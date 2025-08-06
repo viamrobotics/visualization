@@ -1,6 +1,6 @@
 ## motion-tools
 
-`motion-tools` is visualizer
+`motion-tools` is visualizer for motion-related monitoring, testing, and debugging.
 
 ### Getting started
 
