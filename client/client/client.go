@@ -51,8 +51,6 @@ Browsers (especially Chrome/V8) heavily optimize TypedArray access.
 Avoiding object instantiation helps stay in fast paths of the JIT.
 */
 
-const DEFAULT_URL = "http://localhost:3000/"
-
 // DefaultColorMap is a list of sensible colors to cycle between
 // this is also the "Set1" colormap in Matplotlib
 var DefaultColorMap = []string{"#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"}
@@ -68,13 +66,13 @@ func (cc *colorChooser) next() string {
 }
 
 var (
-	url = DEFAULT_URL
+	url = "http://localhost:3000/"
 )
 
 const (
-	PointsType = 0
-	PosesType  = 1
-	LineType   = 2
+	pointsType = 0
+	posesType  = 1
+	lineType   = 2
 )
 
 func hexToRGB(input string) ([3]uint8, error) {
@@ -212,7 +210,7 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor
 	total := 1 + 1 + labelLen + 1 + 3 + 3 + nPoints*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(LineType), float32(labelLen))
+	data = append(data, float32(lineType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
@@ -285,7 +283,7 @@ func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, colo
 	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(PointsType), float32(labelLen))
+	data = append(data, float32(pointsType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
@@ -347,7 +345,7 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	}
 
 	// Header
-	data = append(data, float32(PosesType), float32(nPoses), float32(nColors), float32(a))
+	data = append(data, float32(posesType), float32(nPoses), float32(nColors), float32(a))
 
 	for _, pose := range poses {
 		point := pose.Point()
@@ -411,7 +409,7 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(PointsType), float32(labelLen))
+	data = append(data, float32(pointsType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
