@@ -51,8 +51,6 @@ Browsers (especially Chrome/V8) heavily optimize TypedArray access.
 Avoiding object instantiation helps stay in fast paths of the JIT.
 */
 
-const DEFAULT_URL = "http://localhost:3000/"
-
 // DefaultColorMap is a list of sensible colors to cycle between
 // this is also the "Set1" colormap in Matplotlib
 var DefaultColorMap = []string{"#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"}
@@ -68,20 +66,16 @@ func (cc *colorChooser) next() string {
 }
 
 var (
-	url = DEFAULT_URL
+	url = "http://localhost:3000/"
 )
 
 const (
-	PointsType = 0
-	PosesType  = 1
-	LineType   = 2
+	pointsType = 0
+	posesType  = 1
+	lineType   = 2
 )
 
-func SetURL(preferredURL string) {
-	url = preferredURL
-}
-
-func HexToRGB(input string) ([3]uint8, error) {
+func hexToRGB(input string) ([3]uint8, error) {
 	var rgb [3]uint8
 
 	hexStr := colorutil.NamedColorToHex(input)
@@ -115,6 +109,37 @@ func isASCIIPrintable(label string) error {
 	return nil
 }
 
+func postHTTP(data []byte, content string, endpoint string) error {
+	resp, err := http.Post(url+endpoint, "application/"+content, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("HTTP post unsuccessful: %s", resp.Status)
+	}
+	return nil
+}
+
+// SetURL sets the url for communicating with the visualizer.
+// This is useful when using multiple visualizer windows, or when drawing
+// to a visualizer on another computer.
+//
+// The port should be :3000, which is the port of the drawing server.
+//
+// Parameters:
+//   - preferredURL: a url string
+func SetURL(preferredURL string) {
+	url = preferredURL
+}
+
+// DrawGeometry draws a geometry in the visualizer.
+//
+// Parameters:
+//   - geometry: a geometry
+//   - color: a corresponding color
 func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 	data, err := protojson.Marshal(geometry.ToProtobuf())
 	if err != nil {
@@ -132,6 +157,11 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 	return postHTTP(finalJSON, "json", "geometry")
 }
 
+// DrawGeometries draws a list of geometries in the visualizer.
+//
+// Parameters:
+//   - geometriesInFrame: a list of geometries
+//   - colors: a list of corresponding colors for each geometry
 func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors []string) error {
 	geometries := make([]json.RawMessage, len(geometriesInFrame.Geometries()))
 
@@ -156,6 +186,13 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 	return postHTTP(result, "json", "geometries")
 }
 
+// DrawLine draws a line in the visualizer.
+//
+// Parameters:
+//   - label: an identifier string used for reference in the treeview.
+//   - points: a list of poses, each representing a point in the line
+//   - color: An optional color of the line
+//   - dotColor: An optional color for dots for each vertex in the line
 func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor *[3]uint8) error {
 	labelError := isASCIIPrintable(label)
 	if labelError != nil {
@@ -173,7 +210,7 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor
 	total := 1 + 1 + labelLen + 1 + 3 + 3 + nPoints*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(LineType), float32(labelLen))
+	data = append(data, float32(lineType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
@@ -221,13 +258,13 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor
 	return postHTTP(buf.Bytes(), "octet-stream", "line")
 }
 
-// DrawPoints sends a list of points to the visualizer.
+// DrawPoints draws a list of points in the visualizer.
 //
 // Parameters:
-//   - label: an identifier string used for reference in the treeview.
+//   - label: an identifier string used for reference in the treeview
 //   - points: a list of poses, each representing a point
 //   - colors: Individual point color, optional, and will fallback to defaultColor
-//   - color: an optional fallback color [R, G, B] (0–255); use nil for black.
+//   - color: an optional fallback color [R, G, B] (0–255); use nil for black
 func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, color *[3]uint8) error {
 	labelError := isASCIIPrintable(label)
 	if labelError != nil {
@@ -246,7 +283,7 @@ func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, colo
 	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(PointsType), float32(labelLen))
+	data = append(data, float32(pointsType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
@@ -289,7 +326,7 @@ func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, colo
 	return postHTTP(buf.Bytes(), "octet-stream", "points")
 }
 
-// DrawPoses sends a list of poses to the visualizer and draws them as arrows.
+// DrawPoses draws a list of poses in the visualizer as arrows.
 //
 // Parameters:
 //   - poses: a list of poses
@@ -308,7 +345,7 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	}
 
 	// Header
-	data = append(data, float32(PosesType), float32(nPoses), float32(nColors), float32(a))
+	data = append(data, float32(posesType), float32(nPoses), float32(nColors), float32(a))
 
 	for _, pose := range poses {
 		point := pose.Point()
@@ -323,7 +360,7 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	}
 
 	for _, c := range colors {
-		rgb, err := HexToRGB(c)
+		rgb, err := hexToRGB(c)
 		if err != nil {
 			return err
 		}
@@ -344,10 +381,10 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	return postHTTP(buf.Bytes(), "octet-stream", "poses")
 }
 
-// DrawPointCloud sends a PointCloud to the visualizer.
+// DrawPointCloud draws a PointCloud in the visualizer.
 //
 // Parameters:
-//   - label: an identifier string used for reference in the treeview.
+//   - label: an identifier string used for reference in the treeview
 //   - pc: a PointCloud
 //   - color: an optional override color [R, G, B] (0–255); use nil for original color.
 func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]uint8) error {
@@ -372,7 +409,7 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
 	data := make([]float32, 0, total)
 
-	data = append(data, float32(PointsType), float32(labelLen))
+	data = append(data, float32(pointsType), float32(labelLen))
 	for _, b := range labelBytes {
 		data = append(data, float32(b))
 	}
@@ -429,6 +466,12 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 	return postHTTP(buf.Bytes(), "octet-stream", "points")
 }
 
+// DrawNurbs draws a nurbs curve in the visualizer.
+//
+// Parameters:
+//   - nurbs: A nurbs curve
+//   - color: The color of the line
+//   - name: A unique label for the curve
 func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
 	poseData := make([]json.RawMessage, len(nurbs.ControlPts))
 	for i, pose := range nurbs.ControlPts {
@@ -456,6 +499,10 @@ func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
 	return postHTTP(finalJSON, "json", "nurbs")
 }
 
+// RemoveSpatialObjects clears a list of drawn items.
+//
+// Parameters:
+//   - names: A list of names of items to clear
 func RemoveSpatialObjects(names []string) error {
 	json, err := json.Marshal(names)
 
@@ -466,6 +513,10 @@ func RemoveSpatialObjects(names []string) error {
 	return postHTTP(json, "json", "remove")
 }
 
+// RemoveAllSpatialObjects clears all drawn items from the visualizer.
+//
+// Parameters:
+//   - names: A list of names of items to clear
 func RemoveAllSpatialObjects() error {
 	data := map[string]interface{}{}
 
@@ -477,6 +528,12 @@ func RemoveAllSpatialObjects() error {
 	return postHTTP(json, "json", "remove-all")
 }
 
+// SetCameraPose will set the visualizer's camera pose.
+//
+// Parameters:
+//   - position: The camera position
+//   - lookAt: The direction the camera should look at
+//   - animate: Whether or not to animate to this pose
 func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
 	positionM := map[string]interface{}{
 		"X": position.X / 1000.0,
@@ -505,6 +562,10 @@ func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
 	return postHTTP(json, "json", "camera")
 }
 
+// DrawGLTF will draw a glTF file in the visualizer.
+//
+// Parameters:
+//   - filePath: The gltf filepath
 func DrawGLTF(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -541,6 +602,11 @@ func DrawGLTF(filePath string) error {
 	return nil
 }
 
+// DrawFrameSystem will draw a frame system in the visualizer.
+//
+// Parameters:
+//   - fs: A frame system
+//   - inputs: Frame system inputs
 func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
 	frameGeomMap, err := referenceframe.FrameSystemGeometries(fs, inputs)
 	if err != nil {
@@ -562,6 +628,12 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 	return nil
 }
 
+// DrawWorldState will draw a world state in the visualizer.
+//
+// Parameters:
+//   - ws: A world state
+//   - fs: A frame system
+//   - inputs: Frame system inputs
 func DrawWorldState(ws *referenceframe.WorldState, fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
 	geoms, err := ws.ObstaclesInWorldFrame(fs, inputs)
 	if err != nil {
@@ -582,7 +654,12 @@ func DrawWorldState(ws *referenceframe.WorldState, fs *referenceframe.FrameSyste
 	return nil
 }
 
-// ws can be empty
+// DrawRobot will draw a robot in the visualizer.
+//
+// Parameters:
+//   - ctx: A context
+//   - myRobot: A robot
+//   - ws: An optional world state
 func DrawRobot(ctx context.Context, myRobot robot.Robot, ws *referenceframe.WorldState) error {
 	fsCfg, err := myRobot.FrameSystemConfig(ctx)
 	if err != nil {
@@ -628,19 +705,5 @@ func DrawRobot(ctx context.Context, myRobot robot.Robot, ws *referenceframe.Worl
 		}
 	}
 
-	return nil
-}
-
-func postHTTP(data []byte, content string, endpoint string) error {
-	resp, err := http.Post(url+endpoint, "application/"+content, bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP post unsuccessful: %s", resp.Status)
-	}
 	return nil
 }
