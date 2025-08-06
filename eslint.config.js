@@ -46,6 +46,9 @@ export default ts.config(
 		},
 	},
 	{
-		rules: {},
+		rules: {
+			// Off because this currently has false positives
+			'svelte/prefer-svelte-reactivity': 'off',
+		},
 	}
 )
