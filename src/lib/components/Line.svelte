@@ -4,12 +4,14 @@
 	import Frame from './Frame.svelte'
 	import type { WorldObject } from '$lib/WorldObject'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import type { Snippet } from 'svelte'
 
 	interface Props {
 		object: WorldObject
+		children?: Snippet
 	}
 
-	let { object }: Props = $props()
+	let { object, children }: Props = $props()
 
 	const settings = useSettings()
 </script>
@@ -35,5 +37,7 @@
 				scale={Number(settings.current.lineDotSize)}
 			/>
 		{/each}
+
+		{@render children?.()}
 	</InstancedMesh>
 {/if}

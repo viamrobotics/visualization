@@ -35,7 +35,11 @@
 		} else {
 			const object3d = scene.getObjectByProperty('uuid', selected.current.uuid)
 			if (object3d) {
-				box.setFromObject(object3d)
+				// Create a clone so that our bounding box doesn't include children
+				const clone = object3d.clone(false)
+				object3d.getWorldPosition(clone.position)
+				object3d.getWorldQuaternion(clone.quaternion)
+				box.setFromObject(clone)
 			}
 		}
 	})
