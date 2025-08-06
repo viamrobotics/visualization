@@ -9,7 +9,7 @@
 </script>
 
 <div
-	class="absolute top-2 flex w-full justify-center gap-2"
+	class="absolute top-2 z-1000 flex w-full justify-center gap-2"
 	{...rest}
 >
 	<!-- camera view -->
