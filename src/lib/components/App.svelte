@@ -24,7 +24,7 @@
 </script>
 
 <div
-	class="relative h-full w-full"
+	class="relative h-full w-full overflow-hidden"
 	bind:this={root}
 >
 	<Canvas renderMode="always">
