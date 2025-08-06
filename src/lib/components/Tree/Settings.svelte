@@ -84,14 +84,18 @@
 			</label>
 		</div>
 
-		<h3 class="pt-2 text-sm"><strong>Grid</strong></h3>
+		<h3 class="pt-2 text-sm"><strong>Scene</strong></h3>
 		<div class="flex flex-col gap-2.5">
 			<label class="flex items-center justify-between gap-2">
-				Enabled <Switch bind:on={settings.current.grid} />
+				Object labels <Switch bind:on={settings.current.enableLabels} />
 			</label>
 
 			<label class="flex items-center justify-between gap-2">
-				Cell size (m)
+				Grid <Switch bind:on={settings.current.grid} />
+			</label>
+
+			<label class="flex items-center justify-between gap-2">
+				Grid cell size (m)
 
 				<div class="w-20">
 					<Input
@@ -102,7 +106,7 @@
 			</label>
 
 			<label class="flex items-center justify-between gap-2">
-				Section size (m)
+				Grid section size (m)
 
 				<div class="w-20">
 					<Input
@@ -113,7 +117,7 @@
 			</label>
 
 			<label class="flex items-center justify-between gap-2">
-				Fade distance (m)
+				Grid fade distance (m)
 
 				<div class="w-20">
 					<Input

@@ -30,6 +30,7 @@ interface Settings {
 	enableXR: boolean
 
 	enableMeasure: boolean
+	enableLabels: boolean
 
 	renderStats: boolean
 }
@@ -57,6 +58,7 @@ const defaults = (): Settings => ({
 	lineDotSize: 0.01,
 
 	enableMeasure: false,
+	enableLabels: false,
 
 	enableXR: false,
 

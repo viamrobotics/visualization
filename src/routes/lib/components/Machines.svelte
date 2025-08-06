@@ -33,7 +33,7 @@
 <svelte:window {onpaste} />
 
 <button
-	class=" fixed right-0 bottom-0 z-10 p-2"
+	class=" fixed right-0 bottom-0 z-1000 p-2"
 	type="button"
 	onclick={() => (open.current = !open.current)}
 >
@@ -41,7 +41,7 @@
 </button>
 
 {#if open.current}
-	<div class="fixed top-0 left-0 z-20 grid h-full w-full place-content-center">
+	<div class="fixed top-0 left-0 z-1010 grid h-full w-full place-content-center">
 		<div
 			class="border-medium flex h-full max-h-[500px] w-full max-w-[650px] items-start justify-between overflow-y-auto border bg-white p-2"
 		>

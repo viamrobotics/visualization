@@ -3,12 +3,10 @@
 	import { T } from '@threlte/core'
 	import { Grid, interactivity, PerfMonitor } from '@threlte/extras'
 	import { PortalTarget } from './portal'
-	import Frames from '$lib/components/Frames.svelte'
-	import Pointclouds from '$lib/components/Pointclouds.svelte'
+	import WorldObjects from '$lib/components/WorldObjects.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
-	import Shapes from '$lib/components/Shapes.svelte'
 	import Camera from '$lib/components/Camera.svelte'
 	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import type { Snippet } from 'svelte'
@@ -66,9 +64,8 @@
 
 		<MeasureTool />
 		<StaticGeometries />
-		<Frames />
-		<Pointclouds />
-		<Shapes />
+
+		<WorldObjects />
 
 		<Selected />
 

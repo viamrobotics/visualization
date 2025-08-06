@@ -75,7 +75,7 @@
 {#if object}
 	{@const { geometry } = object}
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-10 m-2 w-60 border p-2 text-xs"
+		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-60 border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
 		{...rest}
 	>

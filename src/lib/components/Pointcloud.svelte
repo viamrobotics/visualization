@@ -13,12 +13,14 @@
 	import { meshBounds } from '@threlte/extras'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import type { Snippet } from 'svelte'
 
 	interface Props {
 		object: WorldObject<{ case: 'points'; value: Float32Array<ArrayBuffer> }>
+		children?: Snippet
 	}
 
-	let { object }: Props = $props()
+	let { object, children }: Props = $props()
 
 	const { camera } = useThrelte()
 	const settings = useSettings()
@@ -88,4 +90,5 @@
 >
 	<T is={geometry} />
 	<T is={material} />
+	{@render children?.()}
 </T>
