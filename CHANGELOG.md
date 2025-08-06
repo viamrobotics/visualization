@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.9.2
+
+### Patch Changes
+
+- 7fd6fc2: Improve client docs
+
 ## 0.9.1
 
 ### Patch Changes
