@@ -25,6 +25,7 @@
 		makeDefault
 		near={-100}
 		far={100}
+		zoom={200}
 		up={[0, 0, 1]}
 		oncreate={(ref) => {
 			ref.lookAt(0, 0, 0)
