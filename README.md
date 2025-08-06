@@ -1,15 +1,21 @@
-## Getting started
+## motion-tools
+
+`motion-tools` is visualizer
+
+### Getting started
 
 1. [Install pnpm](https://pnpm.io/installation)
 2. [Install bun](https://bun.sh/docs/installation)
 3. Install dependencies: `pnpm i`
 4. Run local app server: `pnpm dev`
 
+### Running the visualizer
+
 To visit the visualizer, go to `http://localhost:5173/`
 
-Open the machine config page (bottom right) and enter in connection details to visualize a specific machine.
+Open the machine config page (bottom right) and enter in connection details to visualize a specific machine. You can also add machine configs from an env file (see below).
 
-## Env files
+### Env files for machine configs
 
 To add a list of connection configs in an `.env.local` file, use the following format:
 
@@ -25,3 +31,9 @@ VITE_CONFIGS='
   }
 }
 ```
+
+### Executing drawing commands
+
+The visualizer includes a golang package that allows executing commands to the visualizer.
+
+The list of available commands [can be found here](https://pkg.go.dev/github.com/viam-labs/motion-tools@v0.9.0/client/client).
