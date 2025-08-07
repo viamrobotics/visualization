@@ -528,7 +528,7 @@ func RemoveAllSpatialObjects() error {
 	return postHTTP(json, "json", "remove-all")
 }
 
-// SetCameraPose will set the visualizer's camera pose.
+// SetCameraPose will set the visualizer's camera pose from a position and lookAt vector.
 //
 // Parameters:
 //   - position: The camera position
@@ -552,6 +552,39 @@ func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
 		"Position":      positionM,
 		"LookAt":        lookAtM,
 		"Animate":       animate,
+	}
+
+	json, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return postHTTP(json, "json", "camera")
+}
+
+// SetCameraPoseFromPose will set the visualizer's camera pose from a pose.
+//
+// Parameters:
+//   - pose: The desired camera pose
+//   - animate: Whether or not to animate to this pose
+func SetCameraPoseFromPose(pose spatialmath.Pose, animate bool) error {
+	point := pose.Point()
+	quaternion := pose.Orientation().Quaternion()
+
+	finalPose := map[string]interface{}{
+		"X":  point.X / 1000.0,
+		"Y":  point.Y / 1000.0,
+		"Z":  point.Z / 1000.0,
+		"QX": quaternion.Imag,
+		"QY": quaternion.Jmag,
+		"QZ": quaternion.Kmag,
+		"QW": quaternion.Real,
+	}
+
+	data := map[string]interface{}{
+		"setCameraPoseFromPose": true,
+		"Pose":                  finalPose,
+		"Animate":               animate,
 	}
 
 	json, err := json.Marshal(data)

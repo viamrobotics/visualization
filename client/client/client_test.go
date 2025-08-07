@@ -426,10 +426,12 @@ func TestRemoveSpatialObjects(t *testing.T) {
 	})
 }
 
-func TestSetCameraPose(t *testing.T) {
+func TestSetCameraPoseFromPose(t *testing.T) {
 	t.Run("set camera pose", func(t *testing.T) {
-		position := r3.Vector{X: 10000., Y: 20000., Z: 10000.}
-		lookAt := r3.Vector{X: 100., Y: 500., Z: 800.}
-		test.That(t, SetCameraPose(position, lookAt, true), test.ShouldBeNil)
+		pose := spatialmath.NewPose(
+			r3.Vector{X: 20000., Y: 10000., Z: 10000.},
+			&spatialmath.OrientationVectorDegrees{Theta: 10, OX: 0, OY: 0, OZ: 1},
+		)
+		test.That(t, SetCameraPoseFromPose(pose, false), test.ShouldBeNil)
 	})
 }

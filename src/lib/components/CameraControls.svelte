@@ -5,7 +5,9 @@
 	import Portal from './portal/Portal.svelte'
 	import Button from './dashboard/Button.svelte'
 	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
+	import { useThrelte } from '@threlte/core'
 
+	const { camera } = useThrelte()
 	const drawAPI = useDrawAPI()
 	const transformControls = useTransformControls()
 
@@ -13,9 +15,18 @@
 
 	$effect(() => {
 		if (drawAPI.camera) {
-			const { position, lookAt, animate } = drawAPI.camera
+			const { position, lookAt, quaternion, animate } = drawAPI.camera
 			ref?.setPosition(position.x, position.y, position.z, animate)
-			ref?.setLookAt(position.x, position.y, position.z, lookAt.x, lookAt.y, lookAt.z, animate)
+
+			if (lookAt) {
+				ref?.setLookAt(position.x, position.y, position.z, lookAt.x, lookAt.y, lookAt.z, animate)
+			}
+
+			if (quaternion && ref) {
+				ref.enabled = false
+				camera.current.quaternion.copy(quaternion)
+			}
+
 			drawAPI.clearCamera()
 		}
 	})

@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, type Box3 } from 'three'
+import { Color, Quaternion, Vector3, Vector4, type Box3 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -26,7 +26,8 @@ interface Context {
 	camera:
 		| {
 				position: Vector3
-				lookAt: Vector3
+				quaternion?: Quaternion
+				lookAt?: Vector3
 				animate: boolean
 		  }
 		| undefined
@@ -455,6 +456,14 @@ export const provideDrawAPI = () => {
 		const data = tryParse(event.data)
 
 		if (!data) return
+
+		if ('setCameraPoseFromPose' in data) {
+			camera = {
+				position: new Vector3(data.X, data.Y, data.Z),
+				quaternion: new Quaternion(data.QX, data.QY, data.QZ, data.QW),
+				animate: data.Animate,
+			}
+		}
 
 		if ('setCameraPose' in data) {
 			camera = {
