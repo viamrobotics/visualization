@@ -19,6 +19,12 @@
 			drawAPI.clearCamera()
 		}
 	})
+
+	$effect(() => {
+		if (ref) {
+			;(window as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
+		}
+	})
 </script>
 
 <Portal id="dashboard">
