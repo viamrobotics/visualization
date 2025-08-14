@@ -20,7 +20,7 @@ export const provideObjects = () => {
 	const points = usePointClouds()
 
 	const objects = $derived<WorldObject[]>([
-		...frames.current,
+		...Object.values(frames.current),
 		...geometries.current,
 		...points.current,
 		...statics.current,

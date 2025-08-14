@@ -16,6 +16,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool.svelte'
+	import Resources from './Resources.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -66,6 +67,8 @@
 		<StaticGeometries />
 
 		<WorldObjects />
+
+		<Resources />
 
 		<Selected />
 
