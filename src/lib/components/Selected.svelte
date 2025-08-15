@@ -6,8 +6,10 @@
 
 	const { scene } = useThrelte()
 
+	const box3 = new Box3()
 	const box = new BoxHelper(new Object3D(), 0x000000)
 	const selected = useSelectedObject()
+
 	const object3d = $derived.by(() => {
 		if (selected.current === undefined) {
 			return
@@ -45,8 +47,6 @@
 		},
 		{ autoStart: false }
 	)
-
-	const box3 = new Box3()
 
 	$effect.pre(() => {
 		if (selected.current) {
