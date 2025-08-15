@@ -16,6 +16,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool.svelte'
+	import PointerMissBox from './PointerMissBox.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -66,6 +67,7 @@
 		<StaticGeometries />
 
 		<WorldObjects />
+		<PointerMissBox />
 
 		<Selected />
 
