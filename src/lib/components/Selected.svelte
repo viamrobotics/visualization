@@ -15,6 +15,8 @@
 
 		return scene.getObjectByProperty('uuid', selected.current.uuid)
 	})
+
+	// Create a clone so that our bounding box doesn't include children
 	const clone = $derived.by(() => {
 		if (selected.current?.metadata.batched) {
 			return
@@ -36,7 +38,6 @@
 			}
 
 			if (clone) {
-				// Create a clone so that our bounding box doesn't include children
 				object3d?.getWorldPosition(clone.position)
 				object3d?.getWorldQuaternion(clone.quaternion)
 				box.setFromObject(clone)
