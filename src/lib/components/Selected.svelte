@@ -1,22 +1,13 @@
 <script lang="ts">
 	import { Box3, Object3D } from 'three'
-	import { T, useTask, useThrelte } from '@threlte/core'
-	import { useSelectedObject } from '$lib/hooks/useSelection.svelte'
+	import { T, useTask } from '@threlte/core'
+	import { useSelectedObject, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { BoxHelper } from '$lib/three/BoxHelper'
-
-	const { scene } = useThrelte()
 
 	const box3 = new Box3()
 	const box = new BoxHelper(new Object3D(), 0x000000)
 	const selected = useSelectedObject()
-
-	const object3d = $derived.by(() => {
-		if (selected.current === undefined) {
-			return
-		}
-
-		return scene.getObjectByProperty('uuid', selected.current.uuid)
-	})
+	const selectedObject3d = useSelectedObject3d()
 
 	// Create a clone so that our bounding box doesn't include children
 	const clone = $derived.by(() => {
@@ -24,7 +15,7 @@
 			return
 		}
 
-		return object3d?.clone(false)
+		return selectedObject3d.current?.clone(false)
 	})
 
 	const { start, stop } = useTask(
@@ -40,8 +31,8 @@
 			}
 
 			if (clone) {
-				object3d?.getWorldPosition(clone.position)
-				object3d?.getWorldQuaternion(clone.quaternion)
+				selectedObject3d.current?.getWorldPosition(clone.position)
+				selectedObject3d.current?.getWorldQuaternion(clone.quaternion)
 				box.setFromObject(clone)
 			}
 		},
