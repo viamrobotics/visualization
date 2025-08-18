@@ -1,5 +1,13 @@
 # motion-tools
 
+## 0.9.3
+
+### Patch Changes
+
+- 9026f1f: Expose camera controls to window
+- f0f253b: Improve pointer miss logic
+- f0f253b: Fix custom geometry editing
+
 ## 0.9.2
 
 ### Patch Changes
