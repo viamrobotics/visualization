@@ -51,12 +51,5 @@ export const useObjectEvents = (uuid: () => string) => {
 				selected.set(uuid())
 			}
 		},
-		onpointermissed: () => {
-			if (measuring) {
-				return
-			}
-
-			selected.set()
-		},
 	}
 }
