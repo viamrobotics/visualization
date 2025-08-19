@@ -132,6 +132,9 @@ func postHTTP(data []byte, content string, endpoint string) error {
 // Parameters:
 //   - preferredURL: a url string
 func SetURL(preferredURL string) {
+	if !strings.HasSuffix(preferredURL, "/") {
+		preferredURL += "/"
+	}
 	url = preferredURL
 }
 
