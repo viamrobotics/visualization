@@ -30,6 +30,7 @@ VITE_CONFIGS='
     "signalingAddress": "https://app.viam.com:443"
   }
 }
+'
 ```
 
 ### Executing drawing commands
