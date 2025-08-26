@@ -26,11 +26,13 @@ interface Settings {
 	lineWidth: number
 	lineDotSize: number
 
-	// AR Mode
-	enableXR: boolean
-
 	enableMeasure: boolean
 	enableLabels: boolean
+	enableKeybindings: boolean
+	enableQueryDevtools: boolean
+
+	// AR Mode
+	enableXR: boolean
 
 	renderStats: boolean
 }
@@ -59,6 +61,8 @@ const defaults = (): Settings => ({
 
 	enableMeasure: false,
 	enableLabels: false,
+	enableKeybindings: true,
+	enableQueryDevtools: false,
 
 	enableXR: false,
 
@@ -78,11 +82,15 @@ export const provideSettings = () => {
 		set('motion-tools-settings', $state.snapshot(settings))
 	})
 
-	setContext<Context>(key, {
+	const context: Context = {
 		get current() {
 			return settings
 		},
-	})
+	}
+
+	setContext<Context>(key, context)
+
+	return context
 }
 
 export const useSettings = () => {

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
+
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
 	import Details from '$lib/components/Details.svelte'
@@ -10,18 +12,30 @@
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
+	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 
 	interface Props {
 		partID?: string
+		enableKeybindings?: boolean
 		children?: Snippet
 	}
 
-	let { partID = '', children: appChildren }: Props = $props()
+	let { partID = '', enableKeybindings = true, children: appChildren }: Props = $props()
+
+	const settings = provideSettings()
+
+	$effect(() => {
+		settings.current.enableKeybindings = enableKeybindings
+	})
 
 	createPartIDContext(() => partID)
 
 	let root = $state.raw<HTMLElement>()
 </script>
+
+{#if settings.current.enableQueryDevtools}
+	<SvelteQueryDevtools initialIsOpen />
+{/if}
 
 <div
 	class="relative h-full w-full overflow-hidden"

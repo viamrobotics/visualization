@@ -13,7 +13,6 @@
 	import { provideObjects } from '$lib/hooks/useObjects.svelte'
 	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
-	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import { provideOrigin } from './xr/useOrigin.svelte'
 
 	interface Props {
@@ -24,7 +23,6 @@
 
 	const partID = usePartID()
 
-	provideSettings()
 	provideTransformControls()
 	provideVisibility()
 	provideMachineSettings()

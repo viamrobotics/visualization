@@ -1,13 +1,18 @@
 <script lang="ts">
+	import { MathUtils } from 'three'
 	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import KeyboardControls from './KeyboardControls.svelte'
 	import Portal from './portal/Portal.svelte'
 	import Button from './dashboard/Button.svelte'
 	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
+	const settings = useSettings()
 	const drawAPI = useDrawAPI()
 	const transformControls = useTransformControls()
+
+	const enableKeybindings = $derived(settings.current.enableKeybindings)
 
 	let ref = $state.raw<CameraControlsRef>()
 
@@ -22,6 +27,7 @@
 
 	$effect(() => {
 		if (ref) {
+			;(window as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
 			;(window as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
 		}
 	})
@@ -45,7 +51,9 @@
 	enabled={!transformControls.active}
 >
 	{#snippet children({ ref }: { ref: CameraControlsRef })}
-		<KeyboardControls cameraControls={ref} />
+		{#if enableKeybindings}
+			<KeyboardControls cameraControls={ref} />
+		{/if}
 		<Gizmo />
 	{/snippet}
 </CameraControls>
