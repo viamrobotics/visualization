@@ -1,15 +1,20 @@
 <script lang="ts">
-	import { PersistedState } from 'runed'
+	import Button from '$lib/components/dashboard/Button.svelte'
+	import Portal from '$lib/components/portal/Portal.svelte'
+	import { Icon } from '@viamrobotics/prime-core'
 	import {
 		useConnectionConfigs,
 		useActiveConnectionConfig,
 	} from '../hooks/useConnectionConfigs.svelte'
-	import { X, Radio } from 'lucide-svelte'
+
+	interface Props {
+		isOpen: boolean
+	}
+
+	let { isOpen = $bindable(false) }: Props = $props()
 
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
-
-	let open = new PersistedState('machine-connection-config-open', false)
 
 	const onpaste = (event: ClipboardEvent) => {
 		try {
@@ -32,20 +37,43 @@
 
 <svelte:window {onpaste} />
 
-<button
-	class=" fixed right-0 bottom-0 z-1000 p-2"
-	type="button"
-	onclick={() => (open.current = !open.current)}
->
-	<Radio />
-</button>
+<Portal id="dashboard">
+	<fieldset>
+		<Button
+			active
+			icon="robot-outline"
+			description="Machine connection configs"
+			onclick={() => {
+				isOpen = true
+			}}
+		/>
+	</fieldset>
+</Portal>
 
-{#if open.current}
-	<div class="fixed top-0 left-0 z-1010 grid h-full w-full place-content-center">
+{#if isOpen}
+	<div class="fixed top-0 left-0 z-1010 flex h-full w-full items-center justify-center">
+		<button
+			aria-label="Close"
+			class="absolute h-full w-full bg-black/30"
+			onclick={() => {
+				isOpen = false
+			}}
+		></button>
 		<div
-			class="border-medium flex h-full max-h-[500px] w-full max-w-[650px] items-start justify-between overflow-y-auto border bg-white p-2"
+			class="border-medium z-10 flex h-full max-h-2/3 w-[95%] max-w-[650px] flex-col items-start justify-between border bg-white shadow-2xl"
 		>
-			<div class="flex flex-col gap-2">
+			<div class=" border-gray-3 flex w-full justify-between border-b p-2">
+				<h3 class="text-subtle-1">Machine connection configs</h3>
+				<button
+					onclick={() => {
+						isOpen = !isOpen
+					}}
+				>
+					<Icon name="close" />
+				</button>
+			</div>
+
+			<div class="flex grow flex-col gap-2 overflow-y-auto p-2">
 				{#each connectionConfigs.current as config, index (index)}
 					<form class="flex flex-wrap items-center gap-2">
 						<label class="label flex items-center gap-1.5 text-xs">
@@ -119,10 +147,6 @@
 					onclick={() => connectionConfigs.add()}>Add config</button
 				>
 			</div>
-
-			<button onclick={() => (open.current = !open.current)}>
-				<X />
-			</button>
 		</div>
 	</div>
 {/if}

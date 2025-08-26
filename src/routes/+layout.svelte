@@ -11,7 +11,6 @@
 	import Machines from './lib/components/Machines.svelte'
 	import { getDialConfs } from './lib/robots'
 	import { PersistedState } from 'runed'
-	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { QueryClient } from '@tanstack/svelte-query'
 
 	provideConnectionConfigs()
@@ -44,6 +43,8 @@
 			},
 		},
 	})
+
+	let isMachinesPageOpen = $state(false)
 </script>
 
 <svelte:window
@@ -54,17 +55,16 @@
 	}}
 />
 
-<Machines />
+<Machines bind:isOpen={isMachinesPageOpen} />
 
 <ViamProvider
 	{dialConfigs}
 	{client}
 >
-	<MotionTools {partID}>
+	<MotionTools
+		{partID}
+		enableKeybindings={!isMachinesPageOpen}
+	>
 		{@render children()}
 	</MotionTools>
-
-	{#if queryDevtoolsOpen.current}
-		<SvelteQueryDevtools initialIsOpen />
-	{/if}
 </ViamProvider>

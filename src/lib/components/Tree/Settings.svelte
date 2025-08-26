@@ -156,6 +156,9 @@
 		<h3 class="pt-2 text-sm"><strong>Misc</strong></h3>
 		<div class="flex flex-col gap-2.5">
 			<label class="flex items-center justify-between gap-2">
+				Query devtools <Switch bind:on={settings.current.enableQueryDevtools} />
+			</label>
+			<label class="flex items-center justify-between gap-2">
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
 		</div>
