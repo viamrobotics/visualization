@@ -1,6 +1,6 @@
 ## motion-tools
 
-`motion-tools` is visualizer for motion-related monitoring, testing, and debugging.
+`motion-tools` aims to provide a visualization interface for any spatial information using Viam's APIs. This typically means motion-related monitoring, testing, and debugging.
 
 ### Getting started
 
