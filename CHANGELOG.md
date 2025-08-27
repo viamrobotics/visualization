@@ -1,5 +1,13 @@
 # motion-tools
 
+## 0.9.4
+
+### Patch Changes
+
+- 257395a: Add trailing url check
+- 8c04b83: Machine page quality of life improvements
+- afecbdf: Bump RDK dependency to v0.90.0
+
 ## 0.9.3
 
 ### Patch Changes
