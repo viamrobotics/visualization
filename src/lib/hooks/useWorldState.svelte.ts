@@ -5,7 +5,8 @@ import {
 	createResourceQuery,
 } from '@viamrobotics/svelte-sdk'
 import { fromTransform, WorldObject } from '$lib/WorldObject'
-import { WorldStateStoreClient } from '@viamrobotics/sdk'
+import { WorldStateStoreClient, type TransformChangeStream } from '@viamrobotics/sdk'
+import type { QueryFunction, QueryOptions } from '@tanstack/svelte-query'
 
 interface WorldStateStatus {
 	listUUIDs: {
@@ -16,12 +17,6 @@ interface WorldStateStatus {
 		fetchingCount: number
 		errors: Error[]
 	}
-}
-
-interface WorldStateContext {
-	current: WorldObject[]
-	status: WorldStateStatus
-	changeStream: unknown
 }
 
 const key = Symbol('world-state-context')
@@ -81,7 +76,7 @@ export const provideWorldState = (partID: () => string, resourceName: () => stri
 		status.getTransforms.errors = errors
 	})
 
-	setContext<WorldStateContext>(key, {
+	return setContext(key, {
 		get current() {
 			return current
 		},
@@ -89,11 +84,11 @@ export const provideWorldState = (partID: () => string, resourceName: () => stri
 			return status
 		},
 		get changeStream() {
-			return changeStream
+			return changeStream.current
 		},
 	})
 }
 
-export const useWorldState = (): WorldStateContext => {
-	return getContext<WorldStateContext>(key)
+export const useWorldState = () => {
+	return getContext<ReturnType<typeof provideWorldState>>(key)
 }
