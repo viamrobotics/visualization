@@ -1,4 +1,4 @@
-import type { Geometry, Pose } from '@viamrobotics/sdk'
+import type { Geometry, Pose, TransformWithUUID } from '@viamrobotics/sdk'
 import { BatchedMesh, Box3, MathUtils, Object3D, Vector3, type ColorRepresentation } from 'three'
 import { createPose } from './transform'
 
@@ -38,4 +38,16 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.geometry = geometry
 		this.metadata = metadata ?? {}
 	}
+}
+
+export const fromTransform = (transform: TransformWithUUID) => {
+	const metadata: Metadata = { ...transform.metadata?.fields }
+	const worldObject = new WorldObject(
+		transform.referenceFrame,
+		transform.poseInObserverFrame?.pose,
+		transform.poseInObserverFrame?.referenceFrame,
+		transform.physicalObject?.geometryType,
+		metadata
+	)
+	return worldObject
 }
