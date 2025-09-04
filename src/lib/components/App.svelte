@@ -40,11 +40,7 @@
 	const logStream = async () => {
 		const { data = [] } = worldState.changeStream
 		for await (const change of data) {
-			const { done, value } = await change.next()
-			if (done) {
-				break
-			}
-			const { changeType, transform } = value
+			const { changeType, transform } = change
 			console.log('Log Stream', changeType, transform?.uuid)
 		}
 	}
@@ -52,8 +48,6 @@
 	$effect(() => {
 		void logStream()
 	})
-
-	$inspect(worldState)
 </script>
 
 {#if settings.current.enableQueryDevtools}
