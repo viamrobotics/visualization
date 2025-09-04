@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor } from '@threlte/extras'
+	import { Grid, interactivity, PerfMonitor, bvh } from '@threlte/extras'
 	import { PortalTarget } from './portal'
 	import WorldObjects from '$lib/components/WorldObjects.svelte'
 	import Selected from '$lib/components/Selected.svelte'
@@ -24,7 +24,11 @@
 
 	let { children }: Props = $props()
 
-	interactivity({
+	const settings = useSettings()
+	const focusedObject3d = useFocusedObject3d()
+	const origin = useOrigin()
+
+	const { raycaster, enabled } = interactivity({
 		filter: (items) => {
 			const item = items.find((item) => {
 				return item.object.visible === undefined || item.object.visible === true
@@ -33,10 +37,12 @@
 			return item ? [item] : []
 		},
 	})
+	$effect.pre(() => {
+		enabled.set(!settings.current.enableMeasure)
+	})
+	raycaster.firstHitOnly = true
 
-	const settings = useSettings()
-	const focusedObject3d = useFocusedObject3d()
-	const origin = useOrigin()
+	bvh(() => ({ helper: false }))
 
 	const object3d = $derived(focusedObject3d.current)
 
@@ -52,6 +58,8 @@
 	rotation.x={$isPresenting ? -Math.PI / 2 : 0}
 	rotation.z={origin.rotation}
 >
+	<MeasureTool />
+
 	{#if object3d}
 		<Focus {object3d} />
 	{:else}
@@ -63,7 +71,6 @@
 
 		<PortalTarget id="world" />
 
-		<MeasureTool />
 		<StaticGeometries />
 
 		<WorldObjects />
@@ -73,6 +80,8 @@
 
 		{#if !$isPresenting && settings.current.grid}
 			<Grid
+				raycast={() => null}
+				bvh={{ enabled: false }}
 				plane="xy"
 				sectionColor="#333"
 				infiniteGrid

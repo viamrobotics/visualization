@@ -29,5 +29,13 @@
 	</TrackballControls>
 </Camera>
 
-<T is={object3d} />
-<T.BoxHelper args={[object3d, 'red']} />
+<T
+	is={object3d}
+	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+/>
+
+<T.BoxHelper
+	args={[object3d, 'red']}
+	bvh={{ enabled: false }}
+	raycast={() => null}
+/>

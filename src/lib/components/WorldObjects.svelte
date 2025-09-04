@@ -81,11 +81,13 @@
 	</Portal>
 {/each}
 
-<T
-	name={drawAPI.object3ds.batchedArrow.object3d.name}
-	is={drawAPI.object3ds.batchedArrow.object3d}
-	dispose={false}
-/>
+{#if drawAPI.poses.length > 0}
+	<T
+		name={drawAPI.object3ds.batchedArrow.object3d.name}
+		is={drawAPI.object3ds.batchedArrow.object3d}
+		dispose={false}
+	/>
+{/if}
 
 {#each drawAPI.meshes as object (object.uuid)}
 	<Portal id={object.referenceFrame}>

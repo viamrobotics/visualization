@@ -14,6 +14,7 @@
 </script>
 
 <T.Mesh
+	bvh={{ enabled: false }}
 	onpointerdown={() => {
 		cameraDown.copy(camera.current.position)
 	}}

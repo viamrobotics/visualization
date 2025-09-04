@@ -6,11 +6,10 @@
 		PointsMaterial,
 		OrthographicCamera,
 	} from 'three'
-
+	import { PressedKeys } from 'runed'
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import type { WorldObject } from '$lib/WorldObject'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
-	import { meshBounds } from '@threlte/extras'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
@@ -24,6 +23,8 @@
 
 	const { camera } = useThrelte()
 	const settings = useSettings()
+
+	const keys = new PressedKeys()
 
 	const colors = $derived(object.metadata.colors)
 	const pointSize = $derived(object.metadata.pointSize ?? settings.current.pointSize)
@@ -85,10 +86,15 @@
 	is={points}
 	name={object.name}
 	uuid={object.uuid}
-	raycast={meshBounds}
+	{geometry}
+	{material}
 	{...events}
+	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+	onpointermove={keys.has('shift')
+		? (event) => {
+				console.log(event.point)
+			}
+		: undefined}
 >
-	<T is={geometry} />
-	<T is={material} />
 	{@render children?.()}
 </T>

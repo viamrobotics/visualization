@@ -53,4 +53,5 @@
 <T
 	is={box}
 	raycast={() => null}
+	bvh={{ enabled: false }}
 />
