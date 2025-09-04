@@ -1,87 +1,78 @@
 import { getContext, setContext } from 'svelte'
 import {
+	WorldStateStoreClient,
+	type TransformChangeEvent,
+	TransformChangeType,
+	type TransformWithUUID,
+} from '@viamrobotics/sdk'
+import {
 	createResourceClient,
-	createResourceStream,
 	createResourceQuery,
+	createResourceStream,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform, WorldObject } from '$lib/WorldObject'
-import { WorldStateStoreClient, type TransformChangeStream } from '@viamrobotics/sdk'
-import type { QueryFunction, QueryOptions } from '@tanstack/svelte-query'
-
-interface WorldStateStatus {
-	listUUIDs: {
-		fetching: boolean
-		error?: Error
-	}
-	getTransforms: {
-		fetchingCount: number
-		errors: Error[]
-	}
-}
 
 const key = Symbol('world-state-context')
 
 export const provideWorldState = (partID: () => string, resourceName: () => string) => {
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
+
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
 	const getTransforms = $derived(
-		listUUIDs.current.data?.map((uuid) => createResourceQuery(client, 'getTransform', [uuid]))
+		listUUIDs.current.data?.map((uuid) => {
+			return createResourceQuery(
+				client,
+				'getTransform',
+				() => [uuid] as const,
+				() => ({ refetchInterval: false })
+			)
+		})
 	)
+
 	const changeStream = createResourceStream(client, 'streamTransformChanges')
 
-	const current = $derived.by(() => {
-		const objects: WorldObject[] = []
-		const transforms = getTransforms?.flatMap((query) => query.current.data) ?? []
-
-		for (const transform of transforms) {
+	const current = $state<Record<string, TransformWithUUID>>({})
+	$effect(() => {
+		for (const transform of getTransforms?.flatMap((query) => query.current.data) ?? []) {
 			if (transform === undefined) {
 				continue
 			}
-
-			objects.push(fromTransform(transform))
+			current[transform.uuidString] = transform
 		}
-
-		return objects
 	})
 
-	const status = $state<WorldStateStatus>({
-		listUUIDs: {
-			fetching: false,
-			error: undefined,
-		},
-		getTransforms: {
-			fetchingCount: 0,
-			errors: [],
-		},
-	})
+	const processChangeEvent = async (event: TransformChangeEvent) => {
+		if (event.transform === undefined) {
+			return
+		}
+		switch (event.changeType) {
+			case TransformChangeType.ADDED:
+				current[event.transform.uuidString] = event.transform
+				break
+			case TransformChangeType.UPDATED:
+				// TODO: apply changes not overwriting existing values
+				current[event.transform.uuidString] = event.transform
+				break
+			case TransformChangeType.REMOVED:
+				delete current[event.transform.uuidString]
+				break
+		}
+	}
 
 	$effect(() => {
-		status.listUUIDs.fetching = listUUIDs.current.isFetching
-		status.listUUIDs.error = listUUIDs.current.error ?? undefined
-	})
-
-	$effect(() => {
-		let fetchingCount = 0
-		let errors: Error[] = []
-		for (const query of getTransforms ?? []) {
-			if (query.current.isFetching) {
-				fetchingCount++
-			}
-			if (query.current.error) {
-				errors.push(query.current.error)
-			}
+		for (const event of changeStream.current?.data ?? []) {
+			void processChangeEvent(event)
 		}
-
-		status.getTransforms.fetchingCount = fetchingCount
-		status.getTransforms.errors = errors
 	})
 
 	return setContext(key, {
 		get current() {
 			return current
 		},
-		get status() {
-			return status
+		get listUUIDs() {
+			return listUUIDs.current
+		},
+		get getTransforms() {
+			return getTransforms?.map((query) => query.current)
 		},
 		get changeStream() {
 			return changeStream.current
