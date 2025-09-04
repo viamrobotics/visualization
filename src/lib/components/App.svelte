@@ -13,7 +13,6 @@
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
-	import { provideWorldState } from '$lib/hooks/useWorldState.svelte'
 
 	interface Props {
 		partID?: string
@@ -24,10 +23,6 @@
 	let { partID = '', enableKeybindings = true, children: appChildren }: Props = $props()
 
 	const settings = provideSettings()
-	const worldState = provideWorldState(
-		() => partID,
-		() => 'world-state'
-	)
 
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
@@ -36,18 +31,6 @@
 	createPartIDContext(() => partID)
 
 	let root = $state.raw<HTMLElement>()
-
-	const logStream = async () => {
-		const { data = [] } = worldState.changeStream
-		for await (const change of data) {
-			const { changeType, transform } = change
-			console.log('Log Stream', changeType, transform?.uuid)
-		}
-	}
-
-	$effect(() => {
-		void logStream()
-	})
 </script>
 
 {#if settings.current.enableQueryDevtools}
