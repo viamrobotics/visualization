@@ -1,4 +1,5 @@
 import { getContext, setContext } from 'svelte'
+import { toPath, getInUnsafe, mutInUnsafe } from '@thi.ng/paths'
 import {
 	WorldStateStoreClient,
 	type TransformChangeEvent,
@@ -49,8 +50,12 @@ export const provideWorldState = (partID: () => string, resourceName: () => stri
 				current[event.transform.uuidString] = event.transform
 				break
 			case TransformChangeType.UPDATED:
-				// TODO: apply changes not overwriting existing values
-				current[event.transform.uuidString] = event.transform
+				for (const path of event.updatedFields?.paths ?? []) {
+					// Type inference is tough here, so we use unsafe APIs
+					const paths = toPath(path)
+					const next = getInUnsafe(event.transform, paths)
+					mutInUnsafe(current[event.transform.uuidString], paths, next)
+				}
 				break
 			case TransformChangeType.REMOVED:
 				delete current[event.transform.uuidString]
