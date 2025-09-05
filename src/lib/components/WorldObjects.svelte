@@ -93,6 +93,7 @@
 		name={drawAPI.object3ds.batchedArrow.object3d.name}
 		is={drawAPI.object3ds.batchedArrow.object3d}
 		dispose={false}
+		bvh={{ enabled: false }}
 	/>
 {/if}
 
