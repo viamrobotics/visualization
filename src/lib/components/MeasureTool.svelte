@@ -21,7 +21,9 @@
 
 	const enabled = $derived(settings.current.enableMeasure)
 
-	const { onclick, onmove, raycaster } = useMouseRaycaster(() => ({ enabled }))
+	const { onclick, onmove, raycaster } = useMouseRaycaster(() => ({
+		enabled,
+	}))
 	raycaster.firstHitOnly = true
 	raycaster.params.Points.threshold = 0.005
 
@@ -101,7 +103,7 @@
 			position={htmlPosition.lerpVectors(p1, p2, 0.5).toArray()}
 		>
 			<div class="border border-black bg-white px-1 py-0.5 text-xs">
-				{p1.distanceTo(p2).toFixed(2)}m
+				{p1.distanceTo(p2).toFixed(2)}<span class="text-subtle-2">m</span>
 			</div>
 		</HTML>
 	{/if}

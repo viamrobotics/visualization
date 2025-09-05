@@ -5,20 +5,28 @@ const pointerDown = new Vector2()
 const pointerUp = new Vector2()
 const pointerMove = new Vector2()
 
-interface Event<T> {
+type EventNames = 'click' | 'move' | 'pointerenter' | 'pointerleave'
+
+interface RaycastEvent<T extends EventNames> {
 	type: T
 	intersections: Intersection[]
 }
 
+type Callback<T extends EventNames> = (event: RaycastEvent<T>) => void
+
 export const useMouseRaycaster = (getOptions?: () => { enabled: boolean }) => {
+	let intersections: Intersection[] = []
+
 	const options = $derived({
 		enabled: true,
 		...getOptions?.(),
 	})
 
 	const eventDispatcher = new EventDispatcher<{
-		click: Event<'click'>
-		move: Event<'move'>
+		click: RaycastEvent<'click'>
+		move: RaycastEvent<'move'>
+		pointerenter: RaycastEvent<'pointerenter'>
+		pointerleave: RaycastEvent<'pointerleave'>
 	}>()
 	const raycaster = new Raycaster()
 
@@ -53,9 +61,9 @@ export const useMouseRaycaster = (getOptions?: () => { enabled: boolean }) => {
 		// Update the picking ray with the camera and pointer position
 		raycaster.setFromCamera(pointerUp, camera.current)
 
-		const intersections = raycaster.intersectObjects(scene.children, true)
+		const currentIntersections = raycaster.intersectObjects(scene.children, true)
 
-		eventDispatcher.dispatchEvent({ type: 'click', intersections })
+		eventDispatcher.dispatchEvent({ type: 'click', intersections: currentIntersections })
 	}
 
 	const onPointerMove = (event: PointerEvent): void => {
@@ -67,9 +75,34 @@ export const useMouseRaycaster = (getOptions?: () => { enabled: boolean }) => {
 
 		raycaster.setFromCamera(pointerMove, camera.current)
 
-		const intersections = raycaster.intersectObjects(scene.children, true)
+		const currentIntersections = raycaster.intersectObjects(scene.children, true)
 
-		eventDispatcher.dispatchEvent({ type: 'move', intersections })
+		const enterIntersections = []
+		const leaveIntersections = []
+
+		for (const a of currentIntersections) {
+			if (!intersections.some((b) => b.object.uuid === a.object.uuid)) {
+				enterIntersections.push(a)
+			}
+		}
+
+		for (const a of intersections) {
+			if (!currentIntersections.some((b) => b.object.uuid === a.object.uuid)) {
+				leaveIntersections.push(a)
+			}
+		}
+
+		if (enterIntersections.length > 0) {
+			eventDispatcher.dispatchEvent({ type: 'pointerenter', intersections: enterIntersections })
+		}
+
+		if (leaveIntersections.length > 0) {
+			eventDispatcher.dispatchEvent({ type: 'pointerleave', intersections: leaveIntersections })
+		}
+
+		eventDispatcher.dispatchEvent({ type: 'move', intersections: currentIntersections })
+
+		intersections = currentIntersections
 	}
 
 	$effect(() => {
@@ -90,16 +123,28 @@ export const useMouseRaycaster = (getOptions?: () => { enabled: boolean }) => {
 
 	return {
 		raycaster,
-		onclick: (cb: (event: Event<'click'>) => void) => {
+		onclick: (cb: Callback<'click'>) => {
 			$effect(() => {
 				eventDispatcher.addEventListener('click', cb)
 				return () => eventDispatcher.removeEventListener('click', cb)
 			})
 		},
-		onmove: (cb: (event: Event<'move'>) => void) => {
+		onmove: (cb: Callback<'move'>) => {
 			$effect(() => {
 				eventDispatcher.addEventListener('move', cb)
 				return () => eventDispatcher.removeEventListener('move', cb)
+			})
+		},
+		onpointerenter: (cb: Callback<'pointerenter'>) => {
+			$effect(() => {
+				eventDispatcher.addEventListener('pointerenter', cb)
+				return () => eventDispatcher.removeEventListener('pointerenter', cb)
+			})
+		},
+		onpointerleave: (cb: Callback<'pointerleave'>) => {
+			$effect(() => {
+				eventDispatcher.addEventListener('pointerleave', cb)
+				return () => eventDispatcher.removeEventListener('pointerleave', cb)
 			})
 		},
 	}
