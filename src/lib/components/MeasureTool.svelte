@@ -8,7 +8,9 @@
 	import Portal from './portal/Portal.svelte'
 	import DotSprite from './DotSprite.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
+	import { useFocused } from '$lib/hooks/useSelection.svelte'
 
+	const focus = useFocused()
 	const settings = useSettings()
 
 	const htmlPosition = new Vector3()
@@ -45,14 +47,16 @@
 		}
 	})
 
+	const clear = () => {
+		p1 = undefined
+		p2 = undefined
+		step = 'idle'
+	}
+
 	$effect(() => {
-		if (!enabled) {
-			untrack(() => {
-				p1 = undefined
-				p2 = undefined
-				step = 'idle'
-			})
-		}
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		;(focus.current, enabled)
+		untrack(() => clear())
 	})
 </script>
 

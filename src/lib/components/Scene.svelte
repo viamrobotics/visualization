@@ -44,7 +44,7 @@
 
 	bvh(() => ({ helper: false }))
 
-	const object3d = $derived(focusedObject3d.current)
+	const focusedObject = $derived(focusedObject3d.current)
 
 	const { isPresenting } = useXR()
 </script>
@@ -58,10 +58,11 @@
 	rotation.x={$isPresenting ? -Math.PI / 2 : 0}
 	rotation.z={origin.rotation}
 >
+	<PointerMissBox />
 	<MeasureTool />
 
-	{#if object3d}
-		<Focus {object3d} />
+	{#if focusedObject}
+		<Focus object3d={focusedObject} />
 	{:else}
 		{#if !$isPresenting}
 			<Camera position={[3, 3, 3]}>
@@ -69,13 +70,7 @@
 			</Camera>
 		{/if}
 
-		<PortalTarget id="world" />
-
 		<StaticGeometries />
-
-		<WorldObjects />
-		<PointerMissBox />
-
 		<Selected />
 
 		{#if !$isPresenting && settings.current.grid}
@@ -92,6 +87,11 @@
 			/>
 		{/if}
 	{/if}
+
+	<T.Group attach={focusedObject ? false : undefined}>
+		<PortalTarget id="world" />
+		<WorldObjects />
+	</T.Group>
 
 	{@render children?.()}
 
