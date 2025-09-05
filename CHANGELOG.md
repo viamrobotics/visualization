@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.10.0
+
+### Minor Changes
+
+- 145e959: Allow updating geometries via draw commands
+
 ## 0.9.5
 
 ### Patch Changes
