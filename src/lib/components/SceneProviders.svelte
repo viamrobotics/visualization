@@ -37,6 +37,7 @@
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
 	provideObjects()
+
 	const { focus } = provideSelection()
 </script>
 
