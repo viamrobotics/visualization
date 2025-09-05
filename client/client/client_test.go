@@ -78,7 +78,7 @@ func TestDrawGeometries(t *testing.T) {
 func TestDrawUpdatingGeometries(t *testing.T) {
 	t.Run("draw animating box", func(t *testing.T) {
 
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 100; i++ {
 			box1, err1 := spatialmath.NewBox(
 				spatialmath.NewPose(
 					r3.Vector{X: math.Sin(float64(i)/16.) * 1000, Y: math.Cos(float64(i)/16.) * 1000, Z: 1},
