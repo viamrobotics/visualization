@@ -4,7 +4,7 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { BatchedArrow } from '$lib/three/BatchedArrow'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject'
+import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import type { Geometry } from '@viamrobotics/sdk'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
@@ -108,8 +108,15 @@ export const provideDrawAPI = () => {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addGeometry = (data: any, color: string, parent?: string) => {
+	const drawGeometry = (data: any, color: string, parent?: string) => {
 		let geometry: Geometry['geometryType']
+
+		const existingMesh = meshes.find((mesh) => mesh.name === data.label)
+
+		if (existingMesh) {
+			existingMesh.pose = data.center
+			return
+		}
 
 		if ('mesh' in data) {
 			geometry = {
@@ -319,10 +326,10 @@ export const provideDrawAPI = () => {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addGeometries = (geometries: any[], colors: string[], parent: string) => {
+	const drawGeometries = (geometries: any[], colors: string[], parent: string) => {
 		let i = 0
 		for (const geometry of geometries) {
-			addGeometry(geometry, colors[i], parent)
+			drawGeometry(geometry, colors[i], parent)
 			i += 1
 		}
 	}
@@ -465,7 +472,15 @@ export const provideDrawAPI = () => {
 		}
 
 		if ('geometries' in data) {
-			return addGeometries(data.geometries, data.colors, data.parent)
+			return drawGeometries(data.geometries, data.colors, data.parent)
+		}
+
+		if ('geometry' in data) {
+			return drawGeometry(data.geometry, data.color)
+		}
+
+		if ('Knots' in data) {
+			return addNurbs(data, data.Color)
 		}
 
 		if ('remove' in data) {
@@ -474,14 +489,6 @@ export const provideDrawAPI = () => {
 
 		if ('removeAll' in data) {
 			return removeAll()
-		}
-
-		if ('Knots' in data) {
-			return addNurbs(data, data.Color)
-		}
-
-		if ('geometry' in data) {
-			addGeometry(data.geometry, data.color)
 		}
 	}
 

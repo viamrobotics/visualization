@@ -142,6 +142,10 @@ func SetURL(preferredURL string) {
 
 // DrawGeometry draws a geometry in the visualizer.
 //
+// Labels must be unique within a world. Calling DrawGeometry with labels that
+// already exist will instead update the pose of that geometry. Only poses can be updated,
+// geometries must be cleared if their shape is to change.
+//
 // Parameters:
 //   - geometry: a geometry
 //   - color: a corresponding color
@@ -163,6 +167,10 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 }
 
 // DrawGeometries draws a list of geometries in the visualizer.
+//
+// Labels must be unique within a world. Calling DrawGeometry with labels that
+// already exist will instead update the pose of that geometry. Only poses can be updated,
+// geometries must be cleared if their shape is to change.
 //
 // Parameters:
 //   - geometriesInFrame: a list of geometries

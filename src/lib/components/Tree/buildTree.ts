@@ -1,4 +1,4 @@
-import type { WorldObject } from '$lib/WorldObject'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 export interface TreeNode {
 	id: string

@@ -5,7 +5,7 @@ import { fromStore, toStore } from 'svelte/store'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject'
+import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 
