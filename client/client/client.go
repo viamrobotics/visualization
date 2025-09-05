@@ -168,7 +168,7 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 
 // DrawGeometries draws a list of geometries in the visualizer.
 //
-// Labels must be unique within a world. Calling DrawGeometry with labels that
+// Labels must be unique within a world. Calling DrawGeometries with labels that
 // already exist will instead update the pose of that geometry. Only poses can be updated,
 // geometries must be cleared if their shape is to change.
 //
