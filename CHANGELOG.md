@@ -1,5 +1,13 @@
 # motion-tools
 
+## 0.9.5
+
+### Patch Changes
+
+- bce6867: Add useWorldState hook
+- 4e4cb54: Have consecutive calls to `DrawFrameSystem` attempt to keep the same geometry label -> color mapping.
+- 179e693: Allow measuring against individual points in pointclouds
+
 ## 0.9.4
 
 ### Patch Changes
