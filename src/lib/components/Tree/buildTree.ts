@@ -10,7 +10,10 @@ export interface TreeNode {
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (objects: WorldObject[]): TreeNode[] => {
+export const buildTreeNodes = (
+	objects: WorldObject[],
+	worldStates: { name: string; objects: WorldObject[] }[]
+): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes = []
 
@@ -37,6 +40,33 @@ export const buildTreeNodes = (objects: WorldObject[]): TreeNode[] => {
 				parentNode.children?.push(child)
 			}
 		}
+	}
+
+	for (const worldState of worldStates) {
+		const node: TreeNode = {
+			name: worldState.name,
+			id: worldState.name,
+			children: [],
+			href: `/world-state/${worldState.name}`,
+		}
+
+		console.log('worldState', worldState)
+
+		for (const object of worldState.objects) {
+			const child: TreeNode = {
+				name: object.name,
+				id: object.uuid,
+				children: [],
+				href: `/world-state/${worldState.name}/${object.name}`,
+			}
+
+			nodeMap.set(object.name, child)
+			node.children?.push(child)
+			console.log('child', child)
+		}
+
+		nodeMap.set(worldState.name, node)
+		rootNodes.push(node)
 	}
 
 	return rootNodes

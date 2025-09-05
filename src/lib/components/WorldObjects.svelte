@@ -11,11 +11,14 @@
 	import Pointcloud from './Pointcloud.svelte'
 	import Model from './WorldObject.svelte'
 	import Label from './Label.svelte'
+	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+	import WorldState from './WorldState.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
+	const worldStates = useWorldStates()
 </script>
 
 {#each frames.current as object (object.uuid)}
@@ -63,6 +66,10 @@
 			<Label text={object.name} />
 		</Frame>
 	</Portal>
+{/each}
+
+{#each worldStates.current as { name, objects } (name)}
+	<WorldState {objects} />
 {/each}
 
 {#each points.current as object (object.uuid)}

@@ -9,6 +9,7 @@
 	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
+	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 
 	const { ...rest } = $props()
 
@@ -17,6 +18,7 @@
 	const selected = useSelected()
 	const objects = useObjects()
 	const draggable = useDraggable('treeview')
+	const worldStates = useWorldStates()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -25,7 +27,7 @@
 		href: '/',
 	})
 
-	const nodes = $derived(buildTreeNodes(objects.current))
+	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current))
 
 	$effect.pre(() => {
 		if (!isEqual(rootNode.children, nodes)) {
