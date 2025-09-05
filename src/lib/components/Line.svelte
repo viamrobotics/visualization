@@ -2,7 +2,7 @@
 	import { T } from '@threlte/core'
 	import { Instance, InstancedMesh } from '@threlte/extras'
 	import Frame from './Frame.svelte'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
 

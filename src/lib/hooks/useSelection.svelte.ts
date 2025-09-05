@@ -2,7 +2,7 @@ import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { Matrix4, Object3D } from 'three'
 import { useObjects } from './useObjects.svelte'
-import type { WorldObject } from '$lib/WorldObject'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 const hoverKey = Symbol('hover-context')
 const selectionKey = Symbol('selection-context')

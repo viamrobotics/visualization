@@ -26,7 +26,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 	uuid: string
 	name: string
 	referenceFrame: string
-	pose: Pose
+	pose = $state.raw<Pose>(createPose())
 	geometry?: T
 	metadata: Metadata
 
@@ -34,9 +34,13 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.uuid = MathUtils.generateUUID()
 		this.name = name
 		this.referenceFrame = parent
-		this.pose = pose ?? createPose()
+
 		this.geometry = geometry
 		this.metadata = metadata ?? {}
+
+		if (pose) {
+			this.pose = pose
+		}
 	}
 }
 

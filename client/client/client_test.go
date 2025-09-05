@@ -75,6 +75,51 @@ func TestDrawGeometries(t *testing.T) {
 	})
 }
 
+func TestDrawUpdatingGeometries(t *testing.T) {
+	t.Run("draw animating boxes", func(t *testing.T) {
+
+		for i := 0; i < 100; i++ {
+			box1, err1 := spatialmath.NewBox(
+				spatialmath.NewPose(
+					r3.Vector{X: math.Sin(float64(i)/16.) * 1000, Y: math.Cos(float64(i)/16.) * 1000, Z: 1},
+					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
+				),
+				r3.Vector{X: 101, Y: 100, Z: 200},
+				"myBox1",
+			)
+
+			box2, err2 := spatialmath.NewBox(
+				spatialmath.NewPose(
+					r3.Vector{X: math.Sin(float64(i+120)/16.) * 1000, Y: math.Cos(float64(i+120)/16.) * 1000, Z: 1},
+					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
+				),
+				r3.Vector{X: 101, Y: 100, Z: 200},
+				"myBox2",
+			)
+
+			box3, err3 := spatialmath.NewBox(
+				spatialmath.NewPose(
+					r3.Vector{X: math.Sin(float64(i+240)/16.) * 1000, Y: math.Cos(float64(i+240)/16.) * 1000, Z: 1},
+					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
+				),
+				r3.Vector{X: 101, Y: 100, Z: 200},
+				"myBox3",
+			)
+
+			test.That(t, err1, test.ShouldBeNil)
+			test.That(t, err2, test.ShouldBeNil)
+			test.That(t, err3, test.ShouldBeNil)
+
+			geometries := []spatialmath.Geometry{box1, box2, box3}
+			geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
+			colors := []string{"#EF9A9A", "#EF5350", "#F44336"}
+
+			test.That(t, DrawGeometries(geometriesInFrame, colors), test.ShouldBeNil)
+			time.Sleep(16 * time.Millisecond)
+		}
+	})
+}
+
 func TestDrawGeometry(t *testing.T) {
 	t.Run("draw box", func(t *testing.T) {
 		box, err := spatialmath.NewBox(
@@ -126,6 +171,26 @@ func TestDrawGeometry(t *testing.T) {
 
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, DrawGeometry(meshInWrld, "blue"), test.ShouldBeNil)
+	})
+}
+
+func TestDrawUpdatingGeometry(t *testing.T) {
+	t.Run("draw animating box", func(t *testing.T) {
+
+		for i := 0; i < 100; i++ {
+			box, err := spatialmath.NewBox(
+				spatialmath.NewPose(
+					r3.Vector{X: math.Sin(float64(i)/16.) * 1000, Y: 1, Z: 1},
+					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
+				),
+				r3.Vector{X: 101, Y: 100, Z: 200},
+				"myBox",
+			)
+
+			test.That(t, err, test.ShouldBeNil)
+			test.That(t, DrawGeometry(box, "purple"), test.ShouldBeNil)
+			time.Sleep(16 * time.Millisecond)
+		}
 	})
 }
 
