@@ -6,7 +6,7 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import Geometry from './Geometry.svelte'
 	import { useSelected } from '$lib/hooks/useSelection.svelte'

@@ -3,7 +3,7 @@
 	import Label from './Label.svelte'
 	import Portal from './portal/Portal.svelte'
 	import PortalTarget from './portal/PortalTarget.svelte'
-	import { WorldObject } from '$lib/WorldObject'
+	import { WorldObject } from '$lib/WorldObject.svelte'
 
 	interface Props {
 		objects: WorldObject[]

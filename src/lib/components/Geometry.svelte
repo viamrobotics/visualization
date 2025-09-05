@@ -7,7 +7,7 @@
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
 	const plyLoader = new PLYLoader()
@@ -62,6 +62,7 @@
 	{name}
 	{uuid}
 	{...rest}
+	bvh={{ enabled: false }}
 >
 	{#if geometry?.case === 'mesh'}
 		{@const mesh = geometry.value.mesh as Uint8Array<ArrayBuffer>}
@@ -112,7 +113,10 @@
 		/>
 
 		{#if geo}
-			<T.LineSegments raycast={() => null}>
+			<T.LineSegments
+				raycast={() => null}
+				bvh={{ enabled: false }}
+			>
 				<T.EdgesGeometry args={[geo, 0]} />
 				<T.LineBasicMaterial color={darkenColor(color, 10)} />
 			</T.LineSegments>

@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -140,6 +142,10 @@ func SetURL(preferredURL string) {
 
 // DrawGeometry draws a geometry in the visualizer.
 //
+// Labels must be unique within a world. Calling DrawGeometry with labels that
+// already exist will instead update the pose of that geometry. Only poses can be updated,
+// geometries must be cleared if their shape is to change.
+//
 // Parameters:
 //   - geometry: a geometry
 //   - color: a corresponding color
@@ -161,6 +167,10 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 }
 
 // DrawGeometries draws a list of geometries in the visualizer.
+//
+// Labels must be unique within a world. Calling DrawGeometries with labels that
+// already exist will instead update the pose of that geometry. Only poses can be updated,
+// geometries must be cleared if their shape is to change.
 //
 // Parameters:
 //   - geometriesInFrame: a list of geometries
@@ -617,7 +627,20 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 	}
 
 	i := 0
-	for _, geoms := range frameGeomMap {
+	// We iterate the map of frame labels in a consistent order. Consider the case where a user
+	// wants to visualize a plan by writing:
+	//
+	// for each `FrameSystemInputs` in the plan {
+	//   RemoveAllSpatialObjects()
+	//   DrawFrameSystem(fs, currentInputs)
+	// }
+	//
+	// In this case, the set of figures in the visualization are the same. With just a few figures
+	// moving from one image to the next. It's distracting to see what's happening when the colors
+	// are changing with each image. Hence sorting on the label names allows us to enforce a
+	// consistent color scheme for each figure when the geometry labels remain the same.
+	for _, geomLabel := range slices.Sorted(maps.Keys(frameGeomMap)) {
+		geoms := frameGeomMap[geomLabel]
 		geometries := geoms.Geometries()
 		colors := make([]string, len(geometries))
 		for j := range geometries {

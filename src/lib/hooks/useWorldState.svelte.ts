@@ -10,7 +10,7 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform, WorldObject } from '$lib/WorldObject'
+import { fromTransform, WorldObject } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 
 export const useWorldStates = () => {

@@ -2,19 +2,14 @@ import { useCursor, type IntersectionEvent } from '@threlte/extras'
 import { useFocused, useSelected } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
-import { useSettings } from './useSettings.svelte'
 
 export const useObjectEvents = (uuid: () => string) => {
-	const settings = useSettings()
 	const selected = useSelected()
 	const focused = useFocused()
 	const visibility = useVisibility()
 	const down = new Vector2()
 
-	const measureCursor = useCursor('crosshair')
-	const hoverCursor = useCursor()
-	const measuring = $derived(settings.current.enableMeasure)
-	const cursor = $derived(measuring ? measureCursor : hoverCursor)
+	const cursor = useCursor()
 
 	return {
 		get visible() {
@@ -30,11 +25,6 @@ export const useObjectEvents = (uuid: () => string) => {
 		},
 		ondblclick: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
-
-			if (measuring) {
-				return
-			}
-
 			focused.set(uuid())
 		},
 		onpointerdown: (event: IntersectionEvent<MouseEvent>) => {
@@ -42,10 +32,6 @@ export const useObjectEvents = (uuid: () => string) => {
 		},
 		onclick: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
-
-			if (measuring) {
-				return
-			}
 
 			if (down.distanceToSquared(event.pointer) < 0.1) {
 				selected.set(uuid())

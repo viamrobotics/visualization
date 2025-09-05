@@ -4,7 +4,7 @@ import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject } from '$lib/WorldObject'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'

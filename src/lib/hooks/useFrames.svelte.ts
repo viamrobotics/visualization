@@ -5,7 +5,7 @@ import {
 	useMachineStatus,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { WorldObject } from '$lib/WorldObject'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'

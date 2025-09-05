@@ -6,11 +6,9 @@
 		PointsMaterial,
 		OrthographicCamera,
 	} from 'three'
-
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
-	import { meshBounds } from '@threlte/extras'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
@@ -85,8 +83,8 @@
 	is={points}
 	name={object.name}
 	uuid={object.uuid}
-	raycast={meshBounds}
 	{...events}
+	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
 >
 	<T is={geometry} />
 	<T is={material} />

@@ -1,8 +1,8 @@
-import { useThrelte } from '@threlte/core'
+import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { Matrix4, Object3D } from 'three'
 import { useObjects } from './useObjects.svelte'
-import type { WorldObject } from '$lib/WorldObject'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 const hoverKey = Symbol('hover-context')
 const selectionKey = Symbol('selection-context')
@@ -90,9 +90,19 @@ export const provideSelection = () => {
 
 	const { scene } = useThrelte()
 	const uuid = $derived(focusedObject?.uuid)
-	const focusedObject3d = $derived(
-		uuid ? scene.getObjectByProperty('uuid', uuid)?.clone() : undefined
-	)
+	const focusedObject3d = $derived.by(() => {
+		if (!uuid) return
+
+		const object = scene.getObjectByProperty('uuid', uuid)?.clone()
+
+		object?.traverse((child) => {
+			if (isInstanceOf(child, 'LineSegments')) {
+				child.raycast = () => null
+			}
+		})
+
+		return object
+	})
 
 	setContext(focusedObject3dKey, {
 		get current() {
