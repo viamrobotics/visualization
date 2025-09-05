@@ -17,7 +17,7 @@
 
 	let step: 'idle' | 'p1' | 'p2' = 'idle'
 
-	let intersection: Intersection | undefined = $state.raw()
+	let intersection = $state.raw<Intersection>()
 	let p1 = $state.raw<Vector3>()
 	let p2 = $state.raw<Vector3>()
 
