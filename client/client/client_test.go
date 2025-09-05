@@ -76,7 +76,7 @@ func TestDrawGeometries(t *testing.T) {
 }
 
 func TestDrawUpdatingGeometries(t *testing.T) {
-	t.Run("draw animating box", func(t *testing.T) {
+	t.Run("draw animating boxes", func(t *testing.T) {
 
 		for i := 0; i < 100; i++ {
 			box1, err1 := spatialmath.NewBox(
