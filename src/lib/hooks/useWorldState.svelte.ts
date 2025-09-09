@@ -12,7 +12,7 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import { mutInUnsafe } from '@thi.ng/paths'
+import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
 import { getContext, setContext } from 'svelte'
 
@@ -22,6 +22,10 @@ interface Context {
 	names: ResourceName[]
 	current: Record<string, ReturnType<typeof createWorldState>>
 }
+
+const worker = new Worker(new URL('../workers/worldStateWorker.ts', import.meta.url), {
+	type: 'module',
+})
 
 export const provideWorldStates = () => {
 	const partID = usePartID()
@@ -58,7 +62,6 @@ export const useWorldState = (resourceName: () => string) => {
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
-	let worker: Worker
 
 	let initialized = $state(false)
 	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
@@ -96,8 +99,10 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	}
 
 	const applyEvents = (events: ProcessMessage['events']) => {
+		if (events.length === 0) return
+
+		const next = { ...transforms }
 		for (const event of events) {
-			const next = { ...transforms }
 			switch (event.type) {
 				case TransformChangeType.ADDED:
 					next[event.uuidString] = event.transform
@@ -106,88 +111,74 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 					delete next[event.uuidString]
 					break
 				case TransformChangeType.UPDATED:
+					if (event.changes.length === 0) continue
+
+					let toUpdate = next[event.uuidString]
+					if (!toUpdate) continue
 					for (const [path, value] of event.changes) {
-						mutInUnsafe(next[event.uuidString], path, value)
+						toUpdate = setInUnsafe(toUpdate, path, value)
 					}
+
+					next[event.uuidString] = toUpdate
 					break
 			}
-
-			transforms = next
 		}
+
+		transforms = next
 	}
 
 	const scheduleFlush = () => {
-		if (flushScheduled) {
-			return
-		}
+		if (flushScheduled) return
 		flushScheduled = true
+
 		requestAnimationFrame(() => {
-			flushScheduled = false
 			const toApply = pendingEvents
-			pendingEvents = []
+			if (toApply.length === 0) return
+
 			applyEvents(toApply)
+			flushScheduled = false
+			pendingEvents = []
 		})
 	}
 
 	$effect(() => {
-		if (!getTransforms) {
-			return
-		}
-
-		if (initialized) {
-			return
-		}
+		if (!getTransforms) return
+		if (initialized) return
 
 		const queries = getTransforms.map((query) => query.current)
-		if (queries.some((query) => query?.isLoading)) {
-			return
-		}
+		if (queries.some((query) => query?.isLoading)) return
 
-		const objects: TransformWithUUID[] = []
-		for (const transform of queries.flatMap((query) => query.data) ?? []) {
-			if (transform === undefined) {
-				continue
-			}
-			objects.push(transform)
-		}
+		const data = queries
+			.flatMap((query) => query?.data ?? [])
+			.filter((transform) => transform !== undefined) as TransformWithUUID[]
+		if (data.length === 0) return
 
-		initialize(objects)
+		initialize(data)
 	})
 
 	$effect(() => {
-		if (!worker) {
-			worker = new Worker(new URL('../workers/worldStateWorker.ts', import.meta.url), {
-				type: 'module',
-			})
-		}
-
 		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
-			if (e.data.type !== 'process') {
-				return
-			}
+			if (e.data.type !== 'process') return
 
 			const { events } = e.data ?? { events: [] }
+			if (events.length === 0) return
 
 			pendingEvents.push(...events)
 			scheduleFlush()
 		}
 
 		return () => {
-			console.log('terminate worker', worker)
 			worker.terminate()
 		}
 	})
 
 	$effect.pre(() => {
-		if (changeStream.current?.data === undefined) {
-			return
-		}
+		if (changeStream.current?.data === undefined) return
 
-		if (changeStream.current.data.length === 0) {
-			return
-		}
+		const events = changeStream.current.data.filter((event) => event.transform !== undefined)
+		if (events.length === 0) return
 
-		worker.postMessage({ type: 'change', events: changeStream.current.data })
+		worker.postMessage({ type: 'change', events })
 	})
 
 	return {

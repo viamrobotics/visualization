@@ -55,7 +55,7 @@
 		"@typescript-eslint/parser": "8.42.0",
 		"@viamrobotics/prime-core": "0.1.5",
 		"@viamrobotics/sdk": "0.51.0",
-		"@viamrobotics/svelte-sdk": "0.6.0",
+		"@viamrobotics/svelte-sdk": "0.6.1",
 		"@vitejs/plugin-basic-ssl": "2.1.0",
 		"@zag-js/svelte": "1.22.1",
 		"@zag-js/tree-view": "1.22.1",
@@ -109,10 +109,7 @@
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"
-		],
-		"overrides": {
-			"@viamrobotics/svelte-sdk": "link:../viam-svelte-sdk"
-		}
+		]
 	},
 	"packageManager": "pnpm@10.14.0",
 	"svelte": "./dist/index.js",
