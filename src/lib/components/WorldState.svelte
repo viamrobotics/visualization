@@ -6,13 +6,13 @@
 	import { WorldObject } from '$lib/WorldObject.svelte'
 
 	interface Props {
-		objects: WorldObject[]
+		worldObjects: WorldObject[]
 	}
 
-	let { objects }: Props = $props()
+	let { worldObjects }: Props = $props()
 </script>
 
-{#each objects as object (object.uuid)}
+{#each worldObjects as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}

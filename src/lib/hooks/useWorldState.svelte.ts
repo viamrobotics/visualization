@@ -1,8 +1,8 @@
-import { toPath, getInUnsafe, mutInUnsafe } from '@thi.ng/paths'
 import {
 	WorldStateStoreClient,
-	type TransformChangeEvent,
 	TransformChangeType,
+	type TransformWithUUID,
+	ResourceName,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -10,34 +10,64 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform, WorldObject } from '$lib/WorldObject.svelte'
+import { fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
+import { mutInUnsafe } from '@thi.ng/paths'
+import type { ProcessMessage } from '$lib/world-state-messages'
+import { getContext, setContext } from 'svelte'
 
-export const useWorldStates = () => {
+const key = Symbol('world-state-context')
+
+interface Context {
+	names: ResourceName[]
+	current: Record<string, ReturnType<typeof createWorldState>>
+}
+
+export const provideWorldStates = () => {
 	const partID = usePartID()
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
 	const current = $derived.by(() =>
-		resourceNames.current.map(({ name }) =>
-			useWorldState(
-				() => partID.current,
-				() => name
-			)
+		Object.fromEntries(
+			resourceNames.current.map(({ name }) => [
+				name,
+				createWorldState(
+					() => partID.current,
+					() => name
+				),
+			])
 		)
 	)
 
-	return {
+	setContext<Context>(key, {
 		get names() {
 			return resourceNames.current
 		},
 		get current() {
 			return current
 		},
-	}
+	})
 }
 
-export const useWorldState = (partID: () => string, resourceName: () => string) => {
+export const useWorldStates = () => {
+	return getContext<Context>(key)
+}
+
+export const useWorldState = (resourceName: () => string) => {
+	return useWorldStates().current[resourceName()]
+}
+
+const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
-	let initialized = false
+	let worker: Worker
+
+	let initialized = $state(false)
+	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
+
+	const transformsList = $derived.by(() => Object.values(transforms))
+	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
+
+	let pendingEvents: ProcessMessage['events'] = []
+	let flushScheduled = false
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
 	const getTransforms = $derived(
@@ -51,15 +81,52 @@ export const useWorldState = (partID: () => string, resourceName: () => string) 
 		})
 	)
 
-	const changeStream = createResourceStream(client, 'streamTransformChanges')
+	const changeStream = createResourceStream(client, 'streamTransformChanges', {
+		refetchMode: 'replace',
+	})
 
-	const worldObjects = $state<Record<string, WorldObject>>({})
-	const initializeCurrent = (objects: WorldObject[]) => {
-		for (const object of objects) {
-			worldObjects[object.uuid] = object
+	const initialize = (initial: TransformWithUUID[]) => {
+		const next = { ...transforms }
+		for (const transform of initial) {
+			next[transform.uuidString] = transform
 		}
 
+		transforms = next
 		initialized = true
+	}
+
+	const applyEvents = (events: ProcessMessage['events']) => {
+		for (const event of events) {
+			const next = { ...transforms }
+			switch (event.type) {
+				case TransformChangeType.ADDED:
+					next[event.uuidString] = event.transform
+					break
+				case TransformChangeType.REMOVED:
+					delete next[event.uuidString]
+					break
+				case TransformChangeType.UPDATED:
+					for (const [path, value] of event.changes) {
+						mutInUnsafe(next[event.uuidString], path, value)
+					}
+					break
+			}
+
+			transforms = next
+		}
+	}
+
+	const scheduleFlush = () => {
+		if (flushScheduled) {
+			return
+		}
+		flushScheduled = true
+		requestAnimationFrame(() => {
+			flushScheduled = false
+			const toApply = pendingEvents
+			pendingEvents = []
+			applyEvents(toApply)
+		})
 	}
 
 	$effect(() => {
@@ -76,60 +143,68 @@ export const useWorldState = (partID: () => string, resourceName: () => string) 
 			return
 		}
 
-		const objects: WorldObject[] = []
+		const objects: TransformWithUUID[] = []
 		for (const transform of queries.flatMap((query) => query.data) ?? []) {
 			if (transform === undefined) {
 				continue
 			}
-			objects.push(fromTransform(transform))
+			objects.push(transform)
 		}
 
-		initializeCurrent(objects)
+		initialize(objects)
 	})
 
-	const processChangeEvent = async (event: TransformChangeEvent) => {
-		if (event.transform === undefined) {
+	$effect(() => {
+		if (!worker) {
+			worker = new Worker(new URL('../workers/worldStateWorker.ts', import.meta.url), {
+				type: 'module',
+			})
+		}
+
+		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
+			if (e.data.type !== 'process') {
+				return
+			}
+
+			const { events } = e.data ?? { events: [] }
+
+			pendingEvents.push(...events)
+			scheduleFlush()
+		}
+
+		return () => {
+			console.log('terminate worker', worker)
+			worker.terminate()
+		}
+	})
+
+	$effect.pre(() => {
+		if (changeStream.current?.data === undefined) {
 			return
 		}
-		switch (event.changeType) {
-			case TransformChangeType.ADDED:
-				worldObjects[event.transform.uuidString] = fromTransform(event.transform)
-				break
-			case TransformChangeType.UPDATED:
-				for (const path of event.updatedFields?.paths ?? []) {
-					// Type inference is tough here, so we use unsafe APIs
-					const paths = toPath(path)
-					const next = getInUnsafe(event.transform, paths)
-					mutInUnsafe(worldObjects[event.transform.uuidString], paths, next)
-				}
-				break
-			case TransformChangeType.REMOVED:
-				delete worldObjects[event.transform.uuidString]
-				break
-		}
-	}
 
-	$effect(() => {
-		for (const event of changeStream.current?.data ?? []) {
-			void processChangeEvent(event)
+		if (changeStream.current.data.length === 0) {
+			return
 		}
+
+		worker.postMessage({ type: 'change', events: changeStream.current.data })
 	})
 
 	return {
 		get name() {
 			return resourceName()
 		},
-		get objects() {
-			return Object.values(worldObjects)
+		get transforms() {
+			return transformsList
+		},
+		get worldObjects() {
+			return worldObjectsList
 		},
 		get listUUIDs() {
 			return listUUIDs.current
 		},
 		get getTransforms() {
 			return getTransforms?.map((query) => query.current)
-		},
-		get changeStream() {
-			return changeStream.current
 		},
 	}
 }

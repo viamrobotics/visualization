@@ -53,5 +53,6 @@ export const fromTransform = (transform: TransformWithUUID) => {
 		transform.physicalObject?.geometryType,
 		metadata
 	)
+	worldObject.uuid = transform.uuidString
 	return worldObject
 }
