@@ -68,8 +68,8 @@
 	</Portal>
 {/each}
 
-{#each worldStates.current as { name, objects } (name)}
-	<WorldState {objects} />
+{#each worldStates.names as { name } (name)}
+	<WorldState worldObjects={worldStates.current[name].worldObjects} />
 {/each}
 
 {#each points.current as object (object.uuid)}

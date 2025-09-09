@@ -14,7 +14,7 @@
 	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
 	import { provideOrigin } from './xr/useOrigin.svelte'
-
+	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	interface Props {
 		children: Snippet<[{ focus: boolean }]>
 	}
@@ -37,6 +37,7 @@
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
 	provideObjects()
+	provideWorldStates()
 
 	const { focus } = provideSelection()
 </script>

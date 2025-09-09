@@ -109,7 +109,7 @@
 			{color}
 			side={geometry.case === 'mesh' ? DoubleSide : FrontSide}
 			transparent
-			opacity={0.7}
+			opacity={metadata.opacity ?? 0.7}
 		/>
 
 		{#if geo}

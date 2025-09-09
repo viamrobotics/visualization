@@ -1,3 +1,4 @@
+import type { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
 
 export interface TreeNode {
@@ -12,7 +13,7 @@ export interface TreeNode {
  */
 export const buildTreeNodes = (
 	objects: WorldObject[],
-	worldStates: { name: string; objects: WorldObject[] }[]
+	worldStates: ReturnType<typeof useWorldStates>['current']
 ): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes = []
@@ -42,7 +43,7 @@ export const buildTreeNodes = (
 		}
 	}
 
-	for (const worldState of worldStates) {
+	for (const worldState of Object.values(worldStates)) {
 		const node: TreeNode = {
 			name: worldState.name,
 			id: worldState.name,
@@ -50,9 +51,7 @@ export const buildTreeNodes = (
 			href: `/world-state/${worldState.name}`,
 		}
 
-		console.log('worldState', worldState)
-
-		for (const object of worldState.objects) {
+		for (const object of worldState.worldObjects) {
 			const child: TreeNode = {
 				name: object.name,
 				id: object.uuid,
@@ -62,7 +61,6 @@ export const buildTreeNodes = (
 
 			nodeMap.set(object.name, child)
 			node.children?.push(child)
-			console.log('child', child)
 		}
 
 		nodeMap.set(worldState.name, node)
