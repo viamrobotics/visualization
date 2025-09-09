@@ -54,7 +54,9 @@ export class WorldObject<T extends Geometries = Geometries> {
 	}
 }
 
-const unwrapValue = (value: any): any => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UnwrapValue = { kind: { case: string; value: any } }
+const unwrapValue = (value: UnwrapValue): unknown => {
 	if (!value?.kind) return value
 
 	switch (value.kind.case) {
@@ -62,13 +64,14 @@ const unwrapValue = (value: any): any => {
 		case 'stringValue':
 		case 'boolValue':
 			return value.kind.value
-		case 'structValue':
+		case 'structValue': {
 			// Recursively unwrap nested struct
-			const result: any = {}
+			const result: Record<string, unknown> = {}
 			for (const [key, val] of Object.entries(value.kind.value.fields || {})) {
-				result[key] = unwrapValue(val)
+				result[key] = unwrapValue(val as UnwrapValue)
 			}
 			return result
+		}
 		case 'listValue':
 			return value.kind.value.values?.map(unwrapValue) || []
 		case 'nullValue':
@@ -78,7 +81,7 @@ const unwrapValue = (value: any): any => {
 	}
 }
 
-const parseMetadata = (metadata: any) => {
+const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
 	let json: Metadata = {}
 
 	for (const [k, v] of Object.entries(metadata)) {
@@ -86,7 +89,7 @@ const parseMetadata = (metadata: any) => {
 
 		// TODO: Remove special case and add better handling for metadata
 		if (k === 'color' && unwrappedValue && typeof unwrappedValue === 'object') {
-			const { r, g, b }: RGB = unwrappedValue
+			const { r, g, b } = unwrappedValue as RGB
 			json[k] = new Color().setRGB(r / 255, g / 255, b / 255)
 		} else {
 			json = { ...json, [k]: unwrappedValue }
@@ -97,7 +100,9 @@ const parseMetadata = (metadata: any) => {
 }
 
 export const fromTransform = (transform: TransformWithUUID) => {
-	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
+	const metadata: Metadata = transform.metadata
+		? parseMetadata(transform.metadata.fields as Record<string, UnwrapValue>)
+		: {}
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,

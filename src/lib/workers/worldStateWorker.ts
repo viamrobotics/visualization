@@ -27,7 +27,7 @@ const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefine
 				type: event.changeType,
 				uuidString: event.transform.uuidString,
 			}
-		case TransformChangeType.UPDATED:
+		case TransformChangeType.UPDATED: {
 			const changes: Record<string, unknown> = {}
 			const paths = toPath(event.updatedFields?.paths ?? [])
 			for (const path of paths) {
@@ -40,6 +40,7 @@ const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefine
 				transform: event.transform,
 				changes,
 			}
+		}
 	}
 }
 
@@ -103,7 +104,7 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 				})
 				break
 
-			case TransformChangeType.UPDATED:
+			case TransformChangeType.UPDATED: {
 				const changes = Object.entries(entry.changes ?? {})
 				if (changes.length === 0) continue
 
@@ -113,6 +114,7 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 					changes,
 				})
 				break
+			}
 		}
 	}
 

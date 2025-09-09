@@ -110,7 +110,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 				case TransformChangeType.REMOVED:
 					delete next[event.uuidString]
 					break
-				case TransformChangeType.UPDATED:
+				case TransformChangeType.UPDATED: {
 					if (event.changes.length === 0) continue
 
 					let toUpdate = next[event.uuidString]
@@ -121,6 +121,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 					next[event.uuidString] = toUpdate
 					break
+				}
 			}
 		}
 
