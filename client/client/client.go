@@ -14,6 +14,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/golang/geo/r3"
@@ -112,6 +113,38 @@ func isASCIIPrintable(label string) error {
 }
 
 func postHTTP(data []byte, content string, endpoint string) error {
+	if recordFile != nil {
+		if lastDraw.IsZero() {
+			// If this is the first draw command for a recording, we only need to note the
+			// time. There's no need to add a sleep.
+			lastDraw = time.Now()
+		} else {
+			// Calculate the time since the last frame. We only want to capture user sleeps between
+			// `Draw*` calls. Thus we will only write out a sleep operation if the time is
+			// "significant". We do this "significance" check because a single `Draw` command (e.g:
+			// DrawFrameSystem) often results in many small `postHTTP` calls. The time between these
+			// HTTP calls is not intended to be captured by the user.
+			timeSinceFrame := time.Since(lastDraw)
+			if timeSinceFrame > 10*time.Millisecond {
+				fmt.Fprintf(recordFile, "sleep: %v\n", timeSinceFrame.Nanoseconds())
+			}
+			defer func() {
+				// Because we only want to capture user sleeps calls to drawing, we update the
+				// `lastDraw` time after each response is received. This is to have updating the
+				// `lastDraw` time better track calls to `Draw*` (e.g: `DrawFrameSystem`)
+				// methods. Most `postHTTP` calls take 1-10ms. And a single `DrawFrameSystem` can be
+				// dozens of `postHTTP` calls. We do not want to turn a 100ms user sleep into a
+				// forced 150+ms wait between frames because of the number of smaller `postHTTP`
+				// that had to be made.
+				lastDraw = time.Now()
+			}()
+		}
+
+		fmt.Fprintf(recordFile, "%v\n", endpoint)
+		fmt.Fprintf(recordFile, "%v\n", content)
+		fmt.Fprintf(recordFile, "%v\n", hex.EncodeToString(data))
+	}
+
 	resp, err := http.Post(url+endpoint, "application/"+content, bytes.NewReader(data))
 	if err != nil {
 		return err
