@@ -1,5 +1,15 @@
 # motion-tools
 
+## 0.11.0
+
+### Minor Changes
+
+- e505b0b: Improved world state store handling
+
+### Patch Changes
+
+- c093e40: Add Record + Replay functionality.
+
 ## 0.10.0
 
 ### Minor Changes
