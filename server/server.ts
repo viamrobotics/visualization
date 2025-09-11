@@ -37,27 +37,6 @@ const shutdown = async (code = 0) => {
 	process.exit(code)
 }
 
-const wireProcessLifeline = () => {
-	// If our process is going down, take Vite with us
-	const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
-	for (const sig of signals) {
-		process.on(sig, () => shutdown(0))
-	}
-
-	process.on('uncaughtException', (err) => {
-		console.error('Uncaught exception:', err)
-		shutdown(1)
-	})
-
-	process.on('unhandledRejection', (reason) => {
-		console.error('Unhandled rejection:', reason)
-		shutdown(1)
-	})
-
-	// As a last resort (e.g., normal exit), try to kill vite
-	process.on('exit', () => viteProcess?.kill('SIGTERM'))
-}
-
 const launchVite = (port: number) => {
 	// Keep the handle so we can control it
 	viteProcess = spawn({
@@ -101,6 +80,7 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 				const success = sendToClients(JSON.stringify(json))
 				return jsonResponse(success)
 			}
+
 			case '/points':
 			case '/poses':
 			case '/line':
@@ -110,15 +90,18 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 				const success = sendToClients(buffer)
 				return jsonResponse(success)
 			}
+
 			case '/remove-all': {
 				const success = sendToClients(JSON.stringify({ removeAll: true }))
 				return jsonResponse(success)
 			}
+
 			case '/remove': {
 				const json = await req.json()
 				const success = sendToClients(JSON.stringify({ remove: true, names: json }))
 				return jsonResponse(success)
 			}
+
 			default:
 				return new Response('Not Found', { status: 404 })
 		}
@@ -128,17 +111,35 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 	}
 }
 
-const jsonResponse = (success: boolean) =>
-	new Response(JSON.stringify(success ? messages.success : messages.noClient), {
+const jsonResponse = (success: boolean) => {
+	return new Response(JSON.stringify(success ? messages.success : messages.noClient), {
 		status: success ? 200 : 408,
 		headers: {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*',
 		},
 	})
+}
 
 let port = 3000
-wireProcessLifeline()
+
+const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
+for (const sig of signals) {
+	process.on(sig, () => shutdown(0))
+}
+
+process.on('uncaughtException', (err) => {
+	console.error('Uncaught exception:', err)
+	shutdown(1)
+})
+
+process.on('unhandledRejection', (reason) => {
+	console.error('Unhandled rejection:', reason)
+	shutdown(1)
+})
+
+// As a last resort (e.g., normal exit), try to kill vite
+process.on('exit', () => viteProcess?.kill('SIGTERM'))
 
 while (true) {
 	try {
@@ -190,8 +191,8 @@ while (true) {
 
 		launchVite(port)
 		break
-	} catch (error: any) {
-		if (error?.code === 'EADDRINUSE') {
+	} catch (error) {
+		if (error.code === 'EADDRINUSE') {
 			console.warn(`Port ${port} in use, trying ${port + 1}...`)
 			port += 1
 		} else {
