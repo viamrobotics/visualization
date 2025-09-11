@@ -20,18 +20,24 @@ const shutdown = async (code = 0) => {
 
 	try {
 		server?.stop?.()
-	} catch {}
+	} catch (error) {
+		console.error(error)
+	}
 
 	// Ask Vite to quit nicely; then hard-kill if it lingers
 	try {
 		viteProcess?.kill('SIGTERM')
-	} catch {}
+	} catch (error) {
+		console.error(error)
+	}
 
 	await new Promise((r) => setTimeout(r, 800))
 
 	try {
 		viteProcess?.kill('SIGKILL')
-	} catch {}
+	} catch (error) {
+		console.error(error)
+	}
 
 	// Exit this process
 	process.exit(code)
