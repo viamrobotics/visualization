@@ -15,7 +15,7 @@ type Nurbs struct {
 }
 
 // Generate a NURBS structure similar to the Three.js version
-func GenerateNURBS(numControlPoints int, degree int) Nurbs {
+func GenerateNURBS(numControlPoints int, degree int, offset r3.Vector) Nurbs {
 	controlPts := make([]spatialmath.Pose, numControlPoints)
 	weights := make([]float64, numControlPoints)
 	knots := make([]float64, numControlPoints+degree+1)
@@ -30,9 +30,9 @@ func GenerateNURBS(numControlPoints int, degree int) Nurbs {
 
 		controlPts[i] = spatialmath.NewPose(
 			r3.Vector{
-				X: rand.Float64()*400 - 200, // Random X in range [-200, 200]
-				Y: rand.Float64() * 400,     // Random Y in range [0, 400]
-				Z: rand.Float64()*400 - 200, // Random Z in range [-200, 200]
+				X: rand.Float64()*400 - 200 + offset.X, // Random X in range [-200, 200]
+				Y: rand.Float64()*400 + offset.Y,       // Random Y in range [0, 400]
+				Z: rand.Float64()*400 - 200 + offset.Z, // Random Z in range [-200, 200]
 			},
 			&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
 		)

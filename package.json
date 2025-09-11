@@ -15,7 +15,7 @@
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
-		"test:client": "go test ./... -count=1",
+		"test:client": "go test ./client/... -count=1",
 		"test": "pnpm test:unit -- --run",
 		"test:e2e": "playwright test",
 		"model-pipeline:run": "node scripts/model-pipeline.js",
