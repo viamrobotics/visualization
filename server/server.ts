@@ -9,34 +9,29 @@ const messages = {
 	noClient: { message: 'No connected client', status: 404 },
 }
 
-let viteProc: Subprocess | undefined
+let viteProcess: Subprocess | undefined
 let server: ReturnType<typeof serve> | undefined
 let shuttingDown = false
 
-const killVite = (signal: NodeJS.Signals | 'SIGTERM' | 'SIGKILL' = 'SIGTERM') => {
-	if (!viteProc) return
-	try {
-		// Send the signal to the vite process
-		viteProc.kill(signal)
-	} catch {
-		// ignore
-	}
-}
-
 const shutdown = async (code = 0) => {
 	if (shuttingDown) return
+
 	shuttingDown = true
+
 	try {
-		// Stop accepting new requests ASAP
 		server?.stop?.()
-	} catch {
-		/* ignore */
-	}
+	} catch {}
 
 	// Ask Vite to quit nicely; then hard-kill if it lingers
-	killVite('SIGTERM')
+	try {
+		viteProcess?.kill('SIGTERM')
+	} catch {}
+
 	await new Promise((r) => setTimeout(r, 800))
-	killVite('SIGKILL')
+
+	try {
+		viteProcess?.kill('SIGKILL')
+	} catch {}
 
 	// Exit this process
 	process.exit(code)
@@ -53,18 +48,19 @@ const wireProcessLifeline = () => {
 		console.error('Uncaught exception:', err)
 		shutdown(1)
 	})
+
 	process.on('unhandledRejection', (reason) => {
 		console.error('Unhandled rejection:', reason)
 		shutdown(1)
 	})
 
 	// As a last resort (e.g., normal exit), try to kill vite
-	process.on('exit', () => killVite('SIGTERM'))
+	process.on('exit', () => viteProcess?.kill('SIGTERM'))
 }
 
 const launchVite = (port: number) => {
 	// Keep the handle so we can control it
-	viteProc = spawn({
+	viteProcess = spawn({
 		cmd: ['bun', 'run', 'vite'],
 		env: {
 			...process.env,
@@ -75,9 +71,7 @@ const launchVite = (port: number) => {
 	})
 
 	// If Vite exits on its own, bring down the Bun server too
-	viteProc.exited.then((code) => {
-		// Prevent loops if we're already shutting down
-		if (shuttingDown) return
+	viteProcess.exited.then((code) => {
 		console.warn(`Vite exited with code ${code ?? 'null'}. Shutting down Bun server.`)
 		shutdown(typeof code === 'number' ? code : 1)
 	})
@@ -88,7 +82,11 @@ function sendToClients(data: string | Bun.BufferSource) {
 		console.log('No connected web clients to send data!')
 		return false
 	}
-	for (const ws of connections) ws.send(data)
+
+	for (const ws of connections) {
+		ws.send(data)
+	}
+
 	return true
 }
 
@@ -166,7 +164,10 @@ while (true) {
 					})
 				}
 
-				if (req.method === 'POST') return handlePost(req, pathname)
+				if (req.method === 'POST') {
+					return handlePost(req, pathname)
+				}
+
 				return new Response('Not Found', { status: 404 })
 			},
 			websocket: {
