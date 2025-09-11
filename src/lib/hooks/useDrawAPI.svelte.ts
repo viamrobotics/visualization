@@ -219,7 +219,6 @@ export const provideDrawAPI = () => {
 		}
 
 		const index = points.findIndex(({ name }) => name === label)
-		console.log(index)
 		if (index !== -1) {
 			points.splice(index, 1)
 		}
