@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -28,13 +29,13 @@ func TestDrawPointCloud(t *testing.T) {
 		test.That(t, DrawPointCloud("boat", pc4, nil), test.ShouldBeNil)
 	})
 
-	t.Run("DrawPointCloud updating", func(t *testing.T) {
+	t.Run("DrawPointCloud multiple", func(t *testing.T) {
 		pc, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		for i := 0; i < 100; i++ {
-			time.Sleep(30 * time.Millisecond)
-			test.That(t, DrawPointCloud("Zaghetto", pc, nil), test.ShouldBeNil)
+		for i := 0; i < 10; i++ {
+			time.Sleep(16 * time.Millisecond)
+			test.That(t, DrawPointCloud("Zaghetto"+strconv.Itoa(i+1), pc, nil), test.ShouldBeNil)
 		}
 	})
 }
