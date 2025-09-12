@@ -218,8 +218,6 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		console.log(label)
-
 		const index = points.findIndex(({ name }) => name === label)
 		if (index !== -1) {
 			points.splice(index, 1)
