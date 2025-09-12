@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.3
+
+### Patch Changes
+
+- 0190973: Resize server body size limits to 1GB
+
 ## 0.11.2
 
 ### Patch Changes
