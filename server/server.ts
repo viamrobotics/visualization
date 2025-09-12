@@ -1,4 +1,4 @@
-import { serve, spawn } from 'bun'
+import { serve, spawn, type Subprocess } from 'bun'
 import { getLocalIP } from './ip'
 
 const localIP = getLocalIP()
@@ -9,8 +9,43 @@ const messages = {
 	noClient: { message: 'No connected client', status: 404 },
 }
 
-const launchVite = async (port: number) => {
-	spawn({
+let viteProcess: Subprocess | undefined
+let server: ReturnType<typeof serve> | undefined
+let shuttingDown = false
+
+const shutdown = async (code = 0) => {
+	if (shuttingDown) return
+
+	shuttingDown = true
+
+	try {
+		server?.stop?.()
+	} catch (error) {
+		console.error(error)
+	}
+
+	// Ask Vite to quit nicely; then hard-kill if it lingers
+	try {
+		viteProcess?.kill('SIGTERM')
+	} catch (error) {
+		console.error(error)
+	}
+
+	await new Promise((r) => setTimeout(r, 800))
+
+	try {
+		viteProcess?.kill('SIGKILL')
+	} catch (error) {
+		console.error(error)
+	}
+
+	// Exit this process
+	process.exit(code)
+}
+
+const launchVite = (port: number) => {
+	// Keep the handle so we can control it
+	viteProcess = spawn({
 		cmd: ['bun', 'run', 'vite'],
 		env: {
 			...process.env,
@@ -18,6 +53,12 @@ const launchVite = async (port: number) => {
 		},
 		stdout: 'inherit',
 		stderr: 'inherit',
+	})
+
+	// If Vite exits on its own, bring down the Bun server too
+	viteProcess.exited.then((code) => {
+		console.warn(`Vite exited with code ${code ?? 'null'}. Shutting down Bun server.`)
+		shutdown(typeof code === 'number' ? code : 1)
 	})
 }
 
@@ -30,6 +71,7 @@ function sendToClients(data: string | Bun.BufferSource) {
 	for (const ws of connections) {
 		ws.send(data)
 	}
+
 	return true
 }
 
@@ -87,17 +129,34 @@ const jsonResponse = (success: boolean) => {
 
 let port = 3000
 
+const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
+for (const sig of signals) {
+	process.on(sig, () => shutdown(0))
+}
+
+process.on('uncaughtException', (err) => {
+	console.error('Uncaught exception:', err)
+	shutdown(1)
+})
+
+process.on('unhandledRejection', (reason) => {
+	console.error('Unhandled rejection:', reason)
+	shutdown(1)
+})
+
+// As a last resort (e.g., normal exit), try to kill vite
+process.on('exit', () => viteProcess?.kill('SIGTERM'))
+
 while (true) {
 	try {
-		serve({
+		server = serve({
 			port,
 			hostname: '::',
-
-			fetch(req, server) {
+			fetch(req, srv) {
 				const { pathname } = new URL(req.url)
 
 				if (pathname === '/ws') {
-					if (server.upgrade(req)) return
+					if (srv.upgrade(req)) return
 					return new Response('Upgrade Failed', { status: 400 })
 				}
 
@@ -118,13 +177,12 @@ while (true) {
 
 				return new Response('Not Found', { status: 404 })
 			},
-
 			websocket: {
 				open(ws) {
 					console.log('WebSocket client connected.')
 					connections.add(ws)
 				},
-				message(ws, message) {
+				message(_ws, message) {
 					console.log(`Received: ${message}`)
 				},
 				close(ws) {
@@ -133,11 +191,11 @@ while (true) {
 				},
 			},
 		})
+
 		console.log(`HTTP Server running at http://${localIP}:${port}`)
 		console.log(`WebSocket endpoint at ws://${localIP}:${port}/ws`)
 
 		launchVite(port)
-
 		break
 	} catch (error) {
 		if (error.code === 'EADDRINUSE') {
@@ -145,6 +203,8 @@ while (true) {
 			port += 1
 		} else {
 			console.error('Failed to start server:', error)
+			// if we failed after starting vite, make sure to clean up
+			shutdown(1)
 			break
 		}
 	}
