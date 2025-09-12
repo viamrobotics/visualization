@@ -147,11 +147,15 @@ process.on('unhandledRejection', (reason) => {
 // As a last resort (e.g., normal exit), try to kill vite
 process.on('exit', () => viteProcess?.kill('SIGTERM'))
 
+// Roughly 1 GiB
+const oneGigabyte = 1024 * 1024 * 1024
+
 while (true) {
 	try {
 		server = serve({
 			port,
 			hostname: '::',
+			maxRequestBodySize: oneGigabyte,
 			fetch(req, srv) {
 				const { pathname } = new URL(req.url)
 
