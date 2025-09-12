@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.2
+
+### Patch Changes
+
+- 15fb3e7: Ensure pointcloud arrays are not shared when posting http
+
 ## 0.11.1
 
 ### Patch Changes
