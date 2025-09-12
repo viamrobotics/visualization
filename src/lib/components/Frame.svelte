@@ -1,6 +1,4 @@
 <script module>
-	import { Color, type Object3D } from 'three'
-
 	const colorUtil = new Color()
 </script>
 
@@ -8,6 +6,7 @@
 	import type { Snippet } from 'svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import { Color, type Object3D } from 'three'
 	import Geometry from './Geometry.svelte'
 	import { useSelected } from '$lib/hooks/useSelection.svelte'
 	import { colors, darkenColor } from '$lib/color'
