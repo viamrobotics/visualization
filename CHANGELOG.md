@@ -1,5 +1,23 @@
 # motion-tools
 
+## 0.11.3
+
+### Patch Changes
+
+- 0190973: Resize server body size limits to 1GB
+
+## 0.11.2
+
+### Patch Changes
+
+- 15fb3e7: Ensure pointcloud arrays are not shared when posting http
+
+## 0.11.1
+
+### Patch Changes
+
+- 77856ac: Clear previous points with same label if redrawn
+
 ## 0.11.0
 
 ### Minor Changes

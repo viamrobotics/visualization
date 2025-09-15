@@ -90,7 +90,7 @@ export const provideDrawAPI = () => {
 	const vec3 = new Vector3()
 	const loader = new GLTFLoader()
 
-	const addPCD = async (buffer: ArrayBuffer) => {
+	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
 
 		points.push(
@@ -109,14 +109,14 @@ export const provideDrawAPI = () => {
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
-		let geometry: Geometry['geometryType']
+		const result = meshes.find((mesh) => mesh.name === data.label)
 
-		const existingMesh = meshes.find((mesh) => mesh.name === data.label)
-
-		if (existingMesh) {
-			existingMesh.pose = data.center
+		if (result) {
+			result.pose = data.center
 			return
 		}
+
+		let geometry: Geometry['geometryType']
 
 		if ('mesh' in data) {
 			geometry = {
@@ -141,7 +141,12 @@ export const provideDrawAPI = () => {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addNurbs = (data: any, color: string) => {
+	const drawNurbs = (data: any, color: string) => {
+		const index = nurbs.findIndex(({ name }) => name === data.name)
+		if (index !== -1) {
+			nurbs.splice(index, 1)
+		}
+
 		const controlPoints = data.ControlPts.map(
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
@@ -159,7 +164,7 @@ export const provideDrawAPI = () => {
 
 	const batchedArrow = new BatchedArrow()
 
-	const addPoses = async (reader: Float32Reader) => {
+	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
@@ -205,12 +210,17 @@ export const provideDrawAPI = () => {
 		}
 	}
 
-	const addPoints = async (reader: Float32Reader) => {
+	const drawPoints = async (reader: Float32Reader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
 		for (let i = 0; i < labelLen; i++) {
 			label += String.fromCharCode(reader.read())
+		}
+
+		const index = points.findIndex(({ name }) => name === label)
+		if (index !== -1) {
+			points.splice(index, 1)
 		}
 
 		// Read counts
@@ -276,12 +286,17 @@ export const provideDrawAPI = () => {
 		)
 	}
 
-	const addLine = async (reader: Float32Reader) => {
+	const drawLine = async (reader: Float32Reader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
 		for (let i = 0; i < labelLen; i++) {
 			label += String.fromCharCode(reader.read())
+		}
+
+		const index = lines.findIndex(({ name }) => name === label)
+		if (index !== -1) {
+			lines.splice(index, 1)
 		}
 
 		// Read counts
@@ -334,7 +349,7 @@ export const provideDrawAPI = () => {
 		}
 	}
 
-	const addGLTF = async (buffer: ArrayBuffer) => {
+	const drawGLTF = async (buffer: ArrayBuffer) => {
 		const blob = new Blob([buffer], { type: 'model/gltf-binary' })
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
@@ -447,15 +462,15 @@ export const provideDrawAPI = () => {
 			const type = reader.read()
 
 			if (type === 0) {
-				return addPoints(reader)
+				return drawPoints(reader)
 			} else if (type === 1) {
-				return addPoses(reader)
+				return drawPoses(reader)
 			} else if (type === 2) {
-				return addLine(reader)
+				return drawLine(reader)
 			} else if (type === 3) {
-				return addPCD(reader.buffer)
+				return drawPCD(reader.buffer)
 			} else {
-				return addGLTF(reader.buffer)
+				return drawGLTF(reader.buffer)
 			}
 		}
 
@@ -480,7 +495,7 @@ export const provideDrawAPI = () => {
 		}
 
 		if ('Knots' in data) {
-			return addNurbs(data, data.Color)
+			return drawNurbs(data, data.Color)
 		}
 
 		if ('remove' in data) {
