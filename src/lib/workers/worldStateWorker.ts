@@ -1,4 +1,4 @@
-import type { ChangeMessage, ProcessMessage } from '$lib/world-state-messages'
+import { type ChangeMessage, type ProcessMessage } from '$lib/world-state-messages'
 import { getInUnsafe, toPath } from '@thi.ng/paths'
 import {
 	TransformChangeType,

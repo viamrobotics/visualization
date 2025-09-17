@@ -8,8 +8,10 @@ import {
 	createResourceClient,
 	createResourceQuery,
 	createResourceStream,
+	streamQueryKey,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
+import { useQueryClient } from '@tanstack/svelte-query'
 import { fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
@@ -23,8 +25,6 @@ interface Context {
 	names: ResourceName[]
 	current: Record<string, ReturnType<typeof createWorldState>>
 }
-
-const worker = new WorldStateWorker()
 
 export const provideWorldStates = () => {
 	const partID = usePartID()
@@ -60,6 +60,8 @@ export const useWorldState = (resourceName: () => string) => {
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
+	const worker = new WorldStateWorker({ name: `${resourceName()}-worker` })
+	const queryClient = useQueryClient()
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
 	let initialized = $state(false)
@@ -179,6 +181,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		if (events.length === 0) return
 
 		worker.postMessage({ type: 'change', events })
+
+		// clear the stream data to prevent event accumulation and memory issues
+		queryClient.setQueryData(streamQueryKey(partID(), resourceName(), 'streamTransformChanges'), [])
 	})
 
 	return {

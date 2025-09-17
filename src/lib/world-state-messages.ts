@@ -1,7 +1,7 @@
-import type {
-	TransformChangeEvent,
+import {
 	TransformChangeType,
-	TransformWithUUID,
+	type TransformChangeEvent,
+	type TransformWithUUID,
 } from '@viamrobotics/sdk'
 
 export type ChangeMessage = {
