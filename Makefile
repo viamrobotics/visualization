@@ -13,7 +13,6 @@ help:
 	@echo '  help   - Show this help message'
 
 setup:
-	@echo '🚀 Running motion-tools setup script...'
 	@./etc/setup.sh
 
 up:
