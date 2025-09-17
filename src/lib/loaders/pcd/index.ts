@@ -1,6 +1,7 @@
 import type { Message, SuccessMessage } from './worker'
+import PCDWorker from './worker?worker'
 
-const worker = new Worker(new URL('./worker', import.meta.url), { type: 'module' })
+const worker = new PCDWorker()
 
 export const parsePcdInWorker = async (
 	data: Uint8Array<ArrayBufferLike>
