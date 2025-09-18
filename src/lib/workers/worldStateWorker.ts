@@ -1,4 +1,8 @@
-import { type ChangeMessage, type ProcessMessage } from '$lib/world-state-messages'
+import {
+	postProcessMessage,
+	type ChangeMessage,
+	type ProcessMessage,
+} from '$lib/world-state-messages'
 import { getInUnsafe, toPath } from '@thi.ng/paths'
 import {
 	TransformChangeType,
@@ -123,7 +127,7 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 		events: processedEvents,
 	}
 
-	self.postMessage(message)
+	postProcessMessage(self, message)
 }
 
 export {}

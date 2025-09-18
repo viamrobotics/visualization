@@ -15,7 +15,7 @@ import { useQueryClient } from '@tanstack/svelte-query'
 import { fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
-import type { ProcessMessage } from '$lib/world-state-messages'
+import { postChangeMessage, type ProcessMessage } from '$lib/world-state-messages'
 import { getContext, setContext } from 'svelte'
 import WorldStateWorker from '../workers/worldStateWorker?worker'
 
@@ -180,7 +180,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		const events = changeStream.current.data.filter((event) => event.transform !== undefined)
 		if (events.length === 0) return
 
-		worker.postMessage({ type: 'change', events })
+		postChangeMessage(worker, { type: 'change', events })
 
 		// clear the stream data to prevent event accumulation and memory issues
 		queryClient.setQueryData(streamQueryKey(partID(), resourceName(), 'streamTransformChanges'), [])
