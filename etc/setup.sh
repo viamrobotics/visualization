@@ -81,31 +81,175 @@ main() {
     log_info "Detected OS: $OSTYPE"
     echo
 
-    # Step 1: Install pnpm using standalone script
-    log_info "📦 Step 1: Installing pnpm..."
+    log_info "🗂️ Step 1: Installing nvm..."
+    
+    source_nvm() {
+        export NVM_DIR="$HOME/.nvm"
+        if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+            source "$NVM_DIR/nvm.sh"
+        fi
+        if [[ -s "$NVM_DIR/bash_completion" ]]; then
+            source "$NVM_DIR/bash_completion"
+        fi
+    }
+    
+    # Get latest NVM version from GitHub API
+    local latest_nvm_version="unknown"
+    if command_exists curl; then
+        latest_nvm_version=$(curl -s https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 | sed 's/^v//' 2>/dev/null || echo "unknown")
+    fi
+
+    if [[ "$latest_nvm_version" == "unknown" ]] || [[ -z "$latest_nvm_version" ]]; then
+        if command_exists wget; then
+            latest_nvm_version=$(wget -qO- https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 | sed 's/^v//' 2>/dev/null || echo "unknown")
+        fi
+    fi
+    
+    if [[ "$latest_nvm_version" == "unknown" ]] || [[ -z "$latest_nvm_version" ]]; then
+        log_error "Please install curl or wget, or check your internet connection"
+        exit 1
+    fi
+
+    # Check if NVM is installed
+    if [[ ! -s "$HOME/.nvm/nvm.sh" ]]; then
+        local install_success=false
+        if command_exists curl; then
+            if curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${latest_nvm_version}/install.sh" | bash; then
+                install_success=true
+            fi
+        fi
+        
+        if [[ "$install_success" != "true" ]] && command_exists wget; then
+            if wget -qO- "https://raw.githubusercontent.com/nvm-sh/nvm/v${latest_nvm_version}/install.sh" | bash; then
+                install_success=true
+            fi
+        fi
+        
+        if [[ "$install_success" != "true" ]]; then
+            log_error "Failed to download or execute NVM installation script"
+            exit 1
+        fi
+        
+        source_nvm
+        
+        if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+            log_success "NVM installed successfully (version: $(nvm --version 2>/dev/null || echo 'unknown'))"
+        else
+            log_error "NVM installation failed"
+            exit 1
+        fi
+    else
+        source_nvm
+        
+        if command -v nvm >/dev/null 2>&1; then
+            local current_nvm_version=$(nvm --version 2>/dev/null || echo "unknown")
+            
+            if [[ "$current_nvm_version" != "unknown" ]] && [[ "$latest_nvm_version" != "unknown" ]]; then
+                log_info "nvm is already installed (version: $current_nvm_version)"
+                local version_cmp=$(version_compare "$current_nvm_version" "$latest_nvm_version")
+                if [[ $version_cmp -lt 0 ]]; then
+                    echo
+                    log_warning "nvm update available: $current_nvm_version → $latest_nvm_version"
+                    
+                    local update_success=false
+                    if command_exists curl; then
+                        if curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${latest_nvm_version}/install.sh" | bash; then
+                            update_success=true
+                        fi
+                    fi
+                    
+                    if [[ "$update_success" != "true" ]] && command_exists wget; then
+                        if wget -qO- "https://raw.githubusercontent.com/nvm-sh/nvm/v${latest_nvm_version}/install.sh" | bash; then
+                            update_success=true
+                        fi
+                    fi
+                    
+                    if [[ "$update_success" != "true" ]]; then
+                        log_error "Failed to download or execute nvm update script"
+                        exit 1
+                    fi
+                    
+                    source_nvm
+                    echo
+                    local new_nvm_version=$(nvm --version 2>/dev/null || echo "unknown")
+                    if [[ "$new_nvm_version" != "$current_nvm_version" ]]; then
+                        log_success "nvm updated: $current_nvm_version → $new_nvm_version"
+                    fi
+                else
+                    log_success "nvm is up to date (version: $current_nvm_version)"
+                fi
+            else
+                log_warning "Could not compare nvm versions, skipping update check"
+                log_info "current nvm version: $current_nvm_version"
+            fi
+        else
+            log_error "nvm command not available after installation"
+            exit 1
+        fi
+    fi
+    
+    echo
+    log_info "⚙️ Step 2: Installing Node.js..."
+    
+    local current_node_version=""
+    if command_exists node; then
+        current_node_version=$(node --version 2>/dev/null || echo "")
+        log_info "Current Node.js version: $current_node_version"
+    else
+        log_info "Node.js is not currently installed"
+    fi
+    
+    # Install latest LTS
+    if nvm install --lts >/dev/null 2>&1; then
+        # Use the LTS version
+        nvm use --lts >/dev/null 2>&1
+        nvm alias default lts/* >/dev/null 2>&1
+        
+        local new_node_version=$(node --version 2>/dev/null || echo "unknown")
+        
+        if [[ "$current_node_version" != "$new_node_version" ]] && [[ "$current_node_version" != "" ]]; then
+            log_success "Node.js updated: $current_node_version → $new_node_version"
+        elif [[ "$current_node_version" == "" ]]; then
+            log_success "Node.js installed: $new_node_version"
+        else
+            log_success "Node.js is already at latest LTS: $new_node_version"
+        fi
+        
+    else
+        log_error "Failed to install Node.js LTS via NVM"
+        exit 1
+    fi
+    echo
+
+    log_info "📦 Step 3: Installing pnpm..."
     
     if command_exists pnpm; then
         local current_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
         log_info "pnpm is already installed (version: $current_pnpm_version)"
         
-        # Check if we should update pnpm
-        log_info "Checking for pnpm updates..."
-        local latest_pnpm_version=$(curl -s https://registry.npmjs.org/pnpm/latest | grep -o '"version":"[^"]*' | cut -d'"' -f4 2>/dev/null || echo "unknown")
-        
-        if [[ "$latest_pnpm_version" != "unknown" ]] && [[ "$current_pnpm_version" != "unknown" ]]; then
-            local version_cmp=$(version_compare "$current_pnpm_version" "$latest_pnpm_version")
-            if [[ $version_cmp -lt 0 ]]; then
-                log_warning "pnpm update available: $current_pnpm_version → $latest_pnpm_version"
-                log_info "Updating pnpm to latest version..."
-                curl -fsSL https://get.pnpm.io/install.sh | sh -
-                
-                # Source the updated path
-                export PATH="$HOME/.local/share/pnpm:$PATH"
+        local update_output
+        if update_output=$(pnpm add -g pnpm@latest 2>&1); then
+            # Reload pnpm after potential update
+            hash -r 2>/dev/null || true
+            local new_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
+            
+            if [[ "$current_pnpm_version" != "$new_pnpm_version" ]]; then
+                log_success "pnpm updated: $current_pnpm_version → $new_pnpm_version"
             else
-                log_success "pnpm is up to date"
+                log_success "pnpm is already up to date (version: $current_pnpm_version)"
             fi
         else
-            log_warning "Could not check for pnpm updates, proceeding with current version"
+            log_warning "Could not update pnpm using self-update, trying standalone installer..."
+            curl -fsSL https://get.pnpm.io/install.sh | sh -
+
+            # Add pnpm to PATH for current session
+            export PATH="$HOME/.local/share/pnpm:$PATH"
+            hash -r 2>/dev/null || true
+            
+            local new_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
+            if [[ "$current_pnpm_version" != "$new_pnpm_version" ]]; then
+                log_success "pnpm updated via standalone installer: $current_pnpm_version → $new_pnpm_version"
+            fi
         fi
     else
         log_info "Installing pnpm using standalone script..."
@@ -113,8 +257,8 @@ main() {
         
         # Add pnpm to PATH for current session
         export PATH="$HOME/.local/share/pnpm:$PATH"
+        hash -r 2>/dev/null || true
         
-        # Verify installation
         if command_exists pnpm; then
             log_success "pnpm installed successfully (version: $(pnpm --version))"
         else
@@ -124,24 +268,25 @@ main() {
     fi
     echo
 
-    # Step 2: Install bun
-    log_info "🥟 Step 2: Installing bun..."
+    log_info "🥟 Step 4: Installing bun..."
     
     if command_exists bun; then
         local current_bun_version=$(bun --version 2>/dev/null || echo "unknown")
         log_info "bun is already installed (version: $current_bun_version)"
         
-        # Check for bun updates
-        log_info "Checking for bun updates..."
-        if bun upgrade >/dev/null 2>&1; then
+        local upgrade_output
+        if upgrade_output=$(bun upgrade 2>&1); then
             local new_bun_version=$(bun --version 2>/dev/null || echo "unknown")
+            
+            # Check if version actually changed
             if [[ "$current_bun_version" != "$new_bun_version" ]]; then
                 log_success "bun updated: $current_bun_version → $new_bun_version"
             else
-                log_success "bun is up to date"
+                log_success "bun is already up to date (version: $current_bun_version)"
             fi
         else
-            log_warning "Could not update bun, proceeding with current version"
+            log_warning "Could not check for bun updates, proceeding with current version"
+            log_info "You can manually update bun later with: bun upgrade"
         fi
     else
         log_info "Installing bun..."
@@ -150,7 +295,6 @@ main() {
         # Add bun to PATH for current session
         export PATH="$HOME/.bun/bin:$PATH"
         
-        # Verify installation
         if command_exists bun; then
             log_success "bun installed successfully (version: $(bun --version))"
         else
@@ -160,43 +304,7 @@ main() {
     fi
     echo
 
-    # Step 3: Check and update Node.js version
-    log_info "🟢 Step 3: Checking Node.js version..."
-    
-    if command_exists node; then
-        local current_node_version=$(node --version | sed 's/v//')
-        log_info "Node.js is installed (version: $current_node_version)"
-        
-        # Check for LTS version
-        local lts_version=$(curl -s https://nodejs.org/dist/index.json | grep -o '"version":"v[^"]*' | head -1 | cut -d'v' -f2 | cut -d'"' -f1 2>/dev/null || echo "unknown")
-        
-        if [[ "$lts_version" != "unknown" ]]; then
-            local version_cmp=$(version_compare "$current_node_version" "$lts_version")
-            if [[ $version_cmp -lt 0 ]]; then
-                log_warning "Node.js update available: $current_node_version → $lts_version"
-                log_info "Consider updating Node.js to the latest LTS version"
-                log_info "You can update using your preferred method (nvm, brew, etc.)"
-            else
-                log_success "Node.js is up to date"
-            fi
-        else
-            log_warning "Could not check for Node.js updates"
-        fi
-    else
-        log_warning "Node.js is not installed"
-        log_info "Please install Node.js before continuing: https://nodejs.org/"
-        wait_for_user "Install Node.js and then continue"
-        
-        # Re-check after user intervention
-        if ! command_exists node; then
-            log_error "Node.js is still not available. Please install it manually."
-            exit 1
-        fi
-    fi
-    echo
-
-    # Step 4: Install project dependencies
-    log_info "📚 Step 4: Installing project dependencies..."
+    log_info "📚 Step 5: Installing project dependencies..."
     
     if [[ -f "package.json" ]]; then
         log_info "Running pnpm install..."
@@ -208,18 +316,25 @@ main() {
     fi
     echo
 
-    # Final verification
     log_info "🔍 Verifying installation..."
     echo
     
     log_info "Installed versions:"
+    echo "  • nvm: $(nvm --version 2>/dev/null || echo 'not found')"
+    echo "  • node: $(node --version 2>/dev/null || echo 'not found')"
     echo "  • pnpm: $(pnpm --version 2>/dev/null || echo 'not found')"
     echo "  • bun: $(bun --version 2>/dev/null || echo 'not found')"
-    echo "  • node: $(node --version 2>/dev/null || echo 'not found')"
     echo
     
-    # Check if all required commands are available
     local missing_deps=()
+    
+    if ! command -v nvm >/dev/null 2>&1; then
+        missing_deps+=("nvm")
+    fi
+    
+    if ! command_exists node; then
+        missing_deps+=("node")
+    fi
     
     if ! command_exists pnpm; then
         missing_deps+=("pnpm")
@@ -229,23 +344,16 @@ main() {
         missing_deps+=("bun")
     fi
     
-    if ! command_exists node; then
-        missing_deps+=("node")
-    fi
-    
     if [[ ${#missing_deps[@]} -eq 0 ]]; then
-        log_success "🎉 Setup completed successfully!"
+        echo -e "🎉 ${GREEN}Setup completed successfully!${NC}"
         echo
         log_info "Next steps:"
-        echo "  1. Run 'pnpm dev' to start the development server"
-        echo "  2. Visit http://localhost:5173/ to view the application"
-        echo
-        log_info "💡 Tip: You can also use 'make up' to start the development server"
+        echo -e "  1. Run '${YELLOW}make up${NC}' to start the development server"
+        echo -e "  2. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
     else
         log_error "Setup incomplete. Missing dependencies: ${missing_deps[*]}"
         exit 1
     fi
 }
 
-# Run main function
 main "$@"

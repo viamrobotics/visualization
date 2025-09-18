@@ -4,10 +4,44 @@
 
 ### Getting started
 
-1. [Install pnpm](https://pnpm.io/installation)
-2. [Install bun](https://bun.sh/docs/installation)
-3. Install dependencies: `pnpm i`
-4. Run local app server: `pnpm dev`
+#### Quick Setup (Recommended)
+
+The easiest way to get started is using our automated setup script:
+
+```bash
+make setup
+```
+
+This single command will:
+
+1. Install and configure **nvm** (Node Version Manager)
+2. Install the latest **Node.js LTS** version via nvm
+3. Install **pnpm** package manager
+4. Install **bun** runtime
+5. Install all project dependencies
+
+After setup completes, start the development server:
+
+```bash
+make up
+```
+
+#### Manual Setup
+
+If you prefer to install dependencies manually:
+
+1. [Install nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install Node.js LTS: `nvm install --lts && nvm use --lts`
+3. [Install pnpm](https://pnpm.io/installation)
+4. [Install bun](https://bun.sh/docs/installation)
+5. Install dependencies: `pnpm i`
+6. Run local app server: `pnpm dev`
+
+#### Available Make Commands
+
+- `make setup` - Complete development environment setup
+- `make up` - Start the development server
+- `make help` - Show available commands
 
 ### Running the visualizer
 
