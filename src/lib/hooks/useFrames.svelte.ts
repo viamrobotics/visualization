@@ -9,6 +9,7 @@ import { WorldObject } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
+import type { Pose } from '@viamrobotics/sdk'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -43,20 +44,42 @@ export const provideFrames = (partID: () => string) => {
 			}
 
 			const resourceName = resourceNames.current.find((item) => item.name === frame.referenceFrame)
+			const frameColor = resourceName
+				? { color: resourceColors[resourceName.subtype as keyof typeof resourceColors] }
+				: undefined
 
 			objects.push(
 				new WorldObject(
 					frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame',
 					frame.poseInObserverFrame?.pose,
 					frame.poseInObserverFrame?.referenceFrame,
-					frame.physicalObject?.geometryType,
-					resourceName
-						? {
-								color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
-							}
-						: undefined
+					undefined,
+					frameColor
 				)
 			)
+
+			if (frame.physicalObject?.geometryType) {
+				const combinedPose: Pose = {
+					...frame.poseInObserverFrame?.pose,
+					x: (frame.poseInObserverFrame?.pose?.x ?? 0) + (frame.physicalObject.center?.x ?? 0),
+					y: (frame.poseInObserverFrame?.pose?.y ?? 0) + (frame.physicalObject.center?.y ?? 0),
+					z: (frame.poseInObserverFrame?.pose?.z ?? 0) + (frame.physicalObject.center?.z ?? 0),
+					oX: frame.poseInObserverFrame?.pose?.oX ?? 0,
+					oY: frame.poseInObserverFrame?.pose?.oY ?? 0,
+					oZ: frame.poseInObserverFrame?.pose?.oZ ?? 0,
+					theta: frame.poseInObserverFrame?.pose?.theta ?? 0,
+				}
+
+				objects.push(
+					new WorldObject(
+						`${frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'}_physical`,
+						combinedPose,
+						frame.poseInObserverFrame?.referenceFrame,
+						frame.physicalObject.geometryType,
+						frameColor
+					)
+				)
+			}
 		}
 
 		return objects
