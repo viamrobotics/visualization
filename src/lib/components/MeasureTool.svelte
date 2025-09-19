@@ -76,15 +76,24 @@
 
 {#if enabled}
 	{#if intersection}
-		<DotSprite position={intersection?.point.toArray()} />
+		<DotSprite
+			position={intersection?.point.toArray()}
+			opacity={0.5}
+		/>
 	{/if}
 
 	{#if p1}
-		<DotSprite position={p1.toArray()} />
+		<DotSprite
+			position={p1.toArray()}
+			opacity={0.5}
+		/>
 	{/if}
 
 	{#if p2}
-		<DotSprite position={p2.toArray()} />
+		<DotSprite
+			position={p2.toArray()}
+			opacity={0.5}
+		/>
 	{/if}
 
 	{#if p1 && p2}
@@ -98,6 +107,7 @@
 				width={2.5}
 				depthTest={false}
 				color="black"
+				opacity={0.5}
 				attenuate={false}
 				transparent
 			/>
