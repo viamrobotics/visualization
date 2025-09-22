@@ -12,13 +12,7 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 import { useQueryClient } from '@tanstack/svelte-query'
-import {
-	fromPointcloudTransform,
-	fromTransform,
-	parseMetadata,
-	type PointsGeometry,
-	WorldObject,
-} from '$lib/WorldObject.svelte'
+import { fromPointcloudTransform, fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
 import { postChangeMessage, type ProcessMessage } from '$lib/world-state-messages'
@@ -74,7 +68,8 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 	let initialized = $state(false)
 	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
-	let pointclouds = $state<Record<string, PointcloudTransform>>({})
+
+	const pointclouds = $state<Record<string, PointcloudTransform>>({})
 
 	const transformsList = $derived.by(() => Object.values(transforms))
 	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))

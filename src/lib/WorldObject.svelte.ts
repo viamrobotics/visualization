@@ -81,7 +81,7 @@ const unwrapValue = (value: UnwrapValue): unknown => {
 	}
 }
 
-export const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
+const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
 	let json: Metadata = {}
 
 	for (const [k, v] of Object.entries(metadata)) {
