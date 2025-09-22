@@ -24,6 +24,7 @@ export type RemovedEvent = {
 export type UpdatedEvent = {
 	type: TransformChangeType.UPDATED
 	uuidString: string
+	transform: TransformWithUUID
 	changes: [path: string, value: unknown][]
 }
 

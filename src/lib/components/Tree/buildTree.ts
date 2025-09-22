@@ -51,7 +51,7 @@ export const buildTreeNodes = (
 			href: `/world-state/${worldState.name}`,
 		}
 
-		for (const object of worldState.worldObjects) {
+		for (const object of [...worldState.worldObjects, ...worldState.pointclouds]) {
 			const child: TreeNode = {
 				name: object.name,
 				id: object.uuid,

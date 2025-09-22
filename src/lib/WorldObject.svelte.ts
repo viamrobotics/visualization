@@ -10,6 +10,7 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
+import type { SuccessMessage } from './loaders/pcd/worker'
 
 export type PointsGeometry = { case: 'points'; value: Float32Array<ArrayBuffer> }
 export type LinesGeometry = { case: 'line'; value: Float32Array }
@@ -55,7 +56,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UnwrapValue = { kind: { case: string; value: any } }
+export type UnwrapValue = { kind: { case: string; value: any } }
 const unwrapValue = (value: UnwrapValue): unknown => {
 	if (!value?.kind) return value
 
@@ -65,7 +66,6 @@ const unwrapValue = (value: UnwrapValue): unknown => {
 		case 'boolValue':
 			return value.kind.value
 		case 'structValue': {
-			// Recursively unwrap nested struct
 			const result: Record<string, unknown> = {}
 			for (const [key, val] of Object.entries(value.kind.value.fields || {})) {
 				result[key] = unwrapValue(val as UnwrapValue)
@@ -81,7 +81,7 @@ const unwrapValue = (value: UnwrapValue): unknown => {
 	}
 }
 
-const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
+export const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
 	let json: Metadata = {}
 
 	for (const [k, v] of Object.entries(metadata)) {
@@ -112,4 +112,18 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	)
 	worldObject.uuid = transform.uuidString
 	return worldObject
+}
+
+export type PointcloudTransform = TransformWithUUID & SuccessMessage
+export const fromPointcloudTransform = (pointcloud: PointcloudTransform) => {
+	return new WorldObject(
+		pointcloud.referenceFrame,
+		pointcloud.poseInObserverFrame?.pose,
+		pointcloud.poseInObserverFrame?.referenceFrame,
+		{ case: 'points', value: pointcloud.positions },
+		{
+			...parseMetadata(pointcloud.metadata?.fields as Record<string, UnwrapValue>),
+			colors: pointcloud.colors ?? undefined,
+		}
+	)
 }

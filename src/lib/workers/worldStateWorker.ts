@@ -109,12 +109,15 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 				break
 
 			case TransformChangeType.UPDATED: {
+				if (!entry.transform) continue
+
 				const changes = Object.entries(entry.changes ?? {})
 				if (changes.length === 0) continue
 
 				processedEvents.push({
 					type: TransformChangeType.UPDATED,
 					uuidString: entry.uuidString,
+					transform: entry.transform,
 					changes,
 				})
 				break
