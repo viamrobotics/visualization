@@ -11,6 +11,7 @@
 	import { Icon } from '@viamrobotics/prime-core'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
+	import longpress from '$lib/attachments/onLongPress.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
@@ -104,6 +105,9 @@
 
 				<button
 					class="text-gray-6"
+					onmousedown={(event) => {
+						event.stopPropagation()
+					}}
 					onclick={(event) => {
 						event.stopPropagation()
 						visibility.set(node.id, !isVisible)
@@ -117,6 +121,9 @@
 				</button>
 				<button
 					class="text-gray-6"
+					onmousedown={(event) => {
+						event.stopPropagation()
+					}}
 					onclick={(event) => {
 						//MATTHEW: should we allow deleteing parent frames?
 						event.stopPropagation()
@@ -136,10 +143,13 @@
 		</div>
 	{:else}
 		<div
-			onmousedown={(event: MouseEvent) => {
-				draggingFrame = node.name
-				draggable.onDragStart(event)
-			}}
+			{@attach longpress({
+				onlongpress: (e: MouseEvent) => {
+					draggingFrame = node.name
+					draggable.onDragStart(e)
+				},
+				duration: 1000,
+			})}
 			onmouseup={(event) => {
 				// Get the element under the drop location
 				// Temporarily hide the dragging element to get the element underneath
@@ -190,6 +200,9 @@
 			<div class="flex items-center gap-1.5">
 				<button
 					class="text-gray-6"
+					onmousedown={(event) => {
+						event.stopPropagation()
+					}}
 					onclick={(event) => {
 						event.stopPropagation()
 						visibility.set(node.id, !isVisible)
@@ -203,6 +216,9 @@
 				</button>
 				<button
 					class="text-gray-6"
+					onmousedown={(event) => {
+						event.stopPropagation()
+					}}
 					onclick={(event) => {
 						event.stopPropagation()
 						frames.deleteFrame(node.name)
