@@ -9,15 +9,20 @@ interface Context {
 	}
 }
 
-export const useDraggable = (name: string): Context => {
+export const useDraggable = (name: string, dragFromCenter: boolean = false): Context => {
 	const down = { x: 0, y: 0 }
 	const last = { x: 0, y: 0 }
 
 	let translate = $state({ x: 0, y: 0 })
 
 	const onDragMove = (event: MouseEvent) => {
-		translate.x = event.clientX - down.x + last.x
-		translate.y = event.clientY - down.y + last.y
+		if (dragFromCenter) {
+			translate.x = event.clientX - down.x
+			translate.y = event.clientY - down.y
+		} else {
+			translate.x = event.clientX - down.x + last.x
+			translate.y = event.clientY - down.y + last.y
+		}
 	}
 
 	const onDragStart = (event: MouseEvent) => {
@@ -30,6 +35,10 @@ export const useDraggable = (name: string): Context => {
 	}
 
 	const onDragEnd = () => {
+		if (dragFromCenter) {
+			translate.x = 0
+			translate.y = 0
+		}
 		set(`${name}-draggable`, $state.snapshot(translate))
 		window.removeEventListener('pointermove', onDragMove)
 	}

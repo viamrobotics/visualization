@@ -19,6 +19,7 @@ interface FramesContext {
 	error?: Error
 	fetching: boolean
 	isDirty: boolean
+	setFrameParent: (componentName: string, parentName: string) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (uuid: string, componentName: string) => void
 	updateFrame: (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
@@ -133,6 +134,15 @@ export const provideFrames = (partID: () => string) => {
 		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
 	}
 
+	const setFrameParent = async (componentName: string, parentName: string) => {
+		const partResponse = await appClient.current?.appClient.getRobotPart(partID())
+		const partName = partResponse?.part?.name;
+		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
+		component.frame.parent = parentName
+		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
+	}
+
 	const updateFrame = async (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
 		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
 		const partName = partResponse?.part?.name;
@@ -174,6 +184,7 @@ export const provideFrames = (partID: () => string) => {
 		updateFrame,
 		createFrame,
 		deleteFrame,
+		setFrameParent,
 		get current() {
 			return current
 		},

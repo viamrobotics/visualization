@@ -10,10 +10,12 @@
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
 	const frames = useFrames()
+	const draggable = useDraggable('treenodes', true)
 
 	interface Props {
 		rootNode: TreeNode
@@ -45,6 +47,8 @@
 	})
 
 	const api = $derived(tree.connect(service, normalizeProps))
+
+	let draggingFrame = $state<string>()
 
 	observe(
 		() => [selections],
@@ -92,7 +96,7 @@
 					<ChevronRight size={14} />
 				</span>
 				<span
-					class="flex items-center"
+					class="component-name flex items-center"
 					{...api.getBranchTextProps(nodeProps)}
 				>
 					{node.name}
@@ -132,10 +136,54 @@
 		</div>
 	{:else}
 		<div
-			class={{ 'flex justify-between': true, 'text-disabled': !isVisible, 'bg-medium': selected }}
+			onmousedown={(event: MouseEvent) => {
+				draggingFrame = node.name
+				draggable.onDragStart(event)
+			}}
+			onmouseup={(event) => {
+				// Get the element under the drop location
+				// Temporarily hide the dragging element to get the element underneath
+				const draggingElement = event.currentTarget as HTMLElement
+				const originalDisplay = draggingElement.style.display
+				draggingElement.style.display = 'none'
+
+				const elementUnder = document.elementFromPoint(event.clientX, event.clientY)
+				if (elementUnder?.classList.contains('world-tree')) {
+					draggingFrame = undefined
+					draggable.onDragEnd(event)
+					draggingElement.style.display = originalDisplay
+					frames.setFrameParent(node.name, 'world')
+					return
+				}
+
+				// Restore the dragging element's display
+				draggingElement.style.display = originalDisplay
+				const divUnder = elementUnder?.closest('div')
+				if (divUnder) {
+					// Look for a span with class 'component-name' under the div
+					const componentNameSpan = divUnder.querySelector('span.component-name')
+					if (componentNameSpan) {
+						const droppedOn = componentNameSpan.textContent
+						if (droppedOn !== node.name) {
+							frames.setFrameParent(node.name, droppedOn)
+						}
+					}
+				}
+				draggingFrame = undefined
+				draggable.onDragEnd(event)
+			}}
+			style:transform={node.name === draggingFrame
+				? `translate(${draggable.current.x}px, ${draggable.current.y}px)`
+				: ''}
+			class={{
+				'flex justify-between': true,
+				'text-disabled': !isVisible,
+				'bg-medium': selected,
+				absolute: node.name === draggingFrame,
+			}}
 			{...api.getItemProps(nodeProps)}
 		>
-			<span class="flex items-center gap-1.5">
+			<span class="component-name flex items-center gap-1.5">
 				{node.name}
 			</span>
 
@@ -187,7 +235,7 @@
 				<p class="text-subtle-2 px-2 py-4">No objects displayed</p>
 			{:else if rootChildren.length > 200}
 				<VirtualList
-					class="w-full"
+					class="world-tree w-full"
 					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
 					items={rootChildren}
 				>
@@ -198,7 +246,7 @@
 			{:else}
 				<div
 					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
-					class="overflow-auto"
+					class="world-tree overflow-auto"
 				>
 					{#each rootChildren as node, index (node.id)}
 						{@render treeNode({ node, indexPath: [Number(index)], api })}
