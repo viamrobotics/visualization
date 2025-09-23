@@ -5,6 +5,7 @@ import {
 	useMachineStatus,
 	useResourceNames,
 	useViamClient,
+	createAppQuery,
 } from '@viamrobotics/svelte-sdk'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
@@ -18,7 +19,10 @@ interface FramesContext {
 	error?: Error
 	fetching: boolean
 	isDirty: boolean
+	deleteFrame: (componentName: string) => void
+	createFrame: (uuid: string, componentName: string) => void
 	updateFrame: (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
+	getRobotComponentsWithNoFrame: (uuid: string) => Promise<any[]>
 }
 
 export interface FrameHeirachyNode {
@@ -37,8 +41,14 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig')
+
 	const revision = $derived(machineStatus.current?.config.revision)
 	const appClient = useViamClient();
+	// MATTHEW: this api does not work 
+	// const robotPartQuery = createAppQuery('getRobotPart', ["9b304d77-b1d5-4c96-a64f-4088772b9961"])
+
+	// $inspect(robotPartQuery.current.data)
+
 	let isDirty = $state(false)
 
 	observe.pre(
@@ -52,7 +62,6 @@ export const provideFrames = (partID: () => string) => {
 
 	const current = $derived.by(() => {
 		const objects: WorldObject[] = []
-
 		for (const { frame } of query.current.data ?? []) {
 			if (frame === undefined) {
 				continue
@@ -81,6 +90,48 @@ export const provideFrames = (partID: () => string) => {
 	})
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
+
+	const createFrame = async (uuid: string, componentName: string) => {
+		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
+		const partName = partResponse?.part?.name;
+		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
+		if (component) {
+			component.frame = {
+				parent: "world",
+				translation: {
+					x: 0,
+					y: 0,
+					z: 0,
+				},
+				orientation: {
+					type: 'ov_degrees',
+					value: {
+						x: 0,
+						y: 0,
+						z: 1,
+						th: 0,
+					},
+				},
+				geometry: {
+					type: 'box',
+					x: 100,
+					y: 100,
+					z: 100,
+				},
+			}
+		}
+		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
+	}
+
+	const deleteFrame = async (componentName: string) => {
+		const partResponse = await appClient.current?.appClient.getRobotPart(partID())
+		const partName = partResponse?.part?.name;
+		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
+		delete component.frame
+		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
+	}
 
 	const updateFrame = async (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
 		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
@@ -113,10 +164,21 @@ export const provideFrames = (partID: () => string) => {
 		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
 	}
 
+	const getRobotComponentsWithNoFrame = async (uuid: string) => {
+		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
+		const config = JSON.parse(partResponse?.configJson ?? '{}')
+		return config?.components?.filter((comp: any) => !comp.frame)
+	}
+
 	setContext<FramesContext>(key, {
 		updateFrame,
+		createFrame,
+		deleteFrame,
 		get current() {
 			return current
+		},
+		get getRobotComponentsWithNoFrame() {
+			return getRobotComponentsWithNoFrame
 		},
 		get error() {
 			return error
