@@ -66,9 +66,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const queryClient = useQueryClient()
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
-	let initialized = $state(false)
-	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
-
+	const transforms = $state<Record<string, TransformWithUUID>>({})
 	const pointclouds = $state<Record<string, PointcloudTransform>>({})
 
 	const transformsList = $derived.by(() => Object.values(transforms))
@@ -90,6 +88,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		})
 	)
 
+	const loadingUUIDs = $derived(listUUIDs.current.isLoading)
+	const loadingTransforms = $derived(getTransforms?.some((query) => query.current?.isLoading))
+
 	const changeStream = createResourceStream(client, 'streamTransformChanges', {
 		refetchMode: 'replace',
 	})
@@ -106,34 +107,27 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	}
 
 	const initialize = (initial: TransformWithUUID[]) => {
-		const next = { ...transforms }
 		for (const transform of initial) {
 			if (transform.physicalObject?.geometryType.case === 'pointcloud') {
 				void loadPointcloud(transform)
 			} else {
-				next[transform.uuidString] = transform
+				transforms[transform.uuidString] = transform
 			}
 		}
-
-		transforms = next
-		initialized = true
 	}
 
 	const applyEvents = (events: ProcessMessage['events']) => {
-		if (events.length === 0) return
-
-		const next = { ...transforms }
 		for (const event of events) {
 			switch (event.type) {
 				case TransformChangeType.ADDED:
 					if (event.transform.physicalObject?.geometryType.case === 'pointcloud') {
 						void loadPointcloud(event.transform)
 					} else {
-						next[event.uuidString] = event.transform
+						transforms[event.uuidString] = event.transform
 					}
 					break
 				case TransformChangeType.REMOVED:
-					delete next[event.uuidString]
+					delete transforms[event.uuidString]
 					break
 				case TransformChangeType.UPDATED: {
 					if (event.changes.length === 0) continue
@@ -141,21 +135,16 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 						// TODO: Update the pointcloud in place?
 						void loadPointcloud(event.transform)
 					} else {
-						let toUpdate = next[event.uuidString]
-						if (!toUpdate) continue
+						if (!transforms[event.uuidString]) continue
 						for (const [path, value] of event.changes) {
-							toUpdate = setInUnsafe(toUpdate, path, value)
+							transforms[event.uuidString] = setInUnsafe(transforms[event.uuidString], path, value)
 						}
-
-						next[event.uuidString] = toUpdate
 					}
 
 					break
 				}
 			}
 		}
-
-		transforms = next
 	}
 
 	const scheduleFlush = () => {
@@ -164,8 +153,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 		requestAnimationFrame(() => {
 			const toApply = pendingEvents
-			if (toApply.length === 0) return
-
 			applyEvents(toApply)
 			flushScheduled = false
 			pendingEvents = []
@@ -173,16 +160,11 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	}
 
 	$effect(() => {
-		if (!getTransforms) return
-		if (initialized) return
-
-		const queries = getTransforms.map((query) => query.current)
-		if (queries.some((query) => query?.isLoading)) return
-
+		if (loadingUUIDs || loadingTransforms) return
+		const queries = (getTransforms ?? []).map((query) => query.current)
 		const data = queries
 			.flatMap((query) => query?.data ?? [])
 			.filter((transform) => transform !== undefined) as TransformWithUUID[]
-		if (data.length === 0) return
 
 		initialize(data)
 	})
@@ -204,6 +186,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	$effect.pre(() => {
+		if (loadingUUIDs || loadingTransforms) return
 		if (changeStream.current?.data === undefined) return
 
 		const events = changeStream.current.data.filter((event) => event.transform !== undefined)
@@ -227,12 +210,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		},
 		get pointclouds() {
 			return pointcloudsList
-		},
-		get listUUIDs() {
-			return listUUIDs.current
-		},
-		get getTransforms() {
-			return getTransforms?.map((query) => query.current)
 		},
 	}
 }
