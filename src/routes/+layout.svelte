@@ -46,23 +46,32 @@
 
 <Machines bind:isOpen={isMachinesPageOpen} />
 
-<ViamAppProvider
-	serviceHost="https://app.viam.com"
-	credentials={{
-		type: 'api-key',
-		payload: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
-		authEntity: 'b6c1c558-aac2-4f52-9a17-b5d6cf9df5f7',
-	}}
+<ViamProvider
+	{dialConfigs}
+	{client}
 >
-	<ViamProvider
-		{dialConfigs}
-		{client}
-	>
+	{#if connectionConfig.current}
+		<ViamAppProvider
+			serviceHost="https://app.viam.com"
+			credentials={{
+				type: 'api-key',
+				payload: connectionConfig.current.apiKeyValue,
+				authEntity: connectionConfig.current.apiKeyId,
+			}}
+		>
+			<MotionTools
+				{partID}
+				enableKeybindings={!isMachinesPageOpen}
+			>
+				{@render children()}
+			</MotionTools>
+		</ViamAppProvider>
+	{:else}
 		<MotionTools
 			{partID}
 			enableKeybindings={!isMachinesPageOpen}
 		>
 			{@render children()}
 		</MotionTools>
-	</ViamProvider>
-</ViamAppProvider>
+	{/if}
+</ViamProvider>

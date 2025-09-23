@@ -175,6 +175,9 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const getRobotComponentsWithNoFrame = async (uuid: string) => {
+		if (!appClient) {
+			return []
+		}
 		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
 		const config = JSON.parse(partResponse?.configJson ?? '{}')
 		return config?.components?.filter((comp: any) => !comp.frame)
