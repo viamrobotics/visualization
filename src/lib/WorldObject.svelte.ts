@@ -17,6 +17,7 @@ export type LinesGeometry = { case: 'line'; value: Float32Array }
 export type Geometries = Geometry['geometryType'] | PointsGeometry | LinesGeometry
 
 export type Metadata = {
+	partID?: string
 	colors?: Float32Array
 	color?: ColorRepresentation
 	opacity?: number

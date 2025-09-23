@@ -38,3 +38,5 @@ VITE_CONFIGS='
 The visualizer includes a golang package that allows executing commands to the visualizer.
 
 The list of available commands [can be found here](https://pkg.go.dev/github.com/viam-labs/motion-tools@v0.9.0/client/client).
+
+{"host":"edit-frame-prod-main.i6h2oo7033.viam.cloud","partId":"3e56adc1-df84-4758-b6e4-923f446335cb","apiKeyId":"c6f06050-54a1-4024-bc0a-f28ab009eb4f","apiKeyValue":"52sdu1pb4s9sfmsrf2131r51jpgpevls","signalingAddress":"https://app.viam.com:443"}

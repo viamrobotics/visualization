@@ -1,14 +1,18 @@
-import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { createResourceClient, useMachineStatus, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { usePartID } from './usePartID.svelte'
 import { MotionClient } from '@viamrobotics/sdk'
 import { createQuery, queryOptions } from '@tanstack/svelte-query'
 import { useMachineSettings } from './useMachineSettings.svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMotionClient } from './useMotionClient.svelte'
+import { observe } from '@threlte/core'
+import { untrack } from 'svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
+	const machineStatus = useMachineStatus(() => partID.current)
+	const revision = $derived(machineStatus.current?.config.revision)
 	const motionClient = useMotionClient()
 	const resources = useResourceNames(() => partID.current)
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
@@ -46,6 +50,13 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	)
 
 	const query = fromStore(createQuery(toStore(() => options)))
+
+	observe.pre(
+		() => [revision],
+		() => {
+			untrack(() => query.current).refetch({})
+		}
+	)
 
 	return {
 		get current() {

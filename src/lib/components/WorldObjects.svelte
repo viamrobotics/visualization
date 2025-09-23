@@ -13,15 +13,90 @@
 	import Label from './Label.svelte'
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import WorldState from './WorldState.svelte'
+	import type { FrameHeirachyNode } from '$lib/hooks/useFrames.svelte'
+	import RecursiveFrame from './RecursiveFrame.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
+
+	const frameHeirachy = $derived.by(() => {
+		const queue: FrameHeirachyNode[] = []
+		const treeNodes: FrameHeirachyNode[] = []
+
+		for (const frame of frames.current) {
+			const node: FrameHeirachyNode = {
+				name: frame.name,
+				parentName: frame.referenceFrame,
+				object: frame,
+				children: [],
+			}
+
+			if (frame.referenceFrame === 'world') {
+				treeNodes.push(node)
+			} else {
+				queue.push(node)
+			}
+		}
+
+		while (queue.length > 0) {
+			const node = queue.shift()
+			if (node) {
+				const parentNode = treeNodes.find((treeNode) => treeNode.name === node.parentName)
+				if (parentNode) {
+					parentNode.children.push(node)
+					treeNodes.push(node)
+				} else {
+					queue.push(node)
+				}
+			}
+		}
+
+		return treeNodes
+	})
 </script>
 
-{#each frames.current as object (object.uuid)}
+{#each frameHeirachy.filter((node) => node.object.referenceFrame === 'world') as frameHeirachyNode (frameHeirachyNode.object.uuid)}
+	<Pose name={frameHeirachyNode.object.name}>
+		{#snippet children({ pose })}
+			{#if pose}
+				<Frame
+					uuid={frameHeirachyNode.object.uuid}
+					name={frameHeirachyNode.object.name}
+					{pose}
+					geometry={frameHeirachyNode.object.geometry}
+					metadata={frameHeirachyNode.object.metadata}
+				>
+					{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
+						<RecursiveFrame frameHeirachyNode={childNode} />
+					{/each}
+					<PortalTarget id={frameHeirachyNode.object.name} />
+					<Label text={frameHeirachyNode.object.name} />
+				</Frame>
+			{:else}
+				<Portal id={frameHeirachyNode.object.referenceFrame}>
+					<Frame
+						uuid={frameHeirachyNode.object.uuid}
+						name={frameHeirachyNode.object.name}
+						pose={pose ?? frameHeirachyNode.object.pose}
+						geometry={frameHeirachyNode.object.geometry}
+						metadata={frameHeirachyNode.object.metadata}
+					>
+						{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
+							<RecursiveFrame frameHeirachyNode={childNode} />
+						{/each}
+						<PortalTarget id={frameHeirachyNode.object.name} />
+						<Label text={frameHeirachyNode.object.name} />
+					</Frame>
+				</Portal>
+			{/if}
+		{/snippet}
+	</Pose>
+{/each}
+
+<!-- {#each frames.current as object (object.uuid)}
 	<Pose name={object.name}>
 		{#snippet children({ pose })}
 			{#if pose}
@@ -51,7 +126,7 @@
 			{/if}
 		{/snippet}
 	</Pose>
-{/each}
+{/each} -->
 
 {#each geometries.current as object (object.uuid)}
 	<Portal id={object.referenceFrame}>

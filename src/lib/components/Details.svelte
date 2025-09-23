@@ -22,20 +22,121 @@
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
 
 	const { ...rest } = $props()
 
 	const focused = useFocused()
 	const focusedObject = useFocusedObject()
 	const focusedObject3d = useFocusedObject3d()
+	const frames = useFrames()
 
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
+	const localPose = $derived(object?.pose)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
+	const geometryType = $derived.by(
+		() => (object?.geometry?.case as 'none' | 'box' | 'sphere' | 'capsule' | undefined) ?? 'none'
+	)
+
+	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
+		if (!object || !object3d) return
+		object.pose.x = x ?? object.pose.x
+		object.pose.y = y ?? object.pose.y
+		object.pose.z = z ?? object.pose.z
+		object3d.position.set(
+			(x ?? object3d.position.x * 1000) / 1000,
+			(y ?? object3d.position.y * 1000) / 1000,
+			(z ?? object3d.position.z * 1000) / 1000
+		)
+
+		frames.updateFrame(
+			selectedObject.current?.metadata.partID ?? '',
+			selectedObject.current?.name ?? '',
+			{
+				x,
+				y,
+				z,
+			}
+		)
+	}
+
+	const updateLocalOrientation = ({
+		oX,
+		oY,
+		oZ,
+		theta,
+	}: {
+		oX?: number
+		oY?: number
+		oZ?: number
+		theta?: number
+	}) => {
+		if (!object || !object3d) return
+		object.pose.oX = oX ?? object.pose.oX
+		object.pose.oY = oY ?? object.pose.oY
+		object.pose.oZ = oZ ?? object.pose.oZ
+		object.pose.theta = theta ?? object.pose.theta
+
+		object3d.quaternion.set(
+			oX ?? object3d.quaternion.x,
+			oY ?? object3d.quaternion.y,
+			oZ ?? object3d.quaternion.z,
+			theta ?? object3d.quaternion.w
+		)
+
+		frames.updateFrame(
+			selectedObject.current?.metadata.partID ?? '',
+			selectedObject.current?.name ?? '',
+			{
+				oX,
+				oY,
+				oZ,
+				theta,
+			}
+		)
+	}
+
+	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
+		if (!object) return
+		if (type === 'none') {
+			object.geometry = undefined
+			frames.updateFrame(
+				selectedObject.current?.metadata.partID ?? '',
+				selectedObject.current?.name ?? '',
+				{},
+				{ type: 'none' }
+			)
+		} else if (type === 'box') {
+			object.geometry = { case: 'box', value: { dimsMm: { x: 100, y: 100, z: 100 } } }
+			frames.updateFrame(
+				selectedObject.current?.metadata.partID ?? '',
+				selectedObject.current?.name ?? '',
+				{},
+				{ type: 'box', x: 100, y: 100, z: 100 }
+			)
+		} else if (type === 'sphere') {
+			object.geometry = { case: 'sphere', value: { radiusMm: 100 } }
+			frames.updateFrame(
+				selectedObject.current?.metadata.partID ?? '',
+				selectedObject.current?.name ?? '',
+				{},
+				{ type: 'sphere', r: 100 }
+			)
+		} else if (type === 'capsule') {
+			object.geometry = { case: 'capsule', value: { radiusMm: 20, lengthMm: 100 } }
+			frames.updateFrame(
+				selectedObject.current?.metadata.partID ?? '',
+				selectedObject.current?.name ?? '',
+				{},
+				{ type: 'capsule', r: 20, l: 100 }
+			)
+		}
+	}
 
 	let copied = $state(false)
 
@@ -206,6 +307,140 @@
 					</div>
 				{/if}
 			{/if}
+
+			{#if localPose}
+				<div>
+					<strong class="font-semibold">local position</strong>
+					<div class="flex items-center gap-2">
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">x</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.x}
+								oninput={(e) => {
+									updateLocalPosition({ x: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">y</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.y}
+								oninput={(e) => {
+									updateLocalPosition({ y: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">z</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.z}
+								oninput={(e) => {
+									updateLocalPosition({ z: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+					</div>
+				</div>
+
+				<div>
+					<strong class="font-semibold">local orientation</strong>
+					<div class="flex items-center gap-2">
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">x</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.oX}
+								step="0.01"
+								oninput={(e) => {
+									updateLocalOrientation({ oX: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">y</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.oY}
+								step="0.01"
+								oninput={(e) => {
+									updateLocalOrientation({ oY: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">z</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.oZ}
+								step="0.01"
+								oninput={(e) => {
+									updateLocalOrientation({ oZ: parseFloat((e.target as HTMLInputElement).value) })
+								}}
+							/>
+						</div>
+						<div class="flex min-w-0 flex-1 items-center gap-1">
+							<span class="text-subtle-2 text-xs">th</span>
+							<input
+								type="number"
+								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+								value={localPose.theta}
+								step="0.01"
+								oninput={(e) => {
+									updateLocalOrientation({
+										theta: parseFloat((e.target as HTMLInputElement).value),
+									})
+								}}
+							/>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<div>
+				<strong class="font-semibold">Geometry</strong>
+				{#if frames.isDirty}
+					<div
+						class="bg-warning-light border-warning text-warning-dark mb-2 rounded border px-2 py-1 text-xs"
+					>
+						<div class="flex items-center gap-1">
+							<div class="animate-spin">⟳</div>
+							<span>Saving changes...</span>
+						</div>
+					</div>
+				{:else}
+					<div class="grid grid-cols-2 gap-1">
+						<Button
+							variant={geometryType === 'none' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('none')}>None</Button
+						>
+						<Button
+							variant={geometryType === 'box' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('box')}>Box</Button
+						>
+						<Button
+							variant={geometryType === 'sphere' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('sphere')}>Sphere</Button
+						>
+						<Button
+							variant={geometryType === 'capsule' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('capsule')}>Capsule</Button
+						>
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>

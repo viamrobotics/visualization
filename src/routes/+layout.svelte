@@ -2,7 +2,7 @@
 	import '../app.css'
 
 	import type { DialConf } from '@viamrobotics/sdk'
-	import { ViamProvider } from '@viamrobotics/svelte-sdk'
+	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
 	import { MotionTools } from '$lib'
 	import {
 		provideConnectionConfigs,
@@ -46,14 +46,23 @@
 
 <Machines bind:isOpen={isMachinesPageOpen} />
 
-<ViamProvider
-	{dialConfigs}
-	{client}
+<ViamAppProvider
+	serviceHost="https://app.viam.com"
+	credentials={{
+		type: 'api-key',
+		payload: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
+		authEntity: 'b6c1c558-aac2-4f52-9a17-b5d6cf9df5f7',
+	}}
 >
-	<MotionTools
-		{partID}
-		enableKeybindings={!isMachinesPageOpen}
+	<ViamProvider
+		{dialConfigs}
+		{client}
 	>
-		{@render children()}
-	</MotionTools>
-</ViamProvider>
+		<MotionTools
+			{partID}
+			enableKeybindings={!isMachinesPageOpen}
+		>
+			{@render children()}
+		</MotionTools>
+	</ViamProvider>
+</ViamAppProvider>

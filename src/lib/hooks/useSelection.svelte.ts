@@ -78,7 +78,6 @@ export const provideSelection = () => {
 		},
 	}
 	setContext<SelectedWorldObjectContext>(selectedObjectKey, selectedObjectContext)
-
 	const focusedObject = $derived(objects.current.find((object) => object.uuid === focused))
 
 	const focusedObjectContext = {
