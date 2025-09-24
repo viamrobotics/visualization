@@ -43,6 +43,17 @@
 		const { files } = event.dataTransfer
 
 		for (const file of files) {
+			const ext = file.name.split('.').at(-1)
+
+			if (ext !== '.pcd') {
+				toast({
+					message: `.${ext} is not a supported file type.`,
+					variant: ToastVariant.Danger,
+				})
+
+				continue
+			}
+
 			const reader = new FileReader()
 
 			reader.addEventListener('loadend', () => {
