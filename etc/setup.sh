@@ -248,8 +248,8 @@ main() {
         rustup target add wasm32-unknown-unknown
         log_success "wasm32-unknown-unknown target added"
     fi
-    echo
 
+    echo
     log_info "⚙️ Step 3: Installing Node.js..."
     
     local current_node_version=""
@@ -424,7 +424,6 @@ main() {
         echo -e "🎉 ${GREEN}Setup completed successfully!${NC}"
         echo
         log_info "Next steps:"
-        echo -e "  1. Run '${YELLOW}make build-wasm${NC}' to build the WASM PCD processor"
         echo -e "  2. Run '${YELLOW}make up${NC}' to start the development server"
         echo -e "  3. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
     else

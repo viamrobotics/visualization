@@ -17,14 +17,11 @@ setup:
 	@./etc/setup.sh
 
 up:
+	make build-wasm
 	pnpm dev
 
 build-wasm:
 	@echo 'Building WASM PCD processor...'
-	@if ! command -v wasm-pack >/dev/null 2>&1; then \
-		echo 'Error: wasm-pack not found. Please run "make setup" first.'; \
-		exit 1; \
-	fi
 	@cd src/lib/wasm/pcd-processor && \
 		wasm-pack build --target web --out-dir pkg --release && \
 		echo 'WASM build complete! Generated files in src/lib/wasm/pcd-processor/pkg/'
