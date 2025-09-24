@@ -8,12 +8,12 @@ const pending = new Map<
 	number,
 	{
 		resolve: (msg: SuccessMessage) => void
-		reject: (err: any) => void
+		reject: (err: string) => void
 	}
 >()
 
 worker.addEventListener('message', (event: MessageEvent<Message>) => {
-	const { id, ...rest } = event.data as any
+	const { id, ...rest } = event.data as Message
 
 	const promise = pending.get(id)
 
