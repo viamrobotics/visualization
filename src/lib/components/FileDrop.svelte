@@ -95,7 +95,6 @@
 />
 
 <div
-	id="droppy"
 	class={{
 		'fixed inset-0 z-9999 ': true,
 		'pointer-events-none': dropState === 'inactive',
