@@ -3,21 +3,38 @@ import PCDWorker from './worker?worker'
 
 const worker = new PCDWorker()
 
-export const parsePcdInWorker = async (
-	data: Uint8Array<ArrayBufferLike>
-): Promise<SuccessMessage> => {
+let requestId = 0
+const pending = new Map<
+	number,
+	{
+		resolve: (msg: SuccessMessage) => void
+		reject: (err: any) => void
+	}
+>()
+
+// One global listener for worker messages
+worker.addEventListener('message', (event: MessageEvent<Message>) => {
+	const { id, ...rest } = event.data as any
+
+	if (!pending.has(id)) {
+		return
+	}
+
+	const { resolve, reject } = pending.get(id)!
+	pending.delete(id)
+
+	if ('error' in rest) {
+		reject(rest.error)
+	} else {
+		resolve(rest as SuccessMessage)
+	}
+})
+
+export const parsePcdInWorker = (data: Uint8Array<ArrayBufferLike>): Promise<SuccessMessage> => {
 	return new Promise((resolve, reject) => {
-		const onMessage = (event: MessageEvent<Message>) => {
-			worker.removeEventListener('message', onMessage)
+		const id = ++requestId
+		pending.set(id, { resolve, reject })
 
-			if ('error' in event.data) {
-				return reject(event.data.error)
-			}
-
-			resolve(event.data)
-		}
-
-		worker.addEventListener('message', onMessage)
-		worker.postMessage({ data }, [data.buffer])
+		worker.postMessage({ id, data }, [data.buffer])
 	})
 }
