@@ -10,7 +10,9 @@ import type { Geometry } from '@viamrobotics/sdk'
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
+	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	points: WorldObject<PointsGeometry>[]
+
 	lines: WorldObject[]
 	meshes: WorldObject[]
 	poses: WorldObject[]
@@ -523,6 +525,9 @@ export const provideDrawAPI = () => {
 	setContext<Context>(key, {
 		get points() {
 			return points
+		},
+		addPoints(worldObject: WorldObject<PointsGeometry>) {
+			points.push(worldObject)
 		},
 		get lines() {
 			return lines

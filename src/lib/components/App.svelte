@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
+	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
@@ -13,6 +14,7 @@
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import FileDrop from './FileDrop.svelte'
 
 	interface Props {
 		partID?: string
@@ -29,6 +31,8 @@
 	})
 
 	createPartIDContext(() => partID)
+
+	provideToast()
 
 	let root = $state.raw<HTMLElement>()
 </script>
@@ -57,8 +61,12 @@
 					{#if !focus}
 						<TreeContainer {@attach domPortal(root)} />
 					{/if}
+
+					<FileDrop {@attach domPortal(root)} />
 				{/snippet}
 			</SceneProviders>
 		</World>
 	</Canvas>
+
+	<ToastContainer />
 </div>
