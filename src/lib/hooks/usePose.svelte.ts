@@ -38,7 +38,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 					throw new Error('No client')
 				}
 
-				const pose = await client.current.getPose(resource, parent() ?? 'world', [])
+				const pose = await client.current.getPose(resource.name, parent() ?? 'world', [])
 
 				return pose
 			},
