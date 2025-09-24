@@ -12,21 +12,21 @@ const pending = new Map<
 	}
 >()
 
-// One global listener for worker messages
 worker.addEventListener('message', (event: MessageEvent<Message>) => {
 	const { id, ...rest } = event.data as any
 
-	if (!pending.has(id)) {
+	const promise = pending.get(id)
+
+	if (!promise) {
 		return
 	}
 
-	const { resolve, reject } = pending.get(id)!
 	pending.delete(id)
 
 	if ('error' in rest) {
-		reject(rest.error)
+		promise.reject(rest.error)
 	} else {
-		resolve(rest as SuccessMessage)
+		promise.resolve(rest as SuccessMessage)
 	}
 })
 

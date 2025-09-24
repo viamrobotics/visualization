@@ -1,4 +1,3 @@
-// worker.js
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js'
 
 const loader = new PCDLoader()
