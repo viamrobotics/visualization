@@ -45,7 +45,7 @@ export const providePoses = (partID: () => string) => {
 					}
 
 					const promises = components.map((component) => {
-						return client.getPose(component, 'world', [])
+						return client.getPose(component.name, 'world', [])
 					})
 
 					const results = await Promise.allSettled(promises)
