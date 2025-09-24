@@ -51,7 +51,7 @@ export const buildTreeNodes = (
 			href: `/world-state/${worldState.name}`,
 		}
 
-		for (const object of [...worldState.worldObjects, ...worldState.pointclouds]) {
+		for (const object of worldState.transforms) {
 			const child: TreeNode = {
 				name: object.name,
 				id: object.uuid,
@@ -59,7 +59,19 @@ export const buildTreeNodes = (
 				href: `/world-state/${worldState.name}/${object.name}`,
 			}
 
-			nodeMap.set(object.name, child)
+			nodeMap.set(object.referenceFrame, child)
+			node.children?.push(child)
+		}
+
+		for (const object of worldState.pointclouds) {
+			const child: TreeNode = {
+				name: object.name,
+				id: object.uuid,
+				children: [],
+				href: `/world-state/${worldState.name}/${object.name}`,
+			}
+
+			nodeMap.set(object.referenceFrame, child)
 			node.children?.push(child)
 		}
 

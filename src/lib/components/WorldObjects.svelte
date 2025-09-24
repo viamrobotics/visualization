@@ -69,10 +69,7 @@
 {/each}
 
 {#each worldStates.names as { name } (name)}
-	<WorldState
-		worldObjects={worldStates.current[name].worldObjects}
-		pointclouds={worldStates.current[name].pointclouds}
-	/>
+	<WorldState worldState={worldStates.current[name]} />
 {/each}
 
 {#each points.current as object (object.uuid)}

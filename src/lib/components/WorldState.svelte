@@ -3,36 +3,35 @@
 	import Label from './Label.svelte'
 	import Portal from './portal/Portal.svelte'
 	import PortalTarget from './portal/PortalTarget.svelte'
-	import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 	import Pointcloud from './Pointcloud.svelte'
+	import { useWorldState } from '$lib/hooks/useWorldState.svelte'
 
 	interface Props {
-		worldObjects: WorldObject[]
-		pointclouds: WorldObject<PointsGeometry>[]
+		worldState: ReturnType<typeof useWorldState>
 	}
 
-	let { worldObjects, pointclouds }: Props = $props()
+	let { worldState }: Props = $props()
 </script>
 
-{#each worldObjects as object (object.uuid)}
-	<Portal id={object.referenceFrame}>
+{#each worldState.transforms as transform (transform.uuid)}
+	<Portal id={transform.referenceFrame}>
 		<Frame
-			uuid={object.uuid}
-			name={object.name}
-			pose={object.pose}
-			geometry={object.geometry}
-			metadata={object.metadata}
+			uuid={transform.uuid}
+			name={transform.name}
+			pose={transform.pose}
+			geometry={transform.geometry}
+			metadata={transform.metadata}
 		>
-			<PortalTarget id={object.name} />
-			<Label text={object.name} />
+			<PortalTarget id={transform.name} />
+			<Label text={transform.name} />
 		</Frame>
 	</Portal>
 {/each}
 
-{#each pointclouds as object (object.uuid)}
-	<Portal id={object.referenceFrame}>
-		<Pointcloud {object}>
-			<Label text={object.name} />
+{#each worldState.pointclouds as pointcloud (pointcloud.uuid)}
+	<Portal id={pointcloud.referenceFrame}>
+		<Pointcloud object={pointcloud}>
+			<Label text={pointcloud.name} />
 		</Pointcloud>
 	</Portal>
 {/each}

@@ -10,7 +10,6 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
-import type { SuccessMessage } from './loaders/pcd/worker'
 
 export type PointsGeometry = { case: 'points'; value: Float32Array<ArrayBuffer> }
 export type LinesGeometry = { case: 'line'; value: Float32Array }
@@ -30,6 +29,7 @@ export type Metadata = {
 		id: number
 		object: BatchedMesh
 	}
+	pointCloudDeltaFormat?: 'index_x_y_z'
 	getBoundingBoxAt?: (box: Box3) => void
 }
 
@@ -42,6 +42,7 @@ const METADATA_KEYS = [
 	'lineWidth',
 	'lineDotColor',
 	'batched',
+	'pointCloudDeltaFormat',
 ] as const
 
 export const isMetadataKey = (key: string): key is keyof Metadata => {
@@ -55,8 +56,16 @@ export class WorldObject<T extends Geometries = Geometries> {
 	pose = $state.raw<Pose>(createPose())
 	geometry?: T
 	metadata: Metadata
+	updateVersion: number
 
-	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
+	constructor(
+		name: string,
+		pose?: Pose,
+		parent = 'world',
+		geometry?: T,
+		metadata?: Metadata,
+		updateVersion?: number
+	) {
 		this.uuid = MathUtils.generateUUID()
 		this.name = name
 		this.referenceFrame = parent
@@ -67,6 +76,8 @@ export class WorldObject<T extends Geometries = Geometries> {
 		if (pose) {
 			this.pose = pose
 		}
+
+		this.updateVersion = updateVersion ?? 0
 	}
 }
 
@@ -95,7 +106,7 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 	}
 }
 
-const parseMetadata = (fields: PlainMessage<Struct>['fields']) => {
+export const parseMetadata = (fields: PlainMessage<Struct>['fields']) => {
 	let json: Metadata = {}
 
 	for (const [k, v] of Object.entries(fields)) {
@@ -143,6 +154,9 @@ const parseMetadata = (fields: PlainMessage<Struct>['fields']) => {
 			case 'getBoundingBoxAt':
 				json[k] = unwrappedValue as (box: Box3) => void
 				break
+			case 'pointCloudDeltaFormat':
+				json[k] = unwrappedValue as 'index_x_y_z'
+				break
 		}
 	}
 
@@ -162,17 +176,25 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	return worldObject
 }
 
-export type PointcloudTransform = TransformWithUUID & SuccessMessage
-export const fromPointcloudTransform = (pointcloud: PointcloudTransform) => {
+export type PointCloudTransform = TransformWithUUID & {
+	positions: Float32Array
+	colors: Float32Array | null
+	pointCount: number
+	updateVersion: number
+}
+
+export const fromPointCloudTransform = (pointcloud: PointCloudTransform) => {
 	const metadata: Metadata = pointcloud.metadata ? parseMetadata(pointcloud.metadata.fields) : {}
-	return new WorldObject(
+	const worldObject = new WorldObject(
 		pointcloud.referenceFrame,
 		pointcloud.poseInObserverFrame?.pose,
 		pointcloud.poseInObserverFrame?.referenceFrame,
-		{ case: 'points', value: pointcloud.positions },
+		{ case: 'points', value: pointcloud.positions as Float32Array<ArrayBuffer> },
 		{
 			...metadata,
-			colors: pointcloud.colors ?? undefined,
-		}
+			colors: pointcloud.colors ? (pointcloud.colors as Float32Array) : undefined,
+		},
+		pointcloud.updateVersion
 	)
+	return worldObject
 }

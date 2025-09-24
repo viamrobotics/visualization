@@ -3,7 +3,7 @@ import {
 	type ChangeMessage,
 	type ProcessMessage,
 } from '$lib/world-state-messages'
-import { getInUnsafe, toPath } from '@thi.ng/paths'
+import { getInUnsafe, setInUnsafe, toPath } from '@thi.ng/paths'
 import {
 	TransformChangeType,
 	type TransformChangeEvent,
@@ -14,7 +14,7 @@ interface DeduplicationEntry {
 	type: TransformChangeType
 	uuidString: string
 	transform?: TransformWithUUID
-	changes?: Record<string, unknown>
+	changes?: Set<readonly (number | string)[]>
 }
 
 const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefined => {
@@ -32,29 +32,32 @@ const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefine
 				uuidString: event.transform.uuidString,
 			}
 		case TransformChangeType.UPDATED: {
-			const changes: Record<string, unknown> = {}
-			const paths = toPath(event.updatedFields?.paths ?? [])
-			for (const path of paths) {
-				changes[path.toString()] = getInUnsafe(event.transform, path)
-			}
-
+			const paths = event.updatedFields?.paths ?? []
 			return {
 				type: event.changeType,
 				uuidString: event.transform.uuidString,
 				transform: event.transform,
-				changes,
+				changes: new Set(paths.map(toPath)),
 			}
 		}
 	}
 }
 
+// Throttle worker output to prevent overwhelming the main thread
+let workerLastPostTime = 0
+const WORKER_THROTTLE_MS = 200 // Only post every 200ms max - more aggressive throttling
+
 self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 	const { events } = e.data
 	if (events.length === 0) return
 
+	// Limit the number of events the worker processes at once to prevent it from being overwhelmed
+	const maxWorkerEvents = 50 // Reduced from 100
+	const limitedEvents = events.slice(0, maxWorkerEvents)
+
 	const eventsByUUID = new Map<string, DeduplicationEntry>()
 
-	for (const event of events) {
+	for (const event of limitedEvents) {
 		const entry = createEntry(event)
 		if (!entry) continue
 
@@ -77,13 +80,15 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 			case TransformChangeType.UPDATED:
 				// merge with existing updated event
 				if (existing.type === TransformChangeType.UPDATED) {
-					const paths = toPath(event.updatedFields?.paths ?? [])
+					const paths = event.updatedFields?.paths ?? []
 					if (paths.length === 0) continue
 					for (const path of paths) {
-						if (!existing.changes) existing.changes = {}
-						existing.changes[path.toString()] = getInUnsafe(entry.transform, path)
+						const parsed = toPath(path)
+						const next = getInUnsafe(entry.transform, parsed)
+						existing.changes ??= new Set()
+						existing.changes.add(parsed)
+						existing.transform = setInUnsafe(existing.transform, parsed, next)
 					}
-					existing.transform = event.transform
 				}
 				break
 		}
@@ -111,7 +116,7 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 			case TransformChangeType.UPDATED: {
 				if (!entry.transform) continue
 
-				const changes = Object.entries(entry.changes ?? {})
+				const changes = Array.from(entry.changes ?? [])
 				if (changes.length === 0) continue
 
 				processedEvents.push({
@@ -130,7 +135,12 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 		events: processedEvents,
 	}
 
-	postProcessMessage(self, message)
+	// Throttle worker output to prevent overwhelming the main thread
+	const now = performance.now()
+	if (now - workerLastPostTime >= WORKER_THROTTLE_MS) {
+		postProcessMessage(self, message)
+		workerLastPostTime = now
+	}
 }
 
 export {}

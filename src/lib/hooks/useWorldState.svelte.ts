@@ -3,6 +3,7 @@ import {
 	TransformChangeType,
 	type TransformWithUUID,
 	ResourceName,
+	PointCloud,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -12,20 +13,34 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 import { useQueryClient } from '@tanstack/svelte-query'
-import { fromPointcloudTransform, fromTransform } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import { setInUnsafe } from '@thi.ng/paths'
+import { getInUnsafe, setInUnsafe } from '@thi.ng/paths'
 import { postChangeMessage, type ProcessMessage } from '$lib/world-state-messages'
 import { getContext, setContext } from 'svelte'
 import WorldStateWorker from '../workers/worldStateWorker?worker'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import type { PointcloudTransform } from '$lib/WorldObject.svelte'
+import { getPointcloudManager, type PointCloudLoadResult } from '$lib/wasm/pointcloud-manager'
+import {
+	fromPointCloudTransform,
+	fromTransform,
+	parseMetadata,
+	type PointCloudTransform,
+} from '$lib/WorldObject.svelte'
 
 const key = Symbol('world-state-context')
 
 interface Context {
 	names: ResourceName[]
 	current: Record<string, ReturnType<typeof createWorldState>>
+}
+
+type PointCloudTransformWithUUID = TransformWithUUID & {
+	physicalObject: { geometryType: { case: 'pointcloud'; value: PointCloud } }
+}
+
+const isPointCloudTransformWithUUID = (
+	transform: TransformWithUUID
+): transform is PointCloudTransformWithUUID => {
+	return transform.physicalObject?.geometryType.case === 'pointcloud'
 }
 
 export const provideWorldStates = () => {
@@ -67,11 +82,10 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
 	const transforms = $state<Record<string, TransformWithUUID>>({})
-	const pointclouds = $state<Record<string, PointcloudTransform>>({})
+	const pointclouds = $state<Record<string, PointCloudTransform>>({})
 
-	const transformsList = $derived.by(() => Object.values(transforms))
-	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
-	const pointcloudsList = $derived.by(() => Object.values(pointclouds).map(fromPointcloudTransform))
+	const transformsList = $derived.by(() => Object.values(transforms).map(fromTransform))
+	const pointcloudsList = $derived.by(() => Object.values(pointclouds).map(fromPointCloudTransform))
 
 	let pendingEvents: ProcessMessage['events'] = []
 	let flushScheduled = false
@@ -96,13 +110,96 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	const loadPointcloud = async (transform: TransformWithUUID) => {
-		if (transform.physicalObject?.geometryType.case !== 'pointcloud') return
-		const pointcloud = transform.physicalObject.geometryType.value.pointCloud
-		const { positions, colors } = await parsePcdInWorker(pointcloud)
-		pointclouds[transform.uuidString] = {
-			...transform,
-			positions,
-			colors,
+		if (!isPointCloudTransformWithUUID(transform)) return
+
+		const pointcloudData = transform.physicalObject.geometryType.value.pointCloud
+		if (!pointcloudData || pointcloudData.length === 0) return
+
+		try {
+			const manager = getPointcloudManager()
+			// IMPORTANT: Don't skip colors for initial load - we need to extract them from PCD data
+			// The backend provides PCD data with colors embedded, not separate color arrays
+			const result = await manager.loadPointcloud(
+				transform.uuidString,
+				pointcloudData,
+				parseMetadata(transform.metadata?.fields ?? {})
+			)
+
+			// Store the processed pointcloud with the original transform data
+			const processedPointcloud: PointCloudTransform = {
+				...transform,
+				positions: result.positions,
+				colors: result.colors,
+				pointCount: result.pointCount,
+				updateVersion: 0,
+			}
+
+			pointclouds[transform.uuidString] = processedPointcloud
+		} catch (error) {
+			console.error(`Failed to load pointcloud ${transform.uuidString}:`, error)
+		}
+	}
+
+	const updatePointcloud = async (
+		event: ProcessMessage['events'][0] & { type: TransformChangeType.UPDATED }
+	) => {
+		const existingPointcloud = pointclouds[event.uuidString]
+		if (!existingPointcloud) return
+
+		const deltaFormat = event.transform.metadata?.fields?.pointCloudDeltaFormat?.kind?.value
+		if (deltaFormat === 'index_x_y_z') {
+			try {
+				const geometryValue = event.transform.physicalObject?.geometryType?.value
+				const deltaData = (geometryValue as any)?.pointCloud
+				if (deltaData && deltaData.length > 0) {
+					const manager = getPointcloudManager()
+
+					const result = await manager.updatePointcloud(
+						event.uuidString,
+						deltaData,
+						'index_x_y_z',
+						existingPointcloud.positions,
+						existingPointcloud.colors || undefined
+					)
+
+					// Handle position updates
+					if (result.updatedInPlace) {
+						const newVersion = existingPointcloud.updateVersion + 1
+						existingPointcloud.updateVersion = newVersion
+					} else {
+						if (
+							existingPointcloud.positions &&
+							result.positions.length === existingPointcloud.positions.length
+						) {
+							existingPointcloud.positions.set(result.positions)
+						} else {
+							existingPointcloud.positions = result.positions
+						}
+
+						const newVersion = (existingPointcloud.updateVersion || 0) + 1
+						existingPointcloud.updateVersion = newVersion
+					}
+
+					existingPointcloud.pointCount = result.pointCount
+				}
+			} catch (error) {
+				console.error(`Failed to update pointcloud ${event.uuidString}:`, error)
+			}
+		} else {
+			// For non-delta updates, reload the entire pointcloud
+			if (isPointCloudTransformWithUUID(event.transform)) {
+				await loadPointcloud(event.transform)
+			}
+		}
+	}
+
+	const removePointcloud = async (uuid: string) => {
+		try {
+			const manager = getPointcloudManager()
+			await manager.disposePointcloud(uuid)
+			delete pointclouds[uuid]
+		} catch (error) {
+			console.error(`Failed to remove pointcloud ${uuid}:`, error)
 		}
 	}
 
@@ -127,17 +224,21 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 					}
 					break
 				case TransformChangeType.REMOVED:
-					delete transforms[event.uuidString]
+					if (pointclouds[event.uuidString]) {
+						void removePointcloud(event.uuidString)
+					} else {
+						delete transforms[event.uuidString]
+					}
 					break
 				case TransformChangeType.UPDATED: {
 					if (event.changes.length === 0) continue
 					if (event.transform.physicalObject?.geometryType.case === 'pointcloud') {
-						// TODO: Update the pointcloud in place?
-						void loadPointcloud(event.transform)
+						void updatePointcloud(event)
 					} else {
 						if (!transforms[event.uuidString]) continue
-						for (const [path, value] of event.changes) {
-							transforms[event.uuidString] = setInUnsafe(transforms[event.uuidString], path, value)
+						for (const paths of event.changes) {
+							const next = getInUnsafe(event.transform, paths)
+							transforms[event.uuidString] = setInUnsafe(transforms[event.uuidString], paths, next)
 						}
 					}
 
@@ -181,6 +282,13 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		}
 
 		return () => {
+			const manager = getPointcloudManager()
+			for (const uuid of Object.keys(pointclouds)) {
+				void manager.disposePointcloud(uuid).catch((error) => {
+					console.warn(`Failed to cleanup pointcloud ${uuid}:`, error)
+				})
+			}
+
 			worker.terminate()
 		}
 	})
@@ -204,9 +312,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		},
 		get transforms() {
 			return transformsList
-		},
-		get worldObjects() {
-			return worldObjectsList
 		},
 		get pointclouds() {
 			return pointcloudsList

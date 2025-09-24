@@ -29,6 +29,16 @@ export default defineConfig({
 
 	worker: {
 		format: 'es',
+		plugins: () => [
+			{
+				name: 'wasm-loader',
+				load(id) {
+					if (id.endsWith('.wasm')) {
+						return `export default "${id}"`
+					}
+				},
+			},
+		],
 	},
 
 	define: {
@@ -40,6 +50,7 @@ export default defineConfig({
 		esbuildOptions: {
 			target: 'esnext',
 		},
+		exclude: ['@viamrobotics/pcd-processor-wasm'],
 	},
 	build: {
 		target: 'esnext',

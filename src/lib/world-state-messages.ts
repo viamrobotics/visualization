@@ -25,7 +25,7 @@ export type UpdatedEvent = {
 	type: TransformChangeType.UPDATED
 	uuidString: string
 	transform: TransformWithUUID
-	changes: [path: string, value: unknown][]
+	changes: (readonly (number | string)[])[]
 }
 
 export type ProcessMessage = {
@@ -90,7 +90,7 @@ const extractChangeMessageBuffers = (message: ChangeMessage): ArrayBuffer[] => {
 const extractProcessMessageBuffers = (message: ProcessMessage): ArrayBuffer[] => {
 	const buffers: ArrayBuffer[] = []
 	for (const event of message.events) {
-		if (event.type === TransformChangeType.ADDED && 'transform' in event) {
+		if ('transform' in event && event.transform) {
 			extractTransformBuffers(event.transform, buffers)
 		}
 	}

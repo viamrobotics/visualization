@@ -189,7 +189,68 @@ main() {
     fi
     
     echo
-    log_info "⚙️ Step 2: Installing Node.js..."
+    log_info "🦀 Step 2: Installing Rust and Cargo..."
+    
+    if command_exists rustc && command_exists cargo; then
+        local current_rust_version=$(rustc --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+        log_info "Rust is already installed (version: $current_rust_version)"
+        
+        # Check for updates
+        log_info "Checking for Rust updates..."
+        if rustup update >/dev/null 2>&1; then
+            local new_rust_version=$(rustc --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+            if [[ "$current_rust_version" != "$new_rust_version" ]]; then
+                log_success "Rust updated: $current_rust_version → $new_rust_version"
+            else
+                log_success "Rust is already up to date (version: $current_rust_version)"
+            fi
+        else
+            log_warning "Could not check for Rust updates"
+        fi
+    else
+        log_info "Installing Rust via rustup..."
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        
+        # Source the cargo environment
+        source "$HOME/.cargo/env"
+        
+        if command_exists rustc && command_exists cargo; then
+            local rust_version=$(rustc --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+            log_success "Rust installed successfully (version: $rust_version)"
+        else
+            log_error "Rust installation failed"
+            exit 1
+        fi
+    fi
+    
+    # Install wasm-pack for WebAssembly builds
+    if command_exists wasm-pack; then
+        local current_wasm_pack_version=$(wasm-pack --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+        log_info "wasm-pack is already installed (version: $current_wasm_pack_version)"
+    else
+        log_info "Installing wasm-pack..."
+        cargo install wasm-pack
+        
+        if command_exists wasm-pack; then
+            local wasm_pack_version=$(wasm-pack --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+            log_success "wasm-pack installed successfully (version: $wasm_pack_version)"
+        else
+            log_error "wasm-pack installation failed"
+            exit 1
+        fi
+    fi
+    
+    # Add wasm32-unknown-unknown target for WebAssembly compilation
+    if rustup target list --installed | grep -q "wasm32-unknown-unknown"; then
+        log_info "wasm32-unknown-unknown target is already installed"
+    else
+        log_info "Adding wasm32-unknown-unknown target..."
+        rustup target add wasm32-unknown-unknown
+        log_success "wasm32-unknown-unknown target added"
+    fi
+    echo
+
+    log_info "⚙️ Step 3: Installing Node.js..."
     
     local current_node_version=""
     if command_exists node; then
@@ -221,7 +282,7 @@ main() {
     fi
     echo
 
-    log_info "📦 Step 3: Installing pnpm..."
+    log_info "📦 Step 4: Installing pnpm..."
     
     if command_exists pnpm; then
         local current_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
@@ -268,7 +329,7 @@ main() {
     fi
     echo
 
-    log_info "🥟 Step 4: Installing bun..."
+    log_info "🥟 Step 5: Installing bun..."
     
     if command_exists bun; then
         local current_bun_version=$(bun --version 2>/dev/null || echo "unknown")
@@ -304,7 +365,7 @@ main() {
     fi
     echo
 
-    log_info "📚 Step 5: Installing project dependencies..."
+    log_info "📚 Step 6: Installing project dependencies..."
     
     if [[ -f "package.json" ]]; then
         log_info "Running pnpm install..."
@@ -324,6 +385,9 @@ main() {
     echo "  • node: $(node --version 2>/dev/null || echo 'not found')"
     echo "  • pnpm: $(pnpm --version 2>/dev/null || echo 'not found')"
     echo "  • bun: $(bun --version 2>/dev/null || echo 'not found')"
+    echo "  • rustc: $(rustc --version 2>/dev/null | cut -d' ' -f2 || echo 'not found')"
+    echo "  • cargo: $(cargo --version 2>/dev/null | cut -d' ' -f2 || echo 'not found')"
+    echo "  • wasm-pack: $(wasm-pack --version 2>/dev/null | cut -d' ' -f2 || echo 'not found')"
     echo
     
     local missing_deps=()
@@ -344,12 +408,25 @@ main() {
         missing_deps+=("bun")
     fi
     
+    if ! command_exists rustc; then
+        missing_deps+=("rustc")
+    fi
+    
+    if ! command_exists cargo; then
+        missing_deps+=("cargo")
+    fi
+    
+    if ! command_exists wasm-pack; then
+        missing_deps+=("wasm-pack")
+    fi
+    
     if [[ ${#missing_deps[@]} -eq 0 ]]; then
         echo -e "🎉 ${GREEN}Setup completed successfully!${NC}"
         echo
         log_info "Next steps:"
-        echo -e "  1. Run '${YELLOW}make up${NC}' to start the development server"
-        echo -e "  2. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
+        echo -e "  1. Run '${YELLOW}make build-wasm${NC}' to build the WASM PCD processor"
+        echo -e "  2. Run '${YELLOW}make up${NC}' to start the development server"
+        echo -e "  3. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
     else
         log_error "Setup incomplete. Missing dependencies: ${missing_deps[*]}"
         exit 1
