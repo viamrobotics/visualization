@@ -1,5 +1,15 @@
 # motion-tools
 
+## 0.11.4
+
+### Patch Changes
+
+- 02edb37: Update measurement tool rendering opacity to 0.5
+- 1aa922d: APP-9598 - Update getPose method signature for breaking change
+- 0034f6d: APP 9587 - Allow drag and drop PCD files
+- ad0c509: Use Vite worker bundling
+- dbaf99f: Add makefile for simplifying env setup
+
 ## 0.11.3
 
 ### Patch Changes
