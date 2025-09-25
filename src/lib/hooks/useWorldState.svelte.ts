@@ -23,7 +23,7 @@ interface Context {
 	current: Record<string, ReturnType<typeof createWorldState>>
 }
 
-const worker = new Worker(new URL('../workers/worldStateWorker.ts', import.meta.url), {
+const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
 })
 
