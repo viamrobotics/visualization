@@ -27,10 +27,6 @@ export default defineConfig({
 		sveltekit(),
 	],
 
-	worker: {
-		format: 'es',
-	},
-
 	define: {
 		BACKEND_IP: JSON.stringify(localIP),
 		BUN_SERVER_PORT: JSON.stringify(process.env.BUN_SERVER_PORT),
