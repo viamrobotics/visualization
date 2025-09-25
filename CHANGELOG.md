@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.5
+
+### Patch Changes
+
+- b2e27c8: Revert "Worker fixes"
+
 ## 0.11.4
 
 ### Patch Changes
