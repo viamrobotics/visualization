@@ -15,7 +15,6 @@ import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
 import { getContext, setContext } from 'svelte'
-import WorldStateWorker from '../workers/worldStateWorker?worker'
 
 const key = Symbol('world-state-context')
 
@@ -24,7 +23,9 @@ interface Context {
 	current: Record<string, ReturnType<typeof createWorldState>>
 }
 
-const worker = new WorldStateWorker()
+const worker = new Worker(new URL('../workers/worldStateWorker.ts', import.meta.url), {
+	type: 'module',
+})
 
 export const provideWorldStates = () => {
 	const partID = usePartID()

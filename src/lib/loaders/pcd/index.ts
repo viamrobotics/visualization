@@ -1,7 +1,6 @@
 import type { Message, SuccessMessage } from './worker'
-import PCDWorker from './worker?worker'
 
-const worker = new PCDWorker()
+const worker = new Worker(new URL('./worker', import.meta.url), { type: 'module' })
 
 let requestId = 0
 const pending = new Map<
