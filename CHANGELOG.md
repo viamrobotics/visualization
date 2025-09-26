@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.6
+
+### Patch Changes
+
+- 4095760: Remove .ts extension from worker URL
+
 ## 0.11.5
 
 ### Patch Changes
