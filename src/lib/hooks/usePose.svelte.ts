@@ -12,6 +12,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const motionClient = useMotionClient()
 	const resources = useResourceNames(() => partID.current)
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
+	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
 
 	const client = createResourceClient(
 		MotionClient,
@@ -38,7 +39,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 					throw new Error('No client')
 				}
 
-				const resolvedParent = parent()?.includes('arm') ? `${parent()}_origin` : parent()
+				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
 				const pose = await client.current.getPose(resource.name, resolvedParent ?? 'world', [])
 
 				return pose
