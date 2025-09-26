@@ -43,20 +43,31 @@ export const provideFrames = (partID: () => string) => {
 			}
 
 			const resourceName = resourceNames.current.find((item) => item.name === frame.referenceFrame)
+			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
 
 			objects.push(
 				new WorldObject(
-					frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame',
+					frameName,
 					frame.poseInObserverFrame?.pose,
-					frame.poseInObserverFrame?.referenceFrame,
-					frame.physicalObject?.geometryType,
-					resourceName
-						? {
-								color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
-							}
-						: undefined
+					frame.poseInObserverFrame?.referenceFrame
 				)
 			)
+
+			if (frame.physicalObject?.geometryType) {
+				objects.push(
+					new WorldObject(
+						`${frameName} ${frame.physicalObject.geometryType.case}`,
+						frame.physicalObject.center,
+						frameName,
+						frame.physicalObject.geometryType,
+						resourceName
+							? {
+									color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
+								}
+							: undefined
+					)
+				)
+			}
 		}
 
 		return objects

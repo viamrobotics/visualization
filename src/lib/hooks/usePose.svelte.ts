@@ -38,7 +38,8 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 					throw new Error('No client')
 				}
 
-				const pose = await client.current.getPose(resource.name, parent() ?? 'world', [])
+				const resolvedParent = parent()?.includes('arm') ? `${parent()}_origin` : parent()
+				const pose = await client.current.getPose(resource.name, resolvedParent ?? 'world', [])
 
 				return pose
 			},
