@@ -109,7 +109,11 @@
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"
-		]
+		],
+		"overrides": {
+			"@viamrobotics/sdk": "link:../viam-typescript-sdk",
+			"@viamrobotics/svelte-sdk": "link:../viam-svelte-sdk"
+		}
 	},
 	"packageManager": "pnpm@10.14.0",
 	"svelte": "./dist/index.js",

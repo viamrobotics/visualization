@@ -1,18 +1,18 @@
 <script lang="ts">
+	import { useWorldState } from '$lib/hooks/useWorldState.svelte'
 	import Frame from './Frame.svelte'
 	import Label from './Label.svelte'
 	import Portal from './portal/Portal.svelte'
 	import PortalTarget from './portal/PortalTarget.svelte'
-	import { WorldObject } from '$lib/WorldObject.svelte'
 
 	interface Props {
-		worldObjects: WorldObject[]
+		worldState: ReturnType<typeof useWorldState>
 	}
 
-	let { worldObjects }: Props = $props()
+	let { worldState }: Props = $props()
 </script>
 
-{#each worldObjects as object (object.uuid)}
+{#each Object.values(worldState.worldObjects) as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}

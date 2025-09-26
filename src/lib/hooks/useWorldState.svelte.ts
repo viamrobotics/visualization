@@ -10,7 +10,7 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform } from '$lib/WorldObject.svelte'
+import { fromTransform, WorldObject } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
@@ -63,11 +63,8 @@ export const useWorldState = (resourceName: () => string) => {
 const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
+	const transforms = $state<Record<string, TransformWithUUID>>({})
 	let initialized = $state(false)
-	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
-
-	const transformsList = $derived.by(() => Object.values(transforms))
-	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
 
 	let pendingEvents: ProcessMessage['events'] = []
 	let flushScheduled = false
@@ -89,43 +86,38 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	const initialize = (initial: TransformWithUUID[]) => {
-		const next = { ...transforms }
 		for (const transform of initial) {
-			next[transform.uuidString] = transform
+			transforms[transform.uuidString] = transform
 		}
 
-		transforms = next
 		initialized = true
 	}
 
 	const applyEvents = (events: ProcessMessage['events']) => {
 		if (events.length === 0) return
 
-		const next = { ...transforms }
 		for (const event of events) {
 			switch (event.type) {
 				case TransformChangeType.ADDED:
-					next[event.uuidString] = event.transform
+					transforms[event.uuidString] = event.transform
 					break
 				case TransformChangeType.REMOVED:
-					delete next[event.uuidString]
+					delete transforms[event.uuidString]
 					break
 				case TransformChangeType.UPDATED: {
 					if (event.changes.length === 0) continue
 
-					let toUpdate = next[event.uuidString]
+					let toUpdate = transforms[event.uuidString]
 					if (!toUpdate) continue
 					for (const [path, value] of event.changes) {
 						toUpdate = setInUnsafe(toUpdate, path, value)
 					}
 
-					next[event.uuidString] = toUpdate
+					transforms[event.uuidString] = toUpdate
 					break
 				}
 			}
 		}
-
-		transforms = next
 	}
 
 	const scheduleFlush = () => {
@@ -186,17 +178,8 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		get name() {
 			return resourceName()
 		},
-		get transforms() {
-			return transformsList
-		},
 		get worldObjects() {
-			return worldObjectsList
-		},
-		get listUUIDs() {
-			return listUUIDs.current
-		},
-		get getTransforms() {
-			return getTransforms?.map((query) => query.current)
+			return Object.values(transforms).map(fromTransform)
 		},
 	}
 }

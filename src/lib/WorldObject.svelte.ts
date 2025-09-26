@@ -103,6 +103,7 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	const metadata: Metadata = transform.metadata
 		? parseMetadata(transform.metadata.fields as Record<string, UnwrapValue>)
 		: {}
+
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,
