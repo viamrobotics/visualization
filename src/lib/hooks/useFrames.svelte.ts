@@ -66,7 +66,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 	)
 
-	const current = $derived.by(() => {
+	let current = $derived.by(() => {
 		const objects: WorldObject[] = []
 		for (const { frame } of query.current.data ?? []) {
 			if (frame === undefined) {
@@ -127,6 +127,18 @@ export const provideFrames = (partID: () => string) => {
 				},
 			}
 		}
+
+		current.push(new WorldObject(componentName, {x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0}, 'world', {
+			case: 'box',
+			value: {
+				dimsMm: {
+					x: 100,
+					y: 100,
+					z: 100,
+				},
+			},
+		}));
+		current = [...current];
 		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
 	}
 
@@ -136,6 +148,13 @@ export const provideFrames = (partID: () => string) => {
 		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		delete component.frame
+
+		const worldObjectIndex = current.findIndex((frame) => frame.name === componentName);
+		if (worldObjectIndex !== -1) {
+			current.splice(worldObjectIndex, 1);
+			current = [...current];
+		}
+
 		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
 	}
 
@@ -145,6 +164,13 @@ export const provideFrames = (partID: () => string) => {
 		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		component.frame.parent = parentName
+
+		const worldObjectIndex = current.findIndex((frame) => frame.name === componentName);
+		if (worldObjectIndex !== -1) {
+			current[worldObjectIndex].referenceFrame = parentName
+			current = [...current]
+		}
+
 		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
 	}
 
@@ -199,6 +225,7 @@ export const provideFrames = (partID: () => string) => {
 
 
 	const getRobotComponentsWithNoFrame = async (uuid: string) => {
+		// MATTHEW: this is hard to create a local version for allowing local vs network state sync
 		if (!appClient) {
 			return []
 		}
