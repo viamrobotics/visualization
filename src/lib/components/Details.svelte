@@ -411,39 +411,28 @@
 
 				<div>
 					<strong class="font-semibold">Geometry</strong>
-					{#if frames.isDirty}
-						<div
-							class="bg-warning-light border-warning text-warning-dark mb-2 rounded border px-2 py-1 text-xs"
+					<div class="grid grid-cols-2 gap-1">
+						<Button
+							variant={geometryType === 'none' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('none')}>None</Button
 						>
-							<div class="flex items-center gap-1">
-								<div class="animate-spin">⟳</div>
-								<span>Saving changes...</span>
-							</div>
-						</div>
-					{:else}
-						<div class="grid grid-cols-2 gap-1">
-							<Button
-								variant={geometryType === 'none' ? 'primary' : 'ghost'}
-								class="text-xs"
-								onclick={() => setGeometryType('none')}>None</Button
-							>
-							<Button
-								variant={geometryType === 'box' ? 'primary' : 'ghost'}
-								class="text-xs"
-								onclick={() => setGeometryType('box')}>Box</Button
-							>
-							<Button
-								variant={geometryType === 'sphere' ? 'primary' : 'ghost'}
-								class="text-xs"
-								onclick={() => setGeometryType('sphere')}>Sphere</Button
-							>
-							<Button
-								variant={geometryType === 'capsule' ? 'primary' : 'ghost'}
-								class="text-xs"
-								onclick={() => setGeometryType('capsule')}>Capsule</Button
-							>
-						</div>
-					{/if}
+						<Button
+							variant={geometryType === 'box' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('box')}>Box</Button
+						>
+						<Button
+							variant={geometryType === 'sphere' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('sphere')}>Sphere</Button
+						>
+						<Button
+							variant={geometryType === 'capsule' ? 'primary' : 'ghost'}
+							class="text-xs"
+							onclick={() => setGeometryType('capsule')}>Capsule</Button
+						>
+					</div>
 				</div>
 
 				<div>

@@ -38,7 +38,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 	name: string
 	referenceFrame: string
 	pose = $state.raw<Pose>(createPose())
-	geometry?: T
+	geometry = $state.raw<T>()
 	metadata: Metadata
 
 	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
