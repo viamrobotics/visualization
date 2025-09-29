@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.7
+
+### Patch Changes
+
+- f42eb95: Call getPose from origin frames and add frame geometry offsets
+
 ## 0.11.6
 
 ### Patch Changes
