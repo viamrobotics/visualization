@@ -2,6 +2,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import PortalTarget from '../portal/PortalTarget.svelte'
 	import Button from './Button.svelte'
+	import Toggle from './Toggle.svelte'
 
 	let { ...rest } = $props()
 
@@ -81,6 +82,18 @@
 			/>
 		</fieldset>
 	{/if}
+
+	<fieldset class="flex">
+		<Toggle
+			onValue="Edit"
+			offValue="Monitor"
+			active={settings.current.viewerMode === 'edit'}
+			description="Viewer mode"
+			onclick={() => {
+				settings.current.viewerMode = settings.current.viewerMode === 'edit' ? 'monitor' : 'edit'
+			}}
+		/>
+	</fieldset>
 
 	<PortalTarget id="dashboard" />
 </div>

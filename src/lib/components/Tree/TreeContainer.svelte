@@ -12,6 +12,7 @@
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
@@ -20,6 +21,7 @@
 	const objects = useObjects()
 	const draggable = useDraggable('treeview')
 	const worldStates = useWorldStates()
+	const settings = useSettings()
 	const frames = useFrames()
 	const partID = usePartID()
 
@@ -69,30 +71,32 @@
 		/>
 	{/key}
 
-	<div class="border-medium border-t p-2">
-		<h3 class="mb-2 font-semibold">Components Without Frames</h3>
-		{#await noFrameNodes}
-			<div class="text-gray-500">Loading...</div>
-		{:then components}
-			{#if components && components.length > 0}
-				<ul class="space-y-1">
-					{#each components as component (component.name)}
-						<li class="text-sm text-gray-700">
-							{component.name}
-							<button
-								class="focus:ring-opacity-50 ml-2 rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-								onclick={() => addFrame(component.name)}>Add Frame</button
-							>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<div class="text-sm text-gray-500">No components without frames</div>
-			{/if}
-		{:catch error}
-			<div class="text-sm text-red-500">Error loading components: {error.message}</div>
-		{/await}
-	</div>
+	{#if settings.current.viewerMode === 'edit'}
+		<div class="border-medium border-t p-2">
+			<h3 class="mb-2 font-semibold">Components Without Frames</h3>
+			{#await noFrameNodes}
+				<div class="text-gray-500">Loading...</div>
+			{:then components}
+				{#if components && components.length > 0}
+					<ul class="space-y-1">
+						{#each components as component (component.name)}
+							<li class="text-sm text-gray-700">
+								{component.name}
+								<button
+									class="focus:ring-opacity-50 ml-2 rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+									onclick={() => addFrame(component.name)}>Add Frame</button
+								>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<div class="text-sm text-gray-500">No components without frames</div>
+				{/if}
+			{:catch error}
+				<div class="text-sm text-red-500">Error loading components: {error.message}</div>
+			{/await}
+		</div>
+	{/if}
 
 	<Logs />
 	<Settings />

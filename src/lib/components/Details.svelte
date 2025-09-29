@@ -23,6 +23,7 @@
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const { ...rest } = $props()
 
@@ -30,7 +31,7 @@
 	const focusedObject = useFocusedObject()
 	const focusedObject3d = useFocusedObject3d()
 	const frames = useFrames()
-
+	const settings = useSettings()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -308,139 +309,141 @@
 				{/if}
 			{/if}
 
-			{#if localPose}
-				<div>
-					<strong class="font-semibold">local position</strong>
-					<div class="flex items-center gap-2">
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">x</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.x}
-								oninput={(e) => {
-									updateLocalPosition({ x: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
-						</div>
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">y</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.y}
-								oninput={(e) => {
-									updateLocalPosition({ y: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
-						</div>
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">z</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.z}
-								oninput={(e) => {
-									updateLocalPosition({ z: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
+			{#if settings.current.viewerMode === 'edit'}
+				{#if localPose}
+					<div>
+						<strong class="font-semibold">local position</strong>
+						<div class="flex items-center gap-2">
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">x</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.x}
+									oninput={(e) => {
+										updateLocalPosition({ x: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">y</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.y}
+									oninput={(e) => {
+										updateLocalPosition({ y: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">z</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.z}
+									oninput={(e) => {
+										updateLocalPosition({ z: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div>
-					<strong class="font-semibold">local orientation</strong>
-					<div class="flex items-center gap-2">
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">x</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.oX}
-								step="0.01"
-								oninput={(e) => {
-									updateLocalOrientation({ oX: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
+					<div>
+						<strong class="font-semibold">local orientation</strong>
+						<div class="flex items-center gap-2">
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">x</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.oX}
+									step="0.01"
+									oninput={(e) => {
+										updateLocalOrientation({ oX: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">y</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.oY}
+									step="0.01"
+									oninput={(e) => {
+										updateLocalOrientation({ oY: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">z</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.oZ}
+									step="0.01"
+									oninput={(e) => {
+										updateLocalOrientation({ oZ: parseFloat((e.target as HTMLInputElement).value) })
+									}}
+								/>
+							</div>
+							<div class="flex min-w-0 flex-1 items-center gap-1">
+								<span class="text-subtle-2 text-xs">th</span>
+								<input
+									type="number"
+									class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+									value={localPose.theta}
+									step="0.01"
+									oninput={(e) => {
+										updateLocalOrientation({
+											theta: parseFloat((e.target as HTMLInputElement).value),
+										})
+									}}
+								/>
+							</div>
 						</div>
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">y</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.oY}
-								step="0.01"
-								oninput={(e) => {
-									updateLocalOrientation({ oY: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
-						</div>
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">z</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.oZ}
-								step="0.01"
-								oninput={(e) => {
-									updateLocalOrientation({ oZ: parseFloat((e.target as HTMLInputElement).value) })
-								}}
-							/>
-						</div>
-						<div class="flex min-w-0 flex-1 items-center gap-1">
-							<span class="text-subtle-2 text-xs">th</span>
-							<input
-								type="number"
-								class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-								value={localPose.theta}
-								step="0.01"
-								oninput={(e) => {
-									updateLocalOrientation({
-										theta: parseFloat((e.target as HTMLInputElement).value),
-									})
-								}}
-							/>
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			<div>
-				<strong class="font-semibold">Geometry</strong>
-				{#if frames.isDirty}
-					<div
-						class="bg-warning-light border-warning text-warning-dark mb-2 rounded border px-2 py-1 text-xs"
-					>
-						<div class="flex items-center gap-1">
-							<div class="animate-spin">⟳</div>
-							<span>Saving changes...</span>
-						</div>
-					</div>
-				{:else}
-					<div class="grid grid-cols-2 gap-1">
-						<Button
-							variant={geometryType === 'none' ? 'primary' : 'ghost'}
-							class="text-xs"
-							onclick={() => setGeometryType('none')}>None</Button
-						>
-						<Button
-							variant={geometryType === 'box' ? 'primary' : 'ghost'}
-							class="text-xs"
-							onclick={() => setGeometryType('box')}>Box</Button
-						>
-						<Button
-							variant={geometryType === 'sphere' ? 'primary' : 'ghost'}
-							class="text-xs"
-							onclick={() => setGeometryType('sphere')}>Sphere</Button
-						>
-						<Button
-							variant={geometryType === 'capsule' ? 'primary' : 'ghost'}
-							class="text-xs"
-							onclick={() => setGeometryType('capsule')}>Capsule</Button
-						>
 					</div>
 				{/if}
-			</div>
+
+				<div>
+					<strong class="font-semibold">Geometry</strong>
+					{#if frames.isDirty}
+						<div
+							class="bg-warning-light border-warning text-warning-dark mb-2 rounded border px-2 py-1 text-xs"
+						>
+							<div class="flex items-center gap-1">
+								<div class="animate-spin">⟳</div>
+								<span>Saving changes...</span>
+							</div>
+						</div>
+					{:else}
+						<div class="grid grid-cols-2 gap-1">
+							<Button
+								variant={geometryType === 'none' ? 'primary' : 'ghost'}
+								class="text-xs"
+								onclick={() => setGeometryType('none')}>None</Button
+							>
+							<Button
+								variant={geometryType === 'box' ? 'primary' : 'ghost'}
+								class="text-xs"
+								onclick={() => setGeometryType('box')}>Box</Button
+							>
+							<Button
+								variant={geometryType === 'sphere' ? 'primary' : 'ghost'}
+								class="text-xs"
+								onclick={() => setGeometryType('sphere')}>Sphere</Button
+							>
+							<Button
+								variant={geometryType === 'capsule' ? 'primary' : 'ghost'}
+								class="text-xs"
+								onclick={() => setGeometryType('capsule')}>Capsule</Button
+							>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>

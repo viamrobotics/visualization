@@ -13,6 +13,7 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import type { Geometries, Metadata } from '$lib/WorldObject.svelte'
 import { Struct } from '@viamrobotics/sdk'
+import { useSettings } from './useSettings.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -42,6 +43,7 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig')
+	const settings = useSettings()
 
 	const revision = $derived(machineStatus.current?.config.revision)
 	const appClient = useViamClient();
@@ -55,9 +57,11 @@ export const provideFrames = (partID: () => string) => {
 	observe.pre(
 		() => [revision],
 		() => {
-			untrack(() => query.current).refetch({})
-			untrack(() => isDirty = false)
-			logs.add('Fetching frames...')
+			if (settings.current.viewerMode === 'monitor') {
+				untrack(() => query.current).refetch({})
+				untrack(() => isDirty = false)
+				logs.add('Fetching frames...')
+			}
 		}
 	)
 

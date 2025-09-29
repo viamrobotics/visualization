@@ -12,9 +12,11 @@
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import longpress from '$lib/attachments/onLongPress.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
+	const settings = useSettings()
 	const frames = useFrames()
 	const draggable = useDraggable('treenodes', true)
 
@@ -119,19 +121,21 @@
 						<EyeOff size={14} />
 					{/if}
 				</button>
-				<button
-					class="text-gray-6"
-					onmousedown={(event) => {
-						event.stopPropagation()
-					}}
-					onclick={(event) => {
-						//MATTHEW: should we allow deleteing parent frames?
-						event.stopPropagation()
-						frames.deleteFrame(node.name)
-					}}
-				>
-					<Trash size={14} />
-				</button>
+				{#if settings.current.viewerMode === 'edit'}
+					<button
+						class="text-gray-6"
+						onmousedown={(event) => {
+							event.stopPropagation()
+						}}
+						onclick={(event) => {
+							//MATTHEW: should we allow deleteing parent frames?
+							event.stopPropagation()
+							frames.deleteFrame(node.name)
+						}}
+					>
+						<Trash size={14} />
+					</button>
+				{/if}
 			</div>
 			<div {...api.getBranchContentProps(nodeProps)}>
 				<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
@@ -214,18 +218,20 @@
 						<EyeOff size={14} />
 					{/if}
 				</button>
-				<button
-					class="text-gray-6"
-					onmousedown={(event) => {
-						event.stopPropagation()
-					}}
-					onclick={(event) => {
-						event.stopPropagation()
-						frames.deleteFrame(node.name)
-					}}
-				>
-					<Trash size={14} />
-				</button>
+				{#if settings.current.viewerMode === 'edit'}
+					<button
+						class="text-gray-6"
+						onmousedown={(event) => {
+							event.stopPropagation()
+						}}
+						onclick={(event) => {
+							event.stopPropagation()
+							frames.deleteFrame(node.name)
+						}}
+					>
+						<Trash size={14} />
+					</button>
+				{/if}
 			</div>
 		</div>
 	{/if}
