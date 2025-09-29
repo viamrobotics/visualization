@@ -43,6 +43,8 @@
 	const geometryType = $derived.by(
 		() => (object?.geometry?.case as 'none' | 'box' | 'sphere' | 'capsule' | undefined) ?? 'none'
 	)
+	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
+	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
 
 	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		if (!object || !object3d) return
@@ -442,6 +444,24 @@
 							>
 						</div>
 					{/if}
+				</div>
+
+				<div>
+					<strong class="font-semibold">Refrence Frame</strong>
+					<div class="flex gap-3">
+						<select
+							class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+							value={referenceFrame}
+							onchange={(e) => {
+								const newFrame = (e.target as HTMLSelectElement).value
+								frames.setFrameParent(object.name, newFrame)
+							}}
+						>
+							{#each referenceFrameOptions as option (option)}
+								<option value={option}>{option}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 			{/if}
 		</div>

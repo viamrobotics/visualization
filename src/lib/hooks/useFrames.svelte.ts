@@ -25,6 +25,7 @@ interface FramesContext {
 	createFrame: (uuid: string, componentName: string) => void
 	updateFrame: (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
 	getRobotComponentsWithNoFrame: (uuid: string) => Promise<any[]>
+	getParentFrameOptions: (componentName: string) => string[]
 }
 
 export interface FrameHeirachyNode {
@@ -178,6 +179,25 @@ export const provideFrames = (partID: () => string) => {
 		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
 	}
 
+	const getParentFrameOptions = (componentName: string) => {
+		const validFrames = new Set(current.map((frame) => frame.name));
+		validFrames.add("world");
+
+		const frameNameQueue = [componentName];
+		while (frameNameQueue.length > 0) {
+			const frameName = frameNameQueue.shift();
+			if (frameName) {
+				validFrames.delete(frameName);
+				const frames = current.filter((frame) => frame.referenceFrame === frameName);
+				for (const frame of frames) {
+					frameNameQueue.push(frame.name);
+				}
+			}
+		}
+		return Array.from(validFrames);
+	}
+
+
 	const getRobotComponentsWithNoFrame = async (uuid: string) => {
 		if (!appClient) {
 			return []
@@ -192,6 +212,7 @@ export const provideFrames = (partID: () => string) => {
 		createFrame,
 		deleteFrame,
 		setFrameParent,
+		getParentFrameOptions,
 		get current() {
 			return current
 		},

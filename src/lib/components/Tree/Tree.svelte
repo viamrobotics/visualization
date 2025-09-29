@@ -10,15 +10,12 @@
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
-	import longpress from '$lib/attachments/onLongPress.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
 	const settings = useSettings()
 	const frames = useFrames()
-	const draggable = useDraggable('treenodes', true)
 
 	interface Props {
 		rootNode: TreeNode
@@ -50,8 +47,6 @@
 	})
 
 	const api = $derived(tree.connect(service, normalizeProps))
-
-	let draggingFrame = $state<string>()
 
 	observe(
 		() => [selections],
@@ -133,7 +128,10 @@
 							frames.deleteFrame(node.name)
 						}}
 					>
-						<Trash size={14} />
+						<Trash
+							size={14}
+							color="red"
+						/>
 					</button>
 				{/if}
 			</div>
@@ -147,53 +145,10 @@
 		</div>
 	{:else}
 		<div
-			{@attach longpress({
-				onlongpress: (e: MouseEvent) => {
-					draggingFrame = node.name
-					draggable.onDragStart(e)
-				},
-				duration: 1000,
-			})}
-			onmouseup={(event) => {
-				// Get the element under the drop location
-				// Temporarily hide the dragging element to get the element underneath
-				const draggingElement = event.currentTarget as HTMLElement
-				const originalDisplay = draggingElement.style.display
-				draggingElement.style.display = 'none'
-
-				const elementUnder = document.elementFromPoint(event.clientX, event.clientY)
-				if (elementUnder?.classList.contains('world-tree')) {
-					draggingFrame = undefined
-					draggable.onDragEnd(event)
-					draggingElement.style.display = originalDisplay
-					frames.setFrameParent(node.name, 'world')
-					return
-				}
-
-				// Restore the dragging element's display
-				draggingElement.style.display = originalDisplay
-				const divUnder = elementUnder?.closest('div')
-				if (divUnder) {
-					// Look for a span with class 'component-name' under the div
-					const componentNameSpan = divUnder.querySelector('span.component-name')
-					if (componentNameSpan) {
-						const droppedOn = componentNameSpan.textContent
-						if (droppedOn !== node.name) {
-							frames.setFrameParent(node.name, droppedOn)
-						}
-					}
-				}
-				draggingFrame = undefined
-				draggable.onDragEnd(event)
-			}}
-			style:transform={node.name === draggingFrame
-				? `translate(${draggable.current.x}px, ${draggable.current.y}px)`
-				: ''}
 			class={{
 				'flex justify-between': true,
 				'text-disabled': !isVisible,
 				'bg-medium': selected,
-				absolute: node.name === draggingFrame,
 			}}
 			{...api.getItemProps(nodeProps)}
 		>
@@ -229,7 +184,10 @@
 							frames.deleteFrame(node.name)
 						}}
 					>
-						<Trash size={14} />
+						<Trash
+							size={14}
+							color="red"
+						/>
 					</button>
 				{/if}
 			</div>
