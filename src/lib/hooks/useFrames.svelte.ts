@@ -22,9 +22,11 @@ interface FramesContext {
 	isDirty: boolean
 	setFrameParent: (componentName: string, parentName: string) => void
 	deleteFrame: (componentName: string) => void
-	createFrame: (uuid: string, componentName: string) => void
-	updateFrame: (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
-	getRobotComponentsWithNoFrame: (uuid: string) => Promise<any[]>
+	createFrame: (componentName: string) => void
+	updateFrame: (componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
+	saveConfigChanges: () => void
+	resetConfigChanges: () => void
+	getRobotComponentsWithNoFrame: () => Promise<any[]>
 	getParentFrameOptions: (componentName: string) => string[]
 }
 
@@ -56,15 +58,30 @@ export const provideFrames = (partID: () => string) => {
 	let isDirty = $state(false)
 
 	observe.pre(
-		() => [revision],
+		() => [revision, settings.current.viewerMode],
 		() => {
 			if (settings.current.viewerMode === 'monitor') {
 				untrack(() => query.current).refetch({})
-				untrack(() => isDirty = false)
 				logs.add('Fetching frames...')
 			}
 		}
 	)
+
+	let partConfigNetwork = $state.raw<any>();
+	let partConfigLocal = $state<any>();
+	let partName = $state<string>();
+
+	$effect.pre(() => {
+		async function getPartConfig() {
+			const partResponse = await appClient.current?.appClient.getRobotPart(partID())
+			partConfigNetwork = JSON.parse(partResponse?.configJson ?? '{}')
+			partConfigLocal = JSON.parse(partResponse?.configJson ?? '{}')
+			partName = partResponse?.part?.name ?? ''
+		}
+		if (appClient?.current) {
+			getPartConfig()
+		}
+	})
 
 	let current = $derived.by(() => {
 		const objects: WorldObject[] = []
@@ -97,10 +114,21 @@ export const provideFrames = (partID: () => string) => {
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
 
-	const createFrame = async (uuid: string, componentName: string) => {
-		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
-		const partName = partResponse?.part?.name;
-		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+	const saveConfigChanges = async () => {
+		if (!partConfigLocal) {
+			return
+		}
+		await appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(partConfigLocal));
+		isDirty = false;
+	}
+
+	const resetConfigChanges = () => {
+		partConfigLocal = partConfigNetwork
+		isDirty = false;
+	}
+
+	const createFrame = (componentName: string) => {
+		const newConfig = structuredClone(partConfigNetwork)
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component) {
 			component.frame = {
@@ -139,13 +167,12 @@ export const provideFrames = (partID: () => string) => {
 			},
 		}));
 		current = [...current];
-		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
+		partConfigLocal = newConfig;
+		isDirty = true;
 	}
 
-	const deleteFrame = async (componentName: string) => {
-		const partResponse = await appClient.current?.appClient.getRobotPart(partID())
-		const partName = partResponse?.part?.name;
-		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+	const deleteFrame = (componentName: string) => {
+		const newConfig = structuredClone(partConfigNetwork)
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		delete component.frame
 
@@ -155,13 +182,12 @@ export const provideFrames = (partID: () => string) => {
 			current = [...current];
 		}
 
-		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
+		partConfigLocal = newConfig;
+		isDirty = true;
 	}
 
-	const setFrameParent = async (componentName: string, parentName: string) => {
-		const partResponse = await appClient.current?.appClient.getRobotPart(partID())
-		const partName = partResponse?.part?.name;
-		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+	const setFrameParent = (componentName: string, parentName: string) => {
+		const newConfig = structuredClone(partConfigNetwork)
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		component.frame.parent = parentName
 
@@ -171,14 +197,12 @@ export const provideFrames = (partID: () => string) => {
 			current = [...current]
 		}
 
-		appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(newConfig));
+		partConfigLocal = newConfig;
+		isDirty = true;
 	}
 
-	const updateFrame = async (uuid: string, componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
-		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
-		const partName = partResponse?.part?.name;
-
-		const newConfig = JSON.parse(partResponse?.configJson ?? '{}')
+	const updateFrame = (componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
+		const newConfig = structuredClone(partConfigNetwork)
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component && component.frame) {
 			component.frame.translation = {
@@ -202,7 +226,8 @@ export const provideFrames = (partID: () => string) => {
 			}
 		}
 
-		appClient.current?.appClient.updateRobotPart(uuid, partName ?? '', Struct.fromJson(newConfig));
+		partConfigLocal = newConfig;
+		isDirty = true;
 	}
 
 	const getParentFrameOptions = (componentName: string) => {
@@ -224,17 +249,13 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 
-	const getRobotComponentsWithNoFrame = async (uuid: string) => {
-		// MATTHEW: this is hard to create a local version for allowing local vs network state sync
-		if (!appClient) {
-			return []
-		}
-		const partResponse = await appClient.current?.appClient.getRobotPart(uuid)
-		const config = JSON.parse(partResponse?.configJson ?? '{}')
-		return config?.components?.filter((comp: any) => !comp.frame)
+	const getRobotComponentsWithNoFrame = () => {
+		return partConfigLocal?.components?.filter((comp: any) => !comp.frame)
 	}
 
 	setContext<FramesContext>(key, {
+		saveConfigChanges,
+		resetConfigChanges,
 		updateFrame,
 		createFrame,
 		deleteFrame,

@@ -3,10 +3,11 @@
 	import PortalTarget from '../portal/PortalTarget.svelte'
 	import Button from './Button.svelte'
 	import Toggle from './Toggle.svelte'
-
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	let { ...rest } = $props()
 
 	const settings = useSettings()
+	const frames = useFrames()
 </script>
 
 <div
@@ -90,10 +91,25 @@
 			active={settings.current.viewerMode === 'edit'}
 			description="Viewer mode"
 			onclick={() => {
+				if (settings.current.viewerMode === 'edit' && frames.isDirty) {
+					frames.resetConfigChanges()
+				}
 				settings.current.viewerMode = settings.current.viewerMode === 'edit' ? 'monitor' : 'edit'
 			}}
 		/>
 	</fieldset>
+
+	{#if settings.current.viewerMode === 'edit' && frames.isDirty}
+		<fieldset class="flex">
+			<Button
+				icon="alert-circle"
+				description="Unsaved changes"
+				onclick={() => {
+					frames.saveConfigChanges()
+				}}
+			/>
+		</fieldset>
+	{/if}
 
 	<PortalTarget id="dashboard" />
 </div>

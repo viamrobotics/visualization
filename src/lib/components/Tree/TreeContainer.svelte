@@ -11,7 +11,6 @@
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	const { ...rest } = $props()
 
@@ -23,7 +22,6 @@
 	const worldStates = useWorldStates()
 	const settings = useSettings()
 	const frames = useFrames()
-	const partID = usePartID()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -38,13 +36,13 @@
 	let noFrameNodes = $state<{ name: string }[]>([])
 	$effect.pre(() => {
 		async function getNoFrameNodes() {
-			noFrameNodes = await frames.getRobotComponentsWithNoFrame(partID.current)
+			noFrameNodes = await frames.getRobotComponentsWithNoFrame()
 		}
 		getNoFrameNodes()
 	})
 
 	const addFrame = (componentName: string) => {
-		frames.createFrame(partID.current, componentName)
+		frames.createFrame(componentName)
 	}
 
 	$effect.pre(() => {
