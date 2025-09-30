@@ -21,6 +21,7 @@ import (
 	"github.com/viam-labs/motion-tools/client/shapes"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/robot"
 	"go.viam.com/rdk/spatialmath"
@@ -214,6 +215,23 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 	geometries := make([]json.RawMessage, len(geometriesInFrame.Geometries()))
 
 	for i, geo := range geometriesInFrame.Geometries() {
+		pc, isPc := geo.(pointcloud.PointCloud)
+		if isPc {
+			// Dan: This is maybe in the wrong spot. The pointcloud is getting here from
+			// `DrawWorldState` method (`DrawFrameSystem` presumably has a similar behavior). Those
+			// methods just pass a list of geometries in bulk to this API. I put this here as it's
+			// convenient to not rewrite those (or any other) methods that passthrough a bunch of
+			// geometries in one swoop.
+			//
+			// Another caveat from that is this hard-coded downscaling. Necessary for performance on
+			// the experiments where running now with real-world data. But obviously not immediately
+			// flexible for other use-cases.
+			if err := DrawPointCloudDownscaled(geo.Label(), pc, 25, &[3]uint8{200, 0, 0}); err != nil {
+				return err
+			}
+			continue
+		}
+
 		data, err := protojson.Marshal(geo.ToProtobuf())
 		if err != nil {
 			return err
