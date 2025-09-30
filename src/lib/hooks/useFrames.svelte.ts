@@ -128,7 +128,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const createFrame = (componentName: string) => {
-		const newConfig = structuredClone(partConfigNetwork)
+		const newConfig = {...partConfigLocal}
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component) {
 			component.frame = {
@@ -172,7 +172,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const deleteFrame = (componentName: string) => {
-		const newConfig = structuredClone(partConfigNetwork)
+		const newConfig = {...partConfigLocal}
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		delete component.frame
 
@@ -187,7 +187,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const setFrameParent = (componentName: string, parentName: string) => {
-		const newConfig = structuredClone(partConfigNetwork)
+		const newConfig = {...partConfigLocal}
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		component.frame.parent = parentName
 
@@ -202,7 +202,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const updateFrame = (componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
-		const newConfig = structuredClone(partConfigNetwork)
+		const newConfig = {...partConfigLocal}
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component && component.frame) {
 			component.frame.translation = {
