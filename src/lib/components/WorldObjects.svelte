@@ -22,33 +22,23 @@
 </script>
 
 {#each frames.current as object (object.uuid)}
-	<Pose name={object.name}>
+	<Pose
+		name={object.name}
+		parent={object.referenceFrame}
+	>
 		{#snippet children({ pose })}
-			{#if pose}
+			<Portal id={object.referenceFrame}>
 				<Frame
 					uuid={object.uuid}
 					name={object.name}
-					{pose}
+					pose={pose ?? object.pose}
 					geometry={object.geometry}
 					metadata={object.metadata}
 				>
 					<PortalTarget id={object.name} />
 					<Label text={object.name} />
 				</Frame>
-			{:else}
-				<Portal id={object.referenceFrame}>
-					<Frame
-						uuid={object.uuid}
-						name={object.name}
-						pose={pose ?? object.pose}
-						geometry={object.geometry}
-						metadata={object.metadata}
-					>
-						<PortalTarget id={object.name} />
-						<Label text={object.name} />
-					</Frame>
-				</Portal>
-			{/if}
+			</Portal>
 		{/snippet}
 	</Pose>
 {/each}
