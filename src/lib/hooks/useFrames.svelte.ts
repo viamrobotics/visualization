@@ -26,7 +26,7 @@ interface FramesContext {
 	updateFrame: (componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
 	saveConfigChanges: () => void
 	resetConfigChanges: () => void
-	getRobotComponentsWithNoFrame: () => Promise<any[]>
+	getRobotComponentsWithNoFrame: () => string[]
 	getParentFrameOptions: (componentName: string) => string[]
 }
 
@@ -71,6 +71,7 @@ export const provideFrames = (partID: () => string) => {
 	let partConfigLocal = $state<any>();
 	let partName = $state<string>();
 	let componentNameToFragmentId = $state<Record<string, string>>();
+	let fragmentComponentNames = $derived<string[]>(Object.keys(componentNameToFragmentId ?? {}));
 
 	$effect.pre(() => {
 		async function getPartConfig() {
@@ -140,8 +141,11 @@ export const provideFrames = (partID: () => string) => {
 		return objects
 	})
 
-	$inspect(partConfigNetwork)
-	$inspect(current)
+	const fragmentComponentsWithoutFrames = $derived.by(() => {
+		return fragmentComponentNames.filter((componentName) => {
+			return current.find((frame) => frame.name === componentName) === undefined
+		})
+	})
 
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
@@ -160,6 +164,74 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const createFrame = (componentName: string) => {
+		if (componentNameToFragmentId?.[componentName] !== undefined) {
+			createFragmentFrame(componentNameToFragmentId?.[componentName], componentName)
+		} else {
+			createPartFrame(componentName)
+		}
+
+		current.push(new WorldObject(componentName, {x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0}, 'world', {
+			case: 'box',
+			value: {
+				dimsMm: {
+					x: 100,
+					y: 100,
+					z: 100,
+				},
+			},
+		}));
+		current = [...current];
+		isDirty = true;
+	}
+
+	const createFragmentFrame = (fragmentId: string, componentName: string) => {
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
+		if (newConfig.fragment_mods === undefined) {
+			newConfig.fragment_mods = []
+		}
+		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
+		if (fragmentMod === undefined) {
+			fragmentMod = {
+				fragment_id: fragmentId,
+				mods: []
+			}
+			newConfig.fragment_mods.push(fragmentMod)
+		}
+
+		const modSetPath = `components.${componentName}.frame`
+		const frame = {
+			['$set']: {
+				[modSetPath]: {
+					translation: {
+						x: 0,
+						y: 0,
+						z: 0,
+					},
+					parent: "world",
+					orientation: {
+						type: 'ov_degrees',
+						value: {
+							x: 0,
+							y: 0,
+							z: 1,
+							th: 0,
+						}
+					},
+					geometry: {
+						type: 'box',
+						x: 100,
+						y: 100,
+						z: 100,
+					},
+				},
+			}
+		}
+
+		fragmentMod.mods.push(frame)
+		partConfigLocal = newConfig;
+	}
+
+	const createPartFrame = (componentName: string) => {
 		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component) {
@@ -187,35 +259,53 @@ export const provideFrames = (partID: () => string) => {
 				},
 			}
 		}
-
-		current.push(new WorldObject(componentName, {x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0}, 'world', {
-			case: 'box',
-			value: {
-				dimsMm: {
-					x: 100,
-					y: 100,
-					z: 100,
-				},
-			},
-		}));
-		current = [...current];
 		partConfigLocal = newConfig;
-		isDirty = true;
 	}
 
 	const deleteFrame = (componentName: string) => {
-		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
-		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
-		delete component.frame
+		if (componentNameToFragmentId?.[componentName] !== undefined) {
+			deleteFragmentFrame(componentNameToFragmentId?.[componentName], componentName)
+		} else {
+			deletePartFrame(componentName)
+		}
 
 		const worldObjectIndex = current.findIndex((frame) => frame.name === componentName);
 		if (worldObjectIndex !== -1) {
 			current.splice(worldObjectIndex, 1);
 			current = [...current];
 		}
+		isDirty = true;
+	}
+
+	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
+		if (newConfig.fragment_mods === undefined) {
+			newConfig.fragment_mods = []
+		}
+		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
+		if (fragmentMod === undefined) {
+			fragmentMod = {
+				fragment_id: fragmentId,
+				mods: []
+			}
+			newConfig.fragment_mods.push(fragmentMod)
+		}
+
+		const modUnSetPath = `components.${componentName}.frame`
+		fragmentMod.mods.push({
+			['$unset']: {
+				[modUnSetPath]: ''
+			}
+		})
+		partConfigLocal = newConfig;
+	}
+
+	const deletePartFrame = (componentName: string) => {
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
+		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
+		delete component.frame
 
 		partConfigLocal = newConfig;
-		isDirty = true;
 	}
 
 	const setFrameParent = (componentName: string, parentName: string) => {
@@ -298,7 +388,6 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const updatePartFrame = (componentName: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
-		console.log('updatePartFrame', componentName)
 		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component && component.frame) {
@@ -344,8 +433,9 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 
-	const getRobotComponentsWithNoFrame = () => {
-		return partConfigLocal?.components?.filter((comp: any) => !comp.frame)
+	//MATTHEW: change this to derived
+	const getRobotComponentsWithNoFrame = (): string[] => {
+		return [...(partConfigLocal?.components?.filter((comp: any) => !comp.frame).map((comp: any) => comp.name) ?? []), ...fragmentComponentsWithoutFrames]
 	}
 
 	setContext<FramesContext>(key, {

@@ -33,10 +33,10 @@
 	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current))
 
 	// MATTHEW: this is a hack to get the no frame nodes, ideally the useAppQuery would work to get the config but is not functioning properly
-	let noFrameNodes = $state<{ name: string }[]>([])
+	let noFrameNodes = $state<string[]>([])
 	$effect.pre(() => {
 		async function getNoFrameNodes() {
-			noFrameNodes = await frames.getRobotComponentsWithNoFrame()
+			noFrameNodes = frames.getRobotComponentsWithNoFrame()
 		}
 		getNoFrameNodes()
 	})
@@ -77,12 +77,12 @@
 			{:then components}
 				{#if components && components.length > 0}
 					<ul class="space-y-1">
-						{#each components as component (component.name)}
+						{#each components as componentName (componentName)}
 							<li class="text-sm text-gray-700">
-								{component.name}
+								{componentName}
 								<button
 									class="focus:ring-opacity-50 ml-2 rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-									onclick={() => addFrame(component.name)}>Add Frame</button
+									onclick={() => addFrame(componentName)}>Add Frame</button
 								>
 							</li>
 						{/each}
