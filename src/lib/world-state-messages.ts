@@ -23,7 +23,7 @@ export type RemovedEvent = {
 export type UpdatedEvent = {
 	type: TransformChangeType.UPDATED
 	uuidString: string
-	changes: [path: string, value: unknown][]
+	changes: [path: readonly (string | number)[], value: any][]
 }
 
 export type ProcessMessage = {

@@ -33,19 +33,19 @@ export const provideStaticGeometries = () => {
 		},
 		add() {
 			const object = new WorldObject(
-				`custom geometry ${geometries.length + 1}`,
 				undefined,
+				`custom geometry ${geometries.length + 1}`,
 				undefined,
 				createGeometry({
 					case: 'box',
 					value: { dimsMm: { x: 100, y: 100, z: 100 } },
-				}).geometryType
+				})
 			)
 
 			geometries.push(structuredClone(object))
 		},
 		remove(name: string) {
-			const index = geometries.findIndex((geo) => geo.name === name)
+			const index = geometries.findIndex((geo) => geo.referenceFrame === name)
 			geometries.splice(index, 1)
 		},
 	})

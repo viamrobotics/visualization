@@ -7,17 +7,18 @@
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import type { Geometries, Metadata } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
+	import type { Pose } from '@viamrobotics/sdk'
 
 	const plyLoader = new PLYLoader()
 
 	interface Props extends ThrelteProps<Object3D> {
 		uuid: string
 		name: string
-		geometry?: WorldObject['geometry']
-		pose: WorldObject['pose']
-		metadata: WorldObject['metadata']
+		geometry?: Geometries
+		pose?: Pose
+		metadata: Metadata
 		children?: Snippet<[{ ref: Object3D }]>
 		color?: string
 	}
@@ -45,7 +46,9 @@
 	})
 
 	$effect.pre(() => {
-		poseToObject3d(pose, mesh)
+		if (pose) {
+			poseToObject3d(pose, mesh)
+		}
 	})
 
 	let geo = $state.raw<BufferGeometry>()

@@ -7,7 +7,7 @@
 		OrthographicCamera,
 	} from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import { type WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -23,8 +23,9 @@
 	const { camera } = useThrelte()
 	const settings = useSettings()
 
-	const colors = $derived(object.metadata.colors)
-	const pointSize = $derived(object.metadata.pointSize ?? settings.current.pointSize)
+	const metadata = $derived(object.metadata ?? {})
+	const colors = $derived(metadata.colors)
+	const pointSize = $derived(metadata.pointSize ?? settings.current.pointSize)
 	const positions = $derived(object.geometry?.value ?? new Float32Array())
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
@@ -38,7 +39,7 @@
 	})
 
 	$effect.pre(() => {
-		material.color.set(colors ? 0xffffff : (object.metadata.color ?? settings.current.pointColor))
+		material.color.set(colors ? 0xffffff : (metadata.color ?? settings.current.pointColor))
 	})
 
 	$effect.pre(() => {
@@ -55,7 +56,9 @@
 	})
 
 	$effect.pre(() => {
-		poseToObject3d(object.pose, points)
+		if (object.pose) {
+			poseToObject3d(object.pose, points)
+		}
 	})
 
 	const events = useObjectEvents(() => object.uuid)

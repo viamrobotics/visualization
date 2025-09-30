@@ -63,6 +63,18 @@ export const buildTreeNodes = (
 			node.children?.push(child)
 		}
 
+		for (const object of worldState.pointClouds) {
+			const child: TreeNode = {
+				name: object.name,
+				id: object.uuid,
+				children: [],
+				href: `/world-state/${worldState.name}/${object.name}`,
+			}
+
+			nodeMap.set(object.name, child)
+			node.children?.push(child)
+		}
+
 		nodeMap.set(worldState.name, node)
 		rootNodes.push(node)
 	}

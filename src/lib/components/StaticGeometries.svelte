@@ -4,7 +4,7 @@
 	import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { PressedKeys } from 'runed'
-	import { quaternionToPose, scaleToDimensions, vector3ToPose } from '$lib/transform'
+	import { createPose, quaternionToPose, scaleToDimensions, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
 	import Frame from './Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -32,10 +32,11 @@
 </script>
 
 {#each geometries.current as object (object.uuid)}
+	{@const pose = object.pose ?? createPose()}
 	<Frame
 		uuid={object.uuid}
 		name={object.name}
-		pose={object.pose}
+		{pose}
 		geometry={object.geometry}
 		metadata={object.metadata}
 	>
@@ -55,9 +56,9 @@
 							transformControls.setActive(false)
 
 							if (mode === 'translate') {
-								vector3ToPose(ref.getWorldPosition(vector3), object.pose)
+								vector3ToPose(ref.getWorldPosition(vector3), pose)
 							} else if (mode === 'rotate') {
-								quaternionToPose(ref.getWorldQuaternion(quaternion), object.pose)
+								quaternionToPose(ref.getWorldQuaternion(quaternion), pose)
 								ref.quaternion.copy(quaternion)
 							} else if (mode === 'scale' && object.geometry?.case === 'box') {
 								scaleToDimensions(ref.scale, object.geometry)

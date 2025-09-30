@@ -46,10 +46,10 @@ export const provideFrames = (partID: () => string) => {
 
 			objects.push(
 				new WorldObject(
+					undefined,
 					frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame',
-					frame.poseInObserverFrame?.pose,
-					frame.poseInObserverFrame?.referenceFrame,
-					frame.physicalObject?.geometryType,
+					frame.poseInObserverFrame,
+					frame.physicalObject,
 					resourceName
 						? {
 								color: resourceColors[resourceName.subtype as keyof typeof resourceColors],

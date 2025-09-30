@@ -5,7 +5,7 @@ import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { BatchedArrow } from '$lib/three/BatchedArrow'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
-import type { Geometry } from '@viamrobotics/sdk'
+import { Struct, type Geometry } from '@viamrobotics/sdk'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -101,8 +101,8 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					geometryType: { case: 'points', value: positions },
+					label: `points ${++pointsIndex}`,
 				},
 				colors ? { colors } : undefined
 			)
@@ -135,9 +135,19 @@ export const provideDrawAPI = () => {
 			geometry = { case: undefined, value: undefined }
 		}
 
-		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color,
-		})
+		const object = new WorldObject(
+			undefined,
+			data.label ?? ++geometryIndex,
+			{
+				pose: data.center,
+				referenceFrame: parent ?? 'world',
+			},
+			{
+				geometryType: geometry,
+				label: data.label ?? ++geometryIndex,
+			},
+			{ color }
+		)
 
 		meshes.push(object)
 	}
@@ -154,11 +164,20 @@ export const provideDrawAPI = () => {
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
 		const object = new WorldObject(
+			undefined,
 			data.name,
-			data.pose,
-			data.parent,
-			{ case: 'line', value: new Float32Array() },
-			{ color, points: curve.getPoints(200) }
+			{
+				pose: data.pose,
+				referenceFrame: data.parent ?? 'world',
+			},
+			{
+				geometryType: { case: 'line', value: new Float32Array() },
+				label: data.name,
+			},
+			{
+				color,
+				points: curve.getPoints(200),
+			}
 		)
 
 		nurbs.push(object)
@@ -276,12 +295,12 @@ export const provideDrawAPI = () => {
 
 		points.push(
 			new WorldObject(
+				undefined,
 				label,
 				undefined,
-				undefined,
 				{
-					case: 'points',
-					value: positions,
+					geometryType: { case: 'points', value: positions },
+					label,
 				},
 				metadata
 			)
@@ -326,12 +345,12 @@ export const provideDrawAPI = () => {
 
 		lines.push(
 			new WorldObject(
+				undefined,
 				label,
 				undefined,
-				undefined,
 				{
-					case: 'line',
-					value: positions,
+					geometryType: { case: 'line', value: positions },
+					label,
 				},
 				{
 					points,
@@ -380,7 +399,7 @@ export const provideDrawAPI = () => {
 			index = poses.findIndex((p) => p.name === name)
 
 			if (index !== -1) {
-				const id = poses[index].metadata.batched?.id
+				const id = poses[index].metadata?.batched?.id
 
 				if (id) {
 					batchedArrow.removeArrow(id)

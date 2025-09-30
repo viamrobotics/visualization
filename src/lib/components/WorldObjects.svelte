@@ -40,7 +40,7 @@
 					<Frame
 						uuid={object.uuid}
 						name={object.name}
-						pose={pose ?? object.pose}
+						pose={object.pose}
 						geometry={object.geometry}
 						metadata={object.metadata}
 					>
@@ -136,6 +136,7 @@
 
 {#each drawAPI.lines as object (object.uuid)}
 	<Line {object}>
+		<PortalTarget id={object.name} />
 		<Label text={object.name} />
 	</Line>
 {/each}

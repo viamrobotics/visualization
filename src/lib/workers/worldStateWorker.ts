@@ -1,5 +1,5 @@
-import type { ChangeMessage, ProcessMessage } from '$lib/world-state-messages'
-import { getInUnsafe, toPath } from '@thi.ng/paths'
+import type { ChangeMessage, ProcessMessage, UpdatedEvent } from '$lib/world-state-messages'
+import { getIn, getInUnsafe, toPath } from '@thi.ng/paths'
 import {
 	TransformChangeType,
 	type TransformChangeEvent,
@@ -10,7 +10,7 @@ interface DeduplicationEntry {
 	type: TransformChangeType
 	uuidString: string
 	transform?: TransformWithUUID
-	changes?: Record<string, unknown>
+	changes?: UpdatedEvent['changes']
 }
 
 const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefined => {
@@ -28,10 +28,11 @@ const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefine
 				uuidString: event.transform.uuidString,
 			}
 		case TransformChangeType.UPDATED: {
-			const changes: Record<string, unknown> = {}
-			const paths = toPath(event.updatedFields?.paths ?? [])
+			const changes: UpdatedEvent['changes'] = []
+			const paths = event.updatedFields?.paths ?? []
 			for (const path of paths) {
-				changes[path.toString()] = getInUnsafe(event.transform, path)
+				const pathArray = toPath(path)
+				changes.push([pathArray, getInUnsafe(event.transform, pathArray)])
 			}
 
 			return {
@@ -76,8 +77,8 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 					const paths = toPath(event.updatedFields?.paths ?? [])
 					if (paths.length === 0) continue
 					for (const path of paths) {
-						if (!existing.changes) existing.changes = {}
-						existing.changes[path.toString()] = getInUnsafe(entry.transform, path)
+						if (!existing.changes) existing.changes = []
+						existing.changes.push([toPath(path), getInUnsafe(entry.transform, path)])
 					}
 					existing.transform = event.transform
 				}
@@ -105,7 +106,7 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 				break
 
 			case TransformChangeType.UPDATED: {
-				const changes = Object.entries(entry.changes ?? {})
+				const changes = entry.changes ?? []
 				if (changes.length === 0) continue
 
 				processedEvents.push({

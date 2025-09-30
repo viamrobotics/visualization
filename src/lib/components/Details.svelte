@@ -73,7 +73,7 @@
 </script>
 
 {#if object}
-	{@const { geometry } = object}
+	{@const geometry = object.geometry}
 	<div
 		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-60 border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
@@ -178,17 +178,17 @@
 						</div>
 					</div>
 				{:else if geometry.case === 'capsule'}
-					{@const { value } = geometry}
+					{@const { radiusMm, lengthMm } = geometry.value}
 					<div>
 						<strong class="font-semibold">dimensions</strong>
 						<div class="flex gap-3">
 							<div>
 								<span class="text-subtle-2">r</span>
-								{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+								{radiusMm ? radiusMm.toFixed(2) : '-'}
 							</div>
 							<div>
 								<span class="text-subtle-2">l</span>
-								{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+								{lengthMm ? lengthMm.toFixed(2) : '-'}
 							</div>
 						</div>
 					</div>

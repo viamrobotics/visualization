@@ -8,13 +8,21 @@ import {
 	createResourceClient,
 	createResourceQuery,
 	createResourceStream,
+	streamQueryKey,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform, WorldObject } from '$lib/WorldObject.svelte'
+import {
+	fromTransform,
+	parseMetadata,
+	PointCloudWorldObject,
+	WorldObject,
+} from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
-import { getContext, setContext } from 'svelte'
+import { getContext, setContext, untrack } from 'svelte'
+import { getPointCloud, getPointCloudHeader, isPointCloud } from '$lib/point-cloud'
+import { omit } from 'lodash-es'
+import { useQueryClient } from '@tanstack/svelte-query'
 
 const key = Symbol('world-state-context')
 
@@ -61,9 +69,11 @@ export const useWorldState = (resourceName: () => string) => {
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
+	const queryClient = useQueryClient()
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
-	const transforms = $state<Record<string, TransformWithUUID>>({})
+	const transforms = $state<Record<string, WorldObject>>({})
+	const pointClouds = $state<Record<string, PointCloudWorldObject>>({})
 	let initialized = $state(false)
 
 	let pendingEvents: ProcessMessage['events'] = []
@@ -81,13 +91,32 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		})
 	)
 
-	const changeStream = createResourceStream(client, 'streamTransformChanges', {
-		refetchMode: 'replace',
-	})
+	const changeStream = createResourceStream(client, 'streamTransformChanges')
+
+	const addPointCloud = (transform: TransformWithUUID) => {
+		if (!isPointCloud(transform)) return
+
+		const data = getPointCloud(transform)
+		const header = getPointCloudHeader(transform)
+		const pointCloud = new PointCloudWorldObject(
+			transform.uuidString,
+			transform.referenceFrame,
+			transform.poseInObserverFrame,
+			transform.physicalObject,
+			parseMetadata(transform.metadata?.fields)
+		)
+
+		if (data && header) pointCloud.setFull(header, data)
+		pointClouds[pointCloud.uuid] = pointCloud
+	}
 
 	const initialize = (initial: TransformWithUUID[]) => {
 		for (const transform of initial) {
-			transforms[transform.uuidString] = transform
+			if (isPointCloud(transform)) {
+				addPointCloud(transform)
+			} else {
+				transforms[transform.uuidString] = fromTransform(transform)
+			}
 		}
 
 		initialized = true
@@ -95,25 +124,28 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 	const applyEvents = (events: ProcessMessage['events']) => {
 		if (events.length === 0) return
-
 		for (const event of events) {
 			switch (event.type) {
 				case TransformChangeType.ADDED:
-					transforms[event.uuidString] = event.transform
+					if (isPointCloud(event.transform)) {
+						addPointCloud(event.transform)
+					} else {
+						transforms[event.uuidString] = fromTransform(event.transform)
+					}
 					break
 				case TransformChangeType.REMOVED:
 					delete transforms[event.uuidString]
+					delete pointClouds[event.uuidString]
 					break
 				case TransformChangeType.UPDATED: {
 					if (event.changes.length === 0) continue
 
-					let toUpdate = transforms[event.uuidString]
-					if (!toUpdate) continue
-					for (const [path, value] of event.changes) {
-						toUpdate = setInUnsafe(toUpdate, path, value)
+					// changes to the actual point cloud data is handled by the world object
+					if (pointClouds[event.uuidString]) {
+						pointClouds[event.uuidString].update(event.changes)
+					} else if (transforms[event.uuidString]) {
+						transforms[event.uuidString].update(event.changes)
 					}
-
-					transforms[event.uuidString] = toUpdate
 					break
 				}
 			}
@@ -144,13 +176,12 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		const data = queries
 			.flatMap((query) => query?.data ?? [])
 			.filter((transform) => transform !== undefined) as TransformWithUUID[]
-		if (data.length === 0) return
 
 		initialize(data)
 	})
 
 	$effect(() => {
-		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
+		const onMessage = (e: MessageEvent<ProcessMessage>) => {
 			if (e.data.type !== 'process') return
 
 			const { events } = e.data ?? { events: [] }
@@ -160,8 +191,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			scheduleFlush()
 		}
 
+		worker.addEventListener('message', onMessage as unknown as EventListener)
 		return () => {
-			worker.terminate()
+			worker.removeEventListener('message', onMessage as unknown as EventListener)
 		}
 	})
 
@@ -171,7 +203,50 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		const events = changeStream.current.data.filter((event) => event.transform !== undefined)
 		if (events.length === 0) return
 
-		worker.postMessage({ type: 'change', events })
+		const transformEvents = []
+		for (const event of events) {
+			if (isPointCloud(event.transform)) {
+				switch (event.changeType) {
+					case TransformChangeType.ADDED:
+					case TransformChangeType.REMOVED:
+						transformEvents.push(event)
+						break
+					case TransformChangeType.UPDATED:
+						if (
+							event.transform.physicalObject.geometryType.value.pointCloud !== undefined ||
+							event.transform.physicalObject.geometryType.value.header !== undefined
+						) {
+							const pointCloud = pointClouds[event.transform.uuidString]
+							if (!pointCloud) continue
+
+							const t = event.transform as TransformWithUUID
+							const data = getPointCloud(t)
+							const header = getPointCloudHeader(t)
+							if (data || header) {
+								pointCloud.enqueueUpdate(header, data ?? new Uint8Array(0))
+							}
+						}
+
+						const cleanedEvent = omit(
+							event,
+							'transform.physicalObject.geometryType.value.pointCloud',
+							'transform.physicalObject.geometryType.value.header'
+						)
+						transformEvents.push(cleanedEvent)
+						break
+				}
+			} else {
+				transformEvents.push(event)
+			}
+		}
+
+		if (transformEvents.length > 0) {
+			worker.postMessage({ type: 'change', events: transformEvents })
+			queryClient.setQueryData(
+				streamQueryKey(partID(), resourceName(), 'streamTransformChanges'),
+				[]
+			)
+		}
 	})
 
 	return {
@@ -179,7 +254,10 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			return resourceName()
 		},
 		get worldObjects() {
-			return Object.values(transforms).map(fromTransform)
+			return Object.values(transforms)
+		},
+		get pointClouds() {
+			return Object.values(pointClouds)
 		},
 	}
 }
