@@ -23,7 +23,7 @@ interface FramesContext {
 	setFrameParent: (componentName: string, parentName: string) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
-	updateFrame: (componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
+	updateFrame: (componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => void
 	saveConfigChanges: () => void
 	resetConfigChanges: () => void
 	getRobotComponentsWithNoFrame: () => Promise<any[]>
@@ -70,6 +70,7 @@ export const provideFrames = (partID: () => string) => {
 	let partConfigNetwork = $state.raw<any>();
 	let partConfigLocal = $state<any>();
 	let partName = $state<string>();
+	let componentNameToFragmentId = $state<Record<string, string>>();
 
 	$effect.pre(() => {
 		async function getPartConfig() {
@@ -77,7 +78,34 @@ export const provideFrames = (partID: () => string) => {
 			partConfigNetwork = JSON.parse(partResponse?.configJson ?? '{}')
 			partConfigLocal = JSON.parse(partResponse?.configJson ?? '{}')
 			partName = partResponse?.part?.name ?? ''
+
+			const result: Record<string, string> = {};
+			const fragementRequests = [];
+			for (const fragmentId of partConfigNetwork.fragments) {
+				fragementRequests.push(appClient.current?.appClient.getFragment(fragmentId))
+			}
+			const fragementResponses = await Promise.all(fragementRequests)
+			for (const fragmentResponse of fragementResponses) {
+				const fragmentId = fragmentResponse?.id;
+				if (!fragmentId) {
+					continue
+				}
+				const components = fragmentResponse?.fragment?.fields['components'].kind;
+
+				if (components?.case === 'listValue') {
+					for (const component of components.value.values) {
+						if (component.kind.case === 'structValue') {
+							const componentName = component.kind.value.fields['name'].kind;
+							if (componentName.case === 'stringValue') {
+								result[componentName.value] = fragmentId
+							}
+						}
+					}
+				}
+			}
+			componentNameToFragmentId = result;
 		}
+
 		if (appClient?.current) {
 			getPartConfig()
 		}
@@ -111,6 +139,10 @@ export const provideFrames = (partID: () => string) => {
 
 		return objects
 	})
+
+	$inspect(partConfigNetwork)
+	$inspect(current)
+
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
 
@@ -128,7 +160,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const createFrame = (componentName: string) => {
-		const newConfig = {...partConfigLocal}
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component) {
 			component.frame = {
@@ -172,7 +204,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const deleteFrame = (componentName: string) => {
-		const newConfig = {...partConfigLocal}
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		delete component.frame
 
@@ -187,7 +219,7 @@ export const provideFrames = (partID: () => string) => {
 	}
 
 	const setFrameParent = (componentName: string, parentName: string) => {
-		const newConfig = {...partConfigLocal}
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		component.frame.parent = parentName
 
@@ -201,8 +233,73 @@ export const provideFrames = (partID: () => string) => {
 		isDirty = true;
 	}
 
-	const updateFrame = (componentName: string, framePosition: {x?: number, y?: number, z?: number, oX?: number, oY?: number, oZ?: number, theta?: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
-		const newConfig = {...partConfigLocal}
+	const updateFrame = (componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
+		if (componentNameToFragmentId?.[componentName] !== undefined) {
+			updateFragmentFrame(componentNameToFragmentId?.[componentName], componentName, referenceFrame, framePosition, frameGeometry)
+		} else {
+			updatePartFrame(componentName, framePosition, frameGeometry)
+		}
+		isDirty = true;
+	}
+
+	const updateFragmentFrame = (fragmentId: string, componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
+		if (newConfig.fragment_mods === undefined) {
+			newConfig.fragment_mods = []
+		}
+		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
+		if (fragmentMod === undefined) {
+			fragmentMod = {
+				fragment_id: fragmentId,
+				mods: []
+			}
+			newConfig.fragment_mods.push(fragmentMod)
+		}
+
+		const modSetPath = `components.${componentName}.frame`
+		const frame = {
+			['$set']: {
+				[modSetPath]: {
+					translation: {
+						x: framePosition.x,
+						y: framePosition.y,
+						z: framePosition.z,
+					},
+					parent: referenceFrame,
+					orientation: {
+						type: 'ov_degrees',
+						value: {
+							x: framePosition.oX,
+							y: framePosition.oY,
+							z: framePosition.oZ,
+							th: framePosition.theta,
+						}
+					},
+					geometry: frameGeometry && frameGeometry.type !== 'none' ? {...frameGeometry} : undefined
+				},
+			}
+		}
+		if (frameGeometry === undefined || frameGeometry.type === 'none') {
+			delete frame['$set'][modSetPath].geometry
+		}
+
+		const existingFrameIndex = fragmentMod.mods.findIndex((mod: any) => mod['$set'][modSetPath] !== undefined)
+		if (existingFrameIndex !== -1) {
+			const existingGeometry = fragmentMod.mods[existingFrameIndex]['$set'][modSetPath].geometry
+			if (existingGeometry) {
+				frame['$set'][modSetPath].geometry = existingGeometry
+			}
+			fragmentMod.mods[existingFrameIndex] = frame
+		} else {
+			fragmentMod.mods.push(frame)
+		}
+
+		partConfigLocal = newConfig;
+	}
+
+	const updatePartFrame = (componentName: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
+		console.log('updatePartFrame', componentName)
+		const newConfig = JSON.parse(JSON.stringify(partConfigLocal));
 		const component = newConfig?.components?.find((comp: any) => comp.name === componentName)
 		if (component && component.frame) {
 			component.frame.translation = {
@@ -217,7 +314,6 @@ export const provideFrames = (partID: () => string) => {
 				th: framePosition.theta === undefined ? component.frame.orientation.value.th : framePosition.theta,
 			}
 			if (frameGeometry) {
-				isDirty = true
 				if (frameGeometry.type === 'none') {
 					delete component.frame.geometry
 				} else {
@@ -227,7 +323,6 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		partConfigLocal = newConfig;
-		isDirty = true;
 	}
 
 	const getParentFrameOptions = (componentName: string) => {

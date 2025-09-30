@@ -57,10 +57,14 @@
 			(z ?? object3d.position.z * 1000) / 1000
 		)
 
-		frames.updateFrame(selectedObject.current?.name ?? '', {
-			x,
-			y,
-			z,
+		frames.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+			x: x ?? object.pose.x,
+			y: y ?? object.pose.y,
+			z: z ?? object.pose.z,
+			oX: object.pose.oX,
+			oY: object.pose.oY,
+			oZ: object.pose.oZ,
+			theta: object.pose.theta,
 		})
 	}
 
@@ -88,11 +92,14 @@
 			theta ?? object3d.quaternion.w
 		)
 
-		frames.updateFrame(selectedObject.current?.name ?? '', {
-			oX,
-			oY,
-			oZ,
-			theta,
+		frames.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+			oX: oX ?? object.pose.oX,
+			oY: oY ?? object.pose.oY,
+			oZ: oZ ?? object.pose.oZ,
+			theta: theta ?? object.pose.theta,
+			x: object.pose.x,
+			y: object.pose.y,
+			z: object.pose.z,
 		})
 	}
 
@@ -100,20 +107,68 @@
 		if (!object) return
 		if (type === 'none') {
 			object.geometry = undefined
-			frames.updateFrame(selectedObject.current?.name ?? '', {}, { type: 'none' })
+			frames.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'none' }
+			)
 		} else if (type === 'box') {
 			object.geometry = { case: 'box', value: { dimsMm: { x: 100, y: 100, z: 100 } } }
 			frames.updateFrame(
 				selectedObject.current?.name ?? '',
-				{},
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
 		} else if (type === 'sphere') {
 			object.geometry = { case: 'sphere', value: { radiusMm: 100 } }
-			frames.updateFrame(selectedObject.current?.name ?? '', {}, { type: 'sphere', r: 100 })
+			frames.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'sphere', r: 100 }
+			)
 		} else if (type === 'capsule') {
 			object.geometry = { case: 'capsule', value: { radiusMm: 20, lengthMm: 100 } }
-			frames.updateFrame(selectedObject.current?.name ?? '', {}, { type: 'capsule', r: 20, l: 100 })
+			frames.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'capsule', r: 20, l: 100 }
+			)
 		}
 	}
 
