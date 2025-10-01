@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.11.8
+
+### Patch Changes
+
+- c9662b9: Better pointcloud support. DrawWorldState will draw pointclouds via DrawGeometries. Pointclouds are downscaled for performance.
+
 ## 0.11.7
 
 ### Patch Changes
