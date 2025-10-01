@@ -58,9 +58,9 @@ export const provideFrames = (partID: () => string) => {
 	let isDirty = $state(false)
 
 	observe.pre(
-		() => [revision, settings.current.viewerMode],
+		() => [revision],
 		() => {
-			if (settings.current.viewerMode === 'monitor') {
+			if (!isDirty) {
 				untrack(() => query.current).refetch({})
 				logs.add('Fetching frames...')
 			}
@@ -161,6 +161,7 @@ export const provideFrames = (partID: () => string) => {
 	const resetConfigChanges = () => {
 		partConfigLocal = partConfigNetwork
 		isDirty = false;
+		query.current.refetch({})
 	}
 
 	const createFrame = (componentName: string) => {

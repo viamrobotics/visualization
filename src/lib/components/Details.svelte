@@ -45,6 +45,9 @@
 	)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
+	const isFrameNode = $derived(
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
+	)
 
 	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		if (!object || !object3d) return
@@ -342,7 +345,7 @@
 				{/if}
 			{/if}
 
-			{#if settings.current.viewerMode === 'edit'}
+			{#if isFrameNode}
 				{#if localPose}
 					<div>
 						<strong class="font-semibold">local position</strong>

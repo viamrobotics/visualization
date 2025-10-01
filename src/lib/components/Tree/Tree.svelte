@@ -10,11 +10,9 @@
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
-	const settings = useSettings()
 	const frames = useFrames()
 
 	interface Props {
@@ -74,6 +72,7 @@
 	{@const nodeState = api.getNodeState(nodeProps)}
 	{@const isVisible = visibility.get(node.id) ?? true}
 	{@const { selected } = nodeState}
+	{@const isFrameNode = frames.current.find((frame) => frame.name === node.name) !== undefined}
 
 	{#if nodeState.isBranch}
 		{@const { expanded } = nodeState}
@@ -116,7 +115,7 @@
 						<EyeOff size={14} />
 					{/if}
 				</button>
-				{#if settings.current.viewerMode === 'edit'}
+				{#if isFrameNode}
 					<button
 						class="text-gray-6"
 						onmousedown={(event) => {
@@ -173,7 +172,7 @@
 						<EyeOff size={14} />
 					{/if}
 				</button>
-				{#if settings.current.viewerMode === 'edit'}
+				{#if isFrameNode}
 					<button
 						class="text-gray-6"
 						onmousedown={(event) => {
