@@ -2,28 +2,36 @@ import { getContext, setContext } from "svelte";
 
 const key = Symbol('weblabs-context');
 
-const EXPERIMENT_COOKIES_TO_CHECK = [
-    'MOTION_TOOLS_EDIT_FRAME'
-]
-
 interface Context {
-    activeExperiments: Set<string>
+    weblab: Weblab
 }
 
 export const provideWeblabs = () => {
-    const activeExperiments = $state(new Set<string>());
+    const weblab = $state(new Weblab());
 
-    $effect(() => {
-        for (const experiment of EXPERIMENT_COOKIES_TO_CHECK) {
-            if (document.cookie.includes(experiment)) {
-                activeExperiments.add(experiment)
-            }
-        }
-    })
-
-    setContext<Context>(key, { activeExperiments })
+    setContext<Context>(key, { weblab })
 }
 
 export const useWeblabs = () => {
     return getContext<Context>(key)
+}
+
+class Weblab {
+    private activeExperiments: Set<string>
+
+    constructor() {
+        this.activeExperiments = new Set<string>()
+    }
+
+    isActive(experiment: string) {
+        return this.activeExperiments.has(experiment)
+    }
+
+    async load(experiments: string[]) {
+        for (const experiment of experiments) {
+            if (document.cookie.includes(experiment)) {
+                this.activeExperiments.add(experiment)
+            }
+        }
+    }
 }
