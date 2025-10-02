@@ -27,7 +27,7 @@ class Weblab {
         return this.activeExperiments.has(experiment)
     }
 
-    async load(experiments: string[]) {
+    load(experiments: string[]) {
         for (const experiment of experiments) {
             if (document.cookie.includes(experiment)) {
                 this.activeExperiments.add(experiment)
