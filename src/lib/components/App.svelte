@@ -15,6 +15,7 @@
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
+	import WeblabProvider from './weblab/WeblabProvider.svelte'
 
 	interface Props {
 		partID?: string
@@ -41,32 +42,34 @@
 	<SvelteQueryDevtools initialIsOpen />
 {/if}
 
-<div
-	class="relative h-full w-full overflow-hidden"
-	bind:this={root}
->
-	<Canvas renderMode="always">
-		<World>
-			<SceneProviders>
-				{#snippet children({ focus })}
-					<Scene>
-						{@render appChildren?.()}
-					</Scene>
+<WeblabProvider>
+	<div
+		class="relative h-full w-full overflow-hidden"
+		bind:this={root}
+	>
+		<Canvas renderMode="always">
+			<World>
+				<SceneProviders>
+					{#snippet children({ focus })}
+						<Scene>
+							{@render appChildren?.()}
+						</Scene>
 
-					<XR {@attach domPortal(root)} />
+						<XR {@attach domPortal(root)} />
 
-					<Dashboard {@attach domPortal(root)} />
-					<Details {@attach domPortal(root)} />
+						<Dashboard {@attach domPortal(root)} />
+						<Details {@attach domPortal(root)} />
 
-					{#if !focus}
-						<TreeContainer {@attach domPortal(root)} />
-					{/if}
+						{#if !focus}
+							<TreeContainer {@attach domPortal(root)} />
+						{/if}
 
-					<FileDrop {@attach domPortal(root)} />
-				{/snippet}
-			</SceneProviders>
-		</World>
-	</Canvas>
+						<FileDrop {@attach domPortal(root)} />
+					{/snippet}
+				</SceneProviders>
+			</World>
+		</Canvas>
 
-	<ToastContainer />
-</div>
+		<ToastContainer />
+	</div>
+</WeblabProvider>
