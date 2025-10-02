@@ -15,7 +15,7 @@
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
-	import WeblabProvider from './providers/WeblabProvider.svelte'
+	import WeblabProvider from './weblab/WeblabProvider.svelte'
 
 	interface Props {
 		partID?: string
