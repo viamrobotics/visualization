@@ -65,6 +65,16 @@ version_compare() {
         fi
     fi
 }
+    
+source_nvm() {
+    export NVM_DIR="$HOME/.nvm"
+    if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+        source "$NVM_DIR/nvm.sh"
+    fi
+    if [[ -s "$NVM_DIR/bash_completion" ]]; then
+        source "$NVM_DIR/bash_completion"
+    fi
+}
 
 # Main setup function
 main() {
@@ -82,17 +92,7 @@ main() {
     echo
 
     log_info "🗂️ Step 1: Installing nvm..."
-    
-    source_nvm() {
-        export NVM_DIR="$HOME/.nvm"
-        if [[ -s "$NVM_DIR/nvm.sh" ]]; then
-            source "$NVM_DIR/nvm.sh"
-        fi
-        if [[ -s "$NVM_DIR/bash_completion" ]]; then
-            source "$NVM_DIR/bash_completion"
-        fi
-    }
-    
+
     # Get latest NVM version from GitHub API
     local latest_nvm_version="unknown"
     if command_exists curl; then
@@ -190,6 +190,8 @@ main() {
     
     echo
     log_info "⚙️ Step 2: Installing Node.js..."
+
+    source_nvm
     
     local current_node_version=""
     if command_exists node; then
@@ -199,11 +201,20 @@ main() {
         log_info "Node.js is not currently installed"
     fi
     
-    # Install latest LTS
-    if nvm install --lts >/dev/null 2>&1; then
+    # Install latest LTS with better error handling
+    log_info "Installing/updating to latest LTS version..."
+    local install_output
+    if install_output=$(nvm install --lts 2>&1); then
         # Use the LTS version
-        nvm use --lts >/dev/null 2>&1
-        nvm alias default lts/* >/dev/null 2>&1
+        if ! nvm use --lts >/dev/null 2>&1; then
+            log_error "Failed to switch to LTS version"
+            log_error "Output: $install_output"
+            exit 1
+        fi
+        
+        if ! nvm alias default lts/* >/dev/null 2>&1; then
+            log_warning "Could not set default alias, but continuing..."
+        fi
         
         local new_node_version=$(node --version 2>/dev/null || echo "unknown")
         
@@ -217,11 +228,18 @@ main() {
         
     else
         log_error "Failed to install Node.js LTS via NVM"
+        log_error "Error output:"
+        echo "$install_output" | sed 's/^/  /'
+        log_info "Please ensure nvm is properly installed and try again"
         exit 1
     fi
     echo
 
     log_info "📦 Step 3: Installing pnpm..."
+    
+    # Ensure pnpm directory is in PATH
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
     
     if command_exists pnpm; then
         local current_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
@@ -240,29 +258,43 @@ main() {
             fi
         else
             log_warning "Could not update pnpm using self-update, trying standalone installer..."
-            curl -fsSL https://get.pnpm.io/install.sh | sh -
-
-            # Add pnpm to PATH for current session
-            export PATH="$HOME/.local/share/pnpm:$PATH"
-            hash -r 2>/dev/null || true
+            log_info "Self-update error: ${update_output:0:200}"
             
-            local new_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
-            if [[ "$current_pnpm_version" != "$new_pnpm_version" ]]; then
-                log_success "pnpm updated via standalone installer: $current_pnpm_version → $new_pnpm_version"
+            if curl -fsSL https://get.pnpm.io/install.sh | sh -; then
+                # Reload pnpm after install
+                hash -r 2>/dev/null || true
+                
+                local new_pnpm_version=$(pnpm --version 2>/dev/null || echo "unknown")
+                if [[ "$current_pnpm_version" != "$new_pnpm_version" ]]; then
+                    log_success "pnpm updated via standalone installer: $current_pnpm_version → $new_pnpm_version"
+                else
+                    log_success "pnpm is available (version: $new_pnpm_version)"
+                fi
+            else
+                log_error "Failed to update pnpm via standalone installer"
+                log_warning "Continuing with existing pnpm version: $current_pnpm_version"
             fi
         fi
     else
         log_info "Installing pnpm using standalone script..."
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        
-        # Add pnpm to PATH for current session
-        export PATH="$HOME/.local/share/pnpm:$PATH"
-        hash -r 2>/dev/null || true
-        
-        if command_exists pnpm; then
-            log_success "pnpm installed successfully (version: $(pnpm --version))"
+        local pnpm_install_output
+        if pnpm_install_output=$(curl -fsSL https://get.pnpm.io/install.sh | sh - 2>&1); then
+            # Reload pnpm after install
+            hash -r 2>/dev/null || true
+            
+            if command_exists pnpm; then
+                log_success "pnpm installed successfully (version: $(pnpm --version))"
+            else
+                log_error "pnpm installation completed but command not found"
+                log_error "Please add the following to your shell profile and restart:"
+                echo "  export PNPM_HOME=\"\$HOME/.local/share/pnpm\""
+                echo "  export PATH=\"\$PNPM_HOME:\$PATH\""
+                exit 1
+            fi
         else
             log_error "pnpm installation failed"
+            log_error "Error output:"
+            echo "$pnpm_install_output" | sed 's/^/  /'
             exit 1
         fi
     fi
@@ -308,8 +340,16 @@ main() {
     
     if [[ -f "package.json" ]]; then
         log_info "Running pnpm install..."
-        pnpm install
-        log_success "Dependencies installed successfully"
+        # Use --force to automatically rebuild if Node.js version changed
+        if pnpm install --force; then
+            log_success "Dependencies installed successfully"
+        else
+            local exit_code=$?
+            echo
+            log_error "Failed to install dependencies (exit code: $exit_code)"
+            log_info "Try running 'pnpm install' manually to investigate the issue"
+            exit 1
+        fi
     else
         log_error "package.json not found. Make sure you're in the project root directory."
         exit 1
