@@ -58,6 +58,6 @@ const mockDB = {
 		onupgradeneeded: null,
 	})),
 }
-;(global as any).indexedDB = mockDB
+;(global as unknown as { indexedDB: unknown }).indexedDB = mockDB
 
 // add more mocks here if you need them

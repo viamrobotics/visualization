@@ -1,4 +1,4 @@
-import { getByTestId, render } from '@testing-library/svelte'
+import { render } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
