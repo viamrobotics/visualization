@@ -23,7 +23,10 @@
 
 	const points = new Points()
 	const material = new PointsMaterial()
+	material.toneMapped = false
+
 	const pointSize = $derived(object.metadata?.pointSize ?? settings.current.pointSize)
+
 	$effect.pre(() => {
 		material.size = pointSize
 	})
@@ -124,7 +127,7 @@
 				if (!geometry) continue
 				const hasColor = !!geometry.getAttribute('color')
 				material.vertexColors = hasColor
-				if (!hasColor) material.color.set(0xffffff)
+				if (!hasColor) material.color.set(0x000000)
 				hasPosition = false
 				requestAnimationFrame(() => {
 					const attached = points.geometry as BufferGeometry | undefined
