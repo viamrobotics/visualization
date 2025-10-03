@@ -167,15 +167,24 @@
 
 						<div class="flex gap-3">
 							<div>
-								<span class="text-subtle-2">x</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-position-x">x</span
+								>
 								{localPose.x.toFixed(2)}
 							</div>
 							<div>
-								<span class="text-subtle-2">y</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-position-y">y</span
+								>
 								{localPose.y.toFixed(2)}
 							</div>
 							<div>
-								<span class="text-subtle-2">z</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-position-z">z</span
+								>
 								{localPose.z.toFixed(2)}
 							</div>
 						</div>
@@ -185,19 +194,31 @@
 						<strong class="font-semibold">local orientation</strong>
 						<div class="flex gap-3">
 							<div>
-								<span class="text-subtle-2">x</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-orientation-x">x</span
+								>
 								{localPose.oX.toFixed(2)}
 							</div>
 							<div>
-								<span class="text-subtle-2">y</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-orientation-y">y</span
+								>
 								{localPose.oY.toFixed(2)}
 							</div>
 							<div>
-								<span class="text-subtle-2">z</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-orientation-z">z</span
+								>
 								{localPose.oZ.toFixed(2)}
 							</div>
 							<div>
-								<span class="text-subtle-2">th</span>
+								<span
+									class="text-subtle-2"
+									data-testid="local-orientation-th">th</span
+								>
 								{localPose.theta.toFixed(2)}
 							</div>
 						</div>
@@ -257,10 +278,13 @@
 
 			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
 				<div>
-					<strong class="font-semibold">Parent Frame</strong>
+					<strong class="font-semibold">parent frame</strong>
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2">name</span>
+							<span
+								class="text-subtle-2"
+								data-testid="parent-frame-name">name</span
+							>
 							{referenceFrame}
 						</div>
 					</div>
