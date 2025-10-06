@@ -16,7 +16,7 @@ export const useWeblabs = () => {
 	return getContext<Context>(key)
 }
 
-class Weblab {
+export class Weblab {
 	private activeExperiments: Set<string>
 
 	constructor() {

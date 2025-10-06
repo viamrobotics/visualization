@@ -22,7 +22,7 @@
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
-
+	import WeblabActive from './weblab/WeblabActive.svelte'
 	const { ...rest } = $props()
 
 	const focused = useFocused()
@@ -36,6 +36,9 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
+
+	const localPose = $derived(object?.pose)
+	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 
 	let copied = $state(false)
 
@@ -157,11 +160,77 @@
 				</div>
 			{/if}
 
+			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+				{#if localPose}
+					<div>
+						<strong class="font-semibold">local position</strong>
+
+						<div class="flex gap-3">
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local position x coordinate">x</span
+								>
+								{localPose.x.toFixed(2)}
+							</div>
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local position y coordinate">y</span
+								>
+								{localPose.y.toFixed(2)}
+							</div>
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local position z coordinate">z</span
+								>
+								{localPose.z.toFixed(2)}
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<strong class="font-semibold">local orientation</strong>
+						<div class="flex gap-3">
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local orientation x coordinate">x</span
+								>
+								{localPose.oX.toFixed(2)}
+							</div>
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local orientation y coordinate">y</span
+								>
+								{localPose.oY.toFixed(2)}
+							</div>
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local orientation z coordinate">z</span
+								>
+								{localPose.oZ.toFixed(2)}
+							</div>
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="local orientation theta degrees">th</span
+								>
+								{localPose.theta.toFixed(2)}
+							</div>
+						</div>
+					</div>
+				{/if}
+			</WeblabActive>
+
 			{#if geometry}
 				{#if geometry.case === 'box'}
 					{@const { dimsMm } = geometry.value}
 					<div>
-						<strong class="font-semibold">dimensions</strong>
+						<strong class="font-semibold">dimensions (box)</strong>
 						<div class="flex gap-3">
 							<div>
 								<span class="text-subtle-2">x</span>
@@ -180,7 +249,7 @@
 				{:else if geometry.case === 'capsule'}
 					{@const { value } = geometry}
 					<div>
-						<strong class="font-semibold">dimensions</strong>
+						<strong class="font-semibold">dimensions (capsule)</strong>
 						<div class="flex gap-3">
 							<div>
 								<span class="text-subtle-2">r</span>
@@ -195,7 +264,7 @@
 				{:else if geometry.case === 'sphere'}
 					<div class="flex justify-between">
 						<div>
-							<strong class="font-semibold">dimensions</strong>
+							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex gap-3">
 								<div>
 									<span class="text-subtle-2">r</span>
@@ -206,6 +275,21 @@
 					</div>
 				{/if}
 			{/if}
+
+			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+				<div>
+					<strong class="font-semibold">parent frame</strong>
+					<div class="flex gap-3">
+						<div>
+							<span
+								class="text-subtle-2"
+								aria-label="parent frame name">name</span
+							>
+							{referenceFrame}
+						</div>
+					</div>
+				</div>
+			</WeblabActive>
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
