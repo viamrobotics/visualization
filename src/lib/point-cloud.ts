@@ -23,6 +23,8 @@ type BuiltPointCloud = {
 	points: number
 	strideBytes: number
 	strideElements: number
+	structure?: PointCloudStructure
+	colorFieldOffset?: number
 }
 
 type PointCloudGeometry = TransformWithUUID & {
@@ -125,35 +127,43 @@ export const buildPointCloud = (data: Uint8Array, header?: PointCloudHeader): Bu
 	setFieldAttributes(geometry, interleaved, structure)
 
 	const rgbField = structure.find((f) => f.field.toLowerCase() === 'rgb' && f.itemSize === 1)
+	let rgbFieldOffset: number | undefined
 	if (rgbField) {
 		const bytesPerElement = (interleaved.array as TypedArray).BYTES_PER_ELEMENT
 		if (bytesPerElement === 4) {
-			const colors = extractRgbColors(interleaved, rgbField.offsetElements, 0, points)
+			rgbFieldOffset = rgbField.offsetElements
+			const colors = extractRgbColors(interleaved, rgbFieldOffset, 0, points)
 			geometry.setAttribute('color', new BufferAttribute(colors, 3))
 		}
 	}
 
-	return { buffer: geometry, interleaved, points, strideBytes, strideElements }
+	return {
+		buffer: geometry,
+		interleaved,
+		points,
+		strideBytes,
+		strideElements,
+		structure,
+		colorFieldOffset: rgbFieldOffset,
+	}
 }
 
 export const updatePointCloudColors = (
 	interleaved: InterleavedBuffer,
-	header: PointCloudHeader | undefined,
+	rgbFieldOffset: number | undefined,
 	startPoint: number,
 	countPoints: number,
 	colors?: BufferAttribute
 ) => {
-	if (!header || !colors || countPoints <= 0) return
-
-	const structure = getStructure(header)
-	const rgbField = structure.find((f) => f.field.toLowerCase() === 'rgb' && f.itemSize === 1)
-	if (!rgbField) return
+	if (!colors || countPoints <= 0 || rgbFieldOffset === undefined) return
 
 	const bytesPerElement = (interleaved.array as TypedArray).BYTES_PER_ELEMENT
 	if (bytesPerElement !== 4) return
 
-	const extracted = extractRgbColors(interleaved, rgbField.offsetElements, startPoint, countPoints)
-	colors.array.set(extracted, startPoint * 3)
+	const extracted = extractRgbColors(interleaved, rgbFieldOffset, startPoint, countPoints)
+	const colorOffset = startPoint * 3
+	colors.array.set(extracted, colorOffset)
+	colors.addUpdateRange(colorOffset, countPoints * 3)
 	colors.needsUpdate = true
 }
 
@@ -181,8 +191,9 @@ export const updatePointCloud = (
 	)
 
 	const strideElements = interleaved.stride
+	const offsetElements = startPoint * strideElements
+	const countElements = updatePoints * strideElements
 
-	// Copy all point data directly without any unit conversion
 	for (let p = 0; p < updatePoints; p++) {
 		const srcBase = p * strideElements
 		const dstBase = (startPoint + p) * strideElements
@@ -191,6 +202,7 @@ export const updatePointCloud = (
 		}
 	}
 
+	interleaved.addUpdateRange(offsetElements, countElements)
 	interleaved.needsUpdate = true
 }
 

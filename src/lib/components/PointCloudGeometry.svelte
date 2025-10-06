@@ -4,6 +4,7 @@
 		Points,
 		PointsMaterial,
 		BufferGeometry,
+		BufferAttribute,
 		OrthographicCamera,
 		InterleavedBuffer,
 	} from 'three'
@@ -25,18 +26,43 @@
 	const material = new PointsMaterial()
 	material.toneMapped = false
 
-	const pointSize = $derived(object.metadata?.pointSize ?? settings.current.pointSize)
-
-	$effect.pre(() => {
-		material.size = pointSize
-	})
-
 	let geometry = $state.raw<BufferGeometry>()
 	let interleaved: InterleavedBuffer | undefined
+	let colorFieldOffset: number | undefined
 	let hasPosition = $state(false)
 
-	const headers = $derived(object.geometry?.value.header)
-	const data = $derived(object.geometry?.value.pointCloud)
+	const pointCloud = $derived(object.physicalObject.geometryType.value.pointCloud)
+	const headers = $derived(object.physicalObject.geometryType.value.header)
+	const pointSize = $derived(object.metadata?.pointSize ?? settings.current.pointSize)
+	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
+
+	const rebuildGeometry = (data: Uint8Array, header: typeof headers): boolean => {
+		try {
+			const built = buildPointCloud(data, header)
+			geometry?.dispose()
+			geometry = built.buffer
+			interleaved = built.interleaved
+			colorFieldOffset = built.colorFieldOffset
+			geometry.boundingSphere = null
+		} catch (e) {
+			console.error(`Failed to build point cloud geometry`, e)
+			return false
+		}
+
+		if (!geometry) return false
+
+		const hasColor = geometry.hasAttribute('color')
+		material.vertexColors = hasColor
+		if (!hasColor) material.color.set(0x000000)
+
+		hasPosition = false
+		requestAnimationFrame(() => {
+			const attached = points.geometry
+			hasPosition = attached?.hasAttribute?.('position') ?? false
+		})
+
+		return true
+	}
 
 	$effect.pre(() => {
 		if (object.pose) {
@@ -44,126 +70,67 @@
 		}
 	})
 
-	// Build initial geometry when a full payload exists
 	$effect(() => {
-		if (!headers || !data) return
-		if (geometry) return // already built; avoid repeated full rebuilds on unrelated updates
-
-		try {
-			const built = buildPointCloud(data, headers)
-			geometry = built.buffer
-			interleaved = built.interleaved
-			geometry.computeBoundingSphere()
-		} catch (e) {
-			console.error('Failed to build point cloud geometry', e)
-			return
-		}
-
-		// Enable vertex colors automatically if present
-		const hasColor = !!geometry.getAttribute('color')
-		material.vertexColors = hasColor
-		if (!hasColor) {
-			material.color.set(0x000000)
-		}
-		// Defer enabling BVH until geometry is attached to the points object (next frame)
-		hasPosition = false
-		requestAnimationFrame(() => {
-			const attached = points.geometry as BufferGeometry | undefined
-			hasPosition = !!attached?.getAttribute?.('position')
-		})
-
-		// Clear any queued updates since we just built from the latest full data
+		if (!pointCloud || !headers) return
+		if (geometry) return
+		if (!rebuildGeometry(pointCloud, headers)) return
 		object.drainUpdates()
 	})
 
-	// Drain and apply queued updates every frame (renderer-side batching)
 	useTask(() => {
 		if (!object) return
+
 		const updates = object.drainUpdates()
 		if (!updates || updates.length === 0) return
-
 		if (!interleaved) {
-			// No current buffer; try to build if a full update exists
-			const full = updates.find((u) => !u.header || u.header.start === undefined)
-			if (full && (headers || full.header)) {
-				const header = (full.header ?? headers)!
-				try {
-					const built = buildPointCloud(full.data, header)
-					geometry = built.buffer
-					interleaved = built.interleaved
-					geometry.computeBoundingSphere()
-				} catch (e) {
-					console.error('Failed to build point cloud geometry (full)', e)
-					return
-				}
-				if (!geometry) return
-				const hasColor = !!geometry.getAttribute('color')
-				material.vertexColors = hasColor
-				if (!hasColor) material.color.set(0xffffff)
-				hasPosition = false
-				requestAnimationFrame(() => {
-					const attached = points.geometry as BufferGeometry | undefined
-					hasPosition = !!attached?.getAttribute?.('position')
-				})
-			}
+			const full = updates.find(({ header }) => !header || header.start === undefined)
+			if (!full) return
+			if (!full.header && !headers) return
+			if (!rebuildGeometry(full.data, full.header ?? headers)) return
 		}
 
 		if (!interleaved) return
-
-		for (const u of updates) {
-			// Apply partials; fulls rebuild
-			if (!u.header || u.header.start === undefined) {
-				const header = u.header ?? headers
-				if (!header) continue
-				try {
-					const built = buildPointCloud(u.data, header)
-					geometry = built.buffer
-					interleaved = built.interleaved
-					geometry.computeBoundingSphere()
-				} catch (e) {
-					console.error('Failed to rebuild point cloud geometry (full in updates)', e)
-					continue
-				}
-				if (!geometry) continue
-				const hasColor = !!geometry.getAttribute('color')
-				material.vertexColors = hasColor
-				if (!hasColor) material.color.set(0x000000)
-				hasPosition = false
-				requestAnimationFrame(() => {
-					const attached = points.geometry as BufferGeometry | undefined
-					hasPosition = !!attached?.getAttribute?.('position')
-				})
+		for (const update of updates) {
+			if (!update.header || update.header.start === undefined) {
+				if (!update.header && !headers) continue
+				if (!rebuildGeometry(update.data, update.header ?? headers)) continue
 			} else {
-				// Partial update path: update interleaved buffer in place
-				updatePointCloud(interleaved, u.data, u.header)
+				updatePointCloud(interleaved, update.data, update.header)
+				if (geometry) geometry.boundingSphere = null
 
-				// Mark position attribute for GPU upload
-				const posAttr = geometry?.getAttribute('position')
-				if (posAttr) {
-					posAttr.needsUpdate = true
-				}
-
-				// Also refresh colors for the updated range if we have a color attribute
-				const colorAttr = geometry?.getAttribute('color') as import('three').BufferAttribute
-				if (colorAttr) {
-					const start = u.header.start ?? 0
-					const count = (u.header.width || 0) * (u.header.height || 1)
-					if (count > 0) {
-						updatePointCloudColors(interleaved, headers, start, count, colorAttr)
-					}
+				const start = update.header.start ?? 0
+				const count = (update.header.width || 0) * (update.header.height || 1)
+				const colors = geometry?.getAttribute('color') as BufferAttribute
+				if (colors && count > 0) {
+					updatePointCloudColors(interleaved, colorFieldOffset, start, count, colors)
 				}
 			}
 		}
 	})
 
-	// Make points scale consistent in orthographic (respect metadata-defined pointSize)
-	useTask(
+	const { start: startOrthographicTask, stop: stopOrthographicTask } = useTask(
 		() => {
 			const cam = camera.current as OrthographicCamera | undefined
 			if (cam) material.size = pointSize * (cam.zoom / 2)
 		},
-		{ autoStart: true }
+		{ autoStart: false }
 	)
+
+	$effect(() => {
+		if (orthographic) {
+			startOrthographicTask()
+		} else {
+			stopOrthographicTask()
+			material.size = pointSize
+		}
+	})
+
+	$effect(() => {
+		return () => {
+			geometry?.dispose()
+			material.dispose()
+		}
+	})
 </script>
 
 <T
