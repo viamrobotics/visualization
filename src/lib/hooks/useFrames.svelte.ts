@@ -14,12 +14,12 @@ import { resourceColors } from '$lib/color'
 import type { Geometries, Metadata } from '$lib/WorldObject.svelte'
 import { Struct } from '@viamrobotics/sdk'
 import { useSettings } from './useSettings.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
 	error?: Error
 	fetching: boolean
-	isDirty: boolean
 	setFrameParent: (componentName: string, parentName: string) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
@@ -46,7 +46,7 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig')
-	const settings = useSettings()
+	const partConfig = usePartConfig()
 
 	const revision = $derived(machineStatus.current?.config.revision)
 	const appClient = useViamClient();
@@ -55,12 +55,12 @@ export const provideFrames = (partID: () => string) => {
 
 	// $inspect(robotPartQuery.current.data)
 
-	let isDirty = $state(false)
-
 	observe.pre(
+		//MATTHEW: how can we get explicit refetch on config change back in here?
 		() => [revision],
 		() => {
-			if (!isDirty) {
+			// console.log('partConfig.isDirty()', partConfig.isDirty())
+			if (!partConfig.isDirty()) {
 				untrack(() => query.current).refetch({})
 				logs.add('Fetching frames...')
 			}
@@ -141,6 +141,49 @@ export const provideFrames = (partID: () => string) => {
 		return objects
 	})
 
+	$effect.pre(() => {
+		(partConfig.getLocalPartConfig() as any)?.components?.forEach((component: any) => {
+				untrack(() => {
+					const worldObjectIndex = current.findIndex((frame) => frame.name === component.name);
+					if (worldObjectIndex === -1) {
+						return
+					}
+
+					current[worldObjectIndex].referenceFrame = component.frame.parent;
+
+					current[worldObjectIndex].pose = {
+						x: component.frame.translation.x,
+						y: component.frame.translation.y,
+						z: component.frame.translation.z,
+						oX: component.frame.orientation.value.x,
+						oY: component.frame.orientation.value.y,
+						oZ: component.frame.orientation.value.z,
+						theta: component.frame.orientation.value.th,
+					}
+
+					if (component.frame.geometry) {
+						switch (component.frame.geometry.type) {
+							case 'box':
+								current[worldObjectIndex].geometry = { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } }
+								break
+							case 'sphere':
+								current[worldObjectIndex].geometry = { case: 'sphere', value: { radiusMm: component.frame.geometry.r } }
+								break
+							case 'capsule':
+								current[worldObjectIndex].geometry = { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } }
+								break
+							default:
+								current[worldObjectIndex].geometry = undefined
+								break
+						}
+					} else {
+						current[worldObjectIndex].geometry = undefined
+					}
+				});
+		});
+		untrack(() => current = [...current]);
+	})
+
 	const fragmentComponentsWithoutFrames = $derived.by(() => {
 		return fragmentComponentNames.filter((componentName) => {
 			return current.find((frame) => frame.name === componentName) === undefined
@@ -155,12 +198,10 @@ export const provideFrames = (partID: () => string) => {
 			return
 		}
 		await appClient.current?.appClient.updateRobotPart(partID(), partName ?? '', Struct.fromJson(partConfigLocal));
-		isDirty = false;
 	}
 
 	const resetConfigChanges = () => {
 		partConfigLocal = partConfigNetwork
-		isDirty = false;
 		query.current.refetch({})
 	}
 
@@ -182,7 +223,6 @@ export const provideFrames = (partID: () => string) => {
 			},
 		}));
 		current = [...current];
-		isDirty = true;
 	}
 
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
@@ -275,7 +315,6 @@ export const provideFrames = (partID: () => string) => {
 			current.splice(worldObjectIndex, 1);
 			current = [...current];
 		}
-		isDirty = true;
 	}
 
 	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
@@ -321,7 +360,6 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		partConfigLocal = newConfig;
-		isDirty = true;
 	}
 
 	const updateFrame = (componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
@@ -330,7 +368,6 @@ export const provideFrames = (partID: () => string) => {
 		} else {
 			updatePartFrame(componentName, framePosition, frameGeometry)
 		}
-		isDirty = true;
 	}
 
 	const updateFragmentFrame = (fragmentId: string, componentName: string, referenceFrame: string, framePosition: {x: number, y: number, z: number, oX: number, oY: number, oZ: number, theta: number}, frameGeometry?: {type: 'none' | 'box' | 'sphere' | 'capsule', r?: number, l?: number, x?: number, y?: number, z?: number}) => {
@@ -458,10 +495,7 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get fetching() {
 			return fetching
-		},
-		get isDirty() {
-			return isDirty
-		},
+		}
 	})
 }
 

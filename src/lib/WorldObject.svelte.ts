@@ -36,7 +36,7 @@ export type Metadata = {
 export class WorldObject<T extends Geometries = Geometries> {
 	uuid: string
 	name: string
-	referenceFrame: string
+	referenceFrame = $state.raw<string>()
 	pose = $state.raw<Pose>(createPose())
 	geometry = $state.raw<T>()
 	metadata: Metadata

@@ -23,7 +23,7 @@
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 
 	const { ...rest } = $props()
 
@@ -31,7 +31,7 @@
 	const focusedObject = useFocusedObject()
 	const focusedObject3d = useFocusedObject3d()
 	const frames = useFrames()
-	const settings = useSettings()
+	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -54,13 +54,8 @@
 		object.pose.x = x ?? object.pose.x
 		object.pose.y = y ?? object.pose.y
 		object.pose.z = z ?? object.pose.z
-		object3d.position.set(
-			(x ?? object3d.position.x * 1000) / 1000,
-			(y ?? object3d.position.y * 1000) / 1000,
-			(z ?? object3d.position.z * 1000) / 1000
-		)
 
-		frames.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+		partConfig.updateFrame(selectedObject.current?.name ?? '', {
 			x: x ?? object.pose.x,
 			y: y ?? object.pose.y,
 			z: z ?? object.pose.z,
@@ -83,19 +78,8 @@
 		theta?: number
 	}) => {
 		if (!object || !object3d) return
-		object.pose.oX = oX ?? object.pose.oX
-		object.pose.oY = oY ?? object.pose.oY
-		object.pose.oZ = oZ ?? object.pose.oZ
-		object.pose.theta = theta ?? object.pose.theta
 
-		object3d.quaternion.set(
-			oX ?? object3d.quaternion.x,
-			oY ?? object3d.quaternion.y,
-			oZ ?? object3d.quaternion.z,
-			theta ?? object3d.quaternion.w
-		)
-
-		frames.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+		partConfig.updateFrame(selectedObject.current?.name ?? '', {
 			oX: oX ?? object.pose.oX,
 			oY: oY ?? object.pose.oY,
 			oZ: oZ ?? object.pose.oZ,
@@ -109,10 +93,8 @@
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		if (!object) return
 		if (type === 'none') {
-			object.geometry = undefined
-			frames.updateFrame(
+			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
-				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -125,10 +107,8 @@
 				{ type: 'none' }
 			)
 		} else if (type === 'box') {
-			object.geometry = { case: 'box', value: { dimsMm: { x: 100, y: 100, z: 100 } } }
-			frames.updateFrame(
+			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
-				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -141,10 +121,8 @@
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
 		} else if (type === 'sphere') {
-			object.geometry = { case: 'sphere', value: { radiusMm: 100 } }
-			frames.updateFrame(
+			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
-				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -157,10 +135,8 @@
 				{ type: 'sphere', r: 100 }
 			)
 		} else if (type === 'capsule') {
-			object.geometry = { case: 'capsule', value: { radiusMm: 20, lengthMm: 100 } }
-			frames.updateFrame(
+			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
-				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -477,7 +453,7 @@
 							value={referenceFrame}
 							onchange={(e) => {
 								const newFrame = (e.target as HTMLSelectElement).value
-								frames.setFrameParent(object.name, newFrame)
+								partConfig.setFrameParentConfig(object.name, newFrame)
 							}}
 						>
 							{#each referenceFrameOptions as option (option)}

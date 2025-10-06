@@ -29,7 +29,7 @@
 		for (const frame of frames.current) {
 			const node: FrameHeirachyNode = {
 				name: frame.name,
-				parentName: frame.referenceFrame,
+				parentName: frame.referenceFrame ?? 'world',
 				object: frame,
 				children: [],
 			}

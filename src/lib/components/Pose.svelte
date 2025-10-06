@@ -5,7 +5,7 @@
 
 	interface Props {
 		name: string
-		parent?: string
+		parent?: string | undefined
 		children: Snippet<[{ pose: Pose | undefined }]>
 	}
 	let { name, parent, children }: Props = $props()

@@ -2,11 +2,11 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import PortalTarget from '../portal/PortalTarget.svelte'
 	import Button from './Button.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	let { ...rest } = $props()
 
 	const settings = useSettings()
-	const frames = useFrames()
+	const partConfig = usePartConfig()
 </script>
 
 <div
@@ -83,7 +83,7 @@
 		</fieldset>
 	{/if}
 
-	{#if frames.isDirty}
+	{#if partConfig.isDirty()}
 		<fieldset class="flex">
 			<div
 				class="flex items-center rounded border-l-4 border-blue-600 bg-blue-100 px-4 py-2 text-blue-800"
@@ -92,7 +92,7 @@
 				<a
 					class="ml-2 cursor-pointer text-blue-600"
 					onclick={() => {
-						frames.resetConfigChanges()
+						partConfig.resetLocalPartConfig()
 					}}
 				>
 					Discard
@@ -101,7 +101,7 @@
 			<button
 				class="rounded bg-black px-4 py-2 text-white"
 				onclick={() => {
-					frames.saveConfigChanges()
+					partConfig.saveLocalPartConfig()
 				}}
 			>
 				Save
@@ -110,7 +110,7 @@
 	{/if}
 
 	<fieldset class="flex">
-		{#if frames.isDirty}
+		{#if partConfig.isDirty()}
 			<div
 				class="flex items-center gap-1 rounded border-l-2 border-orange-500 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-800"
 			>
