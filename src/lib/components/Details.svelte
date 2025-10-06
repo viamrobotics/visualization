@@ -169,21 +169,21 @@
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-position-x">x</span
+									aria-label="local position x coordinate">x</span
 								>
 								{localPose.x.toFixed(2)}
 							</div>
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-position-y">y</span
+									aria-label="local position y coordinate">y</span
 								>
 								{localPose.y.toFixed(2)}
 							</div>
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-position-z">z</span
+									aria-label="local position z coordinate">z</span
 								>
 								{localPose.z.toFixed(2)}
 							</div>
@@ -196,28 +196,28 @@
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-orientation-x">x</span
+									aria-label="local orientation x coordinate">x</span
 								>
 								{localPose.oX.toFixed(2)}
 							</div>
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-orientation-y">y</span
+									aria-label="local orientation y coordinate">y</span
 								>
 								{localPose.oY.toFixed(2)}
 							</div>
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-orientation-z">z</span
+									aria-label="local orientation z coordinate">z</span
 								>
 								{localPose.oZ.toFixed(2)}
 							</div>
 							<div>
 								<span
 									class="text-subtle-2"
-									data-testid="local-orientation-th">th</span
+									aria-label="local orientation theta degrees">th</span
 								>
 								{localPose.theta.toFixed(2)}
 							</div>
@@ -230,7 +230,7 @@
 				{#if geometry.case === 'box'}
 					{@const { dimsMm } = geometry.value}
 					<div>
-						<strong class="font-semibold">dimensions (Box)</strong>
+						<strong class="font-semibold">dimensions (box)</strong>
 						<div class="flex gap-3">
 							<div>
 								<span class="text-subtle-2">x</span>
@@ -249,7 +249,7 @@
 				{:else if geometry.case === 'capsule'}
 					{@const { value } = geometry}
 					<div>
-						<strong class="font-semibold">dimensions (Capsule)</strong>
+						<strong class="font-semibold">dimensions (capsule)</strong>
 						<div class="flex gap-3">
 							<div>
 								<span class="text-subtle-2">r</span>
@@ -264,7 +264,7 @@
 				{:else if geometry.case === 'sphere'}
 					<div class="flex justify-between">
 						<div>
-							<strong class="font-semibold">dimensions (Sphere)</strong>
+							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex gap-3">
 								<div>
 									<span class="text-subtle-2">r</span>
@@ -283,7 +283,7 @@
 						<div>
 							<span
 								class="text-subtle-2"
-								data-testid="parent-frame-name">name</span
+								aria-label="parent frame name">name</span
 							>
 							{referenceFrame}
 						</div>

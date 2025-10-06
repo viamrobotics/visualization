@@ -1,5 +1,6 @@
-import { render } from '@testing-library/svelte'
+import { render, screen } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
@@ -41,72 +42,50 @@ describe('Details component', () => {
 		})
 	})
 
-	function getDefaultProps(overrides = {}) {
-		return {
-			...overrides,
-		}
-	}
-
 	it('renders object name', () => {
-		const { getByText } = render(Details, getDefaultProps())
-		expect(getByText('Test Object')).toBeDefined()
+		render(Details)
+		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
 	it('renders local details under weblab active', () => {
 		mockedWeblab.isActive = vi.fn(() => true)
-		const { getByText, getByTestId } = render(Details, getDefaultProps())
+		render(Details)
 
-		expect(getByText('parent frame')).toBeDefined()
-		const parentFrameNameSpan = getByTestId('parent-frame-name')
-		expect(parentFrameNameSpan).toBeDefined()
+		expect(screen.getByText('parent frame')).toBeInTheDocument()
+		const parentFrameNameSpan = screen.getByLabelText('parent frame name')
 		const parentFrameNameText = parentFrameNameSpan.nextSibling as HTMLElement
-		expect(parentFrameNameText).toBeDefined()
 		expect(parentFrameNameText.textContent?.trim()).toBe('parent_frame')
 
-		expect(getByText('local position')).toBeDefined()
+		expect(screen.getByText('local position')).toBeInTheDocument()
 
-		const localPositionXSpan = getByTestId('local-position-x')
-		expect(localPositionXSpan).toBeDefined()
+		const localPositionXSpan = screen.getByLabelText('local position x coordinate')
 		const localPositionXText = localPositionXSpan.nextSibling as HTMLElement
-		expect(localPositionXText).toBeDefined()
 		expect(localPositionXText.textContent?.trim()).toBe((10).toFixed(2))
 
-		const localPositionYSpan = getByTestId('local-position-y')
-		expect(localPositionYSpan).toBeDefined()
+		const localPositionYSpan = screen.getByLabelText('local position y coordinate')
 		const localPositionYText = localPositionYSpan.nextSibling as HTMLElement
-		expect(localPositionYText).toBeDefined()
 		expect(localPositionYText.textContent?.trim()).toBe((20).toFixed(2))
 
-		const localPositionZSpan = getByTestId('local-position-z')
-		expect(localPositionZSpan).toBeDefined()
+		const localPositionZSpan = screen.getByLabelText('local position z coordinate')
 		const localPositionZText = localPositionZSpan.nextSibling as HTMLElement
-		expect(localPositionZText).toBeDefined()
 		expect(localPositionZText.textContent?.trim()).toBe((30).toFixed(2))
 
-		expect(getByText('local orientation')).toBeDefined()
+		expect(screen.getByText('local orientation')).toBeInTheDocument()
 
-		const localOrientationXSpan = getByTestId('local-orientation-x')
-		expect(localOrientationXSpan).toBeDefined()
+		const localOrientationXSpan = screen.getByLabelText('local orientation x coordinate')
 		const localOrientationXText = localOrientationXSpan.nextSibling as HTMLElement
-		expect(localOrientationXText).toBeDefined()
 		expect(localOrientationXText.textContent?.trim()).toBe((0.1).toFixed(2))
 
-		const localOrientationYSpan = getByTestId('local-orientation-y')
-		expect(localOrientationYSpan).toBeDefined()
+		const localOrientationYSpan = screen.getByLabelText('local orientation y coordinate')
 		const localOrientationYText = localOrientationYSpan.nextSibling as HTMLElement
-		expect(localOrientationYText).toBeDefined()
 		expect(localOrientationYText.textContent?.trim()).toBe((0.2).toFixed(2))
 
-		const localOrientationZSpan = getByTestId('local-orientation-z')
-		expect(localOrientationZSpan).toBeDefined()
+		const localOrientationZSpan = screen.getByLabelText('local orientation z coordinate')
 		const localOrientationZText = localOrientationZSpan.nextSibling as HTMLElement
-		expect(localOrientationZText).toBeDefined()
 		expect(localOrientationZText.textContent?.trim()).toBe((0.3).toFixed(2))
 
-		const localOrientationThSpan = getByTestId('local-orientation-th')
-		expect(localOrientationThSpan).toBeDefined()
+		const localOrientationThSpan = screen.getByLabelText('local orientation theta degrees')
 		const localOrientationThText = localOrientationThSpan.nextSibling as HTMLElement
-		expect(localOrientationThText).toBeDefined()
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
 	})
 })
