@@ -5,6 +5,7 @@ import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
 import { Weblab } from '$lib/hooks/useWeblabs.svelte'
+import type { Geometry } from '@viamrobotics/sdk'
 
 describe('Details component', () => {
 	const mockedWeblab = new Weblab()
@@ -26,12 +27,15 @@ describe('Details component', () => {
 					theta: 0.4,
 				},
 				geometry: {
-					case: 'box',
-					value: {
-						dimsMm: { x: 10, y: 20, z: 30 },
+					label: 'my geometry',
+					geometryType: {
+						case: 'box',
+						value: {
+							dimsMm: { x: 10, y: 20, z: 30 },
+						},
 					},
-				},
-				metadata: { batched: undefined },
+				} satisfies Geometry,
+				metadata: {},
 			},
 		})
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
