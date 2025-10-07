@@ -8,7 +8,6 @@ import {
 	Color,
 	Box3,
 	Matrix4,
-	type ColorRepresentation,
 } from 'three'
 
 const black = new Color('black')

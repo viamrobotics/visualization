@@ -85,7 +85,6 @@ export const provideDrawAPI = () => {
 	const color = new Color()
 	const direction = new Vector3()
 	const origin = new Vector3()
-	const vec3 = new Vector3()
 	const loader = new GLTFLoader()
 
 	const batchedArrow = useArrows()
