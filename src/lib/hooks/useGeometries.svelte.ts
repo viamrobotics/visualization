@@ -3,7 +3,7 @@ import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
-import { useMachineSettings } from './useMachineSettings.svelte'
+import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
@@ -37,12 +37,8 @@ export const provideGeometries = (partID: () => string) => {
 	)
 	const clients = $derived([...armClients, ...gripperClients, ...cameraClients])
 
-	if (!refreshRates.has('Geometries')) {
-		refreshRates.set('Geometries', 1000)
-	}
-
 	const options = $derived.by(() => {
-		const interval = refreshRates.get('Geometries')
+		const interval = refreshRates.get(RefreshRates.poses)
 		const results: CreateQueryOptions<
 			{
 				name: string
