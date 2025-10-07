@@ -83,28 +83,28 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if geometry?.geometryType.case === 'mesh'}
+			{#if geometry.geometryType.case === 'mesh'}
 				{@const mesh = geometry.geometryType.value.mesh as Uint8Array<ArrayBuffer>}
 				{@const meshGeometry = plyLoader.parse(typeof mesh === 'string' ? atob(mesh) : mesh.buffer)}
 				<T
 					is={meshGeometry}
 					{oncreate}
 				/>
-			{:else if geometry?.geometryType.case === 'line' && metadata.points}
+			{:else if geometry.geometryType.case === 'line' && metadata.points}
 				<MeshLineGeometry points={metadata.points} />
-			{:else if geometry?.geometryType.case === 'box'}
+			{:else if geometry.geometryType.case === 'box'}
 				{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
 				<T.BoxGeometry
 					args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
 					{oncreate}
 				/>
-			{:else if geometry?.geometryType.case === 'sphere'}
+			{:else if geometry.geometryType.case === 'sphere'}
 				{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
 				<T.SphereGeometry
 					args={[radiusMm * 0.001]}
 					{oncreate}
 				/>
-			{:else if geometry?.geometryType.case === 'capsule'}
+			{:else if geometry.geometryType.case === 'capsule'}
 				{@const { lengthMm, radiusMm } = geometry.geometryType.value}
 				<T
 					is={CapsuleGeometry}
@@ -113,15 +113,15 @@
 				/>
 			{:else}{/if}
 
-			{#if geometry?.geometryType.case === 'line'}
+			{#if geometry.geometryType.case === 'line'}
 				<MeshLineMaterial
 					{color}
 					width={metadata.lineWidth ?? 0.005}
 				/>
-			{:else if geometry}
+			{:else}
 				<T.MeshToonMaterial
 					{color}
-					side={geometry?.geometryType.case === 'mesh' ? DoubleSide : FrontSide}
+					side={geometry.geometryType.case === 'mesh' ? DoubleSide : FrontSide}
 					transparent
 					opacity={metadata.opacity ?? 0.7}
 				/>
