@@ -3,6 +3,7 @@
 	import { Canvas } from '@threlte/core'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import type { Struct } from '@viamrobotics/sdk'
 
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
@@ -16,15 +17,31 @@
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
 	import WeblabProvider from './weblab/WeblabProvider.svelte'
+	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useViamClient } from '@viamrobotics/svelte-sdk'
+	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 
 	interface Props {
 		partID?: string
 		enableKeybindings?: boolean
 		children?: Snippet
+		getLocalPartConfig?: () => unknown
+		setLocalPartConfig?: (config: Struct, partName: string) => void
+		getPartName?: () => string | undefined
+		isDirty?: () => boolean
 	}
 
-	let { partID = '', enableKeybindings = true, children: appChildren }: Props = $props()
+	let {
+		partID = '',
+		enableKeybindings = true,
+		children: appChildren,
+		getLocalPartConfig,
+		setLocalPartConfig,
+		getPartName,
+		isDirty,
+	}: Props = $props()
 
+	const appClient = useViamClient()
 	const settings = provideSettings()
 
 	$effect(() => {
@@ -36,6 +53,42 @@
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
+	let partName = $state<string>()
+	let isStandalone = $state(false)
+
+	$effect.pre(() => {
+		async function getPartName() {
+			console.log('client', appClient?.current)
+			if (appClient?.current === undefined) {
+				return
+			}
+			const partResponse = await appClient.current?.appClient.getRobotPart(partID)
+			partName = partResponse?.part?.name ?? ''
+			console.log('partName', partName)
+		}
+		getPartName()
+	})
+
+	if (getLocalPartConfig && setLocalPartConfig && getPartName && isDirty) {
+		isStandalone = false
+		providePartConfig({
+			appEmbeddedPartConfigProps: {
+				isDirty: () => isDirty(),
+				getLocalPartConfig,
+				setLocalPartConfig,
+				partName: () => getPartName(),
+			},
+		})
+	} else {
+		isStandalone = true
+		providePartConfig({
+			standalonePartConfigProps: {
+				viamClient: () => appClient?.current,
+				partID,
+				partName: () => partName,
+			},
+		})
+	}
 </script>
 
 {#if settings.current.enableQueryDevtools}
@@ -59,6 +112,9 @@
 
 						<Dashboard {@attach domPortal(root)} />
 						<Details {@attach domPortal(root)} />
+						{#if isStandalone}
+							<LiveUpdatesBanner {@attach domPortal(root)} />
+						{/if}
 
 						{#if !focus}
 							<TreeContainer {@attach domPortal(root)} />

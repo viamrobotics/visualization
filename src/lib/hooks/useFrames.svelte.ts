@@ -5,15 +5,24 @@ import {
 	useMachineStatus,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { WorldObject } from '$lib/WorldObject.svelte'
+import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
+import { usePartConfig } from './usePartConfig.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
 	error?: Error
 	fetching: boolean
+	getParentFrameOptions: (componentName: string) => string[]
+}
+
+export interface FrameHeirachyNode {
+	name: string
+	parentName: string
+	object: WorldObject<Geometries>
+	children: FrameHeirachyNode[]
 }
 
 const key = Symbol('frames-context')
@@ -25,16 +34,19 @@ export const provideFrames = (partID: () => string) => {
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig')
 	const revision = $derived(machineStatus.current?.config.revision)
+	const partConfig = usePartConfig()
 
 	observe.pre(
 		() => [revision],
 		() => {
-			untrack(() => query.current).refetch()
-			logs.add('Fetching frames...')
+			if (!partConfig.isDirty()) {
+				untrack(() => query.current).refetch()
+				logs.add('Fetching frames...')
+			}
 		}
 	)
 
-	const current = $derived.by(() => {
+	let current = $derived.by(() => {
 		const objects: WorldObject[] = []
 
 		for (const { frame } of query.current.data ?? []) {
@@ -62,10 +74,73 @@ export const provideFrames = (partID: () => string) => {
 
 		return objects
 	})
+
+	$effect.pre(() => {
+		(partConfig.getLocalPartConfig() as any)?.components?.forEach((component: any) => {
+				untrack(() => {
+					const worldObjectIndex = current.findIndex((frame) => frame.name === component.name);
+					if (worldObjectIndex === -1) {
+						return
+					}
+
+					current[worldObjectIndex].referenceFrame = component.frame.parent;
+
+					current[worldObjectIndex].pose = {
+						x: component.frame.translation.x,
+						y: component.frame.translation.y,
+						z: component.frame.translation.z,
+						oX: component.frame.orientation.value.x,
+						oY: component.frame.orientation.value.y,
+						oZ: component.frame.orientation.value.z,
+						theta: component.frame.orientation.value.th,
+					}
+
+					if (component.frame.geometry) {
+						switch (component.frame.geometry.type) {
+							case 'box':
+								current[worldObjectIndex].geometry = { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } }
+								break
+							case 'sphere':
+								current[worldObjectIndex].geometry = { case: 'sphere', value: { radiusMm: component.frame.geometry.r } }
+								break
+							case 'capsule':
+								current[worldObjectIndex].geometry = { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } }
+								break
+							default:
+								current[worldObjectIndex].geometry = undefined
+								break
+						}
+					} else {
+						current[worldObjectIndex].geometry = undefined
+					}
+				});
+		});
+		untrack(() => current = [...current]);
+	})
+
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
 
+	const getParentFrameOptions = (componentName: string) => {
+		const validFrames = new Set(current.map((frame) => frame.name));
+		validFrames.add("world");
+
+		const frameNameQueue = [componentName];
+		while (frameNameQueue.length > 0) {
+			const frameName = frameNameQueue.shift();
+			if (frameName) {
+				validFrames.delete(frameName);
+				const frames = current.filter((frame) => frame.referenceFrame === frameName);
+				for (const frame of frames) {
+					frameNameQueue.push(frame.name);
+				}
+			}
+		}
+		return Array.from(validFrames);
+	}
+
 	setContext<FramesContext>(key, {
+		getParentFrameOptions,
 		get current() {
 			return current
 		},

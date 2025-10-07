@@ -23,12 +23,16 @@
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import WeblabActive from './weblab/WeblabActive.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+
 	const { ...rest } = $props()
 
 	const focused = useFocused()
 	const focusedObject = useFocusedObject()
 	const focusedObject3d = useFocusedObject3d()
-
+	const frames = useFrames()
+	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -39,10 +43,117 @@
 
 	const localPose = $derived(object?.pose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
+	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
+	const isFrameNode = $derived(
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
+	)
+	$inspect(frames.current)
 
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
+
+	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
+		if (!object || !object3d) return
+		object.pose.x = x ?? object.pose.x
+		object.pose.y = y ?? object.pose.y
+		object.pose.z = z ?? object.pose.z
+
+		partConfig.updateFrame(selectedObject.current?.name ?? '', {
+			x: x ?? object.pose.x,
+			y: y ?? object.pose.y,
+			z: z ?? object.pose.z,
+			oX: object.pose.oX,
+			oY: object.pose.oY,
+			oZ: object.pose.oZ,
+			theta: object.pose.theta,
+		})
+	}
+
+	const updateLocalOrientation = ({
+		oX,
+		oY,
+		oZ,
+		theta,
+	}: {
+		oX?: number
+		oY?: number
+		oZ?: number
+		theta?: number
+	}) => {
+		if (!object || !object3d) return
+
+		partConfig.updateFrame(selectedObject.current?.name ?? '', {
+			oX: oX ?? object.pose.oX,
+			oY: oY ?? object.pose.oY,
+			oZ: oZ ?? object.pose.oZ,
+			theta: theta ?? object.pose.theta,
+			x: object.pose.x,
+			y: object.pose.y,
+			z: object.pose.z,
+		})
+	}
+
+	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
+		if (!object) return
+		if (type === 'none') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'none' }
+			)
+		} else if (type === 'box') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'box', x: 100, y: 100, z: 100 }
+			)
+		} else if (type === 'sphere') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'sphere', r: 100 }
+			)
+		} else if (type === 'capsule') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'capsule', r: 20, l: 100 }
+			)
+		}
+	}
 
 	const { start, stop } = useTask(
 		() => {
@@ -78,7 +189,7 @@
 {#if object}
 	{@const { geometry } = object}
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-60 border p-2 text-xs"
+		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-80 border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
 		{...rest}
 	>
@@ -121,15 +232,15 @@
 
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2">x</span>
+							<span class="text-subtle-2">X</span>
 							{(worldPosition.x * 1000).toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">y</span>
+							<span class="text-subtle-2">Y</span>
 							{(worldPosition.y * 1000).toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">z</span>
+							<span class="text-subtle-2">Z</span>
 							{(worldPosition.z * 1000).toFixed(2)}
 						</div>
 					</div>
@@ -141,19 +252,19 @@
 					<strong class="font-semibold">world orientation</strong>
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2">x</span>
+							<span class="text-subtle-2">X</span>
 							{worldOrientation.x.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">y</span>
+							<span class="text-subtle-2">Y</span>
 							{worldOrientation.y.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">z</span>
+							<span class="text-subtle-2">Z</span>
 							{worldOrientation.z.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">th</span>
+							<span class="text-subtle-2">TH</span>
 							{worldOrientation.th.toFixed(2)}
 						</div>
 					</div>
@@ -161,68 +272,206 @@
 			{/if}
 
 			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+				{#if isFrameNode}
+					<div>
+						<strong class="font-semibold">parent frame</strong>
+						<div class="flex gap-3">
+							<select
+								class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+								value={referenceFrame}
+								onchange={(e) => {
+									const newFrame = (e.target as HTMLSelectElement).value
+									partConfig.setFrameParentConfig(object.name, newFrame)
+								}}
+							>
+								{#each referenceFrameOptions as option (option)}
+									<option value={option}>{option}</option>
+								{/each}
+							</select>
+						</div>
+					</div>
+				{:else}
+					<div>
+						<strong class="font-semibold">parent frame</strong>
+						<div class="flex gap-3">
+							<div>
+								<span
+									class="text-subtle-2"
+									aria-label="parent frame name">name</span
+								>
+								{referenceFrame}
+							</div>
+						</div>
+					</div>
+				{/if}
+			</WeblabActive>
+
+			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
 				{#if localPose}
-					<div>
-						<strong class="font-semibold">local position</strong>
-
-						<div class="flex gap-3">
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position x coordinate">x</span
-								>
-								{localPose.x.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position y coordinate">y</span
-								>
-								{localPose.y.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position z coordinate">z</span
-								>
-								{localPose.z.toFixed(2)}
-							</div>
-						</div>
-					</div>
-
-					<div>
-						<strong class="font-semibold">local orientation</strong>
-						<div class="flex gap-3">
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation x coordinate">x</span
-								>
-								{localPose.oX.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation y coordinate">y</span
-								>
-								{localPose.oY.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation z coordinate">z</span
-								>
-								{localPose.oZ.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation theta degrees">th</span
-								>
-								{localPose.theta.toFixed(2)}
+					{#if isFrameNode}
+						<div>
+							<strong class="font-semibold">local position</strong>
+							<div class="flex items-center gap-2">
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">X</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.x.toFixed(2)}
+										oninput={(e) => {
+											updateLocalPosition({ x: parseFloat((e.target as HTMLInputElement).value) })
+										}}
+									/>
+								</div>
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">Y</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.y.toFixed(2)}
+										oninput={(e) => {
+											updateLocalPosition({ y: parseFloat((e.target as HTMLInputElement).value) })
+										}}
+									/>
+								</div>
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">Z</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.z.toFixed(2)}
+										oninput={(e) => {
+											updateLocalPosition({ z: parseFloat((e.target as HTMLInputElement).value) })
+										}}
+									/>
+								</div>
 							</div>
 						</div>
-					</div>
+
+						<div>
+							<strong class="font-semibold">local orientation</strong>
+							<div class="flex items-center gap-2">
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">X</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.oX.toFixed(2)}
+										step="0.01"
+										oninput={(e) => {
+											updateLocalOrientation({
+												oX: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">Y</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.oY.toFixed(2)}
+										step="0.01"
+										oninput={(e) => {
+											updateLocalOrientation({
+												oY: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">Z</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.oZ.toFixed(2)}
+										step="0.01"
+										oninput={(e) => {
+											updateLocalOrientation({
+												oZ: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
+								<div class="flex min-w-0 flex-1 items-center gap-1">
+									<span class="text-subtle-2 text-xs">TH</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={localPose.theta.toFixed(2)}
+										step="0.01"
+										oninput={(e) => {
+											updateLocalOrientation({
+												theta: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+					{:else}
+						<div>
+							<strong class="font-semibold">local position</strong>
+
+							<div class="flex gap-3">
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local position x coordinate">X</span
+									>
+									{localPose.x.toFixed(2)}
+								</div>
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local position y coordinate">Y</span
+									>
+									{localPose.y.toFixed(2)}
+								</div>
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local position z coordinate">Z</span
+									>
+									{localPose.z.toFixed(2)}
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<strong class="font-semibold">local orientation</strong>
+							<div class="flex gap-3">
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local orientation x coordinate">X</span
+									>
+									{localPose.oX.toFixed(2)}
+								</div>
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local orientation y coordinate">Y</span
+									>
+									{localPose.oY.toFixed(2)}
+								</div>
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local orientation z coordinate">Z</span
+									>
+									{localPose.oZ.toFixed(2)}
+								</div>
+								<div>
+									<span
+										class="text-subtle-2"
+										aria-label="local orientation theta degrees">TH</span
+									>
+									{localPose.theta.toFixed(2)}
+								</div>
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</WeblabActive>
 
@@ -275,21 +524,6 @@
 					</div>
 				{/if}
 			{/if}
-
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-				<div>
-					<strong class="font-semibold">parent frame</strong>
-					<div class="flex gap-3">
-						<div>
-							<span
-								class="text-subtle-2"
-								aria-label="parent frame name">name</span
-							>
-							{referenceFrame}
-						</div>
-					</div>
-				</div>
-			</WeblabActive>
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
