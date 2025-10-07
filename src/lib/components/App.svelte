@@ -58,13 +58,11 @@
 
 	$effect.pre(() => {
 		async function getPartName() {
-			console.log('client', appClient?.current)
 			if (appClient?.current === undefined) {
 				return
 			}
 			const partResponse = await appClient.current?.appClient.getRobotPart(partID)
 			partName = partResponse?.part?.name ?? ''
-			console.log('partName', partName)
 		}
 		getPartName()
 	})

@@ -172,7 +172,6 @@ export class StandalonePartConfig implements LocalPartConfig {
 		return this.localPartConfig?.toJson() ?? {}
 	}
 	public setLocalPartConfig(config: Struct, _: string): void {
-		console.log('setLocalPartConfig', config)
 		this.localPartConfig = config
 		this.dirty = true
 	}
@@ -186,19 +185,14 @@ export class StandalonePartConfig implements LocalPartConfig {
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
-		console.log('saveLocalPartConfig')
-		console.log(this.localPartConfig)
 		if (!this.localPartConfig) {
 			return
 		}
 		const partResponse = await this.standalonePartConfigProps.viamClient()?.appClient.updateRobotPart(this.standalonePartConfigProps.partID, this.standalonePartConfigProps.partName() ?? '', this.localPartConfig)
-		console.log(partResponse)
 		this.dirty = false
 	}
 
 	public async resetLocalPartConfig(): Promise<void> {
-		console.log('resetLocalPartConfig')
-		console.log(this.networkPartConfig)
 		if (!this.networkPartConfig) {
 			return
 		}

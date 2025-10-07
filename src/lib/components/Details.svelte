@@ -40,6 +40,11 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
+	let geometryType = $derived.by(
+		() =>
+			(object?.geometry?.geometryType.case as 'none' | 'box' | 'sphere' | 'capsule' | undefined) ??
+			'none'
+	)
 
 	const localPose = $derived(object?.pose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
@@ -47,8 +52,6 @@
 	const isFrameNode = $derived(
 		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
-	$inspect(frames.current)
-
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
@@ -83,6 +86,11 @@
 	}) => {
 		if (!object || !object3d) return
 
+		object.pose.oX = oX ?? object.pose.oX
+		object.pose.oY = oY ?? object.pose.oY
+		object.pose.oZ = oZ ?? object.pose.oZ
+		object.pose.theta = theta ?? object.pose.theta
+
 		partConfig.updateFrame(selectedObject.current?.name ?? '', {
 			oX: oX ?? object.pose.oX,
 			oY: oY ?? object.pose.oY,
@@ -94,7 +102,88 @@
 		})
 	}
 
+	const updateGeometry = (geometry: {
+		type: 'none' | 'box' | 'sphere' | 'capsule'
+		r?: number
+		l?: number
+		x?: number
+		y?: number
+		z?: number
+	}) => {
+		if (!object) return
+		let geometryObject: {
+			type: 'box' | 'sphere' | 'capsule'
+			x?: number
+			y?: number
+			z?: number
+			r?: number
+			l?: number
+		}
+		if (geometry.type === 'box') {
+			geometryObject = {
+				type: 'box',
+				x: geometry.x ?? object.geometry?.geometryType.value?.dimsMm?.x,
+				y: geometry.y ?? object.geometry?.geometryType.value?.dimsMm?.y,
+				z: geometry.z ?? object.geometry?.geometryType.value?.dimsMm?.z,
+			}
+			object.geometry = {
+				geometryType: {
+					case: 'box',
+					value: {
+						dimsMm: {
+							x: geometry.x ?? object.geometry?.geometryType.value?.dimsMm?.x,
+							y: geometry.y ?? object.geometry?.geometryType.value?.dimsMm?.y,
+							z: geometry.z ?? object.geometry?.geometryType.value?.dimsMm?.z,
+						},
+					},
+				},
+			}
+		} else if (geometry.type === 'sphere') {
+			geometryObject = {
+				type: 'sphere',
+				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
+			}
+			object.geometry = {
+				geometryType: {
+					case: 'sphere',
+					value: { radiusMm: geometry.r ?? object.geometry?.geometryType.value?.radiusMm },
+				},
+			}
+		} else if (geometry.type === 'capsule') {
+			geometryObject = {
+				type: 'capsule',
+				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
+				l: geometry.l ?? object.geometry?.geometryType.value?.lengthMm,
+			}
+			object.geometry = {
+				geometryType: {
+					case: 'capsule',
+					value: {
+						radiusMm: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
+						lengthMm: geometry.l ?? object.geometry?.geometryType.value?.lengthMm,
+					},
+				},
+			}
+		}
+
+		partConfig.updateFrame(
+			selectedObject.current?.name ?? '',
+			{
+				x: object.pose.x,
+				y: object.pose.y,
+				z: object.pose.z,
+				oX: object.pose.oX,
+				oY: object.pose.oY,
+				oZ: object.pose.oZ,
+				theta: object.pose.theta,
+			},
+			{ ...geometryObject! }
+		)
+	}
+
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
+		if (type === geometryType) return
+		geometryType = type
 		if (!object) return
 		if (type === 'none') {
 			partConfig.updateFrame(
@@ -110,6 +199,7 @@
 				},
 				{ type: 'none' }
 			)
+			object.geometry = { geometryType: { case: 'none', value: undefined } }
 		} else if (type === 'box') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -124,6 +214,9 @@
 				},
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
+			object.geometry = {
+				geometryType: { case: 'box', value: { dimsMm: { x: 100, y: 100, z: 100 } } },
+			}
 		} else if (type === 'sphere') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -138,6 +231,7 @@
 				},
 				{ type: 'sphere', r: 100 }
 			)
+			object.geometry = { geometryType: { case: 'sphere', value: { radiusMm: 100 } } }
 		} else if (type === 'capsule') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -152,6 +246,9 @@
 				},
 				{ type: 'capsule', r: 20, l: 100 }
 			)
+			object.geometry = {
+				geometryType: { case: 'capsule', value: { radiusMm: 20, lengthMm: 100 } },
+			}
 		}
 	}
 
@@ -187,7 +284,6 @@
 </script>
 
 {#if object}
-	{@const { geometry } = object}
 	<div
 		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-80 border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
@@ -475,55 +571,238 @@
 				{/if}
 			</WeblabActive>
 
-			{#if geometry}
-				{#if geometry.geometryType.case === 'box'}
-					{@const { dimsMm } = geometry.geometryType.value}
+			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+				{#if isFrameNode}
 					<div>
-						<strong class="font-semibold">dimensions (box)</strong>
-						<div class="flex gap-3">
-							<div>
-								<span class="text-subtle-2">x</span>
-								{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
-							</div>
-							<div>
-								<span class="text-subtle-2">y</span>
-								{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
-							</div>
-							<div>
-								<span class="text-subtle-2">z</span>
-								{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
-							</div>
+						<strong class="font-semibold">geometry</strong>
+						<div class="grid grid-cols-4 gap-1">
+							<Button
+								variant={geometryType === 'none' ? 'secondary' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('none')}>None</Button
+							>
+							<Button
+								variant={geometryType === 'box' ? 'secondary' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('box')}>Box</Button
+							>
+							<Button
+								variant={geometryType === 'sphere' ? 'secondary' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('sphere')}>Sphere</Button
+							>
+							<Button
+								variant={geometryType === 'capsule' ? 'secondary' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('capsule')}>Capsule</Button
+							>
 						</div>
 					</div>
-				{:else if geometry.geometryType.case === 'capsule'}
-					{@const { value } = geometry.geometryType}
-					<div>
-						<strong class="font-semibold">dimensions (capsule)</strong>
-						<div class="flex gap-3">
+					{#if object.geometry}
+						{#if geometryType === 'box'}
+							{@const { dimsMm } = object.geometry.geometryType.value}
 							<div>
-								<span class="text-subtle-2">r</span>
-								{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+								<strong class="font-semibold">dimensions (box)</strong>
+								<div class="flex items-center gap-2">
+									<span class="text-subtle-2">X</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
+										oninput={(e) => {
+											updateGeometry({
+												type: 'box',
+												x: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+									<span class="text-subtle-2">Y</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
+										oninput={(e) => {
+											updateGeometry({
+												type: 'box',
+												y: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+									<span class="text-subtle-2">Z</span>
+									<input
+										type="number"
+										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
+										oninput={(e) => {
+											updateGeometry({
+												type: 'box',
+												z: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
 							</div>
+						{/if}
+						{#if geometryType === 'capsule'}
+							{@const { value } = object.geometry.geometryType}
 							<div>
-								<span class="text-subtle-2">l</span>
-								{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+								<strong class="font-semibold">dimensions (capsule)</strong>
+								<div class="flex items-center gap-2">
+									<span class="text-subtle-2">R</span>
+									<input
+										type="number"
+										class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+										oninput={(e) => {
+											updateGeometry({
+												type: 'capsule',
+												r: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+									<span class="text-subtle-2">L</span>
+									<input
+										type="number"
+										class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+										value={value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+										oninput={(e) => {
+											updateGeometry({
+												type: 'capsule',
+												l: parseFloat((e.target as HTMLInputElement).value),
+											})
+										}}
+									/>
+								</div>
 							</div>
-						</div>
-					</div>
-				{:else if geometry.geometryType.case === 'sphere'}
-					<div class="flex justify-between">
+						{/if}
+						{#if geometryType === 'sphere'}
+							{@const { value } = object.geometry.geometryType}
+							<div>
+								<strong class="font-semibold">dimensions (sphere)</strong>
+								<div class="flex items-center gap-2">
+									<div class="flex min-w-0 flex-1 items-center gap-1">
+										<span class="text-subtle-2 text-xs">R</span>
+										<input
+											type="number"
+											class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+											value={value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+											oninput={(e) => {
+												updateGeometry({
+													type: 'sphere',
+													r: parseFloat((e.target as HTMLInputElement).value),
+												})
+											}}
+										/>
+									</div>
+								</div>
+							</div>
+						{/if}
+					{/if}
+				{:else if object.geometry}
+					{#if object.geometry.geometryType.case === 'box'}
+						{@const { dimsMm } = object.geometry.geometryType.value}
 						<div>
-							<strong class="font-semibold">dimensions (sphere)</strong>
-							<div class="flex gap-3">
+							<strong class="font-semibold">dimensions (box)</strong>
+							<div class="flex items-center gap-2">
 								<div>
-									<span class="text-subtle-2">r</span>
-									{geometry.geometryType.value.radiusMm.toFixed(2)}
+									<span class="text-subtle-2">X</span>
+									{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">Y</span>
+									{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">Z</span>
+									{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
 								</div>
 							</div>
 						</div>
-					</div>
+					{:else if object.geometry.geometryType.case === 'capsule'}
+						{@const { value } = object.geometry.geometryType}
+						<div>
+							<strong class="font-semibold">dimensions (capsule)</strong>
+							<div class="flex items-center gap-2">
+								<div>
+									<span class="text-subtle-2">R</span>
+									{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">L</span>
+									{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+								</div>
+							</div>
+						</div>
+					{:else if object.geometry.geometryType.case === 'sphere'}
+						<div class="flex justify-between">
+							<div>
+								<strong class="font-semibold">dimensions (sphere)</strong>
+								<div class="flex gap-3">
+									<div>
+										<span class="text-subtle-2">R</span>
+										{object.geometry.geometryType.value.radiusMm.toFixed(2)}
+									</div>
+								</div>
+							</div>
+						</div>
+					{/if}
 				{/if}
-			{/if}
+			</WeblabActive>
+
+			<WeblabActive
+				experiment="MOTION_TOOLS_EDIT_FRAME"
+				renderIfActive={false}
+			>
+				{#if object.geometry}
+					{#if object.geometry.geometryType.case === 'box'}
+						{@const { dimsMm } = object.geometry.geometryType.value}
+						<div>
+							<strong class="font-semibold">dimensions (box)</strong>
+							<div class="flex gap-3">
+								<div>
+									<span class="text-subtle-2">X</span>
+									{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">Y</span>
+									{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">Z</span>
+									{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
+								</div>
+							</div>
+						</div>
+					{:else if object.geometry.geometryType.case === 'capsule'}
+						{@const { value } = object.geometry.geometryType}
+						<div>
+							<strong class="font-semibold">dimensions (capsule)</strong>
+							<div class="flex gap-3">
+								<div>
+									<span class="text-subtle-2">R</span>
+									{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">L</span>
+									{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+								</div>
+							</div>
+						</div>
+					{:else if object.geometry.geometryType.case === 'sphere'}
+						<div class="flex justify-between">
+							<div>
+								<strong class="font-semibold">dimensions (sphere)</strong>
+								<div class="flex gap-3">
+									<div>
+										<span class="text-subtle-2">R</span>
+										{object.geometry.geometryType.value.radiusMm.toFixed(2)}
+									</div>
+								</div>
+							</div>
+						</div>
+					{/if}
+				{/if}
+			</WeblabActive>
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>

@@ -98,13 +98,13 @@ export const provideFrames = (partID: () => string) => {
 					if (component.frame.geometry) {
 						switch (component.frame.geometry.type) {
 							case 'box':
-								current[worldObjectIndex].geometry = { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } }
+								current[worldObjectIndex].geometry = { geometryType: { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } } }
 								break
 							case 'sphere':
-								current[worldObjectIndex].geometry = { case: 'sphere', value: { radiusMm: component.frame.geometry.r } }
+								current[worldObjectIndex].geometry = { geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } } }
 								break
 							case 'capsule':
-								current[worldObjectIndex].geometry = { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } }
+								current[worldObjectIndex].geometry = { geometryType: { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } } }
 								break
 							default:
 								current[worldObjectIndex].geometry = undefined
