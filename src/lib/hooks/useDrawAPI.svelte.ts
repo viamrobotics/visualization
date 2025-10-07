@@ -98,8 +98,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				colors ? { colors } : undefined
 			)
@@ -115,21 +118,26 @@ export const provideDrawAPI = () => {
 			return
 		}
 
-		let geometry: Geometry['geometryType']
+		const geometry: Geometry = {
+			label: data.label,
+			center: undefined,
+			geometryType: {
+				case: undefined,
+			},
+		}
 
 		if ('mesh' in data) {
-			geometry = {
-				case: 'mesh',
-				value: { contentType: '', mesh: data.mesh.mesh },
-			}
+			geometry.geometryType.case = 'mesh'
+			geometry.geometryType.value = data.mesh
 		} else if ('box' in data) {
-			geometry = { case: 'box', value: data.box }
+			geometry.geometryType.case = 'box'
+			geometry.geometryType.value = data.box
 		} else if ('sphere' in data) {
-			geometry = { case: 'sphere', value: data.sphere }
+			geometry.geometryType.case = 'sphere'
+			geometry.geometryType.value = data.sphere
 		} else if ('capsule' in data) {
-			geometry = { case: 'capsule', value: data.capsule }
-		} else {
-			geometry = { case: undefined, value: undefined }
+			geometry.geometryType.case = 'capsule'
+			geometry.geometryType.value = data.capsule
 		}
 
 		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
@@ -154,7 +162,7 @@ export const provideDrawAPI = () => {
 			data.name,
 			data.pose,
 			data.parent,
-			{ case: 'line', value: new Float32Array() },
+			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
 			{ color, points: curve.getPoints(200) }
 		)
 
@@ -270,8 +278,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				metadata
 			)
@@ -320,8 +331,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'line',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'line',
+						value: positions,
+					},
 				},
 				{
 					points,

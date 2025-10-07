@@ -7,14 +7,14 @@
 		OrthographicCamera,
 	} from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import type { PointsGeometry, WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
 
 	interface Props {
-		object: WorldObject<{ case: 'points'; value: Float32Array<ArrayBuffer> }>
+		object: WorldObject<PointsGeometry>
 		children?: Snippet
 	}
 
@@ -25,7 +25,7 @@
 
 	const colors = $derived(object.metadata.colors)
 	const pointSize = $derived(object.metadata.pointSize ?? settings.current.pointSize)
-	const positions = $derived(object.geometry?.value ?? new Float32Array())
+	const positions = $derived(object.geometry?.geometryType?.value ?? new Float32Array())
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const points = new Points()

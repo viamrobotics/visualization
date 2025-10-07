@@ -11,10 +11,17 @@ import {
 } from 'three'
 import { createPose } from './transform'
 
-export type PointsGeometry = { case: 'points'; value: Float32Array<ArrayBuffer> }
-export type LinesGeometry = { case: 'line'; value: Float32Array }
+export type PointsGeometry = {
+	center: undefined
+	geometryType: { case: 'points'; value: Float32Array<ArrayBuffer> }
+}
 
-export type Geometries = Geometry['geometryType'] | PointsGeometry | LinesGeometry
+export type LinesGeometry = {
+	center: undefined
+	geometryType: { case: 'line'; value: Float32Array }
+}
+
+export type Geometries = Geometry | PointsGeometry | LinesGeometry
 
 export type Metadata = {
 	colors?: Float32Array
@@ -107,7 +114,7 @@ export const fromTransform = (transform: TransformWithUUID) => {
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,
 		transform.poseInObserverFrame?.referenceFrame,
-		transform.physicalObject?.geometryType,
+		transform.physicalObject,
 		metadata
 	)
 	worldObject.uuid = transform.uuidString
