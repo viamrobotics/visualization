@@ -4,7 +4,7 @@ import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { useMachineSettings } from './useMachineSettings.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
@@ -20,16 +20,12 @@ export const providePointclouds = (partID: () => string) => {
 	const { refreshRates, disabledCameras } = useMachineSettings()
 	const cameras = useResourceNames(partID, 'camera')
 
-	if (!refreshRates.has('Pointclouds')) {
-		refreshRates.set('Pointclouds', -1)
-	}
-
 	const clients = $derived(
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
 	const options = $derived.by(() => {
-		const interval = refreshRates.get('Pointclouds')
+		const interval = refreshRates.get(RefreshRates.pointclouds)
 		const results: CreateQueryOptions<
 			WorldObject<PointsGeometry> | null,
 			Error,
