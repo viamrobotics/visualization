@@ -121,7 +121,7 @@ export const provideDrawAPI = () => {
 			return
 		}
 
-		let geometry: Geometry = {
+		const geometry: Geometry = {
 			label: data.label,
 			center: undefined,
 			geometryType: {
