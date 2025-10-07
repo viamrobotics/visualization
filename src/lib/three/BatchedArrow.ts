@@ -11,6 +11,8 @@ import {
 	type ColorRepresentation,
 } from 'three'
 
+const black = new Color('black')
+
 const axis = new Vector3()
 const object3d = new Object3D()
 const vec3 = new Vector3()
@@ -47,7 +49,7 @@ export class BatchedArrow {
 		const shaftGeo = new BoxGeometry(1, 1, 1)
 		shaftGeo.translate(0, 0.5, 0)
 
-		const coneGeo = new ConeGeometry(0.5, 1, 5, 1)
+		const coneGeo = new ConeGeometry(0.5, 1, 8, 1)
 		coneGeo.translate(0, -0.5, 0)
 
 		const shaftVertexCount = shaftGeo.getAttribute('position').count
@@ -67,8 +69,19 @@ export class BatchedArrow {
 		this.coneGeoId = this.batchedMesh.addGeometry(coneGeo)
 	}
 
-	addArrow(dir: Vector3, origin: Vector3, length = 0.1, color?: ColorRepresentation) {
-		dir.normalize()
+	addArrow(
+		direction: Vector3,
+		origin: Vector3,
+		length = 0.1,
+		color = black,
+		arrowHeadAtPose = true
+	) {
+		if (arrowHeadAtPose) {
+			// Compute the base position so the arrow ends at the origin
+			origin.sub(vec3.copy(direction).multiplyScalar(length))
+		}
+
+		direction.normalize()
 
 		const headLength = length * 0.2
 		const headWidth = headLength * 0.2
@@ -86,12 +99,17 @@ export class BatchedArrow {
 		}
 
 		// Apply shaft transform
-		const shaftMatrix = this._computeTransform(origin, dir, length - headLength, this.shaftWidth)
+		const shaftMatrix = this._computeTransform(
+			origin,
+			direction,
+			length - headLength,
+			this.shaftWidth
+		)
 		this.batchedMesh.setMatrixAt(shaftId, shaftMatrix)
 
 		// Compute cone position = origin + dir * length
-		const coneOrigin = vec3.copy(dir).multiplyScalar(length).add(origin)
-		const coneMatrix = this._computeTransform(coneOrigin, dir, headLength, headWidth * 4)
+		const coneOrigin = vec3.copy(direction).multiplyScalar(length).add(origin)
+		const coneMatrix = this._computeTransform(coneOrigin, direction, headLength, headWidth * 4)
 		this.batchedMesh.setMatrixAt(headId, coneMatrix)
 
 		if (color) {
