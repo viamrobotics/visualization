@@ -78,22 +78,41 @@
 		{/snippet}
 	</Pose>
 {/each} -->
+
 {#each frameHeirachy.filter((node) => node.object.referenceFrame === 'world') as frameHeirachyNode (frameHeirachyNode.object.uuid)}
 	<Pose name={frameHeirachyNode.object.name}>
 		{#snippet children({ pose })}
-			<Frame
-				uuid={frameHeirachyNode.object.uuid}
-				name={frameHeirachyNode.object.name}
-				pose={pose ?? frameHeirachyNode.object.pose}
-				geometry={frameHeirachyNode.object.geometry}
-				metadata={frameHeirachyNode.object.metadata}
-			>
-				{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
-					<RecursiveFrame frameHeirachyNode={childNode} />
-				{/each}
-				<PortalTarget id={frameHeirachyNode.object.name} />
-				<Label text={frameHeirachyNode.object.name} />
-			</Frame>
+			{#if pose}
+				<Frame
+					uuid={frameHeirachyNode.object.uuid}
+					name={frameHeirachyNode.object.name}
+					{pose}
+					geometry={frameHeirachyNode.object.geometry}
+					metadata={frameHeirachyNode.object.metadata}
+				>
+					{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
+						<RecursiveFrame frameHeirachyNode={childNode} />
+					{/each}
+					<PortalTarget id={frameHeirachyNode.object.name} />
+					<Label text={frameHeirachyNode.object.name} />
+				</Frame>
+			{:else}
+				<Portal id={frameHeirachyNode.object.referenceFrame}>
+					<Frame
+						uuid={frameHeirachyNode.object.uuid}
+						name={frameHeirachyNode.object.name}
+						pose={pose ?? frameHeirachyNode.object.pose}
+						geometry={frameHeirachyNode.object.geometry}
+						metadata={frameHeirachyNode.object.metadata}
+					>
+						{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
+							<RecursiveFrame frameHeirachyNode={childNode} />
+						{/each}
+						<PortalTarget id={frameHeirachyNode.object.name} />
+						<Label text={frameHeirachyNode.object.name} />
+					</Frame>
+				</Portal>
+			{/if}
 		{/snippet}
 	</Pose>
 {/each}

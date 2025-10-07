@@ -19,11 +19,11 @@
 	parent={frameHeirachyNode.parentName}
 >
 	{#snippet children({ pose })}
-		<Portal id={frameHeirachyNode.object.referenceFrame}>
+		{#if pose}
 			<Frame
 				uuid={frameHeirachyNode.object.uuid}
 				name={frameHeirachyNode.object.name}
-				pose={pose ?? frameHeirachyNode.object.pose}
+				{pose}
 				geometry={frameHeirachyNode.object.geometry}
 				metadata={frameHeirachyNode.object.metadata}
 			>
@@ -33,6 +33,22 @@
 				<PortalTarget id={frameHeirachyNode.object.name} />
 				<Label text={frameHeirachyNode.object.name} />
 			</Frame>
-		</Portal>
+		{:else}
+			<Portal id={frameHeirachyNode.object.referenceFrame}>
+				<Frame
+					uuid={frameHeirachyNode.object.uuid}
+					name={frameHeirachyNode.object.name}
+					pose={pose ?? frameHeirachyNode.object.pose}
+					geometry={frameHeirachyNode.object.geometry}
+					metadata={frameHeirachyNode.object.metadata}
+				>
+					{#each frameHeirachyNode.children as childNode (childNode.object.uuid)}
+						<RecursiveFrame frameHeirachyNode={childNode} />
+					{/each}
+					<PortalTarget id={frameHeirachyNode.object.name} />
+					<Label text={frameHeirachyNode.object.name} />
+				</Frame>
+			</Portal>
+		{/if}
 	{/snippet}
 </Pose>

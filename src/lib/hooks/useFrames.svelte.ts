@@ -82,10 +82,14 @@ export const provideFrames = (partID: () => string) => {
 					if (worldObjectIndex === -1) {
 						return
 					}
+					const object = current[worldObjectIndex]
+					console.log("updating frames for ", object.name)
+					console.log("current pose", object.pose)
+					console.log("component frame", component.frame)
 
-					current[worldObjectIndex].referenceFrame = component.frame.parent;
+					current[worldObjectIndex].updateReferenceFrame(component.frame.parent);
 
-					current[worldObjectIndex].pose = {
+					current[worldObjectIndex].updatePose({
 						x: component.frame.translation.x,
 						y: component.frame.translation.y,
 						z: component.frame.translation.z,
@@ -93,7 +97,7 @@ export const provideFrames = (partID: () => string) => {
 						oY: component.frame.orientation.value.y,
 						oZ: component.frame.orientation.value.z,
 						theta: component.frame.orientation.value.th,
-					}
+					})
 
 					if (component.frame.geometry) {
 						switch (component.frame.geometry.type) {
@@ -117,6 +121,8 @@ export const provideFrames = (partID: () => string) => {
 		});
 		untrack(() => current = [...current]);
 	})
+
+	$inspect(current)
 
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
