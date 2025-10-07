@@ -49,25 +49,15 @@ export const provideFrames = (partID: () => string) => {
 				new WorldObject(
 					frameName,
 					frame.poseInObserverFrame?.pose,
-					frame.poseInObserverFrame?.referenceFrame
+					frame.poseInObserverFrame?.referenceFrame,
+					frame.physicalObject,
+					resourceName
+						? {
+								color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
+							}
+						: undefined
 				)
 			)
-
-			if (frame.physicalObject?.geometryType) {
-				objects.push(
-					new WorldObject(
-						`${frameName} ${frame.physicalObject.geometryType.case}`,
-						frame.physicalObject.center,
-						frameName,
-						frame.physicalObject.geometryType,
-						resourceName
-							? {
-									color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
-								}
-							: undefined
-					)
-				)
-			}
 		}
 
 		return objects

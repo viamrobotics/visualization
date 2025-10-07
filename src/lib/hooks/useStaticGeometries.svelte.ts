@@ -39,7 +39,7 @@ export const provideStaticGeometries = () => {
 				createGeometry({
 					case: 'box',
 					value: { dimsMm: { x: 100, y: 100, z: 100 } },
-				}).geometryType
+				})
 			)
 
 			geometries.push(structuredClone(object))
