@@ -57,10 +57,7 @@
 	const draggable = useDraggable('details')
 
 	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
-		if (!object || !object3d) return
-		object.pose.x = x ?? object.pose.x
-		object.pose.y = y ?? object.pose.y
-		object.pose.z = z ?? object.pose.z
+		if (!object) return
 
 		partConfig.updateFrame(selectedObject.current?.name ?? '', {
 			x: x ?? object.pose.x,
@@ -84,12 +81,7 @@
 		oZ?: number
 		theta?: number
 	}) => {
-		if (!object || !object3d) return
-
-		object.pose.oX = oX ?? object.pose.oX
-		object.pose.oY = oY ?? object.pose.oY
-		object.pose.oZ = oZ ?? object.pose.oZ
-		object.pose.theta = theta ?? object.pose.theta
+		if (!object) return
 
 		partConfig.updateFrame(selectedObject.current?.name ?? '', {
 			oX: oX ?? object.pose.oX,
@@ -126,43 +118,16 @@
 				y: geometry.y ?? object.geometry?.geometryType.value?.dimsMm?.y,
 				z: geometry.z ?? object.geometry?.geometryType.value?.dimsMm?.z,
 			}
-			object.geometry = {
-				geometryType: {
-					case: 'box',
-					value: {
-						dimsMm: {
-							x: geometry.x ?? object.geometry?.geometryType.value?.dimsMm?.x,
-							y: geometry.y ?? object.geometry?.geometryType.value?.dimsMm?.y,
-							z: geometry.z ?? object.geometry?.geometryType.value?.dimsMm?.z,
-						},
-					},
-				},
-			}
 		} else if (geometry.type === 'sphere') {
 			geometryObject = {
 				type: 'sphere',
 				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
-			}
-			object.geometry = {
-				geometryType: {
-					case: 'sphere',
-					value: { radiusMm: geometry.r ?? object.geometry?.geometryType.value?.radiusMm },
-				},
 			}
 		} else if (geometry.type === 'capsule') {
 			geometryObject = {
 				type: 'capsule',
 				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
 				l: geometry.l ?? object.geometry?.geometryType.value?.lengthMm,
-			}
-			object.geometry = {
-				geometryType: {
-					case: 'capsule',
-					value: {
-						radiusMm: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
-						lengthMm: geometry.l ?? object.geometry?.geometryType.value?.lengthMm,
-					},
-				},
 			}
 		}
 
@@ -199,7 +164,6 @@
 				},
 				{ type: 'none' }
 			)
-			object.geometry = { geometryType: { case: 'none', value: undefined } }
 		} else if (type === 'box') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -214,9 +178,6 @@
 				},
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
-			object.geometry = {
-				geometryType: { case: 'box', value: { dimsMm: { x: 100, y: 100, z: 100 } } },
-			}
 		} else if (type === 'sphere') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -231,7 +192,6 @@
 				},
 				{ type: 'sphere', r: 100 }
 			)
-			object.geometry = { geometryType: { case: 'sphere', value: { radiusMm: 100 } } }
 		} else if (type === 'capsule') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
@@ -246,9 +206,6 @@
 				},
 				{ type: 'capsule', r: 20, l: 100 }
 			)
-			object.geometry = {
-				geometryType: { case: 'capsule', value: { radiusMm: 20, lengthMm: 100 } },
-			}
 		}
 	}
 
