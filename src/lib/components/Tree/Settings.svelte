@@ -6,7 +6,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
+	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
@@ -22,9 +22,15 @@
 	<div class="flex h-100 flex-col gap-2 overflow-scroll p-3">
 		<h3 class="text-sm"><strong>Machine connection</strong></h3>
 
-		<RefreshRate name="Geometries" />
-		<RefreshRate name="Poses" />
-		<RefreshRate name="Pointclouds" />
+		<RefreshRate
+			id={RefreshRates.poses}
+			label="Poses"
+			allowLive
+		/>
+		<RefreshRate
+			id={RefreshRates.pointclouds}
+			label="Pointclouds"
+		/>
 		<div>
 			<div>Enabled pointcloud cameras</div>
 			{#each cameras.current as camera (camera)}
