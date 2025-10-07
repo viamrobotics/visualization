@@ -22,6 +22,8 @@
 		children?: Snippet
 		getLocalPartConfig?: () => unknown
 		setLocalPartConfig?: (config: Struct, partName: string) => void
+		getPartName?: () => string | undefined
+		isDirty?: () => boolean
 	}
 
 	let {
@@ -30,6 +32,8 @@
 		children: appChildren,
 		getLocalPartConfig,
 		setLocalPartConfig,
+		getPartName,
+		isDirty,
 	}: Props = $props()
 
 	const appClient = useViamClient()
@@ -55,13 +59,13 @@
 		getPartName()
 	})
 
-	if (getLocalPartConfig && setLocalPartConfig) {
+	if (getLocalPartConfig && setLocalPartConfig && getPartName && isDirty) {
 		providePartConfig({
 			appEmbeddedPartConfigProps: {
-				isDirty: () => false, //MATTHEW: todo get this from outer context
+				isDirty: () => isDirty(),
 				getLocalPartConfig,
 				setLocalPartConfig,
-				partName: () => partName,
+				partName: () => getPartName(),
 			},
 		})
 	} else {
