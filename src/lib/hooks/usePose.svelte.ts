@@ -5,11 +5,13 @@ import { createQuery, queryOptions } from '@tanstack/svelte-query'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMotionClient } from './useMotionClient.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
 	const motionClient = useMotionClient()
+	const partConfig = usePartConfig()
 	const resources = useResourceNames(() => partID.current)
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
 	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
@@ -51,7 +53,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
-			if (resource?.subtype === 'arm') {
+			if (resource?.subtype === 'arm' || partConfig.isDirty()) {
 				return
 			}
 			return query.current.data?.pose
