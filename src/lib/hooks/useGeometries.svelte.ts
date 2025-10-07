@@ -83,13 +83,13 @@ export const provideGeometries = (partID: () => string) => {
 		for (const query of queries.current) {
 			if (!query.data) continue
 
-			for (const { center, label, geometryType } of query.data.geometries) {
+			for (const geometry of query.data.geometries) {
 				const resourceName = resourceNames.current.find((item) => item.name === query.data.name)
 				const worldObject = new WorldObject(
-					label ? label : 'Unnamed geometry',
-					center,
+					geometry.label ? geometry.label : `${query.data.name} geometry`,
+					undefined,
 					query.data.name,
-					geometryType,
+					geometry,
 					resourceName
 						? { color: resourceColors[resourceName.subtype as keyof typeof resourceColors] }
 						: undefined

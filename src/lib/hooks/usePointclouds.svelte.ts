@@ -59,7 +59,7 @@ export const providePointclouds = (partID: () => string) => {
 						`${name}:pointcloud`,
 						undefined,
 						name,
-						{ case: 'points', value: positions },
+						{ center: undefined, geometryType: { case: 'points', value: positions } },
 						colors ? { colors } : undefined
 					)
 				},

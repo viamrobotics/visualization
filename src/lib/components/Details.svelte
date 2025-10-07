@@ -227,8 +227,8 @@
 			</WeblabActive>
 
 			{#if geometry}
-				{#if geometry.case === 'box'}
-					{@const { dimsMm } = geometry.value}
+				{#if geometry.geometryType.case === 'box'}
+					{@const { dimsMm } = geometry.geometryType.value}
 					<div>
 						<strong class="font-semibold">dimensions (box)</strong>
 						<div class="flex gap-3">
@@ -246,8 +246,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if geometry.case === 'capsule'}
-					{@const { value } = geometry}
+				{:else if geometry.geometryType.case === 'capsule'}
+					{@const { value } = geometry.geometryType}
 					<div>
 						<strong class="font-semibold">dimensions (capsule)</strong>
 						<div class="flex gap-3">
@@ -261,14 +261,14 @@
 							</div>
 						</div>
 					</div>
-				{:else if geometry.case === 'sphere'}
+				{:else if geometry.geometryType.case === 'sphere'}
 					<div class="flex justify-between">
 						<div>
 							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex gap-3">
 								<div>
 									<span class="text-subtle-2">r</span>
-									{geometry.value.radiusMm.toFixed(2)}
+									{geometry.geometryType.value.radiusMm.toFixed(2)}
 								</div>
 							</div>
 						</div>
