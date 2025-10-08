@@ -146,10 +146,10 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 				json[k] = unwrappedValue as number
 				break
 			case 'lineDotColor': {
-				const rawLineDotColor = unwrappedValue as RGB
-				const r = rawLineDotColor.r > 1 ? rawLineDotColor.r / 255 : rawLineDotColor.r
-				const g = rawLineDotColor.g > 1 ? rawLineDotColor.g / 255 : rawLineDotColor.g
-				const b = rawLineDotColor.b > 1 ? rawLineDotColor.b / 255 : rawLineDotColor.b
+				const raw = unwrappedValue as RGB
+				const r = raw.r > 1 ? raw.r / 255 : raw.r
+				const g = raw.g > 1 ? raw.g / 255 : raw.g
+				const b = raw.b > 1 ? raw.b / 255 : raw.b
 				json[k] = new Color().setRGB(r, g, b)
 				break
 			}

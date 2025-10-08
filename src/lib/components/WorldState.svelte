@@ -39,7 +39,7 @@
 
 			const color = isColor(arrow.metadata?.color)
 				? arrow.metadata.color
-				: new Color(arrow.metadata?.color ?? 'black')
+				: new Color(arrow.metadata?.color ?? 'yellow')
 
 			const id = batchedArrow.addArrow(
 				poseToDirection(arrow.pose),
