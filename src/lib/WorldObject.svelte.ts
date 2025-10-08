@@ -42,8 +42,8 @@ export type Metadata = {
 export class WorldObject<T extends Geometries = Geometries> {
 	uuid: string
 	name: string
-	referenceFrame = $state<string>()
-	pose = $state<Pose>(createPose())
+	referenceFrame = $state.raw<string>()
+	pose = $state.raw<Pose>(createPose())
 	geometry?: T
 	metadata: Metadata
 
@@ -58,14 +58,6 @@ export class WorldObject<T extends Geometries = Geometries> {
 		if (pose) {
 			this.pose = pose
 		}
-	}
-
-	updatePose(pose: Pose) {
-		this.pose = pose
-	}
-
-	updateReferenceFrame(referenceFrame: string) {
-		this.referenceFrame = referenceFrame
 	}
 }
 

@@ -4,7 +4,7 @@
 
 	interface Props {
 		experiment: string
-		renderIfActive: boolean
+		renderIfActive?: boolean
 		children: Snippet
 	}
 	let { experiment, children, renderIfActive = true }: Props = $props()

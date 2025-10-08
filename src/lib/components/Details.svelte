@@ -49,8 +49,14 @@
 	const localPose = $derived(object?.pose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
+	const partDefinedComponentNames = $derived.by(() => {
+		const config = partConfig.getLocalPartConfig() as { components: { name: string }[] }
+		return config?.components?.map((component: { name: string }) => component.name) ?? []
+	})
 	const isFrameNode = $derived(
-		frames.current.find((frame) => frame.name === object?.name) !== undefined
+		frames.current.find(
+			(frame) => frame.name === object?.name && partDefinedComponentNames.includes(frame.name)
+		) !== undefined
 	)
 	let copied = $state(false)
 
@@ -112,22 +118,30 @@
 			l?: number
 		}
 		if (geometry.type === 'box') {
+			const currentGeometry = object.geometry?.geometryType.value as {
+				dimsMm: { x: number; y: number; z: number }
+			}
 			geometryObject = {
 				type: 'box',
-				x: geometry.x ?? object.geometry?.geometryType.value?.dimsMm?.x,
-				y: geometry.y ?? object.geometry?.geometryType.value?.dimsMm?.y,
-				z: geometry.z ?? object.geometry?.geometryType.value?.dimsMm?.z,
+				x: geometry.x ?? currentGeometry?.dimsMm?.x,
+				y: geometry.y ?? currentGeometry?.dimsMm?.y,
+				z: geometry.z ?? currentGeometry?.dimsMm?.z,
 			}
 		} else if (geometry.type === 'sphere') {
+			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
 			geometryObject = {
 				type: 'sphere',
-				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
+				r: geometry.r ?? currentGeometry?.radiusMm,
 			}
 		} else if (geometry.type === 'capsule') {
+			const currentGeometry = object.geometry?.geometryType.value as {
+				radiusMm: number
+				lengthMm: number
+			}
 			geometryObject = {
 				type: 'capsule',
-				r: geometry.r ?? object.geometry?.geometryType.value?.radiusMm,
-				l: geometry.l ?? object.geometry?.geometryType.value?.lengthMm,
+				r: geometry.r ?? currentGeometry?.radiusMm,
+				l: geometry.l ?? currentGeometry?.lengthMm,
 			}
 		}
 
@@ -357,9 +371,7 @@
 						</div>
 					</div>
 				{/if}
-			</WeblabActive>
 
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
 				{#if localPose}
 					{#if isFrameNode}
 						<div>
@@ -526,37 +538,35 @@
 						</div>
 					{/if}
 				{/if}
-			</WeblabActive>
 
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
 				{#if isFrameNode}
 					<div>
 						<strong class="font-semibold">geometry</strong>
 						<div class="grid grid-cols-4 gap-1">
 							<Button
-								variant={geometryType === 'none' ? 'secondary' : 'primary'}
+								variant={geometryType === 'none' ? 'dark' : 'primary'}
 								class="h-6 px-2 py-1 text-xs"
 								onclick={() => setGeometryType('none')}>None</Button
 							>
 							<Button
-								variant={geometryType === 'box' ? 'secondary' : 'primary'}
+								variant={geometryType === 'box' ? 'dark' : 'primary'}
 								class="h-6 px-2 py-1 text-xs"
 								onclick={() => setGeometryType('box')}>Box</Button
 							>
 							<Button
-								variant={geometryType === 'sphere' ? 'secondary' : 'primary'}
+								variant={geometryType === 'sphere' ? 'dark' : 'primary'}
 								class="h-6 px-2 py-1 text-xs"
 								onclick={() => setGeometryType('sphere')}>Sphere</Button
 							>
 							<Button
-								variant={geometryType === 'capsule' ? 'secondary' : 'primary'}
+								variant={geometryType === 'capsule' ? 'dark' : 'primary'}
 								class="h-6 px-2 py-1 text-xs"
 								onclick={() => setGeometryType('capsule')}>Capsule</Button
 							>
 						</div>
 					</div>
 					{#if object.geometry}
-						{#if geometryType === 'box'}
+						{#if object.geometry?.geometryType.case === 'box'}
 							{@const { dimsMm } = object.geometry.geometryType.value}
 							<div>
 								<strong class="font-semibold">dimensions (box)</strong>
@@ -600,8 +610,8 @@
 								</div>
 							</div>
 						{/if}
-						{#if geometryType === 'capsule'}
-							{@const { value } = object.geometry.geometryType}
+						{#if object.geometry?.geometryType.case === 'capsule'}
+							{@const { radiusMm, lengthMm } = object.geometry.geometryType.value}
 							<div>
 								<strong class="font-semibold">dimensions (capsule)</strong>
 								<div class="flex items-center gap-2">
@@ -609,7 +619,7 @@
 									<input
 										type="number"
 										class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-										value={value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+										value={radiusMm ? radiusMm.toFixed(2) : '-'}
 										oninput={(e) => {
 											updateGeometry({
 												type: 'capsule',
@@ -621,7 +631,7 @@
 									<input
 										type="number"
 										class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-										value={value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+										value={lengthMm ? lengthMm.toFixed(2) : '-'}
 										oninput={(e) => {
 											updateGeometry({
 												type: 'capsule',
@@ -632,8 +642,8 @@
 								</div>
 							</div>
 						{/if}
-						{#if geometryType === 'sphere'}
-							{@const { value } = object.geometry.geometryType}
+						{#if object.geometry?.geometryType.case === 'sphere'}
+							{@const { radiusMm } = object.geometry.geometryType.value}
 							<div>
 								<strong class="font-semibold">dimensions (sphere)</strong>
 								<div class="flex items-center gap-2">
@@ -642,7 +652,7 @@
 										<input
 											type="number"
 											class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-											value={value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+											value={radiusMm ? radiusMm.toFixed(2) : '-'}
 											oninput={(e) => {
 												updateGeometry({
 													type: 'sphere',

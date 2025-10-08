@@ -5,7 +5,7 @@ import {
 	useMachineStatus,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
@@ -16,13 +16,6 @@ interface FramesContext {
 	error?: Error
 	fetching: boolean
 	getParentFrameOptions: (componentName: string) => string[]
-}
-
-export interface FrameHeirachyNode {
-	name: string
-	parentName: string
-	object: WorldObject<Geometries>
-	children: FrameHeirachyNode[]
 }
 
 const key = Symbol('frames-context')
@@ -83,11 +76,10 @@ export const provideFrames = (partID: () => string) => {
 					if (worldObjectIndex === -1) {
 						return
 					}
-					const object = current[worldObjectIndex]
 
-					current[worldObjectIndex].updateReferenceFrame(component.frame.parent);
+					current[worldObjectIndex].referenceFrame = component.frame.parent;
 
-					current[worldObjectIndex].updatePose({
+					current[worldObjectIndex].pose = {
 						x: component.frame.translation.x,
 						y: component.frame.translation.y,
 						z: component.frame.translation.z,
@@ -95,18 +87,18 @@ export const provideFrames = (partID: () => string) => {
 						oY: component.frame.orientation.value.y,
 						oZ: component.frame.orientation.value.z,
 						theta: component.frame.orientation.value.th,
-					})
+					}
 
 					if (component.frame.geometry) {
 						switch (component.frame.geometry.type) {
 							case 'box':
-								current[worldObjectIndex].geometry = { geometryType: { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } } }
+								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } } }
 								break
 							case 'sphere':
-								current[worldObjectIndex].geometry = { geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } } }
+								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } } }
 								break
 							case 'capsule':
-								current[worldObjectIndex].geometry = { geometryType: { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } } }
+								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } } }
 								break
 							default:
 								current[worldObjectIndex].geometry = undefined

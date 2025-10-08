@@ -133,48 +133,49 @@ interface AppEmbeddedPartConfigProps {
 	partName: () => string | undefined
 }
 export class AppEmbeddedPartConfig implements LocalPartConfig {
-	private appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
+	private _appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
 	constructor(appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps) {
-		this.appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
+		this._appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
 	}
 
 	public isDirty(): boolean {
-		return this.appEmbeddedPartConfigProps.isDirty()
+		return this._appEmbeddedPartConfigProps.isDirty()
 	}
 
 	public getLocalPartConfig(): unknown {
-		return this.appEmbeddedPartConfigProps.getLocalPartConfig()
+		return this._appEmbeddedPartConfigProps.getLocalPartConfig()
 	}
 
 	public setLocalPartConfig(config: Struct, partName: string): void {
-		return this.appEmbeddedPartConfigProps.setLocalPartConfig(config, partName)
+		return this._appEmbeddedPartConfigProps.setLocalPartConfig(config, partName)
 	}
 
 	public partName(): string | undefined {
-		return this.appEmbeddedPartConfigProps.partName()
+		return this._appEmbeddedPartConfigProps.partName()
 	}
 }
 
 interface StandalonePartConfigProps {
 	viamClient: () => ViamClient | undefined
 	partID: string
-	partName: () => string | undefined
 }
 export class StandalonePartConfig implements LocalPartConfig {
-	private standalonePartConfigProps: StandalonePartConfigProps
-	private dirty = $state(false);
-	private networkPartConfig = $state<Struct>();
-	private localPartConfig = $state<Struct>();
+	private _standalonePartConfigProps: StandalonePartConfigProps
+	private _dirty = $state(false);
+	private _networkPartConfig = $state<Struct>();
+	private _localPartConfig = $state<Struct>();
+	private _partName = $state<string>();
 
 	constructor(standalonePartConfigProps: StandalonePartConfigProps) {
-		this.standalonePartConfigProps = standalonePartConfigProps
+		this._standalonePartConfigProps = standalonePartConfigProps
 
 		$effect.pre(() => {
 			const self = this
 			async function initLocalConfig() {
 				const partResponse = await standalonePartConfigProps.viamClient()?.appClient.getRobotPart(standalonePartConfigProps.partID)
-				self.networkPartConfig = Struct.fromJson(JSON.parse(partResponse?.configJson ?? '{}'))
-				self.localPartConfig = Struct.fromJson(JSON.parse(partResponse?.configJson ?? '{}'))
+				self._networkPartConfig = Struct.fromJson(JSON.parse(partResponse?.configJson ?? '{}'))
+				self._localPartConfig = Struct.fromJson(JSON.parse(partResponse?.configJson ?? '{}'))
+				self._partName = partResponse?.part?.name
 			}
 
 			initLocalConfig()
@@ -183,37 +184,36 @@ export class StandalonePartConfig implements LocalPartConfig {
 	
 
 	public getLocalPartConfig(): unknown {
-		return this.localPartConfig?.toJson() ?? {}
+		return this._localPartConfig?.toJson() ?? {}
 	}
 	public setLocalPartConfig(config: Struct, _: string): void {
-		this.localPartConfig = config
-		this.dirty = true
+		this._localPartConfig = config
+		this._dirty = true
 	}
 
 	public partName(): string | undefined {
-		return this.standalonePartConfigProps.partName()
+		return this._partName
 	}
 
 	public isDirty(): boolean {
-		return this.dirty
+		return this._dirty
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
-		if (!this.localPartConfig) {
+		if (!this._localPartConfig || !this._partName) {
 			return
 		}
-		this.networkPartConfig = this.localPartConfig
-		await this.standalonePartConfigProps.viamClient()?.appClient.updateRobotPart(this.standalonePartConfigProps.partID, this.standalonePartConfigProps.partName() ?? '', this.localPartConfig)
-		// force a refresh??
-		this.dirty = false
+		this._networkPartConfig = this._localPartConfig
+		await this._standalonePartConfigProps.viamClient()?.appClient.updateRobotPart(this._standalonePartConfigProps.partID, this._partName, this._localPartConfig)
+		this._dirty = false
 	}
 
 	public async resetLocalPartConfig(): Promise<void> {
-		if (!this.networkPartConfig) {
+		if (!this._networkPartConfig) {
 			return
 		}
-		this.localPartConfig = this.networkPartConfig
-		this.dirty = false
+		this._localPartConfig = this._networkPartConfig
+		this._dirty = false
 	}
 }
 

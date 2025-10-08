@@ -21,24 +21,25 @@
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 
+	interface LocalConfigProps {
+		getLocalPartConfig: () => unknown
+		setLocalPartConfig: (config: Struct, partName: string) => void
+		getPartName: () => string | undefined
+		isDirty: () => boolean
+	}
+
 	interface Props {
 		partID?: string
 		enableKeybindings?: boolean
 		children?: Snippet
-		getLocalPartConfig?: () => unknown
-		setLocalPartConfig?: (config: Struct, partName: string) => void
-		getPartName?: () => string | undefined
-		isDirty?: () => boolean
+		localConfigProps?: LocalConfigProps
 	}
 
 	let {
 		partID = '',
 		enableKeybindings = true,
 		children: appChildren,
-		getLocalPartConfig,
-		setLocalPartConfig,
-		getPartName,
-		isDirty,
+		localConfigProps,
 	}: Props = $props()
 
 	const appClient = useViamClient()
@@ -53,28 +54,17 @@
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
-	let partName = $state<string>()
 	let isStandalone = $state(false)
 
-	$effect.pre(() => {
-		async function getPartName() {
-			if (appClient?.current === undefined) {
-				return
-			}
-			const partResponse = await appClient.current?.appClient.getRobotPart(partID)
-			partName = partResponse?.part?.name ?? ''
-		}
-		getPartName()
-	})
-
-	if (getLocalPartConfig && setLocalPartConfig && getPartName && isDirty) {
+	if (localConfigProps) {
 		isStandalone = false
 		providePartConfig({
 			appEmbeddedPartConfigProps: {
-				isDirty: () => isDirty(),
-				getLocalPartConfig,
-				setLocalPartConfig,
-				partName: () => getPartName(),
+				isDirty: () => localConfigProps.isDirty(),
+				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+				setLocalPartConfig: (config: Struct, partName: string) =>
+					localConfigProps.setLocalPartConfig(config, partName),
+				partName: () => localConfigProps.getPartName(),
 			},
 		})
 	} else {
@@ -83,7 +73,6 @@
 			standalonePartConfigProps: {
 				viamClient: () => appClient?.current,
 				partID,
-				partName: () => partName,
 			},
 		})
 	}
