@@ -41,6 +41,7 @@ export const provideFrames = (partID: () => string) => {
 		() => {
 			if (!partConfig.isDirty()) {
 				untrack(() => query.current).refetch()
+				untrack(() => partConfig.setAwaitingRefresh(false))
 				logs.add('Fetching frames...')
 			}
 		}
@@ -83,9 +84,6 @@ export const provideFrames = (partID: () => string) => {
 						return
 					}
 					const object = current[worldObjectIndex]
-					console.log("updating frames for ", object.name)
-					console.log("current pose", object.pose)
-					console.log("component frame", component.frame)
 
 					current[worldObjectIndex].updateReferenceFrame(component.frame.parent);
 
@@ -121,8 +119,6 @@ export const provideFrames = (partID: () => string) => {
 		});
 		untrack(() => current = [...current]);
 	})
-
-	$inspect(current)
 
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)

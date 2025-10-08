@@ -53,7 +53,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
-			if (resource?.subtype === 'arm' || partConfig.isDirty()) {
+			if (resource?.subtype === 'arm' || partConfig.isDirty() || partConfig.getAwaitingRefresh()) {
 				return
 			}
 			return query.current.data?.pose

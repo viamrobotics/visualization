@@ -16,11 +16,14 @@ interface PartConfigContext {
     saveLocalPartConfig: () => void
     resetLocalPartConfig: () => void
 	getLocalPartConfig: () => unknown
+	getAwaitingRefresh: () => boolean
+	setAwaitingRefresh: (awaitingRefresh: boolean) => void
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
     const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params;
 	let localPartConfig: LocalPartConfig;
+	let awaitingRefresh = $state(false);
 	if (appEmbeddedPartConfigProps) {
 		localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
 	} else if (standalonePartConfigProps) {
@@ -77,6 +80,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 	}
 
 	const saveLocalPartConfig = () => {
+		awaitingRefresh = true
 		localPartConfig.saveLocalPartConfig?.()
 	}
 
@@ -88,6 +92,14 @@ export const providePartConfig = (params: PartConfigParams) => {
 		return localPartConfig.getLocalPartConfig()
 	}
 
+	const getAwaitingRefresh = () => {
+		return awaitingRefresh
+	}
+
+	const setAwaitingRefresh = (val: boolean) => {
+		awaitingRefresh = val
+	}
+
     setContext<PartConfigContext>(key, {
         setFrameParentConfig,
         updateFrame,
@@ -95,6 +107,8 @@ export const providePartConfig = (params: PartConfigParams) => {
 		saveLocalPartConfig,
 		resetLocalPartConfig,
 		getLocalPartConfig,
+		getAwaitingRefresh,
+		setAwaitingRefresh
     })
 }
 
@@ -188,7 +202,9 @@ export class StandalonePartConfig implements LocalPartConfig {
 		if (!this.localPartConfig) {
 			return
 		}
-		const partResponse = await this.standalonePartConfigProps.viamClient()?.appClient.updateRobotPart(this.standalonePartConfigProps.partID, this.standalonePartConfigProps.partName() ?? '', this.localPartConfig)
+		this.networkPartConfig = this.localPartConfig
+		await this.standalonePartConfigProps.viamClient()?.appClient.updateRobotPart(this.standalonePartConfigProps.partID, this.standalonePartConfigProps.partName() ?? '', this.localPartConfig)
+		// force a refresh??
 		this.dirty = false
 	}
 
