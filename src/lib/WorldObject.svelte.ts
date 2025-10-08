@@ -10,6 +10,7 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
+import type { ValueOf } from 'type-fest'
 
 export type PointsGeometry = {
 	center: undefined
@@ -22,6 +23,12 @@ export type LinesGeometry = {
 }
 
 export type Geometries = Geometry | PointsGeometry | LinesGeometry
+
+export const SupportedShapes = {
+	points: 'points',
+	line: 'line',
+	arrow: 'arrow',
+} as const
 
 export type Metadata = {
 	colors?: Float32Array
@@ -36,6 +43,7 @@ export type Metadata = {
 		id: number
 		object: BatchedMesh
 	}
+	shape?: ValueOf<typeof SupportedShapes>
 	getBoundingBoxAt?: (box: Box3) => void
 }
 
