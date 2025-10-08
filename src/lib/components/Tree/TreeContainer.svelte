@@ -10,6 +10,7 @@
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+	import Widgets from './Widgets.svelte'
 
 	const { ...rest } = $props()
 
@@ -55,4 +56,5 @@
 
 	<Logs />
 	<Settings />
+	<Widgets />
 </div>
