@@ -377,6 +377,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
+		console.log('saveLocalPartConfig', this._localPartConfig, this._partName)
 		if (!this._localPartConfig || !this._partName) {
 			return
 		}
