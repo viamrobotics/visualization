@@ -1,4 +1,4 @@
-import type { CreateQueryOptions, QueryObserverResult } from '@tanstack/svelte-query'
+import type { QueryObserverResult } from '@tanstack/svelte-query'
 import { ArmClient, ArmJointPositions } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
