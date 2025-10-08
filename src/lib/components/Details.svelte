@@ -57,16 +57,195 @@
 
 	const draggable = useDraggable('details')
 
+<<<<<<< HEAD
 	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
 		() => referenceFrame
 	)
+=======
+	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
+		if (!object) return
+
+		partConfig.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+			x: x ?? object.pose.x,
+			y: y ?? object.pose.y,
+			z: z ?? object.pose.z,
+			oX: object.pose.oX,
+			oY: object.pose.oY,
+			oZ: object.pose.oZ,
+			theta: object.pose.theta,
+		})
+	}
+
+	const updateLocalOrientation = ({
+		oX,
+		oY,
+		oZ,
+		theta,
+	}: {
+		oX?: number
+		oY?: number
+		oZ?: number
+		theta?: number
+	}) => {
+		if (!object) return
+
+		partConfig.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
+			oX: oX ?? object.pose.oX,
+			oY: oY ?? object.pose.oY,
+			oZ: oZ ?? object.pose.oZ,
+			theta: theta ?? object.pose.theta,
+			x: object.pose.x,
+			y: object.pose.y,
+			z: object.pose.z,
+		})
+	}
+
+	const updateGeometry = (geometry: {
+		type: 'none' | 'box' | 'sphere' | 'capsule'
+		r?: number
+		l?: number
+		x?: number
+		y?: number
+		z?: number
+	}) => {
+		if (!object) return
+		let geometryObject: {
+			type: 'box' | 'sphere' | 'capsule'
+			x?: number
+			y?: number
+			z?: number
+			r?: number
+			l?: number
+		}
+		if (geometry.type === 'box') {
+			const currentGeometry = object.geometry?.geometryType.value as {
+				dimsMm: { x: number; y: number; z: number }
+			}
+			geometryObject = {
+				type: 'box',
+				x: geometry.x ?? currentGeometry?.dimsMm?.x,
+				y: geometry.y ?? currentGeometry?.dimsMm?.y,
+				z: geometry.z ?? currentGeometry?.dimsMm?.z,
+			}
+		} else if (geometry.type === 'sphere') {
+			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
+			geometryObject = {
+				type: 'sphere',
+				r: geometry.r ?? currentGeometry?.radiusMm,
+			}
+		} else if (geometry.type === 'capsule') {
+			const currentGeometry = object.geometry?.geometryType.value as {
+				radiusMm: number
+				lengthMm: number
+			}
+			geometryObject = {
+				type: 'capsule',
+				r: geometry.r ?? currentGeometry?.radiusMm,
+				l: geometry.l ?? currentGeometry?.lengthMm,
+			}
+		}
+
+		partConfig.updateFrame(
+			selectedObject.current?.name ?? '',
+			referenceFrame,
+			{
+				x: object.pose.x,
+				y: object.pose.y,
+				z: object.pose.z,
+				oX: object.pose.oX,
+				oY: object.pose.oY,
+				oZ: object.pose.oZ,
+				theta: object.pose.theta,
+			},
+			{ ...geometryObject! }
+		)
+	}
+>>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		if (type === geometryType) return
 		geometryType = type
+<<<<<<< HEAD
 		detailConfigUpdater.setGeometryType(type)
+=======
+		if (!object) return
+		if (type === 'none') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'none' }
+			)
+		} else if (type === 'box') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'box', x: 100, y: 100, z: 100 }
+			)
+		} else if (type === 'sphere') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'sphere', r: 100 }
+			)
+		} else if (type === 'capsule') {
+			partConfig.updateFrame(
+				selectedObject.current?.name ?? '',
+				referenceFrame,
+				{
+					x: object.pose.x,
+					y: object.pose.y,
+					z: object.pose.z,
+					oX: object.pose.oX,
+					oY: object.pose.oY,
+					oZ: object.pose.oZ,
+					theta: object.pose.theta,
+				},
+				{ type: 'capsule', r: 20, l: 100 }
+			)
+		}
+>>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
+	}
+
+	const setFrameParent = (parentName: string) => {
+		if (!object) return
+		partConfig.updateFrame(object.name, parentName, {
+			x: object.pose.x,
+			y: object.pose.y,
+			z: object.pose.z,
+			oX: object.pose.oX,
+			oY: object.pose.oY,
+			oZ: object.pose.oZ,
+			theta: object.pose.theta,
+		})
 	}
 
 	const { start, stop } = useTask(
@@ -254,6 +433,7 @@
 				<div>
 					<strong class="font-semibold">parent frame</strong>
 					<div class="flex gap-3">
+<<<<<<< HEAD
 						{@render ParentFrame({
 							label: 'name',
 							ariaLabel: 'parent frame name',
@@ -261,6 +441,15 @@
 							options: referenceFrameOptions,
 							onChange: (value) => detailConfigUpdater.setFrameParent(value),
 						})}
+=======
+						<ParentFrame
+							label="name"
+							ariaLabel="parent frame name"
+							value={referenceFrame}
+							options={referenceFrameOptions}
+							onChange={(value) => setFrameParent(value)}
+						/>
+>>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 					</div>
 				</div>
 
