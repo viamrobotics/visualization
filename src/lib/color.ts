@@ -89,3 +89,8 @@ export const resourceColors = {
 	switch: oklchToHex(twColors.stone[darkness]),
 	webcam: oklchToHex(twColors.sky[darkness]),
 } as const
+
+export const isColor = (color: Color | ColorRepresentation | undefined): color is Color => {
+	if (!color) return false
+	return color instanceof Color
+}

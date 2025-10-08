@@ -43,7 +43,7 @@ export class BatchedArrow {
 	constructor({
 		maxArrows = 20_000,
 		shaftWidth = 0.001,
-		material = new MeshBasicMaterial({ color: 0xffff00, toneMapped: false }),
+		material = new MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
 	} = {}) {
 		const shaftGeo = new BoxGeometry(1, 1, 1)
 		shaftGeo.translate(0, 0.5, 0)

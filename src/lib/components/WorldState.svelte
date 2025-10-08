@@ -9,6 +9,7 @@
 	import { WorldObject } from '$lib/WorldObject.svelte'
 	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import { poseToDirection } from '$lib/transform'
+	import { isColor } from '$lib/color'
 
 	interface Props {
 		worldObjects: WorldObject[]
@@ -17,20 +18,43 @@
 	let { worldObjects }: Props = $props()
 
 	const batchedArrow = useArrows()
+	const currentArrows: Record<string, { id: number; arrow: WorldObject }> = {}
 
 	const arrows = $derived(worldObjects.filter((object) => object.metadata?.shape === 'arrow'))
 	const objects = $derived(worldObjects.filter((object) => object.metadata?.shape !== 'arrow'))
 
+	const getArrows = () => ({ ...currentArrows })
+	const getArrow = (uuid: string) => currentArrows[uuid]
+	const setArrow = (uuid: string, id: number, arrow: WorldObject) => {
+		currentArrows[uuid] = { id, arrow }
+	}
+
 	$effect(() => {
-		batchedArrow.clear()
+		const toRemove = getArrows()
 		arrows.forEach((arrow) => {
-			batchedArrow.addArrow(
+			const currentArrow = getArrow(arrow.uuid)
+			if (currentArrow) {
+				batchedArrow.removeArrow(currentArrow.id)
+			}
+
+			const color = isColor(arrow.metadata?.color)
+				? arrow.metadata.color
+				: new Color(arrow.metadata?.color ?? 'black')
+
+			const id = batchedArrow.addArrow(
 				poseToDirection(arrow.pose),
 				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
 				0.1,
-				new Color(arrow.metadata?.color ?? 'black'),
+				color,
 				true
 			)
+
+			setArrow(arrow.uuid, id, arrow)
+			delete toRemove[arrow.uuid]
+		})
+
+		Object.values(toRemove).forEach(({ id }) => {
+			batchedArrow.removeArrow(id)
 		})
 	})
 </script>
