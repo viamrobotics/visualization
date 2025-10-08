@@ -56,13 +56,13 @@ describe('Details component', () => {
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			getLocalPartConfig: vi.fn(() => ({ components: [] })),
-			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
 			isDirty: vi.fn(),
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			setAwaitingRefresh: vi.fn(),
 			getAwaitingRefresh: vi.fn(),
+			getComponentNameToFragmentId: vi.fn(),
 		})
 	})
 
@@ -157,13 +157,13 @@ describe('Details component', () => {
 					},
 				],
 			})),
-			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
 			isDirty: vi.fn(),
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			setAwaitingRefresh: vi.fn(),
 			getAwaitingRefresh: vi.fn(),
+			getComponentNameToFragmentId: vi.fn(),
 		})
 
 		render(Details)

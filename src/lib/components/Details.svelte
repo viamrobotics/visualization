@@ -49,14 +49,8 @@
 	const localPose = $derived(object?.pose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
-	const partDefinedComponentNames = $derived.by(() => {
-		const config = partConfig.getLocalPartConfig() as { components: { name: string }[] }
-		return config?.components?.map((component: { name: string }) => component.name) ?? []
-	})
 	const isFrameNode = $derived(
-		frames.current.find(
-			(frame) => frame.name === object?.name && partDefinedComponentNames.includes(frame.name)
-		) !== undefined
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
 	let copied = $state(false)
 
@@ -65,7 +59,7 @@
 	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		if (!object) return
 
-		partConfig.updateFrame(selectedObject.current?.name ?? '', {
+		partConfig.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
 			x: x ?? object.pose.x,
 			y: y ?? object.pose.y,
 			z: z ?? object.pose.z,
@@ -89,7 +83,7 @@
 	}) => {
 		if (!object) return
 
-		partConfig.updateFrame(selectedObject.current?.name ?? '', {
+		partConfig.updateFrame(selectedObject.current?.name ?? '', referenceFrame, {
 			oX: oX ?? object.pose.oX,
 			oY: oY ?? object.pose.oY,
 			oZ: oZ ?? object.pose.oZ,
@@ -147,6 +141,7 @@
 
 		partConfig.updateFrame(
 			selectedObject.current?.name ?? '',
+			referenceFrame,
 			{
 				x: object.pose.x,
 				y: object.pose.y,
@@ -167,6 +162,7 @@
 		if (type === 'none') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
+				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -181,6 +177,7 @@
 		} else if (type === 'box') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
+				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -195,6 +192,7 @@
 		} else if (type === 'sphere') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
+				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -209,6 +207,7 @@
 		} else if (type === 'capsule') {
 			partConfig.updateFrame(
 				selectedObject.current?.name ?? '',
+				referenceFrame,
 				{
 					x: object.pose.x,
 					y: object.pose.y,
@@ -221,6 +220,19 @@
 				{ type: 'capsule', r: 20, l: 100 }
 			)
 		}
+	}
+
+	const setFrameParent = (parentName: string) => {
+		if (!object) return
+		partConfig.updateFrame(object.name, parentName, {
+			x: object.pose.x,
+			y: object.pose.y,
+			z: object.pose.z,
+			oX: object.pose.oX,
+			oY: object.pose.oY,
+			oZ: object.pose.oZ,
+			theta: object.pose.theta,
+		})
 	}
 
 	const { start, stop } = useTask(
@@ -349,7 +361,7 @@
 								value={referenceFrame}
 								onchange={(e) => {
 									const newFrame = (e.target as HTMLSelectElement).value
-									partConfig.setFrameParentConfig(object.name, newFrame)
+									setFrameParent(newFrame)
 								}}
 							>
 								{#each referenceFrameOptions as option (option)}
