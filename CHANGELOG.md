@@ -1,5 +1,18 @@
 # motion-tools
 
+## 0.12.0
+
+### Minor Changes
+
+- 00d0df6: create weblab infrastructure
+- 65ebe16: Display more info on world object details pane (local pose, parent frame)
+- 2a67113: Add widgets drawer and arm positions widget
+
+### Patch Changes
+
+- 07f9d64: Display only one tree entry for frames with geometries
+- 76c17f4: Allow live refresh rates
+
 ## 0.11.8
 
 ### Patch Changes
