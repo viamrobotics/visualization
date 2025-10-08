@@ -5,11 +5,11 @@ import {
 	useMachineStatus,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { WorldObject } from '$lib/WorldObject.svelte'
+import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
 import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
-import { usePartConfig } from './usePartConfig.svelte'
+import { usePartConfig, type PartConfigComponents } from './usePartConfig.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -70,67 +70,91 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		(partConfig.getLocalPartConfig() as any)?.components?.forEach((component: any) => {
-				untrack(() => {
-					const worldObjectIndex = current.findIndex((frame) => frame.name === component.name);
-					if (worldObjectIndex === -1) {
-						return
-					}
+		;(partConfig.getLocalPartConfig() as PartConfigComponents)?.components?.forEach((component) => {
+			untrack(() => {
+				const worldObjectIndex = current.findIndex((frame) => frame.name === component.name)
+				if (worldObjectIndex === -1) {
+					return
+				}
 
-					current[worldObjectIndex].referenceFrame = component.frame.parent;
+				current[worldObjectIndex].referenceFrame = component.frame.parent
 
-					current[worldObjectIndex].pose = {
-						x: component.frame.translation.x,
-						y: component.frame.translation.y,
-						z: component.frame.translation.z,
-						oX: component.frame.orientation.value.x,
-						oY: component.frame.orientation.value.y,
-						oZ: component.frame.orientation.value.z,
-						theta: component.frame.orientation.value.th,
-					}
+				current[worldObjectIndex].pose = {
+					x: component.frame.translation.x,
+					y: component.frame.translation.y,
+					z: component.frame.translation.z,
+					oX: component.frame.orientation.value.x,
+					oY: component.frame.orientation.value.y,
+					oZ: component.frame.orientation.value.z,
+					theta: component.frame.orientation.value.th,
+				}
 
-					if (component.frame.geometry) {
-						switch (component.frame.geometry.type) {
-							case 'box':
-								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'box', value: { dimsMm: { x: component.frame.geometry.x, y: component.frame.geometry.y, z: component.frame.geometry.z } } } }
-								break
-							case 'sphere':
-								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } } }
-								break
-							case 'capsule':
-								current[worldObjectIndex].geometry = {...current[worldObjectIndex].geometry, geometryType: { case: 'capsule', value: { radiusMm: component.frame.geometry.r, lengthMm: component.frame.geometry.l } } }
-								break
-							default:
-								current[worldObjectIndex].geometry = undefined
-								break
-						}
-					} else {
-						current[worldObjectIndex].geometry = undefined
+				if (component.frame.geometry) {
+					switch (component.frame.geometry.type) {
+						case 'box':
+							current[worldObjectIndex].geometry = {
+								...current[worldObjectIndex].geometry,
+								geometryType: {
+									case: 'box',
+									value: {
+										dimsMm: {
+											x: component.frame.geometry.x,
+											y: component.frame.geometry.y,
+											z: component.frame.geometry.z,
+										},
+									},
+								},
+							} as Geometries
+							break
+						case 'sphere':
+							current[worldObjectIndex].geometry = {
+								...current[worldObjectIndex].geometry,
+								geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } },
+							} as Geometries
+							break
+						case 'capsule':
+							current[worldObjectIndex].geometry = {
+								...current[worldObjectIndex].geometry,
+								geometryType: {
+									case: 'capsule',
+									value: {
+										radiusMm: component.frame.geometry.r,
+										lengthMm: component.frame.geometry.l,
+									},
+								},
+							} as Geometries
+							break
+						default:
+							current[worldObjectIndex].geometry = undefined
+							break
 					}
-				});
-		});
-		untrack(() => current = [...current]);
+				} else {
+					current[worldObjectIndex].geometry = undefined
+				}
+			})
+		})
+		untrack(() => (current = [...current]))
 	})
 
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
 
 	const getParentFrameOptions = (componentName: string) => {
-		const validFrames = new Set(current.map((frame) => frame.name));
-		validFrames.add("world");
+		const validFrames = new Set(current.map((frame) => frame.name))
+		validFrames.add('world')
 
-		const frameNameQueue = [componentName];
+		const frameNameQueue = [componentName]
 		while (frameNameQueue.length > 0) {
-			const frameName = frameNameQueue.shift();
+			const frameName = frameNameQueue.shift()
 			if (frameName) {
-				validFrames.delete(frameName);
-				const frames = current.filter((frame) => frame.referenceFrame === frameName);
+				validFrames.delete(frameName)
+				const frames = current.filter((frame) => frame.referenceFrame === frameName)
 				for (const frame of frames) {
-					frameNameQueue.push(frame.name);
+					frameNameQueue.push(frame.name)
 				}
 			}
 		}
-		return Array.from(validFrames);
+		return Array.from(validFrames)
 	}
 
 	setContext<FramesContext>(key, {

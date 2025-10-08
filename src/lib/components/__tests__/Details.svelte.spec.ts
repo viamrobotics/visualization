@@ -6,9 +6,13 @@ import * as useSelection from '$lib/hooks/useSelection.svelte'
 import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
 import { Weblab } from '$lib/hooks/useWeblabs.svelte'
 import type { Geometry } from '@viamrobotics/sdk'
+import * as useFrames from '$lib/hooks/useFrames.svelte'
+import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 describe('Details component', () => {
 	const mockedWeblab = new Weblab()
+	const mockedCurrent: WorldObject[] = []
 
 	beforeEach(() => {
 		// Mock the selection hooks to return test data
@@ -43,6 +47,22 @@ describe('Details component', () => {
 		})
 		vi.mocked(useWeblabs.useWeblabs).mockReturnValue({
 			weblab: mockedWeblab,
+		})
+
+		vi.mocked(useFrames.useFrames).mockReturnValue({
+			current: mockedCurrent,
+			fetching: false,
+			getParentFrameOptions: vi.fn(),
+		})
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
+			getLocalPartConfig: vi.fn(() => ({ components: [] })),
+			setFrameParentConfig: vi.fn(),
+			updateFrame: vi.fn(),
+			isDirty: vi.fn(),
+			saveLocalPartConfig: vi.fn(),
+			resetLocalPartConfig: vi.fn(),
+			setAwaitingRefresh: vi.fn(),
+			getAwaitingRefresh: vi.fn(),
 		})
 	})
 
@@ -91,5 +111,69 @@ describe('Details component', () => {
 		const localOrientationThSpan = screen.getByLabelText('local orientation theta degrees')
 		const localOrientationThText = localOrientationThSpan.nextSibling as HTMLElement
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
+	})
+
+	it('renders update fields for frame nodes and weblab active', () => {
+		mockedWeblab.isActive = vi.fn(() => true)
+		mockedCurrent.push({
+			name: 'Test Object',
+			uuid: '1234-5678',
+			referenceFrame: 'parent_frame',
+			pose: {
+				x: 10,
+				y: 20,
+				z: 30,
+				oX: 0.1,
+				oY: 0.2,
+				oZ: 0.3,
+				theta: 0.4,
+			},
+			geometry: {
+				label: 'my geometry',
+				geometryType: {
+					case: 'box',
+					value: {
+						dimsMm: { x: 10, y: 20, z: 30 },
+					},
+				},
+			},
+			metadata: {},
+		})
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
+			getLocalPartConfig: vi.fn(() => ({
+				components: [
+					{
+						name: 'Test Object',
+						frame: {
+							parent: 'parent_frame',
+							translation: { x: 10, y: 20, z: 30 },
+							geometry: {
+								type: 'box',
+								x: 10,
+								y: 20,
+								z: 30,
+							},
+						},
+					},
+				],
+			})),
+			setFrameParentConfig: vi.fn(),
+			updateFrame: vi.fn(),
+			isDirty: vi.fn(),
+			saveLocalPartConfig: vi.fn(),
+			resetLocalPartConfig: vi.fn(),
+			setAwaitingRefresh: vi.fn(),
+			getAwaitingRefresh: vi.fn(),
+		})
+
+		render(Details)
+
+		expect(screen.getByLabelText('local position x coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local position y coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local position z coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local orientation x coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local orientation y coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local orientation z coordinate input')).toBeInTheDocument()
+		expect(screen.getByLabelText('local orientation theta degrees input')).toBeInTheDocument()
 	})
 })

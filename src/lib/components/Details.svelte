@@ -344,6 +344,7 @@
 						<strong class="font-semibold">parent frame</strong>
 						<div class="flex gap-3">
 							<select
+								aria-label="parent frame name dropdown"
 								class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
 								value={referenceFrame}
 								onchange={(e) => {
@@ -381,6 +382,7 @@
 									<span class="text-subtle-2 text-xs">X</span>
 									<input
 										type="number"
+										aria-label="local position x coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.x.toFixed(2)}
 										oninput={(e) => {
@@ -392,6 +394,7 @@
 									<span class="text-subtle-2 text-xs">Y</span>
 									<input
 										type="number"
+										aria-label="local position y coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.y.toFixed(2)}
 										oninput={(e) => {
@@ -403,6 +406,7 @@
 									<span class="text-subtle-2 text-xs">Z</span>
 									<input
 										type="number"
+										aria-label="local position z coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.z.toFixed(2)}
 										oninput={(e) => {
@@ -420,6 +424,7 @@
 									<span class="text-subtle-2 text-xs">X</span>
 									<input
 										type="number"
+										aria-label="local orientation x coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.oX.toFixed(2)}
 										step="0.01"
@@ -434,6 +439,7 @@
 									<span class="text-subtle-2 text-xs">Y</span>
 									<input
 										type="number"
+										aria-label="local orientation y coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.oY.toFixed(2)}
 										step="0.01"
@@ -448,6 +454,7 @@
 									<span class="text-subtle-2 text-xs">Z</span>
 									<input
 										type="number"
+										aria-label="local orientation z coordinate input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.oZ.toFixed(2)}
 										step="0.01"
@@ -462,6 +469,7 @@
 									<span class="text-subtle-2 text-xs">TH</span>
 									<input
 										type="number"
+										aria-label="local orientation theta degrees input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={localPose.theta.toFixed(2)}
 										step="0.01"
@@ -574,6 +582,7 @@
 									<span class="text-subtle-2">X</span>
 									<input
 										type="number"
+										aria-label="box dimensions x value input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
 										oninput={(e) => {
@@ -586,6 +595,7 @@
 									<span class="text-subtle-2">Y</span>
 									<input
 										type="number"
+										aria-label="box dimensions y value input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
 										oninput={(e) => {
@@ -598,6 +608,7 @@
 									<span class="text-subtle-2">Z</span>
 									<input
 										type="number"
+										aria-label="box dimensions z value input"
 										class="min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
 										oninput={(e) => {
@@ -618,6 +629,7 @@
 									<span class="text-subtle-2">R</span>
 									<input
 										type="number"
+										aria-label="capsule dimensions radius value input"
 										class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 										value={radiusMm ? radiusMm.toFixed(2) : '-'}
 										oninput={(e) => {
@@ -651,6 +663,7 @@
 										<span class="text-subtle-2 text-xs">R</span>
 										<input
 											type="number"
+											aria-label="sphere dimensions radius value input"
 											class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 											value={radiusMm ? radiusMm.toFixed(2) : '-'}
 											oninput={(e) => {

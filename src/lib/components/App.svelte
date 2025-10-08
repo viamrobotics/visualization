@@ -23,7 +23,7 @@
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => unknown
-		setLocalPartConfig: (config: Struct, partName: string) => void
+		setLocalPartConfig: (config: Struct) => void
 		getPartName: () => string | undefined
 		isDirty: () => boolean
 	}
@@ -62,8 +62,7 @@
 			appEmbeddedPartConfigProps: {
 				isDirty: () => localConfigProps.isDirty(),
 				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
-				setLocalPartConfig: (config: Struct, partName: string) =>
-					localConfigProps.setLocalPartConfig(config, partName),
+				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
 				partName: () => localConfigProps.getPartName(),
 			},
 		})
