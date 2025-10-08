@@ -95,6 +95,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		if (partName !== undefined) {
 			const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 			localPartConfig.setLocalPartConfig(configStruct)
+			awaitingRefresh = true
 		}
 	}
 
@@ -153,6 +154,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		if (partName !== undefined) {
 			const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 			localPartConfig.setLocalPartConfig(configStruct)
+			awaitingRefresh = true
 		}
 	}
 
@@ -161,7 +163,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 	}
 
 	const saveLocalPartConfig = () => {
-		awaitingRefresh = true
 		localPartConfig.saveLocalPartConfig?.()
 	}
 
