@@ -20,6 +20,7 @@
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
+	import ArmPositions from './widgets/ArmPositions.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => unknown
@@ -104,6 +105,10 @@
 
 						{#if !focus}
 							<TreeContainer {@attach domPortal(root)} />
+						{/if}
+
+						{#if !focus && settings.current.enableArmPositionsWidget}
+							<ArmPositions {@attach domPortal(root)} />
 						{/if}
 
 						<FileDrop {@attach domPortal(root)} />
