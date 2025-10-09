@@ -108,7 +108,9 @@ describe('Details component', () => {
 		const localOrientationZText = localOrientationZSpan.nextSibling as HTMLElement
 		expect(localOrientationZText.textContent?.trim()).toBe((0.3).toFixed(2))
 
-		const localOrientationThSpan = screen.getByLabelText('immutable local orientation theta degrees')
+		const localOrientationThSpan = screen.getByLabelText(
+			'immutable local orientation theta degrees'
+		)
 		const localOrientationThText = localOrientationThSpan.nextSibling as HTMLElement
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
 	})
