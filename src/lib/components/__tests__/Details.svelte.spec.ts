@@ -76,39 +76,39 @@ describe('Details component', () => {
 		render(Details)
 
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
-		const parentFrameNameSpan = screen.getByLabelText('parent frame name')
+		const parentFrameNameSpan = screen.getByLabelText('immutable parent frame name')
 		const parentFrameNameText = parentFrameNameSpan.nextSibling as HTMLElement
 		expect(parentFrameNameText.textContent?.trim()).toBe('parent_frame')
 
 		expect(screen.getByText('local position')).toBeInTheDocument()
 
-		const localPositionXSpan = screen.getByLabelText('local position x coordinate')
+		const localPositionXSpan = screen.getByLabelText('immutable local position x coordinate')
 		const localPositionXText = localPositionXSpan.nextSibling as HTMLElement
 		expect(localPositionXText.textContent?.trim()).toBe((10).toFixed(2))
 
-		const localPositionYSpan = screen.getByLabelText('local position y coordinate')
+		const localPositionYSpan = screen.getByLabelText('immutable local position y coordinate')
 		const localPositionYText = localPositionYSpan.nextSibling as HTMLElement
 		expect(localPositionYText.textContent?.trim()).toBe((20).toFixed(2))
 
-		const localPositionZSpan = screen.getByLabelText('local position z coordinate')
+		const localPositionZSpan = screen.getByLabelText('immutable local position z coordinate')
 		const localPositionZText = localPositionZSpan.nextSibling as HTMLElement
 		expect(localPositionZText.textContent?.trim()).toBe((30).toFixed(2))
 
 		expect(screen.getByText('local orientation')).toBeInTheDocument()
 
-		const localOrientationXSpan = screen.getByLabelText('local orientation x coordinate')
+		const localOrientationXSpan = screen.getByLabelText('immutable local orientation x coordinate')
 		const localOrientationXText = localOrientationXSpan.nextSibling as HTMLElement
 		expect(localOrientationXText.textContent?.trim()).toBe((0.1).toFixed(2))
 
-		const localOrientationYSpan = screen.getByLabelText('local orientation y coordinate')
+		const localOrientationYSpan = screen.getByLabelText('immutable local orientation y coordinate')
 		const localOrientationYText = localOrientationYSpan.nextSibling as HTMLElement
 		expect(localOrientationYText.textContent?.trim()).toBe((0.2).toFixed(2))
 
-		const localOrientationZSpan = screen.getByLabelText('local orientation z coordinate')
+		const localOrientationZSpan = screen.getByLabelText('immutable local orientation z coordinate')
 		const localOrientationZText = localOrientationZSpan.nextSibling as HTMLElement
 		expect(localOrientationZText.textContent?.trim()).toBe((0.3).toFixed(2))
 
-		const localOrientationThSpan = screen.getByLabelText('local orientation theta degrees')
+		const localOrientationThSpan = screen.getByLabelText('immutable local orientation theta degrees')
 		const localOrientationThText = localOrientationThSpan.nextSibling as HTMLElement
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
 	})
@@ -168,12 +168,12 @@ describe('Details component', () => {
 
 		render(Details)
 
-		expect(screen.getByLabelText('local position x coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local position y coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local position z coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local orientation x coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local orientation y coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local orientation z coordinate input')).toBeInTheDocument()
-		expect(screen.getByLabelText('local orientation theta degrees input')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local position x coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local position y coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local position z coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local orientation x coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local orientation y coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local orientation z coordinate')).toBeInTheDocument()
+		expect(screen.getByLabelText('mutable local orientation theta degrees')).toBeInTheDocument()
 	})
 })
