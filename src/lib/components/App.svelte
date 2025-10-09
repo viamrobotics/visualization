@@ -27,6 +27,7 @@
 		setLocalPartConfig: (config: Struct) => void
 		isDirty: () => boolean
 		getComponentToFragId: () => Record<string, string>
+		getComponentToFragId: () => Record<string, string>
 	}
 
 	interface Props {

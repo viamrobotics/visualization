@@ -418,13 +418,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 				const componentNameToFragmentId: Record<string, string> = {}
 				const fragementRequests = []
 
-<<<<<<< HEAD
 				if (configJson.fragments) {
-=======
-				console.log('configJson', configJson)
-				if (configJson.fragments) {
-					console.log('configJson.fragments', configJson.fragments)
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 					for (const fragmentId of configJson.fragments) {
 						fragementRequests.push(
 							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId)
@@ -474,7 +468,6 @@ export class StandalonePartConfig implements LocalPartConfig {
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
-		console.log('saveLocalPartConfig', this._localPartConfig, this._partName)
 		if (!this._localPartConfig || !this._partName) {
 			return
 		}
