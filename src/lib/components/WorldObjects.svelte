@@ -7,6 +7,7 @@
 	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { useArrows } from '$lib/hooks/useArrows.svelte'
+	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
 	import Line from './Line.svelte'
@@ -16,6 +17,7 @@
 	import WorldState from './WorldState.svelte'
 
 	const points = usePointClouds()
+	const pointcloudObjects = usePointcloudObjects()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
@@ -69,6 +71,27 @@
 		<Pointcloud {object}>
 			<Label text={object.name} />
 		</Pointcloud>
+	</Portal>
+{/each}
+
+{#each pointcloudObjects.current as object (object.uuid)}
+	<Portal id={object.referenceFrame}>
+		{#if object.geometry?.geometryType.case === 'points'}
+			<Pointcloud {object}>
+				<Label text={object.name} />
+			</Pointcloud>
+		{:else}
+			<Frame
+				uuid={object.uuid}
+				name={object.name}
+				pose={object.pose}
+				geometry={object.geometry}
+				metadata={object.metadata}
+			>
+				<PortalTarget id={object.name} />
+				<Label text={object.name} />
+			</Frame>
+		{/if}
 	</Portal>
 {/each}
 

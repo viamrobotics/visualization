@@ -38,6 +38,7 @@ export const providePointclouds = (partID: () => string) => {
 
 			const options = queryOptions({
 				enabled:
+					false &&
 					interval !== -1 &&
 					cameraClient.current !== undefined &&
 					disabledCameras.get(name) !== true,
@@ -56,10 +57,13 @@ export const providePointclouds = (partID: () => string) => {
 					const { positions, colors } = await parsePcdInWorker(new Uint8Array(response))
 
 					return new WorldObject(
-						`${name}:pointcloud`,
+						`${name} pointcloud`,
 						undefined,
 						name,
-						{ center: undefined, geometryType: { case: 'points', value: positions } },
+						{
+							center: undefined,
+							geometryType: { case: 'points', value: positions },
+						},
 						colors ? { colors } : undefined
 					)
 				},

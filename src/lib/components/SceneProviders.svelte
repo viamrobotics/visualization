@@ -17,6 +17,7 @@
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
+	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	interface Props {
 		children: Snippet<[{ focus: boolean }]>
 	}
@@ -37,6 +38,7 @@
 
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
+	providePointcloudObjects(() => partID.current)
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
 	provideObjects()

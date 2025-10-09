@@ -54,6 +54,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 			if (resource?.subtype === 'arm') {
 				return
 			}
+
 			return query.current.data?.pose
 		},
 	}
