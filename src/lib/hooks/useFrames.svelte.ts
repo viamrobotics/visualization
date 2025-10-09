@@ -70,7 +70,6 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		console.log('partConfig', partConfig.getLocalPartConfig())
 		const components = (partConfig.getLocalPartConfig() as PartConfig)?.components
 		const fragmentMods = (partConfig.getLocalPartConfig() as PartConfig)?.fragment_mods
 		untrack(() => {
@@ -132,10 +131,8 @@ export const provideFrames = (partID: () => string) => {
 						current[index].geometry = undefined
 					}
 				} else {
-					console.log('component not found', frame.name)
 					const fragmentId = partConfig.getComponentNameToFragmentId()[frame.name]
 					const fragmentMod = fragmentMods?.find((mod) => mod.fragment_id === fragmentId)
-					console.log('fragmentMod', fragmentMod)
 					const componentMod = fragmentMod?.mods.findLast(
 						(mod) => mod['$set']?.[`components.${frame.name}.frame`] !== undefined
 					)

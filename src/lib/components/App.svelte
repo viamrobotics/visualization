@@ -25,6 +25,7 @@
 		getLocalPartConfig: () => unknown
 		setLocalPartConfig: (config: Struct) => void
 		isDirty: () => boolean
+		getComponentToFragId: () => Record<string, string>
 	}
 
 	interface Props {
@@ -62,6 +63,7 @@
 				isDirty: () => localConfigProps.isDirty(),
 				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
 			},
 		})
 	} else {

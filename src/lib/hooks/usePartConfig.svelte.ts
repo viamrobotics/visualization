@@ -315,6 +315,7 @@ interface AppEmbeddedPartConfigProps {
 	isDirty: () => boolean
 	getLocalPartConfig: () => unknown
 	setLocalPartConfig: (config: Struct) => void
+	getComponentToFragId: () => Record<string, string>
 }
 export class AppEmbeddedPartConfig implements LocalPartConfig {
 	private _appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
@@ -335,8 +336,7 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 	}
 
 	public componentNameToFragmentId(): Record<string, string> {
-		// TODO: get this from app client somehow
-		return {}
+		return this._appEmbeddedPartConfigProps.getComponentToFragId()
 	}
 }
 
@@ -368,9 +368,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 				const componentNameToFragmentId: Record<string, string> = {}
 				const fragementRequests = []
 
-				console.log('configJson', configJson)
 				if (configJson.fragments) {
-					console.log('configJson.fragments', configJson.fragments)
 					for (const fragmentId of configJson.fragments) {
 						fragementRequests.push(
 							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId)
@@ -420,7 +418,6 @@ export class StandalonePartConfig implements LocalPartConfig {
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
-		console.log('saveLocalPartConfig', this._localPartConfig, this._partName)
 		if (!this._localPartConfig || !this._partName) {
 			return
 		}
