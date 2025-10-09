@@ -178,7 +178,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		)
 		if (existingFrameIndex !== -1) {
 			const existingGeometry = fragmentMod.mods[existingFrameIndex]['$set']?.[modSetPath].geometry
-			if (existingGeometry) {
+			if (existingGeometry && !frameGeometry) {
 				frame['$set'][modSetPath].geometry = existingGeometry
 			}
 			fragmentMod.mods[existingFrameIndex] = frame
@@ -371,6 +371,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 		return this._localPartConfig ?? new Struct()
 	}
 	public setLocalPartConfig(config: Struct): void {
+		console.log('setLocalPartConfig', config.toJson())
 		this._localPartConfig = config
 		this._isDirty = true
 	}
