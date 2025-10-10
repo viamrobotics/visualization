@@ -5,10 +5,11 @@ import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
 import { Weblab } from '$lib/hooks/useWeblabs.svelte'
-import { Struct, type Geometry } from '@viamrobotics/sdk'
+import { Struct, Vector3, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
+import { LocalPartConfigState } from '$lib/hooks/usePartConfig.svelte'
 
 describe('Details component', () => {
 	const mockedWeblab = new Weblab()
@@ -40,6 +41,16 @@ describe('Details component', () => {
 					},
 				} satisfies Geometry,
 				metadata: {},
+				translationDelta: new Vector3(),
+				combinedPose: {
+					x: 10,
+					y: 20,
+					z: 30,
+					oX: 0.1,
+					oY: 0.2,
+					oZ: 0.3,
+					theta: 0.4,
+				},
 			},
 		})
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
@@ -58,7 +69,7 @@ describe('Details component', () => {
 			localPartConfig: new Struct(),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			isDirty: false,
+			localPartConfigState: LocalPartConfigState.clean,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 		})
@@ -128,6 +139,16 @@ describe('Details component', () => {
 				oZ: 0.3,
 				theta: 0.4,
 			},
+			translationDelta: new Vector3(),
+			combinedPose: {
+				x: 10,
+				y: 20,
+				z: 30,
+				oX: 0.1,
+				oY: 0.2,
+				oZ: 0.3,
+				theta: 0.4,
+			},
 			geometry: {
 				label: 'my geometry',
 				geometryType: {
@@ -159,7 +180,7 @@ describe('Details component', () => {
 			}),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			isDirty: false,
+			localPartConfigState: LocalPartConfigState.clean,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 		})

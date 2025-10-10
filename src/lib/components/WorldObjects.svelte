@@ -14,6 +14,7 @@
 	import Model from './WorldObject.svelte'
 	import Label from './Label.svelte'
 	import WorldState from './WorldState.svelte'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
@@ -21,6 +22,24 @@
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
+
+	const determinePose = (
+		object: WorldObject,
+		pose: WorldObject['pose'] | undefined
+	): WorldObject['pose'] => {
+		const basePose: WorldObject['pose'] = pose ?? object.pose
+		const combinedPose: WorldObject['pose'] = {
+			x: basePose.x + object.translationDelta.x,
+			y: basePose.y + object.translationDelta.y,
+			z: basePose.z + object.translationDelta.z,
+			oX: basePose.oX,
+			oY: basePose.oY,
+			oZ: basePose.oZ,
+			theta: basePose.theta,
+		}
+
+		return combinedPose
+	}
 </script>
 
 {#each frames.current as object (object.uuid)}
@@ -29,11 +48,12 @@
 		parent={object.referenceFrame}
 	>
 		{#snippet children({ pose })}
+			{@const framePose = determinePose(object, pose)}
 			<Portal id={object.referenceFrame}>
 				<Frame
 					uuid={object.uuid}
 					name={object.name}
-					pose={pose ?? object.pose}
+					pose={framePose}
 					geometry={object.geometry}
 					metadata={object.metadata}
 				>

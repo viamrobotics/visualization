@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { usePartConfig, LocalPartConfigState } from '$lib/hooks/usePartConfig.svelte'
 
 	const partConfig = usePartConfig()
 
 	const { ...rest } = $props()
 </script>
 
-{#if partConfig.isDirty}
+{#if partConfig.localPartConfigState === LocalPartConfigState.dirty}
 	<div
 		class="absolute bottom-8 z-1000 flex w-full justify-center gap-2"
 		{...rest}

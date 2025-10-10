@@ -28,15 +28,24 @@ export class DetailConfigUpdater {
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		const object = this.object()
 		if (!object) return
+		if (x) {
+			object.translationDelta.x = x - object.pose.x
+		}
+		if (y) {
+			object.translationDelta.y = y - object.pose.y
+		}
+		if (z) {
+			object.translationDelta.z = z - object.pose.z
+		}
 
 		this.updateFrame(object.name ?? '', {
-			x: x ?? object.pose.x,
-			y: y ?? object.pose.y,
-			z: z ?? object.pose.z,
-			oX: object.pose.oX,
-			oY: object.pose.oY,
-			oZ: object.pose.oZ,
-			theta: object.pose.theta,
+			x: x ?? object.combinedPose.x,
+			y: y ?? object.combinedPose.y,
+			z: z ?? object.combinedPose.z,
+			oX: object.combinedPose.oX,
+			oY: object.combinedPose.oY,
+			oZ: object.combinedPose.oZ,
+			theta: object.combinedPose.theta,
 		})
 	}
 
@@ -55,13 +64,13 @@ export class DetailConfigUpdater {
 		if (!object) return
 
 		this.updateFrame(object.name ?? '', {
-			oX: oX ?? object.pose.oX,
-			oY: oY ?? object.pose.oY,
-			oZ: oZ ?? object.pose.oZ,
-			theta: theta ?? object.pose.theta,
-			x: object.pose.x,
-			y: object.pose.y,
-			z: object.pose.z,
+			oX: oX ?? object.combinedPose.oX,
+			oY: oY ?? object.combinedPose.oY,
+			oZ: oZ ?? object.combinedPose.oZ,
+			theta: theta ?? object.combinedPose.theta,
+			x: object.combinedPose.x,
+			y: object.combinedPose.y,
+			z: object.combinedPose.z,
 		})
 	}
 
@@ -114,34 +123,32 @@ export class DetailConfigUpdater {
 		this.updateFrame(
 			object.name ?? '',
 			{
-				x: object.pose.x,
-				y: object.pose.y,
-				z: object.pose.z,
-				oX: object.pose.oX,
-				oY: object.pose.oY,
-				oZ: object.pose.oZ,
-				theta: object.pose.theta,
+				x: object.combinedPose.x,
+				y: object.combinedPose.y,
+				z: object.combinedPose.z,
+				oX: object.combinedPose.oX,
+				oY: object.combinedPose.oY,
+				oZ: object.combinedPose.oZ,
+				theta: object.combinedPose.theta,
 			},
 			{ ...geometryObject! }
 		)
 	}
 
 	public setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
-		// if (type === geometryType) return
-		// geometryType = type
 		const object = this.object()
 		if (!object) return
 		if (type === 'none') {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
+					x: object.combinedPose.x,
+					y: object.combinedPose.y,
+					z: object.combinedPose.z,
+					oX: object.combinedPose.oX,
+					oY: object.combinedPose.oY,
+					oZ: object.combinedPose.oZ,
+					theta: object.combinedPose.theta,
 				},
 				{ type: 'none' }
 			)
@@ -149,13 +156,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
+					x: object.combinedPose.x,
+					y: object.combinedPose.y,
+					z: object.combinedPose.z,
+					oX: object.combinedPose.oX,
+					oY: object.combinedPose.oY,
+					oZ: object.combinedPose.oZ,
+					theta: object.combinedPose.theta,
 				},
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
@@ -163,13 +170,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
+					x: object.combinedPose.x,
+					y: object.combinedPose.y,
+					z: object.combinedPose.z,
+					oX: object.combinedPose.oX,
+					oY: object.combinedPose.oY,
+					oZ: object.combinedPose.oZ,
+					theta: object.combinedPose.theta,
 				},
 				{ type: 'sphere', r: 100 }
 			)
@@ -177,13 +184,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
+					x: object.combinedPose.x,
+					y: object.combinedPose.y,
+					z: object.combinedPose.z,
+					oX: object.combinedPose.oX,
+					oY: object.combinedPose.oY,
+					oZ: object.combinedPose.oZ,
+					theta: object.combinedPose.theta,
 				},
 				{ type: 'capsule', r: 20, l: 100 }
 			)

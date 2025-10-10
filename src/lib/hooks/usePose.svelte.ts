@@ -26,7 +26,11 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	const options = $derived(
 		queryOptions({
-			enabled: interval !== -1 && client.current !== undefined && resource !== undefined,
+			enabled:
+				interval !== -1 &&
+				client.current !== undefined &&
+				resource !== undefined &&
+				settings.current.viewerMode === 'monitor',
 			refetchInterval: interval === 0 ? false : interval,
 			queryKey: [
 				'partID',
@@ -53,7 +57,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
-			if (resource?.subtype === 'arm' || settings.current.viewerMode === 'edit') {
+			if (resource?.subtype === 'arm') {
 				return
 			}
 			return query.current.data?.pose

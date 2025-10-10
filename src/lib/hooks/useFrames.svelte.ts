@@ -11,6 +11,8 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type PartConfigComponents } from './usePartConfig.svelte'
 import { useSettings } from './useSettings.svelte'
+import { Vector3 } from 'three'
+import { LocalPartConfigState } from './usePartConfig.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -34,19 +36,10 @@ export const provideFrames = (partID: () => string) => {
 	observe.pre(
 		() => [revision],
 		() => {
-			if (!partConfig.isDirty) {
+			if (partConfig.localPartConfigState !== LocalPartConfigState.dirty) {
 				untrack(() => query.current).refetch()
 				settings.current.viewerMode = 'monitor'
 				logs.add('Fetching frames...')
-			}
-		}
-	)
-
-	observe.pre(
-		() => [partConfig.isDirty],
-		() => {
-			if (partConfig.isDirty) {
-				settings.current.viewerMode = 'edit'
 			}
 		}
 	)
@@ -79,6 +72,20 @@ export const provideFrames = (partID: () => string) => {
 
 		return objects
 	})
+	$inspect(partConfig.localPartConfigState)
+
+	observe.pre(
+		() => [partConfig.localPartConfigState],
+		() => {
+			if (partConfig.localPartConfigState === LocalPartConfigState.dirty) {
+				settings.current.viewerMode = 'edit'
+			} else if (partConfig.localPartConfigState === LocalPartConfigState.discarded) {
+				current.forEach((frame) => {
+					frame.translationDelta = new Vector3()
+				})
+			}
+		}
+	)
 
 	$effect.pre(() => {
 		;(partConfig.localPartConfig.toJson() as unknown as PartConfigComponents)?.components?.forEach(
@@ -90,16 +97,6 @@ export const provideFrames = (partID: () => string) => {
 					}
 
 					current[worldObjectIndex].referenceFrame = component.frame.parent
-
-					current[worldObjectIndex].pose = {
-						x: component.frame.translation.x,
-						y: component.frame.translation.y,
-						z: component.frame.translation.z,
-						oX: component.frame.orientation.value.x,
-						oY: component.frame.orientation.value.y,
-						oZ: component.frame.orientation.value.z,
-						theta: component.frame.orientation.value.th,
-					}
 
 					if (component.frame.geometry) {
 						switch (component.frame.geometry.type) {
