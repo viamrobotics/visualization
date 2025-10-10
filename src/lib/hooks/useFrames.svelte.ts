@@ -11,7 +11,6 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type PartConfigComponents } from './usePartConfig.svelte'
 import { useSettings } from './useSettings.svelte'
-import { Vector3 } from 'three'
 import { LocalPartConfigState } from './usePartConfig.svelte'
 
 interface FramesContext {
@@ -80,8 +79,8 @@ export const provideFrames = (partID: () => string) => {
 			if (partConfig.localPartConfigState === LocalPartConfigState.dirty) {
 				settings.current.viewerMode = 'edit'
 			} else if (partConfig.localPartConfigState === LocalPartConfigState.discarded) {
-				current.forEach((frame) => {
-					frame.translationDelta = new Vector3()
+				current.forEach((object) => {
+					object.localEditedPose = { ...object.pose }
 				})
 			}
 		}

@@ -28,24 +28,18 @@ export class DetailConfigUpdater {
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		const object = this.object()
 		if (!object) return
-		if (x) {
-			object.translationDelta.x = x - object.pose.x
-		}
-		if (y) {
-			object.translationDelta.y = y - object.pose.y
-		}
-		if (z) {
-			object.translationDelta.z = z - object.pose.z
-		}
+		object.localEditedPose.x = x ?? object.localEditedPose.x
+		object.localEditedPose.y = y ?? object.localEditedPose.y
+		object.localEditedPose.z = z ?? object.localEditedPose.z
 
 		this.updateFrame(object.name ?? '', {
-			x: x ?? object.combinedPose.x,
-			y: y ?? object.combinedPose.y,
-			z: z ?? object.combinedPose.z,
-			oX: object.combinedPose.oX,
-			oY: object.combinedPose.oY,
-			oZ: object.combinedPose.oZ,
-			theta: object.combinedPose.theta,
+			x: x ?? object.localEditedPose.x,
+			y: y ?? object.localEditedPose.y,
+			z: z ?? object.localEditedPose.z,
+			oX: object.localEditedPose.oX,
+			oY: object.localEditedPose.oY,
+			oZ: object.localEditedPose.oZ,
+			theta: object.localEditedPose.theta,
 		})
 	}
 
@@ -63,14 +57,19 @@ export class DetailConfigUpdater {
 		const object = this.object()
 		if (!object) return
 
+		object.localEditedPose.oX = oX ?? object.localEditedPose.oX
+		object.localEditedPose.oY = oY ?? object.localEditedPose.oY
+		object.localEditedPose.oZ = oZ ?? object.localEditedPose.oZ
+		object.localEditedPose.theta = theta ?? object.localEditedPose.theta
+
 		this.updateFrame(object.name ?? '', {
-			oX: oX ?? object.combinedPose.oX,
-			oY: oY ?? object.combinedPose.oY,
-			oZ: oZ ?? object.combinedPose.oZ,
-			theta: theta ?? object.combinedPose.theta,
-			x: object.combinedPose.x,
-			y: object.combinedPose.y,
-			z: object.combinedPose.z,
+			oX: oX ?? object.localEditedPose.oX,
+			oY: oY ?? object.localEditedPose.oY,
+			oZ: oZ ?? object.localEditedPose.oZ,
+			theta: theta ?? object.localEditedPose.theta,
+			x: object.localEditedPose.x,
+			y: object.localEditedPose.y,
+			z: object.localEditedPose.z,
 		})
 	}
 
@@ -123,13 +122,13 @@ export class DetailConfigUpdater {
 		this.updateFrame(
 			object.name ?? '',
 			{
-				x: object.combinedPose.x,
-				y: object.combinedPose.y,
-				z: object.combinedPose.z,
-				oX: object.combinedPose.oX,
-				oY: object.combinedPose.oY,
-				oZ: object.combinedPose.oZ,
-				theta: object.combinedPose.theta,
+				x: object.localEditedPose.x,
+				y: object.localEditedPose.y,
+				z: object.localEditedPose.z,
+				oX: object.localEditedPose.oX,
+				oY: object.localEditedPose.oY,
+				oZ: object.localEditedPose.oZ,
+				theta: object.localEditedPose.theta,
 			},
 			{ ...geometryObject! }
 		)
@@ -142,13 +141,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.combinedPose.x,
-					y: object.combinedPose.y,
-					z: object.combinedPose.z,
-					oX: object.combinedPose.oX,
-					oY: object.combinedPose.oY,
-					oZ: object.combinedPose.oZ,
-					theta: object.combinedPose.theta,
+					x: object.localEditedPose.x,
+					y: object.localEditedPose.y,
+					z: object.localEditedPose.z,
+					oX: object.localEditedPose.oX,
+					oY: object.localEditedPose.oY,
+					oZ: object.localEditedPose.oZ,
+					theta: object.localEditedPose.theta,
 				},
 				{ type: 'none' }
 			)
@@ -156,13 +155,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.combinedPose.x,
-					y: object.combinedPose.y,
-					z: object.combinedPose.z,
-					oX: object.combinedPose.oX,
-					oY: object.combinedPose.oY,
-					oZ: object.combinedPose.oZ,
-					theta: object.combinedPose.theta,
+					x: object.localEditedPose.x,
+					y: object.localEditedPose.y,
+					z: object.localEditedPose.z,
+					oX: object.localEditedPose.oX,
+					oY: object.localEditedPose.oY,
+					oZ: object.localEditedPose.oZ,
+					theta: object.localEditedPose.theta,
 				},
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
@@ -170,13 +169,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.combinedPose.x,
-					y: object.combinedPose.y,
-					z: object.combinedPose.z,
-					oX: object.combinedPose.oX,
-					oY: object.combinedPose.oY,
-					oZ: object.combinedPose.oZ,
-					theta: object.combinedPose.theta,
+					x: object.localEditedPose.x,
+					y: object.localEditedPose.y,
+					z: object.localEditedPose.z,
+					oX: object.localEditedPose.oX,
+					oY: object.localEditedPose.oY,
+					oZ: object.localEditedPose.oZ,
+					theta: object.localEditedPose.theta,
 				},
 				{ type: 'sphere', r: 100 }
 			)
@@ -184,13 +183,13 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				{
-					x: object.combinedPose.x,
-					y: object.combinedPose.y,
-					z: object.combinedPose.z,
-					oX: object.combinedPose.oX,
-					oY: object.combinedPose.oY,
-					oZ: object.combinedPose.oZ,
-					theta: object.combinedPose.theta,
+					x: object.localEditedPose.x,
+					y: object.localEditedPose.y,
+					z: object.localEditedPose.z,
+					oX: object.localEditedPose.oX,
+					oY: object.localEditedPose.oY,
+					oZ: object.localEditedPose.oZ,
+					theta: object.localEditedPose.theta,
 				},
 				{ type: 'capsule', r: 20, l: 100 }
 			)

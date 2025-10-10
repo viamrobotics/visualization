@@ -47,7 +47,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 	pose = $state.raw<Pose>(createPose())
 	geometry?: T
 	metadata: Metadata
-	translationDelta = $state.raw<ViamVector3>(new ViamVector3())
+	localEditedPose = $state.raw<Pose>(createPose())
 
 	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
 		this.uuid = MathUtils.generateUUID()
@@ -58,19 +58,8 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.metadata = metadata ?? {}
 
 		if (pose) {
-			this.pose = pose
-		}
-	}
-
-	get combinedPose(): Pose {
-		return {
-			x: this.pose.x + this.translationDelta.x,
-			y: this.pose.y + this.translationDelta.y,
-			z: this.pose.z + this.translationDelta.z,
-			oX: this.pose.oX,
-			oY: this.pose.oY,
-			oZ: this.pose.oZ,
-			theta: this.pose.theta,
+			this.pose = { ...pose }
+			this.localEditedPose = { ...pose }
 		}
 	}
 }

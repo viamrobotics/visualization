@@ -41,8 +41,7 @@ describe('Details component', () => {
 					},
 				} satisfies Geometry,
 				metadata: {},
-				translationDelta: new Vector3(),
-				combinedPose: {
+				localEditedPose: {
 					x: 10,
 					y: 20,
 					z: 30,
@@ -139,8 +138,7 @@ describe('Details component', () => {
 				oZ: 0.3,
 				theta: 0.4,
 			},
-			translationDelta: new Vector3(),
-			combinedPose: {
+			localEditedPose: {
 				x: 10,
 				y: 20,
 				z: 30,

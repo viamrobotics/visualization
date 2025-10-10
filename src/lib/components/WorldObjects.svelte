@@ -15,6 +15,9 @@
 	import Label from './Label.svelte'
 	import WorldState from './WorldState.svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import { Matrix4, Vector3 } from 'three'
+	import { Quaternion } from 'three'
+	import { createPose } from '$lib/transform'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
@@ -23,22 +26,57 @@
 	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
 
+	const poseToMatrix = (pose: WorldObject['pose']) => {
+		const matrix = new Matrix4()
+		const poseQuaternion = new Quaternion().setFromAxisAngle(
+			new Vector3(pose.oX, pose.oY, pose.oZ),
+			pose.theta
+		)
+		matrix.makeRotationFromQuaternion(poseQuaternion)
+		matrix.makeTranslation(pose.x, pose.y, pose.z)
+		return matrix
+	}
+
+	const matrixToPose = (matrix: Matrix4) => {
+		const pose = createPose()
+		const translation = new Vector3()
+		const quaternion = new Quaternion()
+		matrix.decompose(translation, quaternion, new Vector3())
+		pose.x = translation.x
+		pose.y = translation.y
+		pose.z = translation.z
+
+		const s = Math.sqrt(1 - quaternion.w * quaternion.w)
+		if (s < 0.000001) {
+			pose.oX = 0
+			pose.oY = 0
+			pose.oZ = 1
+			pose.theta = 0
+		} else {
+			pose.oX = quaternion.x / s
+			pose.oY = quaternion.y / s
+			pose.oZ = quaternion.z / s
+			pose.theta = Math.acos(quaternion.w) * 2 * (180 / Math.PI)
+		}
+
+		return pose
+	}
+
 	const determinePose = (
 		object: WorldObject,
 		pose: WorldObject['pose'] | undefined
 	): WorldObject['pose'] => {
-		const basePose: WorldObject['pose'] = pose ?? object.pose
-		const combinedPose: WorldObject['pose'] = {
-			x: basePose.x + object.translationDelta.x,
-			y: basePose.y + object.translationDelta.y,
-			z: basePose.z + object.translationDelta.z,
-			oX: basePose.oX,
-			oY: basePose.oY,
-			oZ: basePose.oZ,
-			theta: basePose.theta,
-		}
+		if (pose === undefined) {
+			return object.localEditedPose
+		} else {
+			const poseNetwork = poseToMatrix(object.pose)
+			const poseUsePose = poseToMatrix(pose)
+			const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
 
-		return combinedPose
+			const poseNetworkInverse = poseNetwork.invert()
+			const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
+			return matrixToPose(resultMatrix)
+		}
 	}
 </script>
 
