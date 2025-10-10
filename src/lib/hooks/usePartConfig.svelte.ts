@@ -76,8 +76,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		throw new Error('No part config provided')
 	}
 
-	let awaitingRefresh = $state(false)
-
 	const updateFrame = (
 		componentName: string,
 		referenceFrame: string,
@@ -187,7 +185,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		}
 
 		_localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
-		awaitingRefresh = true
 	}
 
 	const updatePartFrame = (
@@ -203,9 +200,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 			z?: number
 		}
 	) => {
-		const newConfig = _localPartConfig
-			.getLocalPartConfig()
-			.toJson() as unknown as PartConfig
+		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
@@ -234,7 +229,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 			}
 		}
 
-		
 		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 		_localPartConfig.setLocalPartConfig(configStruct)
 	}
@@ -246,7 +240,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 	const resetLocalPartConfig = () => {
 		_localPartConfig.resetLocalPartConfig?.()
 	}
-
 
 	setContext<PartConfigContext>(key, {
 		updateFrame,

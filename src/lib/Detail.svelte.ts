@@ -22,7 +22,11 @@ export class DetailConfigUpdater {
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
 
-	constructor(object: () => WorldObject<Geometries> | undefined, updateFrame: UpdateFrameCallback, referenceFrame: () => string) {
+	constructor(
+		object: () => WorldObject<Geometries> | undefined,
+		updateFrame: UpdateFrameCallback,
+		referenceFrame: () => string
+	) {
 		this.referenceFrame = referenceFrame
 		this.object = object
 		this.updateFrame = updateFrame
