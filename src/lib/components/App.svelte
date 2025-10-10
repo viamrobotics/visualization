@@ -27,7 +27,6 @@
 		setLocalPartConfig: (config: Struct) => void
 		isDirty: () => boolean
 		getComponentToFragId: () => Record<string, string>
-		getComponentToFragId: () => Record<string, string>
 	}
 
 	interface Props {
@@ -65,10 +64,7 @@
 				isDirty: () => localConfigProps.isDirty(),
 				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-<<<<<<< HEAD
 				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
-=======
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 			},
 		})
 	} else {

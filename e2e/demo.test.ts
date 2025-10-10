@@ -5,7 +5,7 @@ const testConfig = {
 	partId: '9b304d77-b1d5-4c96-a64f-4088772b9961',
 	apiKeyId: 'b6c1c558-aac2-4f52-9a17-b5d6cf9df5f7',
 	apiKeyValue: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
-	signalingAddress: 'https://app.viam.com:443'
+	signalingAddress: 'https://app.viam.com:443',
 }
 // {
 // 	"components": [
@@ -37,7 +37,9 @@ const testConfig = {
 
 test('basic edit frame', async ({ browser }) => {
 	const context = await browser.newContext()
-	await context.addCookies([{name: "MOTION_TOOLS_EDIT_FRAME", value: "true", domain: "localhost", path: "/"}]);
+	await context.addCookies([
+		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+	])
 	let page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
@@ -62,11 +64,8 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
 	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
 	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
-	
+
 	await page.getByTestId('icon-close').click()
-
-
-	
 
 	// OPEN A WORLD OBJECT AND EDIT THE FRAME
 	await expect(page.getByText('base-1')).toBeVisible()
@@ -90,7 +89,6 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable box dimensions y value').fill('500')
 	await expect(page.getByLabel('mutable box dimensions z value')).toBeVisible()
 	await page.getByLabel('mutable box dimensions z value').fill('600')
-	
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-1.png', fullPage: true })
@@ -128,5 +126,4 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-4.png', fullPage: true })
-
 })

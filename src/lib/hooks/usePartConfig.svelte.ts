@@ -48,21 +48,8 @@ interface PartConfigContext {
 	updateFrame: (
 		componentName: string,
 		referenceFrame: string,
-<<<<<<< HEAD
 		pose: Pose,
 		geometry?: {
-=======
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 			type: 'none' | 'box' | 'sphere' | 'capsule'
 			r?: number
 			l?: number
@@ -73,25 +60,14 @@ interface PartConfigContext {
 	) => void
 	saveLocalPartConfig: () => void
 	resetLocalPartConfig: () => void
-<<<<<<< HEAD
 	componentNameToFragmentId: Record<string, string>
 	localPartConfig: Struct
 	isDirty: boolean
-=======
-	getLocalPartConfig: () => unknown
-	getComponentNameToFragmentId: () => Record<string, string>
-	getAwaitingRefresh: () => boolean
-	setAwaitingRefresh: (awaitingRefresh: boolean) => void
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
 	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params
-<<<<<<< HEAD
 	let _localPartConfig: LocalPartConfig
-=======
-	let localPartConfig: LocalPartConfig
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	if (appEmbeddedPartConfigProps) {
 		_localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
 	} else if (standalonePartConfigProps) {
@@ -100,11 +76,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		throw new Error('No part config provided')
 	}
 
-<<<<<<< HEAD
-=======
-	let awaitingRefresh = $state(false)
-
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	const updateFrame = (
 		componentName: string,
 		referenceFrame: string,
@@ -126,11 +97,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 			z?: number
 		}
 	) => {
-<<<<<<< HEAD
 		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-=======
-		const fragmentId = localPartConfig.componentNameToFragmentId()[componentName]
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 		if (fragmentId !== undefined) {
 			updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
 		} else {
@@ -160,11 +127,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 			z?: number
 		}
 	) => {
-<<<<<<< HEAD
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-=======
-		const newConfig = localPartConfig.getLocalPartConfig() as PartConfig
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 		if (newConfig.fragment_mods === undefined) {
 			newConfig.fragment_mods = []
 		}
@@ -221,32 +184,14 @@ export const providePartConfig = (params: PartConfigParams) => {
 			fragmentMod.mods.push(frame)
 		}
 
-<<<<<<< HEAD
 		_localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
-=======
-		localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
-		awaitingRefresh = true
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	}
 
 	const updatePartFrame = (
 		componentName: string,
 		referenceFrame: string,
-<<<<<<< HEAD
 		pose: Pose,
 		geometry?: {
-=======
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 			type: 'none' | 'box' | 'sphere' | 'capsule'
 			r?: number
 			l?: number
@@ -255,11 +200,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 			z?: number
 		}
 	) => {
-<<<<<<< HEAD
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-=======
-		const newConfig = localPartConfig.getLocalPartConfig() as PartConfig
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
@@ -289,16 +230,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		}
 
 		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-<<<<<<< HEAD
 		_localPartConfig.setLocalPartConfig(configStruct)
-=======
-		localPartConfig.setLocalPartConfig(configStruct)
-		awaitingRefresh = true
-	}
-
-	const isDirty = () => {
-		return localPartConfig.isDirty()
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	}
 
 	const saveLocalPartConfig = () => {
@@ -309,15 +241,10 @@ export const providePartConfig = (params: PartConfigParams) => {
 		_localPartConfig.resetLocalPartConfig?.()
 	}
 
-	const getComponentNameToFragmentId = () => {
-		return localPartConfig.componentNameToFragmentId()
-	}
-
 	setContext<PartConfigContext>(key, {
 		updateFrame,
 		saveLocalPartConfig,
 		resetLocalPartConfig,
-<<<<<<< HEAD
 		get localPartConfig() {
 			return _localPartConfig.getLocalPartConfig()
 		},
@@ -327,12 +254,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		get isDirty() {
 			return _localPartConfig.isDirty()
 		},
-=======
-		getLocalPartConfig,
-		getComponentNameToFragmentId,
-		getAwaitingRefresh,
-		setAwaitingRefresh,
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	})
 }
 
@@ -353,10 +274,7 @@ interface AppEmbeddedPartConfigProps {
 	isDirty: () => boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
-<<<<<<< HEAD
 	getComponentToFragId: () => Record<string, string>
-=======
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 }
 export class AppEmbeddedPartConfig implements LocalPartConfig {
 	private _appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
@@ -377,12 +295,7 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 	}
 
 	public componentNameToFragmentId(): Record<string, string> {
-<<<<<<< HEAD
 		return this._appEmbeddedPartConfigProps.getComponentToFragId()
-=======
-		// TODO: get this from app client somehow
-		return {}
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 	}
 }
 

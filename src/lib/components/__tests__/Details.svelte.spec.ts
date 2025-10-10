@@ -64,22 +64,12 @@ describe('Details component', () => {
 			getParentFrameOptions: vi.fn(),
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
-<<<<<<< HEAD
 			localPartConfig: new Struct(),
 			componentNameToFragmentId: {},
-=======
-			getLocalPartConfig: vi.fn(() => ({ components: [] })),
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 			updateFrame: vi.fn(),
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
-<<<<<<< HEAD
-=======
-			setAwaitingRefresh: vi.fn(),
-			getAwaitingRefresh: vi.fn(),
-			getComponentNameToFragmentId: vi.fn(),
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 		})
 	})
 
@@ -184,22 +174,12 @@ describe('Details component', () => {
 						},
 					},
 				],
-<<<<<<< HEAD
 			}),
 			componentNameToFragmentId: {},
-=======
-			})),
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 			updateFrame: vi.fn(),
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
-<<<<<<< HEAD
-=======
-			setAwaitingRefresh: vi.fn(),
-			getAwaitingRefresh: vi.fn(),
-			getComponentNameToFragmentId: vi.fn(),
->>>>>>> 1e5b46a (add ability to modify fragment frames (local motion-tools))
 		})
 
 		render(Details)
