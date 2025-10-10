@@ -91,12 +91,14 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable box dimensions z value').fill('600')
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-1.png', fullPage: true })
+	await expect(page).toHaveScreenshot('0-edited.png', { fullPage: true, threshold: 0.1 })
 
 	// SAVE THE CHANGES
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-2.png', fullPage: true })
+	await expect(page).toHaveScreenshot('1-saved.png', { fullPage: true, threshold: 0.1 })
+	// give network some time to sync the config
+	await page.waitForTimeout(3000)
 
 	// RELOAD THE PAGE
 	page = await context.newPage()
@@ -107,8 +109,8 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('base-1')).toBeVisible()
 	await page.getByText('base-1').click()
 
-	await expect(page.getByLabel('mutable box dimensions x value')).toBeVisible()
-	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-3.png', fullPage: true })
+	await expect(page.getByText('Details')).toBeVisible()
+	await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
 
 	// REVERT THE CHANGES
 	await expect(page.getByText('None')).toBeVisible()
@@ -125,5 +127,7 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await page.screenshot({ path: 'e2e-snapshots/basic-edit-frame-4.png', fullPage: true })
+	await expect(page).toHaveScreenshot('3-reverted.png', { fullPage: true })
+
+	
 })
