@@ -5,7 +5,7 @@ import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
 import { Weblab } from '$lib/hooks/useWeblabs.svelte'
-import type { Geometry } from '@viamrobotics/sdk'
+import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
@@ -55,14 +55,14 @@ describe('Details component', () => {
 			getParentFrameOptions: vi.fn(),
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
-			getLocalPartConfig: vi.fn(() => ({ components: [] })),
+			localPartConfig: new Struct(),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			isDirty: vi.fn(),
+			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			setAwaitingRefresh: vi.fn(),
-			getAwaitingRefresh: vi.fn(),
+			awaitingRefresh: false,
 		})
 	})
 
@@ -142,7 +142,7 @@ describe('Details component', () => {
 			metadata: {},
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
-			getLocalPartConfig: vi.fn(() => ({
+			localPartConfig: new Struct().fromJson({
 				components: [
 					{
 						name: 'Test Object',
@@ -158,14 +158,14 @@ describe('Details component', () => {
 						},
 					},
 				],
-			})),
+			}),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			isDirty: vi.fn(),
+			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			setAwaitingRefresh: vi.fn(),
-			getAwaitingRefresh: vi.fn(),
+			awaitingRefresh: false,
 		})
 
 		render(Details)

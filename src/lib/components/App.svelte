@@ -23,7 +23,7 @@
 	import ArmPositions from './widgets/ArmPositions.svelte'
 
 	interface LocalConfigProps {
-		getLocalPartConfig: () => unknown
+		getLocalPartConfig: () => Struct
 		setLocalPartConfig: (config: Struct) => void
 		getPartName: () => string | undefined
 		isDirty: () => boolean

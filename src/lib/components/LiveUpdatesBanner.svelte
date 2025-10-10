@@ -6,7 +6,7 @@
 	const { ...rest } = $props()
 </script>
 
-{#if partConfig.isDirty()}
+{#if partConfig.isDirty}
 	<div
 		class="absolute bottom-8 z-1000 flex w-full justify-center gap-2"
 		{...rest}

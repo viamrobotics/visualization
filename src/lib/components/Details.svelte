@@ -24,10 +24,8 @@
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import ImmutableField from './ImmutableField.svelte'
-	import MutableField from './MutableField.svelte'
-	import DropDownField from './DropDownField.svelte'
+	import { usePartConfig, type PartConfigComponents } from '$lib/hooks/usePartConfig.svelte'
+	import { DetailConfigUpdater } from '$lib/Detail.svelte'
 
 	const { ...rest } = $props()
 
@@ -53,7 +51,7 @@
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
 	const partDefinedComponentNames = $derived.by(() => {
-		const config = partConfig.getLocalPartConfig() as { components: { name: string }[] }
+		const config = partConfig.localPartConfig.toJson() as unknown as PartConfigComponents
 		return config?.components?.map((component: { name: string }) => component.name) ?? []
 	})
 	const isFrameNode = $derived(
@@ -65,165 +63,15 @@
 
 	const draggable = useDraggable('details')
 
-	const updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
-		if (!object) return
-
-		partConfig.updateFrame(selectedObject.current?.name ?? '', {
-			x: x ?? object.pose.x,
-			y: y ?? object.pose.y,
-			z: z ?? object.pose.z,
-			oX: object.pose.oX,
-			oY: object.pose.oY,
-			oZ: object.pose.oZ,
-			theta: object.pose.theta,
-		})
-	}
-
-	const updateLocalOrientation = ({
-		oX,
-		oY,
-		oZ,
-		theta,
-	}: {
-		oX?: number
-		oY?: number
-		oZ?: number
-		theta?: number
-	}) => {
-		if (!object) return
-
-		partConfig.updateFrame(selectedObject.current?.name ?? '', {
-			oX: oX ?? object.pose.oX,
-			oY: oY ?? object.pose.oY,
-			oZ: oZ ?? object.pose.oZ,
-			theta: theta ?? object.pose.theta,
-			x: object.pose.x,
-			y: object.pose.y,
-			z: object.pose.z,
-		})
-	}
-
-	const updateGeometry = (geometry: {
-		type: 'none' | 'box' | 'sphere' | 'capsule'
-		r?: number
-		l?: number
-		x?: number
-		y?: number
-		z?: number
-	}) => {
-		if (!object) return
-		let geometryObject: {
-			type: 'box' | 'sphere' | 'capsule'
-			x?: number
-			y?: number
-			z?: number
-			r?: number
-			l?: number
-		}
-		if (geometry.type === 'box') {
-			const currentGeometry = object.geometry?.geometryType.value as {
-				dimsMm: { x: number; y: number; z: number }
-			}
-			geometryObject = {
-				type: 'box',
-				x: geometry.x ?? currentGeometry?.dimsMm?.x,
-				y: geometry.y ?? currentGeometry?.dimsMm?.y,
-				z: geometry.z ?? currentGeometry?.dimsMm?.z,
-			}
-		} else if (geometry.type === 'sphere') {
-			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
-			geometryObject = {
-				type: 'sphere',
-				r: geometry.r ?? currentGeometry?.radiusMm,
-			}
-		} else if (geometry.type === 'capsule') {
-			const currentGeometry = object.geometry?.geometryType.value as {
-				radiusMm: number
-				lengthMm: number
-			}
-			geometryObject = {
-				type: 'capsule',
-				r: geometry.r ?? currentGeometry?.radiusMm,
-				l: geometry.l ?? currentGeometry?.lengthMm,
-			}
-		}
-
-		partConfig.updateFrame(
-			selectedObject.current?.name ?? '',
-			{
-				x: object.pose.x,
-				y: object.pose.y,
-				z: object.pose.z,
-				oX: object.pose.oX,
-				oY: object.pose.oY,
-				oZ: object.pose.oZ,
-				theta: object.pose.theta,
-			},
-			{ ...geometryObject! }
-		)
-	}
+	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
+		() => object,
+		partConfig.updateFrame
+	)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		if (type === geometryType) return
 		geometryType = type
-		if (!object) return
-		if (type === 'none') {
-			partConfig.updateFrame(
-				selectedObject.current?.name ?? '',
-				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
-				},
-				{ type: 'none' }
-			)
-		} else if (type === 'box') {
-			partConfig.updateFrame(
-				selectedObject.current?.name ?? '',
-				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
-				},
-				{ type: 'box', x: 100, y: 100, z: 100 }
-			)
-		} else if (type === 'sphere') {
-			partConfig.updateFrame(
-				selectedObject.current?.name ?? '',
-				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
-				},
-				{ type: 'sphere', r: 100 }
-			)
-		} else if (type === 'capsule') {
-			partConfig.updateFrame(
-				selectedObject.current?.name ?? '',
-				{
-					x: object.pose.x,
-					y: object.pose.y,
-					z: object.pose.z,
-					oX: object.pose.oX,
-					oY: object.pose.oY,
-					oZ: object.pose.oZ,
-					theta: object.pose.theta,
-				},
-				{ type: 'capsule', r: 20, l: 100 }
-			)
-		}
+		detailConfigUpdater.setGeometryType(type)
 	}
 
 	const { start, stop } = useTask(
@@ -256,6 +104,68 @@
 		}
 	})
 </script>
+
+{#snippet ImmutableField({
+	label,
+	value,
+	ariaLabel,
+}: {
+	label: string
+	value: string
+	ariaLabel: string
+})}
+	<div>
+		<span
+			class="text-subtle-2"
+			aria-label={`immutable ${ariaLabel}`}>{label}</span
+		>
+		{value}
+	</div>
+{/snippet}
+
+{#snippet MutableField({
+	label,
+	value,
+	ariaLabel,
+	onInput,
+}: {
+	label: string
+	value: string
+	ariaLabel: string
+	onInput: (value: string) => void
+})}
+	<span class="text-subtle-2">{label}</span>
+	<input
+		type="number"
+		aria-label={`mutable ${ariaLabel}`}
+		class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+		{value}
+		oninput={(e) => onInput((e.target as HTMLInputElement).value)}
+	/>
+{/snippet}
+
+{#snippet DropDownField({
+	value,
+	ariaLabel,
+	options,
+	onChange,
+}: {
+	value: string
+	ariaLabel: string
+	options: string[]
+	onChange: (value: string) => void
+})}
+	<select
+		aria-label={`dropdown ${ariaLabel}`}
+		class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+		{value}
+		onchange={(e) => onChange((e.target as HTMLSelectElement).value)}
+	>
+		{#each options as option (option)}
+			<option value={option}>{option}</option>
+		{/each}
+	</select>
+{/snippet}
 
 {#if object}
 	<div
@@ -349,13 +259,13 @@
 				<div>
 					<strong class="font-semibold">parent frame</strong>
 					<div class="flex gap-3">
-						<ParentFrame
-							label="name"
-							ariaLabel="parent frame name"
-							value={referenceFrame}
-							options={referenceFrameOptions}
-							onChange={(value) => partConfig.setFrameParentConfig(object.name, value)}
-						/>
+						{@render ParentFrame({
+							label: 'name',
+							ariaLabel: 'parent frame name',
+							value: referenceFrame,
+							options: referenceFrameOptions,
+							onChange: (value) => partConfig.setFrameParentConfig(object.name, value),
+						})}
 					</div>
 				</div>
 
@@ -365,54 +275,61 @@
 						<strong class="font-semibold">local position</strong>
 
 						<div class="flex gap-3">
-							<PoseAttribute
-								label="X"
-								ariaLabel="local position x coordinate"
-								value={localPose.x.toFixed(2)}
-								onInput={(value) => updateLocalPosition({ x: parseFloat(value) })}
-							/>
-							<PoseAttribute
-								label="Y"
-								ariaLabel="local position y coordinate"
-								value={localPose.y.toFixed(2)}
-								onInput={(value) => updateLocalPosition({ y: parseFloat(value) })}
-							/>
-							<PoseAttribute
-								label="Z"
-								ariaLabel="local position z coordinate"
-								value={localPose.z.toFixed(2)}
-								onInput={(value) => updateLocalPosition({ z: parseFloat(value) })}
-							/>
+							{@render PoseAttribute({
+								label: 'X',
+								ariaLabel: 'local position x coordinate',
+								value: localPose.x.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'Y',
+								ariaLabel: 'local position y coordinate',
+								value: localPose.y.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'Z',
+								ariaLabel: 'local position z coordinate',
+								value: localPose.z.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ z: parseFloat(value) }),
+							})}
 						</div>
 					</div>
 
 					<div>
 						<strong class="font-semibold">local orientation</strong>
 						<div class="flex {isFrameNode ? 'gap-2' : 'gap-3'}">
-							<PoseAttribute
-								label="X"
-								ariaLabel="local orientation x coordinate"
-								value={localPose.oX.toFixed(2)}
-								onInput={(value) => updateLocalOrientation({ oX: parseFloat(value) })}
-							/>
-							<PoseAttribute
-								label="Y"
-								ariaLabel="local orientation y coordinate"
-								value={localPose.oY.toFixed(2)}
-								onInput={(value) => updateLocalOrientation({ oY: parseFloat(value) })}
-							/>
-							<PoseAttribute
-								label="Z"
-								ariaLabel="local orientation z coordinate"
-								value={localPose.oZ.toFixed(2)}
-								onInput={(value) => updateLocalOrientation({ oZ: parseFloat(value) })}
-							/>
-							<PoseAttribute
-								label="TH"
-								ariaLabel="local orientation theta degrees"
-								value={localPose.theta.toFixed(2)}
-								onInput={(value) => updateLocalOrientation({ theta: parseFloat(value) })}
-							/>
+							{@render PoseAttribute({
+								label: 'X',
+								ariaLabel: 'local orientation x coordinate',
+								value: localPose.oX.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oX: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'Y',
+								ariaLabel: 'local orientation y coordinate',
+								value: localPose.oY.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oY: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'Z',
+								ariaLabel: 'local orientation z coordinate',
+								value: localPose.oZ.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oZ: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'TH',
+								ariaLabel: 'local orientation theta degrees',
+								value: localPose.theta.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ theta: parseFloat(value) }),
+							})}
 						</div>
 					</div>
 				{/if}
@@ -445,37 +362,39 @@
 					</div>
 				{/if}
 				{#if object.geometry}
+					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 					{#if geometryType === 'box'}
-						{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 						{@const { dimsMm } = object.geometry.geometryType.value as {
 							dimsMm: { x: number; y: number; z: number }
 						}}
 						<div>
 							<strong class="font-semibold">dimensions (box)</strong>
 							<div class="flex items-center gap-2">
-								<GeometryAttribute
-									label="X"
-									ariaLabel="box dimensions x value input"
-									value={dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'box', x: parseFloat(value) })}
-								/>
-								<GeometryAttribute
-									label="Y"
-									ariaLabel="box dimensions y value input"
-									value={dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'box', y: parseFloat(value) })}
-								/>
-								<GeometryAttribute
-									label="Z"
-									ariaLabel="box dimensions z value input"
-									value={dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'box', z: parseFloat(value) })}
-								/>
+								{@render GeometryAttribute({
+									label: 'X',
+									ariaLabel: 'box dimensions x value input',
+									value: dimsMm?.x ? dimsMm.x.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', x: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'Y',
+									ariaLabel: 'box dimensions y value input',
+									value: dimsMm?.y ? dimsMm.y.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', y: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'Z',
+									ariaLabel: 'box dimensions z value input',
+									value: dimsMm?.z ? dimsMm.z.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', z: parseFloat(value) }),
+								})}
 							</div>
 						</div>
 					{/if}
 					{#if geometryType === 'capsule'}
-						{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 						{@const { radiusMm, lengthMm } = object.geometry.geometryType.value as {
 							radiusMm: number
 							lengthMm: number
@@ -483,33 +402,35 @@
 						<div>
 							<strong class="font-semibold">dimensions (capsule)</strong>
 							<div class="flex items-center gap-2">
-								<GeometryAttribute
-									label="R"
-									ariaLabel="capsule dimensions radius value input"
-									value={radiusMm ? radiusMm.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'capsule', r: parseFloat(value) })}
-								/>
-								<GeometryAttribute
-									label="L"
-									ariaLabel="capsule dimensions length value input"
-									value={lengthMm ? lengthMm.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'capsule', l: parseFloat(value) })}
-								/>
+								{@render GeometryAttribute({
+									label: 'R',
+									ariaLabel: 'capsule dimensions radius value input',
+									value: radiusMm ? radiusMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'capsule', r: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'L',
+									ariaLabel: 'capsule dimensions length value input',
+									value: lengthMm ? lengthMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'capsule', l: parseFloat(value) }),
+								})}
 							</div>
 						</div>
 					{/if}
 					{#if geometryType === 'sphere'}
-						{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 						{@const { radiusMm } = object.geometry.geometryType.value as { radiusMm: number }}
 						<div>
 							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex items-center gap-2">
-								<GeometryAttribute
-									label="R"
-									ariaLabel="sphere dimensions radius value input"
-									value={radiusMm ? radiusMm.toFixed(2) : '-'}
-									onInput={(value) => updateGeometry({ type: 'sphere', r: parseFloat(value) })}
-								/>
+								{@render GeometryAttribute({
+									label: 'R',
+									ariaLabel: 'sphere dimensions radius value input',
+									value: radiusMm ? radiusMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
+								})}
 							</div>
 						</div>
 					{/if}

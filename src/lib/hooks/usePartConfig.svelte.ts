@@ -1,4 +1,4 @@
-import { Struct } from '@viamrobotics/sdk'
+import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue, ViamClient } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
 
@@ -43,16 +43,8 @@ interface PartConfigContext {
 	setFrameParentConfig: (componentName: string, parentName: string) => void
 	updateFrame: (
 		componentName: string,
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
+		pose: Pose,
+		geometry?: {
 			type: 'none' | 'box' | 'sphere' | 'capsule'
 			r?: number
 			l?: number
@@ -61,28 +53,27 @@ interface PartConfigContext {
 			z?: number
 		}
 	) => void
-	isDirty: () => boolean
 	saveLocalPartConfig: () => void
 	resetLocalPartConfig: () => void
-	getLocalPartConfig: () => unknown
-	getAwaitingRefresh: () => boolean
-	setAwaitingRefresh: (awaitingRefresh: boolean) => void
+	localPartConfig: Struct
+	isDirty: boolean
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
 	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params
-	let localPartConfig: LocalPartConfig
-	let awaitingRefresh = $state(false)
+	let _localPartConfig: LocalPartConfig
 	if (appEmbeddedPartConfigProps) {
-		localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
+		_localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
 	} else if (standalonePartConfigProps) {
-		localPartConfig = new StandalonePartConfig(standalonePartConfigProps)
+		_localPartConfig = new StandalonePartConfig(standalonePartConfigProps)
 	} else {
 		throw new Error('No part config provided')
 	}
 
 	const setFrameParentConfig = async (componentName: string, parentName: string) => {
-		const newConfig = localPartConfig.getLocalPartConfig() as PartConfigComponents
+		const newConfig = _localPartConfig
+			.getLocalPartConfig()
+			.toJson() as unknown as PartConfigComponents
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
@@ -91,26 +82,17 @@ export const providePartConfig = (params: PartConfigParams) => {
 		}
 		component.frame.parent = parentName
 
-		const partName = localPartConfig.partName()
+		const partName = _localPartConfig.partName()
 		if (partName !== undefined) {
 			const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-			localPartConfig.setLocalPartConfig(configStruct)
-			awaitingRefresh = true
+			_localPartConfig.setLocalPartConfig(configStruct)
 		}
 	}
 
 	const updateFrame = async (
 		componentName: string,
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
+		pose: Pose,
+		geometry?: {
 			type: 'none' | 'box' | 'sphere' | 'capsule'
 			r?: number
 			l?: number
@@ -119,7 +101,9 @@ export const providePartConfig = (params: PartConfigParams) => {
 			z?: number
 		}
 	) => {
-		const newConfig = localPartConfig.getLocalPartConfig() as PartConfigComponents
+		const newConfig = _localPartConfig
+			.getLocalPartConfig()
+			.toJson() as unknown as PartConfigComponents
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
@@ -128,69 +112,51 @@ export const providePartConfig = (params: PartConfigParams) => {
 		}
 		if (component && component.frame) {
 			component.frame.translation = {
-				x: framePosition.x === undefined ? component.frame.translation.x : framePosition.x,
-				y: framePosition.y === undefined ? component.frame.translation.y : framePosition.y,
-				z: framePosition.z === undefined ? component.frame.translation.z : framePosition.z,
+				x: pose.x === undefined ? component.frame.translation.x : pose.x,
+				y: pose.y === undefined ? component.frame.translation.y : pose.y,
+				z: pose.z === undefined ? component.frame.translation.z : pose.z,
 			}
 			component.frame.orientation.value = {
-				x: framePosition.oX === undefined ? component.frame.orientation.value.x : framePosition.oX,
-				y: framePosition.oY === undefined ? component.frame.orientation.value.y : framePosition.oY,
-				z: framePosition.oZ === undefined ? component.frame.orientation.value.z : framePosition.oZ,
-				th:
-					framePosition.theta === undefined
-						? component.frame.orientation.value.th
-						: framePosition.theta,
+				x: pose.oX === undefined ? component.frame.orientation.value.x : pose.oX,
+				y: pose.oY === undefined ? component.frame.orientation.value.y : pose.oY,
+				z: pose.oZ === undefined ? component.frame.orientation.value.z : pose.oZ,
+				th: pose.theta === undefined ? component.frame.orientation.value.th : pose.theta,
 			}
-			if (frameGeometry) {
-				if (frameGeometry.type === 'none') {
+			if (geometry) {
+				if (geometry.type === 'none') {
 					delete component.frame.geometry
 				} else {
-					component.frame.geometry = { ...frameGeometry }
+					component.frame.geometry = { ...geometry }
 				}
 			}
 		}
 
-		const partName = localPartConfig.partName()
+		const partName = _localPartConfig.partName()
 		if (partName !== undefined) {
 			const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-			localPartConfig.setLocalPartConfig(configStruct)
-			awaitingRefresh = true
+			_localPartConfig.setLocalPartConfig(configStruct)
 		}
 	}
 
-	const isDirty = () => {
-		return localPartConfig.isDirty()
-	}
-
 	const saveLocalPartConfig = () => {
-		localPartConfig.saveLocalPartConfig?.()
+		_localPartConfig.saveLocalPartConfig?.()
 	}
 
 	const resetLocalPartConfig = () => {
-		localPartConfig.resetLocalPartConfig?.()
-	}
-
-	const getLocalPartConfig = () => {
-		return localPartConfig.getLocalPartConfig()
-	}
-
-	const getAwaitingRefresh = () => {
-		return awaitingRefresh
-	}
-
-	const setAwaitingRefresh = (val: boolean) => {
-		awaitingRefresh = val
+		_localPartConfig.resetLocalPartConfig?.()
 	}
 
 	setContext<PartConfigContext>(key, {
 		setFrameParentConfig,
 		updateFrame,
-		isDirty,
 		saveLocalPartConfig,
 		resetLocalPartConfig,
-		getLocalPartConfig,
-		getAwaitingRefresh,
-		setAwaitingRefresh,
+		get localPartConfig() {
+			return _localPartConfig.getLocalPartConfig()
+		},
+		get isDirty() {
+			return _localPartConfig.isDirty()
+		},
 	})
 }
 
@@ -200,7 +166,7 @@ export const usePartConfig = (): PartConfigContext => {
 
 interface LocalPartConfig {
 	isDirty: () => boolean
-	getLocalPartConfig: () => unknown
+	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	partName: () => string | undefined
 	saveLocalPartConfig?: () => void
@@ -209,7 +175,7 @@ interface LocalPartConfig {
 
 interface AppEmbeddedPartConfigProps {
 	isDirty: () => boolean
-	getLocalPartConfig: () => unknown
+	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	partName: () => string | undefined
 }
@@ -223,7 +189,7 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 		return this._appEmbeddedPartConfigProps.isDirty()
 	}
 
-	public getLocalPartConfig(): unknown {
+	public getLocalPartConfig(): Struct {
 		return this._appEmbeddedPartConfigProps.getLocalPartConfig()
 	}
 
@@ -264,8 +230,8 @@ export class StandalonePartConfig implements LocalPartConfig {
 		})
 	}
 
-	public getLocalPartConfig(): unknown {
-		return this._localPartConfig?.toJson() ?? {}
+	public getLocalPartConfig(): Struct {
+		return this._localPartConfig ?? new Struct()
 	}
 	public setLocalPartConfig(config: Struct): void {
 		this._localPartConfig = config

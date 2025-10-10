@@ -10,6 +10,7 @@ import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type PartConfigComponents } from './usePartConfig.svelte'
+import { useSettings } from './useSettings.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -28,14 +29,24 @@ export const provideFrames = (partID: () => string) => {
 	const query = createRobotQuery(client, 'frameSystemConfig')
 	const revision = $derived(machineStatus.current?.config.revision)
 	const partConfig = usePartConfig()
+	const settings = useSettings()
 
 	observe.pre(
 		() => [revision],
 		() => {
-			if (!partConfig.isDirty()) {
+			if (!partConfig.isDirty) {
 				untrack(() => query.current).refetch()
-				untrack(() => partConfig.setAwaitingRefresh(false))
+				settings.current.viewerMode = 'monitor'
 				logs.add('Fetching frames...')
+			}
+		}
+	)
+
+	observe.pre(
+		() => [partConfig.isDirty],
+		() => {
+			if (partConfig.isDirty) {
+				settings.current.viewerMode = 'edit'
 			}
 		}
 	)
@@ -70,69 +81,71 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		;(partConfig.getLocalPartConfig() as PartConfigComponents)?.components?.forEach((component) => {
-			untrack(() => {
-				const worldObjectIndex = current.findIndex((frame) => frame.name === component.name)
-				if (worldObjectIndex === -1) {
-					return
-				}
+		;(partConfig.localPartConfig.toJson() as unknown as PartConfigComponents)?.components?.forEach(
+			(component) => {
+				untrack(() => {
+					const worldObjectIndex = current.findIndex((frame) => frame.name === component.name)
+					if (worldObjectIndex === -1) {
+						return
+					}
 
-				current[worldObjectIndex].referenceFrame = component.frame.parent
+					current[worldObjectIndex].referenceFrame = component.frame.parent
 
-				current[worldObjectIndex].pose = {
-					x: component.frame.translation.x,
-					y: component.frame.translation.y,
-					z: component.frame.translation.z,
-					oX: component.frame.orientation.value.x,
-					oY: component.frame.orientation.value.y,
-					oZ: component.frame.orientation.value.z,
-					theta: component.frame.orientation.value.th,
-				}
+					current[worldObjectIndex].pose = {
+						x: component.frame.translation.x,
+						y: component.frame.translation.y,
+						z: component.frame.translation.z,
+						oX: component.frame.orientation.value.x,
+						oY: component.frame.orientation.value.y,
+						oZ: component.frame.orientation.value.z,
+						theta: component.frame.orientation.value.th,
+					}
 
-				if (component.frame.geometry) {
-					switch (component.frame.geometry.type) {
-						case 'box':
-							current[worldObjectIndex].geometry = {
-								...current[worldObjectIndex].geometry,
-								geometryType: {
-									case: 'box',
-									value: {
-										dimsMm: {
-											x: component.frame.geometry.x,
-											y: component.frame.geometry.y,
-											z: component.frame.geometry.z,
+					if (component.frame.geometry) {
+						switch (component.frame.geometry.type) {
+							case 'box':
+								current[worldObjectIndex].geometry = {
+									...current[worldObjectIndex].geometry,
+									geometryType: {
+										case: 'box',
+										value: {
+											dimsMm: {
+												x: component.frame.geometry.x,
+												y: component.frame.geometry.y,
+												z: component.frame.geometry.z,
+											},
 										},
 									},
-								},
-							} as Geometries
-							break
-						case 'sphere':
-							current[worldObjectIndex].geometry = {
-								...current[worldObjectIndex].geometry,
-								geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } },
-							} as Geometries
-							break
-						case 'capsule':
-							current[worldObjectIndex].geometry = {
-								...current[worldObjectIndex].geometry,
-								geometryType: {
-									case: 'capsule',
-									value: {
-										radiusMm: component.frame.geometry.r,
-										lengthMm: component.frame.geometry.l,
+								} as Geometries
+								break
+							case 'sphere':
+								current[worldObjectIndex].geometry = {
+									...current[worldObjectIndex].geometry,
+									geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } },
+								} as Geometries
+								break
+							case 'capsule':
+								current[worldObjectIndex].geometry = {
+									...current[worldObjectIndex].geometry,
+									geometryType: {
+										case: 'capsule',
+										value: {
+											radiusMm: component.frame.geometry.r,
+											lengthMm: component.frame.geometry.l,
+										},
 									},
-								},
-							} as Geometries
-							break
-						default:
-							current[worldObjectIndex].geometry = undefined
-							break
+								} as Geometries
+								break
+							default:
+								current[worldObjectIndex].geometry = undefined
+								break
+						}
+					} else {
+						current[worldObjectIndex].geometry = undefined
 					}
-				} else {
-					current[worldObjectIndex].geometry = undefined
-				}
-			})
-		})
+				})
+			}
+		)
 		untrack(() => (current = [...current]))
 	})
 
