@@ -184,7 +184,10 @@
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
 
-		<h3 class="text-subtle-2 flex justify-between py-2">
+		<h3
+			class="text-subtle-2 flex justify-between py-2"
+			data-testid="details-header"
+		>
 			Details
 
 			<button

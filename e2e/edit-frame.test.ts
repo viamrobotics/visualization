@@ -31,9 +31,32 @@ const testConfig = {
 // 			}
 // 		  }
 // 		}
+// 	  },
+// 	  {
+// 		"name": "parent",
+// 		"api": "rdk:component:base",
+// 		"model": "rdk:builtin:fake",
+// 		"attributes": {},
+// 		"frame": {
+// 		  "parent": "world",
+// 		  "translation": {
+// 			"x": 0,
+// 			"y": 0,
+// 			"z": 250
+// 		  },
+// 		  "orientation": {
+// 			"type": "ov_degrees",
+// 			"value": {
+// 			  "x": 0,
+// 			  "y": 0,
+// 			  "z": 1,
+// 			  "th": 0
+// 			}
+// 		  }
+// 		}
 // 	  }
 // 	]
-// }
+//   }
 
 test('basic edit frame', async ({ browser }) => {
 	const context = await browser.newContext()
@@ -71,7 +94,7 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('base-1')).toBeVisible()
 	await page.getByText('base-1').click()
 
-	await expect(page.getByText('Details')).toBeVisible()
+	await expect(page.getByTestId('details-header')).toBeVisible()
 
 	await expect(page.getByText('Box')).toBeVisible()
 	await page.getByText('Box').click()
@@ -108,11 +131,25 @@ test('basic edit frame', async ({ browser }) => {
 	await page.goto('/')
 	await expect(page.getByText('base-1')).toBeVisible()
 	await page.getByText('base-1').click()
-
-	await expect(page.getByText('Details')).toBeVisible()
+	await expect(page.getByTestId('details-header')).toBeVisible()
+	// give page time to laod up frame details
+	await page.waitForTimeout(1000)
 	await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
 
-	// REVERT THE CHANGES
+	// REPARENT THE OBJECT
+	await expect(page.getByLabel('dropdown parent frame name')).toBeVisible()
+	await page.getByLabel('dropdown parent frame name').click()
+	await page.getByLabel('dropdown parent frame name').selectOption('parent')
+
+	await expect(page).toHaveScreenshot('3-parented.png', { fullPage: true })
+
+	// DISCARD CHANGES
+	await expect(page.getByText('Live Updates Paused')).toBeVisible()
+	await page.getByText('Discard').click()
+	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page).toHaveScreenshot('4-discarded.png', { fullPage: true })
+
+	// RESTORE THE ORIGINAL FRAME
 	await expect(page.getByText('None')).toBeVisible()
 	await page.getByText('None').click()
 
@@ -127,5 +164,5 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await expect(page).toHaveScreenshot('3-reverted.png', { fullPage: true })
+	await expect(page).toHaveScreenshot('5-restored.png', { fullPage: true })
 })
