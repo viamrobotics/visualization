@@ -61,8 +61,6 @@ describe('Details component', () => {
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
-			setAwaitingRefresh: vi.fn(),
-			awaitingRefresh: false,
 		})
 	})
 
@@ -164,8 +162,6 @@ describe('Details component', () => {
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
-			setAwaitingRefresh: vi.fn(),
-			awaitingRefresh: false,
 		})
 
 		render(Details)
