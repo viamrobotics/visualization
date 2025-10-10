@@ -128,6 +128,4 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	await expect(page).toHaveScreenshot('3-reverted.png', { fullPage: true })
-
-	
 })
