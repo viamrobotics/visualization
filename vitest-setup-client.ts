@@ -34,6 +34,12 @@ vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 		getLocalPartConfig: vi.fn(() => ({ components: [] })),
 		setLocalPartConfig: vi.fn(),
 	})),
+	LocalPartConfigState: {
+		dirty: 'DIRTY',
+		clean: 'CLEAN',
+		discarded: 'DISCARDED',
+		saved: 'SAVED',
+	},
 }))
 
 // Mock useWeblabs hook
