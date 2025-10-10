@@ -214,15 +214,15 @@
 
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2">X</span>
+							<span class="text-subtle-2">x</span>
 							{(worldPosition.x * 1000).toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">Y</span>
+							<span class="text-subtle-2">y</span>
 							{(worldPosition.y * 1000).toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">Z</span>
+							<span class="text-subtle-2">z</span>
 							{(worldPosition.z * 1000).toFixed(2)}
 						</div>
 					</div>
@@ -234,19 +234,19 @@
 					<strong class="font-semibold">world orientation</strong>
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2">X</span>
+							<span class="text-subtle-2">x</span>
 							{worldOrientation.x.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">Y</span>
+							<span class="text-subtle-2">y</span>
 							{worldOrientation.y.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">Z</span>
+							<span class="text-subtle-2">z</span>
 							{worldOrientation.z.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2">TH</span>
+							<span class="text-subtle-2">th</span>
 							{worldOrientation.th.toFixed(2)}
 						</div>
 					</div>
@@ -276,21 +276,21 @@
 
 						<div class="flex gap-3">
 							{@render PoseAttribute({
-								label: 'X',
+								label: 'x',
 								ariaLabel: 'local position x coordinate',
 								value: localPose.x.toFixed(2),
 								onInput: (value) =>
 									detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
 							})}
 							{@render PoseAttribute({
-								label: 'Y',
+								label: 'y',
 								ariaLabel: 'local position y coordinate',
 								value: localPose.y.toFixed(2),
 								onInput: (value) =>
 									detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
 							})}
 							{@render PoseAttribute({
-								label: 'Z',
+								label: 'z',
 								ariaLabel: 'local position z coordinate',
 								value: localPose.z.toFixed(2),
 								onInput: (value) =>
@@ -303,28 +303,28 @@
 						<strong class="font-semibold">local orientation</strong>
 						<div class="flex {isFrameNode ? 'gap-2' : 'gap-3'}">
 							{@render PoseAttribute({
-								label: 'X',
+								label: 'x',
 								ariaLabel: 'local orientation x coordinate',
 								value: localPose.oX.toFixed(2),
 								onInput: (value) =>
 									detailConfigUpdater.updateLocalOrientation({ oX: parseFloat(value) }),
 							})}
 							{@render PoseAttribute({
-								label: 'Y',
+								label: 'y',
 								ariaLabel: 'local orientation y coordinate',
 								value: localPose.oY.toFixed(2),
 								onInput: (value) =>
 									detailConfigUpdater.updateLocalOrientation({ oY: parseFloat(value) }),
 							})}
 							{@render PoseAttribute({
-								label: 'Z',
+								label: 'z',
 								ariaLabel: 'local orientation z coordinate',
 								value: localPose.oZ.toFixed(2),
 								onInput: (value) =>
 									detailConfigUpdater.updateLocalOrientation({ oZ: parseFloat(value) }),
 							})}
 							{@render PoseAttribute({
-								label: 'TH',
+								label: 'th',
 								ariaLabel: 'local orientation theta degrees',
 								value: localPose.theta.toFixed(2),
 								onInput: (value) =>
@@ -371,21 +371,21 @@
 							<strong class="font-semibold">dimensions (box)</strong>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
-									label: 'X',
+									label: 'x',
 									ariaLabel: 'box dimensions x value input',
 									value: dimsMm?.x ? dimsMm.x.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'box', x: parseFloat(value) }),
 								})}
 								{@render GeometryAttribute({
-									label: 'Y',
+									label: 'y',
 									ariaLabel: 'box dimensions y value input',
 									value: dimsMm?.y ? dimsMm.y.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'box', y: parseFloat(value) }),
 								})}
 								{@render GeometryAttribute({
-									label: 'Z',
+									label: 'z',
 									ariaLabel: 'box dimensions z value input',
 									value: dimsMm?.z ? dimsMm.z.toFixed(2) : '-',
 									onInput: (value) =>
@@ -403,14 +403,14 @@
 							<strong class="font-semibold">dimensions (capsule)</strong>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
-									label: 'R',
+									label: 'r',
 									ariaLabel: 'capsule dimensions radius value input',
 									value: radiusMm ? radiusMm.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'capsule', r: parseFloat(value) }),
 								})}
 								{@render GeometryAttribute({
-									label: 'L',
+									label: 'l',
 									ariaLabel: 'capsule dimensions length value input',
 									value: lengthMm ? lengthMm.toFixed(2) : '-',
 									onInput: (value) =>
@@ -425,7 +425,7 @@
 							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
-									label: 'R',
+									label: 'r',
 									ariaLabel: 'sphere dimensions radius value input',
 									value: radiusMm ? radiusMm.toFixed(2) : '-',
 									onInput: (value) =>
@@ -448,15 +448,15 @@
 							<strong class="font-semibold">dimensions (box)</strong>
 							<div class="flex gap-3">
 								<div>
-									<span class="text-subtle-2">X</span>
+									<span class="text-subtle-2">x</span>
 									{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
 								</div>
 								<div>
-									<span class="text-subtle-2">Y</span>
+									<span class="text-subtle-2">y</span>
 									{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
 								</div>
 								<div>
-									<span class="text-subtle-2">Z</span>
+									<span class="text-subtle-2">z</span>
 									{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
 								</div>
 							</div>
@@ -467,11 +467,11 @@
 							<strong class="font-semibold">dimensions (capsule)</strong>
 							<div class="flex gap-3">
 								<div>
-									<span class="text-subtle-2">R</span>
+									<span class="text-subtle-2">r</span>
 									{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
 								</div>
 								<div>
-									<span class="text-subtle-2">L</span>
+									<span class="text-subtle-2">l</span>
 									{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
 								</div>
 							</div>
@@ -482,7 +482,7 @@
 								<strong class="font-semibold">dimensions (sphere)</strong>
 								<div class="flex gap-3">
 									<div>
-										<span class="text-subtle-2">R</span>
+										<span class="text-subtle-2">r</span>
 										{object.geometry.geometryType.value.radiusMm.toFixed(2)}
 									</div>
 								</div>
