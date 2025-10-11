@@ -97,6 +97,16 @@ export const provideFrames = (partID: () => string) => {
 
 					current[worldObjectIndex].referenceFrame = component.frame.parent
 
+					current[worldObjectIndex].localEditedPose = {
+						x: component.frame.translation.x,
+						y: component.frame.translation.y,
+						z: component.frame.translation.z,
+						oX: component.frame.orientation.value.x,
+						oY: component.frame.orientation.value.y,
+						oZ: component.frame.orientation.value.z,
+						theta: component.frame.orientation.value.th,
+					}
+
 					if (component.frame.geometry) {
 						switch (component.frame.geometry.type) {
 							case 'box':
