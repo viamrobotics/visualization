@@ -30,10 +30,10 @@
 		const matrix = new Matrix4()
 		const poseQuaternion = new Quaternion().setFromAxisAngle(
 			new Vector3(pose.oX, pose.oY, pose.oZ),
-			pose.theta
+			pose.theta * (Math.PI / 180)
 		)
 		matrix.makeRotationFromQuaternion(poseQuaternion)
-		matrix.makeTranslation(pose.x, pose.y, pose.z)
+		matrix.setPosition(new Vector3(pose.x, pose.y, pose.z))
 		return matrix
 	}
 

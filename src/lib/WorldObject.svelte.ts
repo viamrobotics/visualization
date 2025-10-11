@@ -10,7 +10,6 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
-import { Vector3 as ViamVector3 } from '@viamrobotics/sdk'
 
 export type PointsGeometry = {
 	center: undefined
@@ -58,7 +57,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.metadata = metadata ?? {}
 
 		if (pose) {
-			this.pose = { ...pose }
+			this.pose = pose
 			this.localEditedPose = { ...pose }
 		}
 	}
