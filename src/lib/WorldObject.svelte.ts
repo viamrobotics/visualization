@@ -142,7 +142,6 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	return worldObject
 }
 
-
 const poseToMatrix = (pose: WorldObject['pose']) => {
 	const matrix = new Matrix4()
 	const poseQuaternion = new Quaternion().setFromAxisAngle(
