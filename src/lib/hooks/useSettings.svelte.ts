@@ -79,7 +79,6 @@ const defaults = (): Settings => ({
 
 export const provideSettings = () => {
 	let settings = $state<Settings>(defaults())
-	$inspect(settings.viewerMode)
 
 	get('motion-tools-settings').then((response: Settings) => {
 		if (response) {

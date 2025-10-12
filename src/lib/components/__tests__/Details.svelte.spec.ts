@@ -9,7 +9,6 @@ import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
-import { LocalPartConfigState } from '$lib/hooks/usePartConfig.svelte'
 
 describe('Details component', () => {
 	const mockedWeblab = new Weblab()
@@ -68,7 +67,7 @@ describe('Details component', () => {
 			localPartConfig: new Struct(),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			localPartConfigState: LocalPartConfigState.clean,
+			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 		})
@@ -178,7 +177,7 @@ describe('Details component', () => {
 			}),
 			setFrameParentConfig: vi.fn(),
 			updateFrame: vi.fn(),
-			localPartConfigState: LocalPartConfigState.clean,
+			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 		})

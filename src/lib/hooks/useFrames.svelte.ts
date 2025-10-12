@@ -11,7 +11,6 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type PartConfigComponents } from './usePartConfig.svelte'
 import { useSettings } from './useSettings.svelte'
-import { LocalPartConfigState } from './usePartConfig.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -35,10 +34,20 @@ export const provideFrames = (partID: () => string) => {
 	observe.pre(
 		() => [revision],
 		() => {
-			if (partConfig.localPartConfigState !== LocalPartConfigState.dirty) {
+			if (!partConfig.isDirty) {
 				untrack(() => query.current).refetch()
-				settings.current.viewerMode = 'monitor'
 				logs.add('Fetching frames...')
+			}
+		}
+	)
+
+	observe.pre(
+		() => [partConfig.isDirty],
+		() => {
+			if (partConfig.isDirty) {
+				settings.current.viewerMode = 'edit'
+			} else {
+				settings.current.viewerMode = 'monitor'
 			}
 		}
 	)
@@ -71,20 +80,6 @@ export const provideFrames = (partID: () => string) => {
 
 		return objects
 	})
-	$inspect(partConfig.localPartConfigState)
-
-	observe.pre(
-		() => [partConfig.localPartConfigState],
-		() => {
-			if (partConfig.localPartConfigState === LocalPartConfigState.dirty) {
-				settings.current.viewerMode = 'edit'
-			} else if (partConfig.localPartConfigState === LocalPartConfigState.discarded) {
-				current.forEach((object) => {
-					object.localEditedPose = { ...object.pose }
-				})
-			}
-		}
-	)
 
 	$effect.pre(() => {
 		;(partConfig.localPartConfig.toJson() as unknown as PartConfigComponents)?.components?.forEach(

@@ -47,7 +47,7 @@
 			'none'
 	)
 
-	const localPose = $derived(object?.pose)
+	const localPose = $derived(object?.localEditedPose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
 	const partDefinedComponentNames = $derived.by(() => {

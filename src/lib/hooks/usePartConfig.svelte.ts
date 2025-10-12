@@ -39,13 +39,6 @@ interface PartConfigParams {
 	standalonePartConfigProps?: StandalonePartConfigProps
 }
 
-export enum LocalPartConfigState {
-	dirty = 'DIRTY',
-	clean = 'CLEAN',
-	discarded = 'DISCARDED',
-	saved = 'SAVED',
-}
-
 interface PartConfigContext {
 	setFrameParentConfig: (componentName: string, parentName: string) => void
 	updateFrame: (
@@ -63,7 +56,7 @@ interface PartConfigContext {
 	saveLocalPartConfig: () => void
 	resetLocalPartConfig: () => void
 	localPartConfig: Struct
-	localPartConfigState: LocalPartConfigState
+	isDirty: boolean
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
@@ -161,8 +154,8 @@ export const providePartConfig = (params: PartConfigParams) => {
 		get localPartConfig() {
 			return _localPartConfig.getLocalPartConfig()
 		},
-		get localPartConfigState() {
-			return _localPartConfig.getLocalPartConfigState()
+		get isDirty() {
+			return _localPartConfig.isDirty()
 		},
 	})
 }
@@ -172,7 +165,7 @@ export const usePartConfig = (): PartConfigContext => {
 }
 
 interface LocalPartConfig {
-	getLocalPartConfigState: () => LocalPartConfigState
+	isDirty: () => boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	partName: () => string | undefined
@@ -181,7 +174,7 @@ interface LocalPartConfig {
 }
 
 interface AppEmbeddedPartConfigProps {
-	getLocalPartConfigState: () => LocalPartConfigState
+	isDirty: () => boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	partName: () => string | undefined
@@ -192,8 +185,8 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 		this._appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
 	}
 
-	public getLocalPartConfigState(): LocalPartConfigState {
-		return this._appEmbeddedPartConfigProps.getLocalPartConfigState()
+	public isDirty(): boolean {
+		return this._appEmbeddedPartConfigProps.isDirty()
 	}
 
 	public getLocalPartConfig(): Struct {
@@ -215,7 +208,7 @@ interface StandalonePartConfigProps {
 }
 export class StandalonePartConfig implements LocalPartConfig {
 	private _standalonePartConfigProps: StandalonePartConfigProps
-	private _localPartConfigState = $state(LocalPartConfigState.clean)
+	private _isDirty = $state(false)
 	private _networkPartConfig = $state<Struct>()
 	private _localPartConfig = $state<Struct>()
 	private _partName = $state<string>()
@@ -242,15 +235,15 @@ export class StandalonePartConfig implements LocalPartConfig {
 	}
 	public setLocalPartConfig(config: Struct): void {
 		this._localPartConfig = config
-		this._localPartConfigState = LocalPartConfigState.dirty
+		this._isDirty = true
 	}
 
 	public partName(): string | undefined {
 		return this._partName
 	}
 
-	public getLocalPartConfigState(): LocalPartConfigState {
-		return this._localPartConfigState
+	public isDirty(): boolean {
+		return this._isDirty
 	}
 
 	public async saveLocalPartConfig(): Promise<void> {
@@ -265,7 +258,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 				this._partName,
 				this._localPartConfig
 			)
-		this._localPartConfigState = LocalPartConfigState.saved
+		this._isDirty = false
 	}
 
 	public async resetLocalPartConfig(): Promise<void> {
@@ -273,6 +266,6 @@ export class StandalonePartConfig implements LocalPartConfig {
 			return
 		}
 		this._localPartConfig = this._networkPartConfig
-		this._localPartConfigState = LocalPartConfigState.discarded
+		this._isDirty = false
 	}
 }

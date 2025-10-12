@@ -17,7 +17,7 @@
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
 	import WeblabProvider from './weblab/WeblabProvider.svelte'
-	import { providePartConfig, LocalPartConfigState } from '$lib/hooks/usePartConfig.svelte'
+	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
@@ -26,7 +26,7 @@
 		getLocalPartConfig: () => Struct
 		setLocalPartConfig: (config: Struct) => void
 		getPartName: () => string | undefined
-		getLocalPartConfigState: () => LocalPartConfigState
+		isDirty: () => boolean
 	}
 
 	interface Props {
@@ -61,7 +61,7 @@
 		isStandalone = false
 		providePartConfig({
 			appEmbeddedPartConfigProps: {
-				getLocalPartConfigState: () => localConfigProps.getLocalPartConfigState(),
+				isDirty: () => localConfigProps.isDirty(),
 				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
 				partName: () => localConfigProps.getPartName(),
