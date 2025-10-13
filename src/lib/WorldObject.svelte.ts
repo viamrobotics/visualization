@@ -1,7 +1,6 @@
 import type { Geometry, Pose, TransformWithUUID } from '@viamrobotics/sdk'
 import {
 	BatchedMesh,
-	Box3,
 	Color,
 	MathUtils,
 	Object3D,
@@ -10,6 +9,7 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
+import type { OBB } from 'three/addons/math/OBB.js'
 
 export type PointsGeometry = {
 	center: undefined
@@ -36,7 +36,7 @@ export type Metadata = {
 		id: number
 		object: BatchedMesh
 	}
-	getBoundingBoxAt?: (box: Box3) => void
+	getBoundingBoxAt?: (box: OBB) => void
 }
 
 export class WorldObject<T extends Geometries = Geometries> {
