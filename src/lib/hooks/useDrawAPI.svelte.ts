@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, type Box3 } from 'three'
+import { Color, Vector3, Vector4 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
