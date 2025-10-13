@@ -70,7 +70,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 	referenceFrame: string
 	pose = $state.raw<Pose>(createPose())
 	geometry?: T
-	metadata: Metadata
+	metadata = $state<Metadata>({})
 
 	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
 		this.uuid = MathUtils.generateUUID()
@@ -78,7 +78,9 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.referenceFrame = parent
 
 		this.geometry = geometry
-		this.metadata = metadata ?? {}
+		if (metadata) {
+			this.metadata = metadata
+		}
 
 		if (pose) {
 			this.pose = pose
@@ -124,7 +126,8 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 				const r = raw.r > 1 ? raw.r / 255 : raw.r
 				const g = raw.g > 1 ? raw.g / 255 : raw.g
 				const b = raw.b > 1 ? raw.b / 255 : raw.b
-				json[k] = new Color().setRGB(r, g, b)
+				const color = new Color().setRGB(r, g, b)
+				json[k] = color
 				break
 			}
 			case 'opacity': {
@@ -167,6 +170,7 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 
 export const fromTransform = (transform: TransformWithUUID) => {
 	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
+
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,

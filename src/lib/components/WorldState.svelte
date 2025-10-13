@@ -25,6 +25,7 @@
 
 	const getArrows = () => ({ ...currentArrows })
 	const getArrow = (uuid: string) => currentArrows[uuid]
+	const removeArrow = (uuid: string) => delete currentArrows[uuid]
 	const setArrow = (uuid: string, id: number, arrow: WorldObject) => {
 		currentArrows[uuid] = { id, arrow }
 	}
@@ -53,8 +54,9 @@
 			delete toRemove[arrow.uuid]
 		})
 
-		Object.values(toRemove).forEach(({ id }) => {
+		Object.values(toRemove).forEach(({ id, arrow }) => {
 			batchedArrow.removeArrow(id)
+			removeArrow(arrow.uuid)
 		})
 	})
 </script>
