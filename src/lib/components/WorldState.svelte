@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Color, Vector3 } from 'three'
-	import { T } from '@threlte/core'
 
 	import Frame from './Frame.svelte'
 	import Label from './Label.svelte'
@@ -34,23 +33,33 @@
 		const toRemove = getArrows()
 		arrows.forEach((arrow) => {
 			const currentArrow = getArrow(arrow.uuid)
-			if (currentArrow) {
-				batchedArrow.removeArrow(currentArrow.id)
-			}
-
 			const color = isColor(arrow.metadata?.color)
 				? arrow.metadata.color
 				: new Color(arrow.metadata?.color ?? 'yellow')
 
-			const id = batchedArrow.addArrow(
-				poseToDirection(arrow.pose),
-				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
-				0.1,
-				color,
-				true
-			)
+			if (currentArrow) {
+				batchedArrow.updateArrow(
+					currentArrow.id,
+					poseToDirection(arrow.pose),
+					new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
+					0.1,
+					color,
+					true
+				)
 
-			setArrow(arrow.uuid, id, arrow)
+				setArrow(arrow.uuid, currentArrow.id, arrow)
+			} else {
+				const id = batchedArrow.addArrow(
+					poseToDirection(arrow.pose),
+					new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
+					0.1,
+					color,
+					true
+				)
+
+				setArrow(arrow.uuid, id, arrow)
+			}
+
 			delete toRemove[arrow.uuid]
 		})
 
@@ -75,10 +84,3 @@
 		</Frame>
 	</Portal>
 {/each}
-
-<T
-	name={batchedArrow.object3d.name}
-	is={batchedArrow.object3d}
-	dispose={false}
-	bvh={{ enabled: false }}
-/>

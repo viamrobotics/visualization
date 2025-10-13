@@ -156,6 +156,52 @@ export class BatchedArrow {
 		this._arrows.delete(arrowId)
 	}
 
+	updateArrow(
+		arrowId: number,
+		direction: Vector3,
+		origin: Vector3,
+		length = 0.1,
+		color = black,
+		arrowHeadAtPose = true
+	) {
+		const arrow = this._arrows.get(arrowId)
+		if (!arrow) return
+
+		if (arrowHeadAtPose) {
+			// Compute the base position so the arrow ends at the origin
+			origin.sub(vec3.copy(direction).multiplyScalar(length))
+		}
+
+		direction.normalize()
+
+		const headLength = length * 0.2
+		const headWidth = headLength * 0.2
+		const { shaftId, headId } = arrow
+
+		// Apply shaft transform
+		const shaftMatrix = this._computeTransform(
+			origin,
+			direction,
+			length - headLength,
+			this.shaftWidth
+		)
+		this.batchedMesh.setMatrixAt(shaftId, shaftMatrix)
+
+		// Compute cone position = origin + dir * length
+		const coneOrigin = vec3.copy(direction).multiplyScalar(length).add(origin)
+		const coneMatrix = this._computeTransform(coneOrigin, direction, headLength, headWidth * 4)
+		this.batchedMesh.setMatrixAt(headId, coneMatrix)
+
+		if (color) {
+			col.set(color)
+			this.batchedMesh.setColorAt(shaftId, col)
+			this.batchedMesh.setColorAt(headId, col)
+		}
+
+		this.batchedMesh.setVisibleAt(shaftId, true)
+		this.batchedMesh.setVisibleAt(headId, true)
+	}
+
 	clear() {
 		for (const id of this._arrows.keys()) {
 			this.removeArrow(id)
