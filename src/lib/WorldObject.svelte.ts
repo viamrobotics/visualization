@@ -1,7 +1,6 @@
 import type { Geometry, Pose, TransformWithUUID } from '@viamrobotics/sdk'
 import {
 	BatchedMesh,
-	Box3,
 	Color,
 	MathUtils,
 	Object3D,
