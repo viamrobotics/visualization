@@ -45,25 +45,24 @@ export class OBBHelper extends LineSegments {
 		return this
 	}
 
-	/**
-	 * Set from a Mesh/Object3D assuming no shears. Uses geometry's local bbox + world rotation/scale.
-	 */
+	/** Set from a Mesh/Object3D assuming no shears. Uses geometry's local bbox + world rotation/scale. */
 	setFromObject(object: Object3D) {
 		// Find a geometry to read bbox from
 		let geometry: BufferGeometry | undefined
 
-		if ((object as Mesh).isMesh && (object as Mesh).geometry) {
+		if ((object as Mesh).geometry) {
 			geometry = (object as Mesh).geometry
 		} else {
 			// try the first mesh child
 			object.traverse((child) => {
-				if (!geometry && (child as Mesh).isMesh && (child as Mesh).geometry) {
+				if (!geometry && (child as Mesh).geometry) {
 					geometry = (child as Mesh).geometry
 				}
 			})
 		}
 
 		if (!geometry) {
+			console.warn('[OBBHelper] No geometry found on object to compute OBB.')
 			return this
 		}
 
