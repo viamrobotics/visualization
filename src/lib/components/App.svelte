@@ -16,7 +16,7 @@
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
 	import WeblabProvider from './weblab/WeblabProvider.svelte'
-
+	import ArmPositions from './widgets/ArmPositions.svelte'
 	interface Props {
 		partID?: string
 		enableKeybindings?: boolean
@@ -62,6 +62,10 @@
 
 						{#if !focus}
 							<TreeContainer {@attach domPortal(root)} />
+						{/if}
+
+						{#if !focus && settings.current.enableArmPositionsWidget}
+							<ArmPositions {@attach domPortal(root)} />
 						{/if}
 
 						<FileDrop {@attach domPortal(root)} />

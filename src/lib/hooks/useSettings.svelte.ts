@@ -34,6 +34,9 @@ interface Settings {
 	// AR Mode
 	enableXR: boolean
 
+	// Widgets
+	enableArmPositionsWidget: boolean
+
 	renderStats: boolean
 }
 
@@ -65,6 +68,8 @@ const defaults = (): Settings => ({
 	enableQueryDevtools: false,
 
 	enableXR: false,
+
+	enableArmPositionsWidget: false,
 
 	renderStats: false,
 })
