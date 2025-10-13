@@ -100,6 +100,7 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 		case 'structValue': {
 			const result: Record<string, unknown> = {}
 			for (const [key, val] of Object.entries(value.kind.value.fields || {})) {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				result[key] = unwrapValue(val as PlainMessage<any>)
 			}
 			return result
@@ -114,7 +115,7 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 }
 
 export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
-	let json: Metadata = {}
+	const json: Metadata = {}
 
 	for (const [k, v] of Object.entries(fields)) {
 		if (!isMetadataKey(k)) continue
