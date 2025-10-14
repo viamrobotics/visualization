@@ -164,7 +164,7 @@ export const provideFrames = (partID: () => string) => {
 		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
 		const fragmentMods = (partConfig.localPartConfig.toJson() as unknown as PartConfig)
 			?.fragment_mods
-		const fragmentDefinedComponents = Object.values(partConfig.componentNameToFragmentId)
+		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
 
 		// deal with part defined frame config
 		for (const component of components || []) {
@@ -198,10 +198,10 @@ export const provideFrames = (partID: () => string) => {
 				continue
 			}
 			const setComponentModIndex = fragmentMod.mods.findLastIndex(
-				(mod) => mod['$set'][`components.${fragmentComponentName}.frame`] !== undefined
+				(mod) => mod['$set']?.[`components.${fragmentComponentName}.frame`] !== undefined
 			)
 			const unsetComponentModIndex = fragmentMod.mods.findLastIndex(
-				(mod) => mod['$unset'][`components.${fragmentComponentName}.frame`] !== undefined
+				(mod) => mod['$unset']?.[`components.${fragmentComponentName}.frame`] !== undefined
 			)
 
 			if (setComponentModIndex < unsetComponentModIndex) {
@@ -216,7 +216,7 @@ export const provideFrames = (partID: () => string) => {
 				}
 				if (worldObject) {
 					setWorldObject(componentConfig, worldObject)
-				} else {
+				} else if (Object.keys(getWorldObjects()).length > 0) {
 					const pose = new Pose({
 						x: frameData.translation.x,
 						y: frameData.translation.y,
