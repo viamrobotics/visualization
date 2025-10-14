@@ -1,7 +1,6 @@
 import type { Geometry, Pose, TransformWithUUID } from '@viamrobotics/sdk'
 import {
 	BatchedMesh,
-	Box3,
 	Color,
 	MathUtils,
 	Matrix4,
@@ -12,6 +11,7 @@ import {
 	type RGB,
 } from 'three'
 import { createPose } from './transform'
+import type { OBB } from 'three/addons/math/OBB.js'
 
 export type PointsGeometry = {
 	center: undefined
@@ -38,7 +38,24 @@ export type Metadata = {
 		id: number
 		object: BatchedMesh
 	}
-	getBoundingBoxAt?: (box: Box3) => void
+	getBoundingBoxAt?: (box: OBB) => void
+}
+
+export const determinePose = (
+	object: WorldObject,
+	pose: WorldObject['pose'] | undefined
+): WorldObject['pose'] => {
+	if (pose === undefined) {
+		return object.localEditedPose
+	} else {
+		const poseNetwork = poseToMatrix(object.pose)
+		const poseUsePose = poseToMatrix(pose)
+		const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
+
+		const poseNetworkInverse = poseNetwork.invert()
+		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
+		return matrixToPose(resultMatrix)
+	}
 }
 
 export const determinePose = (

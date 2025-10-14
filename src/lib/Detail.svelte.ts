@@ -146,13 +146,13 @@ export class DetailConfigUpdater {
 		const object = this.object()
 		if (!object) return
 		this.updateFrame(object.name ?? '', parentName, {
-			x: object.pose.x,
-			y: object.pose.y,
-			z: object.pose.z,
-			oX: object.pose.oX,
-			oY: object.pose.oY,
-			oZ: object.pose.oZ,
-			theta: object.pose.theta,
+			x: object.localEditedPose.x,
+			y: object.localEditedPose.y,
+			z: object.localEditedPose.z,
+			oX: object.localEditedPose.oX,
+			oY: object.localEditedPose.oY,
+			oZ: object.localEditedPose.oZ,
+			theta: object.localEditedPose.theta,
 		})
 	}
 
