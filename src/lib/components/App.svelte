@@ -3,6 +3,7 @@
 	import { Canvas } from '@threlte/core'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import type { Struct } from '@viamrobotics/sdk'
 
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
@@ -16,15 +17,33 @@
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
 	import WeblabProvider from './weblab/WeblabProvider.svelte'
+	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useViamClient } from '@viamrobotics/svelte-sdk'
+	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
+
+	interface LocalConfigProps {
+		getLocalPartConfig: () => Struct
+		setLocalPartConfig: (config: Struct) => void
+		getPartName: () => string | undefined
+		isDirty: () => boolean
+	}
+
 	interface Props {
 		partID?: string
 		enableKeybindings?: boolean
 		children?: Snippet
+		localConfigProps?: LocalConfigProps
 	}
 
-	let { partID = '', enableKeybindings = true, children: appChildren }: Props = $props()
+	let {
+		partID = '',
+		enableKeybindings = true,
+		children: appChildren,
+		localConfigProps,
+	}: Props = $props()
 
+	const appClient = useViamClient()
 	const settings = provideSettings()
 
 	$effect(() => {
@@ -36,6 +55,27 @@
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
+	let isStandalone = $state(false)
+
+	if (localConfigProps) {
+		isStandalone = false
+		providePartConfig({
+			appEmbeddedPartConfigProps: {
+				isDirty: () => localConfigProps.isDirty(),
+				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+				partName: () => localConfigProps.getPartName(),
+			},
+		})
+	} else {
+		isStandalone = true
+		providePartConfig({
+			standalonePartConfigProps: {
+				viamClient: () => appClient?.current,
+				partID,
+			},
+		})
+	}
 </script>
 
 {#if settings.current.enableQueryDevtools}
@@ -59,6 +99,9 @@
 
 						<Dashboard {@attach domPortal(root)} />
 						<Details {@attach domPortal(root)} />
+						{#if isStandalone}
+							<LiveUpdatesBanner {@attach domPortal(root)} />
+						{/if}
 
 						{#if !focus}
 							<TreeContainer {@attach domPortal(root)} />

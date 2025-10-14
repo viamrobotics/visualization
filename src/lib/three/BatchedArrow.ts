@@ -9,6 +9,7 @@ import {
 	Box3,
 	Matrix4,
 } from 'three'
+import type { OBB } from 'three/addons/math/OBB.js'
 
 const black = new Color('black')
 
@@ -17,6 +18,7 @@ const object3d = new Object3D()
 const vec3 = new Vector3()
 const box1 = new Box3()
 const box2 = new Box3()
+const box3 = new Box3()
 const mat4_1 = new Matrix4()
 const mat4_2 = new Matrix4()
 const col = new Color()
@@ -100,7 +102,7 @@ export class BatchedArrow {
 		return this._idToArrowId.get(instanceId)
 	}
 
-	getBoundingBoxAt(arrowId: number, target: Box3) {
+	getBoundingBoxAt(arrowId: number, target: OBB) {
 		const arrow = this._arrows.get(arrowId)
 
 		if (arrow) {
@@ -110,7 +112,9 @@ export class BatchedArrow {
 			if (headBox && tailBox) {
 				this.batchedMesh.getMatrixAt(arrow.headId, mat4_1)
 				this.batchedMesh.getMatrixAt(arrow.shaftId, mat4_2)
-				target.copy(headBox.applyMatrix4(mat4_1)).union(tailBox.applyMatrix4(mat4_2))
+				box3.copy(headBox.applyMatrix4(mat4_1)).union(tailBox.applyMatrix4(mat4_2))
+				target.fromBox3(box3)
+
 				return target
 			}
 		}

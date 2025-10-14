@@ -23,6 +23,25 @@ vi.mock('$lib/hooks/useSelection.svelte', () => ({
 	useSelectedObject3d: vi.fn(() => ({ current: undefined })),
 }))
 
+// Mock useFrames hook
+vi.mock('$lib/hooks/useFrames.svelte', () => ({
+	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
+}))
+
+// Mock usePartConfig hook
+vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
+	usePartConfig: vi.fn(() => ({
+		getLocalPartConfig: vi.fn(() => ({ components: [] })),
+		setLocalPartConfig: vi.fn(),
+	})),
+	LocalPartConfigState: {
+		dirty: 'DIRTY',
+		clean: 'CLEAN',
+		discarded: 'DISCARDED',
+		saved: 'SAVED',
+	},
+}))
+
 // Mock useWeblabs hook
 vi.mock('$lib/hooks/useWeblabs.svelte', () => ({
 	useWeblabs: vi.fn(() => ({

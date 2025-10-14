@@ -1,17 +1,9 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import {
-	BatchedMesh,
-	Box3,
-	Color,
-	MathUtils,
-	Object3D,
-	Vector3,
-	type ColorRepresentation,
-	type RGB,
-} from 'three'
+import { BatchedMesh, Color, MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
 import { createPose } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
+import type { OBB } from 'three/addons/math/OBB.js'
 
 export type PointsGeometry = {
 	center: undefined
@@ -45,7 +37,7 @@ export type Metadata = {
 		object: BatchedMesh
 	}
 	shape?: ValueOf<typeof SupportedShapes>
-	getBoundingBoxAt?: (box: Box3) => void
+	getBoundingBoxAt?: (box: OBB) => void
 }
 
 const METADATA_KEYS = [
@@ -65,13 +57,31 @@ export const isMetadataKey = (key: string): key is keyof Metadata => {
 	return METADATA_KEYS.includes(key as (typeof METADATA_KEYS)[number])
 }
 
+export const determinePose = (
+	object: WorldObject,
+	pose: WorldObject['pose'] | undefined
+): WorldObject['pose'] => {
+	if (pose === undefined) {
+		return object.localEditedPose
+	} else {
+		const poseNetwork = poseToMatrix(object.pose)
+		const poseUsePose = poseToMatrix(pose)
+		const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
+
+		const poseNetworkInverse = poseNetwork.invert()
+		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
+		return matrixToPose(resultMatrix)
+	}
+}
+
 export class WorldObject<T extends Geometries = Geometries> {
 	uuid: string
 	name: string
-	referenceFrame: string
+	referenceFrame = $state.raw<string>()
 	pose = $state.raw<Pose>(createPose())
 	geometry?: T
 	metadata = $state<Metadata>({})
+	localEditedPose = $state.raw<Pose>(createPose())
 
 	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
 		this.uuid = MathUtils.generateUUID()
@@ -85,6 +95,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 
 		if (pose) {
 			this.pose = pose
+			this.localEditedPose = { ...pose }
 		}
 	}
 }
@@ -172,4 +183,40 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	)
 	worldObject.uuid = transform.uuidString
 	return worldObject
+}
+
+const poseToMatrix = (pose: WorldObject['pose']) => {
+	const matrix = new Matrix4()
+	const poseQuaternion = new Quaternion().setFromAxisAngle(
+		new Vector3(pose.oX, pose.oY, pose.oZ),
+		pose.theta * (Math.PI / 180)
+	)
+	matrix.makeRotationFromQuaternion(poseQuaternion)
+	matrix.setPosition(new Vector3(pose.x, pose.y, pose.z))
+	return matrix
+}
+
+const matrixToPose = (matrix: Matrix4) => {
+	const pose = createPose()
+	const translation = new Vector3()
+	const quaternion = new Quaternion()
+	matrix.decompose(translation, quaternion, new Vector3())
+	pose.x = translation.x
+	pose.y = translation.y
+	pose.z = translation.z
+
+	const s = Math.sqrt(1 - quaternion.w * quaternion.w)
+	if (s < 0.000001) {
+		pose.oX = 0
+		pose.oY = 0
+		pose.oZ = 1
+		pose.theta = 0
+	} else {
+		pose.oX = quaternion.x / s
+		pose.oY = quaternion.y / s
+		pose.oZ = quaternion.z / s
+		pose.theta = Math.acos(quaternion.w) * 2 * (180 / Math.PI)
+	}
+
+	return pose
 }
