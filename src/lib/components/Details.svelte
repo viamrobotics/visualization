@@ -24,7 +24,7 @@
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartConfig, type PartConfigComponents } from '$lib/hooks/usePartConfig.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { DetailConfigUpdater } from '$lib/Detail.svelte'
 
 	const { ...rest } = $props()
@@ -50,14 +50,8 @@
 	const localPose = $derived(object?.localEditedPose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
-	const partDefinedComponentNames = $derived.by(() => {
-		const config = partConfig.localPartConfig.toJson() as unknown as PartConfigComponents
-		return config?.components?.map((component: { name: string }) => component.name) ?? []
-	})
 	const isFrameNode = $derived(
-		frames.current.find(
-			(frame) => frame.name === object?.name && partDefinedComponentNames.includes(frame.name)
-		) !== undefined
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
 	let copied = $state(false)
 
@@ -65,7 +59,8 @@
 
 	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
 		() => object,
-		partConfig.updateFrame
+		partConfig.updateFrame,
+		() => referenceFrame
 	)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
@@ -264,7 +259,7 @@
 							ariaLabel: 'parent frame name',
 							value: referenceFrame,
 							options: referenceFrameOptions,
-							onChange: (value) => partConfig.setFrameParentConfig(object.name, value),
+							onChange: (value) => detailConfigUpdater.setFrameParent(value),
 						})}
 					</div>
 				</div>
