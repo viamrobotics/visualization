@@ -10,10 +10,12 @@
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
 	const { deleteFrame } = usePartConfig()
+	const settings = useSettings()
 
 	interface Props {
 		rootNode: TreeNode
@@ -143,15 +145,17 @@
 						<EyeOff size={14} />
 					{/if}
 				</button>
-				<button
-					class="text-gray-6"
-					onclick={(event) => {
-						event.stopPropagation()
-						deleteFrame(node.name)
-					}}
-				>
-					<Trash size={14} />
-				</button>
+				{#if settings.current.isStandalone}
+					<button
+						class="text-gray-6"
+						onclick={(event) => {
+							event.stopPropagation()
+							deleteFrame(node.name)
+						}}
+					>
+						<Trash size={14} />
+					</button>
+				{/if}
 			</div>
 		</div>
 	{/if}

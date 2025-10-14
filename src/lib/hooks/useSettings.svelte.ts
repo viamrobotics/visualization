@@ -6,6 +6,7 @@ const key = Symbol('dashboard-context')
 interface Settings {
 	// viewer mode
 	viewerMode: 'edit' | 'monitor'
+	isStandalone: boolean
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -48,6 +49,7 @@ interface Context {
 
 const defaults = (): Settings => ({
 	viewerMode: 'monitor',
+	isStandalone: true,
 	cameraMode: 'perspective',
 
 	transforming: false,

@@ -55,10 +55,9 @@
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
-	let isStandalone = $state(false)
 
 	if (localConfigProps) {
-		isStandalone = false
+		settings.current.isStandalone = false
 		providePartConfig({
 			appEmbeddedPartConfigProps: {
 				isDirty: () => localConfigProps.isDirty(),
@@ -68,7 +67,7 @@
 			},
 		})
 	} else {
-		isStandalone = true
+		settings.current.isStandalone = true
 		providePartConfig({
 			standalonePartConfigProps: {
 				viamClient: () => appClient?.current,
@@ -99,7 +98,7 @@
 
 						<Dashboard {@attach domPortal(root)} />
 						<Details {@attach domPortal(root)} />
-						{#if isStandalone}
+						{#if settings.current.isStandalone}
 							<LiveUpdatesBanner {@attach domPortal(root)} />
 						{/if}
 
