@@ -24,38 +24,36 @@
 	const getArrows = () => ({ ...currentArrows })
 	const getArrow = (uuid: string) => currentArrows[uuid]
 	const removeArrow = (uuid: string) => delete currentArrows[uuid]
-	const setArrow = (uuid: string, id: number, arrow: WorldObject) => {
-		currentArrows[uuid] = { id, arrow }
+	const setArrow = (arrow: WorldObject) => {
+		const currentArrow = getArrow(arrow.uuid)
+		const color = arrow.metadata?.color ?? new Color('yellow')
+		if (currentArrow) {
+			batchedArrow.updateArrow(
+				currentArrow.id,
+				poseToDirection(arrow.pose),
+				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
+				0.1,
+				color,
+				true
+			)
+
+			currentArrows[arrow.uuid] = { id: currentArrow.id, arrow }
+		} else {
+			const id = batchedArrow.addArrow(
+				poseToDirection(arrow.pose),
+				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
+				0.1,
+				color,
+				true
+			)
+			currentArrows[arrow.uuid] = { id, arrow }
+		}
 	}
 
 	$effect(() => {
 		const toRemove = getArrows()
 		arrows.forEach((arrow) => {
-			const currentArrow = getArrow(arrow.uuid)
-			const color = arrow.metadata?.color ?? new Color('yellow')
-			if (currentArrow) {
-				batchedArrow.updateArrow(
-					currentArrow.id,
-					poseToDirection(arrow.pose),
-					new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
-					0.1,
-					color,
-					true
-				)
-
-				setArrow(arrow.uuid, currentArrow.id, arrow)
-			} else {
-				const id = batchedArrow.addArrow(
-					poseToDirection(arrow.pose),
-					new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
-					0.1,
-					color,
-					true
-				)
-
-				setArrow(arrow.uuid, id, arrow)
-			}
-
+			setArrow(arrow)
 			delete toRemove[arrow.uuid]
 		})
 
