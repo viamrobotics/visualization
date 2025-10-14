@@ -4,9 +4,10 @@
 
 	interface Props {
 		experiment: string
+		renderIfActive?: boolean
 		children: Snippet
 	}
-	let { experiment, children }: Props = $props()
+	let { experiment, children, renderIfActive = true }: Props = $props()
 
 	const { weblab } = useWeblabs()
 
@@ -15,6 +16,6 @@
 	})
 </script>
 
-{#if weblab.isActive(experiment)}
+{#if weblab.isActive(experiment) === renderIfActive}
 	{@render children()}
 {/if}

@@ -14,6 +14,7 @@
 	import Model from './WorldObject.svelte'
 	import Label from './Label.svelte'
 	import WorldState from './WorldState.svelte'
+	import { determinePose } from '$lib/WorldObject.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
@@ -29,11 +30,12 @@
 		parent={object.referenceFrame}
 	>
 		{#snippet children({ pose })}
+			{@const framePose = determinePose(object, pose)}
 			<Portal id={object.referenceFrame}>
 				<Frame
 					uuid={object.uuid}
 					name={object.name}
-					pose={pose ?? object.pose}
+					pose={framePose}
 					geometry={object.geometry}
 					metadata={object.metadata}
 				>
