@@ -1,5 +1,6 @@
-import { Color, type ColorRepresentation } from 'three'
+import { Color, type ColorRepresentation, type RGB } from 'three'
 import twColors from 'tailwindcss/colors'
+import { isNumber } from 'lodash-es'
 
 // Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
@@ -90,7 +91,64 @@ export const resourceColors = {
 	webcam: oklchToHex(twColors.sky[darkness]),
 } as const
 
-export const isColor = (color: Color | ColorRepresentation | undefined): color is Color => {
+export const isColorRepresentation = (color: unknown): color is ColorRepresentation => {
+	if (!color) return false
+	if (isColorString(color)) return true
+	if (isColorHex(color)) return true
+	if (isColor(color)) return true
+	return false
+}
+
+export const parseColor = (color: unknown, defaultColor: ColorRepresentation = 'black'): Color => {
+	if (!isColorRepresentation(color)) return new Color(defaultColor)
+	return new Color(color)
+}
+
+export const isRGB = (color: unknown): color is RGB => {
+	if (
+		!color ||
+		typeof color !== 'object' ||
+		!('r' in color) ||
+		!('g' in color) ||
+		!('b' in color)
+	) {
+		return false
+	}
+
+	return isNumber(color.r) && isNumber(color.g) && isNumber(color.b)
+}
+
+export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 }): Color => {
+	if (!isRGB(color)) return new Color().setRGB(defaultColor.r, defaultColor.g, defaultColor.b)
+	return new Color().setRGB(color.r, color.g, color.b)
+}
+
+export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
+	if (!isNumber(opacity)) return defaultOpacity
+	return opacity > 1 ? opacity / 100 : opacity
+}
+
+const isColor = (color: unknown): color is Color => {
 	if (!color) return false
 	return color instanceof Color
+}
+
+const isColorString = (color: unknown): color is string => {
+	if (!color) return false
+	if (typeof color === 'string') {
+		const parsed = new Color(color)
+		return parsed.isColor
+	}
+
+	return false
+}
+
+const isColorHex = (color: unknown): color is string => {
+	if (!color) return false
+	if (typeof color === 'number') {
+		const parsed = new Color(color)
+		return parsed.isColor
+	}
+
+	return false
 }

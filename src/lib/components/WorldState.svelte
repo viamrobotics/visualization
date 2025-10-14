@@ -8,7 +8,6 @@
 	import { WorldObject } from '$lib/WorldObject.svelte'
 	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import { poseToDirection } from '$lib/transform'
-	import { isColor } from '$lib/color'
 
 	interface Props {
 		worldObjects: WorldObject[]
@@ -33,10 +32,7 @@
 		const toRemove = getArrows()
 		arrows.forEach((arrow) => {
 			const currentArrow = getArrow(arrow.uuid)
-			const color = isColor(arrow.metadata?.color)
-				? arrow.metadata.color
-				: new Color(arrow.metadata?.color ?? 'yellow')
-
+			const color = arrow.metadata?.color ?? new Color('yellow')
 			if (currentArrow) {
 				batchedArrow.updateArrow(
 					currentArrow.id,

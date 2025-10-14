@@ -11,6 +11,7 @@ import {
 } from 'three'
 import { createPose } from './transform'
 import type { ValueOf } from 'type-fest'
+import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 
 export type PointsGeometry = {
 	center: undefined
@@ -32,13 +33,13 @@ export const SupportedShapes = {
 
 export type Metadata = {
 	colors?: Float32Array
-	color?: Color | ColorRepresentation
+	color?: Color
 	opacity?: number
 	gltf?: { scene: Object3D }
 	points?: Vector3[]
 	pointSize?: number
 	lineWidth?: number
-	lineDotColor?: ColorRepresentation
+	lineDotColor?: Color
 	batched?: {
 		id: number
 		object: BatchedMesh
@@ -122,21 +123,13 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 		const unwrappedValue = unwrapValue(v)
 
 		switch (k) {
-			case 'color': {
-				const raw = unwrappedValue as RGB
-				const r = raw.r > 1 ? raw.r / 255 : raw.r
-				const g = raw.g > 1 ? raw.g / 255 : raw.g
-				const b = raw.b > 1 ? raw.b / 255 : raw.b
-				const color = new Color().setRGB(r, g, b)
-				json[k] = color
+			case 'color':
+			case 'lineDotColor':
+				json[k] = readColor(unwrappedValue)
 				break
-			}
-			case 'opacity': {
-				const rawOpacity = unwrappedValue as number
-				const opacity = rawOpacity > 1 ? rawOpacity / 100 : rawOpacity
-				json[k] = opacity
+			case 'opacity':
+				json[k] = parseOpacity(unwrappedValue)
 				break
-			}
 			case 'gltf':
 				json[k] = unwrappedValue as { scene: Object3D }
 				break
@@ -149,14 +142,6 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 			case 'lineWidth':
 				json[k] = unwrappedValue as number
 				break
-			case 'lineDotColor': {
-				const raw = unwrappedValue as RGB
-				const r = raw.r > 1 ? raw.r / 255 : raw.r
-				const g = raw.g > 1 ? raw.g / 255 : raw.g
-				const b = raw.b > 1 ? raw.b / 255 : raw.b
-				json[k] = new Color().setRGB(r, g, b)
-				break
-			}
 			case 'batched':
 				json[k] = unwrappedValue as { id: number; object: BatchedMesh }
 				break
@@ -167,6 +152,12 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 	}
 
 	return json
+}
+
+const readColor = (color: unknown): Color => {
+	if (isColorRepresentation(color)) return parseColor(color)
+	if (isRGB(color)) return parseRGB(color)
+	return new Color('black')
 }
 
 export const fromTransform = (transform: TransformWithUUID) => {
