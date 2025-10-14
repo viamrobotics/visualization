@@ -75,16 +75,6 @@ export class BatchedArrow {
 		color = black,
 		arrowHeadAtPose = true
 	) {
-		if (arrowHeadAtPose) {
-			// Compute the base position so the arrow ends at the origin
-			origin.sub(vec3.copy(direction).multiplyScalar(length))
-		}
-
-		direction.normalize()
-
-		const headLength = length * 0.2
-		const headWidth = headLength * 0.2
-
 		let shaftId: number
 		let headId: number
 
@@ -97,28 +87,7 @@ export class BatchedArrow {
 			headId = this.batchedMesh.addInstance(this.coneGeoId)
 		}
 
-		// Apply shaft transform
-		const shaftMatrix = this._computeTransform(
-			origin,
-			direction,
-			length - headLength,
-			this.shaftWidth
-		)
-		this.batchedMesh.setMatrixAt(shaftId, shaftMatrix)
-
-		// Compute cone position = origin + dir * length
-		const coneOrigin = vec3.copy(direction).multiplyScalar(length).add(origin)
-		const coneMatrix = this._computeTransform(coneOrigin, direction, headLength, headWidth * 4)
-		this.batchedMesh.setMatrixAt(headId, coneMatrix)
-
-		if (color) {
-			col.set(color)
-			this.batchedMesh.setColorAt(shaftId, col)
-			this.batchedMesh.setColorAt(headId, col)
-		}
-
-		this.batchedMesh.setVisibleAt(shaftId, true)
-		this.batchedMesh.setVisibleAt(headId, true)
+		this._drawArrow(shaftId, headId, direction, origin, length, color, arrowHeadAtPose)
 
 		const arrowId = this._idCounter++
 		this._arrows.set(arrowId, { shaftId, headId })
@@ -166,7 +135,30 @@ export class BatchedArrow {
 	) {
 		const arrow = this._arrows.get(arrowId)
 		if (!arrow) return
+		this._drawArrow(arrow.shaftId, arrow.headId, direction, origin, length, color, arrowHeadAtPose)
+	}
 
+	clear() {
+		for (const id of this._arrows.keys()) {
+			this.removeArrow(id)
+		}
+	}
+
+	getObject3d(id: number) {
+		this.batchedMesh.getMatrixAt(id, object3d.matrix)
+		object3d.updateMatrix()
+		return object3d
+	}
+
+	_drawArrow(
+		shaftId: number,
+		headId: number,
+		direction: Vector3,
+		origin: Vector3,
+		length: number,
+		color: Color,
+		arrowHeadAtPose: boolean
+	) {
 		if (arrowHeadAtPose) {
 			// Compute the base position so the arrow ends at the origin
 			origin.sub(vec3.copy(direction).multiplyScalar(length))
@@ -176,7 +168,6 @@ export class BatchedArrow {
 
 		const headLength = length * 0.2
 		const headWidth = headLength * 0.2
-		const { shaftId, headId } = arrow
 
 		// Apply shaft transform
 		const shaftMatrix = this._computeTransform(
@@ -200,18 +191,6 @@ export class BatchedArrow {
 
 		this.batchedMesh.setVisibleAt(shaftId, true)
 		this.batchedMesh.setVisibleAt(headId, true)
-	}
-
-	clear() {
-		for (const id of this._arrows.keys()) {
-			this.removeArrow(id)
-		}
-	}
-
-	getObject3d(id: number) {
-		this.batchedMesh.getMatrixAt(id, object3d.matrix)
-		object3d.updateMatrix()
-		return object3d
 	}
 
 	_computeTransform(origin: Vector3, dir: Vector3, lengthY: number, scaleXZ = 1) {
