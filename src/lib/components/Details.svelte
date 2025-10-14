@@ -184,7 +184,10 @@
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
 
-		<h3 class="text-subtle-2 flex justify-between py-2">
+		<h3
+			class="text-subtle-2 flex justify-between py-2"
+			data-testid="details-header"
+		>
 			Details
 
 			<button
@@ -356,10 +359,10 @@
 						</div>
 					</div>
 				{/if}
-				{#if object.geometry}
+				{#if geometryType !== 'none'}
 					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 					{#if geometryType === 'box'}
-						{@const { dimsMm } = object.geometry.geometryType.value as {
+						{@const { dimsMm } = object?.geometry?.geometryType.value as {
 							dimsMm: { x: number; y: number; z: number }
 						}}
 						<div>
@@ -390,7 +393,7 @@
 						</div>
 					{/if}
 					{#if geometryType === 'capsule'}
-						{@const { radiusMm, lengthMm } = object.geometry.geometryType.value as {
+						{@const { radiusMm, lengthMm } = object?.geometry?.geometryType.value as {
 							radiusMm: number
 							lengthMm: number
 						}}
@@ -415,7 +418,7 @@
 						</div>
 					{/if}
 					{#if geometryType === 'sphere'}
-						{@const { radiusMm } = object.geometry.geometryType.value as { radiusMm: number }}
+						{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
 						<div>
 							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex items-center gap-2">
