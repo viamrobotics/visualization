@@ -61,6 +61,7 @@ interface PartConfigContext {
 	saveLocalPartConfig: () => void
 	resetLocalPartConfig: () => void
 	deleteFrame: (componentName: string) => void
+	createFrame: (componentName: string) => void
 	componentNameToFragmentId: Record<string, string>
 	localPartConfig: Struct
 	isDirty: boolean
@@ -75,6 +76,94 @@ export const providePartConfig = (params: PartConfigParams) => {
 		_localPartConfig = new StandalonePartConfig(standalonePartConfigProps)
 	} else {
 		throw new Error('No part config provided')
+	}
+
+	const createFrame = (componentName: string) => {
+		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
+		if (fragmentId !== undefined) {
+			createFragmentFrame(fragmentId, componentName)
+		} else {
+			createPartFrame(componentName)
+		}
+	}
+
+	const createFragmentFrame = (fragmentId: string, componentName: string) => {
+		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
+		if (newConfig.fragment_mods === undefined) {
+			newConfig.fragment_mods = []
+		}
+		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
+		if (fragmentMod === undefined) {
+			fragmentMod = {
+				fragment_id: fragmentId,
+				mods: [],
+			}
+			newConfig.fragment_mods.push(fragmentMod)
+		}
+
+		const modSetPath = `components.${componentName}.frame`
+		const frame = {
+			['$set']: {
+				[modSetPath]: {
+					translation: {
+						x: 0,
+						y: 0,
+						z: 0,
+					},
+					parent: 'world',
+					orientation: {
+						type: 'ov_degrees',
+						value: {
+							x: 0,
+							y: 0,
+							z: 1,
+							th: 0,
+						},
+					},
+					geometry: {
+						type: 'box',
+						x: 100,
+						y: 100,
+						z: 100,
+					},
+				},
+			},
+		}
+
+		fragmentMod.mods.push(frame)
+		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
+		_localPartConfig.setLocalPartConfig(configStruct)
+	}
+
+	const createPartFrame = (componentName: string) => {
+		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
+		const component = newConfig?.components?.find((comp) => comp.name === componentName)
+		if (component) {
+			component.frame = {
+				parent: 'world',
+				translation: {
+					x: 0,
+					y: 0,
+					z: 0,
+				},
+				orientation: {
+					value: {
+						x: 0,
+						y: 0,
+						z: 1,
+						th: 0,
+					},
+				},
+				geometry: {
+					type: 'box',
+					x: 100,
+					y: 100,
+					z: 100,
+				},
+			}
+		}
+		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
+		_localPartConfig.setLocalPartConfig(configStruct)
 	}
 
 	const updateFrame = (
@@ -292,6 +381,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 	setContext<PartConfigContext>(key, {
 		updateFrame,
 		deleteFrame,
+		createFrame,
 		saveLocalPartConfig,
 		resetLocalPartConfig,
 		get localPartConfig() {

@@ -62,6 +62,7 @@ describe('Details component', () => {
 			current: mockedCurrent,
 			fetching: false,
 			getParentFrameOptions: vi.fn(),
+			componentsWithNoFrame: [],
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct(),
@@ -71,6 +72,7 @@ describe('Details component', () => {
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			deleteFrame: vi.fn(),
+			createFrame: vi.fn(),
 		})
 	})
 
@@ -182,6 +184,7 @@ describe('Details component', () => {
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
 			deleteFrame: vi.fn(),
+			createFrame: vi.fn(),
 		})
 
 		render(Details)

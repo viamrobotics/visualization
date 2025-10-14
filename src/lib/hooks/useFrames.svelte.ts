@@ -19,6 +19,7 @@ interface FramesContext {
 	error?: Error
 	fetching: boolean
 	getParentFrameOptions: (componentName: string) => string[]
+	componentsWithNoFrame: string[]
 }
 
 const key = Symbol('frames-context')
@@ -83,6 +84,22 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		return objects
+	})
+
+	const _componentsWithNoFrame = $derived.by(() => {
+		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
+		const partComponentsWIthNoFrame =
+			components
+				?.filter((component) => component.frame === undefined)
+				.map((component) => component.name) ?? []
+		const fragmentComponentsWithNoFrame = []
+		for (const fragmentComponentName of Object.keys(partConfig.componentNameToFragmentId)) {
+			if (current.find((worldObject) => worldObject.name === fragmentComponentName)) {
+				continue
+			}
+			fragmentComponentsWithNoFrame.push(fragmentComponentName)
+		}
+		return [...partComponentsWIthNoFrame, ...fragmentComponentsWithNoFrame]
 	})
 
 	let currentWorldObjects: Record<string, WorldObject> = {}
@@ -268,6 +285,9 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get fetching() {
 			return fetching
+		},
+		get componentsWithNoFrame() {
+			return _componentsWithNoFrame
 		},
 	})
 }

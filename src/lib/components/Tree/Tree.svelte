@@ -153,7 +153,10 @@
 							deleteFrame(node.name)
 						}}
 					>
-						<Trash size={14} />
+						<Trash
+							size={14}
+							color="red"
+						/>
 					</button>
 				{/if}
 			</div>
