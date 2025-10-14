@@ -129,28 +129,30 @@
 				{node.name}
 			</span>
 
-			<button
-				class="text-gray-6"
-				onclick={(event) => {
-					event.stopPropagation()
-					visibility.set(node.id, !isVisible)
-				}}
-			>
-				{#if isVisible}
-					<Eye size={14} />
-				{:else}
-					<EyeOff size={14} />
-				{/if}
-			</button>
-			<button
-				class="text-gray-6"
-				onclick={(event) => {
-					event.stopPropagation()
-					deleteFrame(node.name)
-				}}
-			>
-				<Trash size={14} />
-			</button>
+			<div class="flex items-center gap-1.5">
+				<button
+					class="text-gray-6"
+					onclick={(event) => {
+						event.stopPropagation()
+						visibility.set(node.id, !isVisible)
+					}}
+				>
+					{#if isVisible}
+						<Eye size={14} />
+					{:else}
+						<EyeOff size={14} />
+					{/if}
+				</button>
+				<button
+					class="text-gray-6"
+					onclick={(event) => {
+						event.stopPropagation()
+						deleteFrame(node.name)
+					}}
+				>
+					<Trash size={14} />
+				</button>
+			</div>
 		</div>
 	{/if}
 {/snippet}

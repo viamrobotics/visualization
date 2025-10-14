@@ -115,20 +115,20 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable box dimensions z value').fill('600')
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.waitForTimeout(5000)
 	try {
 		await expect(page).toHaveScreenshot('0-edited.png', { fullPage: true, threshold: 0.1 })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('0-edited.png')
 	}
 
 	// SAVE THE CHANGES
 	await page.getByText('Save').click()
-	await page.waitForTimeout(5000)
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot('1-saved.png', { fullPage: true, threshold: 0.1 })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('1-saved.png')
 	}
 	// give network some time to sync the config
@@ -147,11 +147,11 @@ test('basic edit frame', async ({ browser }) => {
 	try {
 		await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('2-reloaded.png')
 	}
 
 	// REPARENT THE OBJECT
-	await page.waitForTimeout(5000)
 	await expect(page.getByLabel('dropdown parent frame name')).toBeVisible()
 	await page.getByLabel('dropdown parent frame name').click()
 	await page.getByLabel('dropdown parent frame name').selectOption('parent')
@@ -159,6 +159,7 @@ test('basic edit frame', async ({ browser }) => {
 	try {
 		await expect(page).toHaveScreenshot('3-parented.png', { fullPage: true })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('3-parented.png')
 	}
 
@@ -169,6 +170,7 @@ test('basic edit frame', async ({ browser }) => {
 	try {
 		await expect(page).toHaveScreenshot('4-discarded.png', { fullPage: true })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('4-discarded.png')
 	}
 
@@ -190,6 +192,7 @@ test('basic edit frame', async ({ browser }) => {
 	try {
 		await expect(page).toHaveScreenshot('5-restored.png', { fullPage: true })
 	} catch (error) {
+		console.warn(error)
 		failedScreenshots.push('5-restored.png')
 	}
 

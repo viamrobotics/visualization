@@ -31,7 +31,7 @@ export interface Frame {
 }
 
 export interface PartConfig {
-	components: {name: string, frame?: Frame}[]
+	components: { name: string; frame?: Frame }[]
 	fragment_mods?: {
 		fragment_id: string
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,11 +261,12 @@ export const providePartConfig = (params: PartConfigParams) => {
 		if (newConfig.fragment_mods === undefined) {
 			newConfig.fragment_mods = []
 		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
 			fragmentMod = {
 				fragment_id: fragmentId,
-				mods: []
+				mods: [],
 			}
 			newConfig.fragment_mods.push(fragmentMod)
 		}
@@ -273,8 +274,8 @@ export const providePartConfig = (params: PartConfigParams) => {
 		const modUnSetPath = `components.${componentName}.frame`
 		fragmentMod.mods.push({
 			['$unset']: {
-				[modUnSetPath]: ''
-			}
+				[modUnSetPath]: '',
+			},
 		})
 		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 		_localPartConfig.setLocalPartConfig(configStruct)

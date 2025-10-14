@@ -85,13 +85,15 @@ export const provideFrames = (partID: () => string) => {
 		return objects
 	})
 
-	const currentWorldObjects: Record<string, WorldObject> = {};
-
-	const getWorldObjects = () => ({...currentWorldObjects});
-	const getWorldObject = (componentName: string) => currentWorldObjects[componentName];
-	const setWorldObject = (component: PartConfig['components'][number], worldObject: WorldObject) => {
+	let currentWorldObjects: Record<string, WorldObject> = {}
+	const getWorldObjects = () => ({ ...currentWorldObjects })
+	const getWorldObject = (componentName: string) => currentWorldObjects[componentName]
+	const setWorldObject = (
+		component: PartConfig['components'][number],
+		worldObject: WorldObject
+	) => {
 		if (!component.frame) {
-			return;
+			return
 		}
 		worldObject.referenceFrame = component.frame.parent
 		worldObject.localEditedPose = {
@@ -101,7 +103,7 @@ export const provideFrames = (partID: () => string) => {
 			oX: component.frame.orientation.value.x,
 			oY: component.frame.orientation.value.y,
 			oZ: component.frame.orientation.value.z,
-			theta: component.frame.orientation.value.th
+			theta: component.frame.orientation.value.th,
 		}
 
 		if (component.frame.geometry) {
@@ -146,14 +148,15 @@ export const provideFrames = (partID: () => string) => {
 		} else {
 			worldObject.geometry = undefined
 		}
-		currentWorldObjects[component.name] = worldObject;
+		currentWorldObjects[component.name] = worldObject
 	}
 	const deleteWorldObject = (componentName: string) => {
-		delete currentWorldObjects[componentName];
+		delete currentWorldObjects[componentName]
 	}
 
 	$effect.pre(() => {
 		untrack(() => {
+			currentWorldObjects = {}
 			for (const currentWorldObject of current) {
 				currentWorldObjects[currentWorldObject.name] = currentWorldObject
 			}
@@ -165,25 +168,34 @@ export const provideFrames = (partID: () => string) => {
 
 		// deal with part defined frame config
 		for (const component of components || []) {
-			const worldObject = getWorldObject(component.name);
+			const worldObject = getWorldObject(component.name)
 			if (worldObject && component.frame) {
-				setWorldObject(component, worldObject);
-			} else if (component.frame) {
-				const pose = new Pose({x: component.frame.translation.x, y: component.frame.translation.y, z: component.frame.translation.z, oX: component.frame.orientation.value.x, oY: component.frame.orientation.value.y, oZ: component.frame.orientation.value.z, theta: component.frame.orientation.value.th});
-				const newWorldObject = new WorldObject(component.name, pose, component.frame.parent);
-				setWorldObject(component, newWorldObject);
+				setWorldObject(component, worldObject)
+			} else if (component.frame && Object.keys(getWorldObjects()).length > 0) {
+				// extra clause to prevent adding a component to the world objects when it may be loaded via frame system config later (first tick issue where config updated but current world objects not triggered yet)
+				const pose = new Pose({
+					x: component.frame.translation.x,
+					y: component.frame.translation.y,
+					z: component.frame.translation.z,
+					oX: component.frame.orientation.value.x,
+					oY: component.frame.orientation.value.y,
+					oZ: component.frame.orientation.value.z,
+					theta: component.frame.orientation.value.th,
+				})
+				const newWorldObject = new WorldObject(component.name, pose, component.frame.parent)
+				setWorldObject(component, newWorldObject)
 			} else {
-				deleteWorldObject(component.name);
+				deleteWorldObject(component.name)
 			}
 		}
 
 		// deal with fragment defined components
 		for (const fragmentComponentName of fragmentDefinedComponents || []) {
-			const worldObject = getWorldObject(fragmentComponentName);
+			const worldObject = getWorldObject(fragmentComponentName)
 			const fragmentId = partConfig.componentNameToFragmentId[fragmentComponentName]
 			const fragmentMod = fragmentMods?.find((mod) => mod.fragment_id === fragmentId)
 			if (!fragmentMod) {
-				continue;
+				continue
 			}
 			const setComponentModIndex = fragmentMod.mods.findLastIndex(
 				(mod) => mod['$set'][`components.${fragmentComponentName}.frame`] !== undefined
@@ -195,22 +207,34 @@ export const provideFrames = (partID: () => string) => {
 			if (setComponentModIndex < unsetComponentModIndex) {
 				deleteWorldObject(fragmentComponentName)
 			} else if (unsetComponentModIndex < setComponentModIndex) {
-				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][`components.${fragmentComponentName}.frame`] as Frame
+				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
+					`components.${fragmentComponentName}.frame`
+				] as Frame
 				const componentConfig: PartConfig['components'][number] = {
 					name: fragmentComponentName,
-					frame: frameData
+					frame: frameData,
 				}
 				if (worldObject) {
-					setWorldObject(componentConfig, worldObject);
+					setWorldObject(componentConfig, worldObject)
 				} else {
-					const pose = new Pose({x: frameData.translation.x, y: frameData.translation.y, z: frameData.translation.z, oX: frameData.orientation.value.x, oY: frameData.orientation.value.y, oZ: frameData.orientation.value.z, theta: frameData.orientation.value.th});
-					const newWorldObject = new WorldObject(fragmentComponentName, pose, frameData.parent);
-					setWorldObject(componentConfig, newWorldObject);
+					const pose = new Pose({
+						x: frameData.translation.x,
+						y: frameData.translation.y,
+						z: frameData.translation.z,
+						oX: frameData.orientation.value.x,
+						oY: frameData.orientation.value.y,
+						oZ: frameData.orientation.value.z,
+						theta: frameData.orientation.value.th,
+					})
+					const newWorldObject = new WorldObject(fragmentComponentName, pose, frameData.parent)
+					setWorldObject(componentConfig, newWorldObject)
 				}
 			}
 		}
 
-		untrack(() => (current = [...Object.values(getWorldObjects())]))
+		untrack(() => {
+			current = [...Object.values(getWorldObjects())]
+		})
 	})
 
 	// $effect.pre(() => {
@@ -222,7 +246,7 @@ export const provideFrames = (partID: () => string) => {
 	// 		current.forEach((worldObject) => {
 	// 			const component = components?.find((component) => component.name === worldObject.name)
 	// 			if (component) {
-	// 				// handling part defined frames 
+	// 				// handling part defined frames
 	// 				if (component.frame) {
 	// 					worldObject.referenceFrame = component.frame.parent
 
