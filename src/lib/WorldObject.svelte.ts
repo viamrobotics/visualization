@@ -58,23 +58,6 @@ export const determinePose = (
 	}
 }
 
-export const determinePose = (
-	object: WorldObject,
-	pose: WorldObject['pose'] | undefined
-): WorldObject['pose'] => {
-	if (pose === undefined) {
-		return object.localEditedPose
-	} else {
-		const poseNetwork = poseToMatrix(object.pose)
-		const poseUsePose = poseToMatrix(pose)
-		const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
-
-		const poseNetworkInverse = poseNetwork.invert()
-		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
-		return matrixToPose(resultMatrix)
-	}
-}
-
 export class WorldObject<T extends Geometries = Geometries> {
 	uuid: string
 	name: string
