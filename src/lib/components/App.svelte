@@ -72,7 +72,7 @@
 		providePartConfig({
 			standalonePartConfigProps: {
 				viamClient: () => appClient?.current,
-				partID,
+				partID: () => partID,
 			},
 		})
 	}

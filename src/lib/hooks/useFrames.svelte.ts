@@ -82,15 +82,16 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		const components = (partConfig.localPartConfig as unknown as PartConfig)?.components
-		const fragmentMods = (partConfig.localPartConfig as unknown as PartConfig)?.fragment_mods
+		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
+		const fragmentMods = (partConfig.localPartConfig.toJson() as unknown as PartConfig)
+			?.fragment_mods
 		untrack(() => {
 			current.forEach((frame, index) => {
-				const component = components.find((component) => component.name === frame.name)
+				const component = components?.find((component) => component.name === frame.name)
 				if (component) {
 					current[index].referenceFrame = component.frame.parent
 
-					current[worldObjectIndex].localEditedPose = {
+					current[index].localEditedPose = {
 						x: component.frame.translation.x,
 						y: component.frame.translation.y,
 						z: component.frame.translation.z,

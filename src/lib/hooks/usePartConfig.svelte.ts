@@ -301,7 +301,7 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 
 interface StandalonePartConfigProps {
 	viamClient: () => ViamClient | undefined
-	partID: string
+	partID: () => string
 }
 export class StandalonePartConfig implements LocalPartConfig {
 	private _standalonePartConfigProps: StandalonePartConfigProps
@@ -318,7 +318,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 			const initLocalConfig = async () => {
 				const partResponse = await standalonePartConfigProps
 					.viamClient()
-					?.appClient.getRobotPart(standalonePartConfigProps.partID)
+					?.appClient.getRobotPart(standalonePartConfigProps.partID())
 				const configJson = JSON.parse(partResponse?.configJson ?? '{}')
 				this._networkPartConfig = Struct.fromJson(configJson)
 				this._localPartConfig = Struct.fromJson(configJson)
@@ -384,7 +384,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 		await this._standalonePartConfigProps
 			.viamClient()
 			?.appClient.updateRobotPart(
-				this._standalonePartConfigProps.partID,
+				this._standalonePartConfigProps.partID(),
 				this._partName,
 				this._localPartConfig
 			)
