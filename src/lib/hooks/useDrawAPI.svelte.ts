@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, type Box3 } from 'three'
+import { Color, Vector3, Vector4 } from 'three'
+import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -198,7 +199,7 @@ export const provideDrawAPI = () => {
 			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
 			poses.push(
 				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
-					getBoundingBoxAt(box3: Box3) {
+					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
 					batched: {
