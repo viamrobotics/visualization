@@ -59,6 +59,7 @@ const testConfig = {
 //   }
 
 test('basic edit frame', async ({ browser }) => {
+	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	await context.addCookies([
 		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
@@ -114,14 +115,24 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable box dimensions z value').fill('600')
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await expect(page).toHaveScreenshot('0-edited.png', { fullPage: true, threshold: 0.1 })
+	await page.waitForTimeout(5000)
+	try {
+		await expect(page).toHaveScreenshot('0-edited.png', { fullPage: true, threshold: 0.1 })
+	} catch (error) {
+		failedScreenshots.push('0-edited.png')
+	}
 
 	// SAVE THE CHANGES
 	await page.getByText('Save').click()
+	await page.waitForTimeout(5000)
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await expect(page).toHaveScreenshot('1-saved.png', { fullPage: true, threshold: 0.1 })
+	try {
+		await expect(page).toHaveScreenshot('1-saved.png', { fullPage: true, threshold: 0.1 })
+	} catch (error) {
+		failedScreenshots.push('1-saved.png')
+	}
 	// give network some time to sync the config
-	await page.waitForTimeout(3000)
+	await page.waitForTimeout(5000)
 
 	// RELOAD THE PAGE
 	page = await context.newPage()
@@ -133,21 +144,33 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('base-1').click()
 	await expect(page.getByTestId('details-header')).toBeVisible()
 	// give page time to laod up frame details
-	await page.waitForTimeout(1000)
-	await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
+	try {
+		await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
+	} catch (error) {
+		failedScreenshots.push('2-reloaded.png')
+	}
 
 	// REPARENT THE OBJECT
+	await page.waitForTimeout(5000)
 	await expect(page.getByLabel('dropdown parent frame name')).toBeVisible()
 	await page.getByLabel('dropdown parent frame name').click()
 	await page.getByLabel('dropdown parent frame name').selectOption('parent')
 
-	await expect(page).toHaveScreenshot('3-parented.png', { fullPage: true })
+	try {
+		await expect(page).toHaveScreenshot('3-parented.png', { fullPage: true })
+	} catch (error) {
+		failedScreenshots.push('3-parented.png')
+	}
 
 	// DISCARD CHANGES
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	await page.getByText('Discard').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await expect(page).toHaveScreenshot('4-discarded.png', { fullPage: true })
+	try {
+		await expect(page).toHaveScreenshot('4-discarded.png', { fullPage: true })
+	} catch (error) {
+		failedScreenshots.push('4-discarded.png')
+	}
 
 	// RESTORE THE ORIGINAL FRAME
 	await expect(page.getByText('None')).toBeVisible()
@@ -164,5 +187,14 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
-	await expect(page).toHaveScreenshot('5-restored.png', { fullPage: true })
+	try {
+		await expect(page).toHaveScreenshot('5-restored.png', { fullPage: true })
+	} catch (error) {
+		failedScreenshots.push('5-restored.png')
+	}
+
+	if (failedScreenshots.length > 0) {
+		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+	}
 })
