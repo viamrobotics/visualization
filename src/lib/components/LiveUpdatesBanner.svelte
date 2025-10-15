@@ -19,18 +19,18 @@
 			</p>
 
 			<p class="text-sm">
-				<a
+				<button
 					class="cursor-pointer text-blue-600"
 					onclick={() => {
 						partConfig.saveLocalPartConfig()
-					}}>Save</a
+					}}>Save</button
 				>
 				or
-				<a
+				<button
 					class="cursor-pointer text-blue-600"
 					onclick={() => {
 						partConfig.resetLocalPartConfig()
-					}}>Discard</a
+					}}>Discard</button
 				>
 				to resume.
 			</p>
