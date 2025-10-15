@@ -59,6 +59,11 @@ export const poseToObject3d = (pose: Partial<Pose>, object3d: Object3D) => {
 	poseToQuaternion(pose, object3d.quaternion)
 }
 
+export const poseToDirection = (pose: Pose): Vector3 => {
+	const ov = new OrientationVector(pose.oX, pose.oY, pose.oZ, pose.theta)
+	return new Vector3(ov.x, ov.y, ov.z)
+}
+
 export const scaleToDimensions = (scale: Vector3, geometry: Geometry['geometryType']) => {
 	if (geometry.case === 'box') {
 		geometry.value.dimsMm ??= { x: 0, y: 0, z: 0 }

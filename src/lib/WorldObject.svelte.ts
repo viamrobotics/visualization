@@ -1,16 +1,8 @@
-import type { Geometry, Pose, TransformWithUUID } from '@viamrobotics/sdk'
-import {
-	BatchedMesh,
-	Color,
-	MathUtils,
-	Matrix4,
-	Object3D,
-	Quaternion,
-	Vector3,
-	type ColorRepresentation,
-	type RGB,
-} from 'three'
+import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
+import { BatchedMesh, Color, MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
 import { createPose } from './transform'
+import type { ValueOf } from 'type-fest'
+import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
 
 export type PointsGeometry = {
@@ -25,20 +17,44 @@ export type LinesGeometry = {
 
 export type Geometries = Geometry | PointsGeometry | LinesGeometry
 
+export const SupportedShapes = {
+	points: 'points',
+	line: 'line',
+	arrow: 'arrow',
+} as const
+
 export type Metadata = {
 	colors?: Float32Array
-	color?: ColorRepresentation
+	color?: Color
 	opacity?: number
 	gltf?: { scene: Object3D }
 	points?: Vector3[]
 	pointSize?: number
 	lineWidth?: number
-	lineDotColor?: ColorRepresentation
+	lineDotColor?: Color
 	batched?: {
 		id: number
 		object: BatchedMesh
 	}
+	shape?: ValueOf<typeof SupportedShapes>
 	getBoundingBoxAt?: (box: OBB) => void
+}
+
+const METADATA_KEYS = [
+	'colors',
+	'color',
+	'opacity',
+	'gltf',
+	'points',
+	'pointSize',
+	'lineWidth',
+	'lineDotColor',
+	'batched',
+	'shape',
+] as const
+
+export const isMetadataKey = (key: string): key is keyof Metadata => {
+	return METADATA_KEYS.includes(key as (typeof METADATA_KEYS)[number])
 }
 
 export const determinePose = (
@@ -64,7 +80,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 	referenceFrame = $state.raw<string>()
 	pose = $state.raw<Pose>(createPose())
 	geometry?: T
-	metadata: Metadata
+	metadata = $state<Metadata>({})
 	localEditedPose = $state.raw<Pose>(createPose())
 
 	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
@@ -73,7 +89,9 @@ export class WorldObject<T extends Geometries = Geometries> {
 		this.referenceFrame = parent
 
 		this.geometry = geometry
-		this.metadata = metadata ?? {}
+		if (metadata) {
+			this.metadata = metadata
+		}
 
 		if (pose) {
 			this.pose = pose
@@ -83,8 +101,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UnwrapValue = { kind: { case: string; value: any } }
-const unwrapValue = (value: UnwrapValue): unknown => {
+const unwrapValue = (value: PlainMessage<any>): unknown => {
 	if (!value?.kind) return value
 
 	switch (value.kind.case) {
@@ -93,10 +110,10 @@ const unwrapValue = (value: UnwrapValue): unknown => {
 		case 'boolValue':
 			return value.kind.value
 		case 'structValue': {
-			// Recursively unwrap nested struct
 			const result: Record<string, unknown> = {}
 			for (const [key, val] of Object.entries(value.kind.value.fields || {})) {
-				result[key] = unwrapValue(val as UnwrapValue)
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				result[key] = unwrapValue(val as PlainMessage<any>)
 			}
 			return result
 		}
@@ -109,28 +126,54 @@ const unwrapValue = (value: UnwrapValue): unknown => {
 	}
 }
 
-const parseMetadata = (metadata: Record<string, UnwrapValue>) => {
-	let json: Metadata = {}
+export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
+	const json: Metadata = {}
 
-	for (const [k, v] of Object.entries(metadata)) {
+	for (const [k, v] of Object.entries(fields)) {
+		if (!isMetadataKey(k)) continue
 		const unwrappedValue = unwrapValue(v)
 
-		// TODO: Remove special case and add better handling for metadata
-		if (k === 'color' && unwrappedValue && typeof unwrappedValue === 'object') {
-			const { r, g, b } = unwrappedValue as RGB
-			json[k] = new Color().setRGB(r / 255, g / 255, b / 255)
-		} else {
-			json = { ...json, [k]: unwrappedValue }
+		switch (k) {
+			case 'color':
+			case 'lineDotColor':
+				json[k] = readColor(unwrappedValue)
+				break
+			case 'opacity':
+				json[k] = parseOpacity(unwrappedValue)
+				break
+			case 'gltf':
+				json[k] = unwrappedValue as { scene: Object3D }
+				break
+			case 'points':
+				json[k] = unwrappedValue as Vector3[]
+				break
+			case 'pointSize':
+				json[k] = unwrappedValue as number
+				break
+			case 'lineWidth':
+				json[k] = unwrappedValue as number
+				break
+			case 'batched':
+				json[k] = unwrappedValue as { id: number; object: BatchedMesh }
+				break
+			case 'shape':
+				json[k] = unwrappedValue as ValueOf<typeof SupportedShapes>
+				break
 		}
 	}
 
 	return json
 }
 
+const readColor = (color: unknown): Color => {
+	if (isColorRepresentation(color)) return parseColor(color)
+	if (isRGB(color)) return parseRGB(color)
+	return new Color('black')
+}
+
 export const fromTransform = (transform: TransformWithUUID) => {
-	const metadata: Metadata = transform.metadata
-		? parseMetadata(transform.metadata.fields as Record<string, UnwrapValue>)
-		: {}
+	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
+
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,
