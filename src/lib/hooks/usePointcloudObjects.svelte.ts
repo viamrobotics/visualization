@@ -21,7 +21,6 @@ interface Context {
 
 export const providePointcloudObjects = (partID: () => string) => {
 	const { refreshRates, disabledCameras } = useMachineSettings()
-	const cameras = useResourceNames(partID, 'camera')
 	const services = useResourceNames(partID, 'vision')
 
 	const clients = $derived(
@@ -37,68 +36,66 @@ export const providePointcloudObjects = (partID: () => string) => {
 		const results: CreateQueryOptions<WorldObject[], Error, WorldObject[], string[]>[] = []
 
 		for (const client of clients) {
-			for (const camera of cameras.current) {
-				const options = queryOptions({
-					enabled: interval !== -1 && client.current && disabledCameras.get(camera.name) !== true,
-					refetchInterval: interval === 0 ? false : interval,
-					queryKey: ['partID', partID(), client.current?.name, camera.name, 'getObjectPointClouds'],
-					queryFn: async () => {
-						if (!client.current) {
-							throw new Error('No camera client')
-						}
+			const options = queryOptions({
+				enabled: interval !== -1 && client.current !== undefined,
+				refetchInterval: interval === 0 ? false : interval,
+				queryKey: ['partID', partID(), client.current?.name, 'getObjectPointClouds'],
+				queryFn: async () => {
+					if (!client.current) {
+						throw new Error('No camera client')
+					}
 
-						const properties = await client.current.getProperties()
+					const properties = await client.current.getProperties()
 
-						if (!properties.objectPointCloudsSupported) {
-							return
-						}
+					const objects: WorldObject[] = []
 
-						logs.add(`Fetching pointcloud for ${client.current.name}`)
+					if (!properties.objectPointCloudsSupported) {
+						return objects
+					}
 
-						const responses = await client.current.getObjectPointClouds(camera.name)
+					logs.add(`Fetching pointcloud for ${client.current.name}`)
 
-						const objects: WorldObject[] = []
+					const responses = await client.current.getObjectPointClouds('')
 
-						if (!responses) return objects
+					if (!responses) return objects
 
-						for (const response of responses) {
-							const { positions, colors } = await parsePcdInWorker(
-								new Uint8Array(response.pointCloud)
+					for (const response of responses) {
+						const { positions, colors } = await parsePcdInWorker(
+							new Uint8Array(response.pointCloud)
+						)
+
+						objects.push(
+							new WorldObject(
+								`${client.current.name} pointcloud`,
+								undefined,
+								'world',
+								{
+									center: undefined,
+									geometryType: { case: 'points', value: positions },
+								},
+								colors ? { colors } : undefined
 							)
+						)
 
-							objects.push(
-								new WorldObject(
-									`${camera.name} pointcloud`,
-									undefined,
-									camera.name,
-									{
-										center: undefined,
-										geometryType: { case: 'points', value: positions },
-									},
-									colors ? { colors } : undefined
-								)
-							)
-
-							if (response.geometries?.geometries) {
-								for (const geometry of response.geometries?.geometries) {
-									objects.push(
-										new WorldObject(
-											geometry.label,
-											geometry.center,
-											response.geometries.referenceFrame,
-											geometry
-										)
+						if (response.geometries?.geometries) {
+							for (const geometry of response.geometries?.geometries) {
+								objects.push(
+									new WorldObject(
+										geometry.label,
+										geometry.center,
+										response.geometries.referenceFrame,
+										geometry
 									)
-								}
+								)
 							}
 						}
+					}
 
-						return objects
-					},
-				})
+					return objects
+				},
+			})
 
-				results.push(options)
-			}
+			results.push(options)
 		}
 
 		return results
