@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.14.0
+
+### Minor Changes
+
+- d2c23ec: enable create and delete frames in standalone version
+- 5ec5351: Add `shape` metadata for supported shapes from draw API. Add support for arrows from world state store.
+
 ## 0.13.0
 
 ### Minor Changes
