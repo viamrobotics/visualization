@@ -8,6 +8,7 @@ import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
+import { Color } from 'three'
 
 const key = Symbol('geometries-context')
 
@@ -91,7 +92,11 @@ export const provideGeometries = (partID: () => string) => {
 					query.data.name,
 					geometry,
 					resourceName
-						? { color: resourceColors[resourceName.subtype as keyof typeof resourceColors] }
+						? {
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
+							}
 						: undefined
 				)
 				results.push(worldObject)

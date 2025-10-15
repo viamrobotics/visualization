@@ -11,6 +11,7 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useSettings } from './useSettings.svelte'
+import { Color } from 'three'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -27,7 +28,7 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig')
-	const revision = $derived(machineStatus.current?.config.revision)
+	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()
 	const settings = useSettings()
 
@@ -71,7 +72,9 @@ export const provideFrames = (partID: () => string) => {
 					frame.physicalObject,
 					resourceName
 						? {
-								color: resourceColors[resourceName.subtype as keyof typeof resourceColors],
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
 							}
 						: undefined
 				)

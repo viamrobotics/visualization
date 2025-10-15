@@ -142,7 +142,7 @@ export const provideDrawAPI = () => {
 		}
 
 		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color,
+			color: new Color(color),
 		})
 
 		meshes.push(object)
@@ -164,7 +164,7 @@ export const provideDrawAPI = () => {
 			data.pose,
 			data.parent,
 			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
-			{ color, points: curve.getPoints(200) }
+			{ color: new Color(color), points: curve.getPoints(200) }
 		)
 
 		nurbs.push(object)
