@@ -7,4 +7,5 @@ export default defineConfig({
 	},
 
 	testDir: 'e2e',
+	timeout: 60 * 1000, // 60 seconds
 })

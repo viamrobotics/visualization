@@ -5,16 +5,17 @@ import { createQuery, queryOptions } from '@tanstack/svelte-query'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMotionClient } from './useMotionClient.svelte'
-import { useSettings } from './useSettings.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
 	const motionClient = useMotionClient()
 	const resources = useResourceNames(() => partID.current)
-	const settings = useSettings()
+
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
 	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
+	const environment = useEnvironment()
 
 	const client = createResourceClient(
 		MotionClient,
@@ -30,7 +31,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 				interval !== -1 &&
 				client.current !== undefined &&
 				resource !== undefined &&
-				settings.current.viewerMode === 'monitor',
+				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === 0 ? false : interval,
 			queryKey: [
 				'partID',

@@ -60,6 +60,7 @@
 	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
+		partConfig.deleteFrame,
 		() => referenceFrame
 	)
 
@@ -492,6 +493,16 @@
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
+
+		<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+			{#if isFrameNode}
+				<Button
+					variant="danger"
+					class="mb-2 w-full"
+					onclick={() => detailConfigUpdater.deleteFrame()}>Delete Frame</Button
+				>
+			{/if}
+		</WeblabActive>
 
 		{#if focused.current}
 			<Button

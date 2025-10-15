@@ -17,19 +17,27 @@ type UpdateFrameCallback = {
 		}
 	): void
 }
+
+type RemoveFrameCallback = {
+	(componentName: string): void
+}
+
 export class DetailConfigUpdater {
 	private object: () => WorldObject<Geometries> | undefined
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
+	private removeFrame: RemoveFrameCallback
 
 	constructor(
 		object: () => WorldObject<Geometries> | undefined,
 		updateFrame: UpdateFrameCallback,
+		removeFrame: RemoveFrameCallback,
 		referenceFrame: () => string
 	) {
 		this.referenceFrame = referenceFrame
 		this.object = object
 		this.updateFrame = updateFrame
+		this.removeFrame = removeFrame
 	}
 
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
@@ -154,6 +162,12 @@ export class DetailConfigUpdater {
 			oZ: object.localEditedPose.oZ,
 			theta: object.localEditedPose.theta,
 		})
+	}
+
+	public deleteFrame = () => {
+		const object = this.object()
+		if (!object) return
+		this.removeFrame(object.name ?? '')
 	}
 
 	public setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {

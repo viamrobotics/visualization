@@ -70,6 +70,8 @@ describe('Details component', () => {
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
+			deleteFrame: vi.fn(),
+			createFrame: vi.fn(),
 		})
 	})
 
@@ -180,6 +182,8 @@ describe('Details component', () => {
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
 			resetLocalPartConfig: vi.fn(),
+			deleteFrame: vi.fn(),
+			createFrame: vi.fn(),
 		})
 
 		render(Details)
