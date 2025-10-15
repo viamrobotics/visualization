@@ -23,12 +23,17 @@
 	} from '$lib/hooks/useSelection.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import WeblabActive from './weblab/WeblabActive.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { DetailConfigUpdater } from '$lib/Detail.svelte'
+
 	const { ...rest } = $props()
 
 	const focused = useFocused()
 	const focusedObject = useFocusedObject()
 	const focusedObject3d = useFocusedObject3d()
-
+	const frames = useFrames()
+	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -36,13 +41,33 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
+	let geometryType = $derived.by(
+		() =>
+			(object?.geometry?.geometryType.case as 'none' | 'box' | 'sphere' | 'capsule' | undefined) ??
+			'none'
+	)
 
-	const localPose = $derived(object?.pose)
+	const localPose = $derived(object?.localEditedPose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
-
+	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
+	const isFrameNode = $derived(
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
+	)
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
+
+	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
+		() => object,
+		partConfig.updateFrame,
+		() => referenceFrame
+	)
+
+	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
+		if (type === geometryType) return
+		geometryType = type
+		detailConfigUpdater.setGeometryType(type)
+	}
 
 	const { start, stop } = useTask(
 		() => {
@@ -75,10 +100,73 @@
 	})
 </script>
 
+{#snippet ImmutableField({
+	label,
+	value,
+	ariaLabel,
+}: {
+	label: string
+	value: string
+	ariaLabel: string
+})}
+	<div>
+		<span
+			class="text-subtle-2"
+			aria-label={`immutable ${ariaLabel}`}>{label}</span
+		>
+		{value}
+	</div>
+{/snippet}
+
+{#snippet MutableField({
+	label,
+	value,
+	ariaLabel,
+	onInput,
+}: {
+	label: string
+	value: string
+	ariaLabel: string
+	onInput: (value: string) => void
+})}
+	<span class="text-subtle-2">{label}</span>
+	<input
+		type="number"
+		aria-label={`mutable ${ariaLabel}`}
+		class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+		{value}
+		oninput={(e) => onInput((e.target as HTMLInputElement).value)}
+	/>
+{/snippet}
+
+{#snippet DropDownField({
+	value,
+	ariaLabel,
+	options,
+	onChange,
+}: {
+	value: string
+	ariaLabel: string
+	options: string[]
+	onChange: (value: string) => void
+})}
+	<select
+		aria-label={`dropdown ${ariaLabel}`}
+		class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+		{value}
+		onchange={(e) => onChange((e.target as HTMLSelectElement).value)}
+	>
+		{#each options as option (option)}
+			<option value={option}>{option}</option>
+		{/each}
+	</select>
+{/snippet}
+
 {#if object}
-	{@const { geometry } = object}
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 w-60 border p-2 text-xs"
+		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {isFrameNode
+			? 'w-80'
+			: 'w-60'} border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
 		{...rest}
 	>
@@ -96,7 +184,10 @@
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
 
-		<h3 class="text-subtle-2 flex justify-between py-2">
+		<h3
+			class="text-subtle-2 flex justify-between py-2"
+			data-testid="details-header"
+		>
 			Details
 
 			<button
@@ -161,134 +252,242 @@
 			{/if}
 
 			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+				{@const ParentFrame = isFrameNode ? DropDownField : ImmutableField}
+
+				<div>
+					<strong class="font-semibold">parent frame</strong>
+					<div class="flex gap-3">
+						{@render ParentFrame({
+							label: 'name',
+							ariaLabel: 'parent frame name',
+							value: referenceFrame,
+							options: referenceFrameOptions,
+							onChange: (value) => detailConfigUpdater.setFrameParent(value),
+						})}
+					</div>
+				</div>
+
 				{#if localPose}
+					{@const PoseAttribute = isFrameNode ? MutableField : ImmutableField}
 					<div>
 						<strong class="font-semibold">local position</strong>
 
 						<div class="flex gap-3">
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position x coordinate">x</span
-								>
-								{localPose.x.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position y coordinate">y</span
-								>
-								{localPose.y.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local position z coordinate">z</span
-								>
-								{localPose.z.toFixed(2)}
-							</div>
+							{@render PoseAttribute({
+								label: 'x',
+								ariaLabel: 'local position x coordinate',
+								value: localPose.x.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'y',
+								ariaLabel: 'local position y coordinate',
+								value: localPose.y.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'z',
+								ariaLabel: 'local position z coordinate',
+								value: localPose.z.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalPosition({ z: parseFloat(value) }),
+							})}
 						</div>
 					</div>
 
 					<div>
 						<strong class="font-semibold">local orientation</strong>
-						<div class="flex gap-3">
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation x coordinate">x</span
-								>
-								{localPose.oX.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation y coordinate">y</span
-								>
-								{localPose.oY.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation z coordinate">z</span
-								>
-								{localPose.oZ.toFixed(2)}
-							</div>
-							<div>
-								<span
-									class="text-subtle-2"
-									aria-label="local orientation theta degrees">th</span
-								>
-								{localPose.theta.toFixed(2)}
-							</div>
+						<div class="flex {isFrameNode ? 'gap-2' : 'gap-3'}">
+							{@render PoseAttribute({
+								label: 'x',
+								ariaLabel: 'local orientation x coordinate',
+								value: localPose.oX.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oX: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'y',
+								ariaLabel: 'local orientation y coordinate',
+								value: localPose.oY.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oY: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'z',
+								ariaLabel: 'local orientation z coordinate',
+								value: localPose.oZ.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ oZ: parseFloat(value) }),
+							})}
+							{@render PoseAttribute({
+								label: 'th',
+								ariaLabel: 'local orientation theta degrees',
+								value: localPose.theta.toFixed(2),
+								onInput: (value) =>
+									detailConfigUpdater.updateLocalOrientation({ theta: parseFloat(value) }),
+							})}
 						</div>
 					</div>
+				{/if}
+
+				{#if isFrameNode}
+					<div>
+						<strong class="font-semibold">geometry</strong>
+						<div class="grid grid-cols-4 gap-1">
+							<Button
+								variant={geometryType === 'none' ? 'dark' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('none')}>None</Button
+							>
+							<Button
+								variant={geometryType === 'box' ? 'dark' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('box')}>Box</Button
+							>
+							<Button
+								variant={geometryType === 'sphere' ? 'dark' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('sphere')}>Sphere</Button
+							>
+							<Button
+								variant={geometryType === 'capsule' ? 'dark' : 'primary'}
+								class="h-6 px-2 py-1 text-xs"
+								onclick={() => setGeometryType('capsule')}>Capsule</Button
+							>
+						</div>
+					</div>
+				{/if}
+				{#if geometryType !== 'none'}
+					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
+					{#if geometryType === 'box'}
+						{@const { dimsMm } = object?.geometry?.geometryType.value as {
+							dimsMm: { x: number; y: number; z: number }
+						}}
+						<div>
+							<strong class="font-semibold">dimensions (box)</strong>
+							<div class="flex items-center gap-2">
+								{@render GeometryAttribute({
+									label: 'x',
+									ariaLabel: 'box dimensions x value input',
+									value: dimsMm?.x ? dimsMm.x.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', x: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'y',
+									ariaLabel: 'box dimensions y value input',
+									value: dimsMm?.y ? dimsMm.y.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', y: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'z',
+									ariaLabel: 'box dimensions z value input',
+									value: dimsMm?.z ? dimsMm.z.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'box', z: parseFloat(value) }),
+								})}
+							</div>
+						</div>
+					{/if}
+					{#if geometryType === 'capsule'}
+						{@const { radiusMm, lengthMm } = object?.geometry?.geometryType.value as {
+							radiusMm: number
+							lengthMm: number
+						}}
+						<div>
+							<strong class="font-semibold">dimensions (capsule)</strong>
+							<div class="flex items-center gap-2">
+								{@render GeometryAttribute({
+									label: 'r',
+									ariaLabel: 'capsule dimensions radius value input',
+									value: radiusMm ? radiusMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'capsule', r: parseFloat(value) }),
+								})}
+								{@render GeometryAttribute({
+									label: 'l',
+									ariaLabel: 'capsule dimensions length value input',
+									value: lengthMm ? lengthMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'capsule', l: parseFloat(value) }),
+								})}
+							</div>
+						</div>
+					{/if}
+					{#if geometryType === 'sphere'}
+						{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
+						<div>
+							<strong class="font-semibold">dimensions (sphere)</strong>
+							<div class="flex items-center gap-2">
+								{@render GeometryAttribute({
+									label: 'r',
+									ariaLabel: 'sphere dimensions radius value input',
+									value: radiusMm ? radiusMm.toFixed(2) : '-',
+									onInput: (value) =>
+										detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
+								})}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</WeblabActive>
 
-			{#if geometry}
-				{#if geometry.geometryType.case === 'box'}
-					{@const { dimsMm } = geometry.geometryType.value}
-					<div>
-						<strong class="font-semibold">dimensions (box)</strong>
-						<div class="flex gap-3">
-							<div>
-								<span class="text-subtle-2">x</span>
-								{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
-							</div>
-							<div>
-								<span class="text-subtle-2">y</span>
-								{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
-							</div>
-							<div>
-								<span class="text-subtle-2">z</span>
-								{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
-							</div>
-						</div>
-					</div>
-				{:else if geometry.geometryType.case === 'capsule'}
-					{@const { value } = geometry.geometryType}
-					<div>
-						<strong class="font-semibold">dimensions (capsule)</strong>
-						<div class="flex gap-3">
-							<div>
-								<span class="text-subtle-2">r</span>
-								{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
-							</div>
-							<div>
-								<span class="text-subtle-2">l</span>
-								{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
-							</div>
-						</div>
-					</div>
-				{:else if geometry.geometryType.case === 'sphere'}
-					<div class="flex justify-between">
+			<WeblabActive
+				experiment="MOTION_TOOLS_EDIT_FRAME"
+				renderIfActive={false}
+			>
+				{#if object.geometry}
+					{#if object.geometry.geometryType.case === 'box'}
+						{@const { dimsMm } = object.geometry.geometryType.value}
 						<div>
-							<strong class="font-semibold">dimensions (sphere)</strong>
+							<strong class="font-semibold">dimensions (box)</strong>
 							<div class="flex gap-3">
 								<div>
-									<span class="text-subtle-2">r</span>
-									{geometry.geometryType.value.radiusMm.toFixed(2)}
+									<span class="text-subtle-2">x</span>
+									{dimsMm?.x ? dimsMm.x.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">y</span>
+									{dimsMm?.y ? dimsMm.y.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">z</span>
+									{dimsMm?.z ? dimsMm.z.toFixed(2) : '-'}
 								</div>
 							</div>
 						</div>
-					</div>
-				{/if}
-			{/if}
-
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-				<div>
-					<strong class="font-semibold">parent frame</strong>
-					<div class="flex gap-3">
+					{:else if object.geometry.geometryType.case === 'capsule'}
+						{@const { value } = object.geometry.geometryType}
 						<div>
-							<span
-								class="text-subtle-2"
-								aria-label="parent frame name">name</span
-							>
-							{referenceFrame}
+							<strong class="font-semibold">dimensions (capsule)</strong>
+							<div class="flex gap-3">
+								<div>
+									<span class="text-subtle-2">r</span>
+									{value.radiusMm ? value.radiusMm.toFixed(2) : '-'}
+								</div>
+								<div>
+									<span class="text-subtle-2">l</span>
+									{value.lengthMm ? value.lengthMm.toFixed(2) : '-'}
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
+					{:else if object.geometry.geometryType.case === 'sphere'}
+						<div class="flex justify-between">
+							<div>
+								<strong class="font-semibold">dimensions (sphere)</strong>
+								<div class="flex gap-3">
+									<div>
+										<span class="text-subtle-2">r</span>
+										{object.geometry.geometryType.value.radiusMm.toFixed(2)}
+									</div>
+								</div>
+							</div>
+						</div>
+					{/if}
+				{/if}
 			</WeblabActive>
 		</div>
 

@@ -4,6 +4,8 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('dashboard-context')
 
 interface Settings {
+	// viewer mode
+	viewerMode: 'edit' | 'monitor'
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -45,6 +47,7 @@ interface Context {
 }
 
 const defaults = (): Settings => ({
+	viewerMode: 'monitor',
 	cameraMode: 'perspective',
 
 	transforming: false,
