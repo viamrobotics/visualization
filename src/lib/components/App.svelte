@@ -25,8 +25,8 @@
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
 		setLocalPartConfig: (config: Struct) => void
-		getPartName: () => string | undefined
 		isDirty: () => boolean
+		getComponentToFragId: () => Record<string, string>
 	}
 
 	interface Props {
@@ -64,7 +64,7 @@
 				isDirty: () => localConfigProps.isDirty(),
 				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-				partName: () => localConfigProps.getPartName(),
+				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
 			},
 		})
 	} else {
@@ -72,7 +72,7 @@
 		providePartConfig({
 			standalonePartConfigProps: {
 				viamClient: () => appClient?.current,
-				partID,
+				partID: () => partID,
 			},
 		})
 	}

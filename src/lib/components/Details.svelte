@@ -24,7 +24,7 @@
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartConfig, type PartConfigComponents } from '$lib/hooks/usePartConfig.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { DetailConfigUpdater } from '$lib/Detail.svelte'
 
 	const { ...rest } = $props()
@@ -50,14 +50,8 @@
 	const localPose = $derived(object?.localEditedPose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
-	const partDefinedComponentNames = $derived.by(() => {
-		const config = partConfig.localPartConfig.toJson() as unknown as PartConfigComponents
-		return config?.components?.map((component: { name: string }) => component.name) ?? []
-	})
 	const isFrameNode = $derived(
-		frames.current.find(
-			(frame) => frame.name === object?.name && partDefinedComponentNames.includes(frame.name)
-		) !== undefined
+		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
 	let copied = $state(false)
 
@@ -65,7 +59,8 @@
 
 	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
 		() => object,
-		partConfig.updateFrame
+		partConfig.updateFrame,
+		() => referenceFrame
 	)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
@@ -189,7 +184,10 @@
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
 
-		<h3 class="text-subtle-2 flex justify-between py-2">
+		<h3
+			class="text-subtle-2 flex justify-between py-2"
+			data-testid="details-header"
+		>
 			Details
 
 			<button
@@ -264,7 +262,7 @@
 							ariaLabel: 'parent frame name',
 							value: referenceFrame,
 							options: referenceFrameOptions,
-							onChange: (value) => partConfig.setFrameParentConfig(object.name, value),
+							onChange: (value) => detailConfigUpdater.setFrameParent(value),
 						})}
 					</div>
 				</div>
@@ -361,10 +359,10 @@
 						</div>
 					</div>
 				{/if}
-				{#if object.geometry}
+				{#if geometryType !== 'none'}
 					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
 					{#if geometryType === 'box'}
-						{@const { dimsMm } = object.geometry.geometryType.value as {
+						{@const { dimsMm } = object?.geometry?.geometryType.value as {
 							dimsMm: { x: number; y: number; z: number }
 						}}
 						<div>
@@ -395,7 +393,7 @@
 						</div>
 					{/if}
 					{#if geometryType === 'capsule'}
-						{@const { radiusMm, lengthMm } = object.geometry.geometryType.value as {
+						{@const { radiusMm, lengthMm } = object?.geometry?.geometryType.value as {
 							radiusMm: number
 							lengthMm: number
 						}}
@@ -420,7 +418,7 @@
 						</div>
 					{/if}
 					{#if geometryType === 'sphere'}
-						{@const { radiusMm } = object.geometry.geometryType.value as { radiusMm: number }}
+						{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
 						<div>
 							<strong class="font-semibold">dimensions (sphere)</strong>
 							<div class="flex items-center gap-2">

@@ -65,7 +65,7 @@ describe('Details component', () => {
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct(),
-			setFrameParentConfig: vi.fn(),
+			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),
@@ -175,7 +175,7 @@ describe('Details component', () => {
 					},
 				],
 			}),
-			setFrameParentConfig: vi.fn(),
+			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
 			saveLocalPartConfig: vi.fn(),

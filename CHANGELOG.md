@@ -1,5 +1,16 @@
 # motion-tools
 
+## 0.13.0
+
+### Minor Changes
+
+- a48fd20: allow editing fragment defined frames
+- db8b413: add ability to edit frames (re-parent, update pose, edit geo)
+
+### Patch Changes
+
+- 2a30157: Use oriented bounding boxes for selection
+
 ## 0.12.0
 
 ### Minor Changes
