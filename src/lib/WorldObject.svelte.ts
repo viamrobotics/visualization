@@ -1,5 +1,5 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
+import { BatchedMesh, Color, MathUtils, Object3D, Vector3 } from 'three'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
