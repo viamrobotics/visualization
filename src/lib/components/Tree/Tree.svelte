@@ -2,20 +2,16 @@
 	import * as tree from '@zag-js/tree-view'
 	import { useMachine, normalizeProps } from '@zag-js/svelte'
 	import { untrack } from 'svelte'
-	import { ChevronRight, Eye, EyeOff, Trash } from 'lucide-svelte'
+	import { ChevronRight, Eye, EyeOff } from 'lucide-svelte'
 	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 	import type { TreeNode } from './buildTree'
 	import { useExpanded } from './useExpanded.svelte'
 	import { VirtualList } from 'svelte-virtuallists'
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
-	const { deleteFrame } = usePartConfig()
-	const settings = useSettings()
 
 	interface Props {
 		rootNode: TreeNode
@@ -131,35 +127,19 @@
 				{node.name}
 			</span>
 
-			<div class="flex items-center gap-1.5">
-				<button
-					class="text-gray-6"
-					onclick={(event) => {
-						event.stopPropagation()
-						visibility.set(node.id, !isVisible)
-					}}
-				>
-					{#if isVisible}
-						<Eye size={14} />
-					{:else}
-						<EyeOff size={14} />
-					{/if}
-				</button>
-				{#if settings.current.isStandalone}
-					<button
-						class="text-gray-6"
-						onclick={(event) => {
-							event.stopPropagation()
-							deleteFrame(node.name)
-						}}
-					>
-						<Trash
-							size={14}
-							color="red"
-						/>
-					</button>
+			<button
+				class="text-gray-6"
+				onclick={(event) => {
+					event.stopPropagation()
+					visibility.set(node.id, !isVisible)
+				}}
+			>
+				{#if isVisible}
+					<Eye size={14} />
+				{:else}
+					<EyeOff size={14} />
 				{/if}
-			</div>
+			</button>
 		</div>
 	{/if}
 {/snippet}

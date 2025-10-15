@@ -21,6 +21,7 @@
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
+	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -45,6 +46,7 @@
 
 	const appClient = useViamClient()
 	const settings = provideSettings()
+	const environment = provideEnvironment()
 
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
@@ -57,7 +59,7 @@
 	let root = $state.raw<HTMLElement>()
 
 	if (localConfigProps) {
-		settings.current.isStandalone = false
+		environment.current.isStandalone = false
 		providePartConfig({
 			appEmbeddedPartConfigProps: {
 				isDirty: () => localConfigProps.isDirty(),
@@ -67,7 +69,7 @@
 			},
 		})
 	} else {
-		settings.current.isStandalone = true
+		environment.current.isStandalone = true
 		providePartConfig({
 			standalonePartConfigProps: {
 				viamClient: () => appClient?.current,
@@ -98,7 +100,7 @@
 
 						<Dashboard {@attach domPortal(root)} />
 						<Details {@attach domPortal(root)} />
-						{#if settings.current.isStandalone}
+						{#if environment.current.isStandalone}
 							<LiveUpdatesBanner {@attach domPortal(root)} />
 						{/if}
 

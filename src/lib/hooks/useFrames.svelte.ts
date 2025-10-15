@@ -10,16 +10,15 @@ import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type Frame, type PartConfig } from './usePartConfig.svelte'
-import { useSettings } from './useSettings.svelte'
-import { Pose } from '@viamrobotics/sdk'
 import { Color } from 'three'
+import { useEnvironment } from './useEnvironment.svelte'
+import { createPoseFromFrame } from '$lib/transform'
 
 interface FramesContext {
 	current: WorldObject[]
 	error?: Error
 	fetching: boolean
 	getParentFrameOptions: (componentName: string) => string[]
-	componentsWithNoFrame: string[]
 }
 
 const key = Symbol('frames-context')
@@ -32,7 +31,7 @@ export const provideFrames = (partID: () => string) => {
 	const query = createRobotQuery(client, 'frameSystemConfig')
 	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()
-	const settings = useSettings()
+	const environment = useEnvironment()
 
 	observe.pre(
 		() => [revision],
@@ -48,9 +47,9 @@ export const provideFrames = (partID: () => string) => {
 		() => [partConfig.isDirty],
 		() => {
 			if (partConfig.isDirty) {
-				settings.current.viewerMode = 'edit'
+				environment.current.viewerMode = 'edit'
 			} else {
-				settings.current.viewerMode = 'monitor'
+				environment.current.viewerMode = 'monitor'
 			}
 		}
 	)
@@ -84,22 +83,6 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		return objects
-	})
-
-	const _componentsWithNoFrame = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
-		const partComponentsWIthNoFrame =
-			components
-				?.filter((component) => component.frame === undefined)
-				.map((component) => component.name) ?? []
-		const fragmentComponentsWithNoFrame = []
-		for (const fragmentComponentName of Object.keys(partConfig.componentNameToFragmentId)) {
-			if (current.find((worldObject) => worldObject.name === fragmentComponentName)) {
-				continue
-			}
-			fragmentComponentsWithNoFrame.push(fragmentComponentName)
-		}
-		return [...partComponentsWIthNoFrame, ...fragmentComponentsWithNoFrame]
 	})
 
 	let currentWorldObjects: Record<string, WorldObject> = {}
@@ -190,15 +173,7 @@ export const provideFrames = (partID: () => string) => {
 				setWorldObject(component, worldObject)
 			} else if (component.frame && Object.keys(getWorldObjects()).length > 0) {
 				// extra clause to prevent adding a component to the world objects when it may be loaded via frame system config later (first tick issue where config updated but current world objects not triggered yet)
-				const pose = new Pose({
-					x: component.frame.translation.x,
-					y: component.frame.translation.y,
-					z: component.frame.translation.z,
-					oX: component.frame.orientation.value.x,
-					oY: component.frame.orientation.value.y,
-					oZ: component.frame.orientation.value.z,
-					theta: component.frame.orientation.value.th,
-				})
+				const pose = createPoseFromFrame(component.frame)
 				const newWorldObject = new WorldObject(component.name, pose, component.frame.parent)
 				setWorldObject(component, newWorldObject)
 			} else {
@@ -234,15 +209,7 @@ export const provideFrames = (partID: () => string) => {
 				if (worldObject) {
 					setWorldObject(componentConfig, worldObject)
 				} else if (Object.keys(getWorldObjects()).length > 0) {
-					const pose = new Pose({
-						x: frameData.translation.x,
-						y: frameData.translation.y,
-						z: frameData.translation.z,
-						oX: frameData.orientation.value.x,
-						oY: frameData.orientation.value.y,
-						oZ: frameData.orientation.value.z,
-						theta: frameData.orientation.value.th,
-					})
+					const pose = createPoseFromFrame(frameData)
 					const newWorldObject = new WorldObject(fragmentComponentName, pose, frameData.parent)
 					setWorldObject(componentConfig, newWorldObject)
 				}
@@ -285,9 +252,6 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get fetching() {
 			return fetching
-		},
-		get componentsWithNoFrame() {
-			return _componentsWithNoFrame
 		},
 	})
 }

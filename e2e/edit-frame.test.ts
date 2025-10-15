@@ -7,6 +7,8 @@ const testConfig = {
 	apiKeyValue: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
 	signalingAddress: 'https://app.viam.com:443',
 }
+
+// FRAME CONFIGURATION
 // {
 // 	"components": [
 // 	  {

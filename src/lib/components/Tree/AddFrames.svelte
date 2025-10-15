@@ -1,17 +1,17 @@
 <script lang="ts">
 	import Drawer from './Drawer.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 
-	const frames = useFrames()
+	const framelessComponents = useFramelessComponents()
 	const partConfig = usePartConfig()
 </script>
 
-<Drawer name="Add Frames">
+<Drawer name="Add frames">
 	<div class="flex h-64 w-60 flex-col gap-2 overflow-auto p-3">
-		{#if frames.componentsWithNoFrame.length > 0}
+		{#if framelessComponents.current.length > 0}
 			<ul class="space-y-1">
-				{#each frames.componentsWithNoFrame as component (component)}
+				{#each framelessComponents.current as component (component)}
 					<li class="text-sm text-gray-700">
 						{component}
 						<button

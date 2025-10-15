@@ -1,3 +1,4 @@
+import { createNewFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue, ViamClient } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
@@ -104,29 +105,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		const modSetPath = `components.${componentName}.frame`
 		const frame = {
 			['$set']: {
-				[modSetPath]: {
-					translation: {
-						x: 0,
-						y: 0,
-						z: 0,
-					},
-					parent: 'world',
-					orientation: {
-						type: 'ov_degrees',
-						value: {
-							x: 0,
-							y: 0,
-							z: 1,
-							th: 0,
-						},
-					},
-					geometry: {
-						type: 'box',
-						x: 100,
-						y: 100,
-						z: 100,
-					},
-				},
+				[modSetPath]: createNewFrame(),
 			},
 		}
 
@@ -139,28 +118,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
 		if (component) {
-			component.frame = {
-				parent: 'world',
-				translation: {
-					x: 0,
-					y: 0,
-					z: 0,
-				},
-				orientation: {
-					value: {
-						x: 0,
-						y: 0,
-						z: 1,
-						th: 0,
-					},
-				},
-				geometry: {
-					type: 'box',
-					x: 100,
-					y: 100,
-					z: 100,
-				},
-			}
+			component.frame = createNewFrame()
 		}
 		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 		_localPartConfig.setLocalPartConfig(configStruct)

@@ -62,7 +62,6 @@ describe('Details component', () => {
 			current: mockedCurrent,
 			fetching: false,
 			getParentFrameOptions: vi.fn(),
-			componentsWithNoFrame: [],
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct(),
