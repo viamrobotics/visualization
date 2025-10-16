@@ -159,7 +159,9 @@
 	<Select
 		aria-label={`dropdown ${ariaLabel}`}
 		{value}
-		on:input={(event) => onChange((event.target as HTMLSelectElement).value)}
+		onchange={(event: InputEvent) => {
+			onChange((event.target as HTMLSelectElement).value)
+		}}
 	>
 		{#each options as option (option)}
 			<option value={option}>{option}</option>
