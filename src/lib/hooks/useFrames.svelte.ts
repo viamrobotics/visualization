@@ -36,10 +36,8 @@ export const provideFrames = (partID: () => string) => {
 	observe.pre(
 		() => [revision],
 		() => {
-			if (!partConfig.isDirty) {
-				untrack(() => query.current).refetch()
-				logs.add('Fetching frames...')
-			}
+			untrack(() => query.current).refetch()
+			logs.add('Fetching frames...')
 		}
 	)
 
