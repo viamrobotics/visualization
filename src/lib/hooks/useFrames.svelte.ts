@@ -52,9 +52,6 @@ export const provideFrames = (partID: () => string) => {
 		}
 	)
 
-	$inspect(partConfig.isDirty, 'partConfig.isDirty')
-	$inspect(environment.current.viewerMode, 'environment.current.viewerMode')
-
 	let current = $derived.by(() => {
 		const objects: WorldObject[] = []
 
