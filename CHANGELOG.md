@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.14.1
+
+### Patch Changes
+
+- 95bc6a9: Add missing frameless component provider
+- f173bc4: refetch poses when re-enter monitor mode
+
 ## 0.14.0
 
 ### Minor Changes
