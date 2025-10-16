@@ -6,6 +6,8 @@ import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
+import { observe } from '@threlte/core'
+import { untrack } from 'svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
@@ -55,6 +57,15 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	)
 
 	const query = fromStore(createQuery(toStore(() => options)))
+
+	observe.pre(
+		() => [environment.current.viewerMode],
+		() => {
+			if (environment.current.viewerMode === 'monitor') {
+				untrack(() => query.current).refetch()
+			}
+		}
+	)
 
 	return {
 		get current() {

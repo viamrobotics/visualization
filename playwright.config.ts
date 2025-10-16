@@ -4,6 +4,9 @@ export default defineConfig({
 	webServer: {
 		command: 'pnpm run dev',
 		port: 5173,
+		env: {
+			VITE_CONFIGS: '{}',
+		},
 	},
 
 	testDir: 'e2e',
