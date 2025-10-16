@@ -26,6 +26,7 @@
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { DetailConfigUpdater } from '$lib/Detail.svelte'
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 
 	const { ...rest } = $props()
 
@@ -36,6 +37,7 @@
 	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
+	const { weblab } = useWeblabs()
 
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
@@ -99,6 +101,48 @@
 			stop()
 		}
 	})
+
+	const getCopyClipboardText = () => {
+		if (weblab.isActive('MOTION_TOOLS_EDIT_FRAME')) {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					localPosition: {
+						x: localPose?.x,
+						y: localPose?.y,
+						z: localPose?.z,
+					},
+					localOrientation: {
+						x: localPose?.oX,
+						y: localPose?.oY,
+						z: localPose?.oZ,
+						th: localPose?.theta,
+					},
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+					parentFrame: referenceFrame,
+				},
+				null,
+				2
+			)
+		} else {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+				},
+				null,
+				2
+			)
+		}
+	}
 </script>
 
 {#snippet ImmutableField({
@@ -199,7 +243,7 @@
 
 			<button
 				onclick={async () => {
-					navigator.clipboard.writeText(JSON.stringify($state.snapshot(object)))
+					navigator.clipboard.writeText(getCopyClipboardText())
 					copied = true
 					setTimeout(() => (copied = false), 1000)
 				}}
