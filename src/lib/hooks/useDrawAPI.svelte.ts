@@ -1,11 +1,12 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, type Box3 } from 'three'
+import { Color, Vector3, Vector4 } from 'three'
+import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { BatchedArrow } from '$lib/three/BatchedArrow'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import type { Geometry } from '@viamrobotics/sdk'
+import { useArrows } from './useArrows.svelte'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -20,10 +21,6 @@ interface Context {
 	models: WorldObject[]
 
 	connectionStatus: ConnectionStatus
-
-	object3ds: {
-		batchedArrow: BatchedArrow
-	}
 
 	camera:
 		| {
@@ -89,8 +86,9 @@ export const provideDrawAPI = () => {
 	const color = new Color()
 	const direction = new Vector3()
 	const origin = new Vector3()
-	const vec3 = new Vector3()
 	const loader = new GLTFLoader()
+
+	const batchedArrow = useArrows()
 
 	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
@@ -101,8 +99,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				colors ? { colors } : undefined
 			)
@@ -118,25 +119,30 @@ export const provideDrawAPI = () => {
 			return
 		}
 
-		let geometry: Geometry['geometryType']
+		const geometry: Geometry = {
+			label: data.label,
+			center: undefined,
+			geometryType: {
+				case: undefined,
+			},
+		}
 
 		if ('mesh' in data) {
-			geometry = {
-				case: 'mesh',
-				value: { contentType: '', mesh: data.mesh.mesh },
-			}
+			geometry.geometryType.case = 'mesh'
+			geometry.geometryType.value = data.mesh
 		} else if ('box' in data) {
-			geometry = { case: 'box', value: data.box }
+			geometry.geometryType.case = 'box'
+			geometry.geometryType.value = data.box
 		} else if ('sphere' in data) {
-			geometry = { case: 'sphere', value: data.sphere }
+			geometry.geometryType.case = 'sphere'
+			geometry.geometryType.value = data.sphere
 		} else if ('capsule' in data) {
-			geometry = { case: 'capsule', value: data.capsule }
-		} else {
-			geometry = { case: undefined, value: undefined }
+			geometry.geometryType.case = 'capsule'
+			geometry.geometryType.value = data.capsule
 		}
 
 		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color,
+			color: new Color(color),
 		})
 
 		meshes.push(object)
@@ -157,14 +163,12 @@ export const provideDrawAPI = () => {
 			data.name,
 			data.pose,
 			data.parent,
-			{ case: 'line', value: new Float32Array() },
-			{ color, points: curve.getPoints(200) }
+			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
+			{ color: new Color(color), points: curve.getPoints(200) }
 		)
 
 		nurbs.push(object)
 	}
-
-	const batchedArrow = new BatchedArrow()
 
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
@@ -190,17 +194,12 @@ export const provideDrawAPI = () => {
 			origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
 			direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
 
-			if (arrowHeadAtPose === 1) {
-				// Compute the base position so the arrow ends at the origin
-				origin.sub(vec3.copy(direction).multiplyScalar(length))
-			}
-
 			color.set(colors[j], colors[j + 1], colors[j + 2])
 
-			const arrowId = batchedArrow.addArrow(direction, origin, length, color)
+			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
 			poses.push(
 				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
-					getBoundingBoxAt(box3: Box3) {
+					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
 					batched: {
@@ -280,8 +279,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				metadata
 			)
@@ -330,8 +332,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'line',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'line',
+						value: positions,
+					},
 				},
 				{
 					points,
@@ -546,9 +551,6 @@ export const provideDrawAPI = () => {
 		},
 		get connectionStatus() {
 			return connectionStatus
-		},
-		object3ds: {
-			batchedArrow,
 		},
 		get camera() {
 			return camera

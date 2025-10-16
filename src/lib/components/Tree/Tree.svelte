@@ -156,10 +156,7 @@
 			<h3 {...api.getLabelProps() as object}>{rootNode.name}</h3>
 		</div>
 
-		<div
-			{...api.getTreeProps()}
-			class="w-60"
-		>
+		<div {...api.getTreeProps()}>
 			{#if rootChildren.length === 0}
 				<p class="text-subtle-2 px-2 py-4">No objects displayed</p>
 			{:else if rootChildren.length > 200}

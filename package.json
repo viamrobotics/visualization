@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "0.11.8",
+	"version": "0.14.1",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -81,6 +81,7 @@
 		"three-mesh-bvh": "^0.9.1",
 		"threlte-uikit": "1.2.1",
 		"tsx": "4.20.5",
+		"type-fest": "^5.0.1",
 		"typescript": "5.9.2",
 		"typescript-eslint": "8.42.0",
 		"vite": "7.1.4",

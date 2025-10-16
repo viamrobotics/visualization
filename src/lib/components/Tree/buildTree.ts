@@ -34,7 +34,7 @@ export const buildTreeNodes = (
 	}
 
 	for (const object of objects) {
-		if (object.referenceFrame !== 'world') {
+		if (object.referenceFrame && object.referenceFrame !== 'world') {
 			const parentNode = nodeMap.get(object.referenceFrame)
 			const child = nodeMap.get(object.name)
 			if (parentNode && child) {

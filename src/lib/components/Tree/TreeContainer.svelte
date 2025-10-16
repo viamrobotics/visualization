@@ -10,7 +10,9 @@
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
-
+	import Widgets from './Widgets.svelte'
+	import AddFrames from './AddFrames.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
@@ -19,6 +21,7 @@
 	const objects = useObjects()
 	const draggable = useDraggable('treeview')
 	const worldStates = useWorldStates()
+	const environment = useEnvironment()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -53,6 +56,10 @@
 		/>
 	{/key}
 
+	{#if environment.current.isStandalone}
+		<AddFrames />
+	{/if}
 	<Logs />
 	<Settings />
+	<Widgets />
 </div>

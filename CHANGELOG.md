@@ -1,5 +1,43 @@
 # motion-tools
 
+## 0.14.1
+
+### Patch Changes
+
+- 95bc6a9: Add missing frameless component provider
+- f173bc4: refetch poses when re-enter monitor mode
+
+## 0.14.0
+
+### Minor Changes
+
+- d2c23ec: enable create and delete frames in standalone version
+- 5ec5351: Add `shape` metadata for supported shapes from draw API. Add support for arrows from world state store.
+
+## 0.13.0
+
+### Minor Changes
+
+- a48fd20: allow editing fragment defined frames
+- db8b413: add ability to edit frames (re-parent, update pose, edit geo)
+
+### Patch Changes
+
+- 2a30157: Use oriented bounding boxes for selection
+
+## 0.12.0
+
+### Minor Changes
+
+- 00d0df6: create weblab infrastructure
+- 65ebe16: Display more info on world object details pane (local pose, parent frame)
+- 2a67113: Add widgets drawer and arm positions widget
+
+### Patch Changes
+
+- 07f9d64: Display only one tree entry for frames with geometries
+- 76c17f4: Allow live refresh rates
+
 ## 0.11.8
 
 ### Patch Changes

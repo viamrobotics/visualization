@@ -83,8 +83,11 @@
 						undefined,
 						undefined,
 						{
-							case: 'points',
-							value: result.positions,
+							center: undefined,
+							geometryType: {
+								case: 'points',
+								value: result.positions,
+							},
 						},
 						result.colors ? { colors: result.colors } : undefined
 					)

@@ -5,20 +5,23 @@
 	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
 	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
+	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
 	import Line from './Line.svelte'
 	import Pointcloud from './Pointcloud.svelte'
 	import Model from './WorldObject.svelte'
 	import Label from './Label.svelte'
-	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import WorldState from './WorldState.svelte'
+	import { determinePose } from '$lib/WorldObject.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
+	const batchedArrow = useArrows()
 </script>
 
 {#each frames.current as object (object.uuid)}
@@ -27,11 +30,12 @@
 		parent={object.referenceFrame}
 	>
 		{#snippet children({ pose })}
+			{@const framePose = determinePose(object, pose)}
 			<Portal id={object.referenceFrame}>
 				<Frame
 					uuid={object.uuid}
 					name={object.name}
-					pose={pose ?? object.pose}
+					pose={framePose}
 					geometry={object.geometry}
 					metadata={object.metadata}
 				>
@@ -78,14 +82,12 @@
 	</Portal>
 {/each}
 
-{#if drawAPI.poses.length > 0}
-	<T
-		name={drawAPI.object3ds.batchedArrow.object3d.name}
-		is={drawAPI.object3ds.batchedArrow.object3d}
-		dispose={false}
-		bvh={{ enabled: false }}
-	/>
-{/if}
+<T
+	name={batchedArrow.object3d.name}
+	is={batchedArrow.object3d}
+	dispose={false}
+	bvh={{ enabled: false }}
+/>
 
 {#each drawAPI.meshes as object (object.uuid)}
 	<Portal id={object.referenceFrame}>

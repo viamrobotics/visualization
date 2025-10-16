@@ -3,11 +3,12 @@ import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
-import { useMachineSettings } from './useMachineSettings.svelte'
+import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
+import { Color } from 'three'
 
 const key = Symbol('geometries-context')
 
@@ -37,12 +38,8 @@ export const provideGeometries = (partID: () => string) => {
 	)
 	const clients = $derived([...armClients, ...gripperClients, ...cameraClients])
 
-	if (!refreshRates.has('Geometries')) {
-		refreshRates.set('Geometries', 1000)
-	}
-
 	const options = $derived.by(() => {
-		const interval = refreshRates.get('Geometries')
+		const interval = refreshRates.get(RefreshRates.poses)
 		const results: CreateQueryOptions<
 			{
 				name: string
@@ -87,15 +84,19 @@ export const provideGeometries = (partID: () => string) => {
 		for (const query of queries.current) {
 			if (!query.data) continue
 
-			for (const { center, label, geometryType } of query.data.geometries) {
+			for (const geometry of query.data.geometries) {
 				const resourceName = resourceNames.current.find((item) => item.name === query.data.name)
 				const worldObject = new WorldObject(
-					label ? label : 'Unnamed geometry',
-					center,
+					geometry.label ? geometry.label : `${query.data.name} geometry`,
+					undefined,
 					query.data.name,
-					geometryType,
+					geometry,
 					resourceName
-						? { color: resourceColors[resourceName.subtype as keyof typeof resourceColors] }
+						? {
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
+							}
 						: undefined
 				)
 				results.push(worldObject)
