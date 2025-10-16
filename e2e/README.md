@@ -18,15 +18,13 @@ Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`
 
 - Host address
 - Part ID
+- Part Name
 - API Key ID and Value
 - Signaling Address
 
 ### Step 2: Prepare Your Robot
 
 1. **Start your robot** and ensure it's online
-2. **Update robot configuration** using the JSON config found in the test file comments
-   - Navigate to the Configuration tab in the Viam app
-   - Apply the provided configuration to your robot
 
 ### Step 3: Execute Tests
 
@@ -68,5 +66,4 @@ When you make intentional UI changes that should result in different screenshots
 
 ## Todo
 
-1. Use Fleet API as a fixture to auto change the robot config instead of relying on user to upload thesmselves
-2. add more e2e tests to cover additional user journeys
+1. add more e2e tests to cover additional user journeys

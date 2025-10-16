@@ -1,66 +1,76 @@
 import { expect, test } from '@playwright/test'
+import { createViamClient, Struct, ViamClient, ViamClientOptions } from '@viamrobotics/sdk'
 
 const testConfig = {
 	host: 'edit-frame-testing-main.i6h2oo7033.viam.cloud',
+	name: 'edit-frame-testing-main',
 	partId: '9b304d77-b1d5-4c96-a64f-4088772b9961',
 	apiKeyId: 'b6c1c558-aac2-4f52-9a17-b5d6cf9df5f7',
 	apiKeyValue: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
 	signalingAddress: 'https://app.viam.com:443',
 }
 
-// FRAME CONFIGURATION
-// {
-// 	"components": [
-// 	  {
-// 		"name": "base-1",
-// 		"api": "rdk:component:base",
-// 		"model": "rdk:builtin:fake",
-// 		"attributes": {},
-// 		"frame": {
-// 		  "parent": "world",
-// 		  "translation": {
-// 			"x": 0,
-// 			"y": 0,
-// 			"z": 0
-// 		  },
-// 		  "orientation": {
-// 			"type": "ov_degrees",
-// 			"value": {
-// 			  "x": 0,
-// 			  "y": 0,
-// 			  "z": 1,
-// 			  "th": 0
-// 			}
-// 		  }
-// 		}
-// 	  },
-// 	  {
-// 		"name": "parent",
-// 		"api": "rdk:component:base",
-// 		"model": "rdk:builtin:fake",
-// 		"attributes": {},
-// 		"frame": {
-// 		  "parent": "world",
-// 		  "translation": {
-// 			"x": 0,
-// 			"y": 0,
-// 			"z": 250
-// 		  },
-// 		  "orientation": {
-// 			"type": "ov_degrees",
-// 			"value": {
-// 			  "x": 0,
-// 			  "y": 0,
-// 			  "z": 1,
-// 			  "th": 0
-// 			}
-// 		  }
-// 		}
-// 	  }
-// 	]
-//   }
+async function connect(): Promise<ViamClient> {
+	const API_KEY_ID = testConfig.apiKeyId
+	const API_KEY = testConfig.apiKeyValue
+	const opts: ViamClientOptions = {
+		serviceHost: testConfig.signalingAddress,
+		credentials: {
+			type: 'api-key',
+			authEntity: API_KEY_ID,
+			payload: API_KEY,
+		},
+	}
+
+	const client = await createViamClient(opts)
+	return client
+}
+
+let viamClient: ViamClient
+
+test.beforeAll(async () => {
+	viamClient = await connect()
+})
+
+const basicEditFrameConfig = {
+	components: [
+		{
+			name: 'base-1',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'world',
+				translation: { x: 0, y: 0, z: 0 },
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: 0, y: 0, z: 1, th: 0 },
+				},
+			},
+		},
+		{
+			name: 'parent',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'world',
+				translation: { x: 0, y: 0, z: 250 },
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: 0, y: 0, z: 1, th: 0 },
+				},
+			},
+		},
+	],
+}
 
 test('basic edit frame', async ({ browser }) => {
+	await viamClient.appClient.updateRobotPart(
+		testConfig.partId,
+		testConfig.name,
+		Struct.fromJson(basicEditFrameConfig)
+	)
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	await context.addCookies([
