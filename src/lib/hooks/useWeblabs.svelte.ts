@@ -24,6 +24,7 @@ export class Weblab {
 	}
 
 	isActive(experiment: string) {
+		return true
 		return this.activeExperiments.has(experiment)
 	}
 

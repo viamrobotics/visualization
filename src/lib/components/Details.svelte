@@ -111,14 +111,13 @@
 	ariaLabel: string
 })}
 	<div>
-		{#if label}
-			<span
-				class="text-subtle-2"
-				aria-label={`immutable ${ariaLabel}`}
-			>
-				{label}
-			</span>
-		{/if}
+		<span
+			class="text-subtle-2"
+			aria-label={`immutable ${ariaLabel}`}
+		>
+			{label}
+		</span>
+
 		{value}
 	</div>
 {/snippet}
