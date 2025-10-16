@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.2
+
+### Patch Changes
+
+- 98db073: fix bug with select on:input not firing
+
 ## 0.14.1
 
 ### Patch Changes
