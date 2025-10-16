@@ -85,7 +85,6 @@ describe('Details component', () => {
 		render(Details)
 
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
-		expect(screen.getByText('parent_frame')).toBe
 		const parentFrameNameSpan = screen.getByLabelText('immutable parent frame name')
 		const parentFrameNameText = parentFrameNameSpan.nextSibling as HTMLElement
 		expect(parentFrameNameText.textContent?.trim()).toBe('parent_frame')
