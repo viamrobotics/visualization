@@ -422,34 +422,40 @@ export class StandalonePartConfig implements LocalPartConfig {
 				this._partName = partResponse?.part?.name
 
 				const componentNameToFragmentId: Record<string, string> = {}
-				const fragementRequests = []
+				const fragmentRequests = []
 
 				if (configJson.fragments) {
 					for (const fragmentId of configJson.fragments) {
-						fragementRequests.push(
+						fragmentRequests.push(
 							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId)
 						)
 					}
-					const fragementResponses = await Promise.all(fragementRequests)
-					for (const fragmentResponse of fragementResponses) {
-						const fragmentId = fragmentResponse?.id
-						if (!fragmentId) {
-							continue
-						}
-						const components = fragmentResponse?.fragment?.fields['components'].kind
 
-						if (components?.case === 'listValue') {
-							for (const component of components.value.values) {
-								if (component.kind.case === 'structValue') {
-									const componentName = component.kind.value.fields['name'].kind
-									if (componentName.case === 'stringValue') {
-										componentNameToFragmentId[componentName.value] = fragmentId
+					try {
+						const fragementResponses = await Promise.all(fragmentRequests)
+
+						for (const fragmentResponse of fragementResponses) {
+							const fragmentId = fragmentResponse?.id
+							if (!fragmentId) {
+								continue
+							}
+							const components = fragmentResponse?.fragment?.fields['components'].kind
+
+							if (components?.case === 'listValue') {
+								for (const component of components.value.values) {
+									if (component.kind.case === 'structValue') {
+										const componentName = component.kind.value.fields['name'].kind
+										if (componentName.case === 'stringValue') {
+											componentNameToFragmentId[componentName.value] = fragmentId
+										}
 									}
 								}
 							}
 						}
+						this._componentNameToFragmentId = componentNameToFragmentId
+					} catch {
+						/* Do nothing */
 					}
-					this._componentNameToFragmentId = componentNameToFragmentId
 				}
 			}
 

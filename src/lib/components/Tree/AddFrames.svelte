@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { IconButton } from '@viamrobotics/prime-core'
 	import Drawer from './Drawer.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
@@ -12,12 +13,13 @@
 		{#if framelessComponents.current.length > 0}
 			<ul class="space-y-1">
 				{#each framelessComponents.current as component (component)}
-					<li class="text-sm text-gray-700">
+					<li class="flex items-center gap-2 text-xs text-gray-700">
 						{component}
-						<button
-							class="focus:ring-opacity-50 ml-2 rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-							onclick={() => partConfig.createFrame(component)}>Add Frame</button
-						>
+						<IconButton
+							label="Add frame"
+							icon="plus"
+							onclick={() => partConfig.createFrame(component)}
+						/>
 					</li>
 				{/each}
 			</ul>
