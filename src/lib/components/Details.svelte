@@ -13,7 +13,7 @@
 <script lang="ts">
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask } from '@threlte/core'
-	import { Button, Icon } from '@viamrobotics/prime-core'
+	import { Button, Icon, Select, Input } from '@viamrobotics/prime-core'
 	import {
 		useSelectedObject,
 		useFocusedObject,
@@ -106,15 +106,18 @@
 	value,
 	ariaLabel,
 }: {
-	label: string
+	label?: string
 	value: string
 	ariaLabel: string
 })}
 	<div>
 		<span
 			class="text-subtle-2"
-			aria-label={`immutable ${ariaLabel}`}>{label}</span
+			aria-label={`immutable ${ariaLabel}`}
 		>
+			{label}
+		</span>
+
 		{value}
 	</div>
 {/snippet}
@@ -130,14 +133,16 @@
 	ariaLabel: string
 	onInput: (value: string) => void
 })}
-	<span class="text-subtle-2">{label}</span>
-	<input
-		type="number"
-		aria-label={`mutable ${ariaLabel}`}
-		class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-		{value}
-		oninput={(e) => onInput((e.target as HTMLInputElement).value)}
-	/>
+	<div class="flex items-center gap-1">
+		<span class="text-subtle-2">{label}</span>
+		<Input
+			type="number"
+			aria-label={`mutable ${ariaLabel}`}
+			class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+			{value}
+			on:input={(event) => onInput((event.target as HTMLInputElement).value)}
+		/>
+	</div>
 {/snippet}
 
 {#snippet DropDownField({
@@ -151,16 +156,15 @@
 	options: string[]
 	onChange: (value: string) => void
 })}
-	<select
+	<Select
 		aria-label={`dropdown ${ariaLabel}`}
-		class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
 		{value}
-		onchange={(e) => onChange((e.target as HTMLSelectElement).value)}
+		on:input={(event) => onChange((event.target as HTMLSelectElement).value)}
 	>
 		{#each options as option (option)}
 			<option value={option}>{option}</option>
 		{/each}
-	</select>
+	</Select>
 {/snippet}
 
 {#if object}
@@ -259,7 +263,6 @@
 					<strong class="font-semibold">parent frame</strong>
 					<div class="flex gap-3">
 						{@render ParentFrame({
-							label: 'name',
 							ariaLabel: 'parent frame name',
 							value: referenceFrame,
 							options: referenceFrameOptions,
@@ -494,16 +497,6 @@
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
-		<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-			{#if isFrameNode}
-				<Button
-					variant="danger"
-					class="mb-2 w-full"
-					onclick={() => detailConfigUpdater.deleteFrame()}>Delete Frame</Button
-				>
-			{/if}
-		</WeblabActive>
-
 		{#if focused.current}
 			<Button
 				class="w-full"
@@ -522,5 +515,15 @@
 				Enter object view
 			</Button>
 		{/if}
+
+		<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+			{#if isFrameNode}
+				<Button
+					variant="danger"
+					class="mt-2 w-full"
+					onclick={() => detailConfigUpdater.deleteFrame()}>Delete Frame</Button
+				>
+			{/if}
+		</WeblabActive>
 	</div>
 {/if}

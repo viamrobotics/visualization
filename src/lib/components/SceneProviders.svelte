@@ -17,6 +17,7 @@
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
+	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	interface Props {
 		children: Snippet<[{ focus: boolean }]>
 	}
@@ -42,6 +43,7 @@
 	provideObjects()
 	provideWorldStates()
 	provideArmClient(() => partID.current)
+	provideFramelessComponents()
 
 	const { focus } = provideSelection()
 </script>
