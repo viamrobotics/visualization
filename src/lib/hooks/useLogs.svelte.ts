@@ -1,4 +1,4 @@
-import { getContext, setContext } from 'svelte'
+import { getContext, setContext, untrack } from 'svelte'
 import { MathUtils } from 'three'
 
 const key = Symbol('logs-context')
@@ -8,6 +8,7 @@ type Level = 'info' | 'warn' | 'error'
 interface Log {
 	uuid: string
 	message: string
+	count: number
 	level: Level
 	timestamp: string
 }
@@ -30,16 +31,28 @@ export const provideLogs = () => {
 			return logs
 		},
 		add(message, level = 'info') {
-			logs.push({
-				message,
-				level,
-				uuid: MathUtils.generateUUID(),
-				timestamp: intl.format(Date.now()),
-			})
+			untrack(() => {
+				const timestamp = intl.format(Date.now())
+				const match = logs.find(
+					(log) => log.message === message && log.level === level && log.timestamp === timestamp
+				)
 
-			if (logs.length > 1000) {
-				logs.shift()
-			}
+				if (match) {
+					match.count += 1
+				} else {
+					logs.unshift({
+						message,
+						count: 1,
+						level,
+						uuid: MathUtils.generateUUID(),
+						timestamp: intl.format(Date.now()),
+					})
+				}
+
+				if (logs.length > 200) {
+					logs.pop()
+				}
+			})
 		},
 	})
 }

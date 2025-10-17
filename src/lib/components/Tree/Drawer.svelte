@@ -24,7 +24,7 @@
 			label="unfold more icon"
 			variant="ghost"
 			cx="size-6"
-			on:click={() => (expanded.current = !expanded.current)}
+			onclick={() => (expanded.current = !expanded.current)}
 		/>
 		{name}
 	</h3>

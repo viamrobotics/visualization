@@ -13,6 +13,7 @@ const key = Symbol('pointcloud-context')
 
 interface Context {
 	current: WorldObject<PointsGeometry>[]
+	errors: Error[]
 }
 
 export const providePointclouds = (partID: () => string) => {
@@ -80,10 +81,13 @@ export const providePointclouds = (partID: () => string) => {
 					.flatMap((result) => result.data)
 					.filter((data) => data !== null && data !== undefined)
 
+				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
+
 				updateUUIDs(data)
 
 				return {
 					data,
+					errors,
 				}
 			},
 		})
@@ -92,6 +96,9 @@ export const providePointclouds = (partID: () => string) => {
 	setContext<Context>(key, {
 		get current() {
 			return queries.current.data
+		},
+		get errors() {
+			return queries.current.errors
 		},
 	})
 }
