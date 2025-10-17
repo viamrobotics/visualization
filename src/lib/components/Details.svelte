@@ -430,7 +430,7 @@
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'r',
-									ariaLabel: 'sphere dimensions radius value input',
+									ariaLabel: 'sphere dimensions radius value',
 									value: radiusMm ? radiusMm.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),

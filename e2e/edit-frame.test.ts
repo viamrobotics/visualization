@@ -1,14 +1,22 @@
 import { expect, test } from '@playwright/test'
-import { createViamClient, JsonValue, Struct, ViamClient, ViamClientOptions } from '@viamrobotics/sdk'
+import {
+	createViamClient,
+	JsonValue,
+	Struct,
+	ViamClient,
+	ViamClientOptions,
+} from '@viamrobotics/sdk'
 
 const testConfig = {
 	host: 'edit-frame-testing-main.i6h2oo7033.viam.cloud',
 	name: 'edit-frame-testing-main',
 	partId: '9b304d77-b1d5-4c96-a64f-4088772b9961',
-	apiKeyId: 'b6c1c558-aac2-4f52-9a17-b5d6cf9df5f7',
-	apiKeyValue: 'g70dv014fq3fe4qtfs7f6l99xeufmu2l',
+	apiKeyId: '4624aa5d-b2b8-4eb2-a78e-d938eabfcb30',
+	apiKeyValue: 'f1ohpwifx1y6drnoxmaiblcpyoey8sj4',
 	signalingAddress: 'https://app.viam.com:443',
+	organizationId: 'd9135ec5-e339-4df8-97bb-243586a99daf',
 }
+const fragmentIdsToDelete: string[] = []
 
 async function connect(): Promise<ViamClient> {
 	const API_KEY_ID = testConfig.apiKeyId
@@ -129,7 +137,10 @@ test('basic edit frame', async ({ browser }) => {
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, {
+			fullPage: true,
+			threshold: 0.1,
+		})
 	} catch (error) {
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}-0-edited.png`)
@@ -139,7 +150,10 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
+			fullPage: true,
+			threshold: 0.1,
+		})
 	} catch (error) {
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}-1-saved.png`)
@@ -158,7 +172,10 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByTestId('details-header')).toBeVisible()
 	// give page time to laod up frame details
 	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, {
+			fullPage: true,
+			threshold: 0.1,
+		})
 	} catch (error) {
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}-2-reloaded.png`)
@@ -215,7 +232,6 @@ test('basic edit frame', async ({ browser }) => {
 	}
 })
 
-
 const createDeleteFrameConfig = {
 	components: [
 		{
@@ -236,7 +252,7 @@ const createDeleteFrameConfig = {
 			name: 'no-frame',
 			api: 'rdk:component:base',
 			model: 'rdk:builtin:fake',
-			attributes: {}
+			attributes: {},
 		},
 	],
 }
@@ -253,7 +269,7 @@ test('create and delete frame', async ({ browser }) => {
 	await context.addCookies([
 		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
 	])
-	let page = await context.newPage()
+	const page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
@@ -331,5 +347,184 @@ test('create and delete frame', async ({ browser }) => {
 	if (failedScreenshots.length > 0) {
 		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
 		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+	}
+})
+const fragmentConfig = {
+	components: [
+		{
+			name: 'frag-base-1',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'world',
+				translation: { x: 0, y: 0, z: 0 },
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: 0, y: 0, z: 1, th: 0 },
+				},
+			},
+		},
+		{
+			name: 'frag-base-2',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'world',
+				translation: { x: 10, y: 10, z: 0 },
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: 0, y: 0, z: 1, th: 0 },
+				},
+			},
+		},
+	],
+}
+
+const fragmentUsingConfig = (fragmentId: string) => {
+	return {
+		components: [
+			{
+				name: 'base-1',
+				api: 'rdk:component:base',
+				model: 'rdk:builtin:fake',
+				attributes: {},
+				frame: {
+					parent: 'world',
+					translation: { x: 0, y: 0, z: 0 },
+					orientation: {
+						type: 'ov_degrees',
+						value: { x: 0, y: 0, z: 1, th: 0 },
+					},
+				},
+			},
+		],
+		fragments: [
+			{
+				id: fragmentId,
+			},
+		],
+	}
+}
+
+test.only('fragement edit frame', async ({ browser }) => {
+	const testPrefix = 'FRAGMENT_EDIT_FRAME'
+	const failedScreenshots = [] as string[]
+	const resp = await viamClient.appClient.createFragment(
+		testConfig.organizationId,
+		'TEMP_FRAGMENT',
+		Struct.fromJson(fragmentConfig as unknown as JsonValue)
+	)
+	if (!resp?.id) {
+		throw new Error('Failed to create fragment')
+	}
+	fragmentIdsToDelete.push(resp.id)
+
+	await viamClient.appClient.updateRobotPart(
+		testConfig.partId,
+		testConfig.name,
+		Struct.fromJson(fragmentUsingConfig(resp.id) as unknown as JsonValue)
+	)
+
+	// WAIT FOR THE TREE DRAWER TO LOAD
+	const context = await browser.newContext()
+	await context.addCookies([
+		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+	])
+	const page = await context.newPage()
+	page.on('console', (message) => {
+		console.log(`[${message.type()}] ${message.text()}`)
+	})
+	await page.goto('/')
+	await expect(page.getByText('World')).toBeVisible()
+
+	// SETUP CONFIG
+	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
+	await page.getByTestId('icon-robot-outline').click()
+
+	await expect(page.getByText('Add Config')).toBeVisible()
+	await page.getByText('Add Config').click()
+
+	await expect(page.getByPlaceholder('Host')).toBeVisible()
+	await page.getByPlaceholder('Host').fill(testConfig.host)
+	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
+	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
+	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
+	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
+	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
+	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
+	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
+	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
+
+	await page.getByTestId('icon-close').click()
+
+	// WAIT FOR THE TREE DRAWER TO LOAD
+	await expect(page.getByText('frag-base-1')).toBeVisible()
+
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-0-setup.png`)
+	}
+
+	await expect(page.getByText('frag-base-1')).toBeVisible()
+	await page.getByText('frag-base-1').click()
+
+	await expect(page.getByTestId('details-header')).toBeVisible()
+
+	await expect(page.getByText('Sphere')).toBeVisible()
+	await page.getByText('Sphere').click()
+
+	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
+	await page.getByLabel('mutable local position x coordinate').fill('100')
+	await expect(page.getByLabel('mutable local position y coordinate')).toBeVisible()
+	await page.getByLabel('mutable local position y coordinate').fill('200')
+	await expect(page.getByLabel('mutable local position z coordinate')).toBeVisible()
+	await page.getByLabel('mutable local position z coordinate').fill('300')
+
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-1-TEST.png`, {
+			fullPage: true,
+			threshold: 0.1,
+		})
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-1-saved.png`)
+	}
+
+	await expect(page.getByLabel('mutable sphere dimensions radius value')).toBeVisible()
+	await page.getByLabel('mutable sphere dimensions radius value').fill('400')
+
+	// SAVE THE CHANGES
+	await expect(page.getByText('Live Updates Paused')).toBeVisible()
+	await page.getByText('Save').click()
+	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
+			fullPage: true,
+			threshold: 0.1,
+		})
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-1-saved.png`)
+	}
+
+	if (failedScreenshots.length > 0) {
+		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+	}
+})
+
+test.afterAll('cleanup', async () => {
+	await viamClient.appClient.updateRobotPart(
+		testConfig.partId,
+		testConfig.name,
+		Struct.fromJson({})
+	)
+	for (const fragmentId of fragmentIdsToDelete) {
+		await viamClient.appClient.deleteFragment(fragmentId)
 	}
 })

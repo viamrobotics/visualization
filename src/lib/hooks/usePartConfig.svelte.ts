@@ -232,6 +232,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 			fragmentMod.mods.push(frame)
 		}
 
+		console.log('newConfig fragment frame', newConfig)
 		_localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
 	}
 
@@ -427,7 +428,7 @@ export class StandalonePartConfig implements LocalPartConfig {
 				if (configJson.fragments) {
 					for (const fragmentId of configJson.fragments) {
 						fragmentRequests.push(
-							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId)
+							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId.id)
 						)
 					}
 
