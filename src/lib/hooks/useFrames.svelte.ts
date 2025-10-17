@@ -33,24 +33,20 @@ export const provideFrames = (partID: () => string) => {
 	const partConfig = usePartConfig()
 	const environment = useEnvironment()
 
-	observe.pre(
-		() => [revision],
-		() => {
-			untrack(() => query.current).refetch()
-			logs.add('Fetching frames...')
-		}
-	)
+	$effect.pre(() => {
+		revision
 
-	observe.pre(
-		() => [partConfig.isDirty],
-		() => {
-			if (partConfig.isDirty) {
-				environment.current.viewerMode = 'edit'
-			} else {
-				environment.current.viewerMode = 'monitor'
-			}
+		untrack(() => query.current).refetch()
+		logs.add('Fetching frames...')
+	})
+
+	$effect.pre(() => {
+		if (partConfig.isDirty) {
+			environment.current.viewerMode = 'edit'
+		} else {
+			environment.current.viewerMode = 'monitor'
 		}
-	)
+	})
 
 	let current = $derived.by(() => {
 		const objects: WorldObject[] = []

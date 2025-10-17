@@ -35,6 +35,20 @@
 </script>
 
 <Drawer name="Logs">
+	{#snippet titleAlert()}
+		{#if logs.warnings.length > 0}
+			<span class="mr-1 rounded bg-yellow-700 px-1 py-0.5 text-xs text-white">
+				{logs.warnings.length}
+			</span>
+		{/if}
+
+		{#if logs.errors.length > 0}
+			<span class="mr-1 rounded bg-red-700 px-1 py-0.5 text-xs text-white">
+				{logs.errors.length}
+			</span>
+		{/if}
+	{/snippet}
+
 	<div class="flex h-64 flex-col gap-2 overflow-auto p-3">
 		{#each logs.current as log (log.uuid)}
 			<div>
@@ -53,7 +67,7 @@
 				</div>
 				<div>
 					{#if log.count > 1}
-						<span class="mr-1 rounded bg-green-700 px-1 py-0.5 text-xs text-white!">
+						<span class="mr-1 rounded bg-green-700 px-1 py-0.5 text-xs text-white">
 							{log.count}
 						</span>
 					{/if}

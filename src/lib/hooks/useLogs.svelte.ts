@@ -15,11 +15,15 @@ interface Log {
 
 interface Context {
 	current: Log[]
+	errors: Log[]
+	warnings: Log[]
 	add(message: string, level?: Level): void
 }
 
 export const provideLogs = () => {
 	const logs = $state<Log[]>([])
+	const warnings = $state<Log[]>([])
+	const errors = $state<Log[]>([])
 
 	const intl = new Intl.DateTimeFormat('en-US', {
 		dateStyle: 'short',
@@ -29,6 +33,12 @@ export const provideLogs = () => {
 	setContext<Context>(key, {
 		get current() {
 			return logs
+		},
+		get errors() {
+			return errors
+		},
+		get warnings() {
+			return warnings
 		},
 		add(message, level = 'info') {
 			untrack(() => {
@@ -40,17 +50,31 @@ export const provideLogs = () => {
 				if (match) {
 					match.count += 1
 				} else {
-					logs.unshift({
+					const log: Log = {
+						timestamp,
 						message,
 						count: 1,
 						level,
 						uuid: MathUtils.generateUUID(),
-						timestamp: intl.format(Date.now()),
-					})
+					}
+
+					logs.unshift(log)
+
+					if (level === 'error') {
+						errors.unshift(log)
+					} else if (level === 'warn') {
+						warnings.unshift(log)
+					}
 				}
 
 				if (logs.length > 200) {
-					logs.pop()
+					const log = logs.pop()
+
+					if (log && level === 'error') {
+						errors.splice(errors.indexOf(log), 1)
+					} else if (log && level === 'warn') {
+						warnings.splice(errors.indexOf(log), 1)
+					}
 				}
 			})
 		},
