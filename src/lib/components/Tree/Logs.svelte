@@ -20,8 +20,7 @@
 	$effect(() => {
 		if (geometries.errors.length > 0) {
 			for (const error of geometries.errors) {
-				const message = `Geometries: ${error.message}`
-				logs.add(message, 'error')
+				logs.add(`Geometries: ${error.message}`, 'error')
 			}
 		}
 	})

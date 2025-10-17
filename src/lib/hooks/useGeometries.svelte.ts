@@ -50,7 +50,6 @@ export const provideGeometries = (partID: () => string) => {
 		})
 	)
 
-	$inspect(clients.map((client) => client.current?.name))
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.poses)
 		const results: CreateQueryOptions<
