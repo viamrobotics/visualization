@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
-import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
+import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
 import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
@@ -71,14 +71,15 @@ describe('Details component', () => {
 	})
 
 	it('renders object name', () => {
-		render(Details)
+		const context = createWeblabs()
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
 	it('renders local details under weblab active', () => {
-		const context = useWeblabs.createWeblabs()
+		const context = createWeblabs()
 		context.isActive = vi.fn(() => true)
-		render(Details, { context: [useWeblabs.WEBLABS_CONTEXT_KEY, context] })
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
 		const parentFrameNameSpan = screen.getByLabelText('immutable parent frame name')
@@ -121,7 +122,7 @@ describe('Details component', () => {
 	})
 
 	it('renders update fields for frame nodes and weblab active', () => {
-		const context = useWeblabs.createWeblabs()
+		const context = createWeblabs()
 		context.isActive = vi.fn(() => true)
 
 		mockedCurrent.push({
@@ -184,7 +185,7 @@ describe('Details component', () => {
 			createFrame: vi.fn(),
 		})
 
-		render(Details, { context: [useWeblabs.WEBLABS_CONTEXT_KEY, context] })
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 
 		expect(screen.getByLabelText('mutable local position x coordinate')).toBeInTheDocument()
 		expect(screen.getByLabelText('mutable local position y coordinate')).toBeInTheDocument()
