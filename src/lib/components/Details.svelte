@@ -523,7 +523,7 @@
 				<Button
 					variant="danger"
 					class="mt-2 w-full"
-					onclick={() => detailConfigUpdater.deleteFrame()}>Delete Frame</Button
+					onclick={() => detailConfigUpdater.deleteFrame()}>Delete frame</Button
 				>
 			{/if}
 		</WeblabActive>

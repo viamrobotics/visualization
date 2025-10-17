@@ -91,14 +91,14 @@ test('basic edit frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
-	await expect(page.getByText('World')).toBeVisible()
+	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
 	await page.getByTestId('icon-robot-outline').click()
 
-	await expect(page.getByText('Add Config')).toBeVisible()
-	await page.getByText('Add Config').click()
+	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
+	await page.getByText('Add config', { exact: true }).click()
 
 	await expect(page.getByPlaceholder('Host')).toBeVisible()
 	await page.getByPlaceholder('Host').fill(testConfig.host)
@@ -114,13 +114,13 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByTestId('icon-close').click()
 
 	// OPEN A WORLD OBJECT AND EDIT THE FRAME
-	await expect(page.getByText('base-1')).toBeVisible()
-	await page.getByText('base-1').click()
+	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
+	await page.getByText('base-1', { exact: true }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
 
-	await expect(page.getByText('Box')).toBeVisible()
-	await page.getByText('Box').click()
+	await expect(page.getByText('Box', { exact: true })).toBeVisible()
+	await page.getByText('Box', { exact: true }).click()
 
 	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
 	await page.getByLabel('mutable local position x coordinate').fill('100')
@@ -136,7 +136,7 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByLabel('mutable box dimensions z value')).toBeVisible()
 	await page.getByLabel('mutable box dimensions z value').fill('600')
 
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, {
 			fullPage: true,
@@ -148,8 +148,8 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// SAVE THE CHANGES
-	await page.getByText('Save').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await page.getByText('Save', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
 			fullPage: true,
@@ -168,8 +168,8 @@ test('basic edit frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
-	await expect(page.getByText('base-1')).toBeVisible()
-	await page.getByText('base-1').click()
+	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
+	await page.getByText('base-1', { exact: true }).click()
 	await expect(page.getByTestId('details-header')).toBeVisible()
 	// give page time to laod up frame details
 	try {
@@ -195,9 +195,9 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// DISCARD CHANGES
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.getByText('Discard').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
+	await page.getByText('Discard', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-4-discarded.png`, { fullPage: true })
 	} catch (error) {
@@ -206,8 +206,8 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// RESTORE THE ORIGINAL FRAME
-	await expect(page.getByText('None')).toBeVisible()
-	await page.getByText('None').click()
+	await expect(page.getByText('None', { exact: true })).toBeVisible()
+	await page.getByText('None', { exact: true }).click()
 
 	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
 	await page.getByLabel('mutable local position x coordinate').fill('0')
@@ -217,9 +217,9 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable local position z coordinate').fill('0')
 
 	// SAVE THE CHANGES
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.getByText('Save').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
+	await page.getByText('Save', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-5-restored.png`, { fullPage: true })
 	} catch (error) {
@@ -276,14 +276,14 @@ test('create and delete frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
-	await expect(page.getByText('World')).toBeVisible()
+	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
 	await page.getByTestId('icon-robot-outline').click()
 
-	await expect(page.getByText('Add Config')).toBeVisible()
-	await page.getByText('Add Config').click()
+	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
+	await page.getByText('Add config', { exact: true }).click()
 
 	await expect(page.getByPlaceholder('Host')).toBeVisible()
 	await page.getByPlaceholder('Host').fill(testConfig.host)
@@ -299,11 +299,11 @@ test('create and delete frame', async ({ browser }) => {
 	await page.getByTestId('icon-close').click()
 
 	// WAIT FOR THE TREE DRAWER TO LOAD
-	await expect(page.getByText('base-1')).toBeVisible()
+	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
 
 	// ADD A FRAME & SAVE
-	await expect(page.getByText('Add frames')).toBeVisible()
-	page.getByText('Add frames').click()
+	await expect(page.getByText('Add frames', { exact: true })).toBeVisible()
+	page.getByText('Add frames', { exact: true }).click()
 
 	await expect(page.getByTestId('icon-plus')).toBeVisible()
 	page.getByTestId('icon-plus').click()
@@ -315,18 +315,18 @@ test('create and delete frame', async ({ browser }) => {
 		failedScreenshots.push(`${testPrefix}-0-added.png`)
 	}
 
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.getByText('Save').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
+	await page.getByText('Save', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
 	// wait a couple seconds for the frame system to udpate
 	await page.waitForTimeout(5000)
 
 	// DELETE A FRAME
-	await expect(page.getByText('base-1')).toBeVisible()
-	await page.getByText('base-1').click()
-	await expect(page.getByText('Delete Frame')).toBeVisible()
-	page.getByText('Delete Frame').click()
+	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
+	await page.getByText('base-1', { exact: true }).click()
+	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
+	page.getByText('Delete frame', { exact: true }).click()
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-deleted.png`, { fullPage: true })
@@ -336,9 +336,9 @@ test('create and delete frame', async ({ browser }) => {
 	}
 
 	// DISCARD CHANGES
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.getByText('Discard').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
+	await page.getByText('Discard', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-2-discarded.png`, { fullPage: true })
 	} catch (error) {
@@ -440,14 +440,14 @@ test('fragement edit frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
-	await expect(page.getByText('World')).toBeVisible()
+	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
 	await page.getByTestId('icon-robot-outline').click()
 
-	await expect(page.getByText('Add Config')).toBeVisible()
-	await page.getByText('Add Config').click()
+	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
+	await page.getByText('Add config', { exact: true }).click()
 
 	await expect(page.getByPlaceholder('Host')).toBeVisible()
 	await page.getByPlaceholder('Host').fill(testConfig.host)
@@ -463,7 +463,7 @@ test('fragement edit frame', async ({ browser }) => {
 	await page.getByTestId('icon-close').click()
 
 	// WAIT FOR THE TREE DRAWER TO LOAD
-	await expect(page.getByText('frag-base-1')).toBeVisible()
+	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })
@@ -472,13 +472,13 @@ test('fragement edit frame', async ({ browser }) => {
 		failedScreenshots.push(`${testPrefix}-0-setup.png`)
 	}
 
-	await expect(page.getByText('frag-base-1')).toBeVisible()
-	await page.getByText('frag-base-1').click()
+	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
+	await page.getByText('frag-base-1', { exact: true }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
 
-	await expect(page.getByText('Sphere')).toBeVisible()
-	await page.getByText('Sphere').click()
+	await expect(page.getByText('Sphere', { exact: true })).toBeVisible()
+	await page.getByText('Sphere', { exact: true }).click()
 
 	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
 	await page.getByLabel('mutable local position x coordinate').fill('100')
@@ -491,9 +491,9 @@ test('fragement edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable sphere dimensions radius value').fill('400')
 
 	// SAVE THE CHANGES
-	await expect(page.getByText('Live Updates Paused')).toBeVisible()
-	await page.getByText('Save').click()
-	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
+	await page.getByText('Save', { exact: true }).click()
+	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
