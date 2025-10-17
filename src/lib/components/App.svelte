@@ -16,7 +16,7 @@
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
 	import FileDrop from './FileDrop.svelte'
-	import WeblabProvider from './weblab/WeblabProvider.svelte'
+	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
@@ -54,6 +54,7 @@
 
 	createPartIDContext(() => partID)
 
+	provideWeblabs()
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
@@ -83,41 +84,39 @@
 	<SvelteQueryDevtools initialIsOpen />
 {/if}
 
-<WeblabProvider>
-	<div
-		class="relative h-full w-full overflow-hidden"
-		bind:this={root}
-	>
-		<Canvas renderMode="always">
-			<World>
-				<SceneProviders>
-					{#snippet children({ focus })}
-						<Scene>
-							{@render appChildren?.()}
-						</Scene>
+<div
+	class="relative h-full w-full overflow-hidden"
+	bind:this={root}
+>
+	<Canvas renderMode="always">
+		<World>
+			<SceneProviders>
+				{#snippet children({ focus })}
+					<Scene>
+						{@render appChildren?.()}
+					</Scene>
 
-						<XR {@attach domPortal(root)} />
+					<XR {@attach domPortal(root)} />
 
-						<Dashboard {@attach domPortal(root)} />
-						<Details {@attach domPortal(root)} />
-						{#if environment.current.isStandalone}
-							<LiveUpdatesBanner {@attach domPortal(root)} />
-						{/if}
+					<Dashboard {@attach domPortal(root)} />
+					<Details {@attach domPortal(root)} />
+					{#if environment.current.isStandalone}
+						<LiveUpdatesBanner {@attach domPortal(root)} />
+					{/if}
 
-						{#if !focus}
-							<TreeContainer {@attach domPortal(root)} />
-						{/if}
+					{#if !focus}
+						<TreeContainer {@attach domPortal(root)} />
+					{/if}
 
-						{#if !focus && settings.current.enableArmPositionsWidget}
-							<ArmPositions {@attach domPortal(root)} />
-						{/if}
+					{#if !focus && settings.current.enableArmPositionsWidget}
+						<ArmPositions {@attach domPortal(root)} />
+					{/if}
 
-						<FileDrop {@attach domPortal(root)} />
-					{/snippet}
-				</SceneProviders>
-			</World>
-		</Canvas>
+					<FileDrop {@attach domPortal(root)} />
+				{/snippet}
+			</SceneProviders>
+		</World>
+	</Canvas>
 
-		<ToastContainer />
-	</div>
-</WeblabProvider>
+	<ToastContainer />
+</div>

@@ -1,37 +1,69 @@
 import { getContext, setContext } from 'svelte'
+import { SvelteSet } from 'svelte/reactivity'
 
-const key = Symbol('weblabs-context')
+export const WEBLABS_CONTEXT_KEY = Symbol('weblabs-context')
+
+const getCookie = (name: string): string | null => {
+	const value = `; ${document.cookie}`
+	const parts = value.split(`; ${name}=`)
+	if (parts.length === 2) {
+		return parts.pop()?.split(';').shift() || null
+	}
+	return null
+}
+
+const addCookie = (name: string, value: string, days?: number, path: string = '/'): void => {
+	let expires = ''
+
+	if (days !== undefined) {
+		const date = new Date()
+		date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000) // days in milliseconds
+		expires = '; expires=' + date.toUTCString()
+	}
+
+	document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}${expires}; path=${path}`
+}
+
+const getCookieExperiments = () => {
+	return getCookie('weblab_experiments')?.split(',') ?? []
+}
 
 interface Context {
-	weblab: Weblab
+	load: (experiments: string[]) => void
+	isActive(experiment: string): boolean
 }
 
-export const provideWeblabs = () => {
-	const weblab = $state(new Weblab())
+export const createWeblabs = (): Context => {
+	const activeExperiments = new SvelteSet<string>()
 
-	setContext<Context>(key, { weblab })
-}
+	const load = (experiments: string[]) => {
+		const cookieExperiments = getCookieExperiments()
 
-export const useWeblabs = () => {
-	return getContext<Context>(key)
-}
-
-export class Weblab {
-	private activeExperiments: Set<string>
-
-	constructor() {
-		this.activeExperiments = new Set<string>()
-	}
-
-	isActive(experiment: string) {
-		return this.activeExperiments.has(experiment)
-	}
-
-	load(experiments: string[]) {
 		for (const experiment of experiments) {
-			if (document.cookie.includes(experiment)) {
-				this.activeExperiments.add(experiment)
+			if (cookieExperiments.includes(experiment)) {
+				activeExperiments.add(experiment)
 			}
 		}
 	}
+
+	return {
+		load,
+		isActive: (experiment: string) => {
+			return activeExperiments.has(experiment)
+		},
+	}
+}
+
+export const provideWeblabs = () => {
+	const urlExperiment = new URLSearchParams(window.location.search).get('experiment')
+
+	if (urlExperiment) {
+		addCookie('weblab_experiments', [...getCookieExperiments(), urlExperiment].join(','))
+	}
+
+	setContext<Context>(WEBLABS_CONTEXT_KEY, createWeblabs())
+}
+
+export const useWeblabs = () => {
+	return getContext<Context>(WEBLABS_CONTEXT_KEY)
 }

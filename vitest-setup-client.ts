@@ -42,20 +42,6 @@ vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	},
 }))
 
-// Mock useWeblabs hook
-vi.mock('$lib/hooks/useWeblabs.svelte', () => ({
-	useWeblabs: vi.fn(() => ({
-		weblab: {
-			isActive: vi.fn(() => false),
-			load: vi.fn(),
-		},
-	})),
-	Weblab: vi.fn().mockImplementation(() => ({
-		isActive: vi.fn(() => false),
-		load: vi.fn(),
-	})),
-}))
-
 // required for svelte5 + jsdom as jsdom does not support matchMedia
 Object.defineProperty(window, 'matchMedia', {
 	writable: true,
