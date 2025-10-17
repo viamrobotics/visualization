@@ -61,9 +61,9 @@ export const provideWeblabs = () => {
 		addCookie('weblab_experiments', [...getCookieExperiments(), urlExperiment].join(','))
 	}
 
-	setContext<Context>(key, createWeblabs())
+	setContext<Context>(WEBLABS_CONTEXT_KEY, createWeblabs())
 }
 
 export const useWeblabs = () => {
-	return getContext<Context>(key)
+	return getContext<Context>(WEBLABS_CONTEXT_KEY)
 }
