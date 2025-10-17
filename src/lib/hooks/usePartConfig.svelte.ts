@@ -232,7 +232,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 			fragmentMod.mods.push(frame)
 		}
 
-		console.log('newConfig fragment frame', newConfig)
 		_localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
 	}
 
@@ -432,31 +431,27 @@ export class StandalonePartConfig implements LocalPartConfig {
 						)
 					}
 
-					try {
-						const fragementResponses = await Promise.all(fragmentRequests)
+					const fragementResponses = await Promise.all(fragmentRequests)
 
-						for (const fragmentResponse of fragementResponses) {
-							const fragmentId = fragmentResponse?.id
-							if (!fragmentId) {
-								continue
-							}
-							const components = fragmentResponse?.fragment?.fields['components'].kind
+					for (const fragmentResponse of fragementResponses) {
+						const fragmentId = fragmentResponse?.id
+						if (!fragmentId) {
+							continue
+						}
+						const components = fragmentResponse?.fragment?.fields['components'].kind
 
-							if (components?.case === 'listValue') {
-								for (const component of components.value.values) {
-									if (component.kind.case === 'structValue') {
-										const componentName = component.kind.value.fields['name'].kind
-										if (componentName.case === 'stringValue') {
-											componentNameToFragmentId[componentName.value] = fragmentId
-										}
+						if (components?.case === 'listValue') {
+							for (const component of components.value.values) {
+								if (component.kind.case === 'structValue') {
+									const componentName = component.kind.value.fields['name'].kind
+									if (componentName.case === 'stringValue') {
+										componentNameToFragmentId[componentName.value] = fragmentId
 									}
 								}
 							}
 						}
-						this._componentNameToFragmentId = componentNameToFragmentId
-					} catch {
-						/* Do nothing */
 					}
+					this._componentNameToFragmentId = componentNameToFragmentId
 				}
 			}
 
