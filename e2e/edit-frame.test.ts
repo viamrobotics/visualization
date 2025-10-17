@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createViamClient, Struct, ViamClient, ViamClientOptions } from '@viamrobotics/sdk'
+import { createViamClient, JsonValue, Struct, ViamClient, ViamClientOptions } from '@viamrobotics/sdk'
 
 const testConfig = {
 	host: 'edit-frame-testing-main.i6h2oo7033.viam.cloud',
@@ -66,6 +66,7 @@ const basicEditFrameConfig = {
 }
 
 test('basic edit frame', async ({ browser }) => {
+	const testPrefix = 'BASIC_EDIT_FRAME'
 	await viamClient.appClient.updateRobotPart(
 		testConfig.partId,
 		testConfig.name,
@@ -128,20 +129,20 @@ test('basic edit frame', async ({ browser }) => {
 
 	await expect(page.getByText('Live Updates Paused')).toBeVisible()
 	try {
-		await expect(page).toHaveScreenshot('0-edited.png', { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, { fullPage: true, threshold: 0.1 })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('0-edited.png')
+		failedScreenshots.push(`${testPrefix}-0-edited.png`)
 	}
 
 	// SAVE THE CHANGES
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	try {
-		await expect(page).toHaveScreenshot('1-saved.png', { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, { fullPage: true, threshold: 0.1 })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('1-saved.png')
+		failedScreenshots.push(`${testPrefix}-1-saved.png`)
 	}
 	// give network some time to sync the config
 	await page.waitForTimeout(5000)
@@ -157,10 +158,10 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByTestId('details-header')).toBeVisible()
 	// give page time to laod up frame details
 	try {
-		await expect(page).toHaveScreenshot('2-reloaded.png', { fullPage: true, threshold: 0.1 })
+		await expect(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, { fullPage: true, threshold: 0.1 })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('2-reloaded.png')
+		failedScreenshots.push(`${testPrefix}-2-reloaded.png`)
 	}
 
 	// REPARENT THE OBJECT
@@ -169,10 +170,10 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('dropdown parent frame name').selectOption('parent')
 
 	try {
-		await expect(page).toHaveScreenshot('3-parented.png', { fullPage: true })
+		await expect(page).toHaveScreenshot(`${testPrefix}-3-parented.png`, { fullPage: true })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('3-parented.png')
+		failedScreenshots.push(`${testPrefix}-3-parented.png`)
 	}
 
 	// DISCARD CHANGES
@@ -180,10 +181,10 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('Discard').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	try {
-		await expect(page).toHaveScreenshot('4-discarded.png', { fullPage: true })
+		await expect(page).toHaveScreenshot(`${testPrefix}-4-discarded.png`, { fullPage: true })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('4-discarded.png')
+		failedScreenshots.push(`${testPrefix}-4-discarded.png`)
 	}
 
 	// RESTORE THE ORIGINAL FRAME
@@ -202,10 +203,129 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByText('Save').click()
 	await expect(page.getByText('Live Updates Paused')).toBeHidden()
 	try {
-		await expect(page).toHaveScreenshot('5-restored.png', { fullPage: true })
+		await expect(page).toHaveScreenshot(`${testPrefix}-5-restored.png`, { fullPage: true })
 	} catch (error) {
 		console.warn(error)
-		failedScreenshots.push('5-restored.png')
+		failedScreenshots.push(`${testPrefix}-5-restored.png`)
+	}
+
+	if (failedScreenshots.length > 0) {
+		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+	}
+})
+
+
+const createDeleteFrameConfig = {
+	components: [
+		{
+			name: 'base-1',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'world',
+				translation: { x: 0, y: 0, z: 0 },
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: 0, y: 0, z: 1, th: 0 },
+				},
+			},
+		},
+		{
+			name: 'no-frame',
+			api: 'rdk:component:base',
+			model: 'rdk:builtin:fake',
+			attributes: {}
+		},
+	],
+}
+
+test('create and delete frame', async ({ browser }) => {
+	const testPrefix = 'CREATE_DELETE'
+	await viamClient.appClient.updateRobotPart(
+		testConfig.partId,
+		testConfig.name,
+		Struct.fromJson(createDeleteFrameConfig as unknown as JsonValue)
+	)
+	const failedScreenshots = [] as string[]
+	const context = await browser.newContext()
+	await context.addCookies([
+		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+	])
+	let page = await context.newPage()
+	page.on('console', (message) => {
+		console.log(`[${message.type()}] ${message.text()}`)
+	})
+	await page.goto('/')
+	await expect(page.getByText('World')).toBeVisible()
+
+	// SETUP CONFIG
+	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
+	await page.getByTestId('icon-robot-outline').click()
+
+	await expect(page.getByText('Add Config')).toBeVisible()
+	await page.getByText('Add Config').click()
+
+	await expect(page.getByPlaceholder('Host')).toBeVisible()
+	await page.getByPlaceholder('Host').fill(testConfig.host)
+	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
+	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
+	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
+	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
+	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
+	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
+	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
+	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
+
+	await page.getByTestId('icon-close').click()
+
+	// WAIT FOR THE TREE DRAWER TO LOAD
+	await expect(page.getByText('base-1')).toBeVisible()
+
+	// ADD A FRAME & SAVE
+	await expect(page.getByText('Add frames')).toBeVisible()
+	page.getByText('Add frames').click()
+
+	await expect(page.getByTestId('icon-plus')).toBeVisible()
+	page.getByTestId('icon-plus').click()
+
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-0-added.png`, { fullPage: true })
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-0-added.png`)
+	}
+
+	await expect(page.getByText('Live Updates Paused')).toBeVisible()
+	await page.getByText('Save').click()
+	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+
+	// wait a couple seconds for the frame system to udpate
+	await page.waitForTimeout(5000)
+
+	// DELETE A FRAME
+	await expect(page.getByText('base-1')).toBeVisible()
+	await page.getByText('base-1').click()
+	await expect(page.getByText('Delete Frame')).toBeVisible()
+	page.getByText('Delete Frame').click()
+
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-1-deleted.png`, { fullPage: true })
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-1-deleted.png`)
+	}
+
+	// DISCARD CHANGES
+	await expect(page.getByText('Live Updates Paused')).toBeVisible()
+	await page.getByText('Discard').click()
+	await expect(page.getByText('Live Updates Paused')).toBeHidden()
+	try {
+		await expect(page).toHaveScreenshot(`${testPrefix}-2-discarded.png`, { fullPage: true })
+	} catch (error) {
+		console.warn(error)
+		failedScreenshots.push(`${testPrefix}-2-discarded.png`)
 	}
 
 	if (failedScreenshots.length > 0) {
