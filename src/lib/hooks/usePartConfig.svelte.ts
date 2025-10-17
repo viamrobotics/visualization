@@ -426,8 +426,10 @@ export class StandalonePartConfig implements LocalPartConfig {
 
 				if (configJson.fragments) {
 					for (const fragmentId of configJson.fragments) {
+						//TODO: right now the json could be just a list of strings or an object with an id prop
+						const fragId = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
 						fragmentRequests.push(
-							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId.id)
+							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragId)
 						)
 					}
 

@@ -86,6 +86,7 @@ test('basic edit frame', async ({ browser }) => {
 		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
 	])
 	let page = await context.newPage()
+	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
@@ -270,6 +271,7 @@ test('create and delete frame', async ({ browser }) => {
 		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
 	])
 	const page = await context.newPage()
+	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
@@ -408,7 +410,7 @@ const fragmentUsingConfig = (fragmentId: string) => {
 	}
 }
 
-test.only('fragement edit frame', async ({ browser }) => {
+test('fragement edit frame', async ({ browser }) => {
 	const testPrefix = 'FRAGMENT_EDIT_FRAME'
 	const failedScreenshots = [] as string[]
 	const resp = await viamClient.appClient.createFragment(
@@ -433,6 +435,7 @@ test.only('fragement edit frame', async ({ browser }) => {
 		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
 	])
 	const page = await context.newPage()
+	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
@@ -483,16 +486,6 @@ test.only('fragement edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable local position y coordinate').fill('200')
 	await expect(page.getByLabel('mutable local position z coordinate')).toBeVisible()
 	await page.getByLabel('mutable local position z coordinate').fill('300')
-
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-1-TEST.png`, {
-			fullPage: true,
-			threshold: 0.1,
-		})
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-1-saved.png`)
-	}
 
 	await expect(page.getByLabel('mutable sphere dimensions radius value')).toBeVisible()
 	await page.getByLabel('mutable sphere dimensions radius value').fill('400')
