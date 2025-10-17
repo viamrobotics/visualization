@@ -6,7 +6,6 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
-import { observe } from '@threlte/core'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { usePartConfig, type Frame, type PartConfig } from './usePartConfig.svelte'
