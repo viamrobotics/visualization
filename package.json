@@ -113,6 +113,9 @@
 		]
 	},
 	"packageManager": "pnpm@10.14.0",
+	"engines": {
+		"node": ">=22.0.0"
+	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
