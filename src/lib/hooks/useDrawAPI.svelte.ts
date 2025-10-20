@@ -142,7 +142,6 @@ export const provideDrawAPI = () => {
 				frame.geometry ? geometry : undefined
 			)
 
-			console.log(worldObject)
 			frames.push(worldObject)
 		}
 	}
