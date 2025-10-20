@@ -1,5 +1,31 @@
 # motion-tools
 
+## 0.14.5
+
+### Patch Changes
+
+- fd16f3b: properly parse buffer stored ascii ply files
+
+## 0.14.4
+
+### Patch Changes
+
+- 3bb9b57: Add DrawFrame API
+
+## 0.14.3
+
+### Patch Changes
+
+- 709d3c5: get fragment ids if in string or object with id field
+- d44734e: Improve logs tab
+- 3880247: update details copied from detail pane to match shown
+
+## 0.14.2
+
+### Patch Changes
+
+- 98db073: fix bug with select on:input not firing
+
 ## 0.14.1
 
 ### Patch Changes

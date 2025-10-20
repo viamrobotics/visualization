@@ -9,13 +9,13 @@
 	}
 	let { experiment, children, renderIfActive = true }: Props = $props()
 
-	const { weblab } = useWeblabs()
+	const weblabs = useWeblabs()
 
 	$effect.pre(() => {
-		weblab.load([experiment])
+		weblabs.load([experiment])
 	})
 </script>
 
-{#if weblab.isActive(experiment) === renderIfActive}
+{#if weblabs.isActive(experiment) === renderIfActive}
 	{@render children()}
 {/if}

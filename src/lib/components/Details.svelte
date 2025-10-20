@@ -25,7 +25,8 @@
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { DetailConfigUpdater } from '$lib/Detail.svelte'
+	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 
 	const { ...rest } = $props()
 
@@ -36,6 +37,7 @@
 	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
+	const weblab = useWeblabs()
 
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
@@ -57,7 +59,7 @@
 
 	const draggable = useDraggable('details')
 
-	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
+	const detailConfigUpdater = new FrameConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
 		partConfig.deleteFrame,
@@ -99,6 +101,48 @@
 			stop()
 		}
 	})
+
+	const getCopyClipboardText = () => {
+		if (weblab.isActive('MOTION_TOOLS_EDIT_FRAME')) {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					localPosition: {
+						x: localPose?.x,
+						y: localPose?.y,
+						z: localPose?.z,
+					},
+					localOrientation: {
+						x: localPose?.oX,
+						y: localPose?.oY,
+						z: localPose?.oZ,
+						th: localPose?.theta,
+					},
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+					parentFrame: referenceFrame,
+				},
+				null,
+				2
+			)
+		} else {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+				},
+				null,
+				2
+			)
+		}
+	}
 </script>
 
 {#snippet ImmutableField({
@@ -199,7 +243,7 @@
 
 			<button
 				onclick={async () => {
-					navigator.clipboard.writeText(JSON.stringify($state.snapshot(object)))
+					navigator.clipboard.writeText(getCopyClipboardText())
 					copied = true
 					setTimeout(() => (copied = false), 1000)
 				}}
@@ -430,7 +474,7 @@
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'r',
-									ariaLabel: 'sphere dimensions radius value input',
+									ariaLabel: 'sphere dimensions radius value',
 									value: radiusMm ? radiusMm.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
@@ -523,7 +567,7 @@
 				<Button
 					variant="danger"
 					class="mt-2 w-full"
-					onclick={() => detailConfigUpdater.deleteFrame()}>Delete Frame</Button
+					onclick={() => detailConfigUpdater.deleteFrame()}>Delete frame</Button
 				>
 			{/if}
 		</WeblabActive>

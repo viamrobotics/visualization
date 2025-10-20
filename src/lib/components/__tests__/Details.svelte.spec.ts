@@ -3,15 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
-import * as useWeblabs from '$lib/hooks/useWeblabs.svelte'
-import { Weblab } from '$lib/hooks/useWeblabs.svelte'
+import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
 import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
 
 describe('Details component', () => {
-	const mockedWeblab = new Weblab()
 	const mockedCurrent: WorldObject[] = []
 
 	beforeEach(() => {
@@ -54,9 +52,6 @@ describe('Details component', () => {
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
 			current: undefined,
 		})
-		vi.mocked(useWeblabs.useWeblabs).mockReturnValue({
-			weblab: mockedWeblab,
-		})
 
 		vi.mocked(useFrames.useFrames).mockReturnValue({
 			current: mockedCurrent,
@@ -76,13 +71,15 @@ describe('Details component', () => {
 	})
 
 	it('renders object name', () => {
-		render(Details)
+		const context = createWeblabs()
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
 	it('renders local details under weblab active', () => {
-		mockedWeblab.isActive = vi.fn(() => true)
-		render(Details)
+		const context = createWeblabs()
+		context.isActive = vi.fn(() => true)
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
 		const parentFrameNameSpan = screen.getByLabelText('immutable parent frame name')
@@ -125,7 +122,9 @@ describe('Details component', () => {
 	})
 
 	it('renders update fields for frame nodes and weblab active', () => {
-		mockedWeblab.isActive = vi.fn(() => true)
+		const context = createWeblabs()
+		context.isActive = vi.fn(() => true)
+
 		mockedCurrent.push({
 			name: 'Test Object',
 			uuid: '1234-5678',
@@ -186,7 +185,7 @@ describe('Details component', () => {
 			createFrame: vi.fn(),
 		})
 
-		render(Details)
+		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
 
 		expect(screen.getByLabelText('mutable local position x coordinate')).toBeInTheDocument()
 		expect(screen.getByLabelText('mutable local position y coordinate')).toBeInTheDocument()

@@ -1,28 +1,18 @@
+import type { Frame } from './frame'
 import type { WorldObject } from './lib'
+import { createPose } from './transform'
 import type { Geometries } from './WorldObject.svelte'
 import type { Pose } from '@viamrobotics/sdk'
 
 type UpdateFrameCallback = {
-	(
-		componentName: string,
-		referenceFrame: string,
-		pose: Pose,
-		geometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
-	): void
+	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
 }
 
 type RemoveFrameCallback = {
 	(componentName: string): void
 }
 
-export class DetailConfigUpdater {
+export class FrameConfigUpdater {
 	private object: () => WorldObject<Geometries> | undefined
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
@@ -88,25 +78,13 @@ export class DetailConfigUpdater {
 		})
 	}
 
-	public updateGeometry = (geometry: {
-		type: 'none' | 'box' | 'sphere' | 'capsule'
-		r?: number
-		l?: number
-		x?: number
-		y?: number
-		z?: number
-	}) => {
+	public updateGeometry = (geometry: Partial<Frame['geometry']>) => {
 		const object = this.object()
 		if (!object) return
-		let geometryObject: {
-			type: 'box' | 'sphere' | 'capsule'
-			x?: number
-			y?: number
-			z?: number
-			r?: number
-			l?: number
-		}
-		if (geometry.type === 'box') {
+
+		let geometryObject: Frame['geometry']
+
+		if (geometry?.type === 'box') {
 			const currentGeometry = object.geometry?.geometryType.value as {
 				dimsMm: { x: number; y: number; z: number }
 			}
@@ -116,13 +94,13 @@ export class DetailConfigUpdater {
 				y: geometry.y ?? currentGeometry?.dimsMm?.y,
 				z: geometry.z ?? currentGeometry?.dimsMm?.z,
 			}
-		} else if (geometry.type === 'sphere') {
+		} else if (geometry?.type === 'sphere') {
 			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
 			geometryObject = {
 				type: 'sphere',
 				r: geometry.r ?? currentGeometry?.radiusMm,
 			}
-		} else if (geometry.type === 'capsule') {
+		} else if (geometry?.type === 'capsule') {
 			const currentGeometry = object.geometry?.geometryType.value as {
 				radiusMm: number
 				lengthMm: number
@@ -137,31 +115,15 @@ export class DetailConfigUpdater {
 		this.updateFrame(
 			object.name ?? '',
 			this.referenceFrame(),
-			{
-				x: object.localEditedPose.x,
-				y: object.localEditedPose.y,
-				z: object.localEditedPose.z,
-				oX: object.localEditedPose.oX,
-				oY: object.localEditedPose.oY,
-				oZ: object.localEditedPose.oZ,
-				theta: object.localEditedPose.theta,
-			},
-			{ ...geometryObject! }
+			createPose(object.localEditedPose),
+			geometryObject
 		)
 	}
 
 	public setFrameParent = (parentName: string) => {
 		const object = this.object()
 		if (!object) return
-		this.updateFrame(object.name ?? '', parentName, {
-			x: object.localEditedPose.x,
-			y: object.localEditedPose.y,
-			z: object.localEditedPose.z,
-			oX: object.localEditedPose.oX,
-			oY: object.localEditedPose.oY,
-			oZ: object.localEditedPose.oZ,
-			theta: object.localEditedPose.theta,
-		})
+		this.updateFrame(object.name ?? '', parentName, createPose(object.localEditedPose))
 	}
 
 	public deleteFrame = () => {
@@ -177,45 +139,21 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'none' }
 			)
 		} else if (type === 'box') {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
 		} else if (type === 'sphere') {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'sphere', r: 100 }
 			)
 		} else if (type === 'capsule') {

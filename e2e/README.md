@@ -19,8 +19,9 @@ Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`
 - Host address
 - Part ID
 - Part Name
-- API Key ID and Value
+- API Key ID and Value (with admin permission since this e2e creates and deletes a temp fragment)
 - Signaling Address
+- organizationId
 
 ### Step 2: Prepare Your Robot
 

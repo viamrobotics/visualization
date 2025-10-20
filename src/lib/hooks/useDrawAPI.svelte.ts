@@ -7,6 +7,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import type { Geometry } from '@viamrobotics/sdk'
 import { useArrows } from './useArrows.svelte'
+import type { Frame } from '$lib/frame'
+import { createGeometry } from '$lib/geometry'
+import { createPoseFromFrame } from '$lib/transform'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -14,6 +17,7 @@ interface Context {
 	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	points: WorldObject<PointsGeometry>[]
 
+	frames: WorldObject[]
 	lines: WorldObject[]
 	meshes: WorldObject[]
 	poses: WorldObject[]
@@ -41,6 +45,23 @@ const tryParse = (json: string) => {
 		console.warn('Failed to parse JSON:', error)
 		return
 	}
+}
+
+/**
+ * @TODO get golang scripts to return protobufs so that we
+ * can use our types. Right now we're just marshalling JSON,
+ * leading to upper case var names and no type contract with the golang lib.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lowercaseKeys = <T>(obj: T): any => {
+	if (Array.isArray(obj)) {
+		return obj.map(lowercaseKeys)
+	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
+		return Object.fromEntries(
+			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])
+		)
+	}
+	return obj
 }
 
 class Float32Reader {
@@ -73,6 +94,7 @@ export const provideDrawAPI = () => {
 
 	let ws: WebSocket
 
+	const frames = $state<WorldObject[]>([])
 	const points = $state<WorldObject<PointsGeometry>[]>([])
 	const lines = $state<WorldObject[]>([])
 	const meshes = $state<WorldObject[]>([])
@@ -89,6 +111,41 @@ export const provideDrawAPI = () => {
 	const loader = new GLTFLoader()
 
 	const batchedArrow = useArrows()
+
+	const drawFrames = async (data: Frame[]) => {
+		for (const frame of data) {
+			const name = frame.name || frame.id || ''
+
+			const pose = createPoseFromFrame(lowercaseKeys(frame))
+
+			const geometry = createGeometry()
+
+			if (frame.geometry?.type === 'box') {
+				geometry.label = `${name} geometry (box)`
+				geometry.geometryType.case = 'box'
+				geometry.geometryType.value = {
+					dimsMm: { x: frame.geometry.x, y: frame.geometry.y, z: frame.geometry.z },
+				}
+			} else if (frame.geometry?.type === 'sphere') {
+				geometry.label = `${name} geometry (sphere)`
+				geometry.geometryType.case = 'sphere'
+				geometry.geometryType.value = { radiusMm: frame.geometry.r }
+			} else if (frame.geometry?.type === 'capsule') {
+				geometry.label = `${name} geometry (capsule)`
+				geometry.geometryType.case = 'capsule'
+				geometry.geometryType.value = { lengthMm: frame.geometry.l, radiusMm: frame.geometry.r }
+			}
+
+			const worldObject = new WorldObject(
+				name,
+				pose,
+				frame.parent ?? 'world',
+				frame.geometry ? geometry : undefined
+			)
+
+			frames.push(worldObject)
+		}
+	}
 
 	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
@@ -368,6 +425,13 @@ export const provideDrawAPI = () => {
 		let index = -1
 
 		for (const name of names) {
+			index = frames.findIndex((frame) => frame.name === name)
+
+			if (index !== -1) {
+				frames.slice(index, 1)
+				continue
+			}
+
 			index = points.findIndex((p) => p.name === name)
 
 			if (index !== -1) {
@@ -418,6 +482,7 @@ export const provideDrawAPI = () => {
 	}
 
 	const removeAll = () => {
+		frames.splice(0, frames.length)
 		points.splice(0, points.length)
 		lines.splice(0, lines.length)
 		meshes.splice(0, meshes.length)
@@ -501,6 +566,10 @@ export const provideDrawAPI = () => {
 			return drawGeometry(data.geometry, data.color)
 		}
 
+		if ('frames' in data) {
+			return drawFrames(data.frames)
+		}
+
 		if ('Knots' in data) {
 			return drawNurbs(data, data.Color)
 		}
@@ -528,6 +597,9 @@ export const provideDrawAPI = () => {
 	connect()
 
 	setContext<Context>(key, {
+		get frames() {
+			return frames
+		},
 		get points() {
 			return points
 		},
