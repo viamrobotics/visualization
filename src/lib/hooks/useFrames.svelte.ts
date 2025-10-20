@@ -12,6 +12,7 @@ import { usePartConfig, type Frame, type PartConfig } from './usePartConfig.svel
 import { Color } from 'three'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPoseFromFrame } from '$lib/transform'
+import { observe } from '@threlte/core'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -32,12 +33,13 @@ export const provideFrames = (partID: () => string) => {
 	const partConfig = usePartConfig()
 	const environment = useEnvironment()
 
-	$effect.pre(() => {
-		revision
-
-		untrack(() => query.current).refetch()
-		logs.add('Fetching frames...')
-	})
+	observe.pre(
+		() => [revision],
+		() => {
+			untrack(() => query.current).refetch()
+			logs.add('Fetching frames...')
+		}
+	)
 
 	$effect.pre(() => {
 		if (partConfig.isDirty) {
