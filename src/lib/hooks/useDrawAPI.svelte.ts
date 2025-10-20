@@ -47,6 +47,11 @@ const tryParse = (json: string) => {
 	}
 }
 
+/**
+ * @TODO get golang scripts to return protobufs so that we
+ * can use our types. Right now we're just marshalling JSON,
+ * leading to upper case var names and no type contract with the golang lib.
+ */
 const lowercaseKeys = <T>(obj: T): any => {
 	if (Array.isArray(obj)) {
 		return obj.map(lowercaseKeys)
