@@ -52,6 +52,7 @@ const tryParse = (json: string) => {
  * can use our types. Right now we're just marshalling JSON,
  * leading to upper case var names and no type contract with the golang lib.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lowercaseKeys = <T>(obj: T): any => {
 	if (Array.isArray(obj)) {
 		return obj.map(lowercaseKeys)
