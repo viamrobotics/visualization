@@ -1,7 +1,7 @@
 import { getContext, setContext } from 'svelte'
 import { get, set } from 'idb-keyval'
 import { Debounced } from 'runed'
-import { createGeometry } from '$lib/transform'
+import { createGeometry } from '$lib/geometry'
 import { WorldObject } from '$lib/WorldObject.svelte'
 
 const key = Symbol('static-geometries-context')

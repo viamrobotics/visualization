@@ -184,7 +184,7 @@ export class OrientationVector {
 	/**
 	 * Copies value of ov to this orientation vector.
 	 */
-	copy(ov: OrientationVector): this {
+	copy(ov: OrientationVectorLike): this {
 		this.#vec.set(ov.x, ov.y, ov.z)
 
 		if (this.autoNormalize) {

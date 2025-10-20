@@ -8,7 +8,8 @@ import {
 import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
-import { usePartConfig, type Frame, type PartConfig } from './usePartConfig.svelte'
+import type { Frame } from '$lib/frame'
+import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { Color } from 'three'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPoseFromFrame } from '$lib/transform'
@@ -91,15 +92,7 @@ export const provideFrames = (partID: () => string) => {
 			return
 		}
 		worldObject.referenceFrame = component.frame.parent
-		worldObject.localEditedPose = {
-			x: component.frame.translation.x,
-			y: component.frame.translation.y,
-			z: component.frame.translation.z,
-			oX: component.frame.orientation.value.x,
-			oY: component.frame.orientation.value.y,
-			oZ: component.frame.orientation.value.z,
-			theta: component.frame.orientation.value.th,
-		}
+		worldObject.localEditedPose = createPoseFromFrame(component.frame)
 
 		if (component.frame.geometry) {
 			switch (component.frame.geometry.type) {

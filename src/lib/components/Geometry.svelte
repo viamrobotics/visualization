@@ -71,12 +71,12 @@
 	is={group}
 	{...rest}
 >
-	<AxesHelper
-		width={3}
-		length={0.1}
-	/>
-
 	{#if geometry?.geometryType}
+		<AxesHelper
+			width={3}
+			length={0.1}
+		/>
+
 		<T
 			is={mesh}
 			{name}
@@ -111,7 +111,7 @@
 					args={[radiusMm * 0.001, lengthMm * 0.001]}
 					{oncreate}
 				/>
-			{:else}{/if}
+			{/if}
 
 			{#if geometry.geometryType.case === 'line'}
 				<MeshLineMaterial
@@ -137,6 +137,13 @@
 				{/if}
 			{/if}
 		</T>
+	{:else}
+		<AxesHelper
+			{name}
+			{uuid}
+			width={3}
+			length={0.1}
+		/>
 	{/if}
 
 	{@render children?.({ ref: group })}
