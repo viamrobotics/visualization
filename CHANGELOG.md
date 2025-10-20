@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.5
+
+### Patch Changes
+
+- fd16f3b: properly parse buffer stored ascii ply files
+
 ## 0.14.4
 
 ### Patch Changes
