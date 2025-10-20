@@ -9,7 +9,7 @@
 </script>
 
 <Drawer name="Add frames">
-	<div class="flex h-64 w-60 flex-col gap-2 overflow-auto p-3">
+	<div class="flex max-h-64 flex-col gap-2 overflow-auto p-3">
 		{#if framelessComponents.current.length > 0}
 			<ul class="space-y-1">
 				{#each framelessComponents.current as component (component)}

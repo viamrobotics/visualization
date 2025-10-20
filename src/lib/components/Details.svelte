@@ -37,7 +37,7 @@
 	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
-	const { weblab } = useWeblabs()
+	const weblab = useWeblabs()
 
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
