@@ -6,7 +6,7 @@
 
 - 709d3c5: get fragment ids if in string or object with id field
 - d44734e: Improve logs tab
-- 3880247: update details coppied from detail pane to match shown
+- 3880247: update details copied from detail pane to match shown
 
 ## 0.14.2
 
