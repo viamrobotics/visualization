@@ -1,8 +1,10 @@
 import type { Geometry, Pose } from '@viamrobotics/sdk'
 import { OrientationVector } from './three/OrientationVector'
-import { type Object3D, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
-import type { Frame } from './hooks/usePartConfig.svelte'
+import { type Object3D, Euler, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import type { Frame } from './frame'
 
+const quaternion = new Quaternion()
+const euler = new Euler()
 const ov = new OrientationVector()
 
 export const createPose = (pose?: Pose): Pose => {
@@ -17,11 +19,34 @@ export const createPose = (pose?: Pose): Pose => {
 	}
 }
 
-export const createGeometry = (geometryType?: Geometry['geometryType'], label = ''): Geometry => {
+export const createPoseFromFrame = (frame: Frame): Pose => {
+	if (frame.orientation.type === 'quaternion') {
+		quaternion.copy(frame.orientation.value)
+		ov.setFromQuaternion(quaternion)
+	} else if (frame.orientation.type === 'euler_angles') {
+		euler.set(
+			frame.orientation.value.roll,
+			frame.orientation.value.pitch,
+			frame.orientation.value.yaw,
+			'ZYX'
+		)
+		quaternion.setFromEuler(euler)
+		ov.setFromQuaternion(quaternion)
+	} else if (frame.orientation.type === 'ov_radians') {
+		ov.copy(frame.orientation.value)
+	} else if (frame.orientation.type === 'ov_degrees') {
+		const th = MathUtils.degToRad(frame.orientation.value.th)
+		ov.set(frame.orientation.value.x, frame.orientation.value.y, frame.orientation.value.z, th)
+	}
+
 	return {
-		center: createPose(),
-		label,
-		geometryType: geometryType ?? { case: undefined, value: undefined },
+		x: frame.translation.x ?? 0,
+		y: frame.translation.y ?? 0,
+		z: frame.translation.z ?? 0,
+		oX: ov.x,
+		oY: ov.y,
+		oZ: ov.z,
+		theta: MathUtils.radToDeg(ov.th),
 	}
 }
 
@@ -61,7 +86,7 @@ export const poseToObject3d = (pose: Partial<Pose>, object3d: Object3D) => {
 }
 
 export const poseToDirection = (pose: Pose): Vector3 => {
-	const ov = new OrientationVector(pose.oX, pose.oY, pose.oZ, pose.theta)
+	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta))
 	return new Vector3(ov.x, ov.y, ov.z)
 }
 
@@ -76,43 +101,6 @@ export const scaleToDimensions = (scale: Vector3, geometry: Geometry['geometryTy
 		geometry.value.lengthMm *= scale.y
 	} else if (geometry.case === 'sphere') {
 		geometry.value.radiusMm *= scale.x
-	}
-}
-
-export const createPoseFromFrame = (frame: Frame): Pose => {
-	return {
-		x: frame.translation.x,
-		y: frame.translation.y,
-		z: frame.translation.z,
-		oX: frame.orientation.value.x,
-		oY: frame.orientation.value.y,
-		oZ: frame.orientation.value.z,
-		theta: frame.orientation.value.th,
-	}
-}
-
-export const createNewFrame = (): Frame => {
-	return {
-		parent: 'world',
-		translation: {
-			x: 0,
-			y: 0,
-			z: 0,
-		},
-		orientation: {
-			value: {
-				x: 0,
-				y: 0,
-				z: 1,
-				th: 0,
-			},
-		},
-		geometry: {
-			type: 'box',
-			x: 100,
-			y: 100,
-			z: 100,
-		},
 	}
 }
 

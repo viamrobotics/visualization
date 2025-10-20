@@ -25,7 +25,7 @@
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { DetailConfigUpdater } from '$lib/Detail.svelte'
+	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 
 	const { ...rest } = $props()
@@ -59,7 +59,7 @@
 
 	const draggable = useDraggable('details')
 
-	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
+	const detailConfigUpdater = new FrameConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
 		partConfig.deleteFrame,

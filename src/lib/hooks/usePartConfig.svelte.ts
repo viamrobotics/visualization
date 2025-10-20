@@ -1,35 +1,10 @@
-import { createNewFrame } from '$lib/transform'
+import { type Frame, createFrame } from '$lib/frame'
+import { createPoseFromFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue, ViamClient } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('part-config-context')
-
-// TODO: replace with an actual frame type exported from the sdk when created
-export interface Frame {
-	parent: string
-	translation: {
-		x: number
-		y: number
-		z: number
-	}
-	orientation: {
-		value: {
-			x: number
-			y: number
-			z: number
-			th: number
-		}
-	}
-	geometry?: {
-		type: 'none' | 'box' | 'sphere' | 'capsule'
-		x?: number
-		y?: number
-		z?: number
-		r?: number
-		l?: number
-	}
-}
 
 export interface PartConfig {
 	components: { name: string; frame?: Frame }[]
@@ -50,14 +25,7 @@ interface PartConfigContext {
 		componentName: string,
 		referenceFrame: string,
 		pose: Pose,
-		geometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
+		geometry?: Frame['geometry']
 	) => void
 	saveLocalPartConfig: () => void
 	resetLocalPartConfig: () => void
@@ -79,15 +47,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		throw new Error('No part config provided')
 	}
 
-	const createFrame = (componentName: string) => {
-		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-		if (fragmentId !== undefined) {
-			createFragmentFrame(fragmentId, componentName)
-		} else {
-			createPartFrame(componentName)
-		}
-	}
-
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		if (newConfig.fragment_mods === undefined) {
@@ -105,7 +64,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		const modSetPath = `components.${componentName}.frame`
 		const frame = {
 			['$set']: {
-				[modSetPath]: createNewFrame(),
+				[modSetPath]: createFrame(),
 			},
 		}
 
@@ -118,7 +77,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
 		if (component) {
-			component.frame = createNewFrame()
+			component.frame = createFrame()
 		}
 		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
 		_localPartConfig.setLocalPartConfig(configStruct)
@@ -127,23 +86,8 @@ export const providePartConfig = (params: PartConfigParams) => {
 	const updateFrame = (
 		componentName: string,
 		referenceFrame: string,
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
+		framePosition: Pose,
+		frameGeometry?: Frame['geometry']
 	) => {
 		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
 		if (fragmentId !== undefined) {
@@ -157,23 +101,8 @@ export const providePartConfig = (params: PartConfigParams) => {
 		fragmentId: string,
 		componentName: string,
 		referenceFrame: string,
-		framePosition: {
-			x: number
-			y: number
-			z: number
-			oX: number
-			oY: number
-			oZ: number
-			theta: number
-		},
-		frameGeometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
+		framePosition: Pose,
+		frameGeometry?: Frame['geometry']
 	) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		if (newConfig.fragment_mods === undefined) {
@@ -239,34 +168,31 @@ export const providePartConfig = (params: PartConfigParams) => {
 		componentName: string,
 		referenceFrame: string,
 		pose: Pose,
-		geometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
+		geometry?: Frame['geometry']
 	) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
+
 		if (!component) {
 			return
 		}
-		if (component && component.frame) {
+
+		if (component.frame) {
+			const currentPose = createPoseFromFrame(component.frame)
+
 			component.frame.parent = referenceFrame
 			component.frame.translation = {
-				x: pose.x === undefined ? component.frame.translation.x : pose.x,
-				y: pose.y === undefined ? component.frame.translation.y : pose.y,
-				z: pose.z === undefined ? component.frame.translation.z : pose.z,
+				x: pose.x ?? currentPose.x,
+				y: pose.y ?? currentPose.y,
+				z: pose.z ?? currentPose.z,
 			}
 			component.frame.orientation.value = {
-				x: pose.oX === undefined ? component.frame.orientation.value.x : pose.oX,
-				y: pose.oY === undefined ? component.frame.orientation.value.y : pose.oY,
-				z: pose.oZ === undefined ? component.frame.orientation.value.z : pose.oZ,
-				th: pose.theta === undefined ? component.frame.orientation.value.th : pose.theta,
+				x: pose.oX ?? currentPose.oX,
+				y: pose.oY ?? currentPose.oY,
+				z: pose.oZ ?? currentPose.oZ,
+				th: pose.theta ?? currentPose.theta,
 			}
 			if (geometry) {
 				if (geometry.type === 'none') {
@@ -339,7 +265,14 @@ export const providePartConfig = (params: PartConfigParams) => {
 	setContext<PartConfigContext>(key, {
 		updateFrame,
 		deleteFrame,
-		createFrame,
+		createFrame: (componentName: string) => {
+			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
+			if (fragmentId !== undefined) {
+				createFragmentFrame(fragmentId, componentName)
+			} else {
+				createPartFrame(componentName)
+			}
+		},
 		saveLocalPartConfig,
 		resetLocalPartConfig,
 		get localPartConfig() {
