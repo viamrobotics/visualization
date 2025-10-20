@@ -1,5 +1,13 @@
 # motion-tools
 
+## 0.14.3
+
+### Patch Changes
+
+- 709d3c5: get fragment ids if in string or object with id field
+- d44734e: Improve logs tab
+- 3880247: update details coppied from detail pane to match shown
+
 ## 0.14.2
 
 ### Patch Changes
