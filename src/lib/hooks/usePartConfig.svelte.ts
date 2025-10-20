@@ -83,20 +83,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		_localPartConfig.setLocalPartConfig(configStruct)
 	}
 
-	const updateFrame = (
-		componentName: string,
-		referenceFrame: string,
-		framePosition: Pose,
-		frameGeometry?: Frame['geometry']
-	) => {
-		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-		if (fragmentId !== undefined) {
-			updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
-		} else {
-			updatePartFrame(componentName, referenceFrame, framePosition, frameGeometry)
-		}
-	}
-
 	const updateFragmentFrame = (
 		fragmentId: string,
 		componentName: string,
@@ -207,15 +193,6 @@ export const providePartConfig = (params: PartConfigParams) => {
 		_localPartConfig.setLocalPartConfig(configStruct)
 	}
 
-	const deleteFrame = (componentName: string) => {
-		const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-		if (fragmentId !== undefined) {
-			deleteFragmentFrame(fragmentId, componentName)
-		} else {
-			deletePartFrame(componentName)
-		}
-	}
-
 	const deletePartFrame = (componentName: string) => {
 		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
 		const component = newConfig?.components?.find(
@@ -254,17 +231,28 @@ export const providePartConfig = (params: PartConfigParams) => {
 		_localPartConfig.setLocalPartConfig(configStruct)
 	}
 
-	const saveLocalPartConfig = () => {
-		_localPartConfig.saveLocalPartConfig?.()
-	}
-
-	const resetLocalPartConfig = () => {
-		_localPartConfig.resetLocalPartConfig?.()
-	}
-
 	setContext<PartConfigContext>(key, {
-		updateFrame,
-		deleteFrame,
+		updateFrame: (
+			componentName: string,
+			referenceFrame: string,
+			framePosition: Pose,
+			frameGeometry?: Frame['geometry']
+		) => {
+			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
+			if (fragmentId !== undefined) {
+				updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
+			} else {
+				updatePartFrame(componentName, referenceFrame, framePosition, frameGeometry)
+			}
+		},
+		deleteFrame: (componentName: string) => {
+			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
+			if (fragmentId !== undefined) {
+				deleteFragmentFrame(fragmentId, componentName)
+			} else {
+				deletePartFrame(componentName)
+			}
+		},
 		createFrame: (componentName: string) => {
 			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
 			if (fragmentId !== undefined) {
@@ -273,8 +261,12 @@ export const providePartConfig = (params: PartConfigParams) => {
 				createPartFrame(componentName)
 			}
 		},
-		saveLocalPartConfig,
-		resetLocalPartConfig,
+		saveLocalPartConfig: () => {
+			_localPartConfig.saveLocalPartConfig?.()
+		},
+		resetLocalPartConfig: () => {
+			_localPartConfig.resetLocalPartConfig?.()
+		},
 		get localPartConfig() {
 			return _localPartConfig.getLocalPartConfig()
 		},
