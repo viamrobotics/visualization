@@ -15,7 +15,7 @@
 			class="flex flex-col items-start rounded border-l-4 border-yellow-600 bg-yellow-50 px-4 py-2"
 		>
 			<p>
-				<strong>Live Updates Paused</strong>
+				<strong>Live updates paused</strong>
 			</p>
 
 			<p class="text-sm">

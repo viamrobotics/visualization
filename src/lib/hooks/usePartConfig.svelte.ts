@@ -426,36 +426,34 @@ export class StandalonePartConfig implements LocalPartConfig {
 
 				if (configJson.fragments) {
 					for (const fragmentId of configJson.fragments) {
+						//TODO: right now the json could be just a list of strings or an object with an id prop
+						const fragId = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
 						fragmentRequests.push(
-							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragmentId)
+							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragId)
 						)
 					}
 
-					try {
-						const fragementResponses = await Promise.all(fragmentRequests)
+					const fragementResponses = await Promise.all(fragmentRequests)
 
-						for (const fragmentResponse of fragementResponses) {
-							const fragmentId = fragmentResponse?.id
-							if (!fragmentId) {
-								continue
-							}
-							const components = fragmentResponse?.fragment?.fields['components'].kind
+					for (const fragmentResponse of fragementResponses) {
+						const fragmentId = fragmentResponse?.id
+						if (!fragmentId) {
+							continue
+						}
+						const components = fragmentResponse?.fragment?.fields['components'].kind
 
-							if (components?.case === 'listValue') {
-								for (const component of components.value.values) {
-									if (component.kind.case === 'structValue') {
-										const componentName = component.kind.value.fields['name'].kind
-										if (componentName.case === 'stringValue') {
-											componentNameToFragmentId[componentName.value] = fragmentId
-										}
+						if (components?.case === 'listValue') {
+							for (const component of components.value.values) {
+								if (component.kind.case === 'structValue') {
+									const componentName = component.kind.value.fields['name'].kind
+									if (componentName.case === 'stringValue') {
+										componentNameToFragmentId[componentName.value] = fragmentId
 									}
 								}
 							}
 						}
-						this._componentNameToFragmentId = componentNameToFragmentId
-					} catch {
-						/* Do nothing */
 					}
+					this._componentNameToFragmentId = componentNameToFragmentId
 				}
 			}
 
