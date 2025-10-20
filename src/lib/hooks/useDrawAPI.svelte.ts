@@ -47,6 +47,17 @@ const tryParse = (json: string) => {
 	}
 }
 
+const lowercaseKeys = <T>(obj: T): any => {
+	if (Array.isArray(obj)) {
+		return obj.map(lowercaseKeys)
+	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
+		return Object.fromEntries(
+			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])
+		)
+	}
+	return obj
+}
+
 class Float32Reader {
 	littleEndian = true
 	offset = 0
@@ -99,11 +110,8 @@ export const provideDrawAPI = () => {
 		for (const frame of data) {
 			const name = frame.name || frame.id || ''
 
-			frame.translation.x /= 1000
-			frame.translation.y /= 1000
-			frame.translation.z /= 1000
+			const pose = createPoseFromFrame(lowercaseKeys(frame))
 
-			const pose = createPoseFromFrame(frame)
 			const geometry = createGeometry()
 
 			if (frame.geometry?.type === 'box') {

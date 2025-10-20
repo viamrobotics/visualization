@@ -57,7 +57,9 @@
 	})
 
 	$effect.pre(() => {
+		console.log('pose', pose)
 		poseToObject3d(pose, group)
+		console.log('xyz', group.position)
 	})
 
 	let geo = $state.raw<BufferGeometry>()

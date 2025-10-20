@@ -24,6 +24,7 @@ export const provideObjects = () => {
 		...geometries.current,
 		...points.current,
 		...statics.current,
+		...drawAPI.frames,
 		...drawAPI.meshes,
 		...drawAPI.models,
 		...drawAPI.nurbs,
