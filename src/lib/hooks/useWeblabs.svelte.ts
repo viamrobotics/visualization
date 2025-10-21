@@ -25,7 +25,11 @@ const addCookie = (name: string, value: string, days?: number, path: string = '/
 }
 
 const getCookieExperiments = () => {
-	return getCookie('weblab_experiments')?.split(',') ?? []
+	const cookie = getCookie('weblab_experiments')
+	if (!cookie) {
+		return []
+	}
+	return decodeURIComponent(cookie).split(',')
 }
 
 interface Context {
@@ -58,7 +62,8 @@ export const provideWeblabs = () => {
 	const urlExperiment = new URLSearchParams(window.location.search).get('experiment')
 
 	if (urlExperiment) {
-		addCookie('weblab_experiments', [...getCookieExperiments(), urlExperiment].join(','))
+		const experimentSet = new Set([...getCookieExperiments(), urlExperiment])
+		addCookie('weblab_experiments', Array.from(experimentSet).join(','))
 	}
 
 	setContext<Context>(WEBLABS_CONTEXT_KEY, createWeblabs())
