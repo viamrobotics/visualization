@@ -9,6 +9,7 @@
 	import AxesHelper from './AxesHelper.svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
+	import { useGltf } from '@threlte/extras'
 
 	const plyLoader = new PLYLoader()
 
@@ -33,8 +34,23 @@
 		...rest
 	}: Props = $props()
 
+	const upperArmGltf = useGltf('/models/upper_arm_link.glb')
+	const baseLinkGltf = useGltf('/models/base_link.glb')
+	const forearmLinkGltf = useGltf('/models/forearm_link.glb')
+	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb')
+	const eeLinkGltf = useGltf('/models/ee_link.glb')
+
 	const type = $derived(geometry?.geometryType?.case)
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+	const labelToGlbPath = $derived(
+		new Map([
+			['ur5e:upper_arm_link', $upperArmGltf],
+			['ur5e:base_link', $baseLinkGltf],
+			['ur5e:forearm_link', $forearmLinkGltf],
+			['ur5e:wrist_1_link', $wrist1LinkGltf],
+			['ur5e:ee_link', $eeLinkGltf],
+		])
+	)
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -103,7 +119,9 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if geometry.geometryType.case === 'mesh'}
+			{#if labelToGlbPath.get(name) && labelToGlbPath.get(name)?.scene}
+				<T is={labelToGlbPath.get(name)?.scene} />
+			{:else if geometry.geometryType.case === 'mesh'}
 				{@const mesh = geometry.geometryType.value.mesh}
 				{@const meshGeometry = parsePlyInput(mesh)}
 				<T
