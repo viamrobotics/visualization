@@ -10,7 +10,9 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 	import { useGltf, useDraco } from '@threlte/extras'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
+	const settings = useSettings()
 	const plyLoader = new PLYLoader()
 	const dracoLoader = useDraco()
 
@@ -120,7 +122,7 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if labelToGlbPath.get(name) && labelToGlbPath.get(name)?.scene}
+			{#if settings.current.renderArmModels && labelToGlbPath.get(name) && labelToGlbPath.get(name)?.scene}
 				<T
 					is={labelToGlbPath.get(name)?.scene}
 					oncreate={() => (geo = undefined)}

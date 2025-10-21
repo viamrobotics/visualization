@@ -38,6 +38,7 @@ interface Settings {
 	enableArmPositionsWidget: boolean
 
 	renderStats: boolean
+	renderArmModels: boolean
 }
 
 interface Context {
@@ -72,6 +73,7 @@ const defaults = (): Settings => ({
 	enableArmPositionsWidget: false,
 
 	renderStats: false,
+	renderArmModels: true,
 })
 
 export const provideSettings = () => {
