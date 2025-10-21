@@ -9,9 +9,10 @@
 	import AxesHelper from './AxesHelper.svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
-	import { useGltf } from '@threlte/extras'
+	import { useGltf, useDraco } from '@threlte/extras'
 
 	const plyLoader = new PLYLoader()
+	const dracoLoader = useDraco()
 
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
@@ -34,11 +35,11 @@
 		...rest
 	}: Props = $props()
 
-	const upperArmGltf = useGltf('/models/upper_arm_link.glb')
-	const baseLinkGltf = useGltf('/models/base_link.glb')
-	const forearmLinkGltf = useGltf('/models/forearm_link.glb')
-	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb')
-	const eeLinkGltf = useGltf('/models/ee_link.glb')
+	const upperArmGltf = useGltf('/models/upper_arm_link.glb', { dracoLoader })
+	const baseLinkGltf = useGltf('/models/base_link.glb', { dracoLoader })
+	const forearmLinkGltf = useGltf('/models/forearm_link.glb', { dracoLoader })
+	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb', { dracoLoader })
+	const eeLinkGltf = useGltf('/models/ee_link.glb', { dracoLoader })
 
 	const type = $derived(geometry?.geometryType?.case)
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
