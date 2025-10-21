@@ -121,7 +121,10 @@
 			bvh={{ enabled: false }}
 		>
 			{#if labelToGlbPath.get(name) && labelToGlbPath.get(name)?.scene}
-				<T is={labelToGlbPath.get(name)?.scene} />
+				<T
+					is={labelToGlbPath.get(name)?.scene}
+					oncreate={() => (geo = undefined)}
+				/>
 			{:else if geometry.geometryType.case === 'mesh'}
 				{@const mesh = geometry.geometryType.value.mesh}
 				{@const meshGeometry = parsePlyInput(mesh)}
