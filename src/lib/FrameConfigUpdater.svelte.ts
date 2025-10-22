@@ -33,6 +33,13 @@ export class FrameConfigUpdater {
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		const object = this.object()
 		if (!object) return
+
+		x = this.sanatizeFloatValue(x)
+		y = this.sanatizeFloatValue(y)
+		z = this.sanatizeFloatValue(z)
+
+		if (x === undefined && y === undefined && z === undefined) return
+
 		object.localEditedPose.x = x ?? object.localEditedPose.x
 		object.localEditedPose.y = y ?? object.localEditedPose.y
 		object.localEditedPose.z = z ?? object.localEditedPose.z
@@ -62,6 +69,13 @@ export class FrameConfigUpdater {
 		const object = this.object()
 		if (!object) return
 
+		oX = this.sanatizeFloatValue(oX)
+		oY = this.sanatizeFloatValue(oY)
+		oZ = this.sanatizeFloatValue(oZ)
+		theta = this.sanatizeFloatValue(theta)
+
+		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) return
+
 		object.localEditedPose.oX = oX ?? object.localEditedPose.oX
 		object.localEditedPose.oY = oY ?? object.localEditedPose.oY
 		object.localEditedPose.oZ = oZ ?? object.localEditedPose.oZ
@@ -88,6 +102,12 @@ export class FrameConfigUpdater {
 			const currentGeometry = object.geometry?.geometryType.value as {
 				dimsMm: { x: number; y: number; z: number }
 			}
+			geometry.x = this.sanatizeFloatValue(geometry.x)
+			geometry.y = this.sanatizeFloatValue(geometry.y)
+			geometry.z = this.sanatizeFloatValue(geometry.z)
+
+			if (geometry.x === undefined && geometry.y === undefined && geometry.z === undefined) return
+
 			geometryObject = {
 				type: 'box',
 				x: geometry.x ?? currentGeometry?.dimsMm?.x,
@@ -96,6 +116,9 @@ export class FrameConfigUpdater {
 			}
 		} else if (geometry?.type === 'sphere') {
 			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
+			geometry.r = this.sanatizeFloatValue(geometry.r)
+			if (geometry.r === undefined) return
+
 			geometryObject = {
 				type: 'sphere',
 				r: geometry.r ?? currentGeometry?.radiusMm,
@@ -105,6 +128,10 @@ export class FrameConfigUpdater {
 				radiusMm: number
 				lengthMm: number
 			}
+			geometry.r = this.sanatizeFloatValue(geometry.r)
+			geometry.l = this.sanatizeFloatValue(geometry.l)
+			if (geometry.r === undefined && geometry.l === undefined) return
+
 			geometryObject = {
 				type: 'capsule',
 				r: geometry.r ?? currentGeometry?.radiusMm,
@@ -172,5 +199,12 @@ export class FrameConfigUpdater {
 				{ type: 'capsule', r: 20, l: 100 }
 			)
 		}
+	}
+
+	private sanatizeFloatValue = (value?: number) => {
+		if (value === undefined) return undefined
+		const num = parseFloat(value.toFixed(2))
+		if (isNaN(num)) return undefined
+		return num
 	}
 }
