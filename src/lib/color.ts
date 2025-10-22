@@ -1,6 +1,7 @@
 import { Color, type ColorRepresentation, type RGB } from 'three'
 import twColors from 'tailwindcss/colors'
 import { isNumber } from 'lodash-es'
+import { ResourceName } from '@viamrobotics/sdk'
 
 // Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
@@ -67,6 +68,14 @@ export const darkenColor = (value: ColorRepresentation, percent: number): Color 
 }
 
 const darkness = '600'
+
+export const createColorMetadata = (resourceName?: ResourceName) => {
+	return resourceName
+		? {
+				color: new Color(resourceColors[resourceName.subtype as keyof typeof resourceColors]),
+			}
+		: undefined
+}
 
 export const colors = {
 	default: oklchToHex(twColors.red[darkness]),
