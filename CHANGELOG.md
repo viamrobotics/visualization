@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.6
+
+### Patch Changes
+
+- f9416d4: fix weblab loading logic to properly parse url encoded val
+
 ## 0.14.5
 
 ### Patch Changes
