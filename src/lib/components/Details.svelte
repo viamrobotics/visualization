@@ -55,6 +55,7 @@
 	const isFrameNode = $derived(
 		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
+	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
@@ -215,7 +216,7 @@
 
 {#if object}
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {isFrameNode
+		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {showEditFrameOptions
 			? 'w-80'
 			: 'w-60'} border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
@@ -303,7 +304,7 @@
 			{/if}
 
 			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-				{@const ParentFrame = isFrameNode ? DropDownField : ImmutableField}
+				{@const ParentFrame = showEditFrameOptions ? DropDownField : ImmutableField}
 
 				<div>
 					<strong class="font-semibold">parent frame</strong>
@@ -318,7 +319,7 @@
 				</div>
 
 				{#if localPose}
-					{@const PoseAttribute = isFrameNode ? MutableField : ImmutableField}
+					{@const PoseAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					<div>
 						<strong class="font-semibold">local position</strong>
 
@@ -349,7 +350,7 @@
 
 					<div>
 						<strong class="font-semibold">local orientation</strong>
-						<div class="flex {isFrameNode ? 'gap-2' : 'gap-3'}">
+						<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'}">
 							{@render PoseAttribute({
 								label: 'x',
 								ariaLabel: 'local orientation x coordinate',
@@ -382,7 +383,7 @@
 					</div>
 				{/if}
 
-				{#if isFrameNode}
+				{#if showEditFrameOptions}
 					<div>
 						<strong class="font-semibold">geometry</strong>
 						<div class="grid grid-cols-4 gap-1">
@@ -410,7 +411,7 @@
 					</div>
 				{/if}
 				{#if geometryType !== 'none'}
-					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
+					{@const GeometryAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					{#if geometryType === 'box'}
 						{@const { dimsMm } = object?.geometry?.geometryType.value as {
 							dimsMm: { x: number; y: number; z: number }
@@ -563,7 +564,7 @@
 		{/if}
 
 		<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-			{#if isFrameNode}
+			{#if showEditFrameOptions}
 				<Button
 					variant="danger"
 					class="mt-2 w-full"
