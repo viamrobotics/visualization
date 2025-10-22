@@ -67,6 +67,7 @@ describe('Details component', () => {
 			resetLocalPartConfig: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
+			hasEditPermissions: true,
 		})
 	})
 
@@ -183,6 +184,7 @@ describe('Details component', () => {
 			resetLocalPartConfig: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
+			hasEditPermissions: true,
 		})
 
 		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
