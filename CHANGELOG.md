@@ -1,5 +1,13 @@
 # motion-tools
 
+## 0.14.7
+
+### Patch Changes
+
+- ac38329: Assume orientation is orientation vector degrees when unspecified
+- 33c1353: ignore blank updated fields when edit frame
+- 35bf0cd: dont show edit frames ui to non-permissioned users
+
 ## 0.14.6
 
 ### Patch Changes
