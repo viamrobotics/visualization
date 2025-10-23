@@ -3,7 +3,6 @@ import { OrientationVector } from './three/OrientationVector'
 import { type Object3D, Euler, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Frame } from './frame'
 
-const vector3 = new Vector3()
 const quaternion = new Quaternion()
 const euler = new Euler()
 const ov = new OrientationVector()
