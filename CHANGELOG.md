@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.8
+
+### Patch Changes
+
+- b8127a1: Fix excessive $effect calls causing CPU overload
+
 ## 0.14.7
 
 ### Patch Changes

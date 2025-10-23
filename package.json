@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "0.14.7",
+	"version": "0.14.8",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
