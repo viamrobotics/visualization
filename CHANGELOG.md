@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.10
+
+### Patch Changes
+
+- 1c4143d: put pose matrix computations behind weblab
+
 ## 0.14.9
 
 ### Patch Changes
