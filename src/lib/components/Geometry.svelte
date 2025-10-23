@@ -43,8 +43,6 @@
 	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb', { dracoLoader })
 	const eeLinkGltf = useGltf('/models/ee_link.glb', { dracoLoader })
 
-	const type = $derived(geometry?.geometryType?.case)
-	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
 	const labelToGlbPath = $derived<Record<string, { scene: Object3D | undefined }>>({
 		'ur5e:upper_arm_link': { scene: $upperArmGltf?.scene },
 		'ur5e:base_link': { scene: $baseLinkGltf?.scene },
@@ -52,6 +50,21 @@
 		'ur5e:wrist_1_link': { scene: $wrist1LinkGltf?.scene },
 		'ur5e:ee_link': { scene: $eeLinkGltf?.scene },
 	})
+
+	const type = $derived(geometry?.geometryType?.case)
+	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+	const renderModels = $derived(
+		(settings.current.renderArmModels === 'model' ||
+			settings.current.renderArmModels === 'primitives+model') &&
+			labelToGlbPath[name] &&
+			labelToGlbPath[name]?.scene
+	)
+	const renderPrimitives = $derived(
+		settings.current.renderArmModels === 'primitives' ||
+			settings.current.renderArmModels === 'primitives+model' ||
+			!labelToGlbPath[name] ||
+			!labelToGlbPath[name]?.scene
+	)
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -82,6 +95,12 @@
 	const oncreate = (ref: BufferGeometry) => {
 		geo = ref
 	}
+
+	$effect.pre(() => {
+		if (renderModels && !renderPrimitives) {
+			geo = undefined
+		}
+	})
 
 	const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry => {
 		// Case 1: already a base64 or ASCII string
@@ -120,39 +139,40 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if settings.current.renderArmModels && labelToGlbPath[name] && labelToGlbPath[name]?.scene}
-				<T
-					is={labelToGlbPath[name]?.scene}
-					oncreate={() => (geo = undefined)}
-				/>
-			{:else if geometry.geometryType.case === 'mesh'}
-				{@const mesh = geometry.geometryType.value.mesh}
-				{@const meshGeometry = parsePlyInput(mesh)}
-				<T
-					is={meshGeometry}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'line' && metadata.points}
-				<MeshLineGeometry points={metadata.points} />
-			{:else if geometry.geometryType.case === 'box'}
-				{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
-				<T.BoxGeometry
-					args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'sphere'}
-				{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
-				<T.SphereGeometry
-					args={[radiusMm * 0.001]}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'capsule'}
-				{@const { lengthMm, radiusMm } = geometry.geometryType.value}
-				<T
-					is={CapsuleGeometry}
-					args={[radiusMm * 0.001, lengthMm * 0.001]}
-					{oncreate}
-				/>
+			{#if renderModels}
+				<T is={labelToGlbPath[name].scene} />
+			{/if}
+
+			{#if renderPrimitives}
+				{#if geometry.geometryType.case === 'mesh'}
+					{@const mesh = geometry.geometryType.value.mesh}
+					{@const meshGeometry = parsePlyInput(mesh)}
+					<T
+						is={meshGeometry}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'line' && metadata.points}
+					<MeshLineGeometry points={metadata.points} />
+				{:else if geometry.geometryType.case === 'box'}
+					{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
+					<T.BoxGeometry
+						args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'sphere'}
+					{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
+					<T.SphereGeometry
+						args={[radiusMm * 0.001]}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'capsule'}
+					{@const { lengthMm, radiusMm } = geometry.geometryType.value}
+					<T
+						is={CapsuleGeometry}
+						args={[radiusMm * 0.001, lengthMm * 0.001]}
+						{oncreate}
+					/>
+				{/if}
 			{/if}
 
 			{#if geometry.geometryType.case === 'line'}

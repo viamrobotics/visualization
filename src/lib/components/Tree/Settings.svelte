@@ -168,7 +168,22 @@
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
 			<label class="flex items-center justify-between gap-2">
-				Render Arm Models <Switch bind:on={settings.current.renderArmModels} />
+				Render Arm Models
+				<Select
+					value={settings.current.renderArmModels}
+					onchange={(event: InputEvent) => {
+						if (event.target instanceof HTMLSelectElement) {
+							settings.current.renderArmModels = event.target.value as
+								| 'primitives'
+								| 'primitives+model'
+								| 'model'
+						}
+					}}
+				>
+					<option value="primitives">Primitives</option>
+					<option value="primitives+model">Primitives + Model</option>
+					<option value="model">Model</option>
+				</Select>
 			</label>
 		</div>
 	</div>
