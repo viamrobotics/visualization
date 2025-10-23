@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.9
+
+### Patch Changes
+
+- b2dd602: Fix: use orientation vector methods for matrix transforms
+
 ## 0.14.8
 
 ### Patch Changes
