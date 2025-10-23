@@ -34,6 +34,7 @@ interface PartConfigContext {
 	componentNameToFragmentId: Record<string, string>
 	localPartConfig: Struct
 	isDirty: boolean
+	hasEditPermissions: boolean
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
@@ -276,6 +277,9 @@ export const providePartConfig = (params: PartConfigParams) => {
 		get isDirty() {
 			return _localPartConfig.isDirty()
 		},
+		get hasEditPermissions() {
+			return _localPartConfig.hasEditPermissions()
+		},
 	})
 }
 
@@ -285,6 +289,7 @@ export const usePartConfig = (): PartConfigContext => {
 
 interface LocalPartConfig {
 	isDirty: () => boolean
+	hasEditPermissions: () => boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	componentNameToFragmentId: () => Record<string, string>
@@ -319,6 +324,10 @@ export class AppEmbeddedPartConfig implements LocalPartConfig {
 	public componentNameToFragmentId(): Record<string, string> {
 		return this._appEmbeddedPartConfigProps.getComponentToFragId()
 	}
+
+	public hasEditPermissions(): boolean {
+		return true
+	}
 }
 
 interface StandalonePartConfigProps {
@@ -328,6 +337,7 @@ interface StandalonePartConfigProps {
 export class StandalonePartConfig implements LocalPartConfig {
 	private _standalonePartConfigProps: StandalonePartConfigProps
 	private _isDirty = $state(false)
+	private _hasEditPermissions = $state(false)
 	private _networkPartConfig = $state<Struct>()
 	private _localPartConfig = $state<Struct>()
 	private _partName = $state<string>()
@@ -341,6 +351,11 @@ export class StandalonePartConfig implements LocalPartConfig {
 				const partResponse = await standalonePartConfigProps
 					.viamClient()
 					?.appClient.getRobotPart(standalonePartConfigProps.partID())
+				if (JSON.parse(partResponse?.configJson ?? 'null') === null) {
+					// no config returned here indicates this api key has no permission to update config
+					return
+				}
+				this._hasEditPermissions = true
 				const configJson = JSON.parse(partResponse?.configJson ?? '{}')
 				this._networkPartConfig = Struct.fromJson(configJson)
 				this._localPartConfig = Struct.fromJson(configJson)
@@ -396,6 +411,10 @@ export class StandalonePartConfig implements LocalPartConfig {
 
 	public isDirty(): boolean {
 		return this._isDirty
+	}
+
+	public hasEditPermissions(): boolean {
+		return this._hasEditPermissions
 	}
 
 	public componentNameToFragmentId(): Record<string, string> {
