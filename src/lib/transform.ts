@@ -34,7 +34,7 @@ export const createPoseFromFrame = (frame: Frame): Pose => {
 		ov.setFromQuaternion(quaternion)
 	} else if (frame.orientation.type === 'ov_radians') {
 		ov.copy(frame.orientation.value)
-	} else if (frame.orientation.type === 'ov_degrees') {
+	} else {
 		const th = MathUtils.degToRad(frame.orientation.value.th)
 		ov.set(frame.orientation.value.x, frame.orientation.value.y, frame.orientation.value.z, th)
 	}
