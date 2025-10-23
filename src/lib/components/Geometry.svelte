@@ -2,7 +2,7 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { meshBounds, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
-	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh, type Object3D } from 'three'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
@@ -45,15 +45,13 @@
 
 	const type = $derived(geometry?.geometryType?.case)
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
-	const labelToGlbPath = $derived(
-		new Map([
-			['ur5e:upper_arm_link', $upperArmGltf],
-			['ur5e:base_link', $baseLinkGltf],
-			['ur5e:forearm_link', $forearmLinkGltf],
-			['ur5e:wrist_1_link', $wrist1LinkGltf],
-			['ur5e:ee_link', $eeLinkGltf],
-		])
-	)
+	const labelToGlbPath = $derived<Record<string, { scene: Object3D | undefined }>>({
+		'ur5e:upper_arm_link': { scene: $upperArmGltf?.scene },
+		'ur5e:base_link': { scene: $baseLinkGltf?.scene },
+		'ur5e:forearm_link': { scene: $forearmLinkGltf?.scene },
+		'ur5e:wrist_1_link': { scene: $wrist1LinkGltf?.scene },
+		'ur5e:ee_link': { scene: $eeLinkGltf?.scene },
+	})
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -122,9 +120,9 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if settings.current.renderArmModels && labelToGlbPath.get(name) && labelToGlbPath.get(name)?.scene}
+			{#if settings.current.renderArmModels && labelToGlbPath[name] && labelToGlbPath[name]?.scene}
 				<T
-					is={labelToGlbPath.get(name)?.scene}
+					is={labelToGlbPath[name]?.scene}
 					oncreate={() => (geo = undefined)}
 				/>
 			{:else if geometry.geometryType.case === 'mesh'}
