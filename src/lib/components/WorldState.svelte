@@ -6,8 +6,8 @@
 	import Portal from './portal/Portal.svelte'
 	import PortalTarget from './portal/PortalTarget.svelte'
 	import { WorldObject } from '$lib/WorldObject.svelte'
-	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import { poseToDirection } from '$lib/transform'
+	import { useArrows } from '$lib/hooks/useArrows.svelte'
 
 	interface Props {
 		worldObjects: WorldObject[]
@@ -27,25 +27,14 @@
 	const setArrow = (arrow: WorldObject) => {
 		const currentArrow = getArrow(arrow.uuid)
 		const color = arrow.metadata?.color ?? new Color('yellow')
-		if (currentArrow) {
-			batchedArrow.updateArrow(
-				currentArrow.id,
-				poseToDirection(arrow.pose),
-				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
-				0.1,
-				color,
-				true
-			)
+		const direction = poseToDirection(arrow.pose)
+		const position = new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z)
 
+		if (currentArrow) {
+			batchedArrow.updateArrow(currentArrow.id, direction, position, 0.5, color, true)
 			currentArrows[arrow.uuid] = { id: currentArrow.id, arrow }
 		} else {
-			const id = batchedArrow.addArrow(
-				poseToDirection(arrow.pose),
-				new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z),
-				0.1,
-				color,
-				true
-			)
+			const id = batchedArrow.addArrow(direction, position, 0.5, color, true)
 			currentArrows[arrow.uuid] = { id, arrow }
 		}
 	}

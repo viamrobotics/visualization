@@ -119,8 +119,11 @@ export const isRGB = (color: unknown): color is RGB => {
 }
 
 export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 }): Color => {
-	if (!isRGB(color)) return new Color().setRGB(defaultColor.r, defaultColor.g, defaultColor.b)
-	return new Color().setRGB(color.r, color.g, color.b)
+	if (!isRGB(color)) {
+		return new Color().setRGB(defaultColor.r / 255, defaultColor.g / 255, defaultColor.b / 255)
+	}
+
+	return new Color().setRGB(color.r / 255, color.g / 255, color.b / 255)
 }
 
 export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
