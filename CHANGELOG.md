@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.14.11
+
+### Patch Changes
+
+- 9c6ae90: fix bug in converting quat to ov
+
 ## 0.14.10
 
 ### Patch Changes
