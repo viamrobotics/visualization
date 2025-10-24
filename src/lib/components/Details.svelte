@@ -26,7 +26,7 @@
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { useWeblabs, WEBLAB_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 
 	const { ...rest } = $props()
 
@@ -104,7 +104,7 @@
 	})
 
 	const getCopyClipboardText = () => {
-		if (weblab.isActive('MOTION_TOOLS_EDIT_FRAME')) {
+		if (weblab.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME)) {
 			return JSON.stringify(
 				{
 					worldPosition: worldPosition,
@@ -303,7 +303,7 @@
 				</div>
 			{/if}
 
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+			<WeblabActive experiment={WEBLAB_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
 				{@const ParentFrame = showEditFrameOptions ? DropDownField : ImmutableField}
 
 				<div>
@@ -487,7 +487,7 @@
 			</WeblabActive>
 
 			<WeblabActive
-				experiment="MOTION_TOOLS_EDIT_FRAME"
+				experiment={WEBLAB_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}
 				renderIfActive={false}
 			>
 				{#if object.geometry}
@@ -563,7 +563,7 @@
 			</Button>
 		{/if}
 
-		<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+		<WeblabActive experiment={WEBLAB_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
 			{#if showEditFrameOptions}
 				<Button
 					variant="danger"

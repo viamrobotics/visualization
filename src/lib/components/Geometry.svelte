@@ -10,11 +10,14 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 	import { useGltf, useDraco } from '@threlte/extras'
+	import { WEBLAB_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 
 	const settings = useSettings()
 	const plyLoader = new PLYLoader()
 	const dracoLoader = useDraco()
+	const weblabs = useWeblabs()
 
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
@@ -55,13 +58,13 @@
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
 	const renderModels = $derived(
 		(settings.current.renderArmModels === 'model' ||
-			settings.current.renderArmModels === 'primitives+model') &&
+			settings.current.renderArmModels === 'colliders+model') &&
 			labelToGlbPath[name] &&
 			labelToGlbPath[name]?.scene
 	)
 	const renderPrimitives = $derived(
-		settings.current.renderArmModels === 'primitives' ||
-			settings.current.renderArmModels === 'primitives+model' ||
+		settings.current.renderArmModels === 'colliders' ||
+			settings.current.renderArmModels === 'colliders+model' ||
 			!labelToGlbPath[name] ||
 			!labelToGlbPath[name]?.scene
 	)
@@ -139,11 +142,11 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if renderModels}
+			{#if renderModels && weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)}
 				<T is={labelToGlbPath[name].scene} />
 			{/if}
 
-			{#if renderPrimitives}
+			{#if renderPrimitives || !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)}
 				{#if geometry.geometryType.case === 'mesh'}
 					{@const mesh = geometry.geometryType.value.mesh}
 					{@const meshGeometry = parsePlyInput(mesh)}

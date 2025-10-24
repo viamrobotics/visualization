@@ -7,6 +7,7 @@
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
+	import WeblabActive from '../weblab/WeblabActive.svelte'
 
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
@@ -167,24 +168,26 @@
 			<label class="flex items-center justify-between gap-2">
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
-			<label class="flex items-center justify-between gap-2">
-				Render Arm Models
-				<Select
-					value={settings.current.renderArmModels}
-					onchange={(event: InputEvent) => {
-						if (event.target instanceof HTMLSelectElement) {
-							settings.current.renderArmModels = event.target.value as
-								| 'primitives'
-								| 'primitives+model'
-								| 'model'
-						}
-					}}
-				>
-					<option value="primitives">Primitives</option>
-					<option value="primitives+model">Primitives + Model</option>
-					<option value="model">Model</option>
-				</Select>
-			</label>
+			<WeblabActive experiment="MOTION_TOOLS_RENDER_ARM_MODELS">
+				<label class="flex items-center justify-between gap-2">
+					Render Arm Models
+					<Select
+						value={settings.current.renderArmModels}
+						onchange={(event: InputEvent) => {
+							if (event.target instanceof HTMLSelectElement) {
+								settings.current.renderArmModels = event.target.value as
+									| 'colliders'
+									| 'colliders+model'
+									| 'model'
+							}
+						}}
+					>
+						<option value="colliders">Colliders</option>
+						<option value="colliders+model">Colliders + Model</option>
+						<option value="model">Model</option>
+					</Select>
+				</label>
+			</WeblabActive>
 		</div>
 	</div>
 </Drawer>
