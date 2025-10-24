@@ -107,7 +107,7 @@ export const scaleToDimensions = (scale: Vector3, geometry: Geometry['geometryTy
 }
 
 export const poseToMatrix = (pose: Pose) => {
-	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta))
+	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad((pose.theta + 360) % 360))
 	ov.toQuaternion(quaternion)
 
 	const matrix = new Matrix4()
