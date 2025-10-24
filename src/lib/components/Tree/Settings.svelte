@@ -8,7 +8,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
-
+	import { WEBLAB_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const settings = useSettings()
@@ -168,7 +168,7 @@
 			<label class="flex items-center justify-between gap-2">
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
-			<WeblabActive experiment="MOTION_TOOLS_RENDER_ARM_MODELS">
+			<WeblabActive experiment={WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS}>
 				<label class="flex items-center justify-between gap-2">
 					Render Arm Models
 					<Select
