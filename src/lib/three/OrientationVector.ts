@@ -258,7 +258,7 @@ export class OrientationVector {
 			const theta = Math.acos(cosTheta)
 
 			if (theta > EPSILON) {
-				const newZImagUnit = vecF.copy(newXimag).normalize()
+				const newZImagUnit = vecF.copy(newZimag).normalize()
 				const rotQuatUnit = quatD.setFromAxisAngle(newZImagUnit, -1 * theta)
 				const conj2 = quatE.copy(rotQuatUnit).conjugate()
 				const testZ = rotQuatUnit.multiplyQuaternions(rotQuatUnit.multiply(zAxis), conj2)
