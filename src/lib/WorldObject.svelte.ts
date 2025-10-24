@@ -179,7 +179,7 @@ export const determinePose = (object: WorldObject, pose: Pose | undefined): Pose
 		const poseNetworkInverse = poseNetwork.invert()
 		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
 		const resultPose = matrixToPose(resultMatrix)
-		
+
 		// TODO: when the incoming pose is negative, round tripping ov -> quat -> ov gives us back a flipped sign theta
 		// long term we should stabalize the math to handle this case properly
 		if (pose.theta < 0) {
