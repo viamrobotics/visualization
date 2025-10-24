@@ -100,7 +100,11 @@
 	}
 
 	$effect.pre(() => {
-		if (renderModels && !renderPrimitives) {
+		if (
+			weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) &&
+			renderModels &&
+			!renderPrimitives
+		) {
 			geo = undefined
 		}
 	})
@@ -142,11 +146,11 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if renderModels && weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)}
+			{#if weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
 				<T is={labelToGlbPath[name].scene} />
 			{/if}
 
-			{#if renderPrimitives || !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)}
+			{#if !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
 				{#if geometry.geometryType.case === 'mesh'}
 					{@const mesh = geometry.geometryType.value.mesh}
 					{@const meshGeometry = parsePlyInput(mesh)}
