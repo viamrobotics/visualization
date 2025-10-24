@@ -14,6 +14,10 @@ const quatAppxEqual = (q1: Quaternion, q2: Quaternion) => {
 	)
 }
 
+const numAppxEqual = (a: number, b: number) => {
+	return Math.abs(a - b) < EPSILON
+}
+
 const ovAppxEqual = (ov1: OrientationVector, ov2: OrientationVector) => {
 	const vecDiff = vecA.set(ov1.x, ov1.y, ov1.z).sub(vecB.set(ov2.x, ov2.y, ov2.z))
 
@@ -105,5 +109,25 @@ describe('OrientationVector', () => {
 		)
 		expectedOv.set(0.504_843_794_294_005_4, 0.588_984_426_676_339_7, 0.631_054_742_867_507, 0.02)
 		expect(ovAppxEqual(expectedOv, actualOv.setFromQuaternion(quaternion))).toBe(true)
+	})
+
+	it('roundtrips orientation vector to quaternion to orientation vector', () => {
+		ov.set(0, 0.706635215799611, -0.7075780322987966, -Math.PI / 8)
+		console.log('original orientation vector: ', ov.x, ov.y, ov.z, ov.th)
+		const quaternion = ov.toQuaternion(new Quaternion())
+		console.log('original quaternion: ', quaternion.w, quaternion.x, quaternion.y, quaternion.z)
+		actualOv.setFromQuaternion(quaternion)
+		console.log(
+			'round tripped orientation vector: ',
+			actualOv.x,
+			actualOv.y,
+			actualOv.z,
+			actualOv.th
+		)
+
+		expect(numAppxEqual(ov.x, actualOv.x)).toBe(true)
+		expect(numAppxEqual(ov.y, actualOv.y)).toBe(true)
+		expect(numAppxEqual(ov.z, actualOv.z)).toBe(true)
+		expect(numAppxEqual(ov.th, actualOv.th)).toBe(true)
 	})
 })
