@@ -8,6 +8,8 @@ import {
 	Color,
 	Box3,
 	Matrix4,
+	Group,
+	type Material,
 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 
@@ -26,27 +28,43 @@ const col = new Color()
 interface Arrow {
 	shaftId: number
 	headId: number
+	batchIndex: number
 }
 
 let index = 0
 
 export class BatchedArrow {
-	batchedMesh: BatchedMesh
+	private _batches: BatchedMesh[] = []
+	private _shaftGeoIds: number[] = []
+	private _coneGeoIds: number[] = []
 
-	shaftGeoId = -1
-	coneGeoId = -1
+	private readonly _maxArrowsPerBatch: number
+	private readonly _material: Material
+
+	private readonly _object3d = new Group()
+
+	private readonly _arrows = new Map<number, Arrow>() // arrowId -> { shaftId, headId, batchIndex }
+	private readonly _idToArrowId = new Map<string, number>() // "batchIndex:instanceId" -> arrowId
+	private readonly _pool: Arrow[] = []
+	private _idCounter = 0
+
 	shaftWidth = 0
-
-	_arrows = new Map<number, Arrow>() // arrowId -> { shaftId, headId }
-	_idToArrowId = new Map<number, number>()
-	_pool: Arrow[] = []
-	_idCounter = 0
 
 	constructor({
 		maxArrows = 20_000,
 		shaftWidth = 0.001,
 		material = new MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
 	} = {}) {
+		this._maxArrowsPerBatch = maxArrows
+		this._material = material
+		this.shaftWidth = shaftWidth
+
+		this._object3d.name = `batched arrows container ${++index}`
+
+		this._addNewBatch()
+	}
+
+	private _addNewBatch() {
 		const shaftGeo = new BoxGeometry(1, 1, 1)
 		shaftGeo.translate(0, 0.5, 0)
 
@@ -58,16 +76,23 @@ export class BatchedArrow {
 		const shaftIndexCount = shaftGeo.index?.count ?? shaftVertexCount
 		const coneIndexCount = coneGeo.index?.count ?? coneVertexCount
 
-		const maxVertexCount = maxArrows * (shaftVertexCount + coneVertexCount)
-		const maxIndexCount = maxArrows * (shaftIndexCount + coneIndexCount)
+		const maxVertexCount = this._maxArrowsPerBatch * (shaftVertexCount + coneVertexCount)
+		const maxIndexCount = this._maxArrowsPerBatch * (shaftIndexCount + coneIndexCount)
 
-		this.batchedMesh = new BatchedMesh(maxArrows * 2, maxVertexCount, maxIndexCount, material)
-		this.batchedMesh.name = `batched arrows ${++index}`
-		this.batchedMesh.frustumCulled = false
-		this.shaftWidth = shaftWidth
+		const batchedMesh = new BatchedMesh(
+			this._maxArrowsPerBatch * 2,
+			maxVertexCount,
+			maxIndexCount,
+			this._material
+		)
+		batchedMesh.name = `batched arrows batch ${this._batches.length}`
+		batchedMesh.frustumCulled = false
 
-		this.shaftGeoId = this.batchedMesh.addGeometry(shaftGeo)
-		this.coneGeoId = this.batchedMesh.addGeometry(coneGeo)
+		this._shaftGeoIds.push(batchedMesh.addGeometry(shaftGeo))
+		this._coneGeoIds.push(batchedMesh.addGeometry(coneGeo))
+
+		this._batches.push(batchedMesh)
+		this._object3d.add(batchedMesh)
 	}
 
 	addArrow(
@@ -77,41 +102,76 @@ export class BatchedArrow {
 		color = black,
 		arrowHeadAtPose = true
 	) {
-		let shaftId: number
-		let headId: number
-
 		const instance = this._pool.pop()
-
 		if (instance) {
-			;({ shaftId, headId } = instance)
-		} else {
-			shaftId = this.batchedMesh.addInstance(this.shaftGeoId)
-			headId = this.batchedMesh.addInstance(this.coneGeoId)
+			const { shaftId, headId, batchIndex } = instance
+			this._drawArrow(
+				shaftId,
+				headId,
+				direction,
+				origin,
+				length,
+				color,
+				arrowHeadAtPose,
+				batchIndex
+			)
+			const arrowId = this._idCounter++
+			this._arrows.set(arrowId, instance)
+			this._idToArrowId.set(`${batchIndex}:${shaftId}`, arrowId)
+			this._idToArrowId.set(`${batchIndex}:${headId}`, arrowId)
+			return arrowId
 		}
 
-		this._drawArrow(shaftId, headId, direction, origin, length, color, arrowHeadAtPose)
+		let activeBatchIndex = this._batches.length - 1
+		let activeBatch = this._batches[activeBatchIndex]
+		let shaftId = activeBatch.addInstance(this._shaftGeoIds[activeBatchIndex])
+		if (shaftId === -1) {
+			this._addNewBatch()
+			activeBatchIndex = this._batches.length - 1
+			activeBatch = this._batches[activeBatchIndex]
+			shaftId = activeBatch.addInstance(this._shaftGeoIds[activeBatchIndex])
+		}
+
+		const headId = activeBatch.addInstance(this._coneGeoIds[activeBatchIndex])
+		this._drawArrow(
+			shaftId,
+			headId,
+			direction,
+			origin,
+			length,
+			color,
+			arrowHeadAtPose,
+			activeBatchIndex
+		)
 
 		const arrowId = this._idCounter++
-		this._arrows.set(arrowId, { shaftId, headId })
-		this._idToArrowId.set(shaftId, arrowId)
-		this._idToArrowId.set(headId, arrowId)
+		this._arrows.set(arrowId, { shaftId, headId, batchIndex: activeBatchIndex })
+		this._idToArrowId.set(`${activeBatchIndex}:${shaftId}`, arrowId)
+		this._idToArrowId.set(`${activeBatchIndex}:${headId}`, arrowId)
 		return arrowId
 	}
 
-	getArrowId(instanceId: number) {
-		return this._idToArrowId.get(instanceId)
+	getArrowId(batchIndex: number, instanceId: number) {
+		return this._idToArrowId.get(`${batchIndex}:${instanceId}`)
+	}
+
+	getBatches() {
+		return this._batches
 	}
 
 	getBoundingBoxAt(arrowId: number, target: OBB) {
 		const arrow = this._arrows.get(arrowId)
 
 		if (arrow) {
-			const headBox = this.batchedMesh.getBoundingBoxAt(this.coneGeoId, box1)
-			const tailBox = this.batchedMesh.getBoundingBoxAt(this.shaftGeoId, box2)
+			const batch = this._batches[arrow.batchIndex]
+			const coneGeoId = this._coneGeoIds[arrow.batchIndex]
+			const shaftGeoId = this._shaftGeoIds[arrow.batchIndex]
+			const headBox = batch.getBoundingBoxAt(coneGeoId, box1)
+			const tailBox = batch.getBoundingBoxAt(shaftGeoId, box2)
 
 			if (headBox && tailBox) {
-				this.batchedMesh.getMatrixAt(arrow.headId, mat4_1)
-				this.batchedMesh.getMatrixAt(arrow.shaftId, mat4_2)
+				batch.getMatrixAt(arrow.headId, mat4_1)
+				batch.getMatrixAt(arrow.shaftId, mat4_2)
 				box3.copy(headBox.applyMatrix4(mat4_1)).union(tailBox.applyMatrix4(mat4_2))
 				target.fromBox3(box3)
 
@@ -123,10 +183,13 @@ export class BatchedArrow {
 	removeArrow(arrowId: number) {
 		const arrow = this._arrows.get(arrowId)
 		if (!arrow) return
-		this.batchedMesh.setVisibleAt(arrow.shaftId, false)
-		this.batchedMesh.setVisibleAt(arrow.headId, false)
+		const batch = this._batches[arrow.batchIndex]
+		batch.setVisibleAt(arrow.shaftId, false)
+		batch.setVisibleAt(arrow.headId, false)
 		this._pool.push(arrow)
 		this._arrows.delete(arrowId)
+		this._idToArrowId.delete(`${arrow.batchIndex}:${arrow.shaftId}`)
+		this._idToArrowId.delete(`${arrow.batchIndex}:${arrow.headId}`)
 	}
 
 	updateArrow(
@@ -139,7 +202,16 @@ export class BatchedArrow {
 	) {
 		const arrow = this._arrows.get(arrowId)
 		if (!arrow) return
-		this._drawArrow(arrow.shaftId, arrow.headId, direction, origin, length, color, arrowHeadAtPose)
+		this._drawArrow(
+			arrow.shaftId,
+			arrow.headId,
+			direction,
+			origin,
+			length,
+			color,
+			arrowHeadAtPose,
+			arrow.batchIndex
+		)
 	}
 
 	clear() {
@@ -148,8 +220,10 @@ export class BatchedArrow {
 		}
 	}
 
-	getObject3d(id: number) {
-		this.batchedMesh.getMatrixAt(id, object3d.matrix)
+	getObject3d(batchIndex: number, instanceId: number) {
+		const batch = this._batches[batchIndex]
+		if (!batch) return undefined
+		batch.getMatrixAt(instanceId, object3d.matrix)
 		object3d.updateMatrix()
 		return object3d
 	}
@@ -161,7 +235,8 @@ export class BatchedArrow {
 		origin: Vector3,
 		length: number,
 		color: Color,
-		arrowHeadAtPose: boolean
+		arrowHeadAtPose: boolean,
+		batchIndex: number
 	) {
 		if (arrowHeadAtPose) {
 			// Compute the base position so the arrow ends at the origin
@@ -180,21 +255,22 @@ export class BatchedArrow {
 			length - headLength,
 			this.shaftWidth
 		)
-		this.batchedMesh.setMatrixAt(shaftId, shaftMatrix)
+		const batch = this._batches[batchIndex]
+		batch.setMatrixAt(shaftId, shaftMatrix)
 
 		// Compute cone position = origin + dir * length
 		const coneOrigin = vec3.copy(direction).multiplyScalar(length).add(origin)
 		const coneMatrix = this._computeTransform(coneOrigin, direction, headLength, headWidth * 4)
-		this.batchedMesh.setMatrixAt(headId, coneMatrix)
+		batch.setMatrixAt(headId, coneMatrix)
 
 		if (color) {
 			col.set(color)
-			this.batchedMesh.setColorAt(shaftId, col)
-			this.batchedMesh.setColorAt(headId, col)
+			batch.setColorAt(shaftId, col)
+			batch.setColorAt(headId, col)
 		}
 
-		this.batchedMesh.setVisibleAt(shaftId, true)
-		this.batchedMesh.setVisibleAt(headId, true)
+		batch.setVisibleAt(shaftId, true)
+		batch.setVisibleAt(headId, true)
 	}
 
 	_computeTransform(origin: Vector3, dir: Vector3, lengthY: number, scaleXZ = 1) {
@@ -215,6 +291,6 @@ export class BatchedArrow {
 	}
 
 	get object3d() {
-		return this.batchedMesh
+		return this._object3d
 	}
 }

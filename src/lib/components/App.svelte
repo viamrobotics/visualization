@@ -5,7 +5,6 @@
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import type { Struct } from '@viamrobotics/sdk'
 	import Scene from './Scene.svelte'
-	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
 	import Details from '$lib/components/Details.svelte'
 	import SceneProviders from './SceneProviders.svelte'
 	import XR from '$lib/components/xr/XR.svelte'
@@ -21,6 +20,8 @@
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import BatchedArrowStressTest from './BatchedArrowStressTest.svelte'
+	import TreeContainer from './Tree/TreeContainer.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -93,6 +94,8 @@
 				{#snippet children({ focus })}
 					<Scene>
 						{@render appChildren?.()}
+						<!-- TODO: Delete this component. -->
+						<BatchedArrowStressTest />
 					</Scene>
 
 					<XR {@attach domPortal(root)} />
