@@ -113,17 +113,8 @@ describe('OrientationVector', () => {
 
 	it('roundtrips orientation vector to quaternion to orientation vector', () => {
 		ov.set(0, 0.706635215799611, -0.7075780322987966, -Math.PI / 8)
-		console.log('original orientation vector: ', ov.x, ov.y, ov.z, ov.th)
 		const quaternion = ov.toQuaternion(new Quaternion())
-		console.log('original quaternion: ', quaternion.w, quaternion.x, quaternion.y, quaternion.z)
 		actualOv.setFromQuaternion(quaternion)
-		console.log(
-			'round tripped orientation vector: ',
-			actualOv.x,
-			actualOv.y,
-			actualOv.z,
-			actualOv.th
-		)
 
 		expect(numAppxEqual(ov.x, actualOv.x)).toBe(true)
 		expect(numAppxEqual(ov.y, actualOv.y)).toBe(true)
