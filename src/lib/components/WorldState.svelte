@@ -7,7 +7,8 @@
 	import PortalTarget from './portal/PortalTarget.svelte'
 	import { WorldObject } from '$lib/WorldObject.svelte'
 	import { poseToDirection } from '$lib/transform'
-	import { useArrows } from '$lib/hooks/useArrows.svelte'
+	import { BatchedArrow } from '$lib/three/BatchedArrow'
+	import { T } from '@threlte/core'
 
 	interface Props {
 		worldObjects: WorldObject[]
@@ -15,27 +16,36 @@
 
 	let { worldObjects }: Props = $props()
 
-	const batchedArrow = useArrows()
 	const currentArrows: Record<string, { id: number; arrow: WorldObject }> = {}
+	const arrowBatches = $state<Record<string, BatchedArrow>>({})
 
 	const arrows = $derived(worldObjects.filter((object) => object.metadata?.shape === 'arrow'))
 	const objects = $derived(worldObjects.filter((object) => object.metadata?.shape !== 'arrow'))
 
 	const getArrows = () => ({ ...currentArrows })
-	const getArrow = (uuid: string) => currentArrows[uuid]
-	const removeArrow = (uuid: string) => delete currentArrows[uuid]
+	const getArrow = (referenceFrame: string, uuid: string) =>
+		currentArrows[`${referenceFrame}:${uuid}`]
+
+	const removeArrow = (referenceFrame: string, uuid: string) => {
+		delete currentArrows[`${referenceFrame}:${uuid}`]
+	}
+
 	const setArrow = (arrow: WorldObject) => {
-		const currentArrow = getArrow(arrow.uuid)
+		const referenceFrame = arrow.referenceFrame ?? 'world'
+		const currentArrow = getArrow(referenceFrame, arrow.uuid)
 		const color = arrow.metadata?.color ?? new Color('yellow')
 		const direction = poseToDirection(arrow.pose)
 		const position = new Vector3(arrow.pose.x, arrow.pose.y, arrow.pose.z)
 
+		arrowBatches[referenceFrame] ??= new BatchedArrow()
+		const batchedArrow = arrowBatches[referenceFrame]
+
 		if (currentArrow) {
-			batchedArrow.updateArrow(currentArrow.id, direction, position, 0.5, color, true)
-			currentArrows[arrow.uuid] = { id: currentArrow.id, arrow }
+			batchedArrow.updateArrow(currentArrow.id, direction, position, 0.1, color, true)
+			currentArrows[`${referenceFrame}:${arrow.uuid}`] = { id: currentArrow.id, arrow }
 		} else {
-			const id = batchedArrow.addArrow(direction, position, 0.5, color, true)
-			currentArrows[arrow.uuid] = { id, arrow }
+			const id = batchedArrow.addArrow(direction, position, 0.1, color, true)
+			currentArrows[`${referenceFrame}:${arrow.uuid}`] = { id, arrow }
 		}
 	}
 
@@ -47,11 +57,23 @@
 		})
 
 		Object.values(toRemove).forEach(({ id, arrow }) => {
-			batchedArrow.removeArrow(id)
-			removeArrow(arrow.uuid)
+			const referenceFrame = arrow.referenceFrame ?? 'world'
+			arrowBatches[referenceFrame].removeArrow(id)
+			removeArrow(referenceFrame, arrow.uuid)
 		})
 	})
 </script>
+
+{#each Object.entries(arrowBatches) as [referenceFrame, batch] (referenceFrame)}
+	<Portal id={referenceFrame}>
+		<T
+			name={batch.object3d.name}
+			is={batch.object3d}
+			dispose={false}
+			bvh={{ enabled: false }}
+		/>
+	</Portal>
+{/each}
 
 {#each objects as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
