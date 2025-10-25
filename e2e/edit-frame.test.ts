@@ -83,7 +83,12 @@ test('basic edit frame', async ({ browser }) => {
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	await context.addCookies([
-		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+		{
+			name: 'weblab_experiments',
+			value: 'MOTION_TOOLS_EDIT_FRAME',
+			domain: 'localhost',
+			path: '/',
+		},
 	])
 	let page = await context.newPage()
 	await page.waitForTimeout(5000)
@@ -268,7 +273,12 @@ test('create and delete frame', async ({ browser }) => {
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	await context.addCookies([
-		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+		{
+			name: 'weblab_experiments',
+			value: 'MOTION_TOOLS_EDIT_FRAME',
+			domain: 'localhost',
+			path: '/',
+		},
 	])
 	const page = await context.newPage()
 	await page.waitForTimeout(5000)
@@ -432,7 +442,12 @@ test('fragement edit frame', async ({ browser }) => {
 	// WAIT FOR THE TREE DRAWER TO LOAD
 	const context = await browser.newContext()
 	await context.addCookies([
-		{ name: 'MOTION_TOOLS_EDIT_FRAME', value: 'true', domain: 'localhost', path: '/' },
+		{
+			name: 'weblab_experiments',
+			value: 'MOTION_TOOLS_EDIT_FRAME',
+			domain: 'localhost',
+			path: '/',
+		},
 	])
 	const page = await context.newPage()
 	await page.waitForTimeout(5000)

@@ -1,5 +1,43 @@
 # motion-tools
 
+## 0.14.11
+
+### Patch Changes
+
+- 9c6ae90: fix bug in converting quat to ov
+
+## 0.14.10
+
+### Patch Changes
+
+- 1c4143d: put pose matrix computations behind weblab
+
+## 0.14.9
+
+### Patch Changes
+
+- b2dd602: Fix: use orientation vector methods for matrix transforms
+
+## 0.14.8
+
+### Patch Changes
+
+- b8127a1: Fix excessive $effect calls causing CPU overload
+
+## 0.14.7
+
+### Patch Changes
+
+- ac38329: Assume orientation is orientation vector degrees when unspecified
+- 33c1353: ignore blank updated fields when edit frame
+- 35bf0cd: dont show edit frames ui to non-permissioned users
+
+## 0.14.6
+
+### Patch Changes
+
+- f9416d4: fix weblab loading logic to properly parse url encoded val
+
 ## 0.14.5
 
 ### Patch Changes

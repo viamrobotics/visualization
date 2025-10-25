@@ -14,6 +14,7 @@
 	import AddFrames from './AddFrames.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
@@ -24,6 +25,7 @@
 	const draggable = useDraggable('treeview')
 	const worldStates = useWorldStates()
 	const environment = useEnvironment()
+	const partConfig = usePartConfig()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -58,7 +60,7 @@
 		/>
 	{/key}
 
-	{#if environment.current.isStandalone && partID.current}
+	{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
 		<AddFrames />
 	{/if}
 
