@@ -162,7 +162,7 @@
 			bvh={{ enabled: false }}
 		>
 			{#if weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
-				<T is={geoModel} />
+				<T is={geoModel?.clone(true)} />
 			{/if}
 
 			{#if !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
