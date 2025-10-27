@@ -5,7 +5,7 @@ import {
 	useMachineStatus,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
+import { WorldObject, type Geometries, type Metadata } from '$lib/WorldObject.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import type { Frame } from '$lib/frame'
@@ -53,7 +53,7 @@ export const provideFrames = (partID: () => string) => {
 	let current = $derived.by(() => {
 		const objects: WorldObject[] = []
 
-		for (const { frame } of query.current.data ?? []) {
+		for (const { frame, kinematics } of query.current.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
@@ -61,19 +61,23 @@ export const provideFrames = (partID: () => string) => {
 			const resourceName = resourceNames.current.find((item) => item.name === frame.referenceFrame)
 			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
 
+			const metadata: Metadata = {
+				kinematics: kinematics,
+			}
+
+			if (resourceName) {
+				metadata.color = new Color(
+					resourceColors[resourceName.subtype as keyof typeof resourceColors]
+				)
+			}
+
 			objects.push(
 				new WorldObject(
 					frameName,
 					frame.poseInObserverFrame?.pose,
 					frame.poseInObserverFrame?.referenceFrame,
 					frame.physicalObject,
-					resourceName
-						? {
-								color: new Color(
-									resourceColors[resourceName.subtype as keyof typeof resourceColors]
-								),
-							}
-						: undefined
+					metadata
 				)
 			)
 		}

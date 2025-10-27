@@ -46,12 +46,27 @@
 	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb', { dracoLoader })
 	const eeLinkGltf = useGltf('/models/ee_link.glb', { dracoLoader })
 
-	const labelToGlbPath = $derived<Record<string, { scene: Object3D | undefined }>>({
-		'ur5e:upper_arm_link': { scene: $upperArmGltf?.scene },
-		'ur5e:base_link': { scene: $baseLinkGltf?.scene },
-		'ur5e:forearm_link': { scene: $forearmLinkGltf?.scene },
-		'ur5e:wrist_1_link': { scene: $wrist1LinkGltf?.scene },
-		'ur5e:ee_link': { scene: $eeLinkGltf?.scene },
+	const labelToGlbPath = $derived<Record<string, Record<string, { scene: Object3D | undefined }>>>({
+		UR5e: {
+			upper_arm_link: { scene: $upperArmGltf?.scene },
+			base_link: { scene: $baseLinkGltf?.scene },
+			forearm_link: { scene: $forearmLinkGltf?.scene },
+			wrist_1_link: { scene: $wrist1LinkGltf?.scene },
+			ee_link: { scene: $eeLinkGltf?.scene },
+		},
+	})
+	const geoModel = $derived.by(() => {
+		const kinematicsName = metadata?.kinematics?.fields?.name?.kind?.value
+		if (!kinematicsName || !((kinematicsName as string) in labelToGlbPath)) {
+			return undefined
+		}
+
+		const label = name.split(':')?.at(1)
+		if (!label) {
+			return undefined
+		}
+
+		return labelToGlbPath[kinematicsName as string]?.[label]?.scene
 	})
 
 	const type = $derived(geometry?.geometryType?.case)
@@ -59,14 +74,12 @@
 	const renderModels = $derived(
 		(settings.current.renderArmModels === 'model' ||
 			settings.current.renderArmModels === 'colliders+model') &&
-			labelToGlbPath[name] &&
-			labelToGlbPath[name]?.scene
+			geoModel
 	)
 	const renderPrimitives = $derived(
 		settings.current.renderArmModels === 'colliders' ||
 			settings.current.renderArmModels === 'colliders+model' ||
-			!labelToGlbPath[name] ||
-			!labelToGlbPath[name]?.scene
+			!geoModel
 	)
 
 	const group = new Group()
@@ -147,7 +160,7 @@
 			bvh={{ enabled: false }}
 		>
 			{#if weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
-				<T is={labelToGlbPath[name].scene} />
+				<T is={geoModel} />
 			{/if}
 
 			{#if !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
