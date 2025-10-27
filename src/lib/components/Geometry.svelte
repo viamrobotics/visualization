@@ -44,6 +44,7 @@
 	const baseLinkGltf = useGltf('/models/base_link.glb', { dracoLoader })
 	const forearmLinkGltf = useGltf('/models/forearm_link.glb', { dracoLoader })
 	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb', { dracoLoader })
+	const wrist2LinkGltf = useGltf('/models/wrist_2_link.glb', { dracoLoader })
 	const eeLinkGltf = useGltf('/models/ee_link.glb', { dracoLoader })
 
 	const labelToGlbPath = $derived<Record<string, Record<string, { scene: Object3D | undefined }>>>({
@@ -52,6 +53,7 @@
 			base_link: { scene: $baseLinkGltf?.scene },
 			forearm_link: { scene: $forearmLinkGltf?.scene },
 			wrist_1_link: { scene: $wrist1LinkGltf?.scene },
+			wrist_2_link: { scene: $wrist2LinkGltf?.scene },
 			ee_link: { scene: $eeLinkGltf?.scene },
 		},
 	})
