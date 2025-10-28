@@ -18,6 +18,7 @@
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
@@ -27,7 +28,7 @@
 	const weblabs = useWeblabs()
 
 	const weblabedDeterminePose = (object: WorldObject, pose: ViamPose | undefined) => {
-		if (weblabs.isActive('MOTION_TOOLS_EDIT_FRAME')) {
+		if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME)) {
 			return determinePose(object, pose)
 		}
 		return pose ?? object.pose
