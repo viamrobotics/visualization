@@ -16,6 +16,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
@@ -61,7 +62,7 @@
 		/>
 	{/key}
 
-	<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
+	<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
 		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
 			<AddFrames />
 		{/if}
