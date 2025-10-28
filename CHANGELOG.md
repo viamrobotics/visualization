@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.14.12
+
+### Patch Changes
+
+- 66c4c7c: Allow automatic buffer resizing for drawing arrows
+- b1659d8: put add frames behind weblab
+
 ## 0.14.11
 
 ### Patch Changes
