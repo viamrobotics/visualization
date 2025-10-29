@@ -4,7 +4,7 @@ import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
-import { WorldObject, type Metadata } from '$lib/WorldObject.svelte'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
@@ -15,7 +15,6 @@ const key = Symbol('geometries-context')
 
 interface Context {
 	current: WorldObject[]
-	componentModels: Record<string, Record<string, Geometry>>
 	errors: Error[]
 }
 
@@ -130,24 +129,19 @@ export const provideGeometries = (partID: () => string) => {
 
 			for (const geometry of query.data.geometries) {
 				const resourceName = resourceNames.current.find((item) => item.name === query.data.name)
-				const parentFrame = frames.current.find((frame) => frame.name === query.data.name)
-
-				const metadata: Metadata = {
-					kinematics: parentFrame?.metadata.kinematics,
-				}
-
-				if (resourceName) {
-					metadata.color = new Color(
-						resourceColors[resourceName.subtype as keyof typeof resourceColors]
-					)
-				}
 
 				const worldObject = new WorldObject(
 					geometry.label ? geometry.label : `${query.data.name} geometry`,
 					undefined,
 					query.data.name,
 					geometry,
-					metadata
+					resourceName
+						? {
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
+							}
+						: undefined
 				)
 				results.push(worldObject)
 			}
@@ -161,9 +155,6 @@ export const provideGeometries = (partID: () => string) => {
 	setContext<Context>(key, {
 		get current() {
 			return geometries
-		},
-		get componentModels() {
-			return componentModels
 		},
 		get errors() {
 			return errors

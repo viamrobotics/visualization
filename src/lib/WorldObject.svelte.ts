@@ -27,7 +27,6 @@ export type Metadata = {
 	colors?: Float32Array
 	color?: Color
 	opacity?: number
-	kinematics?: Struct
 	gltf?: { scene: Object3D }
 	points?: Vector3[]
 	pointSize?: number

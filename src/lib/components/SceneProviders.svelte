@@ -18,6 +18,7 @@
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
+	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	interface Props {
 		children: Snippet<[{ focus: boolean }]>
 	}
@@ -38,6 +39,7 @@
 
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
+	provide3DModels(() => partID.current)
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
 	provideObjects()

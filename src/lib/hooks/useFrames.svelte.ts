@@ -61,23 +61,19 @@ export const provideFrames = (partID: () => string) => {
 			const resourceName = resourceNames.current.find((item) => item.name === frame.referenceFrame)
 			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
 
-			const metadata: Metadata = {
-				kinematics: kinematics,
-			}
-
-			if (resourceName) {
-				metadata.color = new Color(
-					resourceColors[resourceName.subtype as keyof typeof resourceColors]
-				)
-			}
-
 			objects.push(
 				new WorldObject(
 					frameName,
 					frame.poseInObserverFrame?.pose,
 					frame.poseInObserverFrame?.referenceFrame,
 					frame.physicalObject,
-					metadata
+					resourceName
+						? {
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
+							}
+						: undefined
 				)
 			)
 		}

@@ -15,7 +15,7 @@
 	import { WEBLAB_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
-	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
+	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
 	const settings = useSettings()
 	const plyLoader = new PLYLoader()
 	const gltfLoader = new GLTFLoader()
@@ -23,7 +23,7 @@
 	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
 	gltfLoader.setDRACOLoader(dracoLoader)
 	const weblabs = useWeblabs()
-	const geometries = useGeometries()
+	const componentModels = use3DModels()
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
 		name: string
@@ -50,11 +50,10 @@
 		if (!componentName || !id) {
 			return undefined
 		}
-		const componentModels = geometries.componentModels[componentName]
-		if (!componentModels) {
+		if (!componentModels.current[componentName]) {
 			return undefined
 		}
-		const geometry = componentModels[id]
+		const geometry = componentModels.current[componentName][id]
 		if (!geometry) {
 			return undefined
 		}
