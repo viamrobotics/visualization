@@ -15,6 +15,7 @@ const key = Symbol('geometries-context')
 
 interface Context {
 	current: WorldObject[]
+	componentModels: Record<string, Record<string, Geometry>>
 	errors: Error[]
 }
 
@@ -25,6 +26,8 @@ export const provideGeometries = (partID: () => string) => {
 	const cameras = useResourceNames(partID, 'camera')
 	const grippers = useResourceNames(partID, 'gripper')
 	const gantries = useResourceNames(partID, 'gantry')
+
+	const componentModels = $state.raw<Record<string, Record<string, Geometry>>>({})
 
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
@@ -49,6 +52,29 @@ export const provideGeometries = (partID: () => string) => {
 			return frames.current.some((frame) => frame.name === client.current?.name)
 		})
 	)
+
+	$effect(() => {
+		const fetchArmModels = async () => {
+			for (const client of armClients) {
+				if (!client.current) continue
+				const models = await client.current.get3DModels()
+				if (!(client.current.name in componentModels)) {
+					componentModels[client.current.name] = {}
+				}
+				for (const [id, model] of Object.entries(models)) {
+					componentModels[client.current.name][id] = new Geometry({
+						geometryType: {
+							case: 'mesh',
+							value: model,
+						},
+					})
+				}
+			}
+
+			console.log(componentModels)
+		}
+		fetchArmModels()
+	})
 
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.poses)
@@ -135,6 +161,9 @@ export const provideGeometries = (partID: () => string) => {
 	setContext<Context>(key, {
 		get current() {
 			return geometries
+		},
+		get componentModels() {
+			return componentModels
 		},
 		get errors() {
 			return errors

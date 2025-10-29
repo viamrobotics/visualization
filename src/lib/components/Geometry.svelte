@@ -2,23 +2,28 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { meshBounds, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
-	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh, type Object3D } from 'three'
+	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import type { Geometry } from '@viamrobotics/sdk'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
-	import { useGltf, useDraco } from '@threlte/extras'
+	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+	import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 	import { WEBLAB_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
-
+	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
 	const settings = useSettings()
 	const plyLoader = new PLYLoader()
-	const dracoLoader = useDraco()
+	const gltfLoader = new GLTFLoader()
+	const dracoLoader = new DRACOLoader()
+	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+	gltfLoader.setDRACOLoader(dracoLoader)
 	const weblabs = useWeblabs()
-
+	const geometries = useGeometries()
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
 		name: string
@@ -40,35 +45,38 @@
 		...rest
 	}: Props = $props()
 
-	const upperArmGltf = useGltf('/models/upper_arm_link.glb', { dracoLoader })
-	const baseLinkGltf = useGltf('/models/base_link.glb', { dracoLoader })
-	const forearmLinkGltf = useGltf('/models/forearm_link.glb', { dracoLoader })
-	const wrist1LinkGltf = useGltf('/models/wrist_1_link.glb', { dracoLoader })
-	const wrist2LinkGltf = useGltf('/models/wrist_2_link.glb', { dracoLoader })
-	const eeLinkGltf = useGltf('/models/ee_link.glb', { dracoLoader })
-
-	const labelToGlbPath = $derived<Record<string, Record<string, { scene: Object3D | undefined }>>>({
-		UR5e: {
-			upper_arm_link: { scene: $upperArmGltf?.scene },
-			base_link: { scene: $baseLinkGltf?.scene },
-			forearm_link: { scene: $forearmLinkGltf?.scene },
-			wrist_1_link: { scene: $wrist1LinkGltf?.scene },
-			wrist_2_link: { scene: $wrist2LinkGltf?.scene },
-			ee_link: { scene: $eeLinkGltf?.scene },
-		},
+	const geoModel = $derived.by<Geometry>(() => {
+		const [componentName, id] = name.split(':')
+		if (!componentName || !id) {
+			return undefined
+		}
+		const componentModels = geometries.componentModels[componentName]
+		if (!componentModels) {
+			return undefined
+		}
+		const geometry = componentModels[id]
+		if (!geometry) {
+			return undefined
+		}
+		return geometry
 	})
-	const geoModel = $derived.by(() => {
-		const kinematicsName = metadata?.kinematics?.fields?.name?.kind?.value
-		if (!kinematicsName || !((kinematicsName as string) in labelToGlbPath)) {
-			return undefined
+
+	let gltfModel = $state.raw<Group>()
+
+	$effect(() => {
+		if (geoModel?.geometryType?.case !== 'mesh') {
+			return
+		}
+		const mesh = geoModel.geometryType.value.mesh
+		if (!mesh) {
+			return
 		}
 
-		const label = name.split(':')?.at(1)
-		if (!label) {
-			return undefined
-		}
+		const arrayBuffer = mesh.buffer.slice(mesh.byteOffset, mesh.byteOffset + mesh.byteLength)
 
-		return labelToGlbPath[kinematicsName as string]?.[label]?.scene
+		gltfLoader.parseAsync(arrayBuffer, '').then((result) => {
+			gltfModel = result.scene
+		})
 	})
 
 	const type = $derived(geometry?.geometryType?.case)
@@ -76,12 +84,12 @@
 	const renderModels = $derived(
 		(settings.current.renderArmModels === 'model' ||
 			settings.current.renderArmModels === 'colliders+model') &&
-			geoModel
+			gltfModel
 	)
 	const renderPrimitives = $derived(
 		settings.current.renderArmModels === 'colliders' ||
 			settings.current.renderArmModels === 'colliders+model' ||
-			!geoModel
+			!gltfModel
 	)
 
 	const group = new Group()
@@ -162,7 +170,7 @@
 			bvh={{ enabled: false }}
 		>
 			{#if weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
-				<T is={geoModel?.clone(true)} />
+				<T is={gltfModel} />
 			{/if}
 
 			{#if !weblabs.isActive(WEBLAB_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
