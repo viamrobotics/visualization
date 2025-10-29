@@ -26,8 +26,6 @@ export const provideGeometries = (partID: () => string) => {
 	const grippers = useResourceNames(partID, 'gripper')
 	const gantries = useResourceNames(partID, 'gantry')
 
-	const componentModels = $state.raw<Record<string, Record<string, Geometry>>>({})
-
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 
@@ -51,29 +49,6 @@ export const provideGeometries = (partID: () => string) => {
 			return frames.current.some((frame) => frame.name === client.current?.name)
 		})
 	)
-
-	$effect(() => {
-		const fetchArmModels = async () => {
-			for (const client of armClients) {
-				if (!client.current) continue
-				const models = await client.current.get3DModels()
-				if (!(client.current.name in componentModels)) {
-					componentModels[client.current.name] = {}
-				}
-				for (const [id, model] of Object.entries(models)) {
-					componentModels[client.current.name][id] = new Geometry({
-						geometryType: {
-							case: 'mesh',
-							value: model,
-						},
-					})
-				}
-			}
-
-			console.log(componentModels)
-		}
-		fetchArmModels()
-	})
 
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.poses)
