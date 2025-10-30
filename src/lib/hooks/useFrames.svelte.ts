@@ -1,19 +1,15 @@
 import { getContext, setContext, untrack } from 'svelte'
-import {
-	useRobotClient,
-	createRobotQuery,
-	useMachineStatus,
-	useResourceNames,
-} from '@viamrobotics/svelte-sdk'
-import { WorldObject, type Geometries } from '$lib/WorldObject.svelte'
+import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { useLogs } from './useLogs.svelte'
-import { resourceColors } from '$lib/color'
+import { resourceNameToColor } from '$lib/color'
 import type { Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
-import { Color } from 'three'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPoseFromFrame } from '$lib/transform'
-import { observe } from '@threlte/core'
+import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
+import { createGeometryFromFrame } from '$lib/geometry'
+import { useResourceByName } from './useResourceByName.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -25,7 +21,7 @@ interface FramesContext {
 const key = Symbol('frames-context')
 
 export const provideFrames = (partID: () => string) => {
-	const resourceNames = useResourceNames(partID)
+	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
@@ -33,14 +29,14 @@ export const provideFrames = (partID: () => string) => {
 	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()
 	const environment = useEnvironment()
+	const { updateUUIDs } = usePersistentUUIDs()
 
-	observe.pre(
-		() => [revision],
-		() => {
+	$effect.pre(() => {
+		if (revision) {
 			untrack(() => query.current).refetch()
-			logs.add('Fetching frames...')
 		}
-	)
+		logs.add('Fetching frames...')
+	})
 
 	$effect.pre(() => {
 		if (partConfig.isDirty) {
@@ -50,133 +46,66 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	let current = $derived.by(() => {
-		const objects: WorldObject[] = []
+	const machineFrames = $derived.by(() => {
+		const objects: Record<string, WorldObject> = {}
 
 		for (const { frame } of query.current.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
 
-			const resourceName = resourceNames.current.find((item) => item.name === frame.referenceFrame)
+			const resourceName = resourceByName.current[frame.referenceFrame]
 			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
+			const color = resourceNameToColor(resourceName)
 
-			objects.push(
-				new WorldObject(
-					frameName,
-					frame.poseInObserverFrame?.pose,
-					frame.poseInObserverFrame?.referenceFrame,
-					frame.physicalObject,
-					resourceName
-						? {
-								color: new Color(
-									resourceColors[resourceName.subtype as keyof typeof resourceColors]
-								),
-							}
-						: undefined
-				)
+			objects[frameName] = new WorldObject(
+				frameName,
+				frame.poseInObserverFrame?.pose,
+				frame.poseInObserverFrame?.referenceFrame,
+				frame.physicalObject,
+				color ? { color } : undefined
 			)
 		}
 
 		return objects
 	})
 
-	let currentWorldObjects: Record<string, WorldObject> = {}
-	const getWorldObjects = () => ({ ...currentWorldObjects })
-	const getWorldObject = (componentName: string) => currentWorldObjects[componentName]
-	const setWorldObject = (
-		component: PartConfig['components'][number],
-		worldObject: WorldObject
-	) => {
-		if (!component.frame) {
-			return
-		}
-		worldObject.referenceFrame = component.frame.parent
-		worldObject.localEditedPose = createPoseFromFrame(component.frame)
+	const configFrames = $derived.by(() => {
+		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
 
-		if (component.frame.geometry) {
-			switch (component.frame.geometry.type) {
-				case 'box':
-					worldObject.geometry = {
-						...worldObject.geometry,
-						geometryType: {
-							case: 'box',
-							value: {
-								dimsMm: {
-									x: component.frame.geometry.x,
-									y: component.frame.geometry.y,
-									z: component.frame.geometry.z,
-								},
-							},
-						},
-					} as Geometries
-					break
-				case 'sphere':
-					worldObject.geometry = {
-						...worldObject.geometry,
-						geometryType: { case: 'sphere', value: { radiusMm: component.frame.geometry.r } },
-					} as Geometries
-					break
-				case 'capsule':
-					worldObject.geometry = {
-						...worldObject.geometry,
-						geometryType: {
-							case: 'capsule',
-							value: {
-								radiusMm: component.frame.geometry.r,
-								lengthMm: component.frame.geometry.l,
-							},
-						},
-					} as Geometries
-					break
-				default:
-					worldObject.geometry = undefined
-					break
-			}
-		} else {
-			worldObject.geometry = undefined
-		}
-		currentWorldObjects[component.name] = worldObject
-	}
-	const deleteWorldObject = (componentName: string) => {
-		delete currentWorldObjects[componentName]
-	}
-
-	$effect.pre(() => {
-		untrack(() => {
-			currentWorldObjects = {}
-			for (const currentWorldObject of current) {
-				currentWorldObjects[currentWorldObject.name] = currentWorldObject
-			}
-		})
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
-		const fragmentMods = (partConfig.localPartConfig.toJson() as unknown as PartConfig)
-			?.fragment_mods
-		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
+		const objects: WorldObject[] = []
 
 		// deal with part defined frame config
-		for (const component of components || []) {
-			const worldObject = getWorldObject(component.name)
-			if (worldObject && component.frame) {
-				setWorldObject(component, worldObject)
-			} else if (component.frame && Object.keys(getWorldObjects()).length > 0) {
-				// extra clause to prevent adding a component to the world objects when it may be loaded via frame system config later (first tick issue where config updated but current world objects not triggered yet)
-				const pose = createPoseFromFrame(component.frame)
-				const newWorldObject = new WorldObject(component.name, pose, component.frame.parent)
-				setWorldObject(component, newWorldObject)
-			} else {
-				deleteWorldObject(component.name)
+		for (const component of components ?? []) {
+			if (!component.frame) {
+				continue
 			}
+
+			const pose = createPoseFromFrame(component.frame)
+			const geometry = createGeometryFromFrame(component.frame)
+			const worldObject = new WorldObject(component.name, pose, component.frame.parent, geometry)
+			objects.push(worldObject)
 		}
+
+		return objects
+	})
+
+	const [fragmentFrames, fragmentUnsetFrames] = $derived.by(() => {
+		const { fragment_mods: fragmentMods = [] } =
+			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
+		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
+		const objects: WorldObject[] = []
+		const unsetObjects: string[] = []
 
 		// deal with fragment defined components
 		for (const fragmentComponentName of fragmentDefinedComponents || []) {
-			const worldObject = getWorldObject(fragmentComponentName)
 			const fragmentId = partConfig.componentNameToFragmentId[fragmentComponentName]
 			const fragmentMod = fragmentMods?.find((mod) => mod.fragment_id === fragmentId)
+
 			if (!fragmentMod) {
 				continue
 			}
+
 			const setComponentModIndex = fragmentMod.mods.findLastIndex(
 				(mod) => mod['$set']?.[`components.${fragmentComponentName}.frame`] !== undefined
 			)
@@ -185,28 +114,58 @@ export const provideFrames = (partID: () => string) => {
 			)
 
 			if (setComponentModIndex < unsetComponentModIndex) {
-				deleteWorldObject(fragmentComponentName)
+				unsetObjects.push(fragmentComponentName)
 			} else if (unsetComponentModIndex < setComponentModIndex) {
 				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
 					`components.${fragmentComponentName}.frame`
 				] as Frame
-				const componentConfig: PartConfig['components'][number] = {
-					name: fragmentComponentName,
-					frame: frameData,
-				}
-				if (worldObject) {
-					setWorldObject(componentConfig, worldObject)
-				} else if (Object.keys(getWorldObjects()).length > 0) {
-					const pose = createPoseFromFrame(frameData)
-					const newWorldObject = new WorldObject(fragmentComponentName, pose, frameData.parent)
-					setWorldObject(componentConfig, newWorldObject)
-				}
+				const pose = createPoseFromFrame(frameData)
+				const geometry = createGeometryFromFrame(frameData)
+				const worldObject = new WorldObject(fragmentComponentName, pose, frameData.parent, geometry)
+				objects.push(worldObject)
 			}
 		}
+		return [objects, unsetObjects]
+	})
 
-		untrack(() => {
-			current = [...Object.values(getWorldObjects())]
-		})
+	$effect.pre(() => {
+		for (const frame of configFrames) {
+			const result = machineFrames[frame.name]
+
+			if (result) {
+				result.referenceFrame = frame.referenceFrame
+				result.pose = frame.pose
+				result.geometry = frame.geometry
+			} else {
+				machineFrames[frame.name] = frame
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const frame of fragmentFrames) {
+			const result = machineFrames[frame.name]
+
+			if (result) {
+				result.referenceFrame = frame.referenceFrame
+				result.pose = frame.pose
+				result.geometry = frame.geometry
+			} else {
+				machineFrames[frame.name] = frame
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const name of fragmentUnsetFrames) {
+			delete machineFrames[name]
+		}
+	})
+
+	const current = $derived.by(() => {
+		const results = Object.values(machineFrames)
+		updateUUIDs(results)
+		return results
 	})
 
 	const error = $derived(query.current.error ?? undefined)
