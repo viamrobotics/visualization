@@ -63,7 +63,7 @@
 
 			if (!supportedFiles.includes(ext)) {
 				toast({
-					message: `.${ext} is not a supported file type.`,
+					message: `Only ${supportedFiles.map((file) => `.${file}`).join(', ')} files are supported.`,
 					variant: ToastVariant.Danger,
 				})
 
@@ -119,9 +119,7 @@
 					)
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
-				}
-
-				if (ext === extensions.PLY) {
+				} else if (ext === extensions.PLY) {
 					const result = new PLYLoader().parse(arrayBuffer)
 					const worldObject = new WorldObject(file.name, undefined, undefined, {
 						center: undefined,
@@ -129,6 +127,8 @@
 					})
 
 					addMesh(worldObject)
+
+					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				}
 			})
 
