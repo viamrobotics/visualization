@@ -29,6 +29,7 @@ export const provideFrames = (partID: () => string) => {
 	const client = useRobotClient(partID)
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
+	$inspect(client)
 	const query = createRobotQuery(client, 'frameSystemConfig')
 	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()

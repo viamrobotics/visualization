@@ -14,17 +14,31 @@ interface Context {
 
 export const provideStaticGeometries = () => {
 	let geometries = $state<WorldObject[]>([])
+	let loaded = $state(false)
 
 	const debounced = new Debounced(() => geometries, 500)
 
 	get('static-geometries').then((response) => {
 		if (Array.isArray(response)) {
-			geometries = response as WorldObject[]
+			for (const json of response) {
+				geometries.push(new WorldObject().fromJSON(json))
+			}
 		}
+
+		loaded = true
 	})
 
 	$effect(() => {
-		set('static-geometries', $state.snapshot(debounced.current))
+		if (!loaded) return
+
+		const results = []
+
+		for (const geometry of debounced.current) {
+			results.push(geometry.toJSON())
+		}
+
+		console.log('hi', results)
+		set('static-geometries', results)
 	})
 
 	setContext<Context>(key, {
@@ -42,7 +56,7 @@ export const provideStaticGeometries = () => {
 				})
 			)
 
-			geometries.push(structuredClone(object))
+			geometries.push(object)
 		},
 		remove(name: string) {
 			const index = geometries.findIndex((geo) => geo.name === name)

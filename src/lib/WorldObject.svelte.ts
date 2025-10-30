@@ -4,6 +4,7 @@ import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
+import { createGeometry } from './geometry'
 
 export type PointsGeometry = {
 	center: undefined
@@ -58,16 +59,15 @@ export const isMetadataKey = (key: string): key is keyof Metadata => {
 }
 
 export class WorldObject<T extends Geometries = Geometries> {
-	uuid: string
-	name: string
+	uuid = MathUtils.generateUUID()
+	name = ''
 	referenceFrame = $state.raw<string>()
 	pose = $state.raw<Pose>(createPose())
-	geometry?: T
+	geometry?: T = $state()
 	metadata = $state<Metadata>({})
 	localEditedPose = $state.raw<Pose>(createPose())
 
-	constructor(name: string, pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
-		this.uuid = MathUtils.generateUUID()
+	constructor(name = '', pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
 		this.name = name
 		this.referenceFrame = parent
 
@@ -80,6 +80,29 @@ export class WorldObject<T extends Geometries = Geometries> {
 			this.pose = pose
 			this.localEditedPose = { ...pose }
 		}
+	}
+
+	toJSON(): Omit<WorldObject, 'toJSON' | 'fromJSON' | 'metadata'> {
+		return {
+			uuid: this.uuid,
+			name: this.name,
+			referenceFrame: $state.snapshot(this.referenceFrame),
+			pose: $state.snapshot(this.pose),
+			geometry: $state.snapshot(this.geometry),
+			localEditedPose: $state.snapshot(this.localEditedPose),
+		}
+	}
+
+	fromJSON(json: WorldObject) {
+		this.uuid = json.uuid
+		this.name = json.name
+		this.referenceFrame = json.referenceFrame
+		this.pose = json.pose
+		this.geometry = json.geometry as T
+		this.localEditedPose = json.localEditedPose
+		this.metadata = {}
+
+		return this
 	}
 }
 
