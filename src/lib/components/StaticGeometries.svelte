@@ -8,6 +8,7 @@
 	import { Quaternion, Vector3 } from 'three'
 	import Frame from './Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { Geometry } from '@viamrobotics/sdk'
 
 	const settings = useSettings()
 	const transformControls = useTransformControls()
@@ -65,7 +66,7 @@
 							}
 
 							object.pose = { ...object.pose }
-							object.geometry = { ...object.geometry }
+							object.geometry = { ...object.geometry } as Geometry
 						}}
 					/>
 				{/key}
