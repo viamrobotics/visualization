@@ -59,8 +59,13 @@ export const buildTreeNodes = (
 				href: `/world-state/${worldState.name}/${object.name}`,
 			}
 
+			const parentNode =
+				object.referenceFrame && nodeMap.has(object.referenceFrame)
+					? nodeMap.get(object.referenceFrame)!
+					: node
+
 			nodeMap.set(object.name, child)
-			node.children?.push(child)
+			parentNode.children?.push(child)
 		}
 
 		nodeMap.set(worldState.name, node)
