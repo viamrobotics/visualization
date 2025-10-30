@@ -69,11 +69,9 @@ export const darkenColor = (value: ColorRepresentation, percent: number): Color 
 
 const darkness = '600'
 
-export const createColorMetadata = (resourceName?: ResourceName) => {
+export const resourceNameToColor = (resourceName?: ResourceName) => {
 	return resourceName
-		? {
-				color: new Color(resourceColors[resourceName.subtype as keyof typeof resourceColors]),
-			}
+		? new Color(resourceColors[resourceName.subtype as keyof typeof resourceColors])
 		: undefined
 }
 

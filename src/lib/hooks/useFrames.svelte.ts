@@ -2,7 +2,7 @@ import { getContext, setContext, untrack } from 'svelte'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { useLogs } from './useLogs.svelte'
-import { createColorMetadata } from '$lib/color'
+import { resourceNameToColor } from '$lib/color'
 import type { Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
@@ -56,13 +56,14 @@ export const provideFrames = (partID: () => string) => {
 
 			const resourceName = resourceByName.current[frame.referenceFrame]
 			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
+			const color = resourceNameToColor(resourceName)
 
 			objects[frameName] = new WorldObject(
 				frameName,
 				frame.poseInObserverFrame?.pose,
 				frame.poseInObserverFrame?.referenceFrame,
 				frame.physicalObject,
-				createColorMetadata(resourceName)
+				color ? { color } : undefined
 			)
 		}
 
