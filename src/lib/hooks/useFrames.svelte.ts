@@ -85,32 +85,6 @@ export const provideFrames = (partID: () => string) => {
 
 		if (component.frame.geometry) {
 			worldObject.geometry = createGeometryFromFrame(component.frame)
-			// switch (component.frame.geometry.type) {
-			// 	case 'box':
-			// 		worldObject.geometry = {
-			// 			...worldObject.geometry,
-			// 			geometryType: {
-			// 				case: 'box',
-			// 				value: {
-			// 					dimsMm: {
-			// 						x: component.frame.geometry.x,
-			// 						y: component.frame.geometry.y,
-			// 						z: component.frame.geometry.z,
-			// 					},
-			// 				},
-			// 			},
-			// 		} as Geometries
-			// 		break
-			// 	case 'sphere':
-			// 		worldObject.geometry = createGeometryFromFrame(component.frame)
-			// 		break
-			// 	case 'capsule':
-			// 		worldObject.geometry = createGeometryFromFrame(component.frame)
-			// 		break
-			// 	default:
-			// 		worldObject.geometry = undefined
-			// 		break
-			// }
 		} else {
 			worldObject.geometry = undefined
 		}
