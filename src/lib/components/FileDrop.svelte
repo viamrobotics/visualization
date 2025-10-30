@@ -61,7 +61,6 @@
 				continue
 			}
 
-			console.log(supportedFiles, ext)
 			if (!supportedFiles.includes(ext)) {
 				toast({
 					message: `.${ext} is not a supported file type.`,
