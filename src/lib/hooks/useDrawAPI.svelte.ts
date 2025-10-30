@@ -5,7 +5,6 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
-import type { Geometry } from '@viamrobotics/sdk'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
@@ -14,9 +13,7 @@ import { createPoseFromFrame } from '$lib/transform'
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
-	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	points: WorldObject<PointsGeometry>[]
-
 	frames: WorldObject[]
 	lines: WorldObject[]
 	meshes: WorldObject[]
@@ -33,6 +30,10 @@ interface Context {
 				animate: boolean
 		  }
 		| undefined
+
+	addPoints(worldObject: WorldObject<PointsGeometry>): void
+	addMesh(worldObject: WorldObject): void
+
 	clearCamera: () => void
 }
 
@@ -176,13 +177,7 @@ export const provideDrawAPI = () => {
 			return
 		}
 
-		const geometry: Geometry = {
-			label: data.label,
-			center: undefined,
-			geometryType: {
-				case: undefined,
-			},
-		}
+		const geometry = createGeometry()
 
 		if ('mesh' in data) {
 			geometry.geometryType.case = 'mesh'
@@ -603,9 +598,6 @@ export const provideDrawAPI = () => {
 		get points() {
 			return points
 		},
-		addPoints(worldObject: WorldObject<PointsGeometry>) {
-			points.push(worldObject)
-		},
 		get lines() {
 			return lines
 		},
@@ -626,6 +618,12 @@ export const provideDrawAPI = () => {
 		},
 		get camera() {
 			return camera
+		},
+		addPoints(worldObject: WorldObject<PointsGeometry>) {
+			points.push(worldObject)
+		},
+		addMesh(worldObject: WorldObject) {
+			meshes.push(worldObject)
 		},
 		clearCamera: () => {
 			camera = undefined

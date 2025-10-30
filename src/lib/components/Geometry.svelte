@@ -103,7 +103,12 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if geometry.geometryType.case === 'mesh'}
+			{#if geometry.geometryType.case === 'bufferGeometry'}
+				<T
+					is={geometry.geometryType.value}
+					{oncreate}
+				/>
+			{:else if geometry.geometryType.case === 'mesh'}
 				{@const mesh = geometry.geometryType.value.mesh}
 				{@const meshGeometry = parsePlyInput(mesh)}
 				<T
