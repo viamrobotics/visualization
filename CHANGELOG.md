@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.15.1
+
+### Patch Changes
+
+- bc666ef: Do not depend on resource names to fetch poses
+
 ## 0.15.0
 
 ### Minor Changes
