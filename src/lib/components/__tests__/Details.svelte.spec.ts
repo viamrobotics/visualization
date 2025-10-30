@@ -83,7 +83,7 @@ describe('Details component', () => {
 		weblabContext.isActive = vi.fn(() => true)
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = true
-		const context = new Map<symbol, any>([
+		const context = new Map<symbol, unknown>([
 			[WEBLABS_CONTEXT_KEY, weblabContext],
 			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
 		])
@@ -196,7 +196,7 @@ describe('Details component', () => {
 			hasEditPermissions: true,
 		})
 
-		const context = new Map<symbol, any>([
+		const context = new Map<symbol, unknown>([
 			[WEBLABS_CONTEXT_KEY, weblabContext],
 			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
 		])

@@ -32,7 +32,6 @@ export const provideEnvironment = () => {
 	const context = createEnvironment()
 	setContext<Context>(ENVIRONMENT_CONTEXT_KEY, context)
 	return context
-
 }
 
 export const useEnvironment = () => {
