@@ -4,7 +4,6 @@ import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
-import { createGeometry } from './geometry'
 
 export type PointsGeometry = {
 	center: undefined
