@@ -28,6 +28,7 @@
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	const { ...rest } = $props()
 
 	const focused = useFocused()
@@ -38,7 +39,7 @@
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 	const weblab = useWeblabs()
-
+	const environment = useEnvironment()
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
@@ -564,7 +565,7 @@
 		{/if}
 
 		<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
-			{#if showEditFrameOptions}
+			{#if showEditFrameOptions && environment.current.isStandalone}
 				<Button
 					variant="danger"
 					class="mt-2 w-full"

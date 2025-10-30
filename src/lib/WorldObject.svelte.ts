@@ -1,5 +1,5 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, MathUtils, Object3D, Vector3 } from 'three'
+import { BatchedMesh, Color, MathUtils, Object3D, Vector3, type BufferGeometry } from 'three'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
@@ -15,7 +15,12 @@ export type LinesGeometry = {
 	geometryType: { case: 'line'; value: Float32Array }
 }
 
-export type Geometries = Geometry | PointsGeometry | LinesGeometry
+export type ThreeBufferGeometry = {
+	center: undefined
+	geometryType: { case: 'bufferGeometry'; value: BufferGeometry }
+}
+
+export type Geometries = Geometry | PointsGeometry | LinesGeometry | ThreeBufferGeometry
 
 export const SupportedShapes = {
 	points: 'points',

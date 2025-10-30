@@ -1,5 +1,16 @@
 # motion-tools
 
+## 0.15.0
+
+### Minor Changes
+
+- b1976c6: Add PLY file drag-n-drop
+
+### Patch Changes
+
+- 9b5f383: hide delete button in app
+- 3539418: Fix world state parenting in tree, fix color parsing, fix arrow management for world state
+
 ## 0.14.12
 
 ### Patch Changes
