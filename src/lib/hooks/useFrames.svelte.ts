@@ -10,7 +10,6 @@ import { createPoseFromFrame } from '$lib/transform'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { createGeometryFromFrame } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
-import { result } from 'lodash-es'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -165,7 +164,6 @@ export const provideFrames = (partID: () => string) => {
 
 	const current = $derived.by(() => {
 		const results = Object.values(machineFrames)
-		console.log(results.map((r) => [r.name, r.referenceFrame]))
 		updateUUIDs(results)
 		return results
 	})
