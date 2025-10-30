@@ -37,7 +37,6 @@ export const provideStaticGeometries = () => {
 			results.push(geometry.toJSON())
 		}
 
-		console.log('hi', results)
 		set('static-geometries', results)
 	})
 
