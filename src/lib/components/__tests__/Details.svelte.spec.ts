@@ -4,10 +4,10 @@ import '@testing-library/jest-dom/vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import * as useEnvironment from '$lib/hooks/useEnvironment.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
 
 describe('Details component', () => {
@@ -70,9 +70,6 @@ describe('Details component', () => {
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
 		})
-		vi.mocked(useEnvironment.useEnvironment).mockReturnValue({
-			current: { viewerMode: 'monitor', isStandalone: true },
-		})
 	})
 
 	it('renders object name', () => {
@@ -82,10 +79,16 @@ describe('Details component', () => {
 	})
 
 	it('renders local details under weblab active', () => {
-		const context = createWeblabs()
-		context.isActive = vi.fn(() => true)
-		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
+		const weblabContext = createWeblabs()
+		weblabContext.isActive = vi.fn(() => true)
+		const environmentContext = createEnvironment()
+		environmentContext.current.isStandalone = true
+		const context = new Map<symbol, any>([
+			[WEBLABS_CONTEXT_KEY, weblabContext],
+			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
+		])
 
+		render(Details, { context })
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
 		const parentFrameNameSpan = screen.getByLabelText('immutable parent frame name')
 		const parentFrameNameText = parentFrameNameSpan.nextSibling as HTMLElement
@@ -127,8 +130,10 @@ describe('Details component', () => {
 	})
 
 	it('renders update fields for frame nodes and weblab active', () => {
-		const context = createWeblabs()
-		context.isActive = vi.fn(() => true)
+		const weblabContext = createWeblabs()
+		weblabContext.isActive = vi.fn(() => true)
+		const environmentContext = createEnvironment()
+		environmentContext.current.isStandalone = true
 
 		mockedCurrent.push({
 			name: 'Test Object',
@@ -191,7 +196,12 @@ describe('Details component', () => {
 			hasEditPermissions: true,
 		})
 
-		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
+		const context = new Map<symbol, any>([
+			[WEBLABS_CONTEXT_KEY, weblabContext],
+			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
+		])
+
+		render(Details, { context })
 
 		expect(screen.getByLabelText('mutable local position x coordinate')).toBeInTheDocument()
 		expect(screen.getByLabelText('mutable local position y coordinate')).toBeInTheDocument()

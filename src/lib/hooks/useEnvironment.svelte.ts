@@ -1,6 +1,6 @@
 import { getContext, setContext } from 'svelte'
 
-const key = Symbol('environment')
+export const ENVIRONMENT_CONTEXT_KEY = Symbol('environment')
 
 interface Environemnt {
 	viewerMode: 'edit' | 'monitor'
@@ -16,7 +16,7 @@ const defaults = (): Environemnt => ({
 	isStandalone: true,
 })
 
-export const provideEnvironment = () => {
+export const createEnvironment = (): Context => {
 	const environment = $state<Environemnt>(defaults())
 
 	const context: Context = {
@@ -25,11 +25,16 @@ export const provideEnvironment = () => {
 		},
 	}
 
-	setContext<Context>(key, context)
-
 	return context
 }
 
+export const provideEnvironment = () => {
+	const context = createEnvironment()
+	setContext<Context>(ENVIRONMENT_CONTEXT_KEY, context)
+	return context
+
+}
+
 export const useEnvironment = () => {
-	return getContext<Context>(key)
+	return getContext<Context>(ENVIRONMENT_CONTEXT_KEY)
 }
