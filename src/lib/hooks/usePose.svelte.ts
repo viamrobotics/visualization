@@ -61,6 +61,10 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
+			/**
+			 * Do not return the pose of an arm because in this case the pose represents
+			 * the end effector frame and not the origin frame
+			 */
 			if (resource?.subtype === 'arm') {
 				return
 			}
