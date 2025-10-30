@@ -32,24 +32,16 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 			enabled:
 				interval !== -1 &&
 				client.current !== undefined &&
-				resource !== undefined &&
 				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === 0 ? false : interval,
-			queryKey: [
-				'partID',
-				partID.current,
-				client.current?.name,
-				'getPose',
-				resource?.name,
-				parent(),
-			],
+			queryKey: ['partID', partID.current, client.current?.name, 'getPose', name(), parent()],
 			queryFn: async () => {
-				if (!client.current || !resource) {
+				if (!client.current) {
 					throw new Error('No client')
 				}
 
 				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
-				const pose = await client.current.getPose(resource.name, resolvedParent ?? 'world', [])
+				const pose = await client.current.getPose(name(), resolvedParent ?? 'world', [])
 
 				return pose
 			},
@@ -69,6 +61,10 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
+			/**
+			 * Do not return the pose of an arm because in this case the pose represents
+			 * the end effector frame and not the origin frame
+			 */
 			if (resource?.subtype === 'arm') {
 				return
 			}
