@@ -13,7 +13,7 @@ interface Context {
 }
 
 export const provideStaticGeometries = () => {
-	let geometries = $state<WorldObject[]>([])
+	const geometries = $state<WorldObject[]>([])
 	let loaded = $state(false)
 
 	const debounced = new Debounced(() => geometries, 500)
