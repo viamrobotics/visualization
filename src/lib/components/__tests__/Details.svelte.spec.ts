@@ -4,51 +4,22 @@ import '@testing-library/jest-dom/vitest'
 import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
-import { Struct, type Geometry } from '@viamrobotics/sdk'
+import { Struct } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import type { WorldObject } from '$lib/WorldObject.svelte'
+import { WorldObject } from '$lib/WorldObject.svelte'
+import { createWorldObjectFixture } from './__fixtures__/worldObject.svelte'
 
 describe('Details component', () => {
 	const mockedCurrent: WorldObject[] = []
 
 	beforeEach(() => {
 		// Mock the selection hooks to return test data
-		vi.mocked(useSelection.useFocusedObject).mockReturnValue({
-			current: {
-				name: 'Test Object',
-				uuid: '1234-5678',
-				referenceFrame: 'parent_frame',
-				pose: {
-					x: 10,
-					y: 20,
-					z: 30,
-					oX: 0.1,
-					oY: 0.2,
-					oZ: 0.3,
-					theta: 0.4,
-				},
-				geometry: {
-					label: 'my geometry',
-					geometryType: {
-						case: 'box',
-						value: {
-							dimsMm: { x: 10, y: 20, z: 30 },
-						},
-					},
-				} satisfies Geometry,
-				metadata: {},
-				localEditedPose: {
-					x: 10,
-					y: 20,
-					z: 30,
-					oX: 0.1,
-					oY: 0.2,
-					oZ: 0.3,
-					theta: 0.4,
-				},
-			},
-		})
+
+		const object = createWorldObjectFixture()
+
+		vi.mocked(useSelection.useFocusedObject).mockReturnValue({ current: object })
+
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
 			current: undefined,
 		})
@@ -126,39 +97,7 @@ describe('Details component', () => {
 		const context = createWeblabs()
 		context.isActive = vi.fn(() => true)
 
-		mockedCurrent.push({
-			name: 'Test Object',
-			uuid: '1234-5678',
-			referenceFrame: 'parent_frame',
-			pose: {
-				x: 10,
-				y: 20,
-				z: 30,
-				oX: 0.1,
-				oY: 0.2,
-				oZ: 0.3,
-				theta: 0.4,
-			},
-			localEditedPose: {
-				x: 10,
-				y: 20,
-				z: 30,
-				oX: 0.1,
-				oY: 0.2,
-				oZ: 0.3,
-				theta: 0.4,
-			},
-			geometry: {
-				label: 'my geometry',
-				geometryType: {
-					case: 'box',
-					value: {
-						dimsMm: { x: 10, y: 20, z: 30 },
-					},
-				},
-			},
-			metadata: {},
-		})
+		mockedCurrent.push(createWorldObjectFixture())
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct().fromJson({
 				components: [
