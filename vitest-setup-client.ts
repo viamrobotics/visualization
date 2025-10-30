@@ -28,6 +28,10 @@ vi.mock('$lib/hooks/useFrames.svelte', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
 }))
 
+// Mock useEnvironment hook
+vi.mock('$lib/hooks/useEnvironment.svelte', () => ({
+	useEnvironment: vi.fn(() => ({ current: { viewerMode: 'monitor', isStandalone: true } })),
+}))
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	usePartConfig: vi.fn(() => ({

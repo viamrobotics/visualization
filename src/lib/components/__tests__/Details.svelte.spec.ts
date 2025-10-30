@@ -7,6 +7,7 @@ import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte
 import { Struct, type Geometry } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import * as useEnvironment from '$lib/hooks/useEnvironment.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
 
 describe('Details component', () => {
@@ -68,6 +69,9 @@ describe('Details component', () => {
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
+		})
+		vi.mocked(useEnvironment.useEnvironment).mockReturnValue({
+			current: { viewerMode: 'monitor', isStandalone: true },
 		})
 	})
 
