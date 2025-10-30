@@ -1,5 +1,47 @@
 # motion-tools
 
+## 0.15.0
+
+### Minor Changes
+
+- b1976c6: Add PLY file drag-n-drop
+
+### Patch Changes
+
+- 9b5f383: hide delete button in app
+- 3539418: Fix world state parenting in tree, fix color parsing, fix arrow management for world state
+
+## 0.14.12
+
+### Patch Changes
+
+- 66c4c7c: Allow automatic buffer resizing for drawing arrows
+- b1659d8: put add frames behind weblab
+
+## 0.14.11
+
+### Patch Changes
+
+- 9c6ae90: fix bug in converting quat to ov
+
+## 0.14.10
+
+### Patch Changes
+
+- 1c4143d: put pose matrix computations behind weblab
+
+## 0.14.9
+
+### Patch Changes
+
+- b2dd602: Fix: use orientation vector methods for matrix transforms
+
+## 0.14.8
+
+### Patch Changes
+
+- b8127a1: Fix excessive $effect calls causing CPU overload
+
 ## 0.14.7
 
 ### Patch Changes

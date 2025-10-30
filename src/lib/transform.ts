@@ -6,6 +6,8 @@ import type { Frame } from './frame'
 const quaternion = new Quaternion()
 const euler = new Euler()
 const ov = new OrientationVector()
+const translation = new Vector3()
+const scale = new Vector3()
 
 export const createPose = (pose?: Pose): Pose => {
 	return {
@@ -105,37 +107,28 @@ export const scaleToDimensions = (scale: Vector3, geometry: Geometry['geometryTy
 }
 
 export const poseToMatrix = (pose: Pose) => {
+	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta))
+	ov.toQuaternion(quaternion)
+
 	const matrix = new Matrix4()
-	const poseQuaternion = new Quaternion().setFromAxisAngle(
-		new Vector3(pose.oX, pose.oY, pose.oZ),
-		pose.theta * (Math.PI / 180)
-	)
-	matrix.makeRotationFromQuaternion(poseQuaternion)
-	matrix.setPosition(new Vector3(pose.x, pose.y, pose.z))
+	matrix.makeRotationFromQuaternion(quaternion)
+	matrix.setPosition(pose.x, pose.y, pose.z)
 	return matrix
 }
 
 export const matrixToPose = (matrix: Matrix4) => {
 	const pose = createPose()
-	const translation = new Vector3()
-	const quaternion = new Quaternion()
-	matrix.decompose(translation, quaternion, new Vector3())
+
+	matrix.decompose(translation, quaternion, scale)
 	pose.x = translation.x
 	pose.y = translation.y
 	pose.z = translation.z
 
-	const s = Math.sqrt(1 - quaternion.w * quaternion.w)
-	if (s < 0.000001) {
-		pose.oX = 0
-		pose.oY = 0
-		pose.oZ = 1
-		pose.theta = 0
-	} else {
-		pose.oX = quaternion.x / s
-		pose.oY = quaternion.y / s
-		pose.oZ = quaternion.z / s
-		pose.theta = Math.acos(quaternion.w) * 2 * (180 / Math.PI)
-	}
+	ov.setFromQuaternion(quaternion)
+	pose.oX = ov.x
+	pose.oY = ov.y
+	pose.oZ = ov.z
+	pose.theta = MathUtils.radToDeg(ov.th)
 
 	return pose
 }

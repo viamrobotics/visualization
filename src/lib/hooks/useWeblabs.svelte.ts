@@ -1,6 +1,10 @@
 import { getContext, setContext } from 'svelte'
 import { SvelteSet } from 'svelte/reactivity'
 
+export const WEBLABS_EXPERIMENTS = {
+	MOTION_TOOLS_EDIT_FRAME: 'MOTION_TOOLS_EDIT_FRAME',
+} as const
+
 export const WEBLABS_CONTEXT_KEY = Symbol('weblabs-context')
 
 const getCookie = (name: string): string | null => {
