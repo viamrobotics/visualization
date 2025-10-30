@@ -2,10 +2,11 @@
 	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { parsePcdInWorker, WorldObject } from '$lib/lib'
 	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
+	import { PLYLoader } from 'three/examples/jsm/Addons.js'
 
 	let { ...rest } = $props()
 
-	const { addPoints } = useDrawAPI()
+	const { addPoints, addMesh } = useDrawAPI()
 
 	type DropStates = 'inactive' | 'hovering' | 'loading'
 
@@ -31,6 +32,12 @@
 
 	const toast = useToast()
 
+	const extensions = {
+		PCD: 'pcd',
+		PLY: 'ply',
+	}
+	const supportedFiles = [extensions.PCD, extensions.PLY]
+
 	const ondrop = (event: DragEvent) => {
 		event.preventDefault()
 
@@ -45,7 +52,17 @@
 		for (const file of files) {
 			const ext = file.name.split('.').at(-1)
 
-			if (ext !== '.pcd') {
+			if (!ext) {
+				toast({
+					message: `Could not determine file extension.`,
+					variant: ToastVariant.Danger,
+				})
+
+				continue
+			}
+
+			console.log(supportedFiles, ext)
+			if (!supportedFiles.includes(ext)) {
 				toast({
 					message: `.${ext} is not a supported file type.`,
 					variant: ToastVariant.Danger,
@@ -65,34 +82,55 @@
 			})
 
 			reader.addEventListener('error', () => {
-				toast({ message: `${file.name} failed to load.`, variant: ToastVariant.Danger })
+				toast({
+					message: `${file.name} failed to load.`,
+					variant: ToastVariant.Danger,
+				})
 			})
 
 			reader.addEventListener('load', async (event) => {
 				const arrayBuffer = event.target?.result
 
 				if (!arrayBuffer || typeof arrayBuffer === 'string') {
+					toast({
+						message: `${file.name} failed to load.`,
+						variant: ToastVariant.Danger,
+					})
+
 					return
 				}
 
-				const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
+				if (ext === extensions.PCD) {
+					const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
 
-				addPoints(
-					new WorldObject(
-						file.name,
-						undefined,
-						undefined,
-						{
-							center: undefined,
-							geometryType: {
-								case: 'points',
-								value: result.positions,
+					addPoints(
+						new WorldObject(
+							file.name,
+							undefined,
+							undefined,
+							{
+								center: undefined,
+								geometryType: {
+									case: 'points',
+									value: result.positions,
+								},
 							},
-						},
-						result.colors ? { colors: result.colors } : undefined
+							result.colors ? { colors: result.colors } : undefined
+						)
 					)
-				)
-				toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
+
+					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
+				}
+
+				if (ext === extensions.PLY) {
+					const result = new PLYLoader().parse(arrayBuffer)
+					const worldObject = new WorldObject(file.name, undefined, undefined, {
+						center: undefined,
+						geometryType: { case: 'bufferGeometry', value: result },
+					})
+
+					addMesh(worldObject)
+				}
 			})
 
 			reader.readAsArrayBuffer(file)
