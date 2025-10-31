@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.15.2
+
+### Patch Changes
+
+- f275caa: revert useframe refactor
+
 ## 0.15.1
 
 ### Patch Changes
