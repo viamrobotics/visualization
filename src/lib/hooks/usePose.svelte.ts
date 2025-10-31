@@ -8,6 +8,7 @@ import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
 import { untrack } from 'svelte'
+import { useFrames } from './useFrames.svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
@@ -18,6 +19,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
 	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
 	const environment = useEnvironment()
+	const frames = useFrames()
 
 	const client = createResourceClient(
 		MotionClient,
@@ -51,7 +53,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const query = fromStore(createQuery(toStore(() => options)))
 
 	observe.pre(
-		() => [environment.current.viewerMode],
+		() => [environment.current.viewerMode, frames.current],
 		() => {
 			if (environment.current.viewerMode === 'monitor') {
 				untrack(() => query.current).refetch()
