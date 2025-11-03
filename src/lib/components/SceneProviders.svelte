@@ -18,6 +18,7 @@
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
+	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	interface Props {
 		children: Snippet<[{ focus: boolean }]>
 	}
@@ -36,13 +37,14 @@
 	provideStaticGeometries()
 	provideDrawAPI()
 
+	provideResourceByName(() => partID.current)
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
+	provideArmClient(() => partID.current)
 	provideObjects()
 	provideWorldStates()
-	provideArmClient(() => partID.current)
 	provideFramelessComponents()
 
 	const { focus } = provideSelection()

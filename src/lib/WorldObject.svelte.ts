@@ -92,7 +92,7 @@ export class WorldObject<T extends Geometries = Geometries> {
 			name: this.name,
 			referenceFrame: $state.snapshot(this.referenceFrame),
 			pose: $state.snapshot(this.pose),
-			geometry: $state.snapshot(this.geometry),
+			geometry: $state.snapshot(this.geometry) as Geometry,
 			localEditedPose: $state.snapshot(this.localEditedPose),
 		}
 	}
