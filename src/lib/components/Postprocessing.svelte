@@ -14,7 +14,7 @@
 
 	const object3d = useSelectedObject3d()
 
-	const { scene, renderer, camera, size, autoRender, renderStage } = useThrelte()
+	const { scene, renderer, camera, size, autoRender, renderStage, shouldRender } = useThrelte()
 
 	scene.background = new Color(0xffffff)
 	const composer = new EffectComposer(renderer)
@@ -31,7 +31,6 @@
 		blendFunction: BlendFunction.ALPHA,
 		edgeStrength: 5,
 		pulseSpeed: 0.0,
-		multisampling: 8,
 		blur: true,
 		visibleEdgeColor: selectionColor,
 		hiddenEdgeColor: selectionColor,
@@ -49,18 +48,18 @@
 		}
 	})
 
-	const smaaEffect = new SMAAEffect({ preset: SMAAPreset.HIGH })
+	const smaaEffect = new SMAAEffect({ preset: SMAAPreset.LOW })
 
-	const effectPass = new EffectPass(undefined, outlineEffect, smaaEffect)
+	const effectPass = new EffectPass($camera, outlineEffect, smaaEffect)
 	composer.addPass(effectPass)
 
-	$effect(() => {
+	$effect.pre(() => {
 		renderPass.mainCamera = $camera
 		outlineEffect.mainCamera = $camera
 		effectPass.mainCamera = $camera
 	})
 
-	$effect(() => {
+	$effect.pre(() => {
 		return () => {
 			composer.removeAllPasses()
 			effectPass.dispose()
@@ -69,7 +68,7 @@
 		}
 	})
 
-	$effect(() => {
+	$effect.pre(() => {
 		const last = autoRender.current
 		autoRender.set(false)
 		return () => {
@@ -79,7 +78,9 @@
 
 	useTask(
 		(delta) => {
-			composer.render(delta)
+			if (shouldRender()) {
+				composer.render(delta)
+			}
 		},
 		{ stage: renderStage, autoInvalidate: false }
 	)
