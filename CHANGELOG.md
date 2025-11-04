@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.15.3
+
+### Patch Changes
+
+- 4b80422: Fix arbitrary geometry editing
+- 60269ad: refactor useframes
+
 ## 0.15.2
 
 ### Patch Changes
