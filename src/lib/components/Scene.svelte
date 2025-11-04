@@ -17,6 +17,7 @@
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
+	import Postprocessing from './Postprocessing.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -98,4 +99,6 @@
 	<T.DirectionalLight position={[3, 3, 3]} />
 	<T.DirectionalLight position={[-3, -3, -3]} />
 	<T.AmbientLight />
+
+	<Postprocessing />
 </T.Group>

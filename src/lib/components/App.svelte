@@ -21,6 +21,7 @@
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { WebGLRenderer } from 'three'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -87,7 +88,18 @@
 	class="relative h-full w-full overflow-hidden"
 	bind:this={root}
 >
-	<Canvas renderMode="always">
+	<Canvas
+		renderMode="always"
+		createRenderer={(canvas) => {
+			return new WebGLRenderer({
+				canvas,
+				powerPreference: 'high-performance',
+				antialias: false,
+				stencil: false,
+				depth: false,
+			})
+		}}
+	>
 		<World>
 			<SceneProviders>
 				{#snippet children({ focus })}

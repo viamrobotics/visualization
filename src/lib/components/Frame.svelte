@@ -8,8 +8,7 @@
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { Color, type Object3D } from 'three'
 	import Geometry from './Geometry.svelte'
-	import { useSelected } from '$lib/hooks/useSelection.svelte'
-	import { colors, darkenColor } from '$lib/color'
+	import { colors } from '$lib/color'
 
 	interface Props {
 		uuid: string
@@ -22,7 +21,6 @@
 
 	let { uuid, ...rest }: Props = $props()
 
-	const selected = useSelected()
 	const events = useObjectEvents(() => uuid)
 
 	const color = $derived(rest.metadata.color ?? colors.default)
@@ -30,9 +28,7 @@
 
 <Geometry
 	{uuid}
-	color={selected.current === uuid
-		? `#${darkenColor(color, 75).getHexString()}`
-		: `#${colorUtil.set(color).getHexString()}`}
+	color={`#${colorUtil.set(color).getHexString()}`}
 	{...events}
 	{...rest}
 />
