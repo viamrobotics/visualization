@@ -73,7 +73,7 @@
 		"prettier-plugin-tailwindcss": "0.6.14",
 		"publint": "0.3.12",
 		"runed": "0.31.1",
-		"svelte": "5.38.7",
+		"svelte": "5.43.0",
 		"svelte-check": "4.3.1",
 		"svelte-virtuallists": "1.4.2",
 		"tailwindcss": "4.1.13",

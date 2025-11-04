@@ -21,11 +21,11 @@ export const createPose = (pose?: Pose): Pose => {
 	}
 }
 
-export const createPoseFromFrame = (frame: Frame): Pose => {
-	if (frame.orientation.type === 'quaternion') {
+export const createPoseFromFrame = (frame: Partial<Frame>): Pose => {
+	if (frame.orientation?.type === 'quaternion') {
 		quaternion.copy(frame.orientation.value)
 		ov.setFromQuaternion(quaternion)
-	} else if (frame.orientation.type === 'euler_angles') {
+	} else if (frame.orientation?.type === 'euler_angles') {
 		euler.set(
 			frame.orientation.value.roll,
 			frame.orientation.value.pitch,
@@ -34,17 +34,17 @@ export const createPoseFromFrame = (frame: Frame): Pose => {
 		)
 		quaternion.setFromEuler(euler)
 		ov.setFromQuaternion(quaternion)
-	} else if (frame.orientation.type === 'ov_radians') {
+	} else if (frame.orientation?.type === 'ov_radians') {
 		ov.copy(frame.orientation.value)
 	} else {
-		const th = MathUtils.degToRad(frame.orientation.value.th)
-		ov.set(frame.orientation.value.x, frame.orientation.value.y, frame.orientation.value.z, th)
+		const th = MathUtils.degToRad(frame.orientation?.value.th ?? 0)
+		ov.set(frame.orientation?.value.x, frame.orientation?.value.y, frame.orientation?.value.z, th)
 	}
 
 	return {
-		x: frame.translation.x ?? 0,
-		y: frame.translation.y ?? 0,
-		z: frame.translation.z ?? 0,
+		x: frame.translation?.x ?? 0,
+		y: frame.translation?.y ?? 0,
+		z: frame.translation?.z ?? 0,
 		oX: ov.x,
 		oY: ov.y,
 		oZ: ov.z,
