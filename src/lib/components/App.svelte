@@ -20,6 +20,7 @@
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -33,6 +34,11 @@
 		enableKeybindings?: boolean
 		children?: Snippet
 		localConfigProps?: LocalConfigProps
+
+		/**
+		 * Allows setting the initial camera pose
+		 */
+		cameraPose?: CameraPose
 	}
 
 	let {
@@ -40,6 +46,7 @@
 		enableKeybindings = true,
 		children: appChildren,
 		localConfigProps,
+		cameraPose,
 	}: Props = $props()
 
 	const appClient = useViamClient()
@@ -87,7 +94,7 @@
 	bind:this={root}
 >
 	<Canvas renderMode="on-demand">
-		<SceneProviders>
+		<SceneProviders {cameraPose}>
 			{#snippet children({ focus })}
 				<Scene>
 					{@render appChildren?.()}
