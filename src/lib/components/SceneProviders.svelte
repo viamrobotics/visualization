@@ -9,7 +9,11 @@
 	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
-	import { provideTransformControls } from '$lib/hooks/useControls.svelte'
+	import {
+		provideCameraControls,
+		provideTransformControls,
+		type CameraPose,
+	} from '$lib/hooks/useControls.svelte'
 	import { provideObjects } from '$lib/hooks/useObjects.svelte'
 	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
@@ -19,14 +23,17 @@
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
+
 	interface Props {
+		cameraPose?: CameraPose
 		children: Snippet<[{ focus: boolean }]>
 	}
 
-	let { children }: Props = $props()
+	let { cameraPose, children }: Props = $props()
 
 	const partID = usePartID()
 
+	provideCameraControls(() => cameraPose)
 	provideTransformControls()
 	provideVisibility()
 	provideMachineSettings()

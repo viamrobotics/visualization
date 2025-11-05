@@ -9,6 +9,7 @@ import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
+import { useCameraControls } from './useControls.svelte'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -23,18 +24,8 @@ interface Context {
 
 	connectionStatus: ConnectionStatus
 
-	camera:
-		| {
-				position: Vector3
-				lookAt: Vector3
-				animate: boolean
-		  }
-		| undefined
-
 	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	addMesh(worldObject: WorldObject): void
-
-	clearCamera: () => void
 }
 
 const key = Symbol('draw-api-context-key')
@@ -85,6 +76,8 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
+	const cameraControls = useCameraControls()
+
 	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
@@ -103,7 +96,6 @@ export const provideDrawAPI = () => {
 	const nurbs = $state<WorldObject[]>([])
 	const models = $state<WorldObject[]>([])
 
-	let camera = $state.raw<Context['camera']>()
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
 	const color = new Color()
@@ -552,11 +544,15 @@ export const provideDrawAPI = () => {
 		if (!data) return
 
 		if ('setCameraPose' in data) {
-			camera = {
-				position: new Vector3(data.Position.X, data.Position.Y, data.Position.Z),
-				lookAt: new Vector3(data.LookAt.X, data.LookAt.Y, data.LookAt.Z),
-				animate: data.Animate,
-			}
+			cameraControls.setPose(
+				{
+					position: [data.Position.X, data.Position.Y, data.Position.Z],
+					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+				},
+				data.Animate
+			)
+
+			return
 		}
 
 		if ('geometries' in data) {
@@ -622,17 +618,11 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		get camera() {
-			return camera
-		},
 		addPoints(worldObject: WorldObject<PointsGeometry>) {
 			points.push(worldObject)
 		},
 		addMesh(worldObject: WorldObject) {
 			meshes.push(worldObject)
-		},
-		clearCamera: () => {
-			camera = undefined
 		},
 	})
 }
