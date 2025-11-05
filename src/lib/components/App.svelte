@@ -90,6 +90,7 @@
 >
 	<Canvas
 		renderMode="always"
+		dpr={1.75}
 		createRenderer={(canvas) => {
 			return new WebGLRenderer({
 				canvas,

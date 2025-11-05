@@ -5,9 +5,7 @@
 		EffectComposer,
 		EffectPass,
 		OutlineEffect,
-		SMAAEffect,
 		RenderPass,
-		SMAAPreset,
 	} from 'postprocessing'
 	import { useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { Color } from 'three'
@@ -18,6 +16,7 @@
 
 	scene.background = new Color(0xffffff)
 	const composer = new EffectComposer(renderer)
+	composer.multisampling = renderer.capabilities.maxSamples
 
 	const renderPass = new RenderPass(scene)
 	composer.addPass(renderPass)
@@ -30,8 +29,9 @@
 	const outlineEffect = new OutlineEffect(scene, undefined, {
 		blendFunction: BlendFunction.ALPHA,
 		edgeStrength: 5,
-		pulseSpeed: 0.0,
-		blur: true,
+		pulseSpeed: 0,
+		blur: false,
+		resolutionScale: 0.3,
 		visibleEdgeColor: selectionColor,
 		hiddenEdgeColor: selectionColor,
 	})
@@ -48,9 +48,7 @@
 		}
 	})
 
-	const smaaEffect = new SMAAEffect({ preset: SMAAPreset.LOW })
-
-	const effectPass = new EffectPass($camera, outlineEffect, smaaEffect)
+	const effectPass = new EffectPass($camera, outlineEffect)
 	composer.addPass(effectPass)
 
 	$effect.pre(() => {
@@ -82,6 +80,9 @@
 				composer.render(delta)
 			}
 		},
-		{ stage: renderStage, autoInvalidate: false }
+		{
+			stage: renderStage,
+			autoInvalidate: false,
+		}
 	)
 </script>
