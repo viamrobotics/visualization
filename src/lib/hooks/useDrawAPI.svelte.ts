@@ -8,7 +8,7 @@ import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
-import { createPoseFromFrame } from '$lib/transform'
+import { createPose, createPoseFromFrame } from '$lib/transform'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -173,7 +173,7 @@ export const provideDrawAPI = () => {
 		const result = meshes.find((mesh) => mesh.name === data.label)
 
 		if (result) {
-			result.pose = data.center
+			result.pose = createPose(data.center)
 			return
 		}
 
@@ -193,9 +193,15 @@ export const provideDrawAPI = () => {
 			geometry.geometryType.value = data.capsule
 		}
 
-		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color: new Color(color),
-		})
+		const object = new WorldObject(
+			data.label ?? ++geometryIndex,
+			createPose(data.center),
+			parent,
+			geometry,
+			{
+				color: new Color(color),
+			}
+		)
 
 		meshes.push(object)
 	}
