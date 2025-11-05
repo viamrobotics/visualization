@@ -93,7 +93,10 @@
 				worldOrientation.th = ov.th
 			}
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {
