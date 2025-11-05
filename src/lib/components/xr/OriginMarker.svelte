@@ -74,7 +74,7 @@
 
 			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
 		},
-		{ autoStart: false }
+		{ autoStart: false, autoInvalidate: false }
 	)
 
 	const rotateTask = useTask(

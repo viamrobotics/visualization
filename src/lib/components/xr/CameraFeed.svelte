@@ -51,7 +51,7 @@
 
 			mesh.lookAt(headset.position)
 		},
-		{ autoStart: false }
+		{ autoStart: false, autoInvalidate: false }
 	)
 
 	$effect(() => {
