@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.15.4
+
+### Patch Changes
+
+- f6dcb64: Sanitize incomplete poses from draw commands
+
 ## 0.15.3
 
 ### Patch Changes
