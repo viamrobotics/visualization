@@ -9,14 +9,18 @@ const ov = new OrientationVector()
 const translation = new Vector3()
 const scale = new Vector3()
 
-export const createPose = (pose?: Pose): Pose => {
+export const createPose = (pose?: Partial<Pose>): Pose => {
+	// We should only default to the 0,0,1,0 orientation vector if the entire vector component is missing
+	const oZ =
+		pose?.oX === undefined && pose?.oY === undefined && pose?.oZ === undefined ? 1 : (pose?.oZ ?? 0)
+
 	return {
 		x: pose?.x ?? 0,
 		y: pose?.y ?? 0,
 		z: pose?.z ?? 0,
 		oX: pose?.oX ?? 0,
 		oY: pose?.oY ?? 0,
-		oZ: pose?.oZ ?? 1,
+		oZ,
 		theta: pose?.theta ?? 0,
 	}
 }
@@ -36,9 +40,11 @@ export const createPoseFromFrame = (frame: Partial<Frame>): Pose => {
 		ov.setFromQuaternion(quaternion)
 	} else if (frame.orientation?.type === 'ov_radians') {
 		ov.copy(frame.orientation.value)
-	} else {
+	} else if (frame.orientation) {
 		const th = MathUtils.degToRad(frame.orientation?.value.th ?? 0)
 		ov.set(frame.orientation?.value.x, frame.orientation?.value.y, frame.orientation?.value.z, th)
+	} else {
+		ov.set(0, 0, 1, 0)
 	}
 
 	return {
