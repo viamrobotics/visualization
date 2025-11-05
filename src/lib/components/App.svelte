@@ -94,7 +94,7 @@
 	bind:this={root}
 >
 	<Canvas renderMode="on-demand">
-		<SceneProviders>
+		<SceneProviders {cameraPose}>
 			{#snippet children({ focus })}
 				<Scene>
 					{@render appChildren?.()}
