@@ -114,8 +114,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
-          echo "$GH_TOKEN" | gh auth login --with-token
-
           EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,title,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' || echo "")
 
           if [ -n "$EXISTING_PRS" ]; then
@@ -151,8 +149,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
-          echo "$GH_TOKEN" | gh auth login --with-token
-
           NEW_VERSION="${{ steps.version.outputs.version }}"
           PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
@@ -181,8 +177,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
-          echo "$GH_TOKEN" | gh auth login --with-token
-
           NEW_VERSION="${{ steps.version.outputs.version }}"
           NEW_PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
           if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
