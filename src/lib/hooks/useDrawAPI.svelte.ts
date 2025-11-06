@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4 } from 'three'
+import { Color, MathUtils, Quaternion, Vector3, Vector4 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -11,6 +11,7 @@ import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useThrelte } from '@threlte/core'
+import { OrientationVector } from '$lib/three/OrientationVector'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -28,6 +29,10 @@ interface Context {
 	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	addMesh(worldObject: WorldObject): void
 }
+
+const axis = new Vector3()
+const quaternion = new Quaternion()
+const ov = new OrientationVector()
 
 const key = Symbol('draw-api-context-key')
 
@@ -253,9 +258,22 @@ export const provideDrawAPI = () => {
 			pose.x = origin.x
 			pose.y = origin.y
 			pose.z = origin.z
-			pose.oX = direction.x
-			pose.oY = direction.y
-			pose.oZ = direction.z
+
+			if (direction.y > 0.99999) {
+				quaternion.set(0, 0, 0, 1)
+			} else if (direction.y < -0.99999) {
+				quaternion.set(1, 0, 0, 0)
+			} else {
+				axis.set(direction.z, 0, -direction.x).normalize()
+				const radians = Math.acos(direction.y)
+				quaternion.setFromAxisAngle(axis, radians)
+			}
+
+			ov.setFromQuaternion(quaternion)
+			pose.oX = ov.x
+			pose.oY = ov.y
+			pose.oZ = ov.z
+			pose.theta = MathUtils.radToDeg(ov.th)
 
 			poses.push(
 				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
