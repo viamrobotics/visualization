@@ -1,5 +1,15 @@
 # motion-tools
 
+## 0.16.0
+
+### Minor Changes
+
+- 4cee07e: Allow setting initial camera pose when embedded
+
+### Patch Changes
+
+- 56fe484: Only render on-demand
+
 ## 0.15.4
 
 ### Patch Changes
