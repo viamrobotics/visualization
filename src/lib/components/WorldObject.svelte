@@ -2,7 +2,7 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import type { Snippet } from 'svelte'
 	import type { Object3D } from 'three'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 
 	interface Props extends ThrelteProps<Object3D> {

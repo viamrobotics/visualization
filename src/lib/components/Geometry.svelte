@@ -2,23 +2,23 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { meshBounds, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
-	import { BufferGeometry, DoubleSide, FrontSide, Mesh, Object3D } from 'three'
+	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh } from 'three'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
-	import type { WorldObject } from '$lib/WorldObject'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
 	const plyLoader = new PLYLoader()
 
-	interface Props extends ThrelteProps<Object3D> {
+	interface Props extends ThrelteProps<Group> {
 		uuid: string
 		name: string
 		geometry?: WorldObject['geometry']
 		pose: WorldObject['pose']
 		metadata: WorldObject['metadata']
-		children?: Snippet<[{ ref: Object3D }]>
+		children?: Snippet<[{ ref: Group }]>
 		color?: string
 	}
 
@@ -33,19 +33,31 @@
 		...rest
 	}: Props = $props()
 
-	const type = $derived(geometry?.case)
+	const type = $derived(geometry?.geometryType?.case)
+	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+
+	const group = new Group()
 	const mesh = $derived.by(() => {
-		const object3d = type === undefined ? new Object3D() : new Mesh()
+		if (type === undefined) {
+			return
+		}
+		const result = new Mesh()
 
 		if (type === 'mesh' || type === 'points' || type === 'line') {
-			object3d.raycast = meshBounds
+			result.raycast = meshBounds
 		}
 
-		return object3d
+		return result
 	})
 
 	$effect.pre(() => {
-		poseToObject3d(pose, mesh)
+		if (geometry?.center && mesh) {
+			poseToObject3d(geometry.center, mesh)
+		}
+	})
+
+	$effect.pre(() => {
+		poseToObject3d(pose, group)
 	})
 
 	let geo = $state.raw<BufferGeometry>()
@@ -54,70 +66,110 @@
 		geo = ref
 	}
 
-	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+	const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry => {
+		// Case 1: already a base64 or ASCII string
+		if (typeof mesh === 'string') {
+			return plyLoader.parse(atob(mesh))
+		}
+
+		// Case 2: detect text vs binary PLY in Uint8Array
+		const header = new TextDecoder().decode(mesh.slice(0, 50))
+		const isAscii = header.includes('format ascii')
+
+		// Case 3: text-mode PLY → decode bytes to string
+		if (isAscii) {
+			const text = new TextDecoder().decode(mesh)
+			return plyLoader.parse(text)
+		}
+
+		// Case 4: binary PLY → pass ArrayBuffer directly
+		return plyLoader.parse(mesh.buffer as ArrayBuffer)
+	}
 </script>
 
 <T
-	is={mesh}
-	{name}
-	{uuid}
+	is={group}
 	{...rest}
 >
-	{#if geometry?.case === 'mesh'}
-		{@const mesh = geometry.value.mesh as Uint8Array<ArrayBuffer>}
-		{@const meshGeometry = plyLoader.parse(typeof mesh === 'string' ? atob(mesh) : mesh.buffer)}
+	{#if geometry?.geometryType}
+		<AxesHelper
+			width={3}
+			length={0.1}
+		/>
+
 		<T
-			is={meshGeometry}
-			{oncreate}
-		/>
-	{:else if geometry?.case === 'line' && metadata.points}
-		<MeshLineGeometry points={metadata.points} />
-	{:else if geometry?.case === 'box'}
-		{@const dimsMm = geometry.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
-		<T.BoxGeometry
-			args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
-			{oncreate}
-		/>
-	{:else if geometry?.case === 'sphere'}
-		{@const radiusMm = geometry.value.radiusMm ?? 0}
-		<T.SphereGeometry
-			args={[radiusMm * 0.001]}
-			{oncreate}
-		/>
-	{:else if geometry?.case === 'capsule'}
-		{@const { lengthMm, radiusMm } = geometry.value}
-		<T
-			is={CapsuleGeometry}
-			args={[radiusMm * 0.001, lengthMm * 0.001]}
-			{oncreate}
-		/>
+			is={mesh}
+			{name}
+			{uuid}
+			bvh={{ enabled: false }}
+		>
+			{#if geometry.geometryType.case === 'bufferGeometry'}
+				<T
+					is={geometry.geometryType.value}
+					{oncreate}
+				/>
+			{:else if geometry.geometryType.case === 'mesh'}
+				{@const mesh = geometry.geometryType.value.mesh}
+				{@const meshGeometry = parsePlyInput(mesh)}
+				<T
+					is={meshGeometry}
+					{oncreate}
+				/>
+			{:else if geometry.geometryType.case === 'line' && metadata.points}
+				<MeshLineGeometry points={metadata.points} />
+			{:else if geometry.geometryType.case === 'box'}
+				{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
+				<T.BoxGeometry
+					args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
+					{oncreate}
+				/>
+			{:else if geometry.geometryType.case === 'sphere'}
+				{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
+				<T.SphereGeometry
+					args={[radiusMm * 0.001]}
+					{oncreate}
+				/>
+			{:else if geometry.geometryType.case === 'capsule'}
+				{@const { lengthMm, radiusMm } = geometry.geometryType.value}
+				<T
+					is={CapsuleGeometry}
+					args={[radiusMm * 0.001, lengthMm * 0.001]}
+					{oncreate}
+				/>
+			{/if}
+
+			{#if geometry.geometryType.case === 'line'}
+				<MeshLineMaterial
+					{color}
+					width={metadata.lineWidth ?? 0.005}
+				/>
+			{:else}
+				<T.MeshToonMaterial
+					{color}
+					side={geometry.geometryType.case === 'mesh' ? DoubleSide : FrontSide}
+					transparent
+					opacity={metadata.opacity ?? 0.7}
+				/>
+
+				{#if geo}
+					<T.LineSegments
+						raycast={() => null}
+						bvh={{ enabled: false }}
+					>
+						<T.EdgesGeometry args={[geo, 0]} />
+						<T.LineBasicMaterial color={darkenColor(color, 10)} />
+					</T.LineSegments>
+				{/if}
+			{/if}
+		</T>
 	{:else}
 		<AxesHelper
+			{name}
+			{uuid}
 			width={3}
 			length={0.1}
 		/>
 	{/if}
 
-	{#if geometry?.case === 'line'}
-		<MeshLineMaterial
-			{color}
-			width={metadata.lineWidth ?? 0.005}
-		/>
-	{:else if geometry}
-		<T.MeshToonMaterial
-			{color}
-			side={geometry.case === 'mesh' ? DoubleSide : FrontSide}
-			transparent
-			opacity={0.7}
-		/>
-
-		{#if geo}
-			<T.LineSegments raycast={() => null}>
-				<T.EdgesGeometry args={[geo, 0]} />
-				<T.LineBasicMaterial color={darkenColor(color, 10)} />
-			</T.LineSegments>
-		{/if}
-	{/if}
-
-	{@render children?.({ ref: mesh })}
+	{@render children?.({ ref: group })}
 </T>

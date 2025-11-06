@@ -1,16 +1,23 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, type Box3 } from 'three'
+import { Color, MathUtils, Quaternion, Vector3, Vector4 } from 'three'
+import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { BatchedArrow } from '$lib/three/BatchedArrow'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject'
-import type { Geometry } from '@viamrobotics/sdk'
+import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
+import { useArrows } from './useArrows.svelte'
+import type { Frame } from '$lib/frame'
+import { createGeometry } from '$lib/geometry'
+import { createPose, createPoseFromFrame } from '$lib/transform'
+import { useCameraControls } from './useControls.svelte'
+import { useThrelte } from '@threlte/core'
+import { OrientationVector } from '$lib/three/OrientationVector'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
 	points: WorldObject<PointsGeometry>[]
+	frames: WorldObject[]
 	lines: WorldObject[]
 	meshes: WorldObject[]
 	poses: WorldObject[]
@@ -19,19 +26,13 @@ interface Context {
 
 	connectionStatus: ConnectionStatus
 
-	object3ds: {
-		batchedArrow: BatchedArrow
-	}
-
-	camera:
-		| {
-				position: Vector3
-				lookAt: Vector3
-				animate: boolean
-		  }
-		| undefined
-	clearCamera: () => void
+	addPoints(worldObject: WorldObject<PointsGeometry>): void
+	addMesh(worldObject: WorldObject): void
 }
+
+const axis = new Vector3()
+const quaternion = new Quaternion()
+const ov = new OrientationVector()
 
 const key = Symbol('draw-api-context-key')
 
@@ -42,6 +43,23 @@ const tryParse = (json: string) => {
 		console.warn('Failed to parse JSON:', error)
 		return
 	}
+}
+
+/**
+ * @TODO get golang scripts to return protobufs so that we
+ * can use our types. Right now we're just marshalling JSON,
+ * leading to upper case var names and no type contract with the golang lib.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lowercaseKeys = <T>(obj: T): any => {
+	if (Array.isArray(obj)) {
+		return obj.map(lowercaseKeys)
+	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
+		return Object.fromEntries(
+			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])
+		)
+	}
+	return obj
 }
 
 class Float32Reader {
@@ -64,6 +82,9 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
+	const cameraControls = useCameraControls()
+	const { invalidate } = useThrelte()
+
 	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
@@ -74,6 +95,7 @@ export const provideDrawAPI = () => {
 
 	let ws: WebSocket
 
+	const frames = $state<WorldObject[]>([])
 	const points = $state<WorldObject<PointsGeometry>[]>([])
 	const lines = $state<WorldObject[]>([])
 	const meshes = $state<WorldObject[]>([])
@@ -81,16 +103,51 @@ export const provideDrawAPI = () => {
 	const nurbs = $state<WorldObject[]>([])
 	const models = $state<WorldObject[]>([])
 
-	let camera = $state.raw<Context['camera']>()
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
 	const color = new Color()
 	const direction = new Vector3()
 	const origin = new Vector3()
-	const vec3 = new Vector3()
 	const loader = new GLTFLoader()
 
-	const addPCD = async (buffer: ArrayBuffer) => {
+	const batchedArrow = useArrows()
+
+	const drawFrames = async (data: Frame[]) => {
+		for (const frame of data) {
+			const name = frame.name || frame.id || ''
+
+			const pose = createPoseFromFrame(lowercaseKeys(frame))
+
+			const geometry = createGeometry()
+
+			if (frame.geometry?.type === 'box') {
+				geometry.label = `${name} geometry (box)`
+				geometry.geometryType.case = 'box'
+				geometry.geometryType.value = {
+					dimsMm: { x: frame.geometry.x, y: frame.geometry.y, z: frame.geometry.z },
+				}
+			} else if (frame.geometry?.type === 'sphere') {
+				geometry.label = `${name} geometry (sphere)`
+				geometry.geometryType.case = 'sphere'
+				geometry.geometryType.value = { radiusMm: frame.geometry.r }
+			} else if (frame.geometry?.type === 'capsule') {
+				geometry.label = `${name} geometry (capsule)`
+				geometry.geometryType.case = 'capsule'
+				geometry.geometryType.value = { lengthMm: frame.geometry.l, radiusMm: frame.geometry.r }
+			}
+
+			const worldObject = new WorldObject(
+				name,
+				pose,
+				frame.parent ?? 'world',
+				frame.geometry ? geometry : undefined
+			)
+
+			frames.push(worldObject)
+		}
+	}
+
+	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
 
 		points.push(
@@ -99,8 +156,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				colors ? { colors } : undefined
 			)
@@ -108,33 +168,50 @@ export const provideDrawAPI = () => {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addGeometry = (data: any, color: string, parent?: string) => {
-		let geometry: Geometry['geometryType']
+	const drawGeometry = (data: any, color: string, parent?: string) => {
+		const result = meshes.find((mesh) => mesh.name === data.label)
 
-		if ('mesh' in data) {
-			geometry = {
-				case: 'mesh',
-				value: { contentType: '', mesh: data.mesh.mesh },
-			}
-		} else if ('box' in data) {
-			geometry = { case: 'box', value: data.box }
-		} else if ('sphere' in data) {
-			geometry = { case: 'sphere', value: data.sphere }
-		} else if ('capsule' in data) {
-			geometry = { case: 'capsule', value: data.capsule }
-		} else {
-			geometry = { case: undefined, value: undefined }
+		if (result) {
+			result.pose = createPose(data.center)
+			return
 		}
 
-		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color,
-		})
+		const geometry = createGeometry()
+
+		if ('mesh' in data) {
+			geometry.geometryType.case = 'mesh'
+			geometry.geometryType.value = data.mesh
+		} else if ('box' in data) {
+			geometry.geometryType.case = 'box'
+			geometry.geometryType.value = data.box
+		} else if ('sphere' in data) {
+			geometry.geometryType.case = 'sphere'
+			geometry.geometryType.value = data.sphere
+		} else if ('capsule' in data) {
+			geometry.geometryType.case = 'capsule'
+			geometry.geometryType.value = data.capsule
+		}
+
+		const object = new WorldObject(
+			data.label ?? ++geometryIndex,
+			createPose(data.center),
+			parent,
+			geometry,
+			{
+				color: new Color(color),
+			}
+		)
 
 		meshes.push(object)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addNurbs = (data: any, color: string) => {
+	const drawNurbs = (data: any, color: string) => {
+		const index = nurbs.findIndex(({ name }) => name === data.name)
+		if (index !== -1) {
+			nurbs.splice(index, 1)
+		}
+
 		const controlPoints = data.ControlPts.map(
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
@@ -143,16 +220,14 @@ export const provideDrawAPI = () => {
 			data.name,
 			data.pose,
 			data.parent,
-			{ case: 'line', value: new Float32Array() },
-			{ color, points: curve.getPoints(200) }
+			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
+			{ color: new Color(color), points: curve.getPoints(200) }
 		)
 
 		nurbs.push(object)
 	}
 
-	const batchedArrow = new BatchedArrow()
-
-	const addPoses = async (reader: Float32Reader) => {
+	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
@@ -176,17 +251,33 @@ export const provideDrawAPI = () => {
 			origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
 			direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
 
-			if (arrowHeadAtPose === 1) {
-				// Compute the base position so the arrow ends at the origin
-				origin.sub(vec3.copy(direction).multiplyScalar(length))
-			}
-
 			color.set(colors[j], colors[j + 1], colors[j + 2])
 
-			const arrowId = batchedArrow.addArrow(direction, origin, length, color)
+			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
+			const pose = createPose()
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+
+			if (direction.y > 0.99999) {
+				quaternion.set(0, 0, 0, 1)
+			} else if (direction.y < -0.99999) {
+				quaternion.set(1, 0, 0, 0)
+			} else {
+				axis.set(direction.z, 0, -direction.x).normalize()
+				const radians = Math.acos(direction.y)
+				quaternion.setFromAxisAngle(axis, radians)
+			}
+
+			ov.setFromQuaternion(quaternion)
+			pose.oX = ov.x
+			pose.oY = ov.y
+			pose.oZ = ov.z
+			pose.theta = MathUtils.radToDeg(ov.th)
+
 			poses.push(
-				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
-					getBoundingBoxAt(box3: Box3) {
+				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
+					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
 					batched: {
@@ -196,14 +287,21 @@ export const provideDrawAPI = () => {
 				})
 			)
 		}
+
+		invalidate()
 	}
 
-	const addPoints = async (reader: Float32Reader) => {
+	const drawPoints = async (reader: Float32Reader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
 		for (let i = 0; i < labelLen; i++) {
 			label += String.fromCharCode(reader.read())
+		}
+
+		const index = points.findIndex(({ name }) => name === label)
+		if (index !== -1) {
+			points.splice(index, 1)
 		}
 
 		// Read counts
@@ -261,20 +359,28 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'points',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'points',
+						value: positions,
+					},
 				},
 				metadata
 			)
 		)
 	}
 
-	const addLine = async (reader: Float32Reader) => {
+	const drawLine = async (reader: Float32Reader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
 		for (let i = 0; i < labelLen; i++) {
 			label += String.fromCharCode(reader.read())
+		}
+
+		const index = lines.findIndex(({ name }) => name === label)
+		if (index !== -1) {
+			lines.splice(index, 1)
 		}
 
 		// Read counts
@@ -306,8 +412,11 @@ export const provideDrawAPI = () => {
 				undefined,
 				undefined,
 				{
-					case: 'line',
-					value: positions,
+					center: undefined,
+					geometryType: {
+						case: 'line',
+						value: positions,
+					},
 				},
 				{
 					points,
@@ -319,15 +428,15 @@ export const provideDrawAPI = () => {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const addGeometries = (geometries: any[], colors: string[], parent: string) => {
+	const drawGeometries = (geometries: any[], colors: string[], parent: string) => {
 		let i = 0
 		for (const geometry of geometries) {
-			addGeometry(geometry, colors[i], parent)
+			drawGeometry(geometry, colors[i], parent)
 			i += 1
 		}
 	}
 
-	const addGLTF = async (buffer: ArrayBuffer) => {
+	const drawGLTF = async (buffer: ArrayBuffer) => {
 		const blob = new Blob([buffer], { type: 'model/gltf-binary' })
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
@@ -339,6 +448,13 @@ export const provideDrawAPI = () => {
 		let index = -1
 
 		for (const name of names) {
+			index = frames.findIndex((frame) => frame.name === name)
+
+			if (index !== -1) {
+				frames.slice(index, 1)
+				continue
+			}
+
 			index = points.findIndex((p) => p.name === name)
 
 			if (index !== -1) {
@@ -389,6 +505,7 @@ export const provideDrawAPI = () => {
 	}
 
 	const removeAll = () => {
+		frames.splice(0, frames.length)
 		points.splice(0, points.length)
 		lines.splice(0, lines.length)
 		meshes.splice(0, meshes.length)
@@ -440,15 +557,15 @@ export const provideDrawAPI = () => {
 			const type = reader.read()
 
 			if (type === 0) {
-				return addPoints(reader)
+				return drawPoints(reader)
 			} else if (type === 1) {
-				return addPoses(reader)
+				return drawPoses(reader)
 			} else if (type === 2) {
-				return addLine(reader)
+				return drawLine(reader)
 			} else if (type === 3) {
-				return addPCD(reader.buffer)
+				return drawPCD(reader.buffer)
 			} else {
-				return addGLTF(reader.buffer)
+				return drawGLTF(reader.buffer)
 			}
 		}
 
@@ -457,15 +574,31 @@ export const provideDrawAPI = () => {
 		if (!data) return
 
 		if ('setCameraPose' in data) {
-			camera = {
-				position: new Vector3(data.Position.X, data.Position.Y, data.Position.Z),
-				lookAt: new Vector3(data.LookAt.X, data.LookAt.Y, data.LookAt.Z),
-				animate: data.Animate,
-			}
+			cameraControls.setPose(
+				{
+					position: [data.Position.X, data.Position.Y, data.Position.Z],
+					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+				},
+				data.Animate
+			)
+
+			return
 		}
 
 		if ('geometries' in data) {
-			return addGeometries(data.geometries, data.colors, data.parent)
+			return drawGeometries(data.geometries, data.colors, data.parent)
+		}
+
+		if ('geometry' in data) {
+			return drawGeometry(data.geometry, data.color)
+		}
+
+		if ('frames' in data) {
+			return drawFrames(data.frames)
+		}
+
+		if ('Knots' in data) {
+			return drawNurbs(data, data.Color)
 		}
 
 		if ('remove' in data) {
@@ -474,14 +607,6 @@ export const provideDrawAPI = () => {
 
 		if ('removeAll' in data) {
 			return removeAll()
-		}
-
-		if ('Knots' in data) {
-			return addNurbs(data, data.Color)
-		}
-
-		if ('geometry' in data) {
-			addGeometry(data.geometry, data.color)
 		}
 	}
 
@@ -499,6 +624,9 @@ export const provideDrawAPI = () => {
 	connect()
 
 	setContext<Context>(key, {
+		get frames() {
+			return frames
+		},
 		get points() {
 			return points
 		},
@@ -520,14 +648,11 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		object3ds: {
-			batchedArrow,
+		addPoints(worldObject: WorldObject<PointsGeometry>) {
+			points.push(worldObject)
 		},
-		get camera() {
-			return camera
-		},
-		clearCamera: () => {
-			camera = undefined
+		addMesh(worldObject: WorldObject) {
+			meshes.push(worldObject)
 		},
 	})
 }

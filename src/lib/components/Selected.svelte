@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Box3, Object3D } from 'three'
 	import { T, useTask } from '@threlte/core'
 	import { useSelectedObject, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
-	import { BoxHelper } from '$lib/three/BoxHelper'
+	import { OBBHelper } from '$lib/three/OBBHelper'
+	import { OBB } from 'three/addons/math/OBB.js'
 
-	const box3 = new Box3()
-	const box = new BoxHelper(new Object3D(), 0x000000)
+	const obb = new OBB()
+	const obbHelper = new OBBHelper()
 	const selected = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -25,32 +25,36 @@
 			}
 
 			if (selected.current.metadata.batched) {
-				selected.current.metadata.getBoundingBoxAt?.(box3)
-				box.setFromBox3(box3)
+				selected.current.metadata.getBoundingBoxAt?.(obb)
+				obbHelper.setFromOBB(obb)
 				return
 			}
 
 			if (clone) {
 				selectedObject3d.current?.getWorldPosition(clone.position)
 				selectedObject3d.current?.getWorldQuaternion(clone.quaternion)
-				box.setFromObject(clone)
+				obbHelper.setFromObject(clone)
 			}
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {
 		if (selected.current) {
 			start()
-			box.visible = true
+			obbHelper.visible = true
 		} else {
 			stop()
-			box.visible = false
+			obbHelper.visible = false
 		}
 	})
 </script>
 
 <T
-	is={box}
+	is={obbHelper}
 	raycast={() => null}
+	bvh={{ enabled: false }}
 />

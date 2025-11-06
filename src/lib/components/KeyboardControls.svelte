@@ -77,7 +77,10 @@
 				cameraControls.rotate(0, 0.05 * MathUtils.DEG2RAD * dt, true)
 			}
 		},
-		{ autoStart: false, autoInvalidate: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {

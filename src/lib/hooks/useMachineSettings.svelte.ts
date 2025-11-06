@@ -6,6 +6,11 @@ const key = Symbol('polling-rate-context')
 const refreshRatesKey = 'polling-rate'
 const disabledCamerasKey = 'disabled-cameras'
 
+export const RefreshRates = {
+	poses: 'poses',
+	pointclouds: 'pointclouds',
+} as const
+
 type Context = {
 	refreshRates: SvelteMap<string, number>
 	disabledCameras: SvelteMap<string, boolean>
@@ -20,7 +25,10 @@ const setFromEntries = (map: SvelteMap<string, unknown>, entries?: [string, unkn
 }
 
 export const provideMachineSettings = () => {
-	const refreshRates = new SvelteMap<string, number>()
+	const refreshRates = new SvelteMap<string, number>([
+		[RefreshRates.poses, 1000],
+		[RefreshRates.pointclouds, -1],
+	])
 	const disabledCameras = new SvelteMap<string, boolean>()
 
 	get(refreshRatesKey).then((entries) => {

@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image/color"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/golang/geo/r3"
@@ -19,7 +21,6 @@ import (
 	"github.com/viam-labs/motion-tools/client/shapes"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/robot"
 	"go.viam.com/rdk/spatialmath"
@@ -110,7 +111,43 @@ func isASCIIPrintable(label string) error {
 }
 
 func postHTTP(data []byte, content string, endpoint string) error {
-	resp, err := http.Post(url+endpoint, "application/"+content, bytes.NewReader(data))
+	// Make a defensive copy so caller's slice can be safely reused.
+	payload := make([]byte, len(data))
+	copy(payload, data)
+
+	if recordFile != nil {
+		if lastDraw.IsZero() {
+			// If this is the first draw command for a recording, we only need to note the
+			// time. There's no need to add a sleep.
+			lastDraw = time.Now()
+		} else {
+			// Calculate the time since the last frame. We only want to capture user sleeps between
+			// `Draw*` calls. Thus we will only write out a sleep operation if the time is
+			// "significant". We do this "significance" check because a single `Draw` command (e.g:
+			// DrawFrameSystem) often results in many small `postHTTP` calls. The time between these
+			// HTTP calls is not intended to be captured by the user.
+			timeSinceFrame := time.Since(lastDraw)
+			if timeSinceFrame > 10*time.Millisecond {
+				fmt.Fprintf(recordFile, "sleep: %v\n", timeSinceFrame.Nanoseconds())
+			}
+			defer func() {
+				// Because we only want to capture user sleeps calls to drawing, we update the
+				// `lastDraw` time after each response is received. This is to have updating the
+				// `lastDraw` time better track calls to `Draw*` (e.g: `DrawFrameSystem`)
+				// methods. Most `postHTTP` calls take 1-10ms. And a single `DrawFrameSystem` can be
+				// dozens of `postHTTP` calls. We do not want to turn a 100ms user sleep into a
+				// forced 150+ms wait between frames because of the number of smaller `postHTTP`
+				// that had to be made.
+				lastDraw = time.Now()
+			}()
+		}
+
+		fmt.Fprintf(recordFile, "%v\n", endpoint)
+		fmt.Fprintf(recordFile, "%v\n", content)
+		fmt.Fprintf(recordFile, "%v\n", hex.EncodeToString(payload))
+	}
+
+	resp, err := http.Post(url+endpoint, "application/"+content, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
@@ -140,6 +177,10 @@ func SetURL(preferredURL string) {
 
 // DrawGeometry draws a geometry in the visualizer.
 //
+// Labels must be unique within a world. Calling DrawGeometry with labels that
+// already exist will instead update the pose of that geometry. Only poses can be updated,
+// geometries must be cleared if their shape is to change.
+//
 // Parameters:
 //   - geometry: a geometry
 //   - color: a corresponding color
@@ -158,35 +199,6 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 	}
 
 	return postHTTP(finalJSON, "json", "geometry")
-}
-
-// DrawGeometries draws a list of geometries in the visualizer.
-//
-// Parameters:
-//   - geometriesInFrame: a list of geometries
-//   - colors: a list of corresponding colors for each geometry
-func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors []string) error {
-	geometries := make([]json.RawMessage, len(geometriesInFrame.Geometries()))
-
-	for i, geo := range geometriesInFrame.Geometries() {
-		data, err := protojson.Marshal(geo.ToProtobuf())
-		if err != nil {
-			return err
-		}
-		geometries[i] = json.RawMessage(data)
-	}
-
-	result, err := json.Marshal(map[string]interface{}{
-		"geometries": geometries,
-		"colors":     colorutil.NamedColorsToHexes(colors),
-		"parent":     geometriesInFrame.Parent(),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return postHTTP(result, "json", "geometries")
 }
 
 // DrawLine draws a line in the visualizer.
@@ -384,91 +396,6 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	return postHTTP(buf.Bytes(), "octet-stream", "poses")
 }
 
-// DrawPointCloud draws a PointCloud in the visualizer.
-//
-// Parameters:
-//   - label: an identifier string used for reference in the treeview
-//   - pc: a PointCloud
-//   - color: an optional override color [R, G, B] (0–255); use nil for original color.
-func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]uint8) error {
-	labelError := isASCIIPrintable(label)
-	if labelError != nil {
-		return labelError
-	}
-
-	labelBytes := []byte(label)
-	labelLen := len(labelBytes)
-
-	nPoints := pc.Size()
-	hasColor := pc.MetaData().HasColor && overrideColor == nil
-	nColors := 0
-	if hasColor {
-		nColors = nPoints
-	}
-
-	// total floats:
-	// 1 (type) + 1 (label length) + labelLen + 2 (nPoints, nColors) + 3 (default color)
-	// + 3*nPoints (positions) + 3*nColors (colors)
-	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
-	data := make([]float32, 0, total)
-
-	data = append(data, float32(pointsType), float32(labelLen))
-	for _, b := range labelBytes {
-		data = append(data, float32(b))
-	}
-
-	// Set to -1 by default to communicate intentionally no color
-	// Allows users to set default colors in the web app.
-	finalColor := [3]float32{-255., -255., -255.}
-	if overrideColor != nil {
-		finalColor[0] = float32(overrideColor[0])
-		finalColor[1] = float32(overrideColor[1])
-		finalColor[2] = float32(overrideColor[2])
-	}
-
-	// Header: nPoints, nColors, color
-	data = append(data,
-		float32(nPoints),
-		float32(nColors),
-		float32(finalColor[0])/255.0,
-		float32(finalColor[1])/255.0,
-		float32(finalColor[2])/255.0,
-	)
-
-	colors := make([]float32, 0, nColors*3)
-
-	// Iterate points
-	pc.Iterate(0, 0, func(p r3.Vector, d pointcloud.Data) bool {
-		data = append(data,
-			float32(p.X)/1000.0,
-			float32(p.Y)/1000.0,
-			float32(p.Z)/1000.0,
-		)
-
-		if hasColor && d.HasColor() {
-			col := d.Color()
-			nrgba := color.NRGBAModel.Convert(col).(color.NRGBA)
-
-			colors = append(colors,
-				float32(nrgba.R)/255.0,
-				float32(nrgba.G)/255.0,
-				float32(nrgba.B)/255.0,
-			)
-		}
-		return true
-	})
-
-	data = append(data, colors...)
-
-	// Binary write
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
-		return err
-	}
-
-	return postHTTP(buf.Bytes(), "octet-stream", "points")
-}
-
 // DrawNurbs draws a nurbs curve in the visualizer.
 //
 // Parameters:
@@ -617,7 +544,20 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 	}
 
 	i := 0
-	for _, geoms := range frameGeomMap {
+	// We iterate the map of frame labels in a consistent order. Consider the case where a user
+	// wants to visualize a plan by writing:
+	//
+	// for each `FrameSystemInputs` in the plan {
+	//   RemoveAllSpatialObjects()
+	//   DrawFrameSystem(fs, currentInputs)
+	// }
+	//
+	// In this case, the set of figures in the visualization are the same. With just a few figures
+	// moving from one image to the next. It's distracting to see what's happening when the colors
+	// are changing with each image. Hence sorting on the label names allows us to enforce a
+	// consistent color scheme for each figure when the geometry labels remain the same.
+	for _, geomLabel := range slices.Sorted(maps.Keys(frameGeomMap)) {
+		geoms := frameGeomMap[geomLabel]
 		geometries := geoms.Geometries()
 		colors := make([]string, len(geometries))
 		for j := range geometries {

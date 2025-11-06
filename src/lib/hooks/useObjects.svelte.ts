@@ -4,7 +4,7 @@ import { useGeometries } from './useGeometries.svelte'
 import { useStaticGeometries } from './useStaticGeometries.svelte'
 import { useDrawAPI } from './useDrawAPI.svelte'
 import { usePointClouds } from './usePointclouds.svelte'
-import type { WorldObject } from '$lib/WorldObject'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 const key = Symbol('objects-context')
 
@@ -24,6 +24,7 @@ export const provideObjects = () => {
 		...geometries.current,
 		...points.current,
 		...statics.current,
+		...drawAPI.frames,
 		...drawAPI.meshes,
 		...drawAPI.models,
 		...drawAPI.nurbs,

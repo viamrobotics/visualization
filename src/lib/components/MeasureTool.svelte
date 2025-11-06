@@ -1,41 +1,39 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { Raycaster, Vector2, Vector3, type Intersection } from 'three'
-	import { T, useThrelte, useTask } from '@threlte/core'
-	import { HTML, MeshLineGeometry, MeshLineMaterial, useInteractivity } from '@threlte/extras'
+	import { Vector3, type Intersection } from 'three'
+	import { T } from '@threlte/core'
+	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import Button from './dashboard/Button.svelte'
 	import Portal from './portal/Portal.svelte'
 	import DotSprite from './DotSprite.svelte'
+	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
+	import { useFocused } from '$lib/hooks/useSelection.svelte'
 
+	const focus = useFocused()
 	const settings = useSettings()
-	const { camera } = useThrelte()
-	const interactivity = useInteractivity()
-	const raycaster = new Raycaster()
 
 	const htmlPosition = new Vector3()
-	const pointerDown = new Vector2()
-	const pointerUp = new Vector2()
 
 	let step: 'idle' | 'p1' | 'p2' = 'idle'
 
-	let intersection: Intersection | undefined
+	let intersection = $state.raw<Intersection>()
 	let p1 = $state.raw<Vector3>()
 	let p2 = $state.raw<Vector3>()
 
 	const enabled = $derived(settings.current.enableMeasure)
 
-	const onpointerdown = (event: PointerEvent) => {
-		pointerDown.set(event.clientX, event.clientY)
-	}
+	const { onclick, onmove, raycaster } = useMouseRaycaster(() => ({
+		enabled,
+	}))
+	raycaster.firstHitOnly = true
+	raycaster.params.Points.threshold = 0.005
 
-	const onpointerup = (event: PointerEvent) => {
-		pointerUp.set(event.clientX, event.clientY)
+	onmove((event) => {
+		intersection = event.intersections[0]
+	})
 
-		if (pointerDown.distanceToSquared(pointerUp) > 0.1) {
-			return
-		}
-
+	onclick(() => {
 		if (step === 'idle' && intersection) {
 			p1 = intersection.point.clone()
 			step = 'p1'
@@ -47,38 +45,18 @@
 			p2 = undefined
 			step = 'idle'
 		}
-	}
-
-	const { start, stop } = useTask(
-		() => {
-			if (interactivity.hovered.size === 0) {
-				return
-			}
-
-			for (const [, event] of interactivity.hovered) {
-				raycaster.setFromCamera(interactivity.pointer.current, camera.current)
-				intersection = raycaster.intersectObject(event.object)[0]
-			}
-		},
-		{ autoStart: false }
-	)
-
-	$effect(() => {
-		if (!enabled) {
-			untrack(() => {
-				p1 = undefined
-				p2 = undefined
-				step = 'idle'
-			})
-		}
 	})
 
+	const clear = () => {
+		p1 = undefined
+		p2 = undefined
+		step = 'idle'
+	}
+
 	$effect(() => {
-		if (enabled) {
-			start()
-		} else {
-			stop()
-		}
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		;(focus.current, enabled)
+		untrack(() => clear())
 	})
 </script>
 
@@ -96,27 +74,42 @@
 	</fieldset>
 </Portal>
 
-<svelte:window
-	onpointerdown={enabled ? onpointerdown : undefined}
-	onpointerup={enabled ? onpointerup : undefined}
-/>
-
 {#if enabled}
+	{#if intersection}
+		<DotSprite
+			position={intersection?.point.toArray()}
+			opacity={0.5}
+		/>
+	{/if}
+
 	{#if p1}
-		<DotSprite position={p1.toArray()} />
+		<DotSprite
+			position={p1.toArray()}
+			opacity={0.5}
+		/>
 	{/if}
 
 	{#if p2}
-		<DotSprite position={p2.toArray()} />
+		<DotSprite
+			position={p2.toArray()}
+			opacity={0.5}
+		/>
 	{/if}
 
 	{#if p1 && p2}
-		<T.Mesh>
+		<T.Mesh
+			raycast={() => null}
+			bvh={{ enabled: false }}
+			renderOrder={1}
+		>
 			<MeshLineGeometry points={[p1, p2]} />
 			<MeshLineMaterial
-				width={0.015}
+				width={2.5}
 				depthTest={false}
 				color="black"
+				opacity={0.5}
+				attenuate={false}
+				transparent
 			/>
 		</T.Mesh>
 		<HTML
@@ -124,7 +117,7 @@
 			position={htmlPosition.lerpVectors(p1, p2, 0.5).toArray()}
 		>
 			<div class="border border-black bg-white px-1 py-0.5 text-xs">
-				{p1.distanceTo(p2).toFixed(2)}m
+				{p1.distanceTo(p2).toFixed(2)}<span class="text-subtle-2">m</span>
 			</div>
 		</HTML>
 	{/if}

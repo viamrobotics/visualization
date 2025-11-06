@@ -4,8 +4,8 @@ import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 
@@ -13,6 +13,7 @@ const key = Symbol('pointcloud-context')
 
 interface Context {
 	current: WorldObject<PointsGeometry>[]
+	errors: Error[]
 }
 
 export const providePointclouds = (partID: () => string) => {
@@ -20,16 +21,12 @@ export const providePointclouds = (partID: () => string) => {
 	const { refreshRates, disabledCameras } = useMachineSettings()
 	const cameras = useResourceNames(partID, 'camera')
 
-	if (!refreshRates.has('Pointclouds')) {
-		refreshRates.set('Pointclouds', -1)
-	}
-
 	const clients = $derived(
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
 	const options = $derived.by(() => {
-		const interval = refreshRates.get('Pointclouds')
+		const interval = refreshRates.get(RefreshRates.pointclouds)
 		const results: CreateQueryOptions<
 			WorldObject<PointsGeometry> | null,
 			Error,
@@ -63,7 +60,7 @@ export const providePointclouds = (partID: () => string) => {
 						`${name}:pointcloud`,
 						undefined,
 						name,
-						{ case: 'points', value: positions },
+						{ center: undefined, geometryType: { case: 'points', value: positions } },
 						colors ? { colors } : undefined
 					)
 				},
@@ -84,10 +81,13 @@ export const providePointclouds = (partID: () => string) => {
 					.flatMap((result) => result.data)
 					.filter((data) => data !== null && data !== undefined)
 
+				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
+
 				updateUUIDs(data)
 
 				return {
 					data,
+					errors,
 				}
 			},
 		})
@@ -96,6 +96,9 @@ export const providePointclouds = (partID: () => string) => {
 	setContext<Context>(key, {
 		get current() {
 			return queries.current.data
+		},
+		get errors() {
+			return queries.current.errors
 		},
 	})
 }

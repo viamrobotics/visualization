@@ -40,7 +40,7 @@
 		metadata={object.metadata}
 	>
 		{#snippet children({ ref })}
-			{#if selected.current === ref.uuid}
+			{#if selected.current === object.uuid}
 				{#key mode}
 					<TransformControls
 						object={ref}
@@ -59,10 +59,12 @@
 							} else if (mode === 'rotate') {
 								quaternionToPose(ref.getWorldQuaternion(quaternion), object.pose)
 								ref.quaternion.copy(quaternion)
-							} else if (mode === 'scale' && object.geometry?.case === 'box') {
-								scaleToDimensions(ref.scale, object.geometry)
+							} else if (mode === 'scale' && object.geometry?.geometryType.case === 'box') {
+								scaleToDimensions(ref.scale, object.geometry.geometryType)
 								ref.scale.setScalar(1)
 							}
+
+							object.pose = { ...object.pose }
 						}}
 					/>
 				{/key}

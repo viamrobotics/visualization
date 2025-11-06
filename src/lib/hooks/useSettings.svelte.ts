@@ -34,6 +34,9 @@ interface Settings {
 	// AR Mode
 	enableXR: boolean
 
+	// Widgets
+	enableArmPositionsWidget: boolean
+
 	renderStats: boolean
 }
 
@@ -66,20 +69,26 @@ const defaults = (): Settings => ({
 
 	enableXR: false,
 
+	enableArmPositionsWidget: false,
+
 	renderStats: false,
 })
 
 export const provideSettings = () => {
 	let settings = $state<Settings>(defaults())
+	let settingsLoaded = $state(false)
 
 	get('motion-tools-settings').then((response: Settings) => {
 		if (response) {
 			settings = { ...settings, ...response }
 		}
+		settingsLoaded = true
 	})
 
 	$effect(() => {
-		set('motion-tools-settings', $state.snapshot(settings))
+		if (settingsLoaded) {
+			set('motion-tools-settings', $state.snapshot(settings))
+		}
 	})
 
 	const context: Context = {

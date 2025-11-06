@@ -1,9 +1,9 @@
-// worker.js
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js'
 
 const loader = new PCDLoader()
 
 export interface SuccessMessage {
+	id: number
 	positions: Float32Array<ArrayBuffer>
 	colors: Float32Array | null
 }
@@ -11,13 +11,14 @@ export interface SuccessMessage {
 export type Message =
 	| SuccessMessage
 	| {
+			id: number
 			error: string
 	  }
 
 self.onmessage = async (event) => {
-	const { data } = event.data
+	const { data, id } = event.data
 	if (!(data instanceof Uint8Array)) {
-		postMessage({ error: 'Invalid data format' } satisfies Message)
+		postMessage({ id, error: 'Invalid data format' } satisfies Message)
 		return
 	}
 
@@ -28,13 +29,13 @@ self.onmessage = async (event) => {
 			const colors = (pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
 
 			postMessage(
-				{ positions, colors } satisfies Message,
+				{ positions, colors, id } satisfies Message,
 				colors ? [positions.buffer, colors.buffer] : [positions.buffer]
 			)
 		} else {
-			postMessage({ error: 'Failed to extract geometry' } satisfies Message)
+			postMessage({ id, error: 'Failed to extract geometry' } satisfies Message)
 		}
 	} catch (error) {
-		postMessage({ error: (error as Error).message } satisfies Message)
+		postMessage({ id, error: (error as Error).message } satisfies Message)
 	}
 }

@@ -1,25 +1,30 @@
-import { ArmClient, CameraClient, Geometry, GripperClient } from '@viamrobotics/sdk'
+import { ArmClient, CameraClient, GantryClient, Geometry, GripperClient } from '@viamrobotics/sdk'
 import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/svelte-query'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
-import { useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject } from '$lib/WorldObject'
+import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
+import { Color } from 'three'
+import { useFrames } from './useFrames.svelte'
 
 const key = Symbol('geometries-context')
 
 interface Context {
 	current: WorldObject[]
+	errors: Error[]
 }
 
 export const provideGeometries = (partID: () => string) => {
+	const frames = useFrames()
 	const resourceNames = useResourceNames(partID)
 	const arms = useResourceNames(partID, 'arm')
 	const cameras = useResourceNames(partID, 'camera')
 	const grippers = useResourceNames(partID, 'gripper')
+	const gantries = useResourceNames(partID, 'gantry')
 
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
@@ -35,14 +40,18 @@ export const provideGeometries = (partID: () => string) => {
 	const cameraClients = $derived(
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
-	const clients = $derived([...armClients, ...gripperClients, ...cameraClients])
+	const gantryClients = $derived(
+		gantries.current.map((gantry) => createResourceClient(GantryClient, partID, () => gantry.name))
+	)
 
-	if (!refreshRates.has('Geometries')) {
-		refreshRates.set('Geometries', 1000)
-	}
+	const clients = $derived(
+		[...armClients, ...gripperClients, ...cameraClients, ...gantryClients].filter((client) => {
+			return frames.current.some((frame) => frame.name === client.current?.name)
+		})
+	)
 
 	const options = $derived.by(() => {
-		const interval = refreshRates.get('Geometries')
+		const interval = refreshRates.get(RefreshRates.poses)
 		const results: CreateQueryOptions<
 			{
 				name: string
@@ -67,7 +76,9 @@ export const provideGeometries = (partID: () => string) => {
 					}
 
 					logs.add(`Fetching geometries for ${client.current.name}...`)
+
 					const geometries = await client.current.getGeometries()
+
 					return { name: client.current.name, geometries }
 				},
 			})
@@ -81,21 +92,29 @@ export const provideGeometries = (partID: () => string) => {
 	const { updateUUIDs } = usePersistentUUIDs()
 	const queries = fromStore(createQueries({ queries: toStore(() => options) }))
 
+	const errors = $derived(
+		queries.current.map((query) => query.error).filter((error) => error !== null)
+	)
+
 	const geometries = $derived.by(() => {
 		const results: WorldObject[] = []
 
 		for (const query of queries.current) {
 			if (!query.data) continue
 
-			for (const { center, label, geometryType } of query.data.geometries) {
+			for (const geometry of query.data.geometries) {
 				const resourceName = resourceNames.current.find((item) => item.name === query.data.name)
 				const worldObject = new WorldObject(
-					label ? label : 'Unnamed geometry',
-					center,
+					geometry.label ? geometry.label : `${query.data.name} geometry`,
+					undefined,
 					query.data.name,
-					geometryType,
+					geometry,
 					resourceName
-						? { color: resourceColors[resourceName.subtype as keyof typeof resourceColors] }
+						? {
+								color: new Color(
+									resourceColors[resourceName.subtype as keyof typeof resourceColors]
+								),
+							}
 						: undefined
 				)
 				results.push(worldObject)
@@ -110,6 +129,9 @@ export const provideGeometries = (partID: () => string) => {
 	setContext<Context>(key, {
 		get current() {
 			return geometries
+		},
+		get errors() {
+			return errors
 		},
 	})
 }

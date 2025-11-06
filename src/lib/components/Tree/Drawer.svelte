@@ -7,9 +7,10 @@
 		name: string
 		defaultOpen?: boolean
 		children: Snippet
+		titleAlert?: Snippet
 	}
 
-	let { name, children, defaultOpen = false }: Props = $props()
+	let { name, children, titleAlert, defaultOpen = false }: Props = $props()
 
 	const expanded = $derived(new PersistedState(`${name}-expanded`, defaultOpen))
 </script>
@@ -24,9 +25,10 @@
 			label="unfold more icon"
 			variant="ghost"
 			cx="size-6"
-			on:click={() => (expanded.current = !expanded.current)}
+			onclick={() => (expanded.current = !expanded.current)}
 		/>
 		{name}
+		{@render titleAlert?.()}
 	</h3>
 </button>
 

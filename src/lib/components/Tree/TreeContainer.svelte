@@ -9,14 +9,25 @@
 	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
-
+	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+	import Widgets from './Widgets.svelte'
+	import AddFrames from './AddFrames.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import WeblabActive from '../weblab/WeblabActive.svelte'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
 
+	const partID = usePartID()
 	const selected = useSelected()
 	const objects = useObjects()
 	const draggable = useDraggable('treeview')
+	const worldStates = useWorldStates()
+	const environment = useEnvironment()
+	const partConfig = usePartConfig()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -25,7 +36,7 @@
 		href: '/',
 	})
 
-	const nodes = $derived(buildTreeNodes(objects.current))
+	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current))
 
 	$effect.pre(() => {
 		if (!isEqual(rootNode.children, nodes)) {
@@ -35,7 +46,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 overflow-y-auto border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 w-60 overflow-y-auto border text-xs"
 	style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
 	{...rest}
 >
@@ -51,6 +62,13 @@
 		/>
 	{/key}
 
+	<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
+		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
+			<AddFrames />
+		{/if}
+	</WeblabActive>
+
 	<Logs />
 	<Settings />
+	<Widgets />
 </div>

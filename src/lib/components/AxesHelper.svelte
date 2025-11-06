@@ -65,7 +65,7 @@
 <T
 	is={line}
 	{...rest}
-	raycast={() => null}
+	bvh={{ enabled: false }}
 >
 	<T is={geometry} />
 	<T
