@@ -1,0 +1,21 @@
+{
+	"go.testTags": "cse",
+	"go.lintTool": "golangci-lint",
+	"go.lintFlags": ["--fast", "--config=${workspaceFolder}/etc/.golangci.yaml"],
+	"eslint.validate": ["javascript", "svelte"],
+	"prettier.documentSelectors": ["**/*.svelte"],
+	"prettier.singleQuote": true,
+	"prettier.jsxSingleQuote": true,
+	"prettier.singleAttributePerLine": true,
+	"[svelte]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"tailwindCSS.classAttributes": ["class", "className", "ngClass", "cx"],
+	"tailwindCSS.experimental.classRegex": [["cx\\(([\\S\\s]*?)\\)", "'([^']*)'"]],
+	"search.exclude": {
+		"**/.svelte-kit": true,
+		"**/build": true,
+		"**/dist": true
+	},
+	"typescript.tsdk": "node_modules/typescript/lib"
+}

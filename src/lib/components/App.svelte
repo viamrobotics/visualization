@@ -1,40 +1,125 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
+	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import type { Struct } from '@viamrobotics/sdk'
 	import Scene from './Scene.svelte'
-	import { provideRobotClientsContext, useRobotClient } from '$lib/client'
-	import { getDialConfs, loadRobots } from '$lib/robots'
-	import { writable } from 'svelte/store'
-	import { createPartIDContext } from '$lib/hooks/usePartID'
-	import { createResourcesContext } from '$lib/hooks/useResources'
-	import { World } from '@threlte/rapier'
+	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
+	import Details from '$lib/components/Details.svelte'
+	import SceneProviders from './SceneProviders.svelte'
+	import XR from '$lib/components/xr/XR.svelte'
+	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
+	import Dashboard from './dashboard/Dashboard.svelte'
+	import { domPortal } from '$lib/portal'
+	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import FileDrop from './FileDrop.svelte'
+	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useViamClient } from '@viamrobotics/svelte-sdk'
+	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
+	import ArmPositions from './widgets/ArmPositions.svelte'
+	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 
-	const robots = loadRobots()
-	const connectParts = provideRobotClientsContext()
+	interface LocalConfigProps {
+		getLocalPartConfig: () => Struct
+		setLocalPartConfig: (config: Struct) => void
+		isDirty: () => boolean
+		getComponentToFragId: () => Record<string, string>
+	}
 
-	connectParts(getDialConfs(robots))
+	interface Props {
+		partID?: string
+		enableKeybindings?: boolean
+		children?: Snippet
+		localConfigProps?: LocalConfigProps
 
-	const part = writable(Object.keys(robots).at(0))
+		/**
+		 * Allows setting the initial camera pose
+		 */
+		cameraPose?: CameraPose
+	}
 
-	const partID = createPartIDContext('')
+	let {
+		partID = '',
+		enableKeybindings = true,
+		children: appChildren,
+		localConfigProps,
+		cameraPose,
+	}: Props = $props()
+
+	const appClient = useViamClient()
+	const settings = provideSettings()
+	const environment = provideEnvironment()
+
 	$effect(() => {
-		console.log(robots, $part)
-		partID.set(robots[$part]?.partId ?? '')
+		settings.current.enableKeybindings = enableKeybindings
 	})
 
-	let { client } = $derived(useRobotClient($partID))
+	createPartIDContext(() => partID)
 
-	const resources = createResourcesContext()
-	$effect(async () => {
-		$client?.resourceNames().then((unsortedResources) => {
-			resources.set(unsortedResources)
+	provideWeblabs()
+	provideToast()
+
+	let root = $state.raw<HTMLElement>()
+
+	if (localConfigProps) {
+		environment.current.isStandalone = false
+		providePartConfig({
+			appEmbeddedPartConfigProps: {
+				isDirty: () => localConfigProps.isDirty(),
+				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
+			},
 		})
-
-		console.log('hi', await $client?.resourceNames())
-	})
+	} else {
+		environment.current.isStandalone = true
+		providePartConfig({
+			standalonePartConfigProps: {
+				viamClient: () => appClient?.current,
+				partID: () => partID,
+			},
+		})
+	}
 </script>
 
-<Canvas>
-	<World>
-		<Scene />
-	</World>
-</Canvas>
+{#if settings.current.enableQueryDevtools}
+	<SvelteQueryDevtools initialIsOpen />
+{/if}
+
+<div
+	class="relative h-full w-full overflow-hidden"
+	bind:this={root}
+>
+	<Canvas renderMode="on-demand">
+		<SceneProviders {cameraPose}>
+			{#snippet children({ focus })}
+				<Scene>
+					{@render appChildren?.()}
+				</Scene>
+
+				<XR {@attach domPortal(root)} />
+
+				<Dashboard {@attach domPortal(root)} />
+				<Details {@attach domPortal(root)} />
+				{#if environment.current.isStandalone}
+					<LiveUpdatesBanner {@attach domPortal(root)} />
+				{/if}
+
+				{#if !focus}
+					<TreeContainer {@attach domPortal(root)} />
+				{/if}
+
+				{#if !focus && settings.current.enableArmPositionsWidget}
+					<ArmPositions {@attach domPortal(root)} />
+				{/if}
+
+				<FileDrop {@attach domPortal(root)} />
+			{/snippet}
+		</SceneProviders>
+	</Canvas>
+
+	<ToastContainer />
+</div>

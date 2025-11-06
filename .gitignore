@@ -1,11 +1,33 @@
-.DS_Store
+test-results
 node_modules
-/build
+
+static/Big_Buck_Bunny_4K.webm
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
 /.svelte-kit
-/package
+/build
+/dist
+viamrobotics-motion-tools-*.tgz
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
 .env
 .env.*
 !.env.example
+!.env.test
+
+# Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-/static/*.webm
+
+*~
+
+# Sentry Config File
+.env.sentry-build-plugin

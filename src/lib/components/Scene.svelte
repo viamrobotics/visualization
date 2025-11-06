@@ -1,86 +1,101 @@
 <script lang="ts">
+	import { Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Float, OrbitControls } from '@threlte/extras'
-	import { XR } from '@threlte/xr'
-	import CameraFeed from './CameraFeed.svelte'
-	import Controllers from './Controllers.svelte'
-	import Hands from './Hands.svelte'
-	import { useResources } from '$lib/hooks/useResources'
-	import OriginMarker from './OriginMarker.svelte'
+	import { Grid, interactivity, PerfMonitor, bvh } from '@threlte/extras'
+	import { PortalTarget } from './portal'
+	import WorldObjects from '$lib/components/WorldObjects.svelte'
+	import Selected from '$lib/components/Selected.svelte'
+	import Focus from '$lib/components/Focus.svelte'
+	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
+	import Camera from '$lib/components/Camera.svelte'
+	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
+	import type { Snippet } from 'svelte'
+	import { useXR } from '@threlte/xr'
 
-	const resources = useResources()
-	const camResource = $derived($resources.filter((r) => r.subtype === 'camera')[0])
+	import { useOrigin } from './xr/useOrigin.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import CameraControls from './CameraControls.svelte'
+	import MeasureTool from './MeasureTool.svelte'
+	import PointerMissBox from './PointerMissBox.svelte'
 
-	$effect(() => console.log($resources))
+	interface Props {
+		children?: Snippet
+	}
+
+	let { children }: Props = $props()
+
+	const settings = useSettings()
+	const focusedObject3d = useFocusedObject3d()
+	const origin = useOrigin()
+
+	const { raycaster, enabled } = interactivity({
+		filter: (items) => {
+			const item = items.find((item) => {
+				return item.object.visible === undefined || item.object.visible === true
+			})
+
+			return item ? [item] : []
+		},
+	})
+	$effect.pre(() => {
+		enabled.set(!settings.current.enableMeasure)
+	})
+	raycaster.firstHitOnly = true
+
+	bvh(() => ({ helper: false }))
+
+	const focusedObject = $derived(focusedObject3d.current)
+
+	const { isPresenting } = useXR()
 </script>
 
-<XR>
-	<CameraFeed resourceName={camResource?.name} />
-	<Controllers />
-	<Hands />
+{#if settings.current.renderStats}
+	<PerfMonitor anchorX="right" />
+{/if}
 
-	<OriginMarker />
-</XR>
-
-<T.PerspectiveCamera
-	makeDefault
-	position={[-10, 10, 10]}
-	fov={15}
+<T.Group
+	position={origin.position}
+	rotation.x={$isPresenting ? -Math.PI / 2 : 0}
+	rotation.z={origin.rotation}
 >
-	<OrbitControls
-		autoRotate
-		enableZoom={false}
-		enableDamping
-		autoRotateSpeed={0.5}
-		target.y={1.5}
-	/>
-</T.PerspectiveCamera>
+	<PointerMissBox />
+	<MeasureTool />
 
-<T.DirectionalLight
-	position.x={5}
-	position.y={10}
-/>
-<T.AmbientLight />
+	{#if focusedObject}
+		<Focus object3d={focusedObject} />
+	{:else}
+		{#if !$isPresenting}
+			<Camera position={[3, 3, 3]}>
+				<CameraControls />
+			</Camera>
+		{/if}
 
-<Float
-	floatIntensity={1}
-	floatingRange={[0, 1]}
->
-	<T.Mesh
-		position.y={1.2}
-		position.z={-0.75}
-		scale={0.1}
-	>
-		<T.BoxGeometry />
-		<T.MeshStandardMaterial color="#0059BA" />
-	</T.Mesh>
-</Float>
+		<StaticGeometries />
+		<Selected />
 
-<Float
-	floatIntensity={1}
-	floatingRange={[0, 1]}
->
-	<T.Mesh
-		position={[1.2, 1.5, 0.75]}
-		rotation.x={5}
-		rotation.y={71}
-		scale={0.1}
-	>
-		<T.TorusKnotGeometry args={[0.5, 0.15, 100, 12, 2, 3]} />
-		<T.MeshStandardMaterial color="#F85122" />
-	</T.Mesh>
-</Float>
+		{#if !$isPresenting && settings.current.grid}
+			<Grid
+				raycast={() => null}
+				bvh={{ enabled: false }}
+				plane="xy"
+				sectionColor="#333"
+				infiniteGrid
+				cellSize={settings.current.gridCellSize}
+				sectionSize={settings.current.gridSectionSize}
+				fadeOrigin={new Vector3()}
+				fadeDistance={settings.current.gridFadeDistance}
+			/>
+		{/if}
+	{/if}
 
-<Float
-	floatIntensity={1}
-	floatingRange={[0, 1]}
->
-	<T.Mesh
-		position={[-1.4, 1.5, 0.75]}
-		rotation={[-5, 128, 10]}
-		scale={0.1}
-	>
-		<T.IcosahedronGeometry />
-		<T.MeshStandardMaterial color="#F8EBCE" />
-	</T.Mesh>
-</Float>
+	<T.Group attach={focusedObject ? false : undefined}>
+		<PortalTarget id="world" />
+		<WorldObjects />
+	</T.Group>
+
+	{@render children?.()}
+
+	<T.DirectionalLight position={[3, 3, 3]} />
+	<T.DirectionalLight position={[-3, -3, -3]} />
+	<T.AmbientLight />
+</T.Group>
