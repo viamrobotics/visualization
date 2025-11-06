@@ -66,7 +66,10 @@
 			// resized to half zoom to take up the same screen space.
 			material.size = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect(() => {

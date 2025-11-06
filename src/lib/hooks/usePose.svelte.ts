@@ -8,6 +8,7 @@ import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
 import { untrack } from 'svelte'
+import { useFrames } from './useFrames.svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const { refreshRates } = useMachineSettings()
@@ -18,6 +19,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const resource = $derived(resources.current.find((resource) => resource.name === name()))
 	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
 	const environment = useEnvironment()
+	const frames = useFrames()
 
 	const client = createResourceClient(
 		MotionClient,
@@ -32,24 +34,16 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 			enabled:
 				interval !== -1 &&
 				client.current !== undefined &&
-				resource !== undefined &&
 				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === 0 ? false : interval,
-			queryKey: [
-				'partID',
-				partID.current,
-				client.current?.name,
-				'getPose',
-				resource?.name,
-				parent(),
-			],
+			queryKey: ['partID', partID.current, client.current?.name, 'getPose', name(), parent()],
 			queryFn: async () => {
-				if (!client.current || !resource) {
+				if (!client.current) {
 					throw new Error('No client')
 				}
 
 				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
-				const pose = await client.current.getPose(resource.name, resolvedParent ?? 'world', [])
+				const pose = await client.current.getPose(name(), resolvedParent ?? 'world', [])
 
 				return pose
 			},
@@ -59,7 +53,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const query = fromStore(createQuery(toStore(() => options)))
 
 	observe.pre(
-		() => [environment.current.viewerMode],
+		() => [environment.current.viewerMode, frames.current],
 		() => {
 			if (environment.current.viewerMode === 'monitor') {
 				untrack(() => query.current).refetch()
@@ -69,6 +63,10 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	return {
 		get current() {
+			/**
+			 * Do not return the pose of an arm because in this case the pose represents
+			 * the end effector frame and not the origin frame
+			 */
 			if (resource?.subtype === 'arm') {
 				return
 			}

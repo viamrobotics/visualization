@@ -14,7 +14,7 @@ Before running the tests, ensure you have:
 
 ### Step 1: Configure Test Settings
 
-Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`) with your robot's details:
+Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`) with your robot's details (it is currently configured to use a `viam-viz` robot called [`motion-tools-e2e`](https://app.viam.com/machine/cac6bcf3-4313-401d-afde-8aad0b4893a4) so you could also just run that config if you have access):
 
 - Host address
 - Part ID

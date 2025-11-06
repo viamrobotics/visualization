@@ -40,7 +40,7 @@
 		metadata={object.metadata}
 	>
 		{#snippet children({ ref })}
-			{#if selected.current === ref.uuid}
+			{#if selected.current === object.uuid}
 				{#key mode}
 					<TransformControls
 						object={ref}
@@ -63,6 +63,8 @@
 								scaleToDimensions(ref.scale, object.geometry.geometryType)
 								ref.scale.setScalar(1)
 							}
+
+							object.pose = { ...object.pose }
 						}}
 					/>
 				{/key}
