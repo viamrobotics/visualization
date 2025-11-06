@@ -13,7 +13,7 @@
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
-	import FileDrop from './FileDrop/FileDrop.svelte'
+	import FileDrop from './FileDrop.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
@@ -40,9 +40,7 @@
 		partID?: string
 		enableKeybindings?: boolean
 		children?: Snippet
-		dashboard?: Snippet
 		localConfigProps?: LocalConfigProps
-		drawConnectionConfig?: DrawConnectionConfig
 
 		/**
 		 * Allows setting the initial camera pose
@@ -53,59 +51,45 @@
 	let {
 		partID = '',
 		enableKeybindings = true,
+		children: appChildren,
 		localConfigProps,
 		cameraPose,
-		drawConnectionConfig,
-		children: appChildren,
-		dashboard,
 	}: Props = $props()
-
-	provideWorld()
 
 	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
-
-	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
 
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
 	})
 
 	createPartIDContext(() => partID)
-	provideDrawConnectionConfig(() => drawConnectionConfig)
+
 	provideWeblabs()
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
 
-	providePartConfig(() => {
-		if (localConfigProps) {
-			return {
-				appEmbeddedPartConfigProps: {
-					isDirty: () => localConfigProps.isDirty(),
-					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
-					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
-				},
-			}
-		} else {
-			return {
-				standalonePartConfigProps: {
-					viamClient: () => appClient?.current,
-					partID: () => partID,
-				},
-			}
-		}
-	})
-
-	$effect.pre(() => {
-		if (localConfigProps) {
-			environment.current.isStandalone = false
-		} else {
-			environment.current.isStandalone = true
-		}
-	})
+	if (localConfigProps) {
+		environment.current.isStandalone = false
+		providePartConfig({
+			appEmbeddedPartConfigProps: {
+				isDirty: () => localConfigProps.isDirty(),
+				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
+			},
+		})
+	} else {
+		environment.current.isStandalone = true
+		providePartConfig({
+			standalonePartConfigProps: {
+				viamClient: () => appClient?.current,
+				partID: () => partID,
+			},
+		})
+	}
 </script>
 
 {#if settings.current.enableQueryDevtools}
@@ -125,14 +109,7 @@
 
 				<XR {@attach domPortal(root)} />
 
-				<Dashboard
-					{@attach domPortal(root)}
-					{dashboard}
-				/>
-
-				{#if settings.current.renderSubEntityHoverDetail}
-					<HoveredEntities {@attach domPortal(root)} />
-				{/if}
+				<Dashboard {@attach domPortal(root)} />
 				<Details {@attach domPortal(root)} />
 				{#if environment.current.isStandalone}
 					<LiveUpdatesBanner {@attach domPortal(root)} />
@@ -144,15 +121,6 @@
 
 				{#if !focus && settings.current.enableArmPositionsWidget}
 					<ArmPositions {@attach domPortal(root)} />
-				{/if}
-
-				{#if !focus}
-					{#each currentRobotCameraWidgets as cameraName (cameraName)}
-						<Camera
-							name={cameraName}
-							{@attach domPortal(root)}
-						/>
-					{/each}
 				{/if}
 
 				<FileDrop {@attach domPortal(root)} />

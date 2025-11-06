@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Select, Switch, Input } from '@viamrobotics/prime-core'
-	import RefreshRate from '../RefreshRate.svelte'
+	import RefreshRate from './RefreshRate.svelte'
 	import Drawer from './Drawer.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'

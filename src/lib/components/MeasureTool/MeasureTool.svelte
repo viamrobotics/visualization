@@ -4,20 +4,19 @@
 	import { T } from '@threlte/core'
 	import { HTML, MeshLineGeometry, MeshLineMaterial, Portal } from '@threlte/extras'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import Button from '../dashboard/Button.svelte'
+	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import MeasurePoint from './MeasurePoint.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
-	import ToggleGroup from '../Overlay/ToggleGroup.svelte'
-	import Popover from '../Overlay/Popover.svelte'
+	import ToggleGroup from '../overlay/ToggleGroup.svelte'
+	import Popover from '../overlay/Popover.svelte'
 
 	const focusedEntity = useFocusedEntity()
 	const settings = useSettings()
 
 	const htmlPosition = new Vector3()
 
-	let step: 'idle' | 'p1' | 'p2' = 'idle'
-
+	let step = $state<'idle' | 'p1' | 'p2'>('idle')
 	let intersection = $state<Intersection>()
 	let p1 = $state.raw<Vector3>()
 	let p2 = $state.raw<Vector3>()
