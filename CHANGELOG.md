@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.16.1
+
+### Patch Changes
+
+- c849ab6: Include position and orientation details in pose world objects
+- c849ab6: Invalidate renderer immediately when poses are drawn
+
 ## 0.16.0
 
 ### Minor Changes
