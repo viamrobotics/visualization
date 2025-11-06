@@ -1,11 +1,13 @@
 name: Bump Version in App Repository
 
 # This workflow automatically opens a PR in viamrobotics/app to bump the
-# version of @viamrobotics/motion-tools in pnpm-workspace.yaml after a release is published.
+# version of @viamrobotics/motion-tools in pnpm-workspace.yaml after a release tag is created.
+# This triggers on git tag pushes (created by changeset publish), not GitHub Releases.
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*' # Triggers on tags like v0.16.1, v1.0.0, etc.
 
 permissions:
   contents: read
@@ -16,10 +18,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract version from release tag
+      - name: Extract version from tag
         id: version
         run: |
-          # Remove 'v' prefix if present (e.g., v0.14.12 -> 0.14.12)
+          # Extract version from tag (e.g., refs/tags/v0.16.1 -> 0.16.1)
+          # Remove 'refs/tags/v' prefix if present, or just 'refs/tags/' if no 'v' prefix
           VERSION=${GITHUB_REF#refs/tags/v}
           VERSION=${VERSION#refs/tags/}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -136,12 +139,12 @@ jobs:
           commit-message: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
           title: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
           body: |
-            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ steps.version.outputs.version }}` after the release was published.
+            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ steps.version.outputs.version }}` after the release tag was created.
 
             **Previous version:** ${{ steps.current-version.outputs.current_version }}  
             **New version:** ${{ steps.version.outputs.version }}
 
-            Released in: ${{ github.event.release.html_url }}
+            Tag: [${{ github.ref_name }}](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})
           branch: chore/bump-motion-tools-${{ steps.version.outputs.version }}
           delete-branch: true
 
