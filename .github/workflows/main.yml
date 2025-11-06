@@ -39,3 +39,172 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract version from package.json
+        if: steps.changesets.outputs.published == 'true'
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Published version: $VERSION"
+
+      - name: Checkout app repository
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: viamrobotics/app
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app-repo
+
+      - name: Read current version from pnpm-workspace.yaml
+        if: steps.changesets.outputs.published == 'true'
+        id: current-version
+        working-directory: app-repo
+        run: |
+          # Extract the current version of motion-tools from pnpm-workspace.yaml
+          CURRENT_VERSION=$(grep -A 2 "motion-tools" pnpm-workspace.yaml | grep -oP 'version:\s*["'\'']?\K[^"'\'']+' || \
+            grep "motion-tools" pnpm-workspace.yaml | grep -oP '["'\'']\K[^"'\'']+(?=["'\''])' | head -1 || echo "")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version in app repo: $CURRENT_VERSION"
+
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+            echo "Version is already up to date, skipping PR creation"
+            echo "skip_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version in pnpm-workspace.yaml
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true'
+        working-directory: app-repo
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+
+          # Install yq for YAML manipulation
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+          # Update the version in pnpm-workspace.yaml
+          if yq eval ".dependencies.\"@viamrobotics/motion-tools\".version = \"$NEW_VERSION\"" -i pnpm-workspace.yaml 2>/dev/null; then
+            echo "Updated using yq (nested structure)"
+          elif yq eval ".dependencies.\"@viamrobotics/motion-tools\" = \"$NEW_VERSION\"" -i pnpm-workspace.yaml 2>/dev/null; then
+            echo "Updated using yq (direct version)"
+          else
+            echo "Falling back to sed..."
+            sed -i.bak -E "s|(@viamrobotics/motion-tools['\"]?:[[:space:]]*\{[[:space:]]*version:[[:space:]]*['\"])[^'\"]*(['\"])|\1$NEW_VERSION\2|g" pnpm-workspace.yaml || \
+            sed -i.bak -E "s|(@viamrobotics/motion-tools['\"]?:[[:space:]]*['\"])[^'\"]*(['\"])|\1$NEW_VERSION\2|g" pnpm-workspace.yaml
+            rm -f pnpm-workspace.yaml.bak
+          fi
+
+          echo "Updated pnpm-workspace.yaml:"
+          grep -A 2 "motion-tools" pnpm-workspace.yaml || true
+
+      - name: Install dependencies in app repo
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true'
+        working-directory: app-repo
+        run: |
+          pnpm install
+          echo "Dependencies installed and lock file updated"
+
+      - name: Find existing motion-tools bump PRs
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true'
+        id: find-existing-prs
+        working-directory: app-repo
+        env:
+          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+
+          EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,title,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' || echo "")
+
+          if [ -n "$EXISTING_PRS" ]; then
+            echo "Found existing PRs: $EXISTING_PRS"
+            echo "pr_numbers=$EXISTING_PRS" >> $GITHUB_OUTPUT
+          else
+            echo "No existing motion-tools bump PRs found"
+            echo "pr_numbers=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request in app repo
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app-repo
+          commit-message: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
+          title: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
+          body: |
+            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ steps.version.outputs.version }}` after the release was published.
+
+            **Previous version:** ${{ steps.current-version.outputs.current_version }}  
+            **New version:** ${{ steps.version.outputs.version }}
+
+            Published: https://www.npmjs.com/package/@viamrobotics/motion-tools/v/${{ steps.version.outputs.version }}
+          branch: chore/bump-motion-tools-${{ steps.version.outputs.version }}
+          delete-branch: true
+
+      - name: Request review from team-viz
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true'
+        working-directory: app-repo
+        env:
+          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            PR_NUMBER="${{ steps.create-pr.outputs.number }}"
+          fi
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
+            PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
+          fi
+
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            echo "Requesting review from team-viz for PR #$PR_NUMBER"
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/viamrobotics/app/pulls/$PR_NUMBER/requested_reviewers" \
+              -f team_reviewers='["team-viz"]' || echo "Warning: Failed to request review from team-viz"
+          else
+            echo "Warning: Could not determine PR number, skipping review request"
+          fi
+
+      - name: Close existing motion-tools bump PRs
+        if: steps.changesets.outputs.published == 'true' && steps.current-version.outputs.skip_pr != 'true' && steps.find-existing-prs.outputs.pr_numbers != ''
+        working-directory: app-repo
+        env:
+          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --with-token
+
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          NEW_PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
+          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
+            NEW_PR_NUMBER="${{ steps.create-pr.outputs.number }}"
+          fi
+
+          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
+            BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
+            NEW_PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
+          fi
+
+          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
+            COMMENT="This PR has been superseded by a new PR which bumps @viamrobotics/motion-tools to version $NEW_VERSION."
+          else
+            COMMENT="This PR has been superseded by #$NEW_PR_NUMBER which bumps @viamrobotics/motion-tools to version $NEW_VERSION.
+
+            See: https://github.com/viamrobotics/app/pull/$NEW_PR_NUMBER"
+          fi
+
+          EXISTING_PRS="${{ steps.find-existing-prs.outputs.pr_numbers }}"
+
+          for PR_NUMBER in $EXISTING_PRS; do
+            echo "Closing PR #$PR_NUMBER"
+            gh pr close "$PR_NUMBER" --repo viamrobotics/app --comment "$COMMENT"
+          done
