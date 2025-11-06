@@ -1,35 +1,54 @@
-import path from 'node:path'
+// eslint.config.js
+import js from '@eslint/js'
+import svelte from 'eslint-plugin-svelte'
+import globals from 'globals'
+import ts from 'typescript-eslint'
+import svelteConfig from './svelte.config.js'
 
-import { baseSvelteConfig, createConfig } from '@viamrobotics/eslint-config-svelte'
-
-export default createConfig(
-	baseSvelteConfig,
+export default ts.config(
+	js.configs.recommended,
+	...ts.configs.recommended,
+	...svelte.configs.recommended,
+	...svelte.configs.prettier,
 	{
-		name: 'viam/ui/ignores',
-		ignores: ['.svelte-kit', 'build', 'static/fonts', 'vite.config.ts.timestamp*'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+				...globals.node,
+			},
+		},
 	},
 	{
-		name: 'viam/ui/base',
+		name: 'ignores',
+		ignores: ['.svelte-kit', 'build', 'dist', 'node_modules'],
+	},
+	{
+		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+		// See more details at: https://typescript-eslint.io/packages/parser/
 		languageOptions: {
 			parserOptions: {
-				project: './tsconfig.json',
-				tsconfigRootDir: import.meta.dirname,
+				projectService: true,
+				extraFileExtensions: ['.svelte'], // Add support for additional file extensions, such as .svelte
+				parser: ts.parser,
+				// Specify a parser for each language, if needed:
+				// parser: {
+				//   ts: ts.parser,
+				//   js: espree,    // Use espree for .js files (add: import espree from 'espree')
+				//   typescript: ts.parser
+				// },
+
+				// We recommend importing and specifying svelte.config.js.
+				// By doing so, some rules in eslint-plugin-svelte will automatically read the configuration and adjust their behavior accordingly.
+				// While certain Svelte settings may be statically loaded from svelte.config.js even if you don’t specify it,
+				// explicitly specifying it ensures better compatibility and functionality.
+				svelteConfig,
 			},
 		},
-		settings: {
-			tailwindcss: {
-				config: path.join(import.meta.dirname, 'tailwind.config.ts'),
-			},
-		},
+	},
+	{
 		rules: {
-			// This is a browser app, window is more specific than globalThis
-			'unicorn/prefer-global-this': 'off',
-
-			// Allow array callback references for performance and type-safety
-			'unicorn/no-array-callback-reference': 'off',
-
-			// Redundant with svelte-check
-			'svelte/no-unused-svelte-ignore': 'off',
+			// Off because this currently has false positives
+			'svelte/prefer-svelte-reactivity': 'off',
 		},
 	}
 )

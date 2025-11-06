@@ -1,88 +1,74 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
-	import { Edges, TransformControls } from '@threlte/extras'
-	import { useSelection } from '$lib/hooks/useSelection.svelte'
+	import { TransformControls } from '@threlte/extras'
+	import { useSelected } from '$lib/hooks/useSelection.svelte'
 	import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { Keybindings } from '$lib/keybindings'
-	import { PersistedState } from 'runed'
+	import { PressedKeys } from 'runed'
 	import { quaternionToPose, scaleToDimensions, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
-	import Clickable from './Clickable.svelte'
-	import { darkenColor } from '$lib/color'
+	import Frame from './Frame.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	type Modes = 'translate' | 'rotate' | 'scale'
-
+	const settings = useSettings()
 	const transformControls = useTransformControls()
 	const geometries = useStaticGeometries()
-	const selection = useSelection()
+	const selected = useSelected()
 
-	let mode = new PersistedState<Modes>('transform-mode', 'translate')
+	const mode = $derived(settings.current.transformMode)
 
 	const quaternion = new Quaternion()
 	const vector3 = new Vector3()
+
+	const keys = new PressedKeys()
+
+	keys.onKeys('=', () => geometries.add())
+	keys.onKeys('-', () => geometries.remove(selected.current ?? ''))
+
+	$effect(() => {
+		settings.current.transforming = geometries.current.some(
+			(geometry) => selected.current === geometry.uuid
+		)
+	})
 </script>
 
-<svelte:window
-	onkeydown={(event) => {
-		if (event.metaKey || event.ctrlKey) {
-			return
-		}
-
-		const key = event.key.toLowerCase()
-
-		if (key === Keybindings.ADD_GEOMETRY) {
-			geometries.add()
-		} else if (key === Keybindings.REMOVE_GEOMETRY) {
-			geometries.remove(selection.current ?? '')
-		} else if (key === Keybindings.TRANSLATE) {
-			mode.current = 'translate'
-		} else if (key === Keybindings.ROTATE) {
-			mode.current = 'rotate'
-		} else if (key === Keybindings.SCALE) {
-			mode.current = 'scale'
-		}
-	}}
-/>
-
-{#each geometries.current as mesh (mesh.uuid)}
-	<Clickable
-		name={mesh.name}
-		object={mesh}
+{#each geometries.current as object (object.uuid)}
+	<Frame
+		uuid={object.uuid}
+		name={object.name}
+		pose={object.pose}
+		geometry={object.geometry}
+		metadata={object.metadata}
 	>
 		{#snippet children({ ref })}
-			{#if selection.current === mesh.name}
-				<TransformControls
-					object={ref}
-					mode={mode.current}
-					onmouseDown={() => transformControls.setActive(true)}
-					onmouseUp={(event) => {
-						transformControls.setActive(false)
+			{#if selected.current === object.uuid}
+				{#key mode}
+					<TransformControls
+						object={ref}
+						{mode}
+						translationSnap={settings.current.snapping ? 0.1 : undefined}
+						rotationSnap={settings.current.snapping ? Math.PI / 24 : undefined}
+						scaleSnap={settings.current.snapping ? 0.1 : undefined}
+						onmouseDown={() => {
+							transformControls.setActive(true)
+						}}
+						onmouseUp={() => {
+							transformControls.setActive(false)
 
-						const { object } = event.target
-						if (mode.current === 'translate') {
-							vector3ToPose(object.getWorldPosition(vector3), mesh.userData.pose)
-						} else if (mode.current === 'rotate') {
-							quaternionToPose(ref.getWorldQuaternion(quaternion), mesh.userData.pose)
-							ref.quaternion.copy(quaternion)
-						} else if (mode.current === 'scale') {
-							scaleToDimensions(ref.scale, mesh.userData.geometry)
-						}
-					}}
-				/>
+							if (mode === 'translate') {
+								vector3ToPose(ref.getWorldPosition(vector3), object.pose)
+							} else if (mode === 'rotate') {
+								quaternionToPose(ref.getWorldQuaternion(quaternion), object.pose)
+								ref.quaternion.copy(quaternion)
+							} else if (mode === 'scale' && object.geometry?.geometryType.case === 'box') {
+								scaleToDimensions(ref.scale, object.geometry.geometryType)
+								ref.scale.setScalar(1)
+							}
+
+							object.pose = { ...object.pose }
+						}}
+					/>
+				{/key}
 			{/if}
-
-			<Edges
-				raycast={() => null}
-				color={darkenColor('hotpink', 10)}
-				renderOrder={-1}
-			/>
-
-			<T.MeshToonMaterial
-				color="hotpink"
-				transparent
-				opacity={0.7}
-			/>
 		{/snippet}
-	</Clickable>
+	</Frame>
 {/each}

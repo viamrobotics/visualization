@@ -1,4 +1,7 @@
+import { sentrySvelteKit } from '@sentry/sveltekit'
+import devtoolsJson from 'vite-plugin-devtools-json'
 import tailwindcss from '@tailwindcss/vite'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
@@ -8,12 +11,25 @@ import dns from 'node:dns'
 dns.setDefaultResultOrder('verbatim')
 
 const localIP = getLocalIP()
+const https = false
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [
+		sentrySvelteKit({
+			sourceMapsUploadOptions: {
+				org: 'viam',
+				project: 'motion-tools',
+			},
+		}),
+		devtoolsJson(),
+		...(https ? [basicSsl()] : []),
+		tailwindcss(),
+		sveltekit(),
+	],
 
 	define: {
-		__BACKEND_IP__: JSON.stringify(localIP),
+		BACKEND_IP: JSON.stringify(localIP),
+		BUN_SERVER_PORT: JSON.stringify(process.env.BUN_SERVER_PORT),
 	},
 
 	optimizeDeps: {
@@ -30,6 +46,7 @@ export default defineConfig({
 		port: 5173,
 		allowedHosts: true,
 		cors: true,
+		https: https ? {} : undefined,
 	},
 
 	ssr: {

@@ -1,72 +1,56 @@
-import { Geometry, Pose } from '@viamrobotics/sdk'
-import { Quaternion, Vector3, BufferGeometry, Color } from 'three'
-import { createPose, poseToQuaternion, poseToVector3 } from './transform'
+// TODO: replace with types exported from the sdk when created
 
-const nullPose = createPose()
+import type { ValueOf } from 'type-fest'
 
-export type GeometryType =
-	| {
-			type: 'points'
-			buffer: BufferGeometry
-	  }
-	| {
-			type: 'trimesh'
-			buffer: BufferGeometry
-	  }
-	| {
-			type: 'box'
-			dimensions: { x: number; y: number; z: number }
-	  }
-	| {
-			type: 'sphere'
-			dimensions: { r: number }
-	  }
-	| {
-			type: 'capsule'
-			dimensions: { r: number; l: number }
-	  }
+type FrameGeometryMap = {
+	none: { type: 'none' }
+	box: { type: 'box'; x: number; y: number; z: number }
+	sphere: { type: 'sphere'; r: number }
+	capsule: { type: 'capsule'; r: number; l: number }
+}
 
-export type GeometryTypes = GeometryType['type']
+export type FrameGeometry = keyof FrameGeometryMap
+export type FrameGeometries = ValueOf<FrameGeometryMap>
 
-export class Frame {
-	name = ''
-	parent = ''
-	position = new Vector3()
-	quaternion = new Quaternion()
-	color = new Color()
+type FrameOrientationMap = {
+	quaternion: { type: 'quaternion'; value: { x: number; y: number; z: number; w: number } }
+	euler_angles: { type: 'euler_angles'; value: { roll: number; pitch: number; yaw: number } }
+	ov_degrees: { type: 'ov_degrees'; value: { x: number; y: number; z: number; th: number } }
+	ov_radians: { type: 'ov_radians'; value: { x: number; y: number; z: number; th: number } }
+}
 
-	geometry: GeometryType | undefined
+export type FrameOrientation = keyof FrameOrientationMap
+export type FrameOrientations = ValueOf<FrameOrientationMap>
 
-	constructor(name = '', parent = 'world', pose?: Partial<Pose>, geometry?: Geometry) {
-		this.name = name
-		this.parent = parent
-		this.setPose(pose ?? nullPose)
-
-		if (geometry) this.setGeometry(geometry)
+export interface Frame<
+	T extends FrameGeometry = FrameGeometry,
+	K extends FrameOrientation = FrameOrientation,
+> {
+	id?: string
+	name?: string
+	parent: string
+	translation: {
+		x: number
+		y: number
+		z: number
 	}
+	orientation: FrameOrientationMap[K]
+	geometry?: FrameGeometryMap[T]
+}
 
-	setPose(pose?: Partial<Pose>) {
-		poseToVector3(pose ?? nullPose, this.position)
-		poseToQuaternion(pose ?? nullPose, this.quaternion)
-	}
-
-	setGeometry(geometry: Geometry) {
-		if (geometry.geometryType.case === 'sphere') {
-			this.geometry = {
-				type: 'sphere',
-				dimensions: {
-					r: geometry.geometryType.value.radiusMm / 1000,
-				},
-			}
-		} else if (geometry.geometryType.case === 'box') {
-			this.geometry = {
-				type: 'box',
-				dimensions: {
-					x: (geometry.geometryType.value?.dimsMm?.x ?? 0) / 1000,
-					y: (geometry.geometryType.value?.dimsMm?.y ?? 0) / 1000,
-					z: (geometry.geometryType.value?.dimsMm?.z ?? 0) / 1000,
-				},
-			}
-		}
-	}
+export const createFrame = <
+	T extends FrameGeometry = 'box',
+	K extends FrameOrientation = 'ov_degrees',
+>(
+	geometry?: FrameGeometryMap[T]
+): Frame<T> => {
+	return {
+		parent: 'world',
+		translation: { x: 0, y: 0, z: 0 },
+		orientation: {
+			type: 'ov_degrees',
+			value: { x: 0, y: 0, z: 1, th: 0 },
+		} as FrameOrientationMap[K],
+		geometry: (geometry ?? { type: 'box', x: 100, y: 100, z: 100 }) as FrameGeometryMap[T],
+	} as Frame<T>
 }

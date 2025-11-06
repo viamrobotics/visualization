@@ -1,92 +1,104 @@
-import { BufferAttribute, BufferGeometry, Points, PointsMaterial } from 'three'
-import { createQueries, queryOptions, type QueryObserverResult } from '@tanstack/svelte-query'
+import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/svelte-query'
 import { CameraClient } from '@viamrobotics/sdk'
 import { setContext, getContext } from 'svelte'
 import { fromStore, toStore } from 'svelte/store'
-import { createResourceClient, useResourceNames, useRobotClient } from '@viamrobotics/svelte-sdk'
-import { parsePCD } from '$lib/loaders/pcd'
-import { useRefreshRates } from './useRefreshRates.svelte'
-import { usePoses } from './usePoses.svelte'
-import { useFrames } from './useFrames.svelte'
+import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
+import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
+import { useLogs } from './useLogs.svelte'
 
 const key = Symbol('pointcloud-context')
 
 interface Context {
-	current: QueryObserverResult<Points | undefined, Error>[]
+	current: WorldObject<PointsGeometry>[]
+	errors: Error[]
 }
 
 export const providePointclouds = (partID: () => string) => {
-	const refreshRates = useRefreshRates()
-	const poses = usePoses()
-	const frames = useFrames()
-	const client = useRobotClient(partID)
+	const logs = useLogs()
+	const { refreshRates, disabledCameras } = useMachineSettings()
 	const cameras = useResourceNames(partID, 'camera')
-
-	if (!refreshRates.has('Pointclouds')) {
-		refreshRates.set('Pointclouds', 5000)
-	}
 
 	const clients = $derived(
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
-	const options = $derived(
-		clients.map((cameraClient) => {
-			const name = cameraClient.current?.name ?? ''
-			const interval = refreshRates.get('Pointclouds')
+	const options = $derived.by(() => {
+		const interval = refreshRates.get(RefreshRates.pointclouds)
+		const results: CreateQueryOptions<
+			WorldObject<PointsGeometry> | null,
+			Error,
+			WorldObject<PointsGeometry> | null,
+			string[]
+		>[] = []
 
-			return queryOptions({
-				enabled: interval !== -1 && cameraClient.current !== undefined,
-				refetchInterval: interval,
+		for (const cameraClient of clients) {
+			const name = cameraClient.current?.name ?? ''
+
+			const options = queryOptions({
+				enabled:
+					interval !== -1 &&
+					cameraClient.current !== undefined &&
+					disabledCameras.get(name) !== true,
+				refetchInterval: interval === 0 ? false : interval,
 				queryKey: ['partID', partID(), name, 'getPointCloud'],
-				queryFn: async (): Promise<Points | undefined> => {
+				queryFn: async (): Promise<WorldObject<PointsGeometry> | null> => {
 					if (!cameraClient.current) {
 						throw new Error('No camera client')
 					}
 
-					const frame = frames.current.find((frame) => frame.name === name)
-					const transform = frame !== undefined
-
+					logs.add(`Fetching pointcloud for ${cameraClient.current.name}`)
 					const response = await cameraClient.current.getPointCloud()
 
-					const transformed = transform
-						? await client.current?.transformPCD(response, cameraClient.current.name, 'world')
-						: response
+					if (!response) return null
 
-					if (!transformed) return
+					const { positions, colors } = await parsePcdInWorker(new Uint8Array(response))
 
-					const { positions, colors } = await parsePCD(new Uint8Array(transformed))
-					const geometry = new BufferGeometry()
-					const material = new PointsMaterial({ size: 0.01, vertexColors: true })
-					geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
-
-					if (colors) {
-						geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3))
-					}
-
-					const points = new Points(geometry, material)
-
-					points.userData.parent = frame ? name : 'world'
-					points.name = `${name}:pointcloud`
-
-					return points
+					return new WorldObject(
+						`${name}:pointcloud`,
+						undefined,
+						name,
+						{ center: undefined, geometryType: { case: 'points', value: positions } },
+						colors ? { colors } : undefined
+					)
 				},
 			})
-		})
-	)
 
+			results.push(options)
+		}
+
+		return results
+	})
+
+	const { updateUUIDs } = usePersistentUUIDs()
 	const queries = fromStore(
 		createQueries({
 			queries: toStore(() => options),
-			combine: (result) => {
-				return result
+			combine: (results) => {
+				const data = results
+					.flatMap((result) => result.data)
+					.filter((data) => data !== null && data !== undefined)
+
+				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
+
+				updateUUIDs(data)
+
+				return {
+					data,
+					errors,
+				}
 			},
 		})
 	)
 
 	setContext<Context>(key, {
 		get current() {
-			return queries.current
+			return queries.current.data
+		},
+		get errors() {
+			return queries.current.errors
 		},
 	})
 }

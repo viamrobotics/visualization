@@ -1,11 +1,11 @@
 {
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "csstools.postcss",
-    "bradlc.vscode-tailwindcss",
-    "golang.go",
-    "unifiedjs.vscode-mdx",
-    "esbenp.prettier-vscode",
-    "github.vscode-github-actions"
-  ]
+	"recommendations": [
+		"dbaeumer.vscode-eslint",
+		"csstools.postcss",
+		"bradlc.vscode-tailwindcss",
+		"golang.go",
+		"unifiedjs.vscode-mdx",
+		"esbenp.prettier-vscode",
+		"github.vscode-github-actions"
+	]
 }

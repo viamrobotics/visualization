@@ -1,55 +1,65 @@
 import { getContext, setContext } from 'svelte'
 import { get, set } from 'idb-keyval'
 import { Debounced } from 'runed'
-import { createGeometry, createPose } from '$lib/transform'
-import { BoxGeometry, Mesh, Object3D } from 'three'
-import { ObjectLoader } from 'three'
+import { createGeometry } from '$lib/geometry'
+import { WorldObject } from '$lib/WorldObject.svelte'
 
 const key = Symbol('static-geometries-context')
 
 interface Context {
-	current: Mesh[]
+	current: WorldObject[]
 	add: () => void
 	remove: (name: string) => void
 }
 
 export const provideStaticGeometries = () => {
-	const loader = new ObjectLoader()
+	const geometries = $state<WorldObject[]>([])
+	let loaded = $state(false)
 
-	let staticGeometries = $state<Mesh[]>([])
-
-	const debounced = new Debounced(() => staticGeometries, 500)
+	const debounced = new Debounced(() => geometries, 500)
 
 	get('static-geometries').then((response) => {
 		if (Array.isArray(response)) {
-			const meshes = response.map((json) => loader.parse(json))
-			staticGeometries = meshes as Mesh[]
+			for (const json of response) {
+				geometries.push(new WorldObject().fromJSON(json))
+			}
 		}
+
+		loaded = true
 	})
 
 	$effect(() => {
-		const jsons = debounced.current.map((mesh) => mesh.toJSON())
-		set('static-geometries', jsons)
+		if (!loaded) return
+
+		const results = []
+
+		for (const geometry of debounced.current) {
+			results.push(geometry.toJSON())
+		}
+
+		set('static-geometries', results)
 	})
 
 	setContext<Context>(key, {
 		get current() {
-			return staticGeometries
+			return geometries
 		},
 		add() {
-			const geometry = new BoxGeometry()
-			const mesh = new Mesh(geometry)
-			mesh.name = `static geometry ${staticGeometries.length + 1}`
-			mesh.userData.pose = createPose()
-			mesh.userData.geometry = createGeometry({
-				case: 'box',
-				value: { dimsMm: { x: 100, y: 100, z: 100 } },
-			})
-			staticGeometries.push(mesh)
+			const object = new WorldObject(
+				`custom geometry ${geometries.length + 1}`,
+				undefined,
+				undefined,
+				createGeometry({
+					case: 'box',
+					value: { dimsMm: { x: 100, y: 100, z: 100 } },
+				})
+			)
+
+			geometries.push(object)
 		},
 		remove(name: string) {
-			const index = staticGeometries.findIndex((geo) => geo.name === name)
-			staticGeometries.splice(index, 1)
+			const index = geometries.findIndex((geo) => geo.name === name)
+			geometries.splice(index, 1)
 		},
 	})
 }

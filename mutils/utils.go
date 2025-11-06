@@ -9,7 +9,7 @@ import (
 	"go.viam.com/rdk/robot/framesystem"
 )
 
-func GetInputs(ctx context.Context, fs referenceframe.FrameSystem, myRobot robot.Robot) (referenceframe.FrameSystemInputs, error) {
+func GetInputs(ctx context.Context, fs *referenceframe.FrameSystem, myRobot robot.Robot) (referenceframe.FrameSystemInputs, error) {
 	input := referenceframe.NewZeroInputs(fs)
 
 	for name, original := range input {

@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { InteractivityProps } from '@threlte/extras'
+import type { InteractivityProps, BVHProps } from '@threlte/extras'
 
 declare global {
 	namespace App {
@@ -12,7 +12,7 @@ declare global {
 	}
 
 	namespace Threlte {
-		interface UserProps extends InteractivityProps {}
+		interface UserProps extends InteractivityProps, BVHProps {}
 	}
 }
 

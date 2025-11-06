@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { TrackballControls, Gizmo } from '@threlte/extras'
-	import { useFocus, useFocusedObject } from '$lib/hooks/useSelection.svelte'
-	import { Keybindings } from '$lib/keybindings'
-	import { Box3, PointsMaterial, Vector3 } from 'three'
+	import { Box3, type Object3D, Vector3 } from 'three'
+	import { TrackballControls as ThreeTrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 	import Camera from './Camera.svelte'
+	import Portal from './portal/Portal.svelte'
+	import Button from './dashboard/Button.svelte'
 
-	const focus = useFocus()
-	const focusObject = useFocusedObject()
+	interface Props {
+		object3d: Object3D
+	}
+
+	let { object3d }: Props = $props()
 
 	const box = new Box3()
 	const vec = new Vector3()
@@ -15,34 +19,48 @@
 	let center = $state.raw<[number, number, number]>([0, 0, 0])
 	let size = $state.raw<[number, number, number]>([0, 0, 0])
 
-	$effect(() => {
-		if (focusObject.current) {
-			box.setFromObject(focusObject.current)
-			center = box.getCenter(vec).toArray()
-			size = box.getSize(vec).toArray()
-		}
-	})
+	let controls = $state.raw<ThreeTrackballControls>()
 
-	const onkeydown = ({ key }: KeyboardEvent) => {
-		if (key === Keybindings.ESCAPE) {
-			focus.set(undefined)
-		} else if (key === Keybindings.UP || key === Keybindings.DOWN) {
-			if (focusObject.current?.material instanceof PointsMaterial) {
-				focusObject.current.material.size += key === Keybindings.UP ? 0.001 : -0.001
-			}
-		}
-	}
+	$effect.pre(() => {
+		box.setFromObject(object3d)
+		size = box.getSize(vec).toArray()
+		center = box.getCenter(vec).toArray()
+	})
 </script>
 
-<svelte:window {onkeydown} />
+<Portal id="dashboard">
+	<fieldset>
+		<Button
+			active
+			icon="camera-outline"
+			description="Reset camera"
+			onclick={() => {
+				controls?.reset()
+			}}
+		/>
+	</fieldset>
+</Portal>
 
-<Camera position={[2, 0, 0]}>
-	<TrackballControls target={center}>
+<Camera position={[size[0] + 1, size[0] + 1, size[0] + 1]}>
+	<TrackballControls
+		bind:ref={controls}
+		target={center}
+	>
 		<Gizmo />
 	</TrackballControls>
 </Camera>
 
-{#if focusObject.current}
-	<T is={focusObject.current} />
-	<T.BoxHelper args={[focusObject.current, 'red']} />
-{/if}
+<T
+	is={object3d}
+	bvh={{
+		enabled: object3d.type === 'Points',
+		maxDepth: 40,
+		maxLeafTris: 20,
+	}}
+/>
+
+<T.BoxHelper
+	args={[object3d, 'red']}
+	bvh={{ enabled: false }}
+	raycast={() => null}
+/>

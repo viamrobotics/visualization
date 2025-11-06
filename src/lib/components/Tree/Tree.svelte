@@ -6,6 +6,9 @@
 	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 	import type { TreeNode } from './buildTree'
 	import { useExpanded } from './useExpanded.svelte'
+	import { VirtualList } from 'svelte-virtuallists'
+	import { observe } from '@threlte/core'
+	import { Icon } from '@viamrobotics/prime-core'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
@@ -14,9 +17,11 @@
 		rootNode: TreeNode
 		selections: string[]
 		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
+		onDragStart?: (event: MouseEvent) => void
+		onDragEnd?: (event: MouseEvent) => void
 	}
 
-	let { rootNode, selections, onSelectionChange }: Props = $props()
+	let { rootNode, selections, onSelectionChange, onDragStart, onDragEnd }: Props = $props()
 
 	const collection = tree.collection<TreeNode>({
 		nodeToValue: (node) => node.id,
@@ -39,13 +44,17 @@
 
 	const api = $derived(tree.connect(service, normalizeProps))
 
-	$effect(() => {
-		untrack(() => api).setSelectedValue(selections)
-	})
+	observe(
+		() => [selections],
+		() => untrack(() => api.setSelectedValue(selections))
+	)
 
-	$effect(() => {
-		untrack(() => api).setExpandedValue([...expanded])
-	})
+	observe(
+		() => [expanded],
+		() => untrack(() => api.setExpandedValue([...expanded]))
+	)
+
+	const rootChildren = $derived(collection.rootNode.children ?? [])
 </script>
 
 {#snippet treeNode({
@@ -59,14 +68,19 @@
 })}
 	{@const nodeProps = { indexPath, node }}
 	{@const nodeState = api.getNodeState(nodeProps)}
-	{@const isVisible = visibility.get(node.name) ?? true}
+	{@const isVisible = visibility.get(node.id) ?? true}
 	{@const { selected } = nodeState}
 
 	{#if nodeState.isBranch}
 		{@const { expanded } = nodeState}
+		{@const { children = [] } = node}
 		<div
 			{...api.getBranchProps(nodeProps)}
-			class={{ 'text-disabled': !isVisible, 'bg-medium': selected }}
+			class={{
+				'text-disabled': !isVisible,
+				'bg-medium': selected,
+				sticky: true,
+			}}
 		>
 			<div {...api.getBranchControlProps(nodeProps)}>
 				<span
@@ -83,9 +97,10 @@
 				</span>
 
 				<button
+					class="text-gray-6"
 					onclick={(event) => {
 						event.stopPropagation()
-						visibility.set(node.name, !isVisible)
+						visibility.set(node.id, !isVisible)
 					}}
 				>
 					{#if isVisible}
@@ -97,8 +112,9 @@
 			</div>
 			<div {...api.getBranchContentProps(nodeProps)}>
 				<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
-				{#each node.children ?? [] as childNode, index}
-					{@render treeNode({ node: childNode, indexPath: [...indexPath, index], api })}
+
+				{#each children as node, index (node.id)}
+					{@render treeNode({ node, indexPath: [...indexPath, index], api })}
 				{/each}
 			</div>
 		</div>
@@ -112,9 +128,10 @@
 			</span>
 
 			<button
+				class="text-gray-6"
 				onclick={(event) => {
 					event.stopPropagation()
-					visibility.set(node.name, !isVisible)
+					visibility.set(node.id, !isVisible)
 				}}
 			>
 				{#if isVisible}
@@ -128,18 +145,40 @@
 {/snippet}
 
 <div class="root-node">
-	<div {...api.getRootProps()}>
-		<div class="border-medium border-b p-2">
-			<h3 {...api.getLabelProps()}>{rootNode.name}</h3>
+	<div {...api.getRootProps() as object}>
+		<div class="border-medium flex items-center gap-1 border-b p-2">
+			<button
+				onmousedown={onDragStart}
+				onmouseup={onDragEnd}
+			>
+				<Icon name="drag" />
+			</button>
+			<h3 {...api.getLabelProps() as object}>{rootNode.name}</h3>
 		</div>
 
-		<div
-			{...api.getTreeProps()}
-			class="w-[240px]"
-		>
-			{#each collection.rootNode.children ?? [] as node, index}
-				{@render treeNode({ node, indexPath: [index], api })}
-			{/each}
+		<div {...api.getTreeProps()}>
+			{#if rootChildren.length === 0}
+				<p class="text-subtle-2 px-2 py-4">No objects displayed</p>
+			{:else if rootChildren.length > 200}
+				<VirtualList
+					class="w-full"
+					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
+					items={rootChildren}
+				>
+					{#snippet vl_slot({ index, item })}
+						{@render treeNode({ node: item, indexPath: [Number(index)], api })}
+					{/snippet}
+				</VirtualList>
+			{:else}
+				<div
+					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
+					class="overflow-auto"
+				>
+					{#each rootChildren as node, index (node.id)}
+						{@render treeNode({ node, indexPath: [Number(index)], api })}
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -171,10 +210,10 @@
 		[data-scope='tree-view'][data-part='branch-indent-guide'] {
 			position: absolute;
 			content: '';
-			border-left: 1px solid rgba(226, 226, 226, 0.179);
+			border-left: 1px solid #eee;
 			height: 100%;
 			translate: calc(var(--depth) * 1.25rem);
-			z-index: 0;
+			z-index: 1;
 		}
 	}
 </style>
