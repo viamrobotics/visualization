@@ -1,5 +1,58 @@
 # motion-tools
 
+## 0.16.1
+
+### Patch Changes
+
+- c849ab6: Include position and orientation details in pose world objects
+- c849ab6: Invalidate renderer immediately when poses are drawn
+
+## 0.16.0
+
+### Minor Changes
+
+- 4cee07e: Allow setting initial camera pose when embedded
+
+### Patch Changes
+
+- 56fe484: Only render on-demand
+
+## 0.15.4
+
+### Patch Changes
+
+- f6dcb64: Sanitize incomplete poses from draw commands
+
+## 0.15.3
+
+### Patch Changes
+
+- 4b80422: Fix arbitrary geometry editing
+- 60269ad: refactor useframes
+
+## 0.15.2
+
+### Patch Changes
+
+- f275caa: revert useframe refactor
+
+## 0.15.1
+
+### Patch Changes
+
+- bc666ef: Do not depend on resource names to fetch poses
+
+## 0.15.0
+
+### Minor Changes
+
+- b1976c6: Add PLY file drag-n-drop
+
+### Patch Changes
+
+- 9b5f383: hide delete button in app
+- 3539418: Fix world state parenting in tree, fix color parsing, fix arrow management for world state
+
 ## 0.14.12
 
 ### Patch Changes

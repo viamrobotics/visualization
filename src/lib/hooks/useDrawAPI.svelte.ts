@@ -5,18 +5,17 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
-import type { Geometry } from '@viamrobotics/sdk'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
-import { createPoseFromFrame } from '$lib/transform'
+import { createPose, createPoseFromFrame } from '$lib/transform'
+import { useCameraControls } from './useControls.svelte'
+import { useThrelte } from '@threlte/core'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
-	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	points: WorldObject<PointsGeometry>[]
-
 	frames: WorldObject[]
 	lines: WorldObject[]
 	meshes: WorldObject[]
@@ -26,14 +25,8 @@ interface Context {
 
 	connectionStatus: ConnectionStatus
 
-	camera:
-		| {
-				position: Vector3
-				lookAt: Vector3
-				animate: boolean
-		  }
-		| undefined
-	clearCamera: () => void
+	addPoints(worldObject: WorldObject<PointsGeometry>): void
+	addMesh(worldObject: WorldObject): void
 }
 
 const key = Symbol('draw-api-context-key')
@@ -84,6 +77,9 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
+	const cameraControls = useCameraControls()
+	const { invalidate } = useThrelte()
+
 	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
@@ -102,7 +98,6 @@ export const provideDrawAPI = () => {
 	const nurbs = $state<WorldObject[]>([])
 	const models = $state<WorldObject[]>([])
 
-	let camera = $state.raw<Context['camera']>()
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
 	const color = new Color()
@@ -172,17 +167,11 @@ export const provideDrawAPI = () => {
 		const result = meshes.find((mesh) => mesh.name === data.label)
 
 		if (result) {
-			result.pose = data.center
+			result.pose = createPose(data.center)
 			return
 		}
 
-		const geometry: Geometry = {
-			label: data.label,
-			center: undefined,
-			geometryType: {
-				case: undefined,
-			},
-		}
+		const geometry = createGeometry()
 
 		if ('mesh' in data) {
 			geometry.geometryType.case = 'mesh'
@@ -198,9 +187,15 @@ export const provideDrawAPI = () => {
 			geometry.geometryType.value = data.capsule
 		}
 
-		const object = new WorldObject(data.label ?? ++geometryIndex, data.center, parent, geometry, {
-			color: new Color(color),
-		})
+		const object = new WorldObject(
+			data.label ?? ++geometryIndex,
+			createPose(data.center),
+			parent,
+			geometry,
+			{
+				color: new Color(color),
+			}
+		)
 
 		meshes.push(object)
 	}
@@ -254,8 +249,16 @@ export const provideDrawAPI = () => {
 			color.set(colors[j], colors[j + 1], colors[j + 2])
 
 			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
+			const pose = createPose()
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
+
 			poses.push(
-				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
+				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
 					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
@@ -266,6 +269,8 @@ export const provideDrawAPI = () => {
 				})
 			)
 		}
+
+		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
@@ -551,11 +556,15 @@ export const provideDrawAPI = () => {
 		if (!data) return
 
 		if ('setCameraPose' in data) {
-			camera = {
-				position: new Vector3(data.Position.X, data.Position.Y, data.Position.Z),
-				lookAt: new Vector3(data.LookAt.X, data.LookAt.Y, data.LookAt.Z),
-				animate: data.Animate,
-			}
+			cameraControls.setPose(
+				{
+					position: [data.Position.X, data.Position.Y, data.Position.Z],
+					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+				},
+				data.Animate
+			)
+
+			return
 		}
 
 		if ('geometries' in data) {
@@ -603,9 +612,6 @@ export const provideDrawAPI = () => {
 		get points() {
 			return points
 		},
-		addPoints(worldObject: WorldObject<PointsGeometry>) {
-			points.push(worldObject)
-		},
 		get lines() {
 			return lines
 		},
@@ -624,11 +630,11 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		get camera() {
-			return camera
+		addPoints(worldObject: WorldObject<PointsGeometry>) {
+			points.push(worldObject)
 		},
-		clearCamera: () => {
-			camera = undefined
+		addMesh(worldObject: WorldObject) {
+			meshes.push(worldObject)
 		},
 	})
 }

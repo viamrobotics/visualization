@@ -9,23 +9,27 @@ const ov = new OrientationVector()
 const translation = new Vector3()
 const scale = new Vector3()
 
-export const createPose = (pose?: Pose): Pose => {
+export const createPose = (pose?: Partial<Pose>): Pose => {
+	// We should only default to the 0,0,1,0 orientation vector if the entire vector component is missing
+	const oZ =
+		pose?.oX === undefined && pose?.oY === undefined && pose?.oZ === undefined ? 1 : (pose?.oZ ?? 0)
+
 	return {
 		x: pose?.x ?? 0,
 		y: pose?.y ?? 0,
 		z: pose?.z ?? 0,
 		oX: pose?.oX ?? 0,
 		oY: pose?.oY ?? 0,
-		oZ: pose?.oZ ?? 1,
+		oZ,
 		theta: pose?.theta ?? 0,
 	}
 }
 
-export const createPoseFromFrame = (frame: Frame): Pose => {
-	if (frame.orientation.type === 'quaternion') {
+export const createPoseFromFrame = (frame: Partial<Frame>): Pose => {
+	if (frame.orientation?.type === 'quaternion') {
 		quaternion.copy(frame.orientation.value)
 		ov.setFromQuaternion(quaternion)
-	} else if (frame.orientation.type === 'euler_angles') {
+	} else if (frame.orientation?.type === 'euler_angles') {
 		euler.set(
 			frame.orientation.value.roll,
 			frame.orientation.value.pitch,
@@ -34,17 +38,19 @@ export const createPoseFromFrame = (frame: Frame): Pose => {
 		)
 		quaternion.setFromEuler(euler)
 		ov.setFromQuaternion(quaternion)
-	} else if (frame.orientation.type === 'ov_radians') {
+	} else if (frame.orientation?.type === 'ov_radians') {
 		ov.copy(frame.orientation.value)
+	} else if (frame.orientation) {
+		const th = MathUtils.degToRad(frame.orientation?.value.th ?? 0)
+		ov.set(frame.orientation?.value.x, frame.orientation?.value.y, frame.orientation?.value.z, th)
 	} else {
-		const th = MathUtils.degToRad(frame.orientation.value.th)
-		ov.set(frame.orientation.value.x, frame.orientation.value.y, frame.orientation.value.z, th)
+		ov.set(0, 0, 1, 0)
 	}
 
 	return {
-		x: frame.translation.x ?? 0,
-		y: frame.translation.y ?? 0,
-		z: frame.translation.z ?? 0,
+		x: frame.translation?.x ?? 0,
+		y: frame.translation?.y ?? 0,
+		z: frame.translation?.z ?? 0,
 		oX: ov.x,
 		oY: ov.y,
 		oZ: ov.z,

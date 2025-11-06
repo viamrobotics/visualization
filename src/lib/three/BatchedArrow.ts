@@ -17,7 +17,6 @@ export class BatchedArrow {
 	_geometryId: number
 	_pool: number[] = []
 	_ids = new Set<number>()
-	_id = 0
 	_max = 20_000
 
 	constructor() {
