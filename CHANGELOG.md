@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.16.3
+
+### Patch Changes
+
+- 77ca9cd: Bumps github.com/go-viper/mapstructure/v2 from 2.3.0 to 2.4.0.
+- 1d24c82: Bumps vite from 7.1.4 to 7.1.11.
+
 ## 0.16.2
 
 ### Patch Changes
