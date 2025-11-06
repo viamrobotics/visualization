@@ -7,7 +7,7 @@ name: Bump Version in App Repository
 on:
   push:
     tags:
-      - 'v*'  # Triggers on tags like v0.16.1, v1.0.0, etc.
+      - 'v*' # Triggers on tags like v0.16.1, v1.0.0, etc.
 
 permissions:
   contents: read
