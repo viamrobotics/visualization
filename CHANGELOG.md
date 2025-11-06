@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.16.2
+
+### Patch Changes
+
+- d87bbb6: fix arrow poses WorldObject init
+
 ## 0.16.1
 
 ### Patch Changes
