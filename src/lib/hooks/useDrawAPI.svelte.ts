@@ -10,6 +10,7 @@ import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
+import { useThrelte } from '@threlte/core'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -77,6 +78,7 @@ class Float32Reader {
 
 export const provideDrawAPI = () => {
 	const cameraControls = useCameraControls()
+	const { invalidate } = useThrelte()
 
 	let pointsIndex = 0
 	let geometryIndex = 0
@@ -247,8 +249,16 @@ export const provideDrawAPI = () => {
 			color.set(colors[j], colors[j + 1], colors[j + 2])
 
 			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
+			const pose = createPose()
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
+
 			poses.push(
-				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
+				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
 					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
@@ -259,6 +269,8 @@ export const provideDrawAPI = () => {
 				})
 			)
 		}
+
+		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
