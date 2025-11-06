@@ -3,7 +3,7 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3 } from 'three'
+	import { Quaternion, Vector3, MathUtils } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -29,6 +29,7 @@
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+
 	const { ...rest } = $props()
 
 	const focused = useFocused()
@@ -93,7 +94,10 @@
 				worldOrientation.th = ov.th
 			}
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {
@@ -262,19 +266,20 @@
 			{#if worldPosition}
 				<div>
 					<strong class="font-semibold">world position</strong>
+					<span class="text-subtle-2">(m)</span>
 
 					<div class="flex gap-3">
 						<div>
 							<span class="text-subtle-2">x</span>
-							{(worldPosition.x * 1000).toFixed(2)}
+							{worldPosition.x.toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">y</span>
-							{(worldPosition.y * 1000).toFixed(2)}
+							{worldPosition.y.toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">z</span>
-							{(worldPosition.z * 1000).toFixed(2)}
+							{worldPosition.z.toFixed(2)}
 						</div>
 					</div>
 				</div>
@@ -283,6 +288,7 @@
 			{#if worldOrientation}
 				<div>
 					<strong class="font-semibold">world orientation</strong>
+					<span class="text-subtle-2">(deg)</span>
 					<div class="flex gap-3">
 						<div>
 							<span class="text-subtle-2">x</span>
@@ -298,7 +304,7 @@
 						</div>
 						<div>
 							<span class="text-subtle-2">th</span>
-							{worldOrientation.th.toFixed(2)}
+							{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
 						</div>
 					</div>
 				</div>
@@ -323,6 +329,7 @@
 					{@const PoseAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					<div>
 						<strong class="font-semibold">local position</strong>
+						<span class="text-subtle-2">(m)</span>
 
 						<div class="flex gap-3">
 							{@render PoseAttribute({
@@ -351,6 +358,7 @@
 
 					<div>
 						<strong class="font-semibold">local orientation</strong>
+						<span class="text-subtle-2">(deg)</span>
 						<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'}">
 							{@render PoseAttribute({
 								label: 'x',

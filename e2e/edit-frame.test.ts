@@ -8,13 +8,13 @@ import {
 } from '@viamrobotics/sdk'
 
 const testConfig = {
-	host: 'edit-frame-testing-main.i6h2oo7033.viam.cloud',
-	name: 'edit-frame-testing-main',
-	partId: '9b304d77-b1d5-4c96-a64f-4088772b9961',
-	apiKeyId: '4624aa5d-b2b8-4eb2-a78e-d938eabfcb30',
-	apiKeyValue: 'f1ohpwifx1y6drnoxmaiblcpyoey8sj4',
+	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
+	name: 'motion-tools-e2e-main',
+	partId: '9741704d-ea0e-484c-8cf8-0a849096af1e',
+	apiKeyId: '76fcaf4b-4e04-4c6b-9665-c9c663ee4fad',
+	apiKeyValue: 'iz95ie2bz5h617xhs2ko9eov1b5bryas',
 	signalingAddress: 'https://app.viam.com:443',
-	organizationId: 'd9135ec5-e339-4df8-97bb-243586a99daf',
+	organizationId: 'd9fd430a-25ec-47ba-b548-5d1b1b2fc6d1',
 }
 const fragmentIdsToDelete: string[] = []
 

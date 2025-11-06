@@ -36,7 +36,10 @@
 				obbHelper.setFromObject(clone)
 			}
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {

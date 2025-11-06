@@ -1,5 +1,41 @@
 # motion-tools
 
+## 0.16.2
+
+### Patch Changes
+
+- d87bbb6: fix arrow poses WorldObject init
+
+## 0.16.1
+
+### Patch Changes
+
+- c849ab6: Include position and orientation details in pose world objects
+- c849ab6: Invalidate renderer immediately when poses are drawn
+
+## 0.16.0
+
+### Minor Changes
+
+- 4cee07e: Allow setting initial camera pose when embedded
+
+### Patch Changes
+
+- 56fe484: Only render on-demand
+
+## 0.15.4
+
+### Patch Changes
+
+- f6dcb64: Sanitize incomplete poses from draw commands
+
+## 0.15.3
+
+### Patch Changes
+
+- 4b80422: Fix arbitrary geometry editing
+- 60269ad: refactor useframes
+
 ## 0.15.2
 
 ### Patch Changes
