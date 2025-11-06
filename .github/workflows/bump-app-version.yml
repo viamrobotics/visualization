@@ -14,7 +14,7 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Extract version from release tag
         id: version
@@ -53,7 +53,7 @@ jobs:
             grep "motion-tools" pnpm-workspace.yaml | grep -oP '["'\'']\K[^"'\'']+(?=["'\''])' | head -1 || echo "")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version in app repo: $CURRENT_VERSION"
-          
+
           # Check if version needs updating
           NEW_VERSION="${{ steps.version.outputs.version }}"
           if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
@@ -68,17 +68,17 @@ jobs:
         working-directory: app-repo
         run: |
           NEW_VERSION="${{ steps.version.outputs.version }}"
-          
+
           # Install yq for YAML manipulation
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
-          
+
           # Update the version in pnpm-workspace.yaml
           # Handle different possible YAML structures:
           # 1. "@viamrobotics/motion-tools": { version: "x.x.x" }
           # 2. "@viamrobotics/motion-tools": "x.x.x"
           # 3. "@viamrobotics/motion-tools": { version: 'x.x.x' }
-          
+
           # Try to update using yq (most reliable)
           if yq eval ".dependencies.\"@viamrobotics/motion-tools\".version = \"$NEW_VERSION\"" -i pnpm-workspace.yaml 2>/dev/null; then
             echo "Updated using yq (nested structure)"
@@ -91,7 +91,7 @@ jobs:
             sed -i.bak -E "s|(@viamrobotics/motion-tools['\"]?:[[:space:]]*['\"])[^'\"]*(['\"])|\1$NEW_VERSION\2|g" pnpm-workspace.yaml
             rm -f pnpm-workspace.yaml.bak
           fi
-          
+
           # Verify the change
           echo "Updated pnpm-workspace.yaml:"
           grep -A 2 "motion-tools" pnpm-workspace.yaml || true
@@ -112,11 +112,11 @@ jobs:
         run: |
           # Authenticate GitHub CLI
           echo "$GH_TOKEN" | gh auth login --with-token
-          
+
           # Find open PRs that bump motion-tools
           # Search for PRs with branch matching "chore/bump-motion-tools-*"
           EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,title,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' || echo "")
-          
+
           if [ -n "$EXISTING_PRS" ]; then
             echo "Found existing PRs: $EXISTING_PRS"
             # Store PR numbers as a space-separated list
@@ -133,14 +133,14 @@ jobs:
         with:
           token: ${{ secrets.APP_REPO_TOKEN }}
           path: app-repo
-          commit-message: "chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}"
-          title: "chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}"
+          commit-message: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
+          title: 'chore: bump @viamrobotics/motion-tools to ${{ steps.version.outputs.version }}'
           body: |
             This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ steps.version.outputs.version }}` after the release was published.
-            
+
             **Previous version:** ${{ steps.current-version.outputs.current_version }}  
             **New version:** ${{ steps.version.outputs.version }}
-            
+
             Released in: ${{ github.event.release.html_url }}
           branch: chore/bump-motion-tools-${{ steps.version.outputs.version }}
           delete-branch: true
@@ -153,20 +153,20 @@ jobs:
         run: |
           # Authenticate GitHub CLI
           echo "$GH_TOKEN" | gh auth login --with-token
-          
+
           NEW_VERSION="${{ steps.version.outputs.version }}"
           # Get PR number from action output (try both common output names)
           PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
             PR_NUMBER="${{ steps.create-pr.outputs.number }}"
           fi
-          
+
           # If PR number not available from outputs, try to get it from the branch
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
             BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
             PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
           fi
-          
+
           if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
             echo "Requesting review from team-viz for PR #$PR_NUMBER"
             # Request review from the team using GitHub API
@@ -187,20 +187,20 @@ jobs:
         run: |
           # Authenticate GitHub CLI
           echo "$GH_TOKEN" | gh auth login --with-token
-          
+
           NEW_VERSION="${{ steps.version.outputs.version }}"
           # Get PR number from action output (try both common output names)
           NEW_PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
           if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
             NEW_PR_NUMBER="${{ steps.create-pr.outputs.number }}"
           fi
-          
+
           # If PR number not available from outputs, try to get it from the branch
           if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
             BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
             NEW_PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
           fi
-          
+
           if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
             echo "Warning: Could not determine new PR number, closing old PRs without link"
             NEW_PR_URL=""
@@ -211,12 +211,11 @@ jobs:
 
             See: $NEW_PR_URL"
           fi
-          
+
           EXISTING_PRS="${{ steps.find-existing-prs.outputs.pr_numbers }}"
-          
+
           # Close each existing PR and add a comment linking to the new PR
           for PR_NUMBER in $EXISTING_PRS; do
             echo "Closing PR #$PR_NUMBER and linking to new PR #$NEW_PR_NUMBER"
             gh pr close "$PR_NUMBER" --repo viamrobotics/app --comment "$COMMENT"
           done
-
