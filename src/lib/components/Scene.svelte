@@ -37,7 +37,7 @@
 			return item ? [item] : []
 		},
 	})
-	$effect.pre(() => {
+	$effect(() => {
 		enabled.set(!settings.current.enableMeasure)
 	})
 	raycaster.firstHitOnly = true
