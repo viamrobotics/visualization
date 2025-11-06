@@ -1,56 +1,125 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
-	import { XRButton } from '@threlte/xr'
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
+	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import type { Struct } from '@viamrobotics/sdk'
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
-	import Logs from '$lib/components/Logs.svelte'
 	import Details from '$lib/components/Details.svelte'
-	import { provideFrames } from '$lib/hooks/useFrames.svelte'
-	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
-	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
-	import { providePoses } from '$lib/hooks/usePoses.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { provideSelection } from '$lib/hooks/useSelection.svelte'
-	import { provideStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
-	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
-	import { provideShapes } from '$lib/hooks/useShapes.svelte'
-	import { providePollingRates } from '$lib/hooks/usePollingRates.svelte'
+	import SceneProviders from './SceneProviders.svelte'
+	import XR from '$lib/components/xr/XR.svelte'
+	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
+	import Dashboard from './dashboard/Dashboard.svelte'
+	import { domPortal } from '$lib/portal'
+	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import FileDrop from './FileDrop.svelte'
+	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useViamClient } from '@viamrobotics/svelte-sdk'
+	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
+	import ArmPositions from './widgets/ArmPositions.svelte'
+	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 
-	interface Props {
-		children?: Snippet
+	interface LocalConfigProps {
+		getLocalPartConfig: () => Struct
+		setLocalPartConfig: (config: Struct) => void
+		isDirty: () => boolean
+		getComponentToFragId: () => Record<string, string>
 	}
 
-	let { children }: Props = $props()
+	interface Props {
+		partID?: string
+		enableKeybindings?: boolean
+		children?: Snippet
+		localConfigProps?: LocalConfigProps
 
-	const partID = usePartID()
+		/**
+		 * Allows setting the initial camera pose
+		 */
+		cameraPose?: CameraPose
+	}
 
-	provideStaticGeometries()
-	provideVisibility()
-	provideShapes()
-	providePollingRates()
+	let {
+		partID = '',
+		enableKeybindings = true,
+		children: appChildren,
+		localConfigProps,
+		cameraPose,
+	}: Props = $props()
 
-	providePoses(() => partID.current)
-	provideGeometries(() => partID.current)
-	providePointclouds(() => partID.current)
-	provideFrames(() => partID.current)
+	const appClient = useViamClient()
+	const settings = provideSettings()
+	const environment = provideEnvironment()
 
-	const { focus } = provideSelection()
+	$effect(() => {
+		settings.current.enableKeybindings = enableKeybindings
+	})
+
+	createPartIDContext(() => partID)
+
+	provideWeblabs()
+	provideToast()
+
+	let root = $state.raw<HTMLElement>()
+
+	if (localConfigProps) {
+		environment.current.isStandalone = false
+		providePartConfig({
+			appEmbeddedPartConfigProps: {
+				isDirty: () => localConfigProps.isDirty(),
+				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
+			},
+		})
+	} else {
+		environment.current.isStandalone = true
+		providePartConfig({
+			standalonePartConfigProps: {
+				viamClient: () => appClient?.current,
+				partID: () => partID,
+			},
+		})
+	}
 </script>
 
-<Canvas renderMode="always">
-	<Scene>
-		{@render children?.()}
-	</Scene>
-</Canvas>
-
-<Details />
-
-{#if focus.current === undefined}
-	<TreeContainer />
-	<Logs />
+{#if settings.current.enableQueryDevtools}
+	<SvelteQueryDevtools initialIsOpen />
 {/if}
 
-{#if false}
-	<XRButton mode="immersive-ar" />
-{/if}
+<div
+	class="relative h-full w-full overflow-hidden"
+	bind:this={root}
+>
+	<Canvas renderMode="on-demand">
+		<SceneProviders {cameraPose}>
+			{#snippet children({ focus })}
+				<Scene>
+					{@render appChildren?.()}
+				</Scene>
+
+				<XR {@attach domPortal(root)} />
+
+				<Dashboard {@attach domPortal(root)} />
+				<Details {@attach domPortal(root)} />
+				{#if environment.current.isStandalone}
+					<LiveUpdatesBanner {@attach domPortal(root)} />
+				{/if}
+
+				{#if !focus}
+					<TreeContainer {@attach domPortal(root)} />
+				{/if}
+
+				{#if !focus && settings.current.enableArmPositionsWidget}
+					<ArmPositions {@attach domPortal(root)} />
+				{/if}
+
+				<FileDrop {@attach domPortal(root)} />
+			{/snippet}
+		</SceneProviders>
+	</Canvas>
+
+	<ToastContainer />
+</div>

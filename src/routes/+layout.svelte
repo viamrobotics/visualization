@@ -2,13 +2,15 @@
 	import '../app.css'
 
 	import type { DialConf } from '@viamrobotics/sdk'
-	import { ViamProvider } from '@viamrobotics/svelte-sdk'
-	import Machines from '$lib/components/Machines.svelte'
-	import { provideConnectionConfigs } from '$lib/hooks'
-	import { getDialConfs } from '$lib/robots'
-	import { useActiveConnectionConfig } from '$lib/hooks'
-	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
-	import MotionTools from '$lib/components/App.svelte'
+	import { ViamProvider, ViamAppProvider } from '@viamrobotics/svelte-sdk'
+	import { MotionTools } from '$lib'
+	import {
+		provideConnectionConfigs,
+		useActiveConnectionConfig,
+	} from './lib/hooks/useConnectionConfigs.svelte'
+	import Machines from './lib/components/Machines.svelte'
+	import { getDialConfs } from './lib/robots'
+	import { QueryClient } from '@tanstack/svelte-query'
 
 	provideConnectionConfigs()
 
@@ -23,19 +25,53 @@
 				disableSessions: true,
 			}
 
-			return getDialConfs({ robot })
+			return { ...getDialConfs({ robot }) }
 		}
 
 		return {}
 	})
 
-	createPartIDContext(() => connectionConfig.current?.partId ?? '')
+	const partID = $derived(connectionConfig.current?.partId)
+
+	const client = new QueryClient({
+		defaultOptions: {
+			queries: {
+				staleTime: Infinity,
+			},
+		},
+	})
+
+	let isMachinesPageOpen = $state(false)
 </script>
 
-<Machines />
+<Machines bind:isOpen={isMachinesPageOpen} />
 
-<ViamProvider {dialConfigs}>
-	<MotionTools>
-		{@render children()}
-	</MotionTools>
+<ViamProvider
+	{dialConfigs}
+	{client}
+>
+	{#if connectionConfig.current}
+		<ViamAppProvider
+			serviceHost="https://app.viam.com"
+			credentials={{
+				type: 'api-key',
+				payload: connectionConfig.current.apiKeyValue,
+				authEntity: connectionConfig.current.apiKeyId,
+			}}
+		>
+			<MotionTools
+				{partID}
+				enableKeybindings={!isMachinesPageOpen}
+			>
+				{@render children()}
+			</MotionTools>
+		</ViamAppProvider>
+	{:else}
+		<MotionTools
+			{partID}
+			enableKeybindings={!isMachinesPageOpen}
+		>
+			{@render children()}
+		</MotionTools>
+	{/if}
 </ViamProvider>

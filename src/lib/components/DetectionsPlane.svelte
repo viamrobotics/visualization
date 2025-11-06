@@ -6,7 +6,7 @@
 </script>
 
 <T.Group scale={0.001}>
-	{#each detections as { xMin, xMax, yMin, yMax }}
+	{#each detections as { xMin, xMax, yMin, yMax }, index (index)}
 		{#if xMin !== undefined && xMax !== undefined && yMin !== undefined && yMax !== undefined}
 			<T.Mesh
 				scale={[Number(xMax - xMin), Number(yMax - yMin), 1]}

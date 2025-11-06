@@ -2,6 +2,7 @@
 	import { Hand } from '@threlte/xr'
 
 	console.log('hands')
+
 	const onpinchstart = () => {
 		console.log('start')
 	}

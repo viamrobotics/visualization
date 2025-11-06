@@ -1,18 +1,39 @@
-// main.js
+import type { Message, SuccessMessage } from './worker'
+
 const worker = new Worker(new URL('./worker', import.meta.url), { type: 'module' })
 
-export const parsePCD = async (
-	array: Uint8Array<ArrayBufferLike>
-): Promise<{ positions: ArrayBuffer; colors: ArrayBuffer | undefined }> => {
+let requestId = 0
+const pending = new Map<
+	number,
+	{
+		resolve: (msg: SuccessMessage) => void
+		reject: (err: string) => void
+	}
+>()
+
+worker.addEventListener('message', (event: MessageEvent<Message>) => {
+	const { id, ...rest } = event.data as Message
+
+	const promise = pending.get(id)
+
+	if (!promise) {
+		return
+	}
+
+	pending.delete(id)
+
+	if ('error' in rest) {
+		promise.reject(rest.error)
+	} else {
+		promise.resolve(rest as SuccessMessage)
+	}
+})
+
+export const parsePcdInWorker = (data: Uint8Array<ArrayBufferLike>): Promise<SuccessMessage> => {
 	return new Promise((resolve, reject) => {
-		worker.onmessage = (event) => {
-			if (event.data.error) {
-				return reject(event.data.error)
-			}
+		const id = ++requestId
+		pending.set(id, { resolve, reject })
 
-			resolve({ positions: event.data.positionArray, colors: event.data.colorArray })
-		}
-
-		worker.postMessage({ data: array }, [array.buffer])
+		worker.postMessage({ id, data }, [data.buffer])
 	})
 }

@@ -10,6 +10,8 @@ static/Big_Buck_Bunny_4K.webm
 .wrangler
 /.svelte-kit
 /build
+/dist
+viamrobotics-motion-tools-*.tgz
 
 # OS
 .DS_Store
@@ -24,3 +26,8 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+*~
+
+# Sentry Config File
+.env.sentry-build-plugin

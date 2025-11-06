@@ -1,56 +1,208 @@
 import { getContext, setContext, untrack } from 'svelte'
-import type { Geometry, Pose } from '@viamrobotics/sdk'
-import { useRobotClient, createRobotQuery } from '@viamrobotics/svelte-sdk'
-import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
-import { useShapes } from '$lib/hooks/useShapes.svelte'
-import { useGeometries } from '$lib/hooks/useGeometries.svelte'
-import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
-import { createPose, createGeometry, object3dToPose } from '$lib/transform'
-
-export interface Frame {
-	name: string
-	parent: string
-	pose: Pose
-	geometry: Geometry
-}
+import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import { WorldObject } from '$lib/WorldObject.svelte'
+import { useLogs } from './useLogs.svelte'
+import { resourceNameToColor } from '$lib/color'
+import type { Frame } from '$lib/frame'
+import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
+import { createPoseFromFrame } from '$lib/transform'
+import { createGeometryFromFrame } from '$lib/geometry'
+import { useResourceByName } from './useResourceByName.svelte'
+import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 
 interface FramesContext {
-	current: Frame[]
+	current: WorldObject[]
 	error?: Error
 	fetching: boolean
-}
-
-interface AllFramesContext {
-	current: Frame[]
+	getParentFrameOptions: (componentName: string) => string[]
 }
 
 const key = Symbol('frames-context')
-const allFramesKey = Symbol('all-frames-context')
 
 export const provideFrames = (partID: () => string) => {
+	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
-	const query = createRobotQuery(client, 'frameSystemConfig', { refetchInterval: 10_000 })
+	const machineStatus = useMachineStatus(partID)
+	const logs = useLogs()
+	const query = createRobotQuery(client, 'frameSystemConfig')
+	const revision = $derived(machineStatus.current?.config?.revision)
+	const partConfig = usePartConfig()
+	const environment = useEnvironment()
+	const { updateUUIDs } = usePersistentUUIDs()
 
-	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		client.current
-		untrack(() => query.current).refetch()
+	$effect.pre(() => {
+		if (revision) {
+			untrack(() => query.current).refetch()
+		}
+		logs.add('Fetching frames...')
 	})
 
-	const current = $derived(
-		(query.current.data ?? []).map((config) => {
-			return {
-				name: config.frame?.referenceFrame ?? '',
-				parent: config.frame?.poseInObserverFrame?.referenceFrame ?? 'world',
-				pose: config.frame?.poseInObserverFrame?.pose ?? createPose(),
-				geometry: config.frame?.physicalObject ?? createGeometry(),
+	$effect.pre(() => {
+		if (partConfig.isDirty) {
+			environment.current.viewerMode = 'edit'
+		} else {
+			environment.current.viewerMode = 'monitor'
+		}
+	})
+
+	const machineFrames = $derived.by(() => {
+		const objects: Record<string, WorldObject> = {}
+
+		for (const { frame } of query.current.data ?? []) {
+			if (frame === undefined) {
+				continue
 			}
-		})
-	)
+
+			const resourceName = resourceByName.current[frame.referenceFrame]
+			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
+			const color = resourceNameToColor(resourceName)
+
+			objects[frameName] = new WorldObject(
+				frameName,
+				frame.poseInObserverFrame?.pose,
+				frame.poseInObserverFrame?.referenceFrame,
+				frame.physicalObject,
+				color ? { color } : undefined
+			)
+		}
+
+		return objects
+	})
+
+	const [configFrames, configUnsetFrames] = $derived.by(() => {
+		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
+
+		const objects: WorldObject[] = []
+		const unsetObjects: string[] = []
+
+		// deal with part defined frame config
+		for (const component of components ?? []) {
+			if (!component.frame) {
+				unsetObjects.push(component.name)
+				continue
+			}
+
+			const pose = createPoseFromFrame(component.frame)
+			const geometry = createGeometryFromFrame(component.frame)
+			const worldObject = new WorldObject(component.name, pose, component.frame.parent, geometry)
+			objects.push(worldObject)
+		}
+
+		return [objects, unsetObjects]
+	})
+
+	const [fragmentFrames, fragmentUnsetFrames] = $derived.by(() => {
+		const { fragment_mods: fragmentMods = [] } =
+			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
+		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
+		const objects: WorldObject[] = []
+		const unsetObjects: string[] = []
+
+		// deal with fragment defined components
+		for (const fragmentComponentName of fragmentDefinedComponents || []) {
+			const fragmentId = partConfig.componentNameToFragmentId[fragmentComponentName]
+			const fragmentMod = fragmentMods?.find((mod) => mod.fragment_id === fragmentId)
+
+			if (!fragmentMod) {
+				continue
+			}
+
+			const setComponentModIndex = fragmentMod.mods.findLastIndex(
+				(mod) => mod['$set']?.[`components.${fragmentComponentName}.frame`] !== undefined
+			)
+			const unsetComponentModIndex = fragmentMod.mods.findLastIndex(
+				(mod) => mod['$unset']?.[`components.${fragmentComponentName}.frame`] !== undefined
+			)
+
+			if (setComponentModIndex < unsetComponentModIndex) {
+				unsetObjects.push(fragmentComponentName)
+			} else if (unsetComponentModIndex < setComponentModIndex) {
+				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
+					`components.${fragmentComponentName}.frame`
+				] as Frame
+				const pose = createPoseFromFrame(frameData)
+				const geometry = createGeometryFromFrame(frameData)
+				const worldObject = new WorldObject(fragmentComponentName, pose, frameData.parent, geometry)
+				objects.push(worldObject)
+			}
+		}
+		return [objects, unsetObjects]
+	})
+
+	$effect.pre(() => {
+		for (const frame of configFrames) {
+			const result = machineFrames[frame.name]
+
+			if (result) {
+				result.referenceFrame = frame.referenceFrame
+				result.localEditedPose = frame.pose
+				result.geometry = frame.geometry
+			} else {
+				machineFrames[frame.name] = frame
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const frame of fragmentFrames) {
+			const result = machineFrames[frame.name]
+
+			if (result) {
+				result.referenceFrame = frame.referenceFrame
+				result.localEditedPose = frame.pose
+				result.geometry = frame.geometry
+			} else {
+				machineFrames[frame.name] = frame
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const name of configUnsetFrames) {
+			delete machineFrames[name]
+		}
+	})
+
+	$effect.pre(() => {
+		for (const name of fragmentUnsetFrames) {
+			delete machineFrames[name]
+		}
+	})
+
+	const current = $derived.by(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _configFrames = configFrames
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _fragmentFrames = fragmentFrames
+		const results = Object.values(machineFrames)
+		updateUUIDs(results)
+		return results
+	})
+
 	const error = $derived(query.current.error ?? undefined)
 	const fetching = $derived(query.current.isFetching)
 
+	const getParentFrameOptions = (componentName: string) => {
+		const validFrames = new Set(current.map((frame) => frame.name))
+		validFrames.add('world')
+
+		const frameNameQueue = [componentName]
+		while (frameNameQueue.length > 0) {
+			const frameName = frameNameQueue.shift()
+			if (frameName) {
+				validFrames.delete(frameName)
+				const frames = current.filter((frame) => frame.referenceFrame === frameName)
+				for (const frame of frames) {
+					frameNameQueue.push(frame.name)
+				}
+			}
+		}
+		return Array.from(validFrames)
+	}
+
 	setContext<FramesContext>(key, {
+		getParentFrameOptions,
 		get current() {
 			return current
 		},
@@ -61,89 +213,8 @@ export const provideFrames = (partID: () => string) => {
 			return fetching
 		},
 	})
-
-	const frames = useFrames()
-	const geometries = useGeometries()
-	const statics = useStaticGeometries()
-	const shapes = useShapes()
-	const pcds = usePointClouds()
-	const clouds1 = $derived(
-		pcds.current
-			.map((query) => query.data)
-			.filter((points) => points !== undefined)
-			.map((points) => {
-				const pose = createPose()
-				object3dToPose(points, pose)
-				return {
-					name: points.name,
-					parent: points.userData.parent ?? 'world',
-					geometry: createGeometry(),
-					pose,
-				} satisfies Frame
-			})
-	)
-	const clouds2 = $derived(
-		shapes.points.map((points) => {
-			const pose = createPose()
-			object3dToPose(points, pose)
-
-			return {
-				name: points.name,
-				parent: 'world',
-				geometry: createGeometry(),
-				pose,
-			} satisfies Frame
-		})
-	)
-	const meshes = $derived(
-		shapes.meshes.map((mesh) => {
-			const pose = createPose()
-			object3dToPose(mesh, pose)
-
-			return {
-				name: mesh.name,
-				parent: 'world',
-				geometry: createGeometry(),
-				pose,
-			} satisfies Frame
-		})
-	)
-	const poses = $derived(
-		shapes.poses.map((arrow) => {
-			console.log(arrow.userData)
-			return {
-				name: arrow.name,
-				parent: 'world',
-				geometry: createGeometry(),
-				pose: arrow.userData.pose,
-			}
-		})
-	)
-
-	const allGeometries = $derived(geometries.current.flatMap((query) => query.data ?? []))
-
-	const allFrames = $derived([
-		...frames.current,
-		...statics.current,
-		...shapes.current,
-		...allGeometries,
-		...clouds1,
-		...clouds2,
-		...meshes,
-		...poses,
-	])
-
-	setContext<AllFramesContext>(allFramesKey, {
-		get current() {
-			return allFrames
-		},
-	})
 }
 
 export const useFrames = (): FramesContext => {
 	return getContext<FramesContext>(key)
-}
-
-export const useAllFrames = (): AllFramesContext => {
-	return getContext<AllFramesContext>(allFramesKey)
 }

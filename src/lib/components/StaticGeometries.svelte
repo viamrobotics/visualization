@@ -1,78 +1,73 @@
 <script lang="ts">
 	import { TransformControls } from '@threlte/extras'
-	import { useSelection } from '$lib/hooks/useSelection.svelte'
+	import { useSelected } from '$lib/hooks/useSelection.svelte'
 	import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
-	import { useControls } from '$lib/hooks/useControls.svelte'
-	import { Keybindings } from '$lib/keybindings'
-	import Frame from './Frame.svelte'
-	import { PersistedState } from 'runed'
+	import { useTransformControls } from '$lib/hooks/useControls.svelte'
+	import { PressedKeys } from 'runed'
 	import { quaternionToPose, scaleToDimensions, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
+	import Frame from './Frame.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	type Modes = 'translate' | 'rotate' | 'scale'
-
-	const controls = useControls()
+	const settings = useSettings()
+	const transformControls = useTransformControls()
 	const geometries = useStaticGeometries()
-	const selection = useSelection()
+	const selected = useSelected()
 
-	let mode = new PersistedState<Modes>('transform-mode', 'translate')
+	const mode = $derived(settings.current.transformMode)
 
 	const quaternion = new Quaternion()
-	const nullRotation = new Quaternion()
 	const vector3 = new Vector3()
+
+	const keys = new PressedKeys()
+
+	keys.onKeys('=', () => geometries.add())
+	keys.onKeys('-', () => geometries.remove(selected.current ?? ''))
+
+	$effect(() => {
+		settings.current.transforming = geometries.current.some(
+			(geometry) => selected.current === geometry.uuid
+		)
+	})
 </script>
 
-<svelte:window
-	onkeydown={(event) => {
-		if (event.metaKey || event.ctrlKey) {
-			return
-		}
-
-		const key = event.key.toLowerCase()
-
-		if (key === Keybindings.ADD_GEOMETRY) {
-			geometries.add()
-		} else if (key === Keybindings.REMOVE_GEOMETRY) {
-			geometries.remove(selection.current ?? '')
-		} else if (key === Keybindings.TRANSLATE) {
-			mode.current = 'translate'
-		} else if (key === Keybindings.ROTATE) {
-			mode.current = 'rotate'
-		} else if (key === Keybindings.SCALE) {
-			mode.current = 'scale'
-		}
-	}}
-/>
-
-{#each geometries.current as frame (frame.name)}
+{#each geometries.current as object (object.uuid)}
 	<Frame
-		name={frame.name}
-		pose={frame.pose}
-		geometry={frame.geometry}
-		color="hotpink"
+		uuid={object.uuid}
+		name={object.name}
+		pose={object.pose}
+		geometry={object.geometry}
+		metadata={object.metadata}
 	>
 		{#snippet children({ ref })}
-			{#if selection.current === frame.name}
-				<TransformControls
-					object={ref}
-					mode={mode.current}
-					onmouseDown={() => controls.setTransformControlsActive(true)}
-					onmouseUp={(event) => {
-						controls.setTransformControlsActive(false)
+			{#if selected.current === object.uuid}
+				{#key mode}
+					<TransformControls
+						object={ref}
+						{mode}
+						translationSnap={settings.current.snapping ? 0.1 : undefined}
+						rotationSnap={settings.current.snapping ? Math.PI / 24 : undefined}
+						scaleSnap={settings.current.snapping ? 0.1 : undefined}
+						onmouseDown={() => {
+							transformControls.setActive(true)
+						}}
+						onmouseUp={() => {
+							transformControls.setActive(false)
 
-						const { object } = event.target
-						if (mode.current === 'translate') {
-							vector3ToPose(object.getWorldPosition(vector3), frame.pose)
-						} else if (mode.current === 'rotate') {
-							quaternionToPose(ref.getWorldQuaternion(quaternion), frame.pose)
-							ref.quaternion.copy(quaternion)
-							// object.quaternion.copy(nullRotation)
-						} else if (mode.current === 'scale') {
-							scaleToDimensions(ref.scale, frame.geometry)
-							ref.scale.setScalar(1)
-						}
-					}}
-				/>
+							if (mode === 'translate') {
+								vector3ToPose(ref.getWorldPosition(vector3), object.pose)
+							} else if (mode === 'rotate') {
+								quaternionToPose(ref.getWorldQuaternion(quaternion), object.pose)
+								ref.quaternion.copy(quaternion)
+							} else if (mode === 'scale' && object.geometry?.geometryType.case === 'box') {
+								scaleToDimensions(ref.scale, object.geometry.geometryType)
+								ref.scale.setScalar(1)
+							}
+
+							object.pose = { ...object.pose }
+						}}
+					/>
+				{/key}
 			{/if}
 		{/snippet}
 	</Frame>

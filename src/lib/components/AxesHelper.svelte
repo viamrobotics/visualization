@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Color } from 'three'
 	import { T, type Props as ThrelteProps } from '@threlte/core'
+	import { Color } from 'three'
 	import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 	import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
@@ -10,12 +10,11 @@
 		width?: number
 		axesColors?: [x: string, y: string, z: string]
 		depthTest?: boolean
-		[key: string]: any
 	}
 
-	let {
+	const {
 		length = 1,
-		width = 1,
+		width = 0.1,
 		axesColors = ['red', 'green', 'blue'],
 		depthTest = true,
 		...rest
@@ -31,16 +30,14 @@
 	const colors = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)
 	const positions = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)
 
-	$effect.pre(() => {
-		material.linewidth = width
-	})
-
 	// Assign colors per vertex
 	$effect.pre(() => {
-		for (const [index, axis] of axesColors.entries()) {
+		for (let i = 0, l = axesColors.length; i < l; i += 1) {
+			const axis = axesColors[i]
+
 			color.set(axis)
 
-			const axisBufferStart = index * TOTAL_VERTICES
+			const axisBufferStart = i * TOTAL_VERTICES
 			const axisBufferEnd = axisBufferStart + TOTAL_VERTICES
 
 			for (let j = axisBufferStart; j < axisBufferEnd; j += VERTEX_COMPONENTS) {
@@ -61,7 +58,6 @@
 		positions[X_AXIS_X_COMPONENT_INDEX] = length
 		positions[Y_AXIS_Y_COMPONENT_INDEX] = length
 		positions[Z_AXIS_Z_COMPONENT_INDEX] = length
-
 		geometry.setPositions(positions)
 	})
 </script>
@@ -69,11 +65,13 @@
 <T
 	is={line}
 	{...rest}
+	bvh={{ enabled: false }}
 >
 	<T is={geometry} />
 	<T
 		is={material}
 		vertexColors
+		linewidth={width}
 		{depthTest}
 	/>
 </T>

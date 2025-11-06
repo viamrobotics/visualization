@@ -1,82 +1,44 @@
-<script
-	module
-	lang="ts"
->
-	import {
-		Box3,
-		Matrix4,
-		PerspectiveCamera,
-		Quaternion,
-		Raycaster,
-		Sphere,
-		Spherical,
-		Vector2,
-		Vector3,
-		Vector4,
-	} from 'three'
-	import CameraControls from 'camera-controls'
-	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { Snippet } from 'svelte'
-	import { useControls } from '$lib/hooks/useControls.svelte'
-
-	let installed = false
-
-	const install = () => {
-		CameraControls.install({
-			THREE: {
-				Box3,
-				Matrix4,
-				Quaternion,
-				Raycaster,
-				Sphere,
-				Spherical,
-				Vector2,
-				Vector3,
-				Vector4,
-			},
-		})
-		installed = true
-	}
-</script>
-
 <script lang="ts">
-	interface Props {
-		ref?: CameraControls
-		children?: Snippet
-	}
+	import { MathUtils } from 'three'
+	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras'
+	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
+	import KeyboardControls from './KeyboardControls.svelte'
+	import Portal from './portal/Portal.svelte'
+	import Button from './dashboard/Button.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	let { ref = $bindable(), children }: Props = $props()
+	const cameraControls = useCameraControls()
+	const settings = useSettings()
+	const transformControls = useTransformControls()
 
-	if (!installed) {
-		install()
-	}
-
-	const { camera, dom, invalidate } = useThrelte()
-	const controlsContext = useControls()
-
-	const controls = new CameraControls(camera.current as PerspectiveCamera, dom)
-
-	$effect.pre(() => {
-		controls.camera = $camera as PerspectiveCamera
-	})
-
-	$effect.pre(() => {
-		controls.enabled = !controlsContext.transformControlsActive
-	})
-
-	useTask(
-		(delta) => {
-			if (controls.update(delta)) {
-				invalidate()
-			}
-		},
-		{ autoInvalidate: false }
-	)
+	const enableKeybindings = $derived(settings.current.enableKeybindings)
 </script>
 
-<T
-	is={controls}
-	bind:ref
+<Portal id="dashboard">
+	<fieldset>
+		<Button
+			active
+			icon="camera-outline"
+			description="Reset camera"
+			onclick={() => {
+				cameraControls.current?.reset(true)
+			}}
+		/>
+	</fieldset>
+</Portal>
+
+<CameraControls
+	enabled={!transformControls.active}
+	oncreate={(ref) => {
+		cameraControls.set(ref)
+		;(window as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
+		;(window as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
+	}}
 >
-	{@render children?.()}
-</T>
+	{#snippet children({ ref }: { ref: CameraControlsRef })}
+		{#if enableKeybindings}
+			<KeyboardControls cameraControls={ref} />
+		{/if}
+		<Gizmo />
+	{/snippet}
+</CameraControls>

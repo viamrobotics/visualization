@@ -1,48 +1,65 @@
 import { getContext, setContext } from 'svelte'
-import type { Frame } from './useFrames.svelte'
 import { get, set } from 'idb-keyval'
 import { Debounced } from 'runed'
-import { createGeometry, createPose } from '$lib/transform'
+import { createGeometry } from '$lib/geometry'
+import { WorldObject } from '$lib/WorldObject.svelte'
 
 const key = Symbol('static-geometries-context')
 
 interface Context {
-	current: Frame[]
+	current: WorldObject[]
 	add: () => void
 	remove: (name: string) => void
 }
 
 export const provideStaticGeometries = () => {
-	let staticGeometries = $state<Frame[]>([])
+	const geometries = $state<WorldObject[]>([])
+	let loaded = $state(false)
 
-	const debounced = new Debounced(() => staticGeometries, 500)
+	const debounced = new Debounced(() => geometries, 500)
 
 	get('static-geometries').then((response) => {
-		staticGeometries = response ?? []
+		if (Array.isArray(response)) {
+			for (const json of response) {
+				geometries.push(new WorldObject().fromJSON(json))
+			}
+		}
+
+		loaded = true
 	})
 
 	$effect(() => {
-		set('static-geometries', $state.snapshot(debounced.current))
+		if (!loaded) return
+
+		const results = []
+
+		for (const geometry of debounced.current) {
+			results.push(geometry.toJSON())
+		}
+
+		set('static-geometries', results)
 	})
 
 	setContext<Context>(key, {
 		get current() {
-			return staticGeometries
+			return geometries
 		},
 		add() {
-			staticGeometries.push({
-				name: `geometry ${staticGeometries.length}`,
-				parent: 'world',
-				pose: createPose(),
-				geometry: createGeometry({
+			const object = new WorldObject(
+				`custom geometry ${geometries.length + 1}`,
+				undefined,
+				undefined,
+				createGeometry({
 					case: 'box',
 					value: { dimsMm: { x: 100, y: 100, z: 100 } },
-				}),
-			})
+				})
+			)
+
+			geometries.push(object)
 		},
 		remove(name: string) {
-			const index = staticGeometries.findIndex((geo) => geo.name === name)
-			staticGeometries.splice(index, 1)
+			const index = geometries.findIndex((geo) => geo.name === name)
+			geometries.splice(index, 1)
 		},
 	})
 }

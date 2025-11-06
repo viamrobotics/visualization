@@ -1,4 +1,5 @@
-import type { Frame } from '$lib/hooks/useFrames.svelte'
+import type { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+import type { WorldObject } from '$lib/WorldObject.svelte'
 
 export interface TreeNode {
 	id: string
@@ -7,58 +8,69 @@ export interface TreeNode {
 	href: string
 }
 
-type FrameData = Omit<Frame, 'pose' | 'geometry'>
-
-const sortTreeByName = (node: TreeNode): TreeNode => {
-	if (node.children && node.children.length > 0) {
-		node.children.sort((a, b) => a.name.localeCompare(b.name))
-		for (const child of node.children) {
-			sortTreeByName(child)
-		}
-	}
-
-	return node
-}
-
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (frames: FrameData[]): TreeNode => {
+export const buildTreeNodes = (
+	objects: WorldObject[],
+	worldStates: ReturnType<typeof useWorldStates>['current']
+): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes = []
 
-	for (const frame of frames) {
-		const { name } = frame
+	for (const object of objects) {
 		const node: TreeNode = {
-			name,
-			id: name,
+			name: object.name,
+			id: object.uuid,
 			children: [],
-			href: `/selection/${name}`,
+			href: `/selection/${object.name}`,
 		}
 
-		nodeMap.set(name, node)
+		nodeMap.set(object.name, node)
 
-		if (frame.parent === 'world') {
+		if (object.referenceFrame === 'world') {
 			rootNodes.push(node)
 		}
 	}
 
-	for (const { name, parent } of frames) {
-		if (parent !== 'world') {
-			const parentNode = nodeMap.get(parent)
-			const child = nodeMap.get(name)
+	for (const object of objects) {
+		if (object.referenceFrame && object.referenceFrame !== 'world') {
+			const parentNode = nodeMap.get(object.referenceFrame)
+			const child = nodeMap.get(object.name)
 			if (parentNode && child) {
 				parentNode.children?.push(child)
 			}
 		}
 	}
 
-	const nextRoot = sortTreeByName({
-		id: 'world',
-		name: 'World',
-		children: rootNodes,
-		href: '/',
-	})
+	for (const worldState of Object.values(worldStates)) {
+		const node: TreeNode = {
+			name: worldState.name,
+			id: worldState.name,
+			children: [],
+			href: `/world-state/${worldState.name}`,
+		}
 
-	return nextRoot
+		for (const object of worldState.worldObjects) {
+			const child: TreeNode = {
+				name: object.name,
+				id: object.uuid,
+				children: [],
+				href: `/world-state/${worldState.name}/${object.name}`,
+			}
+
+			const parentNode =
+				object.referenceFrame && nodeMap.has(object.referenceFrame)
+					? nodeMap.get(object.referenceFrame)!
+					: node
+
+			nodeMap.set(object.name, child)
+			parentNode.children?.push(child)
+		}
+
+		nodeMap.set(worldState.name, node)
+		rootNodes.push(node)
+	}
+
+	return rootNodes
 }

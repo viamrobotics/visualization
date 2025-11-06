@@ -1,0 +1,82 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - next
+
+permissions: write-all
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm 🔧
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint 💅
+        run: pnpm run lint
+
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm 🔧
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check
+        run: pnpm run check
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm 🔧
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test
+        run: pnpm run test
