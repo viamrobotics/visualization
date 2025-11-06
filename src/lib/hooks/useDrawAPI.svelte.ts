@@ -10,8 +10,9 @@ import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
-// import * as ecs from '$lib/ecs'
+import * as ecs from '$lib/ecs'
 import { OrientationVector } from '$lib/lib'
+import { useThrelte } from '@threlte/core'
 
 const ov = new OrientationVector()
 const quaternion = new Quaternion()
@@ -81,9 +82,10 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
-	// const world = ecs.useWorld()
+	const world = ecs.useWorld()
 	const cameraControls = useCameraControls()
 	const batchedArrow = useArrows()
+	const { invalidate } = useThrelte()
 
 	let pointsIndex = 0
 	let geometryIndex = 0
@@ -227,88 +229,100 @@ export const provideDrawAPI = () => {
 
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
-		// const nPoints = reader.read()
-		// const nColors = reader.read()
-		// const arrowHeadAtPose = reader.read()
-		// const eids: number[] = []
-		// const arrowTraits = [
-		// 	ecs.Name,
-		// 	ecs.Position,
-		// 	ecs.Quaternion,
-		// 	ecs.Instance,
-		// 	ecs.Color,
-		// 	ecs.Arrow,
-		// ] as const
-		// for (let i = 0; i < nPoints; i += 1) {
-		// 	const entity = world.spawn(...arrowTraits)
-		// 	eids.push(entity.id())
-		// }
-		// world.query(...arrowTraits).useStores(([names, positions, quaternions, instances]) => {
-		// 	for (let i = 0; i < nPoints; i += 1) {
-		// 		const eid = eids[i]
-		// 		names.name[eid] = `pose ${++poseIndex}`
-		// 		positions.x[eid] = reader.read() * 0.001
-		// 		positions.y[eid] = reader.read() * 0.001
-		// 		positions.z[eid] = reader.read() * 0.001
-		// 		ov.set(reader.read(), reader.read(), reader.read())
-		// 		ov.toQuaternion(quaternion)
-		// 		quaternions.x[eid] = quaternion.x
-		// 		quaternions.y[eid] = quaternion.y
-		// 		quaternions.z[eid] = quaternion.z
-		// 		quaternions.w[eid] = quaternion.w
-		// 		instances.id[eid] = batchedArrow.addArrow(
-		// 			direction.set(positions.x[eid], positions.y[eid], positions.z[eid]),
-		// 			origin.set(ov.x, ov.y, ov.z),
-		// 			undefined,
-		// 			undefined,
-		// 			arrowHeadAtPose === 1
-		// 		)
-		// 	}
-		// })
-		// world
-		// 	.query(...arrowTraits)
-		// 	.useStores(([_names, _positions, _quaternions, instances, colors]) => {
-		// 		for (let i = 0; i < nColors * 3; i++) {
-		// 			const eid = eids[i]
-		// 			colors.r[eid] = reader.read()
-		// 			colors.g[eid] = reader.read()
-		// 			colors.b[eid] = reader.read()
-		// 			batchedArrow.mesh.setColorAt(
-		// 				instances.id[eid],
-		// 				color.setRGB(colors.r[eid], colors.g[eid], colors.b[eid])
-		// 			)
-		// 		}
-		// 	})
-		// Read positions
+		const nPoints = reader.read()
+		const nColors = reader.read()
+		const arrowHeadAtPose = reader.read()
+
+		const eids: number[] = []
+
+		const arrowTraits = [
+			ecs.Name,
+			ecs.Position,
+			ecs.Quaternion,
+			ecs.Instance,
+			ecs.Color,
+			ecs.Arrow,
+		] as const
+
+		for (let i = 0; i < nPoints; i += 1) {
+			const entity = world.spawn(...arrowTraits)
+			eids.push(entity.id())
+		}
+
+		world.query(...arrowTraits).useStores(([names, positions, quaternions, instances]) => {
+			for (let i = 0; i < nPoints; i += 1) {
+				const eid = eids[i]
+				names.name[eid] = `pose ${++poseIndex}`
+				positions.x[eid] = reader.read() * 0.001
+				positions.y[eid] = reader.read() * 0.001
+				positions.z[eid] = reader.read() * 0.001
+
+				ov.set(reader.read(), reader.read(), reader.read())
+				ov.toQuaternion(quaternion)
+				quaternions.x[eid] = quaternion.x
+				quaternions.y[eid] = quaternion.y
+				quaternions.z[eid] = quaternion.z
+				quaternions.w[eid] = quaternion.w
+
+				instances.id[eid] = batchedArrow.addArrow(
+					direction.set(positions.x[eid], positions.y[eid], positions.z[eid]),
+					origin.set(ov.x, ov.y, ov.z),
+					undefined,
+					undefined,
+					arrowHeadAtPose === 1
+				)
+			}
+		})
+
+		world
+			.query(...arrowTraits)
+			.useStores(([_names, _positions, _quaternions, instances, colors]) => {
+				for (let i = 0; i < nColors * 3; i++) {
+					const eid = eids[i]
+					colors.r[eid] = reader.read()
+					colors.g[eid] = reader.read()
+					colors.b[eid] = reader.read()
+					batchedArrow.mesh.setColorAt(
+						instances.id[eid],
+						color.setRGB(colors.r[eid], colors.g[eid], colors.b[eid])
+					)
+				}
+			})
+
+		// // Read positions
 		// const nextPoses = new Float32Array(nPoints * 6)
 		// for (let i = 0; i < nPoints * 6; i++) {
 		// 	nextPoses[i] = reader.read()
 		// }
+
 		// // Read raw colors
 		// const colors = new Float32Array(nColors * 3)
 		// for (let i = 0; i < nColors * 3; i++) {
 		// 	colors[i] = reader.read()
 		// }
+
 		// const length = 0.1
 		// for (let i = 0, j = 0, l = nextPoses.length; i < l; i += 6, j += 3) {
-		// origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
-		// direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
-		// color.set(colors[j], colors[j + 1], colors[j + 2])
-		// const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
-		// ov.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
-		// ov.toQuaternion(quaternion)
-		// poses.push(
-		// 	new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
-		// 		getBoundingBoxAt(box3: OBB) {
-		// 			return batchedArrow.getBoundingBoxAt(arrowId, box3)
-		// 		},
-		// 		batched: {
-		// 			id: arrowId,
-		// 			object: batchedArrow.object3d,
-		// 		},
-		// 	})
-		// )
+		// 	origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
+		// 	direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
+		// 	color.set(colors[j], colors[j + 1], colors[j + 2])
+		// 	const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
+		// 	ov.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
+		// 	ov.toQuaternion(quaternion)
+		// 	poses.push(
+		// 		new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
+		// 			getBoundingBoxAt(box3: OBB) {
+		// 				return batchedArrow.getBoundingBoxAt(arrowId, box3)
+		// 			},
+		// 			batched: {
+		// 				id: arrowId,
+		// 				object: batchedArrow.object3d,
+		// 			},
+		// 		})
+		// 	)
 		// }
+
+		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
