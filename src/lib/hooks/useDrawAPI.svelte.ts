@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, Quaternion } from 'three'
+import { Color, Vector3, Vector4, Quaternion, MathUtils } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -10,28 +10,30 @@ import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
-import * as ecs from '$lib/ecs'
+import { useWorld, traits } from '$lib/ecs'
 import { OrientationVector } from '$lib/lib'
 import { useThrelte } from '@threlte/core'
+import type { Entity } from 'koota'
 
+const colorUtil = new Color()
 const ov = new OrientationVector()
 const quaternion = new Quaternion()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
-	points: WorldObject<PointsGeometry>[]
-	frames: WorldObject[]
-	lines: WorldObject[]
-	meshes: WorldObject[]
-	poses: WorldObject[]
-	nurbs: WorldObject[]
-	models: WorldObject[]
+	points: Entity[]
+	frames: Entity[]
+	lines: Entity[]
+	meshes: Entity[]
+	poses: Entity[]
+	nurbs: Entity[]
+	models: Entity[]
 
 	connectionStatus: ConnectionStatus
 
-	addPoints(worldObject: WorldObject<PointsGeometry>): void
-	addMesh(worldObject: WorldObject): void
+	addPoints(entity: Entity): void
+	addMesh(entity: Entity): void
 }
 
 const key = Symbol('draw-api-context-key')
@@ -82,7 +84,7 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
-	const world = ecs.useWorld()
+	const world = useWorld()
 	const cameraControls = useCameraControls()
 	const batchedArrow = useArrows()
 	const { invalidate } = useThrelte()
@@ -97,13 +99,13 @@ export const provideDrawAPI = () => {
 
 	let ws: WebSocket
 
-	const frames = $state<WorldObject[]>([])
-	const points = $state<WorldObject<PointsGeometry>[]>([])
-	const lines = $state<WorldObject[]>([])
-	const meshes = $state<WorldObject[]>([])
-	const poses = $state<WorldObject[]>([])
-	const nurbs = $state<WorldObject[]>([])
-	const models = $state<WorldObject[]>([])
+	const frames = $state<Entity[]>([])
+	const points = $state<Entity[]>([])
+	const lines = $state<Entity[]>([])
+	const meshes = $state<Entity[]>([])
+	const poses = $state<Entity[]>([])
+	const nurbs = $state<Entity[]>([])
+	const models = $state<Entity[]>([])
 
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
@@ -113,101 +115,98 @@ export const provideDrawAPI = () => {
 	const loader = new GLTFLoader()
 
 	const drawFrames = async (data: Frame[]) => {
-		for (const frame of data) {
-			const name = frame.name || frame.id || ''
+		for (const rawFrame of data) {
+			const frame = lowercaseKeys(rawFrame) as Frame
+			const pose = createPoseFromFrame(frame)
+			ov.set(pose.oX, pose.oY, pose.oZ, pose.theta)
+			ov.toQuaternion(quaternion)
 
-			const pose = createPoseFromFrame(lowercaseKeys(frame))
-
-			const geometry = createGeometry()
-
-			if (frame.geometry?.type === 'box') {
-				geometry.label = `${name} geometry (box)`
-				geometry.geometryType.case = 'box'
-				geometry.geometryType.value = {
-					dimsMm: { x: frame.geometry.x, y: frame.geometry.y, z: frame.geometry.z },
-				}
-			} else if (frame.geometry?.type === 'sphere') {
-				geometry.label = `${name} geometry (sphere)`
-				geometry.geometryType.case = 'sphere'
-				geometry.geometryType.value = { radiusMm: frame.geometry.r }
-			} else if (frame.geometry?.type === 'capsule') {
-				geometry.label = `${name} geometry (capsule)`
-				geometry.geometryType.case = 'capsule'
-				geometry.geometryType.value = { lengthMm: frame.geometry.l, radiusMm: frame.geometry.r }
-			}
-
-			const worldObject = new WorldObject(
-				name,
-				pose,
-				frame.parent ?? 'world',
-				frame.geometry ? geometry : undefined
+			const entity = world.spawn(
+				traits.UUID({ uuid: MathUtils.generateUUID() }),
+				traits.Name(frame),
+				traits.Position({ x: pose.x * 0.001, y: pose.y * 0.001, z: pose.z * 0.001 }),
+				traits.Quaternion(quaternion)
 			)
 
-			frames.push(worldObject)
+			if (frame.geometry?.type === 'box') {
+				entity.add(
+					traits.Box({
+						x: frame.geometry.x * 0.001,
+						y: frame.geometry.y * 0.001,
+						z: frame.geometry.z * 0.001,
+					})
+				)
+			} else if (frame.geometry?.type === 'sphere') {
+				entity.add(traits.Sphere({ r: frame.geometry.r * 0.001 }))
+			} else if (frame.geometry?.type === 'capsule') {
+				entity.add(traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 }))
+			}
+
+			frames.push(entity)
 		}
 	}
 
 	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
 
-		points.push(
-			new WorldObject(
-				`points ${++pointsIndex}`,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'points',
-						value: positions,
-					},
-				},
-				colors ? { colors } : undefined
-			)
+		const entity = world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: `points ${++pointsIndex}` }),
+			traits.PointsGeometry(/* positions */),
+			traits.VertexColors(/* colors */)
 		)
+
+		points.push(entity)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
-		const result = meshes.find((mesh) => mesh.name === data.label)
+		let entity = meshes.find((mesh) => mesh.get(traits.Name)?.name === data.label)
+		const update = entity !== undefined
 
-		if (result) {
-			result.pose = createPose(data.center)
+		const pose = createPose(data.center)
+
+		entity ??= world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: data.label ?? ++geometryIndex }),
+			traits.Parent({ parent }),
+			traits.Position,
+			traits.Quaternion,
+			traits.Color(colorUtil.set(color).getRGB({ r: 0, g: 0, b: 0 }))
+		)
+
+		if (update) {
+			entity.set(traits.Position, {
+				x: data.center?.x * 0.001,
+				y: data.center?.y * 0.001,
+				z: data.center?.z * 0.001,
+			})
+
+			ov.set(pose.oX, pose.oY, pose.oZ, pose.theta)
+			ov.toQuaternion(quaternion)
+			entity.set(traits.Quaternion, quaternion)
 			return
 		}
 
-		const geometry = createGeometry()
-
 		if ('mesh' in data) {
-			geometry.geometryType.case = 'mesh'
-			geometry.geometryType.value = data.mesh
+			entity.add(traits.BufferGeometry(/* data.mesh */))
 		} else if ('box' in data) {
-			geometry.geometryType.case = 'box'
-			geometry.geometryType.value = data.box
+			entity.add(
+				traits.Box({ x: data.box.x * 0.001, y: data.box.y * 0.001, z: data.box.z * 0.001 })
+			)
 		} else if ('sphere' in data) {
-			geometry.geometryType.case = 'sphere'
-			geometry.geometryType.value = data.sphere
+			entity.add(traits.Sphere({ r: data.sphere.r * 0.001 }))
 		} else if ('capsule' in data) {
-			geometry.geometryType.case = 'capsule'
-			geometry.geometryType.value = data.capsule
+			entity.add(traits.Capsule({ r: data.capsule.r * 0.001, l: data.capsule.l * 0.001 }))
 		}
 
-		const object = new WorldObject(
-			data.label ?? ++geometryIndex,
-			createPose(data.center),
-			parent,
-			geometry,
-			{
-				color: new Color(color),
-			}
-		)
-
-		meshes.push(object)
+		meshes.push(entity)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawNurbs = (data: any, color: string) => {
-		const index = nurbs.findIndex(({ name }) => name === data.name)
+		const index = nurbs.findIndex((entity) => entity.get(traits.Name)?.name === data.name)
+
 		if (index !== -1) {
 			nurbs.splice(index, 1)
 		}
@@ -216,15 +215,15 @@ export const provideDrawAPI = () => {
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
-		const object = new WorldObject(
-			data.name,
-			data.pose,
-			data.parent,
-			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
-			{ color: new Color(color), points: curve.getPoints(200) }
+
+		const entity = world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: data.Name }),
+			traits.Color(colorUtil.set(color).getRGB({ r: 0, g: 0, b: 0 })),
+			traits.LineGeometry(/* curve.getPoints(200) */)
 		)
 
-		nurbs.push(object)
+		nurbs.push(entity)
 	}
 
 	const drawPoses = async (reader: Float32Reader) => {
@@ -236,12 +235,13 @@ export const provideDrawAPI = () => {
 		const eids: number[] = []
 
 		const arrowTraits = [
-			ecs.Name,
-			ecs.Position,
-			ecs.Quaternion,
-			ecs.Instance,
-			ecs.Color,
-			ecs.Arrow,
+			traits.UUID,
+			traits.Name,
+			traits.Position,
+			traits.Quaternion,
+			traits.Instance,
+			traits.Color,
+			traits.Arrow,
 		] as const
 
 		for (let i = 0; i < nPoints; i += 1) {
@@ -249,9 +249,10 @@ export const provideDrawAPI = () => {
 			eids.push(entity.id())
 		}
 
-		world.query(...arrowTraits).useStores(([names, positions, quaternions, instances]) => {
+		world.query(...arrowTraits).useStores(([uuid, names, positions, quaternions, instances]) => {
 			for (let i = 0; i < nPoints; i += 1) {
 				const eid = eids[i]
+				uuid.uuid[eid] = MathUtils.generateUUID()
 				names.name[eid] = `pose ${++poseIndex}`
 				positions.x[eid] = reader.read() * 0.001
 				positions.y[eid] = reader.read() * 0.001
@@ -265,8 +266,8 @@ export const provideDrawAPI = () => {
 				quaternions.w[eid] = quaternion.w
 
 				instances.id[eid] = batchedArrow.addArrow(
-					direction.set(positions.x[eid], positions.y[eid], positions.z[eid]),
 					origin.set(ov.x, ov.y, ov.z),
+					direction.set(positions.x[eid], positions.y[eid], positions.z[eid]),
 					undefined,
 					undefined,
 					arrowHeadAtPose === 1
@@ -274,53 +275,22 @@ export const provideDrawAPI = () => {
 			}
 		})
 
+		// @todo interleave to avoid a second loop
 		world
 			.query(...arrowTraits)
-			.useStores(([_names, _positions, _quaternions, instances, colors]) => {
-				for (let i = 0; i < nColors * 3; i++) {
+			.useStores(([_uuid, _names, _positions, _quaternions, instances, colors]) => {
+				for (let i = 0; i < nColors; i += 1) {
 					const eid = eids[i]
 					colors.r[eid] = reader.read()
 					colors.g[eid] = reader.read()
 					colors.b[eid] = reader.read()
+
 					batchedArrow.mesh.setColorAt(
 						instances.id[eid],
 						color.setRGB(colors.r[eid], colors.g[eid], colors.b[eid])
 					)
 				}
 			})
-
-		// // Read positions
-		// const nextPoses = new Float32Array(nPoints * 6)
-		// for (let i = 0; i < nPoints * 6; i++) {
-		// 	nextPoses[i] = reader.read()
-		// }
-
-		// // Read raw colors
-		// const colors = new Float32Array(nColors * 3)
-		// for (let i = 0; i < nColors * 3; i++) {
-		// 	colors[i] = reader.read()
-		// }
-
-		// const length = 0.1
-		// for (let i = 0, j = 0, l = nextPoses.length; i < l; i += 6, j += 3) {
-		// 	origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
-		// 	direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
-		// 	color.set(colors[j], colors[j + 1], colors[j + 2])
-		// 	const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
-		// 	ov.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
-		// 	ov.toQuaternion(quaternion)
-		// 	poses.push(
-		// 		new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
-		// 			getBoundingBoxAt(box3: OBB) {
-		// 				return batchedArrow.getBoundingBoxAt(arrowId, box3)
-		// 			},
-		// 			batched: {
-		// 				id: arrowId,
-		// 				object: batchedArrow.object3d,
-		// 			},
-		// 		})
-		// 	)
-		// }
 
 		invalidate()
 	}
@@ -333,7 +303,7 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const index = points.findIndex(({ name }) => name === label)
+		const index = points.findIndex((entity) => entity.get(traits.Name)?.name === label)
 		if (index !== -1) {
 			points.splice(index, 1)
 		}
@@ -375,33 +345,15 @@ export const provideDrawAPI = () => {
 			return colors
 		}
 
-		const metadata =
-			nColors > 0
-				? {
-						colors: getColors(),
-						color: new Color(r, g, b).convertLinearToSRGB(),
-					}
-				: r === -1
-					? undefined
-					: {
-							color: new Color(r, g, b).convertLinearToSRGB(),
-						}
-
-		points.push(
-			new WorldObject(
-				label,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'points',
-						value: positions,
-					},
-				},
-				metadata
-			)
+		const entity = world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: label }),
+			traits.Color(colorUtil.set(r, g, b)),
+			traits.PointsGeometry(/* positions */),
+			traits.VertexColors(/* getColors()  */)
 		)
+
+		points.push(entity)
 	}
 
 	const drawLine = async (reader: Float32Reader) => {
@@ -412,7 +364,7 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const index = lines.findIndex(({ name }) => name === label)
+		const index = lines.findIndex((entity) => entity.get(traits.Name)?.name === label)
 		if (index !== -1) {
 			lines.splice(index, 1)
 		}
@@ -421,9 +373,9 @@ export const provideDrawAPI = () => {
 		const nPoints = reader.read()
 
 		// Read default color
-		const lineR = reader.read()
-		const lineG = reader.read()
-		const lineB = reader.read()
+		const r = reader.read()
+		const g = reader.read()
+		const b = reader.read()
 
 		const dotR = reader.read()
 		const dotG = reader.read()
@@ -440,25 +392,15 @@ export const provideDrawAPI = () => {
 			points.push(new Vector3(positions[i], positions[i + 1], positions[i + 2]))
 		}
 
-		lines.push(
-			new WorldObject(
-				label,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'line',
-						value: positions,
-					},
-				},
-				{
-					points,
-					color: lineR === -1 ? undefined : new Color().setRGB(lineR, lineG, lineB),
-					lineDotColor: dotR === -1 ? undefined : new Color().setRGB(dotR, dotG, dotB),
-				}
-			)
+		const entity = world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: label }),
+			traits.LineGeometry(/* positions */),
+			traits.Color({ r, g, b })
+			// linedotcolor
 		)
+
+		lines.push(entity)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -474,7 +416,15 @@ export const provideDrawAPI = () => {
 		const blob = new Blob([buffer], { type: 'model/gltf-binary' })
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
-		models.push(new WorldObject(gltf.scene.name, undefined, undefined, undefined, { gltf }))
+
+		const entity = world.spawn(
+			traits.UUID({ uuid: MathUtils.generateUUID() }),
+			traits.Name({ name: gltf.scene.name }),
+			traits.GLTF(/* gltf */)
+		)
+
+		models.push(entity)
+
 		URL.revokeObjectURL(url)
 	}
 
@@ -482,7 +432,7 @@ export const provideDrawAPI = () => {
 		let index = -1
 
 		for (const name of names) {
-			index = frames.findIndex((frame) => frame.name === name)
+			index = frames.findIndex((entity) => entity.get(traits.Name)?.name === name)
 
 			if (index !== -1) {
 				frames.slice(index, 1)

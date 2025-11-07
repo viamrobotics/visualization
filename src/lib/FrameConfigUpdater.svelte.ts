@@ -1,8 +1,8 @@
-import type { Frame } from './frame'
-import type { WorldObject } from './lib'
-import { createPose } from './transform'
-import type { Geometries } from './WorldObject.svelte'
+import type { Entity } from 'koota'
 import type { Pose } from '@viamrobotics/sdk'
+import type { Frame } from '$lib/frame'
+import { createPose } from '$lib/transform'
+import { traits } from '$lib/ecs'
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
@@ -13,26 +13,26 @@ type RemoveFrameCallback = {
 }
 
 export class FrameConfigUpdater {
-	private object: () => WorldObject<Geometries> | undefined
+	private entity: () => Entity | undefined
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
 	private removeFrame: RemoveFrameCallback
 
 	constructor(
-		object: () => WorldObject<Geometries> | undefined,
+		entity: () => Entity | undefined,
 		updateFrame: UpdateFrameCallback,
 		removeFrame: RemoveFrameCallback,
 		referenceFrame: () => string
 	) {
 		this.referenceFrame = referenceFrame
-		this.object = object
+		this.entity = entity
 		this.updateFrame = updateFrame
 		this.removeFrame = removeFrame
 	}
 
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
-		const object = this.object()
-		if (!object) return
+		const entity = this.entity()
+		if (!entity) return
 
 		x = this.sanatizeFloatValue(x)
 		y = this.sanatizeFloatValue(y)
@@ -40,19 +40,14 @@ export class FrameConfigUpdater {
 
 		if (x === undefined && y === undefined && z === undefined) return
 
-		object.localEditedPose.x = x ?? object.localEditedPose.x
-		object.localEditedPose.y = y ?? object.localEditedPose.y
-		object.localEditedPose.z = z ?? object.localEditedPose.z
+		entity.set(traits.EditedPose, { x, y, z })
 
-		this.updateFrame(object.name ?? '', this.referenceFrame(), {
-			x: x ?? object.localEditedPose.x,
-			y: y ?? object.localEditedPose.y,
-			z: z ?? object.localEditedPose.z,
-			oX: object.localEditedPose.oX,
-			oY: object.localEditedPose.oY,
-			oZ: object.localEditedPose.oZ,
-			theta: object.localEditedPose.theta,
-		})
+		const name = entity.get(traits.Name)?.name
+		const updatedPose = entity.get(traits.EditedPose)
+
+		if (name && updatedPose) {
+			this.updateFrame(name, this.referenceFrame(), updatedPose)
+		}
 	}
 
 	public updateLocalOrientation = ({
@@ -66,138 +61,118 @@ export class FrameConfigUpdater {
 		oZ?: number
 		theta?: number
 	}) => {
-		const object = this.object()
-		if (!object) return
+		const entity = this.entity()
+		if (!entity) return
 
 		oX = this.sanatizeFloatValue(oX)
 		oY = this.sanatizeFloatValue(oY)
 		oZ = this.sanatizeFloatValue(oZ)
 		theta = this.sanatizeFloatValue(theta)
 
-		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) return
+		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) {
+			return
+		}
 
-		object.localEditedPose.oX = oX ?? object.localEditedPose.oX
-		object.localEditedPose.oY = oY ?? object.localEditedPose.oY
-		object.localEditedPose.oZ = oZ ?? object.localEditedPose.oZ
-		object.localEditedPose.theta = theta ?? object.localEditedPose.theta
+		entity.set(traits.EditedPose, { oX, oY, oZ, theta })
 
-		this.updateFrame(object.name ?? '', this.referenceFrame(), {
-			oX: oX ?? object.localEditedPose.oX,
-			oY: oY ?? object.localEditedPose.oY,
-			oZ: oZ ?? object.localEditedPose.oZ,
-			theta: theta ?? object.localEditedPose.theta,
-			x: object.localEditedPose.x,
-			y: object.localEditedPose.y,
-			z: object.localEditedPose.z,
-		})
+		const name = entity.get(traits.Name)?.name
+		const updatedPose = entity.get(traits.EditedPose)
+
+		if (name && updatedPose) {
+			this.updateFrame(name, this.referenceFrame(), updatedPose)
+		}
 	}
 
 	public updateGeometry = (geometry: Partial<Frame['geometry']>) => {
-		const object = this.object()
-		if (!object) return
-
-		let geometryObject: Frame['geometry']
+		const entity = this.entity()
+		if (!entity) return
 
 		if (geometry?.type === 'box') {
-			const currentGeometry = object.geometry?.geometryType.value as {
-				dimsMm: { x: number; y: number; z: number }
-			}
-			geometry.x = this.sanatizeFloatValue(geometry.x)
-			geometry.y = this.sanatizeFloatValue(geometry.y)
-			geometry.z = this.sanatizeFloatValue(geometry.z)
+			const x = this.sanatizeFloatValue(geometry.x)
+			const y = this.sanatizeFloatValue(geometry.y)
+			const z = this.sanatizeFloatValue(geometry.z)
 
-			if (geometry.x === undefined && geometry.y === undefined && geometry.z === undefined) return
+			if (x === undefined && y === undefined && z === undefined) return
 
-			geometryObject = {
-				type: 'box',
-				x: geometry.x ?? currentGeometry?.dimsMm?.x,
-				y: geometry.y ?? currentGeometry?.dimsMm?.y,
-				z: geometry.z ?? currentGeometry?.dimsMm?.z,
+			entity.set(traits.Box, { x, y, z })
+
+			const name = entity.get(traits.Name)?.name
+			const box = entity.get(traits.Box)
+			const pose = entity.get(traits.EditedPose)
+
+			if (name && box && pose) {
+				this.updateFrame(name, this.referenceFrame(), pose, { type: 'box', ...box })
 			}
 		} else if (geometry?.type === 'sphere') {
-			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
-			geometry.r = this.sanatizeFloatValue(geometry.r)
-			if (geometry.r === undefined) return
+			const r = this.sanatizeFloatValue(geometry.r)
+			if (r === undefined) return
 
-			geometryObject = {
-				type: 'sphere',
-				r: geometry.r ?? currentGeometry?.radiusMm,
+			entity.set(traits.Sphere, { r })
+
+			const name = entity.get(traits.Name)?.name
+			const sphere = entity.get(traits.Sphere)
+			const pose = entity.get(traits.EditedPose)
+
+			if (name && sphere && pose) {
+				this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', ...sphere })
 			}
 		} else if (geometry?.type === 'capsule') {
-			const currentGeometry = object.geometry?.geometryType.value as {
-				radiusMm: number
-				lengthMm: number
-			}
-			geometry.r = this.sanatizeFloatValue(geometry.r)
-			geometry.l = this.sanatizeFloatValue(geometry.l)
-			if (geometry.r === undefined && geometry.l === undefined) return
+			const r = this.sanatizeFloatValue(geometry.r)
+			const l = this.sanatizeFloatValue(geometry.l)
+			if (r === undefined && l === undefined) return
 
-			geometryObject = {
-				type: 'capsule',
-				r: geometry.r ?? currentGeometry?.radiusMm,
-				l: geometry.l ?? currentGeometry?.lengthMm,
+			entity.set(traits.Capsule, { r, l })
+
+			const name = entity.get(traits.Name)?.name
+			const capsule = entity.get(traits.Capsule)
+			const pose = entity.get(traits.EditedPose)
+
+			if (name && capsule && pose) {
+				this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', ...capsule })
 			}
 		}
-
-		this.updateFrame(
-			object.name ?? '',
-			this.referenceFrame(),
-			createPose(object.localEditedPose),
-			geometryObject
-		)
 	}
 
 	public setFrameParent = (parentName: string) => {
-		const object = this.object()
-		if (!object) return
-		this.updateFrame(object.name ?? '', parentName, createPose(object.localEditedPose))
+		const entity = this.entity()
+		if (!entity) return
+
+		const name = entity.get(traits.Name)?.name
+		const pose = entity.get(traits.EditedPose)
+
+		if (name && pose) {
+			this.updateFrame(name, parentName, pose)
+		}
 	}
 
 	public deleteFrame = () => {
-		const object = this.object()
-		if (!object) return
-		this.removeFrame(object.name ?? '')
+		const entity = this.entity()
+		if (!entity) return
+
+		const name = entity.get(traits.Name)?.name
+
+		if (name) {
+			this.removeFrame(name)
+		}
 	}
 
 	public setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
-		const object = this.object()
-		if (!object) return
+		const entity = this.entity()
+		if (!entity) return
+
+		const name = entity.get(traits.Name)?.name
+		const pose = entity.get(traits.EditedPose)
+
+		if (!name || !pose) return
+
 		if (type === 'none') {
-			this.updateFrame(
-				object.name ?? '',
-				this.referenceFrame(),
-				createPose(object.localEditedPose),
-				{ type: 'none' }
-			)
+			this.updateFrame(name, this.referenceFrame(), pose, { type: 'none' })
 		} else if (type === 'box') {
-			this.updateFrame(
-				object.name ?? '',
-				this.referenceFrame(),
-				createPose(object.localEditedPose),
-				{ type: 'box', x: 100, y: 100, z: 100 }
-			)
+			this.updateFrame(name, this.referenceFrame(), pose, { type: 'box', x: 100, y: 100, z: 100 })
 		} else if (type === 'sphere') {
-			this.updateFrame(
-				object.name ?? '',
-				this.referenceFrame(),
-				createPose(object.localEditedPose),
-				{ type: 'sphere', r: 100 }
-			)
+			this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', r: 100 })
 		} else if (type === 'capsule') {
-			this.updateFrame(
-				object.name ?? '',
-				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
-				{ type: 'capsule', r: 20, l: 100 }
-			)
+			this.updateFrame(name, this.referenceFrame(), pose, { type: 'capsule', r: 20, l: 100 })
 		}
 	}
 

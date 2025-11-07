@@ -418,7 +418,7 @@ func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
 		"Weights":    nurbs.Weights,
 		"Knots":      nurbs.Knots,
 		"Color":      colorutil.NamedColorToHex(color),
-		"name":       name,
+		"Name":       name,
 	}
 
 	finalJSON, err := json.Marshal(wrappedData)

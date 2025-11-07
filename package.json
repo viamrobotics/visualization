@@ -44,7 +44,7 @@
 		"@testing-library/jest-dom": "6.8.0",
 		"@testing-library/svelte": "5.2.8",
 		"@thi.ng/paths": "5.2.21",
-		"@threlte/core": "8.1.5",
+		"@threlte/core": "8.1.9",
 		"@threlte/extras": "9.5.4",
 		"@threlte/rapier": "3.1.5",
 		"@threlte/xr": "1.0.8",

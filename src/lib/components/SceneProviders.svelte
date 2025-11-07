@@ -23,7 +23,7 @@
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	// import { provideWorld } from '$lib/ecs'
+	import { provideWorld } from '$lib/ecs'
 	import { trait } from 'koota'
 
 	trait()
@@ -37,7 +37,7 @@
 
 	const partID = usePartID()
 
-	// provideWorld()
+	provideWorld()
 	provideCameraControls(() => cameraPose)
 	provideTransformControls()
 	provideVisibility()

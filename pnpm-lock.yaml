@@ -75,8 +75,8 @@ importers:
         specifier: 5.2.21
         version: 5.2.21
       '@threlte/core':
-        specifier: 8.1.5
-        version: 8.1.5(svelte@5.43.0)(three@0.180.0)
+        specifier: 8.1.9
+        version: 8.1.9(svelte@5.43.0)(three@0.180.0)
       '@threlte/extras':
         specifier: 9.5.4
         version: 9.5.4(@types/three@0.179.0)(svelte@5.43.0)(three@0.180.0)
@@ -184,7 +184,7 @@ importers:
         version: 0.9.1(three@0.180.0)
       threlte-uikit:
         specifier: 1.2.1
-        version: 1.2.1(@threlte/core@8.1.5(svelte@5.43.0)(three@0.180.0))(svelte@5.43.0)(three@0.180.0)
+        version: 1.2.1(@threlte/core@8.1.9(svelte@5.43.0)(three@0.180.0))(svelte@5.43.0)(three@0.180.0)
       tsx:
         specifier: 4.20.5
         version: 4.20.5
@@ -1383,8 +1383,8 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.1.5':
-    resolution: {integrity: sha512-snSkdx2AgfciYoTVhsEHGgQ4gf2h6UnJq0FHcKq8/FWp4QHzhiChqt8AMILZjiYmBgdzI13emnVzyEw77mxvpw==}
+  '@threlte/core@8.1.9':
+    resolution: {integrity: sha512-0K+u/WKXzLyaOydzp7InMzjLEFwetJDsCjpWYx65dBmW56m9aLzR2d5xNEbRlDq4UMEiIF4W50DbS1to4c1ycg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -5188,7 +5188,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.1.5(svelte@5.43.0)(three@0.180.0)':
+  '@threlte/core@8.1.9(svelte@5.43.0)(three@0.180.0)':
     dependencies:
       mitt: 3.0.1
       svelte: 5.43.0
@@ -7377,11 +7377,11 @@ snapshots:
 
   three@0.180.0: {}
 
-  threlte-uikit@1.2.1(@threlte/core@8.1.5(svelte@5.43.0)(three@0.180.0))(svelte@5.43.0)(three@0.180.0):
+  threlte-uikit@1.2.1(@threlte/core@8.1.9(svelte@5.43.0)(three@0.180.0))(svelte@5.43.0)(three@0.180.0):
     dependencies:
       '@pmndrs/uikit': 0.8.21(three@0.180.0)
       '@preact/signals-core': 1.11.0
-      '@threlte/core': 8.1.5(svelte@5.43.0)(three@0.180.0)
+      '@threlte/core': 8.1.9(svelte@5.43.0)(three@0.180.0)
       svelte: 5.43.0
       three: 0.180.0
     transitivePeerDependencies:
