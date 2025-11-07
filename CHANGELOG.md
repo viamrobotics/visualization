@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.16.4
+
+### Patch Changes
+
+- ff41f2e: Use correct key for updating world state arrows
+
 ## 0.16.3
 
 ### Patch Changes
