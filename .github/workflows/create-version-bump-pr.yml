@@ -95,12 +95,13 @@ jobs:
 
           # Extract changelog section for this version from CHANGELOG.md
           if [ -f "CHANGELOG.md" ]; then
-            # Get content between this version header and the next version header or end of file
-            CHANGELOG=$(awk "/^## $VERSION/,/^## [0-9]/" CHANGELOG.md | sed '/^## [0-9]/d' | sed '1d' | sed '/^$/d' || echo "")
+            # Get content between this version header and the next version header
+            # Using sed to extract the section
+            CHANGELOG=$(sed -n "/^## $VERSION$/,/^## /p" CHANGELOG.md | sed '$d' | tail -n +2 | sed '/^$/d' || echo "")
 
             if [ -z "$CHANGELOG" ]; then
               # Try with v prefix
-              CHANGELOG=$(awk "/^## v$VERSION/,/^## [0-9v]/" CHANGELOG.md | sed '/^## [0-9v]/d' | sed '1d' | sed '/^$/d' || echo "")
+              CHANGELOG=$(sed -n "/^## v$VERSION$/,/^## /p" CHANGELOG.md | sed '$d' | tail -n +2 | sed '/^$/d' || echo "")
             fi
 
             if [ -n "$CHANGELOG" ]; then
@@ -121,29 +122,43 @@ jobs:
             echo "changelog=_No changelog available_" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install dependencies in app repo
-        if: steps.current-version.outputs.skip_pr != 'true'
-        working-directory: app-repo
-        run: |
-          pnpm install
-          echo "Dependencies installed and lock file updated"
-
-      - name: Find existing motion-tools bump PRs
+      - name: Find and close existing motion-tools bump PRs
         if: steps.current-version.outputs.skip_pr != 'true'
         id: find-existing-prs
         working-directory: app-repo
         env:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
-          EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,title,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' || echo "")
+          NEW_VERSION="${{ inputs.version }}"
+
+          # Find all existing motion-tools bump PRs
+          EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | "\(.number):\(.headRefName)"' || echo "")
 
           if [ -n "$EXISTING_PRS" ]; then
-            echo "Found existing PRs: $EXISTING_PRS"
-            echo "pr_numbers=$EXISTING_PRS" >> $GITHUB_OUTPUT
+            echo "Found existing PRs to close:"
+            echo "$EXISTING_PRS"
+            
+            # Close each PR and delete its branch
+            while IFS=: read -r PR_NUMBER BRANCH_NAME; do
+              if [ -n "$PR_NUMBER" ] && [ -n "$BRANCH_NAME" ]; then
+                echo "Closing PR #$PR_NUMBER (branch: $BRANCH_NAME)"
+                gh pr close "$PR_NUMBER" --repo viamrobotics/app --comment "Closing this PR as a new version bump PR is being created for @viamrobotics/motion-tools $NEW_VERSION" || true
+                
+                # Delete the remote branch
+                echo "Deleting branch $BRANCH_NAME"
+                git push origin --delete "$BRANCH_NAME" || true
+              fi
+            done <<< "$EXISTING_PRS"
           else
             echo "No existing motion-tools bump PRs found"
-            echo "pr_numbers=" >> $GITHUB_OUTPUT
           fi
+
+      - name: Install dependencies in app repo
+        if: steps.current-version.outputs.skip_pr != 'true'
+        working-directory: app-repo
+        run: |
+          pnpm install
+          echo "Dependencies installed and lock file updated"
 
       - name: Create Pull Request in app repo
         if: steps.current-version.outputs.skip_pr != 'true'
@@ -167,6 +182,9 @@ jobs:
             📦 Published: https://www.npmjs.com/package/@viamrobotics/motion-tools/v/${{ inputs.version }}
           branch: chore/bump-motion-tools-${{ inputs.version }}
           delete-branch: true
+          add: |
+            pnpm-workspace.yaml
+            pnpm-lock.yaml
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
 
@@ -177,12 +195,10 @@ jobs:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
           NEW_VERSION="${{ inputs.version }}"
-          PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
-            PR_NUMBER="${{ steps.create-pr.outputs.number }}"
-          fi
+          PR_NUMBER="${{ steps.create-pr.outputs.pull-request-number }}"
 
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            # Try to find the PR by branch name
             BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
             PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
           fi
@@ -202,35 +218,3 @@ jobs:
           else
             echo "Warning: Could not determine PR number, skipping review request"
           fi
-
-      - name: Close existing motion-tools bump PRs
-        if: steps.current-version.outputs.skip_pr != 'true' && steps.find-existing-prs.outputs.pr_numbers != ''
-        working-directory: app-repo
-        env:
-          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
-        run: |
-          NEW_VERSION="${{ inputs.version }}"
-          NEW_PR_NUMBER="${{ steps.create-pr.outputs.pr_number }}"
-          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
-            NEW_PR_NUMBER="${{ steps.create-pr.outputs.number }}"
-          fi
-
-          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
-            BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
-            NEW_PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
-          fi
-
-          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
-            COMMENT="This PR has been superseded by a new PR which bumps @viamrobotics/motion-tools to version $NEW_VERSION."
-          else
-            COMMENT="This PR has been superseded by #$NEW_PR_NUMBER which bumps @viamrobotics/motion-tools to version $NEW_VERSION.
-
-            See: https://github.com/viamrobotics/app/pull/$NEW_PR_NUMBER"
-          fi
-
-          EXISTING_PRS="${{ steps.find-existing-prs.outputs.pr_numbers }}"
-
-          for PR_NUMBER in $EXISTING_PRS; do
-            echo "Closing PR #$PR_NUMBER"
-            gh pr close "$PR_NUMBER" --repo viamrobotics/app --comment "$COMMENT"
-          done
