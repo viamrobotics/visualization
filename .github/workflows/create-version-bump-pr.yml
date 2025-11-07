@@ -46,21 +46,33 @@ jobs:
           token: ${{ secrets.APP_REPO_TOKEN }}
           path: app-repo
 
+      - name: Install yq for YAML manipulation
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Read current version from pnpm-workspace.yaml
         id: current-version
         working-directory: app-repo
         run: |
-          # Extract the current version from catalog section
-          CURRENT_VERSION=$(grep -A 1 "catalog:" pnpm-workspace.yaml | grep "@viamrobotics/motion-tools" | grep -oP ":\s*\K[\d\.]+")
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "Current version in app repo: $CURRENT_VERSION"
+          # Extract the current version from catalog section using yq
+          CURRENT_VERSION=$(yq eval '.catalog."@viamrobotics/motion-tools"' pnpm-workspace.yaml)
 
-          NEW_VERSION="${{ inputs.version }}"
-          if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
-            echo "Version is already up to date, skipping PR creation"
-            echo "skip_pr=true" >> $GITHUB_OUTPUT
-          else
+          if [ "$CURRENT_VERSION" = "null" ] || [ -z "$CURRENT_VERSION" ]; then
+            echo "Warning: @viamrobotics/motion-tools not found in catalog"
+            echo "current_version=not_found" >> $GITHUB_OUTPUT
             echo "skip_pr=false" >> $GITHUB_OUTPUT
+          else
+            echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "Current version in app repo: $CURRENT_VERSION"
+            
+            NEW_VERSION="${{ inputs.version }}"
+            if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
+              echo "Version is already up to date, skipping PR creation"
+              echo "skip_pr=true" >> $GITHUB_OUTPUT
+            else
+              echo "skip_pr=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Update version in pnpm-workspace.yaml catalog
@@ -68,10 +80,6 @@ jobs:
         working-directory: app-repo
         run: |
           NEW_VERSION="${{ inputs.version }}"
-
-          # Install yq for YAML manipulation
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
 
           # Update the version in the catalog section
           yq eval ".catalog.\"@viamrobotics/motion-tools\" = \"$NEW_VERSION\"" -i pnpm-workspace.yaml
