@@ -152,7 +152,7 @@ jobs:
           commit-message: 'chore: bump @viamrobotics/motion-tools to ${{ inputs.version }}'
           title: 'chore: bump @viamrobotics/motion-tools to ${{ inputs.version }}'
           body: |
-            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ inputs.version }}`.
+            This PR bumps the version of `@viamrobotics/motion-tools` to `${{ inputs.version }}`.
 
             ${{ steps.changelog.outputs.changelog }}
 
