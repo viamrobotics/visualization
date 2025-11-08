@@ -157,9 +157,10 @@ jobs:
         if: steps.current-version.outputs.skip_pr != 'true'
         working-directory: app-repo
         run: |
-          # Force pnpm to update the lock file by clearing cache and doing a fresh install
-          # The --force flag ensures dependencies are refetched
-          pnpm install --no-frozen-lockfile
+          # Install dependencies and update lock file
+          # --no-frozen-lockfile: Allow lock file updates
+          # --no-strict-peer-deps: Ignore peer dependency warnings/errors
+          pnpm install --no-frozen-lockfile --no-strict-peer-deps
 
           echo "Dependencies installed and lock file updated"
 
