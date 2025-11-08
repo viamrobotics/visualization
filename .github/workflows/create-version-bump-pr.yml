@@ -87,25 +87,37 @@ jobs:
           echo "Updated pnpm-workspace.yaml catalog:"
           yq eval '.catalog."@viamrobotics/motion-tools"' pnpm-workspace.yaml
 
-      - name: Extract changelog for this version
+      - name: Extract changelog from previous to new version
         if: steps.current-version.outputs.skip_pr != 'true'
         id: changelog
         run: |
-          VERSION="${{ inputs.version }}"
+          NEW_VERSION="${{ inputs.version }}"
+          PREV_VERSION="${{ steps.current-version.outputs.current_version }}"
 
-          # Extract changelog section for this version from CHANGELOG.md
+          # Extract changelog section from new version down to (but not including) previous version
           if [ -f "CHANGELOG.md" ]; then
-            # Get content between this version header and the next version header
-            # Using sed to extract the section
-            CHANGELOG=$(sed -n "/^## $VERSION$/,/^## /p" CHANGELOG.md | sed '$d' | tail -n +2 | sed '/^$/d' || echo "")
+            echo "Extracting changelog from $PREV_VERSION to $NEW_VERSION"
+            
+            # Get all content from new version down to previous version
+            # This includes all intermediate versions
+            CHANGELOG=$(sed -n "/^## $NEW_VERSION$/,/^## $PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
 
+            # Try with v prefix if empty
             if [ -z "$CHANGELOG" ]; then
-              # Try with v prefix
-              CHANGELOG=$(sed -n "/^## v$VERSION$/,/^## /p" CHANGELOG.md | sed '$d' | tail -n +2 | sed '/^$/d' || echo "")
+              CHANGELOG=$(sed -n "/^## v$NEW_VERSION$/,/^## v$PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
+            fi
+
+            # Try mixed version formats (one with v, one without)
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG=$(sed -n "/^## $NEW_VERSION$/,/^## v$PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
+            fi
+            
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG=$(sed -n "/^## v$NEW_VERSION$/,/^## $PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
             fi
 
             if [ -n "$CHANGELOG" ]; then
-              echo "Found changelog for version $VERSION"
+              echo "Found changelog entries from $PREV_VERSION to $NEW_VERSION"
               # Save changelog to file to preserve multiline content
               echo "$CHANGELOG" > /tmp/changelog.txt
               {
@@ -114,8 +126,8 @@ jobs:
                 echo EOF
               } >> "$GITHUB_OUTPUT"
             else
-              echo "No changelog found for version $VERSION"
-              echo "changelog=_No changelog entry found_" >> $GITHUB_OUTPUT
+              echo "No changelog found between versions $PREV_VERSION and $NEW_VERSION"
+              echo "changelog=_No changelog entries found_" >> $GITHUB_OUTPUT
             fi
           else
             echo "CHANGELOG.md not found"
@@ -131,12 +143,16 @@ jobs:
         run: |
           NEW_VERSION="${{ inputs.version }}"
 
-          # Find all existing motion-tools bump PRs
+          # Find all existing motion-tools bump PRs and store their numbers
+          EXISTING_PR_NUMBERS=$(gh pr list --repo viamrobotics/app --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' | tr '\n' ' ' || echo "")
           EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | "\(.number):\(.headRefName)"' || echo "")
 
           if [ -n "$EXISTING_PRS" ]; then
             echo "Found existing PRs to close:"
             echo "$EXISTING_PRS"
+            
+            # Store PR numbers for later linking
+            echo "pr_numbers=$EXISTING_PR_NUMBERS" >> $GITHUB_OUTPUT
             
             # Close each PR and delete its branch
             while IFS=: read -r PR_NUMBER BRANCH_NAME; do
@@ -151,6 +167,7 @@ jobs:
             done <<< "$EXISTING_PRS"
           else
             echo "No existing motion-tools bump PRs found"
+            echo "pr_numbers=" >> $GITHUB_OUTPUT
           fi
 
       - name: Install dependencies in app repo
@@ -198,6 +215,32 @@ jobs:
             pnpm-lock.yaml
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+
+      - name: Link closed PRs to new PR
+        if: steps.current-version.outputs.skip_pr != 'true' && steps.find-existing-prs.outputs.pr_numbers != ''
+        working-directory: app-repo
+        env:
+          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+        run: |
+          NEW_VERSION="${{ inputs.version }}"
+          NEW_PR_NUMBER="${{ steps.create-pr.outputs.pull-request-number }}"
+
+          if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
+            # Try to find the PR by branch name
+            BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
+            NEW_PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
+          fi
+
+          if [ -n "$NEW_PR_NUMBER" ] && [ "$NEW_PR_NUMBER" != "null" ]; then
+            CLOSED_PR_NUMBERS="${{ steps.find-existing-prs.outputs.pr_numbers }}"
+            
+            for OLD_PR_NUMBER in $CLOSED_PR_NUMBERS; do
+              echo "Adding link comment to closed PR #$OLD_PR_NUMBER"
+              gh pr comment "$OLD_PR_NUMBER" --repo viamrobotics/app --body "🔗 Superseded by #$NEW_PR_NUMBER" || true
+            done
+          else
+            echo "Could not determine new PR number, skipping link comments"
+          fi
 
       - name: Request review from team-viz
         if: steps.current-version.outputs.skip_pr != 'true'
