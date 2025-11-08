@@ -55,7 +55,6 @@ jobs:
         id: current-version
         working-directory: app-repo
         run: |
-          # Extract the current version from catalog section using yq
           CURRENT_VERSION=$(yq eval '.catalog."@viamrobotics/motion-tools"' pnpm-workspace.yaml)
 
           if [ "$CURRENT_VERSION" = "null" ] || [ -z "$CURRENT_VERSION" ]; then
@@ -65,7 +64,6 @@ jobs:
           else
             echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             echo "Current version in app repo: $CURRENT_VERSION"
-            
             NEW_VERSION="${{ inputs.version }}"
             if [ "$CURRENT_VERSION" = "$NEW_VERSION" ]; then
               echo "Version is already up to date, skipping PR creation"
@@ -80,10 +78,7 @@ jobs:
         working-directory: app-repo
         run: |
           NEW_VERSION="${{ inputs.version }}"
-
-          # Update the version in the catalog section
           yq eval ".catalog.\"@viamrobotics/motion-tools\" = \"$NEW_VERSION\"" -i pnpm-workspace.yaml
-
           echo "Updated pnpm-workspace.yaml catalog:"
           yq eval '.catalog."@viamrobotics/motion-tools"' pnpm-workspace.yaml
 
@@ -94,44 +89,20 @@ jobs:
           NEW_VERSION="${{ inputs.version }}"
           PREV_VERSION="${{ steps.current-version.outputs.current_version }}"
 
-          # Extract changelog section from new version down to (but not including) previous version
-          if [ -f "CHANGELOG.md" ]; then
-            echo "Extracting changelog from $PREV_VERSION to $NEW_VERSION"
-            
-            # Get all content from new version down to previous version
-            # This includes all intermediate versions
-            CHANGELOG=$(sed -n "/^## $NEW_VERSION$/,/^## $PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
+          echo "Extracting changelog from $PREV_VERSION to $NEW_VERSION"
+          CHANGELOG=$(sed -n "/^## $NEW_VERSION$/,/^## $PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
 
-            # Try with v prefix if empty
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG=$(sed -n "/^## v$NEW_VERSION$/,/^## v$PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
-            fi
-
-            # Try mixed version formats (one with v, one without)
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG=$(sed -n "/^## $NEW_VERSION$/,/^## v$PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
-            fi
-            
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG=$(sed -n "/^## v$NEW_VERSION$/,/^## $PREV_VERSION$/p" CHANGELOG.md | sed '$d' || echo "")
-            fi
-
-            if [ -n "$CHANGELOG" ]; then
-              echo "Found changelog entries from $PREV_VERSION to $NEW_VERSION"
-              # Save changelog to file to preserve multiline content
-              echo "$CHANGELOG" > /tmp/changelog.txt
-              {
-                echo 'changelog<<EOF'
-                cat /tmp/changelog.txt
-                echo EOF
-              } >> "$GITHUB_OUTPUT"
-            else
-              echo "No changelog found between versions $PREV_VERSION and $NEW_VERSION"
-              echo "changelog=_No changelog entries found_" >> $GITHUB_OUTPUT
-            fi
+          if [ -n "$CHANGELOG" ]; then
+            echo "Found changelog entries from $PREV_VERSION to $NEW_VERSION"
+            echo "$CHANGELOG" > /tmp/changelog.txt
+            {
+              echo 'changelog<<EOF'
+              cat /tmp/changelog.txt
+              echo EOF
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "CHANGELOG.md not found"
-            echo "changelog=_No changelog available_" >> $GITHUB_OUTPUT
+            echo "No changelog found between versions $PREV_VERSION and $NEW_VERSION"
+            echo "changelog=_No changelog entries found_" >> $GITHUB_OUTPUT
           fi
 
       - name: Find and close existing motion-tools bump PRs
@@ -142,25 +113,19 @@ jobs:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
         run: |
           NEW_VERSION="${{ inputs.version }}"
-
-          # Find all existing motion-tools bump PRs and store their numbers
           EXISTING_PR_NUMBERS=$(gh pr list --repo viamrobotics/app --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | .number' | tr '\n' ' ' || echo "")
           EXISTING_PRS=$(gh pr list --repo viamrobotics/app --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("chore/bump-motion-tools-")) | "\(.number):\(.headRefName)"' || echo "")
 
           if [ -n "$EXISTING_PRS" ]; then
             echo "Found existing PRs to close:"
             echo "$EXISTING_PRS"
-            
-            # Store PR numbers for later linking
             echo "pr_numbers=$EXISTING_PR_NUMBERS" >> $GITHUB_OUTPUT
             
-            # Close each PR and delete its branch
             while IFS=: read -r PR_NUMBER BRANCH_NAME; do
               if [ -n "$PR_NUMBER" ] && [ -n "$BRANCH_NAME" ]; then
                 echo "Closing PR #$PR_NUMBER (branch: $BRANCH_NAME)"
                 gh pr close "$PR_NUMBER" --repo viamrobotics/app --comment "Closing this PR as a new version bump PR is being created for @viamrobotics/motion-tools $NEW_VERSION" || true
                 
-                # Delete the remote branch
                 echo "Deleting branch $BRANCH_NAME"
                 git push origin --delete "$BRANCH_NAME" || true
               fi
@@ -174,20 +139,8 @@ jobs:
         if: steps.current-version.outputs.skip_pr != 'true'
         working-directory: app-repo
         run: |
-          # Install dependencies and update lock file
-          # --no-frozen-lockfile: Allow lock file updates
-          # --no-strict-peer-dependencies: Ignore peer dependency warnings/errors
           pnpm install --no-frozen-lockfile --no-strict-peer-dependencies
-
           echo "Dependencies installed and lock file updated"
-
-          # Verify lock file was updated
-          if git diff --quiet pnpm-lock.yaml; then
-            echo "⚠ Warning: pnpm-lock.yaml was not updated"
-          else
-            echo "✓ pnpm-lock.yaml was updated successfully"
-            git diff pnpm-lock.yaml | head -20
-          fi
 
       - name: Create Pull Request in app repo
         if: steps.current-version.outputs.skip_pr != 'true'
@@ -199,10 +152,7 @@ jobs:
           commit-message: 'chore: bump @viamrobotics/motion-tools to ${{ inputs.version }}'
           title: 'chore: bump @viamrobotics/motion-tools to ${{ inputs.version }}'
           body: |
-            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ inputs.version }}` after the release was published.
-
-            **Previous version:** `${{ steps.current-version.outputs.current_version }}`  
-            **New version:** `${{ inputs.version }}`
+            This PR automatically bumps the version of `@viamrobotics/motion-tools` to `${{ inputs.version }}`.
 
             ${{ steps.changelog.outputs.changelog }}
 
@@ -226,7 +176,6 @@ jobs:
           NEW_PR_NUMBER="${{ steps.create-pr.outputs.pull-request-number }}"
 
           if [ -z "$NEW_PR_NUMBER" ] || [ "$NEW_PR_NUMBER" = "null" ]; then
-            # Try to find the PR by branch name
             BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
             NEW_PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
           fi
@@ -253,7 +202,6 @@ jobs:
           PR_NUMBER="${{ steps.create-pr.outputs.pull-request-number }}"
 
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
-            # Try to find the PR by branch name
             BRANCH_NAME="chore/bump-motion-tools-$NEW_VERSION"
             PR_NUMBER=$(gh pr list --repo viamrobotics/app --head "$BRANCH_NAME" --json number --jq '.[0].number' || echo "")
           fi
