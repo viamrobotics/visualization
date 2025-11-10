@@ -10,18 +10,12 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
-	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-	import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
 	const settings = useSettings()
 	const plyLoader = new PLYLoader()
-	const gltfLoader = new GLTFLoader()
-	const dracoLoader = new DRACOLoader()
-	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
-	gltfLoader.setDRACOLoader(dracoLoader)
 	const weblabs = useWeblabs()
 	const componentModels = use3DModels()
 
@@ -46,34 +40,12 @@
 		...rest
 	}: Props = $props()
 
-	const geoModel = $derived.by(() => {
+	const gltfModel = $derived.by(() => {
 		const [componentName, id] = name.split(':')
 		if (!componentName || !id) {
 			return undefined
 		}
-		if (!componentModels.current[componentName]) {
-			return undefined
-		}
-		const geometry = componentModels.current[componentName][id]
-		if (!geometry) {
-			return undefined
-		}
-		return geometry
-	})
-
-	let gltfModel = $state.raw<Group>()
-	$effect(() => {
-		if (geoModel?.geometryType?.case !== 'mesh') {
-			return
-		}
-		const mesh = geoModel.geometryType.value.mesh
-		if (!mesh) {
-			return
-		}
-		const arrayBuffer = mesh.buffer.slice(mesh.byteOffset, mesh.byteOffset + mesh.byteLength)
-		gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '').then((result) => {
-			gltfModel = result.scene
-		})
+		return componentModels.current?.[componentName]?.[id]
 	})
 
 	const type = $derived(geometry?.geometryType?.case)

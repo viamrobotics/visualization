@@ -1,17 +1,27 @@
-import { ArmClient, Geometry } from '@viamrobotics/sdk'
+import { ArmClient } from '@viamrobotics/sdk'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 import { useWeblabs, WEBLABS_EXPERIMENTS } from './useWeblabs.svelte'
+import { useSettings } from './useSettings.svelte'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import type { Group } from 'three'
+
+const gltfLoader = new GLTFLoader()
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+gltfLoader.setDRACOLoader(dracoLoader)
 
 const key = Symbol('3d-models-context')
 
 interface Context {
-	current: Record<string, Record<string, Geometry>>
+	current: Record<string, Record<string, Group>>
 }
 
 export const provide3DModels = (partID: () => string) => {
     const weblabs = useWeblabs()
-	const current = $state.raw<Record<string, Record<string, Geometry>>>({})
+    const settings = useSettings()
+	const current = $state.raw<Record<string, Record<string, Group>>>({})
 
     const arms = useResourceNames(partID, 'arm')
     const armClients = $derived(
@@ -33,12 +43,9 @@ export const provide3DModels = (partID: () => string) => {
                         current[client.current.name] = {}
                     }
                     for (const [id, model] of Object.entries(models)) {
-                        current[client.current.name][id] = new Geometry({
-                            geometryType: {
-                                case: 'mesh',
-                                value: model,
-                            },
-                        })
+                        const arrayBuffer = model.mesh.buffer.slice(model.mesh.byteOffset, model.mesh.byteOffset + model.mesh.byteLength)
+                        const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
+                        current[client.current.name][id] = gltfModel.scene
                     }
                 } catch (error) {
                     // some arms may not implement this api yet
@@ -46,7 +53,9 @@ export const provide3DModels = (partID: () => string) => {
                 }
             }
         }
-        if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)) {
+
+        const shouldFetchModels = settings.current.isLoaded && (settings.current.renderArmModels === 'model' || settings.current.renderArmModels === 'colliders+model')
+        if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && shouldFetchModels) {
             fetch3DModels()
         }
     })

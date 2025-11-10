@@ -4,6 +4,7 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('dashboard-context')
 
 interface Settings {
+	isLoaded: boolean
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -46,6 +47,7 @@ interface Context {
 }
 
 const defaults = (): Settings => ({
+	isLoaded: false,
 	cameraMode: 'perspective',
 
 	transforming: false,
@@ -85,6 +87,7 @@ export const provideSettings = () => {
 			settings = { ...settings, ...response }
 		}
 		settingsLoaded = true
+		settings.isLoaded = true
 	})
 
 	$effect(() => {
