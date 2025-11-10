@@ -98,7 +98,7 @@
 	<Canvas
 		renderMode="on-demand"
 		autoRender={false}
-		dpr={1.75}
+		dpr={1.8}
 		createRenderer={(canvas) => {
 			return new WebGLRenderer({
 				canvas,
