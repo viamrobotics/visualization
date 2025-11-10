@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
+	import { WebGLRenderer } from 'three'
 	import { Canvas } from '@threlte/core'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import type { Struct } from '@viamrobotics/sdk'
+	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
 	import Details from '$lib/components/Details.svelte'
@@ -16,15 +18,11 @@
 	import FileDrop from './FileDrop.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
-<<<<<<< HEAD
-	import { WebGLRenderer } from 'three'
-=======
+
 	import type { CameraPose } from '$lib/hooks/useControls.svelte'
->>>>>>> main
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -111,12 +109,11 @@
 			})
 		}}
 	>
-		<World>
-			<SceneProviders {cameraPose}>
-				{#snippet children({ focus })}
-					<Scene>
-						{@render appChildren?.()}
-					</Scene>
+		<SceneProviders {cameraPose}>
+			{#snippet children({ focus })}
+				<Scene>
+					{@render appChildren?.()}
+				</Scene>
 
 				<XR {@attach domPortal(root)} />
 
