@@ -9,7 +9,6 @@
 	import Details from '$lib/components/Details.svelte'
 	import SceneProviders from './SceneProviders.svelte'
 	import XR from '$lib/components/xr/XR.svelte'
-	import { World } from '@threlte/rapier'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
@@ -21,7 +20,11 @@
 	import LiveUpdatesBanner from './LiveUpdatesBanner.svelte'
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
+<<<<<<< HEAD
 	import { WebGLRenderer } from 'three'
+=======
+	import type { CameraPose } from '$lib/hooks/useControls.svelte'
+>>>>>>> main
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -35,6 +38,11 @@
 		enableKeybindings?: boolean
 		children?: Snippet
 		localConfigProps?: LocalConfigProps
+
+		/**
+		 * Allows setting the initial camera pose
+		 */
+		cameraPose?: CameraPose
 	}
 
 	let {
@@ -42,6 +50,7 @@
 		enableKeybindings = true,
 		children: appChildren,
 		localConfigProps,
+		cameraPose,
 	}: Props = $props()
 
 	const appClient = useViamClient()
@@ -89,7 +98,8 @@
 	bind:this={root}
 >
 	<Canvas
-		renderMode="always"
+		renderMode="on-demand"
+		autoRender={false}
 		dpr={1.75}
 		createRenderer={(canvas) => {
 			return new WebGLRenderer({
@@ -102,32 +112,31 @@
 		}}
 	>
 		<World>
-			<SceneProviders>
+			<SceneProviders {cameraPose}>
 				{#snippet children({ focus })}
 					<Scene>
 						{@render appChildren?.()}
 					</Scene>
 
-					<XR {@attach domPortal(root)} />
+				<XR {@attach domPortal(root)} />
 
-					<Dashboard {@attach domPortal(root)} />
-					<Details {@attach domPortal(root)} />
-					{#if environment.current.isStandalone}
-						<LiveUpdatesBanner {@attach domPortal(root)} />
-					{/if}
+				<Dashboard {@attach domPortal(root)} />
+				<Details {@attach domPortal(root)} />
+				{#if environment.current.isStandalone}
+					<LiveUpdatesBanner {@attach domPortal(root)} />
+				{/if}
 
-					{#if !focus}
-						<TreeContainer {@attach domPortal(root)} />
-					{/if}
+				{#if !focus}
+					<TreeContainer {@attach domPortal(root)} />
+				{/if}
 
-					{#if !focus && settings.current.enableArmPositionsWidget}
-						<ArmPositions {@attach domPortal(root)} />
-					{/if}
+				{#if !focus && settings.current.enableArmPositionsWidget}
+					<ArmPositions {@attach domPortal(root)} />
+				{/if}
 
-					<FileDrop {@attach domPortal(root)} />
-				{/snippet}
-			</SceneProviders>
-		</World>
+				<FileDrop {@attach domPortal(root)} />
+			{/snippet}
+		</SceneProviders>
 	</Canvas>
 
 	<ToastContainer />

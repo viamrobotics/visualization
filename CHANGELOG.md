@@ -1,5 +1,41 @@
 # motion-tools
 
+## 0.16.4
+
+### Patch Changes
+
+- ff41f2e: Use correct key for updating world state arrows
+
+## 0.16.3
+
+### Patch Changes
+
+- 77ca9cd: Bumps github.com/go-viper/mapstructure/v2 from 2.3.0 to 2.4.0.
+- 1d24c82: Bumps vite from 7.1.4 to 7.1.11.
+
+## 0.16.2
+
+### Patch Changes
+
+- d87bbb6: fix arrow poses WorldObject init
+
+## 0.16.1
+
+### Patch Changes
+
+- c849ab6: Include position and orientation details in pose world objects
+- c849ab6: Invalidate renderer immediately when poses are drawn
+
+## 0.16.0
+
+### Minor Changes
+
+- 4cee07e: Allow setting initial camera pose when embedded
+
+### Patch Changes
+
+- 56fe484: Only render on-demand
+
 ## 0.15.4
 
 ### Patch Changes

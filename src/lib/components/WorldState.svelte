@@ -53,7 +53,8 @@
 		const toRemove = getArrows()
 		arrows.forEach((arrow) => {
 			setArrow(arrow)
-			delete toRemove[arrow.uuid]
+			const referenceFrame = arrow.referenceFrame ?? 'world'
+			delete toRemove[`${referenceFrame}:${arrow.uuid}`]
 		})
 
 		Object.values(toRemove).forEach(({ id, arrow }) => {

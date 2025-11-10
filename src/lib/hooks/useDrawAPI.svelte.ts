@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4 } from 'three'
+import { Color, MathUtils, Quaternion, Vector3, Vector4 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -9,6 +9,9 @@ import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
+import { useCameraControls } from './useControls.svelte'
+import { useThrelte } from '@threlte/core'
+import { OrientationVector } from '$lib/three/OrientationVector'
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -23,19 +26,13 @@ interface Context {
 
 	connectionStatus: ConnectionStatus
 
-	camera:
-		| {
-				position: Vector3
-				lookAt: Vector3
-				animate: boolean
-		  }
-		| undefined
-
 	addPoints(worldObject: WorldObject<PointsGeometry>): void
 	addMesh(worldObject: WorldObject): void
-
-	clearCamera: () => void
 }
+
+const axis = new Vector3()
+const quaternion = new Quaternion()
+const ov = new OrientationVector()
 
 const key = Symbol('draw-api-context-key')
 
@@ -85,6 +82,9 @@ class Float32Reader {
 }
 
 export const provideDrawAPI = () => {
+	const cameraControls = useCameraControls()
+	const { invalidate } = useThrelte()
+
 	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
@@ -103,7 +103,6 @@ export const provideDrawAPI = () => {
 	const nurbs = $state<WorldObject[]>([])
 	const models = $state<WorldObject[]>([])
 
-	let camera = $state.raw<Context['camera']>()
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
 	const color = new Color()
@@ -255,8 +254,29 @@ export const provideDrawAPI = () => {
 			color.set(colors[j], colors[j + 1], colors[j + 2])
 
 			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
+			const pose = createPose()
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+
+			if (direction.y > 0.99999) {
+				quaternion.set(0, 0, 0, 1)
+			} else if (direction.y < -0.99999) {
+				quaternion.set(1, 0, 0, 0)
+			} else {
+				axis.set(direction.z, 0, -direction.x).normalize()
+				const radians = Math.acos(direction.y)
+				quaternion.setFromAxisAngle(axis, radians)
+			}
+
+			ov.setFromQuaternion(quaternion)
+			pose.oX = ov.x
+			pose.oY = ov.y
+			pose.oZ = ov.z
+			pose.theta = MathUtils.radToDeg(ov.th)
+
 			poses.push(
-				new WorldObject(`pose ${++poseIndex}`, undefined, undefined, undefined, {
+				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
 					getBoundingBoxAt(box3: OBB) {
 						return batchedArrow.getBoundingBoxAt(arrowId, box3)
 					},
@@ -267,6 +287,8 @@ export const provideDrawAPI = () => {
 				})
 			)
 		}
+
+		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
@@ -552,11 +574,15 @@ export const provideDrawAPI = () => {
 		if (!data) return
 
 		if ('setCameraPose' in data) {
-			camera = {
-				position: new Vector3(data.Position.X, data.Position.Y, data.Position.Z),
-				lookAt: new Vector3(data.LookAt.X, data.LookAt.Y, data.LookAt.Z),
-				animate: data.Animate,
-			}
+			cameraControls.setPose(
+				{
+					position: [data.Position.X, data.Position.Y, data.Position.Z],
+					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+				},
+				data.Animate
+			)
+
+			return
 		}
 
 		if ('geometries' in data) {
@@ -622,17 +648,11 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		get camera() {
-			return camera
-		},
 		addPoints(worldObject: WorldObject<PointsGeometry>) {
 			points.push(worldObject)
 		},
 		addMesh(worldObject: WorldObject) {
 			meshes.push(worldObject)
-		},
-		clearCamera: () => {
-			camera = undefined
 		},
 	})
 }
