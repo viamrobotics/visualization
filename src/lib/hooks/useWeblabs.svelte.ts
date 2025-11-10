@@ -3,6 +3,7 @@ import { SvelteSet } from 'svelte/reactivity'
 
 export const WEBLABS_EXPERIMENTS = {
 	MOTION_TOOLS_EDIT_FRAME: 'MOTION_TOOLS_EDIT_FRAME',
+	MOTION_TOOLS_RENDER_ARM_MODELS: 'MOTION_TOOLS_RENDER_ARM_MODELS',
 } as const
 
 export const WEBLABS_CONTEXT_KEY = Symbol('weblabs-context')

@@ -10,7 +10,20 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
+	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+	import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
+	const settings = useSettings()
 	const plyLoader = new PLYLoader()
+	const gltfLoader = new GLTFLoader()
+	const dracoLoader = new DRACOLoader()
+	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+	gltfLoader.setDRACOLoader(dracoLoader)
+	const weblabs = useWeblabs()
+	const componentModels = use3DModels()
 
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
@@ -33,8 +46,49 @@
 		...rest
 	}: Props = $props()
 
+	const geoModel = $derived.by(() => {
+		const [componentName, id] = name.split(':')
+		if (!componentName || !id) {
+			return undefined
+		}
+		if (!componentModels.current[componentName]) {
+			return undefined
+		}
+		const geometry = componentModels.current[componentName][id]
+		if (!geometry) {
+			return undefined
+		}
+		return geometry
+	})
+
+	let gltfModel = $state.raw<Group>()
+	$effect(() => {
+		if (geoModel?.geometryType?.case !== 'mesh') {
+			return
+		}
+		const mesh = geoModel.geometryType.value.mesh
+		if (!mesh) {
+			return
+		}
+		const arrayBuffer = mesh.buffer.slice(mesh.byteOffset, mesh.byteOffset + mesh.byteLength)
+		gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '').then((result) => {
+			gltfModel = result.scene
+		})
+	})
+
 	const type = $derived(geometry?.geometryType?.case)
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+
+	const renderModels = $derived(
+		(settings.current.renderArmModels === 'model' ||
+			settings.current.renderArmModels === 'colliders+model') &&
+			gltfModel
+	)
+	const renderPrimitives = $derived(
+		settings.current.renderArmModels === 'colliders' ||
+			settings.current.renderArmModels === 'colliders+model' ||
+			!gltfModel
+	)
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -48,6 +102,16 @@
 		}
 
 		return result
+	})
+
+	$effect.pre(() => {
+		if (
+			weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) &&
+			renderModels &&
+			!renderPrimitives
+		) {
+			geo = undefined
+		}
 	})
 
 	$effect.pre(() => {
@@ -103,39 +167,45 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if geometry.geometryType.case === 'bufferGeometry'}
-				<T
-					is={geometry.geometryType.value}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'mesh'}
-				{@const mesh = geometry.geometryType.value.mesh}
-				{@const meshGeometry = parsePlyInput(mesh)}
-				<T
-					is={meshGeometry}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'line' && metadata.points}
-				<MeshLineGeometry points={metadata.points} />
-			{:else if geometry.geometryType.case === 'box'}
-				{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
-				<T.BoxGeometry
-					args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'sphere'}
-				{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
-				<T.SphereGeometry
-					args={[radiusMm * 0.001]}
-					{oncreate}
-				/>
-			{:else if geometry.geometryType.case === 'capsule'}
-				{@const { lengthMm, radiusMm } = geometry.geometryType.value}
-				<T
-					is={CapsuleGeometry}
-					args={[radiusMm * 0.001, lengthMm * 0.001]}
-					{oncreate}
-				/>
+			{#if weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
+				<T is={gltfModel} />
+			{/if}
+
+			{#if !weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
+				{#if geometry.geometryType.case === 'bufferGeometry'}
+					<T
+						is={geometry.geometryType.value}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'mesh'}
+					{@const mesh = geometry.geometryType.value.mesh}
+					{@const meshGeometry = parsePlyInput(mesh)}
+					<T
+						is={meshGeometry}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'line' && metadata.points}
+					<MeshLineGeometry points={metadata.points} />
+				{:else if geometry.geometryType.case === 'box'}
+					{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
+					<T.BoxGeometry
+						args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'sphere'}
+					{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
+					<T.SphereGeometry
+						args={[radiusMm * 0.001]}
+						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'capsule'}
+					{@const { lengthMm, radiusMm } = geometry.geometryType.value}
+					<T
+						is={CapsuleGeometry}
+						args={[radiusMm * 0.001, lengthMm * 0.001]}
+						{oncreate}
+					/>
+				{/if}
 			{/if}
 
 			{#if geometry.geometryType.case === 'line'}
