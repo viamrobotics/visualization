@@ -30,13 +30,23 @@ export const providePointcloudObjects = (partID: () => string) => {
 		)
 	)
 
+	const propertiesQueries = $derived(
+		clients.map((client) => createResourceQuery(client, 'getProperties'))
+	)
+
+	const enabledClients = $derived(
+		clients.filter(
+			(_client, index) => propertiesQueries[index].current.data?.objectPointCloudsSupported
+		)
+	)
+
 	const options = $derived.by(() => {
 		const logs = useLogs()
 		const interval = refreshRates.get(RefreshRates.pointclouds)
 
 		const results: CreateQueryOptions<WorldObject[], Error, WorldObject[], string[]>[] = []
 
-		for (const client of clients) {
+		for (const client of enabledClients) {
 			const options = queryOptions({
 				enabled: interval !== -1 && client.current !== undefined,
 				refetchInterval: interval === 0 ? false : interval,
@@ -46,16 +56,9 @@ export const providePointcloudObjects = (partID: () => string) => {
 						throw new Error('No vision client')
 					}
 
-					const properties = await client.current.getProperties()
-
-					const objects: WorldObject[] = []
-
-					if (!properties.objectPointCloudsSupported) {
-						return objects
-					}
-
 					logs.add(`Fetching pointcloud objects for ${client.current.name}`)
 
+					const objects: WorldObject[] = []
 					const responses = await client.current.getObjectPointClouds('')
 
 					if (!responses) {
@@ -63,7 +66,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 					}
 
 					for (const response of responses) {
-						const index1 = 0
+						let index1 = 1
+
 						const { positions, colors } = await parsePcdInWorker(
 							new Uint8Array(response.pointCloud)
 						)
@@ -72,7 +76,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 						objects.push(
 							new WorldObject(
-								`${client.current.name} pointcloud ${index1}`,
+								`${client.current.name} object pointcloud ${index1}`,
 								undefined,
 								'world',
 								{
@@ -84,12 +88,14 @@ export const providePointcloudObjects = (partID: () => string) => {
 						)
 
 						if (response.geometries?.geometries) {
-							let index2 = 0
+							let index2 = 1
 
 							for (const geometry of response.geometries?.geometries) {
 								objects.push(
 									new WorldObject(
-										geometry.label ? geometry.label : `${client.current.name} ${index2}`,
+										geometry.label
+											? geometry.label
+											: `${client.current.name} object pointcloud geometry ${index1}-${index2}`,
 										geometry.center,
 										response.geometries.referenceFrame
 											? response.geometries.referenceFrame
@@ -98,9 +104,11 @@ export const providePointcloudObjects = (partID: () => string) => {
 									)
 								)
 
-								index += 1
+								index2 += 1
 							}
 						}
+
+						index1 += 1
 					}
 
 					return objects
