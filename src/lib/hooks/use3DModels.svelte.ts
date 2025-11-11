@@ -19,47 +19,52 @@ interface Context {
 }
 
 export const provide3DModels = (partID: () => string) => {
-    const weblabs = useWeblabs()
-    const settings = useSettings()
+	const weblabs = useWeblabs()
+	const settings = useSettings()
 	const current = $state.raw<Record<string, Record<string, Group>>>({})
 
-    const arms = useResourceNames(partID, 'arm')
-    const armClients = $derived(
-        arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
-    )
-    const clients = $derived(
-        armClients.filter((client) => {
-            return arms.current.some((arm) => arm.name === client.current?.name)
-        })
-    )
+	const arms = useResourceNames(partID, 'arm')
+	const armClients = $derived(
+		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
+	)
+	const clients = $derived(
+		armClients.filter((client) => {
+			return arms.current.some((arm) => arm.name === client.current?.name)
+		})
+	)
 
-    $effect(() => {
-        const fetch3DModels = async () => {
-            for (const client of clients) {
-                if (!client.current) continue
-                try {
-                    const models = await client.current.get3DModels()
-                    if (!(client.current.name in current)) {
-                        current[client.current.name] = {}
-                    }
-                    for (const [id, model] of Object.entries(models)) {
-                        const arrayBuffer = model.mesh.buffer.slice(model.mesh.byteOffset, model.mesh.byteOffset + model.mesh.byteLength)
-                        const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
-                        current[client.current.name][id] = gltfModel.scene
-                    }
-                } catch (error) {
-                    // some arms may not implement this api yet
-                    console.warn(`${client.current.name} returned an error: ${error} when getting 3D models`)
-                }
-            }
-        }
+	$effect(() => {
+		const fetch3DModels = async () => {
+			for (const client of clients) {
+				if (!client.current) continue
+				try {
+					const models = await client.current.get3DModels()
+					if (!(client.current.name in current)) {
+						current[client.current.name] = {}
+					}
+					for (const [id, model] of Object.entries(models)) {
+						const arrayBuffer = model.mesh.buffer.slice(
+							model.mesh.byteOffset,
+							model.mesh.byteOffset + model.mesh.byteLength
+						)
+						const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
+						current[client.current.name][id] = gltfModel.scene
+					}
+				} catch (error) {
+					// some arms may not implement this api yet
+					console.warn(`${client.current.name} returned an error: ${error} when getting 3D models`)
+				}
+			}
+		}
 
-        const shouldFetchModels = settings.current.isLoaded && (settings.current.renderArmModels === 'model' || settings.current.renderArmModels === 'colliders+model')
-        if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && shouldFetchModels) {
-            fetch3DModels()
-        }
-    })
-
+		const shouldFetchModels =
+			settings.current.isLoaded &&
+			(settings.current.renderArmModels === 'model' ||
+				settings.current.renderArmModels === 'colliders+model')
+		if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && shouldFetchModels) {
+			fetch3DModels()
+		}
+	})
 
 	setContext<Context>(key, {
 		get current() {
