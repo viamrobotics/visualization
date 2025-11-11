@@ -4,16 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@viamrobotics/sdk': link:../viam-typescript-sdk
-
 importers:
 
   .:
-    dependencies:
-      '@viamrobotics/sdk':
-        specifier: link:../viam-typescript-sdk
-        version: link:../viam-typescript-sdk
     devDependencies:
       '@ag-grid-community/client-side-row-model':
         specifier: 32.3.9
@@ -111,9 +104,12 @@ importers:
       '@viamrobotics/prime-core':
         specifier: 0.1.5
         version: 0.1.5(svelte@5.43.0)
+      '@viamrobotics/sdk':
+        specifier: 0.55.0
+        version: 0.55.0
       '@viamrobotics/svelte-sdk':
         specifier: 0.7.1
-        version: 0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@viam-typescript-sdk)(svelte@5.43.0)
+        version: 0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.55.0)(svelte@5.43.0)
       '@vitejs/plugin-basic-ssl':
         specifier: 2.1.0
         version: 2.1.0(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -308,6 +304,9 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
+  '@bufbuild/protobuf@1.10.1':
+    resolution: {integrity: sha512-wJ8ReQbHxsAfXhrf9ixl0aYbZorRuOWpBNzm8pL8ftmSxQx/wnJD5Eg861NwJU/czy2VXFIebCeZnZrI9rktIQ==}
+
   '@changesets/apply-release-plan@7.0.13':
     resolution: {integrity: sha512-BIW7bofD2yAWoE8H4V40FikC+1nNFEKBisMECccS16W1rt6qqhNTBDmIw5HaqmMgtLNz9e7oiALiEUuKrQ4oHg==}
 
@@ -362,6 +361,17 @@ packages:
 
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
+
+  '@connectrpc/connect-web@1.7.0':
+    resolution: {integrity: sha512-qyP0YOnUPRWwCc/VfsoydMJvkb7EyUPr2q9sHgBuJzbADjiqck1gKH5V5ZPzPhTLBvmz5UvG+wiZ5sMRQHU1MQ==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^1.10.0
+      '@connectrpc/connect': 1.7.0
+
+  '@connectrpc/connect@1.7.0':
+    resolution: {integrity: sha512-iNKdJRi69YP3mq6AePRT8F/HrxWCewrhxnLMNm0vpqXAR8biwzRtO6Hjx80C6UvtKJ5sFmffQT7I4Baecz389w==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^1.10.0
 
   '@csstools/color-helpers@5.1.0':
     resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
@@ -1527,6 +1537,9 @@ packages:
     peerDependencies:
       svelte: '>=5 <6'
 
+  '@viamrobotics/sdk@0.55.0':
+    resolution: {integrity: sha512-fxoi4r0BNaY8lil93hI4GIYPFasumEbe/4KO0BpGHi7qgJ8wZ9ZRneSIfp0gASPbwNfy2LxDQIqhGCKU1pWvdg==}
+
   '@viamrobotics/svelte-sdk@0.7.1':
     resolution: {integrity: sha512-Cmpj9Y5r2QI4ibd88K5lH8e5Z0y1czS9tiTwvC2XEGU4efzusMpda5NLrwaXG3ZHN5n7Jz7NG3pcCdZhtDb1JQ==}
     peerDependencies:
@@ -1830,6 +1843,9 @@ packages:
     resolution: {integrity: sha512-AXVQwdhot1eqLihwasPElhX2tAZiBjWdJ9i/Zcj2S6QYIjkx62OKSfnobkriB81C3l4w0rVy3Nt4jaTBltYEpw==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
+
+  bsonfy@1.0.2:
+    resolution: {integrity: sha512-/kLM6B2x/CWXdkTu2kAv65trB4YruwahBpFDxYkkSunve6Rvx7KSoSHHe1f4jsPXPgXvDG393IjkQ3Us645Eag==}
 
   bun-types@1.2.21:
     resolution: {integrity: sha512-sa2Tj77Ijc/NTLS0/Odjq/qngmEPZfbfnOERi0KRUYhT9R8M4VBioWVmMWE5GrYbKMc+5lVybXygLdibHaqVqw==}
@@ -2189,6 +2205,9 @@ packages:
   expect-type@1.2.2:
     resolution: {integrity: sha512-JhFGDVJ7tmDJItKhYgJCGLOWjuK9vPxiXoUFLwLDc99NlmklilbiQJwoctZtt13+xMw91MCk/REan6MWHqDjyA==}
     engines: {node: '>=12.0.0'}
+
+  exponential-backoff@3.1.3:
+    resolution: {integrity: sha512-ZgEeZXj30q+I0EN+CbSSpIyPaJ5HVQD18Z1m+u1FXbAeT94mr1zw50q4q6jiiC447Nl/YTcIYSAftiGqetwXCA==}
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
@@ -3879,6 +3898,8 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@bufbuild/protobuf@1.10.1': {}
+
   '@changesets/apply-release-plan@7.0.13':
     dependencies:
       '@changesets/config': 3.1.1
@@ -4022,6 +4043,15 @@ snapshots:
       fs-extra: 7.0.1
       human-id: 4.1.2
       prettier: 2.8.8
+
+  '@connectrpc/connect-web@1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))':
+    dependencies:
+      '@bufbuild/protobuf': 1.10.1
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
+
+  '@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1)':
+    dependencies:
+      '@bufbuild/protobuf': 1.10.1
 
   '@csstools/color-helpers@5.1.0': {}
 
@@ -5253,10 +5283,18 @@ snapshots:
       prismjs: 1.30.0
       svelte: 5.43.0
 
-  '@viamrobotics/svelte-sdk@0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@viam-typescript-sdk)(svelte@5.43.0)':
+  '@viamrobotics/sdk@0.55.0':
+    dependencies:
+      '@bufbuild/protobuf': 1.10.1
+      '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
+      '@connectrpc/connect-web': 1.7.0(@bufbuild/protobuf@1.10.1)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.1))
+      bsonfy: 1.0.2
+      exponential-backoff: 3.1.3
+
+  '@viamrobotics/svelte-sdk@0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.55.0)(svelte@5.43.0)':
     dependencies:
       '@tanstack/svelte-query': 5.87.1(svelte@5.43.0)
-      '@viamrobotics/sdk': link:../viam-typescript-sdk
+      '@viamrobotics/sdk': 0.55.0
       runed: 0.29.2(svelte@5.43.0)
       svelte: 5.43.0
 
@@ -5683,6 +5721,8 @@ snapshots:
       node-releases: 2.0.27
       update-browserslist-db: 1.1.4(browserslist@4.27.0)
 
+  bsonfy@1.0.2: {}
+
   bun-types@1.2.21(@types/react@19.2.2):
     dependencies:
       '@types/node': 24.10.0
@@ -6046,6 +6086,8 @@ snapshots:
   esutils@2.0.3: {}
 
   expect-type@1.2.2: {}
+
+  exponential-backoff@3.1.3: {}
 
   extend@3.0.2: {}
 
