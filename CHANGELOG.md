@@ -1,5 +1,168 @@
 # motion-tools
 
+## 0.17.0
+
+### Minor Changes
+
+- 66ff043: enable 3d models for arms
+
+## 0.16.4
+
+### Patch Changes
+
+- ff41f2e: Use correct key for updating world state arrows
+
+## 0.16.3
+
+### Patch Changes
+
+- 77ca9cd: Bumps github.com/go-viper/mapstructure/v2 from 2.3.0 to 2.4.0.
+- 1d24c82: Bumps vite from 7.1.4 to 7.1.11.
+
+## 0.16.2
+
+### Patch Changes
+
+- d87bbb6: fix arrow poses WorldObject init
+
+## 0.16.1
+
+### Patch Changes
+
+- c849ab6: Include position and orientation details in pose world objects
+- c849ab6: Invalidate renderer immediately when poses are drawn
+
+## 0.16.0
+
+### Minor Changes
+
+- 4cee07e: Allow setting initial camera pose when embedded
+
+### Patch Changes
+
+- 56fe484: Only render on-demand
+
+## 0.15.4
+
+### Patch Changes
+
+- f6dcb64: Sanitize incomplete poses from draw commands
+
+## 0.15.3
+
+### Patch Changes
+
+- 4b80422: Fix arbitrary geometry editing
+- 60269ad: refactor useframes
+
+## 0.15.2
+
+### Patch Changes
+
+- f275caa: revert useframe refactor
+
+## 0.15.1
+
+### Patch Changes
+
+- bc666ef: Do not depend on resource names to fetch poses
+
+## 0.15.0
+
+### Minor Changes
+
+- b1976c6: Add PLY file drag-n-drop
+
+### Patch Changes
+
+- 9b5f383: hide delete button in app
+- 3539418: Fix world state parenting in tree, fix color parsing, fix arrow management for world state
+
+## 0.14.12
+
+### Patch Changes
+
+- 66c4c7c: Allow automatic buffer resizing for drawing arrows
+- b1659d8: put add frames behind weblab
+
+## 0.14.11
+
+### Patch Changes
+
+- 9c6ae90: fix bug in converting quat to ov
+
+## 0.14.10
+
+### Patch Changes
+
+- 1c4143d: put pose matrix computations behind weblab
+
+## 0.14.9
+
+### Patch Changes
+
+- b2dd602: Fix: use orientation vector methods for matrix transforms
+
+## 0.14.8
+
+### Patch Changes
+
+- b8127a1: Fix excessive $effect calls causing CPU overload
+
+## 0.14.7
+
+### Patch Changes
+
+- ac38329: Assume orientation is orientation vector degrees when unspecified
+- 33c1353: ignore blank updated fields when edit frame
+- 35bf0cd: dont show edit frames ui to non-permissioned users
+
+## 0.14.6
+
+### Patch Changes
+
+- f9416d4: fix weblab loading logic to properly parse url encoded val
+
+## 0.14.5
+
+### Patch Changes
+
+- fd16f3b: properly parse buffer stored ascii ply files
+
+## 0.14.4
+
+### Patch Changes
+
+- 3bb9b57: Add DrawFrame API
+
+## 0.14.3
+
+### Patch Changes
+
+- 709d3c5: get fragment ids if in string or object with id field
+- d44734e: Improve logs tab
+- 3880247: update details copied from detail pane to match shown
+
+## 0.14.2
+
+### Patch Changes
+
+- 98db073: fix bug with select on:input not firing
+
+## 0.14.1
+
+### Patch Changes
+
+- 95bc6a9: Add missing frameless component provider
+- f173bc4: refetch poses when re-enter monitor mode
+
+## 0.14.0
+
+### Minor Changes
+
+- d2c23ec: enable create and delete frames in standalone version
+- 5ec5351: Add `shape` metadata for supported shapes from draw API. Add support for arrows from world state store.
+
 ## 0.13.0
 
 ### Minor Changes

@@ -31,7 +31,8 @@ const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefine
 			const changes: Record<string, unknown> = {}
 			const paths = toPath(event.updatedFields?.paths ?? [])
 			for (const path of paths) {
-				changes[path.toString()] = getInUnsafe(event.transform, path)
+				const value = getInUnsafe(event.transform, path)
+				changes[path.toString()] = value
 			}
 
 			return {
@@ -77,9 +78,12 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 					if (paths.length === 0) continue
 					for (const path of paths) {
 						if (!existing.changes) existing.changes = {}
-						existing.changes[path.toString()] = getInUnsafe(entry.transform, path)
+						const value = getInUnsafe(entry.transform, path)
+						existing.changes[path.toString()] = value
 					}
 					existing.transform = event.transform
+				} else {
+					eventsByUUID.set(uuid, entry)
 				}
 				break
 		}

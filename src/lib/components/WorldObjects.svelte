@@ -16,7 +16,10 @@
 	import Label from './Label.svelte'
 	import WorldState from './WorldState.svelte'
 	import { determinePose } from '$lib/WorldObject.svelte'
-
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import type { Pose as ViamPose } from '@viamrobotics/sdk'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	const points = usePointClouds()
 	const pointcloudObjects = usePointcloudObjects()
 	const drawAPI = useDrawAPI()
@@ -24,6 +27,14 @@
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
+	const weblabs = useWeblabs()
+
+	const weblabedDeterminePose = (object: WorldObject, pose: ViamPose | undefined) => {
+		if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME)) {
+			return determinePose(object, pose)
+		}
+		return pose ?? object.pose
+	}
 </script>
 
 {#each frames.current as object (object.uuid)}
@@ -32,7 +43,7 @@
 		parent={object.referenceFrame}
 	>
 		{#snippet children({ pose })}
-			{@const framePose = determinePose(object, pose)}
+			{@const framePose = weblabedDeterminePose(object, pose)}
 			<Portal id={object.referenceFrame}>
 				<Frame
 					uuid={object.uuid}
@@ -94,6 +105,21 @@
 				<Label text={object.name} />
 			</Frame>
 		{/if}
+	</Portal>
+{/each}
+
+{#each drawAPI.frames as object (object.uuid)}
+	<Portal id={object.referenceFrame}>
+		<Frame
+			uuid={object.uuid}
+			name={object.name}
+			pose={object.pose}
+			geometry={object.geometry}
+			metadata={object.metadata}
+		>
+			<PortalTarget id={object.name} />
+			<Label text={object.name} />
+		</Frame>
 	</Portal>
 {/each}
 

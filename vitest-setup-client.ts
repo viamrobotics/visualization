@@ -27,7 +27,6 @@ vi.mock('$lib/hooks/useSelection.svelte', () => ({
 vi.mock('$lib/hooks/useFrames.svelte', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
 }))
-
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	usePartConfig: vi.fn(() => ({
@@ -40,20 +39,6 @@ vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 		discarded: 'DISCARDED',
 		saved: 'SAVED',
 	},
-}))
-
-// Mock useWeblabs hook
-vi.mock('$lib/hooks/useWeblabs.svelte', () => ({
-	useWeblabs: vi.fn(() => ({
-		weblab: {
-			isActive: vi.fn(() => false),
-			load: vi.fn(),
-		},
-	})),
-	Weblab: vi.fn().mockImplementation(() => ({
-		isActive: vi.fn(() => false),
-		load: vi.fn(),
-	})),
 }))
 
 // required for svelte5 + jsdom as jsdom does not support matchMedia

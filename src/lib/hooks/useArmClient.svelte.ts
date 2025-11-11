@@ -16,33 +16,35 @@ interface Context {
 
 export const provideArmClient = (partID: () => string) => {
 	const arms = useResourceNames(partID, 'arm')
-	const clients = $state<Record<string, { current: ArmClient }>>({})
 	const options = { refetchInterval: 500 }
-	const jointPositionsQueries = $state<
-		Record<string, QueryObserverResult<ArmJointPositions, Error>>
-	>({})
 
 	const names = $derived(arms.current.map((arm) => arm.name))
 
-	const currentPositions = $derived(
-		Object.fromEntries(
-			Object.entries(jointPositionsQueries).map(([name, query]) => [name, query.data?.values])
-		)
+	const clients = $derived(
+		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
 	)
 
-	$effect(() => {
-		for (const arm of arms.current) {
-			const client = createResourceClient(ArmClient, partID, () => arm.name)
-			if (client.current && !clients[arm.name]) clients[arm.name] = { current: client.current }
+	const jointPositionsQueries = $derived.by(() => {
+		const results: Record<string, { current: QueryObserverResult<ArmJointPositions, Error> }> = {}
+
+		for (const client of clients) {
+			if (!client.current) continue
+
+			const query = createResourceQuery(client, 'getJointPositions', options)
+			results[client.current.name] = query
 		}
+
+		return results
 	})
 
-	$effect(() => {
-		for (const client of Object.values(clients)) {
-			const query = createResourceQuery(client, 'getJointPositions', options)
-			jointPositionsQueries[client.current.name] = query.current
-		}
-	})
+	const currentPositions = $derived(
+		Object.fromEntries(
+			Object.entries(jointPositionsQueries).map(([name, query]) => [
+				name,
+				query.current.data?.values,
+			])
+		)
+	)
 
 	setContext<Context>(key, {
 		get names() {

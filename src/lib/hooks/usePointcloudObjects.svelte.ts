@@ -12,6 +12,7 @@ import { useLogs } from './useLogs.svelte'
 import { parsePcdInWorker } from '$lib/lib'
 import { fromStore, toStore } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
+import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 
 const key = Symbol('pointcloud-object-context')
 
@@ -42,7 +43,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 				queryKey: ['partID', partID(), client.current?.name, 'getObjectPointClouds'],
 				queryFn: async () => {
 					if (!client.current) {
-						throw new Error('No camera client')
+						throw new Error('No vision client')
 					}
 
 					const properties = await client.current.getProperties()
@@ -53,20 +54,25 @@ export const providePointcloudObjects = (partID: () => string) => {
 						return objects
 					}
 
-					logs.add(`Fetching pointcloud for ${client.current.name}`)
+					logs.add(`Fetching pointcloud objects for ${client.current.name}`)
 
 					const responses = await client.current.getObjectPointClouds('')
 
-					if (!responses) return objects
+					if (!responses) {
+						return objects
+					}
 
 					for (const response of responses) {
+						const index1 = 0
 						const { positions, colors } = await parsePcdInWorker(
 							new Uint8Array(response.pointCloud)
 						)
 
+						console.log(response)
+
 						objects.push(
 							new WorldObject(
-								`${client.current.name} pointcloud`,
+								`${client.current.name} pointcloud ${index1}`,
 								undefined,
 								'world',
 								{
@@ -78,15 +84,21 @@ export const providePointcloudObjects = (partID: () => string) => {
 						)
 
 						if (response.geometries?.geometries) {
+							let index2 = 0
+
 							for (const geometry of response.geometries?.geometries) {
 								objects.push(
 									new WorldObject(
-										geometry.label,
+										geometry.label ? geometry.label : `${client.current.name} ${index2}`,
 										geometry.center,
-										response.geometries.referenceFrame,
+										response.geometries.referenceFrame
+											? response.geometries.referenceFrame
+											: 'world',
 										geometry
 									)
 								)
+
+								index += 1
 							}
 						}
 					}
@@ -101,6 +113,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 		return results
 	})
 
+	const { updateUUIDs } = usePersistentUUIDs()
+
 	const queries = fromStore(
 		createQueries({
 			queries: toStore(() => options),
@@ -108,6 +122,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 				const data = results
 					.flatMap((result) => result.data)
 					.filter((data) => data !== null && data !== undefined)
+
+				updateUUIDs(data)
 
 				return {
 					data,
@@ -118,8 +134,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 			},
 		})
 	)
-
-	$inspect(clients, queries.current.error)
 
 	setContext<Context>(key, {
 		get current() {

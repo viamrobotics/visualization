@@ -1,40 +1,45 @@
+import type { Frame } from './frame'
 import type { WorldObject } from './lib'
+import { createPose } from './transform'
 import type { Geometries } from './WorldObject.svelte'
 import type { Pose } from '@viamrobotics/sdk'
 
 type UpdateFrameCallback = {
-	(
-		componentName: string,
-		referenceFrame: string,
-		pose: Pose,
-		geometry?: {
-			type: 'none' | 'box' | 'sphere' | 'capsule'
-			r?: number
-			l?: number
-			x?: number
-			y?: number
-			z?: number
-		}
-	): void
+	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
 }
-export class DetailConfigUpdater {
+
+type RemoveFrameCallback = {
+	(componentName: string): void
+}
+
+export class FrameConfigUpdater {
 	private object: () => WorldObject<Geometries> | undefined
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
+	private removeFrame: RemoveFrameCallback
 
 	constructor(
 		object: () => WorldObject<Geometries> | undefined,
 		updateFrame: UpdateFrameCallback,
+		removeFrame: RemoveFrameCallback,
 		referenceFrame: () => string
 	) {
 		this.referenceFrame = referenceFrame
 		this.object = object
 		this.updateFrame = updateFrame
+		this.removeFrame = removeFrame
 	}
 
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
 		const object = this.object()
 		if (!object) return
+
+		x = this.sanatizeFloatValue(x)
+		y = this.sanatizeFloatValue(y)
+		z = this.sanatizeFloatValue(z)
+
+		if (x === undefined && y === undefined && z === undefined) return
+
 		object.localEditedPose.x = x ?? object.localEditedPose.x
 		object.localEditedPose.y = y ?? object.localEditedPose.y
 		object.localEditedPose.z = z ?? object.localEditedPose.z
@@ -64,6 +69,13 @@ export class DetailConfigUpdater {
 		const object = this.object()
 		if (!object) return
 
+		oX = this.sanatizeFloatValue(oX)
+		oY = this.sanatizeFloatValue(oY)
+		oZ = this.sanatizeFloatValue(oZ)
+		theta = this.sanatizeFloatValue(theta)
+
+		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) return
+
 		object.localEditedPose.oX = oX ?? object.localEditedPose.oX
 		object.localEditedPose.oY = oY ?? object.localEditedPose.oY
 		object.localEditedPose.oZ = oZ ?? object.localEditedPose.oZ
@@ -80,45 +92,46 @@ export class DetailConfigUpdater {
 		})
 	}
 
-	public updateGeometry = (geometry: {
-		type: 'none' | 'box' | 'sphere' | 'capsule'
-		r?: number
-		l?: number
-		x?: number
-		y?: number
-		z?: number
-	}) => {
+	public updateGeometry = (geometry: Partial<Frame['geometry']>) => {
 		const object = this.object()
 		if (!object) return
-		let geometryObject: {
-			type: 'box' | 'sphere' | 'capsule'
-			x?: number
-			y?: number
-			z?: number
-			r?: number
-			l?: number
-		}
-		if (geometry.type === 'box') {
+
+		let geometryObject: Frame['geometry']
+
+		if (geometry?.type === 'box') {
 			const currentGeometry = object.geometry?.geometryType.value as {
 				dimsMm: { x: number; y: number; z: number }
 			}
+			geometry.x = this.sanatizeFloatValue(geometry.x)
+			geometry.y = this.sanatizeFloatValue(geometry.y)
+			geometry.z = this.sanatizeFloatValue(geometry.z)
+
+			if (geometry.x === undefined && geometry.y === undefined && geometry.z === undefined) return
+
 			geometryObject = {
 				type: 'box',
 				x: geometry.x ?? currentGeometry?.dimsMm?.x,
 				y: geometry.y ?? currentGeometry?.dimsMm?.y,
 				z: geometry.z ?? currentGeometry?.dimsMm?.z,
 			}
-		} else if (geometry.type === 'sphere') {
+		} else if (geometry?.type === 'sphere') {
 			const currentGeometry = object.geometry?.geometryType.value as { radiusMm: number }
+			geometry.r = this.sanatizeFloatValue(geometry.r)
+			if (geometry.r === undefined) return
+
 			geometryObject = {
 				type: 'sphere',
 				r: geometry.r ?? currentGeometry?.radiusMm,
 			}
-		} else if (geometry.type === 'capsule') {
+		} else if (geometry?.type === 'capsule') {
 			const currentGeometry = object.geometry?.geometryType.value as {
 				radiusMm: number
 				lengthMm: number
 			}
+			geometry.r = this.sanatizeFloatValue(geometry.r)
+			geometry.l = this.sanatizeFloatValue(geometry.l)
+			if (geometry.r === undefined && geometry.l === undefined) return
+
 			geometryObject = {
 				type: 'capsule',
 				r: geometry.r ?? currentGeometry?.radiusMm,
@@ -129,31 +142,21 @@ export class DetailConfigUpdater {
 		this.updateFrame(
 			object.name ?? '',
 			this.referenceFrame(),
-			{
-				x: object.localEditedPose.x,
-				y: object.localEditedPose.y,
-				z: object.localEditedPose.z,
-				oX: object.localEditedPose.oX,
-				oY: object.localEditedPose.oY,
-				oZ: object.localEditedPose.oZ,
-				theta: object.localEditedPose.theta,
-			},
-			{ ...geometryObject! }
+			createPose(object.localEditedPose),
+			geometryObject
 		)
 	}
 
 	public setFrameParent = (parentName: string) => {
 		const object = this.object()
 		if (!object) return
-		this.updateFrame(object.name ?? '', parentName, {
-			x: object.localEditedPose.x,
-			y: object.localEditedPose.y,
-			z: object.localEditedPose.z,
-			oX: object.localEditedPose.oX,
-			oY: object.localEditedPose.oY,
-			oZ: object.localEditedPose.oZ,
-			theta: object.localEditedPose.theta,
-		})
+		this.updateFrame(object.name ?? '', parentName, createPose(object.localEditedPose))
+	}
+
+	public deleteFrame = () => {
+		const object = this.object()
+		if (!object) return
+		this.removeFrame(object.name ?? '')
 	}
 
 	public setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
@@ -163,45 +166,21 @@ export class DetailConfigUpdater {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'none' }
 			)
 		} else if (type === 'box') {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'box', x: 100, y: 100, z: 100 }
 			)
 		} else if (type === 'sphere') {
 			this.updateFrame(
 				object.name ?? '',
 				this.referenceFrame(),
-				{
-					x: object.localEditedPose.x,
-					y: object.localEditedPose.y,
-					z: object.localEditedPose.z,
-					oX: object.localEditedPose.oX,
-					oY: object.localEditedPose.oY,
-					oZ: object.localEditedPose.oZ,
-					theta: object.localEditedPose.theta,
-				},
+				createPose(object.localEditedPose),
 				{ type: 'sphere', r: 100 }
 			)
 		} else if (type === 'capsule') {
@@ -220,5 +199,12 @@ export class DetailConfigUpdater {
 				{ type: 'capsule', r: 20, l: 100 }
 			)
 		}
+	}
+
+	private sanatizeFloatValue = (value?: number) => {
+		if (value === undefined) return undefined
+		const num = parseFloat(value.toFixed(2))
+		if (isNaN(num)) return undefined
+		return num
 	}
 }

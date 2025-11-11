@@ -80,6 +80,7 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 		switch (pathname) {
 			case '/geometry':
 			case '/geometries':
+			case '/frames':
 			case '/camera':
 			case '/nurbs': {
 				const json = await req.json()
@@ -201,8 +202,9 @@ while (true) {
 
 		launchVite(port)
 		break
-	} catch (error) {
-		if (error.code === 'EADDRINUSE') {
+	} catch (err) {
+		const error = err as Error
+		if ('code' in error && typeof error.code === 'string' && error.code === 'EADDRINUSE') {
 			console.warn(`Port ${port} in use, trying ${port + 1}...`)
 			port += 1
 		} else {

@@ -4,8 +4,7 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('dashboard-context')
 
 interface Settings {
-	// viewer mode
-	viewerMode: 'edit' | 'monitor'
+	isLoaded: boolean
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -40,6 +39,7 @@ interface Settings {
 	enableArmPositionsWidget: boolean
 
 	renderStats: boolean
+	renderArmModels: 'colliders' | 'colliders+model' | 'model'
 }
 
 interface Context {
@@ -47,7 +47,7 @@ interface Context {
 }
 
 const defaults = (): Settings => ({
-	viewerMode: 'monitor',
+	isLoaded: false,
 	cameraMode: 'perspective',
 
 	transforming: false,
@@ -75,19 +75,25 @@ const defaults = (): Settings => ({
 	enableArmPositionsWidget: false,
 
 	renderStats: false,
+	renderArmModels: 'colliders+model',
 })
 
 export const provideSettings = () => {
 	let settings = $state<Settings>(defaults())
+	let settingsLoaded = $state(false)
 
 	get('motion-tools-settings').then((response: Settings) => {
 		if (response) {
 			settings = { ...settings, ...response }
 		}
+		settingsLoaded = true
+		settings.isLoaded = true
 	})
 
 	$effect(() => {
-		set('motion-tools-settings', $state.snapshot(settings))
+		if (settingsLoaded) {
+			set('motion-tools-settings', $state.snapshot(settings))
+		}
 	})
 
 	const context: Context = {

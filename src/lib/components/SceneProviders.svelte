@@ -9,7 +9,11 @@
 	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
-	import { provideTransformControls } from '$lib/hooks/useControls.svelte'
+	import {
+		provideCameraControls,
+		provideTransformControls,
+		type CameraPose,
+	} from '$lib/hooks/useControls.svelte'
 	import { provideObjects } from '$lib/hooks/useObjects.svelte'
 	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
@@ -18,14 +22,20 @@
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
+	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
+	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
+
 	interface Props {
+		cameraPose?: CameraPose
 		children: Snippet<[{ focus: boolean }]>
 	}
 
-	let { children }: Props = $props()
+	let { cameraPose, children }: Props = $props()
 
 	const partID = usePartID()
 
+	provideCameraControls(() => cameraPose)
 	provideTransformControls()
 	provideVisibility()
 	provideMachineSettings()
@@ -36,14 +46,17 @@
 	provideStaticGeometries()
 	provideDrawAPI()
 
+	provideResourceByName(() => partID.current)
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	providePointcloudObjects(() => partID.current)
+	provide3DModels(() => partID.current)
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
+	provideArmClient(() => partID.current)
 	provideObjects()
 	provideWorldStates()
-	provideArmClient(() => partID.current)
+	provideFramelessComponents()
 
 	const { focus } = provideSelection()
 </script>

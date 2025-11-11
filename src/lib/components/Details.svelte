@@ -3,7 +3,7 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3 } from 'three'
+	import { Quaternion, Vector3, MathUtils } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -13,7 +13,7 @@
 <script lang="ts">
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask } from '@threlte/core'
-	import { Button, Icon } from '@viamrobotics/prime-core'
+	import { Button, Icon, Select, Input } from '@viamrobotics/prime-core'
 	import {
 		useSelectedObject,
 		useFocusedObject,
@@ -25,7 +25,10 @@
 	import WeblabActive from './weblab/WeblabActive.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { DetailConfigUpdater } from '$lib/Detail.svelte'
+	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
+	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	const { ...rest } = $props()
 
@@ -36,7 +39,8 @@
 	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
-
+	const weblab = useWeblabs()
+	const environment = useEnvironment()
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
@@ -53,13 +57,15 @@
 	const isFrameNode = $derived(
 		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
+	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
 
-	const detailConfigUpdater: DetailConfigUpdater = new DetailConfigUpdater(
+	const detailConfigUpdater = new FrameConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
+		partConfig.deleteFrame,
 		() => referenceFrame
 	)
 
@@ -88,7 +94,10 @@
 				worldOrientation.th = ov.th
 			}
 		},
-		{ autoStart: false }
+		{
+			autoStart: false,
+			autoInvalidate: false,
+		}
 	)
 
 	$effect.pre(() => {
@@ -98,6 +107,48 @@
 			stop()
 		}
 	})
+
+	const getCopyClipboardText = () => {
+		if (weblab.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME)) {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					localPosition: {
+						x: localPose?.x,
+						y: localPose?.y,
+						z: localPose?.z,
+					},
+					localOrientation: {
+						x: localPose?.oX,
+						y: localPose?.oY,
+						z: localPose?.oZ,
+						th: localPose?.theta,
+					},
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+					parentFrame: referenceFrame,
+				},
+				null,
+				2
+			)
+		} else {
+			return JSON.stringify(
+				{
+					worldPosition: worldPosition,
+					worldOrientation: worldOrientation,
+					geometry: {
+						type: geometryType,
+						value: object?.geometry?.geometryType.value,
+					},
+				},
+				null,
+				2
+			)
+		}
+	}
 </script>
 
 {#snippet ImmutableField({
@@ -105,15 +156,18 @@
 	value,
 	ariaLabel,
 }: {
-	label: string
+	label?: string
 	value: string
 	ariaLabel: string
 })}
 	<div>
 		<span
 			class="text-subtle-2"
-			aria-label={`immutable ${ariaLabel}`}>{label}</span
+			aria-label={`immutable ${ariaLabel}`}
 		>
+			{label}
+		</span>
+
 		{value}
 	</div>
 {/snippet}
@@ -129,14 +183,16 @@
 	ariaLabel: string
 	onInput: (value: string) => void
 })}
-	<span class="text-subtle-2">{label}</span>
-	<input
-		type="number"
-		aria-label={`mutable ${ariaLabel}`}
-		class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
-		{value}
-		oninput={(e) => onInput((e.target as HTMLInputElement).value)}
-	/>
+	<div class="flex items-center gap-1">
+		<span class="text-subtle-2">{label}</span>
+		<Input
+			type="number"
+			aria-label={`mutable ${ariaLabel}`}
+			class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
+			{value}
+			on:input={(event) => onInput((event.target as HTMLInputElement).value)}
+		/>
+	</div>
 {/snippet}
 
 {#snippet DropDownField({
@@ -150,21 +206,22 @@
 	options: string[]
 	onChange: (value: string) => void
 })}
-	<select
+	<Select
 		aria-label={`dropdown ${ariaLabel}`}
-		class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
 		{value}
-		onchange={(e) => onChange((e.target as HTMLSelectElement).value)}
+		onchange={(event: InputEvent) => {
+			onChange((event.target as HTMLSelectElement).value)
+		}}
 	>
 		{#each options as option (option)}
 			<option value={option}>{option}</option>
 		{/each}
-	</select>
+	</Select>
 {/snippet}
 
 {#if object}
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {isFrameNode
+		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {showEditFrameOptions
 			? 'w-80'
 			: 'w-60'} border p-2 text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
@@ -192,7 +249,7 @@
 
 			<button
 				onclick={async () => {
-					navigator.clipboard.writeText(JSON.stringify($state.snapshot(object)))
+					navigator.clipboard.writeText(getCopyClipboardText())
 					copied = true
 					setTimeout(() => (copied = false), 1000)
 				}}
@@ -209,19 +266,20 @@
 			{#if worldPosition}
 				<div>
 					<strong class="font-semibold">world position</strong>
+					<span class="text-subtle-2">(m)</span>
 
 					<div class="flex gap-3">
 						<div>
 							<span class="text-subtle-2">x</span>
-							{(worldPosition.x * 1000).toFixed(2)}
+							{worldPosition.x.toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">y</span>
-							{(worldPosition.y * 1000).toFixed(2)}
+							{worldPosition.y.toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">z</span>
-							{(worldPosition.z * 1000).toFixed(2)}
+							{worldPosition.z.toFixed(2)}
 						</div>
 					</div>
 				</div>
@@ -230,6 +288,7 @@
 			{#if worldOrientation}
 				<div>
 					<strong class="font-semibold">world orientation</strong>
+					<span class="text-subtle-2">(deg)</span>
 					<div class="flex gap-3">
 						<div>
 							<span class="text-subtle-2">x</span>
@@ -245,20 +304,19 @@
 						</div>
 						<div>
 							<span class="text-subtle-2">th</span>
-							{worldOrientation.th.toFixed(2)}
+							{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
 						</div>
 					</div>
 				</div>
 			{/if}
 
-			<WeblabActive experiment="MOTION_TOOLS_EDIT_FRAME">
-				{@const ParentFrame = isFrameNode ? DropDownField : ImmutableField}
+			<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
+				{@const ParentFrame = showEditFrameOptions ? DropDownField : ImmutableField}
 
 				<div>
 					<strong class="font-semibold">parent frame</strong>
 					<div class="flex gap-3">
 						{@render ParentFrame({
-							label: 'name',
 							ariaLabel: 'parent frame name',
 							value: referenceFrame,
 							options: referenceFrameOptions,
@@ -268,9 +326,10 @@
 				</div>
 
 				{#if localPose}
-					{@const PoseAttribute = isFrameNode ? MutableField : ImmutableField}
+					{@const PoseAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					<div>
 						<strong class="font-semibold">local position</strong>
+						<span class="text-subtle-2">(m)</span>
 
 						<div class="flex gap-3">
 							{@render PoseAttribute({
@@ -299,7 +358,8 @@
 
 					<div>
 						<strong class="font-semibold">local orientation</strong>
-						<div class="flex {isFrameNode ? 'gap-2' : 'gap-3'}">
+						<span class="text-subtle-2">(deg)</span>
+						<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'}">
 							{@render PoseAttribute({
 								label: 'x',
 								ariaLabel: 'local orientation x coordinate',
@@ -332,7 +392,7 @@
 					</div>
 				{/if}
 
-				{#if isFrameNode}
+				{#if showEditFrameOptions}
 					<div>
 						<strong class="font-semibold">geometry</strong>
 						<div class="grid grid-cols-4 gap-1">
@@ -360,7 +420,7 @@
 					</div>
 				{/if}
 				{#if geometryType !== 'none'}
-					{@const GeometryAttribute = isFrameNode ? MutableField : ImmutableField}
+					{@const GeometryAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					{#if geometryType === 'box'}
 						{@const { dimsMm } = object?.geometry?.geometryType.value as {
 							dimsMm: { x: number; y: number; z: number }
@@ -424,7 +484,7 @@
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'r',
-									ariaLabel: 'sphere dimensions radius value input',
+									ariaLabel: 'sphere dimensions radius value',
 									value: radiusMm ? radiusMm.toFixed(2) : '-',
 									onInput: (value) =>
 										detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
@@ -436,7 +496,7 @@
 			</WeblabActive>
 
 			<WeblabActive
-				experiment="MOTION_TOOLS_EDIT_FRAME"
+				experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}
 				renderIfActive={false}
 			>
 				{#if object.geometry}
@@ -511,5 +571,15 @@
 				Enter object view
 			</Button>
 		{/if}
+
+		<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
+			{#if showEditFrameOptions && environment.current.isStandalone}
+				<Button
+					variant="danger"
+					class="mt-2 w-full"
+					onclick={() => detailConfigUpdater.deleteFrame()}>Delete frame</Button
+				>
+			{/if}
+		</WeblabActive>
 	</div>
 {/if}

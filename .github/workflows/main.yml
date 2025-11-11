@@ -9,6 +9,9 @@ permissions: write-all
 jobs:
   deploy-and-publish:
     runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout 🛎️
@@ -39,3 +42,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract version from package.json
+        id: version
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Published version: $VERSION"
+
+  create-version-bump-pr:
+    needs: deploy-and-publish
+    if: needs.deploy-and-publish.outputs.published == 'true'
+    uses: ./.github/workflows/create-version-bump-pr.yml
+    with:
+      version: ${{ needs.deploy-and-publish.outputs.version }}
+    secrets:
+      APP_REPO_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
