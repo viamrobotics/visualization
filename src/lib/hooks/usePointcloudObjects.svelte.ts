@@ -65,6 +65,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 						return objects
 					}
 
+					console.log(responses)
+
 					for (const response of responses) {
 						let index1 = 1
 
