@@ -43,7 +43,7 @@ export const providePointclouds = (partID: () => string) => {
 					cameraClient.current !== undefined &&
 					disabledCameras.get(name) !== true,
 				refetchInterval: interval === 0 ? false : interval,
-				queryKey: ['partID', partID(), name, 'getPointCloud'],
+				queryKey: ['getPointCloud', 'partID', partID(), name],
 				queryFn: async (): Promise<WorldObject<PointsGeometry> | null> => {
 					if (!cameraClient.current) {
 						throw new Error('No camera client')

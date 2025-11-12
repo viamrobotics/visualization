@@ -69,7 +69,7 @@ export const provideGeometries = (partID: () => string) => {
 			const options = queryOptions({
 				enabled: interval !== -1 && client.current !== undefined,
 				refetchInterval: interval === 0 ? false : interval,
-				queryKey: ['partID', partID(), client.current?.name, 'getGeometries'],
+				queryKey: ['getGeometries', 'partID', partID(), client.current?.name],
 				queryFn: async (): Promise<{ name: string; geometries: Geometry[] }> => {
 					if (!client.current) {
 						throw new Error('No client')

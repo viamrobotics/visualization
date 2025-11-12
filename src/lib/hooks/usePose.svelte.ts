@@ -36,7 +36,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 				client.current !== undefined &&
 				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === 0 ? false : interval,
-			queryKey: ['partID', partID.current, client.current?.name, 'getPose', name(), parent()],
+			queryKey: ['getPose', 'partID', partID.current, client.current?.name, name(), parent()],
 			queryFn: async () => {
 				if (!client.current) {
 					throw new Error('No client')
