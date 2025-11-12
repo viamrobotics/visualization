@@ -30,10 +30,13 @@
 		blendFunction: BlendFunction.ALPHA,
 		edgeStrength: 5,
 		pulseSpeed: 0,
-		blur: false,
-		resolutionScale: 0.3,
+		blur: true,
 		visibleEdgeColor: selectionColor,
 		hiddenEdgeColor: selectionColor,
+	})
+
+	$effect(() => {
+		outlineEffect.resolution.setPreferredSize($size.width / 3, $size.height / 3)
 	})
 
 	$effect(() => {
