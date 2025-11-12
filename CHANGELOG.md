@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.17.0
+
+### Minor Changes
+
+- 66ff043: enable 3d models for arms
+
 ## 0.16.4
 
 ### Patch Changes
