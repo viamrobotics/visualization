@@ -10,6 +10,7 @@ import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { Color } from 'three'
 import { useFrames } from './useFrames.svelte'
+import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 
 const key = Symbol('geometries-context')
 
@@ -67,8 +68,8 @@ export const provideGeometries = (partID: () => string) => {
 
 		for (const client of clients) {
 			const options = queryOptions({
-				enabled: interval !== -1 && client.current !== undefined,
-				refetchInterval: interval === 0 ? false : interval,
+				enabled: interval !== RefetchRates.OFF && client.current !== undefined,
+				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
 				queryKey: ['getGeometries', 'partID', partID(), client.current?.name],
 				queryFn: async (): Promise<{ name: string; geometries: Geometry[] }> => {
 					if (!client.current) {

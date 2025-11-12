@@ -91,8 +91,3 @@
 		{/if}
 	</div>
 </label>
-
-<style>
-	:global(select) {
-	}
-</style>
