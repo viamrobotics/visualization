@@ -10,8 +10,10 @@ import { observe } from '@threlte/core'
 import { untrack } from 'svelte'
 import { useFrames } from './useFrames.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { useLogs } from './useLogs.svelte'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
+	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
 	const motionClient = useMotionClient()
@@ -43,6 +45,8 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 					throw new Error('No client')
 				}
 
+				logs.add(`Fetching pose for ${name()}...`)
+
 				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
 				const pose = await client.current.getPose(name(), resolvedParent ?? 'world', [])
 
@@ -61,6 +65,12 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 			}
 		}
 	)
+
+	$effect(() => {
+		if (query.current.error) {
+			logs.add(query.current.error.message, 'error')
+		}
+	})
 
 	return {
 		get current() {
