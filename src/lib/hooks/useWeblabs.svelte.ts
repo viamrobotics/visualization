@@ -75,5 +75,12 @@ export const provideWeblabs = () => {
 }
 
 export const useWeblabs = () => {
-	return getContext<Context>(WEBLABS_CONTEXT_KEY)
+	const context = getContext<Context>(WEBLABS_CONTEXT_KEY)
+	if (!context) {
+		return {
+			load: () => {},
+			isActive: () => false,
+		}
+	}
+	return context
 }
