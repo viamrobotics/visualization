@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.18.1
+
+### Patch Changes
+
+- 429b056: Add usePose to logs
+
 ## 0.18.0
 
 ### Minor Changes
