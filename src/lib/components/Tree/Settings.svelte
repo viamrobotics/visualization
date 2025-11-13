@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Select, Switch, Input } from '@viamrobotics/prime-core'
+	import { useQueryClient } from '@tanstack/svelte-query'
 	import RefreshRate from '../RefreshRate.svelte'
 	import { useMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import Drawer from './Drawer.svelte'
@@ -10,6 +11,7 @@
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 
+	const queryClient = useQueryClient()
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const settings = useSettings()
@@ -28,10 +30,16 @@
 			id={RefreshRates.poses}
 			label="Poses"
 			allowLive
+			onManualRefetch={() => {
+				queryClient.refetchQueries({ queryKey: ['getPose', 'getGeometries'], exact: false })
+			}}
 		/>
 		<RefreshRate
 			id={RefreshRates.pointclouds}
 			label="Pointclouds"
+			onManualRefetch={() => {
+				queryClient.refetchQueries({ queryKey: ['getPointCloud'], exact: false })
+			}}
 		/>
 		<div>
 			<div>Enabled pointcloud cameras</div>

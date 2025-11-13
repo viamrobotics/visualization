@@ -72,3 +72,11 @@ VITE_CONFIGS='
 The visualizer includes a golang package that allows executing commands to the visualizer.
 
 The list of available commands [can be found here](https://pkg.go.dev/github.com/viam-labs/motion-tools@v0.9.0/client/client).
+
+### Programmatic camera control
+
+It is possible to programmatically move the viewer camera and even modify the camera settings during runtime.
+
+To do this, open the Javascript console while using the visualizer and call methods or set properties on the `cameraControls` object.
+
+The following APIs are available: https://github.com/yomotsu/camera-controls?tab=readme-ov-file#properties
