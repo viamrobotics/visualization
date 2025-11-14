@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.18.2
+
+### Patch Changes
+
+- 610ba57: Remove hooks from Geometry component
+
 ## 0.18.1
 
 ### Patch Changes
