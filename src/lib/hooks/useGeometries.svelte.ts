@@ -11,6 +11,11 @@ import { resourceColors } from '$lib/color'
 import { Color } from 'three'
 import { useFrames } from './useFrames.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { trait } from 'koota'
+import { createPose } from '$lib/transform'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
 
 const key = Symbol('geometries-context')
 
@@ -97,6 +102,46 @@ export const provideGeometries = (partID: () => string) => {
 		queries.current.map((query) => query.error).filter((error) => error !== null)
 	)
 
+	const resources = useResourceByName()
+	const world = useWorld()
+
+	const GetGeometriesAPI = trait()
+
+	$effect(() => {
+		for (const query of queries.current) {
+			if (!query.data) continue
+
+			const entities = world.query(GetGeometriesAPI)
+
+			for (const geometry of query.data.geometries) {
+				const resourceName = resources.current[query.data.name]
+				const name = geometry.label ? geometry.label : `${query.data.name} geometry`
+
+				const existing = entities.find((entity) => entity.get(traits.Name) === name)
+				const pose = createPose(geometry.center)
+
+				if (existing) {
+					existing.set(traits.Pose, pose)
+				}
+
+				const entity = world.spawn(
+					traits.UUID,
+					traits.Name(name),
+					traits.Pose(pose),
+					GetGeometriesAPI
+				)
+
+				if (geometry.geometryType.case === 'box') {
+					entity.add(traits.Box(createBox(geometry.geometryType.value)))
+				} else if (geometry.geometryType.case === 'capsule') {
+					entity.add(traits.Capsule(createCapsule(geometry.geometryType.value)))
+				} else if (geometry.geometryType.case === 'sphere') {
+					entity.add(traits.Sphere(createSphere(geometry.geometryType.value)))
+				}
+			}
+		}
+	})
+
 	const geometries = $derived.by(() => {
 		const results: WorldObject[] = []
 
@@ -118,6 +163,7 @@ export const provideGeometries = (partID: () => string) => {
 							}
 						: undefined
 				)
+
 				results.push(worldObject)
 			}
 		}

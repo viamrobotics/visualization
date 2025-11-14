@@ -16,7 +16,6 @@ export const provideObjects = () => {
 	const frames = useFrames()
 	const geometries = useGeometries()
 	const statics = useStaticGeometries()
-	const drawAPI = useDrawAPI()
 	const points = usePointClouds()
 
 	const objects = $derived<WorldObject[]>([
@@ -24,13 +23,6 @@ export const provideObjects = () => {
 		...geometries.current,
 		...points.current,
 		...statics.current,
-		...drawAPI.frames,
-		...drawAPI.meshes,
-		...drawAPI.models,
-		...drawAPI.nurbs,
-		...drawAPI.points,
-		...drawAPI.lines,
-		...drawAPI.poses,
 	])
 
 	setContext<Context>(key, {

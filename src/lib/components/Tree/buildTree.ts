@@ -1,5 +1,7 @@
+import { traits } from '$lib/ecs'
 import type { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
+import type { Entity } from 'koota'
 
 export interface TreeNode {
 	id: string
@@ -12,31 +14,33 @@ export interface TreeNode {
  * Creates a tree representing parent child / relationships from a set of frames.
  */
 export const buildTreeNodes = (
-	objects: WorldObject[],
+	objects: Entity[],
 	worldStates: ReturnType<typeof useWorldStates>['current']
 ): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes = []
 
 	for (const object of objects) {
+		const name = object.get(traits.Name)
 		const node: TreeNode = {
-			name: object.name,
-			id: object.uuid,
+			name,
+			id: object.get(traits.UUID),
 			children: [],
-			href: `/selection/${object.name}`,
+			href: `/selection/${name}`,
 		}
 
-		nodeMap.set(object.name, node)
+		nodeMap.set(name, node)
 
-		if (object.referenceFrame === 'world') {
+		if (object.get(traits.Parent) === 'world') {
 			rootNodes.push(node)
 		}
 	}
 
 	for (const object of objects) {
-		if (object.referenceFrame && object.referenceFrame !== 'world') {
-			const parentNode = nodeMap.get(object.referenceFrame)
-			const child = nodeMap.get(object.name)
+		const parent = object.get(traits.Parent)
+		if (parent && parent !== 'world') {
+			const parentNode = nodeMap.get(parent)
+			const child = nodeMap.get(object.get(traits.Name))
 			if (parentNode && child) {
 				parentNode.children?.push(child)
 			}

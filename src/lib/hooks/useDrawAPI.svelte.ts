@@ -8,15 +8,17 @@ import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
-import { createPose, createPoseFromFrame } from '$lib/transform'
+import { createPose, createPoseFromFrame, poseToQuaternion, poseToVector3 } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { OrientationVector } from '$lib/lib'
 import { useThrelte } from '@threlte/core'
 import { trait, type Entity } from 'koota'
+import { parsePlyInput } from '$lib/ply'
 
 const colorUtil = new Color()
 const ov = new OrientationVector()
+const vec3 = new Vector3()
 const quaternion = new Quaternion()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
@@ -102,15 +104,13 @@ export const provideDrawAPI = () => {
 		for (const rawFrame of data) {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
-			ov.set(pose.oX, pose.oY, pose.oZ, pose.theta)
-			ov.toQuaternion(quaternion)
 
 			const entity = world.spawn(
 				traits.UUID,
-				traits.Name(frame),
-				traits.Parent({ parent: frame.parent }),
-				traits.Position({ x: pose.x * 0.001, y: pose.y * 0.001, z: pose.z * 0.001 }),
-				traits.Quaternion(quaternion)
+				traits.Name(frame.name),
+				traits.Parent(frame.parent),
+				traits.Pose(pose),
+				traits.DrawAPI
 			)
 
 			if (frame.geometry?.type === 'box') {
@@ -134,61 +134,59 @@ export const provideDrawAPI = () => {
 
 		const entity = world.spawn(
 			traits.UUID,
-			traits.Name({ name: `points ${++pointsIndex}` }),
-			traits.PointsGeometry({ geometry: positions })
+			traits.Name(`points ${++pointsIndex}`),
+			traits.PointsGeometry(positions),
+			traits.DrawAPI
 		)
 
 		if (colors) {
-			entity.add(traits.VertexColors({ colors: colors as Float32Array<ArrayBuffer> }))
+			entity.add(traits.VertexColors(colors as Float32Array<ArrayBuffer>))
 		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
 		const entities = world.query(traits.DrawAPI)
-		let entity = entities.find((entity) => entity.get(traits.Name)?.name === data.label)
-		const update = entity !== undefined
+		const existingEntity = entities.find((entity) => entity.get(traits.Name) === data.label)
 		const pose = createPose(data.center)
 
-		entity ??= world.spawn(
-			traits.UUID,
-			traits.Name({ name: data.label ?? ++geometryIndex }),
-			traits.Parent({ parent }),
-			traits.Position,
-			traits.Quaternion,
-			traits.Color(colorUtil.set(color).getRGB({ r: 0, g: 0, b: 0 }))
-		)
-
-		if (update) {
-			entity.set(traits.Position, {
-				x: data.center?.x * 0.001,
-				y: data.center?.y * 0.001,
-				z: data.center?.z * 0.001,
-			})
-
-			ov.set(pose.oX, pose.oY, pose.oZ, pose.theta)
-			ov.toQuaternion(quaternion)
-			entity.set(traits.Quaternion, quaternion)
+		if (existingEntity) {
+			existingEntity.set(traits.Pose, pose)
 			return
 		}
 
+		const entity = world.spawn(
+			traits.UUID,
+			traits.Name(data.label ?? ++geometryIndex),
+			traits.Parent(parent),
+			traits.Pose(pose),
+			traits.Color(colorUtil.set(color)),
+			traits.DrawAPI
+		)
+
 		if ('mesh' in data) {
-			entity.add(traits.BufferGeometry(/* data.mesh */))
+			entity.add(traits.BufferGeometry(parsePlyInput(data.mesh.mesh)))
 		} else if ('box' in data) {
 			entity.add(
-				traits.Box({ x: data.box.x * 0.001, y: data.box.y * 0.001, z: data.box.z * 0.001 })
+				traits.Box({
+					x: data.box.dimsMm.x * 0.001,
+					y: data.box.dimsMm.y * 0.001,
+					z: data.box.dimsMm.z * 0.001,
+				})
 			)
 		} else if ('sphere' in data) {
-			entity.add(traits.Sphere({ r: data.sphere.r * 0.001 }))
+			entity.add(traits.Sphere({ r: data.sphere.radiusMm * 0.001 }))
 		} else if ('capsule' in data) {
-			entity.add(traits.Capsule({ r: data.capsule.r * 0.001, l: data.capsule.l * 0.001 }))
+			entity.add(
+				traits.Capsule({ r: data.capsule.radiusMm * 0.001, l: data.capsule.lengthMm * 0.001 })
+			)
 		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawNurbs = (data: any, color: string) => {
 		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name)?.name === data.name)
+		const entity = entities.find((entity) => entity.get(traits.Name) === data.name)
 		entity?.destroy()
 
 		const controlPoints = data.ControlPts.map(
@@ -206,9 +204,10 @@ export const provideDrawAPI = () => {
 
 		world.spawn(
 			traits.UUID,
-			traits.Name({ name: data.Name }),
+			traits.Name(data.Name),
 			traits.Color(colorUtil.set(color)),
-			traits.LineGeometry({ geometry })
+			traits.LineGeometry(geometry),
+			traits.DrawAPI
 		)
 	}
 
@@ -223,11 +222,11 @@ export const provideDrawAPI = () => {
 		const arrowTraits = [
 			traits.UUID,
 			traits.Name,
-			traits.Position,
-			traits.Quaternion,
+			traits.Pose,
 			traits.Instance,
 			traits.Color,
 			traits.Arrow,
+			traits.DrawAPI,
 		] as const
 
 		for (let i = 0; i < nPoints; i += 1) {
@@ -235,36 +234,40 @@ export const provideDrawAPI = () => {
 			eids.push(entity.id())
 		}
 
-		world.query(...arrowTraits).useStores(([uuid, names, positions, quaternions, instances]) => {
-			for (let i = 0; i < nPoints; i += 1) {
-				const eid = eids[i]
-				uuid.uuid[eid] = MathUtils.generateUUID()
-				names.name[eid] = `pose ${++poseIndex}`
-				positions.x[eid] = reader.read() * 0.001
-				positions.y[eid] = reader.read() * 0.001
-				positions.z[eid] = reader.read() * 0.001
+		world
+			.query(...arrowTraits)
+			.select(traits.Name, traits.Pose, traits.Instance)
+			.useStores(([names, poses, instances]) => {
+				for (let i = 0; i < nPoints; i += 1) {
+					const eid = eids[i]
 
-				ov.set(reader.read(), reader.read(), reader.read())
-				ov.toQuaternion(quaternion)
-				quaternions.x[eid] = quaternion.x
-				quaternions.y[eid] = quaternion.y
-				quaternions.z[eid] = quaternion.z
-				quaternions.w[eid] = quaternion.w
+					names[eid] = `pose ${++poseIndex}`
+					poses.x[eid] = reader.read()
+					poses.y[eid] = reader.read()
+					poses.z[eid] = reader.read()
 
-				instances.id[eid] = batchedArrow.addArrow(
-					origin.set(ov.x, ov.y, ov.z),
-					direction.set(positions.x[eid], positions.y[eid], positions.z[eid]),
-					undefined,
-					undefined,
-					arrowHeadAtPose === 1
-				)
-			}
-		})
+					ov.set(reader.read(), reader.read(), reader.read())
+					ov.toQuaternion(quaternion)
+					poses.oX[eid] = ov.x
+					poses.oY[eid] = ov.y
+					poses.oZ[eid] = ov.z
+					poses.theta[eid] = ov.th
+
+					instances[eid] = batchedArrow.addArrow(
+						origin.set(ov.x, ov.y, ov.z),
+						direction.set(poses.x[eid], poses.y[eid], poses.z[eid]),
+						undefined,
+						undefined,
+						arrowHeadAtPose === 1
+					)
+				}
+			})
 
 		// @todo interleave to avoid a second loop
 		world
 			.query(...arrowTraits)
-			.useStores(([_uuid, _names, _positions, _quaternions, instances, colors]) => {
+			.select(traits.Instance, traits.Color)
+			.useStores(([instances, colors]) => {
 				for (let i = 0; i < nColors; i += 1) {
 					const eid = eids[i]
 					colors.r[eid] = reader.read()
@@ -272,7 +275,7 @@ export const provideDrawAPI = () => {
 					colors.b[eid] = reader.read()
 
 					batchedArrow.mesh.setColorAt(
-						instances.id[eid],
+						instances[eid],
 						color.setRGB(colors.r[eid], colors.g[eid], colors.b[eid])
 					)
 				}
@@ -290,7 +293,7 @@ export const provideDrawAPI = () => {
 		}
 
 		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name)?.name === label)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
 		entity?.destroy()
 
 		// Read counts
@@ -332,10 +335,11 @@ export const provideDrawAPI = () => {
 
 		world.spawn(
 			traits.UUID,
-			traits.Name({ name: label }),
+			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsGeometry({ geometry: positions }),
-			traits.VertexColors({ colors: getColors() })
+			traits.PointsGeometry(positions),
+			traits.VertexColors(getColors()),
+			traits.DrawAPI
 		)
 	}
 
@@ -348,7 +352,7 @@ export const provideDrawAPI = () => {
 		}
 
 		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name)?.name === label)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
 		entity?.destroy()
 
 		// Read counts
@@ -371,9 +375,10 @@ export const provideDrawAPI = () => {
 
 		world.spawn(
 			traits.UUID,
-			traits.Name({ name: label }),
-			traits.LineGeometry({ geometry: positions }),
-			traits.Color({ r, g, b })
+			traits.Name(label),
+			traits.LineGeometry(positions),
+			traits.Color({ r, g, b }),
+			traits.DrawAPI
 			// linedotcolor
 		)
 	}
@@ -392,7 +397,7 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.UUID, traits.Name({ name: gltf.scene.name }), traits.GLTF({ gltf }))
+		world.spawn(traits.UUID, traits.Name(gltf.scene.name), traits.GLTF({ gltf }), traits.DrawAPI)
 
 		URL.revokeObjectURL(url)
 	}
@@ -400,7 +405,7 @@ export const provideDrawAPI = () => {
 	const remove = (names: string[]) => {
 		for (const name of names) {
 			for (const entity of world.query(traits.DrawAPI)) {
-				if (entity.get(traits.Name)?.name === name) {
+				if (entity.get(traits.Name) === name) {
 					entity.destroy()
 				}
 			}

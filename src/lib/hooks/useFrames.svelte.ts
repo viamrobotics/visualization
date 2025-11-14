@@ -6,10 +6,14 @@ import { resourceNameToColor } from '$lib/color'
 import type { Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
-import { createPoseFromFrame } from '$lib/transform'
-import { createGeometryFromFrame } from '$lib/geometry'
+import { createPoseFromFrame, poseToQuaternion, poseToVector3 } from '$lib/transform'
+import { createGeometryFromFrame, createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { Quaternion, Vector3 } from 'three'
+import { parsePlyInput } from '$lib/ply'
+import type { Entity } from 'koota'
 
 interface FramesContext {
 	current: WorldObject[]
@@ -20,7 +24,11 @@ interface FramesContext {
 
 const key = Symbol('frames-context')
 
+const vec3 = new Vector3()
+const quaternion = new Quaternion()
+
 export const provideFrames = (partID: () => string) => {
+	const world = useWorld()
 	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
 	const machineStatus = useMachineStatus(partID)
@@ -46,6 +54,54 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
+	$effect.pre(() => {
+		const entities: Entity[] = []
+
+		for (const { frame } of query.current.data ?? []) {
+			if (frame === undefined) {
+				continue
+			}
+
+			const name = frame.referenceFrame
+			const resourceName = resourceByName.current[frame.referenceFrame]
+			const color = resourceNameToColor(resourceName)
+
+			const entity = world.spawn(
+				traits.UUID,
+				traits.Name(name),
+				traits.Parent(frame.poseInObserverFrame?.referenceFrame),
+				traits.Pose(frame.poseInObserverFrame?.pose)
+			)
+
+			if (color) {
+				entity.add(traits.Color(color))
+			}
+
+			if (frame.physicalObject?.center) {
+				entity.add(traits.Center(frame.physicalObject.center))
+			}
+
+			console.log('p', frame)
+			if (frame.physicalObject?.geometryType.case === 'box') {
+				entity.add(traits.Box(createBox(frame.physicalObject.geometryType.value)))
+			} else if (frame.physicalObject?.geometryType.case === 'capsule') {
+				entity.add(traits.Capsule(createCapsule(frame.physicalObject.geometryType.value)))
+			} else if (frame.physicalObject?.geometryType.case === 'sphere') {
+				entity.add(traits.Sphere(createSphere(frame.physicalObject.geometryType.value)))
+			} else if (frame.physicalObject?.geometryType.case === 'mesh') {
+				entity.add(
+					traits.BufferGeometry(parsePlyInput(frame.physicalObject.geometryType.value.mesh))
+				)
+			}
+		}
+
+		return () => {
+			for (const entity of entities) {
+				entity.destroy()
+			}
+		}
+	})
+
 	const machineFrames = $derived.by(() => {
 		const objects: Record<string, WorldObject> = {}
 
@@ -67,7 +123,8 @@ export const provideFrames = (partID: () => string) => {
 			)
 		}
 
-		return objects
+		return []
+		// return objects
 	})
 
 	const [configFrames, configUnsetFrames] = $derived.by(() => {

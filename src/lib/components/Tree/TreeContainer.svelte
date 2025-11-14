@@ -17,17 +17,19 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useQuery } from '$lib/ecs'
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
 
 	const partID = usePartID()
 	const selected = useSelected()
-	const objects = useObjects()
+
 	const draggable = useDraggable('treeview')
 	const worldStates = useWorldStates()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
+	const objects = useQuery()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',

@@ -20,7 +20,8 @@
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { traits, useQuery } from '$lib/ecs'
-	
+	import { Not } from 'koota'
+
 	const points = usePointClouds()
 	const frames = useFrames()
 	const geometries = useGeometries()
@@ -35,12 +36,11 @@
 		return pose ?? object.pose
 	}
 
-	const frameEntities = useQuery(traits.Parent)
-
-	frameEntities.current.
+	// Non instanced entities must be rendered individually in a loop
+	const nonInstanced = useQuery(Not(traits.Instance))
 </script>
 
-{#each frames.current as object (object.uuid)}
+<!-- {#each frames.current as object (object.uuid)}
 	<Pose
 		name={object.name}
 		parent={object.referenceFrame}
@@ -61,9 +61,9 @@
 			</Portal>
 		{/snippet}
 	</Pose>
-{/each}
+{/each} -->
 
-{#each geometries.current as object (object.uuid)}
+<!-- {#each geometries.current as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}
@@ -76,7 +76,7 @@
 			<Label text={object.name} />
 		</Frame>
 	</Portal>
-{/each}
+{/each} -->
 
 {#each worldStates.names as { name } (name)}
 	<WorldState worldObjects={worldStates.current[name].worldObjects} />
@@ -90,28 +90,22 @@
 	</Portal>
 {/each}
 
-{#each frameEntities.current as object (object.uuid)}
-	<Portal id={object.referenceFrame}>
-		<Frame
-			uuid={object.uuid}
-			name={object.name}
-			pose={object.pose}
-			geometry={object.geometry}
-			metadata={object.metadata}
-		>
-			<PortalTarget id={object.name} />
-			<Label text={object.name} />
+{#each nonInstanced.current as entity (entity.id())}
+	<Portal id={entity.get(traits.Parent)}>
+		<Frame {entity}>
+			<PortalTarget id={entity.get(traits.Name)} />
+			<Label text={entity.get(traits.Name)} />
 		</Frame>
 	</Portal>
 {/each}
 
-{#each drawAPI.points as object (object.uuid)}
+<!-- {#each drawAPI.points as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Pointcloud {object}>
 			<Label text={object.name} />
 		</Pointcloud>
 	</Portal>
-{/each}
+{/each} -->
 
 <T
 	name={batchedArrow.object3d.name}
@@ -120,7 +114,7 @@
 	bvh={{ enabled: false }}
 />
 
-{#each drawAPI.meshes as object (object.uuid)}
+<!-- {#each drawAPI.meshes as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}
@@ -133,9 +127,9 @@
 			<Label text={object.name} />
 		</Frame>
 	</Portal>
-{/each}
+{/each} -->
 
-{#each drawAPI.nurbs as object (object.uuid)}
+<!-- {#each drawAPI.nurbs as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}
@@ -148,17 +142,17 @@
 			<Label text={object.name} />
 		</Frame>
 	</Portal>
-{/each}
+{/each} -->
 
-{#each drawAPI.models as object (object.uuid)}
+<!-- {#each drawAPI.models as object (object.uuid)}
 	<Model {object}>
 		<PortalTarget id={object.name} />
 		<Label text={object.name} />
 	</Model>
-{/each}
+{/each} -->
 
-{#each drawAPI.lines as object (object.uuid)}
+<!-- {#each drawAPI.lines as object (object.uuid)}
 	<Line {object}>
 		<Label text={object.name} />
 	</Line>
-{/each}
+{/each} -->

@@ -1,4 +1,4 @@
-import { $internal, cacheQuery, type QueryParameter, type QueryResult } from 'koota'
+import { $internal as internal, cacheQuery, type QueryParameter, type QueryResult } from 'koota'
 import { useWorld } from './useWorld'
 
 export function useQuery<T extends QueryParameter[]>(
@@ -17,7 +17,7 @@ export function useQuery<T extends QueryParameter[]>(
 
 	$effect(() => {
 		// Using internals to get the query data.
-		const query = world[$internal].queriesHashMap.get(hash)!
+		const query = world[internal].queriesHashMap.get(hash)!
 		initialQueryVersion = query.version
 	})
 
@@ -35,7 +35,7 @@ export function useQuery<T extends QueryParameter[]>(
 
 		// Compare the initial version to the current version to
 		// see it the query has changed.
-		const query = world[$internal].queriesHashMap.get(hash)!
+		const query = world[internal].queriesHashMap.get(hash)!
 
 		if (query.version !== initialQueryVersion) {
 			entities = world.query(hash).sort()
@@ -53,10 +53,10 @@ export function useQuery<T extends QueryParameter[]>(
 			version += 1
 		}
 
-		world[$internal].resetSubscriptions.add(handler)
+		world[internal].resetSubscriptions.add(handler)
 
 		return () => {
-			world[$internal].resetSubscriptions.delete(handler)
+			world[internal].resetSubscriptions.delete(handler)
 		}
 	})
 
