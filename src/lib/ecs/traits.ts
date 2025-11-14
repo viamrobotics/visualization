@@ -1,6 +1,7 @@
 import { trait } from 'koota'
+import { MathUtils } from 'three'
 
-export const UUID = trait({ uuid: '' })
+export const UUID = trait({ uuid: () => MathUtils.generateUUID() })
 export const Name = trait({ name: '' })
 export const Parent = trait({ parent: 'world' })
 
@@ -18,9 +19,12 @@ export const Capsule = trait({ l: 0, r: 0 })
 export const Sphere = trait({ r: 0 })
 
 // Handles for typed arrays
-export const PointsGeometry = trait()
-export const BufferGeometry = trait()
-export const LineGeometry = trait()
-export const VertexColors = trait()
+export const PointsGeometry = trait({ geometry: () => new Float32Array() })
+export const BufferGeometry = trait({ geometry: () => new Float32Array() })
+export const LineGeometry = trait({ geometry: () => new Float32Array() })
+export const VertexColors = trait({ colors: () => new Float32Array() })
 
-export const GLTF = trait()
+export const GLTF = trait({ gltf: () => ({}) as any })
+
+// Objects created with the draw API
+export const DrawAPI = trait()

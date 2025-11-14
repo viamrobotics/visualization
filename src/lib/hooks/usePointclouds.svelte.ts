@@ -8,6 +8,7 @@ import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
+import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 
 const key = Symbol('pointcloud-context')
 
@@ -39,11 +40,11 @@ export const providePointclouds = (partID: () => string) => {
 
 			const options = queryOptions({
 				enabled:
-					interval !== -1 &&
+					interval !== RefetchRates.OFF &&
 					cameraClient.current !== undefined &&
 					disabledCameras.get(name) !== true,
-				refetchInterval: interval === 0 ? false : interval,
-				queryKey: ['partID', partID(), name, 'getPointCloud'],
+				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
+				queryKey: ['getPointCloud', 'partID', partID(), name],
 				queryFn: async (): Promise<WorldObject<PointsGeometry> | null> => {
 					if (!cameraClient.current) {
 						throw new Error('No camera client')

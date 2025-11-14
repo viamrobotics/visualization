@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Select, Switch, Input } from '@viamrobotics/prime-core'
+	import { useQueryClient } from '@tanstack/svelte-query'
 	import RefreshRate from '../RefreshRate.svelte'
 	import { useMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import Drawer from './Drawer.svelte'
@@ -7,7 +8,10 @@
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
+	import WeblabActive from '../weblab/WeblabActive.svelte'
+	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 
+	const queryClient = useQueryClient()
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const settings = useSettings()
@@ -26,10 +30,16 @@
 			id={RefreshRates.poses}
 			label="Poses"
 			allowLive
+			onManualRefetch={() => {
+				queryClient.refetchQueries({ queryKey: ['getPose', 'getGeometries'], exact: false })
+			}}
 		/>
 		<RefreshRate
 			id={RefreshRates.pointclouds}
 			label="Pointclouds"
+			onManualRefetch={() => {
+				queryClient.refetchQueries({ queryKey: ['getPointCloud'], exact: false })
+			}}
 		/>
 		<div>
 			<div>Enabled pointcloud cameras</div>
@@ -167,6 +177,26 @@
 			<label class="flex items-center justify-between gap-2">
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
+			<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS}>
+				<label class="flex items-center justify-between gap-2">
+					Render Arm Models
+					<Select
+						value={settings.current.renderArmModels}
+						onchange={(event: InputEvent) => {
+							if (event.target instanceof HTMLSelectElement) {
+								settings.current.renderArmModels = event.target.value as
+									| 'colliders'
+									| 'colliders+model'
+									| 'model'
+							}
+						}}
+					>
+						<option value="colliders">Colliders</option>
+						<option value="colliders+model">Colliders + Model</option>
+						<option value="model">Model</option>
+					</Select>
+				</label>
+			</WeblabActive>
 		</div>
 	</div>
 </Drawer>

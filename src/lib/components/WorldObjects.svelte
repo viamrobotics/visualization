@@ -19,8 +19,9 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { traits, useQuery } from '$lib/ecs'
+	
 	const points = usePointClouds()
-	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
@@ -33,6 +34,10 @@
 		}
 		return pose ?? object.pose
 	}
+
+	const frameEntities = useQuery(traits.Parent)
+
+	frameEntities.current.
 </script>
 
 {#each frames.current as object (object.uuid)}
@@ -85,7 +90,7 @@
 	</Portal>
 {/each}
 
-{#each drawAPI.frames as object (object.uuid)}
+{#each frameEntities.current as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<Frame
 			uuid={object.uuid}

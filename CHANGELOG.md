@@ -1,5 +1,27 @@
 # motion-tools
 
+## 0.18.1
+
+### Patch Changes
+
+- 429b056: Add usePose to logs
+
+## 0.18.0
+
+### Minor Changes
+
+- 4d33a82: Allow manual refetching pointclouds and poses
+
+### Patch Changes
+
+- 8b3cc87: fix: return fake default weblab if none provided
+
+## 0.17.0
+
+### Minor Changes
+
+- 66ff043: enable 3d models for arms
+
 ## 0.16.4
 
 ### Patch Changes

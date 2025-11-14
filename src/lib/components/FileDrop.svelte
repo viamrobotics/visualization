@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
+	import { traits, useWorld } from '$lib/ecs'
 	import { parsePcdInWorker, WorldObject } from '$lib/lib'
 	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
 	import { PLYLoader } from 'three/examples/jsm/Addons.js'
 
 	let { ...rest } = $props()
 
-	const { addPoints, addMesh } = useDrawAPI()
+	const world = useWorld()
 
 	type DropStates = 'inactive' | 'hovering' | 'loading'
 
@@ -102,6 +102,7 @@
 				if (ext === extensions.PCD) {
 					const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
 
+					world.spawn(traits.UUID)
 					addPoints(
 						new WorldObject(
 							file.name,
