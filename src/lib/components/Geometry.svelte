@@ -1,3 +1,9 @@
+<!--
+
+This component is consumed as a library export
+and should remain pure, i.e. no hooks should be used.
+
+-->
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
@@ -10,14 +16,7 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
-	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	const settings = useSettings()
 	const plyLoader = new PLYLoader()
-	const weblabs = useWeblabs()
-	const componentModels = use3DModels()
 
 	interface Props extends ThrelteProps<Group> {
 		uuid: string
@@ -25,8 +24,10 @@
 		geometry?: WorldObject['geometry']
 		pose: WorldObject['pose']
 		metadata: WorldObject['metadata']
-		children?: Snippet<[{ ref: Group }]>
 		color?: string
+		model?: Group
+		renderMode?: 'model' | 'colliders' | 'colliders+model'
+		children?: Snippet<[{ ref: Group }]>
 	}
 
 	let {
@@ -36,31 +37,14 @@
 		metadata,
 		pose,
 		color: overrideColor,
+		model,
+		renderMode = 'colliders',
 		children,
 		...rest
 	}: Props = $props()
 
-	const gltfModel = $derived.by(() => {
-		const [componentName, id] = name.split(':')
-		if (!componentName || !id) {
-			return undefined
-		}
-		return componentModels.current?.[componentName]?.[id]
-	})
-
 	const type = $derived(geometry?.geometryType?.case)
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
-
-	const renderModels = $derived(
-		(settings.current.renderArmModels === 'model' ||
-			settings.current.renderArmModels === 'colliders+model') &&
-			gltfModel
-	)
-	const renderPrimitives = $derived(
-		settings.current.renderArmModels === 'colliders' ||
-			settings.current.renderArmModels === 'colliders+model' ||
-			!gltfModel
-	)
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -74,16 +58,6 @@
 		}
 
 		return result
-	})
-
-	$effect.pre(() => {
-		if (
-			weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) &&
-			renderModels &&
-			!renderPrimitives
-		) {
-			geo = undefined
-		}
 	})
 
 	$effect.pre(() => {
@@ -139,11 +113,11 @@
 			{uuid}
 			bvh={{ enabled: false }}
 		>
-			{#if weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && renderModels}
-				<T is={gltfModel} />
+			{#if model && renderMode.includes('model')}
+				<T is={model} />
 			{/if}
 
-			{#if !weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) || renderPrimitives}
+			{#if renderMode.includes('colliders')}
 				{#if geometry.geometryType.case === 'bufferGeometry'}
 					<T
 						is={geometry.geometryType.value}
@@ -193,7 +167,7 @@
 					opacity={metadata.opacity ?? 0.7}
 				/>
 
-				{#if geo}
+				{#if geo && renderMode.includes('colliders')}
 					<T.LineSegments
 						raycast={() => null}
 						bvh={{ enabled: false }}
