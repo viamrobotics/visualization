@@ -1,3 +1,9 @@
+<!--
+
+This component is consumed as a library export
+and should remain pure, i.e. no hooks should be used.
+
+-->
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
