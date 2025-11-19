@@ -1,10 +1,8 @@
 import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { Matrix4, Object3D } from 'three'
-import { useObjects } from './useObjects.svelte'
-import type { WorldObject } from '$lib/WorldObject.svelte'
 import type { Entity } from 'koota'
-import { traits, useQuery, useWorld } from '$lib/ecs'
+import { traits, useQuery, useTrait } from '$lib/ecs'
 
 const hoverKey = Symbol('hover-context')
 const selectionKey = Symbol('selection-context')
@@ -15,7 +13,7 @@ const focusedObject3dKey = Symbol('focused-object-3d-context')
 
 interface SelectionContext {
 	readonly current: string | undefined
-	set(value?: string): void
+	setValue(uuid?: string): void
 }
 
 interface FocusContext {
@@ -28,11 +26,11 @@ interface HoverContext {
 	set(value?: string): void
 }
 
-interface SelectedWorldObjectContext {
+interface SelectedEntityContext {
 	readonly current: Entity | undefined
 }
 
-interface FocusedWorldObjectContext {
+interface FocusedEntityContext {
 	readonly current: Entity | undefined
 }
 
@@ -41,12 +39,14 @@ export const provideSelection = () => {
 	let focused = $state<string>()
 	let hovered = $state<string>()
 
+	$inspect(selected)
+
 	const selectionContext = {
 		get current() {
 			return selected
 		},
-		set(value?: string) {
-			selected = value
+		setValue(uuid?: string) {
+			selected = uuid
 		},
 	}
 	setContext<SelectionContext>(selectionKey, selectionContext)
@@ -72,34 +72,35 @@ export const provideSelection = () => {
 	setContext<HoverContext>(hoverKey, hoverContext)
 
 	const entities = useQuery()
-	const selectedObject = $derived(
-		entities.current.find((entity) => entity.get(traits.UUID) === selected)
+	const selectedEntity = $derived(
+		selected ? entities.current.find((entity) => entity.get(traits.UUID) === selected) : undefined
 	)
 
-	const selectedObjectContext = {
+	const selectedEntityContext = {
 		get current() {
-			return selectedObject
+			return selectedEntity
 		},
 	}
-	setContext<SelectedWorldObjectContext>(selectedObjectKey, selectedObjectContext)
+	setContext<SelectedEntityContext>(selectedObjectKey, selectedEntityContext)
 
-	const focusedObject = $derived(
-		entities.current.find((entity) => entity.get(traits.UUID) === focused)
+	const focusedEntity = $derived(
+		focused ? entities.current.find((entity) => entity.get(traits.UUID) === focused) : undefined
 	)
 
-	const focusedObjectContext = {
+	const focusedEntityContext = {
 		get current() {
-			return focusedObject
+			return focusedEntity
 		},
 	}
-	setContext<FocusedWorldObjectContext>(focusedObjectKey, focusedObjectContext)
+	setContext<FocusedEntityContext>(focusedObjectKey, focusedEntityContext)
 
 	const { scene } = useThrelte()
-	const uuid = $derived(focusedObject?.get(traits.UUID))
-	const focusedObject3d = $derived.by(() => {
-		if (!uuid) return
+	const uuid = useTrait(() => focusedEntity, traits.UUID)
 
-		const object = scene.getObjectByProperty('uuid', uuid)?.clone()
+	const focusedObject3d = $derived.by(() => {
+		if (!uuid.current) return
+
+		const object = scene.getObjectByProperty('uuid', uuid.current)?.clone()
 
 		object?.traverse((child) => {
 			if (isInstanceOf(child, 'LineSegments')) {
@@ -131,12 +132,12 @@ export const useFocused = () => {
 	return getContext<FocusContext>(focusKey)
 }
 
-export const useFocusedObject = (): { current: Entity | undefined } => {
-	return getContext<FocusedWorldObjectContext>(focusedObjectKey)
+export const useFocusedEntity = (): { current: Entity | undefined } => {
+	return getContext<FocusedEntityContext>(focusedObjectKey)
 }
 
-export const useSelectedObject = (): { current: Entity | undefined } => {
-	return getContext<SelectedWorldObjectContext>(selectedObjectKey)
+export const useSelectedEntity = (): { current: Entity | undefined } => {
+	return getContext<SelectedEntityContext>(selectedObjectKey)
 }
 
 export const useFocusedObject3d = (): { current: Object3D | undefined } => {
@@ -146,11 +147,12 @@ export const useFocusedObject3d = (): { current: Object3D | undefined } => {
 const matrix = new Matrix4()
 
 export const useSelectedObject3d = (): { current: Object3D | undefined } => {
-	const selectedObject = useSelectedObject()
+	const selectedEntity = useSelectedEntity()
 	const { scene } = useThrelte()
+	const uuid = useTrait(() => selectedEntity.current, traits.UUID)
 
 	const object = $derived.by(() => {
-		if (!selectedObject.current) {
+		if (!selectedEntity.current) {
 			return
 		}
 
@@ -164,7 +166,7 @@ export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 		// 	return proxy
 		// }
 
-		return scene.getObjectByProperty('uuid', selectedObject.current.get(traits.UUID))
+		return scene.getObjectByProperty('uuid', uuid.current)
 	})
 
 	return {

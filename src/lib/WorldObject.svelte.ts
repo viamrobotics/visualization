@@ -4,6 +4,8 @@ import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
+import type { Entity } from 'koota'
+import { traits } from './ecs'
 
 export type PointsGeometry = {
 	center: undefined
@@ -195,13 +197,20 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	return worldObject
 }
 
-export const determinePose = (object: WorldObject, pose: Pose | undefined): Pose => {
+export const determinePose = (entity: Entity, pose: Pose | undefined): Pose | undefined => {
 	if (pose === undefined) {
-		return object.localEditedPose
+		return entity.get(traits.EditedPose)
 	} else {
-		const poseNetwork = poseToMatrix(object.pose)
+		const entityPose = entity.get(traits.Pose)
+		const editedPose = entity.get(traits.EditedPose)
+
+		if (!entityPose || !editedPose) {
+			return
+		}
+
+		const poseNetwork = poseToMatrix(entityPose)
 		const poseUsePose = poseToMatrix(pose)
-		const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
+		const poseLocalEditedPose = poseToMatrix(editedPose)
 
 		const poseNetworkInverse = poseNetwork.invert()
 		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)

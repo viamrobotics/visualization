@@ -7,25 +7,30 @@
 		OrthographicCamera,
 	} from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { PointsGeometry, WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
+	import type { Entity } from 'koota'
+	import { traits, useTrait } from '$lib/ecs'
 
 	interface Props {
-		object: WorldObject<PointsGeometry>
+		entity: Entity
 		children?: Snippet
 	}
 
-	let { object, children }: Props = $props()
+	let { entity, children }: Props = $props()
 
 	const { camera } = useThrelte()
 	const settings = useSettings()
 
-	const colors = $derived(object.metadata.colors)
-	const pointSize = $derived(object.metadata.pointSize ?? settings.current.pointSize)
-	const positions = $derived(object.geometry?.geometryType?.value ?? new Float32Array())
+	const uuid = useTrait(() => entity, traits.UUID)
+	const name = useTrait(() => entity, traits.Name)
+	const pose = useTrait(() => entity, traits.Pose)
+	const positions = useTrait(() => entity, traits.PointsGeometry)
+	const color = useTrait(() => entity, traits.Color)
+	const colors = useTrait(() => entity, traits.VertexColors)
+	const pointSize = $derived(settings.current.pointSize)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const points = new Points()
@@ -38,27 +43,37 @@
 	})
 
 	$effect.pre(() => {
-		material.color.set(colors ? 0xffffff : (object.metadata.color ?? settings.current.pointColor))
+		if (colors) {
+			material.color.set(0xffffff)
+		} else if (color.current) {
+			material.color.setRGB(color.current.r, color.current.g, color.current.b)
+		} else {
+			material.color.set(settings.current.pointColor)
+		}
 	})
 
 	$effect.pre(() => {
-		geometry.setAttribute('position', new BufferAttribute(positions, 3))
+		if (positions.current) {
+			geometry.setAttribute('position', new BufferAttribute(positions.current, 3))
+		}
 	})
 
 	$effect.pre(() => {
 		material.vertexColors = colors !== undefined
 
-		if (colors) {
-			geometry.setAttribute('color', new BufferAttribute(colors, 3))
+		if (colors.current) {
+			geometry.setAttribute('color', new BufferAttribute(colors.current, 3))
 			geometry.attributes.color.needsUpdate = true
 		}
 	})
 
 	$effect.pre(() => {
-		poseToObject3d(object.pose, points)
+		if (pose.current) {
+			poseToObject3d(pose.current, points)
+		}
 	})
 
-	const events = useObjectEvents(() => object.uuid)
+	const events = useObjectEvents(() => uuid.current)
 
 	const { start, stop } = useTask(
 		() => {
@@ -84,8 +99,8 @@
 
 <T
 	is={points}
-	name={object.name}
-	uuid={object.uuid}
+	{name}
+	{uuid}
 	{...events}
 	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
 >

@@ -64,6 +64,7 @@ const defaults = (): Settings => ({
 
 	lineWidth: 0.005,
 	lineDotSize: 0.01,
+	lineDotColor: 'red',
 
 	enableMeasure: false,
 	enableLabels: false,

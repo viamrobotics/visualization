@@ -11,13 +11,15 @@
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import type { Pose } from '@viamrobotics/sdk'
 
 	interface Props {
 		entity: Entity
+		pose?: Pose
 		children?: Snippet<[{ ref: Object3D }]>
 	}
 
-	let { entity, children }: Props = $props()
+	let { entity, pose, children }: Props = $props()
 
 	const colorUtil = new Color()
 	const settings = useSettings()
@@ -55,6 +57,7 @@
 <Geometry
 	{entity}
 	{model}
+	{pose}
 	{children}
 	renderMode={settings.current.renderArmModels}
 	color={selected.current === uuid.current

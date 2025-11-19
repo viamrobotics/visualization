@@ -12,7 +12,7 @@ import { useFrames } from './useFrames.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useLogs } from './useLogs.svelte'
 
-export const usePose = (name: () => string, parent: () => string | undefined) => {
+export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
@@ -31,24 +31,30 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	)
 
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
+	const frameName = $derived(name())
 
 	const options = $derived(
 		queryOptions({
 			enabled:
+				frameName !== undefined &&
 				interval !== RefetchRates.OFF &&
 				client.current !== undefined &&
 				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
-			queryKey: ['getPose', 'partID', partID.current, client.current?.name, name(), parent()],
+			queryKey: ['getPose', 'partID', partID.current, client.current?.name, frameName, parent()],
 			queryFn: async () => {
 				if (!client.current) {
 					throw new Error('No client')
 				}
 
-				logs.add(`Fetching pose for ${name()}...`)
+				if (frameName === undefined) {
+					throw new Error('No frame name')
+				}
+
+				logs.add(`Fetching pose for ${frameName}...`)
 
 				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
-				const pose = await client.current.getPose(name(), resolvedParent ?? 'world', [])
+				const pose = await client.current.getPose(frameName, resolvedParent ?? 'world', [])
 
 				return pose
 			},

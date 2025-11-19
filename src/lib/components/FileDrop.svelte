@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { traits, useWorld } from '$lib/ecs'
-	import { parsePcdInWorker, WorldObject } from '$lib/lib'
+	import { parsePcdInWorker } from '$lib/lib'
 	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
 	import { PLYLoader } from 'three/examples/jsm/Addons.js'
 
@@ -102,32 +102,18 @@
 				if (ext === extensions.PCD) {
 					const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
 
-					world.spawn(traits.UUID)
-					addPoints(
-						new WorldObject(
-							file.name,
-							undefined,
-							undefined,
-							{
-								center: undefined,
-								geometryType: {
-									case: 'points',
-									value: result.positions,
-								},
-							},
-							result.colors ? { colors: result.colors } : undefined
-						)
+					world.spawn(
+						traits.UUID,
+						traits.Name(file.name),
+						traits.PointsGeometry(result.positions),
+						result.colors ? traits.VertexColors() : traits.Color
 					)
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				} else if (ext === extensions.PLY) {
-					const result = new PLYLoader().parse(arrayBuffer)
-					const worldObject = new WorldObject(file.name, undefined, undefined, {
-						center: undefined,
-						geometryType: { case: 'bufferGeometry', value: result },
-					})
+					const bufferGeometry = new PLYLoader().parse(arrayBuffer)
 
-					addMesh(worldObject)
+					world.spawn(traits.UUID, traits.Name(file.name), traits.BufferGeometry(bufferGeometry))
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				}

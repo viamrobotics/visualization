@@ -34,7 +34,7 @@ export const useObjectEvents = (uuid: () => string | undefined) => {
 			event.stopPropagation()
 
 			if (down.distanceToSquared(event.pointer) < 0.1) {
-				selected.set(uuid())
+				selected.setValue(uuid())
 			}
 		},
 	}

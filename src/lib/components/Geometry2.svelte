@@ -13,7 +13,7 @@ and should remain pure, i.e. no hooks should be used.
 <script lang="ts">
 	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
-	import { meshBounds, MeshLineMaterial } from '@threlte/extras'
+	import { meshBounds, MeshLineMaterial, MeshLineGeometry } from '@threlte/extras'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
@@ -21,11 +21,13 @@ and should remain pure, i.e. no hooks should be used.
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
+	import type { Pose } from '@viamrobotics/sdk'
 
 	interface Props extends ThrelteProps<Group> {
 		entity: Entity
 		color?: string
 		model?: Group
+		pose?: Pose
 		renderMode?: 'model' | 'colliders' | 'colliders+model'
 		children?: Snippet<[{ ref: Group }]>
 	}
@@ -35,6 +37,7 @@ and should remain pure, i.e. no hooks should be used.
 		color: overrideColor,
 		model,
 		renderMode = 'colliders',
+		pose,
 		children,
 		...rest
 	}: Props = $props()
@@ -96,10 +99,11 @@ and should remain pure, i.e. no hooks should be used.
 		}
 	})
 
-	const pose = useTrait(() => entity, traits.Pose)
+	const entityPose = useTrait(() => entity, traits.Pose)
+	const finalPose = $derived(pose ?? entityPose.current)
 	$effect.pre(() => {
-		if (pose.current) {
-			poseToObject3d(pose.current, group)
+		if (finalPose) {
+			poseToObject3d(finalPose, group)
 			invalidate()
 		}
 	})
@@ -142,7 +146,8 @@ and should remain pure, i.e. no hooks should be used.
 						/>
 					{/if}
 				{:else if geometryType === 'line'}
-					<!-- <MeshLineGeometry points={metadata.points} /> -->
+					{@const points = entity.get(traits.LineGeometry)}
+					<MeshLineGeometry points={points ?? []} />
 				{:else if geometryType === 'box'}
 					{@const box = entity.get(traits.Box)}
 					<T.BoxGeometry

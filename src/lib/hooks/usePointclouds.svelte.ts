@@ -5,19 +5,26 @@ import { fromStore, toStore } from 'svelte/store'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import type { Entity } from 'koota'
 
 const key = Symbol('pointcloud-context')
 
 interface Context {
-	current: WorldObject<PointsGeometry>[]
 	errors: Error[]
 }
 
+interface QueryResult {
+	name: string
+	positions: Float32Array<ArrayBuffer>
+	colors: Float32Array<ArrayBuffer> | null
+}
+
 export const providePointclouds = (partID: () => string) => {
+	const world = useWorld()
 	const logs = useLogs()
 	const { refreshRates, disabledCameras } = useMachineSettings()
 	const cameras = useResourceNames(partID, 'camera')
@@ -28,12 +35,9 @@ export const providePointclouds = (partID: () => string) => {
 
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.pointclouds)
-		const results: CreateQueryOptions<
-			WorldObject<PointsGeometry> | null,
-			Error,
-			WorldObject<PointsGeometry> | null,
-			string[]
-		>[] = []
+
+		const results: CreateQueryOptions<QueryResult | null, Error, QueryResult | null, string[]>[] =
+			[]
 
 		for (const cameraClient of clients) {
 			const name = cameraClient.current?.name ?? ''
@@ -45,7 +49,7 @@ export const providePointclouds = (partID: () => string) => {
 					disabledCameras.get(name) !== true,
 				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
 				queryKey: ['getPointCloud', 'partID', partID(), name],
-				queryFn: async (): Promise<WorldObject<PointsGeometry> | null> => {
+				queryFn: async (): Promise<QueryResult | null> => {
 					if (!cameraClient.current) {
 						throw new Error('No camera client')
 					}
@@ -57,13 +61,11 @@ export const providePointclouds = (partID: () => string) => {
 
 					const { positions, colors } = await parsePcdInWorker(new Uint8Array(response))
 
-					return new WorldObject(
-						`${name}:pointcloud`,
-						undefined,
+					return {
 						name,
-						{ center: undefined, geometryType: { case: 'points', value: positions } },
-						colors ? { colors } : undefined
-					)
+						positions,
+						colors,
+					}
 				},
 			})
 
@@ -84,8 +86,6 @@ export const providePointclouds = (partID: () => string) => {
 
 				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
 
-				updateUUIDs(data)
-
 				return {
 					data,
 					errors,
@@ -94,10 +94,29 @@ export const providePointclouds = (partID: () => string) => {
 		})
 	)
 
+	$effect(() => {
+		const entities: Entity[] = []
+		for (const { name, positions, colors } of queries.current.data) {
+			const entity = world.spawn(
+				traits.UUID,
+				traits.Name(`${name} pointcloud`),
+				traits.PointsGeometry(positions),
+				colors ? traits.VertexColors(colors) : traits.Color
+			)
+
+			entities.push(entity)
+		}
+
+		updateUUIDs(entities)
+
+		return () => {
+			for (const entity of entities) {
+				entity.destroy()
+			}
+		}
+	})
+
 	setContext<Context>(key, {
-		get current() {
-			return queries.current.data
-		},
 		get errors() {
 			return queries.current.errors
 		},

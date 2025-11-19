@@ -56,7 +56,7 @@
 			{rootNode}
 			selections={selected.current ? [selected.current] : []}
 			onSelectionChange={(event) => {
-				selected.set(event.selectedValue[0])
+				selected.setValue(event.selectedValue[0])
 			}}
 			onDragStart={draggable.onDragStart}
 			onDragEnd={draggable.onDragEnd}

@@ -2,24 +2,28 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import type { Snippet } from 'svelte'
 	import type { Object3D } from 'three'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import type { Entity } from 'koota'
+	import { traits, useTrait } from '$lib/ecs'
 
 	interface Props extends ThrelteProps<Object3D> {
-		object: WorldObject
+		entity: Entity
 		children?: Snippet
 	}
 
-	let { object, children, ...rest }: Props = $props()
+	let { entity, children, ...rest }: Props = $props()
 
-	const objectProps = useObjectEvents(() => object.uuid)
+	const uuid = useTrait(() => entity, traits.UUID)
+	const name = useTrait(() => entity, traits.Name)
+	const gltf = useTrait(() => entity, traits.GLTF)
+	const objectProps = useObjectEvents(() => uuid.current)
 </script>
 
-{#if object.metadata.gltf?.scene}
+{#if gltf.current?.scene}
 	<T
-		is={object.metadata.gltf.scene}
-		uuid={object.uuid}
-		name={object.name}
+		is={gltf.current.scene}
+		{uuid}
+		{name}
 		{...objectProps}
 		{...rest}
 	>

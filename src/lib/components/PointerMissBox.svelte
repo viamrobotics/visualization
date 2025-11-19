@@ -32,7 +32,7 @@
 			return
 		}
 
-		selected.set()
+		selected.setValue()
 	}}
 >
 	<T.BoxGeometry args={[size, size, size]} />

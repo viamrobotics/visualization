@@ -13,7 +13,7 @@ import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { OrientationVector } from '$lib/lib'
 import { useThrelte } from '@threlte/core'
-import { trait, type Entity } from 'koota'
+import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 
 const colorUtil = new Color()
@@ -105,16 +105,16 @@ export const provideDrawAPI = () => {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
 
-			const entity = world.spawn(
+			const entityTraits: ConfigurableTrait[] = [
 				traits.UUID,
 				traits.Name(frame.name),
 				traits.Parent(frame.parent),
 				traits.Pose(pose),
-				traits.DrawAPI
-			)
+				traits.DrawAPI,
+			]
 
 			if (frame.geometry?.type === 'box') {
-				entity.add(
+				entityTraits.push(
 					traits.Box({
 						x: frame.geometry.x * 0.001,
 						y: frame.geometry.y * 0.001,
@@ -122,10 +122,14 @@ export const provideDrawAPI = () => {
 					})
 				)
 			} else if (frame.geometry?.type === 'sphere') {
-				entity.add(traits.Sphere({ r: frame.geometry.r * 0.001 }))
+				entityTraits.push(traits.Sphere({ r: frame.geometry.r * 0.001 }))
 			} else if (frame.geometry?.type === 'capsule') {
-				entity.add(traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 }))
+				entityTraits.push(
+					traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 })
+				)
 			}
+
+			world.spawn(...entityTraits)
 		}
 	}
 
@@ -194,19 +198,12 @@ export const provideDrawAPI = () => {
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
 		const points = curve.getPoints(200)
-		const geometry = new Float32Array(points.length * 3)
-
-		let i = 0
-		for (const point of points) {
-			point.toArray(geometry, i)
-			i += 3
-		}
 
 		world.spawn(
 			traits.UUID,
 			traits.Name(data.Name),
 			traits.Color(colorUtil.set(color)),
-			traits.LineGeometry(geometry),
+			traits.LineGeometry(points),
 			traits.DrawAPI
 		)
 	}
@@ -368,16 +365,17 @@ export const provideDrawAPI = () => {
 		const dotB = reader.read()
 
 		// Read positions
-		const positions = new Float32Array(nPoints * 3)
-		for (let i = 0; i < nPoints * 3; i++) {
-			positions[i] = reader.read()
+		const points: Vector3[] = []
+		for (let i = 0; i < nPoints * 3; i += 3) {
+			points.push(new Vector3(reader.read(), reader.read(), reader.read()))
 		}
 
 		world.spawn(
 			traits.UUID,
 			traits.Name(label),
-			traits.LineGeometry(positions),
+
 			traits.Color({ r, g, b }),
+			traits.LineGeometry(points),
 			traits.DrawAPI
 			// linedotcolor
 		)
@@ -397,7 +395,7 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.UUID, traits.Name(gltf.scene.name), traits.GLTF({ gltf }), traits.DrawAPI)
+		world.spawn(traits.UUID, traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
 
 		URL.revokeObjectURL(url)
 	}
