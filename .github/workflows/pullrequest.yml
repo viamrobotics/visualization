@@ -83,3 +83,11 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+      - name: Test Coverage
+        run: npx vitest run --coverage
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
