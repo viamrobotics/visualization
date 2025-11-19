@@ -1,33 +1,22 @@
 import { getContext, setContext } from 'svelte'
-import { useFrames } from './useFrames.svelte'
-import { useGeometries } from './useGeometries.svelte'
-import { useStaticGeometries } from './useStaticGeometries.svelte'
-import { useDrawAPI } from './useDrawAPI.svelte'
-import { usePointClouds } from './usePointclouds.svelte'
-import type { WorldObject } from '$lib/WorldObject.svelte'
+
+import type { Entity } from 'koota'
+import { useWorld } from '$lib/ecs'
 
 const key = Symbol('objects-context')
 
 interface Context {
-	current: WorldObject[]
+	current: Entity[]
 }
 
 export const provideObjects = () => {
-	const frames = useFrames()
-	const geometries = useGeometries()
-	const statics = useStaticGeometries()
-	const points = usePointClouds()
+	const world = useWorld()
 
-	const objects = $derived<WorldObject[]>([
-		...frames.current,
-		...geometries.current,
-		...points.current,
-		...statics.current,
-	])
+	const entities = world.query()
 
 	setContext<Context>(key, {
 		get current() {
-			return objects
+			return entities as Entity[]
 		},
 	})
 }

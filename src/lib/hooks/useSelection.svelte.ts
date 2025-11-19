@@ -3,6 +3,8 @@ import { getContext, setContext } from 'svelte'
 import { Matrix4, Object3D } from 'three'
 import { useObjects } from './useObjects.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
+import type { Entity } from 'koota'
+import { traits, useQuery, useWorld } from '$lib/ecs'
 
 const hoverKey = Symbol('hover-context')
 const selectionKey = Symbol('selection-context')
@@ -27,11 +29,11 @@ interface HoverContext {
 }
 
 interface SelectedWorldObjectContext {
-	readonly current: WorldObject | undefined
+	readonly current: Entity | undefined
 }
 
 interface FocusedWorldObjectContext {
-	readonly current: WorldObject | undefined
+	readonly current: Entity | undefined
 }
 
 export const provideSelection = () => {
@@ -69,8 +71,10 @@ export const provideSelection = () => {
 	}
 	setContext<HoverContext>(hoverKey, hoverContext)
 
-	const objects = useObjects()
-	const selectedObject = $derived(objects.current.find((object) => object.uuid === selected))
+	const entities = useQuery()
+	const selectedObject = $derived(
+		entities.current.find((entity) => entity.get(traits.UUID) === selected)
+	)
 
 	const selectedObjectContext = {
 		get current() {
@@ -79,7 +83,9 @@ export const provideSelection = () => {
 	}
 	setContext<SelectedWorldObjectContext>(selectedObjectKey, selectedObjectContext)
 
-	const focusedObject = $derived(objects.current.find((object) => object.uuid === focused))
+	const focusedObject = $derived(
+		entities.current.find((entity) => entity.get(traits.UUID) === focused)
+	)
 
 	const focusedObjectContext = {
 		get current() {
@@ -89,7 +95,7 @@ export const provideSelection = () => {
 	setContext<FocusedWorldObjectContext>(focusedObjectKey, focusedObjectContext)
 
 	const { scene } = useThrelte()
-	const uuid = $derived(focusedObject?.uuid)
+	const uuid = $derived(focusedObject?.get(traits.UUID))
 	const focusedObject3d = $derived.by(() => {
 		if (!uuid) return
 
@@ -125,11 +131,11 @@ export const useFocused = () => {
 	return getContext<FocusContext>(focusKey)
 }
 
-export const useFocusedObject = (): { current: WorldObject | undefined } => {
+export const useFocusedObject = (): { current: Entity | undefined } => {
 	return getContext<FocusedWorldObjectContext>(focusedObjectKey)
 }
 
-export const useSelectedObject = (): { current: WorldObject | undefined } => {
+export const useSelectedObject = (): { current: Entity | undefined } => {
 	return getContext<SelectedWorldObjectContext>(selectedObjectKey)
 }
 
@@ -148,17 +154,17 @@ export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 			return
 		}
 
-		if (selectedObject.current.metadata.batched) {
-			const proxy = new Object3D()
-			const { id, object } = selectedObject.current.metadata.batched
+		// if (selectedObject.current.metadata.batched) {
+		// 	const proxy = new Object3D()
+		// 	const { id, object } = selectedObject.current.metadata.batched
 
-			object.getMatrixAt(id, matrix)
-			proxy.applyMatrix4(matrix)
+		// 	object.getMatrixAt(id, matrix)
+		// 	proxy.applyMatrix4(matrix)
 
-			return proxy
-		}
+		// 	return proxy
+		// }
 
-		return scene.getObjectByProperty('uuid', selectedObject.current.uuid)
+		return scene.getObjectByProperty('uuid', selectedObject.current.get(traits.UUID))
 	})
 
 	return {

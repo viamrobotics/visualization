@@ -28,5 +28,7 @@ export const VertexColors = trait(() => new Float32Array())
 // Files
 export const GLTF = trait(() => ({}) as any)
 
-// Objects created with the draw API
+// Objects from APIs
 export const DrawAPI = trait()
+export const GeometriesAPI = trait()
+export const FramesAPI = trait()

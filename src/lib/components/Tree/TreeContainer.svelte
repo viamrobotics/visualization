@@ -5,7 +5,6 @@
 	import { useSelected } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 	import { isEqual } from 'lodash-es'
-	import { useObjects } from '$lib/hooks/useObjects.svelte'
 	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
@@ -29,7 +28,7 @@
 	const worldStates = useWorldStates()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
-	const objects = useQuery()
+	const entities = useQuery()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -38,7 +37,7 @@
 		href: '/',
 	})
 
-	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current))
+	const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
 
 	$effect.pre(() => {
 		if (!isEqual(rootNode.children, nodes)) {

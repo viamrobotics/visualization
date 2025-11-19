@@ -1,7 +1,3 @@
-<script module>
-	const colorUtil = new Color()
-</script>
-
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
@@ -14,7 +10,7 @@
 	import { colors, darkenColor } from '$lib/color'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import type { Entity } from 'koota'
-	import { traits } from '$lib/ecs'
+	import { traits, useTrait } from '$lib/ecs'
 
 	interface Props {
 		entity: Entity
@@ -23,17 +19,20 @@
 
 	let { entity, children }: Props = $props()
 
+	const colorUtil = new Color()
 	const settings = useSettings()
 	const componentModels = use3DModels()
 	const selected = useSelected()
 	const weblabs = useWeblabs()
-	const uuid = $derived(entity.get(traits.UUID))
-	const name = $derived(entity.get(traits.Name))
-	const entityColor = $derived(entity.get(traits.Color))
-	const events = useObjectEvents(() => uuid!)
+	const uuid = useTrait(() => entity, traits.UUID)
+	const name = useTrait(() => entity, traits.Name)
+	const entityColor = useTrait(() => entity, traits.Color)
+	const events = useObjectEvents(() => uuid.current)
 
 	const color = $derived(
-		entityColor ? colorUtil.set(entityColor.r, entityColor.g, entityColor.b) : colors.default
+		entityColor.current
+			? colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+			: colors.default
 	)
 
 	const model = $derived.by(() => {
@@ -41,7 +40,11 @@
 			return
 		}
 
-		const [componentName, id] = name!.split(':')
+		if (!name.current) {
+			return
+		}
+
+		const [componentName, id] = name.current.split(':')
 		if (!componentName || !id) {
 			return
 		}
@@ -54,7 +57,7 @@
 	{model}
 	{children}
 	renderMode={settings.current.renderArmModels}
-	color={selected.current === uuid
+	color={selected.current === uuid.current
 		? `#${darkenColor(color, 75).getHexString()}`
 		: `#${colorUtil.set(color).getHexString()}`}
 	{...events}

@@ -1,17 +1,20 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { isInstanceOf, T, useTask } from '@threlte/core'
 	import { useSelectedObject, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
 	import { OBB } from 'three/addons/math/OBB.js'
+	import { traits } from '$lib/ecs'
 
 	const obb = new OBB()
 	const obbHelper = new OBBHelper()
 	const selected = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
+	$inspect(selected)
+
 	// Create a clone so that our bounding box doesn't include children
 	const clone = $derived.by(() => {
-		if (selected.current?.metadata.batched) {
+		if (isInstanceOf(selectedObject3d.current, 'BatchedMesh')) {
 			return
 		}
 
@@ -24,9 +27,13 @@
 				return
 			}
 
-			if (selected.current.metadata.batched) {
-				selected.current.metadata.getBoundingBoxAt?.(obb)
-				obbHelper.setFromOBB(obb)
+			if (isInstanceOf(selectedObject3d.current, 'BatchedMesh')) {
+				const instance = selected.current.get(traits.Instance)
+				if (instance) {
+					selectedObject3d.current.getBoundingBoxAt(instance, obb)
+					obbHelper.setFromOBB(obb)
+				}
+
 				return
 			}
 

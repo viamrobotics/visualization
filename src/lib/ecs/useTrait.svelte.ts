@@ -25,7 +25,7 @@ export type TraitRecord<T extends Trait | Schema> = T extends Trait
 	? TraitRecordFromSchema<T['schema']>
 	: TraitRecordFromSchema<T>
 
-export function isWorld(target: Entity | World): target is World {
+export function isWorld(target: Entity | World | null | undefined): target is World {
 	return typeof (target as World)?.spawn === 'function'
 }
 
@@ -39,62 +39,40 @@ export function useTrait<T extends Trait>(
 	// Memoize the target entity and a subscriber function.
 	// If the target is undefined or null, undefined is returned here so the hook can exit early.
 	const _target = $derived(target())
-	const memo = $derived(_target ? createSubscriptions(_target, trait, contextWorld) : undefined)
+
+	const world = isWorld(_target) ? _target : contextWorld
+	const entity = isWorld(_target) ? _target[internal].worldEntity : _target
 
 	// Initialize the state with the current value of the trait.
-	let value = $state<TraitRecord<T> | undefined>(
-		memo?.entity.has(trait) ? memo?.entity.get(trait) : undefined
+	let value = $state.raw<TraitRecord<T> | undefined>(
+		entity?.has(trait) ? entity.get(trait) : undefined
 	)
 
-	// Subscribe to changes in the trait.
-	$effect(() => {
-		if (!memo) {
-			return
-		}
-
-		const unsubscribe = memo.subscribe((next) => {
-			value = next
+	$effect.pre(() => {
+		const onChangeUnsub = world.onChange(trait, (e) => {
+			if (e === entity) value = e.get(trait)
 		})
-		return () => unsubscribe()
+
+		const onAddUnsub = world.onAdd(trait, (e) => {
+			if (e === entity) value = e.get(trait)
+		})
+
+		const onRemoveUnsub = world.onRemove(trait, (e) => {
+			if (e === entity) value = undefined
+		})
+
+		value = entity?.has(trait) ? entity.get(trait) : undefined
+
+		return () => {
+			onChangeUnsub()
+			onAddUnsub()
+			onRemoveUnsub()
+		}
 	})
 
 	return {
 		get current() {
 			return value
-		},
-	}
-}
-
-function createSubscriptions<T extends Trait>(
-	target: Entity | World,
-	trait: T,
-	contextWorld: World
-) {
-	const world = isWorld(target) ? target : contextWorld
-	const entity = isWorld(target) ? target[internal].worldEntity : target
-
-	return {
-		entity,
-		subscribe: (setValue: (value: TraitRecord<T> | undefined) => void) => {
-			const onChangeUnsub = world.onChange(trait, (e) => {
-				if (e === entity) setValue(e.get(trait))
-			})
-
-			const onAddUnsub = world.onAdd(trait, (e) => {
-				if (e === entity) setValue(e.get(trait))
-			})
-
-			const onRemoveUnsub = world.onRemove(trait, (e) => {
-				if (e === entity) setValue(undefined)
-			})
-
-			setValue(entity.has(trait) ? entity.get(trait) : undefined)
-
-			return () => {
-				onChangeUnsub()
-				onAddUnsub()
-				onRemoveUnsub()
-			}
 		},
 	}
 }

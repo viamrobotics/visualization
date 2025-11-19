@@ -3,7 +3,7 @@ import { useFocused, useSelected } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 
-export const useObjectEvents = (uuid: () => string) => {
+export const useObjectEvents = (uuid: () => string | undefined) => {
 	const selected = useSelected()
 	const focused = useFocused()
 	const visibility = useVisibility()
@@ -13,7 +13,7 @@ export const useObjectEvents = (uuid: () => string) => {
 
 	return {
 		get visible() {
-			return visibility.get(uuid())
+			return visibility.get(uuid() ?? '')
 		},
 		onpointerenter: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()

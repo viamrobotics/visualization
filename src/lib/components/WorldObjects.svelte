@@ -23,8 +23,7 @@
 	import { Not } from 'koota'
 
 	const points = usePointClouds()
-	const frames = useFrames()
-	const geometries = useGeometries()
+
 	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
 	const weblabs = useWeblabs()
@@ -36,8 +35,8 @@
 		return pose ?? object.pose
 	}
 
-	// Non instanced entities must be rendered individually in a loop
-	const nonInstanced = useQuery(Not(traits.Instance))
+	const frames = useQuery(traits.FramesAPI)
+	const geometries = useQuery(traits.GeometriesAPI)
 </script>
 
 <!-- {#each frames.current as object (object.uuid)}
@@ -90,7 +89,16 @@
 	</Portal>
 {/each}
 
-{#each nonInstanced.current as entity (entity.id())}
+{#each frames.current as entity (entity.id())}
+	<Portal id={entity.get(traits.Parent)}>
+		<Frame {entity}>
+			<PortalTarget id={entity.get(traits.Name)} />
+			<Label text={entity.get(traits.Name)} />
+		</Frame>
+	</Portal>
+{/each}
+
+{#each geometries.current as entity (entity.id())}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />

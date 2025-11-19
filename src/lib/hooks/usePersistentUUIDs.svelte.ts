@@ -1,16 +1,20 @@
-import type { WorldObject } from '$lib/WorldObject.svelte'
+import { traits } from '$lib/ecs'
+import type { Entity } from 'koota'
+import { MathUtils } from 'three'
 
 export const usePersistentUUIDs = () => {
 	const uuids = new Map<string, string>()
-	const updateUUIDs = (objects: WorldObject[]) => {
-		for (const object of objects) {
-			const ref = `${object.referenceFrame}-${object.name}`
 
-			if (uuids.has(ref) === false) {
-				uuids.set(ref, object.uuid)
+	const updateUUIDs = (entities: Entity[]) => {
+		for (const entity of entities) {
+			const ref = `${entity.get(traits.Parent)}-${entity.get(traits.Name)}`
+			const uuid = entity.get(traits.UUID)
+
+			if (uuid && uuids.has(ref) === false) {
+				uuids.set(ref, uuid)
 			}
 
-			object.uuid = uuids.get(ref) ?? object.uuid
+			entity.set(traits.UUID, uuids.get(ref) ?? uuid ?? MathUtils.generateUUID())
 		}
 	}
 

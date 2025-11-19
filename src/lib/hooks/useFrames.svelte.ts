@@ -11,7 +11,7 @@ import { createGeometryFromFrame, createBox, createCapsule, createSphere } from 
 import { useResourceByName } from './useResourceByName.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { Quaternion, Vector3 } from 'three'
+import { MathUtils, Quaternion, Vector3 } from 'three'
 import { parsePlyInput } from '$lib/ply'
 import type { Entity } from 'koota'
 
@@ -67,10 +67,11 @@ export const provideFrames = (partID: () => string) => {
 			const color = resourceNameToColor(resourceName)
 
 			const entity = world.spawn(
-				traits.UUID,
+				traits.UUID(MathUtils.generateUUID()),
 				traits.Name(name),
 				traits.Parent(frame.poseInObserverFrame?.referenceFrame),
-				traits.Pose(frame.poseInObserverFrame?.pose)
+				traits.Pose(frame.poseInObserverFrame?.pose),
+				traits.FramesAPI
 			)
 
 			if (color) {
@@ -81,7 +82,6 @@ export const provideFrames = (partID: () => string) => {
 				entity.add(traits.Center(frame.physicalObject.center))
 			}
 
-			console.log('p', frame)
 			if (frame.physicalObject?.geometryType.case === 'box') {
 				entity.add(traits.Box(createBox(frame.physicalObject.geometryType.value)))
 			} else if (frame.physicalObject?.geometryType.case === 'capsule') {
@@ -123,8 +123,7 @@ export const provideFrames = (partID: () => string) => {
 			)
 		}
 
-		return []
-		// return objects
+		return objects
 	})
 
 	const [configFrames, configUnsetFrames] = $derived.by(() => {
@@ -233,7 +232,7 @@ export const provideFrames = (partID: () => string) => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const _fragmentFrames = fragmentFrames
 		const results = Object.values(machineFrames)
-		updateUUIDs(results)
+		// updateUUIDs(results)
 		return results
 	})
 

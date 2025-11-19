@@ -2,7 +2,6 @@
 	module
 	lang="ts"
 >
-	const colorUtil = new Color()
 </script>
 
 <!--
@@ -14,7 +13,7 @@ and should remain pure, i.e. no hooks should be used.
 <script lang="ts">
 	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
-	import { meshBounds, MeshLineGeometry, MeshLineMaterial, Wireframe } from '@threlte/extras'
+	import { meshBounds, MeshLineMaterial } from '@threlte/extras'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
@@ -40,26 +39,39 @@ and should remain pure, i.e. no hooks should be used.
 		...rest
 	}: Props = $props()
 
+	const colorUtil = new Color()
+
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
 	const uuid = useTrait(() => entity, traits.UUID)
+	const entityColor = useTrait(() => entity, traits.Color)
+	const box = useTrait(() => entity, traits.Box)
+	const capsule = useTrait(() => entity, traits.Capsule)
+	const sphere = useTrait(() => entity, traits.Sphere)
+	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
+	const lineGeometry = useTrait(() => entity, traits.LineGeometry)
+	const pointsGeometry = useTrait(() => entity, traits.PointsGeometry)
 
 	const geometryType = $derived.by(() => {
-		if (entity.has(traits.Box)) return 'box'
-		if (entity.has(traits.Capsule)) return 'capsule'
-		if (entity.has(traits.Sphere)) return 'sphere'
-		if (entity.has(traits.BufferGeometry)) return 'buffer'
-		if (entity.has(traits.LineGeometry)) return 'line'
-		if (entity.has(traits.PointsGeometry)) return 'points'
+		if (box.current) return 'box'
+		if (capsule.current) return 'capsule'
+		if (sphere.current) return 'sphere'
+		if (bufferGeometry.current) return 'buffer'
+		if (lineGeometry.current) return 'line'
+		if (pointsGeometry.current) return 'points'
 	})
-	const entityColor = $derived.by(() => {
-		const result = entity.get(traits.Color)
 
-		if (result) {
-			return colorUtil.setRGB(result.r, result.g, result.b).getHexString()
+	const color = $derived.by(() => {
+		if (overrideColor) {
+			return overrideColor
 		}
+		if (entityColor.current) {
+			return colorUtil
+				.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+				.getHexString()
+		}
+		return colors.default
 	})
-	const color = $derived(overrideColor ?? entityColor ?? colors.default)
 
 	const group = new Group()
 	const mesh = $derived.by(() => {
@@ -97,8 +109,6 @@ and should remain pure, i.e. no hooks should be used.
 	const oncreate = (ref: BufferGeometry) => {
 		geo = ref
 	}
-
-	$inspect(geometryType)
 </script>
 
 <T
@@ -134,22 +144,22 @@ and should remain pure, i.e. no hooks should be used.
 				{:else if geometryType === 'line'}
 					<!-- <MeshLineGeometry points={metadata.points} /> -->
 				{:else if geometryType === 'box'}
-					{@const box = useTrait(() => entity, traits.Box)}
+					{@const box = entity.get(traits.Box)}
 					<T.BoxGeometry
-						args={[box.current?.x, box.current?.y, box.current?.z]}
+						args={[box?.x, box?.y, box?.z]}
 						{oncreate}
 					/>
 				{:else if geometryType === 'sphere'}
-					{@const sphere = useTrait(() => entity, traits.Sphere)}
+					{@const sphere = entity.get(traits.Sphere)}
 					<T.SphereGeometry
-						args={[sphere.current?.r]}
+						args={[sphere?.r]}
 						{oncreate}
 					/>
 				{:else if geometryType === 'capsule'}
-					{@const capsule = useTrait(() => entity, traits.Capsule)}
+					{@const capsule = entity.get(traits.Capsule)}
 					<T
 						is={CapsuleGeometry}
-						args={[capsule.current?.r, capsule.current?.l]}
+						args={[capsule?.r, capsule?.l]}
 						{oncreate}
 					/>
 				{/if}
@@ -169,11 +179,6 @@ and should remain pure, i.e. no hooks should be used.
 				/>
 
 				{#if geo && renderMode.includes('colliders')}
-					<!-- <Wireframe
-						thickness={0.01}
-						strokeOpacity={1}
-						stroke={darkenColor(color, 10)}
-					/> -->
 					<T.LineSegments
 						raycast={() => null}
 						bvh={{ enabled: false }}
