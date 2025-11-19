@@ -1,19 +1,17 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, Quaternion, MathUtils } from 'three'
+import { Color, Vector3, Vector4, Quaternion } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
-import { createGeometry } from '$lib/geometry'
-import { createPose, createPoseFromFrame, poseToQuaternion, poseToVector3 } from '$lib/transform'
+import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { OrientationVector } from '$lib/lib'
 import { useThrelte } from '@threlte/core'
-import { trait, type ConfigurableTrait, type Entity } from 'koota'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 
 const colorUtil = new Color()
@@ -216,65 +214,54 @@ export const provideDrawAPI = () => {
 
 		const eids: number[] = []
 
-		const arrowTraits = [
-			traits.UUID,
-			traits.Name,
-			traits.Pose,
-			traits.Instance,
-			traits.Color,
-			traits.Arrow,
-			traits.DrawAPI,
-		] as const
-
 		for (let i = 0; i < nPoints; i += 1) {
-			const entity = world.spawn(...arrowTraits)
+			const entity = world.spawn(
+				traits.UUID,
+				traits.Name(`pose ${++poseIndex}`),
+				traits.Pose,
+				traits.Instance,
+				traits.Color,
+				traits.Arrow,
+				traits.DrawAPI
+			)
+
 			eids.push(entity.id())
 		}
 
 		world
-			.query(...arrowTraits)
-			.select(traits.Name, traits.Pose, traits.Instance)
-			.useStores(([names, poses, instances]) => {
+			.query(traits.Arrow, traits.Pose, traits.Instance, traits.Color)
+			.select(traits.Pose, traits.Instance, traits.Color)
+			.useStores(([poses, instances, colors]) => {
 				for (let i = 0; i < nPoints; i += 1) {
 					const eid = eids[i]
+					origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
+					direction.set(reader.read(), reader.read(), reader.read())
 
-					names[eid] = `pose ${++poseIndex}`
-					poses.x[eid] = reader.read()
-					poses.y[eid] = reader.read()
-					poses.z[eid] = reader.read()
-
-					ov.set(reader.read(), reader.read(), reader.read())
-					ov.toQuaternion(quaternion)
-					poses.oX[eid] = ov.x
-					poses.oY[eid] = ov.y
-					poses.oZ[eid] = ov.z
-					poses.theta[eid] = ov.th
+					poses.x[eid] = origin.x
+					poses.y[eid] = origin.y
+					poses.z[eid] = origin.z
+					poses.oX[eid] = direction.x
+					poses.oY[eid] = direction.y
+					poses.oZ[eid] = direction.z
 
 					instances[eid] = batchedArrow.addArrow(
-						origin.set(ov.x, ov.y, ov.z),
-						direction.set(poses.x[eid], poses.y[eid], poses.z[eid]),
+						direction,
+						origin,
 						undefined,
 						undefined,
 						arrowHeadAtPose === 1
 					)
 				}
-			})
 
-		// @todo interleave to avoid a second loop
-		world
-			.query(...arrowTraits)
-			.select(traits.Instance, traits.Color)
-			.useStores(([instances, colors]) => {
 				for (let i = 0; i < nColors; i += 1) {
 					const eid = eids[i]
-					colors.r[eid] = reader.read()
-					colors.g[eid] = reader.read()
-					colors.b[eid] = reader.read()
-
-					batchedArrow.mesh.setColorAt(
-						instances[eid],
-						color.setRGB(colors.r[eid], colors.g[eid], colors.b[eid])
-					)
+					const r = reader.read()
+					const g = reader.read()
+					const b = reader.read()
+					colors.r[eid] = r
+					colors.g[eid] = g
+					colors.b[eid] = b
+					batchedArrow.mesh.setColorAt(instances[eid], colorUtil.set(r, g, b))
 				}
 			})
 
@@ -373,6 +360,7 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.UUID,
 			traits.Name(label),
+
 			traits.Color({ r, g, b }),
 			traits.LineGeometry(points),
 			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
