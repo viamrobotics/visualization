@@ -22,13 +22,14 @@ import { createBox, createCapsule, createSphere } from '$lib/geometry'
 const key = Symbol('geometries-context')
 
 interface Context {
-	current: WorldObject[]
 	errors: Error[]
 }
 
 const colorUtil = new Color()
 
 export const provideGeometries = (partID: () => string) => {
+	const resources = useResourceByName()
+	const world = useWorld()
 	const frames = useFrames()
 	const arms = useResourceNames(partID, 'arm')
 	const cameras = useResourceNames(partID, 'camera')
@@ -187,7 +188,9 @@ export const provideGeometries = (partID: () => string) => {
 		updateUUIDs(entities)
 
 		return () => {
-			for (const entity of entities) entity.destroy()
+			for (const entity of entities) {
+				entity.destroy()
+			}
 		}
 	})
 
@@ -246,51 +249,12 @@ export const provideGeometries = (partID: () => string) => {
 		return entities
 	}
 
-	const errors = []
-	// const errors = $derived(
-	// 	queries.current.map((query) => query.error).filter((error) => error !== null)
-	// )
-
-	const resources = useResourceByName()
-	const world = useWorld()
-
-	const geometries = []
-
-	// const geometries = $derived.by(() => {
-	// 	const results: WorldObject[] = []
-
-	// 	for (const query of queries.current) {
-	// 		if (!query.data) continue
-
-	// 		for (const geometry of query.data.geometries) {
-	// 			const resourceName = resourceNames.current.find((item) => item.name === query.data.name)
-	// 			const worldObject = new WorldObject(
-	// 				geometry.label ? geometry.label : `${query.data.name} geometry`,
-	// 				undefined,
-	// 				query.data.name,
-	// 				geometry,
-	// 				resourceName
-	// 					? {
-	// 							color: new Color(
-	// 								resourceColors[resourceName.subtype as keyof typeof resourceColors]
-	// 							),
-	// 						}
-	// 					: undefined
-	// 			)
-
-	// 			results.push(worldObject)
-	// 		}
-	// 	}
-
-	// 	updateUUIDs(results)
-
-	// 	return results
-	// })
+	const queries = $derived([...armQueries, ...cameraQueries, ...gantryQueries, ...gripperQueries])
+	const errors = $derived(
+		queries.map(([name, query]) => query.current).filter((error) => error !== null)
+	)
 
 	setContext<Context>(key, {
-		get current() {
-			return geometries
-		},
 		get errors() {
 			return errors
 		},

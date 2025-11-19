@@ -16,14 +16,15 @@
 
 	const settings = useSettings()
 	const points = useTrait(() => entity, traits.LineGeometry)
+	const dotColor = useTrait(() => entity, traits.DottedLineColor)
 </script>
 
 <Frame {entity} />
 
-{#if entity.metadata.lineDotColor && points.current}
+{#if dotColor.current && points.current}
 	<InstancedMesh frustumCulled={false}>
 		<T.SphereGeometry />
-		<T.MeshBasicMaterial color={object.metadata.lineDotColor} />
+		<T.MeshBasicMaterial color={[dotColor.current.r, dotColor.current.g, dotColor.current.b]} />
 
 		{#each points.current as { x, y, z }, i (i)}
 			<Instance

@@ -373,11 +373,10 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.UUID,
 			traits.Name(label),
-
 			traits.Color({ r, g, b }),
 			traits.LineGeometry(points),
+			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
 			traits.DrawAPI
-			// linedotcolor
 		)
 	}
 
@@ -404,6 +403,10 @@ export const provideDrawAPI = () => {
 		for (const name of names) {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
+					const id = entity.get(traits.Instance)
+					if (id) {
+						batchedArrow.removeArrow(id)
+					}
 					entity.destroy()
 				}
 			}
@@ -412,6 +415,10 @@ export const provideDrawAPI = () => {
 
 	const removeAll = () => {
 		for (const entity of world.query(traits.DrawAPI)) {
+			const id = entity.get(traits.Instance)
+			if (id) {
+				batchedArrow.removeArrow(id)
+			}
 			entity.destroy()
 		}
 

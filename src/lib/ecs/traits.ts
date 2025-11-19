@@ -19,6 +19,8 @@ export const Box = trait({ x: 0, y: 0, z: 0 })
 export const Capsule = trait({ l: 0, r: 0 })
 export const Sphere = trait({ r: 0 })
 
+export const DottedLineColor = trait({ r: 0, g: 0, b: 0 })
+
 export const LineGeometry = trait(() => [] as Vector3[])
 export const PointsGeometry = trait(() => new Float32Array())
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
