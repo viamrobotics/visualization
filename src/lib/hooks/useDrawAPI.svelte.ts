@@ -217,7 +217,7 @@ export const provideDrawAPI = () => {
 		for (let i = 0; i < nPoints; i += 1) {
 			const entity = world.spawn(
 				traits.UUID,
-				traits.Name(`pose ${++poseIndex}`),
+				traits.Name(`Pose ${++poseIndex}`),
 				traits.Pose,
 				traits.Instance,
 				traits.Color,

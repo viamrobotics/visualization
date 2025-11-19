@@ -58,8 +58,6 @@
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 
-	$inspect(entity, entity?.has(traits.Name), name.current)
-
 	const subtype = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $state<'box' | 'sphere' | 'capsule' | 'none'>(
@@ -568,7 +566,7 @@
 			<Button
 				class="w-full"
 				icon="image-filter-center-focus"
-				onclick={() => focused.set(uuid)}
+				onclick={() => focused.set(uuid.current)}
 			>
 				Enter object view
 			</Button>
