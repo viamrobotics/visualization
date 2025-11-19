@@ -20,7 +20,7 @@ export function useQuery<T extends QueryParameter[]>(
 	let entities = $state.raw<QueryResult<T>>(world.query(hash).sort())
 
 	// Subscribe to changes.
-	$effect.pre(() => {
+	$effect(() => {
 		const unsubAdd = world.onQueryAdd(hash, () => {
 			entities = world.query(hash).sort()
 		})
@@ -44,7 +44,7 @@ export function useQuery<T extends QueryParameter[]>(
 	})
 
 	// Force reattaching event listeners when the world is reset.
-	$effect.pre(() => {
+	$effect(() => {
 		const handler = () => {
 			version += 1
 		}

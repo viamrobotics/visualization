@@ -30,9 +30,11 @@
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { traits, useTrait } from '$lib/ecs'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 
 	const { ...rest } = $props()
 
+	const resourceByName = useResourceByName()
 	const focused = useFocused()
 	const focusedEntity = useFocusedEntity()
 	const focusedObject3d = useFocusedObject3d()
@@ -55,6 +57,10 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+
+	$inspect(entity, entity?.has(traits.Name), name.current)
+
+	const subtype = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $state<'box' | 'sphere' | 'capsule' | 'none'>(
 		(() => {
@@ -245,7 +251,8 @@
 				>
 					<Icon name="drag" />
 				</button>
-				{name}
+				<strong>{name.current}</strong>
+				{subtype?.subtype}
 			</div>
 		</div>
 

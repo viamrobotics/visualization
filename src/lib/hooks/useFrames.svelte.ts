@@ -6,12 +6,11 @@ import { resourceNameToColor } from '$lib/color'
 import type { Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
-import { createPoseFromFrame, poseToQuaternion, poseToVector3 } from '$lib/transform'
+import { createPoseFromFrame } from '$lib/transform'
 import { createGeometryFromFrame, createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { MathUtils, Quaternion, Vector3 } from 'three'
 import { parsePlyInput } from '$lib/ply'
 import type { Entity } from 'koota'
 
@@ -23,9 +22,6 @@ interface FramesContext {
 }
 
 const key = Symbol('frames-context')
-
-const vec3 = new Vector3()
-const quaternion = new Quaternion()
 
 export const provideFrames = (partID: () => string) => {
 	const world = useWorld()
@@ -67,7 +63,7 @@ export const provideFrames = (partID: () => string) => {
 			const color = resourceNameToColor(resourceName)
 
 			const entity = world.spawn(
-				traits.UUID(MathUtils.generateUUID()),
+				traits.UUID,
 				traits.Name(name),
 				traits.Parent(frame.poseInObserverFrame?.referenceFrame),
 				traits.Pose(frame.poseInObserverFrame?.pose),
@@ -94,6 +90,8 @@ export const provideFrames = (partID: () => string) => {
 				)
 			}
 		}
+
+		updateUUIDs(entities)
 
 		return () => {
 			for (const entity of entities) {

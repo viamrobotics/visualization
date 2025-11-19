@@ -41,7 +41,7 @@
 	<WorldState worldObjects={worldStates.current[name].worldObjects} />
 {/each}
 
-{#each primitives.current as entity (entity.id())}
+{#each primitives.current as entity}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -50,7 +50,7 @@
 	</Portal>
 {/each}
 
-{#each points.current as entity (entity.id())}
+{#each points.current as entity}
 	<Portal id={entity.get(traits.Parent)}>
 		<Pointcloud {entity}>
 			<Label text={entity.get(traits.Name)} />
@@ -58,7 +58,7 @@
 	</Portal>
 {/each}
 
-{#each frames.current as entity (entity.id())}
+{#each frames.current as entity}
 	{@const name = entity.get(traits.Name)}
 	{@const parent = entity.get(traits.Parent)}
 
@@ -81,7 +81,7 @@
 	</Portal>
 {/each}
 
-{#each geometries.current as entity (entity.id())}
+{#each geometries.current as entity}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -90,7 +90,7 @@
 	</Portal>
 {/each}
 
-{#each lines.current as entity (entity.id())}
+{#each lines.current as entity}
 	<Portal id={entity.get(traits.Parent)}>
 		<Line {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -99,7 +99,7 @@
 	</Portal>
 {/each}
 
-{#each gltfs.current as entity (entity.id())}
+{#each gltfs.current as entity}
 	<Model {entity}>
 		<PortalTarget id={entity.get(traits.Name)} />
 		<Label text={entity.get(traits.Name)} />

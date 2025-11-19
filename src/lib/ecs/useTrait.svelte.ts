@@ -33,22 +33,17 @@ export function useTrait<T extends Trait>(
 	target: () => Entity | World | undefined | null,
 	trait: T
 ): { current: TraitRecord<T> | undefined } {
-	// Get the world from context -- it may be used.
 	const contextWorld = useWorld()
-
-	// Memoize the target entity and a subscriber function.
-	// If the target is undefined or null, undefined is returned here so the hook can exit early.
-	const _target = $derived(target())
-
-	const world = isWorld(_target) ? _target : contextWorld
-	const entity = isWorld(_target) ? _target[internal].worldEntity : _target
+	const targetEntity = $derived(target())
+	const world = isWorld(targetEntity) ? targetEntity : contextWorld
+	const entity = isWorld(targetEntity) ? targetEntity[internal].worldEntity : targetEntity
 
 	// Initialize the state with the current value of the trait.
 	let value = $state.raw<TraitRecord<T> | undefined>(
 		entity?.has(trait) ? entity.get(trait) : undefined
 	)
 
-	$effect.pre(() => {
+	$effect(() => {
 		const onChangeUnsub = world.onChange(trait, (e) => {
 			if (e === entity) value = e.get(trait)
 		})

@@ -1,18 +1,16 @@
 import { ArmClient, CameraClient, GantryClient, Geometry, GripperClient } from '@viamrobotics/sdk'
-import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/svelte-query'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { setContext, getContext, untrack } from 'svelte'
-import { fromStore, toStore } from 'svelte/store'
-import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
+import { setContext, getContext } from 'svelte'
+import { useMachineSettings } from './useMachineSettings.svelte'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
-import { Color, MathUtils } from 'three'
+import { Color } from 'three'
 import { useFrames } from './useFrames.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
@@ -20,7 +18,6 @@ import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait, Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
-import { observe } from '@threlte/core'
 
 const key = Symbol('geometries-context')
 
@@ -33,7 +30,6 @@ const colorUtil = new Color()
 
 export const provideGeometries = (partID: () => string) => {
 	const frames = useFrames()
-	const resourceNames = useResourceNames(partID)
 	const arms = useResourceNames(partID, 'arm')
 	const cameras = useResourceNames(partID, 'camera')
 	const grippers = useResourceNames(partID, 'gripper')
