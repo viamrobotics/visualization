@@ -64,7 +64,7 @@ func TestDrawGeometries(t *testing.T) {
 }
 
 func TestDrawGeometriesUpdating(t *testing.T) {
-	t.Run("DrawGeometries updating", func(t *testing.T) {
+	t.Run("DrawGeometriesUpdating", func(t *testing.T) {
 
 		for i := 0; i < 100; i++ {
 			box1, err1 := spatialmath.NewBox(
