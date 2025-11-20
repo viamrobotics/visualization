@@ -3,7 +3,7 @@
 	import { T } from '@threlte/core'
 	import { Grid, interactivity, PerfMonitor, bvh } from '@threlte/extras'
 	import { PortalTarget } from './portal'
-	import WorldObjects from '$lib/components/WorldObjects.svelte'
+	import Entities from '$lib/components/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
@@ -92,7 +92,8 @@
 		<!-- Capture both "default" and "world" portals -->
 		<PortalTarget />
 		<PortalTarget id="world" />
-		<WorldObjects />
+
+		<Entities />
 	</T.Group>
 
 	{@render children?.()}

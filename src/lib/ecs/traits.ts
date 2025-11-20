@@ -1,9 +1,13 @@
-import { trait } from 'koota'
+import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { relation, trait } from 'koota'
 import { MathUtils, BufferGeometry as ThreeBufferGeometry, type Vector3 } from 'three'
 
 export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
+
+// Signals that this entity is a reference frame in 3D space
+export const ReferenceFrame = trait()
 
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
@@ -26,10 +30,11 @@ export const PointsGeometry = trait(() => new Float32Array())
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 export const VertexColors = trait(() => new Float32Array())
 
-// Files
-export const GLTF = trait(() => ({}) as any)
+export const GLTF = trait(() => ({}) as ThreeGltf)
 
-// Objects from APIs
+// Signals that this entity comes from an API
 export const DrawAPI = trait()
 export const GeometriesAPI = trait()
 export const FramesAPI = trait()
+
+export const ChildOf = relation()

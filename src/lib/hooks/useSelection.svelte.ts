@@ -4,98 +4,50 @@ import { Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
 import { traits, useQuery, useTrait } from '$lib/ecs'
 
-const hoverKey = Symbol('hover-context')
 const selectionKey = Symbol('selection-context')
 const focusKey = Symbol('focus-context')
 const selectedObjectKey = Symbol('selected-frame-context')
 const focusedObjectKey = Symbol('focused-frame-context')
 const focusedObject3dKey = Symbol('focused-object-3d-context')
 
-interface SelectionContext {
-	readonly current: string | undefined
-	setValue(uuid?: string): void
-}
-
-interface FocusContext {
-	readonly current: string | undefined
-	set(value?: string): void
-}
-
-interface HoverContext {
-	readonly current: string | undefined
-	set(value?: string): void
-}
-
 interface SelectedEntityContext {
 	readonly current: Entity | undefined
+	set(entity?: Entity): void
 }
 
 interface FocusedEntityContext {
 	readonly current: Entity | undefined
+	set(entity?: Entity): void
 }
 
 export const provideSelection = () => {
-	let selected = $state<string>()
-	let focused = $state<string>()
-	let hovered = $state<string>()
+	let selected = $state.raw<Entity>()
+	let focused = $state.raw<Entity>()
 
 	$inspect(selected)
 
-	const selectionContext = {
+	const selectedEntityContext = {
 		get current() {
 			return selected
 		},
-		setValue(uuid?: string) {
-			selected = uuid
-		},
-	}
-	setContext<SelectionContext>(selectionKey, selectionContext)
-
-	const focusContext = {
-		get current() {
-			return focused
-		},
-		set(value?: string) {
-			focused = value
-		},
-	}
-	setContext<FocusContext>(focusKey, focusContext)
-
-	const hoverContext = {
-		get current() {
-			return hovered
-		},
-		set(value?: string) {
-			hovered = value
-		},
-	}
-	setContext<HoverContext>(hoverKey, hoverContext)
-
-	const entities = useQuery()
-	const selectedEntity = $derived(
-		selected ? entities.current.find((entity) => entity.get(traits.UUID) === selected) : undefined
-	)
-
-	const selectedEntityContext = {
-		get current() {
-			return selectedEntity
+		set(entity: Entity) {
+			selected = entity
 		},
 	}
 	setContext<SelectedEntityContext>(selectedObjectKey, selectedEntityContext)
 
-	const focusedEntity = $derived(
-		focused ? entities.current.find((entity) => entity.get(traits.UUID) === focused) : undefined
-	)
-
 	const focusedEntityContext = {
 		get current() {
-			return focusedEntity
+			return focused
+		},
+		set(entity: Entity) {
+			focused = entity
 		},
 	}
 	setContext<FocusedEntityContext>(focusedObjectKey, focusedEntityContext)
 
 	const { scene } = useThrelte()
-	const uuid = useTrait(() => focusedEntity, traits.UUID)
+	const uuid = useTrait(() => focused, traits.UUID)
 
 	const focusedObject3d = $derived.by(() => {
 		if (!uuid.current) return
@@ -118,25 +70,16 @@ export const provideSelection = () => {
 	})
 
 	return {
-		selection: selectionContext,
-		focus: focusContext,
-		hover: hoverContext,
+		selection: selectedEntityContext,
+		focus: focusedEntityContext,
 	}
 }
 
-export const useSelected = () => {
-	return getContext<SelectionContext>(selectionKey)
-}
-
-export const useFocused = () => {
-	return getContext<FocusContext>(focusKey)
-}
-
-export const useFocusedEntity = (): { current: Entity | undefined } => {
+export const useFocusedEntity = (): FocusedEntityContext => {
 	return getContext<FocusedEntityContext>(focusedObjectKey)
 }
 
-export const useSelectedEntity = (): { current: Entity | undefined } => {
+export const useSelectedEntity = (): SelectedEntityContext => {
 	return getContext<SelectedEntityContext>(selectedObjectKey)
 }
 

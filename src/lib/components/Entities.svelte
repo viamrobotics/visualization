@@ -7,7 +7,7 @@
 	import Frame from './Frame.svelte'
 	import Line from './Line.svelte'
 	import Pointcloud from './Pointcloud.svelte'
-	import Model from './WorldObject.svelte'
+	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
 	import WorldState from './WorldState.svelte'
 	import { determinePose } from '$lib/WorldObject.svelte'
@@ -29,6 +29,7 @@
 		return pose ?? object.get(traits.Pose)
 	}
 
+	console.log('hi')
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)
@@ -41,7 +42,7 @@
 	<WorldState worldObjects={worldStates.current[name].worldObjects} />
 {/each}
 
-{#each primitives.current as entity (entity.id())}
+{#each primitives.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -50,7 +51,7 @@
 	</Portal>
 {/each}
 
-{#each points.current as entity (entity.id())}
+{#each points.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Pointcloud {entity}>
 			<Label text={entity.get(traits.Name)} />
@@ -58,7 +59,7 @@
 	</Portal>
 {/each}
 
-{#each frames.current as entity (entity.id())}
+{#each frames.current as entity (entity)}
 	{@const name = entity.get(traits.Name)}
 	{@const parent = entity.get(traits.Parent)}
 
@@ -81,7 +82,7 @@
 	</Portal>
 {/each}
 
-{#each geometries.current as entity (entity.id())}
+{#each geometries.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -90,7 +91,7 @@
 	</Portal>
 {/each}
 
-{#each lines.current as entity (entity.id())}
+{#each lines.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Line {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -99,11 +100,11 @@
 	</Portal>
 {/each}
 
-{#each gltfs.current as entity (entity.id())}
-	<Model {entity}>
+{#each gltfs.current as entity (entity)}
+	<GLTF {entity}>
 		<PortalTarget id={entity.get(traits.Name)} />
 		<Label text={entity.get(traits.Name)} />
-	</Model>
+	</GLTF>
 {/each}
 
 <T

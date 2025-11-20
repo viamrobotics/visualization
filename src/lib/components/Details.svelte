@@ -17,7 +17,6 @@
 	import {
 		useSelectedEntity,
 		useFocusedEntity,
-		useFocused,
 		useFocusedObject3d,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
@@ -35,7 +34,6 @@
 	const { ...rest } = $props()
 
 	const resourceByName = useResourceByName()
-	const focused = useFocused()
 	const focusedEntity = useFocusedEntity()
 	const focusedObject3d = useFocusedObject3d()
 	const frames = useFrames()
@@ -49,7 +47,6 @@
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
 
-	const uuid = useTrait(() => entity, traits.UUID)
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
@@ -531,7 +528,7 @@
 							</div>
 							<div>
 								<span class="text-subtle-2">l</span>
-								{capsule.l.toFixed(2)}
+								{capsule.current.l.toFixed(2)}
 							</div>
 						</div>
 					</div>
@@ -553,12 +550,12 @@
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
-		{#if focused.current}
+		{#if focusedEntity.current}
 			<Button
 				class="w-full"
 				icon="arrow-left"
 				variant="dark"
-				onclick={() => focused.set()}
+				onclick={() => focusedEntity.set()}
 			>
 				Exit object view
 			</Button>
@@ -566,7 +563,7 @@
 			<Button
 				class="w-full"
 				icon="image-filter-center-focus"
-				onclick={() => focused.set(uuid.current)}
+				onclick={() => focusedEntity.set(entity)}
 			>
 				Enter object view
 			</Button>

@@ -106,7 +106,7 @@
 						traits.UUID,
 						traits.Name(file.name),
 						traits.PointsGeometry(result.positions),
-						result.colors ? traits.VertexColors() : traits.Color
+						result.colors ? traits.VertexColors(result.colors) : traits.Color
 					)
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })

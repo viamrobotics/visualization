@@ -9,14 +9,17 @@
 	import { VirtualList } from 'svelte-virtuallists'
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
+	import type { Entity } from 'koota'
+	import { traits } from '$lib/ecs'
+	import { MathUtils } from 'three'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
 
 	interface Props {
 		rootNode: TreeNode
-		selections: string[]
-		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
+		selections: Entity[]
+		onSelectionChange?: (event: tree.SelectionChangeDetails<number>) => void
 		onDragStart?: (event: MouseEvent) => void
 		onDragEnd?: (event: MouseEvent) => void
 	}
@@ -24,8 +27,8 @@
 	let { rootNode, selections, onSelectionChange, onDragStart, onDragEnd }: Props = $props()
 
 	const collection = tree.collection<TreeNode>({
-		nodeToValue: (node) => node.id,
-		nodeToString: (node) => node.name,
+		nodeToValue: (node) => node.entity.get(traits.UUID) ?? MathUtils.generateUUID(),
+		nodeToString: (node) => node.entity.get(traits.Name) ?? '',
 		rootNode,
 	})
 
@@ -68,7 +71,7 @@
 })}
 	{@const nodeProps = { indexPath, node }}
 	{@const nodeState = api.getNodeState(nodeProps)}
-	{@const isVisible = visibility.get(node.id) ?? true}
+	{@const isVisible = visibility.get(node.entity) ?? true}
 	{@const { selected } = nodeState}
 
 	{#if nodeState.isBranch}
@@ -93,14 +96,14 @@
 					class="flex items-center"
 					{...api.getBranchTextProps(nodeProps)}
 				>
-					{node.name}
+					{node.entity.get(traits.Name)}
 				</span>
 
 				<button
 					class="text-gray-6"
 					onclick={(event) => {
 						event.stopPropagation()
-						visibility.set(node.id, !isVisible)
+						visibility.set(node.entity, !isVisible)
 					}}
 				>
 					{#if isVisible}
@@ -113,7 +116,7 @@
 			<div {...api.getBranchContentProps(nodeProps)}>
 				<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
 
-				{#each children as node, index (node.id)}
+				{#each children as node, index (node.entity)}
 					{@render treeNode({ node, indexPath: [...indexPath, index], api })}
 				{/each}
 			</div>
@@ -124,14 +127,14 @@
 			{...api.getItemProps(nodeProps)}
 		>
 			<span class="flex items-center gap-1.5">
-				{node.name}
+				{node.entity.get(traits.Name)}
 			</span>
 
 			<button
 				class="text-gray-6"
 				onclick={(event) => {
 					event.stopPropagation()
-					visibility.set(node.id, !isVisible)
+					visibility.set(node.entity, !isVisible)
 				}}
 			>
 				{#if isVisible}
@@ -153,7 +156,7 @@
 			>
 				<Icon name="drag" />
 			</button>
-			<h3 {...api.getLabelProps() as object}>{rootNode.name}</h3>
+			<h3 {...api.getLabelProps() as object}>{rootNode.entity.get(traits.Name)}</h3>
 		</div>
 
 		<div {...api.getTreeProps()}>
@@ -174,7 +177,7 @@
 					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
 					class="overflow-auto"
 				>
-					{#each rootChildren as node, index (node.id)}
+					{#each rootChildren as node, index (node.entity)}
 						{@render treeNode({ node, indexPath: [Number(index)], api })}
 					{/each}
 				</div>

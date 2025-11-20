@@ -73,7 +73,7 @@
 		}
 	})
 
-	const events = useObjectEvents(() => uuid.current)
+	const events = useObjectEvents(() => entity)
 
 	const { start, stop } = useTask(
 		() => {

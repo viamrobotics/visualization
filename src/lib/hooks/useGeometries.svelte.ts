@@ -1,23 +1,20 @@
 import { ArmClient, CameraClient, GantryClient, Geometry, GripperClient } from '@viamrobotics/sdk'
-import {
-	createResourceClient,
-	createResourceQuery,
-	useResourceNames,
-} from '@viamrobotics/svelte-sdk'
-import { setContext, getContext } from 'svelte'
-import { useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject } from '$lib/WorldObject.svelte'
+import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { setContext, getContext, untrack } from 'svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { Color } from 'three'
 import { useFrames } from './useFrames.svelte'
-import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import type { ConfigurableTrait, Entity } from 'koota'
+import type { Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { type CreateQueryOptions, createQueries, queryOptions } from '@tanstack/svelte-query'
+import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { fromStore, toStore } from 'svelte/store'
 
 const key = Symbol('geometries-context')
 
@@ -44,170 +41,87 @@ export const provideGeometries = (partID: () => string) => {
 	)
 
 	const armClients = $derived(
-		arms.current.map((arm) =>
-			createResourceClient(
-				ArmClient,
-				() => partID(),
-				() => arm.name
-			)
-		)
+		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
 	)
 	const gripperClients = $derived(
 		grippers.current.map((gripper) =>
-			createResourceClient(
-				GripperClient,
-				() => partID(),
-				() => gripper.name
-			)
+			createResourceClient(GripperClient, partID, () => gripper.name)
 		)
 	)
 	const cameraClients = $derived(
-		cameras.current.map((camera) =>
-			createResourceClient(
-				CameraClient,
-				() => partID(),
-				() => camera.name
-			)
-		)
+		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 	const gantryClients = $derived(
-		gantries.current.map((gantry) =>
-			createResourceClient(
-				GantryClient,
-				() => partID(),
-				() => gantry.name
-			)
-		)
+		gantries.current.map((gantry) => createResourceClient(GantryClient, partID, () => gantry.name))
 	)
 
-	const refetchInterval = $derived(refreshRates.get('Poses') ?? false)
+	const clients = $derived(
+		[...armClients, ...gripperClients, ...cameraClients, ...gantryClients].filter((client) => {
+			return frames.current.some((frame) => frame.name === client.current?.name)
+		})
+	)
 
-	const armQueries = $derived.by(() => {
-		const results = []
-		for (const client of armClients) {
-			if (client.current && framesByName[client.current.name]) {
-				results.push([
-					client.current.name,
-					createResourceQuery(client, 'getGeometries', () => ({ refetchInterval })),
-				] as const)
-			}
+	const options = $derived.by(() => {
+		const interval = refreshRates.get(RefreshRates.poses)
+		const results: CreateQueryOptions<
+			{
+				name: string
+				geometries: Geometry[]
+			},
+			Error,
+			{
+				name: string
+				geometries: Geometry[]
+			},
+			(string | undefined)[]
+		>[] = []
+
+		for (const client of clients) {
+			const options = queryOptions({
+				enabled: interval !== RefetchRates.OFF && client.current !== undefined,
+				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
+				queryKey: ['getGeometries', 'partID', partID(), client.current?.name],
+				queryFn: async (): Promise<{ name: string; geometries: Geometry[] }> => {
+					if (!client.current) {
+						throw new Error('No client')
+					}
+
+					logs.add(`Fetching geometries for ${client.current.name}...`)
+
+					const geometries = await client.current.getGeometries()
+
+					return { name: client.current.name, geometries }
+				},
+			})
+
+			results.push(options)
 		}
 
 		return results
 	})
 
-	const cameraQueries = $derived.by(() => {
-		const results = []
-		for (const client of cameraClients) {
-			if (client.current && framesByName[client.current.name]) {
-				results.push([
-					client.current.name,
-					createResourceQuery(client, 'getGeometries', () => ({ refetchInterval })),
-				] as const)
-			}
-		}
-
-		return results
-	})
-
-	const gripperQueries = $derived.by(() => {
-		const results = []
-		for (const client of gripperClients) {
-			if (client.current && framesByName[client.current.name]) {
-				results.push([
-					client.current.name,
-					createResourceQuery(client, 'getGeometries', () => ({ refetchInterval })),
-				] as const)
-			}
-		}
-
-		return results
-	})
-
-	const gantryQueries = $derived.by(() => {
-		const results = []
-		for (const client of gantryClients) {
-			if (client.current && framesByName[client.current.name]) {
-				results.push([
-					client.current.name,
-					createResourceQuery(client, 'getGeometries', () => ({ refetchInterval })),
-				] as const)
-			}
-		}
-
-		return results
-	})
+	const queries = fromStore(createQueries({ queries: toStore(() => options) }))
 
 	const { updateUUIDs } = usePersistentUUIDs()
 
 	$effect(() => {
-		let entities: Entity[] = []
+		let entities: Entity[][] = []
 
-		for (const [name, query] of armQueries) {
-			if (query.current.data) {
-				entities = [...entities, ...createGeometries(name, query.current.data)]
+		for (const query of queries.current) {
+			if (query.data) {
+				untrack(() => {
+					const geometries = createGeometries(query.data.name, query.data.geometries)
+					updateUUIDs(geometries)
+					entities.push(geometries)
+				})
 			}
 		}
-
-		updateUUIDs(entities)
 
 		return () => {
-			for (const entity of entities) {
-				entity.destroy()
-			}
-		}
-	})
-
-	$effect(() => {
-		let entities: Entity[] = []
-
-		for (const [name, query] of cameraQueries) {
-			if (query.current.data) {
-				entities = [...entities, ...createGeometries(name, query.current.data)]
-			}
-		}
-
-		updateUUIDs(entities)
-
-		return () => {
-			for (const entity of entities) {
-				entity.destroy()
-			}
-		}
-	})
-
-	$effect(() => {
-		let entities: Entity[] = []
-
-		for (const [name, query] of gripperQueries) {
-			if (query.current.data) {
-				entities = [...entities, ...createGeometries(name, query.current.data)]
-			}
-		}
-
-		updateUUIDs(entities)
-
-		return () => {
-			for (const entity of entities) {
-				entity.destroy()
-			}
-		}
-	})
-
-	$effect(() => {
-		let entities: Entity[] = []
-
-		for (const [name, query] of gantryQueries) {
-			if (query.current.data) {
-				entities = [...entities, ...createGeometries(name, query.current.data)]
-			}
-		}
-
-		updateUUIDs(entities)
-
-		return () => {
-			for (const entity of entities) {
-				entity.destroy()
+			for (const geometries of entities) {
+				for (const entity of geometries) {
+					entity.destroy()
+				}
 			}
 		}
 	})
@@ -220,28 +134,26 @@ export const provideGeometries = (partID: () => string) => {
 			const name = geometry.label ? geometry.label : `${resource} geometry`
 			const pose = createPose(geometry.center)
 
-			const entityTraits: ConfigurableTrait[] = [
+			const entity = world.spawn(
 				traits.UUID,
 				traits.Name(name),
 				traits.Parent(resource),
 				traits.Pose(pose),
-				traits.GeometriesAPI,
-			]
+				traits.GeometriesAPI
+			)
 
 			if (resourceName) {
 				const subtype = resourceName.subtype as keyof typeof resourceColors
-				entityTraits.push(traits.Color(colorUtil.set(resourceColors[subtype])))
+				entity.add(traits.Color(colorUtil.set(resourceColors[subtype])))
 			}
 
 			if (geometry.geometryType.case === 'box') {
-				entityTraits.push(traits.Box(createBox(geometry.geometryType.value)))
+				entity.add(traits.Box(createBox(geometry.geometryType.value)))
 			} else if (geometry.geometryType.case === 'capsule') {
-				entityTraits.push(traits.Capsule(createCapsule(geometry.geometryType.value)))
+				entity.add(traits.Capsule(createCapsule(geometry.geometryType.value)))
 			} else if (geometry.geometryType.case === 'sphere') {
-				entityTraits.push(traits.Sphere(createSphere(geometry.geometryType.value)))
+				entity.add(traits.Sphere(createSphere(geometry.geometryType.value)))
 			}
-
-			const entity = world.spawn(...entityTraits)
 
 			entities.push(entity)
 		}
@@ -249,9 +161,8 @@ export const provideGeometries = (partID: () => string) => {
 		return entities
 	}
 
-	const queries = $derived([...armQueries, ...cameraQueries, ...gantryQueries, ...gripperQueries])
 	const errors = $derived(
-		queries.map(([name, query]) => query.current).filter((error) => error !== null)
+		queries.current.map((query) => query.error).filter((error) => error !== null)
 	)
 
 	setContext<Context>(key, {

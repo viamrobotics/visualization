@@ -72,7 +72,8 @@ export const provideFrames = (partID: () => string) => {
 				traits.Name(name),
 				traits.Parent(frame.poseInObserverFrame?.referenceFrame),
 				traits.Pose(frame.poseInObserverFrame?.pose),
-				traits.FramesAPI
+				traits.FramesAPI,
+				traits.ReferenceFrame
 			)
 
 			if (color) {
@@ -94,9 +95,9 @@ export const provideFrames = (partID: () => string) => {
 					traits.BufferGeometry(parsePlyInput(frame.physicalObject.geometryType.value.mesh))
 				)
 			}
-		}
 
-		updateUUIDs(entities)
+			entities.push(entity)
+		}
 
 		return () => {
 			for (const entity of entities) {

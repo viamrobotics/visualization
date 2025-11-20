@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TransformControls } from '@threlte/extras'
-	import { useSelected } from '$lib/hooks/useSelection.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { PressedKeys } from 'runed'
@@ -12,7 +12,7 @@
 	const settings = useSettings()
 	const transformControls = useTransformControls()
 	const geometries = useStaticGeometries()
-	const selected = useSelected()
+	const selectedEntity = useSelectedEntity()
 
 	const mode = $derived(settings.current.transformMode)
 
@@ -22,11 +22,11 @@
 	const keys = new PressedKeys()
 
 	keys.onKeys('=', () => geometries.add())
-	keys.onKeys('-', () => geometries.remove(selected.current ?? ''))
+	keys.onKeys('-', () => geometries.remove(selectedEntity.current ?? ''))
 
 	$effect(() => {
 		settings.current.transforming = geometries.current.some(
-			(geometry) => selected.current === geometry.uuid
+			(geometry) => selectedEntity.current === geometry.uuid
 		)
 	})
 </script>
@@ -40,7 +40,7 @@
 		metadata={object.metadata}
 	>
 		{#snippet children({ ref })}
-			{#if selected.current === object.uuid}
+			{#if selectedEntity.current === object.uuid}
 				{#key mode}
 					<TransformControls
 						object={ref}

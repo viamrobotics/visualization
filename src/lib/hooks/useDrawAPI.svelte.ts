@@ -109,6 +109,7 @@ export const provideDrawAPI = () => {
 				traits.Parent(frame.parent),
 				traits.Pose(pose),
 				traits.DrawAPI,
+				traits.ReferenceFrame,
 			]
 
 			if (frame.geometry?.type === 'box') {
@@ -136,7 +137,7 @@ export const provideDrawAPI = () => {
 
 		const entity = world.spawn(
 			traits.UUID,
-			traits.Name(`points ${++pointsIndex}`),
+			traits.Name(`Points ${++pointsIndex}`),
 			traits.PointsGeometry(positions),
 			traits.DrawAPI
 		)
@@ -360,7 +361,6 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.UUID,
 			traits.Name(label),
-
 			traits.Color({ r, g, b }),
 			traits.LineGeometry(points),
 			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),

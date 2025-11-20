@@ -16,7 +16,7 @@
 	const uuid = useTrait(() => entity, traits.UUID)
 	const name = useTrait(() => entity, traits.Name)
 	const gltf = useTrait(() => entity, traits.GLTF)
-	const objectProps = useObjectEvents(() => uuid.current)
+	const objectProps = useObjectEvents(() => entity)
 </script>
 
 {#if gltf.current?.scene}

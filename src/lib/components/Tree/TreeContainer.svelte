@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Tree from './Tree.svelte'
-
 	import { buildTreeNodes, type TreeNode } from './buildTree'
-	import { useSelected } from '$lib/hooks/useSelection.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 	import { isEqual } from 'lodash-es'
 	import Settings from './Settings.svelte'
@@ -16,27 +15,28 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
-	import { useQuery } from '$lib/ecs'
+	import { traits, useQuery, useWorld } from '$lib/ecs'
+	import { IsExcluded } from 'koota'
+
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
 
 	const partID = usePartID()
-	const selected = useSelected()
-
+	const selectedEntity = useSelectedEntity()
 	const draggable = useDraggable('treeview')
 	const worldStates = useWorldStates()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
+	const world = useWorld()
 	const entities = useQuery()
 
-	let rootNode = $state<TreeNode>({
-		id: 'world',
-		name: 'World',
+	const rootNode = $state<TreeNode>({
+		entity: world.spawn(IsExcluded, traits.Name('World')),
 		children: [],
-		href: '/',
 	})
 
+	$inspect(entities.current)
 	const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
 
 	$effect.pre(() => {
@@ -54,9 +54,9 @@
 	{#key rootNode}
 		<Tree
 			{rootNode}
-			selections={selected.current ? [selected.current] : []}
+			selections={selectedEntity.current ? [selectedEntity.current] : []}
 			onSelectionChange={(event) => {
-				selected.setValue(event.selectedValue[0])
+				selectedEntity.set(event.selectedValue[0])
 			}}
 			onDragStart={draggable.onDragStart}
 			onDragEnd={draggable.onDragEnd}
