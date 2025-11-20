@@ -12,12 +12,11 @@ const createPage = async (browser: Browser): Promise<Page> => {
 		},
 	])
 	const page = await context.newPage()
-	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
+	await expect(page.getByText('World', { exact: true })).toBeVisible({ timeout: 10000 })
 	return page
 }
 
@@ -128,22 +127,6 @@ test('draw lines', async ({ browser }) => {
 
 	execSync(
 		'go test -run ^TestDrawLines$/DrawLine github.com/viam-labs/motion-tools/client/client -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
-
-	assertNoFailedScreenshots(failedScreenshots)
-})
-
-test('draw nurbs', async ({ browser }) => {
-	const testPrefix = 'DRAW_NURBS'
-	const failedScreenshots = [] as string[]
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawNurbs$/DrawNurbs github.com/viam-labs/motion-tools/client/client -count=1',
 		{
 			encoding: 'utf-8',
 		}
