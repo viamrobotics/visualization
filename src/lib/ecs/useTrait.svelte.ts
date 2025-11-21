@@ -1,5 +1,7 @@
 import { $internal as internal, type Entity, type Trait, type World } from 'koota'
 import { useWorld } from './useWorld'
+import { createSubscriber } from 'svelte/reactivity'
+import { untrack } from 'svelte'
 
 export type AoSFactory = () => unknown
 
@@ -35,34 +37,40 @@ export function useTrait<T extends Trait>(
 ): { current: TraitRecord<T> | undefined } {
 	const contextWorld = useWorld()
 	const targetEntity = $derived(target())
-	const world = isWorld(targetEntity) ? targetEntity : contextWorld
-	const entity = isWorld(targetEntity) ? targetEntity[internal].worldEntity : targetEntity
+	const world = $derived(isWorld(targetEntity) ? targetEntity : contextWorld)
+	const entity = $derived(isWorld(targetEntity) ? targetEntity[internal].worldEntity : targetEntity)
 
 	// Initialize the state with the current value of the trait.
-	let value = $state.raw<TraitRecord<T> | undefined>(
-		entity?.has(trait) ? entity.get(trait) : undefined
-	)
+	let value = $state.raw(entity?.has(trait) ? entity.get(trait) : undefined)
 
 	$effect(() => {
-		const onChangeUnsub = world.onChange(trait, (e) => {
-			if (e === entity) value = e.get(trait)
+		return untrack(() => {
+			const onChangeUnsub = world.onChange(trait, (e) => {
+				if (e === entity) {
+					value = e.get(trait)
+				}
+			})
+
+			const onAddUnsub = world.onAdd(trait, (e) => {
+				if (e === entity) {
+					value = e.get(trait)
+				}
+			})
+
+			const onRemoveUnsub = world.onRemove(trait, (e) => {
+				if (e === entity) {
+					value = undefined
+				}
+			})
+
+			value = entity?.has(trait) ? entity.get(trait) : undefined
+
+			return () => {
+				onChangeUnsub()
+				onAddUnsub()
+				onRemoveUnsub()
+			}
 		})
-
-		const onAddUnsub = world.onAdd(trait, (e) => {
-			if (e === entity) value = e.get(trait)
-		})
-
-		const onRemoveUnsub = world.onRemove(trait, (e) => {
-			if (e === entity) value = undefined
-		})
-
-		value = entity?.has(trait) ? entity.get(trait) : undefined
-
-		return () => {
-			onChangeUnsub()
-			onAddUnsub()
-			onRemoveUnsub()
-		}
 	})
 
 	return {

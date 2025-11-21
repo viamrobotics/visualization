@@ -127,8 +127,8 @@ and should remain pure, i.e. no hooks should be used.
 
 		<T
 			is={mesh}
-			{name}
-			{uuid}
+			name={name.current}
+			uuid={uuid.current}
 			bvh={{ enabled: false }}
 		>
 			{#if model && renderMode.includes('model')}
@@ -196,8 +196,8 @@ and should remain pure, i.e. no hooks should be used.
 		</T>
 	{:else}
 		<AxesHelper
-			{name}
-			{uuid}
+			name={name.current}
+			uuid={uuid.current}
 			width={3}
 			length={0.1}
 		/>

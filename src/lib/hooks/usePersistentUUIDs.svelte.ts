@@ -1,6 +1,5 @@
 import { traits } from '$lib/ecs'
 import type { Entity } from 'koota'
-import { MathUtils } from 'three'
 
 export const usePersistentUUIDs = () => {
 	const uuids = new Map<string, string>()
@@ -14,7 +13,11 @@ export const usePersistentUUIDs = () => {
 				uuids.set(ref, uuid)
 			}
 
-			entity.set(traits.UUID, uuids.get(ref) ?? uuid ?? MathUtils.generateUUID())
+			const refId = uuids.get(ref)
+
+			if (refId && refId !== uuid) {
+				entity.set(traits.UUID, refId)
+			}
 		}
 	}
 

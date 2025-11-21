@@ -9,17 +9,15 @@
 	import { VirtualList } from 'svelte-virtuallists'
 	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
-	import type { Entity } from 'koota'
 	import { traits } from '$lib/ecs'
-	import { MathUtils } from 'three'
 
 	const visibility = useVisibility()
 	const expanded = useExpanded()
 
 	interface Props {
 		rootNode: TreeNode
-		selections: Entity[]
-		onSelectionChange?: (event: tree.SelectionChangeDetails<number>) => void
+		selections: string[]
+		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
 		onDragStart?: (event: MouseEvent) => void
 		onDragEnd?: (event: MouseEvent) => void
 	}
@@ -27,7 +25,7 @@
 	let { rootNode, selections, onSelectionChange, onDragStart, onDragEnd }: Props = $props()
 
 	const collection = tree.collection<TreeNode>({
-		nodeToValue: (node) => node.entity.get(traits.UUID) ?? MathUtils.generateUUID(),
+		nodeToValue: (node) => `${node.entity}`,
 		nodeToString: (node) => node.entity.get(traits.Name) ?? '',
 		rootNode,
 	})
@@ -49,7 +47,10 @@
 
 	observe(
 		() => [selections],
-		() => untrack(() => api.setSelectedValue(selections))
+		() =>
+			untrack(() => {
+				api.setSelectedValue(selections)
+			})
 	)
 
 	observe(

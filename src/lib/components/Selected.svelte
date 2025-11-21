@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { isInstanceOf, T, useTask, useThrelte } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core'
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
 	import { OBB } from 'three/addons/math/OBB.js'
 	import { traits, useTrait } from '$lib/ecs'
-	import { Box3 } from 'three'
+	import { BatchedMesh, Box3 } from 'three'
 
 	const box3 = new Box3()
 	const obb = new OBB()
 	const obbHelper = new OBBHelper()
 
-	const { invalidate } = useThrelte()
+	const { scene, invalidate } = useThrelte()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 	const instance = useTrait(() => selectedEntity.current, traits.Instance)
@@ -30,13 +30,12 @@
 				return
 			}
 
-			if (isInstanceOf(selectedObject3d.current, 'BatchedMesh') && instance.current) {
-				if (instance.current) {
-					selectedObject3d.current.getBoundingBoxAt(instance.current, box3)
-					obb.fromBox3(box3)
-					obbHelper.setFromOBB(obb)
-					invalidate()
-				}
+			if (instance.current) {
+				const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
+				mesh?.getBoundingBoxAt(instance.current.instanceID, box3)
+				obb.fromBox3(box3)
+				obbHelper.setFromOBB(obb)
+				invalidate()
 
 				return
 			}

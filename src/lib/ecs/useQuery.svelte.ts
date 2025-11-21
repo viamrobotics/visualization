@@ -1,32 +1,39 @@
 import { $internal as internal, cacheQuery, type QueryParameter, type QueryResult } from 'koota'
 import { useWorld } from './useWorld'
-import { traits } from '.'
 import { createSubscriber } from 'svelte/reactivity'
 
 export function useQuery<T extends QueryParameter[]>(
 	...parameters: T
 ): { current: QueryResult<T> } {
 	const world = useWorld()
-
-	// This will rerun every render since parameters will always be a fresh
-	// array, but the return value will be stable.
 	const hash = cacheQuery(...parameters)
 
 	// Using internals to get the query data.
-	const query = world[internal].queriesHashMap.get(hash)!
-	const initialQueryVersion = query.version
+	const query = world[internal].queriesHashMap.get(hash)
+	const initialQueryVersion = query?.version
 
-	let entities: QueryResult<T> = world.query(hash).sort()
+	let version = $state.raw(0)
+	let entities = $state.raw<QueryResult<T>>(world.query(hash))
 
-	const subscribe = createSubscriber((update) => {
+	let updateScheduled = false
+
+	const update = () => {
+		entities = world.query(hash).sort()
+		updateScheduled = false
+	}
+
+	$effect(() => {
+		version
 		const unsubAdd = world.onQueryAdd(hash, () => {
-			entities = world.query(hash).sort()
-			update()
+			if (updateScheduled) return
+			queueMicrotask(update)
+			updateScheduled = true
 		})
 
 		const unsubRemove = world.onQueryRemove(hash, () => {
-			entities = world.query(hash).sort()
-			update()
+			if (updateScheduled) return
+			queueMicrotask(update)
+			updateScheduled = true
 		})
 
 		// Compare the initial version to the current version to
@@ -34,8 +41,10 @@ export function useQuery<T extends QueryParameter[]>(
 		const query = world[internal].queriesHashMap.get(hash)
 
 		if (query?.version !== initialQueryVersion) {
-			entities = world.query(hash).sort()
-			update()
+			if (!updateScheduled) {
+				queueMicrotask(update)
+				updateScheduled = true
+			}
 		}
 
 		return () => {
@@ -46,16 +55,19 @@ export function useQuery<T extends QueryParameter[]>(
 
 	// Force reattaching event listeners when the world is reset.
 	$effect(() => {
-		world[internal].resetSubscriptions.add(subscribe)
+		const handler = () => {
+			version += 1
+		}
+
+		world[internal].resetSubscriptions.add(handler)
 
 		return () => {
-			world[internal].resetSubscriptions.delete(subscribe)
+			world[internal].resetSubscriptions.delete(handler)
 		}
 	})
 
 	return {
 		get current() {
-			subscribe()
 			return entities
 		},
 	}

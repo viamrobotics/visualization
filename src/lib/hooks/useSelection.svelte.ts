@@ -1,6 +1,6 @@
 import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
-import { Matrix4, Object3D } from 'three'
+import { BatchedMesh, Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
 import { traits, useQuery, useTrait } from '$lib/ecs'
 
@@ -50,9 +50,13 @@ export const provideSelection = () => {
 	const uuid = useTrait(() => focused, traits.UUID)
 
 	const focusedObject3d = $derived.by(() => {
-		if (!uuid.current) return
+		const name = focused?.get(traits.Name)
 
-		const object = scene.getObjectByProperty('uuid', uuid.current)?.clone()
+		if (!name) {
+			return
+		}
+
+		const object = scene.getObjectByName(name)?.clone()
 
 		object?.traverse((child) => {
 			if (isInstanceOf(child, 'LineSegments')) {
@@ -92,24 +96,30 @@ const matrix = new Matrix4()
 export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 	const selectedEntity = useSelectedEntity()
 	const { scene } = useThrelte()
-	const uuid = useTrait(() => selectedEntity.current, traits.UUID)
 
 	const object = $derived.by(() => {
 		if (!selectedEntity.current) {
 			return
 		}
 
-		// if (selectedObject.current.metadata.batched) {
-		// 	const proxy = new Object3D()
-		// 	const { id, object } = selectedObject.current.metadata.batched
+		const instance = selectedEntity.current.get(traits.Instance)
+		if (instance) {
+			const proxy = new Object3D()
+			const mesh = scene.getObjectById(instance.meshID) as BatchedMesh
 
-		// 	object.getMatrixAt(id, matrix)
-		// 	proxy.applyMatrix4(matrix)
+			mesh?.getMatrixAt(instance.instanceID, matrix)
+			proxy.applyMatrix4(matrix)
 
-		// 	return proxy
-		// }
+			return proxy
+		}
 
-		return scene.getObjectByProperty('uuid', uuid.current)
+		const name = selectedEntity.current.get(traits.Name)
+
+		if (!name) {
+			return
+		}
+
+		return scene.getObjectByName(name)
 	})
 
 	return {

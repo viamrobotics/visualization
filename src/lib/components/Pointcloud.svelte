@@ -99,8 +99,8 @@
 
 <T
 	is={points}
-	{name}
-	{uuid}
+	uuid={uuid.current}
+	name={name.current}
 	{...events}
 	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
 >

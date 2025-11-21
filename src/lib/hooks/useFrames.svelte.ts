@@ -99,6 +99,8 @@ export const provideFrames = (partID: () => string) => {
 			entities.push(entity)
 		}
 
+		updateUUIDs(entities)
+
 		return () => {
 			for (const entity of entities) {
 				entity.destroy()

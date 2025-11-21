@@ -4,7 +4,7 @@ import type { Entity, QueryResult } from 'koota'
 
 export interface TreeNode {
 	entity: Entity
-	children: TreeNode[]
+	children?: TreeNode[]
 }
 
 /**
@@ -25,7 +25,9 @@ export const buildTreeNodes = (
 
 		nodeMap.set(entity, node)
 
-		if (entity.get(traits.Parent) === 'world') {
+		const parent = entity.get(traits.Parent)
+
+		if (!parent || parent === 'world') {
 			rootNodes.push(node)
 		}
 	}
@@ -37,7 +39,8 @@ export const buildTreeNodes = (
 			const parentNode = nodeMap.get(entity)
 			const child = nodeMap.get(entity)
 			if (parentNode && child) {
-				parentNode.children.push(child)
+				parentNode.children ??= []
+				parentNode.children?.push(child)
 			}
 		}
 	}
@@ -64,7 +67,8 @@ export const buildTreeNodes = (
 					: node
 
 			nodeMap.set(object.name, child)
-			parentNode.children.push(child)
+			parentNode.children ??= []
+			parentNode.children?.push(child)
 		}
 
 		nodeMap.set(worldState.name, node)

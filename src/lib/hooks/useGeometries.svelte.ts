@@ -90,7 +90,10 @@ export const provideGeometries = (partID: () => string) => {
 
 					const geometries = await client.current.getGeometries()
 
-					return { name: client.current.name, geometries }
+					return {
+						name: client.current.name,
+						geometries,
+					}
 				},
 			})
 
@@ -105,58 +108,52 @@ export const provideGeometries = (partID: () => string) => {
 	const { updateUUIDs } = usePersistentUUIDs()
 
 	$effect(() => {
-		let entities: Entity[][] = []
+		let entities: Entity[] = []
 
 		for (const query of queries.current) {
 			if (query.data) {
-				untrack(() => {
-					const geometries = createGeometries(query.data.name, query.data.geometries)
-					updateUUIDs(geometries)
-					entities.push(geometries)
-				})
+				for (const geometry of query.data.geometries) {
+					const resourceName = resources.current[query.data.name]
+					const name = geometry.label ? geometry.label : `${query.data.name} geometry`
+					const pose = createPose(geometry.center)
+
+					const entity = world.spawn(
+						traits.UUID,
+						traits.Name(name),
+						traits.Parent(query.data.name),
+						traits.Pose(pose),
+						traits.GeometriesAPI
+					)
+
+					if (resourceName) {
+						const subtype = resourceName.subtype as keyof typeof resourceColors
+						entity.add(traits.Color(colorUtil.set(resourceColors[subtype])))
+					}
+
+					if (geometry.geometryType.case === 'box') {
+						entity.add(traits.Box(createBox(geometry.geometryType.value)))
+					} else if (geometry.geometryType.case === 'capsule') {
+						entity.add(traits.Capsule(createCapsule(geometry.geometryType.value)))
+					} else if (geometry.geometryType.case === 'sphere') {
+						entity.add(traits.Sphere(createSphere(geometry.geometryType.value)))
+					}
+
+					entities.push(entity)
+				}
 			}
 		}
 
+		updateUUIDs(entities)
+
 		return () => {
-			for (const geometries of entities) {
-				for (const entity of geometries) {
-					entity.destroy()
-				}
+			for (const entity of entities) {
+				entity.destroy()
 			}
 		}
 	})
 
 	const createGeometries = (resource: string, geometries: Geometry[]) => {
 		const entities: Entity[] = []
-
-		for (const geometry of geometries) {
-			const resourceName = resources.current[resource]
-			const name = geometry.label ? geometry.label : `${resource} geometry`
-			const pose = createPose(geometry.center)
-
-			const entity = world.spawn(
-				traits.UUID,
-				traits.Name(name),
-				traits.Parent(resource),
-				traits.Pose(pose),
-				traits.GeometriesAPI
-			)
-
-			if (resourceName) {
-				const subtype = resourceName.subtype as keyof typeof resourceColors
-				entity.add(traits.Color(colorUtil.set(resourceColors[subtype])))
-			}
-
-			if (geometry.geometryType.case === 'box') {
-				entity.add(traits.Box(createBox(geometry.geometryType.value)))
-			} else if (geometry.geometryType.case === 'capsule') {
-				entity.add(traits.Capsule(createCapsule(geometry.geometryType.value)))
-			} else if (geometry.geometryType.case === 'sphere') {
-				entity.add(traits.Sphere(createSphere(geometry.geometryType.value)))
-			}
-
-			entities.push(entity)
-		}
 
 		return entities
 	}

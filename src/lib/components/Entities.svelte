@@ -29,7 +29,6 @@
 		return pose ?? object.get(traits.Pose)
 	}
 
-	console.log('hi')
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)

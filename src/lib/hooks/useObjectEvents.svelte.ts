@@ -9,17 +9,17 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const focusedEntity = useFocusedEntity()
 	const visibility = useVisibility()
 	const down = new Vector2()
+	const currentEntity = $derived(entity())
 
 	const cursor = useCursor()
 
 	return {
 		get visible() {
-			const _entity = entity()
-			if (!_entity) {
+			if (!currentEntity) {
 				return true
 			}
 
-			return visibility.get(_entity) ?? true
+			return visibility.get(currentEntity) ?? true
 		},
 		onpointerenter: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
@@ -31,7 +31,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		},
 		ondblclick: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
-			focusedEntity.set(entity())
+			focusedEntity.set(currentEntity)
 		},
 		onpointerdown: (event: IntersectionEvent<MouseEvent>) => {
 			down.copy(event.pointer)
@@ -40,7 +40,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 			event.stopPropagation()
 
 			if (down.distanceToSquared(event.pointer) < 0.1) {
-				selectedEntity.set(entity())
+				selectedEntity.set(currentEntity)
 			}
 		},
 	}

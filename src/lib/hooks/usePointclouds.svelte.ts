@@ -100,6 +100,7 @@ export const providePointclouds = (partID: () => string) => {
 			const entity = world.spawn(
 				traits.UUID,
 				traits.Name(`${name} pointcloud`),
+				traits.Parent(name),
 				traits.PointsGeometry(positions),
 				colors ? traits.VertexColors(colors) : traits.Color
 			)

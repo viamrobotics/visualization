@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import type { Snippet } from 'svelte'
-	import type { Object3D } from 'three'
+	import type { Group, Object3D } from 'three'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
@@ -21,9 +21,9 @@
 
 {#if gltf.current?.scene}
 	<T
-		is={gltf.current.scene}
-		{uuid}
-		{name}
+		is={gltf.current.scene as Group}
+		uuid={uuid.current}
+		name={name.current}
 		{...objectProps}
 		{...rest}
 	>

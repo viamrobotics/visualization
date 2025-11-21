@@ -1,6 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Color, Vector3, Vector4, Quaternion } from 'three'
-import type { OBB } from 'three/addons/math/OBB.js'
+import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -9,15 +8,11 @@ import type { Frame } from '$lib/frame'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
-import { OrientationVector } from '$lib/lib'
 import { useThrelte } from '@threlte/core'
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 
 const colorUtil = new Color()
-const ov = new OrientationVector()
-const vec3 = new Vector3()
-const quaternion = new Quaternion()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -93,7 +88,6 @@ export const provideDrawAPI = () => {
 
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
-	const color = new Color()
 	const direction = new Vector3()
 	const origin = new Vector3()
 	const loader = new GLTFLoader()
@@ -213,7 +207,7 @@ export const provideDrawAPI = () => {
 		const nColors = reader.read()
 		const arrowHeadAtPose = reader.read()
 
-		const eids: number[] = []
+		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
 			const entity = world.spawn(
@@ -226,7 +220,7 @@ export const provideDrawAPI = () => {
 				traits.DrawAPI
 			)
 
-			eids.push(entity.id())
+			entities.push(entity)
 		}
 
 		world
@@ -234,7 +228,7 @@ export const provideDrawAPI = () => {
 			.select(traits.Pose, traits.Instance, traits.Color)
 			.useStores(([poses, instances, colors]) => {
 				for (let i = 0; i < nPoints; i += 1) {
-					const eid = eids[i]
+					const eid = entities[i].id()
 					origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
 					direction.set(reader.read(), reader.read(), reader.read())
 
@@ -245,7 +239,8 @@ export const provideDrawAPI = () => {
 					poses.oY[eid] = direction.y
 					poses.oZ[eid] = direction.z
 
-					instances[eid] = batchedArrow.addArrow(
+					instances.meshID[eid] = batchedArrow.mesh.id
+					instances.instanceID[eid] = batchedArrow.addArrow(
 						direction,
 						origin,
 						undefined,
@@ -255,14 +250,14 @@ export const provideDrawAPI = () => {
 				}
 
 				for (let i = 0; i < nColors; i += 1) {
-					const eid = eids[i]
+					const eid = entities[i].id()
 					const r = reader.read()
 					const g = reader.read()
 					const b = reader.read()
 					colors.r[eid] = r
 					colors.g[eid] = g
 					colors.b[eid] = b
-					batchedArrow.mesh.setColorAt(instances[eid], colorUtil.set(r, g, b))
+					batchedArrow.mesh.setColorAt(instances.instanceID[eid], colorUtil.set(r, g, b))
 				}
 			})
 
@@ -391,9 +386,9 @@ export const provideDrawAPI = () => {
 		for (const name of names) {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
-					const id = entity.get(traits.Instance)
-					if (id) {
-						batchedArrow.removeArrow(id)
+					const instance = entity.get(traits.Instance)
+					if (instance) {
+						batchedArrow.removeArrow(instance.instanceID)
 					}
 					entity.destroy()
 				}
@@ -403,9 +398,9 @@ export const provideDrawAPI = () => {
 
 	const removeAll = () => {
 		for (const entity of world.query(traits.DrawAPI)) {
-			const id = entity.get(traits.Instance)
-			if (id) {
-				batchedArrow.removeArrow(id)
+			const instance = entity.get(traits.Instance)
+			if (instance) {
+				batchedArrow.removeArrow(instance.instanceID)
 			}
 			entity.destroy()
 		}

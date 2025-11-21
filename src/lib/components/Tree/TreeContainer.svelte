@@ -16,7 +16,7 @@
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { IsExcluded } from 'koota'
+	import { IsExcluded, type Entity } from 'koota'
 
 	const { ...rest } = $props()
 
@@ -29,21 +29,30 @@
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
-	const entities = useQuery()
+	// const entities = useQuery()
+
+	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
 	const rootNode = $state<TreeNode>({
-		entity: world.spawn(IsExcluded, traits.Name('World')),
+		entity: worldEntity,
 		children: [],
 	})
 
-	$inspect(entities.current)
-	const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
+	world.onAdd(traits.Name, (entity) => {
+		const parent = entity.get(traits.Parent)
 
-	$effect.pre(() => {
-		if (!isEqual(rootNode.children, nodes)) {
-			rootNode.children = nodes
+		if (!parent || parent === 'world') {
+			rootNode.children?.push({ entity })
 		}
 	})
+
+	// const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
+
+	// $effect.pre(() => {
+	// 	if (!isEqual(rootNode.children, nodes)) {
+	// 		rootNode.children = nodes
+	// 	}
+	// })
 </script>
 
 <div
@@ -54,9 +63,10 @@
 	{#key rootNode}
 		<Tree
 			{rootNode}
-			selections={selectedEntity.current ? [selectedEntity.current] : []}
+			selections={selectedEntity.current ? [`${selectedEntity.current}`] : []}
 			onSelectionChange={(event) => {
-				selectedEntity.set(event.selectedValue[0])
+				const value = event.selectedValue[0]
+				selectedEntity.set(value ? (Number(value) as Entity) : undefined)
 			}}
 			onDragStart={draggable.onDragStart}
 			onDragEnd={draggable.onDragEnd}
