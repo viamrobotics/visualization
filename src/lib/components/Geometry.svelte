@@ -8,13 +8,14 @@ and should remain pure, i.e. no hooks should be used.
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { meshBounds, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
-	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh, Vector3 } from 'three'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
+	import type { ArrowsGeometry, WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
+	import { BatchedArrow } from '$lib/three/BatchedArrow'
 
 	const plyLoader = new PLYLoader()
 
@@ -47,6 +48,13 @@ and should remain pure, i.e. no hooks should be used.
 	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
 
 	const group = new Group()
+
+	const arrowLength = 0.1
+	const arrowHeadAtPose = true
+	const arrowColor = new Color()
+	const arrowOrigin = new Vector3()
+	const arrowDirection = new Vector3()
+
 	const mesh = $derived.by(() => {
 		if (type === undefined) {
 			return
@@ -94,6 +102,43 @@ and should remain pure, i.e. no hooks should be used.
 
 		// Case 4: binary PLY → pass ArrayBuffer directly
 		return plyLoader.parse(mesh.buffer as ArrayBuffer)
+	}
+
+	const getArrowBatch = (arrows: ArrowsGeometry) => {
+		const batchedArrow = new BatchedArrow()
+		const { poses: posesBytes, colorCount, colors: colorsBytes } = arrows.geometryType.value
+
+		const poses = new Float32Array(
+			posesBytes.buffer,
+			posesBytes.byteOffset,
+			posesBytes.byteLength / 4
+		)
+
+		const colors = new Float32Array(
+			colorsBytes.buffer,
+			colorsBytes.byteOffset,
+			colorsBytes.byteLength / 4
+		)
+
+		const singleColor = colorCount === 1
+
+		if (singleColor) {
+			arrowColor.setRGB(colors[0], colors[1], colors[2])
+		}
+
+		for (let i = 0; i < poses.length; i += 6) {
+			arrowOrigin.set(poses[i], poses[i + 1], poses[i + 2]).multiplyScalar(0.001)
+			arrowDirection.set(poses[i + 3], poses[i + 4], poses[i + 5])
+
+			if (!singleColor) {
+				const colorIndex = (i / 6) * 3
+				arrowColor.setRGB(colors[colorIndex], colors[colorIndex + 1], colors[colorIndex + 2])
+			}
+
+			batchedArrow.addArrow(arrowDirection, arrowOrigin, arrowLength, arrowColor, arrowHeadAtPose)
+		}
+
+		return batchedArrow
 	}
 </script>
 
@@ -150,6 +195,14 @@ and should remain pure, i.e. no hooks should be used.
 						is={CapsuleGeometry}
 						args={[radiusMm * 0.001, lengthMm * 0.001]}
 						{oncreate}
+					/>
+				{:else if geometry.geometryType.case === 'arrows'}
+					{@const batch = getArrowBatch(geometry as ArrowsGeometry)}
+					<T
+						name={batch.object3d.name}
+						is={batch.object3d}
+						dispose={false}
+						bvh={{ enabled: false }}
 					/>
 				{/if}
 			{/if}

@@ -19,12 +19,15 @@
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useSnapshot } from '$lib/hooks/useSnapshot.svelte'
+
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
 	const frames = useFrames()
 	const geometries = useGeometries()
 	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
+	const snapshot = useSnapshot()
 	const weblabs = useWeblabs()
 
 	const weblabedDeterminePose = (object: WorldObject, pose: ViamPose | undefined) => {
@@ -71,6 +74,19 @@
 			<Label text={object.name} />
 		</Frame>
 	</Portal>
+{/each}
+
+{#each snapshot.worldObjects as object (object.uuid)}
+	<Frame
+		uuid={object.uuid}
+		name={object.name}
+		pose={object.pose}
+		geometry={object.geometry}
+		metadata={object.metadata}
+	>
+		<PortalTarget id={object.name} />
+		<Label text={object.name} />
+	</Frame>
 {/each}
 
 {#each worldStates.names as { name } (name)}

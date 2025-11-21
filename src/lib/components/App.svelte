@@ -13,7 +13,7 @@
 	import Dashboard from './dashboard/Dashboard.svelte'
 	import { domPortal } from '$lib/portal'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
-	import MeshFileDrop from './MeshFileDrop.svelte'
+	import FileDrop from './file-drop/FileDrop.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useViamClient } from '@viamrobotics/svelte-sdk'
@@ -116,7 +116,7 @@
 					<ArmPositions {@attach domPortal(root)} />
 				{/if}
 
-				<MeshFileDrop {@attach domPortal(root)} />
+				<FileDrop {@attach domPortal(root)} />
 			{/snippet}
 		</SceneProviders>
 	</Canvas>

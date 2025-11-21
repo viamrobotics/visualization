@@ -1,4 +1,5 @@
 import { Transform, Vector3 } from '@viamrobotics/sdk'
+import type { ArmModelRendering } from './hooks/useSettings.svelte'
 
 export interface PerspectiveCamera {}
 export interface OrthographicCamera {}
@@ -15,6 +16,19 @@ export enum RenderArmModels {
 	COLLIDERS = 1,
 	COLLIDERS_AND_MODEL = 2,
 	MODEL = 3,
+}
+
+export const getArmModelRendering = (model: RenderArmModels): ArmModelRendering => {
+	switch (model) {
+		case RenderArmModels.COLLIDERS:
+			return 'colliders'
+		case RenderArmModels.COLLIDERS_AND_MODEL:
+			return 'colliders+model'
+		case RenderArmModels.MODEL:
+			return 'model'
+		default:
+			return 'colliders+model'
+	}
 }
 
 export interface SceneMetadata {

@@ -24,6 +24,7 @@
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { provideSnapshot } from '$lib/hooks/useSnapshot.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -44,6 +45,7 @@
 	provideOrigin()
 	provideStaticGeometries()
 	provideDrawAPI()
+	provideSnapshot()
 
 	provideResourceByName(() => partID.current)
 	provideFrames(() => partID.current)

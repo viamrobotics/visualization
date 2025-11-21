@@ -3,6 +3,8 @@ import { getContext, setContext } from 'svelte'
 
 const key = Symbol('dashboard-context')
 
+export type ArmModelRendering = 'colliders' | 'colliders+model' | 'model'
+
 interface Settings {
 	isLoaded: boolean
 	// Camera
@@ -39,7 +41,7 @@ interface Settings {
 	enableArmPositionsWidget: boolean
 
 	renderStats: boolean
-	renderArmModels: 'colliders' | 'colliders+model' | 'model'
+	renderArmModels: ArmModelRendering
 }
 
 interface Context {
