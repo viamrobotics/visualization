@@ -2,7 +2,7 @@ import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@v
 import { BatchedMesh, Color, MathUtils, Object3D, Vector3, type BufferGeometry } from 'three'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
-import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
+import { isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
 
 export type PointsGeometry = {
@@ -20,13 +20,48 @@ export type ThreeBufferGeometry = {
 	geometryType: { case: 'bufferGeometry'; value: BufferGeometry }
 }
 
-export type Geometries = Geometry | PointsGeometry | LinesGeometry | ThreeBufferGeometry
+export type ArrowsGeometry = {
+	center: undefined
+	geometryType: {
+		case: 'arrows'
+		value: {
+			poseCount: number
+			poses: Uint8Array
+			colorCount: number
+			colors: Uint8Array
+		}
+	}
+}
+
+export type Geometries =
+	| Geometry
+	| PointsGeometry
+	| LinesGeometry
+	| ThreeBufferGeometry
+	| ArrowsGeometry
 
 export const SupportedShapes = {
 	points: 'points',
 	line: 'line',
 	arrow: 'arrow',
 } as const
+
+const SUPPORTED_SHAPES_KEYS = Object.keys(SupportedShapes) as (keyof typeof SupportedShapes)[]
+
+export interface ShapeMetadata {
+	type: ValueOf<typeof SupportedShapes> | ''
+}
+
+export const COLOR_SCHEMA = ['r', 'g', 'b'] as const
+export const POSE_SCHEMA = ['x', 'y', 'z', 'ox', 'oy', 'oz'] as const
+
+export interface ArrowShapeMetadata extends ShapeMetadata {
+	type: 'arrow'
+	poseCount: number
+	poses: Uint8Array
+	colorCount: number
+	colors: Uint8Array
+}
 
 export type Metadata = {
 	colors?: Float32Array
@@ -42,6 +77,8 @@ export type Metadata = {
 		object: BatchedMesh
 	}
 	shape?: ValueOf<typeof SupportedShapes>
+	// TODO: Add other shape metadata types here
+	shapeMetadata?: ArrowShapeMetadata
 	getBoundingBoxAt?: (box: OBB) => void
 }
 
@@ -56,10 +93,39 @@ const METADATA_KEYS = [
 	'lineDotColor',
 	'batched',
 	'shape',
+	'shapeMetadata',
 ] as const
 
-export const isMetadataKey = (key: string): key is keyof Metadata => {
+const isMetadataKey = (key: string): key is keyof Metadata => {
 	return METADATA_KEYS.includes(key as (typeof METADATA_KEYS)[number])
+}
+
+const isShapeMetadata = (value: unknown): value is ShapeMetadata => {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'type' in value &&
+		SUPPORTED_SHAPES_KEYS.includes(value.type as (typeof SUPPORTED_SHAPES_KEYS)[number])
+	)
+}
+
+const isArrowMetadata = (value: unknown): value is ArrowShapeMetadata => {
+	if (!isShapeMetadata(value)) return false
+	if (value.type !== 'arrow') return false
+	if (!('poseCount' in value)) return false
+	if (typeof value.poseCount !== 'number') return false
+	if (!('poses' in value)) return false
+	if (!(value.poses instanceof Uint8Array)) return false
+	// Each pose is 6 float32 values (x, y, z, ox, oy, oz) = 6 * 4 bytes
+	if (value.poses.length !== value.poseCount * POSE_SCHEMA.length * 4) return false
+	if (!('colorCount' in value)) return false
+	if (typeof value.colorCount !== 'number') return false
+	if (!('colors' in value)) return false
+	if (!(value.colors instanceof Uint8Array)) return false
+	// Each color is 3 float32 values (r, g, b) = 3 * 4 bytes
+	if (value.colors.length !== value.colorCount * COLOR_SCHEMA.length * 4) return false
+
+	return true
 }
 
 export class WorldObject<T extends Geometries = Geometries> {
@@ -136,7 +202,28 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 	}
 }
 
-export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
+const EMPTY_SHAPE_METADATA: ShapeMetadata = { type: '' }
+const parseShapeMetadata = (value: unknown) => {
+	if (!isShapeMetadata(value)) return EMPTY_SHAPE_METADATA
+	switch (value.type) {
+		case 'arrow':
+			if ('poses' in value && typeof value.poses === 'string') {
+				value.poses = Uint8Array.fromBase64(value.poses)
+			}
+
+			if ('colors' in value && typeof value.colors === 'string') {
+				value.colors = Uint8Array.fromBase64(value.colors)
+			}
+
+			if (!isArrowMetadata(value)) return EMPTY_SHAPE_METADATA
+
+			return value as ArrowShapeMetadata
+		default:
+			return EMPTY_SHAPE_METADATA
+	}
+}
+
+const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 	const json: Metadata = {}
 
 	for (const [k, v] of Object.entries(fields)) {
@@ -146,7 +233,7 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 		switch (k) {
 			case 'color':
 			case 'lineDotColor':
-				json[k] = readColor(unwrappedValue)
+				json[k] = isRGB(unwrappedValue) ? parseRGB(unwrappedValue) : parseColor(unwrappedValue)
 				break
 			case 'opacity':
 				json[k] = parseOpacity(unwrappedValue)
@@ -169,29 +256,46 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 			case 'shape':
 				json[k] = unwrappedValue as ValueOf<typeof SupportedShapes>
 				break
+			case 'shapeMetadata':
+				json[k] = parseShapeMetadata(unwrappedValue) as ArrowShapeMetadata
+				break
 		}
 	}
 
 	return json
 }
 
-const readColor = (color: unknown): Color => {
-	if (isColorRepresentation(color)) return parseColor(color)
-	if (isRGB(color)) return parseRGB(color)
-	return new Color('black')
-}
-
 export const fromTransform = (transform: TransformWithUUID) => {
 	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
+
+	let geometry: Geometries | undefined = transform.physicalObject
+	if (isArrowMetadata(metadata.shapeMetadata)) {
+		geometry = {
+			center: undefined,
+			geometryType: {
+				case: 'arrows',
+				value: {
+					poseCount: metadata.shapeMetadata.poseCount,
+					poses: metadata.shapeMetadata.poses,
+					colorCount: metadata.shapeMetadata.colorCount,
+					colors: metadata.shapeMetadata.colors,
+				},
+			},
+		}
+	}
 
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,
 		transform.poseInObserverFrame?.referenceFrame,
-		transform.physicalObject,
+		geometry,
 		metadata
 	)
-	worldObject.uuid = transform.uuidString
+
+	if (transform.uuidString) {
+		worldObject.uuid = transform.uuidString
+	}
+
 	return worldObject
 }
 

@@ -105,11 +105,11 @@ importers:
         specifier: 0.1.5
         version: 0.1.5(svelte@5.43.0)
       '@viamrobotics/sdk':
-        specifier: 0.55.0
-        version: 0.55.0
+        specifier: 0.56.0
+        version: 0.56.0
       '@viamrobotics/svelte-sdk':
         specifier: 0.7.1
-        version: 0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.55.0)(svelte@5.43.0)
+        version: 0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.56.0)(svelte@5.43.0)
       '@vitejs/plugin-basic-ssl':
         specifier: 2.1.0
         version: 2.1.0(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -1552,8 +1552,8 @@ packages:
     peerDependencies:
       svelte: '>=5 <6'
 
-  '@viamrobotics/sdk@0.55.0':
-    resolution: {integrity: sha512-fxoi4r0BNaY8lil93hI4GIYPFasumEbe/4KO0BpGHi7qgJ8wZ9ZRneSIfp0gASPbwNfy2LxDQIqhGCKU1pWvdg==}
+  '@viamrobotics/sdk@0.56.0':
+    resolution: {integrity: sha512-p4nNE9RtdXMVyUd9Vtn662QVzJ3LVcJqAJP1AliFJokPsZZRY1IQpI/24BXN/i6g0lT8LfDVwTiZfp3lqrmtfA==}
 
   '@viamrobotics/svelte-sdk@0.7.1':
     resolution: {integrity: sha512-Cmpj9Y5r2QI4ibd88K5lH8e5Z0y1czS9tiTwvC2XEGU4efzusMpda5NLrwaXG3ZHN5n7Jz7NG3pcCdZhtDb1JQ==}
@@ -5349,7 +5349,7 @@ snapshots:
       prismjs: 1.30.0
       svelte: 5.43.0
 
-  '@viamrobotics/sdk@0.55.0':
+  '@viamrobotics/sdk@0.56.0':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
       '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
@@ -5357,10 +5357,10 @@ snapshots:
       bsonfy: 1.0.2
       exponential-backoff: 3.1.3
 
-  '@viamrobotics/svelte-sdk@0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.55.0)(svelte@5.43.0)':
+  '@viamrobotics/svelte-sdk@0.7.1(@tanstack/svelte-query@5.87.1(svelte@5.43.0))(@viamrobotics/sdk@0.56.0)(svelte@5.43.0)':
     dependencies:
       '@tanstack/svelte-query': 5.87.1(svelte@5.43.0)
-      '@viamrobotics/sdk': 0.55.0
+      '@viamrobotics/sdk': 0.56.0
       runed: 0.29.2(svelte@5.43.0)
       svelte: 5.43.0
 
