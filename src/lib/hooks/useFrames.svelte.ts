@@ -35,7 +35,12 @@ export const provideFrames = (partID: () => string) => {
 		if (revision) {
 			untrack(() => query.current).refetch()
 		}
-		logs.add('Fetching frames...')
+	})
+
+	$effect.pre(() => {
+		if (query.current.isFetching) {
+			logs.add('Fetching frames...')
+		}
 	})
 
 	$effect.pre(() => {
