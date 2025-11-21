@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.18.3
+
+### Patch Changes
+
+- a404d00: Add logs from drawing server
+
 ## 0.18.2
 
 ### Patch Changes
