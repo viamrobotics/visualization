@@ -11,7 +11,7 @@ import (
 )
 
 func TestDrawLines(t *testing.T) {
-	offset := r3.Vector{X: 0, Y: 5000, Z: 0}
+	offset := r3.Vector{X: 0, Y: 0, Z: 0}
 
 	t.Run("DrawLine", func(t *testing.T) {
 		nTurns := 5.0    // Number of spiral turns
