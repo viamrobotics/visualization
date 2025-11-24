@@ -41,9 +41,9 @@
 	world.onAdd(traits.Name, (entity) => {
 		const parent = entity.get(traits.Parent)
 
-		if (!parent || parent === 'world') {
-			rootNode.children?.push({ entity })
-		}
+		// if (!parent || parent === 'world') {
+		// 	rootNode.children?.push({ entity })
+		// }
 	})
 
 	// const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
