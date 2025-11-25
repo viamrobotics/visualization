@@ -37,7 +37,16 @@
 
 <Machines bind:isOpen={isMachinesPageOpen} />
 
-<ViamProvider {dialConfigs}>
+<ViamProvider
+	config={{
+		defaultOptions: {
+			queries: {
+				staleTime: Infinity,
+			},
+		},
+	}}
+	{dialConfigs}
+>
 	{#if connectionConfig.current}
 		<ViamAppProvider
 			serviceHost="https://app.viam.com"
