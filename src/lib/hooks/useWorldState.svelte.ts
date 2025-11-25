@@ -74,7 +74,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
 	const getTransforms = $derived(
-		listUUIDs.current.data?.map((uuid) => {
+		listUUIDs.data?.map((uuid) => {
 			return createResourceQuery(
 				client,
 				'getTransform',
@@ -146,10 +146,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		if (!getTransforms) return
 		if (initialized) return
 
-		const queries = getTransforms.map((query) => query.current)
-		if (queries.some((query) => query?.isLoading)) return
+		if (getTransforms.some((query) => query?.isLoading)) return
 
-		const data = queries
+		const data = getTransforms
 			.flatMap((query) => query?.data ?? [])
 			.filter((transform) => transform !== undefined) as TransformWithUUID[]
 		if (data.length === 0) return
@@ -174,9 +173,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	$effect.pre(() => {
-		if (changeStream.current?.data === undefined) return
+		if (changeStream?.data === undefined) return
 
-		const events = changeStream.current.data.filter((event) => event.transform !== undefined)
+		const events = changeStream.data.filter((event) => event.transform !== undefined)
 		if (events.length === 0) return
 
 		worker.postMessage({ type: 'change', events })
@@ -193,10 +192,10 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			return worldObjectsList
 		},
 		get listUUIDs() {
-			return listUUIDs.current
+			return listUUIDs
 		},
 		get getTransforms() {
-			return getTransforms?.map((query) => query.current)
+			return getTransforms
 		},
 	}
 }

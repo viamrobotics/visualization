@@ -25,7 +25,7 @@ export const provideArmClient = (partID: () => string) => {
 	)
 
 	const jointPositionsQueries = $derived.by(() => {
-		const results: Record<string, { current: QueryObserverResult<ArmJointPositions, Error> }> = {}
+		const results: Record<string, QueryObserverResult<ArmJointPositions, Error>> = {}
 
 		for (const client of clients) {
 			if (!client.current) continue
@@ -39,10 +39,7 @@ export const provideArmClient = (partID: () => string) => {
 
 	const currentPositions = $derived(
 		Object.fromEntries(
-			Object.entries(jointPositionsQueries).map(([name, query]) => [
-				name,
-				query.current.data?.values,
-			])
+			Object.entries(jointPositionsQueries).map(([name, query]) => [name, query.data?.values])
 		)
 	)
 

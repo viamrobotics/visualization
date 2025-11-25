@@ -10,7 +10,6 @@
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import Machines from './lib/components/Machines.svelte'
 	import { getDialConfs } from './lib/robots'
-	import { QueryClient } from '@tanstack/svelte-query'
 
 	provideConnectionConfigs()
 
@@ -33,23 +32,12 @@
 
 	const partID = $derived(connectionConfig.current?.partId)
 
-	const client = new QueryClient({
-		defaultOptions: {
-			queries: {
-				staleTime: Infinity,
-			},
-		},
-	})
-
 	let isMachinesPageOpen = $state(false)
 </script>
 
 <Machines bind:isOpen={isMachinesPageOpen} />
 
-<ViamProvider
-	{dialConfigs}
-	{client}
->
+<ViamProvider {dialConfigs}>
 	{#if connectionConfig.current}
 		<ViamAppProvider
 			serviceHost="https://app.viam.com"
