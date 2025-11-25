@@ -11,6 +11,7 @@ import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
+import { useLogs } from './useLogs.svelte'
 
 const colorUtil = new Color()
 
@@ -27,10 +28,9 @@ const key = Symbol('draw-api-context-key')
 
 const tryParse = (json: string) => {
 	try {
-		return JSON.parse(json)
+		return [null, JSON.parse(json)]
 	} catch (error) {
-		console.warn('Failed to parse JSON:', error)
-		return
+		return [error, null]
 	}
 }
 
@@ -72,6 +72,7 @@ class Float32Reader {
 
 export const provideDrawAPI = () => {
 	const world = useWorld()
+	const logs = useLogs()
 	const cameraControls = useCameraControls()
 	const batchedArrow = useArrows()
 	const { invalidate } = useThrelte()
@@ -418,7 +419,7 @@ export const provideDrawAPI = () => {
 	const scheduleReconnect = () => {
 		setTimeout(() => {
 			reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
-			console.log(`Reconnecting in ${reconnectDelay / 1000} seconds...`)
+			logs.add(`Reconnecting to drawing server in ${reconnectDelay / 1000} seconds...`, 'warn')
 			connect()
 		}, reconnectDelay)
 	}
@@ -426,18 +427,25 @@ export const provideDrawAPI = () => {
 	const onOpen = () => {
 		connectionStatus = 'open'
 		reconnectDelay = 1000
-		console.log(`Connected to websocket server at ${BACKEND_IP}:${BUN_SERVER_PORT}`)
+		logs.add(`Connected to drawing server at ${BACKEND_IP}:${BUN_SERVER_PORT}`)
 	}
 
 	const onClose = () => {
 		connectionStatus = 'closed'
-		console.log('Disconnected from websocket server')
+		logs.add('Disconnected from drawing server', 'warn')
 		scheduleReconnect()
 	}
 
 	const onError = (event: Event) => {
-		console.log('Websocket error', JSON.stringify(event))
+		const stringified = JSON.stringify(event)
+
 		ws.close()
+
+		if (stringified === '{"isTrusted":true}') {
+			return
+		}
+
+		logs.add(`Drawing server error: ${JSON.stringify(event)}`, 'error')
 	}
 
 	const onMessage = async (event: MessageEvent) => {
@@ -458,7 +466,11 @@ export const provideDrawAPI = () => {
 			}
 		}
 
-		const data = tryParse(event.data)
+		const [error, data] = tryParse(event.data)
+
+		if (error) {
+			logs.add(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`, 'error')
+		}
 
 		if (!data) return
 
