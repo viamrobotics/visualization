@@ -185,9 +185,6 @@ export const provideFrames = (partID: () => string) => {
 		return results
 	})
 
-	const error = $derived(query.error ?? undefined)
-	const fetching = $derived(query.isFetching)
-
 	const getParentFrameOptions = (componentName: string) => {
 		const validFrames = new Set(current.map((frame) => frame.name))
 		validFrames.add('world')

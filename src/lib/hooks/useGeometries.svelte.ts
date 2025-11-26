@@ -129,7 +129,7 @@ export const provideGeometries = (partID: () => string) => {
 			return geometries
 		},
 		refetch() {
-			for (const [_name, query] of queries) {
+			for (const [, query] of queries) {
 				query.refetch()
 			}
 		},

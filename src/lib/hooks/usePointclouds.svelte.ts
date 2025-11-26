@@ -124,7 +124,7 @@ export const providePointclouds = (partID: () => string) => {
 			return current
 		},
 		refetch() {
-			for (const [_name, query] of queries) {
+			for (const [, query] of queries) {
 				query.refetch()
 			}
 		},

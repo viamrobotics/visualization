@@ -27,7 +27,6 @@ describe('Details component', () => {
 
 		vi.mocked(useFrames.useFrames).mockReturnValue({
 			current: mockedCurrent,
-			fetching: false,
 			getParentFrameOptions: vi.fn(),
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
