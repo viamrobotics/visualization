@@ -28,19 +28,29 @@ export const providePointclouds = (partID: () => string) => {
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
+	const propQueries = $derived(
+		clients.map(
+			(client) =>
+				[
+					client.current?.name,
+					createResourceQuery(client, 'getProperties', {
+						staleTime: Infinity,
+						refetchOnMount: false,
+					}),
+				] as const
+		)
+	)
+
+	const fetchedPropQueries = propQueries.every(([, query]) => query.isPending === false)
+
 	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
 	const enabledClients = $derived(
 		clients.filter(
 			(client) =>
+				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
 				disabledCameras.get(client.current?.name) !== true
-		)
-	)
-
-	const propQueries = $derived(
-		enabledClients.map(
-			(client) => [client.current?.name, createResourceQuery(client, 'getProperties')] as const
 		)
 	)
 
