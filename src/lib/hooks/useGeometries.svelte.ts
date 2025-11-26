@@ -1,4 +1,4 @@
-import { ArmClient, CameraClient, GantryClient, Geometry, GripperClient } from '@viamrobotics/sdk'
+import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -82,9 +82,9 @@ export const provideGeometries = (partID: () => string) => {
 	$effect(() => {
 		for (const [name, query] of queries) {
 			if (query.isFetching) {
-				logs.add(`Fetching pose for ${name}...`)
+				logs.add(`Fetching geometries for ${name}...`)
 			} else if (query.error) {
-				logs.add(`Geometries: ${query.error.message}`, 'error')
+				logs.add(`Error fetching geometries from ${name}: ${query.error.message}`, 'error')
 			}
 		}
 	})
