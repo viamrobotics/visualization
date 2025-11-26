@@ -1,8 +1,10 @@
-import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/svelte-query'
 import { CameraClient } from '@viamrobotics/sdk'
 import { setContext, getContext } from 'svelte'
-import { fromStore, toStore } from 'svelte/store'
-import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import {
+	createResourceClient,
+	createResourceQuery,
+	useResourceNames,
+} from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
@@ -14,7 +16,7 @@ const key = Symbol('pointcloud-context')
 
 interface Context {
 	current: WorldObject<PointsGeometry>[]
-	errors: Error[]
+	refetch: () => void
 }
 
 export const providePointclouds = (partID: () => string) => {
@@ -26,80 +28,105 @@ export const providePointclouds = (partID: () => string) => {
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
-	const options = $derived.by(() => {
-		const interval = refreshRates.get(RefreshRates.pointclouds)
-		const results: CreateQueryOptions<
-			WorldObject<PointsGeometry> | null,
-			Error,
-			WorldObject<PointsGeometry> | null,
-			string[]
-		>[] = []
+	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
+	const enabledClients = $derived(
+		clients.filter(
+			(client) =>
+				client.current?.name &&
+				interval !== RefetchRates.OFF &&
+				disabledCameras.get(client.current?.name) !== true
+		)
+	)
 
-		for (const cameraClient of clients) {
-			const name = cameraClient.current?.name ?? ''
+	const propQueries = $derived(
+		enabledClients.map(
+			(client) => [client.current?.name, createResourceQuery(client, 'getProperties')] as const
+		)
+	)
 
-			const options = queryOptions({
-				enabled:
-					interval !== RefetchRates.OFF &&
-					cameraClient.current !== undefined &&
-					disabledCameras.get(name) !== true,
-				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
-				queryKey: ['getPointCloud', 'partID', partID(), name],
-				queryFn: async (): Promise<WorldObject<PointsGeometry> | null> => {
-					if (!cameraClient.current) {
-						throw new Error('No camera client')
-					}
-
-					logs.add(`Fetching pointcloud for ${cameraClient.current.name}`)
-					const response = await cameraClient.current.getPointCloud()
-
-					if (!response) return null
-
-					const { positions, colors } = await parsePcdInWorker(new Uint8Array(response))
-
-					return new WorldObject(
-						`${name}:pointcloud`,
-						undefined,
-						name,
-						{ center: undefined, geometryType: { case: 'points', value: positions } },
-						colors ? { colors } : undefined
-					)
-				},
-			})
-
-			results.push(options)
+	/**
+	 * Disable cameras that don't support pointclouds by default,
+	 * but allow users to manually enable afterwards
+	 */
+	$effect(() => {
+		for (const [name, query] of propQueries) {
+			if (name && query.data?.supportsPcd === false) {
+				if (disabledCameras.get(name) === undefined) {
+					disabledCameras.set(name, true)
+				}
+			}
 		}
-
-		return results
 	})
 
-	const { updateUUIDs } = usePersistentUUIDs()
-	const queries = fromStore(
-		createQueries({
-			queries: toStore(() => options),
-			combine: (results) => {
-				const data = results
-					.flatMap((result) => result.data)
-					.filter((data) => data !== null && data !== undefined)
-
-				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
-
-				updateUUIDs(data)
-
-				return {
-					data,
-					errors,
-				}
-			},
-		})
+	const queries = $derived(
+		enabledClients.map(
+			(client) =>
+				[
+					client.current?.name,
+					createResourceQuery(client, 'getPointCloud', () => ({ refetchInterval: interval })),
+				] as const
+		)
 	)
+
+	const { updateUUIDs } = usePersistentUUIDs()
+
+	let current = $state.raw<WorldObject<PointsGeometry>[]>([])
+
+	$effect(() => {
+		for (const [name, query] of queries) {
+			if (query.isFetching) {
+				logs.add(`Fetching pointcloud for ${name}...`)
+			} else if (query.error) {
+				logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
+			}
+		}
+	})
+
+	$effect(() => {
+		const binaries: [string, Uint8Array][] = []
+
+		for (const [name, query] of queries) {
+			const { data } = query
+			if (name && data) {
+				binaries.push([name, data])
+			}
+		}
+
+		Promise.allSettled(
+			binaries.map(async ([name, uint8array]) => {
+				const { positions, colors } = await parsePcdInWorker(new Uint8Array(uint8array))
+
+				return new WorldObject(
+					`${name}:pointcloud`,
+					undefined,
+					name,
+					{ center: undefined, geometryType: { case: 'points', value: positions } },
+					colors ? { colors } : undefined
+				)
+			})
+		).then((results) => {
+			const worldObjects: WorldObject<PointsGeometry>[] = []
+			for (const result of results) {
+				if (result.status === 'fulfilled') {
+					worldObjects.push(result.value)
+				} else if (result.status === 'rejected') {
+					logs.add(result.reason, 'error')
+				}
+			}
+
+			updateUUIDs(worldObjects)
+			current = worldObjects
+		})
+	})
 
 	setContext<Context>(key, {
 		get current() {
-			return queries.current.data
+			return current
 		},
-		get errors() {
-			return queries.current.errors
+		refetch() {
+			for (const [_name, query] of queries) {
+				query.refetch()
+			}
 		},
 	})
 }

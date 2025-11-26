@@ -13,8 +13,6 @@ import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 
 interface FramesContext {
 	current: WorldObject[]
-	error?: Error
-	fetching: boolean
 	getParentFrameOptions: (componentName: string) => string[]
 }
 
@@ -37,9 +35,11 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (query.isFetching) {
 			logs.add('Fetching frames...')
+		} else if (query.error) {
+			logs.add(`Frames: ${query.error.message}`, 'error')
 		}
 	})
 
@@ -210,12 +210,6 @@ export const provideFrames = (partID: () => string) => {
 		getParentFrameOptions,
 		get current() {
 			return current
-		},
-		get error() {
-			return error
-		},
-		get fetching() {
-			return fetching
 		},
 	})
 }
