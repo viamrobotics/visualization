@@ -57,7 +57,6 @@
 		}
 
 		invalidate()
-		console.log('derp')
 	})
 </script>
 

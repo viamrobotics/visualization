@@ -36,6 +36,7 @@ export const providePointclouds = (partID: () => string) => {
 					createResourceQuery(client, 'getProperties', {
 						staleTime: Infinity,
 						refetchOnMount: false,
+						refetchInterval: false,
 					}),
 				] as const
 		)
