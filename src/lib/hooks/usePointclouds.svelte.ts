@@ -55,8 +55,11 @@ export const providePointclouds = (partID: () => string) => {
 	)
 
 	/**
-	 * Disable cameras that don't support pointclouds by default,
-	 * but allow users to manually enable afterwards
+	 * Some machines have a lot of cameras, so before enabling all of them
+	 * we'll first check pointcloud support.
+	 *
+	 * We'll disable cameras that don't support pointclouds,
+	 * but still allow users to manually enable if they want to.
 	 */
 	$effect(() => {
 		for (const [name, query] of propQueries) {
