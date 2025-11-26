@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core'
 	import { useSelectedObject, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
 	import { OBB } from 'three/addons/math/OBB.js'
 
 	const obb = new OBB()
 	const obbHelper = new OBBHelper()
+
+	const { invalidate } = useThrelte()
 	const selected = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
 
@@ -27,6 +29,7 @@
 			if (selected.current.metadata.batched) {
 				selected.current.metadata.getBoundingBoxAt?.(obb)
 				obbHelper.setFromOBB(obb)
+				invalidate()
 				return
 			}
 
@@ -34,6 +37,7 @@
 				selectedObject3d.current?.getWorldPosition(clone.position)
 				selectedObject3d.current?.getWorldQuaternion(clone.quaternion)
 				obbHelper.setFromObject(clone)
+				invalidate()
 			}
 		},
 		{
@@ -48,8 +52,11 @@
 			obbHelper.visible = true
 		} else {
 			stop()
+
 			obbHelper.visible = false
 		}
+
+		invalidate()
 	})
 </script>
 

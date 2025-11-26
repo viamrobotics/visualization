@@ -1,37 +1,8 @@
 <script lang="ts">
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
 	import { useLogs } from '$lib/hooks/useLogs.svelte'
-	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import Drawer from './Drawer.svelte'
 
-	const frames = useFrames()
-	const geometries = useGeometries()
-	const pointclouds = usePointClouds()
 	const logs = useLogs()
-
-	$effect(() => {
-		if (frames.error) {
-			const message = `Frames: ${frames.error.message}`
-			logs.add(message, 'error')
-		}
-	})
-
-	$effect(() => {
-		if (geometries.errors.length > 0) {
-			for (const error of geometries.errors) {
-				logs.add(`Geometries: ${error.message}`, 'error')
-			}
-		}
-	})
-
-	$effect(() => {
-		if (pointclouds.errors.length > 0) {
-			for (const error of pointclouds.errors) {
-				logs.add(`Pointclouds: ${error.message}`, 'error')
-			}
-		}
-	})
 </script>
 
 <Drawer name="Logs">

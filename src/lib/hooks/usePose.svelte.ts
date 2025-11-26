@@ -1,9 +1,7 @@
-import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
 import { usePartID } from './usePartID.svelte'
-import { MotionClient } from '@viamrobotics/sdk'
-import { createQuery, queryOptions } from '@tanstack/svelte-query'
+import { MotionClient, Transform } from '@viamrobotics/sdk'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { fromStore, toStore } from 'svelte/store'
 import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
@@ -11,16 +9,21 @@ import { untrack } from 'svelte'
 import { useFrames } from './useFrames.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useLogs } from './useLogs.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
+import { useRefetchPoses } from './useRefetchPoses'
 
 export const usePose = (name: () => string, parent: () => string | undefined) => {
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
 	const motionClient = useMotionClient()
-	const resources = useResourceNames(() => partID.current)
+	const currentName = $derived(name())
+	const currentParent = $derived(parent())
+	const resourceByName = useResourceByName()
+	const { addQueryToRefetch } = useRefetchPoses()
 
-	const resource = $derived(resources.current.find((resource) => resource.name === name()))
-	const parentResource = $derived(resources.current.find((resource) => resource.name === parent()))
+	const resource = $derived(resourceByName.current[currentName])
+	const parentResource = $derived(currentParent ? resourceByName.current[currentParent] : undefined)
 	const environment = useEnvironment()
 	const frames = useFrames()
 
@@ -32,45 +35,37 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
-	const options = $derived(
-		queryOptions({
-			enabled:
-				interval !== RefetchRates.OFF &&
-				client.current !== undefined &&
-				environment.current.viewerMode === 'monitor',
+	const resolvedParent = $derived(
+		parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
+	)
+	const query = createResourceQuery(
+		client,
+		'getPose',
+		() => [currentName, resolvedParent ?? 'world', []] as [string, string, Transform[]],
+		() => ({
+			enabled: interval !== RefetchRates.OFF,
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
-			queryKey: ['getPose', 'partID', partID.current, client.current?.name, name(), parent()],
-			queryFn: async () => {
-				if (!client.current) {
-					throw new Error('No client')
-				}
-
-				logs.add(`Fetching pose for ${name()}...`)
-
-				const resolvedParent = parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
-				const pose = await client.current.getPose(name(), resolvedParent ?? 'world', [])
-
-				return pose
-			},
 		})
 	)
 
-	const query = fromStore(createQuery(toStore(() => options)))
+	$effect(() => addQueryToRefetch(query))
+
+	$effect(() => {
+		if (query.isFetching) {
+			logs.add(`Fetching pose for ${currentName}...`)
+		} else if (query.error) {
+			logs.add(`Error fetching pose for ${currentName}: ${query.error.message}`, 'error')
+		}
+	})
 
 	observe.pre(
 		() => [environment.current.viewerMode, frames.current],
 		() => {
 			if (environment.current.viewerMode === 'monitor') {
-				untrack(() => query.current).refetch()
+				untrack(() => query.refetch())
 			}
 		}
 	)
-
-	$effect(() => {
-		if (query.current.error) {
-			logs.add(query.current.error.message, 'error')
-		}
-	})
 
 	return {
 		get current() {
@@ -81,7 +76,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 			if (resource?.subtype === 'arm') {
 				return
 			}
-			return query.current.data?.pose
+			return query.data?.pose
 		},
 	}
 }

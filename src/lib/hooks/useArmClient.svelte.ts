@@ -1,5 +1,4 @@
-import type { QueryObserverResult } from '@tanstack/svelte-query'
-import { ArmClient, ArmJointPositions } from '@viamrobotics/sdk'
+import { ArmClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -24,26 +23,15 @@ export const provideArmClient = (partID: () => string) => {
 		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
 	)
 
-	const jointPositionsQueries = $derived.by(() => {
-		const results: Record<string, { current: QueryObserverResult<ArmJointPositions, Error> }> = {}
-
-		for (const client of clients) {
-			if (!client.current) continue
-
-			const query = createResourceQuery(client, 'getJointPositions', options)
-			results[client.current.name] = query
-		}
-
-		return results
-	})
+	const jointPositionsQueries = $derived(
+		clients.map(
+			(client) =>
+				[client.current?.name, createResourceQuery(client, 'getJointPositions', options)] as const
+		)
+	)
 
 	const currentPositions = $derived(
-		Object.fromEntries(
-			Object.entries(jointPositionsQueries).map(([name, query]) => [
-				name,
-				query.current.data?.values,
-			])
-		)
+		Object.fromEntries(jointPositionsQueries.map(([name, query]) => [name, query.data?.values]))
 	)
 
 	setContext<Context>(key, {
