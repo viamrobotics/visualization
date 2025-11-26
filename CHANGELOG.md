@@ -1,5 +1,11 @@
 # motion-tools
 
+## 0.19.0
+
+### Minor Changes
+
+- 61f0b27: Upgrade to svelte-sdk v1
+
 ## 0.18.3
 
 ### Patch Changes
