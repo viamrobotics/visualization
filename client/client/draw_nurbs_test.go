@@ -11,7 +11,7 @@ import (
 
 func TestDrawNurbs(t *testing.T) {
 	t.Run("DrawNurbs", func(t *testing.T) {
-		nurbs := shapes.GenerateNURBS(20, 3, r3.Vector{X: 0, Y: 10000, Z: 0})
+		nurbs := shapes.GenerateNURBS(20, 3, r3.Vector{X: 0, Y: 0, Z: 0})
 
 		test.That(t, DrawNurbs(nurbs, "#40E0D0", "nurbs-1"), test.ShouldBeNil)
 	})

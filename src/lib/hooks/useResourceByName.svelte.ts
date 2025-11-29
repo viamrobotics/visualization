@@ -5,7 +5,7 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('resource-by-name-context')
 
 interface Context {
-	current: Record<string, ResourceName>
+	current: Record<string, ResourceName | undefined>
 }
 
 export const provideResourceByName = (partID: () => string) => {

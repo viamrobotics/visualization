@@ -49,6 +49,8 @@ When a screenshot comparison fails, Playwright generates three files:
 - `expected.png` - The baseline screenshot for comparison
 - `diff.png` - A visual diff highlighting the differences
 
+NOTE: running lots of these tests in sequence is somewhat flaky, if you have errors try targeting the single failing test by using the command #2 under `Running specific tests`
+
 ## Updating Screenshots
 
 When you make intentional UI changes that should result in different screenshots:
@@ -64,6 +66,11 @@ When you make intentional UI changes that should result in different screenshots
 3. **Commit the new snapshots** along with your code changes
 
 > **Note:** Only update screenshots when you've intentionally modified the UI. Random test failures should be investigated rather than blindly updating snapshots.
+
+### Running specific tests
+
+1. to run just a particular test file you can use this command `npx playwright test e2e/go-client.test.ts`
+2. to run just a specific test you can use `npx playwright test e2e/go-client.test.ts --grep "draw nurbs"`
 
 ## Todo
 
