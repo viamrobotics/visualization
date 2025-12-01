@@ -39,7 +39,7 @@ export const provide3DModels = (partID: () => string) => {
 				if (!client.current) continue
 				try {
 					const geometries = await client.current.getGeometries()
-					if (geometries.length === 0) { 
+					if (geometries.length === 0) {
 						continue
 					}
 					const geometryLabel = geometries[0].label
