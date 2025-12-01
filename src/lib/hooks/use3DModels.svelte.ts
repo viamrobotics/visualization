@@ -38,9 +38,15 @@ export const provide3DModels = (partID: () => string) => {
 			for (const client of clients) {
 				if (!client.current) continue
 				try {
+					const geometries = await client.current.getGeometries()
+					if (geometries.length === 0) { 
+						continue
+					}
+					const geometryLabel = geometries[0].label
+					const prefix = geometryLabel.split(':')[0]
 					const models = await client.current.get3DModels()
-					if (!(client.current.name in current)) {
-						current[client.current.name] = {}
+					if (!(prefix in current)) {
+						current[prefix] = {}
 					}
 					for (const [id, model] of Object.entries(models)) {
 						const arrayBuffer = model.mesh.buffer.slice(
@@ -48,7 +54,7 @@ export const provide3DModels = (partID: () => string) => {
 							model.mesh.byteOffset + model.mesh.byteLength
 						)
 						const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
-						current[client.current.name][id] = gltfModel.scene
+						current[prefix][id] = gltfModel.scene
 					}
 				} catch (error) {
 					// some arms may not implement this api yet
