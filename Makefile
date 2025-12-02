@@ -1,4 +1,4 @@
-.PHONY: help setup up proto-generate proto-lint proto-format proto-clean
+.PHONY: help setup up proto-generate proto-lint proto-format proto-clean docs-generate docs-install
 
 # Default target - show help when no target is specified
 .DEFAULT_GOAL := help
@@ -14,6 +14,8 @@ help:
 	@echo '  proto-lint     - Lint protobuf files'
 	@echo '  proto-format   - Format protobuf files'
 	@echo '  proto-clean    - Clean generated protobuf code'
+	@echo '  docs-install   - Install gomarkdoc tool for documentation generation'
+	@echo '  docs-generate  - Generate API documentation for Go packages'
 	@echo '  help           - Show this help message'
 
 setup:
@@ -54,3 +56,17 @@ proto-lint:
 
 proto-format:
 	@pnpm exec buf format -w
+
+docs-install:
+	@echo 'Installing gomarkdoc...'
+	@go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+	@echo 'gomarkdoc installed successfully!'
+
+docs-generate:
+	@echo 'Generating API documentation...'
+	@if ! command -v gomarkdoc &> /dev/null; then \
+		echo 'gomarkdoc not found. Installing...'; \
+		$(MAKE) docs-install; \
+	fi
+	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md
+	@echo 'API documentation generated at draw/DOCS.md'

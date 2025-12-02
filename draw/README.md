@@ -2,6 +2,11 @@
 
 The `draw` package provides a Go API for creating and managing 3D visualizations with Viam's motion tools and visualization systems. Along with rendering Viam geometries, it allows you to define scenes, cameras, and various 3D shapes like arrows, lines, points, and models, which can then be serialized to Protobuf for rendering.
 
+## Documentation
+
+- **[API Documentation](DOCS.md)** - Complete API reference (auto-generated from source code)
+- **Quick Start Guide** - See below for usage examples
+
 ## Features
 
 - **Scene Configuration**: Define camera properties (position, look-at, perspective/orthographic) and global scene settings (grid, point sizes, etc.).
