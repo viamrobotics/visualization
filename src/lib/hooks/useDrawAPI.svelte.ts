@@ -9,7 +9,7 @@ import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
-import { type ConfigurableTrait, type Entity } from 'koota'
+import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 
@@ -92,38 +92,48 @@ export const provideDrawAPI = () => {
 	const direction = new Vector3()
 	const origin = new Vector3()
 	const loader = new GLTFLoader()
+	const entities = new Map<string, Entity>()
 
 	const drawFrames = async (data: Frame[]) => {
 		for (const rawFrame of data) {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
+			const name = frame.name ?? ''
 
-			const entityTraits: ConfigurableTrait[] = [
-				traits.UUID,
-				traits.Name(frame.name),
-				traits.Parent(frame.parent),
-				traits.Pose(pose),
-				traits.DrawAPI,
-				traits.ReferenceFrame,
-			]
+			const existing = entities.get(name)
 
-			if (frame.geometry?.type === 'box') {
-				entityTraits.push(
-					traits.Box({
+			if (existing) {
+				existing.set(traits.Pose, pose)
+				continue
+			}
+
+			const geometryTrait = () => {
+				if (frame.geometry?.type === 'box') {
+					return traits.Box({
 						x: frame.geometry.x * 0.001,
 						y: frame.geometry.y * 0.001,
 						z: frame.geometry.z * 0.001,
 					})
-				)
-			} else if (frame.geometry?.type === 'sphere') {
-				entityTraits.push(traits.Sphere({ r: frame.geometry.r * 0.001 }))
-			} else if (frame.geometry?.type === 'capsule') {
-				entityTraits.push(
-					traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 })
-				)
+				} else if (frame.geometry?.type === 'sphere') {
+					return traits.Sphere({ r: frame.geometry.r * 0.001 })
+				} else if (frame.geometry?.type === 'capsule') {
+					return traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 })
+				}
+
+				return trait()
 			}
 
-			world.spawn(...entityTraits)
+			const entity = world.spawn(
+				traits.UUID,
+				traits.Name(frame.name),
+				traits.Parent(frame.parent),
+				traits.Pose(pose),
+				geometryTrait(),
+				traits.DrawAPI,
+				traits.ReferenceFrame
+			)
+
+			entities.set(name, entity)
 		}
 	}
 
@@ -144,13 +154,34 @@ export const provideDrawAPI = () => {
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
-		const entities = world.query(traits.DrawAPI)
-		const existingEntity = entities.find((entity) => entity.get(traits.Name) === data.label)
+		const name = data.label ?? `geometry ${++geometryIndex}`
 		const pose = createPose(data.center)
+		const existing = entities.get(name)
 
-		if (existingEntity) {
-			existingEntity.set(traits.Pose, pose)
+		if (existing) {
+			existing.set(traits.Pose, pose)
 			return
+		}
+
+		const geometryTrait = () => {
+			if ('mesh' in data) {
+				return traits.BufferGeometry(parsePlyInput(data.mesh.mesh))
+			} else if ('box' in data) {
+				return traits.Box({
+					x: data.box.dimsMm.x * 0.001,
+					y: data.box.dimsMm.y * 0.001,
+					z: data.box.dimsMm.z * 0.001,
+				})
+			} else if ('sphere' in data) {
+				return traits.Sphere({ r: data.sphere.radiusMm * 0.001 })
+			} else if ('capsule' in data) {
+				return traits.Capsule({
+					r: data.capsule.radiusMm * 0.001,
+					l: data.capsule.lengthMm * 0.001,
+				})
+			}
+
+			return trait()
 		}
 
 		const entity = world.spawn(
@@ -159,33 +190,17 @@ export const provideDrawAPI = () => {
 			traits.Parent(parent),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
+			geometryTrait(),
 			traits.DrawAPI
 		)
 
-		if ('mesh' in data) {
-			entity.add(traits.BufferGeometry(parsePlyInput(data.mesh.mesh)))
-		} else if ('box' in data) {
-			entity.add(
-				traits.Box({
-					x: data.box.dimsMm.x * 0.001,
-					y: data.box.dimsMm.y * 0.001,
-					z: data.box.dimsMm.z * 0.001,
-				})
-			)
-		} else if ('sphere' in data) {
-			entity.add(traits.Sphere({ r: data.sphere.radiusMm * 0.001 }))
-		} else if ('capsule' in data) {
-			entity.add(
-				traits.Capsule({ r: data.capsule.radiusMm * 0.001, l: data.capsule.lengthMm * 0.001 })
-			)
-		}
+		entities.set(name, entity)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawNurbs = (data: any, color: string) => {
-		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name) === data.name)
-		entity?.destroy()
+		const name = data.Name
+		const existing = entities.get(name)
 
 		const controlPoints = data.ControlPts.map(
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
@@ -193,13 +208,20 @@ export const provideDrawAPI = () => {
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
 		const points = curve.getPoints(200)
 
-		world.spawn(
+		if (existing) {
+			existing.set(traits.LineGeometry, points)
+			return
+		}
+
+		const entity = world.spawn(
 			traits.UUID,
-			traits.Name(data.Name),
+			traits.Name(name),
 			traits.Color(colorUtil.set(color)),
 			traits.LineGeometry(points),
 			traits.DrawAPI
 		)
+
+		entities.set(name, entity)
 	}
 
 	const drawPoses = async (reader: Float32Reader) => {

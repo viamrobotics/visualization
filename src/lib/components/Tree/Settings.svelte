@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Select, Switch, Input } from '@viamrobotics/prime-core'
-	import { useQueryClient } from '@tanstack/svelte-query'
 	import RefreshRate from '../RefreshRate.svelte'
 	import { useMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import Drawer from './Drawer.svelte'
@@ -10,13 +9,31 @@
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
+	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
+	import { useThrelte } from '@threlte/core'
+	import { useRefetchPoses } from '$lib/hooks/useRefetchPoses'
 
-	const queryClient = useQueryClient()
+	const { invalidate } = useThrelte()
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const settings = useSettings()
 	const { disabledCameras } = useMachineSettings()
 	const motionClient = useMotionClient()
+	const geometries = useGeometries()
+	const pointclouds = usePointClouds()
+
+	const { refetchPoses } = useRefetchPoses()
+
+	// Invalidate the renderer for any settings change
+	$effect(() => {
+		for (const key in settings.current) {
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+			settings.current[key as keyof typeof settings.current]
+		}
+
+		invalidate()
+	})
 </script>
 
 <Drawer
@@ -31,14 +48,15 @@
 			label="Poses"
 			allowLive
 			onManualRefetch={() => {
-				queryClient.refetchQueries({ queryKey: ['getPose', 'getGeometries'], exact: false })
+				refetchPoses()
+				geometries.refetch()
 			}}
 		/>
 		<RefreshRate
 			id={RefreshRates.pointclouds}
 			label="Pointclouds"
 			onManualRefetch={() => {
-				queryClient.refetchQueries({ queryKey: ['getPointCloud'], exact: false })
+				pointclouds.refetch()
 			}}
 		/>
 		<div>

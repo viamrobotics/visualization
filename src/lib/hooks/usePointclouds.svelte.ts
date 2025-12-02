@@ -1,11 +1,12 @@
-import { createQueries, queryOptions, type CreateQueryOptions } from '@tanstack/svelte-query'
 import { CameraClient } from '@viamrobotics/sdk'
-import { setContext, getContext } from 'svelte'
-import { fromStore, toStore } from 'svelte/store'
-import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { setContext, getContext, untrack } from 'svelte'
+import {
+	createResourceClient,
+	createResourceQuery,
+	useResourceNames,
+} from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
@@ -14,13 +15,7 @@ import type { Entity } from 'koota'
 const key = Symbol('pointcloud-context')
 
 interface Context {
-	errors: Error[]
-}
-
-interface QueryResult {
-	name: string
-	positions: Float32Array<ArrayBuffer>
-	colors: Float32Array<ArrayBuffer> | null
+	refetch: () => void
 }
 
 export const providePointclouds = (partID: () => string) => {
@@ -33,93 +28,138 @@ export const providePointclouds = (partID: () => string) => {
 		cameras.current.map((camera) => createResourceClient(CameraClient, partID, () => camera.name))
 	)
 
-	const options = $derived.by(() => {
-		const interval = refreshRates.get(RefreshRates.pointclouds)
+	const propQueries = $derived(
+		clients.map(
+			(client) =>
+				[
+					client.current?.name,
+					createResourceQuery(client, 'getProperties', {
+						staleTime: Infinity,
+						refetchOnMount: false,
+						refetchInterval: false,
+					}),
+				] as const
+		)
+	)
 
-		const results: CreateQueryOptions<QueryResult | null, Error, QueryResult | null, string[]>[] =
-			[]
+	const fetchedPropQueries = propQueries.every(([, query]) => query.isPending === false)
 
-		for (const cameraClient of clients) {
-			const name = cameraClient.current?.name ?? ''
+	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
+	const enabledClients = $derived(
+		clients.filter(
+			(client) =>
+				fetchedPropQueries &&
+				client.current?.name &&
+				interval !== RefetchRates.OFF &&
+				disabledCameras.get(client.current?.name) !== true
+		)
+	)
 
-			const options = queryOptions({
-				enabled:
-					interval !== RefetchRates.OFF &&
-					cameraClient.current !== undefined &&
-					disabledCameras.get(name) !== true,
-				refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
-				queryKey: ['getPointCloud', 'partID', partID(), name],
-				queryFn: async (): Promise<QueryResult | null> => {
-					if (!cameraClient.current) {
-						throw new Error('No camera client')
-					}
-
-					logs.add(`Fetching pointcloud for ${cameraClient.current.name}`)
-					const response = await cameraClient.current.getPointCloud()
-
-					if (!response) return null
-
-					const { positions, colors } = await parsePcdInWorker(new Uint8Array(response))
-
-					return {
-						name,
-						positions,
-						colors,
-					}
-				},
-			})
-
-			results.push(options)
+	/**
+	 * Some machines have a lot of cameras, so before enabling all of them
+	 * we'll first check pointcloud support.
+	 *
+	 * We'll disable cameras that don't support pointclouds,
+	 * but still allow users to manually enable if they want to.
+	 */
+	$effect(() => {
+		for (const [name, query] of propQueries) {
+			if (name && query.data?.supportsPcd === false) {
+				if (disabledCameras.get(name) === undefined) {
+					disabledCameras.set(name, true)
+				}
+			}
 		}
-
-		return results
 	})
 
-	const { updateUUIDs } = usePersistentUUIDs()
-	const queries = fromStore(
-		createQueries({
-			queries: toStore(() => options),
-			combine: (results) => {
-				const data = results
-					.flatMap((result) => result.data)
-					.filter((data) => data !== null && data !== undefined)
-
-				const errors = results.flatMap((result) => result.error).filter((error) => error !== null)
-
-				return {
-					data,
-					errors,
-				}
-			},
-		})
+	const queries = $derived(
+		enabledClients.map(
+			(client) =>
+				[
+					client.current?.name,
+					createResourceQuery(client, 'getPointCloud', () => ({ refetchInterval: interval })),
+				] as const
+		)
 	)
 
 	$effect(() => {
-		const entities: Entity[] = []
-		for (const { name, positions, colors } of queries.current.data) {
+		for (const [name, query] of queries) {
+			if (query.isFetching) {
+				logs.add(`Fetching pointcloud for ${name}...`)
+			} else if (query.error) {
+				logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
+			}
+		}
+	})
+
+	const pcObjects = $state<
+		{
+			parent: string
+			positions: Float32Array<ArrayBuffer>
+			colors: Float32Array<ArrayBuffer> | null
+		}[]
+	>([])
+
+	$effect(() => {
+		const binaries: [string, Uint8Array][] = []
+
+		for (const [name, query] of queries) {
+			const { data } = query
+			if (name && data) {
+				binaries.push([name, data])
+			}
+		}
+
+		Promise.allSettled(
+			binaries.map(async ([parent, uint8array]) => {
+				const { positions, colors } = await parsePcdInWorker(new Uint8Array(uint8array))
+
+				return { parent, positions, colors }
+			})
+		).then((results) => {
+			for (const result of results) {
+				if (result.status === 'fulfilled') {
+					untrack(() => pcObjects.push(result.value))
+				} else if (result.status === 'rejected') {
+					logs.add(result.reason, 'error')
+				}
+			}
+		})
+	})
+
+	const entities = new Map<string, Entity>()
+
+	$effect(() => {
+		for (const { parent, positions, colors } of pcObjects) {
+			const name = `${parent} pointcloud`
+
+			const existing = entities.get(name)
+
+			if (existing) {
+				existing.set(traits.PointsGeometry, positions)
+
+				if (colors) {
+					existing.set(traits.VertexColors, colors)
+				}
+			}
+
 			const entity = world.spawn(
 				traits.UUID,
-				traits.Name(`${name} pointcloud`),
+				traits.Name(),
 				traits.Parent(name),
 				traits.PointsGeometry(positions),
 				colors ? traits.VertexColors(colors) : traits.Color
 			)
 
-			entities.push(entity)
-		}
-
-		updateUUIDs(entities)
-
-		return () => {
-			for (const entity of entities) {
-				entity.destroy()
-			}
+			entities.set(name, entity)
 		}
 	})
 
 	setContext<Context>(key, {
-		get errors() {
-			return queries.current.errors
+		refetch() {
+			for (const [, query] of queries) {
+				query.refetch()
+			}
 		},
 	})
 }

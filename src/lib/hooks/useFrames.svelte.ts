@@ -16,8 +16,6 @@ import type { Entity } from 'koota'
 
 interface FramesContext {
 	current: WorldObject[]
-	error?: Error
-	fetching: boolean
 	getParentFrameOptions: (componentName: string) => string[]
 }
 
@@ -37,13 +35,15 @@ export const provideFrames = (partID: () => string) => {
 
 	$effect.pre(() => {
 		if (revision) {
-			untrack(() => query.current).refetch()
+			untrack(() => query.refetch())
 		}
 	})
 
-	$effect.pre(() => {
-		if (query.current.isFetching) {
+	$effect(() => {
+		if (query.isFetching) {
 			logs.add('Fetching frames...')
+		} else if (query.error) {
+			logs.add(`Frames: ${query.error.message}`, 'error')
 		}
 	})
 
@@ -58,7 +58,7 @@ export const provideFrames = (partID: () => string) => {
 	$effect.pre(() => {
 		const entities: Entity[] = []
 
-		for (const { frame } of query.current.data ?? []) {
+		for (const { frame } of query.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
@@ -111,7 +111,7 @@ export const provideFrames = (partID: () => string) => {
 	const machineFrames = $derived.by(() => {
 		const objects: Record<string, WorldObject> = {}
 
-		for (const { frame } of query.current.data ?? []) {
+		for (const { frame } of query.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
@@ -242,9 +242,6 @@ export const provideFrames = (partID: () => string) => {
 		return results
 	})
 
-	const error = $derived(query.current.error ?? undefined)
-	const fetching = $derived(query.current.isFetching)
-
 	const getParentFrameOptions = (componentName: string) => {
 		const validFrames = new Set(current.map((frame) => frame.name))
 		validFrames.add('world')
@@ -267,12 +264,6 @@ export const provideFrames = (partID: () => string) => {
 		getParentFrameOptions,
 		get current() {
 			return current
-		},
-		get error() {
-			return error
-		},
-		get fetching() {
-			return fetching
 		},
 	})
 }

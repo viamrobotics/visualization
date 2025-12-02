@@ -36,7 +36,6 @@
 				obb.fromBox3(box3)
 				obbHelper.setFromOBB(obb)
 				invalidate()
-
 				return
 			}
 
@@ -59,6 +58,8 @@
 		} else {
 			stop()
 		}
+
+		invalidate()
 	})
 </script>
 

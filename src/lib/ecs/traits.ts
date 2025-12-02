@@ -18,7 +18,9 @@ export const Instance = trait({
 	instanceID: -1,
 })
 export const Opacity = trait(() => 1)
-export const Color = trait({ r: 0, g: 0, b: 0 })
+
+// Default to red
+export const Color = trait({ r: 1, g: 0, b: 0 })
 
 export const Arrow = trait()
 

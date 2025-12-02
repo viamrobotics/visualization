@@ -26,13 +26,13 @@ export function useQuery<T extends QueryParameter[]>(
 		version
 		const unsubAdd = world.onQueryAdd(hash, () => {
 			if (updateScheduled) return
-			setTimeout(update)
+			queueMicrotask(update)
 			updateScheduled = true
 		})
 
 		const unsubRemove = world.onQueryRemove(hash, () => {
 			if (updateScheduled) return
-			setTimeout(update)
+			queueMicrotask(update)
 			updateScheduled = true
 		})
 
@@ -42,7 +42,7 @@ export function useQuery<T extends QueryParameter[]>(
 
 		if (query?.version !== initialQueryVersion) {
 			if (!updateScheduled) {
-				setTimeout(update)
+				queueMicrotask(update)
 				updateScheduled = true
 			}
 		}
