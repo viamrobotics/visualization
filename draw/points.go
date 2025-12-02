@@ -8,27 +8,33 @@ import (
 )
 
 var (
-	// DefaultPointSize is the default size of a point in millimeters
+	// DefaultPointSize is the default point size in millimeters.
 	DefaultPointSize float32 = 10.0
 )
 
-// Points represents a set of Points in 3D space
+// Points represents a point cloud or set of discrete points in 3D space.
+// Useful for visualizing sensor data, waypoints, or sparse 3D data.
 type Points struct {
-	// The Positions to render
+	// Positions defines the location of each point.
 	Positions []r3.Vector
 
-	// The size of the points, defaults to 10mm
+	// PointSize specifies the size of each point in millimeters (default: 10mm).
 	PointSize float32
 
-	// Either a single color or a color per point
+	// Colors specifies the color for each point. Can be a single color (applied to all points)
+	// or one color per point.
 	Colors []Color
 }
 
+// drawPointsConfig is a configuration for drawing a set of points
 type drawPointsConfig struct {
 	pointSize float32
 	DrawColorsConfig
 }
 
+// newDrawPointsConfig creates a new draw points configuration
+//
+// Returns the draw points configuration
 func newDrawPointsConfig() *drawPointsConfig {
 	return &drawPointsConfig{
 		pointSize:        DefaultPointSize,
@@ -36,24 +42,28 @@ func newDrawPointsConfig() *drawPointsConfig {
 	}
 }
 
+// drawPointsOption is a function that configures a draw points configuration
 type drawPointsOption func(*drawPointsConfig)
 
-// WithPointsSize sets the size of the points in millimeters
+// WithPointsSize creates a points option that sets the size of each point in millimeters.
 func WithPointsSize(size float32) drawPointsOption {
 	return func(config *drawPointsConfig) {
 		config.pointSize = size
 	}
 }
 
-// WithPointsColors sets the colors of the points
-// Can be a single color or a color per point
+// WithPointsColors creates a points option that sets colors for the points.
+// If only defaultColor is provided, it applies to all points. If perPointColors are provided,
+// each point gets its corresponding color.
 func WithPointsColors(defaultColor Color, perPointColors ...Color) drawPointsOption {
 	colors := []Color{defaultColor}
 	colors = append(colors, perPointColors...)
 	return WithColors[*drawPointsConfig](colors)
 }
 
-// NewPoints creates a new Points object with functional options
+// NewPoints creates a new Points object from the given positions and optional configuration.
+// Returns an error if positions are empty, if the point size is non-positive, or if the number
+// of colors doesn't match requirements (must be 1 or equal to number of positions).
 func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("positions cannot be empty")
@@ -79,8 +89,8 @@ func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, err
 	}, nil
 }
 
-// Draw draws a set of points from a list of positions and colors
-// If colors is nil or empty, uses DefaultPointColor (gray)
+// Draw creates a Drawing from this Points object, positioned at the given pose within the specified
+// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (points Points) Draw(
 	name string,
 	parent string,

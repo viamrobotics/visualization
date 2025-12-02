@@ -9,16 +9,15 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
-// BufferPacker provides efficient direct buffer writing
-// T must be a float32 or uint8
+// BufferPacker provides efficient direct buffer writing for numeric data.
+// The type parameter T must be either float32 or uint8.
 type BufferPacker[T any] struct {
 	buffer []T
 	offset int
 }
 
-// NewBufferPacker creates a new packer with pre-allocated capacity.
-//   - elementCount is the number of elements
-//   - fieldsPerElement is the number of fields per element
+// NewBufferPacker creates a new buffer packer with pre-allocated capacity
+// for elementCount items, each with fieldsPerElement fields.
 func NewBufferPacker[T any](elementCount, fieldsPerElement int) *BufferPacker[T] {
 	return &BufferPacker[T]{
 		buffer: make([]T, elementCount*fieldsPerElement),
@@ -26,14 +25,14 @@ func NewBufferPacker[T any](elementCount, fieldsPerElement int) *BufferPacker[T]
 	}
 }
 
-// Write appends float32 values directly to the buffer
-//   - values are the values to write
+// Write appends values directly to the buffer at the current offset and advances the offset.
 func (packer *BufferPacker[T]) Write(values ...T) {
 	copy(packer.buffer[packer.offset:], values)
 	packer.offset += len(values)
 }
 
-// Read returns the packed buffer as little-endian bytes
+// Read returns the packed buffer as little-endian bytes. For uint8 buffers, returns the buffer directly.
+// For float32 buffers, converts each value to its little-endian byte representation.
 func (packer *BufferPacker[T]) Read() []byte {
 	// Optimization for uint8 (byte)
 	if buf, ok := any(packer.buffer).([]uint8); ok {
@@ -64,8 +63,8 @@ func (packer *BufferPacker[T]) Read() []byte {
 	return bytes
 }
 
-// packFloats packs a slice of float64 values into a Float32Array byte representation
-//   - floats are the values to pack
+// packFloats packs a slice of float64 values into a little-endian Float32Array byte representation.
+// Values are converted from float64 to float32 during packing.
 func packFloats(floats []float64) []byte {
 	packer := NewBufferPacker[float32](len(floats), 1)
 	for _, f := range floats {
@@ -74,8 +73,8 @@ func packFloats(floats []float64) []byte {
 	return packer.Read()
 }
 
-// packPoints packs a slice of 3D points into a Float32Array byte representation
-//   - dots are the points to pack: [x, y, z]
+// packPoints packs a slice of 3D points into a little-endian Float32Array byte representation.
+// Each point is packed as [x, y, z] coordinates.
 func packPoints(dots []r3.Vector) []byte {
 	packer := NewBufferPacker[float32](len(dots), 3)
 
@@ -86,9 +85,9 @@ func packPoints(dots []r3.Vector) []byte {
 	return packer.Read()
 }
 
-// packPoses packs a slice of 3D poses into a Float32Array byte representation
-//   - poses are the poses to pack: [x, y, z, ox, oy, oz, theta (if theta is true)]
-//   - theta is whether to include the theta value
+// packPoses packs a slice of 3D poses into a little-endian Float32Array byte representation.
+// Each pose is packed as [x, y, z, ox, oy, oz], with theta appended if the theta parameter is true.
+// The orientation is represented as an orientation vector in degrees.
 func packPoses(poses []spatialmath.Pose, theta bool) []byte {
 	fields := 6
 	if theta {
@@ -112,8 +111,8 @@ func packPoses(poses []spatialmath.Pose, theta bool) []byte {
 	return packer.Read()
 }
 
-// packColors packs a slice of Color values into a []uint8 byte representation
-//   - colors are the colors to pack: [r, g, b, a]
+// packColors packs a slice of Color values into a uint8 byte representation.
+// Each color is packed as [r, g, b, a] with values in the range 0-255.
 func packColors(colors []Color) []byte {
 	packer := NewBufferPacker[uint8](len(colors), 4)
 
