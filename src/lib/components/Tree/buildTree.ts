@@ -1,6 +1,6 @@
 import type { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 import type { WorldObject } from '$lib/WorldObject.svelte'
-import type { PassSnapshot } from '$lib/gen/draw/v1/snapshot_pb'
+import type { Snapshot } from '$lib/gen/draw/v1/snapshot_pb'
 import { drawingWithUUID, fromDrawing, fromTransform } from '$lib/WorldObject.svelte'
 import { transformWithUUID } from '@viamrobotics/sdk'
 
@@ -29,7 +29,7 @@ const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
 export const buildTreeNodes = (
 	objects: WorldObject[],
 	worldStates: ReturnType<typeof useWorldStates>['current'],
-	snapshot?: PassSnapshot
+	snapshot?: Snapshot
 ): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes = []

@@ -8,7 +8,7 @@ import "draw/v1/scene.proto";
 
 option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
 
-message PassSnapshot {
+message Snapshot {
   // the list of transforms and shapes in the scene to render
   repeated viam.common.v1.Transform transforms = 1;
 

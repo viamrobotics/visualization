@@ -8,7 +8,7 @@
 	import { WorldObject } from '$lib/WorldObject.svelte'
 	import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 	import { useSnapshot } from '$lib/hooks/useSnapshot.svelte'
-	import { decodeSnapshotFromJSON } from '$lib/snapshot'
+	import { decodeSnapshotFromJSON, decodeSnapshotFromGzip } from '$lib/snapshot'
 	import type { HTMLAttributes } from 'svelte/elements'
 	import { useFileDrop } from './useFileDrop.svelte'
 
@@ -18,7 +18,10 @@
 	const snapshot = useSnapshot()
 	const toast = useToast()
 
-	const extensions = ['json', ...SUPPORTED_MESH_EXTENSIONS]
+	// Binary snapshot extension (gzip-compressed protobuf)
+	const BINARY_SNAPSHOT_EXT = 'pb.gz'
+
+	const extensions = ['json', BINARY_SNAPSHOT_EXT, ...SUPPORTED_MESH_EXTENSIONS]
 
 	let fileDrop = useFileDrop()
 
@@ -55,6 +58,14 @@
 		}
 	}
 
+	// Get the file extension, handling compound extensions like .pb.gz
+	const getFileExtension = (filename: string): string => {
+		if (filename.endsWith('.pb.gz')) {
+			return 'pb.gz'
+		}
+		return filename.split('.').at(-1) ?? ''
+	}
+
 	const ondrop = (event: DragEvent) => {
 		event.preventDefault()
 
@@ -67,7 +78,7 @@
 		const { files } = event.dataTransfer
 
 		for (const file of files) {
-			const ext = file.name.split('.').at(-1)
+			const ext = getFileExtension(file.name)
 			if (!ext) {
 				toast({
 					message: `Could not determine file extension.`,
@@ -129,6 +140,33 @@
 					}
 
 					onJSON(prefix, JSON.parse(result))
+				} else if (ext === BINARY_SNAPSHOT_EXT) {
+					// Handle gzip-compressed binary protobuf snapshots
+					if (!isArrayBuffer(result)) {
+						toast({
+							message: `${file.name} failed to load.`,
+							variant: ToastVariant.Danger,
+						})
+						return
+					}
+
+					try {
+						snapshot.current = undefined
+						const decodedSnapshot = await decodeSnapshotFromGzip(new Uint8Array(result))
+						snapshot.current = decodedSnapshot
+
+						toast({
+							message: `Loaded snapshot with ${decodedSnapshot.transforms.length + decodedSnapshot.drawings.length} world objects`,
+							variant: ToastVariant.Success,
+						})
+					} catch (error) {
+						console.error('error decoding binary snapshot', error)
+						const errorMessage = error instanceof Error ? error.message : String(error)
+						toast({
+							message: `Failed to load snapshot: ${errorMessage}`,
+							variant: ToastVariant.Danger,
+						})
+					}
 				} else if (ext === MESH_EXTENSIONS.PCD) {
 					if (!isArrayBuffer(result)) {
 						toast({
@@ -179,7 +217,12 @@
 				}
 			})
 
-			reader.readAsText(file)
+			// Use appropriate reader method based on file type
+			if (ext === 'json') {
+				reader.readAsText(file)
+			} else {
+				reader.readAsArrayBuffer(file)
+			}
 			fileDrop.dropState = 'loading'
 		}
 	}

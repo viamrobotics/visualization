@@ -6,7 +6,7 @@ export const POINT_FIELDS = ['x', 'y', 'z']
 export const POINT_SIZE = [4, 4, 4]
 export const POINT_TYPE = [BufferDataType.FLOAT, BufferDataType.FLOAT, BufferDataType.FLOAT]
 
-export const DEFAULT_POINT_COLOR: RGBA = [0.2, 0.2, 0.2, 1] // #333333
+export const DEFAULT_POINT_COLOR: RGBA = [51, 51, 51, 255] // gray
 export const DEFAULT_POINT_SIZE = 0.01
 
 export const parsePoints = (data: Uint8Array) => {

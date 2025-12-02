@@ -11,7 +11,7 @@ and should remain pure, i.e. no hooks should be used.
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { parsePoints } from '$lib/point'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { RGBA_FIELDS } from '$lib/color'
+	import { RGBA_FIELDS, normalizeColorValue } from '$lib/color'
 	import type { LineGeometry } from '$lib/shape'
 
 	interface Props {
@@ -43,18 +43,27 @@ and should remain pure, i.e. no hooks should be used.
 
 	$effect(() => {
 		const { points } = parsePoints(geometry.geometryType.value.positions)
-		let colorData = metadata?.colors ?? new Float32Array([0, 0.5, 1, 1, 0, 0.3, 0.8, 1]) // Default line blue + point darker blue
+		let colorData = metadata?.colors ?? new Uint8Array([0, 128, 255, 255, 0, 77, 204, 255])
 		let hasPointColor = false
 		if (colorData.length === RGBA_FIELDS.length * 2) {
 			hasPointColor = true
 		}
 
-		lineColor.setRGB(colorData[0], colorData[1], colorData[2])
-		lineOpacity = colorData[3] ?? 1.0
+		lineColor.setRGB(
+			normalizeColorValue(colorData[0]),
+			normalizeColorValue(colorData[1]),
+			normalizeColorValue(colorData[2])
+		)
+
+		lineOpacity = normalizeColorValue(colorData[3] ?? 255)
 
 		if (hasPointColor) {
-			pointColor.setRGB(colorData[4], colorData[5], colorData[6])
-			pointOpacity = colorData[7] ?? 1.0
+			pointColor.setRGB(
+				normalizeColorValue(colorData[4]),
+				normalizeColorValue(colorData[5]),
+				normalizeColorValue(colorData[6])
+			)
+			pointOpacity = normalizeColorValue(colorData[7] ?? 255)
 		} else {
 			pointColor.copy(lineColor)
 			pointOpacity = lineOpacity

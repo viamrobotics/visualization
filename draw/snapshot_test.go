@@ -37,14 +37,14 @@ func TestSnapshotBox(t *testing.T) {
 	voxelScale := 500.0
 	voxelSize := r3.Vector{X: voxelScale, Y: voxelScale, Z: voxelScale}
 
-	woodColor := NewColor(WithName("saddlebrown"))          // wood
-	roofColor := NewColor(WithName("maroon"))               // roof
-	windowColor := NewColor(WithName("blue")).SetAlpha(0.5) // window
-	doorColor := NewColor(WithName("sienna"))               // door
-	chimneyColor := NewColor(WithName("darkgray"))          // chimney
-	benchColor := NewColor(WithName("lightgray"))           // bench
-	chestColor := NewColor(WithName("darkgoldenrod"))       // chest
-	furnitureColor := NewColor(WithName("peru"))            // furniture
+	woodColor := NewColor(WithName("saddlebrown"))                 // wood
+	roofColor := NewColor(WithName("maroon"))                      // roof
+	windowColor := NewColor(WithName("blue")).SetAlpha(uint8(128)) // window
+	doorColor := NewColor(WithName("sienna"))                      // door
+	chimneyColor := NewColor(WithName("darkgray"))                 // chimney
+	benchColor := NewColor(WithName("lightgray"))                  // bench
+	chestColor := NewColor(WithName("darkgoldenrod"))              // chest
+	furnitureColor := NewColor(WithName("peru"))                   // furniture
 
 	// Create frame system and house root frame
 	fs := referenceframe.NewEmptyFrameSystem("world")
@@ -349,20 +349,20 @@ func TestSnapshotSphere(t *testing.T) {
 	createBody(t, snapshot, "callisto", jupiterOrbit, 3000, 270, 225, NewColor(WithName("darkslategray")))
 
 	saturnOrbit := createBody(t, snapshot, "saturn", sunOrbitFrame, 18000, 315, 1300, NewColor(WithName("palegoldenrod")))
-	createRings(t, snapshot, saturnOrbit, 1600, NewColor(WithName("palegoldenrod")).SetAlpha(0.5))
+	createRings(t, snapshot, saturnOrbit, 1600, NewColor(WithName("palegoldenrod")).SetAlpha(uint8(128)))
 	createBody(t, snapshot, "rhea", saturnOrbit, 2100, 110, 125, NewColor(WithName("gainsboro")))
 	createBody(t, snapshot, "enceladus", saturnOrbit, 1850, 200, 100, NewColor(WithName("snow")))
 	createBody(t, snapshot, "mimas", saturnOrbit, 1700, 290, 90, NewColor(WithName("silver")))
 
 	uranusOrbit := createBody(t, snapshot, "uranus", sunOrbitFrame, 22000, 25, 900, NewColor(WithName("paleturquoise")))
-	createRings(t, snapshot, uranusOrbit, 1100, NewColor(WithName("paleturquoise")).SetAlpha(0.5))
+	createRings(t, snapshot, uranusOrbit, 1100, NewColor(WithName("paleturquoise")).SetAlpha(uint8(128)))
 	createBody(t, snapshot, "titania", uranusOrbit, 1900, 0, 150, NewColor(WithName("lightslategray")))
 	createBody(t, snapshot, "oberon", uranusOrbit, 2100, 90, 140, NewColor(WithName("gray")))
 	createBody(t, snapshot, "umbriel", uranusOrbit, 1700, 180, 125, NewColor(WithName("dimgray")))
 	createBody(t, snapshot, "ariel", uranusOrbit, 1550, 270, 130, NewColor(WithName("darkgray")))
 
 	neptuneOrbit := createBody(t, snapshot, "neptune", sunOrbitFrame, 26000, 110, 850, NewColor(WithName("royalblue")))
-	createRings(t, snapshot, neptuneOrbit, 950, NewColor(WithName("royalblue")).SetAlpha(0.5))
+	createRings(t, snapshot, neptuneOrbit, 950, NewColor(WithName("royalblue")).SetAlpha(uint8(128)))
 	createBody(t, snapshot, "triton", neptuneOrbit, 1800, 200, 200, NewColor(WithName("lavender")))
 
 	plutoOrbit := createBody(t, snapshot, "pluto", sunOrbitFrame, 30000, 195, 225, NewColor(WithName("tan")))
@@ -1233,16 +1233,40 @@ func writeSnapshot(t *testing.T, snapshot *Snapshot, filename string) {
 		t.Fatal(err)
 	}
 
-	jsonBytes, err := snapshot.Marshal()
+	// Marshal to JSON
+	jsonBytes, err := snapshot.MarshalJSON()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(dir, filename)
-	if err := os.WriteFile(path, jsonBytes, 0o644); err != nil {
+	// Marshal to binary
+	binaryBytes, err := snapshot.MarshalBinary()
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Logf("Successfully generated %s with %d transforms and %d drawings",
-		filename, len(snapshot.Transforms()), len(snapshot.Drawings()))
+	// Marshal to gzip-compressed binary
+	gzipBytes, err := snapshot.MarshalBinaryGzip()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Write JSON file
+	jsonPath := filepath.Join(dir, filename)
+	if err := os.WriteFile(jsonPath, jsonBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Write gzip-compressed binary file (replace .json with .pb.gz)
+	gzipFilename := strings.TrimSuffix(filename, ".json") + ".pb.gz"
+	gzipPath := filepath.Join(dir, gzipFilename)
+	if err := os.WriteFile(gzipPath, gzipBytes, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Log sizes for benchmarking
+	t.Logf("Generated %s: %d transforms, %d drawings", filename, len(snapshot.Transforms()), len(snapshot.Drawings()))
+	t.Logf("  JSON: %d bytes", len(jsonBytes))
+	t.Logf("  Binary: %d bytes (%.1f%% of JSON)", len(binaryBytes), float64(len(binaryBytes))/float64(len(jsonBytes))*100)
+	t.Logf("  Gzip: %d bytes (%.1f%% of JSON)", len(gzipBytes), float64(len(gzipBytes))/float64(len(jsonBytes))*100)
 }

@@ -77,8 +77,8 @@ message SceneMetadata {
   optional float point_size = 6;
 
   // The color of the points if not defined by a transform's metadata
-  // defaults to [0.2, 0.2, 0.2, 1]
-  repeated float point_color = 7;
+  // defaults to [51, 51, 51, 255] (gray)
+  optional bytes point_color = 7;
 
   // The width of the lines if not defined by a transform's metadata
   // defaults to 5 (millimeters)

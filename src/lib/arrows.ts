@@ -15,7 +15,7 @@ export const ARROWS_POSE_TYPE = [
 	BufferDataType.FLOAT,
 ]
 
-export const DEFAULT_ARROW_COLOR: RGBA = [0, 1, 0, 1]
+export const DEFAULT_ARROW_COLOR: RGBA = [0, 255, 0, 255] // Green in uint8 format
 
 interface ParsedArrowsBuffer {
 	poseData: TypedArray

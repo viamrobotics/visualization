@@ -17,6 +17,7 @@ and should remain pure, i.e. no hooks should be used.
 	import type { WorldObject } from '$lib/WorldObject.svelte'
 	import { parsePoints } from '$lib/point'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { normalizeColorValue } from '$lib/color'
 	import type { Snippet } from 'svelte'
 
 	interface Props {
@@ -66,18 +67,22 @@ and should remain pure, i.e. no hooks should be used.
 				for (let i = 0; i < pointCount; i++) {
 					const srcIdx = i * 4
 					const dstIdx = i * 3
-					rgbColors[dstIdx] = colors[srcIdx]
-					rgbColors[dstIdx + 1] = colors[srcIdx + 1]
-					rgbColors[dstIdx + 2] = colors[srcIdx + 2]
+					rgbColors[dstIdx] = normalizeColorValue(colors[srcIdx])
+					rgbColors[dstIdx + 1] = normalizeColorValue(colors[srcIdx + 1])
+					rgbColors[dstIdx + 2] = normalizeColorValue(colors[srcIdx + 2])
 				}
 
 				material.vertexColors = true
-				material.opacity = colors[3] ?? 1.0
+				material.opacity = normalizeColorValue(colors[3] ?? 255)
 				buffer.setAttribute('color', new BufferAttribute(rgbColors, 3))
 			} else if (numColors === 1) {
 				material.vertexColors = false
-				material.opacity = colors[3] ?? 1.0
-				material.color.setRGB(colors[0], colors[1], colors[2])
+				material.opacity = normalizeColorValue(colors[3] ?? 255)
+				material.color.setRGB(
+					normalizeColorValue(colors[0]),
+					normalizeColorValue(colors[1]),
+					normalizeColorValue(colors[2])
+				)
 			}
 		} else {
 			material.vertexColors = false

@@ -9,6 +9,7 @@ import {
 	parseRGB,
 	parseRGBABuffer,
 	parseBase64RGBABuffer,
+	normalizeColorValue,
 } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
 import type { Drawing, Shape } from './gen/draw/v1/drawing_pb'
@@ -63,7 +64,7 @@ export interface ArrowShapeMetadata extends ShapeMetadata {
 }
 
 export type Metadata = {
-	colors?: Float32Array
+	colors?: Uint8Array | Float32Array
 	color?: Color
 	opacity?: number
 	gltf?: { scene: Object3D }
@@ -235,19 +236,20 @@ const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 				json[k] = isRGB(unwrappedValue) ? parseRGB(unwrappedValue) : parseColor(unwrappedValue)
 				break
 			case 'colors': {
-				let colorsArray: Float32Array | undefined
+				let colorsArray: Uint8Array | undefined
 				if (typeof unwrappedValue === 'string') {
-					// Handle base64 encoded color data from JSON snapshots
-					colorsArray = parseBase64RGBABuffer(unwrappedValue) as Float32Array
+					colorsArray = parseBase64RGBABuffer(unwrappedValue) as Uint8Array
 				} else if (unwrappedValue instanceof Uint8Array) {
-					colorsArray = parseRGBABuffer(unwrappedValue) as Float32Array
+					colorsArray = parseRGBABuffer(unwrappedValue) as Uint8Array
 				}
-				if (colorsArray) {
+				if (colorsArray && colorsArray.length >= 4) {
 					json[k] = colorsArray
-					// Extract alpha/opacity from the 4th value if it exists
-					if (colorsArray.length >= 4 && colorsArray[3] !== undefined) {
-						json.opacity = colorsArray[3]
-					}
+					json.color = new Color().setRGB(
+						normalizeColorValue(colorsArray[0]),
+						normalizeColorValue(colorsArray[1]),
+						normalizeColorValue(colorsArray[2])
+					)
+					json.opacity = normalizeColorValue(colorsArray[3])
 				}
 				break
 			}
@@ -307,15 +309,8 @@ export const drawingWithUUID = (drawing: PlainMessage<Drawing>) => {
 }
 
 export const fromDrawing = (drawing: DrawingWithUUID) => {
-	const colorsArray = parseRGBABuffer(drawing.metadata?.colors ?? new Uint8Array()) as Float32Array
-	const metadata: Metadata = {
-		colors: colorsArray,
-	}
-
-	if (colorsArray.length >= 4 && colorsArray[3] !== undefined) {
-		metadata.opacity = colorsArray[3]
-	}
-
+	const colors = parseRGBABuffer(drawing.metadata?.colors ?? new Uint8Array()) as Uint8Array
+	const metadata: Metadata = { colors: colors }
 	const worldObject = new WorldObject(
 		drawing.referenceFrame,
 		drawing.poseInObserverFrame?.pose,

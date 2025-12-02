@@ -12,7 +12,7 @@
 	import { useSelected } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { colors, darkenColor } from '$lib/color'
+	import { colors, darkenColor, normalizeColorValue } from '$lib/color'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import Shape from './Shape/Shape.svelte'
 	import { isShape } from '$lib/shape'
@@ -37,7 +37,7 @@
 	const color = $derived.by(() => {
 		if (rest.metadata.colors) {
 			if (!rest.metadata.colors.length) {
-				return colors.default
+				return new Color(colors.default)
 			}
 
 			if (
@@ -45,13 +45,18 @@
 				rest.metadata.colors[1] === undefined ||
 				rest.metadata.colors[2] === undefined
 			) {
-				return colors.default
+				return new Color(colors.default)
 			}
 
-			return new Color(rest.metadata.colors[0], rest.metadata.colors[1], rest.metadata.colors[2])
+			// Normalize uint8 (0-255) to float (0-1) for THREE.Color
+			return new Color(
+				normalizeColorValue(rest.metadata.colors[0]),
+				normalizeColorValue(rest.metadata.colors[1]),
+				normalizeColorValue(rest.metadata.colors[2])
+			)
 		}
 
-		return rest.metadata.color ?? colors.default
+		return rest.metadata.color ?? new Color(colors.default)
 	})
 
 	const model = $derived.by(() => {

@@ -5,15 +5,17 @@ import { ResourceName } from '@viamrobotics/sdk'
 import { BufferDataType, parseBuffer } from './buffer-metadata'
 
 export const RGBA_FIELDS = ['r', 'g', 'b', 'a']
-export const RGBA_SIZE = [4, 4, 4, 4]
+export const RGBA_SIZE = [1, 1, 1, 1] // uint8 values (0-255)
 export const RGBA_TYPE = [
-	BufferDataType.FLOAT,
-	BufferDataType.FLOAT,
-	BufferDataType.FLOAT,
-	BufferDataType.FLOAT,
+	BufferDataType.UINT,
+	BufferDataType.UINT,
+	BufferDataType.UINT,
+	BufferDataType.UINT,
 ]
 
 export type RGBA = [number, number, number, number]
+
+export const normalizeColorValue = (value: number): number => value / 255
 
 // Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
@@ -200,22 +202,22 @@ export const parseBase64RGBABuffer = (base64Str: string) => {
 }
 
 export const rgbaToHex = (rgba: number[]): string => {
-	const r = Math.round(rgba[0] ?? 0 * 255)
+	const r = Math.round(rgba[0] ?? 0)
 		.toString(16)
 		.padStart(2, '0')
-	const g = Math.round(rgba[1] ?? 0 * 255)
+	const g = Math.round(rgba[1] ?? 0)
 		.toString(16)
 		.padStart(2, '0')
-	const b = Math.round(rgba[2] ?? 0 * 255)
+	const b = Math.round(rgba[2] ?? 0)
 		.toString(16)
 		.padStart(2, '0')
 	return `#${r}${g}${b}`
 }
 
 export const hexToRGBA = (hex: string): [number, number, number, number] => {
-	const r = parseInt(hex.slice(1, 3), 16) / 255
-	const g = parseInt(hex.slice(3, 5), 16) / 255
-	const b = parseInt(hex.slice(5, 7), 16) / 255
+	const r = parseInt(hex.slice(1, 3), 16)
+	const g = parseInt(hex.slice(3, 5), 16)
+	const b = parseInt(hex.slice(5, 7), 16)
 	const a = 1
 	return [r, g, b, a]
 }

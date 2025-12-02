@@ -1,6 +1,8 @@
 package draw
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 
 	"github.com/golang/geo/r3"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -43,13 +46,13 @@ func (snapshot *Snapshot) SceneMetadata() SceneMetadata {
 }
 
 // ToProto converts the snapshot to a protobuf message
-func (snapshot *Snapshot) ToProto() *drawv1.PassSnapshot {
+func (snapshot *Snapshot) ToProto() *drawv1.Snapshot {
 	drawingProtos := make([]*drawv1.Drawing, len(snapshot.drawings))
 	for i, drawing := range snapshot.drawings {
 		drawingProtos[i] = drawing.toProto()
 	}
 
-	return &drawv1.PassSnapshot{
+	return &drawv1.Snapshot{
 		Transforms:    snapshot.transforms,
 		Drawings:      drawingProtos,
 		Uuid:          snapshot.uuid,
@@ -57,12 +60,37 @@ func (snapshot *Snapshot) ToProto() *drawv1.PassSnapshot {
 	}
 }
 
-// Marshal marshals a snapshot to JSON
-func (snapshot *Snapshot) Marshal() ([]byte, error) {
+// MarshalJSON marshals a snapshot to JSON
+func (snapshot *Snapshot) MarshalJSON() ([]byte, error) {
 	marshaler := protojson.MarshalOptions{
 		EmitUnpopulated: true,
 	}
+
 	return marshaler.Marshal(snapshot.ToProto())
+}
+
+// MarshalBinary marshals a snapshot to binary protobuf format
+func (snapshot *Snapshot) MarshalBinary() ([]byte, error) {
+	return proto.Marshal(snapshot.ToProto())
+}
+
+// MarshalBinaryGzip marshals a snapshot to gzip-compressed binary protobuf format
+func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error) {
+	binaryData, err := snapshot.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal binary: %w", err)
+	}
+
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(binaryData); err != nil {
+		return nil, fmt.Errorf("failed to write gzip data: %w", err)
+	}
+	if err := gz.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
 // NewSnapshot creates a new snapshot with a unique UUID

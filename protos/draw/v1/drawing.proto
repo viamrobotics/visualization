@@ -10,7 +10,7 @@ option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
 
 // Arrows represents a set of arrows in 3D space
 // Metadata:
-// - colors: float32 array of a single color: [r, g, b, a] or a color per arrow: [r, g, b, a, ...], defaults to [0, 1, 0, 0.7] (green)
+// - colors: []uint8 of a single color: [r, g, b, a] or a color per arrow: [r, g, b, a, ...], defaults to [0, 255, 0, 180] (green)
 message Arrows {
   // The poses of the arrows
   // float32 array of poses: [x, y, z, ox, oy, oz]
@@ -19,8 +19,8 @@ message Arrows {
 
 // Line represents a line in 3D space
 // Metadata:
-// - colors: float32 array of a single color: [r, g, b, a] or two colors for lines and points: [r, g, b, a, r, g, b, a]
-//   defaults to [0, 0.5, 1, 0.7] (blue) for lines, [0, 0.3, 0.8, 0.7] (darker blue) for points
+// - colors: []uint8 of a single color: [r, g, b, a] or two colors for lines and points: [r, g, b, a, r, g, b, a]
+//   defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
 message Line {
   // The positions of the line points
   // float32 array of positions: [x, y, z, ...]
@@ -35,7 +35,7 @@ message Line {
 
 // Points represents a set of points in 3D space
 // Metadata:
-// - colors: float32 array of a single color: [r, g, b, a] or a color per point: [r, g, b, a, ...], defaults to [0.2, 0.2, 0.2, 0.7] (gray)
+// - colors: []uint8 of a single color: [r, g, b, a] or a color per point: [r, g, b, a, ...], defaults to [51, 51, 51, 180] (gray)
 message Points {
   // The positions of the points
   // float32 array of positions: [x, y, z, ...]
@@ -64,7 +64,7 @@ message ModelAsset {
 
 // Model represents a 3D model in various formats
 // Metadata:
-// - colors: defaults to float32 array of no colors
+// - colors: defaults to []uint8 of no colors
 message Model {
   // The list of assets that make up the model
   repeated ModelAsset assets = 1;
@@ -78,7 +78,7 @@ message Model {
 
 // Nurbs represents a NURBS curve in 3D space
 // Metadata:
-// - colors: float32 array of a single color: [r, g, b, a], defaults to [0, 1, 1, 0.7] (cyan)
+// - colors: []uint8 of a single color: [r, g, b, a], defaults to [0, 255, 255, 180] (cyan)
 message Nurbs {
   // The control points of the NURBS
   // []float32 of poses: [x, y, z, ox, oy, oz, theta, ...]

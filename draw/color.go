@@ -7,17 +7,13 @@ import (
 )
 
 // DefaultAlpha is the default alpha value, defaults to 1.0
-var DefaultAlpha = float32(1.0)
+var DefaultAlpha = uint8(255)
 
 type Color struct {
-	// 0-1, defaults to 0.0
-	R float32 `json:"r"`
-	// 0-1, defaults to 0.0
-	G float32 `json:"g"`
-	// 0-1, defaults to 0.0
-	B float32 `json:"b"`
-	// 0-1, defaults to 1.0
-	A float32 `json:"a"`
+	R uint8 `json:"r"`
+	G uint8 `json:"g"`
+	B uint8 `json:"b"`
+	A uint8 `json:"a"`
 }
 
 // Default colors as specified in drawing.proto
@@ -36,17 +32,17 @@ var (
 )
 
 type colorConfig struct {
-	r float32
-	g float32
-	b float32
-	a float32
+	r uint8
+	g uint8
+	b uint8
+	a uint8
 }
 
 func newColorConfig() *colorConfig {
 	return &colorConfig{
-		r: 0.0,
-		g: 0.0,
-		b: 0.0,
+		r: 0,
+		g: 0,
+		b: 0,
 		a: DefaultAlpha,
 	}
 }
@@ -54,7 +50,7 @@ func newColorConfig() *colorConfig {
 type colorOption func(*colorConfig)
 
 // WithRGB sets the color from RGB values (with an alpha of 1.0)
-func WithRGB(r, g, b float32) colorOption {
+func WithRGB(r, g, b uint8) colorOption {
 	return func(config *colorConfig) {
 		config.r = r
 		config.g = g
@@ -65,10 +61,10 @@ func WithRGB(r, g, b float32) colorOption {
 // WithRGBA sets the color from RGBA values
 func WithRGBA(rgba color.RGBA) colorOption {
 	return func(config *colorConfig) {
-		config.r = float32(rgba.R) / 255
-		config.g = float32(rgba.G) / 255
-		config.b = float32(rgba.B) / 255
-		config.a = float32(rgba.A) / 255
+		config.r = rgba.R
+		config.g = rgba.G
+		config.b = rgba.B
+		config.a = rgba.A
 	}
 }
 
@@ -82,7 +78,8 @@ func WithName(name string) colorOption {
 	}
 }
 
-// WithHSV sets the color from HSV values (with an alpha of 1.0)
+// WithHSV sets the color from HSV values (with an alpha of 255)
+// h, s, v are expected in the 0-1 range
 func WithHSV(h, s, v float32) colorOption {
 	return func(config *colorConfig) {
 		i := int(h * 6)
@@ -91,22 +88,26 @@ func WithHSV(h, s, v float32) colorOption {
 		q := v * (1 - f*s)
 		t := v * (1 - (1-f)*s)
 
+		var r, g, b float32
 		switch i % 6 {
 		case 0:
-			config.r, config.g, config.b = v, t, p
+			r, g, b = v, t, p
 		case 1:
-			config.r, config.g, config.b = q, v, p
+			r, g, b = q, v, p
 		case 2:
-			config.r, config.g, config.b = p, v, t
+			r, g, b = p, v, t
 		case 3:
-			config.r, config.g, config.b = p, q, v
+			r, g, b = p, q, v
 		case 4:
-			config.r, config.g, config.b = t, p, v
+			r, g, b = t, p, v
 		case 5:
-			config.r, config.g, config.b = v, p, q
+			r, g, b = v, p, q
 		}
 
-		config.a = 1.0
+		config.r = uint8(r * 255)
+		config.g = uint8(g * 255)
+		config.b = uint8(b * 255)
+		config.a = 255
 	}
 }
 
@@ -126,7 +127,7 @@ func NewColor(options ...colorOption) Color {
 }
 
 // SetRGB sets the color RGB values
-func (color Color) SetRGB(r, g, b float32) Color {
+func (color Color) SetRGB(r, g, b uint8) Color {
 	color.R = r
 	color.G = g
 	color.B = b
@@ -134,25 +135,16 @@ func (color Color) SetRGB(r, g, b float32) Color {
 }
 
 // SetRGBA sets the color from RGBA values
-func (color Color) SetRGBA(r, g, b, a float32) Color {
+func (color Color) SetRGBA(r, g, b, a uint8) Color {
 	color.SetRGB(r, g, b)
 	color.A = a
 	return color
 }
 
 // SetAlpha sets the alpha value of the color
-func (color Color) SetAlpha(alpha float32) Color {
+func (color Color) SetAlpha(alpha uint8) Color {
 	color.A = alpha
 	return color
-}
-
-func (from Color) ToNRGBA() color.NRGBA {
-	return color.NRGBA{
-		R: uint8(from.R * 255),
-		G: uint8(from.G * 255),
-		B: uint8(from.B * 255),
-		A: uint8(from.A * 255),
-	}
 }
 
 type ColorChooser struct {
@@ -169,7 +161,7 @@ func (chooser ColorChooser) Next() Color {
 func NewDefaultColorChooser() ColorChooser {
 	colors := make([]Color, len(colornames.Map))
 	for _, rgba := range colornames.Map {
-		colors = append(colors, NewColor(WithRGBA(rgba)).SetAlpha(0.7))
+		colors = append(colors, NewColor(WithRGBA(rgba)))
 	}
 
 	return ColorChooser{colors: colors}

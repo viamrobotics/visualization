@@ -1,7 +1,7 @@
 import { getContext, setContext } from 'svelte'
 import { getArmModelRendering } from '$lib/snapshot'
 import { RenderArmModels } from '$lib/gen/draw/v1/scene_pb'
-import { PassSnapshot } from '$lib/gen/draw/v1/snapshot_pb'
+import { Snapshot } from '$lib/gen/draw/v1/snapshot_pb'
 import { useSettings } from './useSettings.svelte'
 import { useCameraControls, type CameraPose } from './useControls.svelte'
 import { drawingWithUUID, fromDrawing, fromTransform, WorldObject } from '$lib/WorldObject.svelte'
@@ -13,7 +13,7 @@ const key = Symbol('snapshot-context')
 type FrameGeometry = Geometry & { geometryType: { case: undefined; value: undefined } }
 
 interface Context {
-	current: PassSnapshot | undefined
+	current: Snapshot | undefined
 	frames: WorldObject<FrameGeometry>[]
 	worldObjects: WorldObject[]
 }
@@ -22,7 +22,7 @@ export const provideSnapshot = () => {
 	const settings = useSettings()
 	const cameraControls = useCameraControls()
 
-	let snapshot = $state.raw<PassSnapshot>()
+	let snapshot = $state.raw<Snapshot>()
 	let frames = $state.raw<WorldObject<FrameGeometry>[]>([])
 	let worldObjects = $state.raw<WorldObject[]>([])
 
@@ -63,7 +63,7 @@ export const provideSnapshot = () => {
 			? metadata.pointSize * 0.001
 			: settings.current.pointSize
 		settings.current.pointColor = metadata.pointColor
-			? rgbaToHex(metadata.pointColor)
+			? rgbaToHex(Array.from(metadata.pointColor))
 			: settings.current.pointColor
 
 		settings.current.lineWidth = metadata.lineWidth
@@ -134,7 +134,7 @@ export const provideSnapshot = () => {
 			return snapshot
 		},
 
-		set current(value: PassSnapshot | undefined) {
+		set current(value: Snapshot | undefined) {
 			snapshot = value
 		},
 

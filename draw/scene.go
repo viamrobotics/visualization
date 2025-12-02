@@ -257,7 +257,7 @@ func (metadata *SceneMetadata) ToProto() *drawv1.SceneMetadata {
 		GridSectionSize:  &metadata.GridSectionSize,
 		GridFadeDistance: &metadata.GridFadeDistance,
 		PointSize:        &metadata.PointSize,
-		PointColor:       []float32{metadata.PointColor.R, metadata.PointColor.G, metadata.PointColor.B, metadata.PointColor.A},
+		PointColor:       packColors([]Color{metadata.PointColor}),
 		LineWidth:        &metadata.LineWidth,
 		LinePointSize:    &metadata.LinePointSize,
 		RenderArmModels:  &metadata.RenderArmModels,

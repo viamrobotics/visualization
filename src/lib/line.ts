@@ -7,8 +7,8 @@ import { parsePoints } from './point'
 export const DEFAULT_LINE_WIDTH = 0.005
 export const DEFAULT_LINE_DOT_SIZE = 0.01
 
-export const DEFAULT_LINE_COLOR: RGBA = [0, 0.5, 1, 1] // blue
-export const DEFAULT_LINE_POINT_COLOR: RGBA = [0, 0.3, 0.8, 1] // darker blue
+export const DEFAULT_LINE_COLOR: RGBA = [0, 128, 255, 255] // blue
+export const DEFAULT_LINE_POINT_COLOR: RGBA = [0, 77, 204, 255] // darker blue
 
 interface ParsedLineBuffer {
 	pointsData: TypedArray
