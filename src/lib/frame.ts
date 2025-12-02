@@ -2,6 +2,8 @@
 
 import type { Transform } from '@viamrobotics/sdk'
 import type { ValueOf } from 'type-fest'
+import { createPoseFromFrame } from './transform'
+import { createGeometryFromFrame } from './geometry'
 
 type FrameGeometryMap = {
 	none: { type: 'none' }
@@ -56,9 +58,14 @@ export const createFrame = <
 	} satisfies Frame<T>
 }
 
-export const frameToTransform = (frame: Frame): Transform => {
+export const createTransformFromFrame = (name: string, frame: Partial<Frame>): Transform => {
 	return {
 		uuid: new Uint8Array(),
-		referenceFrame: frame.name,
+		referenceFrame: name,
+		poseInObserverFrame: {
+			referenceFrame: frame.parent ?? 'world',
+			pose: createPoseFromFrame(frame),
+		},
+		physicalObject: createGeometryFromFrame(frame),
 	} satisfies Transform
 }

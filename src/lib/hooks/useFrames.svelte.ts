@@ -2,7 +2,7 @@ import { getContext, setContext, untrack } from 'svelte'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
-import { frameToTransform, type Frame } from '$lib/frame'
+import { createTransformFromFrame, type Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPose } from '$lib/transform'
@@ -76,7 +76,7 @@ export const provideFrames = (partID: () => string) => {
 				continue
 			}
 
-			results[name] = frameToTransform(name, frame)
+			results[name] = createTransformFromFrame(name, frame)
 		}
 
 		return results
@@ -113,7 +113,7 @@ export const provideFrames = (partID: () => string) => {
 				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
 					`components.${fragmentComponentName}.frame`
 				] as Frame
-				results[fragmentComponentName] = frameToTransform(fragmentComponentName, frameData)
+				results[fragmentComponentName] = createTransformFromFrame(fragmentComponentName, frameData)
 			}
 		}
 		return [results, unsetResults]
