@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package viam.motion_tools.draw.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
+
+message Transforms {
+  repeated viam.common.v1.Transform transforms = 1;
+}
