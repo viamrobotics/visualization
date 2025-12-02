@@ -7,7 +7,8 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
-// Shape represents a Shape in 3D space
+// Shape represents a drawable geometric shape or object in 3D space. A Shape contains
+// exactly one geometry type (Arrows, Line, Points, Model, or Nurbs), positioned at Center with a Label.
 type Shape struct {
 	Center spatialmath.Pose
 	Label  string
@@ -18,6 +19,7 @@ type Shape struct {
 	Nurbs  *Nurbs
 }
 
+// drawShapeConfig is a configuration for drawing a shape
 type drawShapeConfig struct {
 	arrows *Arrows
 	line   *Line
@@ -26,6 +28,7 @@ type drawShapeConfig struct {
 	nurbs  *Nurbs
 }
 
+// newDrawShapeConfig creates a new draw shape configuration
 func newDrawShapeConfig() *drawShapeConfig {
 	return &drawShapeConfig{
 		arrows: nil,
@@ -36,43 +39,46 @@ func newDrawShapeConfig() *drawShapeConfig {
 	}
 }
 
+// drawShapeOption is a function that configures a draw shape configuration
 type drawShapeOption func(*drawShapeConfig)
 
+// WithArrows creates a shape option that configures the shape as an Arrows geometry.
 func WithArrows(arrows Arrows) drawShapeOption {
 	return func(config *drawShapeConfig) {
 		config.arrows = &arrows
 	}
 }
 
-// WithLine adds a Line to the Shape
+// WithLine creates a shape option that configures the shape as a Line geometry.
 func WithLine(line Line) drawShapeOption {
 	return func(config *drawShapeConfig) {
 		config.line = &line
 	}
 }
 
-// WithPoints adds a Points to the Shape
+// WithPoints creates a shape option that configures the shape as a Points geometry.
 func WithPoints(points Points) drawShapeOption {
 	return func(config *drawShapeConfig) {
 		config.points = &points
 	}
 }
 
-// WithModel adds a Model to the Shape
+// WithModel creates a shape option that configures the shape as a 3D Model geometry.
 func WithModel(model Model) drawShapeOption {
 	return func(config *drawShapeConfig) {
 		config.model = &model
 	}
 }
 
-// WithNurbs adds a Nurbs to the Shape
+// WithNurbs creates a shape option that configures the shape as a NURBS curve geometry.
 func WithNurbs(nurbs Nurbs) drawShapeOption {
 	return func(config *drawShapeConfig) {
 		config.nurbs = &nurbs
 	}
 }
 
-// NewShape creates a new Shape message
+// NewShape creates a new Shape with the given center pose, label, and geometry option.
+// The option must be one of WithArrows, WithLine, WithPoints, WithModel, or WithNurbs.
 func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Shape {
 	config := newDrawShapeConfig()
 	option(config)
@@ -88,7 +94,9 @@ func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Sha
 	}
 }
 
-// toProto converts the Shape to a drawv1.Shape message
+// toProto converts the shape to a drawv1.Shape message
+//
+// Returns the drawv1.Shape message
 func (shape Shape) toProto() *drawv1.Shape {
 	switch {
 	case shape.Arrows != nil:
@@ -186,7 +194,8 @@ func (shape Shape) toProto() *drawv1.Shape {
 	}
 }
 
-// Drawing represents a drawing in 3D space
+// Drawing represents a complete drawable object in 3D space, consisting of a Shape positioned
+// at a Pose within a reference frame (Parent), along with associated Metadata like colors.
 type Drawing struct {
 	Name     string
 	Parent   string
@@ -195,12 +204,13 @@ type Drawing struct {
 	Metadata Metadata
 }
 
-// Drawable represents a shape that can be drawn
+// Drawable is an interface for types that can create a Drawing representation of themselves.
 type Drawable interface {
-	Draw(name string, parent string, pose spatialmath.Pose) (*Drawing, error)
+	// Draw creates a Drawing of this object with the given name, parent reference frame, and pose.
+	Draw(name string, parent string, pose spatialmath.Pose) *Drawing
 }
 
-// NewDrawing creates a new Drawing message
+// NewDrawing creates a new Drawing with the specified name, parent reference frame, pose, shape, and metadata.
 func NewDrawing(
 	name string,
 	parent string,
@@ -211,7 +221,7 @@ func NewDrawing(
 	return &Drawing{Name: name, Parent: parent, Pose: pose, Shape: shape, Metadata: metadata}
 }
 
-// toProto converts the Drawing to a drawv1.Drawing message with unit conversion
+// toProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
 func (drawing Drawing) toProto() *drawv1.Drawing {
 	pose := poseInFrameToProtobuf(drawing.Pose, drawing.Parent)
 	uuidBytes := uuid.New()
@@ -224,28 +234,32 @@ func (drawing Drawing) toProto() *drawv1.Drawing {
 	}
 }
 
-// Metadata represents the metadata of a drawing
+// Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 type Metadata struct {
 	Colors []Color
 }
 
+// drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	DrawColorsConfig
 }
 
+// drawMetadataOption is a function that configures a draw metadata configuration
 type drawMetadataOption func(*drawMetadataConfig)
 
+// newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
 	return &drawMetadataConfig{
 		DrawColorsConfig: NewDrawColorsConfig(),
 	}
 }
 
+// WithMetadataColors creates a metadata option that sets the color list for the metadata.
 func WithMetadataColors(colors ...Color) drawMetadataOption {
 	return WithColors[*drawMetadataConfig](colors)
 }
 
-// NewMetadata creates a new Metadata message
+// NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 func NewMetadata(options ...drawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
 	for _, option := range options {
@@ -255,7 +269,7 @@ func NewMetadata(options ...drawMetadataOption) Metadata {
 	return Metadata{Colors: config.colors}
 }
 
-// ToProto converts the Metadata to a drawv1.Metadata message
+// ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
 	return &drawv1.Metadata{Colors: packColors(metadata.Colors)}
 }

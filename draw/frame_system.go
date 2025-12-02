@@ -11,9 +11,10 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
-// DrawFrameSystemGeometries draws a frame system's geometries in the world frame
-// Colors are mapped by frame name
-// Returns the transforms that were drawn
+// DrawFrameSystemGeometries renders all geometries in a frame system to the world frame.
+// The colors map allows you to specify colors for specific frames by name; frames without
+// specified colors inherit their parent's color or default to magenta. Returns the rendered
+// transforms or an error if the frame system cannot be converted.
 func DrawFrameSystemGeometries(
 	frameSystem *referenceframe.FrameSystem,
 	inputs referenceframe.FrameSystemInputs,
@@ -53,7 +54,10 @@ func DrawFrameSystemGeometries(
 	return transforms, nil
 }
 
+// getFrameColor retrieves the color for a given frame by name. If the frame has no assigned color,
+// it recursively searches parent frames for a color. Defaults to magenta if no color is found.
 func getFrameColor(frameName string, colors map[string]Color, frameSystem *referenceframe.FrameSystem) Color {
+	// If the frame has a color, return it
 	if color, ok := colors[frameName]; ok {
 		return color
 	}

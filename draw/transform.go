@@ -9,8 +9,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// NewTransform creates a Transform with optional geometry and optional metadata
-// If units is nil, uses mm
+// NewTransform creates a Protocol Buffer Transform message representing an object in 3D space.
+// The id can be empty (auto-generated UUID) or a valid UUID string. The geometry and metadata
+// parameters are optional (can be nil). Returns an error if the id is not a valid UUID.
 func NewTransform(
 	id string,
 	name string,
@@ -47,7 +48,9 @@ func NewTransform(
 	return transform, nil
 }
 
-// MetadataToStruct converts drawing metadata (colors/alphas) into a Struct
+// MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable
+// for embedding in transforms. Colors are base64-encoded for efficient transmission.
+// Returns an error if the metadata cannot be converted.
 func MetadataToStruct(metadata Metadata) (*structpb.Struct, error) {
 	fields := make(map[string]*structpb.Value)
 	encoded := base64.StdEncoding.EncodeToString(packColors(metadata.Colors))
