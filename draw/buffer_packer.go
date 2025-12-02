@@ -35,13 +35,16 @@ func (packer *BufferPacker[T]) Write(values ...T) {
 
 // Read returns the packed buffer as little-endian bytes
 func (packer *BufferPacker[T]) Read() []byte {
+	// Optimization for uint8 (byte)
+	if buf, ok := any(packer.buffer).([]uint8); ok {
+		return buf
+	}
+
 	var bytesPerElement int
 	if len(packer.buffer) > 0 {
 		switch any(packer.buffer[0]).(type) {
 		case float32:
 			bytesPerElement = 4
-		case uint8:
-			bytesPerElement = 1
 		default:
 			panic(fmt.Sprintf("unsupported type: %T", packer.buffer[0]))
 		}
@@ -54,8 +57,6 @@ func (packer *BufferPacker[T]) Read() []byte {
 		switch v := any(v).(type) {
 		case float32:
 			binary.LittleEndian.PutUint32(bytes[i*4:], math.Float32bits(v))
-		case uint8:
-			bytes[i] = v
 		default:
 			panic(fmt.Sprintf("unsupported type: %T", v))
 		}
