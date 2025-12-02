@@ -12,6 +12,12 @@ import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
 
+const typeSafeObjectFromEntries = <const T extends ReadonlyArray<readonly [PropertyKey, unknown]>>(
+	entries: T
+): { [K in T[number] as K[0]]: K[1] } => {
+	return Object.fromEntries(entries) as { [K in T[number] as K[0]]: K[1] }
+}
+
 const key = Symbol('pointcloud-context')
 
 interface Context {
@@ -45,15 +51,22 @@ export const providePointclouds = (partID: () => string) => {
 	const fetchedPropQueries = propQueries.every(([, query]) => query.isPending === false)
 
 	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
-	const enabledClients = $derived(
-		clients.filter(
-			(client) =>
+	const enabledClients = $derived.by(() => {
+		const results = []
+
+		for (const client of clients) {
+			if (
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
 				disabledCameras.get(client.current?.name) !== true
-		)
-	)
+			) {
+				results.push(client as { current: CameraClient })
+			}
+		}
+
+		return results
+	})
 
 	/**
 	 * Some machines have a lot of cameras, so before enabling all of them
@@ -76,11 +89,13 @@ export const providePointclouds = (partID: () => string) => {
 		enabledClients.map(
 			(client) =>
 				[
-					client.current?.name,
+					client.current.name,
 					createResourceQuery(client, 'getPointCloud', () => ({ refetchInterval: interval })),
 				] as const
 		)
 	)
+
+	const queryMap = $derived(typeSafeObjectFromEntries(queries))
 
 	$effect(() => {
 		for (const [name, query] of queries) {
@@ -130,10 +145,9 @@ export const providePointclouds = (partID: () => string) => {
 	const entities = new Map<string, Entity>()
 
 	$effect(() => {
+		// Create or update entities
 		for (const { parent, positions, colors } of pcObjects) {
-			const name = `${parent} pointcloud`
-
-			const existing = entities.get(name)
+			const existing = entities.get(parent)
 
 			if (existing) {
 				existing.set(traits.PointsGeometry, positions)
@@ -141,17 +155,28 @@ export const providePointclouds = (partID: () => string) => {
 				if (colors) {
 					existing.set(traits.VertexColors, colors)
 				}
+
+				continue
 			}
 
 			const entity = world.spawn(
 				traits.UUID,
-				traits.Name(),
-				traits.Parent(name),
+				traits.Name(`${parent} pointcloud`),
+				traits.Parent(parent),
 				traits.PointsGeometry(positions),
 				colors ? traits.VertexColors(colors) : traits.Color
 			)
 
-			entities.set(name, entity)
+			entities.set(parent, entity)
+		}
+
+		// Clean up old entities
+		const current = entities.keys()
+		for (const parent of current) {
+			if (!queryMap[parent].data) {
+				entities.get(parent)?.destroy()
+				entities.delete(parent)
+			}
 		}
 	})
 

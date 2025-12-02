@@ -5,7 +5,6 @@
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
-	import { provideStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
 	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
@@ -43,7 +42,6 @@
 
 	provideArrows()
 	provideOrigin()
-	provideStaticGeometries()
 	provideDrawAPI()
 
 	provideResourceByName(() => partID.current)

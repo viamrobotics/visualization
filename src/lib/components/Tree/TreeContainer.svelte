@@ -17,6 +17,7 @@
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
+	import { untrack } from 'svelte'
 
 	const { ...rest } = $props()
 
@@ -41,9 +42,12 @@
 	world.onAdd(traits.Name, (entity) => {
 		const parent = entity.get(traits.Parent)
 
-		// if (!parent || parent === 'world') {
-		// 	rootNode.children?.push({ entity })
-		// }
+		if (!parent || parent === 'world') {
+			untrack(() => {
+				console.log(entity.has(traits.DrawAPI))
+				rootNode.children?.push({ entity })
+			})
+		}
 	})
 
 	// const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))

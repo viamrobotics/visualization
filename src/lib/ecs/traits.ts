@@ -6,7 +6,9 @@ export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
 
-// Signals that this entity is a reference frame in 3D space
+/*
+ * An entity that has a reference frame in 3D space
+ */
 export const ReferenceFrame = trait()
 
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
@@ -19,15 +21,32 @@ export const Instance = trait({
 })
 export const Opacity = trait(() => 1)
 
-// Default to red
+/**
+ * The color of an object
+ * @default { r: 1, g: 0, b: 0 }
+ */
 export const Color = trait({ r: 1, g: 0, b: 0 })
 
 export const Arrow = trait()
 
+/**
+ * A box, in meters
+ */
 export const Box = trait({ x: 0, y: 0, z: 0 })
+
+/**
+ * A capsule, in meters
+ */
 export const Capsule = trait({ l: 0, r: 0 })
+
+/**
+ * A sphere, in meters
+ */
 export const Sphere = trait({ r: 0 })
 
+/**
+ *
+ */
 export const DottedLineColor = trait({ r: 0, g: 0, b: 0 })
 
 export const LineGeometry = trait(() => [] as Vector3[])
@@ -37,9 +56,19 @@ export const VertexColors = trait(() => new Float32Array())
 
 export const GLTF = trait(() => ({}) as ThreeGltf)
 
-// Signals that this entity comes from an API
+/**
+ * An entity with data from draw commands
+ */
 export const DrawAPI = trait()
+
+/**
+ * An entity with data from the GetGeometries() API
+ */
 export const GeometriesAPI = trait()
+
+/**
+ * An entity with data from the FrameSystemConfig() API
+ */
 export const FramesAPI = trait()
 
 export const ChildOf = relation()

@@ -55,7 +55,6 @@
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 
-	$inspect('hi', entity, name.current)
 	const subtype = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $state<'box' | 'sphere' | 'capsule' | 'none'>(

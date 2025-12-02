@@ -1,5 +1,6 @@
 // TODO: replace with types exported from the sdk when created
 
+import type { Transform } from '@viamrobotics/sdk'
 import type { ValueOf } from 'type-fest'
 
 type FrameGeometryMap = {
@@ -52,5 +53,12 @@ export const createFrame = <
 			value: { x: 0, y: 0, z: 1, th: 0 },
 		} as FrameOrientationMap[K],
 		geometry: (geometry ?? { type: 'box', x: 100, y: 100, z: 100 }) as FrameGeometryMap[T],
-	} as Frame<T>
+	} satisfies Frame<T>
+}
+
+export const frameToTransform = (frame: Frame): Transform => {
+	return {
+		uuid: new Uint8Array(),
+		referenceFrame: frame.name,
+	} satisfies Transform
 }

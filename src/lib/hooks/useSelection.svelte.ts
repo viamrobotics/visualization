@@ -2,12 +2,10 @@ import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { BatchedMesh, Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
-import { traits, useQuery, useTrait } from '$lib/ecs'
+import { traits, useTrait } from '$lib/ecs'
 
-const selectionKey = Symbol('selection-context')
-const focusKey = Symbol('focus-context')
-const selectedObjectKey = Symbol('selected-frame-context')
-const focusedObjectKey = Symbol('focused-frame-context')
+const selectedKey = Symbol('selected-frame-context')
+const focusedKey = Symbol('focused-frame-context')
 const focusedObject3dKey = Symbol('focused-object-3d-context')
 
 interface SelectedEntityContext {
@@ -24,8 +22,6 @@ export const provideSelection = () => {
 	let selected = $state.raw<Entity>()
 	let focused = $state.raw<Entity>()
 
-	$inspect(selected)
-
 	const selectedEntityContext = {
 		get current() {
 			return selected
@@ -34,7 +30,7 @@ export const provideSelection = () => {
 			selected = entity
 		},
 	}
-	setContext<SelectedEntityContext>(selectedObjectKey, selectedEntityContext)
+	setContext<SelectedEntityContext>(selectedKey, selectedEntityContext)
 
 	const focusedEntityContext = {
 		get current() {
@@ -44,7 +40,7 @@ export const provideSelection = () => {
 			focused = entity
 		},
 	}
-	setContext<FocusedEntityContext>(focusedObjectKey, focusedEntityContext)
+	setContext<FocusedEntityContext>(focusedKey, focusedEntityContext)
 
 	const { scene } = useThrelte()
 	const uuid = useTrait(() => focused, traits.UUID)
@@ -80,11 +76,11 @@ export const provideSelection = () => {
 }
 
 export const useFocusedEntity = (): FocusedEntityContext => {
-	return getContext<FocusedEntityContext>(focusedObjectKey)
+	return getContext<FocusedEntityContext>(focusedKey)
 }
 
 export const useSelectedEntity = (): SelectedEntityContext => {
-	return getContext<SelectedEntityContext>(selectedObjectKey)
+	return getContext<SelectedEntityContext>(selectedKey)
 }
 
 export const useFocusedObject3d = (): { current: Object3D | undefined } => {

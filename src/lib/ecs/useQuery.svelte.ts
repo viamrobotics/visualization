@@ -1,6 +1,6 @@
+import { untrack } from 'svelte'
 import { $internal as internal, cacheQuery, type QueryParameter, type QueryResult } from 'koota'
 import { useWorld } from './useWorld'
-import { createSubscriber } from 'svelte/reactivity'
 
 export function useQuery<T extends QueryParameter[]>(
 	...parameters: T
@@ -24,33 +24,36 @@ export function useQuery<T extends QueryParameter[]>(
 
 	$effect(() => {
 		version
-		const unsubAdd = world.onQueryAdd(hash, () => {
-			if (updateScheduled) return
-			queueMicrotask(update)
-			updateScheduled = true
-		})
 
-		const unsubRemove = world.onQueryRemove(hash, () => {
-			if (updateScheduled) return
-			queueMicrotask(update)
-			updateScheduled = true
-		})
-
-		// Compare the initial version to the current version to
-		// see it the query has changed.
-		const query = world[internal].queriesHashMap.get(hash)
-
-		if (query?.version !== initialQueryVersion) {
-			if (!updateScheduled) {
+		return untrack(() => {
+			const unsubAdd = world.onQueryAdd(hash, () => {
+				if (updateScheduled) return
 				queueMicrotask(update)
 				updateScheduled = true
-			}
-		}
+			})
 
-		return () => {
-			unsubAdd()
-			unsubRemove()
-		}
+			const unsubRemove = world.onQueryRemove(hash, () => {
+				if (updateScheduled) return
+				queueMicrotask(update)
+				updateScheduled = true
+			})
+
+			// Compare the initial version to the current version to
+			// see it the query has changed.
+			const query = world[internal].queriesHashMap.get(hash)
+
+			if (query?.version !== initialQueryVersion) {
+				if (!updateScheduled) {
+					queueMicrotask(update)
+					updateScheduled = true
+				}
+			}
+
+			return () => {
+				unsubAdd()
+				unsubRemove()
+			}
+		})
 	})
 
 	// Force reattaching event listeners when the world is reset.
