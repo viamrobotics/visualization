@@ -32,3 +32,8 @@ vite.config.ts.timestamp-*
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Protobuf
+draw/v1
+src/lib/common/v1
+src/lib/draw/v1

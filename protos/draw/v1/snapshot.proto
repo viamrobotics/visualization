@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package viam.motion_tools.draw.v1;
+
+import "common/v1/common.proto";
+import "draw/v1/drawing.proto";
+import "draw/v1/scene.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
+
+message Snapshot {
+  // the list of transforms and shapes in the scene to render
+  repeated viam.common.v1.Transform transforms = 1;
+
+  // the list of drawings in the scene to render
+  repeated viam.motion_tools.draw.v1.Drawing drawings = 2;
+
+  // a unique ID for the snapshot, to inform the visualizer if a new snapshot is being rendered
+  bytes uuid = 3;
+
+  // optional metadata for the scene, matches the visualizer's "settings"
+  optional viam.motion_tools.draw.v1.SceneMetadata scene_metadata = 4;
+}

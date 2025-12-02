@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package viam.motion_tools.draw.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
+
+// Transforms is a list of transforms
+// TODO: Here for backwards compatibility for the draw API, remove in a future release
+message Transforms {
+  repeated viam.common.v1.Transform transforms = 1;
+}

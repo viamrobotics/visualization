@@ -1,0 +1,11 @@
+version: v2
+managed:
+  enabled: false
+plugins:
+  # TypeScript code generation (v1 - matches Viam SDK)
+  - remote: buf.build/bufbuild/es:v1.10.0
+    out: src/lib
+    opt:
+      - target=ts
+      - import_extension=none
+    include_imports: true
