@@ -1,6 +1,8 @@
 version: v2
 modules:
   - path: protos
+    excludes:
+      - protos/vendor
 deps:
   - buf.build/viamrobotics/api
 lint:

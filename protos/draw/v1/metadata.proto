@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package viam.motion_tools.draw.v1;
 
-option go_package = "github.com/viam-labs/motion-tools/gen/draw/v1;drawv1";
+option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 message Metadata {
   // Float32Array of colors: [r, g, b, a, ...]

@@ -1,4 +1,4 @@
-.PHONY: help setup up proto-generate proto-lint proto-format proto-clean
+.PHONY: help setup up proto-generate proto-lint proto-format proto-clean docs-generate docs-install
 
 # Default target - show help when no target is specified
 .DEFAULT_GOAL := help
@@ -14,6 +14,7 @@ help:
 	@echo '  proto-lint     - Lint protobuf files'
 	@echo '  proto-format   - Format protobuf files'
 	@echo '  proto-clean    - Clean generated protobuf code'
+	@echo '  proto-vendor   - Vendor protobuf dependencies'
 	@echo '  help           - Show this help message'
 
 setup:
@@ -35,7 +36,11 @@ proto-gen-ts:
 	@echo 'Generating TypeScript code...'
 	@PATH="$(shell go env GOPATH)/bin:$(shell pnpm bin):$$PATH" pnpm exec buf generate --template buf.gen.typescript.yaml
 
-proto-gen: proto-clean
+proto-vendor:
+	@echo 'Vendoring buf dependencies...'
+	@pnpm exec buf export buf.build/viamrobotics/api --output protos/vendor
+
+proto-gen: proto-clean proto-vendor
 	@echo 'Generating protobuf code...'
 	@echo 'Updating buf dependencies...'
 	@pnpm exec buf dep update
