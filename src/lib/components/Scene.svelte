@@ -89,7 +89,7 @@
 	{/if}
 
 	<T.Group attach={focusedObject ? false : undefined}>
-		<!-- Capture both "default" and "world" portals -->
+		<!-- Capture "default" portals if "world" is not explicit -->
 		<PortalTarget />
 		<PortalTarget id="world" />
 
