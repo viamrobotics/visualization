@@ -1,18 +1,30 @@
-import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
+import type { Geometry, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
 import { BatchedMesh, Color, MathUtils, Object3D, Vector3, type BufferGeometry } from 'three'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
-import { isRGB, parseColor, parseOpacity, parseRGB } from './color'
+import {
+	isRGB,
+	parseColor,
+	parseOpacity,
+	parseRGB,
+	parseRGBABuffer,
+	parseBase64RGBABuffer,
+} from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
+import type { Drawing, Shape } from './gen/draw/v1/drawing_pb'
+import type { PlainMessage } from '@bufbuild/protobuf'
+import { UuidTool } from 'uuid-tool'
 
-export type PointsGeometry = {
+// TODO: here for backwards compatibility, remove when moving to new draw API
+export type LegacyPointsGeometry = {
 	center: undefined
-	geometryType: { case: 'points'; value: Float32Array<ArrayBuffer> }
+	geometryType: { case: 'legacyPoints'; value: Float32Array<ArrayBuffer> }
 }
 
-export type LinesGeometry = {
+// TODO: here for backwards compatibility, remove when moving to new draw API
+export type LegacyLinesGeometry = {
 	center: undefined
-	geometryType: { case: 'line'; value: Float32Array }
+	geometryType: { case: 'legacyLines'; value: Float32Array }
 }
 
 export type ThreeBufferGeometry = {
@@ -20,25 +32,12 @@ export type ThreeBufferGeometry = {
 	geometryType: { case: 'bufferGeometry'; value: BufferGeometry }
 }
 
-export type ArrowsGeometry = {
-	center: undefined
-	geometryType: {
-		case: 'arrows'
-		value: {
-			poseCount: number
-			poses: Uint8Array
-			colorCount: number
-			colors: Uint8Array
-		}
-	}
-}
-
 export type Geometries =
 	| Geometry
-	| PointsGeometry
-	| LinesGeometry
+	| PlainMessage<Shape>
+	| LegacyPointsGeometry
+	| LegacyLinesGeometry
 	| ThreeBufferGeometry
-	| ArrowsGeometry
 
 export const SupportedShapes = {
 	points: 'points',
@@ -235,6 +234,23 @@ const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 			case 'lineDotColor':
 				json[k] = isRGB(unwrappedValue) ? parseRGB(unwrappedValue) : parseColor(unwrappedValue)
 				break
+			case 'colors': {
+				let colorsArray: Float32Array | undefined
+				if (typeof unwrappedValue === 'string') {
+					// Handle base64 encoded color data from JSON snapshots
+					colorsArray = parseBase64RGBABuffer(unwrappedValue) as Float32Array
+				} else if (unwrappedValue instanceof Uint8Array) {
+					colorsArray = parseRGBABuffer(unwrappedValue) as Float32Array
+				}
+				if (colorsArray) {
+					json[k] = colorsArray
+					// Extract alpha/opacity from the 4th value if it exists
+					if (colorsArray.length >= 4 && colorsArray[3] !== undefined) {
+						json.opacity = colorsArray[3]
+					}
+				}
+				break
+			}
 			case 'opacity':
 				json[k] = parseOpacity(unwrappedValue)
 				break
@@ -267,33 +283,49 @@ const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 
 export const fromTransform = (transform: TransformWithUUID) => {
 	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
-
-	let geometry: Geometries | undefined = transform.physicalObject
-	if (isArrowMetadata(metadata.shapeMetadata)) {
-		geometry = {
-			center: undefined,
-			geometryType: {
-				case: 'arrows',
-				value: {
-					poseCount: metadata.shapeMetadata.poseCount,
-					poses: metadata.shapeMetadata.poses,
-					colorCount: metadata.shapeMetadata.colorCount,
-					colors: metadata.shapeMetadata.colors,
-				},
-			},
-		}
-	}
-
 	const worldObject = new WorldObject(
 		transform.referenceFrame,
 		transform.poseInObserverFrame?.pose,
 		transform.poseInObserverFrame?.referenceFrame,
-		geometry,
+		transform.physicalObject,
 		metadata
 	)
 
 	if (transform.uuidString) {
 		worldObject.uuid = transform.uuidString
+	}
+
+	return worldObject
+}
+
+export type DrawingWithUUID = PlainMessage<Drawing> & { uuidString: string }
+export const drawingWithUUID = (drawing: PlainMessage<Drawing>) => {
+	return {
+		...drawing,
+		uuidString: UuidTool.toString([...drawing.uuid]),
+	}
+}
+
+export const fromDrawing = (drawing: DrawingWithUUID) => {
+	const colorsArray = parseRGBABuffer(drawing.metadata?.colors ?? new Uint8Array()) as Float32Array
+	const metadata: Metadata = {
+		colors: colorsArray,
+	}
+
+	if (colorsArray.length >= 4 && colorsArray[3] !== undefined) {
+		metadata.opacity = colorsArray[3]
+	}
+
+	const worldObject = new WorldObject(
+		drawing.referenceFrame,
+		drawing.poseInObserverFrame?.pose,
+		drawing.poseInObserverFrame?.referenceFrame,
+		drawing.physicalObject,
+		metadata
+	)
+
+	if (drawing.uuidString) {
+		worldObject.uuid = drawing.uuidString
 	}
 
 	return worldObject

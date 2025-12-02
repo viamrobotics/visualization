@@ -18,7 +18,6 @@ func NewTransform(
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-	units Units,
 ) (*commonv1.Transform, error) {
 	var idBytes []byte
 	if id == "" {
@@ -32,7 +31,7 @@ func NewTransform(
 		idBytes = parsedId[:]
 	}
 
-	poseInFrame := poseInFrameToProtobuf(pose, parent, units)
+	poseInFrame := poseInFrameToProtobuf(pose, parent)
 	transform := &commonv1.Transform{
 		Uuid:                idBytes,
 		ReferenceFrame:      name,
@@ -42,20 +41,17 @@ func NewTransform(
 
 	// Only set PhysicalObject if geometry is provided
 	if geometry != nil {
-		transform.PhysicalObject = geometryToProtobuf(geometry, units)
+		transform.PhysicalObject = geometryToProtobuf(geometry)
 	}
 
 	return transform, nil
 }
 
 // MetadataToStruct converts drawing metadata (colors/alphas) into a Struct
-func MetadataToStruct(metadata *Metadata) (*structpb.Struct, error) {
+func MetadataToStruct(metadata Metadata) (*structpb.Struct, error) {
 	fields := make(map[string]*structpb.Value)
-
-	if metadata.Colors != nil {
-		encoded := base64.StdEncoding.EncodeToString(packColors(metadata.Colors))
-		fields["colors"] = structpb.NewStringValue(encoded)
-	}
+	encoded := base64.StdEncoding.EncodeToString(packColors(metadata.Colors))
+	fields["colors"] = structpb.NewStringValue(encoded)
 
 	return &structpb.Struct{Fields: fields}, nil
 }

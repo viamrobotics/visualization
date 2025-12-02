@@ -13,27 +13,26 @@ func DrawGeometry(
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
 	parent string,
-	color *Color,
-	units Units,
+	color Color,
 ) (*commonv1.Transform, error) {
 	label := geometry.Label()
-	metadata := NewMetadata([]*Color{color})
+	metadata := NewMetadata(WithMetadataColors(color))
 	metadataStruct, err := MetadataToStruct(metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTransform(id, label, parent, pose, geometry, metadataStruct, units)
+	return NewTransform(id, label, parent, pose, geometry, metadataStruct)
 }
 
-func DrawGeometries(geometries *referenceframe.GeometriesInFrame, colors []*Color) (*drawv1.Transforms, error) {
+func DrawGeometries(geometries *referenceframe.GeometriesInFrame, colors []Color) (*drawv1.Transforms, error) {
 	geos := geometries.Geometries()
 	transforms := &drawv1.Transforms{
 		Transforms: make([]*commonv1.Transform, len(geos)),
 	}
 
 	for i, geometry := range geos {
-		transform, err := DrawGeometry("", geometry, geometry.Pose(), geometries.Parent(), colors[i], UnitsM)
+		transform, err := DrawGeometry("", geometry, geometry.Pose(), geometries.Parent(), colors[i])
 		if err != nil {
 			return nil, err
 		}

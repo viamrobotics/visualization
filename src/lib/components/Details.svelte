@@ -3,7 +3,8 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils } from 'three'
+	import { Quaternion, Vector3, MathUtils, Matrix4 } from 'three'
+	import { poseToMatrix, createPose } from '$lib/transform'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -62,11 +63,22 @@
 
 	const draggable = useDraggable('details')
 
+	const getWorldMatrix = (frameName: string): Matrix4 => {
+		if (frameName === 'world') return new Matrix4()
+		const frame = frames.current.find((f) => f.name === frameName)
+		if (!frame) return new Matrix4()
+
+		const parentMatrix = getWorldMatrix(frame.referenceFrame ?? 'world')
+		const localMatrix = poseToMatrix(createPose(frame.pose))
+		return parentMatrix.multiply(localMatrix)
+	}
+
 	const detailConfigUpdater = new FrameConfigUpdater(
 		() => object,
 		partConfig.updateFrame,
 		partConfig.deleteFrame,
-		() => referenceFrame
+		() => referenceFrame,
+		getWorldMatrix
 	)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
@@ -266,20 +278,20 @@
 			{#if worldPosition}
 				<div>
 					<strong class="font-semibold">world position</strong>
-					<span class="text-subtle-2">(m)</span>
+					<span class="text-subtle-2">(mm)</span>
 
 					<div class="flex gap-3">
 						<div>
 							<span class="text-subtle-2">x</span>
-							{worldPosition.x.toFixed(2)}
+							{(worldPosition.x * 1000).toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">y</span>
-							{worldPosition.y.toFixed(2)}
+							{(worldPosition.y * 1000).toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2">z</span>
-							{worldPosition.z.toFixed(2)}
+							{(worldPosition.z * 1000).toFixed(2)}
 						</div>
 					</div>
 				</div>
@@ -329,7 +341,7 @@
 					{@const PoseAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 					<div>
 						<strong class="font-semibold">local position</strong>
-						<span class="text-subtle-2">(m)</span>
+						<span class="text-subtle-2">(mm)</span>
 
 						<div class="flex gap-3">
 							{@render PoseAttribute({
@@ -427,6 +439,7 @@
 						}}
 						<div>
 							<strong class="font-semibold">dimensions (box)</strong>
+							<span class="text-subtle-2">(mm)</span>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'x',
@@ -459,6 +472,7 @@
 						}}
 						<div>
 							<strong class="font-semibold">dimensions (capsule)</strong>
+							<span class="text-subtle-2">(mm)</span>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'r',
@@ -481,6 +495,7 @@
 						{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
 						<div>
 							<strong class="font-semibold">dimensions (sphere)</strong>
+							<span class="text-subtle-2">(mm)</span>
 							<div class="flex items-center gap-2">
 								{@render GeometryAttribute({
 									label: 'r',
@@ -504,6 +519,7 @@
 						{@const { dimsMm } = object.geometry.geometryType.value}
 						<div>
 							<strong class="font-semibold">dimensions (box)</strong>
+							<span class="text-subtle-2">(mm)</span>
 							<div class="flex gap-3">
 								<div>
 									<span class="text-subtle-2">x</span>
@@ -523,6 +539,7 @@
 						{@const { value } = object.geometry.geometryType}
 						<div>
 							<strong class="font-semibold">dimensions (capsule)</strong>
+							<span class="text-subtle-2">(mm)</span>
 							<div class="flex gap-3">
 								<div>
 									<span class="text-subtle-2">r</span>
@@ -538,6 +555,7 @@
 						<div class="flex justify-between">
 							<div>
 								<strong class="font-semibold">dimensions (sphere)</strong>
+								<span class="text-subtle-2">(mm)</span>
 								<div class="flex gap-3">
 									<div>
 										<span class="text-subtle-2">r</span>

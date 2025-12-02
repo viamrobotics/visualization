@@ -13,11 +13,9 @@ var (
 )
 
 // Line represents a Line in 3D space
-// Metadata:
-// - colors: []float32 of a single color: [r, g, b, a] or a color per point: [r, g, b, a, ...], defaults to [0, 0.5, 1, 1] (blue) and [0, 0.3, 0.8, 1] (darker blue)
 type Line struct {
-	// The points to render
-	Points []r3.Vector
+	// The positions of the line points to render
+	Positions []r3.Vector
 
 	// The width of the line, defaults to 5mm
 	LineWidth float32
@@ -25,51 +23,90 @@ type Line struct {
 	// The size of the points, defaults to 10mm
 	PointSize float32
 
-	// Either a single color or a color per point
-	Colors []*Color
+	// The color of the line, defaults to blue
+	LineColor Color
+
+	// The color of the points, defaults to darker blue
+	PointColor Color
+}
+
+// drawLineConfig holds configuration options for creating a Line.
+type drawLineConfig struct {
+	lineWidth float32
+	pointSize float32
+	DrawColorsConfig
+}
+
+func newDrawLineConfig(lineWidth float32, pointSize float32, colors ...Color) *drawLineConfig {
+	return &drawLineConfig{
+		lineWidth:        lineWidth,
+		pointSize:        pointSize,
+		DrawColorsConfig: NewDrawColorsConfig(colors...),
+	}
+}
+
+// drawLineOption is a functional option for configuring a Line
+type drawLineOption func(*drawLineConfig)
+
+// WithLineWidth sets the width of the line in millimeters
+func WithLineWidth(width float32) drawLineOption {
+	return func(config *drawLineConfig) {
+		config.lineWidth = width
+	}
+}
+
+// WithPointSize sets the size of the points/dots at line vertices
+func WithPointSize(size float32) drawLineOption {
+	return func(config *drawLineConfig) {
+		config.pointSize = size
+	}
+}
+
+// WithLineColors sets the color of the line and points
+// If pointColor is nil, uses the line color for points
+func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
+	colors := []Color{lineColor, lineColor}
+	if pointColor != nil {
+		colors[1] = *pointColor
+	}
+
+	return WithColors[*drawLineConfig](colors)
 }
 
 // NewLine creates a new Line object
-func NewLine(points []r3.Vector, lineWidth *float32, pointSize *float32, colors []*Color) (*Line, error) {
-	if len(colors) == 0 {
-		colors = []*Color{DefaultLineColor, DefaultLinePointColor}
-	} else if len(colors) == 1 {
-		// If single color provided, use it for both line and points
-		colors = []*Color{colors[0], colors[0]}
-	} else if len(colors) != 2 {
-		return nil, fmt.Errorf("colors must have length 1 (single color) or 2 (line + dot colors), got %d", len(colors))
+func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
+	config := newDrawLineConfig(DefaultLineWidth, DefaultPointSize, DefaultLineColor, DefaultLinePointColor)
+	for _, option := range options {
+		option(config)
 	}
 
-	if len(points) < 2 {
-		return nil, fmt.Errorf("line must have at least 2 points, got %d", len(points))
+	if len(positions) < 2 {
+		return nil, fmt.Errorf("line must have at least 2 positions, got %d", len(positions))
 	}
 
-	if lineWidth == nil {
-		lineWidth = &DefaultLineWidth
-	} else if *lineWidth <= 0 {
-		return nil, fmt.Errorf("line width must be greater than 0, got %f", *lineWidth)
+	if config.pointSize <= 0 {
+		return nil, fmt.Errorf("point size must be greater than 0, got %f", config.pointSize)
 	}
 
-	if pointSize == nil {
-		pointSize = &DefaultPointSize
-	} else if *pointSize <= 0 {
-		return nil, fmt.Errorf("point size must be greater than 0, got %f", *pointSize)
-	}
-
-	return &Line{Points: points, LineWidth: *lineWidth, PointSize: *pointSize, Colors: colors}, nil
+	return &Line{
+		Positions:  positions,
+		LineWidth:  config.lineWidth,
+		PointSize:  config.pointSize,
+		LineColor:  config.colors[0],
+		PointColor: config.colors[1],
+	}, nil
 }
 
 // Draw draws a line from a list of points, colors, and optional styling
 // If colors is nil or empty, uses DefaultLineColor (blue) for both line and points
 // If colors has 1 element, uses that color for both line and points
 // If colors has 2 elements, first is for line, second is for points
-func (line *Line) Draw(
+func (line Line) Draw(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
-	units Units,
 ) *Drawing {
-	shape := NewShape(pose, name, units).WithLine(line)
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(line.Colors))
+	shape := NewShape(pose, name, WithLine(line))
+	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
 	return drawing
 }

@@ -33,8 +33,8 @@ func TestDrawPointCloud(t *testing.T) {
 		pc, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		for i := 0; i < 10; i++ {
-			time.Sleep(16 * time.Millisecond)
+		for i := range 10 {
+			time.Sleep(100 * time.Millisecond)
 			test.That(t, DrawPointCloud("Zaghetto"+strconv.Itoa(i+1), pc, nil), test.ShouldBeNil)
 		}
 	})

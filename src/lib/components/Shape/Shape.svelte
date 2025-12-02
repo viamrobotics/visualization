@@ -19,7 +19,6 @@
 		pose: WorldObject['pose']
 		metadata: WorldObject['metadata']
 		renderShapes?: RenderShapes[]
-		units?: 'mm' | 'm'
 		children?: Snippet<[{ ref: Group }]>
 	}
 
@@ -35,14 +34,13 @@
 			RenderShapes.NURBS,
 		],
 		children,
-		units = 'mm',
 		...rest
 	}: Props = $props()
 
 	const group = new Group()
 
 	$effect.pre(() => {
-		poseToObject3d(pose, group, units)
+		poseToObject3d(pose, group)
 	})
 </script>
 

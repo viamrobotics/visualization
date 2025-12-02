@@ -16,10 +16,7 @@
 <!-- First pass: Render all frames to establish PortalTargets -->
 {#each frames as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
-		<Frame
-			{...object}
-			units="m"
-		>
+		<Frame {...object}>
 			<PortalTarget id={object.name} />
 			<Label text={object.name} />
 		</Frame>
@@ -30,10 +27,7 @@
 {#each worldObjects as object (object.uuid)}
 	<Portal id={object.referenceFrame}>
 		<!-- WorldObjects with geometry can also act as parents for nested children -->
-		<Frame
-			{...object}
-			units="m"
-		>
+		<Frame {...object}>
 			<PortalTarget id={object.name} />
 			<Label text={object.name} />
 		</Frame>

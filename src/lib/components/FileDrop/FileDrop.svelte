@@ -41,7 +41,7 @@
 				snapshot.current = decodedSnapshot
 
 				toast({
-					message: `Loaded snapshot with ${decodedSnapshot.transforms.length} transforms`,
+					message: `Loaded snapshot with ${decodedSnapshot.transforms.length + decodedSnapshot.drawings.length} world objects`,
 					variant: ToastVariant.Success,
 				})
 			} catch (error) {
@@ -148,7 +148,7 @@
 							{
 								center: undefined,
 								geometryType: {
-									case: 'points',
+									case: 'legacyPoints',
 									value: message.positions,
 								},
 							},

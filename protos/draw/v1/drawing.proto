@@ -22,14 +22,14 @@ message Arrows {
 // - colors: float32 array of a single color: [r, g, b, a] or two colors for lines and points: [r, g, b, a, r, g, b, a]
 //   defaults to [0, 0.5, 1, 0.7] (blue) for lines, [0, 0.3, 0.8, 0.7] (darker blue) for points
 message Line {
-  // The points of the line
+  // The positions of the line points
   // float32 array of positions: [x, y, z, ...]
-  bytes points = 1;
+  bytes positions = 1;
 
   // optional width of the line in millimeters, defaults to 5
   optional float line_width = 2;
 
-  // optional size of the dots in millimeters, defaults to 10
+  // optional size of the points in millimeters, defaults to 10
   optional float point_size = 3;
 }
 
@@ -41,32 +41,39 @@ message Points {
   // float32 array of positions: [x, y, z, ...]
   bytes positions = 1;
 
-  // optional size of the points in millimeters, defaults to 10
+  // Size of the points in millimeters, defaults to 10
   optional float point_size = 2;
+}
+
+// ModelAsset represents the type of model
+message ModelAsset {
+  // The mime type of the model asset
+  string mime_type = 1;
+
+  // Expected file size in bytes (helpful for progress tracking)
+  optional uint64 size_bytes = 2;
+
+  // The content of the model asset
+  oneof content {
+    // The url of the model asset
+    string url = 3;
+    // The binary data of the model asset
+    bytes binary = 4;
+  }
 }
 
 // Model represents a 3D model in various formats
 // Metadata:
 // - colors: defaults to float32 array of no colors
 message Model {
-  // cache key for client-side caching
-  optional string cache_key = 1;
+  // The list of assets that make up the model
+  repeated ModelAsset assets = 1;
 
-  // expected file size in bytes (helpful for progress tracking)
-  optional uint64 size_bytes = 2;
+  // Uniform scale factor, defaults to [1.0, 1.0, 1.0]
+  optional viam.common.v1.Vector3 scale = 2;
 
-  // optional uniform scale factor, defaults to 1.0
-  optional float scale = 3;
-
-  // optional boolean to indicate if the model should animate
-  optional bool animate = 4;
-
-  oneof model_type {
-    // URL to fetch the model from - preferred for large models
-    string url = 5;
-    // GLB (binary GLTF) file as bytes - preferred for small models
-    bytes glb = 6;
-  }
+  // Name of the animation to play, defaults to empty string (no animation)
+  optional string animation_name = 3;
 }
 
 // Nurbs represents a NURBS curve in 3D space
@@ -75,18 +82,18 @@ message Model {
 message Nurbs {
   // The control points of the NURBS
   // []float32 of poses: [x, y, z, ox, oy, oz, theta, ...]
-  bytes poses = 1;
-
-  // The degree of the NURBS, defaults to 3
-  int32 degree = 2;
-
-  // The weights of the NURBS, defaults to [1, 1, 1, ...]
-  // float32 array of weights: [weight, ...]
-  bytes weights = 3;
+  bytes control_points = 1;
 
   // The knots of the NURBS
   // float32 array of knots: [knot, ...]
-  bytes knots = 4;
+  bytes knots = 2;
+
+  // The degree of the NURBS, defaults to 3
+  optional int32 degree = 3;
+
+  // The weights of the NURBS, defaults to [1, 1, 1, ...]
+  // float32 array of weights: [weight, ...]
+  optional bytes weights = 4;
 }
 
 message Shape {
@@ -109,7 +116,7 @@ message Shape {
 // For non-physical visualization shapes
 message Drawing {
   // The name of the shape
-  string name = 1;
+  string reference_frame = 1;
 
   // The pose of the shape as observed through it's parent frame/the world
   viam.common.v1.PoseInFrame pose_in_observer_frame = 2;

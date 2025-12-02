@@ -86,7 +86,7 @@ message SceneMetadata {
 
   // The size of the dots of the lines if not defined by a transform's metadata
   // defaults to 10 (millimeters)
-  optional float line_dot_size = 9;
+  optional float line_point_size = 9;
 
   // The models to render
   // defaults to COLLIDERS_AND_MODEL

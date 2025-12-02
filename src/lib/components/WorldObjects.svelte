@@ -20,6 +20,7 @@
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useSnapshot } from '$lib/hooks/useSnapshot.svelte'
+	import Snapshot from './Snapshot.svelte'
 
 	const points = usePointClouds()
 	const drawAPI = useDrawAPI()
@@ -76,18 +77,12 @@
 	</Portal>
 {/each}
 
-{#each snapshot.worldObjects as object (object.uuid)}
-	<Frame
-		uuid={object.uuid}
-		name={object.name}
-		pose={object.pose}
-		geometry={object.geometry}
-		metadata={object.metadata}
-	>
-		<PortalTarget id={object.name} />
-		<Label text={object.name} />
-	</Frame>
-{/each}
+{#if snapshot.current}
+	<Snapshot
+		frames={snapshot.frames}
+		worldObjects={snapshot.worldObjects}
+	/>
+{/if}
 
 {#each worldStates.names as { name } (name)}
 	<WorldState worldObjects={worldStates.current[name].worldObjects} />

@@ -1,6 +1,5 @@
 import { BufferDataType, parseBuffer } from './buffer-metadata'
 import type { WorldObject } from './WorldObject.svelte'
-import type { Drawing } from './gen/draw/v1/drawing_pb'
 import { RGBA_FIELDS, type RGBA } from './color'
 import type { TypedArray } from 'three'
 import type { ArrowsGeometry } from './shape'
@@ -43,18 +42,33 @@ export const parseArrowsBuffer = (
 		}
 	}
 
-	const poseData = parseBuffer(poses, {
+	const poseDataMm = parseBuffer(poses, {
 		fields: ARROWS_POSE_FIELDS,
 		size: ARROWS_POSE_SIZE,
 		type: ARROWS_POSE_TYPE,
 	})
+
+	// Convert position components (x, y, z) from mm to m, keep orientation (ox, oy, oz) unchanged
+	const poseData = new Float32Array(poseDataMm.length)
+	const numPoses = poseDataMm.length / ARROWS_POSE_FIELDS.length
+	for (let i = 0; i < numPoses; i++) {
+		const idx = i * ARROWS_POSE_FIELDS.length
+		// Scale position (x, y, z) from mm to m
+		poseData[idx] = poseDataMm[idx] * 0.001
+		poseData[idx + 1] = poseDataMm[idx + 1] * 0.001
+		poseData[idx + 2] = poseDataMm[idx + 2] * 0.001
+		// Keep orientation (ox, oy, oz) unchanged
+		poseData[idx + 3] = poseDataMm[idx + 3]
+		poseData[idx + 4] = poseDataMm[idx + 4]
+		poseData[idx + 5] = poseDataMm[idx + 5]
+	}
 
 	const colorData = metadata?.colors ?? new Float32Array([0, 1, 0, 1])
 
 	return {
 		poseData,
 		colorData,
-		poses: poseData.length / ARROWS_POSE_FIELDS.length,
+		poses: numPoses,
 		colors: colorData.length / RGBA_FIELDS.length,
 	}
 }

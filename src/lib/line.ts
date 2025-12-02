@@ -26,9 +26,9 @@ export const parseLineBuffer = (
 			? drawing.physicalObject.geometryType.value
 			: null
 
-	if (!line?.points.length) {
+	if (!line?.positions.length) {
 		console.warn('No points found for line', {
-			points: line?.points.length,
+			points: line?.positions.length,
 		})
 
 		return {
@@ -39,7 +39,7 @@ export const parseLineBuffer = (
 		}
 	}
 
-	const { pointsData, points } = parsePoints(line.points)
+	const { pointsData, points } = parsePoints(line.positions)
 
 	// metadata.colors should already be a Float32Array parsed in WorldObject constructor (RGBA format)
 	// Default to both line and point colors if no colors provided

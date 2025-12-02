@@ -8,15 +8,15 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
-// BufferPacker provides efficient direct buffer writing without map allocations.
-// This eliminates heap allocations and GC pressure compared to map-based approaches.
+// BufferPacker provides efficient direct buffer writing
 type BufferPacker struct {
 	buffer []float32
 	offset int
 }
 
 // NewBufferPacker creates a new packer with pre-allocated capacity.
-// elementCount is the number of elements, fieldsPerElement is the number of fields per element.
+//   - elementCount is the number of elements
+//   - fieldsPerElement is the number of fields per element
 func NewBufferPacker(elementCount, fieldsPerElement int) *BufferPacker {
 	return &BufferPacker{
 		buffer: make([]float32, elementCount*fieldsPerElement),
@@ -24,13 +24,14 @@ func NewBufferPacker(elementCount, fieldsPerElement int) *BufferPacker {
 	}
 }
 
-// Write appends float32 values directly to the buffer.
+// Write appends float32 values directly to the buffer
+//   - values are the values to write
 func (packer *BufferPacker) Write(values ...float32) {
 	copy(packer.buffer[packer.offset:], values)
 	packer.offset += len(values)
 }
 
-// Bytes returns the packed buffer as little-endian bytes.
+// Read returns the packed buffer as little-endian bytes
 func (packer *BufferPacker) Read() []byte {
 	bytes := make([]byte, len(packer.buffer)*4)
 	for i, f := range packer.buffer {
@@ -40,6 +41,7 @@ func (packer *BufferPacker) Read() []byte {
 }
 
 // packFloats packs a slice of float64 values into a Float32Array byte representation
+//   - floats are the values to pack
 func packFloats(floats []float64) []byte {
 	packer := NewBufferPacker(len(floats), 1)
 	for _, f := range floats {
@@ -49,37 +51,37 @@ func packFloats(floats []float64) []byte {
 }
 
 // packPoints packs a slice of 3D points into a Float32Array byte representation
-func packPoints(dots []r3.Vector, units *Units) []byte {
-	packer := NewBufferPacker(len(dots), 3) // 3 fields: x, y, z
+//   - dots are the points to pack: [x, y, z]
+func packPoints(dots []r3.Vector) []byte {
+	packer := NewBufferPacker(len(dots), 3)
 
 	for _, dot := range dots {
-		if units != nil && *units == UnitsM {
-			packer.Write(float32(float64ToMeters(dot.X)), float32(float64ToMeters(dot.Y)), float32(float64ToMeters(dot.Z)))
-		} else {
-			packer.Write(float32(dot.X), float32(dot.Y), float32(dot.Z))
-		}
+		packer.Write(float32(dot.X), float32(dot.Y), float32(dot.Z))
 	}
 
 	return packer.Read()
 }
 
 // packPoses packs a slice of 3D poses into a Float32Array byte representation
-func packPoses(poses []spatialmath.Pose, units *Units) []byte {
-	packer := NewBufferPacker(len(poses), 6) // 6 fields: x, y, z, ox, oy, oz
+//   - poses are the poses to pack: [x, y, z, ox, oy, oz, theta (if theta is true)]
+//   - theta is whether to include the theta value
+func packPoses(poses []spatialmath.Pose, theta bool) []byte {
+	fields := 6
+	if theta {
+		fields = 7
+	}
+
+	packer := NewBufferPacker(len(poses), fields)
 
 	for _, pose := range poses {
 		point := pose.Point()
 		ov := pose.Orientation().OrientationVectorDegrees()
-		if units != nil && *units == UnitsM {
-			packer.Write(
-				float32(float64ToMeters(point.X)), float32(float64ToMeters(point.Y)), float32(float64ToMeters(point.Z)),
-				float32(ov.OX), float32(ov.OY), float32(ov.OZ),
-			)
-		} else {
-			packer.Write(
-				float32(point.X), float32(point.Y), float32(point.Z),
-				float32(ov.OX), float32(ov.OY), float32(ov.OZ),
-			)
+		packer.Write(
+			float32(point.X), float32(point.Y), float32(point.Z),
+			float32(ov.OX), float32(ov.OY), float32(ov.OZ),
+		)
+		if theta {
+			packer.Write(float32(ov.Theta))
 		}
 	}
 
@@ -87,8 +89,9 @@ func packPoses(poses []spatialmath.Pose, units *Units) []byte {
 }
 
 // packColors packs a slice of Color values into a Float32Array byte representation
-func packColors(colors []*Color) []byte {
-	packer := NewBufferPacker(len(colors), 4) // 4 fields: r, g, b, a
+//   - colors are the colors to pack: [r, g, b, a]
+func packColors(colors []Color) []byte {
+	packer := NewBufferPacker(len(colors), 4)
 
 	for _, rgba := range colors {
 		packer.Write(rgba.R, rgba.G, rgba.B, rgba.A)

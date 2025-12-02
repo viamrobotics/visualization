@@ -19,7 +19,7 @@ export const parsePoints = (data: Uint8Array) => {
 	// Convert from millimeters to meters for Three.js
 	const pointsData = new Float32Array(pointsDataMm.length)
 	for (let i = 0; i < pointsDataMm.length; i++) {
-		pointsData[i] = pointsDataMm[i]
+		pointsData[i] = pointsDataMm[i] * 0.001
 	}
 
 	const points: Vector3[] = []

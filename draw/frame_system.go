@@ -17,53 +17,12 @@ import (
 func DrawFrameSystemGeometries(
 	frameSystem *referenceframe.FrameSystem,
 	inputs referenceframe.FrameSystemInputs,
-	colors map[string]*Color,
-	units Units,
+	colors map[string]Color,
 ) (*drawv1.Transforms, error) {
 	transforms := &drawv1.Transforms{
 		Transforms: make([]*commonv1.Transform, 0),
 	}
 
-	// Create transforms for all frames (including parent frames without geometries)
-	frameNames := frameSystem.FrameNames()
-	for _, frameName := range frameNames {
-		if frameName == referenceframe.World {
-			continue
-		}
-
-		frame := frameSystem.Frame(frameName)
-		if frame == nil {
-			continue
-		}
-
-		parent, err := frameSystem.Parent(frame)
-		if err != nil {
-			continue
-		}
-
-		parentName := referenceframe.World
-		if parent != nil {
-			parentName = parent.Name()
-		}
-
-		pose := spatialmath.NewZeroPose()
-
-		color := getFrameColor(frameName, colors, frameSystem)
-		metadata := NewMetadata([]*Color{color})
-		metadataStruct, err := MetadataToStruct(metadata)
-		if err != nil {
-			return nil, err
-		}
-
-		transform, err := NewTransform(uuid.New().String(), frameName, parentName, pose, nil, metadataStruct, units)
-		if err != nil {
-			return nil, err
-		}
-
-		transforms.Transforms = append(transforms.Transforms, transform)
-	}
-
-	// Then, create transforms for all geometries
 	frameMap, err := referenceframe.FrameSystemGeometries(frameSystem, inputs)
 	if err != nil {
 		return nil, err
@@ -75,30 +34,26 @@ func DrawFrameSystemGeometries(
 
 		for _, geometry := range geometries.Geometries() {
 			label := geometry.Label()
-			parent := geometries.Parent()
 			pose := spatialmath.NewZeroPose()
-
-			if color != nil {
-				metadata := NewMetadata([]*Color{color})
-				metadataStruct, err := MetadataToStruct(metadata)
-				if err != nil {
-					return nil, err
-				}
-
-				transform, err := NewTransform(uuid.New().String(), label, parent, pose, geometry, metadataStruct, units)
-				if err != nil {
-					return nil, err
-				}
-
-				transforms.Transforms = append(transforms.Transforms, transform)
+			metadata := NewMetadata(WithMetadataColors(color))
+			metadataStruct, err := MetadataToStruct(metadata)
+			if err != nil {
+				return nil, err
 			}
+
+			transform, err := NewTransform(uuid.New().String(), label, referenceframe.World, pose, geometry, metadataStruct)
+			if err != nil {
+				return nil, err
+			}
+
+			transforms.Transforms = append(transforms.Transforms, transform)
 		}
 	}
 
 	return transforms, nil
 }
 
-func getFrameColor(frameName string, colors map[string]*Color, frameSystem *referenceframe.FrameSystem) *Color {
+func getFrameColor(frameName string, colors map[string]Color, frameSystem *referenceframe.FrameSystem) Color {
 	if color, ok := colors[frameName]; ok {
 		return color
 	}
@@ -111,5 +66,5 @@ func getFrameColor(frameName string, colors map[string]*Color, frameSystem *refe
 		}
 	}
 
-	return NewColor().ByName("magenta").SetAlpha(0.7)
+	return NewColor(WithName("magenta"))
 }

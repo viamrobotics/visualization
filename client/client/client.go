@@ -18,7 +18,7 @@ import (
 
 	"github.com/golang/geo/r3"
 	"github.com/viam-labs/motion-tools/client/colorutil"
-	"github.com/viam-labs/motion-tools/client/shapes"
+	"github.com/viam-labs/motion-tools/draw"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.viam.com/rdk/referenceframe"
@@ -402,18 +402,9 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 //   - nurbs: A nurbs curve
 //   - color: The color of the line
 //   - name: A unique label for the curve
-func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
-	poseData := make([]json.RawMessage, len(nurbs.ControlPts))
-	for i, pose := range nurbs.ControlPts {
-		data, err := protojson.Marshal(spatialmath.PoseToProtobuf(pose))
-		if err != nil {
-			return err
-		}
-		poseData[i] = json.RawMessage(data)
-	}
-
+func DrawNurbs(nurbs *draw.Nurbs, color string, name string) error {
 	wrappedData := map[string]interface{}{
-		"ControlPts": poseData,
+		"ControlPts": nurbs.ControlPoints,
 		"Degree":     nurbs.Degree,
 		"Weights":    nurbs.Weights,
 		"Knots":      nurbs.Knots,
@@ -465,18 +456,8 @@ func RemoveAllSpatialObjects() error {
 //   - lookAt: The direction the camera should look at
 //   - animate: Whether or not to animate to this pose
 func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
-	positionM := map[string]interface{}{
-		"X": position.X / 1000.0,
-		"Y": position.Y / 1000.0,
-		"Z": position.Z / 1000.0,
-	}
-
-	lookAtM := map[string]interface{}{
-		"X": lookAt.X / 1000.0,
-		"Y": lookAt.Y / 1000.0,
-		"Z": lookAt.Z / 1000.0,
-	}
-
+	positionM := position.Mul(0.001)
+	lookAtM := lookAt.Mul(0.001)
 	data := map[string]interface{}{
 		"setCameraPose": true,
 		"Position":      positionM,

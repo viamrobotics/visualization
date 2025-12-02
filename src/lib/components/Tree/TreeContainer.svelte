@@ -17,6 +17,8 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import WeblabActive from '../weblab/WeblabActive.svelte'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useSnapshot } from '$lib/hooks/useSnapshot.svelte'
+
 	const { ...rest } = $props()
 
 	provideTreeExpandedContext()
@@ -28,6 +30,7 @@
 	const worldStates = useWorldStates()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
+	const snapshot = useSnapshot()
 
 	let rootNode = $state<TreeNode>({
 		id: 'world',
@@ -36,7 +39,7 @@
 		href: '/',
 	})
 
-	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current))
+	const nodes = $derived(buildTreeNodes(objects.current, worldStates.current, snapshot.current))
 
 	$effect.pre(() => {
 		if (!isEqual(rootNode.children, nodes)) {

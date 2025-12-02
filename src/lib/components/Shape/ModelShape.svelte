@@ -6,14 +6,16 @@ and should remain pure, i.e. no hooks should be used.
 -->
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
-	import { AnimationMixer } from 'three'
-	import type { Object3D } from 'three'
+	import { AnimationMixer, Group } from 'three'
+	import type { AnimationClip, Object3D } from 'three'
 	import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 	import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 	import type { ModelGeometry } from '$lib/shape'
 	import { noop } from 'lodash-es'
 	import type { Metadata } from '$lib/WorldObject.svelte'
-
+	import { Vector3 } from 'three'
+	import type { PlainMessage } from '@bufbuild/protobuf'
+	import type { ModelAsset } from '$lib/gen/draw/v1/drawing_pb'
 	interface Props {
 		geometry: ModelGeometry
 		metadata: Metadata
@@ -24,40 +26,75 @@ and should remain pure, i.e. no hooks should be used.
 	const loader = new GLTFLoader()
 
 	let scene = $state<Object3D | undefined>(undefined)
-	let gltf = $state<GLTF | undefined>(undefined)
+	let gltfs = $state<GLTF[]>([])
+	let animations = $state<AnimationClip[]>([])
 
 	let update: (delta: number) => void = noop
 
-	const animations = $derived(gltf?.animations ?? [])
-	const isAnimated = $derived(animations.length > 0)
-	const shouldAnimate = $derived(isAnimated && Boolean(geometry.geometryType.value.animate))
-	const scale = $derived(geometry.geometryType.value.scale ?? 1.0)
+	const shouldAnimate = $derived(Boolean(geometry.geometryType.value.animationName !== ''))
+	const scale = $derived(geometry.geometryType.value.scale ?? new Vector3(1, 1, 1))
 
-	// Update the animation mixer each frame
 	useTask((delta) => {
 		update(delta)
 	})
 
+	const handleLoad = (loadedGltf: GLTF) => {
+		gltfs = [...gltfs, loadedGltf]
+		animations = [...animations, ...loadedGltf.animations]
+		console.log('animations', animations)
+		scene?.add(loadedGltf.scene)
+		scene?.animations.push(...animations)
+		console.log('scene?.animations', scene?.animations)
+	}
+
+	const handleError = (error: unknown) => {
+		console.error('Failed to load model', error)
+	}
+
+	const handleAsset = async (asset: PlainMessage<ModelAsset>) => {
+		if (asset.content.case === 'url') {
+			loader.load(asset.content.value, handleLoad, undefined, handleError)
+		} else if (asset.content.case === 'binary') {
+			const arrayBuffer = asset.content.value.buffer.slice(
+				asset.content.value.byteOffset,
+				asset.content.value.byteOffset + asset.content.value.byteLength
+			)
+
+			try {
+				const loadedGltf = await loader.parseAsync(arrayBuffer as ArrayBuffer, '')
+				handleLoad(loadedGltf)
+			} catch (error) {
+				handleError(error)
+			}
+		} else {
+			console.error('No content specified for asset', asset)
+		}
+	}
+
 	$effect.pre(() => {
 		if (scene) {
-			scene.scale.setScalar(scale)
+			scene.scale.set(scale.x, scale.y, scale.z)
 		}
 	})
 
-	// Set up and play animations when gltf is loaded
 	$effect(() => {
-		if (shouldAnimate && scene) {
-			// Create animation mixer
+		// Depend on gltfs.length to re-run when GLTFs are loaded
+		if (shouldAnimate && scene && gltfs.length > 0) {
 			const mixer = new AnimationMixer(scene)
 			update = (delta) => mixer.update(delta)
 
-			// Play all animations
-			animations.forEach((clip) => {
+			const clip = scene.animations.find(
+				(animation) => animation.name === geometry.geometryType.value.animationName
+			)
+			if (!clip) {
+				console.warn(
+					`Animation ${geometry.geometryType.value.animationName} for model ${geometry.label} not found`
+				)
+			} else {
 				const action = mixer.clipAction(clip)
 				action.play()
-			})
+			}
 
-			// Cleanup when effect reruns
 			return () => {
 				mixer.stopAllAction()
 				update = noop
@@ -66,51 +103,18 @@ and should remain pure, i.e. no hooks should be used.
 	})
 
 	$effect(() => {
-		const modelType = geometry.geometryType.value.modelType
-		if (!modelType) {
-			console.error('No model type specified', geometry)
+		const assets = geometry.geometryType.value.assets
+		if (assets.length === 0) {
+			console.error('No assets specified', geometry)
 			return
 		}
 
-		scene = undefined
-		gltf = undefined
+		scene = new Group()
+		gltfs = []
 		update = noop
 
-		if (modelType.case === 'url') {
-			// Load from URL
-			loader.load(
-				modelType.value,
-				(loadedGltf) => {
-					gltf = loadedGltf
-					scene = loadedGltf.scene
-					scene.scale.setScalar(scale)
-					console.log(`ModelShape: Loaded model with ${loadedGltf.animations.length} animation(s)`)
-				},
-				undefined,
-				(err: unknown) => {
-					console.error('Failed to load model', err)
-				}
-			)
-		} else if (modelType.case === 'glb') {
-			// Load from GLB bytes - create a new ArrayBuffer to ensure it's not SharedArrayBuffer
-			const uint8Array = new Uint8Array(modelType.value)
-			const blob = new Blob([uint8Array], { type: 'model/gltf-binary' })
-			const url = URL.createObjectURL(blob)
-
-			loader.load(
-				url,
-				(loadedGltf) => {
-					gltf = loadedGltf
-					scene = loadedGltf.scene
-					scene.scale.setScalar(scale)
-					URL.revokeObjectURL(url)
-				},
-				undefined,
-				(err: unknown) => {
-					console.error('Failed to load GLB', err)
-					URL.revokeObjectURL(url)
-				}
-			)
+		for (const asset of assets) {
+			void handleAsset(asset)
 		}
 	})
 </script>

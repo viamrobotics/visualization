@@ -14,30 +14,36 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type PassSnapshot struct {
+// Snapshot represents a snapshot of a world state
+type Snapshot struct {
 	uuid          []byte
 	transforms    []*commonv1.Transform
 	drawings      []*Drawing
 	sceneMetadata SceneMetadata
 }
 
-func (snapshot *PassSnapshot) UUID() []byte {
+// UUID returns the UUID of the snapshot
+func (snapshot *Snapshot) UUID() []byte {
 	return snapshot.uuid
 }
 
-func (snapshot *PassSnapshot) Transforms() []*commonv1.Transform {
+// Transforms returns the transforms of the snapshot
+func (snapshot *Snapshot) Transforms() []*commonv1.Transform {
 	return snapshot.transforms
 }
 
-func (snapshot *PassSnapshot) Drawings() []*Drawing {
+// Drawings returns the drawings of the snapshot
+func (snapshot *Snapshot) Drawings() []*Drawing {
 	return snapshot.drawings
 }
 
-func (snapshot *PassSnapshot) SceneMetadata() *SceneMetadata {
-	return &snapshot.sceneMetadata
+// SceneMetadata returns the scene metadata of the snapshot
+func (snapshot *Snapshot) SceneMetadata() SceneMetadata {
+	return snapshot.sceneMetadata
 }
 
-func (snapshot *PassSnapshot) ToProto() *drawv1.PassSnapshot {
+// ToProto converts the snapshot to a protobuf message
+func (snapshot *Snapshot) ToProto() *drawv1.PassSnapshot {
 	drawingProtos := make([]*drawv1.Drawing, len(snapshot.drawings))
 	for i, drawing := range snapshot.drawings {
 		drawingProtos[i] = drawing.toProto()
@@ -51,29 +57,27 @@ func (snapshot *PassSnapshot) ToProto() *drawv1.PassSnapshot {
 	}
 }
 
-// MarshalPassSnapshot marshals a pass snapshot to JSON with camelCase field names.
-// All dimensional units should be converted from millimeters to meters before marshalling.
-func (snapshot *PassSnapshot) Marshal() ([]byte, error) {
+// Marshal marshals a snapshot to JSON
+func (snapshot *Snapshot) Marshal() ([]byte, error) {
 	marshaler := protojson.MarshalOptions{
 		EmitUnpopulated: true,
-		Indent:          "  ", // Pretty-print with 2-space indentation
 	}
 	return marshaler.Marshal(snapshot.ToProto())
 }
 
-// NewPassSnapshot creates a new snapshot with a unique UUID
-func NewPassSnapshot() *PassSnapshot {
+// NewSnapshot creates a new snapshot with a unique UUID
+func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot {
 	uuidBytes := uuid.New()
-	return &PassSnapshot{
+	return &Snapshot{
 		uuid:          uuidBytes[:],
 		transforms:    []*commonv1.Transform{},
 		drawings:      []*Drawing{},
-		sceneMetadata: NewSceneMetadata(UnitsM),
+		sceneMetadata: NewSceneMetadata(sceneOptions...),
 	}
 }
 
-// ValidateSnapshot validates a snapshot
-func (snapshot *PassSnapshot) Validate() error {
+// Validate validates a snapshot
+func (snapshot *Snapshot) Validate() error {
 	if snapshot == nil {
 		return fmt.Errorf("snapshot is nil")
 	}
@@ -94,7 +98,6 @@ func (snapshot *PassSnapshot) Validate() error {
 		return fmt.Errorf("snapshot drawings is nil")
 	}
 
-	// Validate each Transform in transforms
 	for i, transform := range snapshot.transforms {
 		if transform == nil {
 			return fmt.Errorf("transform at index %d is nil", i)
@@ -107,7 +110,6 @@ func (snapshot *PassSnapshot) Validate() error {
 		}
 	}
 
-	// Validate each Drawing in drawings
 	for i, drawing := range snapshot.drawings {
 		if drawing == nil {
 			return fmt.Errorf("drawing at index %d is nil", i)
@@ -118,12 +120,8 @@ func (snapshot *PassSnapshot) Validate() error {
 		if drawing.Pose == nil {
 			return fmt.Errorf("drawing at index %d has nil pose in observer frame", i)
 		}
-		if drawing.Shape == nil {
-			return fmt.Errorf("drawing at index %d has nil shape", i)
-		}
 	}
 
-	// Validate SceneMetadata if present
 	if err := snapshot.sceneMetadata.Validate(); err != nil {
 		return fmt.Errorf("invalid scene metadata: %w", err)
 	}
@@ -131,159 +129,160 @@ func (snapshot *PassSnapshot) Validate() error {
 	return nil
 }
 
-// SetSceneCam
-
-// DrawArrows draws arrows to the snapshot
-// Returns the arrows drawing that was drawn
-func (snapshot *PassSnapshot) DrawArrows(
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-	poses []spatialmath.Pose,
-	colors []*Color,
-) (*Drawing, error) {
-	arrows, err := NewArrows(poses, colors)
-	if err != nil {
-		return nil, err
-	}
-
-	drawing := arrows.Draw(name, parent, pose, UnitsM)
-	snapshot.drawings = append(snapshot.drawings, drawing)
-	return drawing, nil
-}
-
 // DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot
-// Colors are mapped by frame name
-// Returns the transforms that were drawn
-func (snapshot *PassSnapshot) DrawFrameSystemGeometries(
+//   - frameSystem is the frame system to draw
+//   - inputs are the inputs to the frame system
+//   - colors are the colors to use for the frame system geometries, mapped by frame name
+//   - Returns an error if the frame system geometries cannot be drawn
+func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	frameSystem *referenceframe.FrameSystem,
 	inputs referenceframe.FrameSystemInputs,
-	colors map[string]*Color,
-) (*drawv1.Transforms, error) {
-	transforms, err := DrawFrameSystemGeometries(frameSystem, inputs, colors, UnitsM)
+	colors map[string]Color,
+) error {
+	transforms, err := DrawFrameSystemGeometries(frameSystem, inputs, colors)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	snapshot.transforms = append(snapshot.transforms, transforms.Transforms...)
-	return transforms, nil
+	return nil
 }
 
 // DrawFrame draws a frame transform to the snapshot
-// Returns the transform that was drawn
-func (snapshot *PassSnapshot) DrawFrame(
+//   - id is the ID of the frame
+//   - name is the name of the frame
+//   - parent is the parent of the frame
+//   - pose is the pose of the frame
+//   - geometry is the geometry of the frame
+//   - metadata is visualizer metadata for the frame
+//   - Returns an error if the frame transform cannot be drawn
+func (snapshot *Snapshot) DrawFrame(
 	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-) (*commonv1.Transform, error) {
-	transform, err := NewTransform(id, name, parent, pose, geometry, metadata, UnitsM)
+) error {
+	transform, err := NewTransform(id, name, parent, pose, geometry, metadata)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	snapshot.transforms = append(snapshot.transforms, transform)
-	return transform, nil
+	return nil
 }
 
 // DrawGeometry draws a geometry to the snapshot
-// Returns the geometry drawing that was drawn
-func (snapshot *PassSnapshot) DrawGeometry(
+//   - geometry is the geometry to draw
+//   - pose is the pose of the geometry
+//   - parent is the parent of the geometry
+//   - color is the color of the geometry
+//   - Returns an error if the geometry cannot be drawn
+func (snapshot *Snapshot) DrawGeometry(
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
 	parent string,
-	color *Color,
-) (*commonv1.Transform, error) {
-	transform, err := DrawGeometry("", geometry, pose, parent, color, UnitsM)
+	color Color,
+) error {
+	transform, err := DrawGeometry("", geometry, pose, parent, color)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	snapshot.transforms = append(snapshot.transforms, transform)
-	return transform, nil
+	return nil
+}
+
+// DrawArrows draws arrows to the snapshot
+//   - name is the name of the arrows
+//   - parent is the parent of the arrows
+//   - pose is the pose of the arrows
+//   - poses are the poses of the arrows
+//   - options are the options for the arrows
+//   - Returns an error if the arrows cannot be drawn
+func (snapshot *Snapshot) DrawArrows(
+	name string,
+	parent string,
+	pose spatialmath.Pose,
+	poses []spatialmath.Pose,
+	options ...drawArrowsOption,
+) error {
+	arrows, err := NewArrows(poses, options...)
+	if err != nil {
+		return err
+	}
+
+	drawing := arrows.Draw(name, parent, pose)
+	snapshot.drawings = append(snapshot.drawings, drawing)
+	return nil
 }
 
 // DrawLine draws a line to the snapshot
-// Returns the line drawing that was drawn
-func (snapshot *PassSnapshot) DrawLine(
+//   - name is the name of the line
+//   - parent is the parent of the line
+//   - pose is the pose of the line
+//   - points are the points of the line
+//   - options are the options for the line
+//   - Returns an error if the line cannot be drawn
+func (snapshot *Snapshot) DrawLine(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	points []r3.Vector,
-	colors []*Color,
-	lineWidth float32,
-	dotSize float32,
-) (*Drawing, error) {
-	line, err := NewLine(points, &lineWidth, &dotSize, colors)
+	options ...drawLineOption,
+) error {
+	line, err := NewLine(points, options...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	drawing := line.Draw(name, parent, pose, UnitsM)
+	drawing := line.Draw(name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
-	return drawing, nil
+	return nil
 }
 
 // DrawModelFromURL draws a model from a URL to the snapshot
-// Returns the model drawing that was drawn
-func (snapshot *PassSnapshot) DrawModelFromURL(
+//   - name is the name of the model
+//   - parent is the parent of the model
+//   - pose is the pose of the model
+//   - options are the options for the model
+//   - Returns an error if the model cannot be drawn
+func (snapshot *Snapshot) DrawModel(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
-	url string,
-	cacheKey string,
-	sizeBytes uint64,
-	scale float32,
-	animate bool,
-) (*Drawing, error) {
-	model, err := NewModelFromURL(url, &cacheKey, &sizeBytes, &scale, &animate)
+	options ...drawModelOption,
+) error {
+	model, err := NewModel(options...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	drawing := model.Draw(name, parent, pose, UnitsM)
+	drawing := model.Draw(name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
-	return drawing, nil
-}
-
-// DrawModelFromGLB draws a model from GLB data to the snapshot
-// Returns the model drawing that was drawn
-func (snapshot *PassSnapshot) DrawModelFromGLB(
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-	glbData []byte,
-	cacheKey string,
-	scale float32,
-	animate bool,
-) (*Drawing, error) {
-	model, err := NewModelFromGLB(glbData, &cacheKey, nil, &scale, &animate)
-	if err != nil {
-		return nil, err
-	}
-
-	drawing := model.Draw(name, parent, pose, UnitsM)
-	snapshot.drawings = append(snapshot.drawings, drawing)
-	return drawing, nil
+	return nil
 }
 
 // DrawPoints draws a set of points to the snapshot
-// Returns the points drawing that was drawn
-func (snapshot *PassSnapshot) DrawPoints(
+//   - name is the name of the points
+//   - parent is the parent of the points
+//   - pose is the pose of the points
+//   - positions are the positions of the points
+//   - options are the options for the points
+//   - Returns an error if the points cannot be drawn
+func (snapshot *Snapshot) DrawPoints(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	positions []r3.Vector,
-	colors []*Color,
-	pointSize float32,
-) (*Drawing, error) {
-	points, err := NewPoints(positions, &pointSize, colors)
+	options ...drawPointsOption,
+) error {
+	points, err := NewPoints(positions, options...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	drawing := points.Draw(name, parent, pose, UnitsM)
+	drawing := points.Draw(name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
-	return drawing, nil
+	return nil
 }

@@ -4,18 +4,12 @@ import (
 	"math/rand"
 
 	"github.com/golang/geo/r3"
+	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/spatialmath"
 )
 
-type Nurbs struct {
-	ControlPts []spatialmath.Pose
-	Degree     int
-	Weights    []float64
-	Knots      []float64
-}
-
 // Generate a NURBS structure similar to the Three.js version
-func GenerateNURBS(numControlPoints int, degree int, offset r3.Vector) Nurbs {
+func GenerateNURBS(numControlPoints int, degree int, offset r3.Vector) draw.Nurbs {
 	controlPts := make([]spatialmath.Pose, numControlPoints)
 	weights := make([]float64, numControlPoints)
 	knots := make([]float64, numControlPoints+degree+1)
@@ -42,11 +36,11 @@ func GenerateNURBS(numControlPoints int, degree int, offset r3.Vector) Nurbs {
 		knots[i+degree+1] = clamp(knot, 0, 1)
 	}
 
-	return Nurbs{
-		ControlPts: controlPts,
-		Degree:     degree,
-		Weights:    weights,
-		Knots:      knots,
+	return draw.Nurbs{
+		ControlPoints: controlPts,
+		Degree:        int32(degree),
+		Weights:       weights,
+		Knots:         knots,
 	}
 }
 

@@ -1,8 +1,9 @@
 import type { Frame } from './frame'
 import type { WorldObject } from './lib'
-import { createPose } from './transform'
+import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { Geometries } from './WorldObject.svelte'
 import type { Pose } from '@viamrobotics/sdk'
+import { Matrix4 } from 'three'
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
@@ -12,22 +13,29 @@ type RemoveFrameCallback = {
 	(componentName: string): void
 }
 
+type GetWorldMatrixCallback = {
+	(frameName: string): Matrix4
+}
+
 export class FrameConfigUpdater {
 	private object: () => WorldObject<Geometries> | undefined
 	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
 	private removeFrame: RemoveFrameCallback
+	private getWorldMatrix: GetWorldMatrixCallback
 
 	constructor(
 		object: () => WorldObject<Geometries> | undefined,
 		updateFrame: UpdateFrameCallback,
 		removeFrame: RemoveFrameCallback,
-		referenceFrame: () => string
+		referenceFrame: () => string,
+		getWorldMatrix: GetWorldMatrixCallback
 	) {
 		this.referenceFrame = referenceFrame
 		this.object = object
 		this.updateFrame = updateFrame
 		this.removeFrame = removeFrame
+		this.getWorldMatrix = getWorldMatrix
 	}
 
 	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
@@ -150,7 +158,21 @@ export class FrameConfigUpdater {
 	public setFrameParent = (parentName: string) => {
 		const object = this.object()
 		if (!object) return
-		this.updateFrame(object.name ?? '', parentName, createPose(object.localEditedPose))
+
+		const currentParentName = this.referenceFrame()
+		const currentLocalPose = object.localEditedPose
+		const currentLocalMatrix = poseToMatrix(createPose(currentLocalPose))
+
+		const currentParentMatrix = this.getWorldMatrix(currentParentName)
+		const currentWorldMatrix = currentParentMatrix.clone().multiply(currentLocalMatrix)
+
+		const newParentMatrix = this.getWorldMatrix(parentName)
+		const newParentMatrixInverse = newParentMatrix.clone().invert()
+
+		const newLocalMatrix = newParentMatrixInverse.multiply(currentWorldMatrix)
+		const newLocalPose = matrixToPose(newLocalMatrix)
+
+		this.updateFrame(object.name ?? '', parentName, newLocalPose)
 	}
 
 	public deleteFrame = () => {

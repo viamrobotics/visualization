@@ -2,6 +2,18 @@ import { Color, type ColorRepresentation, type RGB } from 'three'
 import twColors from 'tailwindcss/colors'
 import { isNumber } from 'lodash-es'
 import { ResourceName } from '@viamrobotics/sdk'
+import { BufferDataType, parseBuffer } from './buffer-metadata'
+
+export const RGBA_FIELDS = ['r', 'g', 'b', 'a']
+export const RGBA_SIZE = [4, 4, 4, 4]
+export const RGBA_TYPE = [
+	BufferDataType.FLOAT,
+	BufferDataType.FLOAT,
+	BufferDataType.FLOAT,
+	BufferDataType.FLOAT,
+]
+
+export type RGBA = [number, number, number, number]
 
 // Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
@@ -168,4 +180,42 @@ const isColorHex = (color: unknown): color is string => {
 	}
 
 	return false
+}
+
+export const parseRGBABuffer = (buffer: Uint8Array) => {
+	return parseBuffer(buffer, {
+		fields: RGBA_FIELDS,
+		size: RGBA_SIZE,
+		type: RGBA_TYPE,
+	})
+}
+
+export const parseBase64RGBABuffer = (base64Str: string) => {
+	const binary = atob(base64Str)
+	const bytes = new Uint8Array(binary.length)
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i)
+	}
+	return parseRGBABuffer(bytes)
+}
+
+export const rgbaToHex = (rgba: number[]): string => {
+	const r = Math.round(rgba[0] ?? 0 * 255)
+		.toString(16)
+		.padStart(2, '0')
+	const g = Math.round(rgba[1] ?? 0 * 255)
+		.toString(16)
+		.padStart(2, '0')
+	const b = Math.round(rgba[2] ?? 0 * 255)
+		.toString(16)
+		.padStart(2, '0')
+	return `#${r}${g}${b}`
+}
+
+export const hexToRGBA = (hex: string): [number, number, number, number] => {
+	const r = parseInt(hex.slice(1, 3), 16) / 255
+	const g = parseInt(hex.slice(3, 5), 16) / 255
+	const b = parseInt(hex.slice(5, 7), 16) / 255
+	const a = 1
+	return [r, g, b, a]
 }

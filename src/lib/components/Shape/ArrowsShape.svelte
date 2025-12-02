@@ -29,7 +29,6 @@ and should remain pure, i.e. no hooks should be used.
 	const direction = new Vector3()
 
 	$effect(() => {
-		// Parse arrows pose data (position + orientation vector)
 		const { poseData, colorData, poses, colors } = parseArrowsBuffer(geometry, metadata)
 		const hasColorPerArrow = colors > 1
 		if (!hasColorPerArrow) {

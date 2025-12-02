@@ -4,7 +4,7 @@ import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
+import { WorldObject, type LegacyPointsGeometry } from '$lib/WorldObject.svelte'
 import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createGeometry } from '$lib/geometry'
@@ -17,7 +17,7 @@ import { useLogs } from './useLogs.svelte'
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
-	points: WorldObject<PointsGeometry>[]
+	points: WorldObject<LegacyPointsGeometry>[]
 	frames: WorldObject[]
 	lines: WorldObject[]
 	meshes: WorldObject[]
@@ -27,7 +27,7 @@ interface Context {
 
 	connectionStatus: ConnectionStatus
 
-	addPoints(worldObject: WorldObject<PointsGeometry>): void
+	addPoints(worldObject: WorldObject<LegacyPointsGeometry>): void
 	addMesh(worldObject: WorldObject): void
 }
 
@@ -97,7 +97,7 @@ export const provideDrawAPI = () => {
 	let ws: WebSocket
 
 	const frames = $state<WorldObject[]>([])
-	const points = $state<WorldObject<PointsGeometry>[]>([])
+	const points = $state<WorldObject<LegacyPointsGeometry>[]>([])
 	const lines = $state<WorldObject[]>([])
 	const meshes = $state<WorldObject[]>([])
 	const poses = $state<WorldObject[]>([])
@@ -159,7 +159,7 @@ export const provideDrawAPI = () => {
 				{
 					center: undefined,
 					geometryType: {
-						case: 'points',
+						case: 'legacyPoints',
 						value: positions,
 					},
 				},
@@ -221,7 +221,7 @@ export const provideDrawAPI = () => {
 			data.name,
 			data.pose,
 			data.parent,
-			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
+			{ center: undefined, geometryType: { case: 'legacyLines', value: new Float32Array() } },
 			{ color: new Color(color), points: curve.getPoints(200) }
 		)
 
@@ -362,7 +362,7 @@ export const provideDrawAPI = () => {
 				{
 					center: undefined,
 					geometryType: {
-						case: 'points',
+						case: 'legacyPoints',
 						value: positions,
 					},
 				},
@@ -415,7 +415,7 @@ export const provideDrawAPI = () => {
 				{
 					center: undefined,
 					geometryType: {
-						case: 'line',
+						case: 'legacyLines',
 						value: positions,
 					},
 				},
@@ -660,7 +660,7 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		addPoints(worldObject: WorldObject<PointsGeometry>) {
+		addPoints(worldObject: WorldObject<LegacyPointsGeometry>) {
 			points.push(worldObject)
 		},
 		addMesh(worldObject: WorldObject) {

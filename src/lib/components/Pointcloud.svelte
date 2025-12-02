@@ -7,14 +7,14 @@
 		OrthographicCamera,
 	} from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import type { PointsGeometry, WorldObject } from '$lib/WorldObject.svelte'
+	import type { LegacyPointsGeometry, WorldObject } from '$lib/WorldObject.svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
 
 	interface Props {
-		object: WorldObject<PointsGeometry>
+		object: WorldObject<LegacyPointsGeometry>
 		children?: Snippet
 	}
 

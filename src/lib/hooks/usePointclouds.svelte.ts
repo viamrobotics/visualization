@@ -7,7 +7,7 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
+import { WorldObject, type LegacyPointsGeometry } from '$lib/WorldObject.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
@@ -15,7 +15,7 @@ import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 const key = Symbol('pointcloud-context')
 
 interface Context {
-	current: WorldObject<PointsGeometry>[]
+	current: WorldObject<LegacyPointsGeometry>[]
 	refetch: () => void
 }
 
@@ -84,7 +84,7 @@ export const providePointclouds = (partID: () => string) => {
 
 	const { updateUUIDs } = usePersistentUUIDs()
 
-	let current = $state.raw<WorldObject<PointsGeometry>[]>([])
+	let current = $state.raw<WorldObject<LegacyPointsGeometry>[]>([])
 
 	$effect(() => {
 		for (const [name, query] of queries) {
@@ -114,12 +114,12 @@ export const providePointclouds = (partID: () => string) => {
 					`${name}:pointcloud`,
 					undefined,
 					name,
-					{ center: undefined, geometryType: { case: 'points', value: positions } },
+					{ center: undefined, geometryType: { case: 'legacyPoints', value: positions } },
 					colors ? { colors } : undefined
 				)
 			})
 		).then((results) => {
-			const worldObjects: WorldObject<PointsGeometry>[] = []
+			const worldObjects: WorldObject<LegacyPointsGeometry>[] = []
 			for (const result of results) {
 				if (result.status === 'fulfilled') {
 					worldObjects.push(result.value)

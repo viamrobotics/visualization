@@ -1,43 +1,26 @@
 import { expect, test } from '@playwright/test'
-import {
-	createViamClient,
-	JsonValue,
-	Struct,
-	ViamClient,
-	ViamClientOptions,
-} from '@viamrobotics/sdk'
+import { JsonValue, Struct, ViamClient } from '@viamrobotics/sdk'
+import { createPage } from './helpers/create-page'
+import { assertNoFailedScreenshots, takeScreenshot } from './helpers/take-screenshot'
+import { connect, testConfig } from './helpers/connect'
 
-const testConfig = {
-	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
-	name: 'motion-tools-e2e-main',
-	partId: '9741704d-ea0e-484c-8cf8-0a849096af1e',
-	apiKeyId: '76fcaf4b-4e04-4c6b-9665-c9c663ee4fad',
-	apiKeyValue: 'iz95ie2bz5h617xhs2ko9eov1b5bryas',
-	signalingAddress: 'https://app.viam.com:443',
-	organizationId: 'd9fd430a-25ec-47ba-b548-5d1b1b2fc6d1',
-}
 const fragmentIdsToDelete: string[] = []
-
-async function connect(): Promise<ViamClient> {
-	const API_KEY_ID = testConfig.apiKeyId
-	const API_KEY = testConfig.apiKeyValue
-	const opts: ViamClientOptions = {
-		serviceHost: testConfig.signalingAddress,
-		credentials: {
-			type: 'api-key',
-			authEntity: API_KEY_ID,
-			payload: API_KEY,
-		},
-	}
-
-	const client = await createViamClient(opts)
-	return client
-}
-
 let viamClient: ViamClient
 
 test.beforeAll(async () => {
 	viamClient = await connect()
+})
+
+test.afterAll('cleanup', async () => {
+	await viamClient.appClient.updateRobotPart(
+		testConfig.partId,
+		testConfig.name,
+		Struct.fromJson({})
+	)
+
+	for (const fragmentId of fragmentIdsToDelete) {
+		await viamClient.appClient.deleteFragment(fragmentId)
+	}
 })
 
 const basicEditFrameConfig = {
@@ -75,28 +58,15 @@ const basicEditFrameConfig = {
 
 test('basic edit frame', async ({ browser }) => {
 	const testPrefix = 'BASIC_EDIT_FRAME'
+	const { page, failedScreenshots, refresh } = await createPage(browser)
+
 	await viamClient.appClient.updateRobotPart(
 		testConfig.partId,
 		testConfig.name,
 		Struct.fromJson(basicEditFrameConfig)
 	)
-	const failedScreenshots = [] as string[]
-	const context = await browser.newContext()
-	await context.addCookies([
-		{
-			name: 'weblab_experiments',
-			value: 'MOTION_TOOLS_EDIT_FRAME',
-			domain: 'localhost',
-			path: '/',
-		},
-	])
-	let page = await context.newPage()
+
 	await page.waitForTimeout(5000)
-	page.on('console', (message) => {
-		console.log(`[${message.type()}] ${message.text()}`)
-	})
-	await page.goto('/')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
@@ -119,8 +89,9 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByTestId('icon-close').click()
 
 	// OPEN A WORLD OBJECT AND EDIT THE FRAME
-	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
-	await page.getByText('base-1', { exact: true }).click()
+	const tree = page.locator('[role="tree"]')
+	await expect(tree.getByText('base-1', { exact: true })).toBeVisible()
+	await tree.getByText('base-1', { exact: true }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
 
@@ -142,73 +113,35 @@ test('basic edit frame', async ({ browser }) => {
 	await page.getByLabel('mutable box dimensions z value').fill('600')
 
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, {
-			fullPage: true,
-			threshold: 0.1,
-		})
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-0-edited.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-0-edited`, failedScreenshots, { fullPage: true })
 
 	// SAVE THE CHANGES
 	await page.getByText('Save', { exact: true }).click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
-			fullPage: true,
-			threshold: 0.1,
-		})
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-1-saved.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-1-saved`, failedScreenshots, { fullPage: true })
 	// give network some time to sync the config
 	await page.waitForTimeout(5000)
 
 	// RELOAD THE PAGE
-	page = await context.newPage()
-	page.on('console', (message) => {
-		console.log(`[${message.type()}] ${message.text()}`)
-	})
-	await page.goto('/')
-	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
-	await page.getByText('base-1', { exact: true }).click()
+	await refresh()
+	await expect(tree.getByText('base-1', { exact: true })).toBeVisible()
+	await tree.getByText('base-1', { exact: true }).click()
 	await expect(page.getByTestId('details-header')).toBeVisible()
 	// give page time to laod up frame details
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, {
-			fullPage: true,
-			threshold: 0.1,
-		})
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-2-reloaded.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-2-reloaded`, failedScreenshots, { fullPage: true })
 
 	// REPARENT THE OBJECT
 	await expect(page.getByLabel('dropdown parent frame name')).toBeVisible()
 	await page.getByLabel('dropdown parent frame name').click()
 	await page.getByLabel('dropdown parent frame name').selectOption('parent')
 
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-3-parented.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-3-parented.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-3-parented`, failedScreenshots, { fullPage: true })
 
 	// DISCARD CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	await page.getByText('Discard', { exact: true }).click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-4-discarded.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-4-discarded.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-4-discarded`, failedScreenshots, { fullPage: true })
 
 	// RESTORE THE ORIGINAL FRAME
 	await expect(page.getByText('None', { exact: true })).toBeVisible()
@@ -225,17 +158,9 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	await page.getByText('Save', { exact: true }).click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-5-restored.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-5-restored.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-5-restored`, failedScreenshots, { fullPage: true })
 
-	if (failedScreenshots.length > 0) {
-		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-	}
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 const createDeleteFrameConfig = {
@@ -265,28 +190,13 @@ const createDeleteFrameConfig = {
 
 test('create and delete frame', async ({ browser }) => {
 	const testPrefix = 'CREATE_DELETE'
+	const { page, failedScreenshots, refresh } = await createPage(browser)
+
 	await viamClient.appClient.updateRobotPart(
 		testConfig.partId,
 		testConfig.name,
 		Struct.fromJson(createDeleteFrameConfig as unknown as JsonValue)
 	)
-	const failedScreenshots = [] as string[]
-	const context = await browser.newContext()
-	await context.addCookies([
-		{
-			name: 'weblab_experiments',
-			value: 'MOTION_TOOLS_EDIT_FRAME',
-			domain: 'localhost',
-			path: '/',
-		},
-	])
-	const page = await context.newPage()
-	await page.waitForTimeout(5000)
-	page.on('console', (message) => {
-		console.log(`[${message.type()}] ${message.text()}`)
-	})
-	await page.goto('/')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
@@ -318,12 +228,7 @@ test('create and delete frame', async ({ browser }) => {
 	await expect(page.getByTestId('icon-plus')).toBeVisible()
 	page.getByTestId('icon-plus').click()
 
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-0-added.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-0-added.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-0-added`, failedScreenshots, { fullPage: true })
 
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	await page.getByText('Save', { exact: true }).click()
@@ -338,28 +243,15 @@ test('create and delete frame', async ({ browser }) => {
 	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
 	page.getByText('Delete frame', { exact: true }).click()
 
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-1-deleted.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-1-deleted.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-1-deleted`, failedScreenshots, { fullPage: true })
 
 	// DISCARD CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	await page.getByText('Discard', { exact: true }).click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-2-discarded.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-2-discarded.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-2-discarded`, failedScreenshots, { fullPage: true })
 
-	if (failedScreenshots.length > 0) {
-		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-	}
+	assertNoFailedScreenshots(failedScreenshots)
 })
 const fragmentConfig = {
 	components: [
@@ -422,7 +314,8 @@ const fragmentUsingConfig = (fragmentId: string) => {
 
 test('fragement edit frame', async ({ browser }) => {
 	const testPrefix = 'FRAGMENT_EDIT_FRAME'
-	const failedScreenshots = [] as string[]
+	const { page, failedScreenshots } = await createPage(browser)
+
 	const resp = await viamClient.appClient.createFragment(
 		testConfig.organizationId,
 		'TEMP_FRAGMENT',
@@ -438,24 +331,6 @@ test('fragement edit frame', async ({ browser }) => {
 		testConfig.name,
 		Struct.fromJson(fragmentUsingConfig(resp.id) as unknown as JsonValue)
 	)
-
-	// WAIT FOR THE TREE DRAWER TO LOAD
-	const context = await browser.newContext()
-	await context.addCookies([
-		{
-			name: 'weblab_experiments',
-			value: 'MOTION_TOOLS_EDIT_FRAME',
-			domain: 'localhost',
-			path: '/',
-		},
-	])
-	const page = await context.newPage()
-	await page.waitForTimeout(5000)
-	page.on('console', (message) => {
-		console.log(`[${message.type()}] ${message.text()}`)
-	})
-	await page.goto('/')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
@@ -480,12 +355,7 @@ test('fragement edit frame', async ({ browser }) => {
 	// WAIT FOR THE TREE DRAWER TO LOAD
 	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
 
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-0-setup.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-0-setup`, failedScreenshots, { fullPage: true })
 
 	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
 	await page.getByText('frag-base-1', { exact: true }).click()
@@ -510,29 +380,7 @@ test('fragement edit frame', async ({ browser }) => {
 	await page.getByText('Save', { exact: true }).click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
-	try {
-		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
-			fullPage: true,
-			threshold: 0.1,
-		})
-	} catch (error) {
-		console.warn(error)
-		failedScreenshots.push(`${testPrefix}-1-saved.png`)
-	}
+	await takeScreenshot(page, `${testPrefix}-1-saved`, failedScreenshots, { fullPage: true })
 
-	if (failedScreenshots.length > 0) {
-		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
-	}
-})
-
-test.afterAll('cleanup', async () => {
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson({})
-	)
-	for (const fragmentId of fragmentIdsToDelete) {
-		await viamClient.appClient.deleteFragment(fragmentId)
-	}
+	assertNoFailedScreenshots(failedScreenshots)
 })

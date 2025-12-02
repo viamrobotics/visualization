@@ -1,5 +1,5 @@
 import { createPose } from './transform'
-import type { Shape as ShapeProto } from '$lib/gen/draw/v1/drawing_pb'
+import type { Nurbs, Shape as ShapeProto } from '$lib/gen/draw/v1/drawing_pb'
 import type { PlainMessage } from '@bufbuild/protobuf'
 
 import type { Points, Line, Arrows, Model } from '$lib/gen/draw/v1/drawing_pb'
@@ -21,6 +21,10 @@ export type PointsGeometry = Shape & {
 
 export type ModelGeometry = Shape & {
 	geometryType: { case: 'model'; value: PlainMessage<Model> }
+}
+
+export type NurbsGeometry = Shape & {
+	geometryType: { case: 'nurbs'; value: PlainMessage<Nurbs> }
 }
 
 export const isArrows = (shape?: Geometries): shape is ArrowsGeometry => {

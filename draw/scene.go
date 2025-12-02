@@ -10,11 +10,12 @@ import (
 
 var (
 	// DefaultSceneCamera is the default scene camera, defaults to a perspective camera with a position of [3000, 3000, 3000] and a look_at of [0, 0, 0]
-	DefaultSceneCamera = &SceneCamera{
+	DefaultSceneCamera = SceneCamera{
 		// Top-down view: directly above origin (in mm)
 		Position: r3.Vector{X: 3000, Y: 3000, Z: 3000},
 		// Look at the origin
 		LookAt:            r3.Vector{X: 0, Y: 0, Z: 0},
+		Animated:          false,
 		PerspectiveCamera: &drawv1.PerspectiveCamera{},
 	}
 
@@ -42,32 +43,52 @@ type SceneCamera struct {
 	OrthographicCamera *drawv1.OrthographicCamera
 }
 
-// NewSceneCamera creates a new SceneCamera
-func NewSceneCamera(position r3.Vector, lookAt r3.Vector, animate bool) *SceneCamera {
-	return &SceneCamera{
-		Position:          position,
-		LookAt:            lookAt,
-		Animated:          animate,
-		PerspectiveCamera: &drawv1.PerspectiveCamera{},
+type sceneCameraConfig struct {
+	animated           bool
+	perspectiveCamera  *drawv1.PerspectiveCamera
+	orthographicCamera *drawv1.OrthographicCamera
+}
+
+func newSceneCameraConfig() *sceneCameraConfig {
+	return &sceneCameraConfig{
+		perspectiveCamera: &drawv1.PerspectiveCamera{},
 	}
 }
 
-// Perspective sets the perspective camera configuration
-func (camera *SceneCamera) Perspective(perspectiveCamera *drawv1.PerspectiveCamera) *SceneCamera {
-	camera.PerspectiveCamera = perspectiveCamera
-	return camera
+type sceneCameraOption func(*sceneCameraConfig)
+
+func WithPerspectiveCamera(perspectiveCamera *drawv1.PerspectiveCamera) sceneCameraOption {
+	return func(config *sceneCameraConfig) {
+		config.perspectiveCamera = perspectiveCamera
+	}
 }
 
-// Orthographic sets the orthographic camera configuration
-func (camera *SceneCamera) Orthographic(orthographicCamera *drawv1.OrthographicCamera) *SceneCamera {
-	camera.OrthographicCamera = orthographicCamera
-	return camera
+func WithOrthographicCamera(orthographicCamera *drawv1.OrthographicCamera) sceneCameraOption {
+	return func(config *sceneCameraConfig) {
+		config.orthographicCamera = orthographicCamera
+	}
 }
 
-// Animate sets the animate flag
-func (camera *SceneCamera) Animate(animate bool) *SceneCamera {
-	camera.Animated = animate
-	return camera
+func WithAnimated(animated bool) sceneCameraOption {
+	return func(config *sceneCameraConfig) {
+		config.animated = animated
+	}
+}
+
+// NewSceneCamera creates a new SceneCamera
+func NewSceneCamera(position r3.Vector, lookAt r3.Vector, options ...sceneCameraOption) SceneCamera {
+	config := newSceneCameraConfig()
+	for _, option := range options {
+		option(config)
+	}
+
+	return SceneCamera{
+		Position:           position,
+		LookAt:             lookAt,
+		Animated:           config.animated,
+		PerspectiveCamera:  config.perspectiveCamera,
+		OrthographicCamera: config.orthographicCamera,
+	}
 }
 
 // ToProto converts a SceneCamera to a protobuf SceneCamera
@@ -94,18 +115,137 @@ func (camera *SceneCamera) ToProto() *drawv1.SceneCamera {
 
 // SceneMetadata represents the metadata of a scene
 type SceneMetadata struct {
-	SceneCamera      *SceneCamera
+	SceneCamera      SceneCamera
 	Grid             bool
 	GridCellSize     float32
 	GridSectionSize  float32
 	GridFadeDistance float32
 	PointSize        float32
-	PointColor       *Color
+	PointColor       Color
 	LineWidth        float32
-	LineDotSize      float32
+	LinePointSize    float32
 	RenderArmModels  drawv1.RenderArmModels
 	RenderShapes     []drawv1.RenderShapes
-	Units            Units
+}
+
+type sceneMetadataConfig struct {
+	sceneCamera      SceneCamera
+	grid             bool
+	gridCellSize     float32
+	gridSectionSize  float32
+	gridFadeDistance float32
+	pointSize        float32
+	pointColor       Color
+	lineWidth        float32
+	linePointSize    float32
+	renderArmModels  drawv1.RenderArmModels
+	renderShapes     []drawv1.RenderShapes
+}
+
+func newSceneMetadataConfig() *sceneMetadataConfig {
+	return &sceneMetadataConfig{
+		sceneCamera:      DefaultSceneCamera,
+		grid:             DefaultGridEnabled,
+		gridCellSize:     DefaultGridCellSize,
+		gridSectionSize:  DefaultGridSectionSize,
+		gridFadeDistance: DefaultGridFadeDistance,
+		pointSize:        DefaultPointSize,
+		pointColor:       DefaultPointColor,
+		lineWidth:        DefaultLineWidth,
+		linePointSize:    DefaultPointSize,
+		renderArmModels:  drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL,
+		renderShapes:     []drawv1.RenderShapes{drawv1.RenderShapes_RENDER_SHAPES_ARROWS, drawv1.RenderShapes_RENDER_SHAPES_POINTS, drawv1.RenderShapes_RENDER_SHAPES_LINES, drawv1.RenderShapes_RENDER_SHAPES_MODEL},
+	}
+}
+
+type sceneMetadataOption func(*sceneMetadataConfig)
+
+func WithSceneCamera(sceneCamera SceneCamera) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.sceneCamera = sceneCamera
+	}
+}
+
+func WithGrid(grid bool) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.grid = grid
+	}
+}
+
+func WithGridCellSize(gridCellSize float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.gridCellSize = gridCellSize
+	}
+}
+
+func WithGridSectionSize(gridSectionSize float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.gridSectionSize = gridSectionSize
+	}
+}
+
+func WithGridFadeDistance(gridFadeDistance float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.gridFadeDistance = gridFadeDistance
+	}
+}
+
+func WithScenePointSize(pointSize float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.pointSize = pointSize
+	}
+}
+
+func WithScenePointColor(pointColor Color) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.pointColor = pointColor
+	}
+}
+
+func WithSceneLineWidth(lineWidth float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.lineWidth = lineWidth
+	}
+}
+
+func WithSceneLinePointSize(linePointSize float32) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.linePointSize = linePointSize
+	}
+}
+
+func WithRenderArmModels(renderArmModels drawv1.RenderArmModels) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.renderArmModels = renderArmModels
+	}
+}
+
+func WithRenderShapes(renderShapes []drawv1.RenderShapes) sceneMetadataOption {
+	return func(config *sceneMetadataConfig) {
+		config.renderShapes = renderShapes
+	}
+}
+
+// NewSceneMetadata creates a new SceneMetadata
+func NewSceneMetadata(options ...sceneMetadataOption) SceneMetadata {
+	config := newSceneMetadataConfig()
+	for _, option := range options {
+		option(config)
+	}
+
+	return SceneMetadata{
+		SceneCamera:      config.sceneCamera,
+		Grid:             config.grid,
+		GridCellSize:     config.gridCellSize,
+		GridSectionSize:  config.gridSectionSize,
+		GridFadeDistance: config.gridFadeDistance,
+		PointSize:        config.pointSize,
+		PointColor:       config.pointColor,
+		LineWidth:        config.lineWidth,
+		LinePointSize:    config.linePointSize,
+		RenderArmModels:  config.renderArmModels,
+		RenderShapes:     config.renderShapes,
+	}
 }
 
 // ToProto converts a SceneMetadata to a protobuf SceneMetadata
@@ -119,152 +259,16 @@ func (metadata *SceneMetadata) ToProto() *drawv1.SceneMetadata {
 		PointSize:        &metadata.PointSize,
 		PointColor:       []float32{metadata.PointColor.R, metadata.PointColor.G, metadata.PointColor.B, metadata.PointColor.A},
 		LineWidth:        &metadata.LineWidth,
-		LineDotSize:      &metadata.LineDotSize,
+		LinePointSize:    &metadata.LinePointSize,
 		RenderArmModels:  &metadata.RenderArmModels,
 		RenderShapes:     metadata.RenderShapes,
 	}
 }
 
-// NewSceneMetadata creates a new SceneMetadata
-func NewSceneMetadata(units Units) SceneMetadata {
-	sceneCamera := DefaultSceneCamera
-	gridCellSize := DefaultGridCellSize
-	gridSectionSize := DefaultGridSectionSize
-	gridFadeDistance := DefaultGridFadeDistance
-	pointSize := DefaultPointSize
-	lineWidth := DefaultLineWidth
-	lineDotSize := DefaultPointSize
-
-	metadata := SceneMetadata{
-		SceneCamera:      sceneCamera,
-		Grid:             DefaultGridEnabled,
-		GridCellSize:     gridCellSize,
-		GridSectionSize:  gridSectionSize,
-		GridFadeDistance: gridFadeDistance,
-		PointSize:        pointSize,
-		PointColor:       DefaultPointColor,
-		LineWidth:        lineWidth,
-		LineDotSize:      lineDotSize,
-		RenderArmModels:  drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL,
-		RenderShapes:     []drawv1.RenderShapes{drawv1.RenderShapes_RENDER_SHAPES_ARROWS, drawv1.RenderShapes_RENDER_SHAPES_POINTS, drawv1.RenderShapes_RENDER_SHAPES_LINES, drawv1.RenderShapes_RENDER_SHAPES_MODEL},
-		Units:            units,
-	}
-
-	if units == UnitsM {
-		metadata.toMeters()
-	}
-
-	return metadata
-}
-
-// SetSceneCameraPosition sets the position of the scene camera, in millimeters
-func (metadata *SceneMetadata) SetSceneCameraPosition(position r3.Vector) {
-	if metadata.Units == UnitsM {
-		position = vectorToMeters(position)
-	}
-
-	metadata.SceneCamera.Position = position
-}
-
-// SetSceneCameraLookAt sets the look at point of the scene camera, in millimeters
-func (metadata *SceneMetadata) SetSceneCameraLookAt(lookAt r3.Vector) {
-	if metadata.Units == UnitsM {
-		lookAt = vectorToMeters(lookAt)
-	}
-
-	metadata.SceneCamera.LookAt = lookAt
-}
-
-// SetPerspectiveSceneCamera sets the perspective camera configuration
-func (metadata *SceneMetadata) SetPerspectiveSceneCamera(perspectiveCamera *drawv1.PerspectiveCamera) {
-	metadata.SceneCamera.PerspectiveCamera = perspectiveCamera
-}
-
-// SetOrthographicSceneCamera sets the orthographic camera configuration
-func (metadata *SceneMetadata) SetOrthographicSceneCamera(orthographicCamera *drawv1.OrthographicCamera) {
-	metadata.SceneCamera.OrthographicCamera = orthographicCamera
-}
-
-// SetGrid sets the enabled state of the grid
-func (metadata *SceneMetadata) SetGrid(grid bool) {
-	metadata.Grid = grid
-}
-
-// SetGridCellSize sets the cell size of the grid, in millimeters
-func (metadata *SceneMetadata) SetGridCellSize(gridCellSize float32) {
-	if metadata.Units == UnitsM {
-		gridCellSize = float32ToMeters(gridCellSize)
-	}
-
-	metadata.GridCellSize = gridCellSize
-}
-
-// SetGridSectionSize sets the section size of the grid, in millimeters
-func (metadata *SceneMetadata) SetGridSectionSize(gridSectionSize float32) {
-	if metadata.Units == UnitsM {
-		gridSectionSize = float32ToMeters(gridSectionSize)
-	}
-
-	metadata.GridSectionSize = gridSectionSize
-}
-
-// SetGridFadeDistance sets the fade distance of the grid, in millimeters
-func (metadata *SceneMetadata) SetGridFadeDistance(gridFadeDistance float32) {
-	if metadata.Units == UnitsM {
-		gridFadeDistance = float32ToMeters(gridFadeDistance)
-	}
-
-	metadata.GridFadeDistance = gridFadeDistance
-}
-
-// SetPointSize sets the size of the points, in millimeters
-func (metadata *SceneMetadata) SetPointSize(pointSize float32) {
-	if metadata.Units == UnitsM {
-		pointSize = float32ToMeters(pointSize)
-	}
-
-	metadata.PointSize = pointSize
-}
-
-// SetPointColor sets the color of the points
-func (metadata *SceneMetadata) SetPointColor(pointColor *Color) {
-	metadata.PointColor = pointColor
-}
-
-// SetLineWidth sets the width of the lines, in millimeters
-func (metadata *SceneMetadata) SetLineWidth(lineWidth float32) {
-	if metadata.Units == UnitsM {
-		lineWidth = float32ToMeters(lineWidth)
-	}
-
-	metadata.LineWidth = lineWidth
-}
-
-// SetLineDotSize sets the size of the dots, in millimeters
-func (metadata *SceneMetadata) SetLineDotSize(lineDotSize float32) {
-	if metadata.Units == UnitsM {
-		lineDotSize = float32ToMeters(lineDotSize)
-	}
-
-	metadata.LineDotSize = lineDotSize
-}
-
-// SetRenderArmModels sets the render arm models
-func (metadata *SceneMetadata) SetRenderArmModels(renderArmModels drawv1.RenderArmModels) {
-	metadata.RenderArmModels = renderArmModels
-}
-
-// SetRenderShapes sets the render shapes
-func (metadata *SceneMetadata) SetRenderShapes(renderShapes []drawv1.RenderShapes) {
-	metadata.RenderShapes = renderShapes
-}
-
 // Validate validates scene metadata
 func (metadata *SceneMetadata) Validate() error {
-	if metadata.SceneCamera != nil {
-		if metadata.SceneCamera.PerspectiveCamera == nil && metadata.SceneCamera.OrthographicCamera == nil {
-			return fmt.Errorf("scene camera type is nil")
-		}
+	if metadata.SceneCamera.PerspectiveCamera == nil && metadata.SceneCamera.OrthographicCamera == nil {
+		return fmt.Errorf("scene camera type is nil")
 	}
 
 	// Validate positive values for size-related fields
@@ -283,8 +287,8 @@ func (metadata *SceneMetadata) Validate() error {
 	if metadata.LineWidth <= 0 {
 		return fmt.Errorf("line width must be positive, got %f", metadata.LineWidth)
 	}
-	if metadata.LineDotSize <= 0 {
-		return fmt.Errorf("line dot size must be positive, got %f", metadata.LineDotSize)
+	if metadata.LinePointSize <= 0 {
+		return fmt.Errorf("line dot size must be positive, got %f", metadata.LinePointSize)
 	}
 
 	if metadata.RenderArmModels != drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL &&
@@ -303,18 +307,4 @@ func (metadata *SceneMetadata) Validate() error {
 	}
 
 	return nil
-}
-
-// toMeters converts the scene metadata to meters
-func (metadata *SceneMetadata) toMeters() {
-	if metadata.Units == UnitsM {
-		metadata.SceneCamera.Position = vectorToMeters(metadata.SceneCamera.Position)
-		metadata.SceneCamera.LookAt = vectorToMeters(metadata.SceneCamera.LookAt)
-		metadata.GridCellSize = float32ToMeters(metadata.GridCellSize)
-		metadata.GridSectionSize = float32ToMeters(metadata.GridSectionSize)
-		metadata.GridFadeDistance = float32ToMeters(metadata.GridFadeDistance)
-		metadata.PointSize = float32ToMeters(metadata.PointSize)
-		metadata.LineWidth = float32ToMeters(metadata.LineWidth)
-		metadata.LineDotSize = float32ToMeters(metadata.LineDotSize)
-	}
 }

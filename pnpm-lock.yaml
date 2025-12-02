@@ -21,6 +21,9 @@ importers:
       '@ag-grid-community/styles':
         specifier: 32.3.9
         version: 32.3.9
+      '@bufbuild/protobuf':
+        specifier: 1.10.1
+        version: 1.10.1
       '@changesets/cli':
         specifier: 2.29.6
         version: 2.29.6(@types/node@24.10.0)
@@ -195,6 +198,9 @@ importers:
       typescript-eslint:
         specifier: 8.42.0
         version: 8.42.0(eslint@9.34.0(jiti@2.6.1))(typescript@5.9.2)
+      uuid-tool:
+        specifier: ^2.0.3
+        version: 2.0.3
       vite:
         specifier: 7.1.11
         version: 7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
@@ -3616,6 +3622,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuid-tool@2.0.3:
+    resolution: {integrity: sha512-En9cTJm+bLgjjfoIVEW91f0Irr0HZ9mqzK0BwntzZzOg82bOUEIzIw8pNwvC+dhVnnJ8x+fQV8TQ+q6te1ximA==}
 
   uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
@@ -7444,6 +7453,8 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  uuid-tool@2.0.3: {}
 
   uuid@11.1.0: {}
 

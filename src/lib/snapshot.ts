@@ -1,22 +1,8 @@
-import { Transform, Vector3 } from '@viamrobotics/sdk'
 import type { ArmModelRendering } from './hooks/useSettings.svelte'
-
-export interface PerspectiveCamera {}
-export interface OrthographicCamera {}
-
-export interface SceneCamera {
-	position?: Vector3 // defaults to [3, 3, 3] (in mm)
-	lookAt?: Vector3 // defaults to [0, 0, 0]
-	perspectiveCamera?: PerspectiveCamera // default
-	orthographicCamera?: OrthographicCamera
-}
-
-export enum RenderArmModels {
-	UNSPECIFIED = 0,
-	COLLIDERS = 1,
-	COLLIDERS_AND_MODEL = 2,
-	MODEL = 3,
-}
+import { RenderArmModels } from './gen/draw/v1/scene_pb'
+import { PassSnapshot } from './gen/draw/v1/snapshot_pb'
+import { Drawing } from './gen/draw/v1/drawing_pb'
+import { Transform } from './gen/common/v1/common_pb'
 
 export const getArmModelRendering = (model: RenderArmModels): ArmModelRendering => {
 	switch (model) {
@@ -29,25 +15,6 @@ export const getArmModelRendering = (model: RenderArmModels): ArmModelRendering 
 		default:
 			return 'colliders+model'
 	}
-}
-
-export interface SceneMetadata {
-	sceneCamera?: SceneCamera
-	grid?: boolean // defaults to true
-	gridCellSize?: number // defaults to 0.5
-	gridSectionSize?: number // defaults to 10
-	gridFadeDistance?: number // defaults to 25
-	pointSize?: number // defaults to 0.01
-	pointColor?: string // defaults to #333333
-	lineWidth?: number // defaults to 0.005
-	lineDotSize?: number // defaults to 0.01
-	renderArmModels?: RenderArmModels // defaults to COLLIDERS_AND_MODEL
-}
-
-export interface PassSnapshot {
-	transforms: Transform[]
-	sceneMetadata?: SceneMetadata
-	uuid: Uint8Array
 }
 
 /** Decodes a PassSnapshot from JSON format, throws an error if the JSON is invalid or the snapshot is missing required fields.
@@ -65,12 +32,20 @@ export const decodeSnapshotFromJSON = (json: unknown): PassSnapshot => {
 		throw new Error('Invalid snapshot: missing transforms array')
 	}
 
+	if (!data.drawings || !Array.isArray(data.drawings)) {
+		throw new Error('Invalid snapshot: missing drawings array')
+	}
+
 	if (!data.uuid || typeof data.uuid !== 'string') {
 		throw new Error('Invalid snapshot: missing or invalid UUID')
 	}
 
+	if (!data.sceneMetadata || typeof data.sceneMetadata !== 'object') {
+		throw new Error('Invalid snapshot: missing or invalid scene metadata')
+	}
+
 	const uuid = Uint8Array.fromBase64(data.uuid)
-	const transforms = data.transforms.map((transformJson: any) => {
+	const transforms: PassSnapshot['transforms'] = data.transforms.map((transformJson: any) => {
 		try {
 			const parsed = Transform.fromJson(transformJson)
 			return parsed
@@ -80,9 +55,20 @@ export const decodeSnapshotFromJSON = (json: unknown): PassSnapshot => {
 		}
 	})
 
-	return {
+	const drawings: PassSnapshot['drawings'] = data.drawings.map((drawingJson: any) => {
+		try {
+			const parsed = Drawing.fromJson(drawingJson)
+			return parsed
+		} catch (error) {
+			console.error('Failed to parse drawing', error, drawingJson)
+			throw error
+		}
+	})
+
+	return new PassSnapshot({
 		transforms,
-		sceneMetadata: data.sceneMetadata as SceneMetadata | undefined,
+		drawings,
+		sceneMetadata: data.sceneMetadata as PassSnapshot['sceneMetadata'] | undefined,
 		uuid,
-	}
+	})
 }
