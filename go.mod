@@ -6,7 +6,7 @@ toolchain go1.23.11
 
 require (
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
-	go.viam.com/api v0.1.473
+	go.viam.com/api v0.1.496
 	go.viam.com/rdk v0.90.0
 	go.viam.com/test v1.2.4
 	google.golang.org/protobuf v1.36.8

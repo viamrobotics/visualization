@@ -35,7 +35,11 @@ proto-gen-ts:
 	@echo 'Generating TypeScript code...'
 	@PATH="$(shell go env GOPATH)/bin:$(shell pnpm bin):$$PATH" pnpm exec buf generate --template buf.gen.typescript.yaml
 
-proto-gen: proto-clean
+proto-vendor:
+	@echo 'Vendoring buf dependencies...'
+	@pnpm exec buf export buf.build/viamrobotics/api --output protos/vendor
+
+proto-gen: proto-clean proto-vendor
 	@echo 'Generating protobuf code...'
 	@echo 'Updating buf dependencies...'
 	@pnpm exec buf dep update
