@@ -14,6 +14,7 @@ help:
 	@echo '  proto-lint     - Lint protobuf files'
 	@echo '  proto-format   - Format protobuf files'
 	@echo '  proto-clean    - Clean generated protobuf code'
+	@echo '  proto-vendor   - Vendor protobuf dependencies'
 	@echo '  docs-install   - Install gomarkdoc tool for documentation generation'
 	@echo '  docs-generate  - Generate API documentation for Go packages'
 	@echo '  help           - Show this help message'
