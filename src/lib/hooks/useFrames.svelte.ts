@@ -14,6 +14,7 @@ import { trait, type Entity } from 'koota'
 import type { Transform } from '@viamrobotics/sdk'
 
 interface FramesContext {
+	current: Transform[]
 	getParentFrameOptions: (componentName: string) => string[]
 }
 
@@ -219,6 +220,9 @@ export const provideFrames = (partID: () => string) => {
 
 	setContext<FramesContext>(key, {
 		getParentFrameOptions,
+		get current() {
+			return current
+		},
 	})
 }
 

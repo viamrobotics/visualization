@@ -7,7 +7,6 @@
 	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
-	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import Widgets from './Widgets.svelte'
 	import AddFrames from './AddFrames.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -26,11 +25,10 @@
 	const partID = usePartID()
 	const selectedEntity = useSelectedEntity()
 	const draggable = useDraggable('treeview')
-	const worldStates = useWorldStates()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
-	// const entities = useQuery()
+	const entities = useQuery(traits.Name)
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
@@ -39,24 +37,24 @@
 		children: [],
 	})
 
-	world.onAdd(traits.Name, (entity) => {
-		const parent = entity.get(traits.Parent)
+	// world.onAdd(traits.Name, (entity) => {
+	// 	const parent = entity.get(traits.Parent)
 
-		if (!parent || parent === 'world') {
-			untrack(() => {
-				console.log(entity.has(traits.DrawAPI))
-				rootNode.children?.push({ entity })
-			})
-		}
-	})
-
-	// const nodes = $derived(buildTreeNodes(entities.current, worldStates.current))
-
-	// $effect.pre(() => {
-	// 	if (!isEqual(rootNode.children, nodes)) {
-	// 		rootNode.children = nodes
+	// 	if (!parent || parent === 'world') {
+	// 		untrack(() => {
+	// 			console.log(entity.has(traits.DrawAPI))
+	// 			rootNode.children?.push({ entity })
+	// 		})
 	// 	}
 	// })
+
+	const nodes = $derived(buildTreeNodes(entities.current))
+
+	$effect.pre(() => {
+		if (!isEqual(rootNode.children, nodes)) {
+			rootNode.children = nodes
+		}
+	})
 </script>
 
 <div

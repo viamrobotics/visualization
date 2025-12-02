@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { Portal, PortalTarget } from './portal'
-	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
@@ -9,7 +8,6 @@
 	import Pointcloud from './Pointcloud.svelte'
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
-	import WorldState from './WorldState.svelte'
 	import { determinePose } from '$lib/WorldObject.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import type { Pose as ViamPose } from '@viamrobotics/sdk'
@@ -17,7 +15,6 @@
 	import { traits, useQuery } from '$lib/ecs'
 	import { Or, type Entity } from 'koota'
 
-	const worldStates = useWorldStates()
 	const batchedArrow = useArrows()
 	const weblabs = useWeblabs()
 
@@ -36,10 +33,6 @@
 	const primitives = useQuery(traits.DrawAPI, Or(traits.Box, traits.Capsule, traits.Sphere))
 	const gltfs = useQuery(traits.GLTF)
 </script>
-
-{#each worldStates.names as { name } (name)}
-	<WorldState worldObjects={worldStates.current[name].worldObjects} />
-{/each}
 
 {#each primitives.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>

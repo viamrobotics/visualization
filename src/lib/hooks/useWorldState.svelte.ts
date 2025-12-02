@@ -30,6 +30,7 @@ const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url
 export const provideWorldStates = () => {
 	const partID = usePartID()
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
+
 	const current = $derived.by(() =>
 		Object.fromEntries(
 			resourceNames.current.map(({ name }) => [
@@ -57,7 +58,14 @@ export const useWorldStates = () => {
 }
 
 export const useWorldState = (resourceName: () => string) => {
-	return useWorldStates().current[resourceName()]
+	const worldStates = useWorldStates()
+	const name = $derived(resourceName())
+
+	return {
+		get current() {
+			return worldStates.current[name]
+		},
+	}
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {

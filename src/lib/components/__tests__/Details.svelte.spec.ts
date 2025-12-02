@@ -8,25 +8,24 @@ import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnviro
 import { Struct } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import { WorldObject } from '$lib/WorldObject.svelte'
-import { createWorldObjectFixture } from './__fixtures__/worldObject.svelte'
+import { createEntityFixture } from './__fixtures__/entity'
+import { createWorld } from 'koota'
 
 describe('Details component', () => {
-	const mockedCurrent: WorldObject[] = []
+	const world = createWorld()
 
 	beforeEach(() => {
 		// Mock the selection hooks to return test data
 
-		const object = createWorldObjectFixture()
+		const entity = createEntityFixture(world)
 
-		vi.mocked(useSelection.useFocusedObject).mockReturnValue({ current: object })
+		vi.mocked(useSelection.useFocusedEntity).mockReturnValue({ current: entity, set: () => {} })
 
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
 			current: undefined,
 		})
 
 		vi.mocked(useFrames.useFrames).mockReturnValue({
-			current: mockedCurrent,
 			getParentFrameOptions: vi.fn(),
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
@@ -105,7 +104,7 @@ describe('Details component', () => {
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = true
 
-		mockedCurrent.push(createWorldObjectFixture())
+		createEntityFixture(world)
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct().fromJson({
 				components: [
