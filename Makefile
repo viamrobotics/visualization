@@ -1,4 +1,4 @@
-.PHONY: help setup up proto-generate proto-lint proto-format proto-clean docs-generate docs-install
+.PHONY: help setup up proto proto-lint proto-format proto-clean proto-gen-go proto-gen-ts proto-vendor
 
 # Default target - show help when no target is specified
 .DEFAULT_GOAL := help
@@ -10,11 +10,7 @@ help:
 	@echo 'Available targets:'
 	@echo '  setup          - Set up development environment (install pnpm, bun, dependencies)'
 	@echo '  up             - Start development server'
-	@echo '  proto-generate - Generate Go and TypeScript code from protobuf definitions'
-	@echo '  proto-lint     - Lint protobuf files'
-	@echo '  proto-format   - Format protobuf files'
-	@echo '  proto-clean    - Clean generated protobuf code'
-	@echo '  proto-vendor   - Vendor protobuf dependencies'
+	@echo '  proto          - Generate protobuf code'
 	@echo '  help           - Show this help message'
 
 setup:
@@ -22,6 +18,8 @@ setup:
 
 up:
 	pnpm dev
+
+## Protobuf commands
 
 proto-clean:
 	@echo 'Cleaning generated protobuf code...'
@@ -40,7 +38,13 @@ proto-vendor:
 	@echo 'Vendoring buf dependencies...'
 	@pnpm exec buf export buf.build/viamrobotics/api --output protos/vendor
 
-proto-gen: proto-clean proto-vendor
+proto-lint:
+	@pnpm exec buf lint
+
+proto-format:
+	@pnpm exec buf format -w
+
+proto: proto-clean proto-lint proto-format proto-vendor
 	@echo 'Generating protobuf code...'
 	@echo 'Updating buf dependencies...'
 	@pnpm exec buf dep update
@@ -50,8 +54,3 @@ proto-gen: proto-clean proto-vendor
 	@make proto-gen-ts
 	@echo 'Protobuf code generation complete!'
 
-proto-lint:
-	@pnpm exec buf lint
-
-proto-format:
-	@pnpm exec buf format -w
