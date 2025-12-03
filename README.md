@@ -59,7 +59,7 @@ After setup completes, you can start a local app server with:
 make up
 ```
 
-This the app as a static site. The build part of the process will only run if you have not built the app yet as a part of `make up`, or your build is out of date.
+This starts the app as a static site. The build part of the process will only run if you have not built the app yet as a part of `make up`, or your build is out of date.
 
 ### Local development
 
