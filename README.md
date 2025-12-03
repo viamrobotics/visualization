@@ -81,7 +81,7 @@ make up
 make up STATIC_PORT=5174
 ```
 
-The apps should be available on `http://localhost:5173/` and ``http://localhost:5174/`, and calls to the draw client API should render in both.
+The apps should be available on `http://localhost:5173/` and `http://localhost:5174/`, and calls to the draw client API should render in both.
 
 ### Local development
 
