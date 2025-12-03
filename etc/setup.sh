@@ -44,9 +44,8 @@ read_package_json_versions() {
         exit 1
     fi
     
-    REQUIRED_NODE_VERSION=$(node -p "require('./package.json').engines.node" 2>/dev/null)
-    REQUIRED_PNPM_VERSION=$(node -p "require('./package.json').packageManager" 2>/dev/null)
-    REQUIRED_PNPM_VERSION=$(echo "$REQUIRED_PNPM_VERSION" | sed 's/.*@//')
+    REQUIRED_NODE_VERSION=$(grep -o '"node"[[:space:]]*:[[:space:]]*"[^"]*"' package.json | sed 's/.*"node"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    REQUIRED_PNPM_VERSION=$(grep -o '"packageManager"[[:space:]]*:[[:space:]]*"[^"]*"' package.json | sed 's/.*"packageManager"[[:space:]]*:[[:space:]]*"pnpm@\([^"]*\)".*/\1/')
 }
 
 version_ge() {
