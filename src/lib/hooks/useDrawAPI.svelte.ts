@@ -45,6 +45,21 @@ const tryParse = (json: string) => {
 	}
 }
 
+const bytesToUUID = (bytes: Uint8Array): string => {
+	const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+	return (
+		hex.slice(0, 8) +
+		'-' +
+		hex.slice(8, 12) +
+		'-' +
+		hex.slice(12, 16) +
+		'-' +
+		hex.slice(16, 20) +
+		'-' +
+		hex.slice(20)
+	)
+}
+
 /**
  * @TODO get golang scripts to return protobufs so that we
  * can use our types. Right now we're just marshalling JSON,
@@ -67,10 +82,16 @@ class Float32Reader {
 	offset = 0
 	buffer = new ArrayBuffer()
 	view = new DataView(this.buffer)
+	header = { requestID: '', type: -1 }
 
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
-		this.view = new DataView(this.buffer)
+		this.header = {
+			requestID: bytesToUUID(new Uint8Array(this.buffer.slice(0, 16))),
+			type: new DataView(this.buffer).getFloat32(16, true),
+		}
+
+		this.view = new DataView(this.buffer.slice(20))
 		return this
 	}
 
@@ -78,6 +99,10 @@ class Float32Reader {
 		const result = this.view.getFloat32(this.offset, this.littleEndian)
 		this.offset += 4
 		return result
+	}
+
+	remainingBuffer(): ArrayBuffer {
+		return this.buffer.slice(this.offset)
 	}
 }
 
@@ -112,6 +137,11 @@ export const provideDrawAPI = () => {
 	const loader = new GLTFLoader()
 
 	const batchedArrow = useArrows()
+
+	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
+		console.log(response)
+		ws.send(JSON.stringify(response))
+	}
 
 	const drawFrames = async (data: Frame[]) => {
 		for (const frame of data) {
@@ -560,66 +590,89 @@ export const provideDrawAPI = () => {
 	}
 
 	const onMessage = async (event: MessageEvent) => {
-		if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
-			const reader = await new Float32Reader().init(event.data)
-			const type = reader.read()
+		let operation = 'UNKNOWN'
+		let requestID = ''
 
-			if (type === 0) {
-				return drawPoints(reader)
-			} else if (type === 1) {
-				return drawPoses(reader)
-			} else if (type === 2) {
-				return drawLine(reader)
-			} else if (type === 3) {
-				return drawPCD(reader.buffer)
+		try {
+			if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
+				const reader = await new Float32Reader().init(event.data)
+
+				requestID = reader.header.requestID
+
+				const { type } = reader.header
+
+				if (type === 0) {
+					operation = 'DrawPoints'
+					drawPoints(reader)
+				} else if (type === 1) {
+					operation = 'DrawPoses'
+					drawPoses(reader)
+				} else if (type === 2) {
+					operation = 'DrawLine'
+					drawLine(reader)
+				} else if (type === 3) {
+					operation = 'DrawPCD'
+					drawPCD(reader.buffer)
+				} else if (type === 4) {
+					operation = 'DrawGLTF'
+					drawGLTF(reader.buffer)
+				} else {
+					throw new Error('Invalid buffer')
+				}
 			} else {
-				return drawGLTF(reader.buffer)
+				const [error, data] = tryParse(event.data)
+
+				if (error) {
+					logs.add(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`, 'error')
+					throw new Error(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`)
+				}
+
+				if (!data) {
+					throw new Error('No drawing data sent to client.')
+				}
+
+				requestID = data.requestID
+
+				if ('setCameraPose' in data) {
+					operation = 'SetCameraPose'
+					cameraControls.setPose(
+						{
+							position: [data.Position.X, data.Position.Y, data.Position.Z],
+							lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+						},
+						data.Animate
+					)
+				} else if ('geometries' in data) {
+					operation = 'DrawGeometries'
+					drawGeometries(data.geometries, data.colors, data.parent)
+				} else if ('geometry' in data) {
+					operation = 'DrawGeometry'
+					drawGeometry(data.geometry, data.color)
+				} else if ('frames' in data) {
+					operation = 'DrawFrames'
+					drawFrames(data.frames)
+				} else if ('Knots' in data) {
+					operation = 'DrawNurbs'
+					drawNurbs(data, data.Color)
+				} else if ('remove' in data) {
+					operation = 'Remove'
+					remove(data.names)
+				} else if ('removeAll' in data) {
+					operation = 'RemoveAll'
+					removeAll()
+				}
 			}
+
+			sendResponse({ code: 200, requestID, message: `${operation} succeeded.` })
+		} catch (error) {
+			sendResponse({
+				code: 500,
+				requestID,
+				message: `${operation} failed. Reason: ${error}`,
+			})
 		}
 
-		const [error, data] = tryParse(event.data)
-
-		if (error) {
-			logs.add(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`, 'error')
-		}
-
-		if (!data) return
-
-		if ('setCameraPose' in data) {
-			cameraControls.setPose(
-				{
-					position: [data.Position.X, data.Position.Y, data.Position.Z],
-					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
-				},
-				data.Animate
-			)
-
-			return
-		}
-
-		if ('geometries' in data) {
-			return drawGeometries(data.geometries, data.colors, data.parent)
-		}
-
-		if ('geometry' in data) {
-			return drawGeometry(data.geometry, data.color)
-		}
-
-		if ('frames' in data) {
-			return drawFrames(data.frames)
-		}
-
-		if ('Knots' in data) {
-			return drawNurbs(data, data.Color)
-		}
-
-		if ('remove' in data) {
-			return remove(data.names)
-		}
-
-		if ('removeAll' in data) {
-			return removeAll()
-		}
+		invalidate()
 	}
 
 	const connect = () => {
