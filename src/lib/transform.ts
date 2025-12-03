@@ -78,14 +78,16 @@ export const object3dToPose = (object3d: Object3D, pose: Partial<Pose>) => {
 	return pose
 }
 
-export const poseToQuaternion = (pose: Partial<Pose>, quaternion: Quaternion) => {
-	const th = MathUtils.degToRad(pose.theta ?? 0)
-	ov.set(pose.oX, pose.oY, pose.oZ, th)
-	ov.toQuaternion(quaternion)
+export const poseToQuaternion = (pose?: Partial<Pose>, quaternion?: Quaternion) => {
+	const th = MathUtils.degToRad(pose?.theta ?? 0)
+	ov.set(pose?.oX, pose?.oY, pose?.oZ, th)
+	if (quaternion) {
+		ov.toQuaternion(quaternion)
+	}
 }
 
-export const poseToVector3 = (pose: Partial<Pose>, vec3: Vector3) => {
-	vec3.set(pose.x ?? 0, pose.y ?? 0, pose.z ?? 0).multiplyScalar(0.001)
+export const poseToVector3 = (pose?: Partial<Pose>, vec3?: Vector3) => {
+	vec3?.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0).multiplyScalar(0.001)
 }
 
 export const poseToObject3d = (pose: Partial<Pose>, object3d: Object3D) => {
