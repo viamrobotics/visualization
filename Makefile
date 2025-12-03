@@ -1,4 +1,6 @@
 .DEFAULT_GOAL := help
+WS_PORT ?= 3000
+STATIC_PORT ?= 5173
 
 define calculate_hash
 	(find src -type f -exec cat {} \; 2>/dev/null; \
@@ -41,7 +43,7 @@ up-build:
 .PHONY: up
 up: up-build
 	@echo 'Starting server...'
-	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
+	@WS_PORT=$(WS_PORT) STATIC_PORT=$(STATIC_PORT) bun run server/server.ts --production
 
 .PHONY: build
 build:

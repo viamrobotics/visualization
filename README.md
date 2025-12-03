@@ -61,6 +61,28 @@ make up
 
 This starts the app as a static site. The build part of the process will only run if you have not built the app yet as a part of `make up`, or your build is out of date.
 
+#### Running multiple apps
+
+If you want to be able to run multiple versions of the app, you can configure how the servers run. The `make up` command can accept two options:
+
+1. `STATIC_PORT` is the port for the static file server, and defaults to `5173`
+2. `WS_PORT` is the port for the websocket server used to communicate with the draw client API
+
+[!NOTE]
+The `WS_PORT` is not fully configurable at the moment, so passing it will only affect where the frontend listens for the websocket server, but calls with the draw client API are currently hardcoded to point to `"http://localhost:3000/"`. If this is a feature you require, please submit a request to the viz team!
+
+To run two apps using the same web socket server, run:
+
+```
+# in one terminal
+make up
+
+# in another terminal
+make up STATIC_PORT=5174
+```
+
+The apps should be available on `http://localhost:5173/` and ``http://localhost:5174/`, and calls to the draw client API should render in both.
+
 ### Local development
 
 If you are contributing to `motion-tools`, you should just run the development web server with:
