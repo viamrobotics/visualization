@@ -32,6 +32,14 @@ interface Context {
 	addMesh(worldObject: WorldObject): void
 }
 
+const bufferTypes = {
+	DRAW_POINTS: 0,
+	DRAW_POSES: 1,
+	DRAW_LINE: 2,
+	DRAW_PCD: 3,
+	DRAW_GLTF: 4,
+} as const
+
 const axis = new Vector3()
 const quaternion = new Quaternion()
 const ov = new OrientationVector()
@@ -77,6 +85,7 @@ class Float32Reader {
 			type: new DataView(this.buffer).getFloat32(16, true),
 		}
 
+		// Slice away the request header and leave the body
 		this.buffer = this.buffer.slice(20)
 		this.view = new DataView(this.buffer)
 		return this
@@ -581,19 +590,19 @@ export const provideDrawAPI = () => {
 
 				const { type } = reader.header
 
-				if (type === 0) {
+				if (type === bufferTypes.DRAW_POINTS) {
 					operation = 'DrawPoints'
 					drawPoints(reader)
-				} else if (type === 1) {
+				} else if (type === bufferTypes.DRAW_POSES) {
 					operation = 'DrawPoses'
 					drawPoses(reader)
-				} else if (type === 2) {
+				} else if (type === bufferTypes.DRAW_LINE) {
 					operation = 'DrawLine'
 					drawLine(reader)
-				} else if (type === 3) {
+				} else if (type === bufferTypes.DRAW_PCD) {
 					operation = 'DrawPCD'
 					drawPCD(reader.buffer)
-				} else if (type === 4) {
+				} else if (type === bufferTypes.DRAW_GLTF) {
 					operation = 'DrawGLTF'
 					drawGLTF(reader.buffer)
 				} else {
