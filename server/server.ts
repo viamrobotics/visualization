@@ -216,7 +216,7 @@ try {
 		port: WS_PORT,
 		hostname: '::',
 		maxRequestBodySize: oneGigabyte,
-		async fetch(req, srv) {
+		fetch(req, srv) {
 			const { pathname } = new URL(req.url)
 
 			if (pathname === '/ws') {
