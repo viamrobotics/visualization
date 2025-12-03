@@ -68,8 +68,8 @@ If you want to be able to run multiple versions of the app, you can configure ho
 1. `STATIC_PORT` is the port for the static file server, and defaults to `5173`
 2. `WS_PORT` is the port for the websocket server used to communicate with the draw client API
 
-[!NOTE]
-The `WS_PORT` is not fully configurable at the moment, so passing it will only affect where the frontend listens for the websocket server, but calls with the draw client API are currently hardcoded to point to `"http://localhost:3000/"`. If this is a feature you require, please submit a request to the viz team!
+> [!NOTE]
+> The `WS_PORT` is not fully configurable at the moment, so passing it will only affect where the frontend listens for the websocket server, but calls with the draw client API are currently hardcoded to point to `"http://localhost:3000/"`. If this is a feature you require, please submit a request to the viz team!
 
 To run two apps using the same web socket server, run:
 
