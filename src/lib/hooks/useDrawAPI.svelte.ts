@@ -91,7 +91,8 @@ class Float32Reader {
 			type: new DataView(this.buffer).getFloat32(16, true),
 		}
 
-		this.view = new DataView(this.buffer.slice(20))
+		this.buffer = this.buffer.slice(20)
+		this.view = new DataView(this.buffer)
 		return this
 	}
 
@@ -99,10 +100,6 @@ class Float32Reader {
 		const result = this.view.getFloat32(this.offset, this.littleEndian)
 		this.offset += 4
 		return result
-	}
-
-	remainingBuffer(): ArrayBuffer {
-		return this.buffer.slice(this.offset)
 	}
 }
 
@@ -318,8 +315,6 @@ export const provideDrawAPI = () => {
 				})
 			)
 		}
-
-		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
