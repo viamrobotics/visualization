@@ -141,6 +141,7 @@
 		"!dist/**/*.spec.*"
 	],
 	"dependencies": {
-		"@tanstack/svelte-query-devtools": "^6.0.2"
+		"@tanstack/svelte-query-devtools": "^6.0.2",
+		"uuid-tool": "^2.0.3"
 	}
 }
