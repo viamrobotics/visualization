@@ -8,13 +8,17 @@ const connections = new Set<Bun.ServerWebSocket<unknown>>()
 const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production')
 const buildDir = resolve(import.meta.dir, '../build')
 
+const STATIC_PORT = parseInt(process.env.STATIC_PORT || '5173', 10)
+const WS_PORT = parseInt(process.env.WS_PORT || '3000', 10)
+
 const messages = {
 	success: { message: 'Data received successfully', status: 200 },
 	noClient: { message: 'No connected client', status: 404 },
 }
 
 let viteProcess: Subprocess | undefined
-let server: ReturnType<typeof serve> | undefined
+let apiServer: ReturnType<typeof serve> | undefined
+let staticServer: ReturnType<typeof serve> | undefined
 let shuttingDown = false
 
 const shutdown = async (code = 0) => {
@@ -23,7 +27,8 @@ const shutdown = async (code = 0) => {
 	shuttingDown = true
 
 	try {
-		server?.stop?.()
+		apiServer?.stop?.()
+		staticServer?.stop?.()
 	} catch (error) {
 		console.error(error)
 	}
@@ -47,13 +52,14 @@ const shutdown = async (code = 0) => {
 	process.exit(code)
 }
 
-const launchVite = (port: number) => {
+const launchVite = () => {
 	// Keep the handle so we can control it
 	viteProcess = spawn({
 		cmd: ['bun', 'run', 'vite'],
 		env: {
 			...process.env,
-			BUN_SERVER_PORT: port.toString(),
+			WS_PORT: WS_PORT.toString(),
+			STATIC_PORT: STATIC_PORT.toString(),
 		},
 		stdout: 'inherit',
 		stderr: 'inherit',
@@ -64,6 +70,30 @@ const launchVite = (port: number) => {
 		console.warn(`Vite exited with code ${code ?? 'null'}. Shutting down Bun server.`)
 		shutdown(typeof code === 'number' ? code : 1)
 	})
+}
+
+const startStaticServer = () => {
+	try {
+		staticServer = serve({
+			port: STATIC_PORT,
+			hostname: '::',
+			async fetch(req) {
+				const { pathname } = new URL(req.url)
+
+				if (req.method === 'GET') {
+					const response = await serveStatic(pathname)
+					if (response) return response
+				}
+
+				return new Response('Not Found', { status: 404 })
+			},
+		})
+
+		console.log(`Static file server running at http://${localIP}:${STATIC_PORT}`)
+	} catch (err) {
+		console.error('Failed to start static file server:', err)
+		shutdown(1)
+	}
 }
 
 const serveStatic = async (pathname: string): Promise<Response | null> => {
@@ -159,9 +189,6 @@ const jsonResponse = (success: boolean) => {
 	})
 }
 
-// In production mode, use port 5173 by default; in dev mode, use 3000
-let port = isProduction ? 5173 : 3000
-
 const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
 for (const sig of signals) {
 	process.on(sig, () => shutdown(0))
@@ -183,73 +210,64 @@ process.on('exit', () => viteProcess?.kill('SIGTERM'))
 // Roughly 1 GiB
 const oneGigabyte = 1024 * 1024 * 1024
 
-while (true) {
-	try {
-		server = serve({
-			port,
-			hostname: '::',
-			maxRequestBodySize: oneGigabyte,
-			async fetch(req, srv) {
-				const { pathname } = new URL(req.url)
+// Start the API/WebSocket server
+try {
+	apiServer = serve({
+		port: WS_PORT,
+		hostname: '::',
+		maxRequestBodySize: oneGigabyte,
+		async fetch(req, srv) {
+			const { pathname } = new URL(req.url)
 
-				if (pathname === '/ws') {
-					if (srv.upgrade(req)) return
-					return new Response('Upgrade Failed', { status: 400 })
-				}
+			if (pathname === '/ws') {
+				if (srv.upgrade(req)) return
+				return new Response('Upgrade Failed', { status: 400 })
+			}
 
-				if (req.method === 'OPTIONS') {
-					return new Response(null, {
-						status: 204,
-						headers: {
-							'Access-Control-Allow-Origin': '*',
-							'Access-Control-Allow-Methods': 'POST, OPTIONS',
-							'Access-Control-Allow-Headers': 'Content-Type',
-						},
-					})
-				}
+			if (req.method === 'OPTIONS') {
+				return new Response(null, {
+					status: 204,
+					headers: {
+						'Access-Control-Allow-Origin': '*',
+						'Access-Control-Allow-Methods': 'POST, OPTIONS',
+						'Access-Control-Allow-Headers': 'Content-Type',
+					},
+				})
+			}
 
-				if (req.method === 'POST') {
-					return handlePost(req, pathname)
-				}
+			if (req.method === 'POST') {
+				return handlePost(req, pathname)
+			}
 
-				if (isProduction && req.method === 'GET') {
-					const response = await serveStatic(pathname)
-					if (response) return response
-				}
-
-				return new Response('Not Found', { status: 404 })
+			return new Response('Not Found', { status: 404 })
+		},
+		websocket: {
+			open(ws) {
+				console.log('WebSocket client connected.')
+				connections.add(ws)
 			},
-			websocket: {
-				open(ws) {
-					console.log('WebSocket client connected.')
-					connections.add(ws)
-				},
-				message(_ws, message) {
-					console.log(`Received: ${message}`)
-				},
-				close(ws) {
-					console.log('WebSocket client closed.')
-					connections.delete(ws)
-				},
+			message(_ws, message) {
+				console.log(`Received: ${message}`)
 			},
-		})
+			close(ws) {
+				console.log('WebSocket client closed.')
+				connections.delete(ws)
+			},
+		},
+	})
 
-		console.log(`HTTP Server running at http://${localIP}:${port}`)
-		console.log(`WebSocket endpoint at ws://${localIP}:${port}/ws`)
-		if (!isProduction) {
-			launchVite(port)
-		}
-		break
-	} catch (err) {
-		const error = err as Error
-		if ('code' in error && typeof error.code === 'string' && error.code === 'EADDRINUSE') {
-			console.warn(`Port ${port} in use, trying ${port + 1}...`)
-			port += 1
-		} else {
-			console.error('Failed to start server:', error)
-			// if we failed after starting vite, make sure to clean up
-			shutdown(1)
-			break
-		}
+	console.log(`API/WebSocket server running at http://${localIP}:${WS_PORT}`)
+	console.log(`WebSocket endpoint: ws://${localIP}:${WS_PORT}/ws`)
+
+	if (isProduction) {
+		startStaticServer()
+		console.log(
+			`\n\t\x1b[32m\x1b[1mAccess the app at:\x1b[0m\x1b[32m http://${localIP}:${STATIC_PORT}\x1b[0m`
+		)
+	} else {
+		launchVite()
 	}
+} catch (err) {
+	console.error('Failed to start server:', err)
+	shutdown(1)
 }

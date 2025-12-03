@@ -1,16 +1,13 @@
-.PHONY: help setup up clean
+.PHONY: help setup up build clean check-build
 
-# Default target - show help when no target is specified
 .DEFAULT_GOAL := help
 
-# Find all source files that should trigger a rebuild
-SRC_FILES := $(shell find src -type f 2>/dev/null) \
-	package.json \
-	pnpm-lock.yaml \
-	svelte.config.js \
-	vite.config.ts \
-	tsconfig.json \
-	tailwind.config.ts
+define calculate_hash
+	(find src -type f -exec cat {} \; 2>/dev/null; \
+	 find static -type f -exec cat {} \; 2>/dev/null; \
+	 cat package.json pnpm-lock.yaml svelte.config.js vite.config.ts tsconfig.json tailwind.config.ts 2>/dev/null) \
+	 | shasum -a 256 | cut -d' ' -f1
+endef
 
 help:
 	@echo 'Motion Tools Development Setup'
@@ -26,26 +23,30 @@ help:
 setup:
 	@./etc/setup.sh
 
-# Regular production build
 build:
 	@echo 'Installing dependencies...'
 	@pnpm install
 	@echo 'Building application...'
 	@pnpm run build
 
-# Incremental build target (internal use by 'up')
-# Marker file tracks when last build completed
-.build-stamp: $(SRC_FILES)
-	@echo 'Source files changed, rebuilding...'
-	@echo 'Installing dependencies...'
-	@pnpm install
-	@echo 'Building application...'
-	@BUN_SERVER_PORT=5173 pnpm run build
-	@touch .build-stamp
+# Check if rebuild is needed based on content hash
+check-build:
+	@CURRENT_HASH=$$($(calculate_hash)); \
+	STORED_HASH=$$(cat .build-stamp 2>/dev/null || echo "none"); \
+	if [ "$$CURRENT_HASH" != "$$STORED_HASH" ]; then \
+		echo 'Source files changed, rebuilding...'; \
+		echo 'Installing dependencies...'; \
+		pnpm install; \
+		echo 'Building application...'; \
+		WS_PORT=3000 STATIC_PORT=5173 pnpm run build; \
+		echo "$$CURRENT_HASH" > .build-stamp; \
+	else \
+		echo 'Build is up to date, skipping rebuild...'; \
+	fi
 
-up: .build-stamp
+up: check-build
 	@echo 'Starting server...'
-	@bun run server/server.ts --production
+	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
 
 clean:
 	@echo 'Removing build artifacts...'

@@ -4,7 +4,7 @@
 
 ### Getting started
 
-#### Quick Setup (Recommended)
+#### Using the app locally
 
 The easiest way to get started is using our automated setup script:
 
@@ -20,11 +20,14 @@ This single command will:
 4. Install **bun** runtime
 5. Install all project dependencies
 
-After setup completes, start the development server:
+After setup completes, start the server:
 
 ```bash
-make up
+make up      # Build and run a local app service
 ```
+
+This runs a local server that serves the app as a static site. The build part of the process will only run if you have
+not built the app yet as a part of `make up`, or your build is out of date.
 
 #### Manual Setup
 
@@ -40,7 +43,9 @@ If you prefer to install dependencies manually:
 #### Available Make Commands
 
 - `make setup` - Complete development environment setup
-- `make up` - Start the development server
+- `make up` - Build and start production server (fast, incremental builds)
+- `make build` - Build the application for production
+- `make clean` - Remove build artifacts
 - `make help` - Show available commands
 
 ### Running the visualizer
