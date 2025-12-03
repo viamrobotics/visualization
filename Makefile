@@ -1,5 +1,3 @@
-.PHONY: help setup up build clean check-build
-
 .DEFAULT_GOAL := help
 
 define calculate_hash
@@ -9,6 +7,7 @@ define calculate_hash
 	 | shasum -a 256 | cut -d' ' -f1
 endef
 
+.PHONY: help
 help:
 	@echo 'Motion Tools Development Setup'
 	@echo 'Usage: make [target]'
@@ -20,17 +19,12 @@ help:
 	@echo '  clean - Remove build artifacts'
 	@echo '  help  - Show this help message'
 
+.PHONY: setup
 setup:
 	@./etc/setup.sh
 
-build:
-	@echo 'Installing dependencies...'
-	@pnpm install
-	@echo 'Building application...'
-	@pnpm run build
-
-# Check if rebuild is needed based on content hash
-check-build:
+.PHONY: up-build
+up-build:
 	@CURRENT_HASH=$$($(calculate_hash)); \
 	STORED_HASH=$$(cat .build-stamp 2>/dev/null || echo "none"); \
 	if [ "$$CURRENT_HASH" != "$$STORED_HASH" ]; then \
@@ -44,10 +38,19 @@ check-build:
 		echo 'Build is up to date, skipping rebuild...'; \
 	fi
 
-up: check-build
+.PHONY: up
+up: up-build
 	@echo 'Starting server...'
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
 
+.PHONY: build
+build:
+	@echo 'Installing dependencies...'
+	@pnpm install
+	@echo 'Building application...'
+	@pnpm run build
+
+.PHONY: clean
 clean:
 	@echo 'Removing build artifacts...'
 	@rm -rf build dist .build-stamp
