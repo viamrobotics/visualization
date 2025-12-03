@@ -1,10 +1,9 @@
 syntax = "proto3";
 
-package viam.motion_tools.draw.v1;
+package draw.v1;
 
 import "common/v1/common.proto";
 import "draw/v1/metadata.proto";
-import "google/protobuf/struct.proto";
 
 option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
@@ -128,5 +127,5 @@ message Drawing {
   bytes uuid = 4;
 
   // The metadata of the shape
-  viam.motion_tools.draw.v1.Metadata metadata = 5;
+  draw.v1.Metadata metadata = 5;
 }
