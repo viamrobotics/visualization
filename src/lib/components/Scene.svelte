@@ -37,7 +37,7 @@
 			return item ? [item] : []
 		},
 	})
-	$effect.pre(() => {
+	$effect(() => {
 		enabled.set(!settings.current.enableMeasure)
 	})
 	raycaster.firstHitOnly = true
@@ -89,7 +89,10 @@
 	{/if}
 
 	<T.Group attach={focusedObject ? false : undefined}>
+		<!-- Capture "default" portals if "world" is not explicit -->
+		<PortalTarget />
 		<PortalTarget id="world" />
+
 		<WorldObjects />
 	</T.Group>
 
