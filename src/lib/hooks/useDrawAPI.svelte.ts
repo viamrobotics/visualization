@@ -2,6 +2,7 @@ import { getContext, setContext } from 'svelte'
 import { Color, MathUtils, Quaternion, Vector3, Vector4 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
+import { UuidTool } from 'uuid-tool'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
@@ -45,21 +46,6 @@ const tryParse = (json: string) => {
 	}
 }
 
-const bytesToUUID = (bytes: Uint8Array): string => {
-	const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
-	return (
-		hex.slice(0, 8) +
-		'-' +
-		hex.slice(8, 12) +
-		'-' +
-		hex.slice(12, 16) +
-		'-' +
-		hex.slice(16, 20) +
-		'-' +
-		hex.slice(20)
-	)
-}
-
 /**
  * @TODO get golang scripts to return protobufs so that we
  * can use our types. Right now we're just marshalling JSON,
@@ -87,7 +73,7 @@ class Float32Reader {
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
 		this.header = {
-			requestID: bytesToUUID(new Uint8Array(this.buffer.slice(0, 16))),
+			requestID: UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))]),
 			type: new DataView(this.buffer).getFloat32(16, true),
 		}
 
@@ -136,7 +122,6 @@ export const provideDrawAPI = () => {
 	const batchedArrow = useArrows()
 
 	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
-		console.log(response)
 		ws.send(JSON.stringify(response))
 	}
 

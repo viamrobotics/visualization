@@ -1,6 +1,6 @@
 import { serve, spawn, type Subprocess } from 'bun'
 import { getLocalIP } from './ip'
-import crypto from 'node:crypto'
+import { UuidTool } from 'uuid-tool'
 
 const localIP = getLocalIP()
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
@@ -8,21 +8,6 @@ const connections = new Set<Bun.ServerWebSocket<unknown>>()
 let viteProcess: Subprocess | undefined
 let server: ReturnType<typeof serve> | undefined
 let shuttingDown = false
-
-const bytesToUUID = (bytes: Uint8Array): string => {
-	const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
-	return (
-		hex.slice(0, 8) +
-		'-' +
-		hex.slice(8, 12) +
-		'-' +
-		hex.slice(12, 16) +
-		'-' +
-		hex.slice(16, 20) +
-		'-' +
-		hex.slice(20)
-	)
-}
 
 const shutdown = async (code = 0) => {
 	if (shuttingDown) return
@@ -89,8 +74,7 @@ function sendToClients(data: string | Bun.BufferSource) {
 const pendingResponses = new Map<string, (value: Response | PromiseLike<Response>) => void>()
 
 async function handlePost(req: Request, pathname: string): Promise<Response> {
-	const id = crypto.randomBytes(16)
-	const uuid = bytesToUUID(id)
+	const uuid = UuidTool.newUuid()
 
 	try {
 		switch (pathname) {
@@ -118,7 +102,7 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 				const original = new Uint8Array(buffer)
 				const payload = new Uint8Array(16 + original.byteLength)
 
-				payload.set(id, 0)
+				payload.set(UuidTool.toBytes(uuid), 0)
 				payload.set(original, 16)
 
 				const error = sendToClients(payload)
@@ -135,7 +119,7 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 				const original = new Uint8Array(buffer)
 				const payload = new Uint8Array(20 + original.byteLength)
 
-				payload.set(id, 0)
+				payload.set(UuidTool.toBytes(uuid), 0)
 				new DataView(payload.buffer).setFloat32(16, 4, true)
 				payload.set(original, 20)
 
