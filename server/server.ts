@@ -1,8 +1,12 @@
-import { serve, spawn, type Subprocess } from 'bun'
+import { serve, spawn, type Subprocess, file } from 'bun'
 import { getLocalIP } from './ip'
+import { resolve, join } from 'node:path'
+import { stat } from 'node:fs/promises'
 
 const localIP = getLocalIP()
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production')
+const buildDir = resolve(import.meta.dir, '../build')
 
 const messages = {
 	success: { message: 'Data received successfully', status: 200 },
@@ -60,6 +64,33 @@ const launchVite = (port: number) => {
 		console.warn(`Vite exited with code ${code ?? 'null'}. Shutting down Bun server.`)
 		shutdown(typeof code === 'number' ? code : 1)
 	})
+}
+
+const serveStatic = async (pathname: string): Promise<Response | null> => {
+	try {
+		let filePath = join(buildDir, pathname)
+
+		const fileStats = await stat(filePath).catch(() => null)
+		if (fileStats?.isFile()) {
+			return new Response(file(filePath))
+		}
+
+		if (fileStats?.isDirectory()) {
+			filePath = join(filePath, 'index.html')
+		} else {
+			filePath = join(buildDir, 'index.html')
+		}
+
+		const indexStats = await stat(filePath).catch(() => null)
+		if (indexStats?.isFile()) {
+			return new Response(file(filePath))
+		}
+
+		return null
+	} catch (err) {
+		console.error('Error serving static file:', err)
+		return null
+	}
 }
 
 function sendToClients(data: string | Bun.BufferSource) {
@@ -128,7 +159,8 @@ const jsonResponse = (success: boolean) => {
 	})
 }
 
-let port = 3000
+// In production mode, use port 5173 by default; in dev mode, use 3000
+let port = isProduction ? 5173 : 3000
 
 const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
 for (const sig of signals) {
@@ -157,7 +189,7 @@ while (true) {
 			port,
 			hostname: '::',
 			maxRequestBodySize: oneGigabyte,
-			fetch(req, srv) {
+			async fetch(req, srv) {
 				const { pathname } = new URL(req.url)
 
 				if (pathname === '/ws') {
@@ -180,6 +212,11 @@ while (true) {
 					return handlePost(req, pathname)
 				}
 
+				if (isProduction && req.method === 'GET') {
+					const response = await serveStatic(pathname)
+					if (response) return response
+				}
+
 				return new Response('Not Found', { status: 404 })
 			},
 			websocket: {
@@ -199,8 +236,9 @@ while (true) {
 
 		console.log(`HTTP Server running at http://${localIP}:${port}`)
 		console.log(`WebSocket endpoint at ws://${localIP}:${port}/ws`)
-
-		launchVite(port)
+		if (!isProduction) {
+			launchVite(port)
+		}
 		break
 	} catch (err) {
 		const error = err as Error
