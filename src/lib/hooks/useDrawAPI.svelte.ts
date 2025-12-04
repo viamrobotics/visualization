@@ -654,6 +654,7 @@ export const provideDrawAPI = () => {
 
 			sendResponse({ code: 200, requestID, message: `${operation} succeeded.` })
 		} catch (error) {
+			logs.add(`${error}`, 'error')
 			sendResponse({
 				code: 500,
 				requestID,
