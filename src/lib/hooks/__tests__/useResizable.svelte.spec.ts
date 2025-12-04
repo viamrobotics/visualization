@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/svelte'
 import ResizableTestWrapper from './fixtures/ResizableTestWrapper.svelte'
 
-const mockStorage = new Map<string, unknown>()
+// Mock store must be defined before vi.mock (which is hoisted)
+const mockStore = new Map<string, unknown>()
 vi.mock('idb-keyval', () => ({
-	get: vi.fn((key: string) => Promise.resolve(mockStorage.get(key))),
+	get: vi.fn((key: string) => Promise.resolve(mockStore.get(key))),
 	set: vi.fn((key: string, value: unknown) => {
-		mockStorage.set(key, value)
+		mockStore.set(key, value)
 		return Promise.resolve()
 	}),
 }))
@@ -43,7 +44,7 @@ const simulateResize = (target: Element, width: number, height: number) => {
 
 describe('useResizable', () => {
 	beforeEach(() => {
-		mockStorage.clear()
+		mockStore.clear()
 		resizeCallback = undefined
 		vi.clearAllMocks()
 	})
@@ -71,7 +72,7 @@ describe('useResizable', () => {
 		})
 
 		it('displays saved dimensions from storage', async () => {
-			mockStorage.set('saved-resizable', { width: 400, height: 600 })
+			mockStore.set('saved-resizable', { width: 400, height: 600 })
 
 			render(ResizableTestWrapper, { name: 'saved' })
 
