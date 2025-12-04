@@ -2,6 +2,7 @@ import { serve, spawn, type Subprocess, file } from 'bun'
 import { getLocalIP } from './ip'
 import { resolve, join } from 'node:path'
 import { stat } from 'node:fs/promises'
+import { UuidTool } from 'uuid-tool'
 
 const localIP = getLocalIP()
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
@@ -10,11 +11,6 @@ const buildDir = resolve(import.meta.dir, '../build')
 
 const STATIC_PORT = parseInt(process.env.STATIC_PORT || '5173', 10)
 const WS_PORT = parseInt(process.env.WS_PORT || '3000', 10)
-
-const messages = {
-	success: { message: 'Data received successfully', status: 200 },
-	noClient: { message: 'No connected client', status: 404 },
-}
 
 let viteProcess: Subprocess | undefined
 let apiServer: ReturnType<typeof serve> | undefined
@@ -125,18 +121,22 @@ const serveStatic = async (pathname: string): Promise<Response | null> => {
 
 function sendToClients(data: string | Bun.BufferSource) {
 	if (connections.size === 0) {
-		console.log('No connected web clients to send data!')
-		return false
+		console.log('No connected web clients to send data.')
+		return { code: 408, message: 'No connected web clients to send data.' }
 	}
 
 	for (const ws of connections) {
 		ws.send(data)
 	}
 
-	return true
+	return
 }
 
+const pendingResponses = new Map<string, (value: Response | PromiseLike<Response>) => void>()
+
 async function handlePost(req: Request, pathname: string): Promise<Response> {
+	const uuid = UuidTool.newUuid()
+
 	try {
 		switch (pathname) {
 			case '/geometry':
@@ -145,43 +145,89 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 			case '/camera':
 			case '/nurbs': {
 				const json = await req.json()
-				const success = sendToClients(JSON.stringify(json))
-				return jsonResponse(success)
+				json.requestID = uuid
+				const error = sendToClients(JSON.stringify(json))
+
+				if (error) {
+					return jsonResponse(error)
+				}
+
+				break
 			}
 
 			case '/points':
 			case '/poses':
 			case '/line':
-			case '/gltf':
 			case '/pcd': {
 				const buffer = await req.arrayBuffer()
-				const success = sendToClients(buffer)
-				return jsonResponse(success)
+				const original = new Uint8Array(buffer)
+				const payload = new Uint8Array(16 + original.byteLength)
+
+				payload.set(UuidTool.toBytes(uuid), 0)
+				payload.set(original, 16)
+
+				const error = sendToClients(payload)
+
+				if (error) {
+					return jsonResponse(error)
+				}
+
+				break
+			}
+
+			case '/gltf': {
+				const buffer = await req.arrayBuffer()
+				const original = new Uint8Array(buffer)
+				const payload = new Uint8Array(20 + original.byteLength)
+
+				payload.set(UuidTool.toBytes(uuid), 0)
+				new DataView(payload.buffer).setFloat32(16, 4, true)
+				payload.set(original, 20)
+
+				const error = sendToClients(payload)
+
+				if (error) {
+					return jsonResponse(error)
+				}
+
+				break
 			}
 
 			case '/remove-all': {
-				const success = sendToClients(JSON.stringify({ removeAll: true }))
-				return jsonResponse(success)
+				const error = sendToClients(JSON.stringify({ requestID: uuid, removeAll: true }))
+
+				if (error) {
+					return jsonResponse(error)
+				}
+
+				break
 			}
 
 			case '/remove': {
 				const json = await req.json()
-				const success = sendToClients(JSON.stringify({ remove: true, names: json }))
-				return jsonResponse(success)
+				const error = sendToClients(JSON.stringify({ requestID: uuid, remove: true, names: json }))
+
+				if (error) {
+					return jsonResponse(error)
+				}
+
+				break
 			}
 
 			default:
 				return new Response('Not Found', { status: 404 })
 		}
+
+		return new Promise((resolve) => pendingResponses.set(uuid, resolve))
 	} catch (err) {
 		console.error('Error handling POST:', err)
 		return new Response('Server Error', { status: 500 })
 	}
 }
 
-const jsonResponse = (success: boolean) => {
-	return new Response(JSON.stringify(success ? messages.success : messages.noClient), {
-		status: success ? 200 : 408,
+const jsonResponse = (response: { code: number; message: string }) => {
+	return new Response(response.message, {
+		status: response.code,
 		headers: {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*',
@@ -247,6 +293,21 @@ try {
 				connections.add(ws)
 			},
 			message(_ws, message) {
+				if (typeof message === 'string') {
+					try {
+						const json = JSON.parse(message)
+						const resolve = pendingResponses.get(json.requestID)
+
+						if (resolve) {
+							delete json.requestID
+							resolve(jsonResponse(json))
+							pendingResponses.delete(json.requestID)
+						}
+					} catch (error) {
+						jsonResponse({ code: 400, message: JSON.stringify(error) })
+					}
+				}
+
 				console.log(`Received: ${message}`)
 			},
 			close(ws) {
