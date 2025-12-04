@@ -4,7 +4,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	interface Props {
-		text: string
+		text?: string
 	}
 
 	let { text }: Props = $props()
@@ -14,7 +14,7 @@
 	const labels = $derived(settings.current.enableLabels)
 </script>
 
-{#if labels}
+{#if labels && text}
 	<HTML
 		center
 		zIndexRange={[100, 0]}

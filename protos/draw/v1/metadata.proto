@@ -5,8 +5,9 @@ package draw.v1;
 option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 message Metadata {
-  // Float32Array of colors: [r, g, b, a, ...]
+  // Uint8Array of colors: [r, g, b, a, ...]
   // For a single shape/geometry, this is a single color of [r, g, b, a]
-  // For complex shapes/geometries, this is an array of colors of [r, g, b, a, ...]
+  // For complex shapes/geometries, this is an array of colors of [r, g, b, a,
+  // ...]
   optional bytes colors = 1;
 }
