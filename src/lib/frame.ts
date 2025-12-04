@@ -2,6 +2,7 @@
 
 import type { Transform } from '@viamrobotics/sdk'
 import type { ValueOf } from 'type-fest'
+import { UuidTool } from 'uuid-tool'
 
 import { createPoseFromFrame } from './transform'
 import { createGeometryFromFrame } from './geometry'
@@ -61,7 +62,7 @@ export const createFrame = <
 
 export const createTransformFromFrame = (name: string, frame: Partial<Frame>): Transform => {
 	return {
-		uuid: new Uint8Array(),
+		uuid: new Uint8Array(UuidTool.toBytes(UuidTool.newUuid())),
 		referenceFrame: name,
 		poseInObserverFrame: {
 			referenceFrame: frame.parent ?? 'world',
