@@ -3,14 +3,6 @@ import { execSync } from 'child_process'
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
-	await context.addCookies([
-		{
-			name: 'weblab_experiments',
-			value: 'MOTION_TOOLS_EDIT_FRAME',
-			domain: 'localhost',
-			path: '/',
-		},
-	])
 	const page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)

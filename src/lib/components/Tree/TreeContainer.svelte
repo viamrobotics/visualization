@@ -15,8 +15,6 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import WeblabActive from '../weblab/WeblabActive.svelte'
-	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useResizable } from '$lib/hooks/useResizable.svelte'
 
 	const { ...rest } = $props()
@@ -76,11 +74,9 @@
 			/>
 		{/key}
 
-		<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
-			{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
-				<AddFrames />
-			{/if}
-		</WeblabActive>
+		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
+			<AddFrames />
+		{/if}
 
 		<Logs />
 		<Settings />
