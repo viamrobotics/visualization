@@ -1,5 +1,7 @@
 import { getContext, setContext, untrack } from 'svelte'
+import { Transform } from '@viamrobotics/sdk'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import { trait, type Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
 import { createTransformFromFrame, type Frame } from '$lib/frame'
@@ -10,8 +12,6 @@ import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import { parsePlyInput } from '$lib/ply'
-import { trait, type Entity } from 'koota'
-import type { Transform } from '@viamrobotics/sdk'
 
 interface FramesContext {
 	current: Transform[]
@@ -67,29 +67,30 @@ export const provideFrames = (partID: () => string) => {
 		return frames
 	})
 
-	const configFrames = $derived.by(() => {
+	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
 		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
 
 		const results: Record<string, Transform> = {}
+		const unsetResults: string[] = []
 
 		for (const { name, frame } of components ?? []) {
 			if (!frame) {
+				unsetResults.push(name)
 				continue
 			}
 
 			results[name] = createTransformFromFrame(name, frame)
 		}
 
-		return results
+		return [results, unsetResults]
 	})
 
-	const [fragmentFrames, fragmentUnsetFrames] = $derived.by(() => {
+	const [fragmentFrames, fragmentUnsetFrameNames] = $derived.by(() => {
 		const { fragment_mods: fragmentMods = [] } =
 			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
 		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
 
 		const results: Record<string, Transform> = {}
-
 		const unsetResults: string[] = []
 
 		// deal with fragment defined components
@@ -127,7 +128,13 @@ export const provideFrames = (partID: () => string) => {
 			...fragmentFrames,
 		}
 
-		for (const name of fragmentUnsetFrames) {
+		// Remove frames that have just been deleted locally for optimistic updates
+		for (const name of configUnsetFrameNames) {
+			delete result[name]
+		}
+
+		// Remove frames that have been removed by fragment overrides
+		for (const name of fragmentUnsetFrameNames) {
 			delete result[name]
 		}
 

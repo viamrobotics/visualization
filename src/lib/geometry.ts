@@ -1,4 +1,4 @@
-import { Capsule, Geometry, RectangularPrism, Sphere } from '@viamrobotics/sdk'
+import type { Capsule, Geometry, RectangularPrism, Sphere } from '@viamrobotics/sdk'
 import { createPose } from './transform'
 import type { Frame } from './frame'
 

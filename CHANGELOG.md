@@ -1,5 +1,19 @@
 # motion-tools
 
+## 0.19.2
+
+### Patch Changes
+
+- 44b0f31: Do not send a list of null geometries to draw if a pointcloud is drawn with DrawGeometries
+- bdf21ce: Refactor useFrames to produce `WorldObject`s at the end of the pipeline
+
+## 0.19.1
+
+### Patch Changes
+
+- 41b18bd: make 3d model map creation more resiliant
+- 3fa205f: Add roundtrip comms for draw API
+
 ## 0.19.0
 
 ### Minor Changes

@@ -1,6 +1,7 @@
 import { getContext, setContext } from 'svelte'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
+import { UuidTool } from 'uuid-tool'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { useArrows } from './useArrows.svelte'
@@ -9,7 +10,7 @@ import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
-import { trait, type ConfigurableTrait, type Entity } from 'koota'
+import { trait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 
@@ -23,6 +24,14 @@ interface Context {
 	addPoints(entity: Entity): void
 	addMesh(entity: Entity): void
 }
+
+const bufferTypes = {
+	DRAW_POINTS: 0,
+	DRAW_POSES: 1,
+	DRAW_LINE: 2,
+	DRAW_PCD: 3,
+	DRAW_GLTF: 4,
+} as const
 
 const key = Symbol('draw-api-context-key')
 
@@ -56,9 +65,17 @@ class Float32Reader {
 	offset = 0
 	buffer = new ArrayBuffer()
 	view = new DataView(this.buffer)
+	header = { requestID: '', type: -1 }
 
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
+		this.header = {
+			requestID: UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))]),
+			type: new DataView(this.buffer).getFloat32(16, true),
+		}
+
+		// Slice away the request header and leave the body
+		this.buffer = this.buffer.slice(20)
 		this.view = new DataView(this.buffer)
 		return this
 	}
@@ -93,6 +110,10 @@ export const provideDrawAPI = () => {
 	const origin = new Vector3()
 	const loader = new GLTFLoader()
 	const entities = new Map<string, Entity>()
+
+	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
+		ws.send(JSON.stringify(response))
+	}
 
 	const drawFrames = async (data: Frame[]) => {
 		for (const rawFrame of data) {
@@ -283,8 +304,6 @@ export const provideDrawAPI = () => {
 					batchedArrow.mesh.setColorAt(instances.instanceID[eid], colorUtil.set(r, g, b))
 				}
 			})
-
-		invalidate()
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
@@ -471,66 +490,90 @@ export const provideDrawAPI = () => {
 	}
 
 	const onMessage = async (event: MessageEvent) => {
-		if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
-			const reader = await new Float32Reader().init(event.data)
-			const type = reader.read()
+		let operation = 'UNKNOWN'
+		let requestID = ''
 
-			if (type === 0) {
-				return drawPoints(reader)
-			} else if (type === 1) {
-				return drawPoses(reader)
-			} else if (type === 2) {
-				return drawLine(reader)
-			} else if (type === 3) {
-				return drawPCD(reader.buffer)
+		try {
+			if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
+				const reader = await new Float32Reader().init(event.data)
+
+				requestID = reader.header.requestID
+
+				const { type } = reader.header
+
+				if (type === bufferTypes.DRAW_POINTS) {
+					operation = 'DrawPoints'
+					drawPoints(reader)
+				} else if (type === bufferTypes.DRAW_POSES) {
+					operation = 'DrawPoses'
+					drawPoses(reader)
+				} else if (type === bufferTypes.DRAW_LINE) {
+					operation = 'DrawLine'
+					drawLine(reader)
+				} else if (type === bufferTypes.DRAW_PCD) {
+					operation = 'DrawPCD'
+					drawPCD(reader.buffer)
+				} else if (type === bufferTypes.DRAW_GLTF) {
+					operation = 'DrawGLTF'
+					drawGLTF(reader.buffer)
+				} else {
+					throw new Error('Invalid buffer')
+				}
 			} else {
-				return drawGLTF(reader.buffer)
+				const [error, data] = tryParse(event.data)
+
+				if (error) {
+					logs.add(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`, 'error')
+					throw new Error(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`)
+				}
+
+				if (!data) {
+					throw new Error('No drawing data sent to client.')
+				}
+
+				requestID = data.requestID
+
+				if ('setCameraPose' in data) {
+					operation = 'SetCameraPose'
+					cameraControls.setPose(
+						{
+							position: [data.Position.X, data.Position.Y, data.Position.Z],
+							lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
+						},
+						data.Animate
+					)
+				} else if ('geometries' in data) {
+					operation = 'DrawGeometries'
+					drawGeometries(data.geometries, data.colors, data.parent)
+				} else if ('geometry' in data) {
+					operation = 'DrawGeometry'
+					drawGeometry(data.geometry, data.color)
+				} else if ('frames' in data) {
+					operation = 'DrawFrames'
+					drawFrames(data.frames)
+				} else if ('Knots' in data) {
+					operation = 'DrawNurbs'
+					drawNurbs(data, data.Color)
+				} else if ('remove' in data) {
+					operation = 'Remove'
+					remove(data.names)
+				} else if ('removeAll' in data) {
+					operation = 'RemoveAll'
+					removeAll()
+				}
 			}
+
+			sendResponse({ code: 200, requestID, message: `${operation} succeeded.` })
+		} catch (error) {
+			logs.add(`${error}`, 'error')
+			sendResponse({
+				code: 500,
+				requestID,
+				message: `${operation} failed. Reason: ${error}`,
+			})
 		}
 
-		const [error, data] = tryParse(event.data)
-
-		if (error) {
-			logs.add(`Failed to parse JSON from drawing server: ${JSON.stringify(error)}`, 'error')
-		}
-
-		if (!data) return
-
-		if ('setCameraPose' in data) {
-			cameraControls.setPose(
-				{
-					position: [data.Position.X, data.Position.Y, data.Position.Z],
-					lookAt: [data.LookAt.X, data.LookAt.Y, data.LookAt.Z],
-				},
-				data.Animate
-			)
-
-			return
-		}
-
-		if ('geometries' in data) {
-			return drawGeometries(data.geometries, data.colors, data.parent)
-		}
-
-		if ('geometry' in data) {
-			return drawGeometry(data.geometry, data.color)
-		}
-
-		if ('frames' in data) {
-			return drawFrames(data.frames)
-		}
-
-		if ('Knots' in data) {
-			return drawNurbs(data, data.Color)
-		}
-
-		if ('remove' in data) {
-			return remove(data.names)
-		}
-
-		if ('removeAll' in data) {
-			return removeAll()
-		}
+		invalidate()
 	}
 
 	const connect = () => {
