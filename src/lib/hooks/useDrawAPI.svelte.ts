@@ -582,6 +582,8 @@ export const provideDrawAPI = () => {
 		let operation = 'UNKNOWN'
 		let requestID = ''
 
+		console.log(event)
+
 		try {
 			if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
 				const reader = await new Float32Reader().init(event.data)
@@ -654,6 +656,7 @@ export const provideDrawAPI = () => {
 
 			sendResponse({ code: 200, requestID, message: `${operation} succeeded.` })
 		} catch (error) {
+			logs.add(`${error}`, 'error')
 			sendResponse({
 				code: 500,
 				requestID,
