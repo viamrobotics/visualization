@@ -1,0 +1,64 @@
+import { get, set } from 'idb-keyval'
+
+interface Dimensions {
+	width: number
+	height: number
+}
+
+interface Context {
+	readonly current: Dimensions
+	readonly isLoaded: boolean
+	observe: (target: HTMLElement) => void
+}
+
+const DEFAULT_DIMENSIONS: Dimensions = { width: 240, height: 320 }
+
+export const useResizable = (name: string): Context => {
+	const key = `${name}-resizable`
+
+	let dimensions = $state<Dimensions>(DEFAULT_DIMENSIONS)
+	let loaded = $state(false)
+	let observer: ResizeObserver | undefined
+
+	get(key).then((saved: Dimensions | undefined) => {
+		if (saved) {
+			dimensions = saved
+		}
+		loaded = true
+	})
+
+	const observe = (target: HTMLElement) => {
+		// Disconnect previous observer if any
+		observer?.disconnect()
+
+		observer = new ResizeObserver((entries) => {
+			const entry = entries[0]
+			if (!entry) return
+
+			const next = {
+				width: entry.contentRect.width,
+				height: entry.contentRect.height,
+			}
+
+			set(key, next)
+		})
+
+		observer.observe(target)
+	}
+
+	$effect(() => {
+		return () => {
+			observer?.disconnect()
+		}
+	})
+
+	return {
+		get current() {
+			return dimensions
+		},
+		get isLoaded() {
+			return loaded
+		},
+		observe,
+	}
+}

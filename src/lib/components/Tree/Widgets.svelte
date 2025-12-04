@@ -6,10 +6,7 @@
 	const settings = useSettings()
 </script>
 
-<Drawer
-	name="Widgets"
-	defaultOpen
->
+<Drawer name="Widgets">
 	<div class="flex h-24 flex-col gap-2 overflow-scroll p-3">
 		<div class="flex items-center justify-between gap-4 py-2">
 			Arm positions
