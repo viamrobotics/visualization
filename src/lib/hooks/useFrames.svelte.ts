@@ -125,10 +125,12 @@ export const provideFrames = (partID: () => string) => {
 			...fragmentFrames,
 		}
 
+		// Remove frames that have just been deleted locally for optimistic updates
 		for (const name of configUnsetFrameNames) {
 			delete result[name]
 		}
 
+		// Remove frames that have been removed by fragment overrides
 		for (const name of fragmentUnsetFrameNames) {
 			delete result[name]
 		}
