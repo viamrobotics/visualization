@@ -1,4 +1,4 @@
-import type { Geometry } from '@viamrobotics/sdk'
+import type { Capsule, Geometry, RectangularPrism, Sphere } from '@viamrobotics/sdk'
 import { createPose } from './transform'
 import type { Frame } from './frame'
 
@@ -45,5 +45,26 @@ export const createGeometryFromFrame = (frame: Partial<Frame>) => {
 				lengthMm: frame.geometry.l,
 			},
 		})
+	}
+}
+
+export const createBox = (box?: RectangularPrism) => {
+	return {
+		x: (box?.dimsMm?.x ?? 0) * 0.001,
+		y: (box?.dimsMm?.y ?? 0) * 0.001,
+		z: (box?.dimsMm?.z ?? 0) * 0.001,
+	}
+}
+
+export const createCapsule = (capsule?: Capsule) => {
+	return {
+		r: (capsule?.radiusMm ?? 0) * 0.001,
+		l: (capsule?.lengthMm ?? 0) * 0.001,
+	}
+}
+
+export const createSphere = (sphere?: Sphere) => {
+	return {
+		r: (sphere?.radiusMm ?? 0) * 0.001,
 	}
 }

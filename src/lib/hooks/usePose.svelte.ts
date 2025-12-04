@@ -12,7 +12,7 @@ import { useLogs } from './useLogs.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
-export const usePose = (name: () => string, parent: () => string | undefined) => {
+export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
@@ -22,7 +22,7 @@ export const usePose = (name: () => string, parent: () => string | undefined) =>
 	const resourceByName = useResourceByName()
 	const { addQueryToRefetch } = useRefetchPoses()
 
-	const resource = $derived(resourceByName.current[currentName])
+	const resource = $derived(currentName ? resourceByName.current[currentName] : undefined)
 	const parentResource = $derived(currentParent ? resourceByName.current[currentParent] : undefined)
 	const environment = useEnvironment()
 	const frames = useFrames()

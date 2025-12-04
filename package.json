@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "0.19.0",
+	"version": "0.19.1",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -113,7 +113,7 @@
 	},
 	"packageManager": "pnpm@10.14.0",
 	"engines": {
-		"node": ">=22.0.0"
+		"node": ">=22.12.0"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -141,6 +141,7 @@
 		"!dist/**/*.spec.*"
 	],
 	"dependencies": {
-		"@tanstack/svelte-query-devtools": "^6.0.2"
+		"@tanstack/svelte-query-devtools": "^6.0.2",
+		"uuid-tool": "^2.0.3"
 	}
 }

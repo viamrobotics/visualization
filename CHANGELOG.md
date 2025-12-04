@@ -1,5 +1,12 @@
 # motion-tools
 
+## 0.19.1
+
+### Patch Changes
+
+- 41b18bd: make 3d model map creation more resiliant
+- 3fa205f: Add roundtrip comms for draw API
+
 ## 0.19.0
 
 ### Minor Changes
