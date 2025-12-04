@@ -25,7 +25,6 @@
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	const { ...rest } = $props()
@@ -37,7 +36,6 @@
 	const partConfig = usePartConfig()
 	const selectedObject = useSelectedObject()
 	const selectedObject3d = useSelectedObject3d()
-	const weblab = useWeblabs()
 	const environment = useEnvironment()
 	const object = $derived(focusedObject.current ?? selectedObject.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
@@ -405,7 +403,8 @@
 						dimsMm: { x: number; y: number; z: number }
 					}}
 					<div>
-						<strong class="font-semibold">dimensions (box)</strong>
+						<strong class="font-semibold"> dimensions </strong>
+						<span class="text-subtle-2">(box)</span>
 						<div class="flex items-center gap-2">
 							{@render GeometryAttribute({
 								label: 'x',
@@ -437,7 +436,8 @@
 						lengthMm: number
 					}}
 					<div>
-						<strong class="font-semibold">dimensions (capsule)</strong>
+						<strong class="font-semibold">dimensions</strong>
+						<span class="text-subtle-2">(capsule)</span>
 						<div class="flex items-center gap-2">
 							{@render GeometryAttribute({
 								label: 'r',
@@ -459,7 +459,8 @@
 				{#if geometryType === 'sphere'}
 					{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
 					<div>
-						<strong class="font-semibold">dimensions (sphere)</strong>
+						<strong class="font-semibold">dimensions</strong>
+						<span class="text-subtle-2">(sphere)</span>
 						<div class="flex items-center gap-2">
 							{@render GeometryAttribute({
 								label: 'r',
