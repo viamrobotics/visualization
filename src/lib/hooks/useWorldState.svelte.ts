@@ -10,18 +10,18 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform } from '$lib/WorldObject.svelte'
+import { fromTransform, parseMetadata } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
 import { getContext, setContext } from 'svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { createPose } from '$lib/transform'
+import { trait, type ConfigurableTrait } from 'koota'
 
 const key = Symbol('world-state-context')
 
-interface Context {
-	names: ResourceName[]
-	current: Record<string, ReturnType<typeof createWorldState>>
-}
+interface Context {}
 
 const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
@@ -58,17 +58,11 @@ export const useWorldStates = () => {
 }
 
 export const useWorldState = (resourceName: () => string) => {
-	const worldStates = useWorldStates()
-	const name = $derived(resourceName())
-
-	return {
-		get current() {
-			return worldStates.current[name]
-		},
-	}
+	return {}
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
+	const world = useWorld()
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
 	let initialized = $state(false)
@@ -76,6 +70,44 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 	const transformsList = $derived.by(() => Object.values(transforms))
 	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
+
+	$effect(() => {
+		for (const [uuid, transform] of Object.entries(transforms)) {
+			const metadata = parseMetadata(transform.metadata?.fields)
+
+			const entityTraits: ConfigurableTrait[] = [
+				traits.UUID(uuid),
+				traits.Name(transform.referenceFrame),
+				traits.Parent(transform.poseInObserverFrame?.referenceFrame),
+				traits.Pose(transform.poseInObserverFrame?.pose),
+			]
+
+			if (metadata.color) {
+				entityTraits.push(traits.Color(metadata.color))
+			}
+
+			if (metadata.colors) {
+				entityTraits.push(traits.VertexColors(metadata.colors))
+			}
+
+			if (metadata.shape === 'line' && metadata.points) {
+				entityTraits.push(
+					traits.LineGeometry(metadata.points),
+					traits.DottedLineColor(metadata.lineDotColor)
+				)
+			}
+
+			if (metadata.gltf) {
+				entityTraits.push(traits.GLTF(metadata.gltf))
+			}
+
+			if (metadata.shape === 'arrow') {
+				entityTraits.push(traits.Arrow)
+			}
+
+			world.spawn(...entityTraits)
+		}
+	})
 
 	let pendingEvents: ProcessMessage['events'] = []
 	let flushScheduled = false
@@ -192,9 +224,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	return {
 		get name() {
 			return resourceName()
-		},
-		get transforms() {
-			return transformsList
 		},
 		get worldObjects() {
 			return worldObjectsList

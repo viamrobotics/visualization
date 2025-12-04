@@ -34,14 +34,14 @@
 	const { ...rest } = $props()
 
 	const resourceByName = useResourceByName()
-	const focusedEntity = useFocusedEntity()
-	const focusedObject3d = useFocusedObject3d()
 	const frames = useFrames()
 	const partConfig = usePartConfig()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 	const weblab = useWeblabs()
 	const environment = useEnvironment()
+	const focusedEntity = useFocusedEntity()
+	const focusedObject3d = useFocusedObject3d()
 	const entity = $derived(focusedEntity.current ?? selectedEntity.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
@@ -53,9 +53,12 @@
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
-	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 
-	const subtype = $derived(name.current ? resourceByName.current[name.current] : undefined)
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const isFrameNode = $derived(!!framesAPI.current)
+	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
+
+	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $state<'box' | 'sphere' | 'capsule' | 'none'>(
 		(() => {
@@ -67,8 +70,7 @@
 	)
 
 	const referenceFrameOptions = $derived(frames.getParentFrameOptions(name.current ?? ''))
-	const isFrameNode = $derived(framesAPI.current)
-	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
+
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
@@ -247,7 +249,7 @@
 					<Icon name="drag" />
 				</button>
 				<strong>{name.current}</strong>
-				{subtype?.subtype}
+				<span class="text-subtle-2">{resourceName?.subtype}</span>
 			</div>
 		</div>
 
@@ -435,7 +437,10 @@
 				{@const GeometryAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 				{#if box.current}
 					<div>
-						<strong class="font-semibold">dimensions (box)</strong>
+						<strong class="font-semibold">
+							dimensions
+							<span class="text-subtle-2">(box)</span>
+						</strong>
 						<div class="flex items-center gap-2">
 							{@render GeometryAttribute({
 								label: 'x',
@@ -462,7 +467,10 @@
 					</div>
 				{:else if capsule.current}
 					<div>
-						<strong class="font-semibold">dimensions (capsule)</strong>
+						<strong class="font-semibold">
+							dimensions
+							<span class="text-subtle-2">(capsule)</span>
+						</strong>
 						<div class="flex items-center gap-2">
 							{@render GeometryAttribute({
 								label: 'r',
