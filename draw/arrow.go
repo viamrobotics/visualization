@@ -45,7 +45,7 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 		option(config)
 	}
 
-	if len(config.colors) != 1 && len(config.colors) != len(poses) {
+	if !(len(config.colors) == 1 || len(config.colors) == len(poses)) {
 		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-arrow colors), got %d", len(poses), len(config.colors))
 	}
 

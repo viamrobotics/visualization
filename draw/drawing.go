@@ -10,6 +10,7 @@ import (
 // Shape represents a drawable geometric shape or object in 3D space. A Shape contains
 // exactly one geometry type (Arrows, Line, Points, Model, or Nurbs), positioned at Center with a Label.
 type Shape struct {
+	drawShapeConfig
 	Center spatialmath.Pose
 	Label  string
 	Arrows *Arrows
@@ -42,9 +43,18 @@ func newDrawShapeConfig() *drawShapeConfig {
 // drawShapeOption is a function that configures a draw shape configuration
 type drawShapeOption func(*drawShapeConfig)
 
+func (config *drawShapeConfig) clear() {
+	config.arrows = nil
+	config.line = nil
+	config.points = nil
+	config.model = nil
+	config.nurbs = nil
+}
+
 // WithArrows creates a shape option that configures the shape as an Arrows geometry.
 func WithArrows(arrows Arrows) drawShapeOption {
 	return func(config *drawShapeConfig) {
+		config.clear()
 		config.arrows = &arrows
 	}
 }
@@ -52,6 +62,7 @@ func WithArrows(arrows Arrows) drawShapeOption {
 // WithLine creates a shape option that configures the shape as a Line geometry.
 func WithLine(line Line) drawShapeOption {
 	return func(config *drawShapeConfig) {
+		config.clear()
 		config.line = &line
 	}
 }
@@ -59,6 +70,7 @@ func WithLine(line Line) drawShapeOption {
 // WithPoints creates a shape option that configures the shape as a Points geometry.
 func WithPoints(points Points) drawShapeOption {
 	return func(config *drawShapeConfig) {
+		config.clear()
 		config.points = &points
 	}
 }
@@ -66,6 +78,7 @@ func WithPoints(points Points) drawShapeOption {
 // WithModel creates a shape option that configures the shape as a 3D Model geometry.
 func WithModel(model Model) drawShapeOption {
 	return func(config *drawShapeConfig) {
+		config.clear()
 		config.model = &model
 	}
 }
@@ -73,6 +86,7 @@ func WithModel(model Model) drawShapeOption {
 // WithNurbs creates a shape option that configures the shape as a NURBS curve geometry.
 func WithNurbs(nurbs Nurbs) drawShapeOption {
 	return func(config *drawShapeConfig) {
+		config.clear()
 		config.nurbs = &nurbs
 	}
 }
@@ -94,10 +108,10 @@ func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Sha
 	}
 }
 
-// toProto converts the shape to a drawv1.Shape message
+// ToProto converts the shape to a drawv1.Shape message
 //
 // Returns the drawv1.Shape message
-func (shape Shape) toProto() *drawv1.Shape {
+func (shape Shape) ToProto() *drawv1.Shape {
 	switch {
 	case shape.Arrows != nil:
 		return &drawv1.Shape{
@@ -156,12 +170,12 @@ func (shape Shape) toProto() *drawv1.Shape {
 						Url: *asset.URLContent,
 					},
 				})
-			case asset.BinaryContent != nil:
+			case asset.DataContent != nil:
 				proto.Assets = append(proto.Assets, &drawv1.ModelAsset{
 					MimeType:  asset.MimeType,
 					SizeBytes: asset.SizeBytes,
-					Content: &drawv1.ModelAsset_Binary{
-						Binary: *asset.BinaryContent,
+					Content: &drawv1.ModelAsset_Data{
+						Data: *asset.DataContent,
 					},
 				})
 			default:
@@ -221,14 +235,14 @@ func NewDrawing(
 	return &Drawing{Name: name, Parent: parent, Pose: pose, Shape: shape, Metadata: metadata}
 }
 
-// toProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
-func (drawing Drawing) toProto() *drawv1.Drawing {
+// ToProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
+func (drawing Drawing) ToProto() *drawv1.Drawing {
 	pose := poseInFrameToProtobuf(drawing.Pose, drawing.Parent)
 	uuidBytes := uuid.New()
 	return &drawv1.Drawing{
 		ReferenceFrame:      drawing.Name,
 		PoseInObserverFrame: pose,
-		PhysicalObject:      drawing.Shape.toProto(),
+		PhysicalObject:      drawing.Shape.ToProto(),
 		Uuid:                uuidBytes[:],
 		Metadata:            drawing.Metadata.ToProto(),
 	}

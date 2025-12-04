@@ -66,7 +66,9 @@ func getFrameColor(frameName string, colors map[string]Color, frameSystem *refer
 	if frame != nil {
 		parent, err := frameSystem.Parent(frame)
 		if err == nil && parent != nil {
-			return getFrameColor(parent.Name(), colors, frameSystem)
+			inheritedColor := getFrameColor(parent.Name(), colors, frameSystem)
+			colors[frameName] = inheritedColor
+			return inheritedColor
 		}
 	}
 

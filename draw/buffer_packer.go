@@ -9,16 +9,20 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
+type BufferPackedEntry interface {
+	~float32 | ~uint8
+}
+
 // BufferPacker provides efficient direct buffer writing for numeric data.
 // The type parameter T must be either float32 or uint8.
-type BufferPacker[T any] struct {
+type BufferPacker[T BufferPackedEntry] struct {
 	buffer []T
 	offset int
 }
 
 // NewBufferPacker creates a new buffer packer with pre-allocated capacity
 // for elementCount items, each with fieldsPerElement fields.
-func NewBufferPacker[T any](elementCount, fieldsPerElement int) *BufferPacker[T] {
+func NewBufferPacker[T BufferPackedEntry](elementCount, fieldsPerElement int) *BufferPacker[T] {
 	return &BufferPacker[T]{
 		buffer: make([]T, elementCount*fieldsPerElement),
 		offset: 0,
