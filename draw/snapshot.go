@@ -49,7 +49,7 @@ func (snapshot *Snapshot) SceneMetadata() SceneMetadata {
 func (snapshot *Snapshot) ToProto() *drawv1.Snapshot {
 	drawingProtos := make([]*drawv1.Drawing, len(snapshot.drawings))
 	for i, drawing := range snapshot.drawings {
-		drawingProtos[i] = drawing.toProto()
+		drawingProtos[i] = drawing.ToProto()
 	}
 
 	return &drawv1.Snapshot{
