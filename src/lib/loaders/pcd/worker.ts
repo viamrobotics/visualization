@@ -5,7 +5,7 @@ const loader = new PCDLoader()
 export interface SuccessMessage {
 	id: number
 	positions: Float32Array<ArrayBuffer>
-	colors: Float32Array | null
+	colors: Float32Array<ArrayBuffer> | null
 }
 
 export type Message =

@@ -10,7 +10,7 @@ help:
 	@echo '  setup          - Set up development environment (install pnpm, bun, dependencies)'
 	@echo '  up             - Start development server'
 	@echo '  proto          - Generate protobuf code'
-	@echo '  docs           - Generate API documentation for Go packages'
+	@echo '  docs           - Generate documentation'
 	@echo '  help           - Show this help message'
 
 .PHONY: setup
