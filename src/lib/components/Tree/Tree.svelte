@@ -24,14 +24,20 @@
 
 	let { rootNode, selections, onSelectionChange, onDragStart, onDragEnd }: Props = $props()
 
-	const collection = tree.collection<TreeNode>({
-		nodeToValue: (node) => `${node.entity}`,
-		nodeToString: (node) => node.entity.get(traits.Name) ?? '',
-		rootNode,
-	})
+	const collection = $derived(
+		tree.collection<TreeNode>({
+			nodeToValue: (node) => node.entity.get(traits.UUID) ?? '',
+			nodeToString: (node) => node.entity.get(traits.Name) ?? '',
+			rootNode,
+		})
+	)
 
+	const id = $props.id()
 	const service = useMachine(tree.machine, {
-		collection,
+		id,
+		get collection() {
+			return collection
+		},
 		onSelectionChange(details) {
 			onSelectionChange?.(details)
 		},

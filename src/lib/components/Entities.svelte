@@ -9,23 +9,10 @@
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
 	import { determinePose } from '$lib/WorldObject.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
-	import type { Pose as ViamPose } from '@viamrobotics/sdk'
-	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { traits, useQuery } from '$lib/ecs'
-	import { Or, type Entity } from 'koota'
+	import { Or } from 'koota'
 
 	const batchedArrow = useArrows()
-	const weblabs = useWeblabs()
-
-	const weblabedDeterminePose = (object: Entity, pose: ViamPose | undefined) => {
-		if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME)) {
-			return determinePose(object, pose)
-		}
-
-		return pose ?? object.get(traits.Pose)
-	}
-
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)
@@ -61,9 +48,8 @@
 			{parent}
 		>
 			{#snippet children({ pose })}
-				{@const framePose = weblabedDeterminePose(entity, pose)}
 				<Frame
-					pose={framePose}
+					pose={determinePose(entity, pose)}
 					{entity}
 				>
 					<PortalTarget id={entity.get(traits.Name)} />

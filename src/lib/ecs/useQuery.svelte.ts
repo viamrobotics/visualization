@@ -18,13 +18,22 @@ export function useQuery<T extends QueryParameter[]>(
 	$effect(() => {
 		version
 
+		let id: number | undefined
+
+		const cb = () => {
+			entities = world.query(hash)
+			id = undefined
+		}
+
 		return untrack(() => {
 			const unsubAdd = world.onQueryAdd(hash, () => {
-				entities = world.query(hash).sort()
+				if (id) return
+				id = window.setTimeout(cb)
 			})
 
 			const unsubRemove = world.onQueryRemove(hash, () => {
-				entities = world.query(hash).sort()
+				if (id) return
+				id = window.setTimeout(cb)
 			})
 
 			// Compare the initial version to the current version to
@@ -32,7 +41,7 @@ export function useQuery<T extends QueryParameter[]>(
 			const query = world[internal].queriesHashMap.get(hash)
 
 			if (query?.version !== initialQueryVersion) {
-				entities = world.query(hash).sort()
+				entities = world.query(hash)
 			}
 
 			return () => {

@@ -10,33 +10,33 @@ export interface TreeNode {
  * Creates a tree representing parent child / relationships from a set of frames.
  */
 export const buildTreeNodes = (entities: QueryResult): TreeNode[] => {
-	const nodeMap = new Map<Entity, TreeNode>()
-	const rootNodes = []
+	const nodeMap = new Map<string, TreeNode>()
+	const rootNodes: TreeNode[] = []
+	const childNodes: TreeNode[] = []
 
 	for (const entity of entities) {
-		const node: TreeNode = {
-			entity,
-			children: [],
-		}
-
-		nodeMap.set(entity, node)
-
 		const parent = entity.get(traits.Parent)
+		const name = entity.get(traits.Name) ?? ''
+		const node: TreeNode = { entity }
+
+		nodeMap.set(name, node)
 
 		if (!parent || parent === 'world') {
 			rootNodes.push(node)
+		} else {
+			childNodes.push(node)
 		}
 	}
 
-	for (const entity of entities) {
-		const parent = entity.get(traits.Parent)
+	for (const node of childNodes) {
+		const parent = node.entity.get(traits.Parent)
 
-		if (parent && parent !== 'world') {
-			const parentNode = nodeMap.get(entity)
-			const child = nodeMap.get(entity)
-			if (parentNode && child) {
+		if (parent) {
+			const parentNode = nodeMap.get(parent)
+
+			if (parentNode) {
 				parentNode.children ??= []
-				parentNode.children?.push(child)
+				parentNode.children?.push(node)
 			}
 		}
 	}

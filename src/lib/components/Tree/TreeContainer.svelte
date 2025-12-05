@@ -1,9 +1,8 @@
 <script lang="ts">
 	import Tree from './Tree.svelte'
-	import { buildTreeNodes, type TreeNode } from './buildTree'
+	import type { TreeNode } from './buildTree'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
-	import { isEqual } from 'lodash-es'
 	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
@@ -12,11 +11,8 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import WeblabActive from '../weblab/WeblabActive.svelte'
-	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
-	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { IsExcluded, type Entity } from 'koota'
-	import { untrack } from 'svelte'
+	import { traits, useWorld } from '$lib/ecs'
+	import { cacheQuery, IsExcluded, type Entity } from 'koota'
 
 	const { ...rest } = $props()
 
@@ -28,7 +24,7 @@
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
-	const entities = useQuery(traits.Name)
+	// const entities = useQuery(traits.Name)
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
@@ -37,23 +33,70 @@
 		children: [],
 	})
 
-	// world.onAdd(traits.Name, (entity) => {
-	// 	const parent = entity.get(traits.Parent)
+	const nodeMap: Record<string, TreeNode> = {}
+	const looseNodeMap: Record<string, TreeNode[] | undefined> = {}
 
-	// 	if (!parent || parent === 'world') {
-	// 		untrack(() => {
-	// 			console.log(entity.has(traits.DrawAPI))
-	// 			rootNode.children?.push({ entity })
-	// 		})
-	// 	}
-	// })
+	const hash = cacheQuery(traits.Name)
+	world.onQueryAdd(hash, (entity) => {
+		const parent = entity.get(traits.Parent)
+		const name = entity.get(traits.Name) ?? ''
+		const node: TreeNode = { entity }
 
-	const nodes = $derived(buildTreeNodes(entities.current))
-
-	$effect.pre(() => {
-		if (!isEqual(rootNode.children, nodes)) {
-			rootNode.children = nodes
+		const looseNodes = looseNodeMap[name]
+		if (looseNodes) {
+			node.children = []
+			node.children.push(...looseNodes)
+			looseNodeMap[name] = undefined
 		}
+
+		nodeMap[name] = node
+
+		if (!parent || parent === 'world') {
+			rootNode.children?.push(node)
+			return
+		}
+
+		const parentNode = nodeMap[parent]
+
+		if (parentNode) {
+			parentNode.children ??= []
+			parentNode.children.push(node)
+		} else {
+			looseNodeMap[parent] ??= []
+			looseNodeMap[parent].push(node)
+		}
+	})
+
+	const traverse = (
+		children: TreeNode[],
+		entity: Entity,
+		cb: (children: TreeNode[], index: number) => void
+	) => {
+		for (let i = 0, l = children.length; i < l; i++) {
+			let child = children[i]
+
+			if (entity === child.entity) {
+				cb(children, i)
+
+				return
+			} else {
+				const c = children[i].children
+
+				if (c) traverse(c, entity, cb)
+			}
+		}
+	}
+
+	world.onChange(traits.Name, (entity) => {
+		traverse(rootNode.children ?? [], entity, (children, i) => {
+			children[i].entity = entity
+		})
+	})
+
+	world.onQueryRemove(hash, (entity) => {
+		traverse(rootNode.children ?? [], entity, (children, i) => {
+			children.splice(i, 1)
+		})
 	})
 </script>
 
@@ -62,24 +105,20 @@
 	style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
 	{...rest}
 >
-	{#key rootNode}
-		<Tree
-			{rootNode}
-			selections={selectedEntity.current ? [`${selectedEntity.current}`] : []}
-			onSelectionChange={(event) => {
-				const value = event.selectedValue[0]
-				selectedEntity.set(value ? (Number(value) as Entity) : undefined)
-			}}
-			onDragStart={draggable.onDragStart}
-			onDragEnd={draggable.onDragEnd}
-		/>
-	{/key}
+	<Tree
+		{rootNode}
+		selections={selectedEntity.current ? [`${selectedEntity.current}`] : []}
+		onSelectionChange={(event) => {
+			const value = event.selectedValue[0]
+			selectedEntity.set(value ? (Number(value) as Entity) : undefined)
+		}}
+		onDragStart={draggable.onDragStart}
+		onDragEnd={draggable.onDragEnd}
+	/>
 
-	<WeblabActive experiment={WEBLABS_EXPERIMENTS.MOTION_TOOLS_EDIT_FRAME}>
-		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
-			<AddFrames />
-		{/if}
-	</WeblabActive>
+	{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
+		<AddFrames />
+	{/if}
 
 	<Logs />
 	<Settings />
