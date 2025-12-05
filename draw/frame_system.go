@@ -1,6 +1,7 @@
 package draw
 
 import (
+	"fmt"
 	"maps"
 	"slices"
 
@@ -32,6 +33,7 @@ func DrawFrameSystemGeometries(
 	for _, frameName := range slices.Sorted(maps.Keys(frameMap)) {
 		geometries := frameMap[frameName]
 		color := getFrameColor(frameName, colors, frameSystem)
+		fmt.Printf("frameName: %s, color: %v\n", frameName, color)
 
 		for _, geometry := range geometries.Geometries() {
 			label := geometry.Label()
@@ -42,7 +44,7 @@ func DrawFrameSystemGeometries(
 				return nil, err
 			}
 
-			transform, err := NewTransform(uuid.New().String(), label, referenceframe.World, pose, geometry, metadataStruct)
+			transform, err := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
 			if err != nil {
 				return nil, err
 			}
