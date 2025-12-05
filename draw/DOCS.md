@@ -20,8 +20,9 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [type Arrows](<#Arrows>)
   - [func NewArrows\(poses \[\]spatialmath.Pose, options ...drawArrowsOption\) \(\*Arrows, error\)](<#NewArrows>)
   - [func \(arrows Arrows\) Draw\(name string, parent string, pose spatialmath.Pose\) \*Drawing](<#Arrows.Draw>)
+- [type BufferPackedEntry](<#BufferPackedEntry>)
 - [type BufferPacker](<#BufferPacker>)
-  - [func NewBufferPacker\[T any\]\(elementCount, fieldsPerElement int\) \*BufferPacker\[T\]](<#NewBufferPacker>)
+  - [func NewBufferPacker\[T BufferPackedEntry\]\(elementCount, fieldsPerElement int\) \*BufferPacker\[T\]](<#NewBufferPacker>)
   - [func \(packer \*BufferPacker\[T\]\) Read\(\) \[\]byte](<#BufferPacker[T].Read>)
   - [func \(packer \*BufferPacker\[T\]\) Write\(values ...T\)](<#BufferPacker[T].Write>)
 - [type Color](<#Color>)
@@ -39,6 +40,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [type Drawable](<#Drawable>)
 - [type Drawing](<#Drawing>)
   - [func NewDrawing\(name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata\) \*Drawing](<#NewDrawing>)
+  - [func \(drawing Drawing\) ToProto\(\) \*drawv1.Drawing](<#Drawing.ToProto>)
 - [type Line](<#Line>)
   - [func NewLine\(positions \[\]r3.Vector, options ...drawLineOption\) \(\*Line, error\)](<#NewLine>)
   - [func \(line Line\) Draw\(name string, parent string, pose spatialmath.Pose\) \*Drawing](<#Line.Draw>)
@@ -66,6 +68,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func \(metadata \*SceneMetadata\) Validate\(\) error](<#SceneMetadata.Validate>)
 - [type Shape](<#Shape>)
   - [func NewShape\(center spatialmath.Pose, label string, option drawShapeOption\) Shape](<#NewShape>)
+  - [func \(shape Shape\) ToProto\(\) \*drawv1.Shape](<#Shape.ToProto>)
 
 
 ## Variables
@@ -164,7 +167,7 @@ var (
 ```
 
 <a name="DrawFrameSystemGeometries"></a>
-## func [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L18-L22>)
+## func [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L19-L23>)
 
 ```go
 func DrawFrameSystemGeometries(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map[string]Color) (*drawv1.Transforms, error)
@@ -251,28 +254,39 @@ func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Dr
 
 Draw creates a Drawing from this Arrows object, positioned at the given pose within the specified reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 
+<a name="BufferPackedEntry"></a>
+## type [BufferPackedEntry](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L12-L14>)
+
+
+
+```go
+type BufferPackedEntry interface {
+    // contains filtered or unexported methods
+}
+```
+
 <a name="BufferPacker"></a>
-## type [BufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L14-L17>)
+## type [BufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L18-L21>)
 
 BufferPacker provides efficient direct buffer writing for numeric data. The type parameter T must be either float32 or uint8.
 
 ```go
-type BufferPacker[T any] struct {
+type BufferPacker[T BufferPackedEntry] struct {
     // contains filtered or unexported fields
 }
 ```
 
 <a name="NewBufferPacker"></a>
-### func [NewBufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L21>)
+### func [NewBufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L25>)
 
 ```go
-func NewBufferPacker[T any](elementCount, fieldsPerElement int) *BufferPacker[T]
+func NewBufferPacker[T BufferPackedEntry](elementCount, fieldsPerElement int) *BufferPacker[T]
 ```
 
 NewBufferPacker creates a new buffer packer with pre\-allocated capacity for elementCount items, each with fieldsPerElement fields.
 
 <a name="BufferPacker[T].Read"></a>
-### func \(\*BufferPacker\[T\]\) [Read](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L36>)
+### func \(\*BufferPacker\[T\]\) [Read](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L40>)
 
 ```go
 func (packer *BufferPacker[T]) Read() []byte
@@ -281,7 +295,7 @@ func (packer *BufferPacker[T]) Read() []byte
 Read returns the packed buffer as little\-endian bytes. For uint8 buffers, returns the buffer directly. For float32 buffers, converts each value to its little\-endian byte representation.
 
 <a name="BufferPacker[T].Write"></a>
-### func \(\*BufferPacker\[T\]\) [Write](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L29>)
+### func \(\*BufferPacker\[T\]\) [Write](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L33>)
 
 ```go
 func (packer *BufferPacker[T]) Write(values ...T)
@@ -414,7 +428,7 @@ func (config *DrawColorsConfig) SetColors(colors []Color)
 SetColors replaces the current colors with the provided list.
 
 <a name="Drawable"></a>
-## type [Drawable](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L208-L211>)
+## type [Drawable](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L222-L225>)
 
 Drawable is an interface for types that can create a Drawing representation of themselves.
 
@@ -426,7 +440,7 @@ type Drawable interface {
 ```
 
 <a name="Drawing"></a>
-## type [Drawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L199-L205>)
+## type [Drawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L213-L219>)
 
 Drawing represents a complete drawable object in 3D space, consisting of a Shape positioned at a Pose within a reference frame \(Parent\), along with associated Metadata like colors.
 
@@ -441,13 +455,22 @@ type Drawing struct {
 ```
 
 <a name="NewDrawing"></a>
-### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L214-L220>)
+### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L228-L234>)
 
 ```go
 func NewDrawing(name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata) *Drawing
 ```
 
 NewDrawing creates a new Drawing with the specified name, parent reference frame, pose, shape, and metadata.
+
+<a name="Drawing.ToProto"></a>
+### func \(Drawing\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L239>)
+
+```go
+func (drawing Drawing) ToProto() *drawv1.Drawing
+```
+
+ToProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
 
 <a name="Line"></a>
 ## type [Line](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L17-L32>)
@@ -483,7 +506,7 @@ func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error)
 NewLine creates a new Line from the given vertex positions and optional configuration. Returns an error if there are fewer than 2 positions or if the point size is non\-positive.
 
 <a name="Line.Draw"></a>
-### func \(Line\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L110-L114>)
+### func \(Line\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L114-L118>)
 
 ```go
 func (line Line) Draw(name string, parent string, pose spatialmath.Pose) *Drawing
@@ -492,7 +515,7 @@ func (line Line) Draw(name string, parent string, pose spatialmath.Pose) *Drawin
 Draw creates a Drawing from this Line object, positioned at the given pose within the specified reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 
 <a name="Metadata"></a>
-## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L238-L240>)
+## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L252-L254>)
 
 Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 
@@ -503,7 +526,7 @@ type Metadata struct {
 ```
 
 <a name="NewMetadata"></a>
-### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L263>)
+### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L277>)
 
 ```go
 func NewMetadata(options ...drawMetadataOption) Metadata
@@ -512,7 +535,7 @@ func NewMetadata(options ...drawMetadataOption) Metadata
 NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 
 <a name="Metadata.ToProto"></a>
-### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L273>)
+### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L287>)
 
 ```go
 func (metadata Metadata) ToProto() *drawv1.Metadata
@@ -563,10 +586,10 @@ ModelAsset represents a 3D model asset that can be loaded from either a URL or b
 
 ```go
 type ModelAsset struct {
-    MimeType      string
-    SizeBytes     *uint64
-    URLContent    *string
-    BinaryContent *[]byte
+    MimeType    string
+    SizeBytes   *uint64
+    URLContent  *string
+    DataContent *[]byte
 }
 ```
 
@@ -756,7 +779,7 @@ func (metadata *SceneMetadata) Validate() error
 Validate checks that all scene metadata values are valid. Returns an error if any values are out of acceptable ranges \(e.g., negative sizes\) or invalid enum values.
 
 <a name="Shape"></a>
-## type [Shape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L12-L20>)
+## type [Shape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L12-L21>)
 
 Shape represents a drawable geometric shape or object in 3D space. A Shape contains exactly one geometry type \(Arrows, Line, Points, Model, or Nurbs\), positioned at Center with a Label.
 
@@ -769,16 +792,28 @@ type Shape struct {
     Points *Points
     Model  *Model
     Nurbs  *Nurbs
+    // contains filtered or unexported fields
 }
 ```
 
 <a name="NewShape"></a>
-### func [NewShape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L82>)
+### func [NewShape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L96>)
 
 ```go
 func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Shape
 ```
 
 NewShape creates a new Shape with the given center pose, label, and geometry option. The option must be one of WithArrows, WithLine, WithPoints, WithModel, or WithNurbs.
+
+<a name="Shape.ToProto"></a>
+### func \(Shape\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L114>)
+
+```go
+func (shape Shape) ToProto() *drawv1.Shape
+```
+
+ToProto converts the shape to a drawv1.Shape message
+
+Returns the drawv1.Shape message
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

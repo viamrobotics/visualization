@@ -64,12 +64,20 @@ proto: proto-clean proto-lint proto-format proto-vendor
 	@make proto-gen-ts
 	@echo 'Protobuf code generation complete!'
 
-.PHONY: docs
-docs:
-	@echo 'Generating API documentation...'
-	@if ! command -v gomarkdoc &> /dev/null; then \
-		echo 'gomarkdoc not found. Installing...'; \
-		go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest; \
-	fi
+DRAW_DIR := draw
+DRAW_FILES := $(shell find $(DRAW_DIR) -not -name "DOCS.md")
+
+.PHONY: gomarkdoc
+gomarkdoc:
+	@echo 'Installing gomarkdoc...'
+	@go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+	@echo 'gomarkdoc installed'
+
+draw/DOCS.md: gomarkdoc $(DRAW_FILES)
+	@echo 'Generating Draw API documentation...'
 	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md
-	@echo 'API documentation generated at draw/DOCS.md'
+	@echo 'Draw API documentation generated at draw/DOCS.md'
+
+.PHONY: docs
+docs: draw/DOCS.md
+	@echo 'All documentation generated'
