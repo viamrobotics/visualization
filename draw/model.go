@@ -18,25 +18,25 @@ var (
 // ModelAsset represents a 3D model asset that can be loaded from either a URL or binary data.
 // Common formats include GLB, GLTF, PLY, and PCD files.
 type ModelAsset struct {
-	MimeType      string
-	SizeBytes     *uint64
-	URLContent    *string
-	BinaryContent *[]byte
+	MimeType    string
+	SizeBytes   *uint64
+	URLContent  *string
+	DataContent *[]byte
 }
 
 // drawModelAssetConfig is a configuration for drawing a model asset
 type drawModelAssetConfig struct {
-	sizeBytes     *uint64
-	urlContent    *string
-	binaryContent *[]byte
+	sizeBytes   *uint64
+	urlContent  *string
+	dataContent *[]byte
 }
 
 // newDrawModelAssetConfig creates a new draw model asset configuration
 func newDrawModelAssetConfig() *drawModelAssetConfig {
 	return &drawModelAssetConfig{
-		sizeBytes:     nil,
-		urlContent:    nil,
-		binaryContent: nil,
+		sizeBytes:   nil,
+		urlContent:  nil,
+		dataContent: nil,
 	}
 }
 
@@ -82,9 +82,9 @@ func NewBinaryModelAsset(mimeType string, binaryContent []byte, options ...drawM
 	}
 
 	return &ModelAsset{
-		MimeType:      mimeType,
-		SizeBytes:     config.sizeBytes,
-		BinaryContent: &binaryContent,
+		MimeType:    mimeType,
+		SizeBytes:   config.sizeBytes,
+		DataContent: &binaryContent,
 	}, nil
 }
 
@@ -125,7 +125,7 @@ type drawModelOption func(*drawModelConfig)
 // WithModelAssets creates a model option that adds one or more assets to the model.
 func WithModelAssets(assets ...*ModelAsset) drawModelOption {
 	return func(config *drawModelConfig) {
-		config.assets = append(config.assets, assets...)
+		config.assets = assets
 	}
 }
 
@@ -155,8 +155,8 @@ func NewModel(options ...drawModelOption) (*Model, error) {
 		return nil, fmt.Errorf("model must have at least one asset")
 	}
 
-	if config.scale.X <= 0 || config.scale.Y <= 0 || config.scale.Z <= 0 {
-		return nil, fmt.Errorf("scale must be positive, got %v", config.scale)
+	if config.scale.X == 0 || config.scale.Y == 0 || config.scale.Z == 0 {
+		return nil, fmt.Errorf("scale cannot be zero, got %v", config.scale)
 	}
 
 	return &Model{
