@@ -96,6 +96,10 @@ func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
 		return nil, fmt.Errorf("point size must be greater than 0, got %f", config.pointSize)
 	}
 
+	if config.lineWidth <= 0 {
+		return nil, fmt.Errorf("line width must be greater than 0, got %f", config.lineWidth)
+	}
+
 	return &Line{
 		Positions:  positions,
 		LineWidth:  config.lineWidth,

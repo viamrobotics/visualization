@@ -3,20 +3,16 @@ package client
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 	"net/http"
 	"os"
-	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/golang/geo/r3"
 	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/client/shapes"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -175,227 +171,6 @@ func SetURL(preferredURL string) {
 	url = preferredURL
 }
 
-// DrawGeometry draws a geometry in the visualizer.
-//
-// Labels must be unique within a world. Calling DrawGeometry with labels that
-// already exist will instead update the pose of that geometry. Only poses can be updated,
-// geometries must be cleared if their shape is to change.
-//
-// Parameters:
-//   - geometry: a geometry
-//   - color: a corresponding color
-func DrawGeometry(geometry spatialmath.Geometry, color string) error {
-	data, err := protojson.Marshal(geometry.ToProtobuf())
-	if err != nil {
-		return err
-	}
-
-	finalJSON, err := json.Marshal(map[string]interface{}{
-		"geometry": json.RawMessage(data),
-		"color":    colorutil.NamedColorToHex(color),
-	})
-	if err != nil {
-		return err
-	}
-
-	return postHTTP(finalJSON, "json", "geometry")
-}
-
-// DrawLine draws a line in the visualizer.
-//
-// Parameters:
-//   - label: an identifier string used for reference in the treeview.
-//   - points: a list of poses, each representing a point in the line
-//   - color: An optional color of the line
-//   - dotColor: An optional color for dots for each vertex in the line
-func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor *[3]uint8) error {
-	labelError := isASCIIPrintable(label)
-	if labelError != nil {
-		return labelError
-	}
-
-	labelBytes := []byte(label)
-	labelLen := len(labelBytes)
-
-	nPoints := len(points)
-
-	// total floats:
-	// 1 (type) + 1 (label length) + labelLen + 1 (nPoints) + 3 (default color)
-	// + 3 (default dot color) + 3*nPoints (positions)
-	total := 1 + 1 + labelLen + 1 + 3 + 3 + nPoints*3
-	data := make([]float32, 0, total)
-
-	data = append(data, float32(lineType), float32(labelLen))
-	for _, b := range labelBytes {
-		data = append(data, float32(b))
-	}
-
-	// Set to -1 by default to communicate intentionally no color
-	// Allows users to set default colors in the web app.
-	finalColor := [3]float32{-255., -255., -255.}
-	if color != nil {
-		finalColor[0] = float32(color[0])
-		finalColor[1] = float32(color[1])
-		finalColor[2] = float32(color[2])
-	}
-
-	finalDotColor := [3]float32{-255., -255., -255.}
-	if dotColor != nil {
-		finalDotColor[0] = float32(dotColor[0])
-		finalDotColor[1] = float32(dotColor[1])
-		finalDotColor[2] = float32(dotColor[2])
-	}
-
-	data = append(data,
-		float32(nPoints),
-		finalColor[0]/255.0,
-		finalColor[1]/255.0,
-		finalColor[2]/255.0,
-		finalDotColor[0]/255.0,
-		finalDotColor[1]/255.0,
-		finalDotColor[2]/255.0,
-	)
-
-	for _, pose := range points {
-		point := pose.Point()
-		data = append(data,
-			float32(point.X)/1000.0,
-			float32(point.Y)/1000.0,
-			float32(point.Z)/1000.0,
-		)
-	}
-
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
-		return err
-	}
-
-	return postHTTP(buf.Bytes(), "octet-stream", "line")
-}
-
-// DrawPoints draws a list of points in the visualizer.
-//
-// Parameters:
-//   - label: an identifier string used for reference in the treeview
-//   - points: a list of poses, each representing a point
-//   - colors: Individual point color, optional, and will fallback to defaultColor
-//   - color: an optional fallback color [R, G, B] (0–255); use nil for black
-func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, color *[3]uint8) error {
-	labelError := isASCIIPrintable(label)
-	if labelError != nil {
-		return labelError
-	}
-
-	labelBytes := []byte(label)
-	labelLen := len(labelBytes)
-
-	nPoints := len(points)
-	nColors := len(colors)
-
-	// total floats:
-	// 1 (type) + 1 (label length) + labelLen + 2 (nPoints, nColors) + 3 (default color)
-	// + 3*nPoints (positions) + 3*nColors (colors)
-	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
-	data := make([]float32, 0, total)
-
-	data = append(data, float32(pointsType), float32(labelLen))
-	for _, b := range labelBytes {
-		data = append(data, float32(b))
-	}
-
-	fallbackColor := [3]uint8{0, 0, 0}
-	if color == nil {
-		color = &fallbackColor
-	}
-
-	data = append(data,
-		float32(nPoints),
-		float32(nColors),
-		float32(color[0])/255.0,
-		float32(color[1])/255.0,
-		float32(color[2])/255.0,
-	)
-
-	for _, pose := range points {
-		point := pose.Point()
-		data = append(data,
-			float32(point.X)/1000.0,
-			float32(point.Y)/1000.0,
-			float32(point.Z)/1000.0,
-		)
-	}
-
-	for _, color := range colors {
-		data = append(data,
-			float32(color[0])/255.0,
-			float32(color[1])/255.0,
-			float32(color[2])/255.0,
-		)
-	}
-
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
-		return err
-	}
-
-	return postHTTP(buf.Bytes(), "octet-stream", "points")
-}
-
-// DrawPoses draws a list of poses in the visualizer as arrows.
-//
-// Parameters:
-//   - poses: a list of poses
-//   - colors: Individual arrow color
-//   - arrowHeadAtPose: whether the tip of the cone of the arrow will be at the pose. default is false
-func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) error {
-	nPoses := len(poses)
-	nColors := len(colors)
-	total := 1 + 3 + nPoses*6 + nColors*3
-
-	data := make([]float32, 0, total)
-
-	a := 0.
-	if arrowHeadAtPose {
-		a = 1.
-	}
-
-	// Header
-	data = append(data, float32(posesType), float32(nPoses), float32(nColors), float32(a))
-
-	for _, pose := range poses {
-		point := pose.Point()
-		orientation := pose.Orientation().OrientationVectorDegrees()
-		data = append(data,
-			float32(point.X),
-			float32(point.Y),
-			float32(point.Z),
-			float32(orientation.OX),
-			float32(orientation.OY),
-			float32(orientation.OZ))
-	}
-
-	for _, c := range colors {
-		rgb, err := hexToRGB(c)
-		if err != nil {
-			return err
-		}
-
-		data = append(data,
-			float32(rgb[0])/255.0,
-			float32(rgb[1])/255.0,
-			float32(rgb[2])/255.0,
-		)
-	}
-
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, data)
-	if err != nil {
-		return err
-	}
-
-	return postHTTP(buf.Bytes(), "octet-stream", "poses")
-}
-
 // DrawNurbs draws a nurbs curve in the visualizer.
 //
 // Parameters:
@@ -458,40 +233,6 @@ func RemoveAllSpatialObjects() error {
 	return postHTTP(json, "json", "remove-all")
 }
 
-// SetCameraPose will set the visualizer's camera pose.
-//
-// Parameters:
-//   - position: The camera position
-//   - lookAt: The direction the camera should look at
-//   - animate: Whether or not to animate to this pose
-func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
-	positionM := map[string]interface{}{
-		"X": position.X / 1000.0,
-		"Y": position.Y / 1000.0,
-		"Z": position.Z / 1000.0,
-	}
-
-	lookAtM := map[string]interface{}{
-		"X": lookAt.X / 1000.0,
-		"Y": lookAt.Y / 1000.0,
-		"Z": lookAt.Z / 1000.0,
-	}
-
-	data := map[string]interface{}{
-		"setCameraPose": true,
-		"Position":      positionM,
-		"LookAt":        lookAtM,
-		"Animate":       animate,
-	}
-
-	json, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	return postHTTP(json, "json", "camera")
-}
-
 // DrawGLTF will draw a glTF file in the visualizer.
 //
 // Parameters:
@@ -527,71 +268,6 @@ func DrawGLTF(filePath string) error {
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("HTTP post unsuccessful: %s", resp.Status)
-	}
-
-	return nil
-}
-
-// DrawFrameSystem will draw a frame system in the visualizer.
-//
-// Parameters:
-//   - fs: A frame system
-//   - inputs: Frame system inputs
-func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
-	frameGeomMap, err := referenceframe.FrameSystemGeometries(fs, inputs)
-	if err != nil {
-		return err
-	}
-
-	i := 0
-	// We iterate the map of frame labels in a consistent order. Consider the case where a user
-	// wants to visualize a plan by writing:
-	//
-	// for each `FrameSystemInputs` in the plan {
-	//   RemoveAllSpatialObjects()
-	//   DrawFrameSystem(fs, currentInputs)
-	// }
-	//
-	// In this case, the set of figures in the visualization are the same. With just a few figures
-	// moving from one image to the next. It's distracting to see what's happening when the colors
-	// are changing with each image. Hence sorting on the label names allows us to enforce a
-	// consistent color scheme for each figure when the geometry labels remain the same.
-	for _, geomLabel := range slices.Sorted(maps.Keys(frameGeomMap)) {
-		geoms := frameGeomMap[geomLabel]
-		geometries := geoms.Geometries()
-		colors := make([]string, len(geometries))
-		for j := range geometries {
-			colors[j] = DefaultColorMap[i%len(DefaultColorMap)]
-		}
-		if err = DrawGeometries(geoms, colors); err != nil {
-			return err
-		}
-		i++
-	}
-	return nil
-}
-
-// DrawWorldState will draw a world state in the visualizer.
-//
-// Parameters:
-//   - ws: A world state
-//   - fs: A frame system
-//   - inputs: Frame system inputs
-func DrawWorldState(ws *referenceframe.WorldState, fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
-	geoms, err := ws.ObstaclesInWorldFrame(fs, inputs)
-	if err != nil {
-		return err
-	}
-
-	geometries := geoms.Geometries()
-	cc := &colorChooser{}
-	colors := make([]string, len(geometries))
-	for i := range geometries {
-		colors[i] = cc.next()
-	}
-
-	if err = DrawGeometries(geoms, colors); err != nil {
-		return err
 	}
 
 	return nil

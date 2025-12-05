@@ -1,6 +1,11 @@
 // TODO: replace with types exported from the sdk when created
 
+import type { Transform } from '@viamrobotics/sdk'
 import type { ValueOf } from 'type-fest'
+import { UuidTool } from 'uuid-tool'
+
+import { createPoseFromFrame } from './transform'
+import { createGeometryFromFrame } from './geometry'
 
 type FrameGeometryMap = {
 	none: { type: 'none' }
@@ -52,5 +57,17 @@ export const createFrame = <
 			value: { x: 0, y: 0, z: 1, th: 0 },
 		} as FrameOrientationMap[K],
 		geometry: (geometry ?? { type: 'box', x: 100, y: 100, z: 100 }) as FrameGeometryMap[T],
-	} as Frame<T>
+	} satisfies Frame<T>
+}
+
+export const createTransformFromFrame = (name: string, frame: Partial<Frame>): Transform => {
+	return {
+		uuid: new Uint8Array(UuidTool.toBytes(UuidTool.newUuid())),
+		referenceFrame: name,
+		poseInObserverFrame: {
+			referenceFrame: frame.parent ?? 'world',
+			pose: createPoseFromFrame(frame),
+		},
+		physicalObject: createGeometryFromFrame(frame),
+	} satisfies Transform
 }

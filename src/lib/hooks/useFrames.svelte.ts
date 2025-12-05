@@ -1,13 +1,12 @@
 import { getContext, setContext, untrack } from 'svelte'
+import { Transform } from '@viamrobotics/sdk'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
 import { WorldObject } from '$lib/WorldObject.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
-import type { Frame } from '$lib/frame'
+import { createTransformFromFrame, type Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
-import { createPoseFromFrame } from '$lib/transform'
-import { createGeometryFromFrame } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
 import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 
@@ -29,7 +28,7 @@ export const provideFrames = (partID: () => string) => {
 	const environment = useEnvironment()
 	const { updateUUIDs } = usePersistentUUIDs()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (revision) {
 			untrack(() => query.refetch())
 		}
@@ -43,7 +42,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (partConfig.isDirty) {
 			environment.current.viewerMode = 'edit'
 		} else {
@@ -52,57 +51,44 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const machineFrames = $derived.by(() => {
-		const objects: Record<string, WorldObject> = {}
+		const frames: Record<string, Transform> = {}
 
 		for (const { frame } of query.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
 
-			const resourceName = resourceByName.current[frame.referenceFrame]
-			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
-			const color = resourceNameToColor(resourceName)
-
-			objects[frameName] = new WorldObject(
-				frameName,
-				frame.poseInObserverFrame?.pose,
-				frame.poseInObserverFrame?.referenceFrame,
-				frame.physicalObject,
-				color ? { color } : undefined
-			)
+			frames[frame.referenceFrame] = frame
 		}
 
-		return objects
+		return frames
 	})
 
-	const [configFrames, configUnsetFrames] = $derived.by(() => {
+	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
 		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
 
-		const objects: WorldObject[] = []
-		const unsetObjects: string[] = []
+		const results: Record<string, Transform> = {}
+		const unsetResults: string[] = []
 
-		// deal with part defined frame config
-		for (const component of components ?? []) {
-			if (!component.frame) {
-				unsetObjects.push(component.name)
+		for (const { name, frame } of components ?? []) {
+			if (!frame) {
+				unsetResults.push(name)
 				continue
 			}
 
-			const pose = createPoseFromFrame(component.frame)
-			const geometry = createGeometryFromFrame(component.frame)
-			const worldObject = new WorldObject(component.name, pose, component.frame.parent, geometry)
-			objects.push(worldObject)
+			results[name] = createTransformFromFrame(name, frame)
 		}
 
-		return [objects, unsetObjects]
+		return [results, unsetResults]
 	})
 
-	const [fragmentFrames, fragmentUnsetFrames] = $derived.by(() => {
+	const [fragmentFrames, fragmentUnsetFrameNames] = $derived.by(() => {
 		const { fragment_mods: fragmentMods = [] } =
 			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
 		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
-		const objects: WorldObject[] = []
-		const unsetObjects: string[] = []
+
+		const results: Record<string, Transform> = {}
+		const unsetResults: string[] = []
 
 		// deal with fragment defined components
 		for (const fragmentComponentName of fragmentDefinedComponents || []) {
@@ -121,67 +107,58 @@ export const provideFrames = (partID: () => string) => {
 			)
 
 			if (setComponentModIndex < unsetComponentModIndex) {
-				unsetObjects.push(fragmentComponentName)
+				unsetResults.push(fragmentComponentName)
 			} else if (unsetComponentModIndex < setComponentModIndex) {
 				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
 					`components.${fragmentComponentName}.frame`
 				] as Frame
-				const pose = createPoseFromFrame(frameData)
-				const geometry = createGeometryFromFrame(frameData)
-				const worldObject = new WorldObject(fragmentComponentName, pose, frameData.parent, geometry)
-				objects.push(worldObject)
+				results[fragmentComponentName] = createTransformFromFrame(fragmentComponentName, frameData)
 			}
 		}
-		return [objects, unsetObjects]
+		return [results, unsetResults]
 	})
 
-	$effect.pre(() => {
-		for (const frame of configFrames) {
-			const result = machineFrames[frame.name]
-
-			if (result) {
-				result.referenceFrame = frame.referenceFrame
-				result.localEditedPose = frame.pose
-				result.geometry = frame.geometry
-			} else {
-				machineFrames[frame.name] = frame
-			}
+	const frames = $derived.by(() => {
+		const result = {
+			...machineFrames,
+			...configFrames,
+			...fragmentFrames,
 		}
-	})
 
-	$effect.pre(() => {
-		for (const frame of fragmentFrames) {
-			const result = machineFrames[frame.name]
-
-			if (result) {
-				result.referenceFrame = frame.referenceFrame
-				result.localEditedPose = frame.pose
-				result.geometry = frame.geometry
-			} else {
-				machineFrames[frame.name] = frame
-			}
+		// Remove frames that have just been deleted locally for optimistic updates
+		for (const name of configUnsetFrameNames) {
+			delete result[name]
 		}
-	})
 
-	$effect.pre(() => {
-		for (const name of configUnsetFrames) {
-			delete machineFrames[name]
+		// Remove frames that have been removed by fragment overrides
+		for (const name of fragmentUnsetFrameNames) {
+			delete result[name]
 		}
-	})
 
-	$effect.pre(() => {
-		for (const name of fragmentUnsetFrames) {
-			delete machineFrames[name]
-		}
+		return result
 	})
 
 	const current = $derived.by(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _configFrames = configFrames
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _fragmentFrames = fragmentFrames
-		const results = Object.values(machineFrames)
+		const results: WorldObject[] = []
+
+		for (const frame of Object.values(frames)) {
+			const resourceName = resourceByName.current[frame.referenceFrame]
+			const frameName = frame.referenceFrame ? frame.referenceFrame : 'Unnamed frame'
+			const color = resourceNameToColor(resourceName)
+
+			results.push(
+				new WorldObject(
+					frameName,
+					frame.poseInObserverFrame?.pose,
+					frame.poseInObserverFrame?.referenceFrame,
+					frame.physicalObject,
+					color ? { color } : undefined
+				)
+			)
+		}
+
 		updateUUIDs(results)
+
 		return results
 	})
 

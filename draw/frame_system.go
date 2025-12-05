@@ -1,6 +1,7 @@
 package draw
 
 import (
+	"fmt"
 	"maps"
 	"slices"
 
@@ -42,7 +43,7 @@ func DrawFrameSystemGeometries(
 				return nil, err
 			}
 
-			transform, err := NewTransform(uuid.New().String(), label, referenceframe.World, pose, geometry, metadataStruct)
+			transform, err := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +67,9 @@ func getFrameColor(frameName string, colors map[string]Color, frameSystem *refer
 	if frame != nil {
 		parent, err := frameSystem.Parent(frame)
 		if err == nil && parent != nil {
-			return getFrameColor(parent.Name(), colors, frameSystem)
+			inheritedColor := getFrameColor(parent.Name(), colors, frameSystem)
+			colors[frameName] = inheritedColor
+			return inheritedColor
 		}
 	}
 

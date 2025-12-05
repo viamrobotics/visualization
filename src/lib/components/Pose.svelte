@@ -4,7 +4,7 @@
 	import type { Snippet } from 'svelte'
 
 	interface Props {
-		name: string
+		name?: string
 		parent?: string
 		children: Snippet<[{ pose: Pose | undefined }]>
 	}

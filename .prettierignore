@@ -8,3 +8,6 @@ yarn.lock
 draw/v1
 src/lib/common/v1
 src/lib/draw/v1
+
+# Docs
+draw/DOCS.md
