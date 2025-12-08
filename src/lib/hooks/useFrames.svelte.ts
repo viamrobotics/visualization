@@ -1,7 +1,7 @@
 import { getContext, setContext, untrack } from 'svelte'
-import { Transform } from '@viamrobotics/sdk'
+import { Geometry, Transform } from '@viamrobotics/sdk'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
-import { trait, type Entity } from 'koota'
+import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
 import { createTransformFromFrame, type Frame } from '$lib/frame'
@@ -160,6 +160,20 @@ export const provideFrames = (partID: () => string) => {
 			const resourceName = resourceByName.current[frame.referenceFrame]
 			const color = resourceNameToColor(resourceName)
 
+			const geometryTrait = (geometry: Geometry) => {
+				if (geometry.geometryType.case === 'box') {
+					return traits.Box(createBox(geometry.geometryType.value))
+				} else if (geometry.geometryType.case === 'capsule') {
+					return traits.Capsule(createCapsule(geometry.geometryType.value))
+				} else if (geometry.geometryType.case === 'sphere') {
+					return traits.Sphere(createSphere(geometry.geometryType.value))
+				} else if (geometry.geometryType.case === 'mesh') {
+					return traits.BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh))
+				}
+
+				return trait()
+			}
+
 			const existing = entities.get(name)
 
 			if (existing) {
@@ -174,35 +188,36 @@ export const provideFrames = (partID: () => string) => {
 					existing.set(traits.Center, center)
 				}
 
+				if (frame.physicalObject) {
+					existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
+					existing.add(geometryTrait(frame.physicalObject))
+				}
+
 				continue
 			}
 
-			const geometryTrait = () => {
-				if (frame.physicalObject?.geometryType.case === 'box') {
-					return traits.Box(createBox(frame.physicalObject.geometryType.value))
-				} else if (frame.physicalObject?.geometryType.case === 'capsule') {
-					return traits.Capsule(createCapsule(frame.physicalObject.geometryType.value))
-				} else if (frame.physicalObject?.geometryType.case === 'sphere') {
-					return traits.Sphere(createSphere(frame.physicalObject.geometryType.value))
-				} else if (frame.physicalObject?.geometryType.case === 'mesh') {
-					return traits.BufferGeometry(parsePlyInput(frame.physicalObject.geometryType.value.mesh))
-				}
-
-				return trait()
-			}
-
-			const entity = world.spawn(
+			const entityTraits: ConfigurableTrait[] = [
 				traits.UUID,
 				traits.Name(name),
 				traits.Parent(parent),
 				traits.Pose(pose),
 				traits.EditedPose(pose),
-				traits.Color(color ? color : undefined),
-				center ? traits.Center(center) : trait(),
-				geometryTrait(),
 				traits.FramesAPI,
-				traits.ReferenceFrame
-			)
+			]
+
+			if (color) {
+				entityTraits.push(traits.Color(color))
+			}
+
+			if (center) {
+				entityTraits.push(traits.Center(center))
+			}
+
+			if (frame.physicalObject) {
+				entityTraits.push(geometryTrait(frame.physicalObject))
+			}
+
+			const entity = world.spawn(...entityTraits)
 
 			entities.set(name, entity)
 		}

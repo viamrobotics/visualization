@@ -35,10 +35,12 @@
 	const nodeMap: Record<string, TreeNode> = {}
 	const looseNodeMap: Record<string, TreeNode[] | undefined> = {}
 
-	const hash = cacheQuery(traits.Name)
-	world.onQueryAdd(hash, (entity) => {
+	world.onAdd(traits.Parent, (entity) => {
 		const parent = entity.get(traits.Parent)
-		const name = entity.get(traits.Name) ?? ''
+		const name = entity.get(traits.Name)
+
+		if (!name) return
+
 		const node: TreeNode = { entity }
 
 		const looseNodes = looseNodeMap[name]
@@ -87,12 +89,14 @@
 	}
 
 	world.onChange(traits.Name, (entity) => {
+		console.log('update', entity.get(traits.Name))
 		traverse(rootNode.children ?? [], entity, (children, i) => {
 			children[i].entity = entity
 		})
 	})
 
-	world.onQueryRemove(hash, (entity) => {
+	world.onRemove(traits.Name, (entity) => {
+		console.log('remove', entity.get(traits.Name))
 		traverse(rootNode.children ?? [], entity, (children, i) => {
 			children.splice(i, 1)
 		})

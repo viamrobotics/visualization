@@ -6,11 +6,6 @@ export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
 
-/*
- * An entity that has a reference frame in 3D space
- */
-export const ReferenceFrame = trait()
-
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })

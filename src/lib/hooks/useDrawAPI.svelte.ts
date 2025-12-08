@@ -149,8 +149,7 @@ export const provideDrawAPI = () => {
 				traits.Parent(frame.parent),
 				traits.Pose(pose),
 				geometryTrait(),
-				traits.DrawAPI,
-				traits.ReferenceFrame
+				traits.DrawAPI
 			)
 
 			entities.set(name, entity)

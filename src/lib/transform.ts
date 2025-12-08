@@ -47,8 +47,6 @@ export const createPoseFromFrame = (frame: Partial<Frame>): Pose => {
 		ov.set(0, 0, 1, 0)
 	}
 
-	console.log(frame)
-
 	return {
 		x: frame.translation?.x ?? 0,
 		y: frame.translation?.y ?? 0,

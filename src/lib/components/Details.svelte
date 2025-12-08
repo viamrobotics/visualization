@@ -50,8 +50,6 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
 
-	$inspect(localPose.current)
-
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
