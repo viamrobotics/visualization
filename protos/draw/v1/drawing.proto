@@ -9,7 +9,7 @@ option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 // Arrows represents a set of arrows in 3D space
 // Metadata:
-// - colors: []uint8 of a single color: [r, g, b, a] 
+// - colors: []uint8 of a single color: [r, g, b, a]
 //   or a color per arrow: [r, g, b, a, ...]
 //   defaults to [0, 255, 0, 180] (green)
 message Arrows {
@@ -20,7 +20,7 @@ message Arrows {
 
 // Line represents a line in 3D space
 // Metadata:
-// - colors: []uint8 of a single color: [r, g, b, a] 
+// - colors: []uint8 of a single color: [r, g, b, a]
 //   or two colors for lines and points: [r, g, b, a, r, g, b, a]
 //   defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
 message Line {
@@ -37,7 +37,7 @@ message Line {
 
 // Points represents a set of points in 3D space
 // Metadata:
-// - colors: []uint8 of a single color: [r, g, b, a] 
+// - colors: []uint8 of a single color: [r, g, b, a]
 //   or a color per point: [r, g, b, a, ...]
 //   defaults to [51, 51, 51, 180] (gray)
 message Points {
