@@ -96,6 +96,9 @@ jobs:
       - name: Test
         run: pnpm run test
 
+      - name: Test Draw
+        run: pnpm run test:draw
+
       - name: Test Coverage
         run: npx vitest run --coverage
 
