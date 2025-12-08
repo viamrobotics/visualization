@@ -13,6 +13,7 @@ static/Big_Buck_Bunny_4K.webm
 /coverage
 /dist
 viamrobotics-motion-tools-*.tgz
+draw/__snapshots__/
 
 # OS
 .DS_Store

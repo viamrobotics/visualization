@@ -20,7 +20,7 @@ export default ts.config(
 	},
 	{
 		name: 'ignores',
-		ignores: ['.svelte-kit', 'build', 'dist', 'node_modules'],
+		ignores: ['.svelte-kit', 'build', 'dist', 'node_modules', 'draw/DOCS.md'],
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
