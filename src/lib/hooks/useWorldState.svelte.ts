@@ -49,12 +49,12 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		for (const [uuid, transform] of Object.entries(transforms)) {
 			const metadata = parseMetadata(transform.metadata?.fields)
 
-			const entityTraits: ConfigurableTrait[] = [
-				traits.UUID(uuid),
-				traits.Name(transform.referenceFrame),
-				traits.Parent(transform.poseInObserverFrame?.referenceFrame),
-				traits.Pose(transform.poseInObserverFrame?.pose),
-			]
+			const entityTraits: ConfigurableTrait[] = []
+
+			const parent = transform.poseInObserverFrame?.referenceFrame
+			if (parent) {
+				entityTraits.push(traits.Parent(parent))
+			}
 
 			if (metadata.color) {
 				entityTraits.push(traits.Color(metadata.color))
@@ -78,6 +78,12 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			if (metadata.shape === 'arrow') {
 				entityTraits.push(traits.Arrow, traits.Instance)
 			}
+
+			entityTraits.push(
+				traits.UUID(uuid),
+				traits.Name(transform.referenceFrame),
+				traits.Pose(transform.poseInObserverFrame?.pose)
+			)
 
 			world.spawn(...entityTraits)
 		}

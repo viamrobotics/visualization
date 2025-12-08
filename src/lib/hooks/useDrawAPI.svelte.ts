@@ -9,7 +9,7 @@ import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
-import { trait, type Entity } from 'koota'
+import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 
@@ -119,11 +119,17 @@ export const provideDrawAPI = () => {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
 			const name = frame.name ?? ''
+			const parent = frame.parent
 
 			const existing = entities.get(name)
 
 			if (existing) {
 				existing.set(traits.Pose, pose)
+
+				if (parent && parent !== 'world') {
+					existing.set(traits.Parent, parent)
+				}
+
 				continue
 			}
 
@@ -143,14 +149,19 @@ export const provideDrawAPI = () => {
 				return trait()
 			}
 
-			const entity = world.spawn(
-				traits.UUID,
-				traits.Name(frame.name),
-				traits.Parent(frame.parent),
-				traits.Pose(pose),
-				geometryTrait(),
-				traits.DrawAPI
-			)
+			const entityTraits: ConfigurableTrait[] = []
+
+			if (parent && parent !== 'world') {
+				entityTraits.push(traits.Parent(parent))
+			}
+
+			if (frame.geometry) {
+				entityTraits.push(geometryTrait())
+			}
+
+			entityTraits.push(traits.UUID, traits.Name(frame.name), traits.Pose(pose), traits.DrawAPI)
+
+			const entity = world.spawn(...entityTraits)
 
 			entities.set(name, entity)
 		}
@@ -203,15 +214,22 @@ export const provideDrawAPI = () => {
 			return trait()
 		}
 
-		const entity = world.spawn(
+		const entityTraits: ConfigurableTrait[] = []
+
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent(parent))
+		}
+
+		entityTraits.push(
 			traits.UUID,
 			traits.Name(data.label ?? ++geometryIndex),
-			traits.Parent(parent),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
 			geometryTrait(),
 			traits.DrawAPI
 		)
+
+		const entity = world.spawn(...entityTraits)
 
 		entities.set(name, entity)
 	}
@@ -248,8 +266,6 @@ export const provideDrawAPI = () => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
-		const arrowHeadAtPose = reader.read()
-
 		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
@@ -276,26 +292,11 @@ export const provideDrawAPI = () => {
 			entities.push(entity)
 		}
 
-		for (const entity of entities) {
+		for (let i = 0; i < nColors; i += 1) {
+			const entity = entities[i]
 			colorUtil.set(reader.read(), reader.read(), reader.read())
 			entity.set(traits.Color, colorUtil)
 		}
-
-		// world
-		// 	.query(traits.Arrow, traits.Color)
-		// 	.select(traits.Color)
-		// 	.useStores(([colors]) => {
-		// 		for (let i = 0; i < nColors; i += 1) {
-		// 			const eid = entities[i].id()
-		// 			const r = reader.read()
-		// 			const g = reader.read()
-		// 			const b = reader.read()
-		// 			colors.r[eid] = r
-		// 			colors.g[eid] = g
-		// 			colors.b[eid] = b
-		// 			entities[i].changed(traits.Color)
-		// 		}
-		// 	})
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {

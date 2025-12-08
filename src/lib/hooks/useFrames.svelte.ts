@@ -152,7 +152,7 @@ export const provideFrames = (partID: () => string) => {
 			}
 
 			const name = frame.referenceFrame
-			const parent = frame.poseInObserverFrame?.referenceFrame ?? 'world'
+			const parent = frame.poseInObserverFrame?.referenceFrame
 			const pose = createPose(frame.poseInObserverFrame?.pose)
 			const center = frame.physicalObject?.center
 				? createPose(frame.physicalObject.center)
@@ -177,8 +177,11 @@ export const provideFrames = (partID: () => string) => {
 			const existing = entities.get(name)
 
 			if (existing) {
-				existing.set(traits.Parent, parent)
 				existing.set(traits.Pose, pose)
+
+				if (parent && parent !== 'world') {
+					existing.set(traits.Parent, parent)
+				}
 
 				if (color) {
 					existing.set(traits.Color, color)
@@ -199,11 +202,14 @@ export const provideFrames = (partID: () => string) => {
 			const entityTraits: ConfigurableTrait[] = [
 				traits.UUID,
 				traits.Name(name),
-				traits.Parent(parent),
 				traits.Pose(pose),
 				traits.EditedPose(pose),
 				traits.FramesAPI,
 			]
+
+			if (parent && parent !== 'world') {
+				entityTraits.push(traits.Parent(parent))
+			}
 
 			if (color) {
 				entityTraits.push(traits.Color(color))

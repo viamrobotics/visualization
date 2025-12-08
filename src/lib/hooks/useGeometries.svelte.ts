@@ -11,7 +11,7 @@ import { resourceColors } from '$lib/color'
 import { Color } from 'three'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { trait, type Entity } from 'koota'
+import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
@@ -134,15 +134,22 @@ export const provideGeometries = (partID: () => string) => {
 						return trait()
 					}
 
-					const entity = world.spawn(
+					const entityTraits: ConfigurableTrait[] = [
 						traits.UUID,
-						traits.Name(label),
 						traits.Parent(name),
+						traits.Name(label),
 						traits.Pose(pose),
 						traits.GeometriesAPI,
-						traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined),
-						geometryTrait()
-					)
+						geometryTrait(),
+					]
+
+					if (subtype) {
+						entityTraits.push(
+							traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
+						)
+					}
+
+					const entity = world.spawn(...entityTraits)
 
 					entities.set(label, entity)
 				}

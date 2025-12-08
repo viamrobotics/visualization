@@ -19,7 +19,7 @@
 
 	const pose = usePose(
 		() => name.current,
-		() => parent.current ?? 'world'
+		() => parent.current
 	)
 
 	const finalPose = $derived.by(() => {

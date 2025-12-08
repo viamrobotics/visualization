@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Tree from './Tree.svelte'
-	import type { TreeNode } from './buildTree'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 	import Settings from './Settings.svelte'
@@ -11,8 +10,9 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { traits, useWorld } from '$lib/ecs'
+	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { cacheQuery, IsExcluded, type Entity } from 'koota'
+	import { buildTreeNodes, type TreeNode } from './buildTree'
 
 	const { ...rest } = $props()
 
@@ -26,80 +26,10 @@
 	const world = useWorld()
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
-
-	const rootNode = $state<TreeNode>({
+	const query = useQuery(traits.Name)
+	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
-		children: [],
-	})
-
-	const nodeMap: Record<string, TreeNode> = {}
-	const looseNodeMap: Record<string, TreeNode[] | undefined> = {}
-
-	world.onAdd(traits.Parent, (entity) => {
-		const parent = entity.get(traits.Parent)
-		const name = entity.get(traits.Name)
-
-		if (!name) return
-
-		const node: TreeNode = { entity }
-
-		const looseNodes = looseNodeMap[name]
-		if (looseNodes) {
-			node.children = []
-			node.children.push(...looseNodes)
-			looseNodeMap[name] = undefined
-		}
-
-		nodeMap[name] = node
-
-		if (!parent || parent === 'world') {
-			rootNode.children?.push(node)
-			return
-		}
-
-		const parentNode = nodeMap[parent]
-
-		if (parentNode) {
-			parentNode.children ??= []
-			parentNode.children.push(node)
-		} else {
-			looseNodeMap[parent] ??= []
-			looseNodeMap[parent].push(node)
-		}
-	})
-
-	const traverse = (
-		children: TreeNode[],
-		entity: Entity,
-		cb: (children: TreeNode[], index: number) => void
-	) => {
-		for (let i = 0, l = children.length; i < l; i++) {
-			let child = children[i]
-
-			if (entity === child.entity) {
-				cb(children, i)
-
-				return
-			} else {
-				const c = children[i].children
-
-				if (c) traverse(c, entity, cb)
-			}
-		}
-	}
-
-	world.onChange(traits.Name, (entity) => {
-		console.log('update', entity.get(traits.Name))
-		traverse(rootNode.children ?? [], entity, (children, i) => {
-			children[i].entity = entity
-		})
-	})
-
-	world.onRemove(traits.Name, (entity) => {
-		console.log('remove', entity.get(traits.Name))
-		traverse(rootNode.children ?? [], entity, (children, i) => {
-			children.splice(i, 1)
-		})
+		children: buildTreeNodes(query.current),
 	})
 </script>
 
