@@ -19,7 +19,7 @@ setup:
 	@go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
 .PHONY: up
-up:
+up: proto-gen-ts
 	pnpm dev
 
 ## Protobuf commands
