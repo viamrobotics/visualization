@@ -266,6 +266,8 @@ export const provideDrawAPI = () => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
+		const arrowHeadAtPose = reader.read()
+
 		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
