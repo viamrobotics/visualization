@@ -26,7 +26,7 @@
 
 	const collection = $derived(
 		tree.collection<TreeNode>({
-			nodeToValue: (node) => node.entity.get(traits.UUID) ?? '',
+			nodeToValue: (node) => `${node.entity}`,
 			nodeToString: (node) => node.entity.get(traits.Name) ?? '',
 			rootNode,
 		})

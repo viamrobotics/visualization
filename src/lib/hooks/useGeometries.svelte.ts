@@ -95,14 +95,23 @@ export const provideGeometries = (partID: () => string) => {
 
 	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
 
-	let entities = new Map<string, Entity>()
+	let entities = new Map<string, Entity | undefined>()
 
 	$effect(() => {
+		let active: Record<string, boolean> = {}
+
 		for (const [name, query] of queries) {
 			if (name && query.data) {
+				let index = 0
+
 				for (const geometry of query.data) {
+					index += 1
+
 					const resourceName = resources.current[name]
-					const label = geometry.label ? geometry.label : `${name} geometry`
+					const label = geometry.label ? geometry.label : `${name} geometry ${index}`
+
+					active[label] = true
+
 					const pose = createPose(geometry.center)
 					const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
@@ -137,6 +146,14 @@ export const provideGeometries = (partID: () => string) => {
 
 					entities.set(label, entity)
 				}
+			}
+		}
+
+		// Clean up non-active entities
+		for (const [label, entity] of entities) {
+			if (!active[label]) {
+				entity?.destroy()
+				entities.delete(label)
 			}
 		}
 	})

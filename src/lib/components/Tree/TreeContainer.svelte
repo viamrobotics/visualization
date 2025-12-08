@@ -110,6 +110,9 @@
 		selections={selectedEntity.current ? [`${selectedEntity.current}`] : []}
 		onSelectionChange={(event) => {
 			const value = event.selectedValue[0]
+
+			console.log(value)
+
 			selectedEntity.set(value ? (Number(value) as Entity) : undefined)
 		}}
 		onDragStart={draggable.onDragStart}

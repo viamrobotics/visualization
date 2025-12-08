@@ -146,13 +146,6 @@ export const provideFrames = (partID: () => string) => {
 	const entities = new Map<string, Entity | undefined>()
 
 	$effect.pre(() => {
-		for (const [name, entity] of entities) {
-			if (!frames[name]) {
-				entity?.destroy()
-				entities.delete(name)
-			}
-		}
-
 		for (const frame of current) {
 			if (frame === undefined) {
 				continue
@@ -212,6 +205,14 @@ export const provideFrames = (partID: () => string) => {
 
 			entities.set(name, entity)
 		}
+
+		// Clean up non-active entities
+		for (const [name, entity] of entities) {
+			if (!frames[name]) {
+				entity?.destroy()
+				entities.delete(name)
+			}
+		}
 	})
 
 	const getParentFrameOptions = (componentName: string) => {
@@ -219,16 +220,24 @@ export const provideFrames = (partID: () => string) => {
 		validFrames.add('world')
 
 		const frameNameQueue = [componentName]
+		const visited = new Set<string>()
+
 		while (frameNameQueue.length > 0) {
 			const frameName = frameNameQueue.shift()
-			if (frameName) {
-				validFrames.delete(frameName)
-				const frames = current.filter((frame) => frame.referenceFrame === frameName)
-				for (const frame of frames) {
-					frameNameQueue.push(frame.referenceFrame)
-				}
+			if (!frameName || visited.has(frameName)) continue
+
+			visited.add(frameName)
+			validFrames.delete(frameName)
+
+			const children = current.filter((frame) => frame.referenceFrame === frameName)
+
+			// Enqueue the CHILD frame's own name
+			for (const frame of children) {
+				// This must be the child key
+				frameNameQueue.push(frame.referenceFrame)
 			}
 		}
+
 		return Array.from(validFrames)
 	}
 

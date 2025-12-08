@@ -24,7 +24,6 @@
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
@@ -65,8 +64,6 @@
 			return 'none'
 		})()
 	)
-
-	const referenceFrameOptions = $derived(frames.getParentFrameOptions(name.current ?? ''))
 
 	let copied = $state(false)
 
@@ -262,52 +259,48 @@
 		</h3>
 
 		<div class="flex flex-col gap-2.5">
-			{#if worldPosition}
-				<div>
-					<strong class="font-semibold">world position</strong>
-					<span class="text-subtle-2">(m)</span>
+			<div>
+				<strong class="font-semibold">world position</strong>
+				<span class="text-subtle-2">(m)</span>
 
-					<div class="flex gap-3">
-						<div>
-							<span class="text-subtle-2">x</span>
-							{worldPosition.x.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">y</span>
-							{worldPosition.y.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">z</span>
-							{worldPosition.z.toFixed(2)}
-						</div>
+				<div class="flex gap-3">
+					<div>
+						<span class="text-subtle-2">x</span>
+						{worldPosition.x.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">y</span>
+						{worldPosition.y.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">z</span>
+						{worldPosition.z.toFixed(2)}
 					</div>
 				</div>
-			{/if}
+			</div>
 
-			{#if worldOrientation}
-				<div>
-					<strong class="font-semibold">world orientation</strong>
-					<span class="text-subtle-2">(deg)</span>
-					<div class="flex gap-3">
-						<div>
-							<span class="text-subtle-2">x</span>
-							{worldOrientation.x.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">y</span>
-							{worldOrientation.y.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">z</span>
-							{worldOrientation.z.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">th</span>
-							{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
-						</div>
+			<div>
+				<strong class="font-semibold">world orientation</strong>
+				<span class="text-subtle-2">(deg)</span>
+				<div class="flex gap-3">
+					<div>
+						<span class="text-subtle-2">x</span>
+						{worldOrientation.x.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">y</span>
+						{worldOrientation.y.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">z</span>
+						{worldOrientation.z.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">th</span>
+						{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
 					</div>
 				</div>
-			{/if}
+			</div>
 
 			<div>
 				<strong class="font-semibold">parent frame</strong>
@@ -315,13 +308,13 @@
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
-						options: referenceFrameOptions,
+						options: frames.getParentFrameOptions(name.current ?? ''),
 						onChange: (value) => detailConfigUpdater.setFrameParent(value),
 					})}
 				</div>
 			</div>
 
-			{#if localPose}
+			{#if localPose.current}
 				<div>
 					<strong class="font-semibold">local position</strong>
 					<span class="text-subtle-2">(m)</span>
@@ -330,19 +323,19 @@
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local position x coordinate',
-							value: localPose.current?.x.toFixed(2) ?? '0',
+							value: localPose.current.x.toFixed(2) ?? '0',
 							onInput: (value) => detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local position y coordinate',
-							value: localPose.current?.y.toFixed(2) ?? '0',
+							value: localPose.current.y.toFixed(2) ?? '0',
 							onInput: (value) => detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local position z coordinate',
-							value: localPose.current?.z.toFixed(2) ?? '0',
+							value: localPose.current.z.toFixed(2) ?? '0',
 							onInput: (value) => detailConfigUpdater.updateLocalPosition({ z: parseFloat(value) }),
 						})}
 					</div>
@@ -391,23 +384,31 @@
 						<Button
 							variant={geometryType === 'none' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('none')}>None</Button
+							onclick={() => setGeometryType('none')}
 						>
+							None
+						</Button>
 						<Button
 							variant={geometryType === 'box' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('box')}>Box</Button
+							onclick={() => setGeometryType('box')}
 						>
+							Box
+						</Button>
 						<Button
 							variant={geometryType === 'sphere' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('sphere')}>Sphere</Button
+							onclick={() => setGeometryType('sphere')}
 						>
+							Sphere
+						</Button>
 						<Button
 							variant={geometryType === 'capsule' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('capsule')}>Capsule</Button
+							onclick={() => setGeometryType('capsule')}
 						>
+							Capsule
+						</Button>
 					</div>
 				</div>
 			{/if}
@@ -500,8 +501,10 @@
 			<Button
 				variant="danger"
 				class="mt-2 w-full"
-				onclick={() => detailConfigUpdater.deleteFrame()}>Delete frame</Button
+				onclick={() => detailConfigUpdater.deleteFrame()}
 			>
+				Delete frame
+			</Button>
 		{/if}
 	</div>
 {/if}
