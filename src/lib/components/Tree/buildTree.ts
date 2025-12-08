@@ -1,5 +1,5 @@
 import { traits } from '$lib/ecs'
-import type { Entity, QueryResult } from 'koota'
+import type { Entity, QueryResult, Trait } from 'koota'
 
 export interface TreeNode {
 	entity: Entity
@@ -9,7 +9,7 @@ export interface TreeNode {
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (entities: QueryResult): TreeNode[] => {
+export const buildTreeNodes = (entities: QueryResult<[Trait<() => string>]>): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes: TreeNode[] = []
 	const childNodes: TreeNode[] = []

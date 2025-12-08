@@ -17,9 +17,9 @@ vi.mock('@threlte/core', () => ({
 // Mock selection hooks
 vi.mock('$lib/hooks/useSelection.svelte', () => ({
 	useFocused: vi.fn(() => ({ current: undefined, set: vi.fn() })),
-	useFocusedObject: vi.fn(() => ({ current: undefined })),
+	useFocusedEntity: vi.fn(() => ({ current: undefined })),
 	useFocusedObject3d: vi.fn(() => ({ current: undefined })),
-	useSelectedObject: vi.fn(() => ({ current: undefined })),
+	useSelectedEntity: vi.fn(() => ({ current: undefined })),
 	useSelectedObject3d: vi.fn(() => ({ current: undefined })),
 }))
 

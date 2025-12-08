@@ -95,10 +95,10 @@ export const provideGeometries = (partID: () => string) => {
 
 	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
 
-	let entities = new Map<string, Entity | undefined>()
+	const entities = new Map<string, Entity | undefined>()
 
 	$effect(() => {
-		let active: Record<string, boolean> = {}
+		const active: Record<string, boolean> = {}
 
 		for (const [name, query] of queries) {
 			if (name && query.data) {

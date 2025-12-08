@@ -13,16 +13,12 @@ import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 
-const vec3 = new Vector3()
 const colorUtil = new Color()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
 	connectionStatus: ConnectionStatus
-
-	addPoints(entity: Entity): void
-	addMesh(entity: Entity): void
 }
 
 const bufferTypes = {
@@ -266,7 +262,8 @@ export const provideDrawAPI = () => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
-		const arrowHeadAtPose = reader.read()
+
+		const _arrowHeadAtPose = reader.read()
 
 		const entities: Entity[] = []
 
@@ -580,8 +577,6 @@ export const provideDrawAPI = () => {
 		get connectionStatus() {
 			return connectionStatus
 		},
-		addPoints(entity: Entity) {},
-		addMesh(entity: Entity) {},
 	})
 }
 

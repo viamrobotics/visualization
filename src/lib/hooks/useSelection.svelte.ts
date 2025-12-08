@@ -43,8 +43,6 @@ export const provideSelection = () => {
 	setContext<FocusedEntityContext>(focusedKey, focusedEntityContext)
 
 	const { scene } = useThrelte()
-	const uuid = useTrait(() => focused, traits.UUID)
-
 	const focusedObject3d = $derived.by(() => {
 		const name = focused?.get(traits.Name)
 

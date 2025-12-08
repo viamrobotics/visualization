@@ -11,7 +11,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { cacheQuery, IsExcluded, type Entity } from 'koota'
+	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 
 	const { ...rest } = $props()

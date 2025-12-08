@@ -2,7 +2,6 @@ import {
 	WorldStateStoreClient,
 	TransformChangeType,
 	type TransformWithUUID,
-	ResourceName,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
