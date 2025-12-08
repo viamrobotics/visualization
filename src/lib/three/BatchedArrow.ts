@@ -75,8 +75,8 @@ export class BatchedArrow {
 		instanceId: number,
 		origin: Vector3,
 		direction: Vector3,
-		length: number,
-		color: Color,
+		length = 0.1,
+		color?: Color,
 		arrowHeadAtPose = true
 	) {
 		if (arrowHeadAtPose) {

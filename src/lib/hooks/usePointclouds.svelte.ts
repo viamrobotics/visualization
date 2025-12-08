@@ -173,7 +173,7 @@ export const providePointclouds = (partID: () => string) => {
 		// Clean up old entities
 		const current = entities.keys()
 		for (const parent of current) {
-			if (!queryMap[parent].data) {
+			if (!queryMap[parent]?.data) {
 				entities.get(parent)?.destroy()
 				entities.delete(parent)
 			}
