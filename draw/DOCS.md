@@ -485,13 +485,13 @@ type Line struct {
     // LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
     LineWidth float32
 
-    // PointSize specifies the size of dots rendered at each vertex in millimeters (default: 10mm).
+    // PointSize specifies the size of points rendered at each vertex in millimeters (default: 10mm).
     PointSize float32
 
     // LineColor is the color used for rendering the line segments (default: blue).
     LineColor Color
 
-    // PointColor is the color used for rendering the vertex dots (default: dark blue).
+    // PointColor is the color used for rendering the vertex points (default: dark blue).
     PointColor Color
 }
 ```

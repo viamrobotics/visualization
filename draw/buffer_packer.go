@@ -79,11 +79,11 @@ func packFloats(floats []float64) []byte {
 
 // packPoints packs a slice of 3D points into a little-endian Float32Array byte representation.
 // Each point is packed as [x, y, z] coordinates.
-func packPoints(dots []r3.Vector) []byte {
-	packer := NewBufferPacker[float32](len(dots), 3)
+func packPoints(points []r3.Vector) []byte {
+	packer := NewBufferPacker[float32](len(points), 3)
 
-	for _, dot := range dots {
-		packer.Write(float32(dot.X), float32(dot.Y), float32(dot.Z))
+	for _, point := range points {
+		packer.Write(float32(point.X), float32(point.Y), float32(point.Z))
 	}
 
 	return packer.Read()

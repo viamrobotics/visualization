@@ -21,13 +21,13 @@ type Line struct {
 	// LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
 	LineWidth float32
 
-	// PointSize specifies the size of dots rendered at each vertex in millimeters (default: 10mm).
+	// PointSize specifies the size of points rendered at each vertex in millimeters (default: 10mm).
 	PointSize float32
 
 	// LineColor is the color used for rendering the line segments (default: blue).
 	LineColor Color
 
-	// PointColor is the color used for rendering the vertex dots (default: dark blue).
+	// PointColor is the color used for rendering the vertex points (default: dark blue).
 	PointColor Color
 }
 
@@ -40,7 +40,7 @@ type drawLineConfig struct {
 
 // newDrawLineConfig creates a new draw line configuration
 //   - lineWidth is the width of the line in millimeters
-//   - pointSize is the size of the points/dots at line vertices in millimeters
+//   - pointSize is the size of the points at line vertices in millimeters
 //   - colors are the colors to set for the line
 //
 // Returns the draw line configuration
@@ -62,14 +62,14 @@ func WithLineWidth(width float32) drawLineOption {
 	}
 }
 
-// WithPointSize creates a line option that sets the size of vertex dots in millimeters.
+// WithPointSize creates a line option that sets the size of vertex points in millimeters.
 func WithPointSize(size float32) drawLineOption {
 	return func(config *drawLineConfig) {
 		config.pointSize = size
 	}
 }
 
-// WithLineColors creates a line option that sets colors for the line segments and vertex dots.
+// WithLineColors creates a line option that sets colors for the line segments and vertex points.
 // If pointColor is nil, the line color is used for both.
 func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
 	colors := []Color{lineColor, lineColor}
