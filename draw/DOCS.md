@@ -69,6 +69,24 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [type Shape](<#Shape>)
   - [func NewShape\(center spatialmath.Pose, label string, option drawShapeOption\) Shape](<#NewShape>)
   - [func \(shape Shape\) ToProto\(\) \*drawv1.Shape](<#Shape.ToProto>)
+- [type Snapshot](<#Snapshot>)
+  - [func NewSnapshot\(sceneOptions ...sceneMetadataOption\) \*Snapshot](<#NewSnapshot>)
+  - [func \(snapshot \*Snapshot\) DrawArrows\(name string, parent string, pose spatialmath.Pose, poses \[\]spatialmath.Pose, options ...drawArrowsOption\) error](<#Snapshot.DrawArrows>)
+  - [func \(snapshot \*Snapshot\) DrawFrame\(id string, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\) error](<#Snapshot.DrawFrame>)
+  - [func \(snapshot \*Snapshot\) DrawFrameSystemGeometries\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map\[string\]Color\) error](<#Snapshot.DrawFrameSystemGeometries>)
+  - [func \(snapshot \*Snapshot\) DrawGeometry\(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color\) error](<#Snapshot.DrawGeometry>)
+  - [func \(snapshot \*Snapshot\) DrawLine\(name string, parent string, pose spatialmath.Pose, points \[\]r3.Vector, options ...drawLineOption\) error](<#Snapshot.DrawLine>)
+  - [func \(snapshot \*Snapshot\) DrawModel\(name string, parent string, pose spatialmath.Pose, options ...drawModelOption\) error](<#Snapshot.DrawModel>)
+  - [func \(snapshot \*Snapshot\) DrawPoints\(name string, parent string, pose spatialmath.Pose, positions \[\]r3.Vector, options ...drawPointsOption\) error](<#Snapshot.DrawPoints>)
+  - [func \(snapshot \*Snapshot\) Drawings\(\) \[\]\*Drawing](<#Snapshot.Drawings>)
+  - [func \(snapshot \*Snapshot\) MarshalBinary\(\) \(\[\]byte, error\)](<#Snapshot.MarshalBinary>)
+  - [func \(snapshot \*Snapshot\) MarshalBinaryGzip\(\) \(\[\]byte, error\)](<#Snapshot.MarshalBinaryGzip>)
+  - [func \(snapshot \*Snapshot\) MarshalJSON\(\) \(\[\]byte, error\)](<#Snapshot.MarshalJSON>)
+  - [func \(snapshot \*Snapshot\) SceneMetadata\(\) SceneMetadata](<#Snapshot.SceneMetadata>)
+  - [func \(snapshot \*Snapshot\) ToProto\(\) \*drawv1.Snapshot](<#Snapshot.ToProto>)
+  - [func \(snapshot \*Snapshot\) Transforms\(\) \[\]\*commonv1.Transform](<#Snapshot.Transforms>)
+  - [func \(snapshot \*Snapshot\) UUID\(\) \[\]byte](<#Snapshot.UUID>)
+  - [func \(snapshot \*Snapshot\) Validate\(\) error](<#Snapshot.Validate>)
 
 
 ## Variables
@@ -485,13 +503,13 @@ type Line struct {
     // LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
     LineWidth float32
 
-    // PointSize specifies the size of dots rendered at each vertex in millimeters (default: 10mm).
+    // PointSize specifies the size of points rendered at each vertex in millimeters (default: 10mm).
     PointSize float32
 
     // LineColor is the color used for rendering the line segments (default: blue).
     LineColor Color
 
-    // PointColor is the color used for rendering the vertex dots (default: dark blue).
+    // PointColor is the color used for rendering the vertex points (default: dark blue).
     PointColor Color
 }
 ```
@@ -815,5 +833,215 @@ func (shape Shape) ToProto() *drawv1.Shape
 ToProto converts the shape to a drawv1.Shape message
 
 Returns the drawv1.Shape message
+
+<a name="Snapshot"></a>
+## type [Snapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L21-L26>)
+
+Snapshot represents a snapshot of a world state
+
+```go
+type Snapshot struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewSnapshot"></a>
+### func [NewSnapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L97>)
+
+```go
+func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot
+```
+
+NewSnapshot creates a new snapshot with a unique UUID
+
+<a name="Snapshot.DrawArrows"></a>
+### func \(\*Snapshot\) [DrawArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L231-L237>)
+
+```go
+func (snapshot *Snapshot) DrawArrows(name string, parent string, pose spatialmath.Pose, poses []spatialmath.Pose, options ...drawArrowsOption) error
+```
+
+DrawArrows draws arrows to the snapshot
+
+- name is the name of the arrows
+- parent is the parent of the arrows
+- pose is the pose of the arrows
+- poses are the poses of the arrows
+- options are the options for the arrows
+- Returns an error if the arrows cannot be drawn
+
+<a name="Snapshot.DrawFrame"></a>
+### func \(\*Snapshot\) [DrawFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L187-L194>)
+
+```go
+func (snapshot *Snapshot) DrawFrame(id string, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *structpb.Struct) error
+```
+
+DrawFrame draws a frame transform to the snapshot
+
+- id is the ID of the frame
+- name is the name of the frame
+- parent is the parent of the frame
+- pose is the pose of the frame
+- geometry is the geometry of the frame
+- metadata is visualizer metadata for the frame
+- Returns an error if the frame transform cannot be drawn
+
+<a name="Snapshot.DrawFrameSystemGeometries"></a>
+### func \(\*Snapshot\) [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L165-L169>)
+
+```go
+func (snapshot *Snapshot) DrawFrameSystemGeometries(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map[string]Color) error
+```
+
+DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot
+
+- frameSystem is the frame system to draw
+- inputs are the inputs to the frame system
+- colors are the colors to use for the frame system geometries, mapped by frame name
+- Returns an error if the frame system geometries cannot be drawn
+
+<a name="Snapshot.DrawGeometry"></a>
+### func \(\*Snapshot\) [DrawGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L209-L214>)
+
+```go
+func (snapshot *Snapshot) DrawGeometry(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color) error
+```
+
+DrawGeometry draws a geometry to the snapshot
+
+- geometry is the geometry to draw
+- pose is the pose of the geometry
+- parent is the parent of the geometry
+- color is the color of the geometry
+- Returns an error if the geometry cannot be drawn
+
+<a name="Snapshot.DrawLine"></a>
+### func \(\*Snapshot\) [DrawLine](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L255-L261>)
+
+```go
+func (snapshot *Snapshot) DrawLine(name string, parent string, pose spatialmath.Pose, points []r3.Vector, options ...drawLineOption) error
+```
+
+DrawLine draws a line to the snapshot
+
+- name is the name of the line
+- parent is the parent of the line
+- pose is the pose of the line
+- points are the points of the line
+- options are the options for the line
+- Returns an error if the line cannot be drawn
+
+<a name="Snapshot.DrawModel"></a>
+### func \(\*Snapshot\) [DrawModel](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L278-L283>)
+
+```go
+func (snapshot *Snapshot) DrawModel(name string, parent string, pose spatialmath.Pose, options ...drawModelOption) error
+```
+
+DrawModelFromURL draws a model from a URL to the snapshot
+
+- name is the name of the model
+- parent is the parent of the model
+- pose is the pose of the model
+- options are the options for the model
+- Returns an error if the model cannot be drawn
+
+<a name="Snapshot.DrawPoints"></a>
+### func \(\*Snapshot\) [DrawPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L301-L307>)
+
+```go
+func (snapshot *Snapshot) DrawPoints(name string, parent string, pose spatialmath.Pose, positions []r3.Vector, options ...drawPointsOption) error
+```
+
+DrawPoints draws a set of points to the snapshot
+
+- name is the name of the points
+- parent is the parent of the points
+- pose is the pose of the points
+- positions are the positions of the points
+- options are the options for the points
+- Returns an error if the points cannot be drawn
+
+<a name="Snapshot.Drawings"></a>
+### func \(\*Snapshot\) [Drawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L39>)
+
+```go
+func (snapshot *Snapshot) Drawings() []*Drawing
+```
+
+Drawings returns the drawings of the snapshot
+
+<a name="Snapshot.MarshalBinary"></a>
+### func \(\*Snapshot\) [MarshalBinary](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L73>)
+
+```go
+func (snapshot *Snapshot) MarshalBinary() ([]byte, error)
+```
+
+MarshalBinary marshals a snapshot to binary protobuf format
+
+<a name="Snapshot.MarshalBinaryGzip"></a>
+### func \(\*Snapshot\) [MarshalBinaryGzip](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L78>)
+
+```go
+func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error)
+```
+
+MarshalBinaryGzip marshals a snapshot to gzip\-compressed binary protobuf format
+
+<a name="Snapshot.MarshalJSON"></a>
+### func \(\*Snapshot\) [MarshalJSON](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L64>)
+
+```go
+func (snapshot *Snapshot) MarshalJSON() ([]byte, error)
+```
+
+MarshalJSON marshals a snapshot to JSON
+
+<a name="Snapshot.SceneMetadata"></a>
+### func \(\*Snapshot\) [SceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L44>)
+
+```go
+func (snapshot *Snapshot) SceneMetadata() SceneMetadata
+```
+
+SceneMetadata returns the scene metadata of the snapshot
+
+<a name="Snapshot.ToProto"></a>
+### func \(\*Snapshot\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L49>)
+
+```go
+func (snapshot *Snapshot) ToProto() *drawv1.Snapshot
+```
+
+ToProto converts the snapshot to a protobuf message
+
+<a name="Snapshot.Transforms"></a>
+### func \(\*Snapshot\) [Transforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L34>)
+
+```go
+func (snapshot *Snapshot) Transforms() []*commonv1.Transform
+```
+
+Transforms returns the transforms of the snapshot
+
+<a name="Snapshot.UUID"></a>
+### func \(\*Snapshot\) [UUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L29>)
+
+```go
+func (snapshot *Snapshot) UUID() []byte
+```
+
+UUID returns the UUID of the snapshot
+
+<a name="Snapshot.Validate"></a>
+### func \(\*Snapshot\) [Validate](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L108>)
+
+```go
+func (snapshot *Snapshot) Validate() error
+```
+
+Validate validates a snapshot
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

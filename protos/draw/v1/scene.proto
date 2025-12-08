@@ -53,7 +53,8 @@ enum RenderShapes {
 
 message SceneMetadata {
   // The camera to use for the scene
-  // defaults to a perspective_camera with a position of [3000, 3000, 3000] and a look_at of [0, 0, 0]
+  // defaults to a perspective_camera with a position of [3000, 3000, 3000] and
+  // a look_at of [0, 0, 0]
   optional SceneCamera scene_camera = 1;
 
   // Whether to render the grid
@@ -84,8 +85,8 @@ message SceneMetadata {
   // defaults to 5 (millimeters)
   optional float line_width = 8;
 
-  // The size of the dots of the lines if not defined by a transform's metadata
-  // defaults to 10 (millimeters)
+  // The size of the points of the lines if not defined by a transform's
+  // metadata defaults to 10 (millimeters)
   optional float line_point_size = 9;
 
   // The models to render

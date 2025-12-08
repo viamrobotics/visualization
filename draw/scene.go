@@ -237,7 +237,7 @@ func WithSceneLineWidth(lineWidth float32) sceneMetadataOption {
 }
 
 // WithSceneLinePointSize creates a metadata option that sets the default size in millimeters
-// for vertex dots on lines (can be overridden per-object).
+// for vertex points on lines (can be overridden per-object).
 func WithSceneLinePointSize(linePointSize float32) sceneMetadataOption {
 	return func(config *sceneMetadataConfig) {
 		config.linePointSize = linePointSize
