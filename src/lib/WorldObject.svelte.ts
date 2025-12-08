@@ -1,5 +1,5 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, MathUtils, Object3D, Vector3, type BufferGeometry } from 'three'
+import { BatchedMesh, Color, MathUtils, Vector3, type BufferGeometry } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
