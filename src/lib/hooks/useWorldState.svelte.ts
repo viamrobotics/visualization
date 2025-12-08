@@ -10,18 +10,12 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform, parseMetadata } from '$lib/WorldObject.svelte'
+import { parseMetadata } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
 import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
-import { getContext, setContext } from 'svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { createPose } from '$lib/transform'
-import { trait, type ConfigurableTrait } from 'koota'
-
-const key = Symbol('world-state-context')
-
-interface Context {}
+import type { ConfigurableTrait } from 'koota'
 
 const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
@@ -31,7 +25,7 @@ export const provideWorldStates = () => {
 	const partID = usePartID()
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
 
-	const current = $derived.by(() =>
+	$effect(() => {
 		Object.fromEntries(
 			resourceNames.current.map(({ name }) => [
 				name,
@@ -41,24 +35,7 @@ export const provideWorldStates = () => {
 				),
 			])
 		)
-	)
-
-	setContext<Context>(key, {
-		get names() {
-			return resourceNames.current
-		},
-		get current() {
-			return current
-		},
 	})
-}
-
-export const useWorldStates = () => {
-	return getContext<Context>(key)
-}
-
-export const useWorldState = (resourceName: () => string) => {
-	return {}
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
@@ -67,9 +44,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 	let initialized = $state(false)
 	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
-
-	const transformsList = $derived.by(() => Object.values(transforms))
-	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
 
 	$effect(() => {
 		for (const [uuid, transform] of Object.entries(transforms)) {
@@ -102,7 +76,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			}
 
 			if (metadata.shape === 'arrow') {
-				entityTraits.push(traits.Arrow)
+				entityTraits.push(traits.Arrow, traits.Instance)
 			}
 
 			world.spawn(...entityTraits)
@@ -224,9 +198,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	return {
 		get name() {
 			return resourceName()
-		},
-		get worldObjects() {
-			return worldObjectsList
 		},
 		get listUUIDs() {
 			return listUUIDs

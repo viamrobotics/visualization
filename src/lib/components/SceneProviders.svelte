@@ -18,7 +18,6 @@
 	import { provideOrigin } from './xr/useOrigin.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideWorld } from '$lib/ecs'
@@ -40,7 +39,6 @@
 	provideMachineSettings()
 	provideLogs()
 
-	provideArrows()
 	provideOrigin()
 	provideDrawAPI()
 

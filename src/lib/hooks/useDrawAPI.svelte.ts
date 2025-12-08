@@ -4,7 +4,6 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { UuidTool } from 'uuid-tool'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
@@ -14,6 +13,7 @@ import { trait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 
+const vec3 = new Vector3()
 const colorUtil = new Color()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
@@ -91,7 +91,6 @@ export const provideDrawAPI = () => {
 	const world = useWorld()
 	const logs = useLogs()
 	const cameraControls = useCameraControls()
-	const batchedArrow = useArrows()
 	const { invalidate } = useThrelte()
 
 	let pointsIndex = 0
@@ -245,6 +244,7 @@ export const provideDrawAPI = () => {
 		entities.set(name, entity)
 	}
 
+	const pose = createPose()
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
@@ -254,10 +254,20 @@ export const provideDrawAPI = () => {
 		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
+			origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
+			direction.set(reader.read(), reader.read(), reader.read())
+
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
+
 			const entity = world.spawn(
 				traits.UUID,
 				traits.Name(`Pose ${++poseIndex}`),
-				traits.Pose,
+				traits.Pose(pose),
 				traits.Instance,
 				traits.Color,
 				traits.Arrow,
@@ -267,43 +277,26 @@ export const provideDrawAPI = () => {
 			entities.push(entity)
 		}
 
-		world
-			.query(traits.Arrow, traits.Pose, traits.Instance, traits.Color)
-			.select(traits.Pose, traits.Instance, traits.Color)
-			.useStores(([poses, instances, colors]) => {
-				for (let i = 0; i < nPoints; i += 1) {
-					const eid = entities[i].id()
-					origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
-					direction.set(reader.read(), reader.read(), reader.read())
+		for (const entity of entities) {
+			colorUtil.set(reader.read(), reader.read(), reader.read())
+			entity.set(traits.Color, colorUtil)
+		}
 
-					poses.x[eid] = origin.x
-					poses.y[eid] = origin.y
-					poses.z[eid] = origin.z
-					poses.oX[eid] = direction.x
-					poses.oY[eid] = direction.y
-					poses.oZ[eid] = direction.z
-
-					instances.meshID[eid] = batchedArrow.mesh.id
-					instances.instanceID[eid] = batchedArrow.addArrow(
-						direction,
-						origin,
-						undefined,
-						undefined,
-						arrowHeadAtPose === 1
-					)
-				}
-
-				for (let i = 0; i < nColors; i += 1) {
-					const eid = entities[i].id()
-					const r = reader.read()
-					const g = reader.read()
-					const b = reader.read()
-					colors.r[eid] = r
-					colors.g[eid] = g
-					colors.b[eid] = b
-					batchedArrow.mesh.setColorAt(instances.instanceID[eid], colorUtil.set(r, g, b))
-				}
-			})
+		// world
+		// 	.query(traits.Arrow, traits.Color)
+		// 	.select(traits.Color)
+		// 	.useStores(([colors]) => {
+		// 		for (let i = 0; i < nColors; i += 1) {
+		// 			const eid = entities[i].id()
+		// 			const r = reader.read()
+		// 			const g = reader.read()
+		// 			const b = reader.read()
+		// 			colors.r[eid] = r
+		// 			colors.g[eid] = g
+		// 			colors.b[eid] = b
+		// 			entities[i].changed(traits.Color)
+		// 		}
+		// 	})
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {
@@ -428,10 +421,6 @@ export const provideDrawAPI = () => {
 		for (const name of names) {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
-					const instance = entity.get(traits.Instance)
-					if (instance) {
-						batchedArrow.removeArrow(instance.instanceID)
-					}
 					entity.destroy()
 				}
 			}
@@ -440,10 +429,6 @@ export const provideDrawAPI = () => {
 
 	const removeAll = () => {
 		for (const entity of world.query(traits.DrawAPI)) {
-			const instance = entity.get(traits.Instance)
-			if (instance) {
-				batchedArrow.removeArrow(instance.instanceID)
-			}
 			entity.destroy()
 		}
 

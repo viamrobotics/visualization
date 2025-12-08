@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
 	import { Portal, PortalTarget } from './portal'
-	import { useArrows } from '$lib/hooks/useArrows.svelte'
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
 	import Line from './Line.svelte'
@@ -12,7 +10,6 @@
 	import { traits, useQuery } from '$lib/ecs'
 	import { Or } from 'koota'
 
-	const batchedArrow = useArrows()
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)
@@ -84,9 +81,3 @@
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
 {/each}
-
-<T
-	is={batchedArrow.mesh}
-	dispose={false}
-	bvh={{ enabled: false }}
-/>

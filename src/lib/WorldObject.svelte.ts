@@ -1,5 +1,5 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, MathUtils, Object3D, Vector3, type BufferGeometry } from 'three'
+import { BatchedMesh, Color, MathUtils, Vector3, type BufferGeometry } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
 import { createPose, matrixToPose, poseToMatrix } from './transform'
 import type { ValueOf } from 'type-fest'
@@ -155,7 +155,7 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 				json[k] = parseOpacity(unwrappedValue)
 				break
 			case 'gltf':
-				json[k] = unwrappedValue as { scene: Object3D }
+				json[k] = unwrappedValue as GLTF
 				break
 			case 'points':
 				json[k] = unwrappedValue as Vector3[]

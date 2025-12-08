@@ -77,7 +77,7 @@ export class BatchedArrow {
 		direction: Vector3,
 		length: number,
 		color: Color,
-		arrowHeadAtPose: boolean
+		arrowHeadAtPose = true
 	) {
 		if (arrowHeadAtPose) {
 			// Compute the base position so the arrow ends at the origin
@@ -103,9 +103,5 @@ export class BatchedArrow {
 		}
 
 		this.mesh.setVisibleAt(instanceId, true)
-	}
-
-	get object3d() {
-		return this.mesh
 	}
 }

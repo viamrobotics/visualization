@@ -17,6 +17,7 @@
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
+	import BatchedArrows from './BatchedArrows.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -94,6 +95,7 @@
 		<PortalTarget id="world" />
 
 		<Entities />
+		<BatchedArrows />
 	</T.Group>
 
 	{@render children?.()}
