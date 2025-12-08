@@ -56,6 +56,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Generate protobuf
+        run: make proto-gen-ts
+
       - name: Check
         run: pnpm run check
 
@@ -80,6 +86,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Generate protobuf
+        run: make proto-gen-ts
 
       - name: Test
         run: pnpm run test
