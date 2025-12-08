@@ -231,7 +231,7 @@ export const provideFrames = (partID: () => string) => {
 
 			const children = current.filter((frame) => frame.referenceFrame === frameName)
 
-			// Enqueue the CHILD frame's own name
+			// Enqueue the child frame's own name
 			for (const frame of children) {
 				// This must be the child key
 				frameNameQueue.push(frame.referenceFrame)
