@@ -200,6 +200,7 @@ export const provideFrames = (partID: () => string) => {
 				center ? traits.Center(center) : trait(),
 				geometryTrait(),
 				traits.FramesAPI,
+				traits.EditedPose(pose),
 				traits.ReferenceFrame
 			)
 
