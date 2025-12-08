@@ -4,6 +4,9 @@
 export { default as Geometry } from './components/Geometry.svelte'
 export { default as AxesHelper } from './components/AxesHelper.svelte'
 
+// Draw
+export { Snapshot } from '$lib/draw/v1/snapshot_pb'
+
 // Classes
 export { BatchedArrow } from './three/BatchedArrow'
 export { CapsuleGeometry } from './three/CapsuleGeometry'
