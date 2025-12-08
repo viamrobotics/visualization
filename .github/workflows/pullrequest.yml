@@ -94,7 +94,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: 1.23.11
-          cache: 'go'
+          cache: true
 
       - name: Install protoc-gen-go and protoc-gen-go-grpc
         run: |
