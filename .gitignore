@@ -13,6 +13,7 @@ static/Big_Buck_Bunny_4K.webm
 /coverage
 /dist
 viamrobotics-motion-tools-*.tgz
+draw/__snapshots__/
 
 # OS
 .DS_Store
@@ -32,3 +33,9 @@ vite.config.ts.timestamp-*
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Protobuf
+draw/v1
+src/lib/common/v1
+src/lib/draw/v1
+protos/vendor

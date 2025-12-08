@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package draw.v1;
+
+import "common/v1/common.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
+
+message OrthographicCamera {
+  // for orthographic camera props
+}
+
+message PerspectiveCamera {
+  // for perspective camera props
+}
+
+message SceneCamera {
+  // The position of the camera in millimeters
+  // defaults to [0, 0, 3000]
+  viam.common.v1.Vector3 position = 1;
+
+  // The look at point of the camera in millimeters
+  // defaults to [0, 0, 0]
+  viam.common.v1.Vector3 look_at = 2;
+
+  // Whether to animate camera movement
+  // defaults to false
+  optional bool animated = 3;
+
+  // The camera type
+  // defaults to perspective_camera
+  oneof camera_type {
+    PerspectiveCamera perspective_camera = 4;
+    OrthographicCamera orthographic_camera = 5;
+  }
+}
+
+enum RenderArmModels {
+  RENDER_ARM_MODELS_UNSPECIFIED = 0;
+  RENDER_ARM_MODELS_COLLIDERS = 1;
+  RENDER_ARM_MODELS_COLLIDERS_AND_MODEL = 2;
+  RENDER_ARM_MODELS_MODEL = 3;
+}
+
+enum RenderShapes {
+  RENDER_SHAPES_UNSPECIFIED = 0;
+  RENDER_SHAPES_ARROWS = 1;
+  RENDER_SHAPES_LINES = 2;
+  RENDER_SHAPES_POINTS = 3;
+  RENDER_SHAPES_MODEL = 4;
+  RENDER_SHAPES_NURBS = 5;
+}
+
+message SceneMetadata {
+  // The camera to use for the scene
+  // defaults to a perspective_camera with a position of [3000, 3000, 3000] and
+  // a look_at of [0, 0, 0]
+  optional SceneCamera scene_camera = 1;
+
+  // Whether to render the grid
+  // defaults to true
+  optional bool grid = 2;
+
+  // The size of the grid cells
+  // defaults to 500 (millimeters)
+  optional float grid_cell_size = 3;
+
+  // The size of the grid sections
+  // defaults to 10000 (millimeters)
+  optional float grid_section_size = 4;
+
+  // The fade distance of the grid
+  // defaults to 25000 (millimeters)
+  optional float grid_fade_distance = 5;
+
+  // The size of points if not defined by a transform's metadata
+  // defaults to 10 (millimeters)
+  optional float point_size = 6;
+
+  // The color of the points if not defined by a transform's metadata
+  // defaults to [51, 51, 51, 255] (gray)
+  optional bytes point_color = 7;
+
+  // The width of the lines if not defined by a transform's metadata
+  // defaults to 5 (millimeters)
+  optional float line_width = 8;
+
+  // The size of the points of the lines if not defined by a transform's
+  // metadata defaults to 10 (millimeters)
+  optional float line_point_size = 9;
+
+  // The models to render
+  // defaults to COLLIDERS_AND_MODEL
+  optional RenderArmModels render_arm_models = 10;
+
+  // The shapes to render
+  // defaults to [ARROWS, POINTS, LINES, MODEL, NURBS]
+  repeated RenderShapes render_shapes = 11;
+}

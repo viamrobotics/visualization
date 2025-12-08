@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package draw.v1;
+
+import "common/v1/common.proto";
+import "draw/v1/metadata.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
+
+// Arrows represents a set of arrows in 3D space
+// Metadata:
+// - colors: []uint8 of a single color: [r, g, b, a] 
+//   or a color per arrow: [r, g, b, a, ...]
+//   defaults to [0, 255, 0, 180] (green)
+message Arrows {
+  // The poses of the arrows
+  // float32 array of poses: [x, y, z, ox, oy, oz]
+  bytes poses = 1;
+}
+
+// Line represents a line in 3D space
+// Metadata:
+// - colors: []uint8 of a single color: [r, g, b, a] 
+//   or two colors for lines and points: [r, g, b, a, r, g, b, a]
+//   defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
+message Line {
+  // The positions of the line points
+  // float32 array of positions: [x, y, z, ...]
+  bytes positions = 1;
+
+  // optional width of the line in millimeters, defaults to 5
+  optional float line_width = 2;
+
+  // optional size of the points in millimeters, defaults to 10
+  optional float point_size = 3;
+}
+
+// Points represents a set of points in 3D space
+// Metadata:
+// - colors: []uint8 of a single color: [r, g, b, a] 
+//   or a color per point: [r, g, b, a, ...]
+//   defaults to [51, 51, 51, 180] (gray)
+message Points {
+  // The positions of the points
+  // float32 array of positions: [x, y, z, ...]
+  bytes positions = 1;
+
+  // Size of the points in millimeters, defaults to 10
+  optional float point_size = 2;
+}
+
+// ModelAsset represents the type of model
+message ModelAsset {
+  // The mime type of the model asset
+  string mime_type = 1;
+
+  // Expected file size in bytes (helpful for progress tracking)
+  optional uint64 size_bytes = 2;
+
+  // The content of the model asset
+  oneof content {
+    // The url of the model asset
+    string url = 3;
+    // The binary data of the model asset
+    bytes data = 4;
+  }
+}
+
+// Model represents a 3D model in various formats
+// Metadata:
+// - colors: []uint8 of no colors
+message Model {
+  // The list of assets that make up the model
+  repeated ModelAsset assets = 1;
+
+  // Uniform scale factor, defaults to [1.0, 1.0, 1.0]
+  optional viam.common.v1.Vector3 scale = 2;
+
+  // Name of the animation to play, defaults to empty string (no animation)
+  optional string animation_name = 3;
+}
+
+// Nurbs represents a NURBS curve in 3D space
+// Metadata:
+// - colors: []uint8 of a single color: [r, g, b, a]
+//   defaults to [0, 255, 255, 180] (cyan)
+message Nurbs {
+  // The control points of the NURBS
+  // []float32 of poses: [x, y, z, ox, oy, oz, theta, ...]
+  bytes control_points = 1;
+
+  // The knots of the NURBS
+  // float32 array of knots: [knot, ...]
+  bytes knots = 2;
+
+  // The degree of the NURBS, defaults to 3
+  optional int32 degree = 3;
+
+  // The weights of the NURBS, defaults to [1, 1, 1, ...]
+  // float32 array of weights: [weight, ...]
+  optional bytes weights = 4;
+}
+
+message Shape {
+  // The center of the shape
+  viam.common.v1.Pose center = 1;
+
+  // The label of the shape
+  string label = 2;
+
+  // The type of the shape
+  oneof geometry_type {
+    Arrows arrows = 3;
+    Line line = 4;
+    Points points = 5;
+    Model model = 6;
+    Nurbs nurbs = 7;
+  }
+}
+
+// For non-physical visualization shapes
+message Drawing {
+  // The name of the shape
+  string reference_frame = 1;
+
+  // The pose of the shape as observed through it's parent frame/the world
+  viam.common.v1.PoseInFrame pose_in_observer_frame = 2;
+
+  // The shape of the drawing
+  optional Shape physical_object = 3;
+
+  // The UUID of the shape
+  bytes uuid = 4;
+
+  // The metadata of the shape
+  optional draw.v1.Metadata metadata = 5;
+}
