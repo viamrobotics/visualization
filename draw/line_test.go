@@ -1,6 +1,8 @@
 package draw
 
 import (
+	"bytes"
+	"encoding/binary"
 	"testing"
 
 	"github.com/golang/geo/r3"
@@ -47,5 +49,50 @@ func TestLine(t *testing.T) {
 
 		test.That(t, line.LineColor, test.ShouldResemble, NewColor(WithName("red")))
 		test.That(t, line.PointColor, test.ShouldResemble, pointColor)
+	})
+
+	t.Run("ToBytes", func(t *testing.T) {
+		positions := []r3.Vector{
+			{X: 0, Y: 0, Z: 0},
+			{X: 1, Y: 0, Z: 0},
+			{X: 0, Y: 1, Z: 0},
+		}
+		pointColor := NewColor(WithName("blue"))
+		line, err := NewLine(positions, WithLineColors(NewColor(WithName("red")), &pointColor))
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, line, test.ShouldNotBeNil)
+
+		buf, err := line.ToBytes("test", 2)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, buf, test.ShouldNotBeNil)
+
+		expected := []float32{
+			float32(2),
+			float32(len("test")),
+			float32('t'),
+			float32('e'),
+			float32('s'),
+			float32('t'),
+			float32(len(positions)),
+			float32(line.LineColor.R) / 255.0,
+			float32(line.LineColor.G) / 255.0,
+			float32(line.LineColor.B) / 255.0,
+			float32(line.PointColor.R) / 255.0,
+			float32(line.PointColor.G) / 255.0,
+			float32(line.PointColor.B) / 255.0,
+			float32(positions[0].X) / 1000.0,
+			float32(positions[0].Y) / 1000.0,
+			float32(positions[0].Z) / 1000.0,
+			float32(positions[1].X) / 1000.0,
+			float32(positions[1].Y) / 1000.0,
+			float32(positions[1].Z) / 1000.0,
+			float32(positions[2].X) / 1000.0,
+			float32(positions[2].Y) / 1000.0,
+			float32(positions[2].Z) / 1000.0,
+		}
+		expectedBuf := new(bytes.Buffer)
+		err = binary.Write(expectedBuf, binary.LittleEndian, expected)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, expectedBuf.Bytes(), test.ShouldResemble, buf)
 	})
 }

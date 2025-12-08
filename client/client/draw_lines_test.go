@@ -39,6 +39,7 @@ func TestDrawLines(t *testing.T) {
 
 		lineColor := [3]uint8{255, 0, 0}
 		dotColor := [3]uint8{0, 255, 0}
-		test.That(t, DrawLine("upwardSpiral", points, &lineColor, &dotColor), test.ShouldBeNil)
+		err := DrawLine("upwardSpiral", points, &lineColor, &dotColor)
+		test.That(t, err, test.ShouldBeNil)
 	})
 }
