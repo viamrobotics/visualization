@@ -1,7 +1,6 @@
 import type { Entity } from 'koota'
 import type { Pose } from '@viamrobotics/sdk'
 import type { Frame } from '$lib/frame'
-import { createPose } from '$lib/transform'
 import { traits } from '$lib/ecs'
 
 type UpdateFrameCallback = {
@@ -42,7 +41,7 @@ export class FrameConfigUpdater {
 
 		entity.set(traits.EditedPose, { x, y, z })
 
-		const name = entity.get(traits.Name)?.name
+		const name = entity.get(traits.Name)
 		const updatedPose = entity.get(traits.EditedPose)
 
 		if (name && updatedPose) {
@@ -75,7 +74,7 @@ export class FrameConfigUpdater {
 
 		entity.set(traits.EditedPose, { oX, oY, oZ, theta })
 
-		const name = entity.get(traits.Name)?.name
+		const name = entity.get(traits.Name)
 		const updatedPose = entity.get(traits.EditedPose)
 
 		if (name && updatedPose) {
@@ -96,7 +95,7 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Box, { x, y, z })
 
-			const name = entity.get(traits.Name)?.name
+			const name = entity.get(traits.Name)
 			const box = entity.get(traits.Box)
 			const pose = entity.get(traits.EditedPose)
 
@@ -109,7 +108,7 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Sphere, { r })
 
-			const name = entity.get(traits.Name)?.name
+			const name = entity.get(traits.Name)
 			const sphere = entity.get(traits.Sphere)
 			const pose = entity.get(traits.EditedPose)
 
@@ -123,7 +122,7 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Capsule, { r, l })
 
-			const name = entity.get(traits.Name)?.name
+			const name = entity.get(traits.Name)
 			const capsule = entity.get(traits.Capsule)
 			const pose = entity.get(traits.EditedPose)
 
@@ -137,7 +136,7 @@ export class FrameConfigUpdater {
 		const entity = this.entity()
 		if (!entity) return
 
-		const name = entity.get(traits.Name)?.name
+		const name = entity.get(traits.Name)
 		const pose = entity.get(traits.EditedPose)
 
 		if (name && pose) {
@@ -149,7 +148,7 @@ export class FrameConfigUpdater {
 		const entity = this.entity()
 		if (!entity) return
 
-		const name = entity.get(traits.Name)?.name
+		const name = entity.get(traits.Name)
 
 		if (name) {
 			this.removeFrame(name)
@@ -160,7 +159,7 @@ export class FrameConfigUpdater {
 		const entity = this.entity()
 		if (!entity) return
 
-		const name = entity.get(traits.Name)?.name
+		const name = entity.get(traits.Name)
 		const pose = entity.get(traits.EditedPose)
 
 		if (!name || !pose) return

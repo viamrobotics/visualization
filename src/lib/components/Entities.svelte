@@ -6,7 +6,6 @@
 	import Pointcloud from './Pointcloud.svelte'
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
-	import { determinePose } from '$lib/WorldObject.svelte'
 	import { traits, useQuery } from '$lib/ecs'
 	import { Or } from 'koota'
 
@@ -14,11 +13,11 @@
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)
 	const lines = useQuery(traits.LineGeometry)
-	const primitives = useQuery(traits.DrawAPI, Or(traits.Box, traits.Capsule, traits.Sphere))
+	const drawnPrimitives = useQuery(traits.DrawAPI, Or(traits.Box, traits.Capsule, traits.Sphere))
 	const gltfs = useQuery(traits.GLTF)
 </script>
 
-{#each primitives.current as entity (entity)}
+{#each drawnPrimitives.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -36,17 +35,13 @@
 {/each}
 
 {#each frames.current as entity (entity)}
-	{@const name = entity.get(traits.Name)}
 	{@const parent = entity.get(traits.Parent)}
 
 	<Portal id={parent}>
-		<Pose
-			{name}
-			{parent}
-		>
+		<Pose {entity}>
 			{#snippet children({ pose })}
 				<Frame
-					pose={determinePose(entity, pose)}
+					{pose}
 					{entity}
 				>
 					<PortalTarget id={entity.get(traits.Name)} />
