@@ -81,6 +81,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate protobuf
+        run: make proto-gen-ts
+
       - name: Test
         run: pnpm run test
 
