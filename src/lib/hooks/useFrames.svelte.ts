@@ -143,9 +143,16 @@ export const provideFrames = (partID: () => string) => {
 
 	const current = $derived(Object.values(frames))
 
-	const entities = new Map<string, Entity>()
+	const entities = new Map<string, Entity | undefined>()
 
 	$effect.pre(() => {
+		for (const [name, entity] of entities) {
+			if (!frames[name]) {
+				entity?.destroy()
+				entities.delete(name)
+			}
+		}
+
 		for (const frame of current) {
 			if (frame === undefined) {
 				continue
