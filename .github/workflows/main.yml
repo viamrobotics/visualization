@@ -28,6 +28,11 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 'latest'
+
       - name: Install and Build 🔧
         run: |
           pnpm i
