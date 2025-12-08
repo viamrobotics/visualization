@@ -50,36 +50,37 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
 
+	$inspect(localPose.current)
+
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
-	let geometryType = $state<'box' | 'sphere' | 'capsule' | 'none'>(
-		(() => {
-			if (box.current) return 'box'
-			if (sphere.current) return 'sphere'
-			if (capsule.current) return 'capsule'
-			return 'none'
-		})()
-	)
+	let geometryType = $derived.by<'box' | 'sphere' | 'capsule' | 'none'>(() => {
+		if (box.current) return 'box'
+		if (sphere.current) return 'sphere'
+		if (capsule.current) return 'capsule'
+		return 'none'
+	})
 
 	let copied = $state(false)
 
 	const draggable = useDraggable('details')
 
-	const detailConfigUpdater = new FrameConfigUpdater(
-		() => entity,
-		partConfig.updateFrame,
-		partConfig.deleteFrame,
-		() => parent.current ?? 'world'
-	)
+	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
-		if (type === geometryType) return
+		if (type === geometryType) {
+			return
+		}
+
 		geometryType = type
-		detailConfigUpdater.setGeometryType(type)
+
+		if (entity) {
+			detailConfigUpdater.setGeometryType(entity, type)
+		}
 	}
 
 	const { start, stop } = useTask(
@@ -309,7 +310,7 @@
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
 						options: frames.getParentFrameOptions(name.current ?? ''),
-						onChange: (value) => detailConfigUpdater.setFrameParent(value),
+						onChange: (value) => detailConfigUpdater.setFrameParent(entity, value),
 					})}
 				</div>
 			</div>
@@ -324,19 +325,22 @@
 							label: 'x',
 							ariaLabel: 'local position x coordinate',
 							value: localPose.current.x.toFixed(2) ?? '0',
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
+							onInput: (value) =>
+								detailConfigUpdater.updateLocalPosition(entity, { x: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local position y coordinate',
 							value: localPose.current.y.toFixed(2) ?? '0',
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
+							onInput: (value) =>
+								detailConfigUpdater.updateLocalPosition(entity, { y: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local position z coordinate',
 							value: localPose.current.z.toFixed(2) ?? '0',
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ z: parseFloat(value) }),
+							onInput: (value) =>
+								detailConfigUpdater.updateLocalPosition(entity, { z: parseFloat(value) }),
 						})}
 					</div>
 				</div>
@@ -350,28 +354,28 @@
 							ariaLabel: 'local orientation x coordinate',
 							value: localPose.current?.oX.toFixed(2) ?? '0.00',
 							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oX: parseFloat(value) }),
+								detailConfigUpdater.updateLocalOrientation(entity, { oX: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local orientation y coordinate',
 							value: localPose.current?.oY.toFixed(2) ?? '0',
 							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oY: parseFloat(value) }),
+								detailConfigUpdater.updateLocalOrientation(entity, { oY: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local orientation z coordinate',
 							value: localPose.current?.oZ.toFixed(2) ?? '0',
 							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oZ: parseFloat(value) }),
+								detailConfigUpdater.updateLocalOrientation(entity, { oZ: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'th',
 							ariaLabel: 'local orientation theta degrees',
 							value: localPose.current?.theta.toFixed(2) ?? '0',
 							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ theta: parseFloat(value) }),
+								detailConfigUpdater.updateLocalOrientation(entity, { theta: parseFloat(value) }),
 						})}
 					</div>
 				</div>
@@ -422,21 +426,21 @@
 							ariaLabel: 'box dimensions x value input',
 							value: box.current.x.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'box', x: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', x: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'box dimensions y value input',
 							value: box.current.y.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'box', y: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', y: parseFloat(value) }),
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'box dimensions z value input',
 							value: box.current.z.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'box', z: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', z: parseFloat(value) }),
 						})}
 					</div>
 				</div>
@@ -449,14 +453,20 @@
 							ariaLabel: 'capsule dimensions radius value input',
 							value: capsule.current.r.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'capsule', r: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'capsule',
+									r: parseFloat(value),
+								}),
 						})}
 						{@render ScalarAttribute({
 							label: 'l',
 							ariaLabel: 'capsule dimensions length value input',
 							value: capsule.current.l.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'capsule', l: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'capsule',
+									l: parseFloat(value),
+								}),
 						})}
 					</div>
 				</div>
@@ -469,7 +479,10 @@
 							ariaLabel: 'sphere dimensions radius value',
 							value: sphere.current.r.toFixed(2),
 							onInput: (value) =>
-								detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'sphere',
+									r: parseFloat(value),
+								}),
 						})}
 					</div>
 				</div>
@@ -501,7 +514,7 @@
 			<Button
 				variant="danger"
 				class="mt-2 w-full"
-				onclick={() => detailConfigUpdater.deleteFrame()}
+				onclick={() => detailConfigUpdater.deleteFrame(entity)}
 			>
 				Delete frame
 			</Button>

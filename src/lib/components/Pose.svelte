@@ -22,8 +22,6 @@
 		() => parent.current ?? 'world'
 	)
 
-	$inspect(pose.current)
-
 	const finalPose = $derived.by(() => {
 		if (pose.current === undefined) {
 			return editedPose.current

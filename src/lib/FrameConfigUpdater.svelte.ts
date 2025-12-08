@@ -2,6 +2,7 @@ import type { Entity } from 'koota'
 import type { Pose } from '@viamrobotics/sdk'
 import type { Frame } from '$lib/frame'
 import { traits } from '$lib/ecs'
+import type { Vector3Like } from 'three'
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
@@ -12,57 +13,46 @@ type RemoveFrameCallback = {
 }
 
 export class FrameConfigUpdater {
-	private entity: () => Entity | undefined
-	private referenceFrame: () => string
 	private updateFrame: UpdateFrameCallback
 	private removeFrame: RemoveFrameCallback
 
-	constructor(
-		entity: () => Entity | undefined,
-		updateFrame: UpdateFrameCallback,
-		removeFrame: RemoveFrameCallback,
-		referenceFrame: () => string
-	) {
-		this.referenceFrame = referenceFrame
-		this.entity = entity
+	constructor(updateFrame: UpdateFrameCallback, removeFrame: RemoveFrameCallback) {
 		this.updateFrame = updateFrame
 		this.removeFrame = removeFrame
 	}
 
-	public updateLocalPosition = ({ x, y, z }: { x?: number; y?: number; z?: number }) => {
-		const entity = this.entity()
-		if (!entity) return
-
-		x = this.sanatizeFloatValue(x)
-		y = this.sanatizeFloatValue(y)
-		z = this.sanatizeFloatValue(z)
+	public updateLocalPosition = (entity: Entity, position: Partial<Vector3Like>) => {
+		const x = this.sanatizeFloatValue(position.x)
+		const y = this.sanatizeFloatValue(position.y)
+		const z = this.sanatizeFloatValue(position.z)
 
 		if (x === undefined && y === undefined && z === undefined) return
 
 		entity.set(traits.EditedPose, { x, y, z })
 
 		const name = entity.get(traits.Name)
+		const parent = entity.get(traits.Parent)
 		const updatedPose = entity.get(traits.EditedPose)
 
-		if (name && updatedPose) {
-			this.updateFrame(name, this.referenceFrame(), updatedPose)
+		if (name && parent && updatedPose) {
+			this.updateFrame(name, parent, updatedPose)
 		}
 	}
 
-	public updateLocalOrientation = ({
-		oX,
-		oY,
-		oZ,
-		theta,
-	}: {
-		oX?: number
-		oY?: number
-		oZ?: number
-		theta?: number
-	}) => {
-		const entity = this.entity()
-		if (!entity) return
-
+	public updateLocalOrientation = (
+		entity: Entity,
+		{
+			oX,
+			oY,
+			oZ,
+			theta,
+		}: {
+			oX?: number
+			oY?: number
+			oZ?: number
+			theta?: number
+		}
+	) => {
 		oX = this.sanatizeFloatValue(oX)
 		oY = this.sanatizeFloatValue(oY)
 		oZ = this.sanatizeFloatValue(oZ)
@@ -75,16 +65,18 @@ export class FrameConfigUpdater {
 		entity.set(traits.EditedPose, { oX, oY, oZ, theta })
 
 		const name = entity.get(traits.Name)
+		const parent = entity.get(traits.Parent)
 		const updatedPose = entity.get(traits.EditedPose)
 
-		if (name && updatedPose) {
-			this.updateFrame(name, this.referenceFrame(), updatedPose)
+		if (name && parent && updatedPose) {
+			this.updateFrame(name, parent, updatedPose)
 		}
 	}
 
-	public updateGeometry = (geometry: Partial<Frame['geometry']>) => {
-		const entity = this.entity()
-		if (!entity) return
+	public updateGeometry = (entity: Entity, geometry: Partial<Frame['geometry']>) => {
+		const name = entity.get(traits.Name)
+		const parent = entity.get(traits.Parent)
+		const pose = entity.get(traits.EditedPose)
 
 		if (geometry?.type === 'box') {
 			const x = this.sanatizeFloatValue(geometry.x)
@@ -95,12 +87,10 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Box, { x, y, z })
 
-			const name = entity.get(traits.Name)
 			const box = entity.get(traits.Box)
-			const pose = entity.get(traits.EditedPose)
 
-			if (name && box && pose) {
-				this.updateFrame(name, this.referenceFrame(), pose, { type: 'box', ...box })
+			if (name && parent && box && pose) {
+				this.updateFrame(name, parent, pose, { type: 'box', ...box })
 			}
 		} else if (geometry?.type === 'sphere') {
 			const r = this.sanatizeFloatValue(geometry.r)
@@ -108,12 +98,10 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Sphere, { r })
 
-			const name = entity.get(traits.Name)
 			const sphere = entity.get(traits.Sphere)
-			const pose = entity.get(traits.EditedPose)
 
-			if (name && sphere && pose) {
-				this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', ...sphere })
+			if (name && parent && sphere && pose) {
+				this.updateFrame(name, parent, pose, { type: 'sphere', ...sphere })
 			}
 		} else if (geometry?.type === 'capsule') {
 			const r = this.sanatizeFloatValue(geometry.r)
@@ -122,20 +110,15 @@ export class FrameConfigUpdater {
 
 			entity.set(traits.Capsule, { r, l })
 
-			const name = entity.get(traits.Name)
 			const capsule = entity.get(traits.Capsule)
-			const pose = entity.get(traits.EditedPose)
 
-			if (name && capsule && pose) {
-				this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', ...capsule })
+			if (name && parent && capsule && pose) {
+				this.updateFrame(name, parent, pose, { type: 'sphere', ...capsule })
 			}
 		}
 	}
 
-	public setFrameParent = (parentName: string) => {
-		const entity = this.entity()
-		if (!entity) return
-
+	public setFrameParent = (entity: Entity, parentName: string) => {
 		const name = entity.get(traits.Name)
 		const pose = entity.get(traits.EditedPose)
 
@@ -144,10 +127,7 @@ export class FrameConfigUpdater {
 		}
 	}
 
-	public deleteFrame = () => {
-		const entity = this.entity()
-		if (!entity) return
-
+	public deleteFrame = (entity: Entity) => {
 		const name = entity.get(traits.Name)
 
 		if (name) {
@@ -155,23 +135,21 @@ export class FrameConfigUpdater {
 		}
 	}
 
-	public setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
-		const entity = this.entity()
-		if (!entity) return
-
+	public setGeometryType = (entity: Entity, type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		const name = entity.get(traits.Name)
+		const parent = entity.get(traits.Parent)
 		const pose = entity.get(traits.EditedPose)
 
-		if (!name || !pose) return
+		if (!name || !parent || !pose) return
 
 		if (type === 'none') {
-			this.updateFrame(name, this.referenceFrame(), pose, { type: 'none' })
+			this.updateFrame(name, parent, pose, { type: 'none' })
 		} else if (type === 'box') {
-			this.updateFrame(name, this.referenceFrame(), pose, { type: 'box', x: 100, y: 100, z: 100 })
+			this.updateFrame(name, parent, pose, { type: 'box', x: 100, y: 100, z: 100 })
 		} else if (type === 'sphere') {
-			this.updateFrame(name, this.referenceFrame(), pose, { type: 'sphere', r: 100 })
+			this.updateFrame(name, parent, pose, { type: 'sphere', r: 100 })
 		} else if (type === 'capsule') {
-			this.updateFrame(name, this.referenceFrame(), pose, { type: 'capsule', r: 20, l: 100 })
+			this.updateFrame(name, parent, pose, { type: 'capsule', r: 20, l: 100 })
 		}
 	}
 

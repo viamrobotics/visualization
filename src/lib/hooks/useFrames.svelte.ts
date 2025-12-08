@@ -196,11 +196,11 @@ export const provideFrames = (partID: () => string) => {
 				traits.Name(name),
 				traits.Parent(parent),
 				traits.Pose(pose),
+				traits.EditedPose(pose),
 				traits.Color(color ? color : undefined),
 				center ? traits.Center(center) : trait(),
 				geometryTrait(),
 				traits.FramesAPI,
-				traits.EditedPose(pose),
 				traits.ReferenceFrame
 			)
 
