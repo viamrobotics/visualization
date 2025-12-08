@@ -42,7 +42,7 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointCol
 		return err
 	}
 
-	buf, err := toBytesLine(line, label)
+	buf, err := lineToBytes(line, label)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointCol
 	return postHTTP(buf, "octet-stream", "line")
 }
 
-func toBytesLine(line *draw.Line, label string) ([]byte, error) {
+func lineToBytes(line *draw.Line, label string) ([]byte, error) {
 	labelBytes := []byte(label)
 	labelLen := len(labelBytes)
 

@@ -31,9 +31,7 @@ type drawArrowsOption func(*drawArrowsConfig)
 
 // WithArrowsColors sets the colors for the arrows. If only defaultColor is provided, it applies
 // to all arrows. If perPoseColors are provided, each arrow gets its corresponding color.
-func WithArrowsColors(defaultColor Color, perPoseColors ...Color) drawArrowsOption {
-	colors := []Color{defaultColor}
-	colors = append(colors, perPoseColors...)
+func WithArrowColors(colors ...Color) drawArrowsOption {
 	return WithColors[*drawArrowsConfig](colors)
 }
 

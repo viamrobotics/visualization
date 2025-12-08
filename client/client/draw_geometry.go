@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/viam-labs/motion-tools/client/colorutil"
+	"github.com/viam-labs/motion-tools/draw"
+	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.viam.com/rdk/spatialmath"
@@ -19,18 +21,28 @@ import (
 //   - geometry: a geometry
 //   - color: a corresponding color
 func DrawGeometry(geometry spatialmath.Geometry, color string) error {
-	data, err := protojson.Marshal(geometry.ToProtobuf())
+
+	drawColor := draw.NewColor(draw.WithName(color))
+	transform, err := draw.DrawGeometry("", geometry, spatialmath.NewZeroPose(), "world", drawColor)
 	if err != nil {
 		return err
 	}
 
-	finalJSON, err := json.Marshal(map[string]interface{}{
+	json, err := transformToGeometryJSON(transform)
+	if err != nil {
+		return err
+	}
+
+	return postHTTP(json, "json", "geometry")
+}
+
+func transformToGeometryJSON(transform *commonv1.Transform) ([]byte, error) {
+	data, err := protojson.Marshal(transform.GetPhysicalObject())
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(map[string]interface{}{
 		"geometry": json.RawMessage(data),
-		"color":    colorutil.NamedColorToHex(color),
+		"color":    colorutil.NamedColorToHex(transform.Metadata.Fields["colors"].GetStringValue()),
 	})
-	if err != nil {
-		return err
-	}
-
-	return postHTTP(finalJSON, "json", "geometry")
 }

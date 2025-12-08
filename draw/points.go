@@ -52,12 +52,8 @@ func WithPointsSize(size float32) drawPointsOption {
 	}
 }
 
-// WithPointsColors creates a points option that sets colors for the points.
-// If only defaultColor is provided, it applies to all points. If perPointColors are provided,
-// each point gets its corresponding color.
-func WithPointsColors(defaultColor Color, perPointColors ...Color) drawPointsOption {
-	colors := []Color{defaultColor}
-	colors = append(colors, perPointColors...)
+// WithPerPointColors creates a points option that sets the colors for each point.
+func WithPointColors(colors ...Color) drawPointsOption {
 	return WithColors[*drawPointsConfig](colors)
 }
 

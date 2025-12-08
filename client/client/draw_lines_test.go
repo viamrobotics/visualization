@@ -57,7 +57,7 @@ func TestDrawLines(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, line, test.ShouldNotBeNil)
 
-		buf, err := toBytesLine(line, "test")
+		buf, err := lineToBytes(line, "test")
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, buf, test.ShouldNotBeNil)
 
