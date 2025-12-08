@@ -1,6 +1,9 @@
 package client
 
 import (
+	"bytes"
+	"encoding/binary"
+
 	"github.com/golang/geo/r3"
 	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/spatialmath"
@@ -39,10 +42,49 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointCol
 		return err
 	}
 
-	buf, err := line.ToBytes(label, lineType)
+	buf, err := toBytesLine(line, label)
 	if err != nil {
 		return err
 	}
 
 	return postHTTP(buf, "octet-stream", "line")
+}
+
+func toBytesLine(line *draw.Line, label string) ([]byte, error) {
+	labelBytes := []byte(label)
+	labelLen := len(labelBytes)
+
+	nPoints := len(line.Positions)
+
+	total := 1 + 1 + labelLen + 1 + 3 + 3 + nPoints*3
+	data := make([]float32, 0, total)
+	data = append(data, float32(lineType), float32(labelLen))
+	for _, b := range labelBytes {
+		data = append(data, float32(b))
+	}
+
+	data = append(data,
+		float32(nPoints),
+		float32(line.LineColor.R)/255.0,
+		float32(line.LineColor.G)/255.0,
+		float32(line.LineColor.B)/255.0,
+		float32(line.PointColor.R)/255.0,
+		float32(line.PointColor.G)/255.0,
+		float32(line.PointColor.B)/255.0,
+	)
+
+	for _, position := range line.Positions {
+		data = append(data,
+			float32(position.X)/1000.0,
+			float32(position.Y)/1000.0,
+			float32(position.Z)/1000.0,
+		)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
