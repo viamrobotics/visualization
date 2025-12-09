@@ -63,19 +63,23 @@ export const useFileDrop = (
 
 			reader.addEventListener('load', async (event) => {
 				const result = event.target?.result
+				let error: string | undefined
 				switch (type) {
-					case 'json':
-						onJSONDrop(file.name, prefix, result, onError, onSuccess)
+					case 'json': {
+						error = onJSONDrop(file.name, prefix, result)
 						break
-					case 'pb':
-						onPBDrop(file.name, extension, prefix, result, onError, onSuccess)
+					}
+					case 'pb': {
+						error = onPBDrop(file.name, extension, prefix, result)
 						break
-					case 'mesh':
-						onMeshDrop(file.name, extension, result, addPoints, addMesh, onError, onSuccess)
+					}
+					case 'mesh': {
+						error = await onMeshDrop(file.name, extension, result, addPoints, addMesh)
 						break
+					}
 				}
 
-				onSuccess(`Loaded ${file.name}`)
+				error ? onError(error) : onSuccess(`Loaded ${file.name}`)
 			})
 
 			readFile(file, reader, extension)

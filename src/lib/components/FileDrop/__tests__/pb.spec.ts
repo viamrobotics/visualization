@@ -29,26 +29,18 @@ describe('pb', () => {
 				expectedError: 'test.pb failed to load.',
 			},
 		])('calls onError for $desc', ({ result, expectedError }) => {
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
+			const error = Subject.onPBDrop('test.pb', 'pb', 'snapshot', result)
 
-			Subject.onPBDrop('test.pb', 'pb', 'snapshot', result, onError, onSuccess)
-
-			expect(onError).toHaveBeenCalledWith(expectedError)
+			expect(error).toBe(expectedError)
 		})
 
 		it.each([
 			{ filename: 'test.pb', extension: 'pb' as const },
 			{ filename: 'test.pb.gz', extension: 'pb.gz' as const },
-		])('calls onSuccess for valid $extension file', ({ filename, extension }) => {
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
-			const buffer = new ArrayBuffer(8)
+		])('returns undefined for valid $extension file', ({ filename, extension }) => {
+			const error = Subject.onPBDrop(filename, extension, 'snapshot', new ArrayBuffer(8))
 
-			Subject.onPBDrop(filename, extension, 'snapshot', buffer, onError, onSuccess)
-
-			expect(onSuccess).toHaveBeenCalledWith(`Loaded ${filename}`)
-			expect(onError).not.toHaveBeenCalled()
+			expect(error).toBeUndefined()
 		})
 	})
 })

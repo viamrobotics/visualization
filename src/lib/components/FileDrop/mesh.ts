@@ -18,27 +18,22 @@ export type MeshDropHandler = (
 	extension: MeshExtension,
 	result: string | ArrayBuffer | null | undefined,
 	addPoints: (points: WorldObject<PointsGeometry>) => void,
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
-) => Promise<void>
+	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
+) => Promise<string | undefined>
 
 export const onMeshDrop: MeshDropHandler = async (
 	name: string,
 	ext: MeshExtension,
 	result: string | ArrayBuffer | null | undefined,
 	addPoints: (points: WorldObject<PointsGeometry>) => void,
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
+	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
 ) => {
 	if (!isArrayBuffer(result)) {
-		onError(`${name} failed to load.`)
-		return
+		return `${name} failed to load.`
 	}
 
 	switch (ext) {
-		case MESH_EXTENSIONS.PCD:
+		case MESH_EXTENSIONS.PCD: {
 			const message = await parsePcdInWorker(new Uint8Array(result))
 			const points = new WorldObject(
 				name,
@@ -54,14 +49,18 @@ export const onMeshDrop: MeshDropHandler = async (
 				message.colors ? { colors: message.colors } : undefined
 			)
 			addPoints(points)
-		case MESH_EXTENSIONS.PLY:
+			break
+		}
+		case MESH_EXTENSIONS.PLY: {
 			const geometry = new PLYLoader().parse(result)
 			const mesh = new WorldObject(name, undefined, undefined, {
 				center: undefined,
 				geometryType: { case: 'bufferGeometry', value: geometry },
 			})
 			addMesh(mesh)
+			break
+		}
 	}
 
-	onSuccess(`Loaded ${name}`)
+	return undefined
 }

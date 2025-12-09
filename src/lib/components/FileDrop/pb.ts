@@ -25,22 +25,17 @@ export type PBDropHandler = (
 	name: string,
 	extension: PBExtension,
 	prefix: PBPrefix,
-	result: string | ArrayBuffer | null | undefined,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
-) => void
+	result: string | ArrayBuffer | null | undefined
+) => string | undefined
 
 export const onPBDrop: PBDropHandler = (
 	name: string,
 	extension: PBExtension,
 	prefix: PBPrefix,
-	result: string | ArrayBuffer | null | undefined,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
+	result: string | ArrayBuffer | null | undefined
 ) => {
 	if (!isArrayBuffer(result)) {
-		onError(`${name} failed to load.`)
-		return
+		return `${name} failed to load.`
 	}
 
 	if (extension === PB_EXTENSIONS.PB_GZ) {
@@ -51,12 +46,8 @@ export const onPBDrop: PBDropHandler = (
 		case PB_PREFIXES.SNAPSHOT:
 			// TODO: decode snapshot from PB
 			console.info('TODO: decode snapshot from PB', result)
-			onSuccess(`Loaded ${name}`)
-			break
+			return undefined
 		default:
-			onError(
-				`${name} has an unsupported prefix: ${prefix}. Only ${SUPPORTED_PB_PREFIXES.join(', ')} are supported.`
-			)
-			break
+			return `${name} has an unsupported prefix: ${prefix}. Only ${SUPPORTED_PB_PREFIXES.join(', ')} are supported.`
 	}
 }

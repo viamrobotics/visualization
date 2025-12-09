@@ -25,15 +25,13 @@ describe('mesh', () => {
 		it.each([
 			{ desc: 'string result', result: 'not an arraybuffer' },
 			{ desc: 'null result', result: null },
-		])('calls onError for $desc', async ({ result }) => {
+		])('returns error for $desc', async ({ result }) => {
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
 
-			await Subject.onMeshDrop('test.pcd', 'pcd', result, addPoints, addMesh, onError, onSuccess)
+			const error = await Subject.onMeshDrop('test.pcd', 'pcd', result, addPoints, addMesh)
 
-			expect(onError).toHaveBeenCalledWith('test.pcd failed to load.')
+			expect(error).toBe('test.pcd failed to load.')
 			expect(addPoints).not.toHaveBeenCalled()
 			expect(addMesh).not.toHaveBeenCalled()
 		})
@@ -49,19 +47,16 @@ describe('mesh', () => {
 
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
 
-			await Subject.onMeshDrop(
+			const error = await Subject.onMeshDrop(
 				'test.pcd',
 				'pcd',
 				new ArrayBuffer(8),
 				addPoints,
-				addMesh,
-				onError,
-				onSuccess
+				addMesh
 			)
 
+			expect(error).toBeUndefined()
 			expect(parsePcdInWorker).toHaveBeenCalled()
 			expect(addPoints).toHaveBeenCalled()
 
@@ -69,32 +64,27 @@ describe('mesh', () => {
 			expect(worldObject.name).toBe('test.pcd')
 			expect(worldObject.geometry?.geometryType.case).toBe('points')
 			expect(worldObject.metadata?.colors).toBe(mockColors)
-			expect(onSuccess).toHaveBeenCalledWith('Loaded test.pcd')
 		})
 
 		it('parses PLY file and calls addMesh', async () => {
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
 
-			await Subject.onMeshDrop(
+			const error = await Subject.onMeshDrop(
 				'test.ply',
 				'ply',
 				new ArrayBuffer(8),
 				addPoints,
-				addMesh,
-				onError,
-				onSuccess
+				addMesh
 			)
 
+			expect(error).toBeUndefined()
 			expect(PLYLoader).toHaveBeenCalled()
 			expect(addMesh).toHaveBeenCalled()
 
 			const worldObject = addMesh.mock.calls[0][0] as WorldObject<ThreeBufferGeometry>
 			expect(worldObject.name).toBe('test.ply')
 			expect(worldObject.geometry?.geometryType.case).toBe('bufferGeometry')
-			expect(onSuccess).toHaveBeenCalledWith('Loaded test.ply')
 		})
 	})
 })

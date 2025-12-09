@@ -15,10 +15,6 @@ export const SUPPORTED_JSON_PREFIXES = [JSON_PREFIXES.SNAPSHOT] as const
 export type JSONExtension = ValueOf<typeof JSON_EXTENSIONS>
 export type JSONPrefix = ValueOf<typeof JSON_PREFIXES>
 
-export const isJSONExtension = (extension: string): extension is JSONExtension => {
-	return SUPPORTED_JSON_EXTENSIONS.includes(extension.toLowerCase() as JSONExtension)
-}
-
 export const isJSONPrefix = (prefix: string | undefined): prefix is JSONPrefix => {
 	if (!prefix) return false
 	return SUPPORTED_JSON_PREFIXES.includes(prefix.toLowerCase() as JSONPrefix)
@@ -27,21 +23,16 @@ export const isJSONPrefix = (prefix: string | undefined): prefix is JSONPrefix =
 export type JSONDropHandler = (
 	name: string,
 	prefix: JSONPrefix,
-	result: string | ArrayBuffer | null | undefined,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
-) => void
+	result: string | ArrayBuffer | null | undefined
+) => string | undefined
 
 export const onJSONDrop: JSONDropHandler = (
 	name: string,
 	prefix: JSONPrefix,
-	result: string | ArrayBuffer | null | undefined,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
+	result: string | ArrayBuffer | null | undefined
 ) => {
 	if (!isString(result)) {
-		onError(`${name} failed to load.`)
-		return
+		return `${name} failed to load.`
 	}
 
 	try {
@@ -50,17 +41,12 @@ export const onJSONDrop: JSONDropHandler = (
 			case JSON_PREFIXES.SNAPSHOT:
 				// TODO: decode snapshot from JSON
 				console.info('TODO: decode snapshot from JSON', json)
-				onSuccess(`Loaded ${name}`)
-				break
+				return undefined
 			default:
-				onError(
-					`${name} has an unsupported prefix: ${prefix}. Only ${SUPPORTED_JSON_PREFIXES.join(', ')} are supported.`
-				)
-				break
+				return `${name} has an unsupported prefix: ${prefix}. Only ${SUPPORTED_JSON_PREFIXES.join(', ')} are supported.`
 		}
 	} catch (error) {
 		console.error(`${name} failed to parse.`, error)
-		onError(`${name} failed to parse.`)
-		return
+		return `${name} failed to parse.`
 	}
 }

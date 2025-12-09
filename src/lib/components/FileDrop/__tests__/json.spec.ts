@@ -33,23 +33,16 @@ describe('json', () => {
 				result: 'invalid json {',
 				expectedError: 'test.json failed to parse.',
 			},
-		])('calls onError for $desc', ({ result, expectedError }) => {
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
+		])('returns $expectedError for $desc', ({ result, expectedError }) => {
+			const error = Subject.onJSONDrop('test.json', 'snapshot', result)
 
-			Subject.onJSONDrop('test.json', 'snapshot', result, onError, onSuccess)
-
-			expect(onError).toHaveBeenCalledWith(expectedError)
+			expect(error).toBe(expectedError)
 		})
 
-		it('calls onSuccess for valid snapshot JSON', () => {
-			const onError = vi.fn()
-			const onSuccess = vi.fn()
+		it('returns undefined for valid snapshot JSON', () => {
+			const error = Subject.onJSONDrop('test.json', 'snapshot', '{"key": "value"}')
 
-			Subject.onJSONDrop('test.json', 'snapshot', '{"key": "value"}', onError, onSuccess)
-
-			expect(onSuccess).toHaveBeenCalledWith('Loaded test.json')
-			expect(onError).not.toHaveBeenCalled()
+			expect(error).toBeUndefined()
 		})
 	})
 })
