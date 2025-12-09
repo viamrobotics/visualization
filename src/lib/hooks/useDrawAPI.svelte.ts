@@ -12,6 +12,7 @@ import { useThrelte } from '@threlte/core'
 import { trait, type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
 
 const colorUtil = new Color()
 
@@ -193,18 +194,11 @@ export const provideDrawAPI = () => {
 			if ('mesh' in data) {
 				return traits.BufferGeometry(parsePlyInput(data.mesh.mesh))
 			} else if ('box' in data) {
-				return traits.Box({
-					x: data.box.dimsMm.x * 0.001,
-					y: data.box.dimsMm.y * 0.001,
-					z: data.box.dimsMm.z * 0.001,
-				})
+				return traits.Box(createBox(data.box))
 			} else if ('sphere' in data) {
-				return traits.Sphere({ r: data.sphere.radiusMm * 0.001 })
+				return traits.Sphere(createSphere(data.sphere))
 			} else if ('capsule' in data) {
-				return traits.Capsule({
-					r: data.capsule.radiusMm * 0.001,
-					l: data.capsule.lengthMm * 0.001,
-				})
+				return traits.Capsule(createCapsule(data.capsule))
 			}
 
 			return trait()

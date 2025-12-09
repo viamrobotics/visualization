@@ -1,17 +1,15 @@
 import { getContext, setContext, untrack } from 'svelte'
-import { Geometry, Transform } from '@viamrobotics/sdk'
+import { Transform } from '@viamrobotics/sdk'
 import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
-import { trait, type ConfigurableTrait, type Entity } from 'koota'
+import type { ConfigurableTrait, Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
 import { createTransformFromFrame, type Frame } from '$lib/frame'
 import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPose } from '$lib/transform'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { parsePlyInput } from '$lib/ply'
 
 interface FramesContext {
 	current: Transform[]
@@ -160,20 +158,6 @@ export const provideFrames = (partID: () => string) => {
 			const resourceName = resourceByName.current[frame.referenceFrame]
 			const color = resourceNameToColor(resourceName)
 
-			const geometryTrait = (geometry: Geometry) => {
-				if (geometry.geometryType.case === 'box') {
-					return traits.Box(createBox(geometry.geometryType.value))
-				} else if (geometry.geometryType.case === 'capsule') {
-					return traits.Capsule(createCapsule(geometry.geometryType.value))
-				} else if (geometry.geometryType.case === 'sphere') {
-					return traits.Sphere(createSphere(geometry.geometryType.value))
-				} else if (geometry.geometryType.case === 'mesh') {
-					return traits.BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh))
-				}
-
-				return trait()
-			}
-
 			const existing = entities.get(name)
 
 			if (existing) {
@@ -193,7 +177,7 @@ export const provideFrames = (partID: () => string) => {
 
 				if (frame.physicalObject) {
 					existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
-					existing.add(geometryTrait(frame.physicalObject))
+					existing.add(traits.Geometry(frame.physicalObject))
 				}
 
 				continue
@@ -220,7 +204,7 @@ export const provideFrames = (partID: () => string) => {
 			}
 
 			if (frame.physicalObject) {
-				entityTraits.push(geometryTrait(frame.physicalObject))
+				entityTraits.push(traits.Geometry(frame.physicalObject))
 			}
 
 			const entity = world.spawn(...entityTraits)

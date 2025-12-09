@@ -122,25 +122,13 @@ export const provideGeometries = (partID: () => string) => {
 						continue
 					}
 
-					const geometryTrait = () => {
-						if (geometry.geometryType.case === 'box') {
-							return traits.Box(createBox(geometry.geometryType.value))
-						} else if (geometry.geometryType.case === 'capsule') {
-							return traits.Capsule(createCapsule(geometry.geometryType.value))
-						} else if (geometry.geometryType.case === 'sphere') {
-							return traits.Sphere(createSphere(geometry.geometryType.value))
-						}
-
-						return trait()
-					}
-
 					const entityTraits: ConfigurableTrait[] = [
 						traits.UUID,
 						traits.Parent(name),
 						traits.Name(label),
 						traits.Pose(pose),
 						traits.GeometriesAPI,
-						geometryTrait(),
+						traits.Geometry(geometry),
 					]
 
 					if (subtype) {
