@@ -44,10 +44,12 @@ func transformToGeometryJSON(transform *commonv1.Transform) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	colorsBytes := base64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue())
-	drawColor := draw.NewColor(draw.WithRGB(colorsBytes[0], colorsBytes[1], colorsBytes[2]))
+	metadata, err := draw.StructToMetadata(transform.Metadata)
+	if err != nil {
+		return nil, err
+	}
 	return json.Marshal(map[string]interface{}{
 		"geometry": json.RawMessage(data),
-		"color":    drawColor.ToHex(),
+		"color":    metadata.Colors[0].ToHex(),
 	})
 }

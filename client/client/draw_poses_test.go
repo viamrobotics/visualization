@@ -71,6 +71,6 @@ func TestDrawPoses(t *testing.T) {
 			"mySpherePose",
 		)
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, DrawGeometry(sphere, "red"), test.ShouldBeNil)
+		test.That(t, DrawGeometry(sphere, "aqua"), test.ShouldBeNil)
 	})
 }
