@@ -2,7 +2,7 @@ import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { BatchedMesh, Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
-import { traits, useTrait } from '$lib/ecs'
+import { traits } from '$lib/ecs'
 
 const selectedKey = Symbol('selected-frame-context')
 const focusedKey = Symbol('focused-frame-context')

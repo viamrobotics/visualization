@@ -16,9 +16,15 @@ export function useQuery<T extends QueryParameter[]>(
 	let entities = $state.raw<QueryResult<T>>(world.query(hash))
 
 	$effect(() => {
-		version
-
 		let id: number | undefined
+
+		// Compare the initial version to the current version to
+		// see it the query has changed.
+		const query = world[internal].queriesHashMap.get(hash)
+
+		if (query?.version !== initialQueryVersion) {
+			entities = world.query(hash)
+		}
 
 		const cb = () => {
 			entities = world.query(hash)
@@ -35,14 +41,6 @@ export function useQuery<T extends QueryParameter[]>(
 				if (id) return
 				id = window.setTimeout(cb)
 			})
-
-			// Compare the initial version to the current version to
-			// see it the query has changed.
-			const query = world[internal].queriesHashMap.get(hash)
-
-			if (query?.version !== initialQueryVersion) {
-				entities = world.query(hash)
-			}
 
 			return () => {
 				unsubAdd()

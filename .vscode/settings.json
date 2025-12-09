@@ -2,7 +2,7 @@
 	"go.testTags": "cse",
 	"go.lintTool": "golangci-lint",
 	"go.lintFlags": ["--fast", "--config=${workspaceFolder}/etc/.golangci.yaml"],
-	"eslint.validate": ["javascript", "svelte"],
+	"eslint.validate": ["javascript", "javascriptreact", "svelte"],
 	"prettier.documentSelectors": ["**/*.svelte"],
 	"prettier.singleQuote": true,
 	"prettier.jsxSingleQuote": true,
