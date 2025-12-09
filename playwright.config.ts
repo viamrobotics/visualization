@@ -11,6 +11,4 @@ export default defineConfig({
 
 	testDir: 'e2e',
 	timeout: 120 * 1000, // 120 seconds
-	// Run tests sequentially to unexpected rendering issues
-	workers: 1,
 })
