@@ -10,20 +10,21 @@ export type ChangeMessage = {
 }
 
 export type AddedEvent = {
-	type: TransformChangeType.ADDED
+	changeType: TransformChangeType.ADDED
 	uuidString: string
 	transform: TransformWithUUID
 }
 
 export type RemovedEvent = {
-	type: TransformChangeType.REMOVED
+	changeType: TransformChangeType.REMOVED
 	uuidString: string
 }
 
 export type UpdatedEvent = {
-	type: TransformChangeType.UPDATED
+	changeType: TransformChangeType.UPDATED
 	uuidString: string
-	changes: [path: string, value: unknown][]
+	transform: TransformWithUUID
+	changes: (number | string)[]
 }
 
 export type ProcessMessage = {

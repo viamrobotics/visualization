@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { usePortalContext } from './usePortalContext.svelte'
+	import { DEFAULT_ID, usePortalContext } from './usePortalContext.svelte'
 	import { SvelteSet } from 'svelte/reactivity'
 
 	interface Props {
@@ -8,7 +8,7 @@
 		children?: Snippet
 	}
 
-	let { id = 'default', children }: Props = $props()
+	let { id = DEFAULT_ID, children }: Props = $props()
 
 	const portals = usePortalContext()
 

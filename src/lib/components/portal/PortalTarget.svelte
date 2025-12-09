@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { usePortalContext } from './usePortalContext.svelte'
+	import { DEFAULT_ID, usePortalContext } from './usePortalContext.svelte'
 
 	interface Props {
 		id?: string
 	}
 
-	let { id = 'default' }: Props = $props()
+	let { id = DEFAULT_ID }: Props = $props()
 
 	const portals = usePortalContext()
 	const childrenArray = $derived(portals.get(id))

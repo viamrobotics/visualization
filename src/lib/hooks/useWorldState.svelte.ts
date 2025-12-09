@@ -11,11 +11,11 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { parseMetadata } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
 import { traits, useWorld } from '$lib/ecs'
-import type { ConfigurableTrait } from 'koota'
+import type { ConfigurableTrait, Entity } from 'koota'
 import { createPose } from '$lib/transform'
+import { useThrelte } from '@threlte/core'
 
 const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
@@ -39,58 +39,92 @@ export const provideWorldStates = () => {
 }
 
 const createWorldState = (partID: () => string, resourceName: () => string) => {
+	const { invalidate } = useThrelte()
 	const world = useWorld()
 	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
 
 	let initialized = $state(false)
-	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
 
-	$effect(() => {
-		for (const transform of Object.values(transforms)) {
-			const metadata = parseMetadata(transform.metadata?.fields)
-			const pose = createPose(transform.poseInObserverFrame?.pose)
+	const entities = new Map<string, Entity>()
 
-			const entityTraits: ConfigurableTrait[] = []
+	const spawnEntity = (transform: TransformWithUUID) => {
+		const metadata = parseMetadata(transform.metadata?.fields)
+		const pose = createPose(transform.poseInObserverFrame?.pose)
 
-			const parent = transform.poseInObserverFrame?.referenceFrame
-			if (parent) {
-				entityTraits.push(traits.Parent(parent))
-			}
+		const entityTraits: ConfigurableTrait[] = []
 
-			if (metadata.color) {
-				entityTraits.push(traits.Color(metadata.color))
-			}
-
-			if (metadata.colors) {
-				entityTraits.push(traits.VertexColors(metadata.colors))
-			}
-
-			if (metadata.shape === 'line' && metadata.points) {
-				entityTraits.push(
-					traits.LineGeometry(metadata.points),
-					traits.DottedLineColor(metadata.lineDotColor)
-				)
-			}
-
-			if (metadata.gltf) {
-				entityTraits.push(traits.GLTF(metadata.gltf))
-			}
-
-			if (metadata.shape === 'arrow') {
-				entityTraits.push(traits.Arrow, traits.Instance)
-			}
-
-			entityTraits.push(traits.Name(transform.referenceFrame), traits.Pose(pose))
-
-			world.spawn(...entityTraits)
+		const parent = transform.poseInObserverFrame?.referenceFrame
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent(parent))
 		}
-	})
+
+		if (metadata.color) {
+			entityTraits.push(traits.Color(metadata.color))
+		}
+
+		if (metadata.colors) {
+			entityTraits.push(traits.VertexColors(metadata.colors))
+		}
+
+		if (transform.physicalObject) {
+			entityTraits.push(traits.Geometry(transform.physicalObject))
+		}
+
+		if (metadata.shape === 'line' && metadata.points) {
+			entityTraits.push(
+				traits.LineGeometry(metadata.points),
+				traits.DottedLineColor(metadata.lineDotColor)
+			)
+		}
+
+		if (metadata.gltf) {
+			entityTraits.push(traits.GLTF(metadata.gltf))
+		}
+
+		if (metadata.shape === 'arrow') {
+			entityTraits.push(traits.Arrow, traits.Instance)
+		}
+
+		entityTraits.push(
+			traits.Name(transform.referenceFrame),
+			traits.Pose(pose),
+			traits.WorldStateStoreAPI
+		)
+
+		const entity = world.spawn(...entityTraits)
+
+		entities.set(transform.uuidString, entity)
+	}
+
+	const destroyEntity = (uuid: string) => {
+		const entity = entities.get(uuid)
+
+		if (!entity) return
+
+		entity.destroy()
+		entities.delete(uuid)
+	}
+
+	const updateEntity = (transform: TransformWithUUID, changes: (string | number)[]) => {
+		const entity = entities.get(transform.uuidString)
+
+		if (!entity) return
+
+		for (const path of changes) {
+			if (typeof path === 'string') {
+				if (path.startsWith('poseInObserverFrame.pose')) {
+					entity.set(traits.Pose, transform.poseInObserverFrame?.pose ?? createPose())
+				} else if (path.startsWith('physicalObject')) {
+				}
+			}
+		}
+	}
 
 	let pendingEvents: ProcessMessage['events'] = []
 	let flushScheduled = false
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
-	const getTransforms = $derived(
+	const getTransformQueries = $derived(
 		listUUIDs.data?.map((uuid) => {
 			return createResourceQuery(
 				client,
@@ -105,44 +139,22 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		refetchMode: 'replace',
 	})
 
-	const initialize = (initial: TransformWithUUID[]) => {
-		const next = { ...transforms }
-		for (const transform of initial) {
-			next[transform.uuidString] = transform
-		}
-
-		transforms = next
-		initialized = true
-	}
-
 	const applyEvents = (events: ProcessMessage['events']) => {
 		if (events.length === 0) return
 
-		const next = { ...transforms }
 		for (const event of events) {
-			switch (event.type) {
-				case TransformChangeType.ADDED:
-					next[event.uuidString] = event.transform
-					break
-				case TransformChangeType.REMOVED:
-					delete next[event.uuidString]
-					break
-				case TransformChangeType.UPDATED: {
-					if (event.changes.length === 0) continue
-
-					let toUpdate = next[event.uuidString]
-					if (!toUpdate) continue
-					for (const [path, value] of event.changes) {
-						toUpdate = setInUnsafe(toUpdate, path, value)
-					}
-
-					next[event.uuidString] = toUpdate
-					break
-				}
+			if (event.changeType === TransformChangeType.ADDED) {
+				spawnEntity(event.transform)
+			} else if (event.changeType === TransformChangeType.REMOVED) {
+				destroyEntity(event.uuidString)
+			} else if (event.changeType === TransformChangeType.UPDATED) {
+				updateEntity(event.transform, event.changes)
+			} else {
+				console.error('Unspecified change type.', event)
 			}
 		}
 
-		transforms = next
+		invalidate()
 	}
 
 	const scheduleFlush = () => {
@@ -160,17 +172,20 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	}
 
 	$effect(() => {
-		if (!getTransforms) return
+		if (!getTransformQueries) return
 		if (initialized) return
+		if (getTransformQueries.some((query) => query?.isLoading)) return
 
-		if (getTransforms.some((query) => query?.isLoading)) return
+		const transforms = getTransformQueries
+			.flatMap((query) => query?.data)
+			.filter((transform) => transform !== undefined)
 
-		const data = getTransforms
-			.flatMap((query) => query?.data ?? [])
-			.filter((transform) => transform !== undefined) as TransformWithUUID[]
-		if (data.length === 0) return
+		for (const transform of transforms) {
+			spawnEntity(transform)
+		}
 
-		initialize(data)
+		invalidate()
+		initialized = true
 	})
 
 	$effect(() => {
@@ -192,21 +207,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	$effect.pre(() => {
 		if (changeStream?.data === undefined) return
 
-		const events = changeStream.data.filter((event) => event.transform !== undefined)
-		if (events.length === 0) return
-
-		worker.postMessage({ type: 'change', events })
+		worker.postMessage({ type: 'change', events: changeStream.data })
 	})
-
-	return {
-		get name() {
-			return resourceName()
-		},
-		get listUUIDs() {
-			return listUUIDs
-		},
-		get getTransforms() {
-			return getTransforms
-		},
-	}
 }

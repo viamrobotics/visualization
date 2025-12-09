@@ -54,15 +54,9 @@ export const VertexColors = trait(() => new Float32Array())
 
 export const GLTF = trait(() => ({}) as ThreeGltf)
 
-/**
- * An entity with data from draw commands
- */
 export const DrawAPI = trait()
-
-/**
- * An entity with data from the GetGeometries() API
- */
 export const GeometriesAPI = trait()
+export const WorldStateStoreAPI = trait()
 
 /**
  * An entity with data from the FrameSystemConfig() API

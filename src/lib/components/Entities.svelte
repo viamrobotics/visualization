@@ -14,10 +14,20 @@
 	const points = useQuery(traits.PointsGeometry)
 	const lines = useQuery(traits.LineGeometry)
 	const drawnPrimitives = useQuery(traits.DrawAPI, Or(traits.Box, traits.Capsule, traits.Sphere))
+	const worldStatePrimitives = useQuery(traits.WorldStateStoreAPI)
 	const gltfs = useQuery(traits.GLTF)
 </script>
 
 {#each drawnPrimitives.current as entity (entity)}
+	<Portal id={entity.get(traits.Parent)}>
+		<Frame {entity}>
+			<PortalTarget id={entity.get(traits.Name)} />
+			<Label text={entity.get(traits.Name)} />
+		</Frame>
+	</Portal>
+{/each}
+
+{#each worldStatePrimitives.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />

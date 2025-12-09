@@ -1,45 +1,37 @@
-import type { ChangeMessage, ProcessMessage } from '$lib/world-state-messages'
-import { getInUnsafe, toPath } from '@thi.ng/paths'
-import {
-	TransformChangeType,
-	type TransformChangeEvent,
-	type TransformWithUUID,
-} from '@viamrobotics/sdk'
+import type {
+	ChangeMessage,
+	ProcessMessage,
+	AddedEvent,
+	RemovedEvent,
+	UpdatedEvent,
+} from '$lib/world-state-messages'
+import { TransformChangeType, type TransformChangeEvent } from '@viamrobotics/sdk'
 
-interface DeduplicationEntry {
-	type: TransformChangeType
-	uuidString: string
-	transform?: TransformWithUUID
-	changes?: Record<string, unknown>
-}
+const createEntry = (
+	event: TransformChangeEvent
+): AddedEvent | RemovedEvent | UpdatedEvent | undefined => {
+	if (event.transform === undefined) {
+		return
+	}
 
-const createEntry = (event: TransformChangeEvent): DeduplicationEntry | undefined => {
-	if (!event.transform) return undefined
 	switch (event.changeType) {
 		case TransformChangeType.ADDED:
 			return {
-				type: event.changeType,
+				changeType: event.changeType,
 				uuidString: event.transform.uuidString,
 				transform: event.transform,
 			}
 		case TransformChangeType.REMOVED:
 			return {
-				type: event.changeType,
+				changeType: event.changeType,
 				uuidString: event.transform.uuidString,
 			}
 		case TransformChangeType.UPDATED: {
-			const changes: Record<string, unknown> = {}
-			const paths = toPath(event.updatedFields?.paths ?? [])
-			for (const path of paths) {
-				const value = getInUnsafe(event.transform, path)
-				changes[path.toString()] = value
-			}
-
 			return {
-				type: event.changeType,
+				changeType: event.changeType,
 				uuidString: event.transform.uuidString,
 				transform: event.transform,
-				changes,
+				changes: event.updatedFields?.paths ?? [],
 			}
 		}
 	}
@@ -49,9 +41,13 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 	const { events } = e.data
 	if (events.length === 0) return
 
-	const eventsByUUID = new Map<string, DeduplicationEntry>()
+	const eventsByUUID = new Map<string, AddedEvent | RemovedEvent | UpdatedEvent | undefined>()
 
 	for (const event of events) {
+		if (!event.transform) {
+			continue
+		}
+
 		const entry = createEntry(event)
 		if (!entry) continue
 
@@ -62,25 +58,30 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 			continue
 		}
 
-		switch (entry.type) {
+		switch (entry.changeType) {
 			case TransformChangeType.REMOVED:
 				eventsByUUID.set(uuid, entry)
 				break
 
 			case TransformChangeType.ADDED:
-				if (existing.type !== TransformChangeType.REMOVED) eventsByUUID.set(uuid, entry)
+				if (existing.changeType !== TransformChangeType.REMOVED) {
+					eventsByUUID.set(uuid, entry)
+				}
 				break
 
 			case TransformChangeType.UPDATED:
 				// merge with existing updated event
-				if (existing.type === TransformChangeType.UPDATED) {
-					const paths = toPath(event.updatedFields?.paths ?? [])
+				if (existing.changeType === TransformChangeType.UPDATED) {
+					const paths = event.updatedFields?.paths ?? []
 					if (paths.length === 0) continue
 					for (const path of paths) {
-						if (!existing.changes) existing.changes = {}
-						const value = getInUnsafe(entry.transform, path)
-						existing.changes[path.toString()] = value
+						if (existing.changes.includes(path)) {
+							continue
+						}
+
+						existing.changes.push(path)
 					}
+
 					existing.transform = event.transform
 				} else {
 					eventsByUUID.set(uuid, entry)
@@ -91,11 +92,11 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 
 	const processedEvents: ProcessMessage['events'] = []
 	for (const entry of eventsByUUID.values()) {
-		switch (entry.type) {
+		switch (entry?.changeType) {
 			case TransformChangeType.ADDED:
 				if (!entry.transform) continue
 				processedEvents.push({
-					type: TransformChangeType.ADDED,
+					changeType: TransformChangeType.ADDED,
 					uuidString: entry.uuidString,
 					transform: entry.transform,
 				})
@@ -103,19 +104,19 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 
 			case TransformChangeType.REMOVED:
 				processedEvents.push({
-					type: TransformChangeType.REMOVED,
+					changeType: TransformChangeType.REMOVED,
 					uuidString: entry.uuidString,
 				})
 				break
 
 			case TransformChangeType.UPDATED: {
-				const changes = Object.entries(entry.changes ?? {})
-				if (changes.length === 0) continue
+				if (entry.changes.length === 0) continue
 
 				processedEvents.push({
-					type: TransformChangeType.UPDATED,
+					changeType: TransformChangeType.UPDATED,
 					uuidString: entry.uuidString,
-					changes,
+					transform: entry.transform,
+					changes: entry.changes,
 				})
 				break
 			}
