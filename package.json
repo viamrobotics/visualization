@@ -27,7 +27,6 @@
 		"@ag-grid-community/client-side-row-model": "32.3.9",
 		"@ag-grid-community/core": "32.3.9",
 		"@ag-grid-community/styles": "32.3.9",
-		"@bufbuild/protobuf": "1.10.1",
 		"@changesets/cli": "2.29.6",
 		"@dimforge/rapier3d-compat": "0.18.2",
 		"@eslint/compat": "1.3.2",
@@ -144,6 +143,7 @@
 	],
 	"dependencies": {
 		"@tanstack/svelte-query-devtools": "^6.0.2",
-		"uuid-tool": "^2.0.3"
+		"uuid-tool": "^2.0.3",
+		"@bufbuild/protobuf": "1.10.1"
 	}
 }
