@@ -1,24 +1,55 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Subject from '../json'
 
 describe('json', () => {
-	describe('isJSONExtension', () => {
-		it.each(['json', 'JSON', 'Json'])('returns true for %s', (value) => {
-			expect(Subject.isJSONExtension(value)).toBe(true)
-		})
-
-		it.each(['jason', 'json.gz', ''])('returns false for %s', (value) => {
-			expect(Subject.isJSONExtension(value)).toBe(false)
+	describe('isJSONPrefix', () => {
+		it.each([
+			{ input: 'snapshot', expected: true },
+			{ input: 'SNAPSHOT', expected: true },
+			{ input: 'Snapshot', expected: true },
+			{ input: 'config', expected: false },
+			{ input: 'data', expected: false },
+			{ input: undefined, expected: false },
+			{ input: '', expected: false },
+		])('returns $expected for "$input"', ({ input, expected }) => {
+			expect(Subject.isJSONPrefix(input)).toBe(expected)
 		})
 	})
 
-	describe('isJSONPrefix', () => {
-		it.each(['snapshot', 'SNAPSHOT', 'Snapshot'])('returns true for %s', (value) => {
-			expect(Subject.isJSONPrefix(value)).toBe(true)
+	describe('onJSONDrop', () => {
+		it.each([
+			{
+				desc: 'ArrayBuffer result',
+				result: new ArrayBuffer(8),
+				expectedError: 'test.json failed to load.',
+			},
+			{
+				desc: 'null result',
+				result: null,
+				expectedError: 'test.json failed to load.',
+			},
+			{
+				desc: 'invalid JSON',
+				result: 'invalid json {',
+				expectedError: 'test.json failed to parse.',
+			},
+		])('calls onError for $desc', ({ result, expectedError }) => {
+			const onError = vi.fn()
+			const onSuccess = vi.fn()
+
+			Subject.onJSONDrop('test.json', 'snapshot', result, onError, onSuccess)
+
+			expect(onError).toHaveBeenCalledWith(expectedError)
 		})
 
-		it.each(['snapshots', ''])('returns false for %s', (value) => {
-			expect(Subject.isJSONPrefix(value)).toBe(false)
+		it('calls onSuccess for valid snapshot JSON', () => {
+			const onError = vi.fn()
+			const onSuccess = vi.fn()
+
+			Subject.onJSONDrop('test.json', 'snapshot', '{"key": "value"}', onError, onSuccess)
+
+			expect(onSuccess).toHaveBeenCalledWith('Loaded test.json')
+			expect(onError).not.toHaveBeenCalled()
 		})
 	})
 })

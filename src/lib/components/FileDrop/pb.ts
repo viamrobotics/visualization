@@ -1,3 +1,4 @@
+import { isArrayBuffer } from 'lodash-es'
 import type { ValueOf } from 'type-fest'
 
 export const PB_EXTENSIONS = {
@@ -10,31 +11,52 @@ export const PB_PREFIXES = {
 } as const
 
 export const SUPPORTED_PB_EXTENSIONS = [PB_EXTENSIONS.PB, PB_EXTENSIONS.PB_GZ] as const
-
 export const SUPPORTED_PB_PREFIXES = [PB_PREFIXES.SNAPSHOT] as const
 
-export const isPBExtension = (extension: string): extension is ValueOf<typeof PB_EXTENSIONS> => {
-	return (
-		extension.toLowerCase() === PB_EXTENSIONS.PB || extension.toLowerCase() === PB_EXTENSIONS.PB_GZ
-	)
+export type PBExtension = ValueOf<typeof PB_EXTENSIONS>
+export type PBPrefix = ValueOf<typeof PB_PREFIXES>
+
+export const isPBPrefix = (prefix: string | undefined): prefix is PBPrefix => {
+	if (!prefix) return false
+	return SUPPORTED_PB_PREFIXES.includes(prefix.toLowerCase() as PBPrefix)
 }
 
-export const isPBPrefix = (prefix: string): prefix is ValueOf<typeof PB_PREFIXES> => {
-	if (!prefix) {
-		return false
+export type PBDropHandler = (
+	name: string,
+	extension: PBExtension,
+	prefix: PBPrefix,
+	result: string | ArrayBuffer | null | undefined,
+	onError: (message: string) => void,
+	onSuccess: (message: string) => void
+) => void
+
+export const onPBDrop: PBDropHandler = (
+	name: string,
+	extension: PBExtension,
+	prefix: PBPrefix,
+	result: string | ArrayBuffer | null | undefined,
+	onError: (message: string) => void,
+	onSuccess: (message: string) => void
+) => {
+	if (!isArrayBuffer(result)) {
+		onError(`${name} failed to load.`)
+		return
 	}
 
-	return SUPPORTED_PB_PREFIXES.includes(prefix.toLowerCase() as ValueOf<typeof PB_PREFIXES>)
-}
-
-export const onPBDrop = (
-	ext: ValueOf<typeof PB_EXTENSIONS>,
-	prefix: ValueOf<typeof PB_PREFIXES>,
-	result: ArrayBuffer
-) => {
-	if (ext === PB_EXTENSIONS.PB_GZ) {
+	if (extension === PB_EXTENSIONS.PB_GZ) {
 		// TODO: unzip gzip
 	}
 
-	// TODO: decode snapshot from PB
+	switch (prefix) {
+		case PB_PREFIXES.SNAPSHOT:
+			// TODO: decode snapshot from PB
+			console.info('TODO: decode snapshot from PB', result)
+			onSuccess(`Loaded ${name}`)
+			break
+		default:
+			onError(
+				`${name} has an unsupported prefix: ${prefix}. Only ${SUPPORTED_PB_PREFIXES.join(', ')} are supported.`
+			)
+			break
+	}
 }
