@@ -52,6 +52,7 @@
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
+
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
