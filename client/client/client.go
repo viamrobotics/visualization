@@ -193,7 +193,7 @@ func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
 		return err
 	}
 
-	json, err := nurbsToJSON(drawNurbs)
+	json, err := nurbsToJSON(drawNurbs, name)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
 	return postHTTP(json, "json", "nurbs")
 }
 
-func nurbsToJSON(drawNurbs *draw.Nurbs) ([]byte, error) {
+func nurbsToJSON(drawNurbs *draw.Nurbs, name string) ([]byte, error) {
 
 	poseData := make([]json.RawMessage, len(drawNurbs.ControlPoints))
 	for i, pose := range drawNurbs.ControlPoints {
@@ -218,6 +218,7 @@ func nurbsToJSON(drawNurbs *draw.Nurbs) ([]byte, error) {
 		"Weights":    drawNurbs.Weights,
 		"Knots":      drawNurbs.Knots,
 		"Color":      drawNurbs.Color.ToHex(),
+		"Name":       name,
 	})
 }
 

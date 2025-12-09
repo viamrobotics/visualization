@@ -49,7 +49,6 @@
 
 	const localPose = $derived(object?.localEditedPose)
 	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
-	const referenceFrameOptions = $derived(frames.getParentFrameOptions(object?.name ?? ''))
 	const isFrameNode = $derived(
 		frames.current.find((frame) => frame.name === object?.name) !== undefined
 	)
@@ -246,52 +245,48 @@
 		</h3>
 
 		<div class="flex flex-col gap-2.5">
-			{#if worldPosition}
-				<div>
-					<strong class="font-semibold">world position</strong>
-					<span class="text-subtle-2">(m)</span>
+			<div>
+				<strong class="font-semibold">world position</strong>
+				<span class="text-subtle-2">(m)</span>
 
-					<div class="flex gap-3">
-						<div>
-							<span class="text-subtle-2">x</span>
-							{worldPosition.x.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">y</span>
-							{worldPosition.y.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">z</span>
-							{worldPosition.z.toFixed(2)}
-						</div>
+				<div class="flex gap-3">
+					<div>
+						<span class="text-subtle-2">x</span>
+						{worldPosition.x.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">y</span>
+						{worldPosition.y.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">z</span>
+						{worldPosition.z.toFixed(2)}
 					</div>
 				</div>
-			{/if}
+			</div>
 
-			{#if worldOrientation}
-				<div>
-					<strong class="font-semibold">world orientation</strong>
-					<span class="text-subtle-2">(deg)</span>
-					<div class="flex gap-3">
-						<div>
-							<span class="text-subtle-2">x</span>
-							{worldOrientation.x.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">y</span>
-							{worldOrientation.y.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">z</span>
-							{worldOrientation.z.toFixed(2)}
-						</div>
-						<div>
-							<span class="text-subtle-2">th</span>
-							{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
-						</div>
+			<div>
+				<strong class="font-semibold">world orientation</strong>
+				<span class="text-subtle-2">(deg)</span>
+				<div class="flex gap-3">
+					<div>
+						<span class="text-subtle-2">x</span>
+						{worldOrientation.x.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">y</span>
+						{worldOrientation.y.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">z</span>
+						{worldOrientation.z.toFixed(2)}
+					</div>
+					<div>
+						<span class="text-subtle-2">th</span>
+						{MathUtils.radToDeg(worldOrientation.th).toFixed(2)}
 					</div>
 				</div>
-			{/if}
+			</div>
 
 			<div>
 				<strong class="font-semibold">parent frame</strong>
@@ -299,7 +294,7 @@
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
 						value: referenceFrame,
-						options: referenceFrameOptions,
+						options: frames.getParentFrameOptions(object?.name ?? ''),
 						onChange: (value) => detailConfigUpdater.setFrameParent(value),
 					})}
 				</div>
@@ -376,23 +371,31 @@
 						<Button
 							variant={geometryType === 'none' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('none')}>None</Button
+							onclick={() => setGeometryType('none')}
 						>
+							None
+						</Button>
 						<Button
 							variant={geometryType === 'box' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('box')}>Box</Button
+							onclick={() => setGeometryType('box')}
 						>
+							Box
+						</Button>
 						<Button
 							variant={geometryType === 'sphere' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('sphere')}>Sphere</Button
+							onclick={() => setGeometryType('sphere')}
 						>
+							Sphere
+						</Button>
 						<Button
 							variant={geometryType === 'capsule' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('capsule')}>Capsule</Button
+							onclick={() => setGeometryType('capsule')}
 						>
+							Capsule
+						</Button>
 					</div>
 				</div>
 			{/if}

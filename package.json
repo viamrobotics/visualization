@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsx server/check-bun && bun run server/server.ts",
-		"build": "make proto-gen-ts && vite build && npm run prepack",
+		"build": "vite build && npm run prepack",
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -16,6 +16,7 @@
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
 		"test:client": "go test ./client/... -count=1",
+		"test:draw": "go test ./draw/... -count=1",
 		"test": "pnpm test:unit -- --run",
 		"test:coverage": "npx vitest run --coverage",
 		"test:e2e": "playwright test",
