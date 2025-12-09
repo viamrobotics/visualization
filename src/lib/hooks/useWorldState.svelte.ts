@@ -31,9 +31,22 @@ export type TransformEvent = TransformChangeEvent & {
 export const provideWorldStates = () => {
 	const partID = usePartID()
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
+	const clients = $derived(
+		resourceNames.current.map(({ name }) =>
+			createResourceClient(
+				WorldStateStoreClient,
+				() => partID.current,
+				() => name
+			)
+		)
+	)
 
 	$effect(() => {
-		const cleanups = resourceNames.current.map(({ name }) => createWorldState(partID.current, name))
+		const cleanups: (() => void)[] = []
+
+		for (const client of clients) {
+			cleanups.push(createWorldState(client))
+		}
 
 		return () => {
 			for (const cleanup of cleanups) {
@@ -43,16 +56,9 @@ export const provideWorldStates = () => {
 	})
 }
 
-const createWorldState = (partID: string, resourceName: string) => {
+const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
-	const client = createResourceClient(
-		WorldStateStoreClient,
-		() => partID,
-		() => resourceName
-	)
-
-	let initialized = $state(false)
 
 	const entities = new Map<string, Entity>()
 
@@ -142,8 +148,9 @@ const createWorldState = (partID: string, resourceName: string) => {
 		}
 	}
 
-	let pendingEvents: TransformEvent[] = []
+	let initialized = false
 	let flushScheduled = false
+	let pendingEvents: TransformEvent[] = []
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
 	const getTransformQueries = $derived(
