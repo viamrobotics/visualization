@@ -46,7 +46,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
 
 	$effect(() => {
-		for (const [uuid, transform] of Object.entries(transforms)) {
+		for (const transform of Object.values(transforms)) {
 			const metadata = parseMetadata(transform.metadata?.fields)
 			const pose = createPose(transform.poseInObserverFrame?.pose)
 

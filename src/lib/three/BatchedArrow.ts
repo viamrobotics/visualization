@@ -5,7 +5,6 @@ import { createArrowGeometry } from './arrow'
 const black = new Color('black')
 const axis = new Vector3()
 const object3d = new Object3D()
-const vec3 = new Vector3()
 const box1 = new Box3()
 const col = new Color()
 
