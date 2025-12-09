@@ -33,22 +33,24 @@ export const provideWorldStates = () => {
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
 
 	$effect(() => {
-		Object.fromEntries(
-			resourceNames.current.map(({ name }) => [
-				name,
-				createWorldState(
-					() => partID.current,
-					() => name
-				),
-			])
-		)
+		const cleanups = resourceNames.current.map(({ name }) => createWorldState(partID.current, name))
+
+		return () => {
+			for (const cleanup of cleanups) {
+				cleanup()
+			}
+		}
 	})
 }
 
-const createWorldState = (partID: () => string, resourceName: () => string) => {
+const createWorldState = (partID: string, resourceName: string) => {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
-	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
+	const client = createResourceClient(
+		WorldStateStoreClient,
+		() => partID,
+		() => resourceName
+	)
 
 	let initialized = $state(false)
 
@@ -259,4 +261,10 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		pendingEvents.push(...eventsByUUID.values())
 		scheduleFlush()
 	})
+
+	return () => {
+		for (const [, entity] of entities) {
+			entity.destroy()
+		}
+	}
 }
