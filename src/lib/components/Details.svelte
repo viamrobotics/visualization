@@ -132,7 +132,7 @@
 				},
 				geometry: {
 					type: geometryType,
-					// value: object?.geometry?.geometryType.value,
+					value: box.current ?? capsule.current ?? sphere.current,
 				},
 				parentFrame: parent.current ?? 'world',
 			},
