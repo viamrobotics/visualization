@@ -1,6 +1,7 @@
 import {
 	WorldStateStoreClient,
 	TransformChangeType,
+	type TransformChangeEvent,
 	type TransformWithUUID,
 } from '@viamrobotics/sdk'
 import {
@@ -11,7 +12,6 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { parseMetadata } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import type { ProcessMessage } from '$lib/world-state-messages'
 import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait, Entity } from 'koota'
 import { createPose } from '$lib/transform'
@@ -19,9 +19,14 @@ import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 
-const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
-	type: 'module',
-})
+export type ChangeMessage = {
+	type: 'change'
+	events: TransformChangeEvent[]
+}
+
+export type TransformEvent = TransformChangeEvent & {
+	transform: TransformWithUUID
+}
 
 export const provideWorldStates = () => {
 	const partID = usePartID()
@@ -135,7 +140,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		}
 	}
 
-	let pendingEvents: ProcessMessage['events'] = []
+	let pendingEvents: TransformEvent[] = []
 	let flushScheduled = false
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
@@ -154,7 +159,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		refetchMode: 'replace',
 	})
 
-	const applyEvents = (events: ProcessMessage['events']) => {
+	const applyEvents = (events: TransformEvent[]) => {
 		for (const event of events) {
 			if (event.changeType === TransformChangeType.ADDED) {
 				spawnEntity(event.transform)
@@ -201,25 +206,57 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	$effect(() => {
-		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
-			if (e.data.type !== 'process') return
-
-			const { events } = e.data
-
-			if (events.length === 0) return
-
-			pendingEvents.push(...events)
-			scheduleFlush()
-		}
-
-		return () => {
-			worker.terminate()
-		}
-	})
-
-	$effect.pre(() => {
 		if (changeStream?.data === undefined) return
 
-		worker.postMessage({ type: 'change', events: changeStream.data })
+		const eventsByUUID = new Map<string, TransformEvent>()
+
+		for (const event of changeStream.data) {
+			if (!event.transform) {
+				continue
+			}
+
+			const uuid = event.transform.uuidString
+			const existing = eventsByUUID.get(uuid)
+			if (!existing) {
+				eventsByUUID.set(uuid, event as TransformEvent)
+				continue
+			}
+
+			switch (event.changeType) {
+				case TransformChangeType.REMOVED:
+					eventsByUUID.set(uuid, event as TransformEvent)
+					break
+
+				case TransformChangeType.ADDED:
+					if (existing.changeType !== TransformChangeType.REMOVED) {
+						eventsByUUID.set(uuid, event as TransformEvent)
+					}
+					break
+
+				case TransformChangeType.UPDATED:
+					// merge with existing updated event
+					if (existing.changeType === TransformChangeType.UPDATED) {
+						existing.updatedFields ??= { paths: [] }
+
+						const paths = event.updatedFields?.paths ?? []
+
+						for (const path of paths) {
+							if (existing.updatedFields.paths.includes(path)) {
+								continue
+							}
+
+							existing.updatedFields.paths.push(path)
+						}
+
+						existing.transform = event.transform
+					} else {
+						eventsByUUID.set(uuid, event as TransformEvent)
+					}
+					break
+			}
+		}
+
+		pendingEvents.push(...eventsByUUID.values())
+		scheduleFlush()
 	})
 }
