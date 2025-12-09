@@ -48,6 +48,9 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	const entities = new Map<string, Entity>()
 
 	const spawnEntity = (transform: TransformWithUUID) => {
+		if (entities.has(transform.uuidString)) {
+			return
+		}
 		const metadata = parseMetadata(transform.metadata?.fields)
 		const pose = createPose(transform.poseInObserverFrame?.pose)
 
@@ -140,15 +143,13 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	})
 
 	const applyEvents = (events: ProcessMessage['events']) => {
-		if (events.length === 0) return
-
 		for (const event of events) {
 			if (event.changeType === TransformChangeType.ADDED) {
 				spawnEntity(event.transform)
 			} else if (event.changeType === TransformChangeType.REMOVED) {
-				destroyEntity(event.uuidString)
+				destroyEntity(event.transform.uuidString)
 			} else if (event.changeType === TransformChangeType.UPDATED) {
-				updateEntity(event.transform, event.changes)
+				updateEntity(event.transform, event.updatedFields?.paths ?? [])
 			} else {
 				console.error('Unspecified change type.', event)
 			}
@@ -163,7 +164,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 		requestAnimationFrame(() => {
 			const toApply = pendingEvents
-			if (toApply.length === 0) return
 
 			applyEvents(toApply)
 			flushScheduled = false
@@ -192,7 +192,8 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
 			if (e.data.type !== 'process') return
 
-			const { events } = e.data ?? { events: [] }
+			const { events } = e.data
+
 			if (events.length === 0) return
 
 			pendingEvents.push(...events)

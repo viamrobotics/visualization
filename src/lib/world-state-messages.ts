@@ -1,33 +1,15 @@
-import type {
-	TransformChangeEvent,
-	TransformChangeType,
-	TransformWithUUID,
-} from '@viamrobotics/sdk'
+import type { TransformChangeEvent, TransformWithUUID } from '@viamrobotics/sdk'
 
 export type ChangeMessage = {
 	type: 'change'
 	events: TransformChangeEvent[]
 }
 
-export type AddedEvent = {
-	changeType: TransformChangeType.ADDED
-	uuidString: string
+export type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
-}
-
-export type RemovedEvent = {
-	changeType: TransformChangeType.REMOVED
-	uuidString: string
-}
-
-export type UpdatedEvent = {
-	changeType: TransformChangeType.UPDATED
-	uuidString: string
-	transform: TransformWithUUID
-	changes: (number | string)[]
 }
 
 export type ProcessMessage = {
 	type: 'process'
-	events: (AddedEvent | RemovedEvent | UpdatedEvent)[]
+	events: TransformEvent[]
 }
