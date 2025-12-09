@@ -226,21 +226,16 @@ export const provideFrames = (partID: () => string) => {
 		validFrames.add('world')
 
 		const frameNameQueue = [componentName]
-		const visited = new Set<string>()
-
 		while (frameNameQueue.length > 0) {
 			const frameName = frameNameQueue.shift()
-			if (!frameName || visited.has(frameName)) continue
-
-			visited.add(frameName)
-			validFrames.delete(frameName)
-
-			const children = current.filter((frame) => frame.referenceFrame === frameName)
-
-			// Enqueue the child frame's own name
-			for (const frame of children) {
-				// This must be the child key
-				frameNameQueue.push(frame.referenceFrame)
+			if (frameName) {
+				validFrames.delete(frameName)
+				const frames = current.filter(
+					(frame) => frame.poseInObserverFrame?.referenceFrame === frameName
+				)
+				for (const frame of frames) {
+					frameNameQueue.push(frame.referenceFrame)
+				}
 			}
 		}
 
