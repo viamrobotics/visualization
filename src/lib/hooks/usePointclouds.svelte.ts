@@ -109,7 +109,7 @@ export const providePointclouds = (partID: () => string) => {
 
 	const pcObjects = $state<
 		{
-			parent: string
+			name: string
 			positions: Float32Array<ArrayBuffer>
 			colors: Float32Array<ArrayBuffer> | null
 		}[]
@@ -126,10 +126,10 @@ export const providePointclouds = (partID: () => string) => {
 		}
 
 		Promise.allSettled(
-			binaries.map(async ([parent, uint8array]) => {
+			binaries.map(async ([name, uint8array]) => {
 				const { positions, colors } = await parsePcdInWorker(new Uint8Array(uint8array))
 
-				return { parent, positions, colors }
+				return { name, positions, colors }
 			})
 		).then((results) => {
 			for (const result of results) {
@@ -146,8 +146,8 @@ export const providePointclouds = (partID: () => string) => {
 
 	$effect(() => {
 		// Create or update entities
-		for (const { parent, positions, colors } of pcObjects) {
-			const existing = entities.get(parent)
+		for (const { name, positions, colors } of pcObjects) {
+			const existing = entities.get(name)
 
 			if (existing) {
 				existing.set(traits.PointsGeometry, positions)
@@ -161,21 +161,20 @@ export const providePointclouds = (partID: () => string) => {
 
 			const entity = world.spawn(
 				traits.UUID,
-				traits.Parent(parent),
-				traits.Name(`${parent} pointcloud`),
+				traits.Parent(name),
+				traits.Name(`${name} pointcloud`),
 				traits.PointsGeometry(positions),
 				colors ? traits.VertexColors(colors) : traits.Color
 			)
 
-			entities.set(parent, entity)
+			entities.set(name, entity)
 		}
 
 		// Clean up old entities
-		const current = entities.keys()
-		for (const parent of current) {
-			if (!queryMap[parent]?.data) {
-				entities.get(parent)?.destroy()
-				entities.delete(parent)
+		for (const [name, entity] of entities) {
+			if (!queryMap[name]?.data) {
+				entity.destroy()
+				entities.delete(name)
 			}
 		}
 	})

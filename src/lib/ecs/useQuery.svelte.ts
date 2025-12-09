@@ -16,6 +16,8 @@ export function useQuery<T extends QueryParameter[]>(
 	let entities = $state.raw<QueryResult<T>>(world.query(hash))
 
 	$effect(() => {
+		version
+
 		let id: number | undefined
 
 		// Compare the initial version to the current version to
