@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -88,14 +87,6 @@ func isASCIIPrintable(label string) error {
 		}
 	}
 	return nil
-}
-
-func base64EncodedToString(encoded string) []byte {
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return nil
-	}
-	return decoded
 }
 
 func postHTTP(data []byte, content string, endpoint string) error {
