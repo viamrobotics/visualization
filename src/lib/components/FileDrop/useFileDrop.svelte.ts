@@ -53,6 +53,11 @@ export const useFileDrop = (
 		}
 	}
 
+	const handleError = (error: string) => {
+		onError(error)
+		dropState = 'inactive'
+	}
+
 	const ondrop = (event: DragEvent) => {
 		event.preventDefault()
 		if (event.dataTransfer === null) return
@@ -62,7 +67,7 @@ export const useFileDrop = (
 		for (const file of files) {
 			const fileName = parseFileName(file.name)
 			if (!fileName.success) {
-				onError(fileName.error)
+				handleError(fileName.error)
 				continue
 			}
 
@@ -79,14 +84,14 @@ export const useFileDrop = (
 			reader.addEventListener('error', (event) => {
 				const error = event.target?.error?.message
 				console.error(`${file.name} failed to load.`, error)
-				onError(`${file.name} failed to load.`)
+				handleError(`${file.name} failed to load.`)
 			})
 
 			reader.addEventListener('load', async (event) => {
 				const result = event.target?.result
 				const dropper = fileDropper(extension)
 				if (!dropper) {
-					onError(
+					handleError(
 						`${file.name} has an unsupported extension: ${extension}. Only ${SUPPORTED_EXTENSIONS.join(', ')} are supported.`
 					)
 					return
@@ -101,7 +106,7 @@ export const useFileDrop = (
 				})
 
 				if (error) {
-					onError(error)
+					handleError(error)
 				} else {
 					onSuccess(`Loaded ${file.name}`)
 				}
