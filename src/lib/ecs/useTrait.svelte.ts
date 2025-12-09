@@ -43,7 +43,7 @@ export function useTrait<T extends Trait>(
 	let value = $state(entity?.has(trait) ? entity.get(trait) : undefined)
 
 	$effect(() => {
-		entity
+		value = entity?.has(trait) ? entity.get(trait) : undefined
 
 		return untrack(() => {
 			const onChangeUnsub = world.onChange(trait, (e) => {
@@ -63,8 +63,6 @@ export function useTrait<T extends Trait>(
 					value = undefined
 				}
 			})
-
-			value = entity?.has(trait) ? entity.get(trait) : undefined
 
 			return () => {
 				onChangeUnsub()
