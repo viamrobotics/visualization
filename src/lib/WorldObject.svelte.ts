@@ -197,24 +197,3 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	worldObject.uuid = transform.uuidString
 	return worldObject
 }
-
-export const determinePose = (entity: Entity, pose: Pose | undefined): Pose | undefined => {
-	if (pose === undefined) {
-		return entity.get(traits.EditedPose)
-	} else {
-		const entityPose = entity.get(traits.Pose)
-		const editedPose = entity.get(traits.EditedPose)
-
-		if (!entityPose || !editedPose) {
-			return
-		}
-
-		const poseNetwork = poseToMatrix(entityPose)
-		const poseUsePose = poseToMatrix(pose)
-		const poseLocalEditedPose = poseToMatrix(editedPose)
-
-		const poseNetworkInverse = poseNetwork.invert()
-		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
-		return matrixToPose(resultMatrix)
-	}
-}
