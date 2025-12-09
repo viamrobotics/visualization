@@ -6,9 +6,9 @@ export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
 
-export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
-export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
-export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 0, theta: 0 })
+export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
 export const Instance = trait({
 	meshID: -1,
@@ -27,17 +27,17 @@ export const Arrow = trait()
 /**
  * A box, in meters
  */
-export const Box = trait({ x: 0, y: 0, z: 0 })
+export const Box = trait({ x: 200, y: 200, z: 200 })
 
 /**
  * A capsule, in meters
  */
-export const Capsule = trait({ l: 0, r: 0 })
+export const Capsule = trait({ l: 200, r: 50 })
 
 /**
  * A sphere, in meters
  */
-export const Sphere = trait({ r: 0 })
+export const Sphere = trait({ r: 200 })
 
 /**
  *

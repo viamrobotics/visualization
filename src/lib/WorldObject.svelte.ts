@@ -1,12 +1,10 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
 import { BatchedMesh, Color, MathUtils, Vector3, type BufferGeometry } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
-import { createPose, matrixToPose, poseToMatrix } from './transform'
+import { createPose } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
-import type { Entity } from 'koota'
-import { traits } from './ecs'
 
 export type PointsGeometry = {
 	center: undefined
