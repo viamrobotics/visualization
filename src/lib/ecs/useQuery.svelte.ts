@@ -16,6 +16,7 @@ export function useQuery<T extends QueryParameter[]>(
 	let entities = $state.raw<QueryResult<T>>(world.query(hash))
 
 	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		version
 
 		let id: number | undefined

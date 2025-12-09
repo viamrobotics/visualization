@@ -27,6 +27,9 @@ vi.mock('$lib/hooks/useSelection.svelte', () => ({
 vi.mock('$lib/hooks/useFrames.svelte', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
 }))
+vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
+	useResourceByName: vi.fn(() => ({ current: {} })),
+}))
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	usePartConfig: vi.fn(() => ({
