@@ -29,7 +29,13 @@ export function useQuery<T extends QueryParameter[]>(
 			entities = world.query(hash)
 		}
 
-		const cb = () => {
+		/**
+		 * A flush function to avoid getting called for every entity added.
+		 *
+		 * Ex: if 50k entities are added, then this query and sort occurs 50k times
+		 * when this hook only needs it to be called once per frame.
+		 */
+		const flush = () => {
 			entities = world.query(hash)
 			id = undefined
 		}
@@ -37,12 +43,12 @@ export function useQuery<T extends QueryParameter[]>(
 		return untrack(() => {
 			const unsubAdd = world.onQueryAdd(hash, () => {
 				if (id) return
-				id = window.setTimeout(cb)
+				id = window.setTimeout(flush)
 			})
 
 			const unsubRemove = world.onQueryRemove(hash, () => {
 				if (id) return
-				id = window.setTimeout(cb)
+				id = window.setTimeout(flush)
 			})
 
 			return () => {
