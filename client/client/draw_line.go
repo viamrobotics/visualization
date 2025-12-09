@@ -13,8 +13,8 @@ import (
 //   - label: an identifier string used for reference in the treeview.
 //   - points: a list of poses, each representing a point in the line
 //   - color: An optional color of the line
-//   - dotColor: An optional color for dots for each vertex in the line
-func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor *[3]uint8) error {
+//   - pointColor: An optional color for points for each vertex in the line
+func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointColor *[3]uint8) error {
 	labelError := isASCIIPrintable(label)
 	if labelError != nil {
 		return labelError
@@ -45,11 +45,11 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor
 		finalColor[2] = float32(color[2])
 	}
 
-	finalDotColor := [3]float32{-255., -255., -255.}
-	if dotColor != nil {
-		finalDotColor[0] = float32(dotColor[0])
-		finalDotColor[1] = float32(dotColor[1])
-		finalDotColor[2] = float32(dotColor[2])
+	finalPointColor := [3]float32{-255., -255., -255.}
+	if pointColor != nil {
+		finalPointColor[0] = float32(pointColor[0])
+		finalPointColor[1] = float32(pointColor[1])
+		finalPointColor[2] = float32(pointColor[2])
 	}
 
 	data = append(data,
@@ -57,9 +57,9 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor
 		finalColor[0]/255.0,
 		finalColor[1]/255.0,
 		finalColor[2]/255.0,
-		finalDotColor[0]/255.0,
-		finalDotColor[1]/255.0,
-		finalDotColor[2]/255.0,
+		finalPointColor[0]/255.0,
+		finalPointColor[1]/255.0,
+		finalPointColor[2]/255.0,
 	)
 
 	for _, pose := range points {

@@ -6,6 +6,7 @@ toolchain go1.23.11
 
 require (
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
+	go.viam.com/api v0.1.496
 	go.viam.com/rdk v0.90.0
 	go.viam.com/test v1.2.4
 	google.golang.org/protobuf v1.36.8
@@ -129,7 +130,6 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	go.viam.com/api v0.1.473 // indirect
 	go.viam.com/utils v0.1.163 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
