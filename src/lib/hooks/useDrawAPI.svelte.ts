@@ -264,8 +264,6 @@ export const provideDrawAPI = () => {
 			direction.set(reader.read(), reader.read(), reader.read())
 
 			if (arrowHeadAtPose === 1) {
-				console.log(arrowHeadAtPose)
-
 				// Compute the base position so the arrow ends at the origin
 				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 0.1))
 			}
