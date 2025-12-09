@@ -11,9 +11,8 @@ import { resourceColors } from '$lib/color'
 import { Color } from 'three'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { trait, type ConfigurableTrait, type Entity } from 'koota'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 
 const key = Symbol('geometries-context')
