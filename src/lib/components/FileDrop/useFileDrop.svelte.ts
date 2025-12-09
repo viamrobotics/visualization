@@ -79,7 +79,11 @@ export const useFileDrop = (
 					}
 				}
 
-				error ? onError(error) : onSuccess(`Loaded ${file.name}`)
+				if (error) {
+					onError(error)
+				} else {
+					onSuccess(`Loaded ${file.name}`)
+				}
 			})
 
 			readFile(file, reader, extension)
