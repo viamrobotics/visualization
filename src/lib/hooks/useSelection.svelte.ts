@@ -2,7 +2,7 @@ import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { BatchedMesh, Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
-import { traits } from '$lib/ecs'
+import { traits, useWorld } from '$lib/ecs'
 
 const selectedKey = Symbol('selected-frame-context')
 const focusedKey = Symbol('focused-frame-context')
@@ -19,8 +19,18 @@ interface FocusedEntityContext {
 }
 
 export const provideSelection = () => {
+	const world = useWorld()
+	const { scene } = useThrelte()
+
 	let selected = $state.raw<Entity>()
 	let focused = $state.raw<Entity>()
+
+	$effect(() => {
+		return world.onRemove(traits.Name, (entity) => {
+			if (entity === selected) selected = undefined
+			if (entity === focused) focused = undefined
+		})
+	})
 
 	const selectedEntityContext = {
 		get current() {
@@ -42,7 +52,6 @@ export const provideSelection = () => {
 	}
 	setContext<FocusedEntityContext>(focusedKey, focusedEntityContext)
 
-	const { scene } = useThrelte()
 	const focusedObject3d = $derived.by(() => {
 		const name = focused?.get(traits.Name)
 

@@ -1,5 +1,5 @@
 import type { ChangeMessage, ProcessMessage, TransformEvent } from '$lib/world-state-messages'
-import { TransformChangeType, type TransformChangeEvent } from '@viamrobotics/sdk'
+import { TransformChangeType } from '@viamrobotics/sdk'
 
 self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 	const { events } = e.data
@@ -33,10 +33,17 @@ self.onmessage = (e: MessageEvent<ChangeMessage>) => {
 			case TransformChangeType.UPDATED:
 				// merge with existing updated event
 				if (existing.changeType === TransformChangeType.UPDATED) {
+					existing.updatedFields ??= { paths: [] }
+
 					const paths = event.updatedFields?.paths ?? []
 
-					existing.updatedFields ??= { paths: [] }
-					existing.updatedFields.paths = [...existing.updatedFields.paths, ...paths]
+					for (const path of paths) {
+						if (existing.updatedFields.paths.includes(path)) {
+							continue
+						}
+
+						existing.updatedFields.paths.push(path)
+					}
 
 					existing.transform = event.transform
 				} else {

@@ -16,6 +16,8 @@ import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait, Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { useThrelte } from '@threlte/core'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePlyInput } from '$lib/ply'
 
 const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
@@ -117,7 +119,17 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 			if (typeof path === 'string') {
 				if (path.startsWith('poseInObserverFrame.pose')) {
 					entity.set(traits.Pose, transform.poseInObserverFrame?.pose ?? createPose())
-				} else if (path.startsWith('physicalObject')) {
+				} else if (path.startsWith('physicalObject') && transform.physicalObject) {
+					const { geometryType } = transform.physicalObject
+					if (geometryType.case === 'box') {
+						entity.set(traits.Box, createBox(geometryType.value))
+					} else if (geometryType.case === 'capsule') {
+						entity.set(traits.Capsule, createCapsule(geometryType.value))
+					} else if (geometryType.case === 'sphere') {
+						entity.set(traits.Sphere, createSphere(geometryType.value))
+					} else if (geometryType.case === 'mesh') {
+						entity.set(traits.BufferGeometry, parsePlyInput(geometryType.value.mesh))
+					}
 				}
 			}
 		}

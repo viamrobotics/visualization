@@ -78,3 +78,17 @@ export const Geometry = (geometry: ViamGeometry) => {
 
 	return trait()
 }
+
+export const updateGeometry = (geometry: ViamGeometry) => {
+	if (geometry.geometryType.case === 'box') {
+		return [Box, createBox(geometry.geometryType.value)]
+	} else if (geometry.geometryType.case === 'capsule') {
+		return [Capsule, createCapsule(geometry.geometryType.value)]
+	} else if (geometry.geometryType.case === 'sphere') {
+		return [Sphere, createSphere(geometry.geometryType.value)]
+	} else if (geometry.geometryType.case === 'mesh') {
+		return [BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh)]
+	}
+
+	return []
+}
