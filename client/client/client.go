@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/client/shapes"
 	"github.com/viam-labs/motion-tools/draw"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -72,6 +74,24 @@ const (
 	lineType   = 2
 )
 
+func hexToRGB(input string) ([3]uint8, error) {
+	var rgb [3]uint8
+
+	hexStr := colorutil.NamedColorToHex(input)
+	hexStr = strings.TrimPrefix(hexStr, "#")
+	if len(hexStr) != 6 {
+		return rgb, errors.New("invalid hex color string")
+	}
+
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil || len(bytes) != 3 {
+		return rgb, err
+	}
+
+	copy(rgb[:], bytes)
+	return rgb, nil
+}
+
 func isASCIIPrintable(label string) error {
 	if !utf8.ValidString(label) {
 		return errors.New("label is not valid utf-8")
@@ -86,6 +106,14 @@ func isASCIIPrintable(label string) error {
 		}
 	}
 	return nil
+}
+
+func base64EncodedToString(encoded string) []byte {
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil
+	}
+	return decoded
 }
 
 func postHTTP(data []byte, content string, endpoint string) error {

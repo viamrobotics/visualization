@@ -26,8 +26,9 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 			return err
 		}
 		geometries = append(geometries, geometry)
-		// MATTHEW: decode the colors from the metadata
-		colors = append(colors, transform.Metadata.Fields["colors"].GetStringValue())
+		colorsBytes := base64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue())
+		drawColor := draw.NewColor(draw.WithRGB(colorsBytes[0], colorsBytes[1], colorsBytes[2]))
+		colors = append(colors, drawColor.ToHex())
 	}
 
 	geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)

@@ -15,7 +15,15 @@ import (
 //   - colors: Individual arrow color
 //   - arrowHeadAtPose: whether the tip of the cone of the arrow will be at the pose. default is false
 func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) error {
-	arrows, err := draw.NewArrows(poses)
+	drawColors := make([]draw.Color, len(colors))
+	for i, color := range colors {
+		rgb, err := hexToRGB(color)
+		if err != nil {
+			return err
+		}
+		drawColors[i] = draw.NewColor(draw.WithRGB(rgb[0], rgb[1], rgb[2]))
+	}
+	arrows, err := draw.NewArrows(poses, draw.WithArrowColors(drawColors...))
 
 	if err != nil {
 		return err

@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 
-	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/draw"
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -41,8 +40,10 @@ func transformToGeometryJSON(transform *commonv1.Transform) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	colorsBytes := base64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue())
+	drawColor := draw.NewColor(draw.WithRGB(colorsBytes[0], colorsBytes[1], colorsBytes[2]))
 	return json.Marshal(map[string]interface{}{
 		"geometry": json.RawMessage(data),
-		"color":    colorutil.NamedColorToHex(transform.Metadata.Fields["colors"].GetStringValue()),
+		"color":    drawColor.ToHex(),
 	})
 }
