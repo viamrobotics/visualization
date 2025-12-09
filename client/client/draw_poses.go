@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
+	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/spatialmath"
 )
@@ -17,11 +18,11 @@ import (
 func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) error {
 	drawColors := make([]draw.Color, len(colors))
 	for i, color := range colors {
-		rgb, err := hexToRGB(color)
+		rgbColor, err := colorutil.NamedColorToRGB(color)
 		if err != nil {
 			return err
 		}
-		drawColors[i] = draw.NewColor(draw.WithRGB(rgb[0], rgb[1], rgb[2]))
+		drawColors[i] = draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))
 	}
 	arrows, err := draw.NewArrows(poses, draw.WithArrowColors(drawColors...))
 

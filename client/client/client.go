@@ -74,24 +74,6 @@ const (
 	lineType   = 2
 )
 
-func hexToRGB(input string) ([3]uint8, error) {
-	var rgb [3]uint8
-
-	hexStr := colorutil.NamedColorToHex(input)
-	hexStr = strings.TrimPrefix(hexStr, "#")
-	if len(hexStr) != 6 {
-		return rgb, errors.New("invalid hex color string")
-	}
-
-	bytes, err := hex.DecodeString(hexStr)
-	if err != nil || len(bytes) != 3 {
-		return rgb, err
-	}
-
-	copy(rgb[:], bytes)
-	return rgb, nil
-}
-
 func isASCIIPrintable(label string) error {
 	if !utf8.ValidString(label) {
 		return errors.New("label is not valid utf-8")
@@ -188,7 +170,11 @@ func SetURL(preferredURL string) {
 //   - color: The color of the line
 //   - name: A unique label for the curve
 func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
-	drawNurbs, err := draw.NewNurbs(nurbs.ControlPts, nurbs.Knots, draw.WithNurbsDegree(int32(nurbs.Degree)), draw.WithNurbsWeights(nurbs.Weights), draw.WithNurbsColors(draw.NewColor(draw.WithName(color))))
+	rgbColor, err := colorutil.NamedColorToRGB(color)
+	if err != nil {
+		return err
+	}
+	drawNurbs, err := draw.NewNurbs(nurbs.ControlPts, nurbs.Knots, draw.WithNurbsDegree(int32(nurbs.Degree)), draw.WithNurbsWeights(nurbs.Weights), draw.WithNurbsColors(draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))))
 	if err != nil {
 		return err
 	}

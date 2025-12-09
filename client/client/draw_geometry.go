@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 
+	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/draw"
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -21,8 +22,11 @@ import (
 //   - color: a corresponding color
 func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 
-	drawColor := draw.NewColor(draw.WithName(color))
-	transform, err := draw.DrawGeometry("", geometry, spatialmath.NewZeroPose(), "world", drawColor)
+	rgbColor, err := colorutil.NamedColorToRGB(color)
+	if err != nil {
+		return err
+	}
+	transform, err := draw.DrawGeometry("", geometry, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2])))
 	if err != nil {
 		return err
 	}
