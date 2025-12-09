@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Subject from '../json'
 
 describe('json', () => {
@@ -17,6 +17,8 @@ describe('json', () => {
 	})
 
 	describe('onJSONDrop', () => {
+		const mockHandlers = { addPoints: vi.fn(), addMesh: vi.fn() }
+
 		it.each([
 			{
 				desc: 'ArrayBuffer result',
@@ -33,14 +35,24 @@ describe('json', () => {
 				result: 'invalid json {',
 				expectedError: 'test.json failed to parse.',
 			},
-		])('returns $expectedError for $desc', ({ result, expectedError }) => {
-			const error = Subject.onJSONDrop('test.json', 'snapshot', result)
+		])('returns $expectedError for $desc', async ({ result, expectedError }) => {
+			const error = await Subject.onJSONDrop({
+				name: 'test.json',
+				extension: 'json',
+				prefix: 'snapshot',
+				result,
+			})
 
 			expect(error).toBe(expectedError)
 		})
 
-		it('returns undefined for valid snapshot JSON', () => {
-			const error = Subject.onJSONDrop('test.json', 'snapshot', '{"key": "value"}')
+		it('returns undefined for valid snapshot JSON', async () => {
+			const error = await Subject.onJSONDrop({
+				name: 'test.json',
+				extension: 'json',
+				prefix: 'snapshot',
+				result: '{"key": "value"}',
+			})
 
 			expect(error).toBeUndefined()
 		})

@@ -1,5 +1,6 @@
 import { isString } from 'lodash-es'
 import type { ValueOf } from 'type-fest'
+import type { FileDropper, FileDropperOptions } from './file-dropper'
 
 export const JSON_EXTENSIONS = {
 	JSON: 'json',
@@ -20,17 +21,11 @@ export const isJSONPrefix = (prefix: string | undefined): prefix is JSONPrefix =
 	return SUPPORTED_JSON_PREFIXES.includes(prefix.toLowerCase() as JSONPrefix)
 }
 
-export type JSONDropHandler = (
-	name: string,
-	prefix: JSONPrefix,
-	result: string | ArrayBuffer | null | undefined
-) => string | undefined
-
-export const onJSONDrop: JSONDropHandler = (
-	name: string,
-	prefix: JSONPrefix,
-	result: string | ArrayBuffer | null | undefined
+export const onJSONDrop: FileDropper<JSONExtension, JSONPrefix> = async (
+	options: FileDropperOptions<JSONExtension, JSONPrefix>
 ) => {
+	const { name, prefix, result } = options
+
 	if (!isString(result)) {
 		return `${name} failed to load.`
 	}

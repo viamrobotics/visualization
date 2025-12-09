@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { assert, describe, expect, it, vi } from 'vitest'
 
 // Mock the pcd loader to avoid Worker instantiation in test environment
 vi.mock('$lib/loaders/pcd', () => ({
@@ -13,35 +13,35 @@ describe('file-names', () => {
 			it.each([
 				{
 					filename: 'snapshot_data.json',
-					expected: { type: 'json', extension: 'json', prefix: 'snapshot', error: undefined },
+					expected: { success: true, extension: 'json', prefix: 'snapshot' },
 				},
 				{
 					filename: 'snapshot_2024-01-01.json',
-					expected: { type: 'json', extension: 'json', prefix: 'snapshot', error: undefined },
+					expected: { success: true, extension: 'json', prefix: 'snapshot' },
 				},
 				{
 					filename: 'snapshot_data.pb',
-					expected: { type: 'pb', extension: 'pb', prefix: 'snapshot', error: undefined },
+					expected: { success: true, extension: 'pb', prefix: 'snapshot' },
 				},
 				{
 					filename: 'snapshot_2024-01-01.pb',
-					expected: { type: 'pb', extension: 'pb', prefix: 'snapshot', error: undefined },
+					expected: { success: true, extension: 'pb', prefix: 'snapshot' },
 				},
 				{
 					filename: 'snapshot_2024-01-01.pb.gz',
-					expected: { type: 'pb', extension: 'pb.gz', prefix: 'snapshot', error: undefined },
+					expected: { success: true, extension: 'pb.gz', prefix: 'snapshot' },
 				},
 				{
 					filename: 'pointcloud.pcd',
-					expected: { type: 'mesh', extension: 'pcd', prefix: undefined, error: undefined },
+					expected: { success: true, extension: 'pcd', prefix: undefined },
 				},
 				{
 					filename: 'mesh.ply',
-					expected: { type: 'mesh', extension: 'ply', prefix: undefined, error: undefined },
+					expected: { success: true, extension: 'ply', prefix: undefined },
 				},
 				{
 					filename: 'snapshot_model.pcd',
-					expected: { type: 'mesh', extension: 'pcd', prefix: undefined, error: undefined },
+					expected: { success: true, extension: 'pcd', prefix: undefined },
 				},
 			])('parses $filename correctly', ({ filename, expected }) => {
 				expect(Subject.parseFileName(filename)).toEqual(expected)
@@ -81,7 +81,7 @@ describe('file-names', () => {
 			])('returns error for $filename', ({ filename, expectedError }) => {
 				const result = Subject.parseFileName(filename)
 
-				expect(result.type).toBeUndefined()
+				assert(!result.success)
 				expect(result.error).toContain(expectedError)
 			})
 		})

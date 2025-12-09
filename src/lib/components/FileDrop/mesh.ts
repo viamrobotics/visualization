@@ -3,6 +3,7 @@ import type { ValueOf } from 'type-fest'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import { isArrayBuffer } from 'lodash-es'
+import type { FileDropper, FileDropperOptions } from './file-dropper'
 
 export const MESH_EXTENSIONS = {
 	PCD: 'pcd',
@@ -13,26 +14,19 @@ export const SUPPORTED_MESH_EXTENSIONS = [MESH_EXTENSIONS.PCD, MESH_EXTENSIONS.P
 
 export type MeshExtension = ValueOf<typeof MESH_EXTENSIONS>
 
-export type MeshDropHandler = (
-	name: string,
-	extension: MeshExtension,
-	result: string | ArrayBuffer | null | undefined,
-	addPoints: (points: WorldObject<PointsGeometry>) => void,
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
-) => Promise<string | undefined>
-
-export const onMeshDrop: MeshDropHandler = async (
-	name: string,
-	ext: MeshExtension,
-	result: string | ArrayBuffer | null | undefined,
-	addPoints: (points: WorldObject<PointsGeometry>) => void,
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
+export const onMeshDrop: FileDropper<MeshExtension, undefined> = async (
+	options: FileDropperOptions<MeshExtension, undefined>
 ) => {
+	const { name, extension, result, handlers } = options
 	if (!isArrayBuffer(result)) {
 		return `${name} failed to load.`
 	}
 
-	switch (ext) {
+	if (!handlers) {
+		throw new Error('Handlers are required for mesh file drops')
+	}
+
+	switch (extension) {
 		case MESH_EXTENSIONS.PCD: {
 			const message = await parsePcdInWorker(new Uint8Array(result))
 			const points = new WorldObject(
@@ -48,7 +42,7 @@ export const onMeshDrop: MeshDropHandler = async (
 				},
 				message.colors ? { colors: message.colors } : undefined
 			)
-			addPoints(points)
+			handlers?.addPoints(points)
 			break
 		}
 		case MESH_EXTENSIONS.PLY: {
@@ -57,7 +51,7 @@ export const onMeshDrop: MeshDropHandler = async (
 				center: undefined,
 				geometryType: { case: 'bufferGeometry', value: geometry },
 			})
-			addMesh(mesh)
+			handlers?.addMesh(mesh)
 			break
 		}
 	}

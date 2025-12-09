@@ -1,5 +1,6 @@
 import { isArrayBuffer } from 'lodash-es'
 import type { ValueOf } from 'type-fest'
+import type { FileDropper, FileDropperOptions } from './file-dropper'
 
 export const PB_EXTENSIONS = {
 	PB: 'pb',
@@ -21,19 +22,10 @@ export const isPBPrefix = (prefix: string | undefined): prefix is PBPrefix => {
 	return SUPPORTED_PB_PREFIXES.includes(prefix.toLowerCase() as PBPrefix)
 }
 
-export type PBDropHandler = (
-	name: string,
-	extension: PBExtension,
-	prefix: PBPrefix,
-	result: string | ArrayBuffer | null | undefined
-) => string | undefined
-
-export const onPBDrop: PBDropHandler = (
-	name: string,
-	extension: PBExtension,
-	prefix: PBPrefix,
-	result: string | ArrayBuffer | null | undefined
+export const onPBDrop: FileDropper<PBExtension, PBPrefix> = async (
+	options: FileDropperOptions<PBExtension, PBPrefix>
 ) => {
+	const { name, extension, prefix, result } = options
 	if (!isArrayBuffer(result)) {
 		return `${name} failed to load.`
 	}

@@ -11,20 +11,8 @@ describe('useFileDrop', () => {
 	const mockOnSuccess = vi.fn()
 	const mockAddPoints = vi.fn()
 	const mockAddMesh = vi.fn()
-	const mockOnJSONDrop = vi.fn()
-	const mockOnMeshDrop = vi.fn()
-	const mockOnPBDrop = vi.fn()
 
-	const createFileDrop = () =>
-		useFileDrop(
-			mockOnError,
-			mockOnSuccess,
-			mockAddPoints,
-			mockAddMesh,
-			mockOnJSONDrop,
-			mockOnMeshDrop,
-			mockOnPBDrop
-		)
+	const createFileDrop = () => useFileDrop(mockOnError, mockOnSuccess, mockAddPoints, mockAddMesh)
 
 	// Helper to create a mock DragEvent (jsdom doesn't support DragEvent)
 	const createDragEvent = (
@@ -130,9 +118,16 @@ describe('useFileDrop', () => {
 			fileDrop.ondrop(event)
 
 			expect(mockOnError).not.toHaveBeenCalled()
-			expect(mockOnJSONDrop).not.toHaveBeenCalled()
-			expect(mockOnMeshDrop).not.toHaveBeenCalled()
-			expect(mockOnPBDrop).not.toHaveBeenCalled()
+		})
+
+		it('calls onError for unsupported file extension', () => {
+			const fileDrop = createFileDrop()
+			const file = new File([''], 'document.txt')
+			const dataTransfer = createDataTransferWithFiles([file])
+
+			fileDrop.ondrop(createDragEvent('drop', { dataTransfer }))
+
+			expect(mockOnError).toHaveBeenCalledWith(expect.stringContaining('files are supported'))
 		})
 	})
 })

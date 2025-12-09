@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Subject from '../pb'
 
 describe('pb', () => {
@@ -28,8 +28,13 @@ describe('pb', () => {
 				result: null,
 				expectedError: 'test.pb failed to load.',
 			},
-		])('calls onError for $desc', ({ result, expectedError }) => {
-			const error = Subject.onPBDrop('test.pb', 'pb', 'snapshot', result)
+		])('returns error for $desc', async ({ result, expectedError }) => {
+			const error = await Subject.onPBDrop({
+				name: 'test.pb',
+				extension: 'pb',
+				prefix: 'snapshot',
+				result,
+			})
 
 			expect(error).toBe(expectedError)
 		})
@@ -37,8 +42,13 @@ describe('pb', () => {
 		it.each([
 			{ filename: 'test.pb', extension: 'pb' as const },
 			{ filename: 'test.pb.gz', extension: 'pb.gz' as const },
-		])('returns undefined for valid $extension file', ({ filename, extension }) => {
-			const error = Subject.onPBDrop(filename, extension, 'snapshot', new ArrayBuffer(8))
+		])('returns undefined for valid $extension file', async ({ filename, extension }) => {
+			const error = await Subject.onPBDrop({
+				name: filename,
+				extension,
+				prefix: 'snapshot',
+				result: new ArrayBuffer(8),
+			})
 
 			expect(error).toBeUndefined()
 		})

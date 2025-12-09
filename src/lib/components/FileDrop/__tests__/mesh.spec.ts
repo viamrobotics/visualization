@@ -29,7 +29,13 @@ describe('mesh', () => {
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
 
-			const error = await Subject.onMeshDrop('test.pcd', 'pcd', result, addPoints, addMesh)
+			const error = await Subject.onMeshDrop({
+				name: 'test.pcd',
+				extension: 'pcd',
+				prefix: undefined,
+				result,
+				handlers: { addPoints, addMesh },
+			})
 
 			expect(error).toBe('test.pcd failed to load.')
 			expect(addPoints).not.toHaveBeenCalled()
@@ -48,13 +54,13 @@ describe('mesh', () => {
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
 
-			const error = await Subject.onMeshDrop(
-				'test.pcd',
-				'pcd',
-				new ArrayBuffer(8),
-				addPoints,
-				addMesh
-			)
+			const error = await Subject.onMeshDrop({
+				name: 'test.pcd',
+				extension: 'pcd',
+				prefix: undefined,
+				result: new ArrayBuffer(8),
+				handlers: { addPoints, addMesh },
+			})
 
 			expect(error).toBeUndefined()
 			expect(parsePcdInWorker).toHaveBeenCalled()
@@ -70,13 +76,13 @@ describe('mesh', () => {
 			const addPoints = vi.fn()
 			const addMesh = vi.fn()
 
-			const error = await Subject.onMeshDrop(
-				'test.ply',
-				'ply',
-				new ArrayBuffer(8),
-				addPoints,
-				addMesh
-			)
+			const error = await Subject.onMeshDrop({
+				name: 'test.ply',
+				extension: 'ply',
+				prefix: undefined,
+				result: new ArrayBuffer(8),
+				handlers: { addPoints, addMesh },
+			})
 
 			expect(error).toBeUndefined()
 			expect(PLYLoader).toHaveBeenCalled()
