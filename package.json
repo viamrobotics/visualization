@@ -16,6 +16,7 @@
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
 		"test:client": "go test ./client/... -count=1",
+		"test:draw": "go test ./draw/... -count=1",
 		"test": "pnpm test:unit -- --run",
 		"test:coverage": "npx vitest run --coverage",
 		"test:e2e": "playwright test",
