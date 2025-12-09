@@ -24,7 +24,6 @@
 	const { camera } = useThrelte()
 	const settings = useSettings()
 
-	const uuid = useTrait(() => entity, traits.UUID)
 	const name = useTrait(() => entity, traits.Name)
 	const pose = useTrait(() => entity, traits.Pose)
 	const positions = useTrait(() => entity, traits.PointsGeometry)
@@ -99,7 +98,6 @@
 
 <T
 	is={points}
-	uuid={uuid.current}
 	name={name.current}
 	{...events}
 	bvh={{ maxDepth: 40, maxLeafTris: 20 }}

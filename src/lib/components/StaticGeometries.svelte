@@ -25,9 +25,7 @@
 
 	const entities = new SvelteSet<Entity>()
 	const selectedCustomGeometry = $derived(
-		[...entities].find(
-			(entity) => entity.get(traits.UUID) === selectedEntity.current?.get(traits.UUID)
-		)
+		[...entities].find((entity) => entity === selectedEntity.current)
 	)
 
 	const mode = $derived(settings.current.transformMode)
@@ -39,7 +37,6 @@
 
 	keys.onKeys('=', () => {
 		const entity = world.spawn(
-			traits.UUID,
 			traits.Name(`custom geometry ${++index}`),
 			traits.Pose,
 			traits.Box({ x: 0.1, y: 0.1, z: 0.1 })

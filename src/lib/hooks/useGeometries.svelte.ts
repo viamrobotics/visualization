@@ -122,7 +122,6 @@ export const provideGeometries = (partID: () => string) => {
 					}
 
 					const entityTraits: ConfigurableTrait[] = [
-						traits.UUID,
 						traits.Parent(name),
 						traits.Name(label),
 						traits.Pose(pose),

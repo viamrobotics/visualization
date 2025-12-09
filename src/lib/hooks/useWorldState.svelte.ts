@@ -15,6 +15,7 @@ import { setInUnsafe } from '@thi.ng/paths'
 import type { ProcessMessage } from '$lib/world-state-messages'
 import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait } from 'koota'
+import { createPose } from '$lib/transform'
 
 const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
 	type: 'module',
@@ -47,6 +48,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	$effect(() => {
 		for (const [uuid, transform] of Object.entries(transforms)) {
 			const metadata = parseMetadata(transform.metadata?.fields)
+			const pose = createPose(transform.poseInObserverFrame?.pose)
 
 			const entityTraits: ConfigurableTrait[] = []
 
@@ -78,11 +80,7 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 				entityTraits.push(traits.Arrow, traits.Instance)
 			}
 
-			entityTraits.push(
-				traits.UUID(uuid),
-				traits.Name(transform.referenceFrame),
-				traits.Pose(transform.poseInObserverFrame?.pose)
-			)
+			entityTraits.push(traits.Name(transform.referenceFrame), traits.Pose(pose))
 
 			world.spawn(...entityTraits)
 		}

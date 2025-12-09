@@ -103,7 +103,6 @@
 					const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
 
 					world.spawn(
-						traits.UUID,
 						traits.Name(file.name),
 						traits.PointsGeometry(result.positions),
 						result.colors ? traits.VertexColors(result.colors) : traits.Color
@@ -113,7 +112,7 @@
 				} else if (ext === extensions.PLY) {
 					const bufferGeometry = new PLYLoader().parse(arrayBuffer)
 
-					world.spawn(traits.UUID, traits.Name(file.name), traits.BufferGeometry(bufferGeometry))
+					world.spawn(traits.Name(file.name), traits.BufferGeometry(bufferGeometry))
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				}

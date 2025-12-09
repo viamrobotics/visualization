@@ -46,7 +46,6 @@ and should remain pure, i.e. no hooks should be used.
 
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
-	const uuid = useTrait(() => entity, traits.UUID)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const box = useTrait(() => entity, traits.Box)
 	const capsule = useTrait(() => entity, traits.Capsule)
@@ -128,7 +127,6 @@ and should remain pure, i.e. no hooks should be used.
 		<T
 			is={mesh}
 			name={name.current}
-			uuid={uuid.current}
 			bvh={{ enabled: false }}
 		>
 			{#if model && renderMode.includes('model')}
@@ -197,7 +195,6 @@ and should remain pure, i.e. no hooks should be used.
 	{:else}
 		<AxesHelper
 			name={name.current}
-			uuid={uuid.current}
 			width={3}
 			length={0.1}
 		/>

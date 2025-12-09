@@ -184,7 +184,6 @@ export const provideFrames = (partID: () => string) => {
 			}
 
 			const entityTraits: ConfigurableTrait[] = [
-				traits.UUID,
 				traits.Name(name),
 				traits.Pose(pose),
 				traits.EditedPose(pose),

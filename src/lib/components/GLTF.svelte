@@ -13,7 +13,6 @@
 
 	let { entity, children, ...rest }: Props = $props()
 
-	const uuid = useTrait(() => entity, traits.UUID)
 	const name = useTrait(() => entity, traits.Name)
 	const gltf = useTrait(() => entity, traits.GLTF)
 	const objectProps = useObjectEvents(() => entity)
@@ -22,7 +21,6 @@
 {#if gltf.current?.scene}
 	<T
 		is={gltf.current.scene as Object3D}
-		uuid={uuid.current}
 		name={name.current}
 		{...objectProps}
 		{...rest}

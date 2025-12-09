@@ -156,7 +156,7 @@ export const provideDrawAPI = () => {
 				entityTraits.push(geometryTrait())
 			}
 
-			entityTraits.push(traits.UUID, traits.Name(frame.name), traits.Pose(pose), traits.DrawAPI)
+			entityTraits.push(traits.Name(frame.name), traits.Pose(pose), traits.DrawAPI)
 
 			const entity = world.spawn(...entityTraits)
 
@@ -168,7 +168,6 @@ export const provideDrawAPI = () => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
 
 		const entity = world.spawn(
-			traits.UUID,
 			traits.Name(`Points ${++pointsIndex}`),
 			traits.PointsGeometry(positions),
 			traits.DrawAPI
@@ -211,7 +210,6 @@ export const provideDrawAPI = () => {
 		}
 
 		entityTraits.push(
-			traits.UUID,
 			traits.Name(data.label ?? ++geometryIndex),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
@@ -241,7 +239,6 @@ export const provideDrawAPI = () => {
 		}
 
 		const entity = world.spawn(
-			traits.UUID,
 			traits.Name(name),
 			traits.Color(colorUtil.set(color)),
 			traits.LineGeometry(points),
@@ -251,19 +248,27 @@ export const provideDrawAPI = () => {
 		entities.set(name, entity)
 	}
 
+	const vec3 = new Vector3()
 	const pose = createPose()
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
 
-		const _arrowHeadAtPose = reader.read()
+		const arrowHeadAtPose = reader.read()
 
 		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
 			origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
 			direction.set(reader.read(), reader.read(), reader.read())
+
+			if (arrowHeadAtPose === 1) {
+				console.log(arrowHeadAtPose)
+
+				// Compute the base position so the arrow ends at the origin
+				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 0.1))
+			}
 
 			pose.x = origin.x
 			pose.y = origin.y
@@ -273,7 +278,6 @@ export const provideDrawAPI = () => {
 			pose.oZ = direction.z
 
 			const entity = world.spawn(
-				traits.UUID,
 				traits.Name(`Pose ${++poseIndex}`),
 				traits.Pose(pose),
 				traits.Instance,
@@ -342,7 +346,6 @@ export const provideDrawAPI = () => {
 		}
 
 		world.spawn(
-			traits.UUID,
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
 			traits.PointsGeometry(positions),
@@ -382,7 +385,6 @@ export const provideDrawAPI = () => {
 		}
 
 		world.spawn(
-			traits.UUID,
 			traits.Name(label),
 			traits.Color({ r, g, b }),
 			traits.LineGeometry(points),
@@ -405,7 +407,7 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.UUID, traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
+		world.spawn(traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
 
 		URL.revokeObjectURL(url)
 	}

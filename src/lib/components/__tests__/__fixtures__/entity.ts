@@ -3,7 +3,6 @@ import { traits } from '$lib/ecs'
 
 export const createEntityFixture = (world: World): Entity => {
 	return world.spawn(
-		traits.UUID('1234-5678'),
 		traits.Parent('parent_frame'),
 		traits.Name('Test Object'),
 		traits.Pose({
