@@ -323,7 +323,7 @@ try {
 	if (isProduction) {
 		startStaticServer()
 		console.log(
-			`\n\t\x1b[32m\x1b[1mAccess the app at:\x1b[0m\x1b[32m http://${localIP}:${STATIC_PORT}\x1b[0m`
+			`\n\t\x1b[32m\x1b[1mAccess the app at:\x1b[0m\x1b[32m http://localhost:${STATIC_PORT}\x1b[0m`
 		)
 	} else {
 		launchVite()
