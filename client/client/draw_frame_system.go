@@ -26,9 +26,13 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 			return err
 		}
 		geometries = append(geometries, geometry)
-		colorsBytes := base64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue())
-		drawColor := draw.NewColor(draw.WithRGB(colorsBytes[0], colorsBytes[1], colorsBytes[2]))
-		colors = append(colors, drawColor.ToHex())
+		metadata, err := draw.StructToMetadata(transform.Metadata)
+		if err != nil {
+			return err
+		}
+		for _, color := range metadata.Colors {
+			colors = append(colors, color.ToHex())
+		}
 	}
 
 	geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
