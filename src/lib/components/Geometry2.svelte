@@ -1,15 +1,3 @@
-<script
-	module
-	lang="ts"
->
-</script>
-
-<!--
-
-This component is consumed as a library export
-and should remain pure, i.e. no hooks should be used.
-
--->
 <script lang="ts">
 	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
@@ -47,6 +35,7 @@ and should remain pure, i.e. no hooks should be used.
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
 	const entityColor = useTrait(() => entity, traits.Color)
+	const opacity = useTrait(() => entity, traits.Opacity)
 	const box = useTrait(() => entity, traits.Box)
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const sphere = useTrait(() => entity, traits.Sphere)
@@ -134,41 +123,33 @@ and should remain pure, i.e. no hooks should be used.
 			{/if}
 
 			{#if renderMode.includes('colliders')}
-				{#if geometryType === 'buffer'}
-					{@const geometry = useTrait(() => entity, traits.BufferGeometry)}
-
-					{#if geometry.current}
-						<T
-							is={geometry.current}
-							{oncreate}
-						/>
-					{/if}
-				{:else if geometryType === 'line'}
-					{@const points = entity.get(traits.LineGeometry)}
-					<MeshLineGeometry points={points ?? []} />
-				{:else if geometryType === 'box'}
-					{@const box = entity.get(traits.Box)}
+				{#if bufferGeometry.current}
+					<T
+						is={bufferGeometry.current}
+						{oncreate}
+					/>
+				{:else if lineGeometry.current}
+					<MeshLineGeometry points={lineGeometry.current} />
+				{:else if box.current}
 					<T.BoxGeometry
-						args={[box?.x, box?.y, box?.z]}
+						args={[box.current?.x, box.current?.y, box.current?.z]}
 						{oncreate}
 					/>
-				{:else if geometryType === 'sphere'}
-					{@const sphere = entity.get(traits.Sphere)}
+				{:else if sphere.current}
 					<T.SphereGeometry
-						args={[sphere?.r]}
+						args={[sphere.current?.r]}
 						{oncreate}
 					/>
-				{:else if geometryType === 'capsule'}
-					{@const capsule = entity.get(traits.Capsule)}
+				{:else if capsule.current}
 					<T
 						is={CapsuleGeometry}
-						args={[capsule?.r, capsule?.l]}
+						args={[capsule.current.r, capsule.current.l]}
 						{oncreate}
 					/>
 				{/if}
 			{/if}
 
-			{#if geometryType === 'line'}
+			{#if lineGeometry.current}
 				<MeshLineMaterial
 					{color}
 					width={/* metadata.lineWidth ?? */ 0.005}
@@ -178,7 +159,7 @@ and should remain pure, i.e. no hooks should be used.
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
 					transparent
-					opacity={useTrait(() => entity, traits.Opacity).current ?? 0.7}
+					opacity={opacity.current ?? 0.7}
 				/>
 
 				{#if geo && renderMode.includes('colliders')}

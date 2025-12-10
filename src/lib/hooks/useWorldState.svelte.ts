@@ -134,9 +134,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 					entity.set(traits.Pose, transform.poseInObserverFrame?.pose ?? createPose())
 				} else if (path.startsWith('physicalObject') && transform.physicalObject) {
 					const { geometryType } = transform.physicalObject
+
 					if (geometryType.case === 'box') {
 						entity.set(traits.Box, createBox(geometryType.value))
 					} else if (geometryType.case === 'capsule') {
+						console.log(geometryType.value)
 						entity.set(traits.Capsule, createCapsule(geometryType.value))
 					} else if (geometryType.case === 'sphere') {
 						entity.set(traits.Sphere, createSphere(geometryType.value))
