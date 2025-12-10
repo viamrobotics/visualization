@@ -15,7 +15,7 @@ func TestPoints(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		points, err := NewPoints(positions, WithPointsSize(10), WithPointColors(NewColor(WithName("red"))))
+		points, err := NewPoints(positions, WithPointsSize(10), WithSinglePointColor(NewColor(WithName("red"))))
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, points, test.ShouldNotBeNil)
 
@@ -38,7 +38,7 @@ func TestPoints(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		points, err := NewPoints(positions, WithPointsSize(10), WithPointColors(NewColor(WithName("red")), NewColor(WithName("blue")), NewColor(WithName("green"))))
+		points, err := NewPoints(positions, WithPointsSize(10), WithPerPointColors(NewColor(WithName("red")), NewColor(WithName("blue")), NewColor(WithName("green"))))
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, points, test.ShouldNotBeNil)
 
@@ -55,7 +55,7 @@ func TestPoints(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		points, err := NewPoints(positions, WithPointsSize(10), WithPointColors(NewColor(WithName("red")), NewColor(WithName("blue")), NewColor(WithName("green")), NewColor(WithName("yellow"))))
+		points, err := NewPoints(positions, WithPointsSize(10), WithPerPointColors(NewColor(WithName("red")), NewColor(WithName("blue")), NewColor(WithName("green")), NewColor(WithName("yellow"))))
 		test.That(t, err, test.ShouldBeError, "colors must have length 1 (single color) or 3 (per-point colors), got 4")
 		test.That(t, points, test.ShouldBeNil)
 	})

@@ -24,7 +24,7 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 		}
 		drawColors[i] = draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))
 	}
-	arrows, err := draw.NewArrows(poses, draw.WithArrowColors(drawColors...))
+	arrows, err := draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
 
 	if err != nil {
 		return err

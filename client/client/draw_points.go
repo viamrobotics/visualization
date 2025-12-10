@@ -49,7 +49,7 @@ func DrawPoints(label string, points []spatialmath.Pose, colors [][3]uint8, colo
 		colorPerPoint = append(colorPerPoint, fallbacks...)
 	}
 
-	drawPoints, err := draw.NewPoints(pointsVec, draw.WithPointColors(colorPerPoint...))
+	drawPoints, err := draw.NewPoints(pointsVec, draw.WithPerPointColors(colorPerPoint...))
 	if err != nil {
 		return err
 	}
