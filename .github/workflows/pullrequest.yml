@@ -56,6 +56,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Generate protobuf
+        run: make proto-gen-ts
+
       - name: Check
         run: pnpm run check
 
@@ -81,8 +87,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23.11
+          cache: true
+
+      - name: Install protoc-gen-go and protoc-gen-go-grpc
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Generate protobuf
+        run: |
+          make proto-gen-ts
+          make proto-gen-go
+
       - name: Test
         run: pnpm run test
+
+      - name: Test Draw
+        run: pnpm run test:draw
 
       - name: Test Coverage
         run: npx vitest run --coverage

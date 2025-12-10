@@ -42,4 +42,13 @@ func TestTransform(t *testing.T) {
 		test.That(t, transform.Metadata, test.ShouldNotBeNil)
 		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
 	})
+
+	t.Run("RoundtripMetadata", func(t *testing.T) {
+		metadata := NewMetadata(WithMetadataColors(NewColor(WithName("red")), NewColor(WithName("blue"))))
+		metadataStruct, err := MetadataToStruct(metadata)
+		test.That(t, err, test.ShouldBeNil)
+		roundtripMetadata, err := StructToMetadata(metadataStruct)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, roundtripMetadata.Colors, test.ShouldResemble, metadata.Colors)
+	})
 }

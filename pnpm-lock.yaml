@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@bufbuild/protobuf':
+        specifier: 1.10.1
+        version: 1.10.1
       '@tanstack/svelte-query-devtools':
         specifier: ^6.0.2
         version: 6.0.2(@tanstack/svelte-query@6.0.9(svelte@5.43.0))(svelte@5.43.0)
@@ -24,9 +27,6 @@ importers:
       '@ag-grid-community/styles':
         specifier: 32.3.9
         version: 32.3.9
-      '@bufbuild/protobuf':
-        specifier: 1.10.1
-        version: 1.10.1
       '@changesets/cli':
         specifier: 2.29.6
         version: 2.29.6(@types/node@24.10.0)

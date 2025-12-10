@@ -253,6 +253,10 @@ type Metadata struct {
 	Colors []Color
 }
 
+func (metadata *Metadata) SetColors(colors []Color) {
+	metadata.Colors = colors
+}
+
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	DrawColorsConfig

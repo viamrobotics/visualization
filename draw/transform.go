@@ -58,3 +58,19 @@ func MetadataToStruct(metadata Metadata) (*structpb.Struct, error) {
 
 	return &structpb.Struct{Fields: fields}, nil
 }
+
+func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
+	metadata := NewMetadata()
+	if structPb.Fields["colors"] != nil {
+		encoded := structPb.Fields["colors"].GetStringValue()
+		colorsBytes, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return NewMetadata(), err
+		}
+		colors := unpackColors(colorsBytes)
+		metadata.SetColors(colors)
+	}
+	// TODO: add other metadata fields
+
+	return metadata, nil
+}

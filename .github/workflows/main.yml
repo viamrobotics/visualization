@@ -36,6 +36,7 @@ jobs:
       - name: Install and Build 🔧
         run: |
           pnpm i
+          make proto-gen-ts
           pnpm run build
 
       - name: Create Release Pull Request or Publish to npm
@@ -73,13 +74,8 @@ jobs:
           go-version: '1.21'
           cache: true
 
-      - name: Install gomarkdoc
-        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-
-      - name: Generate API Documentation
-        run: |
-          gomarkdoc ./draw -o ./draw/DOCS.md
-          echo "Documentation generated at draw/DOCS.md"
+      - name: Generate Documentation
+        run: make docs
 
       - name: Check for documentation changes
         id: check_changes
@@ -98,7 +94,7 @@ jobs:
       - name: Commit and push documentation
         if: steps.check_changes.outputs.changes == 'true'
         run: |
-          git add draw/DOCS.md
+          git add .
           git commit -m "docs: update draw package API documentation [skip ci]"
           git push origin main
 
