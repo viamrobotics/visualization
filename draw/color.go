@@ -1,6 +1,7 @@
 package draw
 
 import (
+	"fmt"
 	"image/color"
 
 	"golang.org/x/image/colornames"
@@ -156,6 +157,10 @@ func (color Color) SetRGBA(r, g, b, a uint8) Color {
 func (color Color) SetAlpha(alpha uint8) Color {
 	color.A = alpha
 	return color
+}
+
+func (color Color) ToHex() string {
+	return fmt.Sprintf("#%02X%02X%02X", color.R, color.G, color.B)
 }
 
 // ColorChooser cycles through a list of colors, useful for automatically assigning different colors

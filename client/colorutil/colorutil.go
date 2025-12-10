@@ -1,6 +1,8 @@
 package colorutil
 
 import (
+	"encoding/hex"
+	"errors"
 	"strings"
 )
 
@@ -188,4 +190,22 @@ func NamedColorsToHexes(names []string) []string {
 		}
 	}
 	return hexes
+}
+
+func NamedColorToRGB(name string) ([3]uint8, error) {
+	var rgb [3]uint8
+
+	hexStr := NamedColorToHex(name)
+	hexStr = strings.TrimPrefix(hexStr, "#")
+	if len(hexStr) != 6 {
+		return rgb, errors.New("invalid hex color string")
+	}
+
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil || len(bytes) != 3 {
+		return rgb, err
+	}
+
+	copy(rgb[:], bytes)
+	return rgb, nil
 }

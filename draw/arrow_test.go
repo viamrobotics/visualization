@@ -14,7 +14,7 @@ func TestArrows(t *testing.T) {
 			[]spatialmath.Pose{
 				spatialmath.NewPose(r3.Vector{X: 1, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 			},
-			WithArrowsColors(NewColor(WithName("red"))),
+			WithSingleArrowColor(NewColor(WithName("red"))),
 		)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, arrows, test.ShouldNotBeNil)
@@ -37,7 +37,7 @@ func TestArrows(t *testing.T) {
 				spatialmath.NewPose(r3.Vector{X: 0, Y: 1, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 				spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 1}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 			},
-			WithArrowsColors(NewColor(WithName("red")), NewColor(WithName("green")), NewColor(WithName("blue"))),
+			WithPerArrowColors(NewColor(WithName("red")), NewColor(WithName("green")), NewColor(WithName("blue"))),
 		)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, arrows, test.ShouldNotBeNil)
@@ -64,7 +64,7 @@ func TestArrows(t *testing.T) {
 				spatialmath.NewPose(r3.Vector{X: 0, Y: 1, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 				spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 1}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 			},
-			WithArrowsColors(NewColor(WithName("red")), NewColor(WithName("green"))),
+			WithPerArrowColors(NewColor(WithName("red")), NewColor(WithName("green"))),
 		)
 
 		test.That(t, err.Error(), test.ShouldContainSubstring, "colors must have length 1 (single color) or 3 (per-arrow colors), got 2")
