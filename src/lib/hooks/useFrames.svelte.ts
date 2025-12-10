@@ -157,7 +157,6 @@ export const provideFrames = (partID: () => string) => {
 				: undefined
 			const resourceName = resourceByName.current[frame.referenceFrame]
 			const color = resourceNameToColor(resourceName)
-			console.log(color)
 
 			const existing = entities.get(name)
 
