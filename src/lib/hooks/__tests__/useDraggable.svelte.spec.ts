@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/svelte'
+import { render, screen, waitFor } from '@testing-library/svelte'
+import userEvent from '@testing-library/user-event'
 import DraggableTestWrapper from './fixtures/DraggableTestWrapper.svelte'
 
 const mockStore = new Map<string, unknown>()
@@ -53,6 +54,7 @@ describe('useDraggable', () => {
 
 	describe('drag interaction', () => {
 		it('saves position to storage on drag end', async () => {
+			const user = userEvent.setup()
 			const { set } = await import('idb-keyval')
 
 			render(DraggableTestWrapper, { name: 'drag-test' })
@@ -61,11 +63,8 @@ describe('useDraggable', () => {
 				expect(screen.getByTestId('status')).toHaveTextContent('loaded')
 			})
 
-			const draggable = screen.getByTestId('draggable')
-
-			// Simulate drag start and end
-			await fireEvent.mouseDown(draggable)
-			await fireEvent.mouseUp(draggable)
+			const draggable = screen.getByRole('button', { name: /drag me/i })
+			await user.pointer([{ keys: '[MouseLeft>]', target: draggable }, { keys: '[/MouseLeft]' }])
 
 			expect(set).toHaveBeenCalledWith('drag-test-draggable', { x: 0, y: 0 })
 		})
