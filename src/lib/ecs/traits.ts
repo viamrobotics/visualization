@@ -28,17 +28,17 @@ export const Color = trait({ r: 1, g: 0, b: 0 })
 export const Arrow = trait()
 
 /**
- * A box, in meters
+ * A box, in mm
  */
 export const Box = trait({ x: 200, y: 200, z: 200 })
 
 /**
- * A capsule, in meters
+ * A capsule, in mm
  */
 export const Capsule = trait({ l: 200, r: 50 })
 
 /**
- * A sphere, in meters
+ * A sphere, in mm
  */
 export const Sphere = trait({ r: 200 })
 
