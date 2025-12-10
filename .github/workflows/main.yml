@@ -28,6 +28,11 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 'latest'
+
       - name: Install and Build 🔧
         run: |
           pnpm i
@@ -50,6 +55,52 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Published version: $VERSION"
+
+  generate-docs:
+    runs-on: ubuntu-latest
+    needs: deploy-and-publish
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+      - name: Generate API Documentation
+        run: |
+          gomarkdoc ./draw -o ./draw/DOCS.md
+          echo "Documentation generated at draw/DOCS.md"
+
+      - name: Check for documentation changes
+        id: check_changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [[ -n $(git status --porcelain draw/DOCS.md) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Documentation has been updated"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes detected"
+          fi
+
+      - name: Commit and push documentation
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git add draw/DOCS.md
+          git commit -m "docs: update draw package API documentation [skip ci]"
+          git push origin main
 
   create-version-bump-pr:
     needs: deploy-and-publish

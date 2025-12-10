@@ -1,0 +1,8 @@
+version: v2
+managed:
+  enabled: false
+plugins:
+  # Go code generation
+  - local: protoc-gen-go
+    out: .
+    opt: paths=source_relative

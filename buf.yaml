@@ -1,0 +1,13 @@
+version: v2
+modules:
+  - path: protos
+    excludes:
+      - protos/vendor
+deps:
+  - buf.build/viamrobotics/api
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
