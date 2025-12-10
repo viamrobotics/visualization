@@ -10,7 +10,7 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { traits, useQuery, useWorld } from '$lib/ecs'
+	import { traits, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 
@@ -26,10 +26,29 @@
 	const world = useWorld()
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
-	const query = useQuery(traits.Name)
+
+	let children = $state<TreeNode[]>([])
+
+	let pending = false
+	const flush = () => {
+		if (pending) return
+		pending = true
+		window.setTimeout(() => {
+			children = buildTreeNodes(world.query(traits.Name))
+			pending = false
+		})
+	}
+
+	world.onAdd(traits.Name, flush)
+	world.onAdd(traits.Parent, flush)
+	world.onRemove(traits.Name, flush)
+	world.onRemove(traits.Parent, flush)
+	world.onChange(traits.Name, flush)
+	world.onChange(traits.Parent, flush)
+
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
-		children: buildTreeNodes(query.current),
+		children,
 	})
 </script>
 

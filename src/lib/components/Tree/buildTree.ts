@@ -9,7 +9,7 @@ export interface TreeNode {
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (entities: QueryResult<[Trait<() => string>]>): TreeNode[] => {
+export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
 	const rootNodes: TreeNode[] = []
 	const childNodes: TreeNode[] = []

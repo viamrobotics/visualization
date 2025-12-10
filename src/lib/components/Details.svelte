@@ -318,7 +318,9 @@
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
 						options: frames.getParentFrameOptions(name.current ?? ''),
-						onChange: (value) => detailConfigUpdater.setFrameParent(entity, value),
+						onChange: (value) => {
+							detailConfigUpdater.setFrameParent(entity, value)
+						},
 					})}
 				</div>
 			</div>

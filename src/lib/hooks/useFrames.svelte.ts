@@ -165,8 +165,10 @@ export const provideFrames = (partID: () => string) => {
 
 				if (!parent || parent === 'world') {
 					existing.remove(traits.Parent)
-				} else if (parent) {
+				} else if (parent && existing.has(traits.Parent)) {
 					existing.set(traits.Parent, parent)
+				} else {
+					existing.add(traits.Parent(parent))
 				}
 
 				if (color) {

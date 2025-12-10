@@ -61,25 +61,24 @@ class Float32Reader {
 	littleEndian = true
 	offset = 0
 	buffer = new ArrayBuffer()
+	array = new Float32Array()
 	view = new DataView(this.buffer)
 	header = { requestID: '', type: -1 }
 
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
-		this.header = {
-			requestID: UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))]),
-			type: new DataView(this.buffer).getFloat32(16, true),
-		}
+		this.header.requestID = UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))])
+		this.header.type = new Float32Array(this.buffer.slice(16, 20))[0]
 
-		// Slice away the request header and leave the body
 		this.buffer = this.buffer.slice(20)
-		this.view = new DataView(this.buffer)
+		this.array = new Float32Array(this.buffer)
+
 		return this
 	}
 
 	read() {
-		const result = this.view.getFloat32(this.offset, this.littleEndian)
-		this.offset += 4
+		const result = this.array[this.offset]
+		this.offset += 1
 		return result
 	}
 }
@@ -192,7 +191,6 @@ export const provideDrawAPI = () => {
 		const geometryTrait = () => {
 			if ('mesh' in data) {
 				const geometry = parsePlyInput(data.mesh.mesh)
-				console.log(geometry)
 				return traits.BufferGeometry(geometry)
 			} else if ('box' in data) {
 				return traits.Box(createBox(data.box))
@@ -317,39 +315,31 @@ export const provideDrawAPI = () => {
 		const g = reader.read()
 		const b = reader.read()
 
-		// Read positions
-		const positions = new Float32Array(nPoints * 3)
-		for (let i = 0; i < nPoints * 3; i++) {
-			positions[i] = reader.read()
-		}
+		const nPointsElements = nPoints * 3
+		const positions = reader.array.slice(reader.offset, reader.offset + nPointsElements)
+		reader.offset += nPointsElements
 
-		const getColors = () => {
-			// Read raw colors
-			const rawColors = new Float32Array(nColors * 3)
-			for (let i = 0; i < nColors * 3; i++) {
-				rawColors[i] = reader.read()
-			}
+		const nColorsElements = nColors * 3
+		const rawColors = reader.array.slice(reader.offset, reader.offset + nColorsElements)
+		reader.offset += nColorsElements
 
-			const colors = new Float32Array(nPoints * 3)
-			colors.set(rawColors)
+		const colors = new Float32Array(nPointsElements)
+		colors.set(rawColors)
 
-			// Cover the gap for any points not colored
-			for (let i = nColors; i < nPoints; i++) {
-				const offset = i * 3
+		// Cover the gap for any points not colored
+		for (let i = nColors; i < nPoints; i++) {
+			const offset = i * 3
 
-				colors[offset] = r
-				colors[offset + 1] = g
-				colors[offset + 2] = b
-			}
-
-			return colors
+			colors[offset] = r
+			colors[offset + 1] = g
+			colors[offset + 2] = b
 		}
 
 		world.spawn(
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
 			traits.PointsGeometry(positions),
-			traits.VertexColors(getColors()),
+			traits.VertexColors(colors),
 			traits.DrawAPI
 		)
 	}
