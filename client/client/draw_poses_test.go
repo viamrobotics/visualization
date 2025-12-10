@@ -62,7 +62,7 @@ func TestDrawPoses(t *testing.T) {
 
 		test.That(t, DrawPoses(poses, colors, true), test.ShouldBeNil)
 
-		box, err := spatialmath.NewSphere(
+		sphere, err := spatialmath.NewSphere(
 			spatialmath.NewPose(
 				r3.Vector{X: centerX, Y: centerY, Z: centerZ},
 				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
@@ -71,6 +71,6 @@ func TestDrawPoses(t *testing.T) {
 			"mySpherePose",
 		)
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, DrawGeometry(box, "turquoise"), test.ShouldBeNil)
+		test.That(t, DrawGeometry(sphere, "aqua"), test.ShouldBeNil)
 	})
 }

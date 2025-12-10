@@ -15,7 +15,7 @@ func TestDrawing(t *testing.T) {
 			[]spatialmath.Pose{
 				spatialmath.NewPose(r3.Vector{X: 1, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 			},
-			WithArrowsColors(NewColor(WithName("red"))),
+			WithSingleArrowColor(NewColor(WithName("red"))),
 		)
 
 		drawing := NewDrawing("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), NewShape(spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), "test", WithArrows(*arrows)), NewMetadata(WithMetadataColors(arrows.Colors...)))
