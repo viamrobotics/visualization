@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import * as Subject from '../pb'
 
 describe('pb', () => {
@@ -7,10 +7,10 @@ describe('pb', () => {
 			{ input: 'snapshot', expected: true },
 			{ input: 'SNAPSHOT', expected: true },
 			{ input: 'Snapshot', expected: true },
-			{ input: 'config', expected: false },
-			{ input: 'data', expected: false },
-			{ input: undefined, expected: false },
+			{ input: 'somethingelse', expected: false },
 			{ input: '', expected: false },
+			{ input: null, expected: false },
+			{ input: undefined, expected: false },
 		])('returns $expected for "$input"', ({ input, expected }) => {
 			expect(Subject.isPBPrefix(input)).toBe(expected)
 		})

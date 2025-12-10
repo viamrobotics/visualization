@@ -1,4 +1,4 @@
-import { WorldObject, type PointsGeometry, type ThreeBufferGeometry } from '$lib/WorldObject.svelte'
+import { WorldObject } from '$lib/WorldObject.svelte'
 import type { ValueOf } from 'type-fest'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
