@@ -3,9 +3,6 @@ import type { Pose } from '@viamrobotics/sdk'
 import type { Frame } from '$lib/frame'
 import { traits } from '$lib/ecs'
 import type { Vector3Like } from 'three'
-import { OrientationVector } from './lib'
-
-const ov = new OrientationVector()
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void

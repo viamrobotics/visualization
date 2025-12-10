@@ -161,6 +161,7 @@ export const provideFrames = (partID: () => string) => {
 			const existing = entities.get(name)
 
 			if (existing) {
+				console.log(existing, pose)
 				existing.set(traits.Pose, pose)
 
 				if (!parent || parent === 'world') {

@@ -149,7 +149,7 @@
 			input.startsWith('.') ||
 			input.startsWith('-0') ||
 			input.startsWith('-.') ||
-			input.endsWith('0') ||
+			(input.includes('.') && input.endsWith('0')) ||
 			input.endsWith('.')
 		)
 	}
@@ -172,7 +172,7 @@
 			{label}
 		</span>
 
-		{value ?? '-'}
+		{typeof value === 'number' ? value.toFixed(2) : (value ?? '-')}
 	</div>
 {/snippet}
 
