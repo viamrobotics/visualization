@@ -84,8 +84,10 @@ proto-format:
 	@pnpm exec buf format -w
 
 .PHONY: proto
-proto: proto-clean proto-vendor proto-lint proto-format
+proto: proto-clean proto-vendor 
 	@pnpm exec buf dep update
+	@$(MAKE) proto-lint
+	@$(MAKE) proto-format
 	@$(MAKE) proto-gen-go
 	@$(MAKE) proto-gen-ts
 
