@@ -143,7 +143,6 @@
 	}
 
 	const isIntermediateInput = (input: string) => {
-		console.log(input)
 		return (
 			input.startsWith('0') ||
 			input.startsWith('.') ||
@@ -335,8 +334,9 @@
 							ariaLabel: 'local position x coordinate',
 							value: localPose.current.x,
 							onInput: (value) => {
+								console.log(value, Number.parseFloat(value))
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { x: parseFloat(value) })
+								detailConfigUpdater.updateLocalPosition(entity, { x: Number.parseFloat(value) })
 							},
 						})}
 						{@render ScalarAttribute({
@@ -345,7 +345,7 @@
 							value: localPose.current.y,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { y: parseFloat(value) })
+								detailConfigUpdater.updateLocalPosition(entity, { y: Number.parseFloat(value) })
 							},
 						})}
 						{@render ScalarAttribute({
@@ -354,7 +354,7 @@
 							value: localPose.current.z,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { z: parseFloat(value) })
+								detailConfigUpdater.updateLocalPosition(entity, { z: Number.parseFloat(value) })
 							},
 						})}
 					</div>
@@ -370,7 +370,7 @@
 							value: localPose.current?.oX,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oX: parseFloat(value) })
+								detailConfigUpdater.updateLocalOrientation(entity, { oX: Number.parseFloat(value) })
 							},
 						})}
 						{@render ScalarAttribute({
@@ -379,7 +379,7 @@
 							value: localPose.current?.oY,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oY: parseFloat(value) })
+								detailConfigUpdater.updateLocalOrientation(entity, { oY: Number.parseFloat(value) })
 							},
 						})}
 						{@render ScalarAttribute({
@@ -388,7 +388,7 @@
 							value: localPose.current?.oZ,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oZ: parseFloat(value) })
+								detailConfigUpdater.updateLocalOrientation(entity, { oZ: Number.parseFloat(value) })
 							},
 						})}
 						{@render ScalarAttribute({
@@ -397,7 +397,9 @@
 							value: localPose.current?.theta,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { theta: parseFloat(value) })
+								detailConfigUpdater.updateLocalOrientation(entity, {
+									theta: Number.parseFloat(value),
+								})
 							},
 						})}
 					</div>
@@ -450,7 +452,10 @@
 							value: box.current.x,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', x: parseFloat(value) })
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									x: Number.parseFloat(value),
+								})
 							},
 						})}
 						{@render ScalarAttribute({
@@ -459,7 +464,10 @@
 							value: box.current.y,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', y: parseFloat(value) })
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									y: Number.parseFloat(value),
+								})
 							},
 						})}
 						{@render ScalarAttribute({
@@ -468,7 +476,10 @@
 							value: box.current.z,
 							onInput: (value) => {
 								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', z: parseFloat(value) })
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									z: Number.parseFloat(value),
+								})
 							},
 						})}
 					</div>
@@ -485,7 +496,7 @@
 								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'capsule',
-									r: parseFloat(value),
+									r: Number.parseFloat(value),
 								})
 							},
 						})}
@@ -497,7 +508,7 @@
 								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'capsule',
-									l: parseFloat(value),
+									l: Number.parseFloat(value),
 								})
 							},
 						})}
@@ -515,7 +526,7 @@
 								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'sphere',
-									r: parseFloat(value),
+									r: Number.parseFloat(value),
 								})
 							},
 						})}
