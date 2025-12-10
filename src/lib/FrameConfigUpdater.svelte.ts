@@ -22,9 +22,9 @@ export class FrameConfigUpdater {
 	}
 
 	public updateLocalPosition = (entity: Entity, position: Partial<Vector3Like>) => {
-		const x = this.sanatizeFloatValue(position.x)
-		const y = this.sanatizeFloatValue(position.y)
-		const z = this.sanatizeFloatValue(position.z)
+		const x = this.sanitizeFloatValue(position.x)
+		const y = this.sanitizeFloatValue(position.y)
+		const z = this.sanitizeFloatValue(position.z)
 
 		if (x === undefined && y === undefined && z === undefined) return
 
@@ -55,10 +55,10 @@ export class FrameConfigUpdater {
 			theta?: number
 		}
 	) => {
-		const oX = this.sanatizeFloatValue(orientation.oX)
-		const oY = this.sanatizeFloatValue(orientation.oY)
-		const oZ = this.sanatizeFloatValue(orientation.oZ)
-		const theta = this.sanatizeFloatValue(orientation.theta)
+		const oX = this.sanitizeFloatValue(orientation.oX)
+		const oY = this.sanitizeFloatValue(orientation.oY)
+		const oZ = this.sanitizeFloatValue(orientation.oZ)
+		const theta = this.sanitizeFloatValue(orientation.theta)
 
 		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) {
 			return
@@ -87,9 +87,9 @@ export class FrameConfigUpdater {
 		const pose = entity.get(traits.EditedPose)
 
 		if (geometry?.type === 'box') {
-			const x = this.sanatizeFloatValue(geometry.x)
-			const y = this.sanatizeFloatValue(geometry.y)
-			const z = this.sanatizeFloatValue(geometry.z)
+			const x = this.sanitizeFloatValue(geometry.x)
+			const y = this.sanitizeFloatValue(geometry.y)
+			const z = this.sanitizeFloatValue(geometry.z)
 
 			if (x === undefined && y === undefined && z === undefined) return
 
@@ -106,7 +106,7 @@ export class FrameConfigUpdater {
 				this.updateFrame(name, parent, pose, { type: 'box', ...box })
 			}
 		} else if (geometry?.type === 'sphere') {
-			const r = this.sanatizeFloatValue(geometry.r)
+			const r = this.sanitizeFloatValue(geometry.r)
 
 			if (r === undefined) return
 
@@ -118,8 +118,8 @@ export class FrameConfigUpdater {
 				this.updateFrame(name, parent, pose, { type: 'sphere', ...sphere })
 			}
 		} else if (geometry?.type === 'capsule') {
-			const r = this.sanatizeFloatValue(geometry.r)
-			const l = this.sanatizeFloatValue(geometry.l)
+			const r = this.sanitizeFloatValue(geometry.r)
+			const l = this.sanitizeFloatValue(geometry.l)
 
 			if (r === undefined && l === undefined) return
 
@@ -172,7 +172,7 @@ export class FrameConfigUpdater {
 		}
 	}
 
-	private sanatizeFloatValue = (value?: number): number | undefined => {
+	private sanitizeFloatValue = (value?: number): number | undefined => {
 		if (value === undefined) {
 			return undefined
 		}
