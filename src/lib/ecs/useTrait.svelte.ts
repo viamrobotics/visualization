@@ -40,7 +40,7 @@ export function useTrait<T extends Trait>(
 	const entity = $derived(isWorld(targetEntity) ? targetEntity[internal].worldEntity : targetEntity)
 
 	// Initialize the state with the current value of the trait.
-	let value = $state(entity?.has(trait) ? entity.get(trait) : undefined)
+	let value = $state.raw(entity?.has(trait) ? entity.get(trait) : undefined)
 
 	$effect(() => {
 		value = entity?.has(trait) ? entity.get(trait) : undefined
