@@ -12,8 +12,13 @@ import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
 
 interface FramesContext {
-	current: Transform[]
+	current: FrameTransform[]
 	getParentFrameOptions: (componentName: string) => string[]
+}
+
+export type FrameTransform = {
+	type: 'machine' | 'config' | 'fragment'
+	transform: Transform
 }
 
 const key = Symbol('frames-context')
@@ -52,14 +57,17 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const machineFrames = $derived.by(() => {
-		const frames: Record<string, Transform> = {}
+		const frames: Record<string, FrameTransform> = {}
 
 		for (const { frame } of query.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
 
-			frames[frame.referenceFrame] = frame
+			frames[frame.referenceFrame] = {
+				type: 'machine',
+				transform: frame,
+			}
 		}
 
 		return frames
@@ -68,7 +76,7 @@ export const provideFrames = (partID: () => string) => {
 	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
 		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
 
-		const results: Record<string, Transform> = {}
+		const results: Record<string, FrameTransform> = {}
 		const unsetResults: string[] = []
 
 		for (const { name, frame } of components ?? []) {
@@ -77,7 +85,10 @@ export const provideFrames = (partID: () => string) => {
 				continue
 			}
 
-			results[name] = createTransformFromFrame(name, frame)
+			results[name] = {
+				type: 'config',
+				transform: createTransformFromFrame(name, frame),
+			}
 		}
 
 		return [results, unsetResults]
@@ -88,7 +99,7 @@ export const provideFrames = (partID: () => string) => {
 			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
 		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
 
-		const results: Record<string, Transform> = {}
+		const results: Record<string, FrameTransform> = {}
 		const unsetResults: string[] = []
 
 		// deal with fragment defined components
@@ -113,7 +124,10 @@ export const provideFrames = (partID: () => string) => {
 				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
 					`components.${fragmentComponentName}.frame`
 				] as Frame
-				results[fragmentComponentName] = createTransformFromFrame(fragmentComponentName, frameData)
+				results[fragmentComponentName] = {
+					type: 'fragment',
+					transform: createTransformFromFrame(fragmentComponentName, frameData),
+				}
 			}
 		}
 		return [results, unsetResults]
@@ -149,19 +163,23 @@ export const provideFrames = (partID: () => string) => {
 				continue
 			}
 
-			const name = frame.referenceFrame
-			const parent = frame.poseInObserverFrame?.referenceFrame
-			const pose = createPose(frame.poseInObserverFrame?.pose)
-			const center = frame.physicalObject?.center
-				? createPose(frame.physicalObject.center)
+			const name = frame.transform.referenceFrame
+			const parent = frame.transform.poseInObserverFrame?.referenceFrame
+			const pose = createPose(frame.transform.poseInObserverFrame?.pose)
+			const center = frame.transform.physicalObject?.center
+				? createPose(frame.transform.physicalObject.center)
 				: undefined
-			const resourceName = resourceByName.current[frame.referenceFrame]
+			const resourceName = resourceByName.current[frame.transform.referenceFrame]
 			const color = resourceNameToColor(resourceName)
 
 			const existing = entities.get(name)
 
 			if (existing) {
-				existing.set(traits.Pose, pose)
+				if (frame.type === 'machine') {
+					existing.set(traits.Pose, pose)
+				} else if (frame.type === 'config' || frame.type === 'fragment') {
+					existing.set(traits.EditedPose, pose)
+				}
 
 				if (!parent || parent === 'world') {
 					existing.remove(traits.Parent)
@@ -179,9 +197,9 @@ export const provideFrames = (partID: () => string) => {
 					existing.set(traits.Center, center)
 				}
 
-				if (frame.physicalObject) {
+				if (frame.transform.physicalObject) {
 					existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
-					existing.add(traits.Geometry(frame.physicalObject))
+					existing.add(traits.Geometry(frame.transform.physicalObject))
 				}
 
 				continue
@@ -206,8 +224,8 @@ export const provideFrames = (partID: () => string) => {
 				entityTraits.push(traits.Center(center))
 			}
 
-			if (frame.physicalObject) {
-				entityTraits.push(traits.Geometry(frame.physicalObject))
+			if (frame.transform.physicalObject) {
+				entityTraits.push(traits.Geometry(frame.transform.physicalObject))
 			}
 
 			const entity = world.spawn(...entityTraits)
@@ -225,7 +243,7 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const getParentFrameOptions = (componentName: string) => {
-		const validFrames = new Set(current.map((frame) => frame.referenceFrame))
+		const validFrames = new Set(current.map((frame) => frame.transform.referenceFrame))
 		validFrames.add('world')
 
 		const frameNameQueue = [componentName]
@@ -234,10 +252,10 @@ export const provideFrames = (partID: () => string) => {
 			if (frameName) {
 				validFrames.delete(frameName)
 				const frames = current.filter(
-					(frame) => frame.poseInObserverFrame?.referenceFrame === frameName
+					(frame) => frame.transform.poseInObserverFrame?.referenceFrame === frameName
 				)
 				for (const frame of frames) {
-					frameNameQueue.push(frame.referenceFrame)
+					frameNameQueue.push(frame.transform.referenceFrame)
 				}
 			}
 		}
