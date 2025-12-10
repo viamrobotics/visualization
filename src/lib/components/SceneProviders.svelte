@@ -20,7 +20,6 @@
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { provideWorld } from '$lib/ecs'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 
 	interface Props {
@@ -32,7 +31,6 @@
 
 	const partID = usePartID()
 
-	provideWorld()
 	provideCameraControls(() => cameraPose)
 	provideTransformControls()
 	provideVisibility()

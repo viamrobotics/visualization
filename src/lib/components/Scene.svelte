@@ -90,8 +90,6 @@
 	{/if}
 
 	<T.Group attach={focusedObject ? false : undefined}>
-		<!-- Capture "default" portals if "world" is not explicit -->
-		<PortalTarget />
 		<PortalTarget id="world" />
 
 		<Entities />
