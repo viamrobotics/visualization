@@ -191,7 +191,9 @@ export const provideDrawAPI = () => {
 
 		const geometryTrait = () => {
 			if ('mesh' in data) {
-				return traits.BufferGeometry(parsePlyInput(data.mesh.mesh))
+				const geometry = parsePlyInput(data.mesh.mesh)
+				console.log(geometry)
+				return traits.BufferGeometry(geometry)
 			} else if ('box' in data) {
 				return traits.Box(createBox(data.box))
 			} else if ('sphere' in data) {

@@ -43,6 +43,8 @@
 	const lineGeometry = useTrait(() => entity, traits.LineGeometry)
 	const pointsGeometry = useTrait(() => entity, traits.PointsGeometry)
 
+	$inspect(name.current, bufferGeometry.current)
+
 	const geometryType = $derived.by(() => {
 		if (box.current) return 'box'
 		if (capsule.current) return 'capsule'

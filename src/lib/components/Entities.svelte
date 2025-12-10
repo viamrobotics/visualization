@@ -13,12 +13,18 @@
 	const geometries = useQuery(traits.GeometriesAPI)
 	const points = useQuery(traits.PointsGeometry)
 	const lines = useQuery(traits.LineGeometry)
-	const drawnPrimitives = useQuery(traits.DrawAPI, Or(traits.Box, traits.Capsule, traits.Sphere))
-	const worldStatePrimitives = useQuery(traits.WorldStateStoreAPI)
 	const gltfs = useQuery(traits.GLTF)
+	const drawnMeshes = useQuery(
+		traits.DrawAPI,
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry)
+	)
+	const worldStateMeshes = useQuery(
+		traits.WorldStateStoreAPI,
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry)
+	)
 </script>
 
-{#each drawnPrimitives.current as entity (entity)}
+{#each drawnMeshes.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
@@ -27,7 +33,7 @@
 	</Portal>
 {/each}
 
-{#each worldStatePrimitives.current as entity (entity)}
+{#each worldStateMeshes.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>
 			<PortalTarget id={entity.get(traits.Name)} />
