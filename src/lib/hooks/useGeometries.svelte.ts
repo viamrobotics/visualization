@@ -109,12 +109,12 @@ export const provideGeometries = (partID: () => string) => {
 					const resourceName = resources.current[name]
 					const label = geometry.label ? geometry.label : `${name} geometry ${index}`
 
-					active[label] = true
+					active[`${name}:${label}`] = true
 
 					const pose = createPose(geometry.center)
 					const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
-					const existing = entities.get(label)
+					const existing = entities.get(`${name}:${label}`)
 
 					if (existing) {
 						existing.set(traits.Pose, pose)
@@ -137,7 +137,7 @@ export const provideGeometries = (partID: () => string) => {
 
 					const entity = world.spawn(...entityTraits)
 
-					entities.set(label, entity)
+					entities.set(`${name}:${label}`, entity)
 				}
 			}
 		}
