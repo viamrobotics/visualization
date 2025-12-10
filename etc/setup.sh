@@ -35,6 +35,60 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if a directory exists and is writable, or can be created
+check_dir_writable() {
+    local dir="$1"
+    local description="$2"
+    
+    if [[ -d "$dir" ]]; then
+        if [[ ! -w "$dir" ]]; then
+            return 1
+        fi
+    else
+        # Check if parent directory is writable (so we can create the dir)
+        local parent_dir
+        parent_dir="$(dirname "$dir")"
+        if [[ -d "$parent_dir" ]] && [[ ! -w "$parent_dir" ]]; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Check permissions and provide fix instructions if there's an issue
+check_permissions() {
+    local dir="$1"
+    local description="$2"
+    local fix_command="$3"
+    
+    if ! check_dir_writable "$dir" "$description"; then
+        log_error "Permission denied: Cannot write to $description"
+        echo -e "   Directory: ${YELLOW}$dir${NC}"
+        echo -e "   Fix with:  ${YELLOW}$fix_command${NC}"
+        echo -e "   Then rerun: ${YELLOW}make setup${NC}"
+        exit 1
+    fi
+}
+
+# Fix permission issues for a directory by removing it if we can't write to it
+fix_cache_permissions() {
+    local dir="$1"
+    local description="$2"
+    
+    if [[ -d "$dir" ]] && [[ ! -w "$dir" ]]; then
+        log_warning "Permission issue detected with $description: $dir"
+        log_info "Attempting to remove and recreate..."
+        if rm -rf "$dir" 2>/dev/null; then
+            log_success "Fixed $description permissions"
+        else
+            log_error "Cannot fix $description permissions automatically"
+            echo -e "   Fix with:  ${YELLOW}sudo rm -rf $dir${NC}"
+            echo -e "   Then rerun: ${YELLOW}make setup${NC}"
+            exit 1
+        fi
+    fi
+}
+
 source_brew() {
     if [[ "$(uname)" == "Darwin" ]]; then
         if [[ "$(uname -m)" == "arm64" ]]; then
@@ -108,6 +162,11 @@ verify_versions() {
 install_go_tools() {
     log_info "Installing Go tools..."
 
+    # Check Go bin directory permissions
+    local go_bin_dir
+    go_bin_dir="$(go env GOPATH)/bin"
+    check_permissions "$go_bin_dir" "Go bin directory" "sudo chown -R \$(whoami) $go_bin_dir"
+
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
     go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
@@ -118,6 +177,12 @@ install_node_dependencies() {
     log_info "Installing Node.js project dependencies..."
 
     cd "$PROJECT_ROOT"
+    
+    # Check node_modules directory permissions if it exists
+    if [[ -d "$PROJECT_ROOT/node_modules" ]]; then
+        check_permissions "$PROJECT_ROOT/node_modules" "node_modules directory" "sudo rm -rf $PROJECT_ROOT/node_modules"
+    fi
+
     if pnpm install; then
         log_success "Node.js dependencies installed successfully"
     else
@@ -144,6 +209,36 @@ setup_shell_paths() {
             echo '  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
         fi
     fi
+}
+
+check_proto_permissions() {
+    log_info "Checking protobuf generation permissions..."
+
+    # Check buf cache directory - this is a common source of permission issues
+    local buf_cache_dir="${HOME}/.cache/buf"
+    fix_cache_permissions "$buf_cache_dir" "buf cache"
+
+    # Check generated proto directories in the project
+    local proto_dirs=(
+        "$PROJECT_ROOT/draw/v1"
+        "$PROJECT_ROOT/src/lib/common/v1"
+        "$PROJECT_ROOT/src/lib/draw/v1"
+        "$PROJECT_ROOT/protos/vendor"
+    )
+
+    for dir in "${proto_dirs[@]}"; do
+        if [[ -d "$dir" ]] && [[ ! -w "$dir" ]]; then
+            log_warning "Permission issue with generated proto directory: $dir"
+            if rm -rf "$dir" 2>/dev/null; then
+                log_success "Removed $dir (will be regenerated)"
+            else
+                log_error "Cannot remove generated proto directory: $dir"
+                echo -e "   Fix with:  ${YELLOW}sudo rm -rf $PROJECT_ROOT/draw/v1 $PROJECT_ROOT/src/lib/common/v1 $PROJECT_ROOT/src/lib/draw/v1 $PROJECT_ROOT/protos/vendor${NC}"
+                echo -e "   Then rerun: ${YELLOW}make setup${NC}"
+                exit 1
+            fi
+        fi
+    done
 }
 
 main() {
@@ -188,6 +283,7 @@ main() {
 
     # Step 6: Generate protobuf code
     log_info "💪 Step 6: Generating protobuf code..."
+    check_proto_permissions
     make proto
     log_success "Protobuf code generated successfully"
     echo
