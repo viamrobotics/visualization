@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/viam-labs/motion-tools/client/colorutil"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.viam.com/rdk/pointcloud"
@@ -70,7 +69,7 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 
 	result, err := json.Marshal(map[string]interface{}{
 		"geometries": geometries,
-		"colors":     colorutil.NamedColorsToHexes(colors),
+		"colors":     colors,
 		"parent":     geometriesInFrame.Parent(),
 	})
 

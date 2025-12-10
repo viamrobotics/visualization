@@ -126,3 +126,17 @@ func packColors(colors []Color) []byte {
 
 	return packer.Read()
 }
+
+func unpackColors(colorsBytes []byte) []Color {
+	bytesPerColor := 4
+	colors := make([]Color, len(colorsBytes)/bytesPerColor)
+	for i := 0; i < len(colors); i++ {
+		colors[i] = Color{
+			R: colorsBytes[i*bytesPerColor],
+			G: colorsBytes[i*bytesPerColor+1],
+			B: colorsBytes[i*bytesPerColor+2],
+			A: colorsBytes[i*bytesPerColor+3],
+		}
+	}
+	return colors
+}
