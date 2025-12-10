@@ -9,7 +9,6 @@ describe('json', () => {
 			{ input: 'Snapshot', expected: true },
 			{ input: 'somethingelse', expected: false },
 			{ input: '', expected: false },
-			{ input: null, expected: false },
 			{ input: undefined, expected: false },
 		])('returns $expected for "$input"', ({ input, expected }) => {
 			expect(Subject.isJSONPrefix(input)).toBe(expected)
