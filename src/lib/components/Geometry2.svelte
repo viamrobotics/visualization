@@ -143,7 +143,7 @@
 				{:else if capsule.current}
 					<T
 						is={CapsuleGeometry}
-						args={[capsule.current.r, capsule.current.l]}
+						args={[capsule.current?.r, capsule.current?.l]}
 						{oncreate}
 					/>
 				{/if}

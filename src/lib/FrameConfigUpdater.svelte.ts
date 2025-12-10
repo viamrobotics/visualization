@@ -31,10 +31,10 @@ export class FrameConfigUpdater {
 		entity.set(traits.EditedPose, { x, y, z })
 
 		const name = entity.get(traits.Name)
-		const parent = entity.get(traits.Parent)
+		const parent = entity.get(traits.Parent) ?? 'world'
 		const updatedPose = entity.get(traits.EditedPose)
 
-		if (name && parent && updatedPose) {
+		if (name && updatedPose) {
 			this.updateFrame(name, parent, updatedPose)
 		}
 	}
@@ -65,17 +65,17 @@ export class FrameConfigUpdater {
 		entity.set(traits.EditedPose, { oX, oY, oZ, theta })
 
 		const name = entity.get(traits.Name)
-		const parent = entity.get(traits.Parent)
+		const parent = entity.get(traits.Parent) ?? 'world'
 		const updatedPose = entity.get(traits.EditedPose)
 
-		if (name && parent && updatedPose) {
+		if (name && updatedPose) {
 			this.updateFrame(name, parent, updatedPose)
 		}
 	}
 
 	public updateGeometry = (entity: Entity, geometry: Partial<Frame['geometry']>) => {
 		const name = entity.get(traits.Name)
-		const parent = entity.get(traits.Parent)
+		const parent = entity.get(traits.Parent) ?? 'parent'
 		const pose = entity.get(traits.EditedPose)
 
 		if (geometry?.type === 'box') {
@@ -89,7 +89,7 @@ export class FrameConfigUpdater {
 
 			const box = entity.get(traits.Box)
 
-			if (name && parent && box && pose) {
+			if (name && box && pose) {
 				this.updateFrame(name, parent, pose, { type: 'box', ...box })
 			}
 		} else if (geometry?.type === 'sphere') {
@@ -100,7 +100,7 @@ export class FrameConfigUpdater {
 
 			const sphere = entity.get(traits.Sphere)
 
-			if (name && parent && sphere && pose) {
+			if (name && sphere && pose) {
 				this.updateFrame(name, parent, pose, { type: 'sphere', ...sphere })
 			}
 		} else if (geometry?.type === 'capsule') {
@@ -112,7 +112,7 @@ export class FrameConfigUpdater {
 
 			const capsule = entity.get(traits.Capsule)
 
-			if (name && parent && capsule && pose) {
+			if (name && capsule && pose) {
 				this.updateFrame(name, parent, pose, { type: 'sphere', ...capsule })
 			}
 		}
@@ -137,10 +137,10 @@ export class FrameConfigUpdater {
 
 	public setGeometryType = (entity: Entity, type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		const name = entity.get(traits.Name)
-		const parent = entity.get(traits.Parent)
+		const parent = entity.get(traits.Parent) ?? 'world'
 		const pose = entity.get(traits.EditedPose)
 
-		if (!name || !parent || !pose) return
+		if (!name || !pose) return
 
 		if (type === 'none') {
 			this.updateFrame(name, parent, pose, { type: 'none' })
