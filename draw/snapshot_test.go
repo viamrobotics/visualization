@@ -72,7 +72,7 @@ func TestSnapshotToProto(t *testing.T) {
 
 		positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 0, Z: 0}}
 		_ = snapshot.DrawPoints("points", "world", spatialmath.NewZeroPose(), positions,
-			WithPointsColors(NewColor(WithName("blue"))))
+			WithSinglePointColor(NewColor(WithName("blue"))))
 
 		protoSnapshot := snapshot.ToProto()
 		test.That(t, protoSnapshot, test.ShouldNotBeNil)
