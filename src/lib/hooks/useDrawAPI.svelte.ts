@@ -131,15 +131,11 @@ export const provideDrawAPI = () => {
 
 			const geometryTrait = () => {
 				if (frame.geometry?.type === 'box') {
-					return traits.Box({
-						x: frame.geometry.x * 0.001,
-						y: frame.geometry.y * 0.001,
-						z: frame.geometry.z * 0.001,
-					})
+					return traits.Box(frame.geometry)
 				} else if (frame.geometry?.type === 'sphere') {
-					return traits.Sphere({ r: frame.geometry.r * 0.001 })
+					return traits.Sphere(frame.geometry)
 				} else if (frame.geometry?.type === 'capsule') {
-					return traits.Capsule({ r: frame.geometry.r * 0.001, l: frame.geometry.l * 0.001 })
+					return traits.Capsule(frame.geometry)
 				}
 
 				return trait()

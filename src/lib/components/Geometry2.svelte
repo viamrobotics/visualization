@@ -132,18 +132,22 @@
 					<MeshLineGeometry points={lineGeometry.current} />
 				{:else if box.current}
 					<T.BoxGeometry
-						args={[box.current?.x, box.current?.y, box.current?.z]}
+						args={[
+							(box.current?.x ?? 0) * 0.001,
+							(box.current?.y ?? 0) * 0.001,
+							(box.current?.z ?? 0) * 0.001,
+						]}
 						{oncreate}
 					/>
 				{:else if sphere.current}
 					<T.SphereGeometry
-						args={[sphere.current?.r]}
+						args={[(sphere.current?.r ?? 0) * 0.001]}
 						{oncreate}
 					/>
 				{:else if capsule.current}
 					<T
 						is={CapsuleGeometry}
-						args={[capsule.current?.r, capsule.current?.l]}
+						args={[(capsule.current?.r ?? 0) * 0.001, (capsule.current?.l ?? 0) * 0.001]}
 						{oncreate}
 					/>
 				{/if}
@@ -152,7 +156,7 @@
 			{#if lineGeometry.current}
 				<MeshLineMaterial
 					{color}
-					width={/* metadata.lineWidth ?? */ 0.005}
+					width={0.005}
 				/>
 			{:else}
 				<T.MeshToonMaterial

@@ -28,8 +28,6 @@ export class FrameConfigUpdater {
 
 		if (x === undefined && y === undefined && z === undefined) return
 
-		console.log(x, y, z)
-
 		const change: { x?: number; y?: number; z?: number } = {}
 		if (x !== undefined) change.x = x
 		if (y !== undefined) change.y = y

@@ -270,20 +270,20 @@
 		<div class="flex flex-col gap-2.5">
 			<div>
 				<strong class="font-semibold">world position</strong>
-				<span class="text-subtle-2">(m)</span>
+				<span class="text-subtle-2">(mm)</span>
 
 				<div class="flex gap-3">
 					<div>
 						<span class="text-subtle-2">x</span>
-						{worldPosition.x.toFixed(2)}
+						{(worldPosition.x * 1000).toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">y</span>
-						{worldPosition.y.toFixed(2)}
+						{(worldPosition.y * 1000).toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">z</span>
-						{worldPosition.z.toFixed(2)}
+						{(worldPosition.z * 1000).toFixed(2)}
 					</div>
 				</div>
 			</div>
@@ -313,7 +313,7 @@
 
 			<div>
 				<strong class="font-semibold">parent frame</strong>
-				<div class="flex gap-3">
+				<div class="mt-0.5 flex gap-3">
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
@@ -328,15 +328,14 @@
 			{#if localPose.current}
 				<div>
 					<strong class="font-semibold">local position</strong>
-					<span class="text-subtle-2">(m)</span>
+					<span class="text-subtle-2">(mm)</span>
 
-					<div class="flex gap-3">
+					<div class="mt-0.5 flex gap-3">
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local position x coordinate',
 							value: localPose.current.x,
 							onInput: (value) => {
-								console.log(value, Number.parseFloat(value))
 								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateLocalPosition(entity, { x: Number.parseFloat(value) })
 							},
@@ -365,7 +364,7 @@
 				<div>
 					<strong class="font-semibold">local orientation</strong>
 					<span class="text-subtle-2">(deg)</span>
-					<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'}">
+					<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'} mt-0.5">
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local orientation x coordinate',
@@ -411,7 +410,7 @@
 			{#if showEditFrameOptions}
 				<div>
 					<strong class="font-semibold">geometry</strong>
-					<div class="grid grid-cols-4 gap-1">
+					<div class="mt-0.5 grid grid-cols-4 gap-1">
 						<Button
 							variant={geometryType === 'none' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
@@ -446,8 +445,9 @@
 
 			{#if box.current}
 				<div>
-					<strong class="font-semibold">dimensions <span>(box)</span></strong>
-					<div class="flex items-center gap-2">
+					<strong class="font-semibold"> dimensions </strong>
+					<span class="text-subtle-2">(box) (mm)</span>
+					<div class="mt-0.5 flex items-center gap-2">
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'box dimensions x value input',
@@ -488,8 +488,9 @@
 				</div>
 			{:else if capsule.current}
 				<div>
-					<strong class="font-semibold">dimensions (capsule)</strong>
-					<div class="flex items-center gap-2">
+					<strong class="font-semibold">dimensions</strong>
+					<span class="text-subtle-2">(capsule) (mm)</span>
+					<div class="mt-0.5 flex items-center gap-2">
 						{@render ScalarAttribute({
 							label: 'r',
 							ariaLabel: 'capsule dimensions radius value input',

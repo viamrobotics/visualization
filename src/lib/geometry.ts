@@ -50,21 +50,21 @@ export const createGeometryFromFrame = (frame: Partial<Frame>) => {
 
 export const createBox = (box?: RectangularPrism) => {
 	return {
-		x: (box?.dimsMm?.x ?? 0) * 0.001,
-		y: (box?.dimsMm?.y ?? 0) * 0.001,
-		z: (box?.dimsMm?.z ?? 0) * 0.001,
+		x: box?.dimsMm?.x ?? 0,
+		y: box?.dimsMm?.y ?? 0,
+		z: box?.dimsMm?.z ?? 0,
 	}
 }
 
 export const createCapsule = (capsule?: Capsule) => {
 	return {
-		r: (capsule?.radiusMm ?? 0) * 0.001,
-		l: (capsule?.lengthMm ?? 0) * 0.001,
+		r: capsule?.radiusMm ?? 0,
+		l: capsule?.lengthMm ?? 0,
 	}
 }
 
 export const createSphere = (sphere?: Sphere) => {
 	return {
-		r: (sphere?.radiusMm ?? 0) * 0.001,
+		r: sphere?.radiusMm ?? 0,
 	}
 }
