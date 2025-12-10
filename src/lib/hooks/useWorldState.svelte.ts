@@ -138,7 +138,6 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 					if (geometryType.case === 'box') {
 						entity.set(traits.Box, createBox(geometryType.value))
 					} else if (geometryType.case === 'capsule') {
-						console.log(geometryType.value)
 						entity.set(traits.Capsule, createCapsule(geometryType.value))
 					} else if (geometryType.case === 'sphere') {
 						entity.set(traits.Sphere, createSphere(geometryType.value))
