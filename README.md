@@ -110,11 +110,3 @@ It is possible to programmatically move the viewer camera and even modify the ca
 To do this, open the Javascript console while using the visualizer and call methods or set properties on the `cameraControls` object.
 
 The following APIs are available: https://github.com/yomotsu/camera-controls?tab=readme-ov-file#properties
-
-## Available Make Commands
-
-- `make setup` - Complete development environment setup
-- `make up` - Build and start a local app server
-- `make build` - Build the application for production
-- `make clean` - Remove build artifacts
-- `make help` - Show available commands
