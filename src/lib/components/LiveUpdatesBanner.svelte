@@ -6,6 +6,18 @@
 	const { ...rest } = $props()
 </script>
 
+<svelte:window
+	onkeydown={(event) => {
+		if (event.metaKey) {
+			if (event.key.toLowerCase() === 's') {
+				event.preventDefault()
+				event.stopImmediatePropagation()
+				partConfig.saveLocalPartConfig()
+			}
+		}
+	}}
+/>
+
 {#if partConfig.isDirty}
 	<div
 		class="absolute bottom-8 z-1000 flex w-full justify-center gap-2"

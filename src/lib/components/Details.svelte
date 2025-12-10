@@ -141,6 +141,18 @@
 			2
 		)
 	}
+
+	const isIntermediateInput = (input: string) => {
+		console.log(input)
+		return (
+			input.startsWith('0') ||
+			input.startsWith('.') ||
+			input.startsWith('-0') ||
+			input.startsWith('-.') ||
+			input.endsWith('0') ||
+			input.endsWith('.')
+		)
+	}
 </script>
 
 {#snippet ImmutableField({
@@ -149,7 +161,7 @@
 	ariaLabel,
 }: {
 	label?: string
-	value: string
+	value?: number | string
 	ariaLabel: string
 })}
 	<div>
@@ -160,7 +172,7 @@
 			{label}
 		</span>
 
-		{value}
+		{value ?? '-'}
 	</div>
 {/snippet}
 
@@ -171,16 +183,14 @@
 	onInput,
 }: {
 	label: string
-	value: string
+	value?: number
 	ariaLabel: string
 	onInput: (value: string) => void
 })}
 	<div class="flex items-center gap-1">
 		<span class="text-subtle-2">{label}</span>
 		<Input
-			type="number"
 			aria-label={`mutable ${ariaLabel}`}
-			class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 			{value}
 			on:input={(event) => onInput((event.target as HTMLInputElement).value)}
 		/>
@@ -323,23 +333,29 @@
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local position x coordinate',
-							value: localPose.current.x.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalPosition(entity, { x: parseFloat(value) }),
+							value: localPose.current.x,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { x: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local position y coordinate',
-							value: localPose.current.y.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalPosition(entity, { y: parseFloat(value) }),
+							value: localPose.current.y,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { y: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local position z coordinate',
-							value: localPose.current.z.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalPosition(entity, { z: parseFloat(value) }),
+							value: localPose.current.z,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { z: parseFloat(value) })
+							},
 						})}
 					</div>
 				</div>
@@ -351,30 +367,38 @@
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local orientation x coordinate',
-							value: localPose.current?.oX.toFixed(2) ?? '0.00',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation(entity, { oX: parseFloat(value) }),
+							value: localPose.current?.oX,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oX: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local orientation y coordinate',
-							value: localPose.current?.oY.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation(entity, { oY: parseFloat(value) }),
+							value: localPose.current?.oY,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oY: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local orientation z coordinate',
-							value: localPose.current?.oZ.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation(entity, { oZ: parseFloat(value) }),
+							value: localPose.current?.oZ,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oZ: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'th',
 							ariaLabel: 'local orientation theta degrees',
-							value: localPose.current?.theta.toFixed(2) ?? '0',
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation(entity, { theta: parseFloat(value) }),
+							value: localPose.current?.theta,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { theta: parseFloat(value) })
+							},
 						})}
 					</div>
 				</div>
@@ -423,23 +447,29 @@
 						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'box dimensions x value input',
-							value: box.current.x.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', x: parseFloat(value) }),
+							value: box.current.x,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', x: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'box dimensions y value input',
-							value: box.current.y.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', y: parseFloat(value) }),
+							value: box.current.y,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', y: parseFloat(value) })
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'box dimensions z value input',
-							value: box.current.z.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateGeometry(entity, { type: 'box', z: parseFloat(value) }),
+							value: box.current.z,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, { type: 'box', z: parseFloat(value) })
+							},
 						})}
 					</div>
 				</div>
@@ -450,22 +480,26 @@
 						{@render ScalarAttribute({
 							label: 'r',
 							ariaLabel: 'capsule dimensions radius value input',
-							value: capsule.current.r.toFixed(2),
-							onInput: (value) =>
+							value: capsule.current.r,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'capsule',
 									r: parseFloat(value),
-								}),
+								})
+							},
 						})}
 						{@render ScalarAttribute({
 							label: 'l',
 							ariaLabel: 'capsule dimensions length value input',
-							value: capsule.current.l.toFixed(2),
-							onInput: (value) =>
+							value: capsule.current.l,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'capsule',
 									l: parseFloat(value),
-								}),
+								})
+							},
 						})}
 					</div>
 				</div>
@@ -476,12 +510,14 @@
 						{@render ScalarAttribute({
 							label: 'r',
 							ariaLabel: 'sphere dimensions radius value',
-							value: sphere.current.r.toFixed(2),
-							onInput: (value) =>
+							value: sphere.current.r,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
 								detailConfigUpdater.updateGeometry(entity, {
 									type: 'sphere',
 									r: parseFloat(value),
-								}),
+								})
+							},
 						})}
 					</div>
 				</div>

@@ -3,6 +3,9 @@ import type { Pose } from '@viamrobotics/sdk'
 import type { Frame } from '$lib/frame'
 import { traits } from '$lib/ecs'
 import type { Vector3Like } from 'three'
+import { OrientationVector } from './lib'
+
+const ov = new OrientationVector()
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
@@ -28,7 +31,12 @@ export class FrameConfigUpdater {
 
 		if (x === undefined && y === undefined && z === undefined) return
 
-		entity.set(traits.EditedPose, { x, y, z })
+		const change: { x?: number; y?: number; z?: number } = {}
+		if (x !== undefined) change.x = x
+		if (y !== undefined) change.y = y
+		if (z !== undefined) change.z = z
+
+		entity.set(traits.EditedPose, change)
 
 		const name = entity.get(traits.Name)
 		const parent = entity.get(traits.Parent) ?? 'world'
@@ -41,28 +49,29 @@ export class FrameConfigUpdater {
 
 	public updateLocalOrientation = (
 		entity: Entity,
-		{
-			oX,
-			oY,
-			oZ,
-			theta,
-		}: {
+		orientation: {
 			oX?: number
 			oY?: number
 			oZ?: number
 			theta?: number
 		}
 	) => {
-		oX = this.sanatizeFloatValue(oX)
-		oY = this.sanatizeFloatValue(oY)
-		oZ = this.sanatizeFloatValue(oZ)
-		theta = this.sanatizeFloatValue(theta)
+		const oX = this.sanatizeFloatValue(orientation.oX)
+		const oY = this.sanatizeFloatValue(orientation.oY)
+		const oZ = this.sanatizeFloatValue(orientation.oZ)
+		const theta = this.sanatizeFloatValue(orientation.theta)
 
 		if (oX === undefined && oY === undefined && oZ === undefined && theta === undefined) {
 			return
 		}
 
-		entity.set(traits.EditedPose, { oX, oY, oZ, theta })
+		const change: { oX?: number; oY?: number; oZ?: number; theta?: number } = {}
+		if (oX !== undefined) change.oX = oX
+		if (oY !== undefined) change.oY = oY
+		if (oZ !== undefined) change.oZ = oZ
+		if (theta !== undefined) change.theta = theta
+
+		entity.set(traits.EditedPose, change)
 
 		const name = entity.get(traits.Name)
 		const parent = entity.get(traits.Parent) ?? 'world'
@@ -85,7 +94,12 @@ export class FrameConfigUpdater {
 
 			if (x === undefined && y === undefined && z === undefined) return
 
-			entity.set(traits.Box, { x, y, z })
+			const change: { x?: number; y?: number; z?: number } = {}
+			if (x !== undefined) change.x = x
+			if (y !== undefined) change.y = y
+			if (z !== undefined) change.z = z
+
+			entity.set(traits.Box, change)
 
 			const box = entity.get(traits.Box)
 
@@ -94,6 +108,7 @@ export class FrameConfigUpdater {
 			}
 		} else if (geometry?.type === 'sphere') {
 			const r = this.sanatizeFloatValue(geometry.r)
+
 			if (r === undefined) return
 
 			entity.set(traits.Sphere, { r })
@@ -106,7 +121,12 @@ export class FrameConfigUpdater {
 		} else if (geometry?.type === 'capsule') {
 			const r = this.sanatizeFloatValue(geometry.r)
 			const l = this.sanatizeFloatValue(geometry.l)
+
 			if (r === undefined && l === undefined) return
+
+			const change: { r?: number; l?: number } = {}
+			if (r !== undefined) change.r = r
+			if (l !== undefined) change.l = l
 
 			entity.set(traits.Capsule, { r, l })
 
@@ -153,10 +173,17 @@ export class FrameConfigUpdater {
 		}
 	}
 
-	private sanatizeFloatValue = (value?: number) => {
-		if (value === undefined) return undefined
+	private sanatizeFloatValue = (value?: number): number | undefined => {
+		if (value === undefined) {
+			return undefined
+		}
+
 		const num = parseFloat(value.toFixed(2))
-		if (isNaN(num)) return undefined
+
+		if (isNaN(num)) {
+			return undefined
+		}
+
 		return num
 	}
 }

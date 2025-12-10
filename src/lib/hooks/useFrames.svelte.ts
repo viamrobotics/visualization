@@ -163,7 +163,9 @@ export const provideFrames = (partID: () => string) => {
 			if (existing) {
 				existing.set(traits.Pose, pose)
 
-				if (parent && parent !== 'world') {
+				if (!parent || parent === 'world') {
+					existing.remove(traits.Parent)
+				} else if (parent) {
 					existing.set(traits.Parent, parent)
 				}
 
