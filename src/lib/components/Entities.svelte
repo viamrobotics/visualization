@@ -44,24 +44,6 @@
 	</Portal>
 {/each}
 
-{#each frames.current as entity (entity)}
-	{@const parent = entity.get(traits.Parent)}
-
-	<Portal id={parent}>
-		<Pose {entity}>
-			{#snippet children({ pose })}
-				<Frame
-					{pose}
-					{entity}
-				>
-					<PortalTarget id={entity.get(traits.Name)} />
-					<Label text={entity.get(traits.Name)} />
-				</Frame>
-			{/snippet}
-		</Pose>
-	</Portal>
-{/each}
-
 {#each geometries.current as entity (entity)}
 	<Portal id={entity.get(traits.Parent)}>
 		<Frame {entity}>

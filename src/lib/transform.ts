@@ -100,14 +100,14 @@ export const poseToDirection = (pose: Pose): Vector3 => {
 	return new Vector3(ov.x, ov.y, ov.z)
 }
 
-export const poseToMatrix = (pose: Pose) => {
+export const poseToMatrix = (pose: Pose, matrix?: Matrix4) => {
 	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta))
 	ov.toQuaternion(quaternion)
 
-	const matrix = new Matrix4()
-	matrix.makeRotationFromQuaternion(quaternion)
-	matrix.setPosition(pose.x, pose.y, pose.z)
-	return matrix
+	const result = matrix ?? new Matrix4()
+	result.makeRotationFromQuaternion(quaternion)
+	result.setPosition(pose.x, pose.y, pose.z)
+	return result
 }
 
 export const matrixToPose = (matrix: Matrix4) => {

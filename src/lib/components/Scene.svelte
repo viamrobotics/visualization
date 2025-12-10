@@ -18,6 +18,7 @@
 	import MeasureTool from './MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
 	import BatchedArrows from './BatchedArrows.svelte'
+	import BatchedGeometries from './BatchedGeometries.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -96,6 +97,7 @@
 
 		<Entities />
 		<BatchedArrows />
+		<BatchedGeometries />
 	</T.Group>
 
 	{@render children?.()}
