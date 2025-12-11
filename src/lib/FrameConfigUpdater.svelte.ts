@@ -81,7 +81,7 @@ export class FrameConfigUpdater {
 
 	public updateGeometry = (entity: Entity, geometry: Partial<Frame['geometry']>) => {
 		const name = entity.get(traits.Name)
-		const parent = entity.get(traits.Parent) ?? 'parent'
+		const parent = entity.get(traits.Parent) ?? 'world'
 		const pose = entity.get(traits.EditedPose)
 
 		if (geometry?.type === 'box') {
@@ -130,7 +130,7 @@ export class FrameConfigUpdater {
 			const capsule = entity.get(traits.Capsule)
 
 			if (name && capsule && pose) {
-				this.updateFrame(name, parent, pose, { type: 'sphere', ...capsule })
+				this.updateFrame(name, parent, pose, { type: 'capsule', ...capsule })
 			}
 		}
 	}

@@ -51,6 +51,7 @@
 
 				<Button
 					variant="dark"
+					aria-label="Save"
 					class="cursor-pointer text-blue-600"
 					onclick={() => {
 						partConfig.saveLocalPartConfig()
