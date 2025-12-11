@@ -15,6 +15,7 @@ import (
 
 	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/client/shapes"
+	"github.com/viam-labs/motion-tools/draw"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.viam.com/rdk/referenceframe"
@@ -71,24 +72,6 @@ const (
 	posesType  = 1
 	lineType   = 2
 )
-
-func hexToRGB(input string) ([3]uint8, error) {
-	var rgb [3]uint8
-
-	hexStr := colorutil.NamedColorToHex(input)
-	hexStr = strings.TrimPrefix(hexStr, "#")
-	if len(hexStr) != 6 {
-		return rgb, errors.New("invalid hex color string")
-	}
-
-	bytes, err := hex.DecodeString(hexStr)
-	if err != nil || len(bytes) != 3 {
-		return rgb, err
-	}
-
-	copy(rgb[:], bytes)
-	return rgb, nil
-}
 
 func isASCIIPrintable(label string) error {
 	if !utf8.ValidString(label) {
@@ -178,30 +161,42 @@ func SetURL(preferredURL string) {
 //   - color: The color of the line
 //   - name: A unique label for the curve
 func DrawNurbs(nurbs shapes.Nurbs, color string, name string) error {
-	poseData := make([]json.RawMessage, len(nurbs.ControlPts))
-	for i, pose := range nurbs.ControlPts {
-		data, err := protojson.Marshal(spatialmath.PoseToProtobuf(pose))
-		if err != nil {
-			return err
-		}
-		poseData[i] = json.RawMessage(data)
+	rgbColor, err := colorutil.NamedColorToRGB(color)
+	if err != nil {
+		return err
 	}
-
-	wrappedData := map[string]interface{}{
-		"ControlPts": poseData,
-		"Degree":     nurbs.Degree,
-		"Weights":    nurbs.Weights,
-		"Knots":      nurbs.Knots,
-		"Color":      colorutil.NamedColorToHex(color),
-		"name":       name,
-	}
-
-	finalJSON, err := json.Marshal(wrappedData)
+	drawNurbs, err := draw.NewNurbs(nurbs.ControlPts, nurbs.Knots, draw.WithNurbsDegree(int32(nurbs.Degree)), draw.WithNurbsWeights(nurbs.Weights), draw.WithNurbsColors(draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))))
 	if err != nil {
 		return err
 	}
 
-	return postHTTP(finalJSON, "json", "nurbs")
+	json, err := nurbsToJSON(drawNurbs, name)
+	if err != nil {
+		return err
+	}
+
+	return postHTTP(json, "json", "nurbs")
+}
+
+func nurbsToJSON(drawNurbs *draw.Nurbs, name string) ([]byte, error) {
+
+	poseData := make([]json.RawMessage, len(drawNurbs.ControlPoints))
+	for i, pose := range drawNurbs.ControlPoints {
+		data, err := protojson.Marshal(spatialmath.PoseToProtobuf(pose))
+		if err != nil {
+			return nil, err
+		}
+		poseData[i] = json.RawMessage(data)
+	}
+
+	return json.Marshal(map[string]interface{}{
+		"ControlPts": poseData,
+		"Degree":     drawNurbs.Degree,
+		"Weights":    drawNurbs.Weights,
+		"Knots":      drawNurbs.Knots,
+		"Color":      drawNurbs.Color.ToHex(),
+		"Name":       name,
+	})
 }
 
 // RemoveSpatialObjects clears a list of drawn items.

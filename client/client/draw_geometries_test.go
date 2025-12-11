@@ -57,7 +57,7 @@ func TestDrawGeometries(t *testing.T) {
 		geometries := []spatialmath.Geometry{box, sphere, capsule, meshInWorld}
 		geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
 
-		colors := []string{"#EF9A9A", "#EF5350", "#F44336", "fern"}
+		colors := []string{"#EF9A9A", "#EF5350", "#F44336", "lime"}
 
 		test.That(t, DrawGeometries(geometriesInFrame, colors), test.ShouldBeNil)
 	})
