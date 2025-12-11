@@ -39,6 +39,6 @@
 		{#if enableKeybindings}
 			<KeyboardControls cameraControls={ref} />
 		{/if}
-		<Gizmo />
+		<Gizmo placement="bottom-right" />
 	{/snippet}
 </CameraControls>

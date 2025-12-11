@@ -7,7 +7,7 @@
 
 	const { ...rest } = $props()
 
-	const draggable = useDraggable('arm-current-positions')
+	const draggable = useDraggable(() => 'arm-current-positions')
 	const armClient = useArmClient()
 
 	let selectedArm = $state(armClient.names[0])

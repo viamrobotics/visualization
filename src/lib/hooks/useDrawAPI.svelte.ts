@@ -418,9 +418,9 @@ export const provideDrawAPI = () => {
 		poseIndex = 0
 	}
 
-	const { BACKEND_IP, BUN_SERVER_PORT } = globalThis as unknown as {
+	const { BACKEND_IP, WS_PORT } = globalThis as unknown as {
 		BACKEND_IP?: string
-		BUN_SERVER_PORT?: string
+		WS_PORT?: string
 	}
 
 	const scheduleReconnect = () => {
@@ -434,7 +434,7 @@ export const provideDrawAPI = () => {
 	const onOpen = () => {
 		connectionStatus = 'open'
 		reconnectDelay = 1000
-		logs.add(`Connected to drawing server at ${BACKEND_IP}:${BUN_SERVER_PORT}`)
+		logs.add(`Connected to drawing server at ${BACKEND_IP}:${WS_PORT}`)
 	}
 
 	const onClose = () => {
@@ -543,9 +543,9 @@ export const provideDrawAPI = () => {
 	}
 
 	const connect = () => {
-		if (BACKEND_IP && BUN_SERVER_PORT) {
+		if (BACKEND_IP && WS_PORT) {
 			const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-			ws = new WebSocket(`${protocol}://${BACKEND_IP}:${BUN_SERVER_PORT}/ws`)
+			ws = new WebSocket(`${protocol}://${BACKEND_IP}:${WS_PORT}/ws`)
 			ws.onclose = onClose
 			ws.onerror = onError
 			ws.onopen = onOpen
