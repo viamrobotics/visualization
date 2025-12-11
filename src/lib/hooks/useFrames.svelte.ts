@@ -202,7 +202,8 @@ export const provideFrames = (partID: () => string) => {
 
 				existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
 				if (frame.transform.physicalObject) {
-					existing.add(traits.Geometry(frame.transform.physicalObject))
+					const geometry = traits.Geometry(frame.transform.physicalObject)
+					existing.add(geometry)
 				}
 
 				continue

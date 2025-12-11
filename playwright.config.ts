@@ -8,7 +8,9 @@ export default defineConfig({
 			VITE_CONFIGS: '{}',
 		},
 	},
-
+	use: {
+		trace: 'on',
+	},
 	testDir: 'e2e',
 	timeout: 120 * 1000, // 120 seconds
 })
