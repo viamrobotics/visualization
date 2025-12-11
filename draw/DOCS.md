@@ -30,6 +30,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func \(color Color\) SetAlpha\(alpha uint8\) Color](<#Color.SetAlpha>)
   - [func \(color Color\) SetRGB\(r, g, b uint8\) Color](<#Color.SetRGB>)
   - [func \(color Color\) SetRGBA\(r, g, b, a uint8\) Color](<#Color.SetRGBA>)
+  - [func \(color Color\) ToHex\(\) string](<#Color.ToHex>)
 - [type ColorChooser](<#ColorChooser>)
   - [func NewDefaultColorChooser\(\) ColorChooser](<#NewDefaultColorChooser>)
   - [func \(chooser ColorChooser\) Next\(\) Color](<#ColorChooser.Next>)
@@ -46,6 +47,8 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func \(line Line\) Draw\(name string, parent string, pose spatialmath.Pose\) \*Drawing](<#Line.Draw>)
 - [type Metadata](<#Metadata>)
   - [func NewMetadata\(options ...drawMetadataOption\) Metadata](<#NewMetadata>)
+  - [func StructToMetadata\(structPb \*structpb.Struct\) \(Metadata, error\)](<#StructToMetadata>)
+  - [func \(metadata \*Metadata\) SetColors\(colors \[\]Color\)](<#Metadata.SetColors>)
   - [func \(metadata Metadata\) ToProto\(\) \*drawv1.Metadata](<#Metadata.ToProto>)
 - [type Model](<#Model>)
   - [func NewModel\(options ...drawModelOption\) \(\*Model, error\)](<#NewModel>)
@@ -230,7 +233,7 @@ func NewTransform(id string, name string, parent string, pose spatialmath.Pose, 
 NewTransform creates a Protocol Buffer Transform message representing an object in 3D space. The id can be empty \(auto\-generated UUID\) or a valid UUID string. The geometry and metadata parameters are optional \(can be nil\). Returns an error if the id is not a valid UUID.
 
 <a name="WithColors"></a>
-## func [WithColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L209>)
+## func [WithColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L214>)
 
 ```go
 func WithColors[T ConfigurableColors](colors []Color) func(T)
@@ -255,7 +258,7 @@ type Arrows struct {
 ```
 
 <a name="NewArrows"></a>
-### func [NewArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L42>)
+### func [NewArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L44>)
 
 ```go
 func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, error)
@@ -264,7 +267,7 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 NewArrows creates a new Arrows object from the given poses and optional configuration. Returns an error if the number of colors doesn't match the requirements \(must be 1 or equal to number of poses\).
 
 <a name="Arrows.Draw"></a>
-### func \(Arrows\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L57>)
+### func \(Arrows\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L59>)
 
 ```go
 func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Drawing
@@ -322,7 +325,7 @@ func (packer *BufferPacker[T]) Write(values ...T)
 Write appends values directly to the buffer at the current offset and advances the offset.
 
 <a name="Color"></a>
-## type [Color](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L13-L22>)
+## type [Color](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L14-L23>)
 
 Color represents an RGBA color with 8\-bit channels \(0\-255 range\).
 
@@ -340,7 +343,7 @@ type Color struct {
 ```
 
 <a name="NewColor"></a>
-### func [NewColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L126>)
+### func [NewColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L127>)
 
 ```go
 func NewColor(options ...colorOption) Color
@@ -349,7 +352,7 @@ func NewColor(options ...colorOption) Color
 NewColor creates a new Color with the given options. If no options are provided, returns black with full opacity \(0, 0, 0, 255\).
 
 <a name="Color.SetAlpha"></a>
-### func \(Color\) [SetAlpha](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L156>)
+### func \(Color\) [SetAlpha](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L157>)
 
 ```go
 func (color Color) SetAlpha(alpha uint8) Color
@@ -358,7 +361,7 @@ func (color Color) SetAlpha(alpha uint8) Color
 SetAlpha returns a new Color with the specified alpha value, preserving the RGB values.
 
 <a name="Color.SetRGB"></a>
-### func \(Color\) [SetRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L141>)
+### func \(Color\) [SetRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L142>)
 
 ```go
 func (color Color) SetRGB(r, g, b uint8) Color
@@ -367,7 +370,7 @@ func (color Color) SetRGB(r, g, b uint8) Color
 SetRGB returns a new Color with the specified RGB values, preserving the original alpha value.
 
 <a name="Color.SetRGBA"></a>
-### func \(Color\) [SetRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L149>)
+### func \(Color\) [SetRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L150>)
 
 ```go
 func (color Color) SetRGBA(r, g, b, a uint8) Color
@@ -375,8 +378,17 @@ func (color Color) SetRGBA(r, g, b, a uint8) Color
 
 SetRGBA returns a new Color with all RGBA values set.
 
+<a name="Color.ToHex"></a>
+### func \(Color\) [ToHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L162>)
+
+```go
+func (color Color) ToHex() string
+```
+
+
+
 <a name="ColorChooser"></a>
-## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L163-L166>)
+## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L168-L171>)
 
 ColorChooser cycles through a list of colors, useful for automatically assigning different colors to multiple objects. Each call to Next\(\) returns the next color in sequence, wrapping around to the start.
 
@@ -387,7 +399,7 @@ type ColorChooser struct {
 ```
 
 <a name="NewDefaultColorChooser"></a>
-### func [NewDefaultColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L176>)
+### func [NewDefaultColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L181>)
 
 ```go
 func NewDefaultColorChooser() ColorChooser
@@ -396,7 +408,7 @@ func NewDefaultColorChooser() ColorChooser
 NewDefaultColorChooser creates a ColorChooser populated with all standard web color names.
 
 <a name="ColorChooser.Next"></a>
-### func \(ColorChooser\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L169>)
+### func \(ColorChooser\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L174>)
 
 ```go
 func (chooser ColorChooser) Next() Color
@@ -405,7 +417,7 @@ func (chooser ColorChooser) Next() Color
 Next returns the next color in the sequence, cycling back to the first color after reaching the end.
 
 <a name="ConfigurableColors"></a>
-## type [ConfigurableColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L186-L189>)
+## type [ConfigurableColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L191-L194>)
 
 ConfigurableColors is an interface for types that can have their colors configured.
 
@@ -417,7 +429,7 @@ type ConfigurableColors interface {
 ```
 
 <a name="DrawColorsConfig"></a>
-## type [DrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L192-L194>)
+## type [DrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L197-L199>)
 
 DrawColorsConfig stores color configuration for drawable objects.
 
@@ -428,7 +440,7 @@ type DrawColorsConfig struct {
 ```
 
 <a name="NewDrawColorsConfig"></a>
-### func [NewDrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L197>)
+### func [NewDrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L202>)
 
 ```go
 func NewDrawColorsConfig(colors ...Color) DrawColorsConfig
@@ -437,7 +449,7 @@ func NewDrawColorsConfig(colors ...Color) DrawColorsConfig
 NewDrawColorsConfig creates a new color configuration with the given colors.
 
 <a name="DrawColorsConfig.SetColors"></a>
-### func \(\*DrawColorsConfig\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L204>)
+### func \(\*DrawColorsConfig\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L209>)
 
 ```go
 func (config *DrawColorsConfig) SetColors(colors []Color)
@@ -544,7 +556,7 @@ type Metadata struct {
 ```
 
 <a name="NewMetadata"></a>
-### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L277>)
+### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L281>)
 
 ```go
 func NewMetadata(options ...drawMetadataOption) Metadata
@@ -552,8 +564,26 @@ func NewMetadata(options ...drawMetadataOption) Metadata
 
 NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 
+<a name="StructToMetadata"></a>
+### func [StructToMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L62>)
+
+```go
+func StructToMetadata(structPb *structpb.Struct) (Metadata, error)
+```
+
+
+
+<a name="Metadata.SetColors"></a>
+### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L256>)
+
+```go
+func (metadata *Metadata) SetColors(colors []Color)
+```
+
+
+
 <a name="Metadata.ToProto"></a>
-### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L287>)
+### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L291>)
 
 ```go
 func (metadata Metadata) ToProto() *drawv1.Metadata
@@ -693,7 +723,7 @@ type Points struct {
 ```
 
 <a name="NewPoints"></a>
-### func [NewPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L67>)
+### func [NewPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L68>)
 
 ```go
 func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, error)
@@ -702,7 +732,7 @@ func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, err
 NewPoints creates a new Points object from the given positions and optional configuration. Returns an error if positions are empty, if the point size is non\-positive, or if the number of colors doesn't match requirements \(must be 1 or equal to number of positions\).
 
 <a name="Points.Draw"></a>
-### func \(Points\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L94-L98>)
+### func \(Points\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L95-L99>)
 
 ```go
 func (points Points) Draw(name string, parent string, pose spatialmath.Pose) *Drawing
