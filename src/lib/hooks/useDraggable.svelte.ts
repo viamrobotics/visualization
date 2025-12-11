@@ -10,7 +10,7 @@ interface Context {
 	readonly isLoaded: boolean
 }
 
-export const useDraggable = (name: string): Context => {
+export const useDraggable = (name: () => string): Context => {
 	const down = { x: 0, y: 0 }
 	const last = { x: 0, y: 0 }
 
@@ -32,15 +32,17 @@ export const useDraggable = (name: string): Context => {
 	}
 
 	const onDragEnd = () => {
-		set(`${name}-draggable`, $state.snapshot(translate))
+		set(`${name()}-draggable`, $state.snapshot(translate))
 		window.removeEventListener('pointermove', onDragMove)
 	}
 
-	get(`${name}-draggable`).then((response) => {
-		if (response) {
-			translate = response
-		}
-		loaded = true
+	$effect(() => {
+		get(`${name()}-draggable`).then((response) => {
+			if (response) {
+				translate = response
+			}
+			loaded = true
+		})
 	})
 
 	$effect(() => {

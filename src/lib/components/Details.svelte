@@ -66,7 +66,7 @@
 
 	let copied = $state(false)
 
-	const draggable = useDraggable('details')
+	const draggable = useDraggable(() => 'details')
 
 	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 

@@ -13,18 +13,20 @@ interface Context {
 
 const DEFAULT_DIMENSIONS: Dimensions = { width: 240, height: 320 }
 
-export const useResizable = (name: string): Context => {
-	const key = `${name}-resizable`
+export const useResizable = (name: () => string): Context => {
+	const key = $derived(`${name()}-resizable`)
 
-	let dimensions = $state<Dimensions>(DEFAULT_DIMENSIONS)
+	let dimensions = $state.raw<Dimensions>(DEFAULT_DIMENSIONS)
 	let loaded = $state(false)
 	let observer: ResizeObserver | undefined
 
-	get(key).then((saved: Dimensions | undefined) => {
-		if (saved) {
-			dimensions = saved
-		}
-		loaded = true
+	$effect(() => {
+		get(key).then((saved: Dimensions | undefined) => {
+			if (saved) {
+				dimensions = saved
+			}
+			loaded = true
+		})
 	})
 
 	const observe = (target: HTMLElement) => {

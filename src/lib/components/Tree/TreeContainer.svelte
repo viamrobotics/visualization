@@ -21,8 +21,8 @@
 
 	const partID = usePartID()
 	const selectedEntity = useSelectedEntity()
-	const draggable = useDraggable('treeview')
-	const resizable = useResizable('treeview')
+	const draggable = useDraggable(() => 'treeview')
+	const resizable = useResizable(() => 'treeview')
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()

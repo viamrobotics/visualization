@@ -7,7 +7,7 @@
 
 	let { name }: Props = $props()
 
-	const resizable = useResizable(name)
+	const resizable = useResizable(() => name)
 
 	let container = $state<HTMLDivElement>()
 
