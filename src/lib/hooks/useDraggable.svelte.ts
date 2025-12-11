@@ -7,6 +7,7 @@ interface Context {
 		x: number
 		y: number
 	}
+	readonly isLoaded: boolean
 }
 
 export const useDraggable = (name: string): Context => {
@@ -14,6 +15,7 @@ export const useDraggable = (name: string): Context => {
 	const last = { x: 0, y: 0 }
 
 	let translate = $state({ x: 0, y: 0 })
+	let loaded = $state(false)
 
 	const onDragMove = (event: MouseEvent) => {
 		translate.x = event.clientX - down.x + last.x
@@ -38,6 +40,7 @@ export const useDraggable = (name: string): Context => {
 		if (response) {
 			translate = response
 		}
+		loaded = true
 	})
 
 	$effect(() => {
@@ -49,6 +52,9 @@ export const useDraggable = (name: string): Context => {
 		onDragEnd,
 		get current() {
 			return translate
+		},
+		get isLoaded() {
+			return loaded
 		},
 	}
 }
