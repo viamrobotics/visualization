@@ -131,19 +131,19 @@
 				{:else if lineGeometry.current}
 					<MeshLineGeometry points={lineGeometry.current} />
 				{:else if box.current}
-					{@const { x, y, z } = entity.get(traits.Box) ?? { x: 0, y: 0, z: 0 }}
+					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
 						args={[x * 0.001, y * 0.001, z * 0.001]}
 						{oncreate}
 					/>
 				{:else if sphere.current}
-					{@const { r } = entity.get(traits.Sphere) ?? { r: 0 }}
+					{@const { r } = sphere.current ?? { r: 0 }}
 					<T.SphereGeometry
 						args={[r * 0.001]}
 						{oncreate}
 					/>
 				{:else if capsule.current}
-					{@const { r, l } = entity.get(traits.Capsule) ?? { r: 0, l: 0 }}
+					{@const { r, l } = capsule.current ?? { r: 0, l: 0 }}
 					<T
 						is={CapsuleGeometry}
 						args={[r * 0.001, l * 0.001]}
