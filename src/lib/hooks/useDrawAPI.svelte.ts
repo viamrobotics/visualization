@@ -114,7 +114,7 @@ export const provideDrawAPI = () => {
 		for (const rawFrame of data) {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
-			const name = frame.name ?? ''
+			const name = frame.name || frame.id || ''
 			const parent = frame.parent
 
 			const existing = entities.get(name)
@@ -151,7 +151,7 @@ export const provideDrawAPI = () => {
 				entityTraits.push(geometryTrait())
 			}
 
-			entityTraits.push(traits.Name(frame.name), traits.Pose(pose), traits.DrawAPI)
+			entityTraits.push(traits.Name(name), traits.Pose(pose), traits.DrawAPI)
 
 			const entity = world.spawn(...entityTraits)
 
