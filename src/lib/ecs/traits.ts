@@ -63,7 +63,7 @@ export const WorldStateStoreAPI = trait()
  */
 export const FramesAPI = trait()
 
-export const ChildOf = relation()
+export const ReferenceFrame = trait()
 
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
@@ -76,7 +76,7 @@ export const Geometry = (geometry: ViamGeometry) => {
 		return BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh))
 	}
 
-	return trait()
+	return ReferenceFrame
 }
 
 export const updateGeometry = (geometry: ViamGeometry) => {

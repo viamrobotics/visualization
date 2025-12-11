@@ -116,7 +116,7 @@
 		<T
 			is={mesh}
 			name={name.current}
-			bvh={{ enabled: false }}
+			bvh={{ enabled: bufferGeometry.current !== undefined }}
 		>
 			{#if model && renderMode.includes('model')}
 				<T is={model} />

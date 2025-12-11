@@ -9,7 +9,7 @@ import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
 import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
-import { trait, type ConfigurableTrait, type Entity } from 'koota'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -114,7 +114,7 @@ export const provideDrawAPI = () => {
 		for (const rawFrame of data) {
 			const frame = lowercaseKeys(rawFrame) as Frame
 			const pose = createPoseFromFrame(frame)
-			const name = frame.name || frame.id || ''
+			const name = frame.name ?? frame.id ?? ''
 			const parent = frame.parent
 
 			const existing = entities.get(name)
@@ -138,7 +138,7 @@ export const provideDrawAPI = () => {
 					return traits.Capsule(frame.geometry)
 				}
 
-				return trait()
+				return traits.ReferenceFrame
 			}
 
 			const entityTraits: ConfigurableTrait[] = []
@@ -151,7 +151,7 @@ export const provideDrawAPI = () => {
 				entityTraits.push(geometryTrait())
 			}
 
-			entityTraits.push(traits.Name(name), traits.Pose(pose), traits.DrawAPI)
+			entityTraits.push(traits.Name(name), traits.Pose(pose), traits.DrawAPI, traits.ReferenceFrame)
 
 			const entity = world.spawn(...entityTraits)
 
@@ -196,7 +196,7 @@ export const provideDrawAPI = () => {
 				return traits.Capsule(createCapsule(data.capsule))
 			}
 
-			return trait()
+			return traits.ReferenceFrame
 		}
 
 		const entityTraits: ConfigurableTrait[] = []

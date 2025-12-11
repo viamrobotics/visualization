@@ -13,7 +13,7 @@
 	import { traits, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
-	import { useResizable } from '$lib/hooks/useResizable.svelte'
+	import { MIN_DIMENSIONS, useResizable } from '$lib/hooks/useResizable.svelte'
 
 	const { ...rest } = $props()
 
@@ -67,6 +67,8 @@
 		bind:this={container}
 		class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 resize overflow-y-auto border text-xs"
 		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
+		style:min-width="{MIN_DIMENSIONS.width}px"
+		style:min-height="{MIN_DIMENSIONS.height}px"
 		style:width={resizable.current ? `${resizable.current.width}px` : undefined}
 		style:height={resizable.current ? `${resizable.current.height}px` : undefined}
 		{...rest}

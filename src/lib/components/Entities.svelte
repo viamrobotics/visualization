@@ -16,11 +16,11 @@
 	const gltfs = useQuery(traits.GLTF)
 	const drawnMeshes = useQuery(
 		traits.DrawAPI,
-		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry)
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 	const worldStateMeshes = useQuery(
 		traits.WorldStateStoreAPI,
-		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry)
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 </script>
 
