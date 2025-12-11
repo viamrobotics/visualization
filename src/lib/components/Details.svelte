@@ -143,6 +143,8 @@
 	}
 
 	const isIntermediateInput = (input: string) => {
+		if (input === '0') return false
+
 		return (
 			input.startsWith('0') ||
 			input.startsWith('.') ||

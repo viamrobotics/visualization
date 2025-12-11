@@ -5,8 +5,6 @@
 
 	let { dashboard, ...rest } = $props()
 
-	$inspect(dashboard)
-
 	const settings = useSettings()
 </script>
 

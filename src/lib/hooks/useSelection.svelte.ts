@@ -2,7 +2,7 @@ import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
 import { BatchedMesh, Matrix4, Object3D } from 'three'
 import type { Entity } from 'koota'
-import { traits, useWorld } from '$lib/ecs'
+import { traits, useTrait, useWorld } from '$lib/ecs'
 
 const selectedKey = Symbol('selected-frame-context')
 const focusedKey = Symbol('focused-frame-context')
@@ -100,29 +100,29 @@ export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 	const selectedEntity = useSelectedEntity()
 	const { scene } = useThrelte()
 
+	const name = useTrait(() => selectedEntity.current, traits.Name)
+	const instance = useTrait(() => selectedEntity.current, traits.Instance)
+
 	const object = $derived.by(() => {
 		if (!selectedEntity.current) {
 			return
 		}
 
-		const instance = selectedEntity.current.get(traits.Instance)
-		if (instance) {
+		if (instance.current) {
 			const proxy = new Object3D()
-			const mesh = scene.getObjectById(instance.meshID) as BatchedMesh
+			const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
 
-			mesh?.getMatrixAt(instance.instanceID, matrix)
+			mesh?.getMatrixAt(instance.current.instanceID, matrix)
 			proxy.applyMatrix4(matrix)
 
 			return proxy
 		}
 
-		const name = selectedEntity.current.get(traits.Name)
-
-		if (!name) {
+		if (!name.current) {
 			return
 		}
 
-		return scene.getObjectByName(name)
+		return scene.getObjectByName(name.current)
 	})
 
 	return {

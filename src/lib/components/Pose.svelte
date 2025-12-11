@@ -22,7 +22,7 @@
 		() => parent.current
 	)
 
-	const finalPose = $derived.by(() => {
+	const resolvedPose = $derived.by(() => {
 		if (pose.current === undefined) {
 			return editedPose.current
 		}
@@ -41,4 +41,4 @@
 	})
 </script>
 
-{@render children({ pose: finalPose })}
+{@render children({ pose: resolvedPose })}

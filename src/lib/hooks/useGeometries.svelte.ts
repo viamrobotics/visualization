@@ -14,6 +14,7 @@ import { traits, useWorld } from '$lib/ecs'
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
 
 const key = Symbol('geometries-context')
 
@@ -24,6 +25,7 @@ interface Context {
 const colorUtil = new Color()
 
 export const provideGeometries = (partID: () => string) => {
+	const environment = useEnvironment()
 	const resources = useResourceByName()
 	const world = useWorld()
 	const logs = useLogs()
@@ -52,7 +54,9 @@ export const provideGeometries = (partID: () => string) => {
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.poses)
 		return {
-			enabled: refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF,
+			enabled:
+				refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF &&
+				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 		}
 	})

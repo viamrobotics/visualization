@@ -13,6 +13,7 @@ import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
+	const environment = useEnvironment()
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
@@ -24,7 +25,6 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 
 	const resource = $derived(currentName ? resourceByName.current[currentName] : undefined)
 	const parentResource = $derived(currentParent ? resourceByName.current[currentParent] : undefined)
-	const environment = useEnvironment()
 	const frames = useFrames()
 
 	const client = createResourceClient(
@@ -43,7 +43,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 		'getPose',
 		() => [currentName, resolvedParent ?? 'world', []] as [string, string, Transform[]],
 		() => ({
-			enabled: interval !== RefetchRates.OFF,
+			enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
 		})
 	)

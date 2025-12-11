@@ -88,10 +88,10 @@
 	})
 
 	const entityPose = useTrait(() => entity, traits.Pose)
-	const finalPose = $derived(pose ?? entityPose.current)
+	const resolvedPose = $derived(pose ?? entityPose.current)
 	$effect.pre(() => {
-		if (finalPose) {
-			poseToObject3d(finalPose, group)
+		if (resolvedPose) {
+			poseToObject3d(resolvedPose, group)
 			invalidate()
 		}
 	})
