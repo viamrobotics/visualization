@@ -3,6 +3,7 @@ import { createPoseFromFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue, ViamClient } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
+import { traits, useWorld } from '$lib/ecs'
 
 const key = Symbol('part-config-context')
 
@@ -38,6 +39,7 @@ interface PartConfigContext {
 }
 
 export const providePartConfig = (params: PartConfigParams) => {
+	const world = useWorld()
 	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params
 	let _localPartConfig: LocalPartConfig
 	if (appEmbeddedPartConfigProps) {
@@ -263,7 +265,15 @@ export const providePartConfig = (params: PartConfigParams) => {
 				createPartFrame(componentName)
 			}
 		},
-		saveLocalPartConfig: () => {
+		saveLocalPartConfig: () => {			
+			const frames = world.query(traits.FramesAPI)
+			for (const frame of frames) {
+				const editedPose = frame.get(traits.EditedPose)
+				if (editedPose) {
+					frame.set(traits.Pose, editedPose)
+				}
+				
+			}
 			_localPartConfig.saveLocalPartConfig?.()
 		},
 		resetLocalPartConfig: () => {
