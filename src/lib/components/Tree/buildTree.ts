@@ -15,13 +15,13 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 	const childNodes: TreeNode[] = []
 
 	for (const entity of entities) {
-		const parent = entity.get(traits.Parent)
+		const localParent = entity.get(traits.EditedParent)
 		const name = entity.get(traits.Name) ?? ''
 		const node: TreeNode = { entity }
 
 		nodeMap.set(name, node)
 
-		if (!parent || parent === 'world') {
+		if (!localParent || localParent === 'world') {
 			rootNodes.push(node)
 		} else {
 			childNodes.push(node)
@@ -29,10 +29,10 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 	}
 
 	for (const node of childNodes) {
-		const parent = node.entity.get(traits.Parent)
+		const localParent = node.entity.get(traits.EditedParent)
 
-		if (parent) {
-			const parentNode = nodeMap.get(parent)
+		if (localParent) {
+			const parentNode = nodeMap.get(localParent)
 
 			if (parentNode) {
 				parentNode.children ??= []

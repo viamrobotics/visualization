@@ -181,12 +181,26 @@ export const provideFrames = (partID: () => string) => {
 					existing.set(traits.EditedPose, pose)
 				}
 
-				if (!parent || parent === 'world') {
-					existing.remove(traits.Parent)
-				} else if (parent && existing.has(traits.Parent)) {
-					existing.set(traits.Parent, parent)
-				} else {
-					existing.add(traits.Parent(parent))
+				if (frame.type === 'machine') {
+					if (!parent || parent === 'world') {
+						existing.remove(traits.Parent)
+					} else if (parent && existing.has(traits.Parent)) {
+						existing.set(traits.Parent, parent)
+					} else {
+						existing.add(traits.Parent(parent))
+					}
+				} else if (frame.type === 'config' || frame.type === 'fragment') {
+					if (!parent || parent === 'world') {
+						console.log(parent, 'parent')
+						console.log(`removing edited parent for ${name}`)
+						existing.remove(traits.EditedParent)
+					} else if (parent && existing.has(traits.EditedParent)) {
+						console.log(`setting edited parent for ${name} to ${parent}`)
+						existing.set(traits.EditedParent, parent)
+					} else {
+						console.log(`adding edited parent for ${name} to ${parent}`)
+						existing.add(traits.EditedParent(parent))
+					}
 				}
 
 				if (color) {
@@ -213,7 +227,9 @@ export const provideFrames = (partID: () => string) => {
 			]
 
 			if (parent && parent !== 'world') {
+				console.log(`adding parent for ${name} to ${parent}`)
 				entityTraits.push(traits.Parent(parent))
+				entityTraits.push(traits.EditedParent(parent))
 			}
 
 			if (color) {

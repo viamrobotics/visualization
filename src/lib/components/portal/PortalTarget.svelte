@@ -14,6 +14,8 @@
 	const resolvedId = $derived(id ?? name.current ?? 'world')
 	const portals = usePortalContext()
 	const childrenArray = $derived(portals.get(resolvedId))
+
+	$inspect(`resolvedId is ${resolvedId} and has ${childrenArray?.size} children`)
 </script>
 
 {#if childrenArray !== undefined}

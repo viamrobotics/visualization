@@ -76,6 +76,10 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 			if (resource?.subtype === 'arm') {
 				return
 			}
+			// if (currentName === 'base-1') {
+			// 	console.log('--------------base-1---------------')
+			// 	console.log('query.data', query.data)
+			// }
 			return query.data?.pose
 		},
 	}

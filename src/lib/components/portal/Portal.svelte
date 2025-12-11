@@ -15,8 +15,9 @@
 
 	const portals = usePortalContext()
 
+	const editedParent = useTrait(() => entity, traits.EditedParent)
 	const parent = useTrait(() => entity, traits.Parent)
-	const resolvedId = $derived(id ?? parent.current ?? 'world')
+	const resolvedId = $derived(id ?? editedParent.current ?? parent.current ?? 'world')
 
 	$effect.pre(() => {
 		if (!children) return

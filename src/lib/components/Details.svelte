@@ -44,7 +44,7 @@
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
 
 	const name = useTrait(() => entity, traits.Name)
-	const parent = useTrait(() => entity, traits.Parent)
+	const localParent = useTrait(() => entity, traits.EditedParent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
@@ -135,7 +135,7 @@
 					type: geometryType,
 					value: box.current ?? capsule.current ?? sphere.current,
 				},
-				parentFrame: parent.current ?? 'world',
+				parentFrame: localParent.current ?? 'world',
 			},
 			null,
 			2
@@ -316,7 +316,7 @@
 				<div class="mt-0.5 flex gap-3">
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
-						value: parent.current ?? 'world',
+						value: localParent.current ?? 'world',
 						options: frames.getParentFrameOptions(name.current ?? ''),
 						onChange: (value) => {
 							detailConfigUpdater.setFrameParent(entity, value)

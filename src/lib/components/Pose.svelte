@@ -31,6 +31,12 @@
 			return
 		}
 
+		// if (name.current === 'base-1') {
+		// 	console.log('--------------base-1---------------')
+		// 	console.log('entityPose', entityPose.current)
+		// 	console.log('pose', pose.current)
+		// 	console.log('editedPose', editedPose.current)
+		// }
 		const poseNetwork = poseToMatrix(entityPose.current)
 		const poseUsePose = poseToMatrix(pose.current)
 		const poseLocalEditedPose = poseToMatrix(editedPose.current)

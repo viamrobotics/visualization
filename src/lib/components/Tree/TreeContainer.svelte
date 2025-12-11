@@ -40,11 +40,11 @@
 	}
 
 	world.onAdd(traits.Name, flush)
-	world.onAdd(traits.Parent, flush)
+	world.onAdd(traits.EditedParent, flush)
 	world.onRemove(traits.Name, flush)
-	world.onRemove(traits.Parent, flush)
+	world.onRemove(traits.EditedParent, flush)
 	world.onChange(traits.Name, flush)
-	world.onChange(traits.Parent, flush)
+	world.onChange(traits.EditedParent, flush)
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
