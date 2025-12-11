@@ -7,11 +7,12 @@
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { colors, darkenColor } from '$lib/color'
+	import { colors, darkenColor, resourceColors } from '$lib/color'
 	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 
 	interface Props {
 		entity: Entity
@@ -25,16 +26,28 @@
 	const settings = useSettings()
 	const componentModels = use3DModels()
 	const selectedEntity = useSelectedEntity()
+	const resourceByName = useResourceByName()
 	const weblabs = useWeblabs()
 	const name = useTrait(() => entity, traits.Name)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const events = useObjectEvents(() => entity)
+	const resourceColor = $derived.by(() => {
+		if (!name.current) {
+			return undefined
+		}
+		const subtype = resourceByName.current[name.current]?.subtype
+		return resourceColors[subtype as keyof typeof resourceColors]
+	})
 
-	const color = $derived(
-		entityColor.current
-			? colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
-			: colors.default
-	)
+	const color = $derived.by(() => {
+		if (entityColor.current) {
+			return colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+		}
+		if (resourceColor) {
+			return resourceColor
+		}
+		return colors.default
+	})
 
 	const model = $derived.by(() => {
 		if (!weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)) {
