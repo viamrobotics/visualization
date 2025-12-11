@@ -13,6 +13,7 @@
 	import { traits, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
+	import { useResizable } from '$lib/hooks/useResizable.svelte'
 
 	const { ...rest } = $props()
 
@@ -21,9 +22,12 @@
 	const partID = usePartID()
 	const selectedEntity = useSelectedEntity()
 	const draggable = useDraggable('treeview')
+	const resizable = useResizable('treeview')
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
+
+	let container = $state<HTMLDivElement>()
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
@@ -50,11 +54,19 @@
 		entity: worldEntity,
 		children,
 	})
+
+	$effect(() => {
+		if (container) {
+			resizable.observe(container)
+		}
+	})
 </script>
 
 <div
 	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 w-60 overflow-y-auto border text-xs"
 	style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
+	style:width={resizable.current ? `${resizable.current.width}px` : undefined}
+	style:height={resizable.current ? `${resizable.current.height}px` : undefined}
 	{...rest}
 >
 	<Tree
