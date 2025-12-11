@@ -159,6 +159,45 @@ export const provideFrames = (partID: () => string) => {
 	const current = $derived(Object.values(frames))
 
 	const entities = new Map<string, Entity | undefined>()
+	
+	$effect.pre(() => {
+		for (const [name, machineFrame] of Object.entries(machineFrames)) {
+			if (machineFrame === undefined) {
+				continue
+			}
+			const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
+			const existing = entities.get(name)
+			if (existing) {
+				existing.set(traits.Pose, pose)
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const [name, configFrame] of Object.entries(configFrames)) {
+			if (configFrame === undefined) {
+				continue
+			}
+			const pose = createPose(configFrame.transform.poseInObserverFrame?.pose)
+			const existing = entities.get(name)
+			if (existing) {
+				existing.set(traits.EditedPose, pose)
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		for (const [name, fragmentFrame] of Object.entries(fragmentFrames)) {
+			if (fragmentFrame === undefined) {
+				continue
+			}
+			const pose = createPose(fragmentFrame.transform.poseInObserverFrame?.pose)
+			const existing = entities.get(name)
+			if (existing) {
+				existing.set(traits.EditedPose, pose)
+			}
+		}
+	})
 
 	$effect.pre(() => {
 		for (const frame of current) {
@@ -178,12 +217,6 @@ export const provideFrames = (partID: () => string) => {
 			const existing = entities.get(name)
 
 			if (existing) {
-				if (frame.type === 'machine') {
-					existing.set(traits.Pose, pose)
-				} else if (frame.type === 'config') {
-					existing.set(traits.EditedPose, pose)
-				}
-
 				if (!parent || parent === 'world') {
 					existing.remove(traits.Parent)
 				} else if (parent && existing.has(traits.Parent)) {
