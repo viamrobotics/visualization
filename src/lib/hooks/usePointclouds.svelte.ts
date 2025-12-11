@@ -11,6 +11,7 @@ import { useLogs } from './useLogs.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
+import { useEnvironment } from './useEnvironment.svelte'
 
 const typeSafeObjectFromEntries = <const T extends ReadonlyArray<readonly [PropertyKey, unknown]>>(
 	entries: T
@@ -25,6 +26,7 @@ interface Context {
 }
 
 export const providePointclouds = (partID: () => string) => {
+	const environment = useEnvironment()
 	const world = useWorld()
 	const logs = useLogs()
 	const { refreshRates, disabledCameras } = useMachineSettings()
@@ -85,13 +87,15 @@ export const providePointclouds = (partID: () => string) => {
 		}
 	})
 
+	const options = $derived({
+		enabled: environment.current.viewerMode === 'edit',
+		refetchInterval: interval,
+	})
+
 	const queries = $derived(
 		enabledClients.map(
 			(client) =>
-				[
-					client.current.name,
-					createResourceQuery(client, 'getPointCloud', () => ({ refetchInterval: interval })),
-				] as const
+				[client.current.name, createResourceQuery(client, 'getPointCloud', () => options)] as const
 		)
 	)
 
