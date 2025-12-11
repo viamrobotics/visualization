@@ -265,14 +265,13 @@ export const providePartConfig = (params: PartConfigParams) => {
 				createPartFrame(componentName)
 			}
 		},
-		saveLocalPartConfig: () => {			
+		saveLocalPartConfig: () => {
 			const frames = world.query(traits.FramesAPI)
 			for (const frame of frames) {
 				const editedPose = frame.get(traits.EditedPose)
 				if (editedPose) {
 					frame.set(traits.Pose, editedPose)
 				}
-				
 			}
 			_localPartConfig.saveLocalPartConfig?.()
 		},
