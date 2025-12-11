@@ -75,7 +75,9 @@ jobs:
           cache: true
 
       - name: Generate Documentation
-        run: make docs
+        run: |
+          make setup
+          make docs
 
       - name: Check for documentation changes
         id: check_changes
