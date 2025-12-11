@@ -19,8 +19,6 @@ export function useQuery<T extends QueryParameter[]>(
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		version
 
-		let id: number | undefined
-
 		// Compare the initial version to the current version to
 		// see it the query has changed.
 		const query = world[internal].queriesHashMap.get(hash)
@@ -29,26 +27,13 @@ export function useQuery<T extends QueryParameter[]>(
 			entities = world.query(hash)
 		}
 
-		/**
-		 * A flush function to avoid getting called for every entity added.
-		 *
-		 * Ex: if 50k entities are added, then this query and sort occurs 50k times
-		 * when this hook only needs it to be called once per frame.
-		 */
-		const flush = () => {
-			entities = world.query(hash)
-			id = undefined
-		}
-
 		return untrack(() => {
 			const unsubAdd = world.onQueryAdd(hash, () => {
-				if (id) return
-				id = window.setTimeout(flush)
+				entities = world.query(hash)
 			})
 
 			const unsubRemove = world.onQueryRemove(hash, () => {
-				if (id) return
-				id = window.setTimeout(flush)
+				entities = world.query(hash)
 			})
 
 			return () => {

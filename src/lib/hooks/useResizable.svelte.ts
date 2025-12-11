@@ -11,12 +11,12 @@ interface Context {
 	observe: (target: HTMLElement) => void
 }
 
-const DEFAULT_DIMENSIONS: Dimensions = { width: 240, height: 320 }
+export const MIN_DIMENSIONS: Dimensions = { width: 240, height: 320 }
 
 export const useResizable = (name: () => string): Context => {
 	const key = $derived(`${name()}-resizable`)
 
-	let dimensions = $state.raw<Dimensions>(DEFAULT_DIMENSIONS)
+	let dimensions = $state.raw<Dimensions>(MIN_DIMENSIONS)
 	let loaded = $state(false)
 	let observer: ResizeObserver | undefined
 
@@ -38,8 +38,8 @@ export const useResizable = (name: () => string): Context => {
 			if (!entry) return
 
 			const next = {
-				width: entry.contentRect.width,
-				height: entry.contentRect.height,
+				width: Math.max(entry.contentRect.width, MIN_DIMENSIONS.width),
+				height: Math.max(entry.contentRect.height, MIN_DIMENSIONS.height),
 			}
 
 			set(key, next)

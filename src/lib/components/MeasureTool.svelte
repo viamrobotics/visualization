@@ -31,6 +31,7 @@
 
 	onmove((event) => {
 		intersection = event.intersections[0]
+		console.log(intersection)
 	})
 
 	onclick(() => {
