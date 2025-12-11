@@ -40,36 +40,32 @@ export function useTrait<T extends Trait>(
 	const entity = $derived(isWorld(targetEntity) ? targetEntity[internal].worldEntity : targetEntity)
 
 	// Initialize the state with the current value of the trait.
-	let value = $state.raw(entity?.has(trait) ? entity.get(trait) : undefined)
+	let value = $derived(entity?.get(trait))
+
+	const onAddUnsub = world.onAdd(trait, (e) => {
+		if (e === entity) {
+			value = e.get(trait)
+		}
+	})
+
+	const onRemoveUnsub = world.onRemove(trait, (e) => {
+		if (e === entity) {
+			value = undefined
+		}
+	})
+
+	const onChangeUnsub = world.onChange(trait, (e) => {
+		if (e === entity) {
+			value = e.get(trait)
+		}
+	})
 
 	$effect(() => {
-		value = entity?.has(trait) ? entity.get(trait) : undefined
-
-		return untrack(() => {
-			const onChangeUnsub = world.onChange(trait, (e) => {
-				if (e === entity) {
-					value = e.get(trait)
-				}
-			})
-
-			const onAddUnsub = world.onAdd(trait, (e) => {
-				if (e === entity) {
-					value = e.get(trait)
-				}
-			})
-
-			const onRemoveUnsub = world.onRemove(trait, (e) => {
-				if (e === entity) {
-					value = undefined
-				}
-			})
-
-			return () => {
-				onChangeUnsub()
-				onAddUnsub()
-				onRemoveUnsub()
-			}
-		})
+		return () => {
+			onChangeUnsub()
+			onAddUnsub()
+			onRemoveUnsub()
+		}
 	})
 
 	return {
