@@ -145,7 +145,7 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// SAVE THE CHANGES
-	await page.getByText('Save', { exact: true }).click()
+	await page.getByLabel('Save').click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, {
@@ -215,7 +215,7 @@ test('basic edit frame', async ({ browser }) => {
 
 	// SAVE THE CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
-	await page.getByText('Save', { exact: true }).click()
+	await page.getByLabel('Save').click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-5-restored.png`, { fullPage: true })
@@ -310,7 +310,7 @@ test('create and delete frame', async ({ browser }) => {
 	}
 
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
-	await page.getByText('Save', { exact: true }).click()
+	await page.getByLabel('Save').click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
 	// wait a couple seconds for the frame system to udpate
@@ -483,7 +483,7 @@ test('fragement edit frame', async ({ browser }) => {
 
 	// SAVE THE CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
-	await page.getByText('Save', { exact: true }).click()
+	await page.getByLabel('Save').click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
 	try {
