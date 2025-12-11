@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate Documentation
         run: |
-          make setup
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
           make docs
 
       - name: Check for documentation changes
