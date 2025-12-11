@@ -1,12 +1,20 @@
-import { serve, spawn, type Subprocess } from 'bun'
+import { serve, spawn, type Subprocess, file } from 'bun'
 import { getLocalIP } from './ip'
+import { resolve, join } from 'node:path'
+import { stat } from 'node:fs/promises'
 import { UuidTool } from 'uuid-tool'
 
 const localIP = getLocalIP()
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
+const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production')
+const buildDir = resolve(import.meta.dir, '../build')
+
+const STATIC_PORT = parseInt(process.env.STATIC_PORT || '5173', 10)
+const WS_PORT = parseInt(process.env.WS_PORT || '3000', 10)
 
 let viteProcess: Subprocess | undefined
-let server: ReturnType<typeof serve> | undefined
+let apiServer: ReturnType<typeof serve> | undefined
+let staticServer: ReturnType<typeof serve> | undefined
 let shuttingDown = false
 
 const shutdown = async (code = 0) => {
@@ -15,7 +23,8 @@ const shutdown = async (code = 0) => {
 	shuttingDown = true
 
 	try {
-		server?.stop?.()
+		apiServer?.stop?.()
+		staticServer?.stop?.()
 	} catch (error) {
 		console.error(error)
 	}
@@ -39,13 +48,14 @@ const shutdown = async (code = 0) => {
 	process.exit(code)
 }
 
-const launchVite = (port: number) => {
+const launchVite = () => {
 	// Keep the handle so we can control it
 	viteProcess = spawn({
 		cmd: ['bun', 'run', 'vite'],
 		env: {
 			...process.env,
-			BUN_SERVER_PORT: port.toString(),
+			WS_PORT: WS_PORT.toString(),
+			STATIC_PORT: STATIC_PORT.toString(),
 		},
 		stdout: 'inherit',
 		stderr: 'inherit',
@@ -56,6 +66,57 @@ const launchVite = (port: number) => {
 		console.warn(`Vite exited with code ${code ?? 'null'}. Shutting down Bun server.`)
 		shutdown(typeof code === 'number' ? code : 1)
 	})
+}
+
+const startStaticServer = () => {
+	try {
+		staticServer = serve({
+			port: STATIC_PORT,
+			hostname: '::',
+			async fetch(req) {
+				const { pathname } = new URL(req.url)
+
+				if (req.method === 'GET') {
+					const response = await serveStatic(pathname)
+					if (response) return response
+				}
+
+				return new Response('Not Found', { status: 404 })
+			},
+		})
+
+		console.log(`Static file server running at http://${localIP}:${STATIC_PORT}`)
+	} catch (err) {
+		console.error('Failed to start static file server:', err)
+		shutdown(1)
+	}
+}
+
+const serveStatic = async (pathname: string): Promise<Response | null> => {
+	try {
+		let filePath = join(buildDir, pathname)
+
+		const fileStats = await stat(filePath).catch(() => null)
+		if (fileStats?.isFile()) {
+			return new Response(file(filePath))
+		}
+
+		if (fileStats?.isDirectory()) {
+			filePath = join(filePath, 'index.html')
+		} else {
+			filePath = join(buildDir, 'index.html')
+		}
+
+		const indexStats = await stat(filePath).catch(() => null)
+		if (indexStats?.isFile()) {
+			return new Response(file(filePath))
+		}
+
+		return null
+	} catch (err) {
+		console.error('Error serving static file:', err)
+		return null
+	}
 }
 
 function sendToClients(data: string | Bun.BufferSource) {
@@ -174,8 +235,6 @@ const jsonResponse = (response: { code: number; message: string }) => {
 	})
 }
 
-let port = 3000
-
 const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT']
 for (const sig of signals) {
 	process.on(sig, () => shutdown(0))
@@ -197,82 +256,79 @@ process.on('exit', () => viteProcess?.kill('SIGTERM'))
 // Roughly 1 GiB
 const oneGigabyte = 1024 * 1024 * 1024
 
-while (true) {
-	try {
-		server = serve({
-			port,
-			hostname: '::',
-			maxRequestBodySize: oneGigabyte,
-			fetch(req, srv) {
-				const { pathname } = new URL(req.url)
+// Start the API/WebSocket server
+try {
+	apiServer = serve({
+		port: WS_PORT,
+		hostname: '::',
+		maxRequestBodySize: oneGigabyte,
+		fetch(req, srv) {
+			const { pathname } = new URL(req.url)
 
-				if (pathname === '/ws') {
-					if (srv.upgrade(req)) return
-					return new Response('Upgrade Failed', { status: 400 })
-				}
+			if (pathname === '/ws') {
+				if (srv.upgrade(req)) return
+				return new Response('Upgrade Failed', { status: 400 })
+			}
 
-				if (req.method === 'OPTIONS') {
-					return new Response(null, {
-						status: 204,
-						headers: {
-							'Access-Control-Allow-Origin': '*',
-							'Access-Control-Allow-Methods': 'POST, OPTIONS',
-							'Access-Control-Allow-Headers': 'Content-Type',
-						},
-					})
-				}
+			if (req.method === 'OPTIONS') {
+				return new Response(null, {
+					status: 204,
+					headers: {
+						'Access-Control-Allow-Origin': '*',
+						'Access-Control-Allow-Methods': 'POST, OPTIONS',
+						'Access-Control-Allow-Headers': 'Content-Type',
+					},
+				})
+			}
 
-				if (req.method === 'POST') {
-					return handlePost(req, pathname)
-				}
+			if (req.method === 'POST') {
+				return handlePost(req, pathname)
+			}
 
-				return new Response('Not Found', { status: 404 })
+			return new Response('Not Found', { status: 404 })
+		},
+		websocket: {
+			open(ws) {
+				console.log('WebSocket client connected.')
+				connections.add(ws)
 			},
-			websocket: {
-				open(ws) {
-					console.log('WebSocket client connected.')
-					connections.add(ws)
-				},
-				message(_ws, message) {
-					if (typeof message === 'string') {
-						try {
-							const json = JSON.parse(message)
-							const resolve = pendingResponses.get(json.requestID)
+			message(_ws, message) {
+				if (typeof message === 'string') {
+					try {
+						const json = JSON.parse(message)
+						const resolve = pendingResponses.get(json.requestID)
 
-							if (resolve) {
-								delete json.requestID
-								resolve(jsonResponse(json))
-								pendingResponses.delete(json.requestID)
-							}
-						} catch (error) {
-							jsonResponse({ code: 400, message: JSON.stringify(error) })
+						if (resolve) {
+							delete json.requestID
+							resolve(jsonResponse(json))
+							pendingResponses.delete(json.requestID)
 						}
+					} catch (error) {
+						jsonResponse({ code: 400, message: JSON.stringify(error) })
 					}
+				}
 
-					console.log(`Received: ${message}`)
-				},
-				close(ws) {
-					console.log('WebSocket client closed.')
-					connections.delete(ws)
-				},
+				console.log(`Received: ${message}`)
 			},
-		})
+			close(ws) {
+				console.log('WebSocket client closed.')
+				connections.delete(ws)
+			},
+		},
+	})
 
-		console.log(`HTTP Server running at http://${localIP}:${port}`)
-		console.log(`WebSocket endpoint at ws://${localIP}:${port}/ws`)
+	console.log(`API/WebSocket server running at http://${localIP}:${WS_PORT}`)
+	console.log(`WebSocket endpoint: ws://${localIP}:${WS_PORT}/ws`)
 
-		launchVite(port)
-		break
-	} catch (err) {
-		const error = err as Error
-		if ('code' in error && typeof error.code === 'string' && error.code === 'EADDRINUSE') {
-			console.warn(`Port ${port} in use, trying ${port + 1}...`)
-			port += 1
-		} else {
-			console.error('Failed to start server:', error)
-			// if we failed after starting vite, make sure to clean up
-			shutdown(1)
-			break
-		}
+	if (isProduction) {
+		startStaticServer()
+		console.log(
+			`\n\t\x1b[32m\x1b[1mAccess the app at:\x1b[0m\x1b[32m http://localhost:${STATIC_PORT}\x1b[0m`
+		)
+	} else {
+		launchVite()
 	}
+} catch (err) {
+	console.error('Failed to start server:', err)
+	shutdown(1)
 }
