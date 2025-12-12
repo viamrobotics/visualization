@@ -418,11 +418,6 @@ export const provideDrawAPI = () => {
 		poseIndex = 0
 	}
 
-	const { BACKEND_IP, WS_PORT } = globalThis as unknown as {
-		BACKEND_IP?: string
-		WS_PORT?: string
-	}
-
 	const scheduleReconnect = () => {
 		setTimeout(() => {
 			reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)

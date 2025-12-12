@@ -36,7 +36,7 @@ setup:
 .PHONY: up-build
 up-build:
 	@$(MAKE) proto
-	@BUN_SERVER_PORT=5173 pnpm run build
+	@pnpm run build
 
 .PHONY: up-check
 up-check:
