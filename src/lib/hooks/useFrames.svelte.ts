@@ -159,15 +159,17 @@ export const provideFrames = (partID: () => string) => {
 	const current = $derived(Object.values(frames))
 
 	const entities = new Map<string, Entity | undefined>()
-	
+
 	$effect.pre(() => {
 		for (const [name, machineFrame] of Object.entries(machineFrames)) {
 			if (machineFrame === undefined) {
 				continue
 			}
-			const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
+
 			const existing = entities.get(name)
+
 			if (existing) {
+				const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
 				existing.set(traits.Pose, pose)
 			}
 		}
@@ -178,9 +180,11 @@ export const provideFrames = (partID: () => string) => {
 			if (configFrame === undefined) {
 				continue
 			}
-			const pose = createPose(configFrame.transform.poseInObserverFrame?.pose)
+
 			const existing = entities.get(name)
+
 			if (existing) {
+				const pose = createPose(configFrame.transform.poseInObserverFrame?.pose)
 				existing.set(traits.EditedPose, pose)
 			}
 		}
@@ -191,9 +195,11 @@ export const provideFrames = (partID: () => string) => {
 			if (fragmentFrame === undefined) {
 				continue
 			}
-			const pose = createPose(fragmentFrame.transform.poseInObserverFrame?.pose)
+
 			const existing = entities.get(name)
+
 			if (existing) {
+				const pose = createPose(fragmentFrame.transform.poseInObserverFrame?.pose)
 				existing.set(traits.EditedPose, pose)
 			}
 		}

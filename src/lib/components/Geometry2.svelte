@@ -122,7 +122,7 @@
 				<T is={model} />
 			{/if}
 
-			{#if renderMode.includes('colliders')}
+			{#if !model || renderMode.includes('colliders')}
 				{#if bufferGeometry.current}
 					<T
 						is={bufferGeometry.current}
