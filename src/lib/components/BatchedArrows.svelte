@@ -88,6 +88,7 @@
 		return () => {
 			unsubAdd()
 			unsubRemove()
+
 			unsubPoseChange()
 			unsubColorChange()
 		}
