@@ -165,7 +165,7 @@
 					opacity={opacity.current ?? 0.7}
 				/>
 
-				{#if geo && renderMode.includes('colliders')}
+				{#if geo}
 					<T.LineSegments
 						raycast={() => null}
 						bvh={{ enabled: false }}

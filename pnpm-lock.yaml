@@ -11,6 +11,9 @@ importers:
       '@bufbuild/protobuf':
         specifier: 1.10.1
         version: 1.10.1
+      '@neodrag/svelte':
+        specifier: ^2.3.3
+        version: 2.3.3(svelte@5.45.9)
       '@tanstack/svelte-query-devtools':
         specifier: ^6.0.2
         version: 6.0.2(@tanstack/svelte-query@6.0.9(svelte@5.45.9))(svelte@5.45.9)
@@ -701,6 +704,11 @@ packages:
 
   '@mdi/js@7.4.47':
     resolution: {integrity: sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==}
+
+  '@neodrag/svelte@2.3.3':
+    resolution: {integrity: sha512-avXzhrilsBsnMFljhVAQ7h+6hbSIrvRCJ61GCiGbGISkC1QOhjDCNvPZo2+7KVwiYrnUBx4NRH0kTIqrcxv9Lg==}
+    peerDependencies:
+      svelte: ^3.0.0 || ^4.0.0 || ^5.0.0
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -4376,6 +4384,10 @@ snapshots:
       read-yaml-file: 1.1.0
 
   '@mdi/js@7.4.47': {}
+
+  '@neodrag/svelte@2.3.3(svelte@5.45.9)':
+    dependencies:
+      svelte: 5.45.9
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

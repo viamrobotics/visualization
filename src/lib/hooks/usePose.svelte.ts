@@ -37,7 +37,9 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
 	const resolvedParent = $derived(
-		parentResource?.subtype === 'arm' ? `${parent()}_origin` : parent()
+		parentResource?.subtype === 'arm' || parentResource?.subtype === 'gantry'
+			? `${parent()}_origin`
+			: parent()
 	)
 	const query = createResourceQuery(
 		client,
@@ -77,10 +79,10 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	return {
 		get current() {
 			/**
-			 * Do not return the pose of an arm because in this case the pose represents
+			 * Do not return the pose of an arm or gantry because in this case the pose represents
 			 * the end effector frame and not the origin frame
 			 */
-			if (resource?.subtype === 'arm') {
+			if (resource?.subtype === 'arm' || resource?.subtype === 'gantry') {
 				return
 			}
 			return pose
