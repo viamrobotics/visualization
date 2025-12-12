@@ -32,7 +32,7 @@
 	const { ...rest } = $props()
 
 	const dragPosition = new PersistedState<Vector2Like | undefined>(
-		'details-pane-drag-position',
+		'details-drag-position',
 		undefined
 	)
 

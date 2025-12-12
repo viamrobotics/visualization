@@ -22,7 +22,6 @@
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 	import { provideWorld } from '$lib/ecs'
-	import { provideRoot } from '$lib/hooks/useRoot.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -69,7 +68,6 @@
 
 	provideWeblabs()
 	provideToast()
-	provideRoot(() => root)
 
 	if (localConfigProps) {
 		environment.current.isStandalone = false
@@ -96,10 +94,7 @@
 	<SvelteQueryDevtools initialIsOpen />
 {/if}
 
-<div
-	class="relative h-full w-full overflow-hidden"
-	bind:this={root}
->
+<div class="relative h-full w-full overflow-hidden">
 	<Canvas renderMode="on-demand">
 		<SceneProviders {cameraPose}>
 			{#snippet children({ focus })}
