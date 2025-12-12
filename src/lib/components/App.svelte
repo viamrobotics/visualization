@@ -64,10 +64,10 @@
 
 	createPartIDContext(() => partID)
 
-	let root = $state.raw<HTMLElement>()
-
 	provideWeblabs()
 	provideToast()
+
+	let root = $state.raw<HTMLElement>()
 
 	if (localConfigProps) {
 		environment.current.isStandalone = false
@@ -94,7 +94,10 @@
 	<SvelteQueryDevtools initialIsOpen />
 {/if}
 
-<div class="relative h-full w-full overflow-hidden">
+<div
+	class="relative h-full w-full overflow-hidden"
+	bind:this={root}
+>
 	<Canvas renderMode="on-demand">
 		<SceneProviders {cameraPose}>
 			{#snippet children({ focus })}
