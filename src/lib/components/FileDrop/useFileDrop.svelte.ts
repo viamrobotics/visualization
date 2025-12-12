@@ -1,4 +1,3 @@
-import type { PointsGeometry, ThreeBufferGeometry, WorldObject } from '$lib/WorldObject.svelte'
 import type { FileDropper } from './file-dropper'
 import { parseFileName, readFile, SUPPORTED_EXTENSIONS, SUPPORTED_PREFIXES } from './file-names'
 import { JSON_EXTENSIONS, onJSONDrop } from './json'

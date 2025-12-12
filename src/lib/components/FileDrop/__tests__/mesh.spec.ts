@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import type { PointsGeometry, ThreeBufferGeometry, WorldObject } from '$lib/WorldObject.svelte'
 import { BufferGeometry } from 'three'
 
 vi.mock('$lib/loaders/pcd', () => ({
@@ -15,7 +14,6 @@ vi.mock('three/examples/jsm/loaders/PLYLoader.js', () => ({
 import * as Subject from '../mesh'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
-import { traits } from '$lib/ecs'
 
 describe('mesh', () => {
 	beforeEach(() => {
