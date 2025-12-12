@@ -6,8 +6,14 @@
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { Icon, Label, Select } from '@viamrobotics/prime-core'
 	import { PersistedState } from 'runed'
+	import { useResizable } from '$lib/hooks/useResizable.svelte'
 
 	const { ...rest } = $props()
+
+	const resizable = useResizable(
+		() => 'arm-positions-widget',
+		() => ({ x: 190, y: 175 })
+	)
 
 	const dragPosition = new PersistedState<Vector2Like | undefined>(
 		'details-drag-position',
@@ -24,7 +30,12 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 overflow-y-auto border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 resize overflow-y-auto border text-xs"
+	style:min-width={resizable.style.minWidth}
+	style:min-height={resizable.style.minHeight}
+	style:width={resizable.style.width}
+	style:height={resizable.style.height}
+	use:resizable.resize
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,
@@ -33,6 +44,7 @@
 			dragPosition.current = { x: data.offsetX, y: data.offsetY }
 		},
 	}}
+	onresized={resizable.onResized}
 	{...rest}
 >
 	<div class="flex min-w-0 flex-col">

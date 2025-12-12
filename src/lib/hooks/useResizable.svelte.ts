@@ -1,66 +1,53 @@
+import {
+	resize,
+	type ResizeAttributes,
+	type ResizeConfig,
+	type ResizeDetail,
+} from '@svelte-put/resize'
 import { get, set } from 'idb-keyval'
-
-interface Dimensions {
-	width: number
-	height: number
-}
+import { PersistedState } from 'runed'
+import type { Action } from 'svelte/action'
+import type { Vector2Like } from 'three'
 
 interface Context {
-	readonly current: Dimensions
-	readonly isLoaded: boolean
-	observe: (target: HTMLElement) => void
+	style: Partial<CSSStyleDeclaration>
+	resize: Action<Element, ResizeConfig | undefined, ResizeAttributes>
+	onResized: (event: CustomEvent<ResizeDetail>) => void
 }
 
-export const MIN_DIMENSIONS: Dimensions = { width: 240, height: 320 }
-
-export const useResizable = (name: () => string): Context => {
+export const useResizable = (name: () => string, minDimensions: () => Vector2Like): Context => {
 	const key = $derived(`${name()}-resizable`)
 
-	let dimensions = $state.raw<Dimensions>(MIN_DIMENSIONS)
-	let loaded = $state(false)
-	let observer: ResizeObserver | undefined
+	let dimensions = new PersistedState<Vector2Like | undefined>(key, undefined)
+	let loaded = false
 
 	$effect(() => {
-		get(key).then((saved: Dimensions | undefined) => {
-			if (saved) {
-				dimensions = saved
-			}
-			loaded = true
-		})
-	})
-
-	const observe = (target: HTMLElement) => {
-		// Disconnect previous observer if any
-		observer?.disconnect()
-
-		observer = new ResizeObserver((entries) => {
-			const entry = entries[0]
-			if (!entry) return
-
-			const next = {
-				width: Math.max(entry.contentRect.width, MIN_DIMENSIONS.width),
-				height: Math.max(entry.contentRect.height, MIN_DIMENSIONS.height),
-			}
-
-			set(key, next)
-		})
-
-		observer.observe(target)
-	}
-
-	$effect(() => {
-		return () => {
-			observer?.disconnect()
+		if (dimensions.current) {
+			get(key).then((saved) => {
+				if (saved) {
+					dimensions.current = saved
+				}
+				loaded = true
+			})
 		}
 	})
 
+	const onResized = (event: CustomEvent<ResizeDetail>) => {
+		if (!loaded) return
+		const { width, height } = event.detail.entry.contentRect
+		set(key, { x: Math.max(width, minDimensions().x), y: Math.max(height, minDimensions().y) })
+	}
+
 	return {
-		get current() {
-			return dimensions
+		get style() {
+			return {
+				minWidth: `${minDimensions().x}px`,
+				minHeight: `${minDimensions().y}px`,
+				width: `${dimensions.current?.x ?? minDimensions().x}px`,
+				height: `${dimensions.current?.y ?? minDimensions().y}px`,
+			}
 		},
-		get isLoaded() {
-			return loaded
-		},
-		observe,
+		resize,
+		onResized,
 	}
 }
