@@ -1,7 +1,7 @@
 import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
 import { BatchedMesh, Color, MathUtils, Vector3, type BufferGeometry } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
-import { createPose, matrixToPose, poseToMatrix } from './transform'
+import { createPose } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
@@ -194,18 +194,4 @@ export const fromTransform = (transform: TransformWithUUID) => {
 	)
 	worldObject.uuid = transform.uuidString
 	return worldObject
-}
-
-export const determinePose = (object: WorldObject, pose: Pose | undefined): Pose => {
-	if (pose === undefined) {
-		return object.localEditedPose
-	} else {
-		const poseNetwork = poseToMatrix(object.pose)
-		const poseUsePose = poseToMatrix(pose)
-		const poseLocalEditedPose = poseToMatrix(object.localEditedPose)
-
-		const poseNetworkInverse = poseNetwork.invert()
-		const resultMatrix = poseUsePose.multiply(poseNetworkInverse).multiply(poseLocalEditedPose)
-		return matrixToPose(resultMatrix)
-	}
 }

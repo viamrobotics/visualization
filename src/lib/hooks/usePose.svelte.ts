@@ -1,6 +1,6 @@
 import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
 import { usePartID } from './usePartID.svelte'
-import { MotionClient, Transform } from '@viamrobotics/sdk'
+import { MotionClient, Pose, Transform } from '@viamrobotics/sdk'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
@@ -13,6 +13,7 @@ import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
+	const environment = useEnvironment()
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
@@ -24,8 +25,8 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 
 	const resource = $derived(currentName ? resourceByName.current[currentName] : undefined)
 	const parentResource = $derived(currentParent ? resourceByName.current[currentParent] : undefined)
-	const environment = useEnvironment()
 	const frames = useFrames()
+	let pose = $state<Pose | undefined>(undefined)
 
 	const client = createResourceClient(
 		MotionClient,
@@ -43,10 +44,16 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 		'getPose',
 		() => [currentName, resolvedParent ?? 'world', []] as [string, string, Transform[]],
 		() => ({
-			enabled: interval !== RefetchRates.OFF,
+			enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
 		})
 	)
+
+	$effect(() => {
+		if (environment.current.viewerMode === 'monitor') {
+			pose = query.data?.pose
+		}
+	})
 
 	$effect(() => addQueryToRefetch(query))
 
@@ -76,7 +83,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 			if (resource?.subtype === 'arm') {
 				return
 			}
-			return query.data?.pose
+			return pose
 		},
 	}
 }

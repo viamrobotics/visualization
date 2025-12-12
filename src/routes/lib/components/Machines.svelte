@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Button from '$lib/components/dashboard/Button.svelte'
-	import Portal from '$lib/components/portal/Portal.svelte'
 	import { Icon } from '@viamrobotics/prime-core'
 	import {
 		useConnectionConfigs,
@@ -37,18 +36,16 @@
 
 <svelte:window {onpaste} />
 
-<Portal id="dashboard">
-	<fieldset>
-		<Button
-			active
-			icon="robot-outline"
-			description="Machine connection configs"
-			onclick={() => {
-				isOpen = true
-			}}
-		/>
-	</fieldset>
-</Portal>
+<fieldset>
+	<Button
+		active
+		icon="robot-outline"
+		description="Machine connection configs"
+		onclick={() => {
+			isOpen = true
+		}}
+	/>
+</fieldset>
 
 {#if isOpen}
 	<div class="fixed top-0 left-0 z-1010 flex h-full w-full items-center justify-center">

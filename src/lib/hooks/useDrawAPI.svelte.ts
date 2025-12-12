@@ -1,35 +1,25 @@
 import { getContext, setContext } from 'svelte'
-import { Color, MathUtils, Quaternion, Vector3, Vector4 } from 'three'
-import type { OBB } from 'three/addons/math/OBB.js'
+import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { UuidTool } from 'uuid-tool'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { WorldObject, type PointsGeometry } from '$lib/WorldObject.svelte'
-import { useArrows } from './useArrows.svelte'
 import type { Frame } from '$lib/frame'
-import { createGeometry } from '$lib/geometry'
 import { createPose, createPoseFromFrame } from '$lib/transform'
 import { useCameraControls } from './useControls.svelte'
+import { useWorld, traits } from '$lib/ecs'
 import { useThrelte } from '@threlte/core'
-import { OrientationVector } from '$lib/three/OrientationVector'
+import { type ConfigurableTrait, type Entity } from 'koota'
+import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+
+const colorUtil = new Color()
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
 interface Context {
-	points: WorldObject<PointsGeometry>[]
-	frames: WorldObject[]
-	lines: WorldObject[]
-	meshes: WorldObject[]
-	poses: WorldObject[]
-	nurbs: WorldObject[]
-	models: WorldObject[]
-
 	connectionStatus: ConnectionStatus
-
-	addPoints(worldObject: WorldObject<PointsGeometry>): void
-	addMesh(worldObject: WorldObject): void
 }
 
 const bufferTypes = {
@@ -39,10 +29,6 @@ const bufferTypes = {
 	DRAW_PCD: 3,
 	DRAW_GLTF: 4,
 } as const
-
-const axis = new Vector3()
-const quaternion = new Quaternion()
-const ov = new OrientationVector()
 
 const key = Symbol('draw-api-context-key')
 
@@ -75,30 +61,30 @@ class Float32Reader {
 	littleEndian = true
 	offset = 0
 	buffer = new ArrayBuffer()
+	array = new Float32Array()
 	view = new DataView(this.buffer)
 	header = { requestID: '', type: -1 }
 
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
-		this.header = {
-			requestID: UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))]),
-			type: new DataView(this.buffer).getFloat32(16, true),
-		}
+		this.header.requestID = UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))])
+		this.header.type = new Float32Array(this.buffer.slice(16, 20))[0]
 
-		// Slice away the request header and leave the body
 		this.buffer = this.buffer.slice(20)
-		this.view = new DataView(this.buffer)
+		this.array = new Float32Array(this.buffer)
+
 		return this
 	}
 
 	read() {
-		const result = this.view.getFloat32(this.offset, this.littleEndian)
-		this.offset += 4
+		const result = this.array[this.offset]
+		this.offset += 1
 		return result
 	}
 }
 
 export const provideDrawAPI = () => {
+	const world = useWorld()
 	const logs = useLogs()
 	const cameraControls = useCameraControls()
 	const { invalidate } = useThrelte()
@@ -113,201 +99,194 @@ export const provideDrawAPI = () => {
 
 	let ws: WebSocket
 
-	const frames = $state<WorldObject[]>([])
-	const points = $state<WorldObject<PointsGeometry>[]>([])
-	const lines = $state<WorldObject[]>([])
-	const meshes = $state<WorldObject[]>([])
-	const poses = $state<WorldObject[]>([])
-	const nurbs = $state<WorldObject[]>([])
-	const models = $state<WorldObject[]>([])
-
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
-	const color = new Color()
 	const direction = new Vector3()
 	const origin = new Vector3()
 	const loader = new GLTFLoader()
-
-	const batchedArrow = useArrows()
+	const entities = new Map<string, Entity>()
 
 	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
 		ws.send(JSON.stringify(response))
 	}
 
 	const drawFrames = async (data: Frame[]) => {
-		for (const frame of data) {
-			const name = frame.name || frame.id || ''
+		for (const rawFrame of data) {
+			const frame = lowercaseKeys(rawFrame) as Frame
+			const pose = createPoseFromFrame(frame)
+			const name = frame.name ?? frame.id ?? ''
+			const parent = frame.parent
 
-			const pose = createPoseFromFrame(lowercaseKeys(frame))
+			const existing = entities.get(name)
 
-			const geometry = createGeometry()
+			if (existing) {
+				existing.set(traits.Pose, pose)
 
-			if (frame.geometry?.type === 'box') {
-				geometry.label = `${name} geometry (box)`
-				geometry.geometryType.case = 'box'
-				geometry.geometryType.value = {
-					dimsMm: { x: frame.geometry.x, y: frame.geometry.y, z: frame.geometry.z },
+				if (parent && parent !== 'world') {
+					existing.set(traits.Parent, parent)
 				}
-			} else if (frame.geometry?.type === 'sphere') {
-				geometry.label = `${name} geometry (sphere)`
-				geometry.geometryType.case = 'sphere'
-				geometry.geometryType.value = { radiusMm: frame.geometry.r }
-			} else if (frame.geometry?.type === 'capsule') {
-				geometry.label = `${name} geometry (capsule)`
-				geometry.geometryType.case = 'capsule'
-				geometry.geometryType.value = { lengthMm: frame.geometry.l, radiusMm: frame.geometry.r }
+
+				continue
 			}
 
-			const worldObject = new WorldObject(
-				name,
-				pose,
-				frame.parent ?? 'world',
-				frame.geometry ? geometry : undefined
-			)
+			const geometryTrait = () => {
+				if (frame.geometry?.type === 'box') {
+					return traits.Box(frame.geometry)
+				} else if (frame.geometry?.type === 'sphere') {
+					return traits.Sphere(frame.geometry)
+				} else if (frame.geometry?.type === 'capsule') {
+					return traits.Capsule(frame.geometry)
+				}
 
-			frames.push(worldObject)
+				return traits.ReferenceFrame
+			}
+
+			const entityTraits: ConfigurableTrait[] = []
+
+			if (parent && parent !== 'world') {
+				entityTraits.push(traits.Parent(parent))
+			}
+
+			if (frame.geometry) {
+				entityTraits.push(geometryTrait())
+			}
+
+			entityTraits.push(traits.Name(name), traits.Pose(pose), traits.DrawAPI, traits.ReferenceFrame)
+
+			const entity = world.spawn(...entityTraits)
+
+			entities.set(name, entity)
 		}
 	}
 
 	const drawPCD = async (buffer: ArrayBuffer) => {
 		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
 
-		points.push(
-			new WorldObject(
-				`points ${++pointsIndex}`,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'points',
-						value: positions,
-					},
-				},
-				colors ? { colors } : undefined
-			)
+		const entity = world.spawn(
+			traits.Name(`Points ${++pointsIndex}`),
+			traits.PointsGeometry(positions),
+			traits.DrawAPI
 		)
+
+		if (colors) {
+			entity.add(traits.VertexColors(colors as Float32Array<ArrayBuffer>))
+		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
-		const result = meshes.find((mesh) => mesh.name === data.label)
+		const name = data.label ?? `geometry ${++geometryIndex}`
+		const pose = createPose(data.center)
+		const existing = entities.get(name)
 
-		if (result) {
-			result.pose = createPose(data.center)
+		if (existing) {
+			existing.set(traits.Pose, pose)
 			return
 		}
 
-		const geometry = createGeometry()
+		const geometryTrait = () => {
+			if ('mesh' in data) {
+				const geometry = parsePlyInput(data.mesh.mesh)
+				return traits.BufferGeometry(geometry)
+			} else if ('box' in data) {
+				return traits.Box(createBox(data.box))
+			} else if ('sphere' in data) {
+				return traits.Sphere(createSphere(data.sphere))
+			} else if ('capsule' in data) {
+				return traits.Capsule(createCapsule(data.capsule))
+			}
 
-		if ('mesh' in data) {
-			geometry.geometryType.case = 'mesh'
-			geometry.geometryType.value = data.mesh
-		} else if ('box' in data) {
-			geometry.geometryType.case = 'box'
-			geometry.geometryType.value = data.box
-		} else if ('sphere' in data) {
-			geometry.geometryType.case = 'sphere'
-			geometry.geometryType.value = data.sphere
-		} else if ('capsule' in data) {
-			geometry.geometryType.case = 'capsule'
-			geometry.geometryType.value = data.capsule
+			return traits.ReferenceFrame
 		}
 
-		const object = new WorldObject(
-			data.label ?? ++geometryIndex,
-			createPose(data.center),
-			parent,
-			geometry,
-			{
-				color: new Color(color),
-			}
+		const entityTraits: ConfigurableTrait[] = []
+
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent(parent))
+		}
+
+		entityTraits.push(
+			traits.Name(data.label ?? ++geometryIndex),
+			traits.Pose(pose),
+			traits.Color(colorUtil.set(color)),
+			geometryTrait(),
+			traits.DrawAPI
 		)
 
-		meshes.push(object)
+		const entity = world.spawn(...entityTraits)
+
+		entities.set(name, entity)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawNurbs = (data: any, color: string) => {
-		const index = nurbs.findIndex(({ name }) => name === data.name)
-		if (index !== -1) {
-			nurbs.splice(index, 1)
-		}
+		const name = data.Name
+		const existing = entities.get(name)
 
 		const controlPoints = data.ControlPts.map(
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
-		const object = new WorldObject(
-			data.name,
-			data.pose,
-			data.parent,
-			{ center: undefined, geometryType: { case: 'line', value: new Float32Array() } },
-			{ color: new Color(color), points: curve.getPoints(200) }
+		const points = curve.getPoints(200)
+
+		if (existing) {
+			existing.set(traits.LineGeometry, points)
+			return
+		}
+
+		const entity = world.spawn(
+			traits.Name(name),
+			traits.Color(colorUtil.set(color)),
+			traits.LineGeometry(points),
+			traits.DrawAPI
 		)
 
-		nurbs.push(object)
+		entities.set(name, entity)
 	}
 
+	const vec3 = new Vector3()
+	const pose = createPose()
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
+
 		const arrowHeadAtPose = reader.read()
 
-		// Read positions
-		const nextPoses = new Float32Array(nPoints * 6)
-		for (let i = 0; i < nPoints * 6; i++) {
-			nextPoses[i] = reader.read()
-		}
+		const entities: Entity[] = []
 
-		// Read raw colors
-		const colors = new Float32Array(nColors * 3)
-		for (let i = 0; i < nColors * 3; i++) {
-			colors[i] = reader.read()
-		}
+		for (let i = 0; i < nPoints; i += 1) {
+			origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
+			direction.set(reader.read(), reader.read(), reader.read())
 
-		const length = 0.1
+			if (arrowHeadAtPose === 1) {
+				// Compute the base position so the arrow ends at the origin
+				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 0.1))
+			}
 
-		for (let i = 0, j = 0, l = nextPoses.length; i < l; i += 6, j += 3) {
-			origin.set(nextPoses[i], nextPoses[i + 1], nextPoses[i + 2]).multiplyScalar(0.001)
-			direction.set(nextPoses[i + 3], nextPoses[i + 4], nextPoses[i + 5])
-
-			color.set(colors[j], colors[j + 1], colors[j + 2])
-
-			const arrowId = batchedArrow.addArrow(direction, origin, length, color, arrowHeadAtPose === 1)
-			const pose = createPose()
 			pose.x = origin.x
 			pose.y = origin.y
 			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
 
-			if (direction.y > 0.99999) {
-				quaternion.set(0, 0, 0, 1)
-			} else if (direction.y < -0.99999) {
-				quaternion.set(1, 0, 0, 0)
-			} else {
-				axis.set(direction.z, 0, -direction.x).normalize()
-				const radians = Math.acos(direction.y)
-				quaternion.setFromAxisAngle(axis, radians)
-			}
-
-			ov.setFromQuaternion(quaternion)
-			pose.oX = ov.x
-			pose.oY = ov.y
-			pose.oZ = ov.z
-			pose.theta = MathUtils.radToDeg(ov.th)
-
-			poses.push(
-				new WorldObject(`pose ${++poseIndex}`, pose, 'world', undefined, {
-					getBoundingBoxAt(box3: OBB) {
-						return batchedArrow.getBoundingBoxAt(arrowId, box3)
-					},
-					batched: {
-						id: arrowId,
-						object: batchedArrow.object3d,
-					},
-				})
+			const entity = world.spawn(
+				traits.Name(`Pose ${++poseIndex}`),
+				traits.Pose(pose),
+				traits.Instance,
+				traits.Color,
+				traits.Arrow,
+				traits.DrawAPI
 			)
+
+			entities.push(entity)
+		}
+
+		for (let i = 0; i < nColors; i += 1) {
+			const entity = entities[i]
+			colorUtil.set(reader.read(), reader.read(), reader.read())
+			entity.set(traits.Color, colorUtil)
 		}
 	}
 
@@ -319,10 +298,9 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const index = points.findIndex(({ name }) => name === label)
-		if (index !== -1) {
-			points.splice(index, 1)
-		}
+		const entities = world.query(traits.DrawAPI)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+		entity?.destroy()
 
 		// Read counts
 		const nPoints = reader.read()
@@ -333,60 +311,32 @@ export const provideDrawAPI = () => {
 		const g = reader.read()
 		const b = reader.read()
 
-		// Read positions
-		const positions = new Float32Array(nPoints * 3)
-		for (let i = 0; i < nPoints * 3; i++) {
-			positions[i] = reader.read()
+		const nPointsElements = nPoints * 3
+		const positions = reader.array.slice(reader.offset, reader.offset + nPointsElements)
+		reader.offset += nPointsElements
+
+		const nColorsElements = nColors * 3
+		const rawColors = reader.array.slice(reader.offset, reader.offset + nColorsElements)
+		reader.offset += nColorsElements
+
+		const colors = new Float32Array(nPointsElements)
+		colors.set(rawColors)
+
+		// Cover the gap for any points not colored
+		for (let i = nColors; i < nPoints; i++) {
+			const offset = i * 3
+
+			colors[offset] = r
+			colors[offset + 1] = g
+			colors[offset + 2] = b
 		}
 
-		const getColors = () => {
-			// Read raw colors
-			const rawColors = new Float32Array(nColors * 3)
-			for (let i = 0; i < nColors * 3; i++) {
-				rawColors[i] = reader.read()
-			}
-
-			const colors = new Float32Array(nPoints * 3)
-			colors.set(rawColors)
-
-			// Cover the gap for any points not colored
-			for (let i = nColors; i < nPoints; i++) {
-				const offset = i * 3
-
-				colors[offset] = r
-				colors[offset + 1] = g
-				colors[offset + 2] = b
-			}
-
-			return colors
-		}
-
-		const metadata =
-			nColors > 0
-				? {
-						colors: getColors(),
-						color: new Color(r, g, b).convertLinearToSRGB(),
-					}
-				: r === -1
-					? undefined
-					: {
-							color: new Color(r, g, b).convertLinearToSRGB(),
-						}
-
-		points.push(
-			new WorldObject(
-				label,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'points',
-						value: positions,
-					},
-				},
-				metadata
-			)
+		world.spawn(
+			traits.Name(label),
+			traits.Color(colorUtil.set(r, g, b)),
+			traits.PointsGeometry(positions),
+			traits.VertexColors(colors),
+			traits.DrawAPI
 		)
 	}
 
@@ -398,52 +348,34 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const index = lines.findIndex(({ name }) => name === label)
-		if (index !== -1) {
-			lines.splice(index, 1)
-		}
+		const entities = world.query(traits.DrawAPI)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+		entity?.destroy()
 
 		// Read counts
 		const nPoints = reader.read()
 
 		// Read default color
-		const lineR = reader.read()
-		const lineG = reader.read()
-		const lineB = reader.read()
+		const r = reader.read()
+		const g = reader.read()
+		const b = reader.read()
 
 		const dotR = reader.read()
 		const dotG = reader.read()
 		const dotB = reader.read()
 
 		// Read positions
-		const positions = new Float32Array(nPoints * 3)
-		for (let i = 0; i < nPoints * 3; i++) {
-			positions[i] = reader.read()
+		const points: Vector3[] = []
+		for (let i = 0; i < nPoints * 3; i += 3) {
+			points.push(new Vector3(reader.read(), reader.read(), reader.read()))
 		}
 
-		const points = []
-		for (let i = 0; i < positions.length; i += 3) {
-			points.push(new Vector3(positions[i], positions[i + 1], positions[i + 2]))
-		}
-
-		lines.push(
-			new WorldObject(
-				label,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'line',
-						value: positions,
-					},
-				},
-				{
-					points,
-					color: lineR === -1 ? undefined : new Color().setRGB(lineR, lineG, lineB),
-					lineDotColor: dotR === -1 ? undefined : new Color().setRGB(dotR, dotG, dotB),
-				}
-			)
+		world.spawn(
+			traits.Name(label),
+			traits.Color({ r, g, b }),
+			traits.LineGeometry(points),
+			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
+			traits.DrawAPI
 		)
 	}
 
@@ -460,81 +392,26 @@ export const provideDrawAPI = () => {
 		const blob = new Blob([buffer], { type: 'model/gltf-binary' })
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
-		models.push(new WorldObject(gltf.scene.name, undefined, undefined, undefined, { gltf }))
+
+		world.spawn(traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
+
 		URL.revokeObjectURL(url)
 	}
 
 	const remove = (names: string[]) => {
-		let index = -1
-
 		for (const name of names) {
-			index = frames.findIndex((frame) => frame.name === name)
-
-			if (index !== -1) {
-				frames.slice(index, 1)
-				continue
-			}
-
-			index = points.findIndex((p) => p.name === name)
-
-			if (index !== -1) {
-				points.splice(index, 1)
-				continue
-			}
-
-			index = meshes.findIndex((m) => m.name === name)
-
-			if (index !== -1) {
-				meshes.splice(index, 1)
-				continue
-			}
-
-			index = poses.findIndex((p) => p.name === name)
-
-			if (index !== -1) {
-				const id = poses[index].metadata.batched?.id
-
-				if (id) {
-					batchedArrow.removeArrow(id)
-					poses.splice(index, 1)
-					continue
+			for (const entity of world.query(traits.DrawAPI)) {
+				if (entity.get(traits.Name) === name) {
+					entity.destroy()
 				}
-			}
-
-			index = nurbs.findIndex((n) => n.name === name)
-
-			if (index !== -1) {
-				nurbs.splice(index, 1)
-				continue
-			}
-
-			index = models.findIndex((m) => m.name === name)
-
-			if (index !== -1) {
-				models.splice(index, 1)
-				continue
-			}
-
-			index = lines.findIndex((m) => m.name === name)
-
-			if (index !== -1) {
-				lines.splice(index, 1)
-				continue
 			}
 		}
 	}
 
 	const removeAll = () => {
-		frames.splice(0, frames.length)
-		points.splice(0, points.length)
-		lines.splice(0, lines.length)
-		meshes.splice(0, meshes.length)
-
-		nurbs.splice(0, nurbs.length)
-		models.splice(0, models.length)
-
-		poses.splice(0, poses.length)
-		batchedArrow.clear()
+		for (const entity of world.query(traits.DrawAPI)) {
+			entity.destroy()
+		}
 
 		pointsIndex = 0
 		geometryIndex = 0
@@ -679,35 +556,8 @@ export const provideDrawAPI = () => {
 	connect()
 
 	setContext<Context>(key, {
-		get frames() {
-			return frames
-		},
-		get points() {
-			return points
-		},
-		get lines() {
-			return lines
-		},
-		get meshes() {
-			return meshes
-		},
-		get poses() {
-			return poses
-		},
-		get nurbs() {
-			return nurbs
-		},
-		get models() {
-			return models
-		},
 		get connectionStatus() {
 			return connectionStatus
-		},
-		addPoints(worldObject: WorldObject<PointsGeometry>) {
-			points.push(worldObject)
-		},
-		addMesh(worldObject: WorldObject) {
-			meshes.push(worldObject)
 		},
 	})
 }

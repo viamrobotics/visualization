@@ -15,9 +15,8 @@
 	import { useTask } from '@threlte/core'
 	import { Button, Icon, Select, Input } from '@viamrobotics/prime-core'
 	import {
-		useSelectedObject,
-		useFocusedObject,
-		useFocused,
+		useSelectedEntity,
+		useFocusedEntity,
 		useFocusedObject3d,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
@@ -26,48 +25,61 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { traits, useTrait } from '$lib/ecs'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 
 	const { ...rest } = $props()
 
-	const focused = useFocused()
-	const focusedObject = useFocusedObject()
-	const focusedObject3d = useFocusedObject3d()
+	const resourceByName = useResourceByName()
 	const frames = useFrames()
 	const partConfig = usePartConfig()
-	const selectedObject = useSelectedObject()
+	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 	const environment = useEnvironment()
-	const object = $derived(focusedObject.current ?? selectedObject.current)
+	const focusedEntity = useFocusedEntity()
+	const focusedObject3d = useFocusedObject3d()
+	const entity = $derived(focusedEntity.current ?? selectedEntity.current)
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
-	let geometryType = $derived.by(
-		() =>
-			(object?.geometry?.geometryType.case as 'none' | 'box' | 'sphere' | 'capsule' | undefined) ??
-			'none'
-	)
 
-	const localPose = $derived(object?.localEditedPose)
-	const referenceFrame = $derived(object?.referenceFrame ?? 'world')
-	const isFrameNode = $derived(
-		frames.current.find((frame) => frame.name === object?.name) !== undefined
-	)
+	const name = useTrait(() => entity, traits.Name)
+	const parent = useTrait(() => entity, traits.Parent)
+	const localPose = useTrait(() => entity, traits.EditedPose)
+	const box = useTrait(() => entity, traits.Box)
+	const sphere = useTrait(() => entity, traits.Sphere)
+	const capsule = useTrait(() => entity, traits.Capsule)
+
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const isFrameNode = $derived(!!framesAPI.current)
+
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
+
+	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
+
+	let geometryType = $derived.by<'box' | 'sphere' | 'capsule' | 'none'>(() => {
+		if (box.current) return 'box'
+		if (sphere.current) return 'sphere'
+		if (capsule.current) return 'capsule'
+		return 'none'
+	})
+
 	let copied = $state(false)
 
-	const draggable = useDraggable('details')
+	const draggable = useDraggable(() => 'details')
 
-	const detailConfigUpdater = new FrameConfigUpdater(
-		() => object,
-		partConfig.updateFrame,
-		partConfig.deleteFrame,
-		() => referenceFrame
-	)
+	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
-		if (type === geometryType) return
+		if (type === geometryType) {
+			return
+		}
+
 		geometryType = type
-		detailConfigUpdater.setGeometryType(type)
+
+		if (entity) {
+			detailConfigUpdater.setGeometryType(entity, type)
+		}
 	}
 
 	const { start, stop } = useTask(
@@ -109,24 +121,37 @@
 				worldPosition: worldPosition,
 				worldOrientation: worldOrientation,
 				localPosition: {
-					x: localPose?.x,
-					y: localPose?.y,
-					z: localPose?.z,
+					x: localPose.current?.x,
+					y: localPose.current?.y,
+					z: localPose.current?.z,
 				},
 				localOrientation: {
-					x: localPose?.oX,
-					y: localPose?.oY,
-					z: localPose?.oZ,
-					th: localPose?.theta,
+					x: localPose.current?.oX,
+					y: localPose.current?.oY,
+					z: localPose.current?.oZ,
+					th: localPose.current?.theta,
 				},
 				geometry: {
 					type: geometryType,
-					value: object?.geometry?.geometryType.value,
+					value: box.current ?? capsule.current ?? sphere.current,
 				},
-				parentFrame: referenceFrame,
+				parentFrame: parent.current ?? 'world',
 			},
 			null,
 			2
+		)
+	}
+
+	const isIntermediateInput = (input: string) => {
+		if (input === '0') return false
+
+		return (
+			input.startsWith('0') ||
+			input.startsWith('.') ||
+			input.startsWith('-0') ||
+			input.startsWith('-.') ||
+			(input.includes('.') && input.endsWith('0')) ||
+			input.endsWith('.')
 		)
 	}
 </script>
@@ -137,7 +162,7 @@
 	ariaLabel,
 }: {
 	label?: string
-	value: string
+	value?: number | string
 	ariaLabel: string
 })}
 	<div>
@@ -148,7 +173,7 @@
 			{label}
 		</span>
 
-		{value}
+		{typeof value === 'number' ? value.toFixed(2) : (value ?? '-')}
 	</div>
 {/snippet}
 
@@ -159,16 +184,14 @@
 	onInput,
 }: {
 	label: string
-	value: string
+	value?: number
 	ariaLabel: string
 	onInput: (value: string) => void
 })}
 	<div class="flex items-center gap-1">
 		<span class="text-subtle-2">{label}</span>
 		<Input
-			type="number"
 			aria-label={`mutable ${ariaLabel}`}
-			class="max-w-24 min-w-0 flex-1 rounded border px-1 py-0.5 text-xs"
 			{value}
 			on:input={(event) => onInput((event.target as HTMLInputElement).value)}
 		/>
@@ -199,8 +222,9 @@
 	</Select>
 {/snippet}
 
-{#if object}
+{#if entity}
 	{@const ParentFrame = showEditFrameOptions ? DropDownField : ImmutableField}
+	{@const ScalarAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 
 	<div
 		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {showEditFrameOptions
@@ -217,7 +241,8 @@
 				>
 					<Icon name="drag" />
 				</button>
-				{object.name}
+				<strong>{name.current}</strong>
+				<span class="text-subtle-2">{resourceName?.subtype}</span>
 			</div>
 		</div>
 
@@ -247,20 +272,20 @@
 		<div class="flex flex-col gap-2.5">
 			<div>
 				<strong class="font-semibold">world position</strong>
-				<span class="text-subtle-2">(m)</span>
+				<span class="text-subtle-2">(mm)</span>
 
 				<div class="flex gap-3">
 					<div>
 						<span class="text-subtle-2">x</span>
-						{worldPosition.x.toFixed(2)}
+						{(worldPosition.x * 1000).toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">y</span>
-						{worldPosition.y.toFixed(2)}
+						{(worldPosition.y * 1000).toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">z</span>
-						{worldPosition.z.toFixed(2)}
+						{(worldPosition.z * 1000).toFixed(2)}
 					</div>
 				</div>
 			</div>
@@ -290,40 +315,50 @@
 
 			<div>
 				<strong class="font-semibold">parent frame</strong>
-				<div class="flex gap-3">
+				<div class="mt-0.5 flex gap-3">
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
-						value: referenceFrame,
-						options: frames.getParentFrameOptions(object?.name ?? ''),
-						onChange: (value) => detailConfigUpdater.setFrameParent(value),
+						value: parent.current ?? 'world',
+						options: frames.getParentFrameOptions(name.current ?? ''),
+						onChange: (value) => {
+							detailConfigUpdater.setFrameParent(entity, value)
+						},
 					})}
 				</div>
 			</div>
 
-			{#if localPose}
-				{@const PoseAttribute = showEditFrameOptions ? MutableField : ImmutableField}
+			{#if localPose.current}
 				<div>
 					<strong class="font-semibold">local position</strong>
-					<span class="text-subtle-2">(m)</span>
+					<span class="text-subtle-2">(mm)</span>
 
-					<div class="flex gap-3">
-						{@render PoseAttribute({
+					<div class="mt-0.5 flex gap-3">
+						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local position x coordinate',
-							value: localPose.x.toFixed(2),
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ x: parseFloat(value) }),
+							value: localPose.current.x,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { x: Number.parseFloat(value) })
+							},
 						})}
-						{@render PoseAttribute({
+						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local position y coordinate',
-							value: localPose.y.toFixed(2),
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ y: parseFloat(value) }),
+							value: localPose.current.y,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { y: Number.parseFloat(value) })
+							},
 						})}
-						{@render PoseAttribute({
+						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local position z coordinate',
-							value: localPose.z.toFixed(2),
-							onInput: (value) => detailConfigUpdater.updateLocalPosition({ z: parseFloat(value) }),
+							value: localPose.current.z,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalPosition(entity, { z: Number.parseFloat(value) })
+							},
 						})}
 					</div>
 				</div>
@@ -331,34 +366,44 @@
 				<div>
 					<strong class="font-semibold">local orientation</strong>
 					<span class="text-subtle-2">(deg)</span>
-					<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'}">
-						{@render PoseAttribute({
+					<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'} mt-0.5">
+						{@render ScalarAttribute({
 							label: 'x',
 							ariaLabel: 'local orientation x coordinate',
-							value: localPose.oX.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oX: parseFloat(value) }),
+							value: localPose.current?.oX,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oX: Number.parseFloat(value) })
+							},
 						})}
-						{@render PoseAttribute({
+						{@render ScalarAttribute({
 							label: 'y',
 							ariaLabel: 'local orientation y coordinate',
-							value: localPose.oY.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oY: parseFloat(value) }),
+							value: localPose.current?.oY,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oY: Number.parseFloat(value) })
+							},
 						})}
-						{@render PoseAttribute({
+						{@render ScalarAttribute({
 							label: 'z',
 							ariaLabel: 'local orientation z coordinate',
-							value: localPose.oZ.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ oZ: parseFloat(value) }),
+							value: localPose.current?.oZ,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, { oZ: Number.parseFloat(value) })
+							},
 						})}
-						{@render PoseAttribute({
+						{@render ScalarAttribute({
 							label: 'th',
 							ariaLabel: 'local orientation theta degrees',
-							value: localPose.theta.toFixed(2),
-							onInput: (value) =>
-								detailConfigUpdater.updateLocalOrientation({ theta: parseFloat(value) }),
+							value: localPose.current?.theta,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateLocalOrientation(entity, {
+									theta: Number.parseFloat(value),
+								})
+							},
 						})}
 					</div>
 				</div>
@@ -367,7 +412,7 @@
 			{#if showEditFrameOptions}
 				<div>
 					<strong class="font-semibold">geometry</strong>
-					<div class="grid grid-cols-4 gap-1">
+					<div class="mt-0.5 grid grid-cols-4 gap-1">
 						<Button
 							variant={geometryType === 'none' ? 'dark' : 'primary'}
 							class="h-6 px-2 py-1 text-xs"
@@ -399,93 +444,110 @@
 					</div>
 				</div>
 			{/if}
-			{#if geometryType !== 'none'}
-				{@const GeometryAttribute = showEditFrameOptions ? MutableField : ImmutableField}
-				{#if geometryType === 'box'}
-					{@const { dimsMm } = object?.geometry?.geometryType.value as {
-						dimsMm: { x: number; y: number; z: number }
-					}}
-					<div>
-						<strong class="font-semibold"> dimensions </strong>
-						<span class="text-subtle-2">(box)</span>
-						<div class="flex items-center gap-2">
-							{@render GeometryAttribute({
-								label: 'x',
-								ariaLabel: 'box dimensions x value input',
-								value: dimsMm?.x ? dimsMm.x.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'box', x: parseFloat(value) }),
-							})}
-							{@render GeometryAttribute({
-								label: 'y',
-								ariaLabel: 'box dimensions y value input',
-								value: dimsMm?.y ? dimsMm.y.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'box', y: parseFloat(value) }),
-							})}
-							{@render GeometryAttribute({
-								label: 'z',
-								ariaLabel: 'box dimensions z value input',
-								value: dimsMm?.z ? dimsMm.z.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'box', z: parseFloat(value) }),
-							})}
-						</div>
+
+			{#if box.current}
+				<div>
+					<strong class="font-semibold"> dimensions </strong>
+					<span class="text-subtle-2">(box) (mm)</span>
+					<div class="mt-0.5 flex items-center gap-2">
+						{@render ScalarAttribute({
+							label: 'x',
+							ariaLabel: 'box dimensions x value input',
+							value: box.current.x,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									x: Number.parseFloat(value),
+								})
+							},
+						})}
+						{@render ScalarAttribute({
+							label: 'y',
+							ariaLabel: 'box dimensions y value input',
+							value: box.current.y,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									y: Number.parseFloat(value),
+								})
+							},
+						})}
+						{@render ScalarAttribute({
+							label: 'z',
+							ariaLabel: 'box dimensions z value input',
+							value: box.current.z,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'box',
+									z: Number.parseFloat(value),
+								})
+							},
+						})}
 					</div>
-				{/if}
-				{#if geometryType === 'capsule'}
-					{@const { radiusMm, lengthMm } = object?.geometry?.geometryType.value as {
-						radiusMm: number
-						lengthMm: number
-					}}
-					<div>
-						<strong class="font-semibold">dimensions</strong>
-						<span class="text-subtle-2">(capsule)</span>
-						<div class="flex items-center gap-2">
-							{@render GeometryAttribute({
-								label: 'r',
-								ariaLabel: 'capsule dimensions radius value input',
-								value: radiusMm ? radiusMm.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'capsule', r: parseFloat(value) }),
-							})}
-							{@render GeometryAttribute({
-								label: 'l',
-								ariaLabel: 'capsule dimensions length value input',
-								value: lengthMm ? lengthMm.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'capsule', l: parseFloat(value) }),
-							})}
-						</div>
+				</div>
+			{:else if capsule.current}
+				<div>
+					<strong class="font-semibold">dimensions</strong>
+					<span class="text-subtle-2">(capsule) (mm)</span>
+					<div class="mt-0.5 flex items-center gap-2">
+						{@render ScalarAttribute({
+							label: 'r',
+							ariaLabel: 'capsule dimensions radius value input',
+							value: capsule.current.r,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'capsule',
+									r: Number.parseFloat(value),
+								})
+							},
+						})}
+						{@render ScalarAttribute({
+							label: 'l',
+							ariaLabel: 'capsule dimensions length value input',
+							value: capsule.current.l,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'capsule',
+									l: Number.parseFloat(value),
+								})
+							},
+						})}
 					</div>
-				{/if}
-				{#if geometryType === 'sphere'}
-					{@const { radiusMm } = object?.geometry?.geometryType.value as { radiusMm: number }}
-					<div>
-						<strong class="font-semibold">dimensions</strong>
-						<span class="text-subtle-2">(sphere)</span>
-						<div class="flex items-center gap-2">
-							{@render GeometryAttribute({
-								label: 'r',
-								ariaLabel: 'sphere dimensions radius value',
-								value: radiusMm ? radiusMm.toFixed(2) : '-',
-								onInput: (value) =>
-									detailConfigUpdater.updateGeometry({ type: 'sphere', r: parseFloat(value) }),
-							})}
-						</div>
+				</div>
+			{:else if sphere.current}
+				<div>
+					<strong class="font-semibold">dimensions (sphere)</strong>
+					<div class="flex items-center gap-2">
+						{@render ScalarAttribute({
+							label: 'r',
+							ariaLabel: 'sphere dimensions radius value',
+							value: sphere.current.r,
+							onInput: (value) => {
+								if (isIntermediateInput(value)) return
+								detailConfigUpdater.updateGeometry(entity, {
+									type: 'sphere',
+									r: Number.parseFloat(value),
+								})
+							},
+						})}
 					</div>
-				{/if}
+				</div>
 			{/if}
 		</div>
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
-		{#if focused.current}
+		{#if focusedEntity.current}
 			<Button
 				class="w-full"
 				icon="arrow-left"
 				variant="dark"
-				onclick={() => focused.set()}
+				onclick={() => focusedEntity.set()}
 			>
 				Exit object view
 			</Button>
@@ -493,7 +555,7 @@
 			<Button
 				class="w-full"
 				icon="image-filter-center-focus"
-				onclick={() => focused.set(object.uuid)}
+				onclick={() => focusedEntity.set(entity)}
 			>
 				Enter object view
 			</Button>
@@ -503,8 +565,10 @@
 			<Button
 				variant="danger"
 				class="mt-2 w-full"
-				onclick={() => detailConfigUpdater.deleteFrame()}>Delete frame</Button
+				onclick={() => detailConfigUpdater.deleteFrame(entity)}
 			>
+				Delete frame
+			</Button>
 		{/if}
 	</div>
 {/if}

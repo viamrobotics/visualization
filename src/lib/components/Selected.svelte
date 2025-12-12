@@ -1,19 +1,23 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import { useSelectedObject, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
+	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
 	import { OBB } from 'three/addons/math/OBB.js'
+	import { traits, useTrait } from '$lib/ecs'
+	import { BatchedMesh, Box3 } from 'three'
 
+	const box3 = new Box3()
 	const obb = new OBB()
 	const obbHelper = new OBBHelper()
 
-	const { invalidate } = useThrelte()
-	const selected = useSelectedObject()
+	const { scene, invalidate } = useThrelte()
+	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
+	const instance = useTrait(() => selectedEntity.current, traits.Instance)
 
 	// Create a clone so that our bounding box doesn't include children
 	const clone = $derived.by(() => {
-		if (selected.current?.metadata.batched) {
+		if (instance.current) {
 			return
 		}
 
@@ -22,12 +26,14 @@
 
 	const { start, stop } = useTask(
 		() => {
-			if (selected.current === undefined) {
+			if (selectedEntity.current === undefined) {
 				return
 			}
 
-			if (selected.current.metadata.batched) {
-				selected.current.metadata.getBoundingBoxAt?.(obb)
+			if (instance.current) {
+				const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
+				mesh?.getBoundingBoxAt(instance.current.instanceID, box3)
+				obb.fromBox3(box3)
 				obbHelper.setFromOBB(obb)
 				invalidate()
 				return
@@ -47,21 +53,21 @@
 	)
 
 	$effect.pre(() => {
-		if (selected.current) {
+		if (selectedEntity.current) {
 			start()
-			obbHelper.visible = true
 		} else {
 			stop()
-
-			obbHelper.visible = false
 		}
 
 		invalidate()
 	})
 </script>
 
-<T
-	is={obbHelper}
-	raycast={() => null}
-	bvh={{ enabled: false }}
-/>
+{#if selectedEntity.current}
+	<T
+		is={obbHelper}
+		dispose={false}
+		raycast={() => null}
+		bvh={{ enabled: false }}
+	/>
+{/if}

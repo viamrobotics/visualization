@@ -1,14 +1,19 @@
 <script lang="ts">
+	import type { Entity } from 'koota'
 	import { usePortalContext } from './usePortalContext.svelte'
+	import { traits, useTrait } from '$lib/ecs'
 
 	interface Props {
 		id?: string
+		entity?: Entity
 	}
 
-	let { id = 'default' }: Props = $props()
+	let { id, entity }: Props = $props()
 
+	const name = useTrait(() => entity, traits.Name)
+	const resolvedId = $derived(id ?? name.current ?? 'world')
 	const portals = usePortalContext()
-	const childrenArray = $derived(portals.get(id))
+	const childrenArray = $derived(portals.get(resolvedId))
 </script>
 
 {#if childrenArray !== undefined}

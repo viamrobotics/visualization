@@ -1,19 +1,25 @@
 import { useCursor, type IntersectionEvent } from '@threlte/extras'
-import { useFocused, useSelected } from './useSelection.svelte'
+import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
+import type { Entity } from 'koota'
 
-export const useObjectEvents = (uuid: () => string) => {
-	const selected = useSelected()
-	const focused = useFocused()
+export const useObjectEvents = (entity: () => Entity | undefined) => {
+	const selectedEntity = useSelectedEntity()
+	const focusedEntity = useFocusedEntity()
 	const visibility = useVisibility()
 	const down = new Vector2()
+	const currentEntity = $derived(entity())
 
 	const cursor = useCursor()
 
 	return {
 		get visible() {
-			return visibility.get(uuid())
+			if (!currentEntity) {
+				return true
+			}
+
+			return visibility.get(currentEntity) ?? true
 		},
 		onpointerenter: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
@@ -25,7 +31,7 @@ export const useObjectEvents = (uuid: () => string) => {
 		},
 		ondblclick: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
-			focused.set(uuid())
+			focusedEntity.set(currentEntity)
 		},
 		onpointerdown: (event: IntersectionEvent<MouseEvent>) => {
 			down.copy(event.pointer)
@@ -34,7 +40,7 @@ export const useObjectEvents = (uuid: () => string) => {
 			event.stopPropagation()
 
 			if (down.distanceToSquared(event.pointer) < 0.1) {
-				selected.set(uuid())
+				selectedEntity.set(currentEntity)
 			}
 		},
 	}

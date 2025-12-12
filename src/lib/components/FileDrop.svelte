@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
-	import { parsePcdInWorker, WorldObject } from '$lib/lib'
+	import { traits, useWorld } from '$lib/ecs'
+	import { parsePcdInWorker } from '$lib/lib'
 	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
 	import { PLYLoader } from 'three/examples/jsm/Addons.js'
 
 	let { ...rest } = $props()
 
-	const { addPoints, addMesh } = useDrawAPI()
+	const world = useWorld()
 
 	type DropStates = 'inactive' | 'hovering' | 'loading'
 
@@ -102,31 +102,17 @@
 				if (ext === extensions.PCD) {
 					const result = await parsePcdInWorker(new Uint8Array(arrayBuffer))
 
-					addPoints(
-						new WorldObject(
-							file.name,
-							undefined,
-							undefined,
-							{
-								center: undefined,
-								geometryType: {
-									case: 'points',
-									value: result.positions,
-								},
-							},
-							result.colors ? { colors: result.colors } : undefined
-						)
+					world.spawn(
+						traits.Name(file.name),
+						traits.PointsGeometry(result.positions),
+						result.colors ? traits.VertexColors(result.colors) : traits.Color
 					)
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				} else if (ext === extensions.PLY) {
-					const result = new PLYLoader().parse(arrayBuffer)
-					const worldObject = new WorldObject(file.name, undefined, undefined, {
-						center: undefined,
-						geometryType: { case: 'bufferGeometry', value: result },
-					})
+					const bufferGeometry = new PLYLoader().parse(arrayBuffer)
 
-					addMesh(worldObject)
+					world.spawn(traits.Name(file.name), traits.BufferGeometry(bufferGeometry))
 
 					toast({ message: `Loaded ${file.name}`, variant: ToastVariant.Success })
 				}

@@ -3,7 +3,7 @@
 	import { useTask } from '@threlte/core'
 	import type { CameraControlsRef } from '@threlte/extras'
 	import { PressedKeys } from 'runed'
-	import { useFocused } from '$lib/hooks/useSelection.svelte'
+	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	interface Props {
@@ -12,7 +12,7 @@
 
 	let { cameraControls }: Props = $props()
 
-	const focus = useFocused()
+	const focusedEntity = useFocusedEntity()
 	const settings = useSettings()
 
 	const keys = new PressedKeys()
@@ -93,7 +93,7 @@
 
 	keys.onKeys('escape', () => {
 		if (keys.has('escape')) {
-			focus.set(undefined)
+			focusedEntity.set()
 		}
 	})
 

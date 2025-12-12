@@ -1,18 +1,32 @@
+<script
+	module
+	lang="ts"
+>
+	let index = 0
+</script>
+
 <script lang="ts">
 	import { TransformControls } from '@threlte/extras'
-	import { useSelected } from '$lib/hooks/useSelection.svelte'
-	import { useStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { PressedKeys } from 'runed'
-	import { quaternionToPose, scaleToDimensions, vector3ToPose } from '$lib/transform'
+	import { quaternionToPose, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
 	import Frame from './Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useWorld, traits } from '$lib/ecs'
+	import type { Entity } from 'koota'
+	import { SvelteSet } from 'svelte/reactivity'
 
+	const world = useWorld()
 	const settings = useSettings()
 	const transformControls = useTransformControls()
-	const geometries = useStaticGeometries()
-	const selected = useSelected()
+	const selectedEntity = useSelectedEntity()
+
+	const entities = new SvelteSet<Entity>()
+	const selectedCustomGeometry = $derived(
+		[...entities].find((entity) => entity === selectedEntity.current)
+	)
 
 	const mode = $derived(settings.current.transformMode)
 
@@ -21,26 +35,33 @@
 
 	const keys = new PressedKeys()
 
-	keys.onKeys('=', () => geometries.add())
-	keys.onKeys('-', () => geometries.remove(selected.current ?? ''))
+	keys.onKeys('=', () => {
+		const entity = world.spawn(
+			traits.Name(`custom geometry ${++index}`),
+			traits.Pose,
+			traits.Box({ x: 0.1, y: 0.1, z: 0.1 })
+		)
+
+		entities.add(entity)
+	})
+
+	keys.onKeys('-', () => {
+		if (selectedCustomGeometry) {
+			selectedCustomGeometry.destroy()
+			entities.delete(selectedCustomGeometry)
+			selectedEntity.set()
+		}
+	})
 
 	$effect(() => {
-		settings.current.transforming = geometries.current.some(
-			(geometry) => selected.current === geometry.uuid
-		)
+		settings.current.transforming = selectedCustomGeometry !== undefined
 	})
 </script>
 
-{#each geometries.current as object (object.uuid)}
-	<Frame
-		uuid={object.uuid}
-		name={object.name}
-		pose={object.pose}
-		geometry={object.geometry}
-		metadata={object.metadata}
-	>
+{#each entities as entity (entity)}
+	<Frame {entity}>
 		{#snippet children({ ref })}
-			{#if selected.current === object.uuid}
+			{#if selectedEntity.current === entity}
 				{#key mode}
 					<TransformControls
 						object={ref}
@@ -54,17 +75,20 @@
 						onmouseUp={() => {
 							transformControls.setActive(false)
 
-							if (mode === 'translate') {
-								vector3ToPose(ref.getWorldPosition(vector3), object.pose)
-							} else if (mode === 'rotate') {
-								quaternionToPose(ref.getWorldQuaternion(quaternion), object.pose)
+							const pose = entity.get(traits.Pose)
+							const box = entity.get(traits.Box)
+
+							if (pose && mode === 'translate') {
+								vector3ToPose(ref.getWorldPosition(vector3), pose)
+								entity.set(traits.Pose, pose)
+							} else if (pose && mode === 'rotate') {
+								quaternionToPose(ref.getWorldQuaternion(quaternion), pose)
 								ref.quaternion.copy(quaternion)
-							} else if (mode === 'scale' && object.geometry?.geometryType.case === 'box') {
-								scaleToDimensions(ref.scale, object.geometry.geometryType)
+								entity.set(traits.Pose, pose)
+							} else if (box && mode === 'scale') {
+								entity.set(traits.Box, ref.scale)
 								ref.scale.setScalar(1)
 							}
-
-							object.pose = { ...object.pose }
 						}}
 					/>
 				{/key}

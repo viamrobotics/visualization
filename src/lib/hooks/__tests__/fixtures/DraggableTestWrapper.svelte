@@ -7,7 +7,7 @@
 
 	let { name }: Props = $props()
 
-	const draggable = useDraggable(name)
+	const draggable = useDraggable(() => name)
 </script>
 
 <div data-testid="status">

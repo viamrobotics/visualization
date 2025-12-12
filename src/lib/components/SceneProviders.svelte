@@ -5,7 +5,6 @@
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
-	import { provideStaticGeometries } from '$lib/hooks/useStaticGeometries.svelte'
 	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
@@ -14,13 +13,11 @@
 		provideTransformControls,
 		type CameraPose,
 	} from '$lib/hooks/useControls.svelte'
-	import { provideObjects } from '$lib/hooks/useObjects.svelte'
 	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
 	import { provideOrigin } from './xr/useOrigin.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { provideArrows } from '$lib/hooks/useArrows.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
@@ -40,9 +37,7 @@
 	provideMachineSettings()
 	provideLogs()
 
-	provideArrows()
 	provideOrigin()
-	provideStaticGeometries()
 	provideDrawAPI()
 
 	provideResourceByName(() => partID.current)
@@ -52,7 +47,6 @@
 	providePointclouds(() => partID.current)
 	provideMotionClient(() => partID.current)
 	provideArmClient(() => partID.current)
-	provideObjects()
 	provideWorldStates()
 	provideFramelessComponents()
 

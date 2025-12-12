@@ -1,4 +1,4 @@
-import type { Geometry, Pose } from '@viamrobotics/sdk'
+import type { Pose } from '@viamrobotics/sdk'
 import { OrientationVector } from './three/OrientationVector'
 import { type Object3D, Euler, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import type { Frame } from './frame'
@@ -98,20 +98,6 @@ export const poseToObject3d = (pose: Partial<Pose>, object3d: Object3D) => {
 export const poseToDirection = (pose: Pose): Vector3 => {
 	ov.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta))
 	return new Vector3(ov.x, ov.y, ov.z)
-}
-
-export const scaleToDimensions = (scale: Vector3, geometry: Geometry['geometryType']) => {
-	if (geometry.case === 'box') {
-		geometry.value.dimsMm ??= { x: 0, y: 0, z: 0 }
-		geometry.value.dimsMm.x *= scale.x
-		geometry.value.dimsMm.y *= scale.y
-		geometry.value.dimsMm.z *= scale.z
-	} else if (geometry.case === 'capsule') {
-		geometry.value.radiusMm *= scale.x
-		geometry.value.lengthMm *= scale.y
-	} else if (geometry.case === 'sphere') {
-		geometry.value.radiusMm *= scale.x
-	}
 }
 
 export const poseToMatrix = (pose: Pose) => {

@@ -46,7 +46,7 @@
 		bind:ref={controls}
 		target={center}
 	>
-		<Gizmo />
+		<Gizmo placement="bottom-right" />
 	</TrackballControls>
 </Camera>
 

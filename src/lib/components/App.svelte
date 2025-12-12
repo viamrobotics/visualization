@@ -21,6 +21,7 @@
 	import ArmPositions from './widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import type { CameraPose } from '$lib/hooks/useControls.svelte'
+	import { provideWorld } from '$lib/ecs'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -33,6 +34,7 @@
 		partID?: string
 		enableKeybindings?: boolean
 		children?: Snippet
+		dashboard?: Snippet
 		localConfigProps?: LocalConfigProps
 
 		/**
@@ -44,10 +46,13 @@
 	let {
 		partID = '',
 		enableKeybindings = true,
-		children: appChildren,
 		localConfigProps,
 		cameraPose,
+		children: appChildren,
+		dashboard,
 	}: Props = $props()
+
+	provideWorld()
 
 	const appClient = useViamClient()
 	const settings = provideSettings()
@@ -102,7 +107,10 @@
 
 				<XR {@attach domPortal(root)} />
 
-				<Dashboard {@attach domPortal(root)} />
+				<Dashboard
+					{@attach domPortal(root)}
+					{dashboard}
+				/>
 				<Details {@attach domPortal(root)} />
 				{#if environment.current.isStandalone}
 					<LiveUpdatesBanner {@attach domPortal(root)} />

@@ -1,8 +1,8 @@
 import {
 	WorldStateStoreClient,
 	TransformChangeType,
+	type TransformChangeEvent,
 	type TransformWithUUID,
-	ResourceName,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -10,70 +10,151 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { fromTransform } from '$lib/WorldObject.svelte'
+import { parseMetadata } from '$lib/WorldObject.svelte'
 import { usePartID } from './usePartID.svelte'
-import { setInUnsafe } from '@thi.ng/paths'
-import type { ProcessMessage } from '$lib/world-state-messages'
-import { getContext, setContext } from 'svelte'
+import { traits, useWorld } from '$lib/ecs'
+import type { ConfigurableTrait, Entity } from 'koota'
+import { createPose } from '$lib/transform'
+import { useThrelte } from '@threlte/core'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePlyInput } from '$lib/ply'
 
-const key = Symbol('world-state-context')
-
-interface Context {
-	names: ResourceName[]
-	current: Record<string, ReturnType<typeof createWorldState>>
+export type ChangeMessage = {
+	type: 'change'
+	events: TransformChangeEvent[]
 }
 
-const worker = new Worker(new URL('../workers/worldStateWorker', import.meta.url), {
-	type: 'module',
-})
+export type TransformEvent = TransformChangeEvent & {
+	transform: TransformWithUUID
+}
 
 export const provideWorldStates = () => {
 	const partID = usePartID()
 	const resourceNames = useResourceNames(() => partID.current, 'world_state_store')
-	const current = $derived.by(() =>
-		Object.fromEntries(
-			resourceNames.current.map(({ name }) => [
-				name,
-				createWorldState(
-					() => partID.current,
-					() => name
-				),
-			])
+	const clients = $derived(
+		resourceNames.current.map(({ name }) =>
+			createResourceClient(
+				WorldStateStoreClient,
+				() => partID.current,
+				() => name
+			)
 		)
 	)
 
-	setContext<Context>(key, {
-		get names() {
-			return resourceNames.current
-		},
-		get current() {
-			return current
-		},
+	$effect(() => {
+		const cleanups: (() => void)[] = []
+
+		for (const client of clients) {
+			cleanups.push(createWorldState(client))
+		}
+
+		return () => {
+			for (const cleanup of cleanups) {
+				cleanup()
+			}
+		}
 	})
 }
 
-export const useWorldStates = () => {
-	return getContext<Context>(key)
-}
+const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
+	const { invalidate } = useThrelte()
+	const world = useWorld()
 
-export const useWorldState = (resourceName: () => string) => {
-	return useWorldStates().current[resourceName()]
-}
+	const entities = new Map<string, Entity>()
 
-const createWorldState = (partID: () => string, resourceName: () => string) => {
-	const client = createResourceClient(WorldStateStoreClient, partID, resourceName)
+	const spawnEntity = (transform: TransformWithUUID) => {
+		if (entities.has(transform.uuidString)) {
+			return
+		}
+		const metadata = parseMetadata(transform.metadata?.fields)
+		const pose = createPose(transform.poseInObserverFrame?.pose)
 
-	let initialized = $state(false)
-	let transforms = $state.raw<Record<string, TransformWithUUID>>({})
+		const entityTraits: ConfigurableTrait[] = []
 
-	const transformsList = $derived.by(() => Object.values(transforms))
-	const worldObjectsList = $derived.by(() => transformsList.map(fromTransform))
+		const parent = transform.poseInObserverFrame?.referenceFrame
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent(parent))
+		}
 
-	let pendingEvents: ProcessMessage['events'] = []
+		if (metadata.color) {
+			entityTraits.push(traits.Color(metadata.color))
+		}
+
+		if (metadata.colors) {
+			entityTraits.push(traits.VertexColors(metadata.colors))
+		}
+
+		if (transform.physicalObject) {
+			entityTraits.push(traits.Geometry(transform.physicalObject))
+		}
+
+		if (metadata.shape === 'line' && metadata.points) {
+			entityTraits.push(
+				traits.LineGeometry(metadata.points),
+				traits.DottedLineColor(metadata.lineDotColor)
+			)
+		}
+
+		if (metadata.gltf) {
+			entityTraits.push(traits.GLTF(metadata.gltf))
+		}
+
+		if (metadata.shape === 'arrow') {
+			entityTraits.push(traits.Arrow, traits.Instance)
+		}
+
+		entityTraits.push(
+			traits.Name(transform.referenceFrame),
+			traits.Pose(pose),
+			traits.WorldStateStoreAPI
+		)
+
+		const entity = world.spawn(...entityTraits)
+
+		entities.set(transform.uuidString, entity)
+	}
+
+	const destroyEntity = (uuid: string) => {
+		const entity = entities.get(uuid)
+
+		if (!entity) return
+
+		entity.destroy()
+		entities.delete(uuid)
+	}
+
+	const updateEntity = (transform: TransformWithUUID, changes: (string | number)[]) => {
+		const entity = entities.get(transform.uuidString)
+
+		if (!entity) return
+
+		for (const path of changes) {
+			if (typeof path === 'string') {
+				if (path.startsWith('poseInObserverFrame.pose')) {
+					entity.set(traits.Pose, transform.poseInObserverFrame?.pose ?? createPose())
+				} else if (path.startsWith('physicalObject') && transform.physicalObject) {
+					const { geometryType } = transform.physicalObject
+
+					if (geometryType.case === 'box') {
+						entity.set(traits.Box, createBox(geometryType.value))
+					} else if (geometryType.case === 'capsule') {
+						entity.set(traits.Capsule, createCapsule(geometryType.value))
+					} else if (geometryType.case === 'sphere') {
+						entity.set(traits.Sphere, createSphere(geometryType.value))
+					} else if (geometryType.case === 'mesh') {
+						entity.set(traits.BufferGeometry, parsePlyInput(geometryType.value.mesh))
+					}
+				}
+			}
+		}
+	}
+
+	let initialized = false
 	let flushScheduled = false
+	let pendingEvents: TransformEvent[] = []
 
 	const listUUIDs = createResourceQuery(client, 'listUUIDs')
-	const getTransforms = $derived(
+	const getTransformQueries = $derived(
 		listUUIDs.data?.map((uuid) => {
 			return createResourceQuery(
 				client,
@@ -88,44 +169,20 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 		refetchMode: 'replace',
 	})
 
-	const initialize = (initial: TransformWithUUID[]) => {
-		const next = { ...transforms }
-		for (const transform of initial) {
-			next[transform.uuidString] = transform
-		}
-
-		transforms = next
-		initialized = true
-	}
-
-	const applyEvents = (events: ProcessMessage['events']) => {
-		if (events.length === 0) return
-
-		const next = { ...transforms }
+	const applyEvents = (events: TransformEvent[]) => {
 		for (const event of events) {
-			switch (event.type) {
-				case TransformChangeType.ADDED:
-					next[event.uuidString] = event.transform
-					break
-				case TransformChangeType.REMOVED:
-					delete next[event.uuidString]
-					break
-				case TransformChangeType.UPDATED: {
-					if (event.changes.length === 0) continue
-
-					let toUpdate = next[event.uuidString]
-					if (!toUpdate) continue
-					for (const [path, value] of event.changes) {
-						toUpdate = setInUnsafe(toUpdate, path, value)
-					}
-
-					next[event.uuidString] = toUpdate
-					break
-				}
+			if (event.changeType === TransformChangeType.ADDED) {
+				spawnEntity(event.transform)
+			} else if (event.changeType === TransformChangeType.REMOVED) {
+				destroyEntity(event.transform.uuidString)
+			} else if (event.changeType === TransformChangeType.UPDATED) {
+				updateEntity(event.transform, event.updatedFields?.paths ?? [])
+			} else {
+				console.error('Unspecified change type.', event)
 			}
 		}
 
-		transforms = next
+		invalidate()
 	}
 
 	const scheduleFlush = () => {
@@ -134,7 +191,6 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 
 		requestAnimationFrame(() => {
 			const toApply = pendingEvents
-			if (toApply.length === 0) return
 
 			applyEvents(toApply)
 			flushScheduled = false
@@ -143,59 +199,80 @@ const createWorldState = (partID: () => string, resourceName: () => string) => {
 	}
 
 	$effect(() => {
-		if (!getTransforms) return
+		if (!getTransformQueries) return
 		if (initialized) return
+		if (getTransformQueries.some((query) => query?.isLoading)) return
 
-		if (getTransforms.some((query) => query?.isLoading)) return
+		const transforms = getTransformQueries
+			.flatMap((query) => query?.data)
+			.filter((transform) => transform !== undefined)
 
-		const data = getTransforms
-			.flatMap((query) => query?.data ?? [])
-			.filter((transform) => transform !== undefined) as TransformWithUUID[]
-		if (data.length === 0) return
+		for (const transform of transforms) {
+			spawnEntity(transform)
+		}
 
-		initialize(data)
+		invalidate()
+		initialized = true
 	})
 
 	$effect(() => {
-		worker.onmessage = (e: MessageEvent<ProcessMessage>) => {
-			if (e.data.type !== 'process') return
-
-			const { events } = e.data ?? { events: [] }
-			if (events.length === 0) return
-
-			pendingEvents.push(...events)
-			scheduleFlush()
-		}
-
-		return () => {
-			worker.terminate()
-		}
-	})
-
-	$effect.pre(() => {
 		if (changeStream?.data === undefined) return
 
-		const events = changeStream.data.filter((event) => event.transform !== undefined)
-		if (events.length === 0) return
+		const eventsByUUID = new Map<string, TransformEvent>()
 
-		worker.postMessage({ type: 'change', events })
+		for (const event of changeStream.data) {
+			if (!event.transform) {
+				continue
+			}
+
+			const uuid = event.transform.uuidString
+			const existing = eventsByUUID.get(uuid)
+			if (!existing) {
+				eventsByUUID.set(uuid, event as TransformEvent)
+				continue
+			}
+
+			switch (event.changeType) {
+				case TransformChangeType.REMOVED:
+					eventsByUUID.set(uuid, event as TransformEvent)
+					break
+
+				case TransformChangeType.ADDED:
+					if (existing.changeType !== TransformChangeType.REMOVED) {
+						eventsByUUID.set(uuid, event as TransformEvent)
+					}
+					break
+
+				case TransformChangeType.UPDATED:
+					// merge with existing updated event
+					if (existing.changeType === TransformChangeType.UPDATED) {
+						existing.updatedFields ??= { paths: [] }
+
+						const paths = event.updatedFields?.paths ?? []
+
+						for (const path of paths) {
+							if (existing.updatedFields.paths.includes(path)) {
+								continue
+							}
+
+							existing.updatedFields.paths.push(path)
+						}
+
+						existing.transform = event.transform
+					} else {
+						eventsByUUID.set(uuid, event as TransformEvent)
+					}
+					break
+			}
+		}
+
+		pendingEvents.push(...eventsByUUID.values())
+		scheduleFlush()
 	})
 
-	return {
-		get name() {
-			return resourceName()
-		},
-		get transforms() {
-			return transformsList
-		},
-		get worldObjects() {
-			return worldObjectsList
-		},
-		get listUUIDs() {
-			return listUUIDs
-		},
-		get getTransforms() {
-			return getTransforms
-		},
+	return () => {
+		for (const [, entity] of entities) {
+			entity.destroy()
+		}
 	}
 }
