@@ -1,5 +1,23 @@
 # motion-tools
 
+## 1.0.0
+
+### Major Changes
+
+- 2205701: Use an ECS for state management
+
+### Minor Changes
+
+- a6be822: Add go draw API
+- f584b66: use draw api for go client
+
+### Patch Changes
+
+- 58f32c5: Make the tree container resizable
+- 785d2ee: Remove edit frame weblab
+- 37ca6bb: Add draw API protos
+- 633db17: Add snapshot API
+
 ## 0.19.2
 
 ### Patch Changes
