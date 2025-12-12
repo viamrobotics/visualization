@@ -1,6 +1,5 @@
 import { $internal as internal, type Entity, type Trait, type World } from 'koota'
 import { useWorld } from './useWorld'
-import { untrack } from 'svelte'
 
 export type AoSFactory = () => unknown
 
