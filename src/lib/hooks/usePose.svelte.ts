@@ -79,7 +79,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	return {
 		get current() {
 			/**
-			 * Do not return the pose of an arm because in this case the pose represents
+			 * Do not return the pose of an arm or gantry because in this case the pose represents
 			 * the end effector frame and not the origin frame
 			 */
 			if (resource?.subtype === 'arm' || resource?.subtype === 'gantry') {
