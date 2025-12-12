@@ -8,7 +8,9 @@ import { LatheGeometry, Path } from 'three'
 export class CapsuleGeometry extends LatheGeometry {
 	override type = 'CapsuleGeometry'
 
-	constructor(radius = 1, length = 1, capSegments = 4, radialSegments = 8) {
+	constructor(r = 1, l = 1, capSegments = 4, radialSegments = 8) {
+		const radius = Math.max(0.0001, r)
+		const length = Math.max(0.0001, l)
 		const path = new Path()
 		const midsectionLength = length - 2 * radius
 

@@ -9,10 +9,9 @@ import { useFileDrop } from '../useFileDrop.svelte'
 describe('useFileDrop', () => {
 	const mockOnError = vi.fn()
 	const mockOnSuccess = vi.fn()
-	const mockAddPoints = vi.fn()
-	const mockAddMesh = vi.fn()
+	const mockSpawn = vi.fn()
 
-	const createFileDrop = () => useFileDrop(mockOnError, mockOnSuccess, mockAddPoints, mockAddMesh)
+	const createFileDrop = () => useFileDrop(mockSpawn, mockOnError, mockOnSuccess)
 
 	// Helper to create a mock DragEvent (jsdom doesn't support DragEvent)
 	const createDragEvent = (

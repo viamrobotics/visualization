@@ -17,15 +17,18 @@ vi.mock('@threlte/core', () => ({
 // Mock selection hooks
 vi.mock('$lib/hooks/useSelection.svelte', () => ({
 	useFocused: vi.fn(() => ({ current: undefined, set: vi.fn() })),
-	useFocusedObject: vi.fn(() => ({ current: undefined })),
+	useFocusedEntity: vi.fn(() => ({ current: undefined })),
 	useFocusedObject3d: vi.fn(() => ({ current: undefined })),
-	useSelectedObject: vi.fn(() => ({ current: undefined })),
+	useSelectedEntity: vi.fn(() => ({ current: undefined })),
 	useSelectedObject3d: vi.fn(() => ({ current: undefined })),
 }))
 
 // Mock useFrames hook
 vi.mock('$lib/hooks/useFrames.svelte', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
+}))
+vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
+	useResourceByName: vi.fn(() => ({ current: {} })),
 }))
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({

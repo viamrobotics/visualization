@@ -3,7 +3,6 @@
 import type { Transform } from '@viamrobotics/sdk'
 import type { ValueOf } from 'type-fest'
 import { UuidTool } from 'uuid-tool'
-
 import { createPoseFromFrame } from './transform'
 import { createGeometryFromFrame } from './geometry'
 

@@ -2,13 +2,13 @@
 	import { BackSide, Mesh, Vector3 } from 'three'
 	import { T, useThrelte } from '@threlte/core'
 	import { MeshDiscardMaterial } from '@threlte/extras'
-	import { useSelected } from '$lib/hooks/useSelection.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const { camera } = useThrelte()
 	const settings = useSettings()
-	const selected = useSelected()
+	const selectedEntity = useSelectedEntity()
 	const transformControls = useTransformControls()
 	const cameraDown = new Vector3()
 
@@ -32,7 +32,7 @@
 			return
 		}
 
-		selected.set()
+		selectedEntity.set()
 	}}
 >
 	<T.BoxGeometry args={[size, size, size]} />

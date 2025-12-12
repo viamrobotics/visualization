@@ -4,6 +4,7 @@ import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import { isArrayBuffer } from 'lodash-es'
 import type { FileDropper, FileDropperOptions } from './file-dropper'
+import { traits } from '$lib/ecs'
 
 export const MESH_EXTENSIONS = {
 	PCD: 'pcd',
@@ -17,41 +18,24 @@ export type MeshExtension = ValueOf<typeof MESH_EXTENSIONS>
 export const onMeshDrop: FileDropper<MeshExtension, undefined> = async (
 	options: FileDropperOptions<MeshExtension, undefined>
 ) => {
-	const { name, extension, result, handlers } = options
+	const { name, extension, result, spawn } = options
 	if (!isArrayBuffer(result)) {
 		return `${name} failed to load.`
-	}
-
-	if (!handlers) {
-		throw new Error('Handlers are required for mesh file drops')
 	}
 
 	switch (extension) {
 		case MESH_EXTENSIONS.PCD: {
 			const message = await parsePcdInWorker(new Uint8Array(result))
-			const points = new WorldObject(
-				name,
-				undefined,
-				undefined,
-				{
-					center: undefined,
-					geometryType: {
-						case: 'points',
-						value: message.positions,
-					},
-				},
-				message.colors ? { colors: message.colors } : undefined
+			spawn(
+				traits.Name(name),
+				traits.PointsGeometry(message.positions),
+				message.colors ? traits.VertexColors(message.colors) : traits.Color
 			)
-			handlers?.addPoints(points)
 			break
 		}
 		case MESH_EXTENSIONS.PLY: {
 			const geometry = new PLYLoader().parse(result)
-			const mesh = new WorldObject(name, undefined, undefined, {
-				center: undefined,
-				geometryType: { case: 'bufferGeometry', value: geometry },
-			})
-			handlers?.addMesh(mesh)
+			spawn(traits.Name(name), traits.BufferGeometry(geometry))
 			break
 		}
 	}

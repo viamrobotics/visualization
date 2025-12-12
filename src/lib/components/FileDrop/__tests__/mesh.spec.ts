@@ -15,6 +15,7 @@ vi.mock('three/examples/jsm/loaders/PLYLoader.js', () => ({
 import * as Subject from '../mesh'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
+import { traits } from '$lib/ecs'
 
 describe('mesh', () => {
 	beforeEach(() => {
@@ -26,20 +27,18 @@ describe('mesh', () => {
 			{ desc: 'string result', result: 'not an arraybuffer' },
 			{ desc: 'null result', result: null },
 		])('returns error for $desc', async ({ result }) => {
-			const addPoints = vi.fn()
-			const addMesh = vi.fn()
+			const spawn = vi.fn()
 
 			const error = await Subject.onMeshDrop({
 				name: 'test.pcd',
 				extension: 'pcd',
 				prefix: undefined,
 				result,
-				handlers: { addPoints, addMesh },
+				spawn,
 			})
 
 			expect(error).toBe('test.pcd failed to load.')
-			expect(addPoints).not.toHaveBeenCalled()
-			expect(addMesh).not.toHaveBeenCalled()
+			expect(spawn).not.toHaveBeenCalled()
 		})
 
 		it('parses PCD file and calls addPoints', async () => {
@@ -51,46 +50,44 @@ describe('mesh', () => {
 				id: 0,
 			})
 
-			const addPoints = vi.fn()
-			const addMesh = vi.fn()
+			const spawn = vi.fn()
 
 			const error = await Subject.onMeshDrop({
 				name: 'test.pcd',
 				extension: 'pcd',
 				prefix: undefined,
 				result: new ArrayBuffer(8),
-				handlers: { addPoints, addMesh },
+				spawn,
 			})
 
 			expect(error).toBeUndefined()
 			expect(parsePcdInWorker).toHaveBeenCalled()
-			expect(addPoints).toHaveBeenCalled()
+			expect(spawn).toHaveBeenCalled()
 
-			const worldObject = addPoints.mock.calls[0][0] as WorldObject<PointsGeometry>
-			expect(worldObject.name).toBe('test.pcd')
-			expect(worldObject.geometry?.geometryType.case).toBe('points')
-			expect(worldObject.metadata?.colors).toBe(mockColors)
+			const [[, name], [, geometry], [, colors]] = spawn.mock.calls[0]
+			expect(name).toBe('test.pcd')
+			expect(geometry).toBe(mockPositions)
+			expect(colors).toBe(mockColors)
 		})
 
 		it('parses PLY file and calls addMesh', async () => {
-			const addPoints = vi.fn()
-			const addMesh = vi.fn()
+			const spawn = vi.fn()
 
 			const error = await Subject.onMeshDrop({
 				name: 'test.ply',
 				extension: 'ply',
 				prefix: undefined,
 				result: new ArrayBuffer(8),
-				handlers: { addPoints, addMesh },
+				spawn,
 			})
 
 			expect(error).toBeUndefined()
 			expect(PLYLoader).toHaveBeenCalled()
-			expect(addMesh).toHaveBeenCalled()
+			expect(spawn).toHaveBeenCalled()
 
-			const worldObject = addMesh.mock.calls[0][0] as WorldObject<ThreeBufferGeometry>
-			expect(worldObject.name).toBe('test.ply')
-			expect(worldObject.geometry?.geometryType.case).toBe('bufferGeometry')
+			const [[, name], [, geometry]] = spawn.mock.calls[0]
+			expect(name).toBe('test.ply')
+			expect(geometry).toBeInstanceOf(BufferGeometry)
 		})
 	})
 })

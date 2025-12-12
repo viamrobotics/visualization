@@ -4,6 +4,7 @@ import { parseFileName, readFile, SUPPORTED_EXTENSIONS, SUPPORTED_PREFIXES } fro
 import { JSON_EXTENSIONS, onJSONDrop } from './json'
 import { MESH_EXTENSIONS, onMeshDrop } from './mesh'
 import { PB_EXTENSIONS, onPBDrop } from './pb'
+import type { World } from 'koota'
 
 export type DropStates = 'inactive' | 'hovering' | 'loading'
 
@@ -28,10 +29,9 @@ const fileDropper = <
 }
 
 export const useFileDrop = (
+	spawn: World['spawn'],
 	onError: (message: string) => void,
-	onSuccess: (message: string) => void,
-	addPoints: (points: WorldObject<PointsGeometry>) => void,
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
+	onSuccess: (message: string) => void
 ) => {
 	let dropState = $state<DropStates>('inactive')
 
@@ -102,7 +102,7 @@ export const useFileDrop = (
 					extension,
 					prefix,
 					result,
-					handlers: { addPoints, addMesh },
+					spawn,
 				})
 
 				if (error) {

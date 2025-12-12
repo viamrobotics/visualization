@@ -5,7 +5,6 @@ import { createArrowGeometry } from './arrow'
 const black = new Color('black')
 const axis = new Vector3()
 const object3d = new Object3D()
-const vec3 = new Vector3()
 const box1 = new Box3()
 const col = new Color()
 
@@ -31,13 +30,7 @@ export class BatchedArrow {
 		this._geometryId = this.mesh.addGeometry(geometry)
 	}
 
-	addArrow(
-		direction: Vector3,
-		origin: Vector3,
-		length = 0.1,
-		color = black,
-		arrowHeadAtPose = true
-	) {
+	addArrow(direction: Vector3, origin: Vector3, color = black) {
 		if (this.mesh.instanceCount >= this._max) {
 			this._max += 20_000
 			this.mesh.setInstanceCount(this._max)
@@ -46,7 +39,7 @@ export class BatchedArrow {
 		const instanceId = this._pool.pop() ?? this.mesh.addInstance(this._geometryId)
 
 		this._ids.add(instanceId)
-		this.updateArrow(instanceId, origin, direction, length, color, arrowHeadAtPose)
+		this.updateArrow(instanceId, origin, direction, color)
 
 		return instanceId
 	}
@@ -71,19 +64,7 @@ export class BatchedArrow {
 		return target
 	}
 
-	updateArrow(
-		instanceId: number,
-		origin: Vector3,
-		direction: Vector3,
-		length: number,
-		color: Color,
-		arrowHeadAtPose: boolean
-	) {
-		if (arrowHeadAtPose) {
-			// Compute the base position so the arrow ends at the origin
-			origin.sub(vec3.copy(direction).multiplyScalar(length))
-		}
-
+	updateArrow(instanceId: number, origin: Vector3, direction: Vector3, color?: Color) {
 		direction.normalize()
 
 		object3d.position.copy(origin)
@@ -103,9 +84,5 @@ export class BatchedArrow {
 		}
 
 		this.mesh.setVisibleAt(instanceId, true)
-	}
-
-	get object3d() {
-		return this.mesh
 	}
 }

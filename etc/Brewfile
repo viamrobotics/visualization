@@ -1,0 +1,12 @@
+# Motion Tools Development Dependencies
+# Install with: brew bundle --file=etc/Brewfile
+
+# Taps
+tap "oven-sh/bun"
+
+# Dependencies
+brew "node@22"
+brew "pnpm"
+brew "bun"
+brew "go"
+brew "buf"

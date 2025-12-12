@@ -1,75 +1,44 @@
-import type { useWorldStates } from '$lib/hooks/useWorldState.svelte'
-import type { WorldObject } from '$lib/WorldObject.svelte'
+import { traits } from '$lib/ecs'
+import type { Entity, QueryResult, Trait } from 'koota'
 
 export interface TreeNode {
-	id: string
-	name: string
+	entity: Entity
 	children?: TreeNode[]
-	href: string
 }
 
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (
-	objects: WorldObject[],
-	worldStates: ReturnType<typeof useWorldStates>['current']
-): TreeNode[] => {
+export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 	const nodeMap = new Map<string, TreeNode>()
-	const rootNodes = []
+	const rootNodes: TreeNode[] = []
+	const childNodes: TreeNode[] = []
 
-	for (const object of objects) {
-		const node: TreeNode = {
-			name: object.name,
-			id: object.uuid,
-			children: [],
-			href: `/selection/${object.name}`,
-		}
+	for (const entity of entities) {
+		const parent = entity.get(traits.Parent)
+		const name = entity.get(traits.Name) ?? ''
+		const node: TreeNode = { entity }
 
-		nodeMap.set(object.name, node)
+		nodeMap.set(name, node)
 
-		if (object.referenceFrame === 'world') {
+		if (!parent || parent === 'world') {
 			rootNodes.push(node)
+		} else {
+			childNodes.push(node)
 		}
 	}
 
-	for (const object of objects) {
-		if (object.referenceFrame && object.referenceFrame !== 'world') {
-			const parentNode = nodeMap.get(object.referenceFrame)
-			const child = nodeMap.get(object.name)
-			if (parentNode && child) {
-				parentNode.children?.push(child)
+	for (const node of childNodes) {
+		const parent = node.entity.get(traits.Parent)
+
+		if (parent) {
+			const parentNode = nodeMap.get(parent)
+
+			if (parentNode) {
+				parentNode.children ??= []
+				parentNode.children?.push(node)
 			}
 		}
-	}
-
-	for (const worldState of Object.values(worldStates)) {
-		const node: TreeNode = {
-			name: worldState.name,
-			id: worldState.name,
-			children: [],
-			href: `/world-state/${worldState.name}`,
-		}
-
-		for (const object of worldState.worldObjects) {
-			const child: TreeNode = {
-				name: object.name,
-				id: object.uuid,
-				children: [],
-				href: `/world-state/${worldState.name}/${object.name}`,
-			}
-
-			const parentNode =
-				object.referenceFrame && nodeMap.has(object.referenceFrame)
-					? nodeMap.get(object.referenceFrame)!
-					: node
-
-			nodeMap.set(object.name, child)
-			parentNode.children?.push(child)
-		}
-
-		nodeMap.set(worldState.name, node)
-		rootNodes.push(node)
 	}
 
 	return rootNodes

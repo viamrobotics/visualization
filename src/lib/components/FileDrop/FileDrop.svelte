@@ -1,18 +1,17 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements'
 	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
-	import { useDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { useFileDrop } from './useFileDrop.svelte'
+	import { useWorld } from '$lib/ecs/useWorld'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 
-	const { addPoints, addMesh } = useDrawAPI()
+	const world = useWorld()
 	const toast = useToast()
 	const fileDrop = useFileDrop(
+		world.spawn,
 		(message: string) => toast({ message, variant: ToastVariant.Danger }),
-		(message: string) => toast({ message, variant: ToastVariant.Success }),
-		addPoints,
-		addMesh
+		(message: string) => toast({ message, variant: ToastVariant.Success })
 	)
 </script>
 

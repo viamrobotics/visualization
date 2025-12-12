@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Subject from '../pb'
 
 describe('pb', () => {
@@ -33,6 +33,7 @@ describe('pb', () => {
 				extension: 'pb',
 				prefix: 'snapshot',
 				result,
+				spawn: vi.fn(),
 			})
 
 			expect(error).toBe(expectedError)
@@ -47,6 +48,7 @@ describe('pb', () => {
 				extension,
 				prefix: 'snapshot',
 				result: new ArrayBuffer(8),
+				spawn: vi.fn(),
 			})
 
 			expect(error).toBeUndefined()

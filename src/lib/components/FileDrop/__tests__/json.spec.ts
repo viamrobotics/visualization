@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Subject from '../json'
 
 describe('json', () => {
@@ -38,6 +38,7 @@ describe('json', () => {
 				extension: 'json',
 				prefix: 'snapshot',
 				result,
+				spawn: vi.fn(),
 			})
 
 			expect(error).toBe(expectedError)
@@ -49,6 +50,7 @@ describe('json', () => {
 				extension: 'json',
 				prefix: 'snapshot',
 				result: '{"key": "value"}',
+				spawn: vi.fn(),
 			})
 
 			expect(error).toBeUndefined()

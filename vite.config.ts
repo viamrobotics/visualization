@@ -29,7 +29,7 @@ export default defineConfig({
 
 	define: {
 		BACKEND_IP: JSON.stringify(localIP),
-		BUN_SERVER_PORT: JSON.stringify(process.env.BUN_SERVER_PORT),
+		WS_PORT: JSON.stringify(process.env.WS_PORT || '3000'),
 	},
 
 	optimizeDeps: {
@@ -43,7 +43,7 @@ export default defineConfig({
 
 	server: {
 		host: true,
-		port: 5173,
+		port: parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
 		cors: true,
 		https: https ? {} : undefined,

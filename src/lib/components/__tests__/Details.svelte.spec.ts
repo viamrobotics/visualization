@@ -5,29 +5,38 @@ import Details from '../Details.svelte'
 import * as useSelection from '$lib/hooks/useSelection.svelte'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
+import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import { Struct } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import { WorldObject } from '$lib/WorldObject.svelte'
-import { createWorldObjectFixture } from './__fixtures__/worldObject.svelte'
+import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
+import { createEntityFixture } from './__fixtures__/entity'
+import { createWorld, type Entity } from 'koota'
+import { resource } from './__fixtures__/resource'
+import { traits } from '$lib/ecs'
 
 describe('Details component', () => {
-	const mockedCurrent: WorldObject[] = []
+	const world = createWorld()
+
+	let entity: Entity
 
 	beforeEach(() => {
 		// Mock the selection hooks to return test data
+		world.reset()
 
-		const object = createWorldObjectFixture()
+		entity = createEntityFixture(world)
 
-		vi.mocked(useSelection.useFocusedObject).mockReturnValue({ current: object })
+		vi.mocked(useSelection.useFocusedEntity).mockReturnValue({ current: entity, set: () => {} })
 
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
 			current: undefined,
 		})
-
+		vi.mocked(useResourceByName.useResourceByName).mockReturnValue({
+			current: {},
+		})
 		vi.mocked(useFrames.useFrames).mockReturnValue({
-			current: mockedCurrent,
 			getParentFrameOptions: vi.fn(),
+			current: [],
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct(),
@@ -44,11 +53,16 @@ describe('Details component', () => {
 
 	it('renders object name', () => {
 		const context = createWeblabs()
-		render(Details, { context: new Map([[WEBLABS_CONTEXT_KEY, context]]) })
+		render(Details, {
+			context: new Map<symbol, unknown>([
+				[WEBLABS_CONTEXT_KEY, context],
+				[WORLD_CONTEXT_KEY, world],
+			]),
+		})
 		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
-	it('renders local details under weblab active', () => {
+	it('renders local details', () => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 		const environmentContext = createEnvironment()
@@ -56,6 +70,7 @@ describe('Details component', () => {
 		const context = new Map<symbol, unknown>([
 			[WEBLABS_CONTEXT_KEY, weblabContext],
 			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
+			[WORLD_CONTEXT_KEY, world],
 		])
 
 		render(Details, { context })
@@ -99,30 +114,17 @@ describe('Details component', () => {
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
 	})
 
-	it('renders update fields for frame nodes and weblab active', () => {
+	it('renders update fields for frame nodes', () => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = true
 
-		mockedCurrent.push(createWorldObjectFixture())
+		entity.add(traits.FramesAPI)
+
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
 			localPartConfig: new Struct().fromJson({
-				components: [
-					{
-						name: 'Test Object',
-						frame: {
-							parent: 'parent_frame',
-							translation: { x: 10, y: 20, z: 30 },
-							geometry: {
-								type: 'box',
-								x: 10,
-								y: 20,
-								z: 30,
-							},
-						},
-					},
-				],
+				components: [resource],
 			}),
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
@@ -137,6 +139,7 @@ describe('Details component', () => {
 		const context = new Map<symbol, unknown>([
 			[WEBLABS_CONTEXT_KEY, weblabContext],
 			[ENVIRONMENT_CONTEXT_KEY, environmentContext],
+			[WORLD_CONTEXT_KEY, world],
 		])
 
 		render(Details, { context })

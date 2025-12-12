@@ -8,9 +8,9 @@
 	import Portal from './portal/Portal.svelte'
 	import DotSprite from './DotSprite.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
-	import { useFocused } from '$lib/hooks/useSelection.svelte'
+	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
 
-	const focus = useFocused()
+	const focusedEntity = useFocusedEntity()
 	const settings = useSettings()
 
 	const htmlPosition = new Vector3()
@@ -31,6 +31,7 @@
 
 	onmove((event) => {
 		intersection = event.intersections[0]
+		console.log(intersection)
 	})
 
 	onclick(() => {
@@ -55,7 +56,7 @@
 
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		;(focus.current, enabled)
+		;(focusedEntity.current, enabled)
 		untrack(() => clear())
 	})
 </script>

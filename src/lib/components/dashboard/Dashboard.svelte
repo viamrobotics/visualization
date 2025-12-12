@@ -3,7 +3,7 @@
 	import PortalTarget from '../portal/PortalTarget.svelte'
 	import Button from './Button.svelte'
 
-	let { ...rest } = $props()
+	let { dashboard, ...rest } = $props()
 
 	const settings = useSettings()
 </script>
@@ -83,4 +83,6 @@
 	{/if}
 
 	<PortalTarget id="dashboard" />
+
+	{@render dashboard?.()}
 </div>

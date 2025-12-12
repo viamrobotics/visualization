@@ -35,8 +35,6 @@
 	let isMachinesPageOpen = $state(false)
 </script>
 
-<Machines bind:isOpen={isMachinesPageOpen} />
-
 <ViamProvider
 	config={{
 		defaultOptions: {
@@ -61,6 +59,10 @@
 				enableKeybindings={!isMachinesPageOpen}
 			>
 				{@render children()}
+
+				{#snippet dashboard()}
+					<Machines bind:isOpen={isMachinesPageOpen} />
+				{/snippet}
 			</MotionTools>
 		</ViamAppProvider>
 	{:else}
@@ -69,6 +71,10 @@
 			enableKeybindings={!isMachinesPageOpen}
 		>
 			{@render children()}
+
+			{#snippet dashboard()}
+				<Machines bind:isOpen={isMachinesPageOpen} />
+			{/snippet}
 		</MotionTools>
 	{/if}
 </ViamProvider>

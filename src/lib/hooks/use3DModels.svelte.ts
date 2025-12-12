@@ -21,7 +21,7 @@ interface Context {
 export const provide3DModels = (partID: () => string) => {
 	const weblabs = useWeblabs()
 	const settings = useSettings()
-	const current = $state.raw<Record<string, Record<string, Group>>>({})
+	let current = $state.raw<Record<string, Record<string, Group>>>({})
 
 	const arms = useResourceNames(partID, 'arm')
 	const armClients = $derived(
@@ -35,6 +35,7 @@ export const provide3DModels = (partID: () => string) => {
 
 	$effect(() => {
 		const fetch3DModels = async () => {
+			const next: Record<string, Record<string, Group>> = {}
 			for (const client of clients) {
 				if (!client.current) continue
 				try {
@@ -45,8 +46,8 @@ export const provide3DModels = (partID: () => string) => {
 					const geometryLabel = geometries[0].label
 					const prefix = geometryLabel.split(':')[0]
 					const models = await client.current.get3DModels()
-					if (!(prefix in current)) {
-						current[prefix] = {}
+					if (!(prefix in next)) {
+						next[prefix] = {}
 					}
 					for (const [id, model] of Object.entries(models)) {
 						const arrayBuffer = model.mesh.buffer.slice(
@@ -54,8 +55,9 @@ export const provide3DModels = (partID: () => string) => {
 							model.mesh.byteOffset + model.mesh.byteLength
 						)
 						const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
-						current[prefix][id] = gltfModel.scene
+						next[prefix][id] = gltfModel.scene
 					}
+					current = next
 				} catch (error) {
 					// some arms may not implement this api yet
 					console.warn(`${client.current.name} returned an error: ${error} when getting 3D models`)

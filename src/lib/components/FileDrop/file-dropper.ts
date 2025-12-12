@@ -1,16 +1,11 @@
-import type { PointsGeometry, ThreeBufferGeometry, WorldObject } from '$lib/WorldObject.svelte'
-
-export interface FileDropperHandlers {
-	addPoints: (points: WorldObject<PointsGeometry>) => void
-	addMesh: (mesh: WorldObject<ThreeBufferGeometry>) => void
-}
+import type { World } from 'koota'
 
 export interface FileDropperOptions<Extension, Prefix> {
 	name: string
 	extension: Extension
 	prefix: Prefix
 	result: string | ArrayBuffer | null | undefined
-	handlers?: FileDropperHandlers
+	spawn: World['spawn']
 }
 
 export type FileDropper<

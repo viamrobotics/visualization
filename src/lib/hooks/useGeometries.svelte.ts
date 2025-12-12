@@ -1,29 +1,34 @@
 import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
+import { setContext, getContext } from 'svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { setContext, getContext } from 'svelte'
-import { useMachineSettings, RefreshRates } from './useMachineSettings.svelte'
-import { WorldObject } from '$lib/WorldObject.svelte'
-import { usePersistentUUIDs } from './usePersistentUUIDs.svelte'
 import { useLogs } from './useLogs.svelte'
 import { resourceColors } from '$lib/color'
 import { Color } from 'three'
-import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { type ConfigurableTrait, type Entity } from 'koota'
+import { createPose } from '$lib/transform'
+import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
 
 const key = Symbol('geometries-context')
 
 interface Context {
-	current: WorldObject[]
 	refetch: () => void
 }
 
+const colorUtil = new Color()
+
 export const provideGeometries = (partID: () => string) => {
+	const environment = useEnvironment()
+	const resources = useResourceByName()
+	const world = useWorld()
 	const logs = useLogs()
-	const resourceByName = useResourceByName()
 	const arms = useResourceNames(partID, 'arm')
 	const cameras = useResourceNames(partID, 'camera')
 	const grippers = useResourceNames(partID, 'gripper')
@@ -49,7 +54,9 @@ export const provideGeometries = (partID: () => string) => {
 	const options = $derived.by(() => {
 		const interval = refreshRates.get(RefreshRates.poses)
 		return {
-			enabled: refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF,
+			enabled:
+				refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF &&
+				environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 		}
 	})
@@ -89,45 +96,66 @@ export const provideGeometries = (partID: () => string) => {
 		}
 	})
 
-	const { updateUUIDs } = usePersistentUUIDs()
 	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
 
-	const geometries = $derived.by(() => {
-		const results: WorldObject[] = []
+	const entities = new Map<string, Entity | undefined>()
+
+	$effect(() => {
+		const active: Record<string, boolean> = {}
 
 		for (const [name, query] of queries) {
-			if (!name || !query.data) {
-				continue
-			}
+			if (name && query.data) {
+				let index = 0
 
-			for (const geometry of query.data) {
-				const resourceName = resourceByName.current[name]
-				const worldObject = new WorldObject(
-					geometry.label ? geometry.label : `${name} geometry`,
-					undefined,
-					name,
-					geometry,
-					resourceName
-						? {
-								color: new Color(
-									resourceColors[resourceName.subtype as keyof typeof resourceColors]
-								),
-							}
-						: undefined
-				)
-				results.push(worldObject)
+				for (const geometry of query.data) {
+					index += 1
+
+					const resourceName = resources.current[name]
+					const label = geometry.label ? geometry.label : `${name} geometry ${index}`
+
+					active[`${name}:${label}`] = true
+
+					const pose = createPose(geometry.center)
+					const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
+
+					const existing = entities.get(`${name}:${label}`)
+
+					if (existing) {
+						existing.set(traits.Pose, pose)
+						continue
+					}
+
+					const entityTraits: ConfigurableTrait[] = [
+						traits.Parent(name),
+						traits.Name(label),
+						traits.Pose(pose),
+						traits.GeometriesAPI,
+						traits.Geometry(geometry),
+					]
+
+					if (subtype) {
+						entityTraits.push(
+							traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
+						)
+					}
+
+					const entity = world.spawn(...entityTraits)
+
+					entities.set(`${name}:${label}`, entity)
+				}
 			}
 		}
 
-		updateUUIDs(results)
-
-		return results
+		// Clean up non-active entities
+		for (const [label, entity] of entities) {
+			if (!active[label]) {
+				entity?.destroy()
+				entities.delete(label)
+			}
+		}
 	})
 
 	setContext<Context>(key, {
-		get current() {
-			return geometries
-		},
 		refetch() {
 			for (const [, query] of queries) {
 				query.refetch()
