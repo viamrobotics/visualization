@@ -3,7 +3,7 @@ import { parseFileName, readFile, SUPPORTED_EXTENSIONS, SUPPORTED_PREFIXES } fro
 import { JSON_EXTENSIONS, onJSONDrop } from './json'
 import { MESH_EXTENSIONS, onMeshDrop } from './mesh'
 import { PB_EXTENSIONS, onPBDrop } from './pb'
-import type { World } from 'koota'
+import type { Spawner } from './file-dropper'
 
 export type DropStates = 'inactive' | 'hovering' | 'loading'
 
@@ -28,7 +28,7 @@ const fileDropper = <
 }
 
 export const useFileDrop = (
-	spawn: World['spawn'],
+	spawn: Spawner,
 	onError: (message: string) => void,
 	onSuccess: (message: string) => void
 ) => {

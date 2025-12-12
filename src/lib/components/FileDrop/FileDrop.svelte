@@ -9,9 +9,9 @@
 	const world = useWorld()
 	const toast = useToast()
 	const fileDrop = useFileDrop(
-		world.spawn,
-		(message: string) => toast({ message, variant: ToastVariant.Danger }),
-		(message: string) => toast({ message, variant: ToastVariant.Success })
+		(...traits) => world.spawn(...traits),
+		(message) => toast({ message, variant: ToastVariant.Danger }),
+		(message) => toast({ message, variant: ToastVariant.Success })
 	)
 </script>
 
