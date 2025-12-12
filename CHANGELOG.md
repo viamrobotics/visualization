@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.0.1
+
+### Patch Changes
+
+- eb911ff: Replace `useDraggable` hook with library
+- 5e6964d: Add RemoveAllSpatialObjects() test
+
 ## 1.0.0
 
 ### Major Changes
