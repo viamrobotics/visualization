@@ -3,7 +3,7 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils } from 'three'
+	import { Quaternion, Vector3, MathUtils, type Vector2Like } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { draggable } from '@neodrag/svelte'
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask } from '@threlte/core'
 	import { Button, Icon, Select, Input } from '@viamrobotics/prime-core'
@@ -20,15 +21,20 @@
 		useFocusedObject3d,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
-	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { PersistedState } from 'runed'
 
 	const { ...rest } = $props()
+
+	const dragPosition = new PersistedState<Vector2Like | undefined>(
+		'details-drag-position',
+		undefined
+	)
 
 	const resourceByName = useResourceByName()
 	const frames = useFrames()
@@ -66,7 +72,7 @@
 
 	let copied = $state(false)
 
-	const draggable = useDraggable(() => 'details')
+	let dragElement = $state.raw<HTMLElement>()
 
 	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 
@@ -230,15 +236,19 @@
 		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {showEditFrameOptions
 			? 'w-80'
 			: 'w-60'} border p-2 text-xs"
-		style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
+		use:draggable={{
+			bounds: 'body',
+			handle: dragElement,
+			defaultPosition: dragPosition.current,
+			onDragEnd(data) {
+				dragPosition.current = { x: data.offsetX, y: data.offsetY }
+			},
+		}}
 		{...rest}
 	>
 		<div class="flex items-center justify-between gap-2 pb-2">
 			<div class="flex items-center gap-1">
-				<button
-					onmousedown={draggable.onDragStart}
-					onmouseup={draggable.onDragEnd}
-				>
+				<button bind:this={dragElement}>
 					<Icon name="drag" />
 				</button>
 				<strong>{name.current}</strong>

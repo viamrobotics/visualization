@@ -58,7 +58,7 @@ Object.defineProperty(window, 'matchMedia', {
 	})),
 })
 
-// Mock indexedDB for idb-keyval (useDraggable hook)
+// Mock indexedDB for idb-keyval
 const mockDB = {
 	open: vi.fn(() => ({
 		result: { createObjectStore: vi.fn() },
