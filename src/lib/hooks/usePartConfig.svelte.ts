@@ -265,7 +265,7 @@ export const providePartConfig = (params: PartConfigParams) => {
 				createPartFrame(componentName)
 			}
 		},
-		saveLocalPartConfig: () => {			
+		saveLocalPartConfig: () => {
 			_localPartConfig.saveLocalPartConfig?.()
 		},
 		resetLocalPartConfig: () => {
