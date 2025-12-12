@@ -22,6 +22,7 @@
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 	import { provideWorld } from '$lib/ecs'
+	import { provideRoot } from '$lib/hooks/useRoot.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -64,10 +65,11 @@
 
 	createPartIDContext(() => partID)
 
+	let root = $state.raw<HTMLElement>()
+
 	provideWeblabs()
 	provideToast()
-
-	let root = $state.raw<HTMLElement>()
+	provideRoot(() => root)
 
 	if (localConfigProps) {
 		environment.current.isStandalone = false

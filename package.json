@@ -144,8 +144,9 @@
 		"!dist/**/*.spec.*"
 	],
 	"dependencies": {
+		"@bufbuild/protobuf": "1.10.1",
+		"@neodrag/svelte": "^2.3.3",
 		"@tanstack/svelte-query-devtools": "^6.0.2",
-		"uuid-tool": "^2.0.3",
-		"@bufbuild/protobuf": "1.10.1"
+		"uuid-tool": "^2.0.3"
 	}
 }

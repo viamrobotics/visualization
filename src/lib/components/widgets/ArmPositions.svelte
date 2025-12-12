@@ -1,13 +1,14 @@
 <script lang="ts">
+	import { draggable } from '@neodrag/svelte'
 	import { formatNumeric } from '../../format'
 	import Table from '../shared/Table.svelte'
-	import { useDraggable } from '$lib/hooks/useDraggable.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { Icon, Label, Select } from '@viamrobotics/prime-core'
 
 	const { ...rest } = $props()
 
-	const draggable = useDraggable(() => 'arm-current-positions')
+	let dragElement = $state.raw<HTMLElement>()
+
 	const armClient = useArmClient()
 
 	let selectedArm = $state(armClient.names[0])
@@ -17,16 +18,13 @@
 
 <div
 	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 overflow-y-auto border text-xs"
-	style:transform="translate({draggable.current.x}px, {draggable.current.y}px)"
+	use:draggable={{ bounds: 'body', handle: dragElement }}
 	{...rest}
 >
 	<div class="flex min-w-0 flex-col">
 		<div class="flex w-full items-center justify-between">
 			<div class="border-medium flex w-full items-center gap-1 border-b p-2">
-				<button
-					onmousedown={draggable.onDragStart}
-					onmouseup={draggable.onDragEnd}
-				>
+				<button bind:this={dragElement}>
 					<Icon name="drag" />
 				</button>
 				<h3>Arm positions</h3>

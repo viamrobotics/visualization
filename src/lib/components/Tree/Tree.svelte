@@ -17,12 +17,11 @@
 	interface Props {
 		rootNode: TreeNode
 		selections: string[]
+		dragElement?: HTMLElement
 		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
-		onDragStart?: (event: MouseEvent) => void
-		onDragEnd?: (event: MouseEvent) => void
 	}
 
-	let { rootNode, selections, onSelectionChange, onDragStart, onDragEnd }: Props = $props()
+	let { rootNode, selections, onSelectionChange, dragElement = $bindable() }: Props = $props()
 
 	const collection = $derived(
 		tree.collection<TreeNode>({
@@ -157,10 +156,7 @@
 <div class="root-node">
 	<div {...api.getRootProps() as object}>
 		<div class="border-medium flex items-center gap-1 border-b p-2">
-			<button
-				onmousedown={onDragStart}
-				onmouseup={onDragEnd}
-			>
+			<button bind:this={dragElement}>
 				<Icon name="drag" />
 			</button>
 			<h3 {...api.getLabelProps() as object}>{rootNode.entity.get(traits.Name)}</h3>

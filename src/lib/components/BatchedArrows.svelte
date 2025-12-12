@@ -78,17 +78,15 @@
 		}
 	}
 
+	const unsubAdd = world.onQueryAdd(hash, onAdd)
+	const unsubRemove = world.onQueryRemove(hash, onRemove)
+	const unsubPoseChange = world.onChange(traits.Pose, onPoseChange)
+	const unsubColorChange = world.onChange(traits.Color, onColorChange)
+
 	$effect(() => {
-		const unsubAdd = world.onQueryAdd(hash, onAdd)
-		const unsubRemove = world.onQueryRemove(hash, onRemove)
-
-		const unsubPoseChange = world.onChange(traits.Pose, onPoseChange)
-		const unsubColorChange = world.onChange(traits.Color, onColorChange)
-
 		return () => {
 			unsubAdd()
 			unsubRemove()
-
 			unsubPoseChange()
 			unsubColorChange()
 		}
