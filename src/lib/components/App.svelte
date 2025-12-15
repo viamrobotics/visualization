@@ -69,25 +69,31 @@
 
 	let root = $state.raw<HTMLElement>()
 
-	$effect.pre(() => {
+	providePartConfig(() => {
 		if (localConfigProps) {
-			environment.current.isStandalone = false
-			providePartConfig({
+			return {
 				appEmbeddedPartConfigProps: {
 					isDirty: () => localConfigProps.isDirty(),
 					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
 					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
 				},
-			})
+			}
 		} else {
-			environment.current.isStandalone = true
-			providePartConfig({
+			return {
 				standalonePartConfigProps: {
 					viamClient: () => appClient?.current,
 					partID: () => partID,
 				},
-			})
+			}
+		}
+	})
+
+	$effect.pre(() => {
+		if (localConfigProps) {
+			environment.current.isStandalone = false
+		} else {
+			environment.current.isStandalone = true
 		}
 	})
 </script>
