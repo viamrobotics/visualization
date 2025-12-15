@@ -18,7 +18,7 @@ interface Context {
 export const useResizable = (name: () => string, minDimensions: () => Vector2Like): Context => {
 	const key = $derived(`${name()}-resizable`)
 
-	let dimensions = new PersistedState<Vector2Like | undefined>(key, undefined)
+	const dimensions = new PersistedState<Vector2Like | undefined>(key, undefined)
 	let loaded = false
 
 	$effect(() => {
