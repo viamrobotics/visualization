@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { TrackballControls, Gizmo } from '@threlte/extras'
+	import { TrackballControls, Gizmo, Portal } from '@threlte/extras'
 	import { Box3, type Object3D, Vector3 } from 'three'
 	import { TrackballControls as ThreeTrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 	import Camera from './Camera.svelte'
-	import Portal from './portal/Portal.svelte'
 	import Button from './dashboard/Button.svelte'
 
 	interface Props {

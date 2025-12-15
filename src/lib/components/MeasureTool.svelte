@@ -2,10 +2,9 @@
 	import { untrack } from 'svelte'
 	import { Vector3, type Intersection } from 'three'
 	import { T } from '@threlte/core'
-	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
+	import { HTML, MeshLineGeometry, MeshLineMaterial, Portal } from '@threlte/extras'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import Button from './dashboard/Button.svelte'
-	import Portal from './portal/Portal.svelte'
 	import DotSprite from './DotSprite.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
@@ -31,7 +30,6 @@
 
 	onmove((event) => {
 		intersection = event.intersections[0]
-		console.log(intersection)
 	})
 
 	onclick(() => {

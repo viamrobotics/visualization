@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { MathUtils } from 'three'
-	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras'
+	import { CameraControls, type CameraControlsRef, Gizmo, Portal } from '@threlte/extras'
 	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
 	import KeyboardControls from './KeyboardControls.svelte'
-	import Portal from './portal/Portal.svelte'
 	import Button from './dashboard/Button.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
