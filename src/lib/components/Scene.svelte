@@ -41,6 +41,7 @@
 		enabled.set(!settings.current.enableMeasure)
 	})
 	raycaster.firstHitOnly = true
+	raycaster.params.Points.threshold = 0.005
 
 	bvh(() => ({ helper: false }))
 

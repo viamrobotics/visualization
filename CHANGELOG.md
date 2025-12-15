@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.0.2
+
+### Patch Changes
+
+- cd6ae37: Reduce points threshold for raycasting
+
 ## 1.0.1
 
 ### Patch Changes
