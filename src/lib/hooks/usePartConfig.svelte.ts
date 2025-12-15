@@ -37,8 +37,8 @@ interface PartConfigContext {
 	hasEditPermissions: boolean
 }
 
-export const providePartConfig = (params: PartConfigParams) => {
-	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params
+export const providePartConfig = (params: () => PartConfigParams) => {
+	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params()
 	let _localPartConfig: LocalPartConfig
 	if (appEmbeddedPartConfigProps) {
 		_localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
