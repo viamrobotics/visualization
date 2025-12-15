@@ -87,7 +87,6 @@
 		<Tree
 			{rootNode}
 			bind:dragElement
-			selections={selectedEntity.current ? [`${selectedEntity.current}`] : []}
 			onSelectionChange={(event) => {
 				const value = event.selectedValue[0]
 
