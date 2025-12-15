@@ -1,6 +1,6 @@
 <script>
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import PortalTarget from '../portal/PortalTarget.svelte'
+	import { PortalTarget } from '@threlte/extras'
 	import Button from './Button.svelte'
 
 	let { dashboard, ...rest } = $props()
@@ -9,7 +9,7 @@
 </script>
 
 <div
-	class="absolute top-2 z-1000 flex w-full justify-center gap-2"
+	class="absolute top-2 z-10 flex w-full justify-center gap-2"
 	{...rest}
 >
 	<!-- camera view -->

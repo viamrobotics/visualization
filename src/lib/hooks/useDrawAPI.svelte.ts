@@ -246,6 +246,7 @@ export const provideDrawAPI = () => {
 
 	const vec3 = new Vector3()
 	const pose = createPose()
+
 	const drawPoses = async (reader: Float32Reader) => {
 		// Read counts
 		const nPoints = reader.read()
@@ -274,10 +275,9 @@ export const provideDrawAPI = () => {
 			const entity = world.spawn(
 				traits.Name(`Pose ${++poseIndex}`),
 				traits.Pose(pose),
-				traits.Instance,
 				traits.Color,
-				traits.Arrow,
-				traits.DrawAPI
+				traits.DrawAPI,
+				traits.Arrow
 			)
 
 			entities.push(entity)
