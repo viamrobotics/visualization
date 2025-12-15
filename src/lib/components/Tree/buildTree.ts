@@ -3,14 +3,15 @@ import type { Entity, QueryResult, Trait } from 'koota'
 
 export interface TreeNode {
 	entity: Entity
+	parent?: TreeNode
 	children?: TreeNode[]
 }
 
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
-export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
-	const nodeMap = new Map<string, TreeNode>()
+export const buildTreeNodes = (entities: QueryResult<[Trait]>) => {
+	const nodeMap: Record<string, TreeNode | undefined> = {}
 	const rootNodes: TreeNode[] = []
 	const childNodes: TreeNode[] = []
 
@@ -19,7 +20,7 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 		const name = entity.get(traits.Name) ?? ''
 		const node: TreeNode = { entity }
 
-		nodeMap.set(name, node)
+		nodeMap[name] = node
 
 		if (!parent || parent === 'world') {
 			rootNodes.push(node)
@@ -32,7 +33,9 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 		const parent = node.entity.get(traits.Parent)
 
 		if (parent) {
-			const parentNode = nodeMap.get(parent)
+			const parentNode = nodeMap[parent]
+
+			node.parent = parentNode
 
 			if (parentNode) {
 				parentNode.children ??= []
@@ -41,5 +44,5 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>): TreeNode[] => {
 		}
 	}
 
-	return rootNodes
+	return { rootNodes, nodeMap }
 }

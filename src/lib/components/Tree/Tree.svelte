@@ -4,23 +4,23 @@
 	import { ChevronRight, Eye, EyeOff } from 'lucide-svelte'
 	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 	import type { TreeNode } from './buildTree'
-	import { useExpanded } from './useExpanded.svelte'
 	import { VirtualList } from 'svelte-virtuallists'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { traits } from '$lib/ecs'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { SvelteSet } from 'svelte/reactivity'
 
 	const selected = useSelectedEntity()
 	const visibility = useVisibility()
-	const expanded = useExpanded()
 
 	interface Props {
 		rootNode: TreeNode
+		nodeMap: Record<string, TreeNode | undefined>
 		dragElement?: HTMLElement
 		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
 	}
 
-	let { rootNode, onSelectionChange, dragElement = $bindable() }: Props = $props()
+	let { rootNode, nodeMap, onSelectionChange, dragElement = $bindable() }: Props = $props()
 
 	const collection = $derived(
 		tree.collection<TreeNode>({
@@ -31,14 +31,15 @@
 	)
 
 	const selectedValue = $derived(selected.current ? [`${selected.current}`] : [])
-	const expandedValue = $derived(
-		selected.current ? [...expanded, `${selected.current}`] : [...expanded]
-	)
+	const expandedValue = new SvelteSet<string>()
 
 	$effect(() => {
-		document
-			.querySelector(`[data-scope="tree-view"][data-value="${selected.current}"]`)
-			?.scrollIntoView()
+		let name = selected.current?.get(traits.Name)
+		let node = nodeMap[name ?? '']
+		while (node) {
+			expandedValue.add(`${node.entity}`)
+			node = node.parent
+		}
 	})
 
 	const id = $props.id()
@@ -46,20 +47,30 @@
 		id,
 		collection,
 		selectedValue,
-		expandedValue,
+		expandedValue: [...expandedValue],
 		onSelectionChange(details) {
 			onSelectionChange?.(details)
 		},
 		onExpandedChange(details) {
-			expanded.clear()
+			expandedValue.clear()
 			for (const value of details.expandedValue) {
-				expanded.add(value)
+				expandedValue.add(value)
 			}
 		},
 	}))
 
 	const api = $derived(tree.connect(service, normalizeProps))
 	const rootChildren = $derived(collection.rootNode.children ?? [])
+
+	$effect(() => {
+		const element = document.querySelector(
+			`[data-scope="tree-view"][data-value="${selected.current}"]`
+		)
+
+		requestAnimationFrame(() => {
+			element?.scrollIntoView({ block: 'nearest' })
+		})
+	})
 </script>
 
 {#snippet treeNode({

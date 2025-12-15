@@ -35,14 +35,17 @@
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
-	let children = $state<TreeNode[]>([])
+	let children = $state.raw<TreeNode[]>([])
+	let nodeMap = $state.raw<Record<string, TreeNode | undefined>>({})
 
 	let pending = false
 	const flush = () => {
 		if (pending) return
 		pending = true
 		window.setTimeout(() => {
-			children = buildTreeNodes(world.query(traits.Name))
+			const results = buildTreeNodes(world.query(traits.Name))
+			children = results.rootNodes
+			nodeMap = results.nodeMap
 			pending = false
 		})
 	}
@@ -86,6 +89,7 @@
 	>
 		<Tree
 			{rootNode}
+			{nodeMap}
 			bind:dragElement
 			onSelectionChange={(event) => {
 				const value = event.selectedValue[0]
