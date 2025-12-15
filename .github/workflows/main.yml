@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
 
-permissions: write-all
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 jobs:
   deploy-and-publish:
@@ -27,6 +30,10 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
@@ -47,7 +54,6 @@ jobs:
           publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract version from package.json
         id: version
