@@ -69,25 +69,27 @@
 
 	let root = $state.raw<HTMLElement>()
 
-	if (localConfigProps) {
-		environment.current.isStandalone = false
-		providePartConfig({
-			appEmbeddedPartConfigProps: {
-				isDirty: () => localConfigProps.isDirty(),
-				getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
-				setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-				getComponentToFragId: () => localConfigProps.getComponentToFragId(),
-			},
-		})
-	} else {
-		environment.current.isStandalone = true
-		providePartConfig({
-			standalonePartConfigProps: {
-				viamClient: () => appClient?.current,
-				partID: () => partID,
-			},
-		})
-	}
+	$effect.pre(() => {
+		if (localConfigProps) {
+			environment.current.isStandalone = false
+			providePartConfig({
+				appEmbeddedPartConfigProps: {
+					isDirty: () => localConfigProps.isDirty(),
+					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
+					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
+					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
+				},
+			})
+		} else {
+			environment.current.isStandalone = true
+			providePartConfig({
+				standalonePartConfigProps: {
+					viamClient: () => appClient?.current,
+					partID: () => partID,
+				},
+			})
+		}
+	})
 </script>
 
 {#if settings.current.enableQueryDevtools}
