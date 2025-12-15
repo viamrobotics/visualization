@@ -1,5 +1,6 @@
 import { $internal as internal, type Entity, type Trait, type World } from 'koota'
 import { useWorld } from './useWorld'
+import { untrack } from 'svelte'
 
 export type AoSFactory = () => unknown
 
@@ -41,25 +42,25 @@ export function useTrait<T extends Trait>(
 	// Initialize the state with the current value of the trait.
 	let value = $derived(entity?.get(trait))
 
-	const onAddUnsub = world.onAdd(trait, (e) => {
-		if (e === entity) {
-			value = e.get(trait)
-		}
-	})
-
-	const onRemoveUnsub = world.onRemove(trait, (e) => {
-		if (e === entity) {
-			value = undefined
-		}
-	})
-
-	const onChangeUnsub = world.onChange(trait, (e) => {
-		if (e === entity) {
-			value = e.get(trait)
-		}
-	})
-
 	$effect(() => {
+		const onAddUnsub = world.onAdd(trait, (e) => {
+			if (e === entity) {
+				value = e.get(trait)
+			}
+		})
+
+		const onRemoveUnsub = world.onRemove(trait, (e) => {
+			if (e === entity) {
+				value = undefined
+			}
+		})
+
+		const onChangeUnsub = world.onChange(trait, (e) => {
+			if (e === entity) {
+				value = e.get(trait)
+			}
+		})
+
 		return () => {
 			onChangeUnsub()
 			onAddUnsub()

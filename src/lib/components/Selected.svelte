@@ -13,11 +13,11 @@
 	const { scene, invalidate } = useThrelte()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
-	const instance = useTrait(() => selectedEntity.current, traits.Instance)
+	const arrow = useTrait(() => selectedEntity.current, traits.Arrow)
 
 	// Create a clone so that our bounding box doesn't include children
 	const clone = $derived.by(() => {
-		if (instance.current) {
+		if (arrow.current) {
 			return
 		}
 
@@ -30,9 +30,9 @@
 				return
 			}
 
-			if (instance.current) {
-				const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
-				mesh?.getBoundingBoxAt(instance.current.instanceID, box3)
+			if (arrow.current) {
+				const mesh = scene.getObjectById(arrow.current.meshID) as BatchedMesh
+				mesh?.getBoundingBoxAt(arrow.current.instanceID, box3)
 				obb.fromBox3(box3)
 				obbHelper.setFromOBB(obb)
 				invalidate()

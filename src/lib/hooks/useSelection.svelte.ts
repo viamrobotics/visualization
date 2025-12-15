@@ -101,18 +101,18 @@ export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 	const { scene } = useThrelte()
 
 	const name = useTrait(() => selectedEntity.current, traits.Name)
-	const instance = useTrait(() => selectedEntity.current, traits.Instance)
+	const arrow = useTrait(() => selectedEntity.current, traits.Arrow)
 
 	const object = $derived.by(() => {
 		if (!selectedEntity.current) {
 			return
 		}
 
-		if (instance.current) {
+		if (arrow.current) {
 			const proxy = new Object3D()
-			const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
+			const mesh = scene.getObjectById(arrow.current.meshID) as BatchedMesh
 
-			mesh?.getMatrixAt(instance.current.instanceID, matrix)
+			mesh?.getMatrixAt(arrow.current.instanceID, matrix)
 			proxy.applyMatrix4(matrix)
 
 			return proxy

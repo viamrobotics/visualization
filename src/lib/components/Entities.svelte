@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Portal, PortalTarget } from './portal'
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
 	import Line from './Line.svelte'
@@ -25,68 +24,50 @@
 </script>
 
 {#each drawnMeshes.current as entity (entity)}
-	<Portal {entity}>
-		<Frame {entity}>
-			<PortalTarget {entity} />
-			<Label text={entity.get(traits.Name)} />
-		</Frame>
-	</Portal>
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
 {/each}
 
 {#each worldStateMeshes.current as entity (entity)}
-	<Portal {entity}>
-		<Frame {entity}>
-			<PortalTarget {entity} />
-			<Label text={entity.get(traits.Name)} />
-		</Frame>
-	</Portal>
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
 {/each}
 
 {#each points.current as entity (entity)}
-	<Portal {entity}>
-		<Pointcloud {entity}>
-			<Label text={entity.get(traits.Name)} />
-		</Pointcloud>
-	</Portal>
+	<Pointcloud {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Pointcloud>
 {/each}
 
 {#each frames.current as entity (entity)}
-	<Portal {entity}>
-		<Pose {entity}>
-			{#snippet children({ pose })}
-				<Frame
-					{pose}
-					{entity}
-				>
-					<PortalTarget {entity} />
-					<Label text={entity.get(traits.Name)} />
-				</Frame>
-			{/snippet}
-		</Pose>
-	</Portal>
+	<Pose {entity}>
+		{#snippet children({ pose })}
+			<Frame
+				{pose}
+				{entity}
+			>
+				<Label text={entity.get(traits.Name)} />
+			</Frame>
+		{/snippet}
+	</Pose>
 {/each}
 
 {#each geometries.current as entity (entity)}
-	<Portal {entity}>
-		<Frame {entity}>
-			<PortalTarget {entity} />
-			<Label text={entity.get(traits.Name)} />
-		</Frame>
-	</Portal>
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
 {/each}
 
 {#each lines.current as entity (entity)}
-	<Portal {entity}>
-		<Line {entity}>
-			<PortalTarget {entity} />
-			<Label text={entity.get(traits.Name)} />
-		</Line>
-	</Portal>
+	<Line {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Line>
 {/each}
 
 {#each gltfs.current as entity (entity)}
 	<GLTF {entity}>
-		<PortalTarget {entity} />
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
 {/each}
