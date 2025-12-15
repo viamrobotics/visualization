@@ -108,6 +108,18 @@
 	const oncreate = (ref: BufferGeometry) => {
 		geo = ref
 	}
+
+	$effect.pre(() => {
+		if (mesh && bufferGeometry.current) {
+			mesh.geometry = bufferGeometry.current
+			oncreate(bufferGeometry.current)
+
+			return () => {
+				geo = undefined
+				mesh.geometry.dispose()
+			}
+		}
+	})
 </script>
 
 <Portal id={parent.current}>
@@ -131,12 +143,7 @@
 				{/if}
 
 				{#if !model || renderMode.includes('colliders')}
-					{#if bufferGeometry.current}
-						<T
-							is={bufferGeometry.current}
-							{oncreate}
-						/>
-					{:else if lineGeometry.current}
+					{#if lineGeometry.current}
 						<MeshLineGeometry points={lineGeometry.current} />
 					{:else if box.current}
 						{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}

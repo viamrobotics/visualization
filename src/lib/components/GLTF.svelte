@@ -20,8 +20,8 @@
 	const objectProps = useObjectEvents(() => entity)
 </script>
 
-{#if gltf.current?.scene}
-	<Portal id={parent.current}>
+<Portal id={parent.current}>
+	{#if gltf.current?.scene}
 		<T
 			is={gltf.current.scene as Object3D}
 			name={name.current}
@@ -32,5 +32,5 @@
 
 			<PortalTarget id={name.current} />
 		</T>
-	</Portal>
-{/if}
+	{/if}
+</Portal>
