@@ -13,6 +13,10 @@ export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
+export const Instance = trait({
+	meshID: -1,
+	instanceID: -1,
+})
 export const Opacity = trait(() => 1)
 
 /**
@@ -21,7 +25,7 @@ export const Opacity = trait(() => 1)
  */
 export const Color = trait({ r: 1, g: 0, b: 0 })
 
-export const Arrow = trait({ instanceID: -1, meshID: -1 })
+export const Arrow = trait()
 
 /**
  * A box, in mm

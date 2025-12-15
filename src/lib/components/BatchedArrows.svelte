@@ -3,12 +3,13 @@
 	import { Portal } from '@threlte/extras'
 	import { BatchedArrow } from '$lib/three/BatchedArrow'
 	import { traits, useWorld } from '$lib/ecs'
-	import { type Entity } from 'koota'
+	import type { Entity } from 'koota'
 	import { Color, Vector3 } from 'three'
 
-	const arrowBatches = $state<Record<string, BatchedArrow>>({
+	const arrowBatchMap = $state<Record<string, BatchedArrow>>({
 		world: new BatchedArrow(),
 	})
+	const batchEntries = $derived(Object.entries(arrowBatchMap))
 
 	const world = useWorld()
 
@@ -19,8 +20,8 @@
 	const onAdd = (entity: Entity) => {
 		const parent = entity.get(traits.Parent) ?? 'world'
 
-		arrowBatches[parent] ??= new BatchedArrow()
-		const batched = arrowBatches[parent]
+		arrowBatchMap[parent] ??= new BatchedArrow()
+		const batched = arrowBatchMap[parent]
 
 		const pose = entity.get(traits.Pose)
 		const colorRGB = entity.get(traits.Color)
@@ -31,15 +32,15 @@
 			colorRGB ? color.set(colorRGB.r, colorRGB.g, colorRGB.b) : color.set('yellow')
 		)
 
-		entity.set(traits.Arrow, { instanceID })
+		entity.add(traits.Instance({ instanceID, meshID: batched.mesh.id }))
 	}
 
 	const onPoseChange = (entity: Entity) => {
 		if (!entity.has(traits.Arrow)) return
 
 		const parent = entity.get(traits.Parent) ?? 'world'
-		const batch = arrowBatches[parent]
-		const instanceID = entity.get(traits.Arrow)?.instanceID
+		const batch = arrowBatchMap[parent]
+		const instanceID = entity.get(traits.Instance)?.instanceID
 		const pose = entity.get(traits.Pose)
 
 		if (instanceID && instanceID !== -1 && pose) {
@@ -55,8 +56,8 @@
 		if (!entity.has(traits.Arrow)) return
 
 		const parent = entity.get(traits.Parent) ?? 'world'
-		const batch = arrowBatches[parent]
-		const instanceID = entity.get(traits.Arrow)?.instanceID
+		const batch = arrowBatchMap[parent]
+		const instanceID = entity.get(traits.Instance)?.instanceID
 		const colorRGB = entity.get(traits.Color)
 
 		if (instanceID && instanceID !== -1 && colorRGB) {
@@ -65,19 +66,19 @@
 		}
 	}
 
-	const onRemove = (entity: Entity) => {
-		const parent = entity.get(traits.Parent) ?? 'world'
-		const batch = arrowBatches[parent]
-		const instanceID = entity.get(traits.Arrow)?.instanceID
+	const onInstanceRemove = (entity: Entity) => {
+		const instance = entity.get(traits.Instance)
 
-		if (instanceID) {
-			batch.removeArrow(instanceID)
+		for (const [, batch] of batchEntries) {
+			if (batch.mesh.id === instance?.meshID) {
+				batch.removeArrow(instance.instanceID)
+			}
 		}
 	}
 
 	$effect(() => {
 		const unsubAdd = world.onAdd(traits.Arrow, onAdd)
-		const unsubRemove = world.onRemove(traits.Arrow, onRemove)
+		const unsubRemove = world.onRemove(traits.Instance, onInstanceRemove)
 		const unsubPoseChange = world.onChange(traits.Pose, onPoseChange)
 		const unsubColorChange = world.onChange(traits.Color, onColorChange)
 
@@ -90,7 +91,7 @@
 	})
 </script>
 
-{#each Object.entries(arrowBatches) as [parent, batch] (parent)}
+{#each batchEntries as [parent, batch] (parent)}
 	<Portal id={parent}>
 		<T
 			is={batch.mesh}
