@@ -1,27 +1,26 @@
 <script lang="ts">
 	import * as tree from '@zag-js/tree-view'
 	import { useMachine, normalizeProps } from '@zag-js/svelte'
-	import { untrack } from 'svelte'
 	import { ChevronRight, Eye, EyeOff } from 'lucide-svelte'
 	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 	import type { TreeNode } from './buildTree'
-	import { useExpanded } from './useExpanded.svelte'
 	import { VirtualList } from 'svelte-virtuallists'
-	import { observe } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { traits } from '$lib/ecs'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { SvelteSet } from 'svelte/reactivity'
 
+	const selected = useSelectedEntity()
 	const visibility = useVisibility()
-	const expanded = useExpanded()
 
 	interface Props {
 		rootNode: TreeNode
-		selections: string[]
+		nodeMap: Record<string, TreeNode | undefined>
 		dragElement?: HTMLElement
 		onSelectionChange?: (event: tree.SelectionChangeDetails) => void
 	}
 
-	let { rootNode, selections, onSelectionChange, dragElement = $bindable() }: Props = $props()
+	let { rootNode, nodeMap, onSelectionChange, dragElement = $bindable() }: Props = $props()
 
 	const collection = $derived(
 		tree.collection<TreeNode>({
@@ -31,39 +30,47 @@
 		})
 	)
 
+	const selectedValue = $derived(selected.current ? [`${selected.current}`] : [])
+	const expandedValues = new SvelteSet<string>()
+
+	$effect(() => {
+		let name = selected.current?.get(traits.Name)
+		let node = nodeMap[name ?? '']
+		while (node) {
+			expandedValues.add(`${node.entity}`)
+			node = node.parent
+		}
+	})
+
 	const id = $props.id()
-	const service = useMachine(tree.machine, {
+	const service = useMachine(tree.machine, () => ({
 		id,
-		get collection() {
-			return collection
-		},
+		collection,
+		selectedValue,
+		expandedValue: [...expandedValues],
 		onSelectionChange(details) {
 			onSelectionChange?.(details)
 		},
 		onExpandedChange(details) {
-			expanded.clear()
+			expandedValues.clear()
 			for (const value of details.expandedValue) {
-				expanded.add(value)
+				expandedValues.add(value)
 			}
 		},
-	})
+	}))
 
 	const api = $derived(tree.connect(service, normalizeProps))
-
-	observe(
-		() => [selections],
-		() =>
-			untrack(() => {
-				api.setSelectedValue(selections)
-			})
-	)
-
-	observe(
-		() => [expanded],
-		() => untrack(() => api.setExpandedValue([...expanded]))
-	)
-
 	const rootChildren = $derived(collection.rootNode.children ?? [])
+
+	$effect(() => {
+		const element = document.querySelector(
+			`[data-scope="tree-view"][data-value="${selected.current}"]`
+		)
+
+		requestAnimationFrame(() => {
+			element?.scrollIntoView({ block: 'nearest' })
+		})
+	})
 </script>
 
 {#snippet treeNode({
