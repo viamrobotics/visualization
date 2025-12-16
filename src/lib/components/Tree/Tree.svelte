@@ -31,13 +31,13 @@
 	)
 
 	const selectedValue = $derived(selected.current ? [`${selected.current}`] : [])
-	const expandedValue = new SvelteSet<string>()
+	const expandedValues = new SvelteSet<string>()
 
 	$effect(() => {
 		let name = selected.current?.get(traits.Name)
 		let node = nodeMap[name ?? '']
 		while (node) {
-			expandedValue.add(`${node.entity}`)
+			expandedValues.add(`${node.entity}`)
 			node = node.parent
 		}
 	})
@@ -47,14 +47,14 @@
 		id,
 		collection,
 		selectedValue,
-		expandedValue: [...expandedValue],
+		expandedValue: [...expandedValues],
 		onSelectionChange(details) {
 			onSelectionChange?.(details)
 		},
 		onExpandedChange(details) {
-			expandedValue.clear()
+			expandedValues.clear()
 			for (const value of details.expandedValue) {
-				expandedValue.add(value)
+				expandedValues.add(value)
 			}
 		},
 	}))
