@@ -187,13 +187,10 @@ jobs:
           path: draw/v1/
 
       - name: Test
-        run: pnpm run test
+        run: npx vitest run --coverage
 
       - name: Test Draw
         run: pnpm run test:draw
-
-      - name: Test Coverage
-        run: npx vitest run --coverage
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
