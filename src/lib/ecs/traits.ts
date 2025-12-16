@@ -59,6 +59,11 @@ export const GeometriesAPI = trait()
 export const WorldStateStoreAPI = trait()
 
 /**
+ * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)
+ */
+export const DroppedFile = trait()
+
+/**
  * An entity with data from the FrameSystemConfig() API
  */
 export const FramesAPI = trait()
