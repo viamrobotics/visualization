@@ -1,6 +1,11 @@
-import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
+import {
+	createResourceClient,
+	createResourceQuery,
+	createRobotQuery,
+	useRobotClient,
+} from '@viamrobotics/svelte-sdk'
 import { usePartID } from './usePartID.svelte'
-import { commonApi, Pose } from '@viamrobotics/sdk'
+import { commonApi, MotionClient, Pose, Transform } from '@viamrobotics/sdk'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
@@ -10,6 +15,8 @@ import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { useLogs } from './useLogs.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
+import { useMotionClient } from './useMotionClient.svelte'
+import diff from 'microdiff'
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const environment = useEnvironment()
@@ -17,6 +24,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
 	const robotClient = useRobotClient(() => partID.current)
+	const motionClient = useMotionClient()
 	const currentName = $derived(name())
 	const currentParent = $derived(parent())
 	const resourceByName = useResourceByName()
@@ -45,13 +53,32 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 		})
 	)
 
+	const client = createResourceClient(
+		MotionClient,
+		() => partID.current,
+		() => currentName ?? ''
+	)
+
+	const motionQuery = createResourceQuery(
+		client,
+		'getPose',
+		() => [currentName, resolvedParent ?? 'world', []] as [string, string, Transform[]],
+		() => ({
+			enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
+			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
+		})
+	)
+
 	$effect(() => {
 		if (environment.current.viewerMode === 'monitor') {
 			pose = query.data?.pose
 		}
 	})
 
-	$effect(() => addQueryToRefetch(query))
+	$effect(() => {
+		addQueryToRefetch(query)
+		addQueryToRefetch(motionQuery)
+	})
 
 	$effect(() => {
 		if (query.isFetching) {
@@ -66,8 +93,17 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 		() => {
 			if (environment.current.viewerMode === 'monitor') {
 				untrack(() => query.refetch())
+				untrack(() => motionQuery.refetch())
 			}
 		}
+	)
+
+	$inspect(query.data?.pose).with((_, val) => console.log(`${currentName} robot query pose`, val))
+	$inspect(motionQuery.data?.pose).with((_, val) =>
+		console.log(`${currentName} motion query pose`, val)
+	)
+	$inspect(diff(query.data?.pose ?? {}, motionQuery.data?.pose ?? {})).with((_, val) =>
+		console.log(`${currentName} pose diff`, val)
 	)
 
 	return {

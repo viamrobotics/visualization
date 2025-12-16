@@ -12,6 +12,7 @@
 	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import { useThrelte } from '@threlte/core'
 	import { useRefetchPoses } from '$lib/hooks/useRefetchPoses'
+	import { useMotionClient } from '$lib/hooks/useMotionClient.svelte'
 
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
@@ -20,7 +21,7 @@
 	const { disabledCameras } = useMachineSettings()
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
-
+	const motionClient = useMotionClient()
 	const { refetchPoses } = useRefetchPoses()
 
 	// Invalidate the renderer for any settings change
@@ -73,6 +74,22 @@
 				No cameras detected
 			{/each}
 		</div>
+
+		<label class="flex flex-col gap-1">
+			Motion client
+			<Select
+				onchange={(event: InputEvent) => {
+					if (event.target instanceof HTMLSelectElement) {
+						motionClient.set(event.target.value)
+					}
+				}}
+				value={motionClient.current}
+			>
+				{#each motionClient.names as name (name)}
+					<option>{name}</option>
+				{/each}
+			</Select>
+		</label>
 
 		<h3 class="pt-2 text-sm"><strong>Pointclouds</strong></h3>
 		<div class="flex flex-col gap-2.5">

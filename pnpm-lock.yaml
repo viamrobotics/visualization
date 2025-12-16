@@ -162,6 +162,9 @@ importers:
       lucide-svelte:
         specifier: 0.542.0
         version: 0.542.0(svelte@5.45.9)
+      microdiff:
+        specifier: ^1.5.0
+        version: 1.5.0
       prettier:
         specifier: 3.6.2
         version: 3.6.2
@@ -2784,6 +2787,9 @@ packages:
 
   meshoptimizer@0.22.0:
     resolution: {integrity: sha512-IebiK79sqIy+E4EgOr+CAw+Ke8hAspXKzBd0JdgEmPHiAwmvEj2S4h1rfvo+o/BnfEYd/jAOg5IeeIjzlzSnDg==}
+
+  microdiff@1.5.0:
+    resolution: {integrity: sha512-Drq+/THMvDdzRYrK0oxJmOKiC24ayUV8ahrt8l3oRK51PWt6gdtrIGrlIH3pT/lFh1z93FbAcidtsHcWbnRz8Q==}
 
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
@@ -6713,6 +6719,8 @@ snapshots:
   merge2@1.4.1: {}
 
   meshoptimizer@0.22.0: {}
+
+  microdiff@1.5.0: {}
 
   micromatch@4.0.8:
     dependencies:

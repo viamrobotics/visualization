@@ -13,6 +13,7 @@
 		provideTransformControls,
 		type CameraPose,
 	} from '$lib/hooks/useControls.svelte'
+	import { provideMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
 	import { provideOrigin } from './xr/useOrigin.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
@@ -44,6 +45,7 @@
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)
 	providePointclouds(() => partID.current)
+	provideMotionClient(() => partID.current)
 	provideArmClient(() => partID.current)
 	provideWorldStates()
 	provideFramelessComponents()
