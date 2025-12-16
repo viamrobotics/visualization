@@ -13,6 +13,7 @@
 	const points = useQuery(traits.PointsGeometry)
 	const lines = useQuery(traits.LineGeometry)
 	const gltfs = useQuery(traits.GLTF)
+	const droppedMeshes = useQuery(traits.DroppedFile, traits.BufferGeometry)
 	const drawnMeshes = useQuery(
 		traits.DrawAPI,
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
@@ -30,6 +31,12 @@
 {/each}
 
 {#each worldStateMeshes.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
+{/each}
+
+{#each droppedMeshes.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</Frame>
