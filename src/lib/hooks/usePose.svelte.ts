@@ -35,10 +35,16 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 			: parent()
 	)
 
+	const resolvedName = $derived(
+		resource?.subtype === 'arm' || resource?.subtype === 'gantry'
+			? `${currentName}_origin`
+			: currentName
+	)
+
 	const query = createRobotQuery(
 		robotClient,
 		'getPose',
-		() => [currentName, resolvedParent ?? 'world', []] as [string, string, commonApi.Transform[]],
+		() => [resolvedName, resolvedParent ?? 'world', []] as [string, string, commonApi.Transform[]],
 		() => ({
 			enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
@@ -72,13 +78,6 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 
 	return {
 		get current() {
-			/**
-			 * Do not return the pose of an arm or gantry because in this case the pose represents
-			 * the end effector frame and not the origin frame
-			 */
-			if (resource?.subtype === 'arm' || resource?.subtype === 'gantry') {
-				return
-			}
 			return pose
 		},
 	}
