@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.0.3
+
+### Patch Changes
+
+- 4a1d233: Fix: bvh unmount cleanup error
+- c42053a: Fix: scroll to selected treeview item when 3d object clicked
+
 ## 1.0.2
 
 ### Patch Changes
