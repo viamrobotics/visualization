@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Select, Switch, Input } from '@viamrobotics/prime-core'
 	import RefreshRate from '../RefreshRate.svelte'
-	import { useMotionClient } from '$lib/hooks/useMotionClient.svelte'
 	import Drawer from './Drawer.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
@@ -19,7 +18,6 @@
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const settings = useSettings()
 	const { disabledCameras } = useMachineSettings()
-	const motionClient = useMotionClient()
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
 
@@ -75,22 +73,6 @@
 				No cameras detected
 			{/each}
 		</div>
-
-		<label class="flex flex-col gap-1">
-			Motion client
-			<Select
-				onchange={(event: InputEvent) => {
-					if (event.target instanceof HTMLSelectElement) {
-						motionClient.set(event.target.value)
-					}
-				}}
-				value={motionClient.current}
-			>
-				{#each motionClient.names as name (name)}
-					<option>{name}</option>
-				{/each}
-			</Select>
-		</label>
 
 		<h3 class="pt-2 text-sm"><strong>Pointclouds</strong></h3>
 		<div class="flex flex-col gap-2.5">
