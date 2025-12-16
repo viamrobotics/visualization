@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.1.2
+
+### Patch Changes
+
+- 6297e12: fix parented motion service components rendering
+
 ## 1.1.1
 
 ### Patch Changes
