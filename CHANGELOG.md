@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.1.0
+
+### Minor Changes
+
+- 9c99afe: Include draw/v1 API
+
 ## 1.0.3
 
 ### Patch Changes
