@@ -48,7 +48,6 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 	const lineGeometry = useTrait(() => entity, traits.LineGeometry)
-	const pointsGeometry = useTrait(() => entity, traits.PointsGeometry)
 	const center = useTrait(() => entity, traits.Center)
 
 	const geometryType = $derived.by(() => {
@@ -57,7 +56,6 @@
 		if (sphere.current) return 'sphere'
 		if (bufferGeometry.current) return 'buffer'
 		if (lineGeometry.current) return 'line'
-		if (pointsGeometry.current) return 'points'
 	})
 
 	const color = $derived.by(() => {
@@ -80,7 +78,7 @@
 
 		const result = new Mesh()
 
-		if (geometryType === 'buffer' || geometryType === 'points' || geometryType === 'line') {
+		if (geometryType === 'line') {
 			result.raycast = meshBounds
 		}
 
@@ -108,6 +106,18 @@
 	const oncreate = (ref: BufferGeometry) => {
 		geo = ref
 	}
+
+	$effect.pre(() => {
+		if (mesh && bufferGeometry.current) {
+			mesh.geometry = bufferGeometry.current
+			oncreate(bufferGeometry.current)
+
+			return () => {
+				geo = undefined
+				mesh.geometry.dispose()
+			}
+		}
+	})
 </script>
 
 <Portal id={parent.current}>
@@ -124,19 +134,14 @@
 			<T
 				is={mesh}
 				name={name.current}
-				bvh={{ enabled: bufferGeometry.current !== undefined }}
+				bvh={{ enabled: geometryType === 'buffer' }}
 			>
 				{#if model && renderMode.includes('model')}
 					<T is={model} />
 				{/if}
 
 				{#if !model || renderMode.includes('colliders')}
-					{#if bufferGeometry.current}
-						<T
-							is={bufferGeometry.current}
-							{oncreate}
-						/>
-					{:else if lineGeometry.current}
+					{#if lineGeometry.current}
 						<MeshLineGeometry points={lineGeometry.current} />
 					{:else if box.current}
 						{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}

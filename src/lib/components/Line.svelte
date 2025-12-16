@@ -22,7 +22,11 @@
 <Frame {entity} />
 
 {#if dotColor.current && points.current}
-	<InstancedMesh frustumCulled={false}>
+	<InstancedMesh
+		frustumCulled={false}
+		bvh={{ enabled: false }}
+		raycast={() => null}
+	>
 		<T.SphereGeometry />
 		<T.MeshBasicMaterial color={[dotColor.current.r, dotColor.current.g, dotColor.current.b]} />
 
