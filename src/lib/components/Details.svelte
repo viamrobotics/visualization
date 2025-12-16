@@ -233,7 +233,7 @@
 	{@const ScalarAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 
 	<div
-		class="border-medium bg-extralight absolute top-0 right-0 z-1000 m-2 {showEditFrameOptions
+		class="border-medium bg-extralight absolute top-0 right-0 z-10 m-2 {showEditFrameOptions
 			? 'w-80'
 			: 'w-60'} border p-2 text-xs"
 		use:draggable={{

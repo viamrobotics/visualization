@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor, bvh } from '@threlte/extras'
-	import { PortalTarget } from './portal'
+	import { Grid, interactivity, PerfMonitor, bvh, PortalTarget } from '@threlte/extras'
 	import Entities from '$lib/components/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
@@ -42,6 +41,7 @@
 		enabled.set(!settings.current.enableMeasure)
 	})
 	raycaster.firstHitOnly = true
+	raycaster.params.Points.threshold = 0.005
 
 	bvh(() => ({ helper: false }))
 
@@ -91,6 +91,7 @@
 
 	<T.Group attach={focusedObject ? false : undefined}>
 		<PortalTarget id="world" />
+		<PortalTarget />
 
 		<Entities />
 		<BatchedArrows />

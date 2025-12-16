@@ -48,7 +48,7 @@
 </fieldset>
 
 {#if isOpen}
-	<div class="fixed top-0 left-0 z-1010 flex h-full w-full items-center justify-center">
+	<div class="fixed top-0 left-0 z-20 flex h-full w-full items-center justify-center">
 		<button
 			aria-label="Close"
 			class="absolute h-full w-full bg-black/30"
@@ -57,7 +57,7 @@
 			}}
 		></button>
 		<div
-			class="border-medium z-10 flex h-full max-h-2/3 w-[95%] max-w-[650px] flex-col items-start justify-between border bg-white shadow-2xl"
+			class="border-medium z-1 flex h-full max-h-2/3 w-[95%] max-w-[650px] flex-col items-start justify-between border bg-white shadow-2xl"
 		>
 			<div class=" border-gray-3 flex w-full justify-between border-b p-2">
 				<h3 class="text-subtle-1">Machine connection configs</h3>

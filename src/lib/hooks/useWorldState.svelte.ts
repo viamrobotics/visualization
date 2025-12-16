@@ -100,7 +100,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (metadata.shape === 'arrow') {
-			entityTraits.push(traits.Arrow, traits.Instance)
+			entityTraits.push(traits.Arrow)
 		}
 
 		entityTraits.push(
