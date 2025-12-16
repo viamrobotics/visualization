@@ -56,7 +56,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const client = createResourceClient(
 		MotionClient,
 		() => partID.current,
-		() => currentName ?? ''
+		() => motionClient.current ?? ''
 	)
 
 	const motionQuery = createResourceQuery(
