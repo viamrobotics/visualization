@@ -1,36 +1,30 @@
-import type { FileDropper } from './file-dropper'
-import { parseFileName, readFile, SUPPORTED_EXTENSIONS, SUPPORTED_PREFIXES } from './file-names'
-import { JSON_EXTENSIONS, onJSONDrop } from './json'
-import { MESH_EXTENSIONS, onMeshDrop } from './mesh'
-import { PB_EXTENSIONS, onPBDrop } from './pb'
-import type { Spawner } from './file-dropper'
+import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
+import type { FileDropperSuccess } from './file-dropper'
+import { pcdDropper } from './pcd-dropper'
+import { plyDropper } from './ply-dropper'
+import { snapshotDropper } from './snapshot-dropper'
 
 export type DropStates = 'inactive' | 'hovering' | 'loading'
 
-const fileDropper = <
-	E extends (typeof SUPPORTED_EXTENSIONS)[number],
-	P extends (typeof SUPPORTED_PREFIXES)[number] | undefined,
->(
-	extension: E
-): FileDropper<E, P> => {
-	switch (extension) {
-		case JSON_EXTENSIONS.JSON:
-			return onJSONDrop as FileDropper<E, P>
-		case MESH_EXTENSIONS.PCD:
-		case MESH_EXTENSIONS.PLY:
-			return onMeshDrop as FileDropper<E, P>
-		case PB_EXTENSIONS.PB:
-		case PB_EXTENSIONS.PB_GZ:
-			return onPBDrop as FileDropper<E, P>
-		default:
-			return () => Promise.resolve(undefined)
+const createFileDropper = (extension: string, prefix: string | undefined) => {
+	switch (prefix) {
+		case Prefixes.Snapshot:
+			return snapshotDropper
 	}
+
+	switch (extension) {
+		case Extensions.PCD:
+			return pcdDropper
+		case Extensions.PLY:
+			return plyDropper
+	}
+
+	return undefined
 }
 
 export const useFileDrop = (
-	spawn: Spawner,
-	onError: (message: string) => void,
-	onSuccess: (message: string) => void
+	onSuccess: (result: FileDropperSuccess) => void,
+	onError: (message: string) => void
 ) => {
 	let dropState = $state<DropStates>('inactive')
 
@@ -66,7 +60,7 @@ export const useFileDrop = (
 		for (const file of files) {
 			const fileName = parseFileName(file.name)
 			if (!fileName.success) {
-				handleError(fileName.error)
+				handleError(fileName.error.message)
 				continue
 			}
 
@@ -87,27 +81,24 @@ export const useFileDrop = (
 			})
 
 			reader.addEventListener('load', async (event) => {
-				const result = event.target?.result
-				const dropper = fileDropper(extension)
+				const content = event.target?.result
+				const dropper = createFileDropper(extension, prefix)
 				if (!dropper) {
-					handleError(
-						`${file.name} has an unsupported extension: ${extension}. Only ${SUPPORTED_EXTENSIONS.join(', ')} are supported.`
-					)
+					handleError(`${file.name} is not a supported file type.`)
 					return
 				}
 
-				const error = await dropper({
+				const result = await dropper({
 					name: file.name,
 					extension,
 					prefix,
-					result,
-					spawn,
+					content,
 				})
 
-				if (error) {
-					handleError(error)
+				if (!result.success) {
+					handleError(result.error.message)
 				} else {
-					onSuccess(`Loaded ${file.name}`)
+					onSuccess(result)
 				}
 			})
 

@@ -1,116 +1,158 @@
-import { assert, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { parseFileName, readFile, Extensions, Prefixes } from '../file-names'
 
-// Mock the pcd loader to avoid Worker instantiation in test environment
-vi.mock('$lib/loaders/pcd', () => ({
-	parsePcdInWorker: vi.fn(),
-}))
-
-import * as Subject from '../file-names'
-
-describe('file-names', () => {
-	describe('parseFileName', () => {
-		describe('successful parsing', () => {
-			it.each([
-				{
-					filename: 'snapshot_data.json',
-					expected: { success: true, extension: 'json', prefix: 'snapshot' },
-				},
-				{
-					filename: 'snapshot_2024-01-01.json',
-					expected: { success: true, extension: 'json', prefix: 'snapshot' },
-				},
-				{
-					filename: 'snapshot_data.pb',
-					expected: { success: true, extension: 'pb', prefix: 'snapshot' },
-				},
-				{
-					filename: 'snapshot_2024-01-01.pb',
-					expected: { success: true, extension: 'pb', prefix: 'snapshot' },
-				},
-				{
-					filename: 'snapshot_2024-01-01.pb.gz',
-					expected: { success: true, extension: 'pb.gz', prefix: 'snapshot' },
-				},
-				{
-					filename: 'pointcloud.pcd',
-					expected: { success: true, extension: 'pcd', prefix: undefined },
-				},
-				{
-					filename: 'mesh.ply',
-					expected: { success: true, extension: 'ply', prefix: undefined },
-				},
-				{
-					filename: 'snapshot_model.pcd',
-					expected: { success: true, extension: 'pcd', prefix: undefined },
-				},
-			])('parses $filename correctly', ({ filename, expected }) => {
-				expect(Subject.parseFileName(filename)).toEqual(expected)
-			})
+describe('parseFileName', () => {
+	describe('extension parsing', () => {
+		it.each([
+			{ filename: 'model.pcd', expectedExt: Extensions.PCD },
+			{ filename: 'model.ply', expectedExt: Extensions.PLY },
+			{ filename: 'data.json', expectedExt: Extensions.JSON },
+			{ filename: 'data.pb', expectedExt: Extensions.PB },
+			{ filename: 'data.pb.gz', expectedExt: Extensions.PB_GZ },
+		])('parses $filename as $expectedExt extension', ({ filename, expectedExt }) => {
+			const result = parseFileName(filename)
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.extension).toBe(expectedExt)
+			}
 		})
 
-		describe('error cases', () => {
-			it.each([
-				{
-					filename: 'filename',
-					expectedError: 'Could not determine file extension.',
-				},
-				{
-					filename: 'document.txt',
-					expectedError: 'files are supported',
-				},
-				{
-					filename: 'archive.tar.bz2',
-					expectedError: 'files are supported',
-				},
-				{
-					filename: 'my.pointcloud.data.pcd',
-					expectedError: 'files are supported',
-				},
-				{
-					filename: 'data_file.json',
-					expectedError: 'prefixes are supported',
-				},
-				{
-					filename: 'config_data.pb',
-					expectedError: 'prefixes are supported',
-				},
-				{
-					filename: 'config_data.pb.gz',
-					expectedError: 'prefixes are supported',
-				},
-			])('returns error for $filename', ({ filename, expectedError }) => {
-				const result = Subject.parseFileName(filename)
+		it('returns error for file without extension', () => {
+			const result = parseFileName('noextension')
+			expect(result.success).toBe(false)
+			if (!result.success) {
+				expect(result.error.message).toBe('Could not determine file extension.')
+			}
+		})
 
-				assert(!result.success)
-				expect(result.error).toContain(expectedError)
-			})
+		it('returns error for unsupported extension', () => {
+			const result = parseFileName('document.txt')
+			expect(result.success).toBe(false)
+			if (!result.success) {
+				expect(result.error.message).toContain('files are supported')
+			}
+		})
+
+		it('returns error for unknown nested extension', () => {
+			const result = parseFileName('data.unknown.gz')
+			expect(result.success).toBe(false)
+			if (!result.success) {
+				expect(result.error.message).toContain('files are supported')
+			}
 		})
 	})
 
-	describe('readFile', () => {
+	describe('prefix parsing', () => {
 		it.each([
-			{ extension: 'json', method: 'readAsText' as const },
-			{ extension: 'pcd', method: 'readAsArrayBuffer' as const },
-			{ extension: 'ply', method: 'readAsArrayBuffer' as const },
-			{ extension: 'pb', method: 'readAsArrayBuffer' as const },
-			{ extension: 'pb.gz', method: 'readAsArrayBuffer' as const },
-		])('reads $extension files with $method', ({ extension, method }) => {
-			const file = new File([''], `test.${extension}`)
-			const reader = { readAsText: vi.fn(), readAsArrayBuffer: vi.fn() } as unknown as FileReader
-
-			Subject.readFile(file, reader, extension)
-
-			expect(reader[method]).toHaveBeenCalledWith(file)
+			{ filename: 'snapshot_2024.json', expectedPrefix: Prefixes.Snapshot },
+			{ filename: 'snapshot_data.pb', expectedPrefix: Prefixes.Snapshot },
+			{ filename: 'snapshot_compressed.pb.gz', expectedPrefix: Prefixes.Snapshot },
+		])('parses $filename with snapshot prefix', ({ filename, expectedPrefix }) => {
+			const result = parseFileName(filename)
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.prefix).toBe(expectedPrefix)
+			}
 		})
 
-		it('does nothing when extension is undefined', () => {
-			const file = new File([''], 'test')
-			const reader = { readAsText: vi.fn(), readAsArrayBuffer: vi.fn() } as unknown as FileReader
+		it('returns undefined prefix for files without recognized prefix', () => {
+			const result = parseFileName('model.pcd')
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.prefix).toBeUndefined()
+			}
+		})
 
-			Subject.readFile(file, reader, undefined)
+		it('returns undefined prefix for files with unrecognized prefix', () => {
+			const result = parseFileName('unknown_prefix.json')
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.prefix).toBeUndefined()
+			}
+		})
+	})
 
+	describe('prefix validation', () => {
+		it.each([
+			{ filename: 'snapshot_data.json', expectedExt: Extensions.JSON },
+			{ filename: 'snapshot_data.pb', expectedExt: Extensions.PB },
+			{ filename: 'snapshot_data.pb.gz', expectedExt: Extensions.PB_GZ },
+		])('allows snapshot prefix with $expectedExt extension', ({ filename, expectedExt }) => {
+			const result = parseFileName(filename)
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.extension).toBe(expectedExt)
+				expect(result.prefix).toBe(Prefixes.Snapshot)
+			}
+		})
+
+		it('returns error for snapshot prefix with unsupported extension', () => {
+			const result = parseFileName('snapshot_data.pcd')
+			expect(result.success).toBe(false)
+			if (!result.success) {
+				expect(result.error.message).toContain('snapshot files are supported')
+			}
+		})
+	})
+
+	describe('validation', () => {
+		it('handles filenames with underscores but no valid prefix', () => {
+			const result = parseFileName('my_model_v2.ply')
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.prefix).toBeUndefined()
+				expect(result.extension).toBe(Extensions.PLY)
+			}
+		})
+
+		it('handles filenames with multiple dots with valid extension', () => {
+			const result = parseFileName('my.file.name.pcd')
+			expect(result.success).toBe(true)
+			if (result.success) {
+				expect(result.extension).toBe(Extensions.PCD)
+			}
+		})
+	})
+})
+
+describe('readFile', () => {
+	const createMockReader = () => ({
+		readAsText: vi.fn(),
+		readAsArrayBuffer: vi.fn(),
+	})
+
+	const createMockFile = (name: string) => new File(['content'], name)
+
+	it('reads JSON files as text', () => {
+		const reader = createMockReader()
+		const file = createMockFile('data.json')
+
+		readFile(file, reader as unknown as FileReader, Extensions.JSON)
+
+		expect(reader.readAsText).toHaveBeenCalledWith(file)
+		expect(reader.readAsArrayBuffer).not.toHaveBeenCalled()
+	})
+
+	it.each([Extensions.PCD, Extensions.PLY, Extensions.PB, Extensions.PB_GZ])(
+		'reads %s files as array buffer',
+		(extension) => {
+			const reader = createMockReader()
+			const file = createMockFile(`data.${extension}`)
+
+			readFile(file, reader as unknown as FileReader, extension)
+
+			expect(reader.readAsArrayBuffer).toHaveBeenCalledWith(file)
 			expect(reader.readAsText).not.toHaveBeenCalled()
-			expect(reader.readAsArrayBuffer).not.toHaveBeenCalled()
-		})
+		}
+	)
+
+	it('does nothing when extension is undefined', () => {
+		const reader = createMockReader()
+		const file = createMockFile('data.txt')
+
+		readFile(file, reader as unknown as FileReader, undefined)
+
+		expect(reader.readAsText).not.toHaveBeenCalled()
+		expect(reader.readAsArrayBuffer).not.toHaveBeenCalled()
 	})
 })

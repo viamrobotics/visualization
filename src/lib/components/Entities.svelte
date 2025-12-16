@@ -14,6 +14,7 @@
 	const points = useQuery(traits.PointsGeometry)
 	const lines = useQuery(traits.LineGeometry)
 	const gltfs = useQuery(traits.GLTF)
+	const droppedMeshes = useQuery(traits.DroppedFile, traits.BufferGeometry)
 	const drawnMeshes = useQuery(
 		traits.DrawAPI,
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
@@ -42,27 +43,12 @@
 	</Portal>
 {/each}
 
-{#each points.current as entity (entity)}
+{#each droppedMeshes.current as entity (entity)}
 	<Portal {entity}>
-		<Pointcloud {entity}>
+		<Frame {entity}>
+			<PortalTarget {entity} />
 			<Label text={entity.get(traits.Name)} />
-		</Pointcloud>
-	</Portal>
-{/each}
-
-{#each frames.current as entity (entity)}
-	<Portal {entity}>
-		<Pose {entity}>
-			{#snippet children({ pose })}
-				<Frame
-					{pose}
-					{entity}
-				>
-					<PortalTarget {entity} />
-					<Label text={entity.get(traits.Name)} />
-				</Frame>
-			{/snippet}
-		</Pose>
+		</Frame>
 	</Portal>
 {/each}
 
@@ -89,4 +75,28 @@
 		<PortalTarget {entity} />
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
+{/each}
+
+{#each points.current as entity (entity)}
+	<Portal {entity}>
+		<Pointcloud {entity}>
+			<Label text={entity.get(traits.Name)} />
+		</Pointcloud>
+	</Portal>
+{/each}
+
+{#each frames.current as entity (entity)}
+	<Portal {entity}>
+		<Pose {entity}>
+			{#snippet children({ pose })}
+				<Frame
+					{pose}
+					{entity}
+				>
+					<PortalTarget {entity} />
+					<Label text={entity.get(traits.Name)} />
+				</Frame>
+			{/snippet}
+		</Pose>
+	</Portal>
 {/each}

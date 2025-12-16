@@ -1,36 +1,66 @@
-import {
-	isJSONPrefix,
-	JSON_EXTENSIONS,
-	SUPPORTED_JSON_EXTENSIONS,
-	SUPPORTED_JSON_PREFIXES,
-} from './json'
-import { MESH_EXTENSIONS, SUPPORTED_MESH_EXTENSIONS } from './mesh'
-import { isPBPrefix, PB_EXTENSIONS, SUPPORTED_PB_EXTENSIONS, SUPPORTED_PB_PREFIXES } from './pb'
+import type { ValueOf } from 'type-fest'
 
-export const SUPPORTED_EXTENSIONS = [
-	...SUPPORTED_JSON_EXTENSIONS,
-	...SUPPORTED_PB_EXTENSIONS,
-	...SUPPORTED_MESH_EXTENSIONS,
-]
+export const Extensions = {
+	JSON: 'json',
+	PCD: 'pcd',
+	PLY: 'ply',
+	PB: 'pb',
+	PB_GZ: 'pb.gz',
+} as const
 
-export const SUPPORTED_PREFIXES = [...SUPPORTED_JSON_PREFIXES, ...SUPPORTED_PB_PREFIXES]
+export const Prefixes = {
+	Snapshot: 'snapshot',
+} as const
 
-const isExtension = (extension: string): extension is (typeof SUPPORTED_EXTENSIONS)[number] => {
-	return SUPPORTED_EXTENSIONS.includes(extension as (typeof SUPPORTED_EXTENSIONS)[number])
+class FileNameError extends Error {
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options)
+		this.name = 'FileNameError'
+	}
 }
 
 interface ParseFileSuccess {
 	success: true
-	extension: (typeof SUPPORTED_EXTENSIONS)[number]
-	prefix: (typeof SUPPORTED_PREFIXES)[number] | undefined
+	extension: ValueOf<typeof Extensions>
+	prefix: ValueOf<typeof Prefixes> | undefined
 }
 
 interface ParseFileError {
 	success: false
-	error: string
+	error: FileNameError
 }
 
 type ParseFileResult = ParseFileSuccess | ParseFileError
+
+const isExtension = (extension: string): extension is ValueOf<typeof Extensions> => {
+	return Object.values(Extensions).includes(extension as ValueOf<typeof Extensions>)
+}
+
+const isPrefix = (prefix: string | undefined): prefix is ValueOf<typeof Prefixes> => {
+	if (!prefix) return false
+	return Object.values(Prefixes).includes(prefix as ValueOf<typeof Prefixes>)
+}
+
+const validatePrefix = (
+	extension: ValueOf<typeof Extensions>,
+	prefix: string
+): FileNameError | undefined => {
+	switch (prefix) {
+		case Prefixes.Snapshot:
+			if (
+				extension !== Extensions.JSON &&
+				extension !== Extensions.PB &&
+				extension !== Extensions.PB_GZ
+			) {
+				return new FileNameError(
+					`Only ${Extensions.JSON}, ${Extensions.PB} and ${Extensions.PB_GZ} snapshot files are supported.`
+				)
+			}
+			break
+	}
+
+	return undefined
+}
 
 export const parseFileName = (filename: string): ParseFileResult => {
 	const [name, ...extensions] = filename.split('.')
@@ -38,57 +68,55 @@ export const parseFileName = (filename: string): ParseFileResult => {
 	if (!suffix) {
 		return {
 			success: false,
-			error: 'Could not determine file extension.',
+			error: new FileNameError('Could not determine file extension.'),
 		}
 	}
 
 	const nested = extensions.at(-2)
-	const extension = nested ? `${nested}.${suffix}` : suffix
+	let extension = suffix
+	if (nested) {
+		const nestedExtension = `${nested}.${suffix}`
+		if (isExtension(nestedExtension)) {
+			extension = nestedExtension
+		}
+	}
+
 	if (!isExtension(extension)) {
 		return {
 			success: false,
-			error: `Only ${SUPPORTED_EXTENSIONS.join(', ')} files are supported.`,
+			error: new FileNameError(`Only ${Object.values(Extensions).join(', ')} files are supported.`),
 		}
 	}
 
 	const prefix = name.split('_').at(0)
-	switch (extension) {
-		case JSON_EXTENSIONS.JSON:
-			if (!isJSONPrefix(prefix)) {
-				return {
-					success: false,
-					error: `Only JSON files with the following prefixes are supported: ${SUPPORTED_JSON_PREFIXES.join(', ')}.`,
-				}
-			}
-			return { success: true, extension, prefix }
-		case PB_EXTENSIONS.PB:
-		case PB_EXTENSIONS.PB_GZ:
-			if (!isPBPrefix(prefix)) {
-				return {
-					success: false,
-					error: `Only protocol buffer binary files with the following prefixes are supported: ${SUPPORTED_PB_PREFIXES.join(', ')}.`,
-				}
-			}
-			return { success: true, extension, prefix }
-		case MESH_EXTENSIONS.PCD:
-		case MESH_EXTENSIONS.PLY:
+	if (isPrefix(prefix)) {
+		const error = validatePrefix(extension, prefix)
+		if (error) {
 			return {
-				success: true,
-				extension,
-				prefix: undefined,
+				success: false,
+				error,
 			}
+		}
+
+		return { success: true, extension, prefix }
 	}
+
+	return { success: true, extension, prefix: undefined }
 }
 
-export const readFile = (file: File, reader: FileReader, extension: string | undefined) => {
+export const readFile = (
+	file: File,
+	reader: FileReader,
+	extension: ValueOf<typeof Extensions> | undefined
+) => {
 	if (!extension) return
 	switch (extension) {
-		case JSON_EXTENSIONS.JSON:
+		case Extensions.JSON:
 			return reader.readAsText(file)
-		case MESH_EXTENSIONS.PCD:
-		case MESH_EXTENSIONS.PLY:
-		case PB_EXTENSIONS.PB:
-		case PB_EXTENSIONS.PB_GZ:
+		case Extensions.PCD:
+		case Extensions.PLY:
+		case Extensions.PB:
+		case Extensions.PB_GZ:
 			return reader.readAsArrayBuffer(file)
 	}
 }

@@ -13,7 +13,7 @@ test.describe('file drop', () => {
 		await dropFile(path.resolve(__dirname, '../client/data/simple.pcd'))
 
 		await expect(page.getByText('simple.pcd', { exact: true })).toBeVisible({ timeout: 10000 })
-		await expect(page.getByText('Loaded simple.pcd')).toBeVisible({ timeout: 5000 })
+		await expect(page.getByText('simple.pcd loaded.')).toBeVisible({ timeout: 5000 })
 
 		await takeScreenshot('FILE_DROP_PCD')
 		assertScreenshots()
@@ -25,7 +25,7 @@ test.describe('file drop', () => {
 		await dropFile(path.resolve(__dirname, '../client/data/lod_100.ply'))
 
 		await expect(page.getByText('lod_100.ply', { exact: true })).toBeVisible({ timeout: 10000 })
-		await expect(page.getByText('Loaded lod_100.ply')).toBeVisible({ timeout: 5000 })
+		await expect(page.getByText('lod_100.ply loaded.')).toBeVisible({ timeout: 5000 })
 
 		await takeScreenshot('FILE_DROP_PLY')
 		assertScreenshots()
