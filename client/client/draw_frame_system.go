@@ -21,7 +21,7 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 	geometries := make([]spatialmath.Geometry, 0)
 	colors := make([]string, 0)
 	for _, transform := range transforms.Transforms {
-		geometry, err := spatialmath.NewGeometryFromProto(transform.GetPhysicalObject())
+		geometry, err := referenceframe.NewGeometryFromProto(transform.GetPhysicalObject())
 		if err != nil {
 			return err
 		}

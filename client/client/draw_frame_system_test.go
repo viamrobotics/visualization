@@ -39,7 +39,7 @@ func TestDrawFrameSystem(t *testing.T) {
 		// draw the frame system
 		inputs := referenceframe.NewZeroInputs(fs)
 		test.That(t, DrawFrameSystem(fs, inputs), test.ShouldBeNil)
-		inputs[armName] = referenceframe.FloatsToInputs([]float64{1, 1, 1, 1, 1, 1})
+		inputs[armName] = []float64{1, 1, 1, 1, 1, 1}
 		test.That(t, DrawFrameSystem(fs, inputs), test.ShouldBeNil)
 	})
 }
