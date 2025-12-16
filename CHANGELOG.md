@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.1.1
+
+### Patch Changes
+
+- eaee2e6: Bump go dependencies
+
 ## 1.1.0
 
 ### Minor Changes
