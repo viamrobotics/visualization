@@ -140,6 +140,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: protos-ts
+          path: src/lib/
 
       - name: Check
         run: pnpm run check
@@ -177,6 +178,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: protos-ts
+          path: src/lib/
 
       - name: Download Go proto artifacts
         uses: actions/download-artifact@v4
