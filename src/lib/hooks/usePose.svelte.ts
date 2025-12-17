@@ -1,8 +1,7 @@
-import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
+import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
 import { usePartID } from './usePartID.svelte'
-import { MotionClient, Pose, Transform } from '@viamrobotics/sdk'
+import { commonApi, Pose } from '@viamrobotics/sdk'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { useMotionClient } from './useMotionClient.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
 import { untrack } from 'svelte'
@@ -17,7 +16,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const logs = useLogs()
 	const { refreshRates } = useMachineSettings()
 	const partID = usePartID()
-	const motionClient = useMotionClient()
+	const robotClient = useRobotClient(() => partID.current)
 	const currentName = $derived(name())
 	const currentParent = $derived(parent())
 	const resourceByName = useResourceByName()
@@ -28,12 +27,6 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const frames = useFrames()
 	let pose = $state<Pose | undefined>(undefined)
 
-	const client = createResourceClient(
-		MotionClient,
-		() => partID.current,
-		() => motionClient.current ?? ''
-	)
-
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
 	const resolvedParent = $derived(
@@ -41,15 +34,17 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 			? `${parent()}_origin`
 			: parent()
 	)
+
 	const resolvedName = $derived(
 		resource?.subtype === 'arm' || resource?.subtype === 'gantry'
 			? `${currentName}_origin`
 			: currentName
 	)
-	const query = createResourceQuery(
-		client,
+
+	const query = createRobotQuery(
+		robotClient,
 		'getPose',
-		() => [resolvedName, resolvedParent ?? 'world', []] as [string, string, Transform[]],
+		() => [resolvedName, resolvedParent ?? 'world', []] as [string, string, commonApi.Transform[]],
 		() => ({
 			enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
 			refetchInterval: interval === RefetchRates.MANUAL ? false : interval,
