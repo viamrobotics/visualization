@@ -550,10 +550,10 @@ export const provideDrawAPI = () => {
 	const connect = (backendIP: string, websocketPort: string) => {
 		const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
 		ws = new WebSocket(`${protocol}://${backendIP}:${websocketPort}/ws`)
-		ws.addEventListener('close', onClose)
-		ws.addEventListener('error', onError)
-		ws.addEventListener('open', onOpen)
-		ws.addEventListener('message', onMessage)
+		ws.onclose = onClose
+		ws.onerror = onError
+		ws.onopen = onOpen
+		ws.onmessage = onMessage
 	}
 
 	const disconnect = () => {
@@ -566,7 +566,6 @@ export const provideDrawAPI = () => {
 	}
 
 	$effect(() => {
-		console.log(drawConnectionConfig.current)
 		if (!backendIP || !websocketPort) {
 			return
 		}

@@ -69,7 +69,6 @@
 	})
 
 	createPartIDContext(() => partID)
-	$inspect(drawConnectionConfig)
 	provideDrawConnectionConfig(() => drawConnectionConfig)
 	provideWeblabs()
 	provideToast()
