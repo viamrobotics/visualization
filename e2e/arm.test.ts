@@ -117,7 +117,6 @@ test('arm', async ({ browser }) => {
 		},
 	])
 	const page = await context.newPage()
-	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
