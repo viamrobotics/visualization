@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.1.3
+
+### Patch Changes
+
+- 44886c4: Fix: correct pointcloud parenting to camera
+
 ## 1.1.2
 
 ### Patch Changes
