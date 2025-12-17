@@ -101,8 +101,6 @@ export const providePointclouds = (partID: () => string) => {
 
 	const queryMap = $derived(typeSafeObjectFromEntries(queries))
 
-	$inspect(queries)
-
 	$effect(() => {
 		for (const [name, query] of queries) {
 			if (query.isFetching) {
@@ -165,7 +163,6 @@ export const providePointclouds = (partID: () => string) => {
 				continue
 			}
 
-			console.log(name)
 			const entity = world.spawn(
 				traits.Parent(name),
 				traits.Name(`${name} pointcloud`),
