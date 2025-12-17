@@ -1,10 +1,13 @@
 <script lang="ts">
-	import Button from '$lib/components/dashboard/Button.svelte'
-	import { Icon } from '@viamrobotics/prime-core'
+	import DashboardButton from '$lib/components/dashboard/Button.svelte'
+	import { Input, Switch, Button, Icon, IconButton } from '@viamrobotics/prime-core'
+	import * as floatingPanel from '@zag-js/floating-panel'
+	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import {
 		useConnectionConfigs,
 		useActiveConnectionConfig,
 	} from '../hooks/useConnectionConfigs.svelte'
+	import Collapsible from './Collapsible.svelte'
 
 	interface Props {
 		isOpen: boolean
@@ -32,118 +35,158 @@
 			// Do nothing
 		}
 	}
+
+	const id = $props.id()
+	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
+		id,
+		defaultSize: { width: 700, height: 500 },
+		resizable: false,
+		defaultOpen: true,
+	}))
+
+	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
 </script>
 
 <svelte:window {onpaste} />
 
 <fieldset>
-	<Button
+	<DashboardButton
 		active
 		icon="robot-outline"
 		description="Machine connection configs"
-		onclick={() => {
-			isOpen = true
-		}}
+		{...api.getTriggerProps()}
 	/>
 </fieldset>
 
-{#if isOpen}
-	<div class="fixed top-0 left-0 z-20 flex h-full w-full items-center justify-center">
-		<button
-			aria-label="Close"
-			class="absolute h-full w-full bg-black/30"
-			onclick={() => {
-				isOpen = false
-			}}
-		></button>
+<div {...api.getPositionerProps()}>
+	<div
+		{...api.getContentProps()}
+		class="border-medium overflow-y-auto border-1 bg-white"
+	>
 		<div
-			class="border-medium z-1 flex h-full max-h-2/3 w-[95%] max-w-[650px] flex-col items-start justify-between border bg-white shadow-2xl"
+			{...api.getDragTriggerProps()}
+			class="sticky top-0 z-10 bg-white"
 		>
-			<div class=" border-gray-3 flex w-full justify-between border-b p-2">
-				<h3 class="text-subtle-1">Machine connection configs</h3>
-				<button
-					onclick={() => {
-						isOpen = !isOpen
-					}}
+			<div
+				{...api.getHeaderProps()}
+				class="border-medium flex justify-between border-b p-2"
+			>
+				<p
+					{...api.getTitleProps()}
+					class="text-xs"
 				>
-					<Icon name="close" />
-				</button>
+					Machine connection configs
+				</p>
+				<div
+					{...api.getControlProps()}
+					class="flex gap-3"
+				>
+					<button {...api.getCloseTriggerProps()}>
+						<Icon name="close" />
+					</button>
+				</div>
 			</div>
+		</div>
 
+		<div {...api.getBodyProps()}>
 			<div class="flex grow flex-col gap-2 overflow-y-auto p-2">
 				{#each connectionConfigs.current as config, index (index)}
-					<form class="flex flex-wrap items-center gap-2">
-						<label class="label flex items-center gap-1.5 text-xs">
-							<input
-								class="checkbox"
-								type="checkbox"
-								checked={activeConfig.current?.partId === config.partId}
-								onchange={(event) => {
-									const { checked } = event.target as HTMLInputElement
-									activeConfig.set(checked ? index : undefined)
+					<form class="flex flex-col gap-2">
+						<div class="flex justify-between gap-2">
+							<Switch
+								on={activeConfig.current?.partId === config.partId}
+								on:change={(event) => {
+									console.log(event)
+									activeConfig.set(event.detail ? index : undefined)
 								}}
 							/>
-							Active
-						</label>
 
-						<input
-							bind:value={config.host}
-							class="input max-w-72 text-xs"
-							placeholder="Host"
-						/>
-						<input
-							bind:value={config.partId}
-							class="input max-w-72 text-xs"
-							placeholder="Part ID"
-						/>
-						<input
-							bind:value={config.apiKeyId}
-							class="input max-w-72 text-xs"
-							placeholder="API Key ID"
-						/>
-						<input
-							bind:value={config.apiKeyValue}
-							class="input max-w-72 text-xs"
-							placeholder="API Key Value"
-						/>
-						<input
-							bind:value={config.signalingAddress}
-							class="input max-w-72 text-xs"
-							placeholder="Signaling Address"
-						/>
-						{#if !connectionConfigs.isEnvConfig(config)}
-							<button
-								type="button"
-								class="btn preset-filled p-2 text-xs"
+							<Input
+								bind:value={config.host}
+								class="input w-full grow text-xs"
+								placeholder="Host"
+							/>
+
+							{#if !connectionConfigs.isEnvConfig(config)}
+								<Button
+									onclick={() => {
+										connectionConfigs.remove(index)
+									}}
+								>
+									Delete
+								</Button>
+							{/if}
+
+							<IconButton
+								icon="content-copy"
+								label="Copy config"
 								onclick={() => {
-									connectionConfigs.remove(index)
+									const data = connectionConfigs.current[index]
+									navigator.clipboard.writeText(JSON.stringify(data))
 								}}
-							>
-								Delete
-							</button>
-						{/if}
+							/>
+						</div>
 
-						<button
-							type="button"
-							class="btn preset-filled p-2 text-xs"
-							onclick={() => {
-								const data = connectionConfigs.current[index]
-								navigator.clipboard.writeText(JSON.stringify(data))
-							}}
-						>
-							Copy
-						</button>
+						<Collapsible>
+							<div class="grid grid-cols-3 items-center gap-2 pt-2">
+								<label
+									for="{config.host}-partId"
+									class="text-xs">Part ID</label
+								>
+								<div class="col-span-2">
+									<Input
+										id="{config.host}-partId"
+										bind:value={config.partId}
+									/>
+								</div>
+
+								<label
+									for="{config.host}-apiKeyId"
+									class="text-xs">API key ID</label
+								>
+								<div class="col-span-2">
+									<Input
+										id="{config.host}-apiKeyId"
+										bind:value={config.apiKeyId}
+									/>
+								</div>
+
+								<label
+									for="{config.host}-apiKeyValue"
+									class="text-xs">API key value</label
+								>
+								<div class="col-span-2">
+									<Input
+										id="{config.host}-apiKeyValue"
+										bind:value={config.apiKeyValue}
+									/>
+								</div>
+
+								<label
+									for="{config.host}-address"
+									class="text-xs">Signaling address</label
+								>
+								<div class="col-span-2">
+									<Input
+										id="{config.host}-address"
+										bind:value={config.signalingAddress}
+									/>
+								</div>
+							</div>
+						</Collapsible>
 					</form>
 
-					<div class="mt-2 mb-4 w-full border-b border-gray-300"></div>
+					<div class="mt-2 mb-2 w-full border-b border-gray-300"></div>
 				{/each}
-
-				<button
-					type="button"
-					class="btn preset-filled"
-					onclick={() => connectionConfigs.add()}>Add config</button
+			</div>
+			<div class="border-medium flex w-full justify-center border-t bg-white p-2">
+				<Button
+					icon="plus"
+					onclick={() => connectionConfigs.add()}
 				>
+					Add config
+				</Button>
 			</div>
 		</div>
 	</div>
-{/if}
+</div>
