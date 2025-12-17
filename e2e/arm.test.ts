@@ -127,7 +127,9 @@ test('arm', async ({ browser }) => {
 	// SETUP CONFIG
 	setupMachineConfig(page, testConfig)
 
-	const frameTreeCarrot = await page.waitForSelector('[data-part="branch-indicator"]', { timeout: 5000 })
+	const frameTreeCarrot = await page.waitForSelector('[data-part="branch-indicator"]', {
+		timeout: 5000,
+	})
 	await frameTreeCarrot.click()
 
 	await expect(page.getByText('arm-1:base_link', { exact: true })).toBeVisible()

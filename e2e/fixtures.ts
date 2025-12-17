@@ -1,16 +1,16 @@
-import { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { Page } from '@playwright/test'
+import { expect } from '@playwright/test'
 
 interface TestConfig {
-    host: string
-    partId: string
-    apiKeyId: string
-    apiKeyValue: string
-    signalingAddress: string
+	host: string
+	partId: string
+	apiKeyId: string
+	apiKeyValue: string
+	signalingAddress: string
 }
 
 export const setupMachineConfig = async (page: Page, testConfig: TestConfig) => {
-    const machineConfigButton = page.getByRole('radio', { name: 'Machine connection configs' })
+	const machineConfigButton = page.getByRole('radio', { name: 'Machine connection configs' })
 	await expect(machineConfigButton).toBeVisible()
 	await machineConfigButton.click()
 
