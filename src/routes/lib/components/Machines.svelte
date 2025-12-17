@@ -9,12 +9,6 @@
 	} from '../hooks/useConnectionConfigs.svelte'
 	import Collapsible from './Collapsible.svelte'
 
-	interface Props {
-		isOpen: boolean
-	}
-
-	let { isOpen = $bindable(false) }: Props = $props()
-
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 
