@@ -14,6 +14,7 @@
 	<button
 		{...api.getTriggerProps()}
 		class="bg-gray-2 m-auto flex w-14 justify-center"
+		aria-label="Expand connection config"
 	>
 		<Icon
 			name="chevron-down"
