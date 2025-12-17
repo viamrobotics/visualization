@@ -1,6 +1,12 @@
-import { createViamClient, JsonValue, Struct, ViamClient, ViamClientOptions } from "@viamrobotics/sdk"
-import { expect, test } from "@playwright/test"
-import { execSync } from "child_process"
+import {
+	createViamClient,
+	JsonValue,
+	Struct,
+	ViamClient,
+	ViamClientOptions,
+} from '@viamrobotics/sdk'
+import { expect, test } from '@playwright/test'
+import { execSync } from 'child_process'
 
 const testConfig = {
 	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
@@ -28,7 +34,6 @@ async function connectViamClient(): Promise<ViamClient> {
 	return client
 }
 
-
 let viamClient: ViamClient
 
 test.beforeAll(async () => {
@@ -36,60 +41,60 @@ test.beforeAll(async () => {
 })
 
 const armConfig = {
-  components: [
-    {
-      name: "arm-1",
-      api: "rdk:component:arm",
-      model: "rdk:builtin:fake",
-      attributes: {
-        "arm-model": "ur5e",
-      },
-      frame: {
-        parent: "world",
-        translation: {
-          x: 0,
-          y: 0,
-          z: 0,
-        },
-        orientation: {
-          type: "ov_degrees",
-          value: {
-            x: 0,
-            y: 0,
-            z: 1,
-            th: 0,
-          },
-        },
-      },
-    },
-    {
-      name: "generic-1",
-      api: "rdk:component:generic",
-      model: "rdk:builtin:fake",
-      attributes: {},
-      frame: {
-        parent: "arm-1",
-        translation: {
-          x: 0,
-          y: 0,
-          z: 100,
-        },
-        orientation: {
-          type: "ov_degrees",
-          value: {
-            x: 0,
-            y: 0,
-            z: 1,
-            th: 0,
-          },
-        },
-        geometry: {
-          type: "sphere",
-          r: 100,
-        },
-      },
-    },
-  ],
+	components: [
+		{
+			name: 'arm-1',
+			api: 'rdk:component:arm',
+			model: 'rdk:builtin:fake',
+			attributes: {
+				'arm-model': 'ur5e',
+			},
+			frame: {
+				parent: 'world',
+				translation: {
+					x: 0,
+					y: 0,
+					z: 0,
+				},
+				orientation: {
+					type: 'ov_degrees',
+					value: {
+						x: 0,
+						y: 0,
+						z: 1,
+						th: 0,
+					},
+				},
+			},
+		},
+		{
+			name: 'generic-1',
+			api: 'rdk:component:generic',
+			model: 'rdk:builtin:fake',
+			attributes: {},
+			frame: {
+				parent: 'arm-1',
+				translation: {
+					x: 0,
+					y: 0,
+					z: 100,
+				},
+				orientation: {
+					type: 'ov_degrees',
+					value: {
+						x: 0,
+						y: 0,
+						z: 1,
+						th: 0,
+					},
+				},
+				geometry: {
+					type: 'sphere',
+					r: 100,
+				},
+			},
+		},
+	],
 }
 
 test('arm', async ({ browser }) => {
@@ -100,9 +105,9 @@ test('arm', async ({ browser }) => {
 		Struct.fromJson(armConfig as unknown as JsonValue)
 	)
 
-    const failedScreenshots = [] as string[]
+	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
-    await context.addCookies([
+	await context.addCookies([
 		{
 			name: 'weblab_experiments',
 			value: 'MOTION_TOOLS_RENDER_ARM_MODELS',
@@ -110,7 +115,7 @@ test('arm', async ({ browser }) => {
 			path: '/',
 		},
 	])
-	let page = await context.newPage()
+	const page = await context.newPage()
 	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
@@ -138,7 +143,7 @@ test('arm', async ({ browser }) => {
 
 	await page.getByTestId('icon-close').click()
 
-    await page.waitForTimeout(5000) // wait for arm geometries to load
+	await page.waitForTimeout(5000) // wait for arm geometries to load
 
 	await expect(page.getByText('arm-1', { exact: true })).toBeVisible()
 	await page.getByText('arm-1', { exact: true }).click()
@@ -155,13 +160,13 @@ test('arm', async ({ browser }) => {
 		failedScreenshots.push(`${testPrefix}-0-loaded.png`)
 	}
 
-    // MOVE ARM
-    execSync('go run e2e/go-scripts/main.go moveArmJointPositions', {
-        encoding: 'utf-8',
-    })
+	// MOVE ARM
+	execSync('go run e2e/go-scripts/main.go moveArmJointPositions', {
+		encoding: 'utf-8',
+	})
 
-    await page.waitForTimeout(1000) // wait for arm pose refetch
-    try {
+	await page.waitForTimeout(1000) // wait for arm pose refetch
+	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-moved.png`, {
 			fullPage: true,
 			threshold: 0.1,
