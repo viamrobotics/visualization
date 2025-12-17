@@ -96,7 +96,6 @@
 							<Switch
 								on={activeConfig.current?.partId === config.partId}
 								on:change={(event) => {
-									console.log(event)
 									activeConfig.set(event.detail ? index : undefined)
 								}}
 							/>
