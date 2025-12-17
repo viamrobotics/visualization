@@ -91,8 +91,8 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
-	await page.getByTestId('icon-robot-outline').click()
+	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
+	await page.getByLabel('Machine connection configs').click()
 
 	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
 	await page.getByText('Add config', { exact: true }).click()
@@ -273,8 +273,8 @@ test('create and delete frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
-	await page.getByTestId('icon-robot-outline').click()
+	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
+	await page.getByLabel('Machine connection configs').click()
 
 	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
 	await page.getByText('Add config', { exact: true }).click()
@@ -434,8 +434,8 @@ test('fragement edit frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
-	await page.getByTestId('icon-robot-outline').click()
+	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
+	await page.getByLabel('Machine connection configs').click()
 
 	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
 	await page.getByText('Add config', { exact: true }).click()

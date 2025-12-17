@@ -124,26 +124,26 @@ test('arm', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByTestId('icon-robot-outline')).toBeVisible()
-	await page.getByTestId('icon-robot-outline').click()
+	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
+	await page.getByLabel('Machine connection configs').click()
 
 	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
 	await page.getByText('Add config', { exact: true }).click()
 
-	await expect(page.getByPlaceholder('Host')).toBeVisible()
-	await page.getByPlaceholder('Host').fill(testConfig.host)
-	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
-	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
-	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
-	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
-	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
-	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
-	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
-	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
+	await expect(page.getByPlaceholder(/host/iu)).toBeVisible()
+	await page.getByPlaceholder(/host/iu).fill(testConfig.host)
+	await expect(page.getByPlaceholder(/part id/iu)).toBeVisible()
+	await page.getByPlaceholder(/part id/iu).fill(testConfig.partId)
+	await expect(page.getByPlaceholder(/api key id/iu)).toBeVisible()
+	await page.getByPlaceholder(/api key id/iu).fill(testConfig.apiKeyId)
+	await expect(page.getByPlaceholder(/api key value/iu)).toBeVisible()
+	await page.getByPlaceholder(/api key value/iu).fill(testConfig.apiKeyValue)
+	await expect(page.getByPlaceholder(/signaling address/iu)).toBeVisible()
+	await page.getByPlaceholder(/signaling address/iu).fill(testConfig.signalingAddress)
 
 	await page.getByTestId('icon-close').click()
 
-	await page.waitForTimeout(5000) // wait for arm geometries to load
+	await page.waitForSelector('[data-part="branch-indicator"]', { timeout: 5000 })
 
 	await expect(page.getByText('arm-1', { exact: true })).toBeVisible()
 	await page.getByText('arm-1', { exact: true }).click()
