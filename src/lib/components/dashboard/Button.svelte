@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { Icon, type IconName, Tooltip } from '@viamrobotics/prime-core'
 	import { Ruler } from 'lucide-svelte'
+	import type { ClassValue, MouseEventHandler } from 'svelte/elements'
 
 	interface Props {
 		icon: IconName | 'ruler'
 		active?: boolean
 		description: string
 		hotkey?: string
-		class?: string
-		onclick?: () => void
+		class?: ClassValue | null | undefined
+		onclick?: MouseEventHandler<HTMLButtonElement> | null | undefined
 	}
 
 	let {
