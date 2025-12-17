@@ -45,7 +45,6 @@
 		"@testing-library/jest-dom": "6.8.0",
 		"@testing-library/svelte": "5.2.8",
 		"@testing-library/user-event": "^14.6.1",
-		"@thi.ng/paths": "5.2.21",
 		"@threlte/core": "8.3.0",
 		"@threlte/extras": "9.7.0",
 		"@threlte/rapier": "3.2.0",
@@ -69,8 +68,6 @@
 		"globals": "16.3.0",
 		"idb-keyval": "6.2.2",
 		"jsdom": "26.1.0",
-		"koota": "^0.5.3",
-		"lodash-es": "4.17.21",
 		"lucide-svelte": "0.542.0",
 		"prettier": "3.6.2",
 		"prettier-plugin-svelte": "3.4.0",
@@ -82,7 +79,6 @@
 		"svelte-virtuallists": "1.4.2",
 		"tailwindcss": "4.1.13",
 		"three": "0.182.0",
-		"three-mesh-bvh": "^0.9.1",
 		"threlte-uikit": "1.2.1",
 		"tsx": "4.20.5",
 		"type-fest": "^5.0.1",
@@ -104,6 +100,7 @@
 		"@viamrobotics/svelte-sdk": ">=0.1",
 		"@zag-js/svelte": ">=1",
 		"@zag-js/tree-view": ">=1",
+		"camera-controls": ">=3",
 		"idb-keyval": ">=6",
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
@@ -148,6 +145,8 @@
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
 		"@tanstack/svelte-query-devtools": "^6.0.2",
+		"koota": "^0.5.3",
+		"lodash-es": "4.17.21",
 		"uuid-tool": "^2.0.3"
 	}
 }
