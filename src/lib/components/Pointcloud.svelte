@@ -7,6 +7,7 @@
 		OrthographicCamera,
 	} from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
+	import { Portal } from '@threlte/extras'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -25,6 +26,7 @@
 	const settings = useSettings()
 
 	const name = useTrait(() => entity, traits.Name)
+	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const positions = useTrait(() => entity, traits.PointsGeometry)
 	const color = useTrait(() => entity, traits.Color)
@@ -96,13 +98,15 @@
 	})
 </script>
 
-<T
-	is={points}
-	name={name.current}
-	{...events}
-	bvh={{ maxDepth: 40, maxLeafTris: 20 }}
->
-	<T is={geometry} />
-	<T is={material} />
-	{@render children?.()}
-</T>
+<Portal id={parent.current}>
+	<T
+		is={points}
+		name={name.current}
+		{...events}
+		bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+	>
+		<T is={geometry} />
+		<T is={material} />
+		{@render children?.()}
+	</T>
+</Portal>
