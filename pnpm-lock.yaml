@@ -17,6 +17,9 @@ importers:
       '@tanstack/svelte-query-devtools':
         specifier: ^6.0.2
         version: 6.0.2(@tanstack/svelte-query@6.0.9(svelte@5.45.9))(svelte@5.45.9)
+      koota:
+        specifier: ^0.5.3
+        version: 0.5.3(@types/react@19.2.2)
       uuid-tool:
         specifier: ^2.0.3
         version: 2.0.3
@@ -153,9 +156,6 @@ importers:
       jsdom:
         specifier: 26.1.0
         version: 26.1.0
-      koota:
-        specifier: ^0.5.3
-        version: 0.5.3(@types/react@19.2.2)
       lodash-es:
         specifier: 4.17.21
         version: 4.17.21
