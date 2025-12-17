@@ -83,7 +83,10 @@
 					{...api.getControlProps()}
 					class="flex gap-3"
 				>
-					<button onclick={() => (isOpen = false)}>
+					<button
+						aria-label="Close connection configs panel"
+						onclick={() => (isOpen = false)}
+					>
 						<Icon name="close" />
 					</button>
 				</div>
