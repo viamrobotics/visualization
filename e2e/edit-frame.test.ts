@@ -6,6 +6,7 @@ import {
 	ViamClient,
 	ViamClientOptions,
 } from '@viamrobotics/sdk'
+import { setupMachineConfig } from './fixtures'
 
 const testConfig = {
 	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
@@ -91,24 +92,7 @@ test('basic edit frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
-	await page.getByLabel('Machine connection configs').click()
-
-	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
-	await page.getByText('Add config', { exact: true }).click()
-
-	await expect(page.getByPlaceholder('Host')).toBeVisible()
-	await page.getByPlaceholder('Host').fill(testConfig.host)
-	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
-	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
-	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
-	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
-	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
-	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
-	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
-	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
-
-	await page.getByTestId('icon-close').click()
+	setupMachineConfig(page, testConfig)
 
 	// OPEN A WORLD OBJECT AND EDIT THE FRAME
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
@@ -273,24 +257,7 @@ test('create and delete frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
-	await page.getByLabel('Machine connection configs').click()
-
-	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
-	await page.getByText('Add config', { exact: true }).click()
-
-	await expect(page.getByPlaceholder('Host')).toBeVisible()
-	await page.getByPlaceholder('Host').fill(testConfig.host)
-	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
-	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
-	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
-	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
-	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
-	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
-	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
-	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
-
-	await page.getByTestId('icon-close').click()
+	setupMachineConfig(page, testConfig)
 
 	// WAIT FOR THE TREE DRAWER TO LOAD
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
@@ -299,8 +266,8 @@ test('create and delete frame', async ({ browser }) => {
 	await expect(page.getByText('Add frames', { exact: true })).toBeVisible()
 	page.getByText('Add frames', { exact: true }).click()
 
-	await expect(page.getByTestId('icon-plus')).toBeVisible()
-	page.getByTestId('icon-plus').click()
+	await expect(page.getByRole('button', { name: 'Add frame', exact: true })).toBeVisible()
+	page.getByRole('button', { name: 'Add frame', exact: true }).click()
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-0-added.png`, { fullPage: true })
@@ -434,24 +401,7 @@ test('fragement edit frame', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
-	await page.getByLabel('Machine connection configs').click()
-
-	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
-	await page.getByText('Add config', { exact: true }).click()
-
-	await expect(page.getByPlaceholder('Host')).toBeVisible()
-	await page.getByPlaceholder('Host').fill(testConfig.host)
-	await expect(page.getByPlaceholder('Part ID')).toBeVisible()
-	await page.getByPlaceholder('Part ID').fill(testConfig.partId)
-	await expect(page.getByPlaceholder('API Key ID')).toBeVisible()
-	await page.getByPlaceholder('API Key ID').fill(testConfig.apiKeyId)
-	await expect(page.getByPlaceholder('API Key Value')).toBeVisible()
-	await page.getByPlaceholder('API Key Value').fill(testConfig.apiKeyValue)
-	await expect(page.getByPlaceholder('Signaling Address')).toBeVisible()
-	await page.getByPlaceholder('Signaling Address').fill(testConfig.signalingAddress)
-
-	await page.getByTestId('icon-close').click()
+	setupMachineConfig(page, testConfig)
 
 	// WAIT FOR THE TREE DRAWER TO LOAD
 	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()

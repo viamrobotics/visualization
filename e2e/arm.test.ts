@@ -7,6 +7,7 @@ import {
 } from '@viamrobotics/sdk'
 import { expect, test } from '@playwright/test'
 import { execSync } from 'child_process'
+import { setupMachineConfig } from './fixtures'
 
 const testConfig = {
 	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
@@ -124,29 +125,15 @@ test('arm', async ({ browser }) => {
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
-	await expect(page.getByLabel('Machine connection configs')).toBeVisible()
-	await page.getByLabel('Machine connection configs').click()
+	setupMachineConfig(page, testConfig)
 
-	await expect(page.getByText('Add config', { exact: true })).toBeVisible()
-	await page.getByText('Add config', { exact: true }).click()
+	const frameTreeCarrot = await page.waitForSelector('[data-part="branch-indicator"]', { timeout: 5000 })
+	await frameTreeCarrot.click()
 
-	await expect(page.getByPlaceholder(/host/iu)).toBeVisible()
-	await page.getByPlaceholder(/host/iu).fill(testConfig.host)
-	await expect(page.getByPlaceholder(/part id/iu)).toBeVisible()
-	await page.getByPlaceholder(/part id/iu).fill(testConfig.partId)
-	await expect(page.getByPlaceholder(/api key id/iu)).toBeVisible()
-	await page.getByPlaceholder(/api key id/iu).fill(testConfig.apiKeyId)
-	await expect(page.getByPlaceholder(/api key value/iu)).toBeVisible()
-	await page.getByPlaceholder(/api key value/iu).fill(testConfig.apiKeyValue)
-	await expect(page.getByPlaceholder(/signaling address/iu)).toBeVisible()
-	await page.getByPlaceholder(/signaling address/iu).fill(testConfig.signalingAddress)
+	await expect(page.getByText('arm-1:base_link', { exact: true })).toBeVisible()
 
-	await page.getByTestId('icon-close').click()
-
-	await page.waitForSelector('[data-part="branch-indicator"]', { timeout: 5000 })
-
-	await expect(page.getByText('arm-1', { exact: true })).toBeVisible()
-	await page.getByText('arm-1', { exact: true }).click()
+	await expect(page.getByRole('button', { name: 'arm-1' })).toBeVisible()
+	await page.getByRole('button', { name: 'arm-1' }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
 
