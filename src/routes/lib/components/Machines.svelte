@@ -9,6 +9,12 @@
 	} from '../hooks/useConnectionConfigs.svelte'
 	import Collapsible from './Collapsible.svelte'
 
+	interface Props {
+		isOpen: boolean
+	}
+
+	let { isOpen = $bindable(false) }: Props = $props()
+
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 
@@ -35,7 +41,7 @@
 		id,
 		defaultSize: { width: 700, height: 500 },
 		resizable: false,
-		defaultOpen: true,
+		open: isOpen,
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
@@ -48,7 +54,9 @@
 		active
 		icon="robot-outline"
 		description="Machine connection configs"
-		{...api.getTriggerProps()}
+		onclick={() => {
+			isOpen = true
+		}}
 	/>
 </fieldset>
 
@@ -75,7 +83,7 @@
 					{...api.getControlProps()}
 					class="flex gap-3"
 				>
-					<button {...api.getCloseTriggerProps()}>
+					<button onclick={() => (isOpen = false)}>
 						<Icon name="close" />
 					</button>
 				</div>
