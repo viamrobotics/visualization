@@ -138,11 +138,11 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Send Slack notification
+      - name: Send Slack notification to release channel
         uses: slackapi/slack-github-action@v2.1.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
-            channel: C0370C5QTCK
+            channel: C057799FCBA
             text: "`motion-tools` has been updated to v${{ needs.deploy-and-publish.outputs.version }}.\n\nChanges:\n\n${{ steps.changelog.outputs.changelog }}\n\nTo report any issues with this release, please respond to this thread and tag the `@viz-team`."
