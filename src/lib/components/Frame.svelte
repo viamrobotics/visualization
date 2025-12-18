@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
-	import { Color, type Object3D } from 'three'
+	import { Color, Group, type Object3D } from 'three'
 	import Geometry from './Geometry2.svelte'
 	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
@@ -13,6 +13,7 @@
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { Portal, PortalTarget } from '@threlte/extras'
 
 	interface Props {
 		entity: Entity
@@ -22,14 +23,20 @@
 
 	let { entity, pose, children }: Props = $props()
 
+	let ref = $state<Group>()
+
 	const colorUtil = new Color()
+
 	const settings = useSettings()
 	const componentModels = use3DModels()
 	const selectedEntity = useSelectedEntity()
 	const resourceByName = useResourceByName()
 	const weblabs = useWeblabs()
+
 	const name = useTrait(() => entity, traits.Name)
+	const parent = useTrait(() => entity, traits.Parent)
 	const entityColor = useTrait(() => entity, traits.Color)
+
 	const events = useObjectEvents(() => entity)
 	const resourceColor = $derived.by(() => {
 		if (!name.current) {
@@ -66,14 +73,24 @@
 	})
 </script>
 
-<Geometry
-	{entity}
-	{model}
-	{pose}
-	{children}
-	renderMode={settings.current.renderArmModels}
-	color={selectedEntity.current === entity
-		? `#${darkenColor(color, 75).getHexString()}`
-		: `#${colorUtil.set(color).getHexString()}`}
-	{...events}
-/>
+<Portal id={parent.current}>
+	<Geometry
+		bind:ref
+		{entity}
+		{model}
+		{pose}
+		renderMode={settings.current.renderArmModels}
+		color={selectedEntity.current === entity
+			? `#${darkenColor(color, 75).getHexString()}`
+			: `#${colorUtil.set(color).getHexString()}`}
+		{...events}
+	>
+		{#if name.current}
+			<PortalTarget id={name.current} />
+		{/if}
+
+		{#if ref}
+			{@render children?.({ ref })}
+		{/if}
+	</Geometry>
+</Portal>
