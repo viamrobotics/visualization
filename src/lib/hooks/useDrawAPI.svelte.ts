@@ -124,6 +124,8 @@ export const provideDrawAPI = () => {
 
 			const existing = entities.get(name)
 
+			console.log(existing)
+
 			if (existing) {
 				existing.set(traits.Pose, pose)
 
@@ -408,6 +410,7 @@ export const provideDrawAPI = () => {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
 					entity.destroy()
+					entities.delete(name)
 				}
 			}
 		}
@@ -417,6 +420,8 @@ export const provideDrawAPI = () => {
 		for (const entity of world.query(traits.DrawAPI)) {
 			entity.destroy()
 		}
+
+		entities.clear()
 
 		pointsIndex = 0
 		geometryIndex = 0
