@@ -4,6 +4,7 @@ import { MathUtils, BufferGeometry as ThreeBufferGeometry, type Vector3 } from '
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
+import { ModelAsset } from '$lib/draw/v1/drawing_pb'
 
 export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
@@ -57,11 +58,67 @@ export const GLTF = trait(() => ({}) as ThreeGltf)
 export const DrawAPI = trait()
 export const GeometriesAPI = trait()
 export const WorldStateStoreAPI = trait()
+export const SnapshotAPI = trait()
 
 /**
  * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)
  */
 export const DroppedFile = trait()
+
+/**
+ * Packed poses (sans-theta) buffer: [x, y, z, ox, oy, oz, ...]
+ */
+export const Arrows = trait(() => new Uint8Array(0))
+
+/**
+ * Packed positions buffer: [x, y, z, ...]
+ */
+export const Positions = trait(() => new Uint8Array(0))
+
+/**
+ * Packed poses buffer: [x, y, z, ox, oy, oz, theta, ...]
+ */
+export const Poses = trait(() => new Uint8Array(0))
+
+/**
+ * Knots buffer: [k0, k1, ...]
+ */
+export const Knots = trait(() => new Uint8Array(0))
+
+/**
+ * Weights buffer, optional: [w0, w1, ...]
+ */
+export const Weights = trait(() => new Uint8Array(0))
+
+// === Shape Properties ===
+
+/**
+ * Curve degree, defaults to 3
+ */
+export const Degree = trait(() => 3)
+
+/**
+ * Point size, in mm
+ */
+export const PointSize = trait(() => 10)
+
+/**
+ * Line width, in mm
+ */
+export const LineWidth = trait(() => 5)
+
+/**
+ * RGBA colors buffer: [r, g, b, a, ...] as uint8 (0-255)
+ * Can be single color or per-vertex colors.
+ */
+export const ColorsRGBA = trait(() => new Uint8Array(0))
+
+export const MimeType = trait(() => '')
+export const SizeBytes = trait(() => 0)
+export const URLContent = trait(() => ({ case: 'url', value: '' }))
+export const DataContent = trait(() => ({ case: 'data', value: new Uint8Array(0) }))
+export const Scale = trait({ x: 1, y: 1, z: 1 })
+export const AnimationName = trait(() => '')
 
 /**
  * An entity with data from the FrameSystemConfig() API
