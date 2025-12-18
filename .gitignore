@@ -38,3 +38,6 @@ vite.config.ts.timestamp-*
 src/lib/common/v1
 src/lib/draw/v1
 protos/vendor
+
+# IDE
+.cursor
