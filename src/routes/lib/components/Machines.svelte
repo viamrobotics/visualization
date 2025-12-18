@@ -141,6 +141,7 @@
 									<Input
 										id="{config.host}-partId"
 										bind:value={config.partId}
+										placeholder="Part ID"
 									/>
 								</div>
 
@@ -152,6 +153,7 @@
 									<Input
 										id="{config.host}-apiKeyId"
 										bind:value={config.apiKeyId}
+										placeholder="API key ID"
 									/>
 								</div>
 
@@ -163,6 +165,7 @@
 									<Input
 										id="{config.host}-apiKeyValue"
 										bind:value={config.apiKeyValue}
+										placeholder="API key value"
 									/>
 								</div>
 
@@ -174,6 +177,7 @@
 									<Input
 										id="{config.host}-address"
 										bind:value={config.signalingAddress}
+										placeholder="Signaling address"
 									/>
 								</div>
 							</div>
