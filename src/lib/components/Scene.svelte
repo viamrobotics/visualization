@@ -90,7 +90,6 @@
 	{/if}
 
 	<T.Group
-		name="world-root"
 		attach={focusedObject ? false : undefined}
 	>
 		<PortalTarget id="world" />
