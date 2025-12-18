@@ -89,9 +89,7 @@
 		{/if}
 	{/if}
 
-	<T.Group
-		attach={focusedObject ? false : undefined}
-	>
+	<T.Group attach={focusedObject ? false : undefined}>
 		<PortalTarget id="world" />
 		<PortalTarget />
 
