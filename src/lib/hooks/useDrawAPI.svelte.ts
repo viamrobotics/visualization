@@ -124,8 +124,6 @@ export const provideDrawAPI = () => {
 
 			const existing = entities.get(name)
 
-			console.log(existing)
-
 			if (existing) {
 				existing.set(traits.Pose, pose)
 
