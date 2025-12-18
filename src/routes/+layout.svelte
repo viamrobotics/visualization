@@ -10,6 +10,7 @@
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import Machines from './lib/components/Machines.svelte'
 	import { getDialConfs } from './lib/robots'
+	import { backendIP, websocketPort } from '$lib/defines'
 
 	provideConnectionConfigs()
 
@@ -57,6 +58,7 @@
 			<MotionTools
 				{partID}
 				enableKeybindings={!isMachinesPageOpen}
+				drawConnectionConfig={{ backendIP, websocketPort }}
 			>
 				{@render children()}
 
@@ -69,6 +71,7 @@
 		<MotionTools
 			{partID}
 			enableKeybindings={!isMachinesPageOpen}
+			drawConnectionConfig={{ backendIP, websocketPort }}
 		>
 			{@render children()}
 

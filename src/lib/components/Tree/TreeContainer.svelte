@@ -69,41 +69,39 @@
 	})
 </script>
 
-{#if resizable.isLoaded}
-	<div
-		bind:this={container}
-		class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 resize overflow-y-auto border text-xs"
-		style:min-width="{MIN_DIMENSIONS.width}px"
-		style:min-height="{MIN_DIMENSIONS.height}px"
-		style:width={resizable.current ? `${resizable.current.width}px` : undefined}
-		style:height={resizable.current ? `${resizable.current.height}px` : undefined}
-		use:draggable={{
-			bounds: 'body',
-			handle: dragElement,
-			defaultPosition: dragPosition.current,
-			onDragEnd(data) {
-				dragPosition.current = { x: data.offsetX, y: data.offsetY }
-			},
+<div
+	bind:this={container}
+	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 resize overflow-y-auto border text-xs"
+	style:min-width="{MIN_DIMENSIONS.width}px"
+	style:min-height="{MIN_DIMENSIONS.height}px"
+	style:width={resizable.current ? `${resizable.current.width}px` : undefined}
+	style:height={resizable.current ? `${resizable.current.height}px` : undefined}
+	use:draggable={{
+		bounds: 'body',
+		handle: dragElement,
+		defaultPosition: dragPosition.current,
+		onDragEnd(data) {
+			dragPosition.current = { x: Math.max(data.offsetX, 0), y: Math.max(data.offsetY, 0) }
+		},
+	}}
+	{...rest}
+>
+	<Tree
+		{rootNode}
+		{nodeMap}
+		bind:dragElement
+		onSelectionChange={(event) => {
+			const value = event.selectedValue[0]
+
+			selectedEntity.set(value ? (Number(value) as Entity) : undefined)
 		}}
-		{...rest}
-	>
-		<Tree
-			{rootNode}
-			{nodeMap}
-			bind:dragElement
-			onSelectionChange={(event) => {
-				const value = event.selectedValue[0]
+	/>
 
-				selectedEntity.set(value ? (Number(value) as Entity) : undefined)
-			}}
-		/>
+	{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
+		<AddFrames />
+	{/if}
 
-		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
-			<AddFrames />
-		{/if}
-
-		<Logs />
-		<Settings />
-		<Widgets />
-	</div>
-{/if}
+	<Logs />
+	<Settings />
+	<Widgets />
+</div>
