@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.1.6
+
+### Patch Changes
+
+- ae47b1c: Fix: clear up entities when executing remove draw calls
+- ae47b1c: Fix: correct reparenting when editing frames
+
 ## 1.1.5
 
 ### Patch Changes
