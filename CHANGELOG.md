@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.1.5
+
+### Patch Changes
+
+- 5b23b66: Clean up machine picker UI
+- 61e71d6: Fix: vite string replacement causing undefined values to be shipped to NPM package
+
 ## 1.1.4
 
 ### Patch Changes
