@@ -3,11 +3,12 @@
 	import { Portal, PortalTarget } from '@threlte/extras'
 	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 	import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-	import { AnimationMixer, type Object3D } from 'three'
+	import { AnimationMixer, Group, type Object3D } from 'three'
 	import { useTask } from '@threlte/core'
 	import type { Snippet } from 'svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import { poseToObject3d } from '$lib/transform'
 
 	interface Props {
 		entity: Entity
@@ -18,6 +19,7 @@
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
+	const pose = useTrait(() => entity, traits.Pose)
 	const urlContent = useTrait(() => entity, traits.URLContent)
 	const dataContent = useTrait(() => entity, traits.DataContent)
 	const scale = useTrait(() => entity, traits.Scale)
@@ -29,6 +31,14 @@
 
 	let scene = $state<Object3D | undefined>(undefined)
 	let mixer = $state<AnimationMixer | undefined>(undefined)
+	const group = new Group()
+
+	// Apply pose to group
+	$effect.pre(() => {
+		if (pose.current) {
+			poseToObject3d(pose.current, group)
+		}
+	})
 
 	$effect(() => {
 		const loadModel = async () => {
@@ -107,14 +117,18 @@
 </script>
 
 <Portal id={parent.current}>
-	{#if scene}
-		<T
-			is={scene}
-			name={name.current}
-			scale={scaleArray}
-		>
-			{@render children?.()}
-			<PortalTarget id={name.current ?? ''} />
-		</T>
-	{/if}
+	<T
+		is={group}
+		name={name.current}
+	>
+		{#if scene}
+			<T
+				is={scene}
+				scale={scaleArray}
+			>
+				{@render children?.()}
+				<PortalTarget id={name.current ?? ''} />
+			</T>
+		{/if}
+	</T>
 </Portal>
