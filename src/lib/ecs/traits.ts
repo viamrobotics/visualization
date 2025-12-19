@@ -51,7 +51,7 @@ export const DottedLineColor = trait({ r: 0, g: 0, b: 0 })
 export const LineGeometry = trait(() => [] as Vector3[])
 export const PointsGeometry = trait(() => new Float32Array())
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
-export const VertexColors = trait(() => new Float32Array())
+export const VertexColors = trait(() => new Float32Array() as Float32Array<ArrayBufferLike>)
 
 export const GLTF = trait(() => ({}) as ThreeGltf)
 
@@ -76,9 +76,9 @@ export const Arrows = trait(() => new Uint8Array(0))
 export const Positions = trait(() => new Uint8Array(0))
 
 /**
- * Packed poses buffer: [x, y, z, ox, oy, oz, theta, ...]
+ * Control points buffer: [x, y, z, ox, oy, oz, theta, ...]
  */
-export const Poses = trait(() => new Uint8Array(0))
+export const ControlPoints = trait(() => new Uint8Array(0))
 
 /**
  * Knots buffer: [k0, k1, ...]

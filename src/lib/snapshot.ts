@@ -6,6 +6,7 @@ import type { Transform } from '$lib/common/v1/common_pb'
 import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
+import { parseMetadata } from '$lib/WorldObject.svelte'
 
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }
@@ -91,13 +92,25 @@ const getRenderArmModels = (
 const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(transform.referenceFrame),
+		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
+		traits.Center(transform.physicalObject?.center),
 		traits.SnapshotAPI,
 	]
 
 	const poseInFrame = transform.poseInObserverFrame
 	entityTraits.push(traits.Pose(poseInFrame?.pose))
 	entityTraits.push(traits.Parent(poseInFrame?.referenceFrame))
-	entityTraits.push(traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})))
+
+	if (transform.metadata) {
+		const metadata = parseMetadata(transform.metadata.fields)
+		if (metadata.color) {
+			entityTraits.push(traits.Color(metadata.color))
+		}
+		if (metadata.opacity !== undefined) {
+			entityTraits.push(traits.Opacity(metadata.opacity))
+		}
+	}
+
 	return world.spawn(...entityTraits)
 }
 
@@ -137,8 +150,8 @@ const addShapeTraits = (entityTraits: ConfigurableTrait[], shape: Shape): Config
 
 		case 'line':
 			entityTraits.push(traits.Positions(geometryType.value.positions))
-			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth))
-			entityTraits.push(traits.PointSize(geometryType.value.pointSize))
+			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth ?? 5))
+			entityTraits.push(traits.PointSize(geometryType.value.pointSize ?? 10))
 			return []
 
 		case 'points':
@@ -150,7 +163,7 @@ const addShapeTraits = (entityTraits: ConfigurableTrait[], shape: Shape): Config
 			return addModelTraits(entityTraits, geometryType.value)
 
 		case 'nurbs':
-			entityTraits.push(traits.Poses(geometryType.value.controlPoints))
+			entityTraits.push(traits.ControlPoints(geometryType.value.controlPoints))
 			entityTraits.push(traits.Knots(geometryType.value.knots))
 			entityTraits.push(traits.Degree(geometryType.value.degree))
 			entityTraits.push(traits.Weights(geometryType.value.weights))
