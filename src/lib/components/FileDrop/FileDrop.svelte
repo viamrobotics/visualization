@@ -5,53 +5,18 @@
 	import { useWorld } from '$lib/ecs/useWorld'
 	import type { FileDropperSuccess } from './file-dropper'
 	import { traits } from '$lib/ecs'
-	import { parseMetadata } from '$lib/WorldObject.svelte'
-	import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
+	import { spawnSnapshotEntities } from '$lib/snapshot'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 
 	const world = useWorld()
 	const toast = useToast()
 
-	const addSnapshotToWorld = (snapshot: Snapshot) => {
-		for (const transform of snapshot.transforms) {
-			const entity = world.spawn(
-				traits.Name(transform.referenceFrame),
-				traits.Pose(transform.poseInObserverFrame?.pose),
-				traits.Parent(transform.poseInObserverFrame?.referenceFrame)
-			)
-
-			if (transform.physicalObject) {
-				entity.add(traits.Geometry(transform.physicalObject))
-			}
-
-			if (transform.metadata) {
-				const metadata = parseMetadata(transform.metadata.fields)
-				if (metadata.color) {
-					entity.add(traits.Color(metadata.color))
-				}
-			}
-		}
-
-		for (const drawing of snapshot.drawings) {
-			world.spawn(
-				traits.Name(drawing.referenceFrame),
-				traits.Pose(drawing.poseInObserverFrame?.pose),
-				traits.Parent(drawing.poseInObserverFrame?.referenceFrame)
-				// TODO: Add shape
-			)
-
-			if (drawing.metadata) {
-				// add shape colors
-			}
-		}
-	}
-
 	const fileDrop = useFileDrop(
 		(result: FileDropperSuccess) => {
 			switch (result.type) {
 				case 'snapshot': {
-					addSnapshotToWorld(result.snapshot)
+					spawnSnapshotEntities(world, result.snapshot)
 					break
 				}
 				case 'pcd':
