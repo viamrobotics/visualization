@@ -1,9 +1,51 @@
 import type { World, Entity, ConfigurableTrait } from 'koota'
 import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
+import { RenderArmModels, type SceneMetadata } from '$lib/draw/v1/scene_pb'
 import { Model, Shape, type Drawing } from '$lib/draw/v1/drawing_pb'
 import type { Transform } from '$lib/common/v1/common_pb'
 import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
+import type { Settings } from '$lib/hooks/useSettings.svelte'
+import { parseMetadata } from '$lib/WorldObject.svelte'
+
+export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
+	const next: Settings = { ...settings }
+	if (metadata.grid !== undefined) {
+		next.grid = metadata.grid
+	}
+	if (metadata.gridCellSize !== undefined) {
+		next.gridCellSize = metadata.gridCellSize / 1000
+	}
+	if (metadata.gridSectionSize !== undefined) {
+		next.gridSectionSize = metadata.gridSectionSize / 1000
+	}
+	if (metadata.gridFadeDistance !== undefined) {
+		next.gridFadeDistance = metadata.gridFadeDistance / 1000
+	}
+	if (metadata.pointSize !== undefined) {
+		next.pointSize = metadata.pointSize / 1000
+	}
+	if (metadata.pointColor !== undefined) {
+		next.pointColor = rgbaToHex(metadata.pointColor)
+	}
+	if (metadata.lineWidth !== undefined) {
+		next.lineWidth = metadata.lineWidth / 1000
+	}
+	if (metadata.linePointSize !== undefined) {
+		next.lineDotSize = metadata.linePointSize / 1000
+	}
+	if (metadata.renderArmModels !== undefined) {
+		next.renderArmModels = getRenderArmModels(metadata.renderArmModels)
+	}
+
+	if (metadata.sceneCamera?.cameraType.case === 'orthographicCamera') {
+		next.cameraMode = 'orthographic'
+	} else if (metadata.sceneCamera?.cameraType.case === 'perspectiveCamera') {
+		next.cameraMode = 'perspective'
+	}
+
+	return next
+}
 
 export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
 	const entities: Entity[] = []
@@ -25,16 +67,50 @@ export const destroyEntities = (entities: Entity[]): void => {
 	}
 }
 
+const rgbaToHex = (rgba: Uint8Array): string => {
+	if (rgba.length < 3) return '#333333'
+	const r = rgba[0]!.toString(16).padStart(2, '0')
+	const g = rgba[1]!.toString(16).padStart(2, '0')
+	const b = rgba[2]!.toString(16).padStart(2, '0')
+	return `#${r}${g}${b}`
+}
+
+const getRenderArmModels = (
+	renderArmModels: RenderArmModels
+): 'colliders' | 'colliders+model' | 'model' => {
+	switch (renderArmModels) {
+		case RenderArmModels.COLLIDERS:
+			return 'colliders'
+		case RenderArmModels.UNSPECIFIED:
+		case RenderArmModels.COLLIDERS_AND_MODEL:
+			return 'colliders+model'
+		case RenderArmModels.MODEL:
+			return 'model'
+	}
+}
+
 const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(transform.referenceFrame),
+		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
+		traits.Center(transform.physicalObject?.center),
 		traits.SnapshotAPI,
 	]
 
 	const poseInFrame = transform.poseInObserverFrame
 	entityTraits.push(traits.Pose(poseInFrame?.pose))
 	entityTraits.push(traits.Parent(poseInFrame?.referenceFrame))
-	entityTraits.push(traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})))
+
+	if (transform.metadata) {
+		const metadata = parseMetadata(transform.metadata.fields)
+		if (metadata.color) {
+			entityTraits.push(traits.Color(metadata.color))
+		}
+		if (metadata.opacity !== undefined) {
+			entityTraits.push(traits.Opacity(metadata.opacity))
+		}
+	}
+
 	return world.spawn(...entityTraits)
 }
 
@@ -74,8 +150,8 @@ const addShapeTraits = (entityTraits: ConfigurableTrait[], shape: Shape): Config
 
 		case 'line':
 			entityTraits.push(traits.Positions(geometryType.value.positions))
-			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth))
-			entityTraits.push(traits.PointSize(geometryType.value.pointSize))
+			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth ?? 5))
+			entityTraits.push(traits.PointSize(geometryType.value.pointSize ?? 10))
 			return []
 
 		case 'points':
@@ -87,7 +163,7 @@ const addShapeTraits = (entityTraits: ConfigurableTrait[], shape: Shape): Config
 			return addModelTraits(entityTraits, geometryType.value)
 
 		case 'nurbs':
-			entityTraits.push(traits.Poses(geometryType.value.controlPoints))
+			entityTraits.push(traits.ControlPoints(geometryType.value.controlPoints))
 			entityTraits.push(traits.Knots(geometryType.value.knots))
 			entityTraits.push(traits.Degree(geometryType.value.degree))
 			entityTraits.push(traits.Weights(geometryType.value.weights))

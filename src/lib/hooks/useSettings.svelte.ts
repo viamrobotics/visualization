@@ -3,7 +3,7 @@ import { getContext, setContext } from 'svelte'
 
 const key = Symbol('dashboard-context')
 
-interface Settings {
+export interface Settings {
 	isLoaded: boolean
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
@@ -99,6 +99,10 @@ export const provideSettings = () => {
 	const context: Context = {
 		get current() {
 			return settings
+		},
+
+		set current(value: Settings) {
+			settings = value
 		},
 	}
 
