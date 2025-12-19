@@ -28,7 +28,7 @@ vi.mock('$lib/ecs', () => ({
 		Positions: vi.fn((v) => ({ trait: 'Positions', value: v })),
 		LineWidth: vi.fn((v) => ({ trait: 'LineWidth', value: v })),
 		PointSize: vi.fn((v) => ({ trait: 'PointSize', value: v })),
-		Poses: vi.fn((v) => ({ trait: 'Poses', value: v })),
+		ControlPoints: vi.fn((v) => ({ trait: 'ControlPoints', value: v })),
 		Knots: vi.fn((v) => ({ trait: 'Knots', value: v })),
 		Degree: vi.fn((v) => ({ trait: 'Degree', value: v })),
 		Weights: vi.fn((v) => ({ trait: 'Weights', value: v })),
@@ -252,7 +252,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(traits.PointSize).toHaveBeenCalledWith(8)
 	})
 
-	it('spawns nurbs shape with Poses, Knots, Degree, Weights traits', async () => {
+	it('spawns nurbs shape with ControlPoints, Knots, Degree, Weights traits', async () => {
 		const { traits } = await import('$lib/ecs')
 		const mockWorld = createMockWorld()
 		const controlPoints = new Uint8Array(56) // 2 control points
@@ -271,7 +271,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		spawnSnapshotEntities(mockWorld as unknown as World, snapshot)
 
-		expect(traits.Poses).toHaveBeenCalledWith(controlPoints)
+		expect(traits.ControlPoints).toHaveBeenCalledWith(controlPoints)
 		expect(traits.Knots).toHaveBeenCalledWith(knots)
 		expect(traits.Degree).toHaveBeenCalledWith(3)
 		expect(traits.Weights).toHaveBeenCalledWith(weights)
