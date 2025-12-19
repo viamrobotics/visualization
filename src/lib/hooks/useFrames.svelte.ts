@@ -31,7 +31,7 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
-		enabled: environment.current.viewerMode === 'monitor',
+		enabled: partID() !== '' && environment.current.viewerMode === 'monitor',
 	}))
 
 	const revision = $derived(machineStatus.current?.config?.revision)
