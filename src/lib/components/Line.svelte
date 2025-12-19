@@ -7,7 +7,7 @@
 	import type { Snippet } from 'svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
-	import { asFloat32Array } from '$lib/buffer'
+	import { asFloat32Array, STRIDE } from '$lib/buffer'
 
 	interface Props {
 		entity: Entity
@@ -23,19 +23,21 @@
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const pointSize = useTrait(() => entity, traits.PointSize)
 	const colors = useTrait(() => entity, traits.ColorsRGBA)
+
 	const points = $derived.by(() => {
 		const positionsData = positions.current
 		if (!positionsData || positionsData.length === 0) return []
 
 		const floats = asFloat32Array(positionsData)
-		const result: Vector3[] = []
-		for (let i = 0; i < floats.length; i += 3) {
-			result.push(
-				new Vector3(
-					floats[i] * 0.001, // mm to m
-					floats[i + 1] * 0.001,
-					floats[i + 2] * 0.001
-				)
+		const numPoints = Math.floor(floats.length / STRIDE.POSITIONS)
+		const result: Vector3[] = new Array(numPoints)
+
+		for (let i = 0; i < numPoints; i++) {
+			const offset = i * STRIDE.POSITIONS
+			result[i] = new Vector3(
+				floats[offset] * 0.001, // mm to m
+				floats[offset + 1] * 0.001,
+				floats[offset + 2] * 0.001
 			)
 		}
 
