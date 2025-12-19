@@ -88,7 +88,7 @@ export const Knots = trait(() => new Uint8Array(0))
 /**
  * Weights buffer, optional: [w0, w1, ...]
  */
-export const Weights = trait(() => new Uint8Array(0))
+export const Weights = trait(() => new Uint8Array(0) as Uint8Array<ArrayBufferLike>)
 
 // === Shape Properties ===
 
@@ -111,12 +111,15 @@ export const LineWidth = trait(() => 5)
  * RGBA colors buffer: [r, g, b, a, ...] as uint8 (0-255)
  * Can be single color or per-vertex colors.
  */
-export const ColorsRGBA = trait(() => new Uint8Array(0))
+export const ColorsRGBA = trait(() => new Uint8Array(0) as Uint8Array<ArrayBufferLike>)
 
 export const MimeType = trait(() => '')
 export const SizeBytes = trait(() => 0)
 export const URLContent = trait(() => ({ case: 'url', value: '' }))
-export const DataContent = trait(() => ({ case: 'data', value: new Uint8Array(0) }))
+export const DataContent = trait(() => ({
+	case: 'data',
+	value: new Uint8Array(0) as Uint8Array<ArrayBufferLike>,
+}))
 export const Scale = trait({ x: 1, y: 1, z: 1 })
 export const AnimationName = trait(() => '')
 
