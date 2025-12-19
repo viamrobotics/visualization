@@ -1,25 +1,39 @@
 <script lang="ts">
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
-	import Line from './Line.svelte'
-	import Pointcloud from './Pointcloud.svelte'
+	import DrawnLine from './DrawnLine.svelte'
+	import Pointcloud from './DrawnPoints.svelte'
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
+	import Line from './Line.svelte'
+	import Points from './Points.svelte'
+	import Nurbs from './Nurbs.svelte'
+	import Model from './Model.svelte'
 	import { traits, useQuery } from '$lib/ecs'
-	import { Or } from 'koota'
+	import { Not, Or } from 'koota'
 
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
-	const points = useQuery(traits.PointsGeometry)
-	const lines = useQuery(traits.LineGeometry)
 	const gltfs = useQuery(traits.GLTF)
 	const droppedMeshes = useQuery(traits.DroppedFile, traits.BufferGeometry)
+
+	const drawnPoints = useQuery(traits.PointsGeometry)
+	const drawnLines = useQuery(traits.LineGeometry)
 	const drawnMeshes = useQuery(
 		traits.DrawAPI,
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 	const worldStateMeshes = useQuery(
 		traits.WorldStateStoreAPI,
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
+	)
+
+	const lines = useQuery(traits.Positions, traits.LineWidth, traits.PointSize)
+	const nurbs = useQuery(traits.ControlPoints)
+	const models = useQuery(Or(traits.URLContent, traits.DataContent))
+	const points = useQuery(traits.Positions, traits.PointSize, Not(traits.LineWidth))
+	const meshes = useQuery(
+		traits.SnapshotAPI,
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 </script>
@@ -42,7 +56,7 @@
 	</Frame>
 {/each}
 
-{#each points.current as entity (entity)}
+{#each drawnPoints.current as entity (entity)}
 	<Pointcloud {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</Pointcloud>
@@ -67,14 +81,44 @@
 	</Frame>
 {/each}
 
-{#each lines.current as entity (entity)}
-	<Line {entity}>
+{#each drawnLines.current as entity (entity)}
+	<DrawnLine {entity}>
 		<Label text={entity.get(traits.Name)} />
-	</Line>
+	</DrawnLine>
 {/each}
 
 {#each gltfs.current as entity (entity)}
 	<GLTF {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
+{/each}
+
+{#each lines.current as entity (entity)}
+	<Line {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Line>
+{/each}
+
+{#each points.current as entity (entity)}
+	<Points {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Points>
+{/each}
+
+{#each nurbs.current as entity (entity)}
+	<Nurbs {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Nurbs>
+{/each}
+
+{#each models.current as entity (entity)}
+	<Model {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Model>
+{/each}
+
+{#each meshes.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
 {/each}
