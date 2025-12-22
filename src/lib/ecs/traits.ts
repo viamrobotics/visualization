@@ -52,7 +52,15 @@ export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 /** format [r, g, b, ...] */
 export const VertexColors = trait(() => new Float32Array())
 
-export const GLTF = trait(() => ({}) as ThreeGltf)
+export const GLTF = trait(() => ({
+	gltf: {} as ThreeGltf,
+	mimeType: '',
+	sizeBytes: 0,
+	source: { url: '' } as { url: string } | { data: Uint8Array },
+	animationName: '',
+}))
+
+export const Scale = trait({ x: 1, y: 1, z: 1 })
 
 export const FramesAPI = trait()
 export const GeometriesAPI = trait()
@@ -75,16 +83,6 @@ export const PointSize = trait(() => 10)
  * Line width, in mm
  */
 export const LineWidth = trait(() => 5)
-
-export const MimeType = trait(() => '')
-export const SizeBytes = trait(() => 0)
-export const URLContent = trait(() => ({ case: 'url', value: '' }))
-export const DataContent = trait(() => ({
-	case: 'data',
-	value: new Uint8Array(0) as Uint8Array<ArrayBufferLike>,
-}))
-export const Scale = trait({ x: 1, y: 1, z: 1 })
-export const AnimationName = trait(() => '')
 
 export const ReferenceFrame = trait()
 
