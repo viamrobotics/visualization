@@ -13,6 +13,7 @@ import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 
 const colorUtil = new Color()
 
@@ -88,6 +89,10 @@ export const provideDrawAPI = () => {
 	const logs = useLogs()
 	const cameraControls = useCameraControls()
 	const { invalidate } = useThrelte()
+	const drawConnectionConfig = useDrawConnectionConfig()
+
+	const backendIP = $derived(drawConnectionConfig.current?.backendIP)
+	const websocketPort = $derived(drawConnectionConfig.current?.websocketPort)
 
 	let pointsIndex = 0
 	let geometryIndex = 0
@@ -97,7 +102,7 @@ export const provideDrawAPI = () => {
 
 	const maxReconnectDelay = 5_000
 
-	let ws: WebSocket
+	let ws: WebSocket | undefined
 
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
@@ -107,7 +112,7 @@ export const provideDrawAPI = () => {
 	const entities = new Map<string, Entity>()
 
 	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
-		ws.send(JSON.stringify(response))
+		ws?.send(JSON.stringify(response))
 	}
 
 	const drawFrames = async (data: Frame[]) => {
@@ -403,6 +408,7 @@ export const provideDrawAPI = () => {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
 					entity.destroy()
+					entities.delete(name)
 				}
 			}
 		}
@@ -413,6 +419,8 @@ export const provideDrawAPI = () => {
 			entity.destroy()
 		}
 
+		entities.clear()
+
 		pointsIndex = 0
 		geometryIndex = 0
 		poseIndex = 0
@@ -420,16 +428,21 @@ export const provideDrawAPI = () => {
 
 	const scheduleReconnect = () => {
 		setTimeout(() => {
-			reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
-			logs.add(`Reconnecting to drawing server in ${reconnectDelay / 1000} seconds...`, 'warn')
-			connect()
+			if (backendIP && websocketPort) {
+				reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+				logs.add(`Reconnecting to drawing server in ${reconnectDelay / 1000} seconds...`, 'warn')
+
+				connect(backendIP, websocketPort)
+			} else {
+				logs.add('No provided backend IP or websocket port', 'error')
+			}
 		}, reconnectDelay)
 	}
 
 	const onOpen = () => {
 		connectionStatus = 'open'
 		reconnectDelay = 1000
-		logs.add(`Connected to drawing server at ${BACKEND_IP}:${WS_PORT}`)
+		logs.add(`Connected to drawing server at ${backendIP}:${websocketPort}`)
 	}
 
 	const onClose = () => {
@@ -441,7 +454,7 @@ export const provideDrawAPI = () => {
 	const onError = (event: Event) => {
 		const stringified = JSON.stringify(event)
 
-		ws.close()
+		ws?.close()
 
 		if (stringified === '{"isTrusted":true}') {
 			return
@@ -537,18 +550,35 @@ export const provideDrawAPI = () => {
 		invalidate()
 	}
 
-	const connect = () => {
-		if (BACKEND_IP && WS_PORT) {
-			const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-			ws = new WebSocket(`${protocol}://${BACKEND_IP}:${WS_PORT}/ws`)
-			ws.onclose = onClose
-			ws.onerror = onError
-			ws.onopen = onOpen
-			ws.onmessage = onMessage
-		}
+	const connect = (backendIP: string, websocketPort: string) => {
+		const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
+		ws = new WebSocket(`${protocol}://${backendIP}:${websocketPort}/ws`)
+		ws.onclose = onClose
+		ws.onerror = onError
+		ws.onopen = onOpen
+		ws.onmessage = onMessage
 	}
 
-	connect()
+	const disconnect = () => {
+		ws?.removeEventListener('close', onClose)
+		ws?.removeEventListener('error', onError)
+		ws?.removeEventListener('open', onOpen)
+		ws?.removeEventListener('message', onMessage)
+		ws?.close()
+		ws = undefined
+	}
+
+	$effect(() => {
+		if (!backendIP || !websocketPort) {
+			return
+		}
+
+		connect(backendIP, websocketPort)
+
+		return () => {
+			disconnect()
+		}
+	})
 
 	setContext<Context>(key, {
 		get connectionStatus() {

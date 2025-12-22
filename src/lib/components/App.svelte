@@ -22,6 +22,10 @@
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import type { CameraPose } from '$lib/hooks/useControls.svelte'
 	import { provideWorld } from '$lib/ecs'
+	import {
+		provideDrawConnectionConfig,
+		type DrawConnectionConfig,
+	} from '$lib/hooks/useDrawConnectionConfig.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -36,6 +40,7 @@
 		children?: Snippet
 		dashboard?: Snippet
 		localConfigProps?: LocalConfigProps
+		drawConnectionConfig?: DrawConnectionConfig
 
 		/**
 		 * Allows setting the initial camera pose
@@ -48,6 +53,7 @@
 		enableKeybindings = true,
 		localConfigProps,
 		cameraPose,
+		drawConnectionConfig,
 		children: appChildren,
 		dashboard,
 	}: Props = $props()
@@ -63,7 +69,7 @@
 	})
 
 	createPartIDContext(() => partID)
-
+	provideDrawConnectionConfig(() => drawConnectionConfig)
 	provideWeblabs()
 	provideToast()
 

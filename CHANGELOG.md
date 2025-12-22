@@ -1,5 +1,32 @@
 # motion-tools
 
+## 1.1.6
+
+### Patch Changes
+
+- ae47b1c: Fix: clear up entities when executing remove draw calls
+- ae47b1c: Fix: correct reparenting when editing frames
+
+## 1.1.5
+
+### Patch Changes
+
+- 5b23b66: Clean up machine picker UI
+- 61e71d6: Fix: vite string replacement causing undefined values to be shipped to NPM package
+
+## 1.1.4
+
+### Patch Changes
+
+- 8dd0334: Use getPose from Robot client instead of deprecated motion service method
+- 8d2a621: Fix: ensure all dependencies are listed in package.json for embedded environments
+
+## 1.1.3
+
+### Patch Changes
+
+- 44886c4: Fix: correct pointcloud parenting to camera
+
 ## 1.1.2
 
 ### Patch Changes
