@@ -13,6 +13,7 @@ import { type ConfigurableTrait, type Entity } from 'koota'
 import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 
 const colorUtil = new Color()
 
@@ -88,6 +89,10 @@ export const provideDrawAPI = () => {
 	const logs = useLogs()
 	const cameraControls = useCameraControls()
 	const { invalidate } = useThrelte()
+	const drawConnectionConfig = useDrawConnectionConfig()
+
+	const backendIP = $derived(drawConnectionConfig.current?.backendIP)
+	const websocketPort = $derived(drawConnectionConfig.current?.websocketPort)
 
 	let pointsIndex = 0
 	let geometryIndex = 0
@@ -97,7 +102,7 @@ export const provideDrawAPI = () => {
 
 	const maxReconnectDelay = 5_000
 
-	let ws: WebSocket
+	let ws: WebSocket | undefined
 
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
@@ -107,7 +112,7 @@ export const provideDrawAPI = () => {
 	const entities = new Map<string, Entity>()
 
 	const sendResponse = (response: { requestID: string; code: number; message: string }) => {
-		ws.send(JSON.stringify(response))
+		ws?.send(JSON.stringify(response))
 	}
 
 	const drawFrames = async (data: Frame[]) => {
@@ -164,7 +169,7 @@ export const provideDrawAPI = () => {
 
 		const entity = world.spawn(
 			traits.Name(`Points ${++pointsIndex}`),
-			traits.PointsGeometry(positions),
+			traits.PointsPositions(positions),
 			traits.DrawAPI
 		)
 
@@ -227,17 +232,28 @@ export const provideDrawAPI = () => {
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
-		const points = curve.getPoints(200)
+
+		const numPoints = 600
+		const points = new Float32Array(numPoints * 3)
+		const l = numPoints * 3
+		for (let i = 0; i < l; i += 3) {
+			curve.getPointAt(i / (l - 1), vec3)
+			points[i + 0] = vec3.x
+			points[i + 1] = vec3.y
+			points[i + 2] = vec3.z
+		}
+
+		console.log(points)
 
 		if (existing) {
-			existing.set(traits.LineGeometry, points)
+			existing.set(traits.LinePositions, points)
 			return
 		}
 
 		const entity = world.spawn(
 			traits.Name(name),
 			traits.Color(colorUtil.set(color)),
-			traits.LineGeometry(points),
+			traits.LinePositions(points),
 			traits.DrawAPI
 		)
 
@@ -334,7 +350,7 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsGeometry(positions),
+			traits.PointsPositions(positions),
 			traits.VertexColors(colors),
 			traits.DrawAPI
 		)
@@ -365,16 +381,18 @@ export const provideDrawAPI = () => {
 		const dotB = reader.read()
 
 		// Read positions
-		const points: Vector3[] = []
+		const points = new Float32Array(nPoints * 3)
 		for (let i = 0; i < nPoints * 3; i += 3) {
-			points.push(new Vector3(reader.read(), reader.read(), reader.read()))
+			points[i + 0] = reader.read()
+			points[i + 1] = reader.read()
+			points[i + 2] = reader.read()
 		}
 
 		world.spawn(
 			traits.Name(label),
 			traits.Color({ r, g, b }),
-			traits.LineGeometry(points),
-			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
+			traits.LinePositions(points),
+			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
 			traits.DrawAPI
 		)
 	}
@@ -393,7 +411,11 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
+		world.spawn(
+			traits.Name(gltf.scene.name),
+			traits.GLTF({ source: { gltf }, animationName: '' }),
+			traits.DrawAPI
+		)
 
 		URL.revokeObjectURL(url)
 	}
@@ -403,6 +425,7 @@ export const provideDrawAPI = () => {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
 					entity.destroy()
+					entities.delete(name)
 				}
 			}
 		}
@@ -413,6 +436,8 @@ export const provideDrawAPI = () => {
 			entity.destroy()
 		}
 
+		entities.clear()
+
 		pointsIndex = 0
 		geometryIndex = 0
 		poseIndex = 0
@@ -420,16 +445,21 @@ export const provideDrawAPI = () => {
 
 	const scheduleReconnect = () => {
 		setTimeout(() => {
-			reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
-			logs.add(`Reconnecting to drawing server in ${reconnectDelay / 1000} seconds...`, 'warn')
-			connect()
+			if (backendIP && websocketPort) {
+				reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+				logs.add(`Reconnecting to drawing server in ${reconnectDelay / 1000} seconds...`, 'warn')
+
+				connect(backendIP, websocketPort)
+			} else {
+				logs.add('No provided backend IP or websocket port', 'error')
+			}
 		}, reconnectDelay)
 	}
 
 	const onOpen = () => {
 		connectionStatus = 'open'
 		reconnectDelay = 1000
-		logs.add(`Connected to drawing server at ${BACKEND_IP}:${WS_PORT}`)
+		logs.add(`Connected to drawing server at ${backendIP}:${websocketPort}`)
 	}
 
 	const onClose = () => {
@@ -441,7 +471,7 @@ export const provideDrawAPI = () => {
 	const onError = (event: Event) => {
 		const stringified = JSON.stringify(event)
 
-		ws.close()
+		ws?.close()
 
 		if (stringified === '{"isTrusted":true}') {
 			return
@@ -537,18 +567,35 @@ export const provideDrawAPI = () => {
 		invalidate()
 	}
 
-	const connect = () => {
-		if (BACKEND_IP && WS_PORT) {
-			const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-			ws = new WebSocket(`${protocol}://${BACKEND_IP}:${WS_PORT}/ws`)
-			ws.onclose = onClose
-			ws.onerror = onError
-			ws.onopen = onOpen
-			ws.onmessage = onMessage
-		}
+	const connect = (backendIP: string, websocketPort: string) => {
+		const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
+		ws = new WebSocket(`${protocol}://${backendIP}:${websocketPort}/ws`)
+		ws.onclose = onClose
+		ws.onerror = onError
+		ws.onopen = onOpen
+		ws.onmessage = onMessage
 	}
 
-	connect()
+	const disconnect = () => {
+		ws?.removeEventListener('close', onClose)
+		ws?.removeEventListener('error', onError)
+		ws?.removeEventListener('open', onOpen)
+		ws?.removeEventListener('message', onMessage)
+		ws?.close()
+		ws = undefined
+	}
+
+	$effect(() => {
+		if (!backendIP || !websocketPort) {
+			return
+		}
+
+		connect(backendIP, websocketPort)
+
+		return () => {
+			disconnect()
+		}
+	})
 
 	setContext<Context>(key, {
 		get connectionStatus() {

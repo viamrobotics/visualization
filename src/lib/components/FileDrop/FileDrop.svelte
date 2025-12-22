@@ -57,7 +57,7 @@
 				case 'pcd':
 					world.spawn(
 						traits.Name(result.name),
-						traits.PointsGeometry(result.pcd.positions),
+						traits.PointsPositions(result.pcd.positions),
 						result.pcd.colors ? traits.VertexColors(result.pcd.colors) : traits.Color,
 						traits.DroppedFile
 					)
