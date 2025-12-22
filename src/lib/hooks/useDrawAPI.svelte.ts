@@ -169,7 +169,7 @@ export const provideDrawAPI = () => {
 
 		const entity = world.spawn(
 			traits.Name(`Points ${++pointsIndex}`),
-			traits.PointsGeometry(positions),
+			traits.PointsPositions(positions),
 			traits.DrawAPI
 		)
 
@@ -232,17 +232,28 @@ export const provideDrawAPI = () => {
 			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
-		const points = curve.getPoints(200)
+
+		const numPoints = 600
+		const points = new Float32Array(numPoints * 3)
+		const l = numPoints * 3
+		for (let i = 0; i < l; i += 3) {
+			curve.getPointAt(i / (l - 1), vec3)
+			points[i + 0] = vec3.x
+			points[i + 1] = vec3.y
+			points[i + 2] = vec3.z
+		}
+
+		console.log(points)
 
 		if (existing) {
-			existing.set(traits.LineGeometry, points)
+			existing.set(traits.LinePositions, points)
 			return
 		}
 
 		const entity = world.spawn(
 			traits.Name(name),
 			traits.Color(colorUtil.set(color)),
-			traits.LineGeometry(points),
+			traits.LinePositions(points),
 			traits.DrawAPI
 		)
 
@@ -339,7 +350,7 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsGeometry(positions),
+			traits.PointsPositions(positions),
 			traits.VertexColors(colors),
 			traits.DrawAPI
 		)
@@ -370,16 +381,18 @@ export const provideDrawAPI = () => {
 		const dotB = reader.read()
 
 		// Read positions
-		const points: Vector3[] = []
+		const points = new Float32Array(nPoints * 3)
 		for (let i = 0; i < nPoints * 3; i += 3) {
-			points.push(new Vector3(reader.read(), reader.read(), reader.read()))
+			points[i + 0] = reader.read()
+			points[i + 1] = reader.read()
+			points[i + 2] = reader.read()
 		}
 
 		world.spawn(
 			traits.Name(label),
 			traits.Color({ r, g, b }),
-			traits.LineGeometry(points),
-			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
+			traits.LinePositions(points),
+			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
 			traits.DrawAPI
 		)
 	}
@@ -398,7 +411,11 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
+		world.spawn(
+			traits.Name(gltf.scene.name),
+			traits.GLTF({ source: { gltf }, animationName: '' }),
+			traits.DrawAPI
+		)
 
 		URL.revokeObjectURL(url)
 	}

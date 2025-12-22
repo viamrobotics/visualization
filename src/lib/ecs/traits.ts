@@ -1,11 +1,10 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { trait } from 'koota'
-import { MathUtils, BufferGeometry as ThreeBufferGeometry, type Vector3 } from 'three'
+import { BufferGeometry as ThreeBufferGeometry } from 'three'
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 
-export const UUID = trait(() => MathUtils.generateUUID())
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
 
@@ -42,31 +41,45 @@ export const Capsule = trait({ l: 200, r: 50 })
  */
 export const Sphere = trait({ r: 200 })
 
-/**
- *
- */
-export const DottedLineColor = trait({ r: 0, g: 0, b: 0 })
+export const PointColor = trait({ r: 0, g: 0, b: 0 })
 
-export const LineGeometry = trait(() => [] as Vector3[])
-export const PointsGeometry = trait(() => new Float32Array())
+/** format [x, y, z, ...] */
+export const LinePositions = trait(() => new Float32Array())
+export const PointsPositions = trait(() => new Float32Array())
+
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
+
+/** format [r, g, b, ...] */
 export const VertexColors = trait(() => new Float32Array())
 
-export const GLTF = trait(() => ({}) as ThreeGltf)
+export const GLTF = trait(() => ({
+	source: { url: '' } as { url: string } | { gltf: ThreeGltf },
+	animationName: '',
+}))
 
-export const DrawAPI = trait()
+export const Scale = trait({ x: 1, y: 1, z: 1 })
+
+export const FramesAPI = trait()
 export const GeometriesAPI = trait()
+export const DrawAPI = trait()
 export const WorldStateStoreAPI = trait()
+export const SnapshotAPI = trait()
 
 /**
  * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)
  */
 export const DroppedFile = trait()
 
+// === Shape Properties ===
 /**
- * An entity with data from the FrameSystemConfig() API
+ * Point size, in mm
  */
-export const FramesAPI = trait()
+export const PointSize = trait(() => 10)
+
+/**
+ * Line width, in mm
+ */
+export const LineWidth = trait(() => 5)
 
 export const ReferenceFrame = trait()
 

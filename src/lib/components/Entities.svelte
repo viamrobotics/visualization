@@ -10,8 +10,8 @@
 
 	const frames = useQuery(traits.FramesAPI)
 	const geometries = useQuery(traits.GeometriesAPI)
-	const points = useQuery(traits.PointsGeometry)
-	const lines = useQuery(traits.LineGeometry)
+	const points = useQuery(traits.PointsPositions)
+	const lines = useQuery(traits.LinePositions)
 	const gltfs = useQuery(traits.GLTF)
 	const droppedMeshes = useQuery(traits.DroppedFile, traits.BufferGeometry)
 	const drawnMeshes = useQuery(

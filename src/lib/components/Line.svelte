@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
-	import { Instance, InstancedMesh } from '@threlte/extras'
 	import Frame from './Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import LineDots from './LineDots.svelte'
 
 	interface Props {
 		entity: Entity
@@ -15,30 +14,22 @@
 	let { entity, children }: Props = $props()
 
 	const settings = useSettings()
-	const points = useTrait(() => entity, traits.LineGeometry)
-	const dotColor = useTrait(() => entity, traits.DottedLineColor)
+	const linePositions = useTrait(() => entity, traits.LinePositions)
+	const pointColor = useTrait(() => entity, traits.PointColor)
 </script>
 
-<Frame {entity} />
+<Frame {entity}>
+	{@render children?.()}
+</Frame>
 
-{#if dotColor.current && points.current}
-	<InstancedMesh
-		frustumCulled={false}
-		bvh={{ enabled: false }}
-		raycast={() => null}
-	>
-		<T.SphereGeometry />
-		<T.MeshBasicMaterial color={[dotColor.current.r, dotColor.current.g, dotColor.current.b]} />
-
-		{#each points.current as { x, y, z }, i (i)}
-			<Instance
-				position.x={x}
-				position.y={y}
-				position.z={z}
-				scale={Number(settings.current.lineDotSize)}
-			/>
-		{/each}
-
-		{@render children?.()}
-	</InstancedMesh>
+{#if pointColor.current && linePositions.current}
+	<LineDots
+		color={[pointColor.current.r, pointColor.current.g, pointColor.current.b] as [
+			number,
+			number,
+			number,
+		]}
+		positions={linePositions.current}
+		scale={Number(settings.current.lineDotSize)}
+	/>
 {/if}

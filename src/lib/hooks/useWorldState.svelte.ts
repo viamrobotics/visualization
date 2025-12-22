@@ -89,14 +89,18 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (metadata.shape === 'line' && metadata.points) {
-			entityTraits.push(
-				traits.LineGeometry(metadata.points),
-				traits.DottedLineColor(metadata.lineDotColor)
-			)
+			const { points } = metadata
+			const positions = new Float32Array(points.length * 3)
+			for (let i = 0, j = 0, l = points.length * 3; i < l; i += 3, j += 1) {
+				positions[i + 0] = points[j].x
+				positions[i + 1] = points[j].y
+				positions[i + 2] = points[j].z
+			}
+			entityTraits.push(traits.LinePositions(positions), traits.PointColor(metadata.lineDotColor))
 		}
 
 		if (metadata.gltf) {
-			entityTraits.push(traits.GLTF(metadata.gltf))
+			entityTraits.push(traits.GLTF({ source: { gltf: metadata.gltf }, animationName: '' }))
 		}
 
 		if (metadata.shape === 'arrow') {

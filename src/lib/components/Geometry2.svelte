@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
-	import { meshBounds, MeshLineMaterial, MeshLineGeometry } from '@threlte/extras'
+	import { meshBounds } from '@threlte/extras'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
@@ -42,7 +43,7 @@
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
-	const lineGeometry = useTrait(() => entity, traits.LineGeometry)
+	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const center = useTrait(() => entity, traits.Center)
 
 	const geometryType = $derived.by(() => {
@@ -50,7 +51,7 @@
 		if (capsule.current) return 'capsule'
 		if (sphere.current) return 'sphere'
 		if (bufferGeometry.current) return 'buffer'
-		if (lineGeometry.current) return 'line'
+		if (linePositions.current) return 'line'
 	})
 
 	const color = $derived.by(() => {
@@ -73,7 +74,7 @@
 			return
 		}
 
-		const result = new Mesh()
+		const result = geometryType === 'line' ? new Line2() : new Mesh()
 
 		if (geometryType === 'line') {
 			result.raycast = meshBounds
@@ -137,8 +138,15 @@
 			{/if}
 
 			{#if !model || renderMode.includes('colliders')}
-				{#if lineGeometry.current}
-					<MeshLineGeometry points={lineGeometry.current} />
+				{#if linePositions.current}
+					<T
+						is={LineGeometry}
+						oncreate={(ref) => {
+							if (linePositions.current) {
+								ref.setPositions(linePositions.current)
+							}
+						}}
+					/>
 				{:else if box.current}
 					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
@@ -161,10 +169,11 @@
 				{/if}
 			{/if}
 
-			{#if lineGeometry.current}
-				<MeshLineMaterial
+			{#if linePositions.current}
+				<T
+					is={LineMaterial}
 					{color}
-					width={0.005}
+					width={0.5}
 				/>
 			{:else}
 				<T.MeshToonMaterial

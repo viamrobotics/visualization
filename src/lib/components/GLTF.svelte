@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import { Portal, PortalTarget } from '@threlte/extras'
+	import { GLTF, Portal, PortalTarget } from '@threlte/extras'
 	import type { Snippet } from 'svelte'
 	import type { Object3D } from 'three'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
@@ -21,16 +21,24 @@
 </script>
 
 <Portal id={parent.current}>
-	{#if gltf.current?.scene}
-		<T
-			is={gltf.current.scene as Object3D}
-			name={name.current}
-			{...objectProps}
-			{...rest}
-		>
-			{@render children?.()}
+	{#if gltf.current}
+		{#if 'url' in gltf.current.source}
+			<GLTF url={gltf.current.source.url}>
+				{@render children?.()}
 
-			<PortalTarget id={name.current} />
-		</T>
+				<PortalTarget id={name.current} />
+			</GLTF>
+		{:else}
+			<T
+				is={gltf.current.source.gltf.scene as Object3D}
+				name={name.current}
+				{...objectProps}
+				{...rest}
+			>
+				{@render children?.()}
+
+				<PortalTarget id={name.current} />
+			</T>
+		{/if}
 	{/if}
 </Portal>
