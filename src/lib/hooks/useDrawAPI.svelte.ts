@@ -392,7 +392,7 @@ export const provideDrawAPI = () => {
 			traits.Name(label),
 			traits.Color({ r, g, b }),
 			traits.LinePositions(points),
-			traits.DottedLineColor({ r: dotR, g: dotG, b: dotB }),
+			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
 			traits.DrawAPI
 		)
 	}
@@ -411,7 +411,11 @@ export const provideDrawAPI = () => {
 		const url = URL.createObjectURL(blob)
 		const gltf = await loader.loadAsync(url)
 
-		world.spawn(traits.Name(gltf.scene.name), traits.GLTF(gltf), traits.DrawAPI)
+		world.spawn(
+			traits.Name(gltf.scene.name),
+			traits.GLTF({ source: { gltf }, animationName: '' }),
+			traits.DrawAPI
+		)
 
 		URL.revokeObjectURL(url)
 	}

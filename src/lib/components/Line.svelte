@@ -15,16 +15,20 @@
 
 	const settings = useSettings()
 	const linePositions = useTrait(() => entity, traits.LinePositions)
-	const dotColor = useTrait(() => entity, traits.DottedLineColor)
+	const pointColor = useTrait(() => entity, traits.PointColor)
 </script>
 
 <Frame {entity}>
 	{@render children?.()}
 </Frame>
 
-{#if dotColor.current && linePositions.current}
+{#if pointColor.current && linePositions.current}
 	<LineDots
-		color={[dotColor.current.r, dotColor.current.g, dotColor.current.b] as [number, number, number]}
+		color={[pointColor.current.r, pointColor.current.g, pointColor.current.b] as [
+			number,
+			number,
+			number,
+		]}
 		positions={linePositions.current}
 		scale={Number(settings.current.lineDotSize)}
 	/>

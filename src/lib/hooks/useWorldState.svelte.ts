@@ -96,14 +96,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 				positions[i + 1] = points[j].y
 				positions[i + 2] = points[j].z
 			}
-			entityTraits.push(
-				traits.LinePositions(positions),
-				traits.DottedLineColor(metadata.lineDotColor)
-			)
+			entityTraits.push(traits.LinePositions(positions), traits.PointColor(metadata.lineDotColor))
 		}
 
 		if (metadata.gltf) {
-			entityTraits.push(traits.GLTF(metadata.gltf))
+			entityTraits.push(traits.GLTF({ source: { gltf: metadata.gltf }, animationName: '' }))
 		}
 
 		if (metadata.shape === 'arrow') {
