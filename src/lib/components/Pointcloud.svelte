@@ -28,7 +28,7 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
-	const positions = useTrait(() => entity, traits.PointsGeometry)
+	const positions = useTrait(() => entity, traits.PointsPositions)
 	const color = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.VertexColors)
 	const pointSize = $derived(settings.current.pointSize)
