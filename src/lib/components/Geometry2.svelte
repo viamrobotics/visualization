@@ -2,7 +2,7 @@
 	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { meshBounds } from '@threlte/extras'
-	import { BufferAttribute, BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
 	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
