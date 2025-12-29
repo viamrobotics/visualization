@@ -4,7 +4,6 @@ import { BufferGeometry as ThreeBufferGeometry } from 'three'
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
-import { ModelAsset } from '$lib/draw/v1/drawing_pb'
 
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
