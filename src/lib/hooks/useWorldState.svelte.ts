@@ -81,7 +81,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (metadata.colors) {
-			entityTraits.push(traits.VertexColors(metadata.colors))
+			entityTraits.push(traits.VertexColors(metadata.colors as Float32Array<ArrayBuffer>))
 		}
 
 		if (transform.physicalObject) {
