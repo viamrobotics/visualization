@@ -1,0 +1,306 @@
+import type { World, Entity, ConfigurableTrait } from 'koota'
+import { Color, Vector3, Vector4 } from 'three'
+import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
+import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
+import { RenderArmModels, type SceneMetadata } from '$lib/draw/v1/scene_pb'
+import { type Drawing } from '$lib/draw/v1/drawing_pb'
+import type { Transform } from '$lib/common/v1/common_pb'
+import { traits } from '$lib/ecs'
+import { Geometry } from '@viamrobotics/sdk'
+import type { Settings } from '$lib/hooks/useSettings.svelte'
+import { parseMetadata } from '$lib/WorldObject.svelte'
+import { rgbaToHex } from './color'
+import { asFloat32Array, STRIDE } from './buffer'
+import { createPose } from './transform'
+
+const vec3 = new Vector3()
+const color = new Color()
+const pose = createPose()
+
+export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
+	const next: Settings = { ...settings }
+	if (metadata.grid !== undefined) {
+		next.grid = metadata.grid
+	}
+	if (metadata.gridCellSize !== undefined) {
+		next.gridCellSize = metadata.gridCellSize / 1000
+	}
+	if (metadata.gridSectionSize !== undefined) {
+		next.gridSectionSize = metadata.gridSectionSize / 1000
+	}
+	if (metadata.gridFadeDistance !== undefined) {
+		next.gridFadeDistance = metadata.gridFadeDistance / 1000
+	}
+	if (metadata.pointSize !== undefined) {
+		next.pointSize = metadata.pointSize / 1000
+	}
+	if (metadata.pointColor !== undefined) {
+		next.pointColor = rgbaToHex(metadata.pointColor)
+	}
+	if (metadata.lineWidth !== undefined) {
+		next.lineWidth = metadata.lineWidth / 1000
+	}
+	if (metadata.linePointSize !== undefined) {
+		next.lineDotSize = metadata.linePointSize / 1000
+	}
+	if (metadata.renderArmModels !== undefined) {
+		next.renderArmModels = getRenderArmModels(metadata.renderArmModels)
+	}
+
+	if (metadata.sceneCamera?.cameraType.case === 'orthographicCamera') {
+		next.cameraMode = 'orthographic'
+	} else if (metadata.sceneCamera?.cameraType.case === 'perspectiveCamera') {
+		next.cameraMode = 'perspective'
+	}
+
+	return next
+}
+
+export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
+	const entities: Entity[] = []
+
+	for (const transform of snapshot.transforms) {
+		entities.push(spawnTransformEntity(world, transform))
+	}
+
+	for (const drawing of snapshot.drawings) {
+		entities.push(...spawnEntitiesFromDrawing(world, drawing))
+	}
+
+	return entities
+}
+
+export const destroyEntities = (entities: Entity[]): void => {
+	for (const entity of entities) {
+		entity.destroy()
+	}
+}
+
+const getRenderArmModels = (
+	renderArmModels: RenderArmModels
+): 'colliders' | 'colliders+model' | 'model' => {
+	switch (renderArmModels) {
+		case RenderArmModels.COLLIDERS:
+			return 'colliders'
+		case RenderArmModels.UNSPECIFIED:
+		case RenderArmModels.COLLIDERS_AND_MODEL:
+			return 'colliders+model'
+		case RenderArmModels.MODEL:
+			return 'model'
+	}
+}
+
+const spawnTransformEntity = (world: World, transform: Transform): Entity => {
+	const entityTraits: ConfigurableTrait[] = [
+		traits.Name(transform.referenceFrame),
+		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
+		traits.Center(transform.physicalObject?.center),
+		traits.SnapshotAPI,
+	]
+
+	const poseInFrame = transform.poseInObserverFrame
+	entityTraits.push(traits.Pose(poseInFrame?.pose))
+	entityTraits.push(traits.Parent(poseInFrame?.referenceFrame))
+
+	if (transform.metadata) {
+		const metadata = parseMetadata(transform.metadata.fields)
+		if (metadata.color) {
+			entityTraits.push(traits.Color(metadata.color))
+		}
+
+		if (metadata.opacity !== undefined) {
+			entityTraits.push(traits.Opacity(metadata.opacity))
+		}
+	}
+
+	return world.spawn(...entityTraits)
+}
+
+const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
+	const entities: Entity[] = []
+	const poseInFrame = drawing.poseInObserverFrame
+	const parent = poseInFrame?.referenceFrame
+	const { geometryType } = drawing.physicalObject ?? {}
+
+	if (geometryType?.case === 'arrows') {
+		const rootEntityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+			traits.ReferenceFrame,
+		]
+
+		if (parent) {
+			rootEntityTraits.push(traits.Parent(parent))
+		}
+
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+
+		entities.push(rootEntity)
+
+		const poses = asFloat32Array(geometryType.value.poses)
+		const colors = drawing.metadata?.colors
+			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
+			: []
+
+		for (
+			let i = 0, j = 0, k = 0, l = poses.length / STRIDE.ARROWS;
+			i < l;
+			i += STRIDE.ARROWS, j += 1, k += 4
+		) {
+			const entityTraits: ConfigurableTrait[] = [
+				traits.Name(`pose ${j}`),
+				traits.Parent(drawing.referenceFrame),
+			]
+
+			pose.x = poses[i + 0]
+			pose.y = poses[i + 1]
+			pose.z = poses[i + 2]
+			pose.oX = poses[i + 3]
+			pose.oY = poses[i + 4]
+			pose.oZ = poses[i + 5]
+
+			entityTraits.push(traits.Pose(pose))
+
+			if (colors[k + 0] && colors[k + 1] && colors[k + 2]) {
+				color.r = colors[k + 0]
+				color.g = colors[k + 1]
+				color.b = colors[k + 2]
+				entityTraits.push(traits.Color(color))
+			}
+
+			if (colors[k + 3]) {
+				entityTraits.push(traits.Opacity(colors[k + 3]))
+			}
+
+			const entity = world.spawn(...entityTraits, traits.Arrow, traits.SnapshotAPI)
+
+			entities.push(entity)
+		}
+	} else if (geometryType?.case === 'model') {
+		const rootEntityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+			traits.ReferenceFrame,
+		]
+
+		if (parent) {
+			rootEntityTraits.push(traits.Parent(parent))
+		}
+
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+
+		entities.push(rootEntity)
+
+		let i = 1
+		for (const asset of geometryType.value.assets) {
+			const entityTraits: ConfigurableTrait[] = [
+				traits.Name(`${drawing.referenceFrame} model ${i++}`),
+				traits.Pose(poseInFrame?.pose),
+				traits.Parent(drawing.referenceFrame),
+			]
+
+			if (geometryType.value.scale) {
+				entityTraits.push(traits.Scale(geometryType.value.scale))
+			}
+
+			if (asset.content.case === 'url') {
+				entityTraits.push(
+					traits.GLTF({
+						source: { url: asset.content.value },
+						animationName: geometryType.value.animationName ?? '',
+					})
+				)
+			} else if (asset.content.value) {
+				entityTraits.push(
+					traits.GLTF({
+						source: { glb: asset.content.value as Uint8Array<ArrayBuffer> },
+						animationName: geometryType.value.animationName ?? '',
+					})
+				)
+			}
+
+			const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+
+			entities.push(entity)
+		}
+	} else {
+		const entityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+		]
+
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent)
+		}
+
+		if (drawing.metadata?.colors) {
+			entityTraits.push(
+				traits.VertexColors(asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
+			)
+		}
+
+		if (drawing.physicalObject?.center) {
+			entityTraits.push(traits.Center(drawing.physicalObject.center))
+		}
+
+		if (geometryType?.case === 'line') {
+			const positions = asFloat32Array(geometryType.value.positions)
+			entityTraits.push(
+				traits.LinePositions(positions),
+				traits.LineWidth(geometryType.value.lineWidth),
+				traits.PointSize(geometryType.value.pointSize)
+			)
+		} else if (geometryType?.case === 'points') {
+			const positions = asFloat32Array(geometryType.value.positions)
+			entityTraits.push(
+				traits.PointsPositions(positions),
+				traits.PointSize(geometryType.value.pointSize)
+			)
+		} else if (geometryType?.case === 'nurbs') {
+			const {
+				degree = 3,
+				knots: knotsBuffer,
+				weights: weightsBuffer,
+				controlPoints: controlPointsBuffer,
+			} = geometryType.value
+
+			const knots = [...asFloat32Array(knotsBuffer)]
+			const weights = weightsBuffer
+				? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
+				: []
+			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
+			const controlPoints: Vector4[] = []
+
+			for (
+				let i = 0, j = 0, l = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS;
+				i < l;
+				i += STRIDE.NURBS_CONTROL_POINTS, j += 1
+			) {
+				vec3
+					.set(controlPointsArray[0], controlPointsArray[1], controlPointsArray[2])
+					.multiplyScalar(0.001)
+				controlPoints.push(new Vector4(vec3.x, vec3.y, vec3.z, weights[j] ?? 0))
+			}
+
+			const curve = new NURBSCurve(degree, knots, controlPoints)
+
+			const numPoints = 600
+			const points = new Float32Array(numPoints * 3)
+			const l = numPoints * 3
+			for (let i = 0; i < l; i += 3) {
+				curve.getPointAt(i / (l - 1), vec3)
+				points[i + 0] = vec3.x
+				points[i + 1] = vec3.y
+				points[i + 2] = vec3.z
+			}
+
+			entityTraits.push(traits.LinePositions(points))
+		}
+
+		const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+
+		entities.push(entity)
+	}
+
+	return entities
+}

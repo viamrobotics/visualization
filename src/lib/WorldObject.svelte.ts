@@ -30,7 +30,7 @@ export const SupportedShapes = {
 } as const
 
 export type Metadata = {
-	colors?: Float32Array<ArrayBuffer>
+	colors?: Float32Array<ArrayBufferLike>
 	color?: Color
 	opacity?: number
 	gltf?: GLTF
@@ -149,6 +149,30 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 			case 'lineDotColor':
 				json[k] = readColor(unwrappedValue)
 				break
+			case 'colors': {
+				let colorBytes: number[] | Uint8Array | undefined
+
+				// Handle base64-encoded string (from protobuf Struct)
+				if (typeof unwrappedValue === 'string') {
+					const binary = atob(unwrappedValue)
+					colorBytes = new Uint8Array(binary.length)
+					for (let i = 0; i < binary.length; i++) {
+						colorBytes[i] = binary.charCodeAt(i)
+					}
+				} else if (Array.isArray(unwrappedValue)) {
+					colorBytes = unwrappedValue as number[]
+				}
+
+				if (colorBytes && colorBytes.length >= 3) {
+					const r = (colorBytes[0] ?? 0) / 255
+					const g = (colorBytes[1] ?? 0) / 255
+					const b = (colorBytes[2] ?? 0) / 255
+					const a = colorBytes.length >= 4 ? (colorBytes[3] ?? 255) / 255 : 1
+					json.color = new Color(r, g, b)
+					json.opacity = a
+				}
+				break
+			}
 			case 'opacity':
 				json[k] = parseOpacity(unwrappedValue)
 				break

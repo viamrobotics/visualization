@@ -53,7 +53,7 @@ export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 export const VertexColors = trait(() => new Float32Array())
 
 export const GLTF = trait(() => ({
-	source: { url: '' } as { url: string } | { gltf: ThreeGltf },
+	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
 	animationName: '',
 }))
 

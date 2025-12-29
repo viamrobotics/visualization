@@ -28,7 +28,7 @@
 
 				<PortalTarget id={name.current} />
 			</GLTF>
-		{:else}
+		{:else if 'gltf' in gltf.current.source}
 			<T
 				is={gltf.current.source.gltf.scene as Object3D}
 				name={name.current}

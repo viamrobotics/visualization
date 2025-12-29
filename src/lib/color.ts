@@ -171,3 +171,11 @@ const isColorHex = (color: unknown): color is string => {
 
 	return false
 }
+
+export const rgbaToHex = (rgba: Uint8Array): string => {
+	if (rgba.length < 3) return '#333333'
+	const r = rgba[0]!.toString(16).padStart(2, '0')
+	const g = rgba[1]!.toString(16).padStart(2, '0')
+	const b = rgba[2]!.toString(16).padStart(2, '0')
+	return `#${r}${g}${b}`
+}

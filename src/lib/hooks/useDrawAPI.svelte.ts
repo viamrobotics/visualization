@@ -243,8 +243,6 @@ export const provideDrawAPI = () => {
 			points[i + 2] = vec3.z
 		}
 
-		console.log(points)
-
 		if (existing) {
 			existing.set(traits.LinePositions, points)
 			return
@@ -273,7 +271,7 @@ export const provideDrawAPI = () => {
 		const entities: Entity[] = []
 
 		for (let i = 0; i < nPoints; i += 1) {
-			origin.set(reader.read(), reader.read(), reader.read()).multiplyScalar(0.001)
+			origin.set(reader.read(), reader.read(), reader.read())
 			direction.set(reader.read(), reader.read(), reader.read())
 
 			if (arrowHeadAtPose === 1) {

@@ -35,7 +35,7 @@ export const STRIDE = {
  * geometry.setAttribute('position', new BufferAttribute(positions, 3))
  * ```
  */
-export const asFloat32Array = (bytes: Uint8Array): Float32Array => {
+export const asFloat32Array = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
