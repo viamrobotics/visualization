@@ -1,17 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { createWorld, type Entity, type World } from 'koota'
+import { describe, expect, it } from 'vitest'
+import { createWorld } from 'koota'
 import { Snapshot } from '$lib/draw/v1/snapshot_pb'
-import {
-	Drawing,
-	Shape,
-	Arrows,
-	Line,
-	Points,
-	Model,
-	Nurbs,
-	ModelAsset,
-} from '$lib/draw/v1/drawing_pb'
-import { Transform, Pose, PoseInFrame, Geometry } from '$lib/common/v1/common_pb'
+import { Drawing, Shape, Arrows, Line, Points, Model, ModelAsset } from '$lib/draw/v1/drawing_pb'
+import { Transform, Geometry } from '$lib/common/v1/common_pb'
 import { Metadata } from '$lib/draw/v1/metadata_pb'
 import { spawnSnapshotEntities } from '../snapshot'
 import { traits } from '$lib/ecs'
