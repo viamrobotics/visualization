@@ -107,6 +107,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 		if (metadata.color) {
 			entityTraits.push(traits.Color(metadata.color))
 		}
+
 		if (metadata.opacity !== undefined) {
 			entityTraits.push(traits.Opacity(metadata.opacity))
 		}

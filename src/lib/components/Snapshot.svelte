@@ -30,6 +30,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	const world = useWorld()
 	const settings = useSettings()
 	const cameraControls = useCameraControls()
+
 	let entities: Entity[] = []
 
 	$effect(() => {

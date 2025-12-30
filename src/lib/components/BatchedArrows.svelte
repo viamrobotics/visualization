@@ -17,7 +17,7 @@
 	const origin = new Vector3()
 	const color = new Color()
 
-	const onAddArrow = (entity: Entity) => {
+	const onAdd = (entity: Entity) => {
 		const parent = entity.get(traits.Parent) ?? 'world'
 
 		arrowBatchMap[parent] ??= new BatchedArrow()
@@ -77,13 +77,13 @@
 	}
 
 	$effect(() => {
-		const unsubAddArrow = world.onAdd(traits.Arrow, onAddArrow)
+		const unsubOnAdd = world.onAdd(traits.Arrow, onAdd)
 		const unsubRemoveInstance = world.onRemove(traits.Instance, onInstanceRemove)
 		const unsubPoseChange = world.onChange(traits.Pose, onPoseChange)
 		const unsubColorChange = world.onChange(traits.Color, onColorChange)
 
 		return () => {
-			unsubAddArrow()
+			unsubOnAdd()
 			unsubRemoveInstance()
 			unsubPoseChange()
 			unsubColorChange()
