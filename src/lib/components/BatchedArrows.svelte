@@ -77,14 +77,14 @@
 	}
 
 	$effect(() => {
-		const unsubOnAdd = world.onAdd(traits.Arrow, onAdd)
-		const unsubRemoveInstance = world.onRemove(traits.Instance, onInstanceRemove)
+		const unsubAdd = world.onAdd(traits.Arrow, onAdd)
+		const unsubRemove = world.onRemove(traits.Instance, onInstanceRemove)
 		const unsubPoseChange = world.onChange(traits.Pose, onPoseChange)
 		const unsubColorChange = world.onChange(traits.Color, onColorChange)
 
 		return () => {
-			unsubOnAdd()
-			unsubRemoveInstance()
+			unsubAdd()
+			unsubRemove()
 			unsubPoseChange()
 			unsubColorChange()
 		}
