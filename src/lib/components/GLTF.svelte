@@ -58,7 +58,11 @@
 			if ('url' in source) {
 				$gltf = (await gltfLoader.loadAsync(source.url)) as ThrelteGltf
 			} else if ('glb' in source) {
-				$gltf = (await gltfLoader.parseAsync(source.glb.buffer, '')) as ThrelteGltf
+				const buffer = source.glb.buffer.slice(
+					source.glb.byteOffset,
+					source.glb.byteOffset + source.glb.byteLength
+				)
+				$gltf = (await gltfLoader.parseAsync(buffer, '')) as ThrelteGltf
 			} else if ('gltf' in source) {
 				$gltf = source.gltf as ThrelteGltf
 			}
