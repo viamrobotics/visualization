@@ -31,7 +31,11 @@
 	const positions = useTrait(() => entity, traits.PointsPositions)
 	const color = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.VertexColors)
-	const pointSize = $derived(settings.current.pointSize)
+	const entityPointSize = useTrait(() => entity, traits.PointSize)
+
+	const pointSize = $derived(
+		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
+	)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const points = new Points()

@@ -44,6 +44,8 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
+	const lineWidth = useTrait(() => entity, traits.LineWidth)
+
 	const center = useTrait(() => entity, traits.Center)
 
 	const geometryType = $derived.by(() => {
@@ -173,7 +175,7 @@
 				<T
 					is={LineMaterial}
 					{color}
-					width={0.5}
+					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
 				/>
 			{:else}
 				<T.MeshToonMaterial

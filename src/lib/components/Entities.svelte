@@ -1,54 +1,51 @@
 <script lang="ts">
 	import Pose from './Pose.svelte'
 	import Frame from './Frame.svelte'
-	import Line from './Line.svelte'
-	import Pointcloud from './Pointcloud.svelte'
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
+	import Line from './Line.svelte'
+	import Points from './Points.svelte'
 	import { traits, useQuery } from '$lib/ecs'
-	import { Or } from 'koota'
+	import { Not, Or } from 'koota'
 
-	const frames = useQuery(traits.FramesAPI)
-	const geometries = useQuery(traits.GeometriesAPI)
-	const points = useQuery(traits.PointsPositions)
-	const lines = useQuery(traits.LinePositions)
-	const gltfs = useQuery(traits.GLTF)
-	const droppedMeshes = useQuery(traits.DroppedFile, traits.BufferGeometry)
-	const drawnMeshes = useQuery(
-		traits.DrawAPI,
-		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
-	)
-	const worldStateMeshes = useQuery(
+	/**
+	 * Frames from a live machine are bucketed into their own query
+	 * due to needing to call `getPose` on each one
+	 */
+	const machineFramesEntities = useQuery(traits.FramesAPI)
+
+	/**
+	 * Geometries from a live machine are bucketed into their own query
+	 * to avoid thrashing other query results due to them being
+	 * potentially being polled at 30/60fps.
+	 */
+	const resourceGeometriesEntities = useQuery(traits.GeometriesAPI)
+
+	/**
+	 * Geometries from the world state API are bucketed into their own query
+	 * to avoid thrashing other query results due to them being potentially polled at 60fps.
+	 */
+	const worldStateEntities = useQuery(
 		traits.WorldStateStoreAPI,
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
+
+	/**
+	 * All remaining meshes can be bucketed into a query due to lower frequency updates.
+	 */
+	const meshEntities = useQuery(
+		Not(traits.FramesAPI),
+		Not(traits.GeometriesAPI),
+		Not(traits.WorldStateStoreAPI),
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
+	)
+
+	const points = useQuery(traits.PointsPositions)
+	const lines = useQuery(traits.LinePositions)
+	const gltfs = useQuery(traits.GLTF)
 </script>
 
-{#each drawnMeshes.current as entity (entity)}
-	<Frame {entity}>
-		<Label text={entity.get(traits.Name)} />
-	</Frame>
-{/each}
-
-{#each worldStateMeshes.current as entity (entity)}
-	<Frame {entity}>
-		<Label text={entity.get(traits.Name)} />
-	</Frame>
-{/each}
-
-{#each droppedMeshes.current as entity (entity)}
-	<Frame {entity}>
-		<Label text={entity.get(traits.Name)} />
-	</Frame>
-{/each}
-
-{#each points.current as entity (entity)}
-	<Pointcloud {entity}>
-		<Label text={entity.get(traits.Name)} />
-	</Pointcloud>
-{/each}
-
-{#each frames.current as entity (entity)}
+{#each machineFramesEntities.current as entity (entity)}
 	<Pose {entity}>
 		{#snippet children({ pose })}
 			<Frame
@@ -61,10 +58,28 @@
 	</Pose>
 {/each}
 
-{#each geometries.current as entity (entity)}
+{#each resourceGeometriesEntities.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</Frame>
+{/each}
+
+{#each worldStateEntities.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
+{/each}
+
+{#each meshEntities.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
+{/each}
+
+{#each points.current as entity (entity)}
+	<Points {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Points>
 {/each}
 
 {#each lines.current as entity (entity)}

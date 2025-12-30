@@ -1,11 +1,25 @@
+<script
+	module
+	lang="ts"
+>
+	import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
+
+	const dracoLoader = new DRACOLoader()
+	const gltfLoader = new GLTFLoader()
+
+	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+	gltfLoader.setDRACOLoader(dracoLoader)
+</script>
+
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import { GLTF, Portal, PortalTarget } from '@threlte/extras'
+	import { Portal, PortalTarget, useGltfAnimations, type ThrelteGltf } from '@threlte/extras'
 	import type { Snippet } from 'svelte'
-	import type { Object3D } from 'three'
+	import { Group, type Object3D } from 'three'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import { poseToObject3d } from '$lib/transform'
 
 	interface Props extends ThrelteProps<Object3D> {
 		entity: Entity
@@ -14,23 +28,62 @@
 
 	let { entity, children, ...rest }: Props = $props()
 
+	const { gltf, actions } = useGltfAnimations()
+
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
-	const gltf = useTrait(() => entity, traits.GLTF)
+	const pose = useTrait(() => entity, traits.Pose)
+	const gltfTrait = useTrait(() => entity, traits.GLTF)
+	const scale = useTrait(() => entity, traits.Scale)
 	const objectProps = useObjectEvents(() => entity)
+
+	const animationName = $derived(gltfTrait.current?.animationName)
+
+	const group = new Group()
+
+	$effect.pre(() => {
+		if (pose.current) {
+			poseToObject3d(pose.current, group)
+		}
+	})
+
+	$effect.pre(() => {
+		if (!gltfTrait.current) {
+			return
+		}
+
+		const { source } = gltfTrait.current
+
+		const load = async () => {
+			if ('url' in source) {
+				$gltf = (await gltfLoader.loadAsync(source.url)) as ThrelteGltf
+			} else if ('glb' in source) {
+				const buffer = source.glb.buffer.slice(
+					source.glb.byteOffset,
+					source.glb.byteOffset + source.glb.byteLength
+				)
+				$gltf = (await gltfLoader.parseAsync(buffer, '')) as ThrelteGltf
+			} else if ('gltf' in source) {
+				$gltf = source.gltf as ThrelteGltf
+			}
+		}
+
+		load()
+	})
+
+	$effect.pre(() => {
+		if (animationName) {
+			$actions[animationName]?.play()
+		}
+	})
 </script>
 
 <Portal id={parent.current}>
-	{#if gltf.current}
-		{#if 'url' in gltf.current.source}
-			<GLTF url={gltf.current.source.url}>
-				{@render children?.()}
-
-				<PortalTarget id={name.current} />
-			</GLTF>
-		{:else if 'gltf' in gltf.current.source}
+	<T is={group}>
+		{#if $gltf}
 			<T
-				is={gltf.current.source.gltf.scene as Object3D}
+				is={$gltf.scene as Object3D}
+				scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
 				name={name.current}
 				{...objectProps}
 				{...rest}
@@ -40,5 +93,5 @@
 				<PortalTarget id={name.current} />
 			</T>
 		{/if}
-	{/if}
+	</T>
 </Portal>

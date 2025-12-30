@@ -16,6 +16,7 @@
 	const settings = useSettings()
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const pointColor = useTrait(() => entity, traits.PointColor)
+	const pointSize = useTrait(() => entity, traits.PointSize)
 </script>
 
 <Frame {entity}>
@@ -30,6 +31,6 @@
 			number,
 		]}
 		positions={linePositions.current}
-		scale={Number(settings.current.lineDotSize)}
+		scale={Number(pointSize.current ? pointSize.current : settings.current.lineDotSize)}
 	/>
 {/if}
