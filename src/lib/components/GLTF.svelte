@@ -15,10 +15,11 @@
 	import { T, type Props as ThrelteProps } from '@threlte/core'
 	import { Portal, PortalTarget, useGltfAnimations, type ThrelteGltf } from '@threlte/extras'
 	import type { Snippet } from 'svelte'
-	import type { Object3D } from 'three'
+	import { Group, type Object3D } from 'three'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import { poseToObject3d } from '$lib/transform'
 
 	interface Props extends ThrelteProps<Object3D> {
 		entity: Entity
@@ -31,13 +32,22 @@
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
+	const pose = useTrait(() => entity, traits.Pose)
 	const gltfTrait = useTrait(() => entity, traits.GLTF)
 	const scale = useTrait(() => entity, traits.Scale)
 	const objectProps = useObjectEvents(() => entity)
 
 	const animationName = $derived(gltfTrait.current?.animationName)
 
-	$effect(() => {
+	const group = new Group()
+
+	$effect.pre(() => {
+		if (pose.current) {
+			poseToObject3d(pose.current, group)
+		}
+	})
+
+	$effect.pre(() => {
 		if (!gltfTrait.current) {
 			return
 		}
@@ -57,7 +67,7 @@
 		load()
 	})
 
-	$effect(() => {
+	$effect.pre(() => {
 		if (animationName) {
 			$actions[animationName]?.play()
 		}
@@ -65,17 +75,19 @@
 </script>
 
 <Portal id={parent.current}>
-	{#if $gltf}
-		<T
-			is={$gltf.scene as Object3D}
-			scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
-			name={name.current}
-			{...objectProps}
-			{...rest}
-		>
-			{@render children?.()}
+	<T is={group}>
+		{#if $gltf}
+			<T
+				is={$gltf.scene as Object3D}
+				scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
+				name={name.current}
+				{...objectProps}
+				{...rest}
+			>
+				{@render children?.()}
 
-			<PortalTarget id={name.current} />
-		</T>
-	{/if}
+				<PortalTarget id={name.current} />
+			</T>
+		{/if}
+	</T>
 </Portal>
