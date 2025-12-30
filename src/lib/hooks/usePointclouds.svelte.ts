@@ -154,7 +154,7 @@ export const providePointclouds = (partID: () => string) => {
 			const existing = entities.get(name)
 
 			if (existing) {
-				existing.set(traits.PointsGeometry, positions)
+				existing.set(traits.PointsPositions, positions)
 
 				if (colors) {
 					existing.set(traits.VertexColors, colors)
@@ -166,7 +166,7 @@ export const providePointclouds = (partID: () => string) => {
 			const entity = world.spawn(
 				traits.Parent(name),
 				traits.Name(`${name} pointcloud`),
-				traits.PointsGeometry(positions),
+				traits.PointsPositions(positions),
 				colors ? traits.VertexColors(colors) : traits.Color
 			)
 
