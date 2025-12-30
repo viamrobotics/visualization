@@ -30,6 +30,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	const world = useWorld()
 	const settings = useSettings()
 	const cameraControls = useCameraControls()
+
 	let entities: Entity[] = []
 
 	$effect(() => {
@@ -44,26 +45,11 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	})
 
 	$effect(() => {
-		if (!cameraControls.current) return
+		const { position, lookAt } = snapshot.sceneMetadata?.sceneCamera ?? {}
 
-		if (snapshot.sceneMetadata?.sceneCamera?.position) {
-			cameraControls.current.setPosition(
-				snapshot.sceneMetadata.sceneCamera.position.x,
-				snapshot.sceneMetadata.sceneCamera.position.y,
-				snapshot.sceneMetadata.sceneCamera.position.z
-			)
-		}
-
-		if (snapshot.sceneMetadata?.sceneCamera?.lookAt) {
-			const position = snapshot.sceneMetadata.sceneCamera.position ?? { x: 0, y: 0, z: 0 }
-			cameraControls.current.setLookAt(
-				position.x,
-				position.y,
-				position.z,
-				snapshot.sceneMetadata.sceneCamera.lookAt.x,
-				snapshot.sceneMetadata.sceneCamera.lookAt.y,
-				snapshot.sceneMetadata.sceneCamera.lookAt.z
-			)
-		}
+		cameraControls.setPose({
+			position: [position?.x ?? 0, position?.y ?? 0, position?.z ?? 0],
+			lookAt: [lookAt?.x ?? 0, lookAt?.y ?? 0, lookAt?.z ?? 0],
+		})
 	})
 </script>

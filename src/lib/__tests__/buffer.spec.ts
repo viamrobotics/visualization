@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { STRIDE, asFloat32Array, normalizeColorsRGBA } from '../buffer'
+import { asFloat32Array, normalizeColorsRGBA } from '../buffer'
 
 describe('asFloat32Array', () => {
 	it('converts aligned bytes to Float32Array', () => {

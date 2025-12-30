@@ -11,3 +11,6 @@ src/lib/draw/v1
 
 # Docs
 draw/DOCS.md
+
+# IDE
+.cursor

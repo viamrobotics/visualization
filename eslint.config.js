@@ -1,9 +1,16 @@
 // eslint.config.js
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 import js from '@eslint/js'
+import { includeIgnoreFile } from '@eslint/compat'
 import svelte from 'eslint-plugin-svelte'
 import globals from 'globals'
 import ts from 'typescript-eslint'
 import svelteConfig from './svelte.config.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const gitignorePath = resolve(__dirname, '.gitignore')
 
 export default ts.config(
 	js.configs.recommended,
@@ -18,9 +25,10 @@ export default ts.config(
 			},
 		},
 	},
+	includeIgnoreFile(gitignorePath),
 	{
 		name: 'ignores',
-		ignores: ['.svelte-kit', 'build', 'dist', 'node_modules', 'draw/DOCS.md'],
+		ignores: ['draw/DOCS.md'],
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

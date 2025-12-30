@@ -1,12 +1,21 @@
 import type { World, Entity, ConfigurableTrait } from 'koota'
+import { Color, Vector3, Vector4 } from 'three'
+import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
 import { RenderArmModels, type SceneMetadata } from '$lib/draw/v1/scene_pb'
-import { Model, Shape, type Drawing } from '$lib/draw/v1/drawing_pb'
+import { type Drawing } from '$lib/draw/v1/drawing_pb'
 import type { Transform } from '$lib/common/v1/common_pb'
 import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/WorldObject.svelte'
+import { rgbaToHex } from './color'
+import { asFloat32Array, STRIDE } from './buffer'
+import { createPose } from './transform'
+
+const vec3 = new Vector3()
+const color = new Color()
+const pose = createPose()
 
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }
@@ -55,7 +64,7 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	}
 
 	for (const drawing of snapshot.drawings) {
-		entities.push(...spawnDrawingEntity(world, drawing))
+		entities.push(...spawnEntitiesFromDrawing(world, drawing))
 	}
 
 	return entities
@@ -65,14 +74,6 @@ export const destroyEntities = (entities: Entity[]): void => {
 	for (const entity of entities) {
 		entity.destroy()
 	}
-}
-
-const rgbaToHex = (rgba: Uint8Array): string => {
-	if (rgba.length < 3) return '#333333'
-	const r = rgba[0]!.toString(16).padStart(2, '0')
-	const g = rgba[1]!.toString(16).padStart(2, '0')
-	const b = rgba[2]!.toString(16).padStart(2, '0')
-	return `#${r}${g}${b}`
 }
 
 const getRenderArmModels = (
@@ -106,6 +107,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 		if (metadata.color) {
 			entityTraits.push(traits.Color(metadata.color))
 		}
+
 		if (metadata.opacity !== undefined) {
 			entityTraits.push(traits.Opacity(metadata.opacity))
 		}
@@ -114,86 +116,191 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 	return world.spawn(...entityTraits)
 }
 
-const spawnDrawingEntity = (world: World, drawing: Drawing): Entity[] => {
-	const entityTraits: ConfigurableTrait[] = [
-		traits.Name(drawing.referenceFrame),
-		traits.SnapshotAPI,
-	]
-
+const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
+	const entities: Entity[] = []
 	const poseInFrame = drawing.poseInObserverFrame
-	entityTraits.push(traits.Pose(poseInFrame?.pose))
-	entityTraits.push(traits.Parent(poseInFrame?.referenceFrame))
-	entityTraits.push(traits.ColorsRGBA(drawing.metadata?.colors))
-	const subEntities = addShapeTraits(entityTraits, drawing?.physicalObject ?? Shape.fromJson({}))
+	const parent = poseInFrame?.referenceFrame
+	const { geometryType } = drawing.physicalObject ?? {}
 
-	if (subEntities.length > 0) {
-		const entities: Entity[] = []
-		for (const entity of subEntities) {
-			entities.push(world.spawn(...entity))
+	if (geometryType?.case === 'arrows') {
+		const rootEntityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+			traits.ReferenceFrame,
+		]
+
+		if (parent) {
+			rootEntityTraits.push(traits.Parent(parent))
 		}
-		return entities
+
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+
+		entities.push(rootEntity)
+
+		const poses = asFloat32Array(geometryType.value.poses)
+		const colors = drawing.metadata?.colors
+			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
+			: []
+
+		for (
+			let i = 0, j = 0, k = 0, l = poses.length / STRIDE.ARROWS;
+			i < l;
+			i += STRIDE.ARROWS, j += 1, k += 4
+		) {
+			const entityTraits: ConfigurableTrait[] = [
+				traits.Name(`pose ${j}`),
+				traits.Parent(drawing.referenceFrame),
+			]
+
+			pose.x = poses[i + 0]
+			pose.y = poses[i + 1]
+			pose.z = poses[i + 2]
+			pose.oX = poses[i + 3]
+			pose.oY = poses[i + 4]
+			pose.oZ = poses[i + 5]
+
+			entityTraits.push(traits.Pose(pose))
+
+			if (colors[k + 0] && colors[k + 1] && colors[k + 2]) {
+				color.r = colors[k + 0]
+				color.g = colors[k + 1]
+				color.b = colors[k + 2]
+				entityTraits.push(traits.Color(color))
+			}
+
+			if (colors[k + 3]) {
+				entityTraits.push(traits.Opacity(colors[k + 3]))
+			}
+
+			const entity = world.spawn(...entityTraits, traits.Arrow, traits.SnapshotAPI)
+
+			entities.push(entity)
+		}
+	} else if (geometryType?.case === 'model') {
+		const rootEntityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+			traits.ReferenceFrame,
+		]
+
+		if (parent) {
+			rootEntityTraits.push(traits.Parent(parent))
+		}
+
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+
+		entities.push(rootEntity)
+
+		let i = 1
+		for (const asset of geometryType.value.assets) {
+			const entityTraits: ConfigurableTrait[] = [
+				traits.Name(`${drawing.referenceFrame} model ${i++}`),
+				traits.Pose(poseInFrame?.pose),
+				traits.Parent(drawing.referenceFrame),
+			]
+
+			if (geometryType.value.scale) {
+				entityTraits.push(traits.Scale(geometryType.value.scale))
+			}
+
+			if (asset.content.case === 'url') {
+				entityTraits.push(
+					traits.GLTF({
+						source: { url: asset.content.value },
+						animationName: geometryType.value.animationName ?? '',
+					})
+				)
+			} else if (asset.content.value) {
+				entityTraits.push(
+					traits.GLTF({
+						source: { glb: asset.content.value as Uint8Array<ArrayBuffer> },
+						animationName: geometryType.value.animationName ?? '',
+					})
+				)
+			}
+
+			const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+
+			entities.push(entity)
+		}
 	} else {
-		return [world.spawn(...entityTraits)]
-	}
-}
+		const entityTraits: ConfigurableTrait[] = [
+			traits.Name(drawing.referenceFrame),
+			traits.Pose(poseInFrame?.pose),
+		]
 
-const addShapeTraits = (entityTraits: ConfigurableTrait[], shape: Shape): ConfigurableTrait[][] => {
-	if (shape.center) {
-		entityTraits.push(traits.Center(shape.center))
-	}
-
-	const { geometryType } = shape
-	switch (geometryType.case) {
-		case 'arrows':
-			entityTraits.push(traits.Arrows(geometryType.value.poses))
-			return []
-
-		case 'line':
-			entityTraits.push(traits.Positions(geometryType.value.positions))
-			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth ?? 5))
-			entityTraits.push(traits.PointSize(geometryType.value.pointSize ?? 10))
-			return []
-
-		case 'points':
-			entityTraits.push(traits.Positions(geometryType.value.positions))
-			entityTraits.push(traits.PointSize(geometryType.value.pointSize))
-			return []
-
-		case 'model':
-			return addModelTraits(entityTraits, geometryType.value)
-
-		case 'nurbs':
-			entityTraits.push(traits.ControlPoints(geometryType.value.controlPoints))
-			entityTraits.push(traits.Knots(geometryType.value.knots))
-			entityTraits.push(traits.Degree(geometryType.value.degree))
-			entityTraits.push(traits.Weights(geometryType.value.weights))
-			return []
-	}
-
-	return []
-}
-
-const addModelTraits = (entityTraits: ConfigurableTrait[], model: Model): ConfigurableTrait[][] => {
-	const subEntities: ConfigurableTrait[][] = []
-	for (const asset of model.assets) {
-		const modelEntityTraits: ConfigurableTrait[] = [...entityTraits]
-		modelEntityTraits.push(traits.MimeType(asset.mimeType))
-		modelEntityTraits.push(traits.SizeBytes(Number(asset.sizeBytes)))
-		if (asset.content.case === 'url') {
-			modelEntityTraits.push(traits.URLContent({ case: 'url', value: asset.content.value }))
-		} else if (asset.content.case === 'data') {
-			modelEntityTraits.push(traits.DataContent({ case: 'data', value: asset.content.value }))
+		if (parent && parent !== 'world') {
+			entityTraits.push(traits.Parent)
 		}
 
-		if (model.scale) {
-			modelEntityTraits.push(traits.Scale(model.scale))
-		}
-		if (model.animationName !== undefined) {
-			modelEntityTraits.push(traits.AnimationName(model.animationName))
+		if (drawing.metadata?.colors) {
+			entityTraits.push(
+				traits.VertexColors(asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
+			)
 		}
 
-		subEntities.push(modelEntityTraits)
+		if (drawing.physicalObject?.center) {
+			entityTraits.push(traits.Center(drawing.physicalObject.center))
+		}
+
+		if (geometryType?.case === 'line') {
+			const positions = asFloat32Array(geometryType.value.positions)
+			entityTraits.push(
+				traits.LinePositions(positions),
+				traits.LineWidth(geometryType.value.lineWidth),
+				traits.PointSize(geometryType.value.pointSize)
+			)
+		} else if (geometryType?.case === 'points') {
+			const positions = asFloat32Array(geometryType.value.positions)
+			entityTraits.push(
+				traits.PointsPositions(positions),
+				traits.PointSize(geometryType.value.pointSize)
+			)
+		} else if (geometryType?.case === 'nurbs') {
+			const {
+				degree = 3,
+				knots: knotsBuffer,
+				weights: weightsBuffer,
+				controlPoints: controlPointsBuffer,
+			} = geometryType.value
+
+			const knots = [...asFloat32Array(knotsBuffer)]
+			const weights = weightsBuffer
+				? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
+				: []
+			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
+			const controlPoints: Vector4[] = []
+
+			for (
+				let i = 0, j = 0, l = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS;
+				i < l;
+				i += STRIDE.NURBS_CONTROL_POINTS, j += 1
+			) {
+				vec3
+					.set(controlPointsArray[0], controlPointsArray[1], controlPointsArray[2])
+					.multiplyScalar(0.001)
+				controlPoints.push(new Vector4(vec3.x, vec3.y, vec3.z, weights[j] ?? 0))
+			}
+
+			const curve = new NURBSCurve(degree, knots, controlPoints)
+
+			const numPoints = 600
+			const points = new Float32Array(numPoints * 3)
+			const l = numPoints * 3
+			for (let i = 0; i < l; i += 3) {
+				curve.getPointAt(i / (l - 1), vec3)
+				points[i + 0] = vec3.x
+				points[i + 1] = vec3.y
+				points[i + 2] = vec3.z
+			}
+
+			entityTraits.push(traits.LinePositions(points))
+		}
+
+		const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+
+		entities.push(entity)
 	}
 
-	return subEntities
+	return entities
 }

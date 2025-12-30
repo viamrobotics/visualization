@@ -1,6 +1,5 @@
 import { Color, type ColorRepresentation, type RGB } from 'three'
 import twColors from 'tailwindcss/colors'
-import { isNumber } from 'lodash-es'
 import { ResourceName } from '@viamrobotics/sdk'
 
 // Step 3: linear sRGB → sRGB
@@ -122,7 +121,7 @@ export const isRGB = (color: unknown): color is RGB => {
 		return false
 	}
 
-	return isNumber(color.r) && isNumber(color.g) && isNumber(color.b)
+	return typeof color.r === 'number' && typeof color.g === 'number' && typeof color.b === 'number'
 }
 
 export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 }): Color => {
@@ -141,7 +140,10 @@ export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 
 }
 
 export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
-	if (!isNumber(opacity)) return defaultOpacity
+	if (typeof opacity !== 'number') {
+		return defaultOpacity
+	}
+
 	return opacity > 1 ? opacity / 100 : opacity
 }
 
@@ -168,4 +170,12 @@ const isColorHex = (color: unknown): color is string => {
 	}
 
 	return false
+}
+
+export const rgbaToHex = (rgba: Uint8Array): string => {
+	if (rgba.length < 3) return '#333333'
+	const r = rgba[0]!.toString(16).padStart(2, '0')
+	const g = rgba[1]!.toString(16).padStart(2, '0')
+	const b = rgba[2]!.toString(16).padStart(2, '0')
+	return `#${r}${g}${b}`
 }
