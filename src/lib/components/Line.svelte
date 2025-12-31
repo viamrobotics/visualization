@@ -17,8 +17,6 @@
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const pointColor = useTrait(() => entity, traits.PointColor)
 	const pointSize = useTrait(() => entity, traits.PointSize)
-
-	$inspect(linePositions.current)
 </script>
 
 <Frame {entity}>
