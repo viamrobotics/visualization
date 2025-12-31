@@ -179,3 +179,11 @@ export const rgbaToHex = (rgba: Uint8Array): string => {
 	const b = rgba[2]!.toString(16).padStart(2, '0')
 	return `#${r}${g}${b}`
 }
+
+export const rgbaBytesToFloat32 = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
+	const out = new Float32Array(bytes.length)
+	for (let i = 0; i < bytes.length; i++) {
+		out[i] = bytes[i] / 255
+	}
+	return out
+}

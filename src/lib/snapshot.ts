@@ -9,7 +9,7 @@ import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/WorldObject.svelte'
-import { rgbaToHex } from './color'
+import { rgbaBytesToFloat32, rgbaToHex } from './color'
 import { asFloat32Array, STRIDE } from './buffer'
 import { createPose } from './transform'
 
@@ -234,9 +234,17 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (drawing.metadata?.colors) {
-			entityTraits.push(
-				traits.VertexColors(asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
-			)
+			const colors = rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
+
+			if (colors.length === 4) {
+				console.log(colors)
+				entityTraits.push(
+					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
+					traits.Opacity(colors[3])
+				)
+			} else {
+				entityTraits.push(traits.VertexColors(colors))
+			}
 		}
 
 		if (drawing.physicalObject?.center) {
@@ -245,6 +253,11 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 
 		if (geometryType?.case === 'line') {
 			const positions = asFloat32Array(geometryType.value.positions)
+
+			for (let i = 0, l = positions.length; i < l; i += 1) {
+				positions[i] *= 0.001
+			}
+
 			entityTraits.push(
 				traits.LinePositions(positions),
 				traits.LineWidth(geometryType.value.lineWidth),
@@ -252,10 +265,16 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			)
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
-			entityTraits.push(
-				traits.PointsPositions(positions),
-				traits.PointSize(geometryType.value.pointSize)
-			)
+
+			for (let i = 0, l = positions.length; i < l; i += 1) {
+				positions[i] *= 0.001
+			}
+
+			entityTraits.push(traits.PointsPositions(positions))
+
+			if (geometryType.value.pointSize) {
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+			}
 		} else if (geometryType?.case === 'nurbs') {
 			const {
 				degree = 3,
