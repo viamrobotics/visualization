@@ -48,8 +48,6 @@
 		material.size = pointSize
 	})
 
-	$inspect(colors.current, color.current)
-
 	$effect.pre(() => {
 		if (colors.current) {
 			material.color.set(0xffffff)
