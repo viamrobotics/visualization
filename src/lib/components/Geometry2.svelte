@@ -181,7 +181,7 @@
 				<T.MeshToonMaterial
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent
+					transparent={(opacity.current ?? 0.7) < 1}
 					opacity={opacity.current ?? 0.7}
 				/>
 

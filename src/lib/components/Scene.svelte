@@ -100,6 +100,5 @@
 	{@render children?.()}
 
 	<T.DirectionalLight position={[3, 3, 3]} />
-	<T.DirectionalLight position={[-3, -3, -3]} />
 	<T.AmbientLight />
 </T.Group>

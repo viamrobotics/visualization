@@ -195,7 +195,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		for (const asset of geometryType.value.assets) {
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(`${drawing.referenceFrame} model ${i++}`),
-				traits.Pose(poseInFrame?.pose),
 				traits.Parent(drawing.referenceFrame),
 			]
 
@@ -236,6 +235,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		if (drawing.metadata?.colors) {
 			const colors = rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
 
+			console.log(drawing.referenceFrame, colors)
 			if (colors.length === 4) {
 				entityTraits.push(
 					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
