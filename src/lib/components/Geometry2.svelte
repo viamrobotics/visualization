@@ -45,7 +45,6 @@
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
-
 	const center = useTrait(() => entity, traits.Center)
 
 	const geometryType = $derived.by(() => {
