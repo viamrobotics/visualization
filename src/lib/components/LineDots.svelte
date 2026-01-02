@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { BatchedMesh, Matrix4, SphereGeometry, Vector3 } from 'three'
+	import { BatchedMesh, Matrix4, SphereGeometry, Vector3, type ColorRepresentation } from 'three'
 
 	interface Props {
-		color: [number, number, number]
+		color: ColorRepresentation
 		positions: Float32Array
 		scale: number
 	}

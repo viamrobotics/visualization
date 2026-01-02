@@ -45,11 +45,16 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	})
 
 	$effect(() => {
-		const { position, lookAt } = snapshot.sceneMetadata?.sceneCamera ?? {}
+		const { sceneCamera } = snapshot.sceneMetadata ?? {}
 
-		cameraControls.setPose({
-			position: [position?.x ?? 0, position?.y ?? 0, position?.z ?? 0],
-			lookAt: [lookAt?.x ?? 0, lookAt?.y ?? 0, lookAt?.z ?? 0],
-		})
+		if (sceneCamera) {
+			const { x = 0, y = 0, z = 0 } = sceneCamera.position ?? {}
+			const { x: lx = 0, y: ly = 0, z: lz = 0 } = sceneCamera.lookAt ?? {}
+
+			cameraControls.setPose({
+				position: [x * 0.001, y * 0.001, z * 0.001],
+				lookAt: [lx * 0.001, ly * 0.001, lz * 0.001],
+			})
+		}
 	})
 </script>

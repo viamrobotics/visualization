@@ -276,7 +276,7 @@ export const provideDrawAPI = () => {
 
 			if (arrowHeadAtPose === 1) {
 				// Compute the base position so the arrow ends at the origin
-				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 0.1))
+				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
 			}
 
 			pose.x = origin.x

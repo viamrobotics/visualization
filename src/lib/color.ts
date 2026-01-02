@@ -53,6 +53,8 @@ const oklchToHex = (raw: string) => {
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
+const original = new Color()
+const hsl = { h: 0, s: 0, l: 0 }
 /**
  * Darkens a THREE.Color by a given percentage while preserving hue.
  * @param color The original THREE.Color instance.
@@ -60,19 +62,19 @@ const oklchToHex = (raw: string) => {
  * @returns A new THREE.Color instance with the darkened color.
  */
 export const darkenColor = (value: ColorRepresentation, percent: number): Color => {
-	const original = new Color(value)
-	const hsl = original.getHSL({ h: 0, s: 0, l: 0 })
+	original.set(value)
+	original.getHSL(hsl)
 	hsl.l = Math.max(0, hsl.l * (1 - percent / 100))
 	return new Color().setHSL(hsl.h, hsl.s, hsl.l)
 }
-
-const darkness = '600'
 
 export const resourceNameToColor = (resourceName?: ResourceName) => {
 	return resourceName
 		? new Color(resourceColors[resourceName.subtype as keyof typeof resourceColors])
 		: undefined
 }
+
+const darkness = '600'
 
 export const colors = {
 	default: oklchToHex(twColors.red[darkness]),
@@ -178,4 +180,12 @@ export const rgbaToHex = (rgba: Uint8Array): string => {
 	const g = rgba[1]!.toString(16).padStart(2, '0')
 	const b = rgba[2]!.toString(16).padStart(2, '0')
 	return `#${r}${g}${b}`
+}
+
+export const rgbaBytesToFloat32 = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
+	const out = new Float32Array(bytes.length)
+	for (let i = 0; i < bytes.length; i++) {
+		out[i] = bytes[i] / 255
+	}
+	return out
 }

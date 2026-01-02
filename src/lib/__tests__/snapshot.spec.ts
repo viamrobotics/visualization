@@ -8,6 +8,7 @@ import { spawnSnapshotEntities } from '../snapshot'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 import { asFloat32Array } from '$lib/buffer'
+import { rgbaBytesToFloat32 } from '$lib/color'
 
 describe('spawnSnapshotEntities', () => {
 	it('spawns entities for transforms', () => {
@@ -159,12 +160,13 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		const world = createWorld()
 		const positionsData = new Uint8Array(36) // 3 points
 		const floats = asFloat32Array(positionsData)
+		const pointSize = 8
 		const drawing = new Drawing({
 			referenceFrame: 'points1',
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'points',
-					value: new Points({ positions: positionsData, pointSize: 8 }),
+					value: new Points({ positions: positionsData, pointSize }),
 				},
 			}),
 		})
@@ -173,7 +175,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
 		expect(entity.get(traits.PointsPositions)).toStrictEqual(floats)
-		expect(entity.get(traits.PointSize)).toBe(8)
+		expect(entity.get(traits.PointSize)).toBe(pointSize * 0.001)
 	})
 
 	it('spawns with center pose if shape has center', async () => {
@@ -195,8 +197,8 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 	it('spawns with VertexColors from metadata', async () => {
 		const world = createWorld()
-		const colors = new Uint8Array([255, 0, 0, 255])
-		const colorsFloat = asFloat32Array(colors)
+		const colors = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 255])
+		const colorsFloat = rgbaBytesToFloat32(colors)
 		const drawing = new Drawing({
 			referenceFrame: 'colored',
 			physicalObject: new Shape({

@@ -5,53 +5,33 @@
 	import { useWorld } from '$lib/ecs/useWorld'
 	import type { FileDropperSuccess } from './file-dropper'
 	import { traits } from '$lib/ecs'
-	import { parseMetadata } from '$lib/WorldObject.svelte'
-	import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
+	import { spawnSnapshotEntities } from '$lib/snapshot'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 
 	const world = useWorld()
 	const toast = useToast()
-
-	const addSnapshotToWorld = (snapshot: Snapshot) => {
-		for (const transform of snapshot.transforms) {
-			const entity = world.spawn(
-				traits.Name(transform.referenceFrame),
-				traits.Pose(transform.poseInObserverFrame?.pose),
-				traits.Parent(transform.poseInObserverFrame?.referenceFrame)
-			)
-
-			if (transform.physicalObject) {
-				entity.add(traits.Geometry(transform.physicalObject))
-			}
-
-			if (transform.metadata) {
-				const metadata = parseMetadata(transform.metadata.fields)
-				if (metadata.color) {
-					entity.add(traits.Color(metadata.color))
-				}
-			}
-		}
-
-		for (const drawing of snapshot.drawings) {
-			world.spawn(
-				traits.Name(drawing.referenceFrame),
-				traits.Pose(drawing.poseInObserverFrame?.pose),
-				traits.Parent(drawing.poseInObserverFrame?.referenceFrame)
-				// TODO: Add shape
-			)
-
-			if (drawing.metadata) {
-				// add shape colors
-			}
-		}
-	}
+	const cameraControls = useCameraControls()
 
 	const fileDrop = useFileDrop(
 		(result: FileDropperSuccess) => {
 			switch (result.type) {
 				case 'snapshot': {
-					addSnapshotToWorld(result.snapshot)
+					spawnSnapshotEntities(world, result.snapshot)
+
+					const { sceneCamera } = result.snapshot.sceneMetadata ?? {}
+
+					if (sceneCamera) {
+						const { x = 0, y = 0, z = 0 } = sceneCamera.position ?? {}
+						const { x: lx = 0, y: ly = 0, z: lz = 0 } = sceneCamera.lookAt ?? {}
+
+						cameraControls.setPose({
+							position: [x * 0.001, y * 0.001, z * 0.001],
+							lookAt: [lx * 0.001, ly * 0.001, lz * 0.001],
+						})
+					}
+
 					break
 				}
 				case 'pcd':

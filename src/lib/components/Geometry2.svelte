@@ -45,7 +45,6 @@
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
-
 	const center = useTrait(() => entity, traits.Center)
 
 	const geometryType = $derived.by(() => {
@@ -181,7 +180,7 @@
 				<T.MeshToonMaterial
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent
+					transparent={(opacity.current ?? 0.7) < 1}
 					opacity={opacity.current ?? 0.7}
 				/>
 

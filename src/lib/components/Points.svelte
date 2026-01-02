@@ -31,6 +31,7 @@
 	const positions = useTrait(() => entity, traits.PointsPositions)
 	const color = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.VertexColors)
+	const opacity = useTrait(() => entity, traits.Opacity)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 
 	const pointSize = $derived(
@@ -48,12 +49,27 @@
 	})
 
 	$effect.pre(() => {
-		if (colors) {
+		if (colors.current) {
 			material.color.set(0xffffff)
 		} else if (color.current) {
 			material.color.setRGB(color.current.r, color.current.g, color.current.b)
 		} else {
 			material.color.set(settings.current.pointColor)
+		}
+	})
+
+	/**
+	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
+	 */
+	$effect.pre(() => {
+		if (opacity.current && opacity.current < 1) {
+			material.transparent = true
+			material.opacity = opacity.current
+
+			return () => {
+				material.transparent = false
+				material.opacity = 1
+			}
 		}
 	})
 
@@ -64,11 +80,26 @@
 	})
 
 	$effect.pre(() => {
-		material.vertexColors = colors !== undefined
+		material.vertexColors = colors.current !== undefined
 
-		if (colors.current) {
-			geometry.setAttribute('color', new BufferAttribute(colors.current, 3))
+		if (colors.current && positions.current) {
+			const vertexColors = colors.current
+			const hasAlphaChannel = positions.current.length / vertexColors.length === 0.75
+			const itemSize = hasAlphaChannel ? 4 : 3
+			geometry.setAttribute('color', new BufferAttribute(vertexColors, itemSize))
 			geometry.attributes.color.needsUpdate = true
+
+			let transparent = false
+			if (hasAlphaChannel) {
+				for (let i = 3, l = vertexColors.length; i < l; i += 4) {
+					if (vertexColors[i] < 1) {
+						transparent = true
+						break
+					}
+				}
+			}
+
+			material.transparent = transparent
 		}
 	})
 

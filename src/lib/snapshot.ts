@@ -9,11 +9,13 @@ import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/WorldObject.svelte'
-import { rgbaToHex } from './color'
+import { rgbaBytesToFloat32, rgbaToHex } from './color'
 import { asFloat32Array, STRIDE } from './buffer'
 import { createPose } from './transform'
 
 const vec3 = new Vector3()
+const origin = new Vector3()
+const direction = new Vector3()
 const color = new Color()
 const pose = createPose()
 
@@ -142,22 +144,24 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
 			: []
 
-		for (
-			let i = 0, j = 0, k = 0, l = poses.length / STRIDE.ARROWS;
-			i < l;
-			i += STRIDE.ARROWS, j += 1, k += 4
-		) {
+		for (let i = 0, j = 0, k = 0, l = poses.length; i < l; i += STRIDE.ARROWS, j += 1, k += 4) {
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(`pose ${j}`),
 				traits.Parent(drawing.referenceFrame),
 			]
 
-			pose.x = poses[i + 0]
-			pose.y = poses[i + 1]
-			pose.z = poses[i + 2]
-			pose.oX = poses[i + 3]
-			pose.oY = poses[i + 4]
-			pose.oZ = poses[i + 5]
+			origin.set(poses[i + 0], poses[i + 1], poses[i + 2])
+			direction.set(poses[i + 3], poses[i + 4], poses[i + 5])
+
+			// Compute the base position so the arrow ends at the origin
+			origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
+
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
 
 			entityTraits.push(traits.Pose(pose))
 
@@ -195,7 +199,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		for (const asset of geometryType.value.assets) {
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(`${drawing.referenceFrame} model ${i++}`),
-				traits.Pose(poseInFrame?.pose),
 				traits.Parent(drawing.referenceFrame),
 			]
 
@@ -234,9 +237,16 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (drawing.metadata?.colors) {
-			entityTraits.push(
-				traits.VertexColors(asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
-			)
+			const colors = rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
+
+			if (colors.length === 4) {
+				entityTraits.push(
+					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
+					traits.Opacity(colors[3])
+				)
+			} else {
+				entityTraits.push(traits.VertexColors(colors))
+			}
 		}
 
 		if (drawing.physicalObject?.center) {
@@ -245,17 +255,32 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 
 		if (geometryType?.case === 'line') {
 			const positions = asFloat32Array(geometryType.value.positions)
+
+			for (let i = 0, l = positions.length; i < l; i += 1) {
+				positions[i] *= 0.001
+			}
+
 			entityTraits.push(
 				traits.LinePositions(positions),
 				traits.LineWidth(geometryType.value.lineWidth),
 				traits.PointSize(geometryType.value.pointSize)
 			)
+
+			if (geometryType.value.pointSize) {
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+			}
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
-			entityTraits.push(
-				traits.PointsPositions(positions),
-				traits.PointSize(geometryType.value.pointSize)
-			)
+
+			for (let i = 0, l = positions.length; i < l; i += 1) {
+				positions[i] *= 0.001
+			}
+
+			entityTraits.push(traits.PointsPositions(positions))
+
+			if (geometryType.value.pointSize) {
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+			}
 		} else if (geometryType?.case === 'nurbs') {
 			const {
 				degree = 3,
