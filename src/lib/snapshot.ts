@@ -239,7 +239,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		if (drawing.metadata?.colors) {
 			const colors = rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
 
-			console.log(drawing.referenceFrame, colors)
 			if (colors.length === 4) {
 				entityTraits.push(
 					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
@@ -266,6 +265,10 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				traits.LineWidth(geometryType.value.lineWidth),
 				traits.PointSize(geometryType.value.pointSize)
 			)
+
+			if (geometryType.value.pointSize) {
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+			}
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
 

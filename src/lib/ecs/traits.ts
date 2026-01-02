@@ -22,7 +22,7 @@ export const Opacity = trait(() => 1)
  * The color of an object
  * @default { r: 1, g: 0, b: 0 }
  */
-export const Color = trait({ r: 1, g: 0, b: 0 })
+export const Color = trait({ r: 0, g: 0, b: 0 })
 
 export const Arrow = trait()
 
