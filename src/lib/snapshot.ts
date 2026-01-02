@@ -14,6 +14,8 @@ import { asFloat32Array, STRIDE } from './buffer'
 import { createPose } from './transform'
 
 const vec3 = new Vector3()
+const origin = new Vector3()
+const direction = new Vector3()
 const color = new Color()
 const pose = createPose()
 
@@ -142,22 +144,24 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
 			: []
 
-		for (
-			let i = 0, j = 0, k = 0, l = poses.length / STRIDE.ARROWS;
-			i < l;
-			i += STRIDE.ARROWS, j += 1, k += 4
-		) {
+		for (let i = 0, j = 0, k = 0, l = poses.length; i < l; i += STRIDE.ARROWS, j += 1, k += 4) {
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(`pose ${j}`),
 				traits.Parent(drawing.referenceFrame),
 			]
 
-			pose.x = poses[i + 0]
-			pose.y = poses[i + 1]
-			pose.z = poses[i + 2]
-			pose.oX = poses[i + 3]
-			pose.oY = poses[i + 4]
-			pose.oZ = poses[i + 5]
+			origin.set(poses[i + 0], poses[i + 1], poses[i + 2])
+			direction.set(poses[i + 3], poses[i + 4], poses[i + 5])
+
+			// Compute the base position so the arrow ends at the origin
+			origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
+
+			pose.x = origin.x
+			pose.y = origin.y
+			pose.z = origin.z
+			pose.oX = direction.x
+			pose.oY = direction.y
+			pose.oZ = direction.z
 
 			entityTraits.push(traits.Pose(pose))
 
