@@ -673,12 +673,12 @@ func TestGeneratingSnapshots(t *testing.T) {
 			normal r3.Vector
 			offset r3.Vector
 		}{
-			{r3.Vector{X: 0, Y: 0, Z: -1}, r3.Vector{X: 0, Y: 0, Z: boxHalfSize + 150}}, // Top
-			{r3.Vector{X: 0, Y: 0, Z: 1}, r3.Vector{X: 0, Y: 0, Z: -boxHalfSize - 150}}, // Bottom
-			{r3.Vector{X: 0, Y: -1, Z: 0}, r3.Vector{X: 0, Y: boxHalfSize + 150, Z: 0}}, // Front (+Y)
-			{r3.Vector{X: 0, Y: 1, Z: 0}, r3.Vector{X: 0, Y: -boxHalfSize - 150, Z: 0}}, // Back (-Y)
-			{r3.Vector{X: -1, Y: 0, Z: 0}, r3.Vector{X: boxHalfSize + 150, Y: 0, Z: 0}}, // Right (+X)
-			{r3.Vector{X: 1, Y: 0, Z: 0}, r3.Vector{X: -boxHalfSize - 150, Y: 0, Z: 0}}, // Left (-X)
+			{r3.Vector{X: 0, Y: 0, Z: -1}, r3.Vector{X: 0, Y: 0, Z: boxHalfSize}}, // Top
+			{r3.Vector{X: 0, Y: 0, Z: 1}, r3.Vector{X: 0, Y: 0, Z: -boxHalfSize}}, // Bottom
+			{r3.Vector{X: 0, Y: -1, Z: 0}, r3.Vector{X: 0, Y: boxHalfSize, Z: 0}}, // Front (+Y)
+			{r3.Vector{X: 0, Y: 1, Z: 0}, r3.Vector{X: 0, Y: -boxHalfSize, Z: 0}}, // Back (-Y)
+			{r3.Vector{X: -1, Y: 0, Z: 0}, r3.Vector{X: boxHalfSize, Y: 0, Z: 0}}, // Right (+X)
+			{r3.Vector{X: 1, Y: 0, Z: 0}, r3.Vector{X: -boxHalfSize, Y: 0, Z: 0}}, // Left (-X)
 		}
 
 		for _, face := range faces {
