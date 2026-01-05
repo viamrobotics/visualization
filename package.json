@@ -109,7 +109,11 @@
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
 		"svelte": ">=5",
-		"svelte-virtuallists": ">=1"
+		"svelte-virtuallists": ">=1",
+		"@ag-grid-community/client-side-row-model": ">=32.3.0",
+		"@ag-grid-community/core": ">=32.3.0",
+		"@ag-grid-community/styles": ">=32.3.0",
+		"@zag-js/dialog": ">=1.31"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
