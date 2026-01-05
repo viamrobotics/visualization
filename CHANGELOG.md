@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.2.0
+
+### Minor Changes
+
+- d089816: Add Snapshot component
+
 ## 1.1.6
 
 ### Patch Changes
