@@ -66,15 +66,20 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	}
 
 	for (const drawing of snapshot.drawings) {
-		entities.push(...spawnEntitiesFromDrawing(world, drawing))
+		const drawingEntities = spawnEntitiesFromDrawing(world, drawing)
+		for (const e of drawingEntities) {
+			entities.push(e)
+		}
 	}
 
 	return entities
 }
 
-export const destroyEntities = (entities: Entity[]): void => {
+export const destroyEntities = (world: World, entities: Entity[]): void => {
 	for (const entity of entities) {
-		entity.destroy()
+		if (world.has(entity)) {
+			entity.destroy()
+		}
 	}
 }
 

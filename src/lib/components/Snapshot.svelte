@@ -20,6 +20,8 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	import { spawnSnapshotEntities, destroyEntities, applySceneMetadata } from '$lib/snapshot'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import type { Entity } from 'koota'
+	import { untrack } from 'svelte'
+	import { onDestroy } from 'svelte'
 
 	interface Props {
 		snapshot: SnapshotProto
@@ -34,14 +36,20 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	let entities: Entity[] = []
 
 	$effect(() => {
-		destroyEntities(entities)
-		entities = spawnSnapshotEntities(world, snapshot)
+		world.id.toString()
+		snapshot.uuid.toString()
 
+		untrack(() => {
+			entities = spawnSnapshotEntities(world, snapshot)
+		})
+	})
+
+	$effect(() => {
 		if (snapshot.sceneMetadata) {
-			settings.current = applySceneMetadata(settings.current, snapshot.sceneMetadata)
+			untrack(() => {
+				settings.current = applySceneMetadata(settings.current, snapshot.sceneMetadata!)
+			})
 		}
-
-		return () => destroyEntities(entities)
 	})
 
 	$effect(() => {
@@ -56,5 +64,9 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 				lookAt: [lx * 0.001, ly * 0.001, lz * 0.001],
 			})
 		}
+	})
+
+	onDestroy(() => {
+		destroyEntities(world, entities)
 	})
 </script>

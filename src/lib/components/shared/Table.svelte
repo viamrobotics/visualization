@@ -12,7 +12,7 @@
 	{@render children?.()}
 </table>
 
-<style lang="postcss">
+<!-- <style lang="postcss">
 	@reference "../../../app.css";
 
 	.motion-tools-table {
@@ -34,4 +34,4 @@
 	.motion-tools-table :global(tbody th) {
 		@apply border-light font-roboto-mono text-default h-[40px] gap-2 border px-1.5 text-center text-xs font-normal;
 	}
-</style>
+</style> -->

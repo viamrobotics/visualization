@@ -129,9 +129,21 @@
 			<div {...api.getBranchContentProps(nodeProps)}>
 				<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
 
-				{#each children as node, index (node.entity)}
-					{@render treeNode({ node, indexPath: [...indexPath, index], api })}
-				{/each}
+				{#if children.length > 200}
+					<VirtualList
+						class="w-full"
+						style="height:{Math.min(8, Math.max(children.length, 5)) * 32}px;"
+						items={children}
+					>
+						{#snippet vl_slot({ index, item })}
+							{@render treeNode({ node: item, indexPath: [...indexPath, Number(index)], api })}
+						{/snippet}
+					</VirtualList>
+				{:else}
+					{#each children as node, index (node.entity)}
+						{@render treeNode({ node, indexPath: [...indexPath, index], api })}
+					{/each}
+				{/if}
 			</div>
 		</div>
 	{:else}
