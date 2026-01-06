@@ -12,8 +12,8 @@
 
 /** Parsed PCD data with pre-allocated typed arrays. */
 export interface ParsedPCD {
-	positions: Float32Array
-	colors: Float32Array | null
+	positions: Float32Array<ArrayBuffer>
+	colors: Float32Array<ArrayBuffer> | null
 	normals: Float32Array | null
 	intensity: Float32Array | null
 	labels: Int32Array | null

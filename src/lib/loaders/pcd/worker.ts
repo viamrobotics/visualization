@@ -22,13 +22,7 @@ self.onmessage = async (event) => {
 
 	try {
 		const result = await parsePcd(data.buffer as ArrayBuffer)
-		const positions = result.positions as Float32Array<ArrayBuffer>
-		const colors = result.colors as Float32Array<ArrayBuffer> | null
-
-		postMessage(
-			{ positions, colors, id } satisfies Message,
-			colors ? [positions.buffer, colors.buffer] : [positions.buffer]
-		)
+		postMessage({ ...result, id })
 	} catch (error) {
 		console.error(error)
 		postMessage({ id, error: (error as Error).message } satisfies Message)
