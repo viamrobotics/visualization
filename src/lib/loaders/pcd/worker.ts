@@ -1,6 +1,4 @@
-import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js'
-
-const loader = new PCDLoader()
+import { parsePcd } from './parser'
 
 export interface SuccessMessage {
 	id: number
@@ -23,19 +21,16 @@ self.onmessage = async (event) => {
 	}
 
 	try {
-		const pcd = loader.parse(data.buffer as ArrayBuffer)
-		if (pcd.geometry) {
-			const positions = pcd.geometry.attributes.position.array as Float32Array<ArrayBuffer>
-			const colors = (pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
+		const result = await parsePcd(data.buffer as ArrayBuffer)
+		const positions = result.positions as Float32Array<ArrayBuffer>
+		const colors = result.colors as Float32Array<ArrayBuffer> | null
 
-			postMessage(
-				{ positions, colors, id } satisfies Message,
-				colors ? [positions.buffer, colors.buffer] : [positions.buffer]
-			)
-		} else {
-			postMessage({ id, error: 'Failed to extract geometry' } satisfies Message)
-		}
+		postMessage(
+			{ positions, colors, id } satisfies Message,
+			colors ? [positions.buffer, colors.buffer] : [positions.buffer]
+		)
 	} catch (error) {
+		console.error(error)
 		postMessage({ id, error: (error as Error).message } satisfies Message)
 	}
 }
