@@ -131,6 +131,12 @@ install_brew() {
     log_success "Homebrew installed successfully"
 }
 
+update_brew_packages() {
+    log_info "Updating Homebrew packages..."
+    brew update
+    log_success "Homebrew packages updated successfully"
+}
+
 install_dependencies() {
     log_info "Installing dependencies from Brewfile..."
 
@@ -263,6 +269,7 @@ main() {
 
     # Step 2: Install dependencies from Brewfile
     log_info "🍻 Step 2: Installing dependencies from Brewfile..."
+    update_brew_packages
     install_dependencies
     echo
 
