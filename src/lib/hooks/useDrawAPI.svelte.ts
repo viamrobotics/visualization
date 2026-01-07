@@ -2,7 +2,6 @@ import { getContext, setContext } from 'svelte'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { UuidTool } from 'uuid-tool'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { Frame } from '$lib/frame'
 import { createPose, createPoseFromFrame } from '$lib/transform'
@@ -14,6 +13,7 @@ import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 
 const colorUtil = new Color()
 
@@ -94,7 +94,6 @@ export const provideDrawAPI = () => {
 	const backendIP = $derived(drawConnectionConfig.current?.backendIP)
 	const websocketPort = $derived(drawConnectionConfig.current?.websocketPort)
 
-	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
 
@@ -161,20 +160,6 @@ export const provideDrawAPI = () => {
 			const entity = world.spawn(...entityTraits)
 
 			entities.set(name, entity)
-		}
-	}
-
-	const drawPCD = async (buffer: ArrayBuffer) => {
-		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
-
-		const entity = world.spawn(
-			traits.Name(`Points ${++pointsIndex}`),
-			traits.PointsPositions(positions),
-			traits.DrawAPI
-		)
-
-		if (colors) {
-			entity.add(traits.VertexColors(colors as Float32Array<ArrayBuffer>))
 		}
 	}
 
@@ -312,10 +297,6 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name) === label)
-		entity?.destroy()
-
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
@@ -345,11 +326,25 @@ export const provideDrawAPI = () => {
 			colors[offset + 2] = b
 		}
 
+		const entities = world.query(traits.DrawAPI)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+
+		if (entity) {
+			const geometry = entity.get(traits.BufferGeometry)
+
+			if (geometry) {
+				updateBufferGeometry(geometry, positions, colors)
+				return
+			}
+		}
+
+		const geometry = createBufferGeometry(positions, colors)
+
 		world.spawn(
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsPositions(positions),
-			traits.VertexColors(colors),
+			traits.BufferGeometry(geometry),
+			traits.Points,
 			traits.DrawAPI
 		)
 	}
@@ -436,7 +431,6 @@ export const provideDrawAPI = () => {
 
 		entities.clear()
 
-		pointsIndex = 0
 		geometryIndex = 0
 		poseIndex = 0
 	}
@@ -499,9 +493,6 @@ export const provideDrawAPI = () => {
 				} else if (type === bufferTypes.DRAW_LINE) {
 					operation = 'DrawLine'
 					drawLine(reader)
-				} else if (type === bufferTypes.DRAW_PCD) {
-					operation = 'DrawPCD'
-					drawPCD(reader.buffer)
 				} else if (type === bufferTypes.DRAW_GLTF) {
 					operation = 'DrawGLTF'
 					drawGLTF(reader.buffer)

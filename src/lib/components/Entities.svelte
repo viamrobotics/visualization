@@ -37,10 +37,11 @@
 		Not(traits.FramesAPI),
 		Not(traits.GeometriesAPI),
 		Not(traits.WorldStateStoreAPI),
+		Not(traits.Points),
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 
-	const points = useQuery(traits.PointsPositions)
+	const points = useQuery(traits.Points)
 	const lines = useQuery(traits.LinePositions)
 	const gltfs = useQuery(traits.GLTF)
 </script>

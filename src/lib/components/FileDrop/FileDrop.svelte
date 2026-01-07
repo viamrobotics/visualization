@@ -7,6 +7,7 @@
 	import { traits } from '$lib/ecs'
 	import { spawnSnapshotEntities } from '$lib/snapshot'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { createBufferGeometry } from '$lib/attribute'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 
@@ -34,21 +35,25 @@
 
 					break
 				}
-				case 'pcd':
+				case 'pcd': {
+					const geometry = createBufferGeometry(result.pcd.positions, result.pcd.colors)
+
 					world.spawn(
 						traits.Name(result.name),
-						traits.PointsPositions(result.pcd.positions),
-						result.pcd.colors ? traits.VertexColors(result.pcd.colors) : traits.Color,
+						traits.BufferGeometry(geometry),
+						traits.Points,
 						traits.DroppedFile
 					)
 					break
-				case 'ply':
+				}
+				case 'ply': {
 					world.spawn(
 						traits.Name(result.name),
 						traits.BufferGeometry(result.ply),
 						traits.DroppedFile
 					)
 					break
+				}
 			}
 
 			toast({ message: `${result.name} loaded.`, variant: ToastVariant.Success })
