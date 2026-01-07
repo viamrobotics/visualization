@@ -15,3 +15,23 @@ body {
 	height: 100dvh;
 	font-family: system-ui;
 }
+
+.motion-tools-table {
+	@apply w-full table-auto;
+}
+.motion-tools-table thead {
+	@apply border-light bg-light border;
+}
+.motion-tools-table thead th {
+	@apply border-light text-subtle-1 border px-2.5 py-1 text-xs font-normal whitespace-nowrap;
+}
+.motion-tools-table thead th abbr {
+	@apply text-disabled;
+}
+
+.motion-tools-table tbody {
+	@apply border-light border;
+}
+.motion-tools-table tbody th {
+	@apply border-light font-roboto-mono text-default h-[40px] gap-2 border px-1.5 text-center text-xs font-normal;
+}
