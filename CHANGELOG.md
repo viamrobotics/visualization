@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.2.3
+
+### Patch Changes
+
+- 4145bf2: Fix: memory leak in pointcloud rendering, reuse pointcloud attribute buffers
+
 ## 1.2.2
 
 ### Patch Changes
