@@ -431,7 +431,6 @@ export const provideDrawAPI = () => {
 
 		entities.clear()
 
-		pointsIndex = 0
 		geometryIndex = 0
 		poseIndex = 0
 	}
