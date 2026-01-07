@@ -312,12 +312,14 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name) === label)
-		entity?.destroy()
+		const batchIndex = reader.read()
+		const batchCount = reader.read()
 
 		// Read counts
 		const nPoints = reader.read()
+		const totalPoints = reader.read()
+		const pointsPerChunk = reader.read()
+
 		const nColors = reader.read()
 
 		// Read default color
@@ -326,14 +328,14 @@ export const provideDrawAPI = () => {
 		const b = reader.read()
 
 		const nPointsElements = nPoints * 3
-		const positions = reader.array.slice(reader.offset, reader.offset + nPointsElements)
+		let positions = reader.array.slice(reader.offset, reader.offset + nPointsElements)
 		reader.offset += nPointsElements
 
 		const nColorsElements = nColors * 3
 		const rawColors = reader.array.slice(reader.offset, reader.offset + nColorsElements)
 		reader.offset += nColorsElements
 
-		const colors = new Float32Array(nPointsElements)
+		let colors = new Float32Array(nPointsElements)
 		colors.set(rawColors)
 
 		// Cover the gap for any points not colored
@@ -345,13 +347,36 @@ export const provideDrawAPI = () => {
 			colors[offset + 2] = b
 		}
 
-		world.spawn(
-			traits.Name(label),
-			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsPositions(positions),
-			traits.VertexColors(colors),
-			traits.DrawAPI
-		)
+		const entities = world.query(traits.DrawAPI)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+
+		if (batchCount > 1) {
+			const existingPositions =
+				entity?.get(traits.PointsPositions) ?? new Float32Array(totalPoints * 3)
+
+			existingPositions.set(positions, pointsPerChunk * 3 * batchIndex)
+			positions = existingPositions
+			console.log(pointsPerChunk * 3 * batchIndex)
+
+			const existingColors = entity?.get(traits.VertexColors) ?? new Float32Array(totalPoints * 3)
+			existingColors.set(colors, pointsPerChunk * 3 * batchIndex)
+			colors = existingColors
+		}
+
+		if (entity) {
+			entity.set(traits.Color, colorUtil.set(r, g, b))
+			entity.set(traits.PointsPositions, positions, true)
+			entity.set(traits.VertexColors, colors, true)
+			entity.changed(traits.PointsPositions)
+		} else {
+			world.spawn(
+				traits.Name(label),
+				traits.Color(colorUtil.set(r, g, b)),
+				traits.PointsPositions(positions),
+				traits.VertexColors(colors),
+				traits.DrawAPI
+			)
+		}
 	}
 
 	const drawLine = async (reader: Float32Reader) => {

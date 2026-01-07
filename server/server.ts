@@ -126,6 +126,8 @@ function sendToClients(data: string | Bun.BufferSource) {
 	}
 
 	for (const ws of connections) {
+		if (ws.readyState !== WebSocket.OPEN) continue
+
 		ws.send(data)
 	}
 
@@ -288,6 +290,7 @@ try {
 			return new Response('Not Found', { status: 404 })
 		},
 		websocket: {
+			maxPayloadLength: 64 * 1024 * 1024, // 64 MB
 			open(ws) {
 				console.log('WebSocket client connected.')
 				connections.add(ws)

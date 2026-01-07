@@ -75,7 +75,11 @@
 
 	$effect.pre(() => {
 		if (positions.current) {
-			geometry.setAttribute('position', new BufferAttribute(positions.current, 3))
+			if (geometry.getAttribute('position')?.array !== positions.current) {
+				geometry.setAttribute('position', new BufferAttribute(positions.current, 3))
+			}
+
+			geometry.attributes.position.needsUpdate = true
 		}
 	})
 
