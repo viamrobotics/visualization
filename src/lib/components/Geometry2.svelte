@@ -113,7 +113,7 @@
 
 			return () => {
 				geo = undefined
-				mesh.geometry.dispose()
+				mesh?.geometry?.dispose()
 			}
 		}
 	})

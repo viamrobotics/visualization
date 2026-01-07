@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.2.1
+
+### Patch Changes
+
+- 115eaab: fix: improve tree node virtualization; fix effect loop in exported Snapshot component
+- 2515d55: add peer deps
+
 ## 1.2.0
 
 ### Minor Changes
