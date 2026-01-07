@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.2.2
+
+### Patch Changes
+
+- 0eccaab: remove relative app.css ref and put global styles in app.css
+
 ## 1.2.1
 
 ### Patch Changes
