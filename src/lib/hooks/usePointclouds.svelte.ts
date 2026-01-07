@@ -1,6 +1,5 @@
 import { CameraClient } from '@viamrobotics/sdk'
-import { BufferAttribute, BufferGeometry } from 'three'
-import { setContext, getContext, untrack } from 'svelte'
+import { setContext, getContext } from 'svelte'
 import {
 	createResourceClient,
 	createResourceQuery,

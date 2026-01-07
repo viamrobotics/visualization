@@ -2,7 +2,6 @@ import { getContext, setContext } from 'svelte'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { UuidTool } from 'uuid-tool'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { Frame } from '$lib/frame'
 import { createPose, createPoseFromFrame } from '$lib/transform'
@@ -95,7 +94,6 @@ export const provideDrawAPI = () => {
 	const backendIP = $derived(drawConnectionConfig.current?.backendIP)
 	const websocketPort = $derived(drawConnectionConfig.current?.websocketPort)
 
-	let pointsIndex = 0
 	let geometryIndex = 0
 	let poseIndex = 0
 
