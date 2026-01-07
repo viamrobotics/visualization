@@ -7,7 +7,7 @@
 	import { traits } from '$lib/ecs'
 	import { spawnSnapshotEntities } from '$lib/snapshot'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { BufferAttribute, BufferGeometry } from 'three'
+	import { createBufferGeometry } from '$lib/attribute'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 
@@ -36,12 +36,7 @@
 					break
 				}
 				case 'pcd': {
-					const geometry = new BufferGeometry()
-					geometry.setAttribute('position', new BufferAttribute(result.pcd.positions, 3))
-
-					if (result.pcd.colors) {
-						geometry.setAttribute('color', new BufferAttribute(result.pcd.colors, 3))
-					}
+					const geometry = createBufferGeometry(result.pcd.positions, result.pcd.colors)
 
 					world.spawn(
 						traits.Name(result.name),

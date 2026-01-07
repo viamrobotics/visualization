@@ -42,7 +42,7 @@
 	const flush = () => {
 		if (pending) return
 		pending = true
-		return
+
 		window.setTimeout(() => {
 			const results = buildTreeNodes(world.query(traits.Name))
 			children = results.rootNodes
