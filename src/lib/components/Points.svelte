@@ -1,11 +1,5 @@
 <script lang="ts">
-	import {
-		Points,
-		BufferAttribute,
-		BufferGeometry,
-		PointsMaterial,
-		OrthographicCamera,
-	} from 'three'
+	import { Points, PointsMaterial, OrthographicCamera } from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
@@ -28,9 +22,8 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
-	const positions = useTrait(() => entity, traits.PointsPositions)
+	const geometry = useTrait(() => entity, traits.BufferGeometry)
 	const color = useTrait(() => entity, traits.Color)
-	const colors = useTrait(() => entity, traits.VertexColors)
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 
@@ -40,8 +33,7 @@
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const points = new Points()
-	const geometry = new BufferGeometry()
-	const material = new PointsMaterial()
+	const material = points.material as PointsMaterial
 	material.toneMapped = false
 
 	$effect.pre(() => {
@@ -49,7 +41,7 @@
 	})
 
 	$effect.pre(() => {
-		if (colors.current) {
+		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
 		} else if (color.current) {
 			material.color.setRGB(color.current.r, color.current.g, color.current.b)
@@ -74,25 +66,18 @@
 	})
 
 	$effect.pre(() => {
-		if (positions.current) {
-			geometry.setAttribute('position', new BufferAttribute(positions.current, 3))
-		}
-	})
+		const colors = geometry.current?.getAttribute('color')
+		const positions = geometry.current?.getAttribute('position')
 
-	$effect.pre(() => {
-		material.vertexColors = colors.current !== undefined
+		material.vertexColors = colors !== undefined
 
-		if (colors.current && positions.current) {
-			const vertexColors = colors.current
-			const hasAlphaChannel = positions.current.length / vertexColors.length === 0.75
-			const itemSize = hasAlphaChannel ? 4 : 3
-			geometry.setAttribute('color', new BufferAttribute(vertexColors, itemSize))
-			geometry.attributes.color.needsUpdate = true
+		if (colors && positions) {
+			const hasAlphaChannel = positions.array.length / colors.array.length === 0.75
 
 			let transparent = false
 			if (hasAlphaChannel) {
-				for (let i = 3, l = vertexColors.length; i < l; i += 4) {
-					if (vertexColors[i] < 1) {
+				for (let i = 3, l = colors.array.length; i < l; i += 4) {
+					if (colors.array[i] < 1) {
 						transparent = true
 						break
 					}
@@ -133,15 +118,17 @@
 	})
 </script>
 
-<Portal id={parent.current}>
-	<T
-		is={points}
-		name={name.current}
-		{...events}
-		bvh={{ maxDepth: 40, maxLeafTris: 20 }}
-	>
-		<T is={geometry} />
-		<T is={material} />
-		{@render children?.()}
-	</T>
-</Portal>
+{#if geometry.current}
+	<Portal id={parent.current}>
+		<T
+			is={points}
+			name={name.current}
+			{...events}
+			bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+		>
+			<T is={geometry.current} />
+			<T is={material} />
+			{@render children?.()}
+		</T>
+	</Portal>
+{/if}

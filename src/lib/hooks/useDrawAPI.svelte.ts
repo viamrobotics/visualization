@@ -14,6 +14,7 @@ import { parsePlyInput } from '$lib/ply'
 import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 
 const colorUtil = new Color()
 
@@ -164,20 +165,6 @@ export const provideDrawAPI = () => {
 		}
 	}
 
-	const drawPCD = async (buffer: ArrayBuffer) => {
-		const { positions, colors } = await parsePcdInWorker(new Uint8Array(buffer))
-
-		const entity = world.spawn(
-			traits.Name(`Points ${++pointsIndex}`),
-			traits.PointsPositions(positions),
-			traits.DrawAPI
-		)
-
-		if (colors) {
-			entity.add(traits.VertexColors(colors as Float32Array<ArrayBuffer>))
-		}
-	}
-
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const drawGeometry = (data: any, color: string, parent?: string) => {
 		const name = data.label ?? `geometry ${++geometryIndex}`
@@ -312,10 +299,6 @@ export const provideDrawAPI = () => {
 			label += String.fromCharCode(reader.read())
 		}
 
-		const entities = world.query(traits.DrawAPI)
-		const entity = entities.find((entity) => entity.get(traits.Name) === label)
-		entity?.destroy()
-
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
@@ -345,11 +328,25 @@ export const provideDrawAPI = () => {
 			colors[offset + 2] = b
 		}
 
+		const entities = world.query(traits.DrawAPI)
+		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+
+		if (entity) {
+			const geometry = entity.get(traits.BufferGeometry)
+
+			if (geometry) {
+				updateBufferGeometry(geometry, positions, colors)
+				return
+			}
+		}
+
+		const geometry = createBufferGeometry(positions, colors)
+
 		world.spawn(
 			traits.Name(label),
 			traits.Color(colorUtil.set(r, g, b)),
-			traits.PointsPositions(positions),
-			traits.VertexColors(colors),
+			traits.BufferGeometry(geometry),
+			traits.Points,
 			traits.DrawAPI
 		)
 	}
@@ -499,9 +496,6 @@ export const provideDrawAPI = () => {
 				} else if (type === bufferTypes.DRAW_LINE) {
 					operation = 'DrawLine'
 					drawLine(reader)
-				} else if (type === bufferTypes.DRAW_PCD) {
-					operation = 'DrawPCD'
-					drawPCD(reader.buffer)
 				} else if (type === bufferTypes.DRAW_GLTF) {
 					operation = 'DrawGLTF'
 					drawGLTF(reader.buffer)
