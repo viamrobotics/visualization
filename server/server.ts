@@ -288,6 +288,7 @@ try {
 			return new Response('Not Found', { status: 404 })
 		},
 		websocket: {
+			maxPayloadLength: oneGigabyte,
 			open(ws) {
 				console.log('WebSocket client connected.')
 				connections.add(ws)
