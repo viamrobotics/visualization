@@ -13,7 +13,7 @@ import (
 func TestDrawPoses(t *testing.T) {
 	t.Run("DrawPoses", func(t *testing.T) {
 		const (
-			numPoints = 5000
+			numPoints = 20_000
 			radius    = 1000.0
 		)
 
