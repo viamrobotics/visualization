@@ -20,6 +20,7 @@
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -44,6 +45,7 @@
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)
 	providePointclouds(() => partID.current)
+	providePointcloudObjects(() => partID.current)
 	provideArmClient(() => partID.current)
 	provideWorldStates()
 	provideFramelessComponents()
