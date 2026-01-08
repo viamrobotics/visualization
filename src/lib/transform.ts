@@ -67,9 +67,9 @@ export const quaternionToPose = (quaternion: Quaternion, pose: Partial<Pose>) =>
 }
 
 export const vector3ToPose = (vec3: Vector3, pose: Partial<Pose>) => {
-	pose.x = vec3.x * 1000
-	pose.y = vec3.y * 1000
-	pose.z = vec3.z * 1000
+	pose.x = vec3.x
+	pose.y = vec3.y
+	pose.z = vec3.z
 }
 
 export const object3dToPose = (object3d: Object3D, pose: Partial<Pose>) => {
@@ -87,7 +87,7 @@ export const poseToQuaternion = (pose?: Partial<Pose>, quaternion?: Quaternion) 
 }
 
 export const poseToVector3 = (pose?: Partial<Pose>, vec3?: Vector3) => {
-	vec3?.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0).multiplyScalar(0.001)
+	vec3?.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0)
 }
 
 export const poseToObject3d = (pose: Partial<Pose>, object3d: Object3D) => {

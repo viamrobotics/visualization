@@ -113,20 +113,20 @@ and should remain pure, i.e. no hooks should be used.
 				{:else if geometry.geometryType.case === 'box'}
 					{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
-						args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
+						args={[dimsMm.x, dimsMm.y, dimsMm.z]}
 						{oncreate}
 					/>
 				{:else if geometry.geometryType.case === 'sphere'}
 					{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
 					<T.SphereGeometry
-						args={[radiusMm * 0.001]}
+						args={[radiusMm]}
 						{oncreate}
 					/>
 				{:else if geometry.geometryType.case === 'capsule'}
 					{@const { lengthMm, radiusMm } = geometry.geometryType.value}
 					<T
 						is={CapsuleGeometry}
-						args={[radiusMm * 0.001, lengthMm * 0.001]}
+						args={[radiusMm, lengthMm]}
 						{oncreate}
 					/>
 				{/if}

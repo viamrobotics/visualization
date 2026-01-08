@@ -28,7 +28,7 @@
 
 		const instanceID = batched.addArrow(
 			direction.set(pose?.oX ?? 0, pose?.oY ?? 0, pose?.oZ ?? 0),
-			origin.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0).multiplyScalar(0.001),
+			origin.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0),
 			colorRGB ? color.set(colorRGB.r, colorRGB.g, colorRGB.b) : color.set('yellow')
 		)
 
@@ -47,7 +47,7 @@
 			batch?.updateArrow(
 				instanceID,
 				direction.set(pose.oX, pose.oY, pose.oZ),
-				origin.set(pose.x, pose.y, pose.z).multiplyScalar(0.001)
+				origin.set(pose.x, pose.y, pose.z)
 			)
 		}
 	}

@@ -287,15 +287,15 @@
 				<div class="flex gap-3">
 					<div>
 						<span class="text-subtle-2">x</span>
-						{(worldPosition.x * 1000).toFixed(2)}
+						{worldPosition.x.toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">y</span>
-						{(worldPosition.y * 1000).toFixed(2)}
+						{worldPosition.y.toFixed(2)}
 					</div>
 					<div>
 						<span class="text-subtle-2">z</span>
-						{(worldPosition.z * 1000).toFixed(2)}
+						{worldPosition.z.toFixed(2)}
 					</div>
 				</div>
 			</div>

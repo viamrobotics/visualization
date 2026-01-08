@@ -5,7 +5,7 @@
 	export let detections: Detection[]
 </script>
 
-<T.Group scale={0.001}>
+<T.Group>
 	{#each detections as { xMin, xMax, yMin, yMax }, index (index)}
 		{#if xMin !== undefined && xMax !== undefined && yMin !== undefined && yMax !== undefined}
 			<T.Mesh

@@ -229,7 +229,7 @@ export const provideDrawAPI = () => {
 		const existing = entities.get(name)
 
 		const controlPoints = data.ControlPts.map(
-			(point: Vector3) => new Vector4(point.x / 1000, point.y / 1000, point.z / 1000)
+			(point: Vector3) => new Vector4(point.x, point.y, point.z)
 		)
 		const curve = new NURBSCurve(data.Degree, data.Knots, controlPoints)
 

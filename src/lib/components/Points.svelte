@@ -35,7 +35,7 @@
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 
 	const pointSize = $derived(
-		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
+		entityPointSize.current ? entityPointSize.current : settings.current.pointSize
 	)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 

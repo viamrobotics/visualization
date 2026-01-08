@@ -38,6 +38,6 @@
 	<LineDots
 		color={darkenColor(resolvedColor, 10)}
 		positions={linePositions.current}
-		scale={pointSize.current * 0.001}
+		scale={pointSize.current}
 	/>
 {/if}

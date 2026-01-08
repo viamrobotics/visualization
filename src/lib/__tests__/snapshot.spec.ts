@@ -175,7 +175,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
 		expect(entity.get(traits.PointsPositions)).toStrictEqual(floats)
-		expect(entity.get(traits.PointSize)).toBe(pointSize * 0.001)
+		expect(entity.get(traits.PointSize)).toBe(pointSize)
 	})
 
 	it('spawns with center pose if shape has center', async () => {

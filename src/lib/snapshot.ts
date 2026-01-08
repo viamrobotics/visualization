@@ -25,25 +25,25 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
 		next.grid = metadata.grid
 	}
 	if (metadata.gridCellSize !== undefined) {
-		next.gridCellSize = metadata.gridCellSize / 1000
+		next.gridCellSize = metadata.gridCellSize
 	}
 	if (metadata.gridSectionSize !== undefined) {
-		next.gridSectionSize = metadata.gridSectionSize / 1000
+		next.gridSectionSize = metadata.gridSectionSize
 	}
 	if (metadata.gridFadeDistance !== undefined) {
-		next.gridFadeDistance = metadata.gridFadeDistance / 1000
+		next.gridFadeDistance = metadata.gridFadeDistance
 	}
 	if (metadata.pointSize !== undefined) {
-		next.pointSize = metadata.pointSize / 1000
+		next.pointSize = metadata.pointSize
 	}
 	if (metadata.pointColor !== undefined) {
 		next.pointColor = rgbaToHex(metadata.pointColor)
 	}
 	if (metadata.lineWidth !== undefined) {
-		next.lineWidth = metadata.lineWidth / 1000
+		next.lineWidth = metadata.lineWidth
 	}
 	if (metadata.linePointSize !== undefined) {
-		next.lineDotSize = metadata.linePointSize / 1000
+		next.lineDotSize = metadata.linePointSize
 	}
 	if (metadata.renderArmModels !== undefined) {
 		next.renderArmModels = getRenderArmModels(metadata.renderArmModels)
@@ -261,10 +261,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		if (geometryType?.case === 'line') {
 			const positions = asFloat32Array(geometryType.value.positions)
 
-			for (let i = 0, l = positions.length; i < l; i += 1) {
-				positions[i] *= 0.001
-			}
-
 			entityTraits.push(
 				traits.LinePositions(positions),
 				traits.LineWidth(geometryType.value.lineWidth),
@@ -272,19 +268,15 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			)
 
 			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize))
 			}
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
 
-			for (let i = 0, l = positions.length; i < l; i += 1) {
-				positions[i] *= 0.001
-			}
-
 			entityTraits.push(traits.PointsPositions(positions))
 
 			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+				entityTraits.push(traits.PointSize(geometryType.value.pointSize))
 			}
 		} else if (geometryType?.case === 'nurbs') {
 			const {
@@ -306,9 +298,8 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				i < l;
 				i += STRIDE.NURBS_CONTROL_POINTS, j += 1
 			) {
-				vec3
-					.set(controlPointsArray[0], controlPointsArray[1], controlPointsArray[2])
-					.multiplyScalar(0.001)
+				vec3.set(controlPointsArray[0], controlPointsArray[1], controlPointsArray[2])
+
 				controlPoints.push(new Vector4(vec3.x, vec3.y, vec3.z, weights[j] ?? 0))
 			}
 

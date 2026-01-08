@@ -7,11 +7,11 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
  * Arrow points along +Y with its base at y = 0
  */
 export const createArrowGeometry = (): BufferGeometry => {
-	const length = 0.1
+	const length = 100
 	const headLength = length * 0.2
 	const headWidth = headLength * 0.3
 	const tailLength = length - headLength
-	const tailWidth = 0.001
+	const tailWidth = 1
 
 	// Tail: box translated so base starts at y = 0
 	const tailGeometry = new BoxGeometry(tailWidth, tailLength, tailWidth)

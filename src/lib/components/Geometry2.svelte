@@ -151,20 +151,20 @@
 				{:else if box.current}
 					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
-						args={[x * 0.001, y * 0.001, z * 0.001]}
+						args={[x, y, z]}
 						{oncreate}
 					/>
 				{:else if sphere.current}
 					{@const { r } = sphere.current ?? { r: 0 }}
 					<T.SphereGeometry
-						args={[r * 0.001]}
+						args={[r]}
 						{oncreate}
 					/>
 				{:else if capsule.current}
 					{@const { r, l } = capsule.current ?? { r: 0, l: 0 }}
 					<T
 						is={CapsuleGeometry}
-						args={[r * 0.001, l * 0.001]}
+						args={[r, l]}
 						{oncreate}
 					/>
 				{/if}
@@ -174,7 +174,7 @@
 				<T
 					is={LineMaterial}
 					{color}
-					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+					width={lineWidth.current ? lineWidth.current : 0.5}
 				/>
 			{:else}
 				<T.MeshToonMaterial
