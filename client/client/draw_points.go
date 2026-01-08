@@ -87,9 +87,9 @@ func pointsToBytes(points *draw.Points, label string, defaultColor *[3]uint8) ([
 
 	for _, position := range points.Positions {
 		data = append(data,
-			float32(position.X)/1000.0,
-			float32(position.Y)/1000.0,
-			float32(position.Z)/1000.0,
+			float32(position.X),
+			float32(position.Y),
+			float32(position.Z),
 		)
 	}
 	for _, color := range points.Colors {

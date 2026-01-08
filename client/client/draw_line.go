@@ -75,9 +75,9 @@ func lineToBytes(line *draw.Line, label string) ([]byte, error) {
 
 	for _, position := range line.Positions {
 		data = append(data,
-			float32(position.X)/1000.0,
-			float32(position.Y)/1000.0,
-			float32(position.Z)/1000.0,
+			float32(position.X),
+			float32(position.Y),
+			float32(position.Z),
 		)
 	}
 

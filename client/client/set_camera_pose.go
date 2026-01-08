@@ -13,7 +13,11 @@ import (
 //   - lookAt: The direction the camera should look at
 //   - animate: Whether or not to animate to this pose
 func SetCameraPose(position r3.Vector, lookAt r3.Vector, animate bool) error {
-	sceneCamera := draw.NewSceneCamera(r3.Vector{X: position.X / 1000.0, Y: position.Y / 1000.0, Z: position.Z / 1000.0}, r3.Vector{X: lookAt.X / 1000.0, Y: lookAt.Y / 1000.0, Z: lookAt.Z / 1000.0}, draw.WithAnimated(animate))
+	sceneCamera := draw.NewSceneCamera(
+		r3.Vector{X: position.X, Y: position.Y, Z: position.Z},
+		r3.Vector{X: lookAt.X, Y: lookAt.Y, Z: lookAt.Z},
+		draw.WithAnimated(animate),
+	)
 
 	json, err := sceneCameraToJSON(sceneCamera)
 	if err != nil {
