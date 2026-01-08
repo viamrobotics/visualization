@@ -1,5 +1,16 @@
 # motion-tools
 
+## 1.3.0
+
+### Minor Changes
+
+- 971ae0d: Add support for viewing pointcloud objects
+
+### Patch Changes
+
+- 1309814: Reduce arrow geometry resolution
+- 1309814: Increase websocket max packet size to 1gb
+
 ## 1.2.3
 
 ### Patch Changes
