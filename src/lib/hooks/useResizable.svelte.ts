@@ -13,10 +13,10 @@ interface Context {
 
 export const MIN_DIMENSIONS: Dimensions = { width: 240, height: 320 }
 
-export const useResizable = (name: () => string): Context => {
+export const useResizable = (name: () => string, defaultDimensions?: () => Dimensions): Context => {
 	const key = $derived(`${name()}-resizable`)
 
-	let dimensions = $state.raw<Dimensions>(MIN_DIMENSIONS)
+	let dimensions = $derived<Dimensions>(defaultDimensions?.() ?? MIN_DIMENSIONS)
 	let loaded = $state(false)
 	let observer: ResizeObserver | undefined
 

@@ -16,8 +16,9 @@
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
+	const visionServices = useResourceNames(() => partID.current, 'vision')
 	const settings = useSettings()
-	const { disabledCameras } = useMachineSettings()
+	const { disabledCameras, disabledVisionServicesObjectPointclouds } = useMachineSettings()
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
 	const { refetchPoses } = useRefetchPoses()
@@ -56,8 +57,9 @@
 				pointclouds.refetch()
 			}}
 		/>
-		<div>
-			<div>Enabled pointcloud cameras</div>
+
+		<div class="mt-4">
+			<h3 class="text-sm"><strong>Enabled pointcloud cameras</strong></h3>
 			{#each cameras.current as camera (camera)}
 				<div class="flex items-center justify-between gap-4 py-2">
 					{camera.name}
@@ -70,6 +72,23 @@
 				</div>
 			{:else}
 				No cameras detected
+			{/each}
+		</div>
+
+		<div class="mt-4">
+			<h3 class="text-sm"><strong>Enabled vision services</strong></h3>
+			{#each visionServices.current as visionService (visionService)}
+				<div class="flex items-center justify-between gap-4 py-2">
+					{visionService.name}
+					<Switch
+						on={disabledVisionServicesObjectPointclouds.get(visionService.name) !== true}
+						on:change={(event) => {
+							disabledVisionServicesObjectPointclouds.set(visionService.name, !event.detail)
+						}}
+					/>
+				</div>
+			{:else}
+				No vision services detected
 			{/each}
 		</div>
 
