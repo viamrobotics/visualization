@@ -11,7 +11,6 @@ import { getContext, setContext } from 'svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity, ConfigurableTrait } from 'koota'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { typeSafeObjectFromEntries } from '$lib/entries'
 import { useEnvironment } from './useEnvironment.svelte'
 import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { createPose } from '$lib/transform'
@@ -53,7 +52,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 	const enabledClients = $derived.by(() => {
 		const results = []
 
-		let index = 0
 		for (const client of clients) {
 			if (
 				environment.current.viewerMode === 'monitor' &&
@@ -62,7 +60,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 				interval !== RefetchRates.OFF
 			) {
 				results.push(client as { current: VisionClient })
-				index += 1
 			}
 		}
 
@@ -103,8 +100,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 				] as const
 		)
 	)
-
-	const queryMap = $derived(typeSafeObjectFromEntries(queries))
 
 	$effect(() => {
 		for (const [name, query] of queries) {
