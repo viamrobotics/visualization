@@ -156,7 +156,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(entity.has(traits.PointSize)).toBeTruthy()
 	})
 
-	it('spawns points shape with Positions, PointSize traits', async () => {
+	it('spawns points shape with BufferGeometry, PointSize traits', async () => {
 		const world = createWorld()
 		const positionsData = new Uint8Array(36) // 3 points
 		const floats = asFloat32Array(positionsData)
@@ -174,7 +174,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
-		expect(entity.get(traits.PointsPositions)).toStrictEqual(floats)
+		expect(entity.get(traits.BufferGeometry)?.getAttribute('position')?.array).toStrictEqual(floats)
 		expect(entity.get(traits.PointSize)).toBe(pointSize)
 	})
 

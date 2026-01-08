@@ -27,6 +27,11 @@ export const Color = trait({ r: 0, g: 0, b: 0 })
 export const Arrow = trait()
 
 /**
+ * Render entity as points
+ */
+export const Points = trait()
+
+/**
  * A box, in mm
  */
 export const Box = trait({ x: 200, y: 200, z: 200 })
@@ -45,7 +50,6 @@ export const PointColor = trait({ r: 0, g: 0, b: 0 })
 
 /** format [x, y, z, ...] */
 export const LinePositions = trait(() => new Float32Array())
-export const PointsPositions = trait(() => new Float32Array())
 
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 

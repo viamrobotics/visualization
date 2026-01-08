@@ -1,5 +1,5 @@
 import { CameraClient } from '@viamrobotics/sdk'
-import { setContext, getContext, untrack } from 'svelte'
+import { setContext, getContext } from 'svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -12,6 +12,7 @@ import { RefetchRates } from '$lib/components/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 
 const typeSafeObjectFromEntries = <const T extends ReadonlyArray<readonly [PropertyKey, unknown]>>(
 	entries: T
@@ -50,7 +51,7 @@ export const providePointclouds = (partID: () => string) => {
 		)
 	)
 
-	const fetchedPropQueries = propQueries.every(([, query]) => query.isPending === false)
+	const fetchedPropQueries = $derived(propQueries.every(([, query]) => query.isPending === false))
 
 	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
 	const enabledClients = $derived.by(() => {
@@ -58,6 +59,7 @@ export const providePointclouds = (partID: () => string) => {
 
 		for (const client of clients) {
 			if (
+				environment.current.viewerMode === 'monitor' &&
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
@@ -88,7 +90,6 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const options = $derived({
-		enabled: environment.current.viewerMode === 'edit',
 		refetchInterval: interval,
 	})
 
@@ -111,13 +112,13 @@ export const providePointclouds = (partID: () => string) => {
 		}
 	})
 
-	const pcObjects = $state<
-		{
-			name: string
-			positions: Float32Array<ArrayBuffer>
-			colors: Float32Array<ArrayBuffer> | null
-		}[]
-	>([])
+	interface PCObject {
+		name: string
+		positions: Float32Array<ArrayBuffer>
+		colors: Float32Array<ArrayBuffer> | null
+	}
+
+	let pcObjects = $state.raw<PCObject[]>([])
 
 	$effect(() => {
 		const binaries: [string, Uint8Array][] = []
@@ -136,13 +137,17 @@ export const providePointclouds = (partID: () => string) => {
 				return { name, positions, colors }
 			})
 		).then((results) => {
+			const fulfilledResults: PCObject[] = []
+
 			for (const result of results) {
 				if (result.status === 'fulfilled') {
-					untrack(() => pcObjects.push(result.value))
+					fulfilledResults.push(result.value)
 				} else if (result.status === 'rejected') {
 					logs.add(result.reason, 'error')
 				}
 			}
+
+			pcObjects = fulfilledResults
 		})
 	})
 
@@ -154,20 +159,21 @@ export const providePointclouds = (partID: () => string) => {
 			const existing = entities.get(name)
 
 			if (existing) {
-				existing.set(traits.PointsPositions, positions)
+				const geometry = existing.get(traits.BufferGeometry)
 
-				if (colors) {
-					existing.set(traits.VertexColors, colors)
+				if (geometry) {
+					updateBufferGeometry(geometry, positions, colors)
+					continue
 				}
-
-				continue
 			}
+
+			const geometry = createBufferGeometry(positions, colors)
 
 			const entity = world.spawn(
 				traits.Parent(name),
 				traits.Name(`${name} pointcloud`),
-				traits.PointsPositions(positions),
-				colors ? traits.VertexColors(colors) : traits.Color
+				traits.BufferGeometry(geometry),
+				traits.Points
 			)
 
 			entities.set(name, entity)

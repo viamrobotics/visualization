@@ -12,6 +12,7 @@ import { parseMetadata } from '$lib/WorldObject.svelte'
 import { rgbaBytesToFloat32, rgbaToHex } from './color'
 import { asFloat32Array, STRIDE } from './buffer'
 import { createPose } from './transform'
+import { createBufferGeometry } from './attribute'
 
 const vec3 = new Vector3()
 const origin = new Vector3()
@@ -273,11 +274,18 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
 
-			entityTraits.push(traits.PointsPositions(positions))
+			const colors = drawing.metadata?.colors
+				? rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
+				: undefined
+			const geometry = createBufferGeometry(positions, colors)
+
+			entityTraits.push(traits.BufferGeometry(geometry))
 
 			if (geometryType.value.pointSize) {
 				entityTraits.push(traits.PointSize(geometryType.value.pointSize))
 			}
+
+			entityTraits.push(traits.Points)
 		} else if (geometryType?.case === 'nurbs') {
 			const {
 				degree = 3,

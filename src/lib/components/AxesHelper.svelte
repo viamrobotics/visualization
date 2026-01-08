@@ -13,7 +13,7 @@
 	}
 
 	const {
-		length = 1,
+		length = 1000,
 		width = 0.1,
 		axesColors = ['red', 'green', 'blue'],
 		depthTest = true,

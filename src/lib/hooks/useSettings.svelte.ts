@@ -4,7 +4,8 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('dashboard-context')
 
 export interface Settings {
-	isLoaded: boolean
+	revision: number
+
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -47,7 +48,7 @@ interface Context {
 }
 
 const defaults = (): Settings => ({
-	isLoaded: false,
+	revision: 2,
 	cameraMode: 'perspective',
 
 	transforming: false,
@@ -55,15 +56,15 @@ const defaults = (): Settings => ({
 	transformMode: 'translate',
 
 	grid: true,
-	gridCellSize: 0.5,
-	gridSectionSize: 10,
-	gridFadeDistance: 25,
+	gridCellSize: 500,
+	gridSectionSize: 10_000,
+	gridFadeDistance: 25_000,
 
-	pointSize: 0.01,
+	pointSize: 10,
 	pointColor: '#333333',
 
-	lineWidth: 0.005,
-	lineDotSize: 0.01,
+	lineWidth: 5,
+	lineDotSize: 10,
 
 	enableMeasure: false,
 	enableLabels: false,
@@ -83,11 +84,11 @@ export const provideSettings = () => {
 	let settingsLoaded = $state(false)
 
 	get('motion-tools-settings').then((response: Settings) => {
-		if (response) {
+		if (response && response.revision === settings.revision) {
 			settings = { ...settings, ...response }
 		}
+
 		settingsLoaded = true
-		settings.isLoaded = true
 	})
 
 	$effect(() => {

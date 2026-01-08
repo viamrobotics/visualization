@@ -38,27 +38,27 @@
 			}
 
 			if (a) {
-				cameraControls.truck(-0.01 * dt, 0, true)
+				cameraControls.truck(-10 * dt, 0, true)
 			}
 
 			if (d) {
-				cameraControls.truck(0.01 * dt, 0, true)
+				cameraControls.truck(10 * dt, 0, true)
 			}
 
 			if (w) {
-				cameraControls.forward(0.01 * dt, true)
+				cameraControls.forward(10 * dt, true)
 			}
 
 			if (s) {
-				cameraControls.forward(-0.01 * dt, true)
+				cameraControls.forward(-10 * dt, true)
 			}
 
 			if (r) {
-				cameraControls.dolly(0.01 * dt, true)
+				cameraControls.dolly(10 * dt, true)
 			}
 
 			if (f) {
-				cameraControls.dolly(-0.01 * dt, true)
+				cameraControls.dolly(-10 * dt, true)
 			}
 
 			if (left) {

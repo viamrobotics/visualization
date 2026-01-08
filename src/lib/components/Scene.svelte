@@ -66,7 +66,7 @@
 		<Focus object3d={focusedObject} />
 	{:else}
 		{#if !$isPresenting}
-			<Camera position={[3, 3, 3]}>
+			<Camera position={[3000, 3000, 3000]}>
 				<CameraControls />
 			</Camera>
 		{/if}
