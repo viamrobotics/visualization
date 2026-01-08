@@ -255,6 +255,8 @@ export const provideDrawAPI = () => {
 
 		const entities: Entity[] = []
 
+		console.log(nPoints)
+
 		for (let i = 0; i < nPoints; i += 1) {
 			origin.set(reader.read(), reader.read(), reader.read())
 			direction.set(reader.read(), reader.read(), reader.read())
