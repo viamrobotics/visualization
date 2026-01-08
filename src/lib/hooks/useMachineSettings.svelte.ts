@@ -5,6 +5,7 @@ import { SvelteMap } from 'svelte/reactivity'
 const key = Symbol('polling-rate-context')
 const refreshRatesKey = 'polling-rate'
 const disabledCamerasKey = 'disabled-cameras'
+const disabledVisionServicesObjectPointcloudsKey = 'disabled-vision-services-object-pointcloud'
 
 export const RefreshRates = {
 	poses: 'poses',
@@ -14,6 +15,7 @@ export const RefreshRates = {
 type Context = {
 	refreshRates: SvelteMap<string, number>
 	disabledCameras: SvelteMap<string, boolean>
+	disabledVisionServicesObjectPointclouds: SvelteMap<string, boolean>
 }
 
 const setFromEntries = (map: SvelteMap<string, unknown>, entries?: [string, unknown][]) => {
@@ -30,6 +32,7 @@ export const provideMachineSettings = () => {
 		[RefreshRates.pointclouds, -1],
 	])
 	const disabledCameras = new SvelteMap<string, boolean>()
+	const disabledVisionServicesObjectPointclouds = new SvelteMap<string, boolean>()
 
 	get(refreshRatesKey).then((entries) => {
 		setFromEntries(refreshRates, entries)
@@ -37,6 +40,10 @@ export const provideMachineSettings = () => {
 
 	get(disabledCamerasKey).then((entries) => {
 		setFromEntries(disabledCameras, entries)
+	})
+
+	get(disabledVisionServicesObjectPointcloudsKey).then((entries) => {
+		setFromEntries(disabledVisionServicesObjectPointclouds, entries)
 	})
 
 	$effect(() => {
@@ -53,6 +60,9 @@ export const provideMachineSettings = () => {
 		},
 		get disabledCameras() {
 			return disabledCameras
+		},
+		get disabledVisionServicesObjectPointclouds() {
+			return disabledVisionServicesObjectPointclouds
 		},
 	})
 }

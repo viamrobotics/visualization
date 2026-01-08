@@ -28,7 +28,10 @@
 
 	const partID = usePartID()
 	const selectedEntity = useSelectedEntity()
-	const resizable = useResizable(() => 'treeview')
+	const resizable = useResizable(
+		() => 'treeview',
+		() => ({ width: 240, height: window.innerHeight - 20 })
+	)
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
