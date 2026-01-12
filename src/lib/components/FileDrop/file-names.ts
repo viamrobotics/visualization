@@ -36,9 +36,11 @@ const isExtension = (extension: string): extension is ValueOf<typeof Extensions>
 	return Object.values(Extensions).includes(extension as ValueOf<typeof Extensions>)
 }
 
-const isPrefix = (prefix: string | undefined): prefix is ValueOf<typeof Prefixes> => {
-	if (!prefix) return false
-	return Object.values(Prefixes).includes(prefix as ValueOf<typeof Prefixes>)
+const getPrefix = (filename: string): ValueOf<typeof Prefixes> | undefined => {
+	console.log('getPrefix', filename)
+	const prefix = Object.values(Prefixes).find((prefix) => filename.startsWith(prefix))
+	console.log('prefix', prefix)
+	return prefix ? (prefix as ValueOf<typeof Prefixes>) : undefined
 }
 
 const validatePrefix = (
@@ -63,7 +65,7 @@ const validatePrefix = (
 }
 
 export const parseFileName = (filename: string): ParseFileResult => {
-	const [name, ...extensions] = filename.split('.')
+	const [_, ...extensions] = filename.split('.')
 	const suffix = extensions.at(-1)
 	if (!suffix) {
 		return {
@@ -88,8 +90,8 @@ export const parseFileName = (filename: string): ParseFileResult => {
 		}
 	}
 
-	const prefix = name.split('_').at(0)
-	if (isPrefix(prefix)) {
+	const prefix = getPrefix(filename)
+	if (prefix) {
 		const error = validatePrefix(extension, prefix)
 		if (error) {
 			return {
