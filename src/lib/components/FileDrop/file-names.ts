@@ -9,7 +9,7 @@ export const Extensions = {
 } as const
 
 export const Prefixes = {
-	Snapshot: 'snapshot',
+	Snapshot: 'visualization_snapshot',
 } as const
 
 class FileNameError extends Error {
@@ -36,9 +36,12 @@ const isExtension = (extension: string): extension is ValueOf<typeof Extensions>
 	return Object.values(Extensions).includes(extension as ValueOf<typeof Extensions>)
 }
 
-const isPrefix = (prefix: string | undefined): prefix is ValueOf<typeof Prefixes> => {
-	if (!prefix) return false
-	return Object.values(Prefixes).includes(prefix as ValueOf<typeof Prefixes>)
+const hasPrefix = (name: string): ValueOf<typeof Prefixes> | undefined => {
+	for (const prefix of Object.values(Prefixes)) {
+		if (name.startsWith(prefix)) return prefix
+	}
+
+	return undefined
 }
 
 const validatePrefix = (
@@ -88,8 +91,8 @@ export const parseFileName = (filename: string): ParseFileResult => {
 		}
 	}
 
-	const prefix = name.split('_').at(0)
-	if (isPrefix(prefix)) {
+	const prefix = hasPrefix(name)
+	if (prefix) {
 		const error = validatePrefix(extension, prefix)
 		if (error) {
 			return {
