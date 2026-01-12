@@ -9,7 +9,7 @@ export const Extensions = {
 } as const
 
 export const Prefixes = {
-	Snapshot: 'snapshot',
+	Snapshot: 'visualization_snapshot',
 } as const
 
 class FileNameError extends Error {
