@@ -7,7 +7,6 @@ import { snapshotDropper } from './snapshot-dropper'
 export type DropStates = 'inactive' | 'hovering' | 'loading'
 
 const createFileDropper = (extension: string, prefix: string | undefined) => {
-	console.log('createFileDropper', extension, prefix)
 	switch (prefix) {
 		case Prefixes.Snapshot:
 			return snapshotDropper
