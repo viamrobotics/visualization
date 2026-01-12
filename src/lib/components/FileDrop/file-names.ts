@@ -63,7 +63,7 @@ const validatePrefix = (
 }
 
 export const parseFileName = (filename: string): ParseFileResult => {
-	const [_, ...extensions] = filename.split('.')
+	const extensions = filename.split('.')
 	const suffix = extensions.at(-1)
 	if (!suffix) {
 		return {
