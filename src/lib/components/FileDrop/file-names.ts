@@ -37,9 +37,7 @@ const isExtension = (extension: string): extension is ValueOf<typeof Extensions>
 }
 
 const getPrefix = (filename: string): ValueOf<typeof Prefixes> | undefined => {
-	console.log('getPrefix', filename)
 	const prefix = Object.values(Prefixes).find((prefix) => filename.startsWith(prefix))
-	console.log('prefix', prefix)
 	return prefix ? (prefix as ValueOf<typeof Prefixes>) : undefined
 }
 
