@@ -21,8 +21,8 @@ importers:
         specifier: '>=1.31'
         version: 1.32.0
       koota:
-        specifier: ^0.5.3
-        version: 0.5.3(@types/react@19.2.2)
+        specifier: ^0.6.3
+        version: 0.6.3(@types/react@19.2.2)
       lodash-es:
         specifier: 4.17.21
         version: 4.17.21
@@ -2727,8 +2727,8 @@ packages:
   known-css-properties@0.37.0:
     resolution: {integrity: sha512-JCDrsP4Z1Sb9JwG0aJ8Eo2r7k4Ou5MwmThS/6lcIe1ICyb7UBJKGRIUUdqc2ASdE/42lgz6zFUnzAIhtXnBVrQ==}
 
-  koota@0.5.3:
-    resolution: {integrity: sha512-mGTOSeVgHqAe/AtsChSv3IaFwzEWFvrDSGVv0tXqMX9ttaDMg+1DlnLaD/PpMZ6xQx4U1H2AdUjvsjFoJnFMsA==}
+  koota@0.6.3:
+    resolution: {integrity: sha512-O2KfXqz4xa+uGUXwrcF1vxen9IYsnbUp9vSIPbSYPyeC1+11FQDvig+sNfwBfMnnCBUPzBGjA+K1JLuLqEfSvg==}
     peerDependencies:
       '@types/react': '>=18.0.0'
       react: '>=18.0.0'
@@ -6819,7 +6819,7 @@ snapshots:
 
   known-css-properties@0.37.0: {}
 
-  koota@0.5.3(@types/react@19.2.2):
+  koota@0.6.3(@types/react@19.2.2):
     optionalDependencies:
       '@types/react': 19.2.2
 

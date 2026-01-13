@@ -14,6 +14,7 @@ import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { STRIDE } from '$lib/buffer'
 
 const colorUtil = new Color()
 
@@ -255,38 +256,19 @@ export const provideDrawAPI = () => {
 
 		const entities: Entity[] = []
 
-		for (let i = 0; i < nPoints; i += 1) {
-			origin.set(reader.read(), reader.read(), reader.read())
-			direction.set(reader.read(), reader.read(), reader.read())
+		const posesStart = 3
+		const posesEnd = nPoints * STRIDE.ARROWS + posesStart
+		const colorsEnd = posesEnd + nColors * STRIDE.COLORS_RGB
 
-			if (arrowHeadAtPose === 1) {
-				// Compute the base position so the arrow ends at the origin
-				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
-			}
+		const entity = world.spawn(
+			traits.Name(`Arrow group ${++poseIndex}`),
+			traits.Positions(reader.array.slice(posesStart, posesEnd)),
+			traits.Colors(reader.array.slice(posesEnd, colorsEnd)),
+			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
+			traits.DrawAPI
+		)
 
-			pose.x = origin.x
-			pose.y = origin.y
-			pose.z = origin.z
-			pose.oX = direction.x
-			pose.oY = direction.y
-			pose.oZ = direction.z
-
-			const entity = world.spawn(
-				traits.Name(`Pose ${++poseIndex}`),
-				traits.Pose(pose),
-				traits.Color,
-				traits.DrawAPI,
-				traits.Arrow
-			)
-
-			entities.push(entity)
-		}
-
-		for (let i = 0; i < nColors; i += 1) {
-			const entity = entities[i]
-			colorUtil.set(reader.read(), reader.read(), reader.read())
-			entity.set(traits.Color, colorUtil)
-		}
+		entities.push(entity)
 	}
 
 	const drawPoints = async (reader: Float32Reader) => {

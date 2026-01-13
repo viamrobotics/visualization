@@ -26,6 +26,17 @@ export const Color = trait({ r: 0, g: 0, b: 0 })
 
 export const Arrow = trait()
 
+export const Positions = trait(() => new Float32Array())
+export const Colors = trait(() => new Float32Array())
+export const Instances = trait({
+	ids: () => new Uint32Array(),
+	meshId: -1,
+})
+
+export const Arrows = trait({
+	headAtPose: true,
+})
+
 /**
  * Render entity as points
  */
