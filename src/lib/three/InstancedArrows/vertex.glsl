@@ -2,21 +2,18 @@ precision highp float;
 
 attribute vec3 position;
 
-// Per-instance attributes
 attribute vec3 instanceOrigin;
 attribute vec3 instanceDirection; 
 attribute vec3 instanceColor;
 
-// Uniform sizing (shared by all instances)
 uniform float shaftRadius;
 uniform float headLength;
 uniform float headWidth;
 uniform float arrowLength;        
-uniform float minimumArrowLength; // prevents degenerate / NaN cases
+uniform float minimumArrowLength; 
 
 uniform float headAtOrigin; // 0.0 = base at origin, 1.0 = head tip at origin
 
-// Standard transforms provided by three.js
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
@@ -55,8 +52,7 @@ void main() {
 	vec3 basisX, basisY, basisZ;
 	buildOrthonormalBasisFromDirection(normalizedDirection, basisX, basisY, basisZ);
 
-	// If requested: shift the arrow so its head tip lands at the provided origin.
-	// This matches your JS idea: origin -= directionNormalized * arrowLength.
+	// Shift the arrow so its head tip lands at the provided origin.
 	vec3 effectiveOrigin = instanceOrigin;
 	if (headAtOrigin > 0.5) {
 		effectiveOrigin -= basisY * clampedArrowLength;
@@ -65,7 +61,6 @@ void main() {
 	float computedHeadLength = min(headLength, clampedArrowLength);
 	float computedShaftLength = max(clampedArrowLength - computedHeadLength, 0.0);
 
-	// Base mesh is modeled as unit-length along +Y with base at y=0 and tip at y=1.
 	vec3 localPosition = position.xyz;
 
 	#if defined(IS_HEAD)
@@ -92,8 +87,6 @@ void main() {
 		vec3 worldPosition =
 			effectiveOrigin +
 			(basisX * localPosition.x + basisY * localPosition.y + basisZ * localPosition.z);
-
-    
 	#endif
 
 	gl_Position = projectionMatrix * (modelViewMatrix * vec4(worldPosition, 1.0));

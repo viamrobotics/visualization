@@ -6,8 +6,6 @@ import {
 	DynamicDrawUsage,
 	Mesh,
 	BufferGeometry,
-	Vector3,
-	Color,
 	InstancedInterleavedBuffer,
 	InterleavedBufferAttribute,
 	Material,
@@ -45,8 +43,6 @@ const createMaterial = (options: { isHead: boolean }) => {
 export class InstancedArrows extends Group {
 	count: number
 
-	origins: Float32Array
-	directions: Float32Array
 	colors: Float32Array
 
 	shaftMesh: Mesh
@@ -63,6 +59,7 @@ export class InstancedArrows extends Group {
 			shaftRadius?: number
 			headLength?: number
 			headWidth?: number
+			alpha?: number
 		} = {}
 	) {
 		super()
@@ -70,24 +67,19 @@ export class InstancedArrows extends Group {
 		const count = Math.max(0, options?.count ?? 0)
 		this.count = count
 
-		this.colors = new Float32Array(count * 3)
+		this.colors = new Float32Array(count * (options?.alpha ? 4 : 3))
 
 		const stride = 6
 		const posesInterleaved = new Float32Array(count * stride)
 
-		// Instanced interleaved buffer (important: 'instanceCount' is still controlled via geometry.instanceCount)
 		this.poses = new InstancedInterleavedBuffer(posesInterleaved, stride)
 		this.poses.setUsage(DynamicDrawUsage)
 
-		// Create "views" into that same buffer
 		const instanceOrigin = new InterleavedBufferAttribute(this.poses, 3, 0, false)
 		const instanceDirection = new InterleavedBufferAttribute(this.poses, 3, 3, false)
 
-		// const instanceOrigin = new InstancedBufferAttribute(this.origins, 3).setUsage(DynamicDrawUsage)
-		// const instanceDirection = new InstancedBufferAttribute(this.directions, 3).setUsage(
-		// 	DynamicDrawUsage
-		// )
-		const instanceColor = new InstancedBufferAttribute(this.colors, 3).setUsage(DynamicDrawUsage)
+		const instanceColor = new InstancedBufferAttribute(this.colors, options?.alpha ? 4 : 3)
+		instanceColor.setUsage(DynamicDrawUsage)
 
 		const attributes: BufferGeometry['attributes'] = {
 			instanceOrigin,
@@ -119,7 +111,7 @@ export class InstancedArrows extends Group {
 		this.attributes = { instanceOrigin, instanceDirection, instanceColor }
 	}
 
-	update(arrows: { poses?: Float32Array; colors?: Float32Array }) {
+	update(arrows: { poses?: Float32Array; colors?: Float32Array; headAtPose?: boolean }) {
 		if (arrows.poses) {
 			for (let i = 0, l = arrows.poses.length; i < l; i += 6) {
 				arrows.poses[i + 0] *= 0.001
