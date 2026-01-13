@@ -44,9 +44,9 @@ describe('parseFileName', () => {
 
 	describe('prefix parsing', () => {
 		it.each([
-			{ filename: 'snapshot_2024.json', expectedPrefix: Prefixes.Snapshot },
-			{ filename: 'snapshot_data.pb', expectedPrefix: Prefixes.Snapshot },
-			{ filename: 'snapshot_compressed.pb.gz', expectedPrefix: Prefixes.Snapshot },
+			{ filename: 'visualization_snapshot_2024.json', expectedPrefix: Prefixes.Snapshot },
+			{ filename: 'visualization_snapshot_data.pb', expectedPrefix: Prefixes.Snapshot },
+			{ filename: 'visualization_snapshot_compressed.pb.gz', expectedPrefix: Prefixes.Snapshot },
 		])('parses $filename with snapshot prefix', ({ filename, expectedPrefix }) => {
 			const result = parseFileName(filename)
 			expect(result.success).toBe(true)
@@ -74,9 +74,9 @@ describe('parseFileName', () => {
 
 	describe('prefix validation', () => {
 		it.each([
-			{ filename: 'snapshot_data.json', expectedExt: Extensions.JSON },
-			{ filename: 'snapshot_data.pb', expectedExt: Extensions.PB },
-			{ filename: 'snapshot_data.pb.gz', expectedExt: Extensions.PB_GZ },
+			{ filename: 'visualization_snapshot_data.json', expectedExt: Extensions.JSON },
+			{ filename: 'visualization_snapshot_data.pb', expectedExt: Extensions.PB },
+			{ filename: 'visualization_snapshot_data.pb.gz', expectedExt: Extensions.PB_GZ },
 		])('allows snapshot prefix with $expectedExt extension', ({ filename, expectedExt }) => {
 			const result = parseFileName(filename)
 			expect(result.success).toBe(true)
@@ -87,7 +87,7 @@ describe('parseFileName', () => {
 		})
 
 		it('returns error for snapshot prefix with unsupported extension', () => {
-			const result = parseFileName('snapshot_data.pcd')
+			const result = parseFileName('visualization_snapshot_data.pcd')
 			expect(result.success).toBe(false)
 			if (!result.success) {
 				expect(result.error.message).toContain('snapshot files are supported')
