@@ -7,6 +7,7 @@
 	import { STRIDE } from '$lib/buffer'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { SvelteMap } from 'svelte/reactivity'
+	import { Color } from 'three'
 
 	const world = useWorld()
 
@@ -20,10 +21,14 @@
 		if (!poses) return
 
 		const total = poses.length / STRIDE.ARROWS
+		const alpha = colors && colors.length / STRIDE.COLORS_RGBA === total
+		const uniformColor =
+			colors && (colors.length === 3 || colors.length === 4)
+				? new Color(colors[0], colors[1], colors[2])
+				: undefined
 
-		const arrows = new InstancedArrows({ count: total })
+		const arrows = new InstancedArrows({ count: total, alpha, uniformColor })
 		map.set(entity, arrows)
-
 		arrows.update({ poses, colors, headAtPose })
 	}
 

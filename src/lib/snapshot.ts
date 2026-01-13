@@ -128,8 +128,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 	if (geometryType?.case === 'arrows') {
 		const poses = asFloat32Array(geometryType.value.poses)
 		const colors = drawing.metadata?.colors
-			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-			: undefined
 
 		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(drawing.referenceFrame),
@@ -142,7 +140,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (colors) {
-			entityTraits.push(traits.Colors(colors))
+			entityTraits.push(traits.Colors(colors as Uint8Array<ArrayBuffer>))
 		}
 
 		const entity = world.spawn(

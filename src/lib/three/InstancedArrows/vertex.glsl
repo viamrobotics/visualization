@@ -4,7 +4,12 @@ attribute vec3 position;
 
 attribute vec3 instanceOrigin;
 attribute vec3 instanceDirection; 
-attribute vec3 instanceColor;
+
+#ifdef USE_COLOR_ATTRIBUTE
+  attribute vec3 instanceColor;
+#else
+  uniform vec3 uniformColor;
+#endif
 
 uniform float shaftRadius;
 uniform float headLength;
@@ -37,7 +42,11 @@ void buildOrthonormalBasisFromDirection(
 }
 
 void main() {
-	vColor = instanceColor;
+	#ifdef USE_COLOR_ATTRIBUTE
+    vColor = instanceColor;
+  #else
+    vColor = uniformColor;
+  #endif
 
 	float clampedArrowLength = max(arrowLength, minimumArrowLength);
 

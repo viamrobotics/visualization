@@ -9,6 +9,8 @@ import {
 	InstancedInterleavedBuffer,
 	InterleavedBufferAttribute,
 	Material,
+	type ColorRepresentation,
+	Color,
 } from 'three'
 import vertexShader from './vertex.glsl?raw'
 import fragmentShader from './fragment.glsl?raw'
@@ -21,7 +23,7 @@ const defaults = {
 	SHAFT_RADIUS: 0.001,
 }
 
-const createMaterial = (options: { isHead: boolean }) => {
+const createMaterial = (options: { isHead: boolean; useColorAttribute: boolean }) => {
 	return new RawShaderMaterial({
 		vertexShader,
 		fragmentShader,
@@ -32,8 +34,12 @@ const createMaterial = (options: { isHead: boolean }) => {
 			headWidth: { value: defaults.HEAD_WIDTH },
 			arrowLength: { value: defaults.LENGTH },
 			minimumArrowLength: { value: 1e-6 },
+			uniformColor: { value: new Color() },
 		},
-		defines: options.isHead ? { IS_HEAD: 1 } : {},
+		defines: {
+			...(options.isHead ? { IS_HEAD: 1 } : {}),
+			...(options.useColorAttribute ? { USE_COLOR_ATTRIBUTE: 1 } : {}),
+		},
 		side: FrontSide,
 		depthTest: true,
 		depthWrite: true,
@@ -42,8 +48,6 @@ const createMaterial = (options: { isHead: boolean }) => {
 
 export class InstancedArrows extends Group {
 	count: number
-
-	colors: Float32Array
 
 	shaftMesh: Mesh
 	headMesh: Mesh
@@ -59,15 +63,16 @@ export class InstancedArrows extends Group {
 			shaftRadius?: number
 			headLength?: number
 			headWidth?: number
-			alpha?: number
+			alpha?: boolean
+			uniformColor?: ColorRepresentation
 		} = {}
 	) {
 		super()
 
+		console.log(options.uniformColor)
+
 		const count = Math.max(0, options?.count ?? 0)
 		this.count = count
-
-		this.colors = new Float32Array(count * (options?.alpha ? 4 : 3))
 
 		const stride = 6
 		const posesInterleaved = new Float32Array(count * stride)
@@ -78,26 +83,40 @@ export class InstancedArrows extends Group {
 		const instanceOrigin = new InterleavedBufferAttribute(this.poses, 3, 0, false)
 		const instanceDirection = new InterleavedBufferAttribute(this.poses, 3, 3, false)
 
-		const instanceColor = new InstancedBufferAttribute(this.colors, options?.alpha ? 4 : 3)
-		instanceColor.setUsage(DynamicDrawUsage)
-
-		const attributes: BufferGeometry['attributes'] = {
+		this.attributes = {
 			instanceOrigin,
 			instanceDirection,
-			instanceColor,
 		}
 
-		const shaftGeometry = toInstanced(createShaftGeometry(), count, attributes)
-		const headGeometry = toInstanced(createHeadGeometry(), count, attributes)
+		if (!options.uniformColor) {
+			const colors = new Uint8Array(count * (options?.alpha ? 4 : 3))
+			const instanceColor = new InstancedBufferAttribute(colors, options?.alpha ? 4 : 3, true)
+			instanceColor.setUsage(DynamicDrawUsage)
 
-		const shaftMaterial = createMaterial({ isHead: false })
-		const headMaterial = createMaterial({ isHead: true })
+			this.attributes.instanceColor = instanceColor
+		}
+
+		const shaftGeometry = toInstanced(createShaftGeometry(), count, this.attributes)
+		const headGeometry = toInstanced(createHeadGeometry(), count, this.attributes)
+
+		const shaftMaterial = createMaterial({
+			isHead: false,
+			useColorAttribute: !options.uniformColor,
+		})
+		const headMaterial = createMaterial({
+			isHead: true,
+			useColorAttribute: !options.uniformColor,
+		})
 
 		for (const { uniforms } of [shaftMaterial, headMaterial]) {
 			uniforms.shaftRadius.value = options?.shaftRadius ?? defaults.SHAFT_RADIUS
 			uniforms.headLength.value = options?.headLength ?? defaults.HEAD_LENGTH
 			uniforms.headWidth.value = options?.headWidth ?? defaults.HEAD_WIDTH
 			uniforms.arrowLength.value = options?.length ?? defaults.LENGTH
+
+			if (options.uniformColor) {
+				uniforms.uniformColor.value.set(options.uniformColor)
+			}
 		}
 
 		this.shaftMesh = new Mesh(shaftGeometry, shaftMaterial)
@@ -107,8 +126,6 @@ export class InstancedArrows extends Group {
 		this.headMesh.frustumCulled = false
 
 		this.add(this.shaftMesh, this.headMesh)
-
-		this.attributes = { instanceOrigin, instanceDirection, instanceColor }
 	}
 
 	update(arrows: { poses?: Float32Array; colors?: Float32Array; headAtPose?: boolean }) {
@@ -125,8 +142,8 @@ export class InstancedArrows extends Group {
 			this.attributes.instanceDirection.needsUpdate = true
 		}
 
-		if (arrows.colors) {
-			this.colors.set(arrows.colors)
+		if (arrows.colors && this.attributes.instanceColor) {
+			this.attributes.instanceColor.array.set(arrows.colors)
 			this.attributes.instanceColor.needsUpdate = true
 		}
 	}
