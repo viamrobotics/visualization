@@ -160,6 +160,22 @@ test('draw points', async ({ browser }) => {
 	assertNoFailedScreenshots(failedScreenshots)
 })
 
+test('draw poses with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_SINGLE_COLOR'
+	const failedScreenshots = [] as string[]
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoses$/DrawPosesWithSingleColor github.com/viam-labs/motion-tools/client/client -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+	await takeScreenshot(page, testPrefix, failedScreenshots)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
 test('draw poses', async ({ browser }) => {
 	const testPrefix = 'DRAW_POSES'
 	const failedScreenshots = [] as string[]

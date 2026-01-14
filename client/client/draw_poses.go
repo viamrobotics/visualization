@@ -24,11 +24,15 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 		}
 		drawColors[i] = draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))
 	}
-	arrows, err := draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
 
-	if err != nil {
-		return err
+	var err error
+	var arrows *draw.Arrows
+	if len(drawColors) == 1 {
+		arrows, err = draw.NewArrows(poses, draw.WithSingleArrowColor(drawColors[0]))
+	} else {
+		arrows, err = draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
 	}
+
 	buf, err := posesToBytes(arrows, arrowHeadAtPose)
 	if err != nil {
 		return err

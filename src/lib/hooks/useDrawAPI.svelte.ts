@@ -282,10 +282,18 @@ export const provideDrawAPI = () => {
 			entities.push(entity)
 		}
 
-		for (let i = 0; i < nColors; i += 1) {
-			const entity = entities[i]
+		if (nColors === 1) {
+			// if only one color, apply it to all entities
 			colorUtil.set(reader.read(), reader.read(), reader.read())
-			entity.set(traits.Color, colorUtil)
+			for (const entity of entities) {
+				entity.set(traits.Color, colorUtil)
+			}
+		} else {
+			for (let i = 0; i < nColors; i += 1) {
+				const entity = entities[i]
+				colorUtil.set(reader.read(), reader.read(), reader.read())
+				entity.set(traits.Color, colorUtil)
+			}
 		}
 	}
 
