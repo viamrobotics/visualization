@@ -49,7 +49,8 @@ type BuiltPointCloud = {
 	colorFieldOffset?: number
 }	
 
-export const buildPointCloud = (data: Uint8Array): BuiltPointCloud => {
+export const buildPointCloud = (data: Uint8Array, header?: PointCloudHeader): BuiltPointCloud => {
+	if (!header) {
 	// Fallback for payloads without header: interpret as Float32 XYZ
 		const aligned =
 			data.byteOffset % Float32Array.BYTES_PER_ELEMENT === 0 ? data : new Uint8Array(data)
@@ -75,51 +76,51 @@ export const buildPointCloud = (data: Uint8Array): BuiltPointCloud => {
 			strideBytes: 3 * Float32Array.BYTES_PER_ELEMENT,
 			strideElements: 3,
 		}
+	}
+	const { baseType, baseSize } = assertUniformity(header)
+	const strideBytes = computeStrideBytes(header)
+	if (strideBytes <= 0) throw new Error('Invalid header: non-positive stride')
 
-	// const { baseType, baseSize } = assertUniformity(header)
-	// const strideBytes = computeStrideBytes(header)
-	// if (strideBytes <= 0) throw new Error('Invalid header: non-positive stride')
+	const ArrayType = typedArrayFor(baseType, baseSize)
+	const points = header.width * header.height
+	const strideElements = Math.floor(strideBytes / ArrayType.BYTES_PER_ELEMENT)
+	const expectedLength = points * strideElements
+	const availableElementsRaw = Math.floor(data.byteLength / ArrayType.BYTES_PER_ELEMENT)
+	if (availableElementsRaw !== expectedLength) {
+		throw new Error(
+			`Binary size mismatch. expected elements ${expectedLength}, got ${availableElementsRaw}`
+		)
+	}
 
-	// const ArrayType = typedArrayFor(baseType, baseSize)
-	// const points = header.width * header.height
-	// const strideElements = Math.floor(strideBytes / ArrayType.BYTES_PER_ELEMENT)
-	// const expectedLength = points * strideElements
-	// const availableElementsRaw = Math.floor(data.byteLength / ArrayType.BYTES_PER_ELEMENT)
-	// if (availableElementsRaw !== expectedLength) {
-	// 	throw new Error(
-	// 		`Binary size mismatch. expected elements ${expectedLength}, got ${availableElementsRaw}`
-	// 	)
-	// }
+	const aligned = data.byteOffset % ArrayType.BYTES_PER_ELEMENT === 0 ? data : new Uint8Array(data)
+	const array = new ArrayType(aligned.buffer, aligned.byteOffset, expectedLength)
+	const interleaved = new InterleavedBuffer(array, strideElements)
+	const geometry = new BufferGeometry()
+	const structure = getStructure(header)
 
-	// const aligned = data.byteOffset % ArrayType.BYTES_PER_ELEMENT === 0 ? data : new Uint8Array(data)
-	// const array = new ArrayType(aligned.buffer, aligned.byteOffset, expectedLength)
-	// const interleaved = new InterleavedBuffer(array, strideElements)
-	// const geometry = new BufferGeometry()
-	// const structure = getStructure(header)
+	setPosition(geometry, interleaved, structure)
+	setFieldAttributes(geometry, interleaved, structure)
 
-	// setPosition(geometry, interleaved, structure)
-	// setFieldAttributes(geometry, interleaved, structure)
+	const rgbField = structure.find((f) => f.field.toLowerCase() === 'rgb' && f.itemSize === 1)
+	let rgbFieldOffset: number | undefined
+	if (rgbField) {
+		const bytesPerElement = (interleaved.array as TypedArray).BYTES_PER_ELEMENT
+		if (bytesPerElement === 4) {
+			rgbFieldOffset = rgbField.offsetElements
+			const colors = extractRgbColors(interleaved, rgbFieldOffset, 0, points)
+			geometry.setAttribute('color', new BufferAttribute(colors, 3))
+		}
+	}
 
-	// const rgbField = structure.find((f) => f.field.toLowerCase() === 'rgb' && f.itemSize === 1)
-	// let rgbFieldOffset: number | undefined
-	// if (rgbField) {
-	// 	const bytesPerElement = (interleaved.array as TypedArray).BYTES_PER_ELEMENT
-	// 	if (bytesPerElement === 4) {
-	// 		rgbFieldOffset = rgbField.offsetElements
-	// 		const colors = extractRgbColors(interleaved, rgbFieldOffset, 0, points)
-	// 		geometry.setAttribute('color', new BufferAttribute(colors, 3))
-	// 	}
-	// }
-
-	// return {
-	// 	buffer: geometry,
-	// 	interleaved,
-	// 	points,
-	// 	strideBytes,
-	// 	strideElements,
-	// 	structure,
-	// 	colorFieldOffset: rgbFieldOffset,
-	// }
+	return {
+		buffer: geometry,
+		interleaved,
+		points,
+		strideBytes,
+		strideElements,
+		structure,
+		colorFieldOffset: rgbFieldOffset,
+	}
 }
 
 export const provideWorldStates = () => {
