@@ -15,7 +15,7 @@ describe('snapshotDropper', () => {
 			vi.spyOn(Snapshot, 'fromJsonString').mockReturnValue(emptySnapshot)
 
 			const result = await snapshotDropper({
-				name: 'snapshot_test.json',
+				name: 'visualization_snapshot_test.json',
 				extension: 'json',
 				prefix: 'snapshot',
 				content: '{"transforms":[],"drawings":[]}',
@@ -25,14 +25,14 @@ describe('snapshotDropper', () => {
 			if (result.success && result.type === 'snapshot') {
 				const snapshotResult = result as SnapshotFileDropSuccess
 				expect(snapshotResult.type).toBe('snapshot')
-				expect(snapshotResult.name).toBe('snapshot_test.json')
+				expect(snapshotResult.name).toBe('visualization_snapshot_test.json')
 				expect(snapshotResult.snapshot).toBe(emptySnapshot)
 			}
 		})
 
 		it('returns error when JSON content is not a string', async () => {
 			const result = await snapshotDropper({
-				name: 'snapshot_test.json',
+				name: 'visualization_snapshot_test.json',
 				extension: 'json',
 				prefix: 'snapshot',
 				content: new ArrayBuffer(8),
@@ -51,7 +51,7 @@ describe('snapshotDropper', () => {
 			})
 
 			const result = await snapshotDropper({
-				name: 'snapshot_test.json',
+				name: 'visualization_snapshot_test.json',
 				extension: 'json',
 				prefix: 'snapshot',
 				content: 'invalid json',
@@ -70,7 +70,7 @@ describe('snapshotDropper', () => {
 			vi.spyOn(Snapshot, 'fromBinary').mockReturnValue(emptySnapshot)
 
 			const result = await snapshotDropper({
-				name: 'snapshot_test.pb',
+				name: 'visualization_snapshot_test.pb',
 				extension: 'pb',
 				prefix: 'snapshot',
 				content: new ArrayBuffer(8),
@@ -79,13 +79,13 @@ describe('snapshotDropper', () => {
 			expect(result.success).toBe(true)
 			if (result.success) {
 				expect(result.type).toBe('snapshot')
-				expect(result.name).toBe('snapshot_test.pb')
+				expect(result.name).toBe('visualization_snapshot_test.pb')
 			}
 		})
 
 		it('returns error when binary content is not an ArrayBuffer', async () => {
 			const result = await snapshotDropper({
-				name: 'snapshot_test.pb',
+				name: 'visualization_snapshot_test.pb',
 				extension: 'pb',
 				prefix: 'snapshot',
 				content: 'not an array buffer',
@@ -104,7 +104,7 @@ describe('snapshotDropper', () => {
 			})
 
 			const result = await snapshotDropper({
-				name: 'snapshot_test.pb',
+				name: 'visualization_snapshot_test.pb',
 				extension: 'pb',
 				prefix: 'snapshot',
 				content: new ArrayBuffer(8),
@@ -121,7 +121,7 @@ describe('snapshotDropper', () => {
 	describe('gzip (pb.gz) decoding', () => {
 		it('returns error when gzip content is not an ArrayBuffer', async () => {
 			const result = await snapshotDropper({
-				name: 'snapshot_test.pb.gz',
+				name: 'visualization_snapshot_test.pb.gz',
 				extension: 'pb.gz',
 				prefix: 'snapshot',
 				content: 'not an array buffer',
@@ -141,7 +141,7 @@ describe('snapshotDropper', () => {
 	describe('unsupported extension', () => {
 		it('returns error for unsupported extension', async () => {
 			const result = await snapshotDropper({
-				name: 'snapshot_test.pcd',
+				name: 'visualization_snapshot_test.pcd',
 				extension: 'pcd',
 				prefix: 'snapshot',
 				content: new ArrayBuffer(8),

@@ -431,7 +431,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_box.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_box.json")
 
 	})
 
@@ -500,7 +500,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 		createBody(t, snapshot, "ceres", sunOrbitFrame, 11500, 140, 175, NewColor(WithName("rosybrown")))
 
-		writeSnapshot(t, snapshot, "snapshot_sphere.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_sphere.json")
 	})
 
 	// generates a snapshot of a city simulation with plots, buildings, and citizens
@@ -634,7 +634,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_capsule.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_capsule.json")
 	})
 
 	// generates a snapshot showcasing arrow drawings
@@ -855,7 +855,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_arrows.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_arrows.json")
 	})
 
 	// generates a snapshot showcasing lines navigating around obstacles
@@ -1034,7 +1034,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_line.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_line.json")
 	})
 
 	// generates a snapshot showcasing points shapes
@@ -1126,7 +1126,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_points.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_points.json")
 	})
 
 	// generates a snapshot showcasing model shapes with fun models
@@ -1261,6 +1261,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		writeSnapshot(t, snapshot, "snapshot_model.json")
+		writeSnapshot(t, snapshot, "visualization_snapshot_model.json")
 	})
 }
