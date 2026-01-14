@@ -7,6 +7,7 @@ import {
 	Vector3,
 	type Intersection,
 	Box3,
+	RawShaderMaterial,
 } from 'three'
 import type { InstancedArrows } from './InstancedArrows'
 
@@ -106,7 +107,7 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 	inverseMatrix.copy(this.shaftMesh.matrixWorld).invert()
 	localRay.copy(raycaster.ray).applyMatrix4(inverseMatrix)
 	localRay.direction.normalize()
-	const material = this.shaftMesh.material as any
+	const material = this.shaftMesh.material as RawShaderMaterial
 	const poseScale = material.uniforms?.poseScale?.value ?? 0.001
 	const headAtOrigin = material.uniforms?.headAtOrigin?.value ?? 0.0
 
@@ -179,6 +180,6 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 			point: bestPointWorld,
 			object: this.shaftMesh,
 			instanceId: bestInstanceId,
-		} as any)
+		})
 	}
 }
