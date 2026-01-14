@@ -122,9 +122,9 @@
 	<Portal id={parent.current}>
 		<T
 			is={points}
-			name={name.current}
-			{...events}
+			name={entity}
 			bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+			{...events}
 		>
 			<T is={geometry.current} />
 			<T is={material} />

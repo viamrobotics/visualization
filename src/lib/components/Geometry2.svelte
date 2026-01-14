@@ -131,7 +131,7 @@
 
 		<T
 			is={mesh}
-			name={name.current}
+			name={entity}
 			bvh={{ enabled: geometryType === 'buffer' }}
 		>
 			{#if model && renderMode.includes('model')}

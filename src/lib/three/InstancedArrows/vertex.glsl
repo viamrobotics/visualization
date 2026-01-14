@@ -61,8 +61,10 @@ void main() {
 	vec3 basisX, basisY, basisZ;
 	buildOrthonormalBasisFromDirection(normalizedDirection, basisX, basisY, basisZ);
 
+  vec3 scaledInstanceOrigin = instanceOrigin * 0.001;
+  vec3 effectiveOrigin = scaledInstanceOrigin;
+
 	// Shift the arrow so its head tip lands at the provided origin.
-	vec3 effectiveOrigin = instanceOrigin;
 	if (headAtOrigin > 0.5) {
 		effectiveOrigin -= basisY * clampedArrowLength;
 	}

@@ -2,12 +2,13 @@
 	import { T } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
 	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
-	import { traits, useWorld } from '$lib/ecs'
+	import { traits, useTrait, useWorld } from '$lib/ecs'
 	import type { Entity } from 'koota'
 	import { STRIDE } from '$lib/buffer'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
+	import { meshBoundsRaycast } from '$lib/three/InstancedArrows/raycast'
 
 	const world = useWorld()
 
@@ -56,9 +57,19 @@
 	<Portal id={entity.get(traits.Parent)}>
 		<T
 			is={arrows}
-			dispose={false}
-			bvh={{ enabled: false }}
-			{...events}
-		/>
+			name={entity}
+		>
+			<T
+				is={arrows.headMesh}
+				bvh={{ enabled: false }}
+				raycast={() => null}
+			/>
+			<T
+				is={arrows.shaftMesh}
+				bvh={{ enabled: false }}
+				raycast={meshBoundsRaycast}
+				{...events}
+			/>
+		</T>
 	</Portal>
 {/each}

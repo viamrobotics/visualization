@@ -82,6 +82,7 @@ func TestArrowStress(t *testing.T) {
 	t.Run("TestArrowStress", func(t *testing.T) {
 		const (
 			numPoints = 4_000_000
+			width     = 50_000
 		)
 
 		var poses []spatialmath.Pose
@@ -90,7 +91,11 @@ func TestArrowStress(t *testing.T) {
 
 		for i := range numPoints {
 			pose := spatialmath.NewPose(
-				r3.Vector{X: rand.Float64()*10_000 - 5000, Y: rand.Float64()*10_000 - 5000, Z: rand.Float64()*10_000 - 5000},
+				r3.Vector{
+					X: rand.Float64()*width - width/2,
+					Y: rand.Float64()*width - width/2,
+					Z: rand.Float64()*width - width/2,
+				},
 				&spatialmath.OrientationVectorDegrees{
 					OX:    rand.Float64()*2 - 1,
 					OY:    rand.Float64()*2 - 1,

@@ -146,7 +146,8 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		const entity = world.spawn(
 			...entityTraits,
 			traits.SnapshotAPI,
-			traits.Arrows({ headAtPose: true })
+			traits.Arrows({ headAtPose: true }),
+			traits.Instances({ count: poses.length / STRIDE.ARROWS })
 		)
 
 		entities.push(entity)

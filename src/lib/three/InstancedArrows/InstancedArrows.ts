@@ -11,10 +11,13 @@ import {
 	Material,
 	type ColorRepresentation,
 	Color,
+	Vector3,
+	Box3,
 } from 'three'
 import vertexShader from './vertex.glsl?raw'
 import fragmentShader from './fragment.glsl?raw'
 import { createHeadGeometry, createShaftGeometry, toInstanced } from './geometry'
+import { computeBoundingBox } from './box'
 
 const defaults = {
 	LENGTH: 0.1,
@@ -22,6 +25,11 @@ const defaults = {
 	HEAD_WIDTH: 0.005,
 	SHAFT_RADIUS: 0.001,
 }
+
+const origin = new Vector3()
+const direction = new Vector3()
+const min = new Vector3()
+const max = new Vector3()
 
 const createMaterial = (options: { isHead: boolean; useColorAttribute: boolean }) => {
 	return new RawShaderMaterial({
@@ -47,7 +55,13 @@ const createMaterial = (options: { isHead: boolean; useColorAttribute: boolean }
 }
 
 export class InstancedArrows extends Group {
+	isInstancedArrows = true
+
 	count: number
+	arrowLength: number
+	shaftRadius: number
+	headLength: number
+	headWidth: number
 
 	shaftMesh: Mesh
 	headMesh: Mesh
@@ -69,14 +83,14 @@ export class InstancedArrows extends Group {
 	) {
 		super()
 
-		console.log(options.uniformColor)
-
-		const count = Math.max(0, options?.count ?? 0)
-		this.count = count
+		this.count = options?.count ?? 0
+		this.shaftRadius = options?.shaftRadius ?? defaults.SHAFT_RADIUS
+		this.headLength = options?.headLength ?? defaults.HEAD_LENGTH
+		this.headWidth = options?.headWidth ?? defaults.HEAD_WIDTH
+		this.arrowLength = options?.length ?? defaults.LENGTH
 
 		const stride = 6
-		const posesInterleaved = new Float32Array(count * stride)
-
+		const posesInterleaved = new Float32Array(this.count * stride)
 		this.poses = new InstancedInterleavedBuffer(posesInterleaved, stride)
 		this.poses.setUsage(DynamicDrawUsage)
 
@@ -89,15 +103,18 @@ export class InstancedArrows extends Group {
 		}
 
 		if (!options.uniformColor) {
-			const colors = new Uint8Array(count * (options?.alpha ? 4 : 3))
+			const colors = new Uint8Array(this.count * (options?.alpha ? 4 : 3))
 			const instanceColor = new InstancedBufferAttribute(colors, options?.alpha ? 4 : 3, true)
 			instanceColor.setUsage(DynamicDrawUsage)
 
 			this.attributes.instanceColor = instanceColor
 		}
 
-		const shaftGeometry = toInstanced(createShaftGeometry(), count, this.attributes)
-		const headGeometry = toInstanced(createHeadGeometry(), count, this.attributes)
+		const shaftGeometry = toInstanced(createShaftGeometry(), this.count, this.attributes)
+		shaftGeometry.computeBoundingBox = computeBoundingBox.bind(this, shaftGeometry)
+
+		const headGeometry = toInstanced(createHeadGeometry(), this.count, this.attributes)
+		headGeometry.computeBoundingBox = computeBoundingBox.bind(this, headGeometry)
 
 		const shaftMaterial = createMaterial({
 			isHead: false,
@@ -109,10 +126,10 @@ export class InstancedArrows extends Group {
 		})
 
 		for (const { uniforms } of [shaftMaterial, headMaterial]) {
-			uniforms.shaftRadius.value = options?.shaftRadius ?? defaults.SHAFT_RADIUS
-			uniforms.headLength.value = options?.headLength ?? defaults.HEAD_LENGTH
-			uniforms.headWidth.value = options?.headWidth ?? defaults.HEAD_WIDTH
-			uniforms.arrowLength.value = options?.length ?? defaults.LENGTH
+			uniforms.shaftRadius.value = this.shaftRadius
+			uniforms.headLength.value = this.headLength
+			uniforms.headWidth.value = this.headWidth
+			uniforms.arrowLength.value = this.arrowLength
 
 			if (options.uniformColor) {
 				uniforms.uniformColor.value.set(options.uniformColor)
@@ -125,27 +142,56 @@ export class InstancedArrows extends Group {
 		this.shaftMesh.frustumCulled = false
 		this.headMesh.frustumCulled = false
 
+		this.shaftMesh.raycast = () => null
+		this.headMesh.raycast = () => null
+
 		this.add(this.shaftMesh, this.headMesh)
 	}
 
-	update(arrows: { poses?: Float32Array; colors?: Float32Array; headAtPose?: boolean }) {
+	update(arrows: { poses?: Float32Array; colors?: Uint8Array; headAtPose?: boolean }) {
 		if (arrows.poses) {
-			for (let i = 0, l = arrows.poses.length; i < l; i += 6) {
-				arrows.poses[i + 0] *= 0.001
-				arrows.poses[i + 1] *= 0.001
-				arrows.poses[i + 2] *= 0.001
-			}
-
 			this.poses.array.set(arrows.poses)
 			this.poses.needsUpdate = true
-			this.attributes.instanceOrigin.needsUpdate = true
-			this.attributes.instanceDirection.needsUpdate = true
 		}
 
 		if (arrows.colors && this.attributes.instanceColor) {
 			this.attributes.instanceColor.array.set(arrows.colors)
 			this.attributes.instanceColor.needsUpdate = true
 		}
+	}
+
+	getBoundingBoxAt(instanceId: number, target: Box3): Box3 {
+		this.getPoseAt(instanceId, origin, direction)
+
+		const r = Math.max(this.shaftRadius, this.headWidth)
+
+		const directionLength = direction.length()
+		if (directionLength > 0) direction.multiplyScalar(1 / directionLength)
+		else direction.set(0, 1, 0)
+
+		direction.multiplyScalar(this.arrowLength).add(origin)
+
+		min.set(
+			Math.min(origin.x, direction.x) - r,
+			Math.min(origin.y, direction.y) - r,
+			Math.min(origin.z, direction.z) - r
+		)
+		max.set(
+			Math.max(origin.x, direction.x) + r,
+			Math.max(origin.y, direction.y) + r,
+			Math.max(origin.z, direction.z) + r
+		)
+
+		target.min.copy(min)
+		target.max.copy(max)
+		return target
+	}
+
+	getPoseAt(instanceID: number, origin: Vector3, direction: Vector3): void {
+		const i = instanceID * 6
+		const { array } = this.poses
+		origin.set(array[i], array[i + 1], array[i + 2])
+		direction.set(array[i + 3], array[i + 4], array[i + 5])
 	}
 
 	dispose() {

@@ -1,50 +1,54 @@
 <script lang="ts">
-	import { T, useTask, useThrelte } from '@threlte/core'
+	import { isInstanceOf, T, useTask, useThrelte } from '@threlte/core'
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
 	import { OBB } from 'three/addons/math/OBB.js'
-	import { traits, useTrait } from '$lib/ecs'
 	import { BatchedMesh, Box3 } from 'three'
+	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
 	const box3 = new Box3()
 	const obb = new OBB()
 	const obbHelper = new OBBHelper()
 
-	const { scene, invalidate } = useThrelte()
+	const { invalidate } = useThrelte()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
-	const instance = useTrait(() => selectedEntity.current, traits.Instance)
 
-	// Create a clone so that our bounding box doesn't include children
-	const clone = $derived.by(() => {
-		if (instance.current) {
-			return
+	const object = $derived.by(() => {
+		if (!isInstanceOf(selectedObject3d.current, 'Mesh')) {
+			return selectedObject3d.current
 		}
 
-		return selectedObject3d.current?.clone(false)
+		// Create a clone in the case of meshes, which could be frames with geometries,
+		// so that our bounding box doesn't include children
+		const result = selectedObject3d.current?.clone(false)
+
+		if (result) {
+			selectedObject3d.current?.getWorldPosition(result.position)
+			selectedObject3d.current?.getWorldQuaternion(result.quaternion)
+			return result
+		}
 	})
 
 	const { start, stop } = useTask(
 		() => {
-			if (selectedEntity.current === undefined) {
+			if (object === undefined) {
 				return
 			}
 
-			if (instance.current) {
-				const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
-				mesh?.getBoundingBoxAt(instance.current.instanceID, box3)
+			if (
+				selectedEntity.instance &&
+				(isInstanceOf(object, 'BatchedMesh') || (object as InstancedArrows).isInstancedArrows)
+			) {
+				const mesh = object as BatchedMesh | InstancedArrows
+				mesh.getBoundingBoxAt(selectedEntity.instance, box3)
 				obb.fromBox3(box3)
 				obbHelper.setFromOBB(obb)
-				invalidate()
-				return
+			} else {
+				obbHelper.setFromObject(object)
 			}
 
-			if (clone) {
-				selectedObject3d.current?.getWorldPosition(clone.position)
-				selectedObject3d.current?.getWorldQuaternion(clone.quaternion)
-				obbHelper.setFromObject(clone)
-				invalidate()
-			}
+			invalidate()
 		},
 		{
 			autoStart: false,
