@@ -19,7 +19,6 @@
 	const { camera } = useThrelte()
 	const settings = useSettings()
 
-	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const geometry = useTrait(() => entity, traits.BufferGeometry)

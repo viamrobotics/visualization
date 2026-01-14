@@ -273,7 +273,6 @@ export const provideDrawAPI = () => {
 	}
 
 	const vec3 = new Vector3()
-	const pose = createPose()
 
 	const drawPoses = async (reader: BinaryReader) => {
 		// Read counts
@@ -289,7 +288,6 @@ export const provideDrawAPI = () => {
 			traits.Positions(reader.readF32Array(nPoints * STRIDE.ARROWS)),
 			traits.Colors(reader.readU8Array(nColors * STRIDE.COLORS_RGB)),
 			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
-			traits.Instanced,
 			traits.DrawAPI
 		)
 
