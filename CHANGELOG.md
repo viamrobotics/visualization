@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.3.1
+
+### Patch Changes
+
+- cfd02f1: Update snapshot drag-and-drop prefix
+- fab1052: remove bun from pnpm install use brew
+
 ## 1.3.0
 
 ### Minor Changes
