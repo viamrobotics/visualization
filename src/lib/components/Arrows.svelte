@@ -2,7 +2,7 @@
 	import { T } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
 	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
-	import { traits, useTrait, useWorld } from '$lib/ecs'
+	import { traits, useWorld } from '$lib/ecs'
 	import type { Entity } from 'koota'
 	import { STRIDE } from '$lib/buffer'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
@@ -33,7 +33,13 @@
 		arrows.update({ poses, colors, headAtPose })
 	}
 
-	const onChange = (entity: Entity) => {}
+	/**
+	 * TODO: more granular updates here, but this should be fine for now.
+	 */
+	const onChange = (entity: Entity) => {
+		onRemove(entity)
+		onAdd(entity)
+	}
 
 	const onRemove = (entity: Entity) => {
 		map.delete(entity)
