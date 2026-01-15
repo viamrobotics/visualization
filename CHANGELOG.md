@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.3.2
+
+### Patch Changes
+
+- cfd73bf: Improve arrow performance / avoid max entity limits when rendering many arrows
+
 ## 1.3.1
 
 ### Patch Changes
