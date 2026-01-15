@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"math"
+	"math/rand"
 
 	"github.com/golang/geo/r3"
 	"go.viam.com/rdk/spatialmath"
@@ -13,7 +14,7 @@ import (
 func TestDrawPoses(t *testing.T) {
 	t.Run("DrawPoses", func(t *testing.T) {
 		const (
-			numPoints = 20_000
+			numPoints = 100_000
 			radius    = 1000.0
 		)
 
@@ -72,5 +73,41 @@ func TestDrawPoses(t *testing.T) {
 		)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, DrawGeometry(sphere, "aqua"), test.ShouldBeNil)
+	})
+}
+
+func TestArrowStress(t *testing.T) {
+	t.Skip("Run only if you want to punish your computer.")
+
+	t.Run("TestArrowStress", func(t *testing.T) {
+		const (
+			numPoints = 4_000_000
+			width     = 50_000
+		)
+
+		var poses []spatialmath.Pose
+		var colors []string
+		pallet := []string{"#6200EA", "#EF5350", "#0091EA", "#E53935", "#D32F2F", "blue"}
+
+		for i := range numPoints {
+			pose := spatialmath.NewPose(
+				r3.Vector{
+					X: rand.Float64()*width - width/2,
+					Y: rand.Float64()*width - width/2,
+					Z: rand.Float64()*width - width/2,
+				},
+				&spatialmath.OrientationVectorDegrees{
+					OX:    rand.Float64()*2 - 1,
+					OY:    rand.Float64()*2 - 1,
+					OZ:    rand.Float64()*2 - 1,
+					Theta: 0,
+				},
+			)
+
+			poses = append(poses, pose)
+			colors = append(colors, pallet[i%len(pallet)])
+		}
+
+		test.That(t, DrawPoses(poses, colors, true), test.ShouldBeNil)
 	})
 }

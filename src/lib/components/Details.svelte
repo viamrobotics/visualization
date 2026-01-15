@@ -33,10 +33,7 @@
 
 	const { ...rest } = $props()
 
-	const dragPosition = new PersistedState<Vector2Like | undefined>(
-		'details-drag-position',
-		undefined
-	)
+	const dragPosition = new PersistedState<Vector2Like>('details-drag-position', { x: 0, y: 0 })
 
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()

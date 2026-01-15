@@ -1,8 +1,8 @@
 import { isInstanceOf, useThrelte } from '@threlte/core'
 import { getContext, setContext } from 'svelte'
-import { BatchedMesh, Matrix4, Object3D } from 'three'
+import { Object3D } from 'three'
 import type { Entity } from 'koota'
-import { traits, useTrait, useWorld } from '$lib/ecs'
+import { traits, useWorld } from '$lib/ecs'
 
 const selectedKey = Symbol('selected-frame-context')
 const focusedKey = Symbol('focused-frame-context')
@@ -10,12 +10,16 @@ const focusedObject3dKey = Symbol('focused-object-3d-context')
 
 interface SelectedEntityContext {
 	readonly current: Entity | undefined
-	set(entity?: Entity): void
+	readonly instance: number | undefined
+
+	set(entity?: Entity, instance?: number): void
 }
 
 interface FocusedEntityContext {
 	readonly current: Entity | undefined
-	set(entity?: Entity): void
+	readonly instance: number | undefined
+
+	set(entity?: Entity, instance?: number): void
 }
 
 export const provideSelection = () => {
@@ -23,7 +27,9 @@ export const provideSelection = () => {
 	const { scene } = useThrelte()
 
 	let selected = $state.raw<Entity>()
+	let selectedInstance = $state<number>()
 	let focused = $state.raw<Entity>()
+	let focusedInstance = $state<number>()
 
 	$effect(() => {
 		return world.onRemove(traits.Name, (entity) => {
@@ -36,8 +42,12 @@ export const provideSelection = () => {
 		get current() {
 			return selected
 		},
-		set(entity: Entity) {
+		get instance() {
+			return selectedInstance
+		},
+		set(entity: Entity, instance?: number) {
 			selected = entity
+			selectedInstance = instance
 		},
 	}
 	setContext<SelectedEntityContext>(selectedKey, selectedEntityContext)
@@ -46,8 +56,12 @@ export const provideSelection = () => {
 		get current() {
 			return focused
 		},
-		set(entity: Entity) {
+		get instance() {
+			return focusedInstance
+		},
+		set(entity: Entity, instance?: number) {
 			focused = entity
+			focusedInstance = instance
 		},
 	}
 	setContext<FocusedEntityContext>(focusedKey, focusedEntityContext)
@@ -94,35 +108,16 @@ export const useFocusedObject3d = (): { current: Object3D | undefined } => {
 	return getContext(focusedObject3dKey)
 }
 
-const matrix = new Matrix4()
-
 export const useSelectedObject3d = (): { current: Object3D | undefined } => {
 	const selectedEntity = useSelectedEntity()
 	const { scene } = useThrelte()
-
-	const name = useTrait(() => selectedEntity.current, traits.Name)
-	const instance = useTrait(() => selectedEntity.current, traits.Instance)
 
 	const object = $derived.by(() => {
 		if (!selectedEntity.current) {
 			return
 		}
 
-		if (instance.current) {
-			const proxy = new Object3D()
-			const mesh = scene.getObjectById(instance.current.meshID) as BatchedMesh
-
-			mesh?.getMatrixAt(instance.current.instanceID, matrix)
-			proxy.applyMatrix4(matrix)
-
-			return proxy
-		}
-
-		if (!name.current) {
-			return
-		}
-
-		return scene.getObjectByName(name.current)
+		return scene.getObjectByName(selectedEntity.current as unknown as string)
 	})
 
 	return {
