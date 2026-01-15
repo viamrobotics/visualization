@@ -136,10 +136,11 @@ export const providePointcloudObjects = (partID: () => string) => {
 		Promise.allSettled(
 			responses.map(async ([name, pointcloudObjects]) => {
 				const pointclouds = await Promise.all(
-					pointcloudObjects.map((value) => {
-						console.log(value.pointCloud)
-						parsePcdInWorker(new Uint8Array(value.pointCloud))
-					})
+					pointcloudObjects
+						.filter((value) => value !== undefined)
+						.map((value) => {
+							return parsePcdInWorker(new Uint8Array(value.pointCloud))
+						})
 				)
 
 				return {
@@ -149,7 +150,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 				}
 			})
 		).then((results) => {
-			console.trace(results)
+			console.log('results', results)
 			const fulfilledResults: PCResult[] = []
 
 			for (const result of results) {
@@ -169,6 +170,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 	$effect(() => {
 		const active: Record<string, boolean> = {}
 
+		console.log('pcResults', pcResults)
 		for (const { name, pointclouds, geometries } of pcResults) {
 			for (const [pointcloudIndex, pointcloud] of pointclouds.entries()) {
 				const poincloudLabel = `${name} pointcloud ${pointcloudIndex + 1}`
@@ -208,6 +210,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 								if (existing) {
 									existing.set(traits.Pose, pose)
 								} else {
+									console.log(geometryLabel)
 									const entityTraits: ConfigurableTrait[] = [
 										traits.Name(geometryLabel),
 										traits.Pose(pose),
