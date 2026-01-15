@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Fix vision service toggling
+Fix vision service toggling, allow empty pointclouds from GetObjectPointclouds
