@@ -166,7 +166,7 @@ test('draw poses with single color', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPoses$/DrawPosesWithSingleColor github.com/viam-labs/motion-tools/client/client -count=1',
+		'go test -run ^TestDrawPoses$/DrawPosesWithSingleColor$ github.com/viam-labs/motion-tools/client/client -count=1',
 		{
 			encoding: 'utf-8',
 		}
@@ -182,7 +182,7 @@ test('draw poses', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPoses$/DrawPoses github.com/viam-labs/motion-tools/client/client -count=1',
+		'go test -run ^TestDrawPoses$/DrawPoses$ github.com/viam-labs/motion-tools/client/client -count=1',
 		{
 			encoding: 'utf-8',
 		}
