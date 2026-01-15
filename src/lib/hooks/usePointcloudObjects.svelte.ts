@@ -150,7 +150,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 				}
 			})
 		).then((results) => {
-			console.log('results', results)
 			const fulfilledResults: PCResult[] = []
 
 			for (const result of results) {
@@ -170,7 +169,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 	$effect(() => {
 		const active: Record<string, boolean> = {}
 
-		console.log('pcResults', pcResults)
 		for (const { name, pointclouds, geometries } of pcResults) {
 			for (const [pointcloudIndex, pointcloud] of pointclouds.entries()) {
 				const poincloudLabel = `${name} pointcloud ${pointcloudIndex + 1}`
@@ -210,7 +208,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 								if (existing) {
 									existing.set(traits.Pose, pose)
 								} else {
-									console.log(geometryLabel)
 									const entityTraits: ConfigurableTrait[] = [
 										traits.Name(geometryLabel),
 										traits.Pose(pose),
