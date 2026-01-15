@@ -61,9 +61,9 @@ describe('spawnSnapshotEntities', () => {
 
 		const entities = spawnSnapshotEntities(world, snapshot)
 
-		// 1 parent entity for arrows + 1 arrow entity + 1 frame
-		expect(entities).toHaveLength(3)
-		expect(world.query()).toHaveLength(3)
+		// 1 arrows entity + 1 frame
+		expect(entities).toHaveLength(2)
+		expect(world.query()).toHaveLength(2)
 	})
 
 	it('returns empty array for empty snapshot', () => {
@@ -132,7 +132,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		spawnSnapshotEntities(world, snapshot)
 
-		expect(world.query(traits.Arrow)).toHaveLength(1)
+		expect(world.query(traits.Arrows)).toHaveLength(1)
 	})
 
 	it('spawns line shape with Positions, LineWidth, PointSize traits', async () => {

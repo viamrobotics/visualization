@@ -26,7 +26,11 @@ describe('Details component', () => {
 
 		entity = createEntityFixture(world)
 
-		vi.mocked(useSelection.useFocusedEntity).mockReturnValue({ current: entity, set: () => {} })
+		vi.mocked(useSelection.useFocusedEntity).mockReturnValue({
+			current: entity,
+			instance: undefined,
+			set: () => {},
+		})
 
 		vi.mocked(useSelection.useFocusedObject3d).mockReturnValue({
 			current: undefined,

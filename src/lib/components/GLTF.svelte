@@ -84,7 +84,7 @@
 			<T
 				is={$gltf.scene as Object3D}
 				scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
-				name={name.current}
+				name={entity}
 				{...objectProps}
 				{...rest}
 			>

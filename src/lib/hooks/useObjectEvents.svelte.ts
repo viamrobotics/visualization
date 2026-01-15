@@ -31,7 +31,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		},
 		ondblclick: (event: IntersectionEvent<MouseEvent>) => {
 			event.stopPropagation()
-			focusedEntity.set(currentEntity)
+			focusedEntity.set(currentEntity, event.instanceId ?? event.batchId)
 		},
 		onpointerdown: (event: IntersectionEvent<MouseEvent>) => {
 			down.copy(event.pointer)
@@ -40,7 +40,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 			event.stopPropagation()
 
 			if (down.distanceToSquared(event.pointer) < 0.1) {
-				selectedEntity.set(currentEntity)
+				selectedEntity.set(currentEntity, event.instanceId ?? event.batchId)
 			}
 		},
 	}

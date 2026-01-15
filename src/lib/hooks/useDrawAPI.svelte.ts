@@ -14,6 +14,7 @@ import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { STRIDE } from '$lib/buffer'
 
 const colorUtil = new Color()
 
@@ -58,29 +59,59 @@ const lowercaseKeys = <T>(obj: T): any => {
 	return obj
 }
 
-class Float32Reader {
+class BinaryReader {
 	littleEndian = true
-	offset = 0
-	buffer = new ArrayBuffer()
-	array = new Float32Array()
+	offsetBytes = 0
+
+	buffer = new ArrayBuffer(0)
 	view = new DataView(this.buffer)
+
 	header = { requestID: '', type: -1 }
 
 	async init(data: Blob) {
 		this.buffer = await data.arrayBuffer()
-		this.header.requestID = UuidTool.toString([...new Uint8Array(this.buffer.slice(0, 16))])
-		this.header.type = new Float32Array(this.buffer.slice(16, 20))[0]
+		this.view = new DataView(this.buffer)
+		this.offsetBytes = 0
 
-		this.buffer = this.buffer.slice(20)
-		this.array = new Float32Array(this.buffer)
+		// 16-byte UUID
+		const uuidBytes = new Uint8Array(this.buffer, 0, 16)
+		this.header.requestID = UuidTool.toString([...uuidBytes])
 
+		// 4-byte float32 type at byte offset 16
+		this.header.type = this.view.getFloat32(16, this.littleEndian)
+
+		// payload starts after 20 bytes
+		this.offsetBytes = 20
 		return this
 	}
 
+	/** Read one float32 and advance. */
 	read() {
-		const result = this.array[this.offset]
-		this.offset += 1
-		return result
+		const v = this.view.getFloat32(this.offsetBytes, this.littleEndian)
+		this.offsetBytes += 4
+		return v
+	}
+
+	/**
+	 * Get a Float32Array VIEW into the underlying buffer (no copy) and advance.
+	 * Requires current offset to be 4-byte aligned (it will be, if you only readF32 so far).
+	 */
+	readF32Array(count: number) {
+		const byteOffset = this.offsetBytes
+		const byteLength = count * 4
+		const arr = new Float32Array(this.buffer, byteOffset, count)
+		this.offsetBytes += byteLength
+		return arr
+	}
+
+	/**
+	 * Get a Uint8Array VIEW (no copy) and advance.
+	 */
+	readU8Array(count: number) {
+		const byteOffset = this.offsetBytes
+		const arr = new Uint8Array(this.buffer, byteOffset, count)
+		this.offsetBytes += count
+		return arr
 	}
 }
 
@@ -105,8 +136,6 @@ export const provideDrawAPI = () => {
 
 	let connectionStatus = $state<ConnectionStatus>('connecting')
 
-	const direction = new Vector3()
-	const origin = new Vector3()
 	const loader = new GLTFLoader()
 	const entities = new Map<string, Entity>()
 
@@ -244,9 +273,8 @@ export const provideDrawAPI = () => {
 	}
 
 	const vec3 = new Vector3()
-	const pose = createPose()
 
-	const drawPoses = async (reader: Float32Reader) => {
+	const drawPoses = async (reader: BinaryReader) => {
 		// Read counts
 		const nPoints = reader.read()
 		const nColors = reader.read()
@@ -255,41 +283,18 @@ export const provideDrawAPI = () => {
 
 		const entities: Entity[] = []
 
-		for (let i = 0; i < nPoints; i += 1) {
-			origin.set(reader.read(), reader.read(), reader.read())
-			direction.set(reader.read(), reader.read(), reader.read())
+		const entity = world.spawn(
+			traits.Name(`Arrow group ${++poseIndex}`),
+			traits.Positions(reader.readF32Array(nPoints * STRIDE.ARROWS)),
+			traits.Colors(reader.readU8Array(nColors * STRIDE.COLORS_RGB)),
+			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
+			traits.DrawAPI
+		)
 
-			if (arrowHeadAtPose === 1) {
-				// Compute the base position so the arrow ends at the origin
-				origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
-			}
-
-			pose.x = origin.x
-			pose.y = origin.y
-			pose.z = origin.z
-			pose.oX = direction.x
-			pose.oY = direction.y
-			pose.oZ = direction.z
-
-			const entity = world.spawn(
-				traits.Name(`Pose ${++poseIndex}`),
-				traits.Pose(pose),
-				traits.Color,
-				traits.DrawAPI,
-				traits.Arrow
-			)
-
-			entities.push(entity)
-		}
-
-		for (let i = 0; i < nColors; i += 1) {
-			const entity = entities[i]
-			colorUtil.set(reader.read(), reader.read(), reader.read())
-			entity.set(traits.Color, colorUtil)
-		}
+		entities.push(entity)
 	}
 
-	const drawPoints = async (reader: Float32Reader) => {
+	const drawPoints = async (reader: BinaryReader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
@@ -307,12 +312,10 @@ export const provideDrawAPI = () => {
 		const b = reader.read()
 
 		const nPointsElements = nPoints * 3
-		const positions = reader.array.slice(reader.offset, reader.offset + nPointsElements)
-		reader.offset += nPointsElements
+		const positions = reader.readF32Array(nPointsElements)
 
 		const nColorsElements = nColors * 3
-		const rawColors = reader.array.slice(reader.offset, reader.offset + nColorsElements)
-		reader.offset += nColorsElements
+		const rawColors = reader.readF32Array(nColorsElements)
 
 		const colors = new Float32Array(nPointsElements)
 		colors.set(rawColors)
@@ -349,7 +352,7 @@ export const provideDrawAPI = () => {
 		)
 	}
 
-	const drawLine = async (reader: Float32Reader) => {
+	const drawLine = async (reader: BinaryReader) => {
 		// Read label length
 		const labelLen = reader.read()
 		let label = ''
@@ -478,7 +481,7 @@ export const provideDrawAPI = () => {
 
 		try {
 			if (typeof event.data === 'object' && 'arrayBuffer' in event.data) {
-				const reader = await new Float32Reader().init(event.data)
+				const reader = await new BinaryReader().init(event.data)
 
 				requestID = reader.header.requestID
 
