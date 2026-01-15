@@ -33,6 +33,10 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 		arrows, err = draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
 	}
 
+	if err != nil {
+		return err
+	}
+
 	buf, err := posesToBytes(arrows, arrowHeadAtPose)
 	if err != nil {
 		return err
