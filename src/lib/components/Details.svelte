@@ -29,7 +29,6 @@
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { PersistedState } from 'runed'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { degToRad } from 'three/src/math/MathUtils.js'
 
 	const { ...rest } = $props()
 
@@ -266,14 +265,20 @@
 						onclick={() => {
 							const padding = 0.4
 
-							controls.current?.fitToBox(object3d, true, {
+							if (!controls.current) return
+
+							const { azimuthAngle, polarAngle } = controls.current
+
+							controls.current.fitToBox(object3d, true, {
 								paddingTop: padding,
 								paddingBottom: padding,
 								paddingLeft: padding,
 								paddingRight: padding,
 							})
-							controls.current?.rotateAzimuthTo(MathUtils.degToRad(135), true)
-							controls.current?.rotatePolarTo(MathUtils.degToRad(55), true)
+
+							// Preserve previous rotation
+							controls.current?.rotateAzimuthTo(azimuthAngle, true)
+							controls.current?.rotatePolarTo(polarAngle, true)
 						}}
 					>
 						<Icon name="image-filter-center-focus" />
