@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.3.3
+
+### Patch Changes
+
+- 19a26cf: enable poses color palleting
+- 7d66c9d: add gripper as origin_frame using component for pose
+
 ## 1.3.2
 
 ### Patch Changes
