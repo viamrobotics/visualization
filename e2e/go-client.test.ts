@@ -166,7 +166,39 @@ test('draw poses', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPoses$/DrawPoses github.com/viam-labs/motion-tools/client/client -count=1',
+		'go test -run ^TestDrawPoses$/DrawPoses$ github.com/viam-labs/motion-tools/client/client -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+	await takeScreenshot(page, testPrefix, failedScreenshots)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
+test('draw poses with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_WITH_COLOR_PALETTE'
+	const failedScreenshots = [] as string[]
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoses$/DrawAlternatingColorsPoses$ github.com/viam-labs/motion-tools/client/client -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+	await takeScreenshot(page, testPrefix, failedScreenshots)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
+test('draw poses with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_WITH_SINGLE_COLOR'
+	const failedScreenshots = [] as string[]
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoses$/DrawSingleColorPoses$ github.com/viam-labs/motion-tools/client/client -count=1',
 		{
 			encoding: 'utf-8',
 		}

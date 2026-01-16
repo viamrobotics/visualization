@@ -39,6 +39,15 @@ func WithPerArrowColors(colors ...Color) drawArrowsOption {
 	return WithColors[*drawArrowsConfig](colors)
 }
 
+func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
+	finalColors := make([]Color, numPoses)
+	for i := range numPoses {
+		finalColors[i] = palette[i%len(palette)]
+	}
+	return WithColors[*drawArrowsConfig](finalColors)
+
+}
+
 // NewArrows creates a new Arrows object from the given poses and optional configuration.
 // Returns an error if the number of colors doesn't match the requirements (must be 1 or equal to number of poses).
 func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, error) {
