@@ -18,7 +18,7 @@
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const visionServices = useResourceNames(() => partID.current, 'vision')
 	const settings = useSettings()
-	const { disabledCameras, disabledVisionServicesObjectPointclouds } = useMachineSettings()
+	const { disabledCameras, disabledVisionServices } = useMachineSettings()
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
 	const { refetchPoses } = useRefetchPoses()
@@ -81,9 +81,9 @@
 				<div class="flex items-center justify-between gap-4 py-2">
 					{visionService.name}
 					<Switch
-						on={disabledVisionServicesObjectPointclouds.get(visionService.name) !== true}
+						on={disabledVisionServices.get(visionService.name) !== true}
 						on:change={(event) => {
-							disabledVisionServicesObjectPointclouds.set(visionService.name, !event.detail)
+							disabledVisionServices.set(visionService.name, !event.detail)
 						}}
 					/>
 				</div>

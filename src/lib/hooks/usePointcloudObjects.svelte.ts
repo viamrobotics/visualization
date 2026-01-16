@@ -24,7 +24,7 @@ interface Context {
 export const providePointcloudObjects = (partID: () => string) => {
 	const world = useWorld()
 	const environment = useEnvironment()
-	const { refreshRates, disabledVisionServicesObjectPointclouds } = useMachineSettings()
+	const { refreshRates, disabledVisionServices } = useMachineSettings()
 	const services = useResourceNames(partID, 'vision')
 
 	const clients = $derived(
@@ -57,7 +57,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 				environment.current.viewerMode === 'monitor' &&
 				fetchedPropQueries &&
 				client.current?.name &&
-				interval !== RefetchRates.OFF
+				interval !== RefetchRates.OFF &&
+				disabledVisionServices.get(client.current?.name) !== true
 			) {
 				results.push(client as { current: VisionClient })
 			}
@@ -76,8 +77,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 	$effect(() => {
 		for (const [name, query] of propQueries) {
 			if (name && query.data?.objectPointCloudsSupported === false) {
-				if (disabledVisionServicesObjectPointclouds.get(name) === undefined) {
-					disabledVisionServicesObjectPointclouds.set(name, true)
+				if (disabledVisionServices.get(name) === undefined) {
+					disabledVisionServices.set(name, true)
 				}
 			}
 		}
@@ -135,7 +136,11 @@ export const providePointcloudObjects = (partID: () => string) => {
 		Promise.allSettled(
 			responses.map(async ([name, pointcloudObjects]) => {
 				const pointclouds = await Promise.all(
-					pointcloudObjects.map((value) => parsePcdInWorker(new Uint8Array(value.pointCloud)))
+					pointcloudObjects
+						.filter((value) => value !== undefined)
+						.map((value) => {
+							return parsePcdInWorker(new Uint8Array(value.pointCloud))
+						})
 				)
 
 				return {
