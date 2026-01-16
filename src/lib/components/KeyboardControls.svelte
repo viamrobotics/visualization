@@ -3,8 +3,9 @@
 	import { useTask } from '@threlte/core'
 	import type { CameraControlsRef } from '@threlte/extras'
 	import { PressedKeys } from 'runed'
-	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
+	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 
 	interface Props {
 		cameraControls: CameraControlsRef
@@ -13,7 +14,12 @@
 	let { cameraControls }: Props = $props()
 
 	const focusedEntity = useFocusedEntity()
+	const selectedEntity = useSelectedEntity()
+
+	const entity = $derived(focusedEntity.current ?? selectedEntity.current)
+
 	const settings = useSettings()
+	const visibility = useVisibility()
 
 	const keys = new PressedKeys()
 	const meta = $derived(keys.has('meta'))
@@ -28,6 +34,7 @@
 	const down = $derived(keys.has('arrowdown'))
 	const right = $derived(keys.has('arrowright'))
 	const any = $derived(w || s || a || d || r || f || up || left || down || right)
+
 	const { start, stop } = useTask(
 		(delta) => {
 			const dt = delta * 1000
@@ -117,4 +124,24 @@
 	keys.onKeys('x', () => {
 		settings.current.enableXR = !settings.current.enableXR
 	})
+
+	/**
+	 * Handler for any keybindings that need to access the event object
+	 */
+	const onkeydown = (event: KeyboardEvent) => {
+		const key = event.key.toLowerCase()
+
+		if (key === 'h') {
+			if (!entity) return
+
+			event.stopImmediatePropagation()
+
+			const visible = visibility.get(entity) ?? true
+
+			visibility.set(entity, !visible)
+			return
+		}
+	}
 </script>
+
+<svelte:window {onkeydown} />
