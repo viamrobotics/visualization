@@ -12,6 +12,126 @@ import (
 )
 
 func TestDrawPoses(t *testing.T) {
+
+	t.Run("DrawAlternatingColorsPoses", func(t *testing.T) {
+		const (
+			numPoints = 10_000
+			radius    = 1000.0
+		)
+
+		// Define the center of the sphere
+		centerX := 1500.0
+		centerY := 1500.0
+		centerZ := -300.0
+
+		var poses []spatialmath.Pose
+
+		for i := range numPoints {
+			phi := math.Acos(1 - 2*float64(i)/float64(numPoints))
+			theta := math.Pi * (1 + math.Sqrt(5)) * float64(i)
+
+			x := radius * math.Sin(phi) * math.Cos(theta)
+			y := radius * math.Sin(phi) * math.Sin(theta)
+			z := radius * math.Cos(phi)
+
+			// Apply offset to shift the sphere center
+			x += centerX
+			y += centerY
+			z += centerZ
+
+			// Orientation: point back toward the center
+			dx := centerX - x
+			dy := centerY - y
+			dz := centerZ - z
+
+			length := math.Sqrt(dx*dx + dy*dy + dz*dz)
+
+			pose := spatialmath.NewPose(
+				r3.Vector{X: x, Y: y, Z: z},
+				&spatialmath.OrientationVectorDegrees{
+					OX:    dx / length,
+					OY:    dy / length,
+					OZ:    dz / length,
+					Theta: 0,
+				},
+			)
+
+			poses = append(poses, pose)
+		}
+
+		test.That(t, DrawPoses(poses, []string{"yellow", "red"}, true), test.ShouldBeNil)
+
+		sphere, err := spatialmath.NewSphere(
+			spatialmath.NewPose(
+				r3.Vector{X: centerX, Y: centerY, Z: centerZ},
+				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
+			),
+			radius,
+			"mySpherePose",
+		)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, DrawGeometry(sphere, "aqua"), test.ShouldBeNil)
+	})
+
+	t.Run("DrawSingleColorPoses", func(t *testing.T) {
+		const (
+			numPoints = 10_000
+			radius    = 1000.0
+		)
+
+		// Define the center of the sphere
+		centerX := 1500.0
+		centerY := 1500.0
+		centerZ := -300.0
+
+		var poses []spatialmath.Pose
+
+		for i := range numPoints {
+			phi := math.Acos(1 - 2*float64(i)/float64(numPoints))
+			theta := math.Pi * (1 + math.Sqrt(5)) * float64(i)
+
+			x := radius * math.Sin(phi) * math.Cos(theta)
+			y := radius * math.Sin(phi) * math.Sin(theta)
+			z := radius * math.Cos(phi)
+
+			// Apply offset to shift the sphere center
+			x += centerX
+			y += centerY
+			z += centerZ
+
+			// Orientation: point back toward the center
+			dx := centerX - x
+			dy := centerY - y
+			dz := centerZ - z
+
+			length := math.Sqrt(dx*dx + dy*dy + dz*dz)
+
+			pose := spatialmath.NewPose(
+				r3.Vector{X: x, Y: y, Z: z},
+				&spatialmath.OrientationVectorDegrees{
+					OX:    dx / length,
+					OY:    dy / length,
+					OZ:    dz / length,
+					Theta: 0,
+				},
+			)
+
+			poses = append(poses, pose)
+		}
+
+		test.That(t, DrawPoses(poses, []string{"yellow"}, true), test.ShouldBeNil)
+
+		sphere, err := spatialmath.NewSphere(
+			spatialmath.NewPose(
+				r3.Vector{X: centerX, Y: centerY, Z: centerZ},
+				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
+			),
+			radius,
+			"mySpherePose",
+		)
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, DrawGeometry(sphere, "aqua"), test.ShouldBeNil)
+	})
 	t.Run("DrawPoses", func(t *testing.T) {
 		const (
 			numPoints = 100_000
