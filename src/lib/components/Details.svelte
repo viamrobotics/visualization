@@ -14,7 +14,7 @@
 	import { draggable } from '@neodrag/svelte'
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask } from '@threlte/core'
-	import { Button, Icon, Select, Input } from '@viamrobotics/prime-core'
+	import { Button, Icon, Select, Input, Tooltip } from '@viamrobotics/prime-core'
 	import {
 		useSelectedEntity,
 		useFocusedEntity,
@@ -28,11 +28,13 @@
 	import { traits, useTrait } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { PersistedState } from 'runed'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	const { ...rest } = $props()
 
 	const dragPosition = new PersistedState<Vector2Like>('details-drag-position', { x: 0, y: 0 })
 
+	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
 	const frames = useFrames()
 	const partConfig = usePartConfig()
@@ -244,13 +246,46 @@
 		{...rest}
 	>
 		<div class="flex items-center justify-between gap-2 pb-2">
-			<div class="flex items-center gap-1">
+			<div class="flex w-[90%] items-center gap-1">
 				<button bind:this={dragElement}>
 					<Icon name="drag" />
 				</button>
-				<strong>{name.current}</strong>
+				<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
 				<span class="text-subtle-2">{resourceName?.subtype}</span>
 			</div>
+
+			{#if object3d}
+				<Tooltip
+					let:tooltipID
+					location="bottom"
+				>
+					<button
+						class="text-subtle-2"
+						aria-describedby={tooltipID}
+						onclick={() => {
+							const padding = 0.4
+
+							if (!controls.current) return
+
+							const { azimuthAngle, polarAngle } = controls.current
+
+							controls.current.fitToBox(object3d, true, {
+								paddingTop: padding,
+								paddingBottom: padding,
+								paddingLeft: padding,
+								paddingRight: padding,
+							})
+
+							// Preserve previous rotation
+							controls.current?.rotateAzimuthTo(azimuthAngle, true)
+							controls.current?.rotatePolarTo(polarAngle, true)
+						}}
+					>
+						<Icon name="image-filter-center-focus" />
+					</button>
+					<p slot="description">Zoom to object</p>
+				</Tooltip>
+			{/if}
 		</div>
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
