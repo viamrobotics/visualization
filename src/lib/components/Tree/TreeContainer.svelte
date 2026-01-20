@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Vector2Like } from 'three'
 	import { draggable } from '@neodrag/svelte'
 	import Tree from './Tree.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
@@ -15,11 +14,8 @@
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 	import { MIN_DIMENSIONS, useResizable } from '$lib/hooks/useResizable.svelte'
-	import { PersistedState } from 'runed'
 
 	const { ...rest } = $props()
-
-	const dragPosition = new PersistedState<Vector2Like | undefined>('tree-drag-position', undefined)
 
 	provideTreeExpandedContext()
 
@@ -83,10 +79,6 @@
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,
-		defaultPosition: dragPosition.current,
-		onDragEnd(data) {
-			dragPosition.current = { x: Math.max(data.offsetX, 0), y: Math.max(data.offsetY, 0) }
-		},
 	}}
 	{...rest}
 >
