@@ -103,6 +103,11 @@ export const LineWidth = trait(() => 5)
 
 export const ReferenceFrame = trait()
 
+/**
+ * This entity can be safetly removed from the scene by the user
+ */
+export const Removable = trait()
+
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
 		return Box(createBox(geometry.geometryType.value))

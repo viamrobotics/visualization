@@ -42,7 +42,8 @@
 						traits.Name(result.name),
 						traits.BufferGeometry(geometry),
 						traits.Points,
-						traits.DroppedFile
+						traits.DroppedFile,
+						traits.Removable
 					)
 					break
 				}
@@ -50,7 +51,8 @@
 					world.spawn(
 						traits.Name(result.name),
 						traits.BufferGeometry(result.ply),
-						traits.DroppedFile
+						traits.DroppedFile,
+						traits.Removable
 					)
 					break
 				}
