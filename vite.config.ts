@@ -2,6 +2,7 @@ import { sentrySvelteKit } from '@sentry/sveltekit'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import tailwindcss from '@tailwindcss/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import glsl from 'vite-plugin-glsl'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
@@ -15,6 +16,7 @@ const https = false
 
 export default defineConfig({
 	plugins: [
+		glsl(),
 		sentrySvelteKit({
 			sourceMapsUploadOptions: {
 				org: 'viam',
