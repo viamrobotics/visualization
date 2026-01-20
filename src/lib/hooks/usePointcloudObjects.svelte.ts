@@ -235,7 +235,9 @@ export const providePointcloudObjects = (partID: () => string) => {
 		// Clean up old entities
 		for (const [label, entity] of entities) {
 			if (!active[label]) {
-				entity.destroy()
+				if (world.has(entity)) {
+					entity.destroy()
+				}
 				entities.delete(label)
 			}
 		}

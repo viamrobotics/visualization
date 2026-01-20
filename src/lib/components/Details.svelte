@@ -3,7 +3,7 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils, type Vector2Like } from 'three'
+	import { Quaternion, Vector3, MathUtils } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -25,15 +25,13 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait, useWorld } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { PersistedState } from 'runed'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	const { ...rest } = $props()
 
-	const dragPosition = new PersistedState<Vector2Like>('details-drag-position', { x: 0, y: 0 })
-
+	const world = useWorld()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
 	const frames = useFrames()
@@ -54,6 +52,7 @@
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
+	const removable = useTrait(() => entity, traits.Removable)
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
@@ -232,21 +231,18 @@
 	{@const ScalarAttribute = showEditFrameOptions ? MutableField : ImmutableField}
 
 	<div
+		id="details-panel"
 		class="border-medium bg-extralight absolute top-0 right-0 z-10 m-2 {showEditFrameOptions
 			? 'w-80'
 			: 'w-60'} border p-2 text-xs"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,
-			defaultPosition: dragPosition.current,
-			onDragEnd(data) {
-				dragPosition.current = { x: data.offsetX, y: data.offsetY }
-			},
 		}}
 		{...rest}
 	>
 		<div class="flex items-center justify-between gap-2 pb-2">
-			<div class="flex w-[90%] items-center gap-1">
+			<div class="flex w-[80%] items-center gap-1">
 				<button bind:this={dragElement}>
 					<Icon name="drag" />
 				</button>
@@ -284,6 +280,26 @@
 						<Icon name="image-filter-center-focus" />
 					</button>
 					<p slot="description">Zoom to object</p>
+				</Tooltip>
+			{/if}
+
+			{#if removable.current}
+				<Tooltip
+					let:tooltipID
+					location="bottom"
+				>
+					<button
+						class="text-subtle-2"
+						aria-describedby={tooltipID}
+						onclick={() => {
+							if (world.has(entity)) {
+								entity.destroy()
+							}
+						}}
+					>
+						<Icon name="trash-can-outline" />
+					</button>
+					<p slot="description">Remove from scene</p>
 				</Tooltip>
 			{/if}
 		</div>
