@@ -58,6 +58,11 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 		offset += 4
 	}
 
+	putU32 := func(v uint32) {
+		binary.LittleEndian.PutUint32(out[offset:], v)
+		offset += 4
+	}
+
 	// Header
 	putF32(float32(pointsType))
 	putF32(float32(labelLen))
@@ -67,8 +72,8 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 
 	// Placeholder nColors for now; patch later once we know nColors.
 	nColorsOffsetBytes := offset + 4 // after writing nPoints, the next float is nColors
-	putF32(float32(nPoints))
-	putF32(0) // nColors placeholder
+	putU32(uint32(nPoints))
+	putU32(0) // nColors placeholder
 
 	putF32(finalColor[0] / 255.0)
 	putF32(finalColor[1] / 255.0)
@@ -97,7 +102,7 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 	})
 
 	// Patch nColors in the float header
-	binary.LittleEndian.PutUint32(out[nColorsOffsetBytes:], math.Float32bits(float32(nColors)))
+	binary.LittleEndian.PutUint32(out[nColorsOffsetBytes:], uint32(nColors))
 
 	// Trim buffer to actual used size
 	return postHTTP(out[:colorOffset], "octet-stream", "points")

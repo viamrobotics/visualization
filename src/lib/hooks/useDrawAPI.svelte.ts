@@ -92,6 +92,12 @@ class BinaryReader {
 		return v
 	}
 
+	readU32() {
+		const v = this.view.getUint32(this.offsetBytes, this.littleEndian)
+		this.offsetBytes += 4
+		return v
+	}
+
 	/**
 	 * Get a Float32Array VIEW into the underlying buffer (no copy) and advance.
 	 * Requires current offset to be 4-byte aligned (it will be, if you only readF32 so far).
@@ -312,8 +318,8 @@ export const provideDrawAPI = () => {
 		}
 
 		// Read counts
-		const nPoints = reader.read()
-		const nColors = reader.read()
+		const nPoints = reader.readU32()
+		const nColors = reader.readU32()
 
 		// Read default color
 		let r = reader.read()

@@ -89,43 +89,45 @@ func pointsToBytes(points *draw.Points, label string, defaultColor *[3]uint8) ([
 	totalBytes := floatCount*4 + nColors*3
 
 	out := make([]byte, totalBytes)
-	off := 0
+	offset := 0
 
 	putF32 := func(v float32) {
-		binary.LittleEndian.PutUint32(out[off:], math.Float32bits(v))
-		off += 4
+		binary.LittleEndian.PutUint32(out[offset:], math.Float32bits(v))
+		offset += 4
+	}
+
+	putU32 := func(v uint32) {
+		binary.LittleEndian.PutUint32(out[offset:], v)
+		offset += 4
 	}
 
 	// Header
 	putF32(float32(pointsType))
 	putF32(float32(labelLen))
 
-	// Label bytes as float32s (kept exactly as your current encoding)
 	for _, b := range labelBytes {
 		putF32(float32(b))
 	}
 
-	putF32(float32(nPoints))
-	putF32(float32(nColors))
+	putU32(uint32(nPoints))
+	putU32(uint32(nColors))
 
-	// Default color stays normalized floats (kept exactly as your current encoding)
+	// Default color
 	putF32(float32(dc[0]) / 255.0)
 	putF32(float32(dc[1]) / 255.0)
 	putF32(float32(dc[2]) / 255.0)
 
-	// Positions (kept exactly as your current encoding)
 	for _, p := range points.Positions {
 		putF32(float32(p.X) / 1000.0)
 		putF32(float32(p.Y) / 1000.0)
 		putF32(float32(p.Z) / 1000.0)
 	}
 
-	// Colors as raw bytes (0..255), same idea as posesToBytes
 	for _, c := range points.Colors {
-		out[off+0] = uint8(c.R)
-		out[off+1] = uint8(c.G)
-		out[off+2] = uint8(c.B)
-		off += 3
+		out[offset+0] = uint8(c.R)
+		out[offset+1] = uint8(c.G)
+		out[offset+2] = uint8(c.B)
+		offset += 3
 	}
 
 	return out, nil
