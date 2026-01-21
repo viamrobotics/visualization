@@ -1,5 +1,15 @@
 # motion-tools
 
+## 1.3.5
+
+### Patch Changes
+
+- 486557a: Use localhost instead of detecting device local ip
+- 8393486: Focus view fixes
+- 00c60ca: Add "remove from scene" button for non-polling objects
+- e508a60: Add vite-plugin-glsl
+- 38809b1: Do not render line outline on 3d model in model only mode
+
 ## 1.3.4
 
 ### Patch Changes
