@@ -171,6 +171,9 @@ export const provideFrames = (partID: () => string) => {
 			if (existing) {
 				const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
 				existing.set(traits.Pose, pose)
+				if (environment.current.viewerMode === "monitor") {
+					existing.set(traits.EditedPose, pose)
+				}
 			}
 		}
 	})

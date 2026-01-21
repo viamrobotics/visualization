@@ -11,7 +11,7 @@ import { useLogs } from './useLogs.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
-const origingFrameComponentTypes = ['arm', 'gantry', 'gripper']
+const origingFrameComponentTypes = ['arm', 'gantry', 'gripper', 'base']
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const environment = useEnvironment()

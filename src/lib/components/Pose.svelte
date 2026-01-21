@@ -5,7 +5,6 @@
 	import type { Pose } from '@viamrobotics/sdk'
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	interface Props {
 		entity: Entity
@@ -16,7 +15,6 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const editedPose = useTrait(() => entity, traits.EditedPose)
-	const environment = useEnvironment()
 	const entityPose = useTrait(() => entity, traits.Pose)
 
 	const pose = usePose(
@@ -27,9 +25,6 @@
 	const resolvedPose = $derived.by(() => {
 		if (pose.current === undefined) {
 			return editedPose.current
-		}
-		if (environment.current.viewerMode === 'monitor') {
-			return pose.current
 		}
 
 		if (!entityPose.current || !editedPose.current) {

@@ -49,7 +49,6 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
-	// const pose = useTrait(() => entity, traits.Pose)
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
@@ -61,14 +60,6 @@
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
-
-	// const localPose = $derived.by(() => {
-	// 	if (environment.current.viewerMode !== 'monitor') {
-	// 		return editedPose.current
-	// 	}
-	// 	return pose.current
-	// })
-
 
 	let geometryType = $derived.by<'box' | 'sphere' | 'capsule' | 'none'>(() => {
 		if (box.current) return 'box'
