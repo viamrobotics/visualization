@@ -168,14 +168,14 @@ export const provideFrames = (partID: () => string) => {
 					if (machineFrame === undefined) {
 						continue
 					}
-		
+
 					const existing = entities.get(name)
-		
+
 					if (existing) {
 						const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
 						existing.set(traits.Pose, pose)
-	
-						if (environment.current.viewerMode === "monitor") {
+
+						if (environment.current.viewerMode === 'monitor') {
 							// if we are in monitor mode, we want the network pose to overwrite any leftover edited poses
 							existing.set(traits.EditedPose, pose)
 						}
