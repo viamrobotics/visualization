@@ -1,8 +1,9 @@
-import { isInstanceOf, useThrelte } from '@threlte/core'
-import { getContext, setContext } from 'svelte'
+import { useThrelte } from '@threlte/core'
+import { getContext, setContext, untrack } from 'svelte'
 import { Object3D } from 'three'
 import type { Entity } from 'koota'
 import { traits, useWorld } from '$lib/ecs'
+import { useEnvironment } from './useEnvironment.svelte'
 
 const selectedKey = Symbol('selected-frame-context')
 const focusedKey = Symbol('focused-frame-context')
@@ -25,6 +26,7 @@ interface FocusedEntityContext {
 export const provideSelection = () => {
 	const world = useWorld()
 	const { scene } = useThrelte()
+	const environment = useEnvironment()
 
 	let selected = $state.raw<Entity>()
 	let selectedInstance = $state<number>()
@@ -66,22 +68,20 @@ export const provideSelection = () => {
 	}
 	setContext<FocusedEntityContext>(focusedKey, focusedEntityContext)
 
-	const focusedObject3d = $derived.by(() => {
-		const name = focused?.get(traits.Name)
+	const focusedObject3d = $derived(
+		focused ? scene.getObjectByName(focused as unknown as string)?.clone() : undefined
+	)
 
-		if (!name) {
-			return
-		}
+	$effect(() => {
+		const previousMode = untrack(() => environment.current.viewerMode)
 
-		const object = scene.getObjectByName(name)?.clone()
+		if (focusedObject3d) {
+			environment.current.viewerMode = 'focus'
 
-		object?.traverse((child) => {
-			if (isInstanceOf(child, 'LineSegments')) {
-				child.raycast = () => null
+			return () => {
+				environment.current.viewerMode = previousMode
 			}
-		})
-
-		return object
+		}
 	})
 
 	setContext(focusedObject3dKey, {
