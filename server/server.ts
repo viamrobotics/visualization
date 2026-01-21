@@ -1,10 +1,8 @@
 import { serve, spawn, type Subprocess, file } from 'bun'
-import { getLocalIP } from './ip'
 import { resolve, join } from 'node:path'
 import { stat } from 'node:fs/promises'
 import { UuidTool } from 'uuid-tool'
 
-const localIP = getLocalIP()
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
 const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production')
 const buildDir = resolve(import.meta.dir, '../build')
@@ -85,7 +83,7 @@ const startStaticServer = () => {
 			},
 		})
 
-		console.log(`Static file server running at http://${localIP}:${STATIC_PORT}`)
+		console.log(`Static file server running at http://localhost:${STATIC_PORT}`)
 	} catch (err) {
 		console.error('Failed to start static file server:', err)
 		shutdown(1)
@@ -318,8 +316,8 @@ try {
 		},
 	})
 
-	console.log(`API/WebSocket server running at http://${localIP}:${WS_PORT}`)
-	console.log(`WebSocket endpoint: ws://${localIP}:${WS_PORT}/ws`)
+	console.log(`API/WebSocket server running at http://localhost:${WS_PORT}`)
+	console.log(`WebSocket endpoint: ws://localhost:${WS_PORT}/ws`)
 
 	if (isProduction) {
 		startStaticServer()

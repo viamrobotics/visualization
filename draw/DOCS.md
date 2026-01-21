@@ -258,7 +258,7 @@ type Arrows struct {
 ```
 
 <a name="NewArrows"></a>
-### func [NewArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L44>)
+### func [NewArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L53>)
 
 ```go
 func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, error)
@@ -267,7 +267,7 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 NewArrows creates a new Arrows object from the given poses and optional configuration. Returns an error if the number of colors doesn't match the requirements \(must be 1 or equal to number of poses\).
 
 <a name="Arrows.Draw"></a>
-### func \(Arrows\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L59>)
+### func \(Arrows\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L68>)
 
 ```go
 func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Drawing
