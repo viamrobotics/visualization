@@ -37,11 +37,11 @@ export const provideFrames = (partID: () => string) => {
 	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()
 
-	$effect(() => {
-		if (revision) {
-			untrack(() => query.refetch())
-		}
-	})
+	// $effect(() => {
+	// 	if (revision) {
+	// 		untrack(() => query.refetch())
+	// 	}
+	// })
 
 	$effect(() => {
 		if (query.isFetching) {
@@ -161,20 +161,27 @@ export const provideFrames = (partID: () => string) => {
 	const entities = new Map<string, Entity | undefined>()
 
 	$effect.pre(() => {
-		for (const [name, machineFrame] of Object.entries(machineFrames)) {
-			if (machineFrame === undefined) {
-				continue
-			}
-
-			const existing = entities.get(name)
-
-			if (existing) {
-				const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
-				existing.set(traits.Pose, pose)
-				if (environment.current.viewerMode === "monitor") {
-					existing.set(traits.EditedPose, pose)
+		if (revision) {
+			untrack(async () => {
+				await query.refetch()
+				for (const [name, machineFrame] of Object.entries(machineFrames)) {
+					if (machineFrame === undefined) {
+						continue
+					}
+		
+					const existing = entities.get(name)
+		
+					if (existing) {
+						const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
+						existing.set(traits.Pose, pose)
+	
+						if (environment.current.viewerMode === "monitor") {
+							// if we are in monitor mode, we want the network pose to overwrite any leftover edited poses
+							existing.set(traits.EditedPose, pose)
+						}
+					}
 				}
-			}
+			})
 		}
 	})
 
