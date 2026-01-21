@@ -37,12 +37,6 @@ export const provideFrames = (partID: () => string) => {
 	const revision = $derived(machineStatus.current?.config?.revision)
 	const partConfig = usePartConfig()
 
-	// $effect(() => {
-	// 	if (revision) {
-	// 		untrack(() => query.refetch())
-	// 	}
-	// })
-
 	$effect(() => {
 		if (query.isFetching) {
 			logs.add('Fetching frames...')
