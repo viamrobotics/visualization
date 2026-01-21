@@ -171,6 +171,11 @@ export const provideFrames = (partID: () => string) => {
 			if (existing) {
 				const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
 				existing.set(traits.Pose, pose)
+				if (environment.current.viewerMode === "monitor") {
+					// if we are in monitor mode we should overwrite the edited pose with the one from the framesystem
+					// else we will keep the locally edited one
+					existing.set(traits.EditedPose, pose)
+				}
 			}
 		}
 	})
