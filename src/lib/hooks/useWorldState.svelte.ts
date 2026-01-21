@@ -19,14 +19,16 @@ import { createPose } from '$lib/transform'
 import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { createBufferGeometry } from '../attribute.ts';
-import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js';
-import { BufferGeometry, InterleavedBuffer, InterleavedBufferAttribute } from 'three';
+import { BufferGeometry, InterleavedBuffer, InterleavedBufferAttribute, type TypedArray, BufferAttribute } from 'three';
 
 export type ChangeMessage = {
 	type: 'change'
 	events: TransformChangeEvent[]
+}
+
+type TypedArrayConstructor<T extends TypedArray = TypedArray> = {
+	new (buffer: ArrayBufferLike, byteOffset?: number, length?: number): T
+	readonly BYTES_PER_ELEMENT: number
 }
 
 export type TransformEvent = TransformChangeEvent & {
@@ -122,6 +124,79 @@ export const buildPointCloud = (data: Uint8Array, header?: any): BuiltPointCloud
 		structure,
 		colorFieldOffset: rgbFieldOffset,
 	}
+}
+
+const setPosition = (
+	geometry: BufferGeometry,
+	interleaved: InterleavedBuffer,
+	structure: PointCloudStructure
+) => {
+	const xIndex = structure.findIndex((f) => f.field.toLowerCase() === 'x')
+	if (xIndex === -1) return
+
+	const y = structure[xIndex + 1]
+	const z = structure[xIndex + 2]
+	const x = structure[xIndex]
+
+	if (!y || !z) return
+	if (y.field.toLowerCase() !== 'y' || z.field.toLowerCase() !== 'z') return
+	if (x.itemSize !== 1 || y.itemSize !== 1 || z.itemSize !== 1) return
+	if (y.offsetElements !== x.offsetElements + 1) return
+	if (z.offsetElements !== x.offsetElements + 2) return
+
+	geometry.setAttribute(
+		'position',
+		new InterleavedBufferAttribute(interleaved, 3, x.offsetElements)
+	)
+}
+
+const setFieldAttributes = (
+	geometry: BufferGeometry,
+	interleaved: InterleavedBuffer,
+	structure: PointCloudStructure
+) => {
+	for (const { field, itemSize, offsetElements } of structure) {
+		const name = field.toLowerCase()
+		if (name === 'x' || name === 'y' || name === 'z') continue
+		if (name === 'rgb') continue // handled specially as 'color'
+		geometry.setAttribute(
+			field,
+			new InterleavedBufferAttribute(interleaved, itemSize, offsetElements)
+		)
+	}
+}
+
+const extractRgbColors = (
+	interleaved: InterleavedBuffer,
+	rgbOffsetElements: number,
+	startPoint: number,
+	countPoints: number
+): Float32Array => {
+	const strideElements = interleaved.stride
+	const colors = new Float32Array(countPoints * 3)
+	const asUint32 = new Uint32Array(
+		interleaved.array.buffer,
+		interleaved.array.byteOffset,
+		interleaved.array.length
+	)
+
+	for (let i = 0; i < countPoints; i++) {
+		const pointIndex = startPoint + i
+		const idx = pointIndex * strideElements + rgbOffsetElements
+		const packed = asUint32[idx]
+
+		// RGB extraction (0x00RRGGBB format)
+		const r = (packed >>> 16) & 0xff
+		const g = (packed >>> 8) & 0xff
+		const b = packed & 0xff
+
+		const base = i * 3
+		colors[base] = r / 255
+		colors[base + 1] = g / 255
+		colors[base + 2] = b / 255
+	}
+
+	return colors
 }
 
 export const provideWorldStates = () => {
@@ -259,7 +334,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		if (transform.physicalObject) {
 			// pcds are a special case since they have to be loaded in a worker
 			if (transform.physicalObject.geometryType.case === 'pointcloud') {
-				const builtPointCloud = buildPointCloud(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud))
+				let header = undefined;
+				if (transform.physicalObject.geometryType.value.header) {
+					header = transform.physicalObject.geometryType.value.header;
+				}
+				const builtPointCloud = buildPointCloud(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud), header)
 				entityTraits.push(traits.BufferGeometry(builtPointCloud.buffer), traits.Points)
 			} else {
 				entityTraits.push(traits.Geometry(transform.physicalObject))
