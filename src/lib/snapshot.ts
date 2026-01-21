@@ -251,8 +251,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			}
 
 			const colors = drawing.metadata?.colors
-				? rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-				: undefined
 			const geometry = createBufferGeometry(positions, colors)
 
 			entityTraits.push(traits.BufferGeometry(geometry))

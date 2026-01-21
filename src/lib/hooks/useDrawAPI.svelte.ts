@@ -316,26 +316,34 @@ export const provideDrawAPI = () => {
 		const nColors = reader.read()
 
 		// Read default color
-		const r = reader.read()
-		const g = reader.read()
-		const b = reader.read()
+		let r = reader.read()
+		let g = reader.read()
+		let b = reader.read()
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
 
 		const nColorsElements = nColors * 3
-		const rawColors = reader.readF32Array(nColorsElements)
+		const rawColors = reader.readU8Array(nColorsElements)
 
-		const colors = new Float32Array(nPointsElements)
-		colors.set(rawColors)
+		let colors: Uint8Array | null = null
 
-		// Cover the gap for any points not colored
-		for (let i = nColors; i < nPoints; i++) {
-			const offset = i * 3
+		if (nColors > 1) {
+			colors = new Uint8Array(nPointsElements)
+			colors.set(rawColors)
 
-			colors[offset] = r
-			colors[offset + 1] = g
-			colors[offset + 2] = b
+			// Cover the gap for any points not colored
+			for (let i = nColors; i < nPoints; i++) {
+				const offset = i * 3
+
+				colors[offset] = Math.round(r * 255)
+				colors[offset + 1] = Math.round(g * 255)
+				colors[offset + 2] = Math.round(b * 255)
+			}
+		} else if (nColors === 1) {
+			r = rawColors[0] / 255
+			g = rawColors[1] / 255
+			b = rawColors[2] / 255
 		}
 
 		const entities = world.query(traits.DrawAPI)

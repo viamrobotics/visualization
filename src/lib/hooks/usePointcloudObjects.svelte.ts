@@ -116,7 +116,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 		name: string
 		pointclouds: {
 			positions: Float32Array
-			colors?: Float32Array | null
+			colors?: Uint8Array | null
 		}[]
 		geometries: (GeometriesInFrame | undefined)[]
 	}
