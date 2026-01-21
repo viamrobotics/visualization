@@ -1,18 +1,11 @@
 <script lang="ts">
-	import type { Vector2Like } from 'three'
 	import { draggable } from '@neodrag/svelte'
 	import { formatNumeric } from '../../format'
 	import Table from '../shared/Table.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { Icon, Label, Select } from '@viamrobotics/prime-core'
-	import { PersistedState } from 'runed'
 
 	const { ...rest } = $props()
-
-	const dragPosition = new PersistedState<Vector2Like | undefined>(
-		'details-drag-position',
-		undefined
-	)
 
 	let dragElement = $state.raw<HTMLElement>()
 
@@ -28,10 +21,6 @@
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,
-		defaultPosition: dragPosition.current,
-		onDragEnd(data) {
-			dragPosition.current = { x: data.offsetX, y: data.offsetY }
-		},
 	}}
 	{...rest}
 >

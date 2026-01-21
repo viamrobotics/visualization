@@ -184,7 +184,13 @@ export const provideDrawAPI = () => {
 				entityTraits.push(geometryTrait())
 			}
 
-			entityTraits.push(traits.Name(name), traits.Pose(pose), traits.DrawAPI, traits.ReferenceFrame)
+			entityTraits.push(
+				traits.Name(name),
+				traits.Pose(pose),
+				traits.DrawAPI,
+				traits.ReferenceFrame,
+				traits.Removable
+			)
 
 			const entity = world.spawn(...entityTraits)
 
@@ -229,7 +235,8 @@ export const provideDrawAPI = () => {
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
 			geometryTrait(),
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 
 		const entity = world.spawn(...entityTraits)
@@ -266,7 +273,8 @@ export const provideDrawAPI = () => {
 			traits.Name(name),
 			traits.Color(colorUtil.set(color)),
 			traits.LinePositions(points),
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 
 		entities.set(name, entity)
@@ -288,7 +296,8 @@ export const provideDrawAPI = () => {
 			traits.Positions(reader.readF32Array(nPoints * STRIDE.ARROWS)),
 			traits.Colors(reader.readU8Array(nColors * STRIDE.COLORS_RGB)),
 			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 
 		entities.push(entity)
@@ -348,7 +357,8 @@ export const provideDrawAPI = () => {
 			traits.Color(colorUtil.set(r, g, b)),
 			traits.BufferGeometry(geometry),
 			traits.Points,
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 	}
 
@@ -389,7 +399,8 @@ export const provideDrawAPI = () => {
 			traits.Color({ r, g, b }),
 			traits.LinePositions(points),
 			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 	}
 
@@ -410,7 +421,8 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.Name(gltf.scene.name),
 			traits.GLTF({ source: { gltf }, animationName: '' }),
-			traits.DrawAPI
+			traits.DrawAPI,
+			traits.Removable
 		)
 
 		URL.revokeObjectURL(url)
@@ -420,7 +432,9 @@ export const provideDrawAPI = () => {
 		for (const name of names) {
 			for (const entity of world.query(traits.DrawAPI)) {
 				if (entity.get(traits.Name) === name) {
-					entity.destroy()
+					if (world.has(entity)) {
+						entity.destroy()
+					}
 					entities.delete(name)
 				}
 			}
@@ -429,7 +443,9 @@ export const provideDrawAPI = () => {
 
 	const removeAll = () => {
 		for (const entity of world.query(traits.DrawAPI)) {
-			entity.destroy()
+			if (world.has(entity)) {
+				entity.destroy()
+			}
 		}
 
 		entities.clear()

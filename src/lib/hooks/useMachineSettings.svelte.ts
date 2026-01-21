@@ -5,7 +5,7 @@ import { SvelteMap } from 'svelte/reactivity'
 const key = Symbol('polling-rate-context')
 const refreshRatesKey = 'polling-rate'
 const disabledCamerasKey = 'disabled-cameras'
-const disabledVisionServicesObjectPointcloudsKey = 'disabled-vision-services-object-pointcloud'
+const disabledVisionServicesKey = 'disabled-vision-services-object-pointcloud'
 
 export const RefreshRates = {
 	poses: 'poses',
@@ -15,7 +15,7 @@ export const RefreshRates = {
 type Context = {
 	refreshRates: SvelteMap<string, number>
 	disabledCameras: SvelteMap<string, boolean>
-	disabledVisionServicesObjectPointclouds: SvelteMap<string, boolean>
+	disabledVisionServices: SvelteMap<string, boolean>
 }
 
 const setFromEntries = (map: SvelteMap<string, unknown>, entries?: [string, unknown][]) => {
@@ -32,7 +32,7 @@ export const provideMachineSettings = () => {
 		[RefreshRates.pointclouds, -1],
 	])
 	const disabledCameras = new SvelteMap<string, boolean>()
-	const disabledVisionServicesObjectPointclouds = new SvelteMap<string, boolean>()
+	const disabledVisionServices = new SvelteMap<string, boolean>()
 
 	get(refreshRatesKey).then((entries) => {
 		setFromEntries(refreshRates, entries)
@@ -42,8 +42,8 @@ export const provideMachineSettings = () => {
 		setFromEntries(disabledCameras, entries)
 	})
 
-	get(disabledVisionServicesObjectPointcloudsKey).then((entries) => {
-		setFromEntries(disabledVisionServicesObjectPointclouds, entries)
+	get(disabledVisionServicesKey).then((entries) => {
+		setFromEntries(disabledVisionServices, entries)
 	})
 
 	$effect(() => {
@@ -54,6 +54,10 @@ export const provideMachineSettings = () => {
 		set(disabledCamerasKey, [...disabledCameras.entries()])
 	})
 
+	$effect(() => {
+		set(disabledVisionServicesKey, [...disabledVisionServices.entries()])
+	})
+
 	setContext<Context>(key, {
 		get refreshRates() {
 			return refreshRates
@@ -61,8 +65,8 @@ export const provideMachineSettings = () => {
 		get disabledCameras() {
 			return disabledCameras
 		},
-		get disabledVisionServicesObjectPointclouds() {
-			return disabledVisionServicesObjectPointclouds
+		get disabledVisionServices() {
+			return disabledVisionServices
 		},
 	})
 }

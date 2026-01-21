@@ -25,7 +25,13 @@ self.onmessage = async (event) => {
 	try {
 		const pcd = loader.parse(data.buffer as ArrayBuffer)
 		if (pcd.geometry) {
-			const positions = pcd.geometry.attributes.position.array as Float32Array<ArrayBuffer>
+			/**
+			 * Positions is _usually_ defined. However, we have experienced parsing PCDs from Viam APIs that
+			 * result in the Three.js parser not attaching this attribute, throwing errors downstream.
+			 */
+			const positions =
+				(pcd.geometry.attributes.position?.array as Float32Array<ArrayBuffer>) ??
+				new Float32Array(0)
 			const colors = (pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
 
 			postMessage(

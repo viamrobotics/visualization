@@ -99,6 +99,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
 		traits.Center(transform.physicalObject?.center),
 		traits.SnapshotAPI,
+		traits.Removable,
 	]
 
 	const poseInFrame = transform.poseInObserverFrame
@@ -145,9 +146,11 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 
 		const entity = world.spawn(
 			...entityTraits,
-			traits.SnapshotAPI,
+
 			traits.Arrows({ headAtPose: true }),
-			traits.Instances({ count: poses.length / STRIDE.ARROWS })
+			traits.Instances({ count: poses.length / STRIDE.ARROWS }),
+			traits.SnapshotAPI,
+			traits.Removable
 		)
 
 		entities.push(entity)
@@ -162,7 +165,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			rootEntityTraits.push(traits.Parent(parent))
 		}
 
-		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI, traits.Removable)
 
 		entities.push(rootEntity)
 
@@ -193,7 +196,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				)
 			}
 
-			const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+			const entity = world.spawn(...entityTraits, traits.SnapshotAPI, traits.Removable)
 
 			entities.push(entity)
 		}
@@ -300,7 +303,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			entityTraits.push(traits.LinePositions(points))
 		}
 
-		const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+		const entity = world.spawn(...entityTraits, traits.SnapshotAPI, traits.Removable)
 
 		entities.push(entity)
 	}

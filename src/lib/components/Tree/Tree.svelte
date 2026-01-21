@@ -92,11 +92,14 @@
 		{@const { children = [] } = node}
 		<div
 			{...api.getBranchProps(nodeProps)}
-			class={{
-				'text-disabled': !isVisible,
-				'bg-medium': selected,
-				sticky: true,
-			}}
+			class={[
+				'w-full',
+				{
+					'text-disabled': !isVisible,
+					'bg-medium': selected,
+					sticky: true,
+				},
+			]}
 		>
 			<div {...api.getBranchControlProps(nodeProps)}>
 				<span
@@ -106,7 +109,7 @@
 					<ChevronRight size={14} />
 				</span>
 				<span
-					class="flex items-center"
+					class="flex items-center overflow-hidden text-ellipsis"
 					{...api.getBranchTextProps(nodeProps)}
 				>
 					{node.entity.get(traits.Name)}
@@ -151,7 +154,7 @@
 			class={{ 'flex justify-between': true, 'text-disabled': !isVisible, 'bg-medium': selected }}
 			{...api.getItemProps(nodeProps)}
 		>
-			<span class="flex items-center gap-1.5">
+			<span class="flex items-center gap-1.5 overflow-hidden text-nowrap text-ellipsis">
 				{node.entity.get(traits.Name)}
 			</span>
 

@@ -1,5 +1,20 @@
 # motion-tools
 
+## 1.3.4
+
+### Patch Changes
+
+- 4bb4a20: Add click to zoom to object
+- 7cac829: Fix vision service toggling, allow empty pointclouds from GetObjectPointclouds
+- 835468e: Fix hiding arrows, add hotkey for hiding
+
+## 1.3.3
+
+### Patch Changes
+
+- 19a26cf: enable poses color palleting
+- 7d66c9d: add gripper as origin_frame using component for pose
+
 ## 1.3.2
 
 ### Patch Changes

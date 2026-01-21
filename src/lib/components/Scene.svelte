@@ -17,7 +17,7 @@
 	import MeasureTool from './MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
 	import BatchedArrows from './BatchedArrows.svelte'
-	import Arrows from './Arrows.svelte'
+	import Arrows from './Arrows/ArrowGroups.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -30,17 +30,19 @@
 	const origin = useOrigin()
 
 	const { raycaster, enabled } = interactivity({
-		filter: (items) => {
-			const item = items.find((item) => {
-				return item.object.visible === undefined || item.object.visible === true
+		filter: (intersections) => {
+			const match = intersections.find((intersection) => {
+				return intersection.object.visible === undefined || intersection.object.visible === true
 			})
 
-			return item ? [item] : []
+			return match ? [match] : []
 		},
 	})
+
 	$effect(() => {
 		enabled.set(!settings.current.enableMeasure)
 	})
+
 	raycaster.firstHitOnly = true
 	raycaster.params.Points.threshold = 0.005
 
