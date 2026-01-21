@@ -49,7 +49,7 @@ type BuiltPointCloud = {
 	colorFieldOffset?: number
 }	
 
-export const buildPointCloud = (data: Uint8Array, header?: PointCloudHeader): BuiltPointCloud => {
+export const buildPointCloud = (data: Uint8Array, header?: any): BuiltPointCloud => {
 	if (!header) {
 	// Fallback for payloads without header: interpret as Float32 XYZ
 		const aligned =
@@ -149,6 +149,81 @@ export const provideWorldStates = () => {
 			}
 		}
 	})
+}
+
+const assertUniformity = (header: any) => {
+	if (
+		header.fields.length !== header.size.length ||
+		header.fields.length !== header.type.length ||
+		header.fields.length !== header.count.length
+	) {
+		throw new Error('Invalid header: arrays must be equal length')
+	}
+
+	const baseType = header.type[0]
+	const baseSize = header.size[0]
+	for (let i = 1; i < header.fields.length; i++) {
+		if (header.type[i] !== baseType) {
+			throw new Error('Mixed field types are not supported for interleaved buffers')
+		}
+		if (header.size[i] !== baseSize) {
+			throw new Error('Mixed field element sizes are not supported for interleaved buffers')
+		}
+	}
+
+	return { baseType, baseSize }
+}
+
+const typedArrayFor = (
+	dataType: commonApi.PointCloudDataType,
+	bytesPerElement: number
+): TypedArrayConstructor => {
+	if (dataType === commonApi.PointCloudDataType.FLOAT) {
+		if (bytesPerElement === 4) return Float32Array
+		if (bytesPerElement === 8) return Float64Array
+	}
+	if (dataType === commonApi.PointCloudDataType.INT) {
+		if (bytesPerElement === 1) return Int8Array
+		if (bytesPerElement === 2) return Int16Array
+		if (bytesPerElement === 4) return Int32Array
+	}
+	if (dataType === commonApi.PointCloudDataType.UINT) {
+		if (bytesPerElement === 1) return Uint8Array
+		if (bytesPerElement === 2) return Uint16Array
+		if (bytesPerElement === 4) return Uint32Array
+	}
+	throw new Error(`Unsupported type/size combination: ${dataType}/${bytesPerElement}`)
+}
+
+const computeStrideBytes = (header: any) => {
+	let stride = 0
+	for (let i = 0; i < header.fields.length; i++) {
+		stride += header.size[i] * header.count[i]
+	}
+	return stride
+}
+
+const getStructure = (header: any) => {
+	const { baseSize } = assertUniformity(header)
+	const bytesPerElement = baseSize
+	const structure: PointCloudStructure = []
+	let runningOffsetBytes = 0
+	for (let i = 0; i < header.fields.length; i++) {
+		const field = header.fields[i]
+		const count = header.count[i]
+		const size = header.size[i]
+		const itemSize = (size / bytesPerElement) * count
+		structure.push({
+			field,
+			offsetBytes: runningOffsetBytes,
+			offsetElements: runningOffsetBytes / bytesPerElement,
+			itemSize,
+		})
+
+		runningOffsetBytes += size * count
+	}
+
+	return structure
 }
 
 const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
