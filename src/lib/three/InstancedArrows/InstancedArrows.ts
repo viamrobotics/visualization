@@ -14,8 +14,8 @@ import {
 	Vector3,
 	Box3,
 } from 'three'
-import vertexShader from './vertex.glsl?raw'
-import fragmentShader from './fragment.glsl?raw'
+import vertexShader from './vertex.glsl'
+import fragmentShader from './fragment.glsl'
 import { createHeadGeometry, createShaftGeometry, toInstanced } from './geometry'
 import { computeBoundingBox } from './box'
 
