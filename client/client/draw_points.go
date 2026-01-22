@@ -1,8 +1,8 @@
 package client
 
 import (
-	"bytes"
 	"encoding/binary"
+	"math"
 
 	"github.com/golang/geo/r3"
 	"github.com/viam-labs/motion-tools/draw"
@@ -66,44 +66,69 @@ func pointsToBytes(points *draw.Points, label string, defaultColor *[3]uint8) ([
 	labelBytes := []byte(label)
 	labelLen := len(labelBytes)
 
+	// Ensure defaultColor is always valid (avoid nil panic)
+	dc := [3]uint8{0, 0, 0}
+	if defaultColor != nil {
+		dc = *defaultColor
+	}
+
 	nPoints := len(points.Positions)
 	nColors := len(points.Colors)
 
-	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
-	data := make([]float32, 0, total)
+	// Float32 section layout (unchanged from your existing protocol):
+	// [type, labelLen]                       -> 2 floats
+	// [label bytes as floats]                -> labelLen floats
+	// [nPoints, nColors]                     -> 2 floats
+	// [defaultColor normalized rgb floats]   -> 3 floats
+	// [positions xyz floats]                 -> nPoints*3 floats
+	floatCount := 2 + labelLen + 2 + 3 + nPoints*3
 
-	data = append(data, float32(pointsType), float32(labelLen))
+	// Total bytes:
+	// float payload: floatCount * 4 bytes
+	// color payload: nColors * 3 bytes (raw uint8)
+	totalBytes := floatCount*4 + nColors*3
+
+	out := make([]byte, totalBytes)
+	offset := 0
+
+	putF32 := func(v float32) {
+		binary.LittleEndian.PutUint32(out[offset:], math.Float32bits(v))
+		offset += 4
+	}
+
+	putU32 := func(v uint32) {
+		binary.LittleEndian.PutUint32(out[offset:], v)
+		offset += 4
+	}
+
+	// Header
+	putF32(float32(pointsType))
+	putF32(float32(labelLen))
+
 	for _, b := range labelBytes {
-		data = append(data, float32(b))
+		putF32(float32(b))
 	}
 
-	data = append(data,
-		float32(nPoints),
-		float32(nColors),
-		float32(defaultColor[0])/255.0,
-		float32(defaultColor[1])/255.0,
-		float32(defaultColor[2])/255.0,
-	)
+	putU32(uint32(nPoints))
+	putU32(uint32(nColors))
 
-	for _, position := range points.Positions {
-		data = append(data,
-			float32(position.X)/1000.0,
-			float32(position.Y)/1000.0,
-			float32(position.Z)/1000.0,
-		)
-	}
-	for _, color := range points.Colors {
-		data = append(data,
-			float32(color.R)/255.0,
-			float32(color.G)/255.0,
-			float32(color.B)/255.0,
-		)
+	// Default color
+	putF32(float32(dc[0]) / 255.0)
+	putF32(float32(dc[1]) / 255.0)
+	putF32(float32(dc[2]) / 255.0)
+
+	for _, p := range points.Positions {
+		putF32(float32(p.X) / 1000.0)
+		putF32(float32(p.Y) / 1000.0)
+		putF32(float32(p.Z) / 1000.0)
 	}
 
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
-		return nil, err
+	for _, c := range points.Colors {
+		out[offset+0] = uint8(c.R)
+		out[offset+1] = uint8(c.G)
+		out[offset+2] = uint8(c.B)
+		offset += 3
 	}
 
-	return buf.Bytes(), nil
+	return out, nil
 }

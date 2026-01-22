@@ -3,7 +3,7 @@
 	lang="ts"
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils } from 'three'
+	import { Quaternion, Vector3, MathUtils, BufferAttribute } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -13,7 +13,7 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
 	import { Check, Copy } from 'lucide-svelte'
-	import { useTask } from '@threlte/core'
+	import { useTask, isInstanceOf } from '@threlte/core'
 	import { Button, Icon, Select, Input, Tooltip } from '@viamrobotics/prime-core'
 	import {
 		useSelectedEntity,
@@ -594,6 +594,19 @@
 							},
 						})}
 					</div>
+				</div>
+			{/if}
+
+			{#if isInstanceOf(object3d, 'Points')}
+				<div>
+					<strong class="font-semibold">points</strong>
+					{@render ImmutableField({
+						label: 'count',
+						ariaLabel: 'points count',
+						value: new Intl.NumberFormat().format(
+							(object3d.geometry.getAttribute('position') as BufferAttribute).array.length / 3
+						),
+					})}
 				</div>
 			{/if}
 		</div>

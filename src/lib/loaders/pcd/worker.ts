@@ -5,7 +5,7 @@ const loader = new PCDLoader()
 export interface SuccessMessage {
 	id: number
 	positions: Float32Array<ArrayBuffer>
-	colors: Float32Array<ArrayBuffer> | null
+	colors: Uint8Array<ArrayBuffer> | null
 }
 
 export type Message =
@@ -32,7 +32,15 @@ self.onmessage = async (event) => {
 			const positions =
 				(pcd.geometry.attributes.position?.array as Float32Array<ArrayBuffer>) ??
 				new Float32Array(0)
-			const colors = (pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
+			const colorsFloat: Float32Array | null =
+				(pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
+			const colors = colorsFloat ? new Uint8Array(colorsFloat.length) : null
+
+			if (colors) {
+				for (let i = 0, l = colorsFloat.length; i < l; i++) {
+					colors[i] = Math.round(colorsFloat[i] * 255)
+				}
+			}
 
 			postMessage(
 				{ positions, colors, id } satisfies Message,
