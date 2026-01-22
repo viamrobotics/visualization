@@ -1,11 +1,14 @@
 # motion-tools
 
-## 1.3.6
+## 1.4.0
+
+### Minor Changes
+
+- 7d54e64: Fix drawing pointclouds with over 16 million points
 
 ### Patch Changes
 
 - 5b83236: update localpose from frames when not editing
-- 7d54e64: Fix drawing pointclouds with over 16 million points
 
 ## 1.3.5
 
