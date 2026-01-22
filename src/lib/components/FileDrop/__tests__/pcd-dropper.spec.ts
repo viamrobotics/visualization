@@ -11,7 +11,7 @@ describe('pcdDropper', () => {
 	const mockPcdResult = {
 		id: 1,
 		positions: new Float32Array([0, 0, 0, 1, 1, 1]),
-		colors: new Float32Array([1, 0, 0, 0, 1, 0]),
+		colors: new Uint8Array([255, 0, 0, 0, 255, 0]),
 	}
 
 	beforeEach(() => {

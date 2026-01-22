@@ -1,11 +1,11 @@
 import { BufferGeometry, BufferAttribute } from 'three'
 
-export const createBufferGeometry = (positions: Float32Array, colors?: Float32Array | null) => {
+export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Array | null) => {
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
 	if (colors) {
-		geometry.setAttribute('color', new BufferAttribute(colors, 3))
+		geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
 	}
 
 	return geometry
@@ -14,7 +14,7 @@ export const createBufferGeometry = (positions: Float32Array, colors?: Float32Ar
 export const updateBufferGeometry = (
 	geometry: BufferGeometry,
 	positions: Float32Array,
-	colors?: Float32Array | null
+	colors?: Uint8Array | null
 ) => {
 	const positionAttr = geometry.getAttribute('position')
 
@@ -33,7 +33,7 @@ export const updateBufferGeometry = (
 			colorAttr.array.set(colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('color', new BufferAttribute(colors, 3))
+			geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
 		}
 	}
 }

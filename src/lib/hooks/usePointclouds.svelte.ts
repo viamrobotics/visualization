@@ -115,7 +115,7 @@ export const providePointclouds = (partID: () => string) => {
 	interface PCObject {
 		name: string
 		positions: Float32Array<ArrayBuffer>
-		colors: Float32Array<ArrayBuffer> | null
+		colors: Uint8Array<ArrayBuffer> | null
 	}
 
 	let pcObjects = $state.raw<PCObject[]>([])
