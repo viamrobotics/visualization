@@ -89,7 +89,6 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 
 		if (transform.physicalObject) {
 			if (transform.physicalObject.geometryType.case === 'pointcloud') {
-				console.log('pointcloud', transform.physicalObject.geometryType.value.pointCloud)
 				parsePcdInWorker(
 					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
 				).then((pointcloud) => {
@@ -99,7 +98,6 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
 						return
 					}
-					console.log('pointcloud', pointcloud)
 					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
 					entity.add(traits.BufferGeometry(geometry))
 					entity.add(traits.Points)
