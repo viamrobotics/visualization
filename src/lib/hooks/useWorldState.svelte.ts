@@ -65,7 +65,6 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 	const entities = new Map<string, Entity>()
 
 	const spawnEntity = (transform: TransformWithUUID) => {
-		console.log('spawnEntity', transform)
 		if (entities.has(transform.uuidString)) {
 			return
 		}
