@@ -1,5 +1,4 @@
 import {
-	commonApi,
 	WorldStateStoreClient,
 	TransformChangeType,
 	type TransformChangeEvent,
@@ -19,184 +18,16 @@ import { createPose } from '$lib/transform'
 import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
-import { BufferGeometry, InterleavedBuffer, InterleavedBufferAttribute, type TypedArray, BufferAttribute } from 'three';
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { createBufferGeometry } from '$lib/attribute';
 
 export type ChangeMessage = {
 	type: 'change'
 	events: TransformChangeEvent[]
 }
 
-type TypedArrayConstructor<T extends TypedArray = TypedArray> = {
-	new (buffer: ArrayBufferLike, byteOffset?: number, length?: number): T
-	readonly BYTES_PER_ELEMENT: number
-}
-
 export type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
-}
-
-type PointCloudStructure = {
-	field: string
-	offsetBytes: number
-	offsetElements: number
-	itemSize: number
-}[]
-
-type BuiltPointCloud = {
-	buffer: BufferGeometry
-	interleaved: InterleavedBuffer
-	points: number
-	strideBytes: number
-	strideElements: number
-	structure?: PointCloudStructure
-	colorFieldOffset?: number
-}	
-
-export const buildPointCloud = (data: Uint8Array, header?: any): BuiltPointCloud => {
-	if (!header) {
-	// Fallback for payloads without header: interpret as Float32 XYZ
-		const aligned =
-			data.byteOffset % Float32Array.BYTES_PER_ELEMENT === 0 ? data : new Uint8Array(data)
-
-		const array = new Float32Array(
-			aligned.buffer,
-			aligned.byteOffset,
-			Math.floor(aligned.byteLength / Float32Array.BYTES_PER_ELEMENT)
-		)
-
-		if (array.length % 3 !== 0) {
-			throw new Error('Legacy point cloud without header must be float32 XYZ (length % 3 == 0)')
-		}
-
-		const points = Math.floor(array.length / 3)
-		const interleaved = new InterleavedBuffer(array, 3)
-		const geometry = new BufferGeometry()
-		geometry.setAttribute('position', new InterleavedBufferAttribute(interleaved, 3, 0))
-		return {
-			buffer: geometry,
-			interleaved,
-			points,
-			strideBytes: 3 * Float32Array.BYTES_PER_ELEMENT,
-			strideElements: 3,
-		}
-	}
-	const { baseType, baseSize } = assertUniformity(header)
-	const strideBytes = computeStrideBytes(header)
-	if (strideBytes <= 0) throw new Error('Invalid header: non-positive stride')
-
-	const ArrayType = typedArrayFor(baseType, baseSize)
-	const points = header.width * header.height
-	const strideElements = Math.floor(strideBytes / ArrayType.BYTES_PER_ELEMENT)
-	const expectedLength = points * strideElements
-	const availableElementsRaw = Math.floor(data.byteLength / ArrayType.BYTES_PER_ELEMENT)
-	if (availableElementsRaw !== expectedLength) {
-		throw new Error(
-			`Binary size mismatch. expected elements ${expectedLength}, got ${availableElementsRaw}`
-		)
-	}
-
-	const aligned = data.byteOffset % ArrayType.BYTES_PER_ELEMENT === 0 ? data : new Uint8Array(data)
-	const array = new ArrayType(aligned.buffer, aligned.byteOffset, expectedLength)
-	const interleaved = new InterleavedBuffer(array, strideElements)
-	const geometry = new BufferGeometry()
-	const structure = getStructure(header)
-
-	setPosition(geometry, interleaved, structure)
-	setFieldAttributes(geometry, interleaved, structure)
-
-	const rgbField = structure.find((f) => f.field.toLowerCase() === 'rgb' && f.itemSize === 1)
-	let rgbFieldOffset: number | undefined
-	if (rgbField) {
-		const bytesPerElement = (interleaved.array as TypedArray).BYTES_PER_ELEMENT
-		if (bytesPerElement === 4) {
-			rgbFieldOffset = rgbField.offsetElements
-			const colors = extractRgbColors(interleaved, rgbFieldOffset, 0, points)
-			geometry.setAttribute('color', new BufferAttribute(colors, 3))
-		}
-	}
-
-	return {
-		buffer: geometry,
-		interleaved,
-		points,
-		strideBytes,
-		strideElements,
-		structure,
-		colorFieldOffset: rgbFieldOffset,
-	}
-}
-
-const setPosition = (
-	geometry: BufferGeometry,
-	interleaved: InterleavedBuffer,
-	structure: PointCloudStructure
-) => {
-	const xIndex = structure.findIndex((f) => f.field.toLowerCase() === 'x')
-	if (xIndex === -1) return
-
-	const y = structure[xIndex + 1]
-	const z = structure[xIndex + 2]
-	const x = structure[xIndex]
-
-	if (!y || !z) return
-	if (y.field.toLowerCase() !== 'y' || z.field.toLowerCase() !== 'z') return
-	if (x.itemSize !== 1 || y.itemSize !== 1 || z.itemSize !== 1) return
-	if (y.offsetElements !== x.offsetElements + 1) return
-	if (z.offsetElements !== x.offsetElements + 2) return
-
-	geometry.setAttribute(
-		'position',
-		new InterleavedBufferAttribute(interleaved, 3, x.offsetElements)
-	)
-}
-
-const setFieldAttributes = (
-	geometry: BufferGeometry,
-	interleaved: InterleavedBuffer,
-	structure: PointCloudStructure
-) => {
-	for (const { field, itemSize, offsetElements } of structure) {
-		const name = field.toLowerCase()
-		if (name === 'x' || name === 'y' || name === 'z') continue
-		if (name === 'rgb') continue // handled specially as 'color'
-		geometry.setAttribute(
-			field,
-			new InterleavedBufferAttribute(interleaved, itemSize, offsetElements)
-		)
-	}
-}
-
-const extractRgbColors = (
-	interleaved: InterleavedBuffer,
-	rgbOffsetElements: number,
-	startPoint: number,
-	countPoints: number
-): Float32Array => {
-	const strideElements = interleaved.stride
-	const colors = new Float32Array(countPoints * 3)
-	const asUint32 = new Uint32Array(
-		interleaved.array.buffer,
-		interleaved.array.byteOffset,
-		interleaved.array.length
-	)
-
-	for (let i = 0; i < countPoints; i++) {
-		const pointIndex = startPoint + i
-		const idx = pointIndex * strideElements + rgbOffsetElements
-		const packed = asUint32[idx]
-
-		// RGB extraction (0x00RRGGBB format)
-		const r = (packed >>> 16) & 0xff
-		const g = (packed >>> 8) & 0xff
-		const b = packed & 0xff
-
-		const base = i * 3
-		colors[base] = r / 255
-		colors[base + 1] = g / 255
-		colors[base + 2] = b / 255
-	}
-
-	return colors
 }
 
 export const provideWorldStates = () => {
@@ -225,81 +56,6 @@ export const provideWorldStates = () => {
 			}
 		}
 	})
-}
-
-const assertUniformity = (header: any) => {
-	if (
-		header.fields.length !== header.size.length ||
-		header.fields.length !== header.type.length ||
-		header.fields.length !== header.count.length
-	) {
-		throw new Error('Invalid header: arrays must be equal length')
-	}
-
-	const baseType = header.type[0]
-	const baseSize = header.size[0]
-	for (let i = 1; i < header.fields.length; i++) {
-		if (header.type[i] !== baseType) {
-			throw new Error('Mixed field types are not supported for interleaved buffers')
-		}
-		if (header.size[i] !== baseSize) {
-			throw new Error('Mixed field element sizes are not supported for interleaved buffers')
-		}
-	}
-
-	return { baseType, baseSize }
-}
-
-const typedArrayFor = (
-	dataType: commonApi.PointCloudDataType,
-	bytesPerElement: number
-): TypedArrayConstructor => {
-	if (dataType === commonApi.PointCloudDataType.FLOAT) {
-		if (bytesPerElement === 4) return Float32Array
-		if (bytesPerElement === 8) return Float64Array
-	}
-	if (dataType === commonApi.PointCloudDataType.INT) {
-		if (bytesPerElement === 1) return Int8Array
-		if (bytesPerElement === 2) return Int16Array
-		if (bytesPerElement === 4) return Int32Array
-	}
-	if (dataType === commonApi.PointCloudDataType.UINT) {
-		if (bytesPerElement === 1) return Uint8Array
-		if (bytesPerElement === 2) return Uint16Array
-		if (bytesPerElement === 4) return Uint32Array
-	}
-	throw new Error(`Unsupported type/size combination: ${dataType}/${bytesPerElement}`)
-}
-
-const computeStrideBytes = (header: any) => {
-	let stride = 0
-	for (let i = 0; i < header.fields.length; i++) {
-		stride += header.size[i] * header.count[i]
-	}
-	return stride
-}
-
-const getStructure = (header: any) => {
-	const { baseSize } = assertUniformity(header)
-	const bytesPerElement = baseSize
-	const structure: PointCloudStructure = []
-	let runningOffsetBytes = 0
-	for (let i = 0; i < header.fields.length; i++) {
-		const field = header.fields[i]
-		const count = header.count[i]
-		const size = header.size[i]
-		const itemSize = (size / bytesPerElement) * count
-		structure.push({
-			field,
-			offsetBytes: runningOffsetBytes,
-			offsetElements: runningOffsetBytes / bytesPerElement,
-			itemSize,
-		})
-
-		runningOffsetBytes += size * count
-	}
-
-	return structure
 }
 
 const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
@@ -332,14 +88,21 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (transform.physicalObject) {
-			// pcds are a special case since they have to be loaded in a worker
 			if (transform.physicalObject.geometryType.case === 'pointcloud') {
-				let header = undefined;
-				if (transform.physicalObject.geometryType.value.header) {
-					header = transform.physicalObject.geometryType.value.header;
-				}
-				const builtPointCloud = buildPointCloud(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud), header)
-				entityTraits.push(traits.BufferGeometry(builtPointCloud.buffer), traits.Points)
+				console.log('pointcloud', transform.physicalObject.geometryType.value.pointCloud)
+				parsePcdInWorker(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud))
+				.then(pointcloud => {
+					// pcds are a special case since they have to be loaded in a worker and the trait will be added to the existing entity
+					const entity = entities.get(transform.uuidString)
+					if (!entity) {
+						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
+						return
+					}
+					console.log('pointcloud', pointcloud)
+					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
+					entity.add(traits.BufferGeometry(geometry))
+					entity.add(traits.Points)
+				})
 			} else {
 				entityTraits.push(traits.Geometry(transform.physicalObject))
 			}

@@ -121,11 +121,11 @@ importers:
         specifier: 0.1.5
         version: 0.1.5(svelte@5.45.9)
       '@viamrobotics/sdk':
-        specifier: file:../viam-typescript-sdk
-        version: file:../viam-typescript-sdk
+        specifier: 0.61.0
+        version: 0.61.0
       '@viamrobotics/svelte-sdk':
         specifier: 1.0.1
-        version: 1.0.1(@viamrobotics/sdk@file:../viam-typescript-sdk)(svelte@5.45.9)
+        version: 1.0.1(@viamrobotics/sdk@0.61.0)(svelte@5.45.9)
       '@vitejs/plugin-basic-ssl':
         specifier: 2.1.0
         version: 2.1.0(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -1563,12 +1563,11 @@ packages:
     peerDependencies:
       svelte: '>=5 <6'
 
-  '@viamrobotics/sdk@file:../viam-typescript-sdk':
-    resolution: {directory: ../viam-typescript-sdk, type: directory}
+  '@viamrobotics/sdk@0.61.0':
+    resolution: {integrity: sha512-CNYTNkb9f57jheA+ILZWKHz0j69c9/GMHjy3/txAryEBU7oMMsMdYj7qPHeiudB+WVxwWM3l7Div7wDzicSEbQ==}
 
   '@viamrobotics/svelte-sdk@1.0.1':
     resolution: {integrity: sha512-ywVzZpyOyr0BFZ1GoeUE+9cIZxfCdxpw+K/kZqzHDQM4AddHL5A4WrJezwO5SfQtn+jwrNX+ehj4pZDJB1zXXg==}
-    version: 1.0.1
     peerDependencies:
       '@viamrobotics/sdk': '>=0.51'
       svelte: '>=5'
@@ -5427,7 +5426,7 @@ snapshots:
       prismjs: 1.30.0
       svelte: 5.45.9
 
-  '@viamrobotics/sdk@file:../viam-typescript-sdk':
+  '@viamrobotics/sdk@0.61.0':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
       '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.1)
@@ -5435,11 +5434,11 @@ snapshots:
       bsonfy: 1.0.2
       exponential-backoff: 3.1.3
 
-  '@viamrobotics/svelte-sdk@1.0.1(@viamrobotics/sdk@file:../viam-typescript-sdk)(svelte@5.45.9)':
+  '@viamrobotics/svelte-sdk@1.0.1(@viamrobotics/sdk@0.61.0)(svelte@5.45.9)':
     dependencies:
       '@tanstack/svelte-query': 6.0.9(svelte@5.45.9)
       '@tanstack/svelte-query-devtools': 6.0.2(@tanstack/svelte-query@6.0.9(svelte@5.45.9))(svelte@5.45.9)
-      '@viamrobotics/sdk': file:../viam-typescript-sdk
+      '@viamrobotics/sdk': 0.61.0
       runed: 0.29.2(svelte@5.45.9)
       svelte: 5.45.9
 
