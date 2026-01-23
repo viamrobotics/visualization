@@ -20,6 +20,8 @@ export const STRIDE = {
 	NURBS_KNOTS: 1,
 	/** Colors: [r, g, b, a] per color (uint8) */
 	COLORS_RGBA: 4,
+	/** Colors: [r, g, b] */
+	COLORS_RGB: 3,
 } as const
 
 /**

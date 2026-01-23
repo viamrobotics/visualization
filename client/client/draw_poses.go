@@ -1,8 +1,8 @@
 package client
 
 import (
-	"bytes"
 	"encoding/binary"
+	"math"
 
 	"github.com/viam-labs/motion-tools/client/colorutil"
 	"github.com/viam-labs/motion-tools/draw"
@@ -24,11 +24,20 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 		}
 		drawColors[i] = draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))
 	}
-	arrows, err := draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
+	var arrows *draw.Arrows
+	var err error
+	if len(drawColors) == 1 {
+		arrows, err = draw.NewArrows(poses, draw.WithSingleArrowColor(drawColors[0]))
+	} else if len(drawColors) == len(poses) {
+		arrows, err = draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
+	} else {
+		arrows, err = draw.NewArrows(poses, draw.WithColorPalette(drawColors, len(poses)))
+	}
 
 	if err != nil {
 		return err
 	}
+
 	buf, err := posesToBytes(arrows, arrowHeadAtPose)
 	if err != nil {
 		return err
@@ -40,42 +49,51 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 func posesToBytes(arrows *draw.Arrows, arrowHeadAtPose bool) ([]byte, error) {
 	nPoses := len(arrows.Poses)
 	nColors := len(arrows.Colors)
-	total := 1 + 3 + nPoses*6 + nColors*3
 
-	data := make([]float32, 0, total)
+	// Header (type + nPoses + nColors + arrowHeadAtPose) = 4 float32 = 16 bytes
+	// Pose payload = nPoses * 6 float32 = nPoses * 24 bytes
+	// Color payload = nColors * 3 uint8 = nColors * 3 bytes
+	floatCount := 4 + nPoses*6
+	totalBytes := floatCount*4 + nColors*3
 
-	a := 0.
+	out := make([]byte, totalBytes)
+	off := 0
+
+	putF32 := func(v float32) {
+		binary.LittleEndian.PutUint32(out[off:], math.Float32bits(v))
+		off += 4
+	}
+
+	// Header (keep your existing "float header structure")
+	a := float32(0)
 	if arrowHeadAtPose {
-		a = 1.
+		a = 1
 	}
+	putF32(float32(posesType))
+	putF32(float32(nPoses))
+	putF32(float32(nColors))
+	putF32(a)
 
-	data = append(data, float32(posesType), float32(nPoses), float32(nColors), float32(a))
-
+	// Poses (same as before, still float32s)
 	for _, pose := range arrows.Poses {
-		point := pose.Point()
-		orientation := pose.Orientation().OrientationVectorDegrees()
-		data = append(data,
-			float32(point.X),
-			float32(point.Y),
-			float32(point.Z),
-			float32(orientation.OX),
-			float32(orientation.OY),
-			float32(orientation.OZ))
+		p := pose.Point()
+		o := pose.Orientation().OrientationVectorDegrees()
+
+		putF32(float32(p.X))
+		putF32(float32(p.Y))
+		putF32(float32(p.Z))
+		putF32(float32(o.OX))
+		putF32(float32(o.OY))
+		putF32(float32(o.OZ))
 	}
 
+	// Colors as raw bytes (0..255)
 	for _, c := range arrows.Colors {
-		data = append(data,
-			float32(c.R)/255.0,
-			float32(c.G)/255.0,
-			float32(c.B)/255.0,
-		)
+		out[off+0] = uint8(c.R)
+		out[off+1] = uint8(c.G)
+		out[off+2] = uint8(c.B)
+		off += 3
 	}
 
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, data)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return out, nil
 }

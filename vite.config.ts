@@ -2,19 +2,19 @@ import { sentrySvelteKit } from '@sentry/sveltekit'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import tailwindcss from '@tailwindcss/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import glsl from 'vite-plugin-glsl'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
-import { getLocalIP } from './server/ip'
 import dns from 'node:dns'
 
 dns.setDefaultResultOrder('verbatim')
 
-const localIP = getLocalIP()
 const https = false
 
 export default defineConfig({
 	plugins: [
+		glsl(),
 		sentrySvelteKit({
 			sourceMapsUploadOptions: {
 				org: 'viam',
@@ -28,7 +28,7 @@ export default defineConfig({
 	],
 
 	define: {
-		BACKEND_IP: JSON.stringify(localIP),
+		BACKEND_IP: JSON.stringify('localhost'),
 		WS_PORT: JSON.stringify(process.env.WS_PORT || '3000'),
 	},
 

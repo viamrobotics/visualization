@@ -38,12 +38,6 @@ export const provideFrames = (partID: () => string) => {
 	const partConfig = usePartConfig()
 
 	$effect(() => {
-		if (revision) {
-			untrack(() => query.refetch())
-		}
-	})
-
-	$effect(() => {
 		if (query.isFetching) {
 			logs.add('Fetching frames...')
 		} else if (query.error) {
@@ -161,17 +155,27 @@ export const provideFrames = (partID: () => string) => {
 	const entities = new Map<string, Entity | undefined>()
 
 	$effect.pre(() => {
-		for (const [name, machineFrame] of Object.entries(machineFrames)) {
-			if (machineFrame === undefined) {
-				continue
-			}
+		if (revision) {
+			untrack(async () => {
+				await query.refetch()
+				for (const [name, machineFrame] of Object.entries(machineFrames)) {
+					if (machineFrame === undefined) {
+						continue
+					}
 
-			const existing = entities.get(name)
+					const existing = entities.get(name)
 
-			if (existing) {
-				const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
-				existing.set(traits.Pose, pose)
-			}
+					if (existing) {
+						const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
+						existing.set(traits.Pose, pose)
+
+						if (environment.current.viewerMode === 'monitor') {
+							// if we are in monitor mode, we want the network pose to overwrite any leftover edited poses
+							existing.set(traits.EditedPose, pose)
+						}
+					}
+				}
+			})
 		}
 	})
 

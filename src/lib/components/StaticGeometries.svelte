@@ -39,7 +39,8 @@
 		const entity = world.spawn(
 			traits.Name(`custom geometry ${++index}`),
 			traits.Pose,
-			traits.Box({ x: 0.1, y: 0.1, z: 0.1 })
+			traits.Box({ x: 0.1, y: 0.1, z: 0.1 }),
+			traits.Removable
 		)
 
 		entities.add(entity)

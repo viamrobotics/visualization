@@ -131,7 +131,8 @@
 
 		<T
 			is={mesh}
-			name={name.current}
+			name={entity}
+			userData.name={name}
 			bvh={{ enabled: geometryType === 'buffer' }}
 		>
 			{#if model && renderMode.includes('model')}
@@ -184,7 +185,7 @@
 					opacity={opacity.current ?? 0.7}
 				/>
 
-				{#if geo}
+				{#if geo && renderMode.includes('colliders')}
 					<T.LineSegments
 						raycast={() => null}
 						bvh={{ enabled: false }}

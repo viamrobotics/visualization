@@ -1,5 +1,5 @@
 import type { World, Entity, ConfigurableTrait } from 'koota'
-import { Color, Vector3, Vector4 } from 'three'
+import { Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
 import { RenderArmModels, type SceneMetadata } from '$lib/draw/v1/scene_pb'
@@ -11,14 +11,9 @@ import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/WorldObject.svelte'
 import { rgbaBytesToFloat32, rgbaToHex } from './color'
 import { asFloat32Array, STRIDE } from './buffer'
-import { createPose } from './transform'
 import { createBufferGeometry } from './attribute'
 
 const vec3 = new Vector3()
-const origin = new Vector3()
-const direction = new Vector3()
-const color = new Color()
-const pose = createPose()
 
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }
@@ -104,6 +99,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
 		traits.Center(transform.physicalObject?.center),
 		traits.SnapshotAPI,
+		traits.Removable,
 	]
 
 	const poseInFrame = transform.poseInObserverFrame
@@ -131,61 +127,33 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 	const { geometryType } = drawing.physicalObject ?? {}
 
 	if (geometryType?.case === 'arrows') {
-		const rootEntityTraits: ConfigurableTrait[] = [
+		const poses = asFloat32Array(geometryType.value.poses)
+		const colors = drawing.metadata?.colors
+
+		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(drawing.referenceFrame),
 			traits.Pose(poseInFrame?.pose),
-			traits.ReferenceFrame,
+			traits.Positions(poses),
 		]
 
 		if (parent) {
-			rootEntityTraits.push(traits.Parent(parent))
+			entityTraits.push(traits.Parent(parent))
 		}
 
-		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
-
-		entities.push(rootEntity)
-
-		const poses = asFloat32Array(geometryType.value.poses)
-		const colors = drawing.metadata?.colors
-			? asFloat32Array(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-			: []
-
-		for (let i = 0, j = 0, k = 0, l = poses.length; i < l; i += STRIDE.ARROWS, j += 1, k += 4) {
-			const entityTraits: ConfigurableTrait[] = [
-				traits.Name(`pose ${j}`),
-				traits.Parent(drawing.referenceFrame),
-			]
-
-			origin.set(poses[i + 0], poses[i + 1], poses[i + 2])
-			direction.set(poses[i + 3], poses[i + 4], poses[i + 5])
-
-			// Compute the base position so the arrow ends at the origin
-			origin.sub(vec3.copy(direction).multiplyScalar(/** arrow length */ 100))
-
-			pose.x = origin.x
-			pose.y = origin.y
-			pose.z = origin.z
-			pose.oX = direction.x
-			pose.oY = direction.y
-			pose.oZ = direction.z
-
-			entityTraits.push(traits.Pose(pose))
-
-			if (colors[k + 0] && colors[k + 1] && colors[k + 2]) {
-				color.r = colors[k + 0]
-				color.g = colors[k + 1]
-				color.b = colors[k + 2]
-				entityTraits.push(traits.Color(color))
-			}
-
-			if (colors[k + 3]) {
-				entityTraits.push(traits.Opacity(colors[k + 3]))
-			}
-
-			const entity = world.spawn(...entityTraits, traits.Arrow, traits.SnapshotAPI)
-
-			entities.push(entity)
+		if (colors) {
+			entityTraits.push(traits.Colors(colors as Uint8Array<ArrayBuffer>))
 		}
+
+		const entity = world.spawn(
+			...entityTraits,
+
+			traits.Arrows({ headAtPose: true }),
+			traits.Instances({ count: poses.length / STRIDE.ARROWS }),
+			traits.SnapshotAPI,
+			traits.Removable
+		)
+
+		entities.push(entity)
 	} else if (geometryType?.case === 'model') {
 		const rootEntityTraits: ConfigurableTrait[] = [
 			traits.Name(drawing.referenceFrame),
@@ -197,7 +165,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			rootEntityTraits.push(traits.Parent(parent))
 		}
 
-		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI)
+		const rootEntity = world.spawn(...rootEntityTraits, traits.SnapshotAPI, traits.Removable)
 
 		entities.push(rootEntity)
 
@@ -228,7 +196,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				)
 			}
 
-			const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+			const entity = world.spawn(...entityTraits, traits.SnapshotAPI, traits.Removable)
 
 			entities.push(entity)
 		}
@@ -283,8 +251,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			}
 
 			const colors = drawing.metadata?.colors
-				? rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-				: undefined
 			const geometry = createBufferGeometry(positions, colors)
 
 			entityTraits.push(traits.BufferGeometry(geometry))
@@ -335,7 +301,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			entityTraits.push(traits.LinePositions(points))
 		}
 
-		const entity = world.spawn(...entityTraits, traits.SnapshotAPI)
+		const entity = world.spawn(...entityTraits, traits.SnapshotAPI, traits.Removable)
 
 		entities.push(entity)
 	}

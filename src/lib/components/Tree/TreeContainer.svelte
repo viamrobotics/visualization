@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Vector2Like } from 'three'
 	import { draggable } from '@neodrag/svelte'
 	import Tree from './Tree.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
@@ -11,15 +10,12 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { traits, useWorld } from '$lib/ecs'
+	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 	import { MIN_DIMENSIONS, useResizable } from '$lib/hooks/useResizable.svelte'
-	import { PersistedState } from 'runed'
 
 	const { ...rest } = $props()
-
-	const dragPosition = new PersistedState<Vector2Like | undefined>('tree-drag-position', undefined)
 
 	provideTreeExpandedContext()
 
@@ -38,32 +34,13 @@
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
-	let children = $state.raw<TreeNode[]>([])
-	let nodeMap = $state.raw<Record<string, TreeNode | undefined>>({})
+	const allEntities = useQuery(traits.Name)
 
-	let pending = false
-	const flush = () => {
-		if (pending) return
-		pending = true
-
-		window.setTimeout(() => {
-			const results = buildTreeNodes(world.query(traits.Name))
-			children = results.rootNodes
-			nodeMap = results.nodeMap
-			pending = false
-		})
-	}
-
-	world.onAdd(traits.Name, flush)
-	world.onAdd(traits.Parent, flush)
-	world.onRemove(traits.Name, flush)
-	world.onRemove(traits.Parent, flush)
-	world.onChange(traits.Name, flush)
-	world.onChange(traits.Parent, flush)
+	const { rootNodes, nodeMap } = $derived(buildTreeNodes(allEntities.current))
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
-		children,
+		children: rootNodes,
 	})
 
 	$effect(() => {
@@ -83,10 +60,6 @@
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,
-		defaultPosition: dragPosition.current,
-		onDragEnd(data) {
-			dragPosition.current = { x: Math.max(data.offsetX, 0), y: Math.max(data.offsetY, 0) }
-		},
 	}}
 	{...rest}
 >

@@ -1,5 +1,46 @@
 # motion-tools
 
+## 1.4.0
+
+### Minor Changes
+
+- 7d54e64: Fix drawing pointclouds with over 16 million points
+
+### Patch Changes
+
+- 5b83236: update localpose from frames when not editing
+
+## 1.3.5
+
+### Patch Changes
+
+- 486557a: Use localhost instead of detecting device local ip
+- 8393486: Focus view fixes
+- 00c60ca: Add "remove from scene" button for non-polling objects
+- e508a60: Add vite-plugin-glsl
+- 38809b1: Do not render line outline on 3d model in model only mode
+
+## 1.3.4
+
+### Patch Changes
+
+- 4bb4a20: Add click to zoom to object
+- 7cac829: Fix vision service toggling, allow empty pointclouds from GetObjectPointclouds
+- 835468e: Fix hiding arrows, add hotkey for hiding
+
+## 1.3.3
+
+### Patch Changes
+
+- 19a26cf: enable poses color palleting
+- 7d66c9d: add gripper as origin_frame using component for pose
+
+## 1.3.2
+
+### Patch Changes
+
+- cfd73bf: Improve arrow performance / avoid max entity limits when rendering many arrows
+
 ## 1.3.1
 
 ### Patch Changes

@@ -11,6 +11,8 @@ import { useLogs } from './useLogs.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
+const origingFrameComponentTypes = ['arm', 'gantry', 'gripper', 'base']
+
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const environment = useEnvironment()
 	const logs = useLogs()
@@ -30,13 +32,13 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
 	const resolvedParent = $derived(
-		parentResource?.subtype === 'arm' || parentResource?.subtype === 'gantry'
+		origingFrameComponentTypes.includes(parentResource?.subtype ?? '')
 			? `${parent()}_origin`
 			: parent()
 	)
 
 	const resolvedName = $derived(
-		resource?.subtype === 'arm' || resource?.subtype === 'gantry'
+		origingFrameComponentTypes.includes(resource?.subtype ?? '')
 			? `${currentName}_origin`
 			: currentName
 	)

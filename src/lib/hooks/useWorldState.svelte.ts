@@ -141,7 +141,9 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 
 		if (!entity) return
 
-		entity.destroy()
+		if (world.has(entity)) {
+			entity.destroy()
+		}
 		entities.delete(uuid)
 	}
 
@@ -294,7 +296,9 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 
 	return () => {
 		for (const [, entity] of entities) {
-			entity.destroy()
+			if (world.has(entity)) {
+				entity.destroy()
+			}
 		}
 	}
 }

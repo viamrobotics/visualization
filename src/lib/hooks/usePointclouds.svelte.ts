@@ -115,7 +115,7 @@ export const providePointclouds = (partID: () => string) => {
 	interface PCObject {
 		name: string
 		positions: Float32Array<ArrayBuffer>
-		colors: Float32Array<ArrayBuffer> | null
+		colors: Uint8Array<ArrayBuffer> | null
 	}
 
 	let pcObjects = $state.raw<PCObject[]>([])
@@ -182,7 +182,9 @@ export const providePointclouds = (partID: () => string) => {
 		// Clean up old entities
 		for (const [name, entity] of entities) {
 			if (!queryMap[name]?.data) {
-				entity.destroy()
+				if (world.has(entity)) {
+					entity.destroy()
+				}
 				entities.delete(name)
 			}
 		}

@@ -12,6 +12,12 @@ export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
+/**
+ * Represents that an entity is composed of many instances, so that the treeview and
+ * details panel may display all instances
+ */
+export const Instanced = trait()
+
 export const Instance = trait({
 	meshID: -1,
 	instanceID: -1,
@@ -25,6 +31,16 @@ export const Opacity = trait(() => 1)
 export const Color = trait({ r: 0, g: 0, b: 0 })
 
 export const Arrow = trait()
+
+export const Positions = trait(() => new Float32Array())
+export const Colors = trait(() => new Uint8Array())
+export const Instances = trait({
+	count: 0,
+})
+
+export const Arrows = trait({
+	headAtPose: true,
+})
 
 /**
  * Render entity as points
@@ -86,6 +102,11 @@ export const PointSize = trait(() => 10)
 export const LineWidth = trait(() => 5)
 
 export const ReferenceFrame = trait()
+
+/**
+ * This entity can be safetly removed from the scene by the user
+ */
+export const Removable = trait()
 
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
