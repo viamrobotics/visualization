@@ -528,7 +528,8 @@ export const provideDrawAPI = () => {
 					drawLine(reader)
 				} else if (type === bufferTypes.DRAW_GLTF) {
 					operation = 'DrawGLTF'
-					drawGLTF(reader.buffer)
+					// GLTF payload starts after the 20-byte header (16 bytes UUID + 4 bytes type)
+					drawGLTF(reader.buffer.slice(20))
 				} else {
 					throw new Error('Invalid buffer')
 				}

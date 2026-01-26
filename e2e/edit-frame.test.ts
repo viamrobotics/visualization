@@ -371,7 +371,7 @@ const fragmentUsingConfig = (fragmentId: string) => {
 	}
 }
 
-test('fragement edit frame', async ({ browser }) => {
+test('fragment edit frame', async ({ browser }) => {
 	const testPrefix = 'FRAGMENT_EDIT_FRAME'
 	const failedScreenshots = [] as string[]
 	const resp = await viamClient.appClient.createFragment(

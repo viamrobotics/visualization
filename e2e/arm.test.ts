@@ -166,9 +166,9 @@ test('arm', async ({ browser }) => {
 })
 
 test.afterAll('cleanup', async () => {
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson({})
-	)
+	// await viamClient.appClient.updateRobotPart(
+	// 	testConfig.partId,
+	// 	testConfig.name,
+	// 	Struct.fromJson({})
+	// )
 })
