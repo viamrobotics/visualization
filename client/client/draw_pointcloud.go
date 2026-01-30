@@ -22,6 +22,13 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 		return labelError
 	}
 
+	out := pointcloudToBytes(label, pc, overrideColor)
+
+	// Trim buffer to actual used size
+	return postHTTP(out, "octet-stream", "points")
+}
+
+func pointcloudToBytes(label string, pc pointcloud.PointCloud, overrideColor *[3]uint8) []byte {
 	labelBytes := []byte(label)
 	labelLen := len(labelBytes)
 
@@ -104,6 +111,5 @@ func DrawPointCloud(label string, pc pointcloud.PointCloud, overrideColor *[3]ui
 	// Patch nColors in the float header
 	binary.LittleEndian.PutUint32(out[nColorsOffsetBytes:], uint32(nColors))
 
-	// Trim buffer to actual used size
-	return postHTTP(out[:colorOffset], "octet-stream", "points")
+	return out[:colorOffset]
 }
