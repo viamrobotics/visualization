@@ -1,5 +1,19 @@
 # motion-tools
 
+## 1.5.0
+
+### Minor Changes
+
+- 8c31e73: enable pcds from world store services
+
+### Patch Changes
+
+- b8208f7: Fix `drawGLTF` to skip header bytes
+- 19f1fee: Clicking the icon on the Drawer buttons now opens or closes the section, just like the rest of the button.
+- b8208f7: Update E2E snapshots
+- b8208f7: Fix world tree not be reactive to frame changes
+- 3855183: Restore downscaling when drawing pointclouds with DrawGeometries
+
 ## 1.4.0
 
 ### Minor Changes
