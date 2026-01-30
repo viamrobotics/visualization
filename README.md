@@ -17,21 +17,28 @@ make setup
 
 This single command will:
 
-1. Install and configure **nvm** (Node Version Manager)
-2. Install the latest **Node.js LTS** version via nvm
-3. Install **pnpm** package manager
-4. Install **bun** runtime
+1. Install **fnm** (Fast Node Manager) and **Node.js 22**
+2. Install **pnpm** package manager
+3. Install **bun** runtime
+4. Install **Go** and **buf** (for protobuf generation)
 5. Install all project dependencies
+6. Generate protobuf code
+
+After setup completes, add the shell configuration it prints to your shell config file (`~/.zshrc` or `~/.bashrc`), then restart your terminal.
 
 #### Manual setup
 
 If the above does not work for you, or if you prefer to install dependencies manually:
 
-1. [Install nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-2. Install Node.js LTS: `nvm install --lts && nvm use --lts`
-3. [Install pnpm](https://pnpm.io/installation)
-4. [Install bun](https://bun.sh/docs/installation)
-5. Install dependencies: `pnpm i`
+1. [Install fnm](https://github.com/Schniz/fnm#installation): `curl -fsSL https://fnm.vercel.app/install | bash`
+2. Install Node.js: `fnm install 22 && fnm use 22`
+3. [Install pnpm](https://pnpm.io/installation): `curl -fsSL https://get.pnpm.io/install.sh | sh -`
+4. [Install bun](https://bun.sh/docs/installation): `curl -fsSL https://bun.sh/install | bash`
+5. [Install Go](https://go.dev/doc/install)
+6. [Install buf](https://buf.build/docs/installation): download from GitHub releases
+7. Install Go tools: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
+8. Install dependencies: `pnpm install`
+9. Generate protobufs: `make proto`
 
 ### Env files for machine configs
 
