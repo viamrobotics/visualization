@@ -3,16 +3,14 @@
 	import { Icon, Select } from '@viamrobotics/prime-core'
 	import { CameraStream, useRobotClient } from '@viamrobotics/svelte-sdk'
 	import { StreamClient } from '@viamrobotics/sdk'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
-	// Type definitions for stream resolution
 	interface Resolution {
 		width: number
 		height: number
 	}
-
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	const { name, ...rest } = $props<{ name: string }>()
 
@@ -26,17 +24,21 @@
 	let fps = $state(0)
 	let resolutions = $state<Resolution[]>([])
 	let currentResolution = $state<string>('')
+	let isLoading = $state(true)
+	let error = $state<string | undefined>(undefined)
 
 	let fpsInterval: ReturnType<typeof setInterval> | undefined
+	let fpsCounterActive = false
 
-	// Cleanup interval on destroy
+	// Cleanup on destroy
 	$effect(() => {
 		return () => {
 			if (fpsInterval) clearInterval(fpsInterval)
+			fpsCounterActive = false
 		}
 	})
 
-	const onMediaLoad = async (e: Event) => {
+	const onMediaLoad = (e: Event) => {
 		const target = e.target as HTMLVideoElement
 
 		// Update aspect ratio
@@ -47,10 +49,13 @@
 		// Start FPS counter
 		if ('requestVideoFrameCallback' in target) {
 			if (fpsInterval) clearInterval(fpsInterval)
+			fpsCounterActive = false
 
 			let frameCount = 0
-			// Use rVFC just to count frames
+			fpsCounterActive = true
+
 			const onFrame = () => {
+				if (!fpsCounterActive) return
 				frameCount++
 				target.requestVideoFrameCallback(onFrame)
 			}
@@ -65,35 +70,38 @@
 		}
 	}
 
+	// Create a single StreamClient instance per robot client
+	let streamClient = $derived(client.current ? new StreamClient(client.current) : undefined)
+
 	$effect(() => {
-		if (client.current) {
-			const streamClient = new StreamClient(client.current)
+		if (streamClient) {
+			isLoading = true
+			error = undefined
 			streamClient
 				.getOptions(name)
 				.then((options) => {
 					resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
-					// Set initial selection if available but don't force it automatically unless necessary?
-					// Actually, forcing the first option (often lowest or sensible default) might solve the lag immediately.
-					// But let's just let the user choose.
-					if (resolutions.length > 0) {
-						console.log(`Available resolutions for ${name}:`, resolutions)
-					}
+					isLoading = false
 				})
-				.catch((e) => console.error('Failed to get stream options', e))
+				.catch((e) => {
+					error = e instanceof Error ? e.message : 'Failed to get stream options'
+					isLoading = false
+				})
 		}
 	})
 
 	const handleResolutionChange = async (e: Event) => {
 		const target = e.target as HTMLSelectElement
-		if (!target.value || !client.current) return
+		if (!target.value || !streamClient) return
 
 		const [w, h] = target.value.split('x').map(Number)
-		const streamClient = new StreamClient(client.current)
+		if (isNaN(w) || isNaN(h)) return
+
 		try {
 			await streamClient.setOptions(name, w, h)
-			console.log(`Set resolution to ${w}x${h}`)
+			error = undefined
 		} catch (err) {
-			console.error('Failed to set resolution', err)
+			error = err instanceof Error ? err.message : 'Failed to set resolution'
 		}
 	}
 </script>
@@ -117,13 +125,15 @@
 				<h3 class="min-w-0 truncate">{name}</h3>
 				<div class="flex-1"></div>
 
-				{#if resolutions.length > 0}
+				{#if isLoading}
+					<span class="text-subtle mr-2">Loading...</span>
+				{:else if resolutions.length > 0}
 					<div class="mr-2 w-32">
 						<Select
 							bind:value={currentResolution}
 							onchange={handleResolutionChange}
 						>
-							<option value="">Auto</option>
+							<option value="">Default</option>
 							{#each resolutions as res}
 								<option value={`${res.width}x${res.height}`}>{res.width}x{res.height}</option>
 							{/each}
@@ -134,10 +144,13 @@
 				<button
 					aria-label="close"
 					class="hover:text-default"
-					onclick={() =>
-						(settings.current.openCameraWidgets = settings.current.openCameraWidgets.filter(
-							(widget) => widget !== name
-						))}
+					onclick={() => {
+						const widgets = settings.current.openCameraWidgets[partID.current] || []
+						settings.current.openCameraWidgets = {
+							...settings.current.openCameraWidgets,
+							[partID.current]: widgets.filter((widget) => widget !== name),
+						}
+					}}
 				>
 					<Icon
 						name="close"
@@ -166,6 +179,15 @@
 					class="absolute bottom-2 left-2 z-10 rounded-[3px] bg-black/30 px-1 py-0.5 text-right font-mono text-xs text-white"
 				>
 					{fps.toFixed(1)}fps
+				</div>
+			{/if}
+
+			<!-- Error display -->
+			{#if error}
+				<div
+					class="absolute inset-0 flex items-center justify-center bg-black/50 p-2 text-center text-white"
+				>
+					{error}
 				</div>
 			{/if}
 		</div>

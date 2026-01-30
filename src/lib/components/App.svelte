@@ -65,6 +65,8 @@
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 
+	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
+
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
 	})
@@ -139,12 +141,14 @@
 					<ArmPositions {@attach domPortal(root)} />
 				{/if}
 
-				{#each settings.current.openCameraWidgets as cameraName (cameraName)}
-					<Camera
-						name={cameraName}
-						{@attach domPortal(root)}
-					/>
-				{/each}
+				{#if !focus}
+					{#each currentRobotCameraWidgets as cameraName (cameraName)}
+						<Camera
+							name={cameraName}
+							{@attach domPortal(root)}
+						/>
+					{/each}
+				{/if}
 
 				<FileDrop {@attach domPortal(root)} />
 			{/snippet}

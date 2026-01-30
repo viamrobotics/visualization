@@ -3,12 +3,18 @@
 	import Drawer from './Drawer.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
 
 	const settings = useSettings()
 	const resourceByName = useResourceByName()
+	const partID = usePartID()
 
 	const cameras = $derived(
 		Object.values(resourceByName.current).filter((resource) => resource?.subtype === 'camera')
+	)
+
+	const currentRobotCameraWidgets = $derived(
+		settings.current.openCameraWidgets[partID.current] || []
 	)
 </script>
 
@@ -28,21 +34,24 @@
 			<h3 class="text-sm"><strong>Camera Widgets</strong></h3>
 			{#each cameras as camera (camera?.name)}
 				{#if camera}
-					{@const isOpen = settings.current.openCameraWidgets.includes(camera.name)}
+					{@const isOpen = currentRobotCameraWidgets.includes(camera.name)}
 					<div class="flex items-center justify-between gap-4 py-2">
 						{camera.name}
 						<Switch
 							on={isOpen}
 							on:change={(event) => {
 								if (event.detail) {
-									settings.current.openCameraWidgets = [
+									settings.current.openCameraWidgets = {
 										...settings.current.openCameraWidgets,
-										camera.name,
-									]
+										[partID.current]: [...currentRobotCameraWidgets, camera.name],
+									}
 								} else {
-									settings.current.openCameraWidgets = settings.current.openCameraWidgets.filter(
-										(widget) => widget !== camera.name
-									)
+									settings.current.openCameraWidgets = {
+										...settings.current.openCameraWidgets,
+										[partID.current]: currentRobotCameraWidgets.filter(
+											(widget) => widget !== camera.name
+										),
+									}
 								}
 							}}
 						/>
