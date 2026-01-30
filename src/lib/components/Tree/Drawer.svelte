@@ -25,7 +25,6 @@
 			label="unfold more icon"
 			variant="ghost"
 			cx="size-6"
-			onclick={() => (expanded.current = !expanded.current)}
 		/>
 		{name}
 		{@render titleAlert?.()}
