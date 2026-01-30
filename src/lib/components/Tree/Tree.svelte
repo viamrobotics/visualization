@@ -9,9 +9,13 @@
 	import { traits } from '$lib/ecs'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { SvelteSet } from 'svelte/reactivity'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const selected = useSelectedEntity()
 	const visibility = useVisibility()
+	const resourceByName = useResourceByName()
+	const settings = useSettings()
 
 	interface Props {
 		rootNode: TreeNode

@@ -26,6 +26,7 @@
 		provideDrawConnectionConfig,
 		type DrawConnectionConfig,
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
+	import Camera from './widgets/Camera.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -137,6 +138,13 @@
 				{#if !focus && settings.current.enableArmPositionsWidget}
 					<ArmPositions {@attach domPortal(root)} />
 				{/if}
+
+				{#each settings.current.openCameraWidgets as cameraName (cameraName)}
+					<Camera
+						name={cameraName}
+						{@attach domPortal(root)}
+					/>
+				{/each}
 
 				<FileDrop {@attach domPortal(root)} />
 			{/snippet}
