@@ -134,7 +134,7 @@
 							onchange={handleResolutionChange}
 						>
 							<option value="">Default</option>
-							{#each resolutions as res}
+							{#each resolutions as res (`${res.width}x${res.height}`)}
 								<option value={`${res.width}x${res.height}`}>{res.width}x{res.height}</option>
 							{/each}
 						</Select>

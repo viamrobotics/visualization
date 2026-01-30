@@ -9,16 +9,14 @@ import { useSettings } from '$lib/hooks/useSettings.svelte'
 vi.mock('@viamrobotics/svelte-sdk', () => ({
 	// We use a simple div to represent the stream
 	CameraStream: vi.fn().mockImplementation(() => ({
-		$$render: () => '<div data-testid="camera-stream"></div>'
+		$$render: () => '<div data-testid="camera-stream"></div>',
 	})),
 	useRobotClient: vi.fn(() => ({ current: {} })),
 }))
 
 vi.mock('@viamrobotics/sdk', () => ({
 	StreamClient: vi.fn().mockImplementation(() => ({
-		getOptions: vi.fn().mockResolvedValue([
-			{ width: 640, height: 480 },
-		]),
+		getOptions: vi.fn().mockResolvedValue([{ width: 640, height: 480 }]),
 		setOptions: vi.fn().mockResolvedValue(undefined),
 	})),
 }))
@@ -50,6 +48,7 @@ describe('Camera widget', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		vi.mocked(useSettings).mockReturnValue(mockSettings as any)
 	})
 
@@ -60,7 +59,7 @@ describe('Camera widget', () => {
 
 	it('renders resolutions in dropdown', async () => {
 		render(Camera, { name: 'test-camera' })
-		
+
 		await waitFor(() => {
 			expect(screen.getByRole('combobox')).toBeInTheDocument()
 		})
@@ -80,10 +79,14 @@ describe('Camera widget', () => {
 
 	it('calls setOptions when a resolution is selected', async () => {
 		const mockSetOptions = vi.fn().mockResolvedValue(undefined)
-		vi.mocked(StreamClient).mockImplementation(() => ({
-			getOptions: vi.fn().mockResolvedValue([{ width: 640, height: 480 }]),
-			setOptions: mockSetOptions,
-		}) as any)
+		vi.mocked(StreamClient).mockImplementation(
+			() =>
+				({
+					getOptions: vi.fn().mockResolvedValue([{ width: 640, height: 480 }]),
+					setOptions: mockSetOptions,
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				}) as any
+		)
 
 		render(Camera, { name: 'test-camera' })
 
