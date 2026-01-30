@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/geo/r3"
+	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
@@ -54,7 +55,12 @@ func TestDrawGeometries(t *testing.T) {
 
 		test.That(t, err, test.ShouldBeNil)
 
-		geometries := []spatialmath.Geometry{box, sphere, capsule, meshInWorld}
+		pc, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
+		test.That(t, err, test.ShouldBeNil)
+		octree, err := pointcloud.ToBasicOctree(pc, 0)
+		test.That(t, err, test.ShouldBeNil)
+
+		geometries := []spatialmath.Geometry{box, sphere, capsule, meshInWorld, octree}
 		geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
 
 		colors := []string{"#EF9A9A", "#EF5350", "#F44336", "lime"}

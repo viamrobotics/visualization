@@ -1,10 +1,7 @@
 package client
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/json"
-	"image/color"
 	"log"
 
 	"github.com/golang/geo/r3"
@@ -40,12 +37,12 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 			// Another caveat from that is this hard-coded downscaling. Necessary for performance on
 			// the experiments where running now with real-world data. But obviously not immediately
 			// flexible for other use-cases.
-			buf, err := drawPointCloudDownscaled(geo.Label(), pc, 25, &[3]uint8{200, 0, 0})
+			downscaled, err := drawPointCloudDownscaled(geo.Label(), pc, 25)
 			if err != nil {
 				return err
 			}
 
-			if err := postHTTP(buf, "octet-stream", "points"); err != nil {
+			if err := DrawPointCloud(geo.Label(), downscaled, &[3]uint8{200, 0, 0}); err != nil {
 				return err
 			}
 
@@ -88,14 +85,11 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 	return postHTTP(result, "json", "geometries")
 }
 
-func drawPointCloudDownscaled(label string, pc pointcloud.PointCloud, minDistance float64, overrideColor *[3]uint8) ([]byte, error) {
+func drawPointCloudDownscaled(label string, pc pointcloud.PointCloud, minDistance float64) (pointcloud.PointCloud, error) {
 	labelError := isASCIIPrintable(label)
 	if labelError != nil {
 		return nil, labelError
 	}
-
-	labelBytes := []byte(label)
-	labelLen := len(labelBytes)
 
 	addedPoints := make([]struct {
 		point r3.Vector
@@ -127,72 +121,10 @@ func drawPointCloudDownscaled(label string, pc pointcloud.PointCloud, minDistanc
 		return true
 	})
 
-	nPoints := len(addedPoints)
-	hasColor := pc.MetaData().HasColor && overrideColor == nil
-	nColors := 0
-	if hasColor {
-		nColors = nPoints
+	downscaled := pointcloud.NewBasicPointCloud(len(addedPoints))
+	for _, point := range addedPoints {
+		downscaled.Set(point.point, point.data)
 	}
 
-	// total floats:
-	// 1 (type) + 1 (label length) + labelLen + 2 (nPoints, nColors) + 3 (default color)
-	// + 3*nPoints (positions) + 3*nColors (colors)
-	total := 1 + 1 + labelLen + 2 + 3 + nPoints*3 + nColors*3
-	data := make([]float32, 0, total)
-
-	data = append(data, float32(pointsType), float32(labelLen))
-	for _, b := range labelBytes {
-		data = append(data, float32(b))
-	}
-
-	// Set to -1 by default to communicate intentionally no color
-	// Allows users to set default colors in the web app.
-	finalColor := [3]float32{-255., -255., -255.}
-	if overrideColor != nil {
-		finalColor[0] = float32(overrideColor[0])
-		finalColor[1] = float32(overrideColor[1])
-		finalColor[2] = float32(overrideColor[2])
-	}
-
-	// Header: nPoints, nColors, color
-	data = append(data,
-		float32(nPoints),
-		float32(nColors),
-		float32(finalColor[0])/255.0,
-		float32(finalColor[1])/255.0,
-		float32(finalColor[2])/255.0,
-	)
-
-	colors := make([]float32, 0, nColors*3)
-
-	for idx := range addedPoints {
-		p := &addedPoints[idx]
-
-		data = append(data,
-			float32(p.point.X)/1000.0,
-			float32(p.point.Y)/1000.0,
-			float32(p.point.Z)/1000.0,
-		)
-
-		if hasColor && p.data.HasColor() {
-			col := p.data.Color()
-			nrgba := color.NRGBAModel.Convert(col).(color.NRGBA)
-
-			colors = append(colors,
-				float32(nrgba.R)/255.0,
-				float32(nrgba.G)/255.0,
-				float32(nrgba.B)/255.0,
-			)
-		}
-	}
-
-	data = append(data, colors...)
-
-	// Binary write
-	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, data); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return downscaled, nil
 }
