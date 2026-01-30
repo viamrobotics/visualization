@@ -18,6 +18,8 @@ import { createPose } from '$lib/transform'
 import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { createBufferGeometry } from '$lib/attribute'
 
 export type ChangeMessage = {
 	type: 'change'
@@ -85,7 +87,23 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (transform.physicalObject) {
-			entityTraits.push(traits.Geometry(transform.physicalObject))
+			if (transform.physicalObject.geometryType.case === 'pointcloud') {
+				parsePcdInWorker(
+					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
+				).then((pointcloud) => {
+					// pcds are a special case since they have to be loaded in a worker and the trait will be added to the existing entity
+					const entity = entities.get(transform.uuidString)
+					if (!entity) {
+						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
+						return
+					}
+					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
+					entity.add(traits.BufferGeometry(geometry))
+					entity.add(traits.Points)
+				})
+			} else {
+				entityTraits.push(traits.Geometry(transform.physicalObject))
+			}
 		}
 
 		if (metadata.shape === 'line' && metadata.points) {

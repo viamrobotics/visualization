@@ -10,6 +10,7 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
@@ -30,13 +31,19 @@
 	)
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
+	const frames = useFrames()
 	const world = useWorld()
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
 	const allEntities = useQuery(traits.Name)
 
-	const { rootNodes, nodeMap } = $derived(buildTreeNodes(allEntities.current))
+	const { rootNodes, nodeMap } = $derived.by(() => {
+		// This ensures the tree rebuilds when frame parent relationships change
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		frames.current
+		return buildTreeNodes(allEntities.current)
+	})
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
