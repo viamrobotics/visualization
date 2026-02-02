@@ -1,8 +1,7 @@
 import { getContext, setContext } from 'svelte'
 import { SvelteSet } from 'svelte/reactivity'
 
-export const WEBLABS_EXPERIMENTS = {
-} as const
+export const WEBLABS_EXPERIMENTS = {} as const
 
 export const WEBLABS_CONTEXT_KEY = Symbol('weblabs-context')
 
