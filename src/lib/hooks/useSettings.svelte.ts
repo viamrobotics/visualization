@@ -37,6 +37,7 @@ export interface Settings {
 
 	// Widgets
 	enableArmPositionsWidget: boolean
+	openCameraWidgets: Record<string, string[]>
 
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
@@ -73,6 +74,7 @@ const defaults = (): Settings => ({
 	enableXR: false,
 
 	enableArmPositionsWidget: false,
+	openCameraWidgets: {},
 
 	renderStats: false,
 	renderArmModels: 'colliders+model',
