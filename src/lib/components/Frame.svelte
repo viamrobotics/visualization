@@ -3,12 +3,10 @@
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { Color, Group, type Object3D } from 'three'
 	import Geometry from './Geometry2.svelte'
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { colors, darkenColor, resourceColors } from '$lib/color'
-	import { WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
@@ -31,7 +29,6 @@
 	const componentModels = use3DModels()
 	const selectedEntity = useSelectedEntity()
 	const resourceByName = useResourceByName()
-	const weblabs = useWeblabs()
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
@@ -57,10 +54,6 @@
 	})
 
 	const model = $derived.by(() => {
-		if (!weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS)) {
-			return
-		}
-
 		if (!name.current) {
 			return
 		}

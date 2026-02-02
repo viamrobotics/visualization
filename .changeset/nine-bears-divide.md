@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': minor
 ---
 
-enable pcds from world store services
+general availability for 3d model arms
