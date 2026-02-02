@@ -190,7 +190,7 @@ check_and_install_buf() {
     fi
     
     log_info "Installing buf..."
-    curl -sSL https://buf.build/install.sh | bash
+    pnpm add -g @bufbuild/buf
     
     # Add to PATH for this session
     export PATH="$HOME/.buf/bin:$PATH"
