@@ -1,7 +1,6 @@
 import { ArmClient } from '@viamrobotics/sdk'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
-import { useWeblabs, WEBLABS_EXPERIMENTS } from './useWeblabs.svelte'
 import { useSettings } from './useSettings.svelte'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
@@ -19,7 +18,6 @@ interface Context {
 }
 
 export const provide3DModels = (partID: () => string) => {
-	const weblabs = useWeblabs()
 	const settings = useSettings()
 	let current = $state.raw<Record<string, Record<string, Group>>>({})
 
@@ -69,7 +67,7 @@ export const provide3DModels = (partID: () => string) => {
 			settings.current.isLoaded &&
 			(settings.current.renderArmModels === 'model' ||
 				settings.current.renderArmModels === 'colliders+model')
-		if (weblabs.isActive(WEBLABS_EXPERIMENTS.MOTION_TOOLS_RENDER_ARM_MODELS) && shouldFetchModels) {
+		if (shouldFetchModels) {
 			fetch3DModels()
 		}
 	})

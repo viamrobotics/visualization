@@ -108,14 +108,6 @@ test('arm', async ({ browser }) => {
 
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
-	await context.addCookies([
-		{
-			name: 'weblab_experiments',
-			value: 'MOTION_TOOLS_RENDER_ARM_MODELS',
-			domain: 'localhost',
-			path: '/',
-		},
-	])
 	const page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
