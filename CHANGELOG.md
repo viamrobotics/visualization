@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.7.0
+
+### Minor Changes
+
+- 7e842e0: Added the Camera widget, including a resolution selector and a styled FPS counter with freeze detection. Improved layout stability by locking the aspect ratio to the video source.
+
 ## 1.6.0
 
 ### Minor Changes
