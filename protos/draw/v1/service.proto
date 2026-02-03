@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package draw.v1;
+
+import "common/v1/common.proto";
+import "draw/v1/drawing.proto";
+import "draw/v1/scene.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
+
+// DrawService is the service for drawing to a local visualizer instance
+service DrawService {
+  // AddEntity adds an entity to the scene
+  rpc AddEntity(AddEntityRequest) returns (AddEntityResponse);
+
+  // GetEntity returns an entity by its UUID
+  rpc GetEntity(GetEntityRequest) returns (GetEntityResponse);
+
+  // ListEntities returns all entities in the scene
+  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+  // RemoveEntity removes an entity by its UUID
+  rpc RemoveEntity(RemoveEntityRequest) returns (RemoveEntityResponse);
+
+  // RemoveAllEntities removes all entities from the scene
+  rpc RemoveAllEntities(RemoveAllEntitiesRequest) returns (RemoveAllEntitiesResponse);
+
+  // UpdateEntity updates an entity by its UUID
+  rpc UpdateEntity(UpdateEntityRequest) returns (UpdateEntityResponse);
+
+  // SetSceneCamera sets the scene camera
+  rpc SetSceneCamera(SetSceneCameraRequest) returns (SetSceneCameraResponse);
+
+  // StreamEntityChanges streams changes to the entities in the scene
+  rpc StreamEntityChanges(StreamEntityChangesRequest) returns (stream StreamEntityChangesResponse);
+
+  // StreamSceneCamera streams changes to the scene camera
+  rpc StreamSceneCamera(StreamSceneCameraRequest) returns (stream StreamSceneCameraResponse);
+
+  // Record records all operations between now and `StopRecord` to the input filename.
+  rpc Record(RecordRequest) returns (RecordResponse);
+
+  // StopRecord stops recording.
+  rpc StopRecord(StopRecordRequest) returns (StopRecordResponse);
+
+  // Replay replays a prior recorded rendering.
+  rpc Replay(ReplayRequest) returns (ReplayResponse);
+}
+
+message AddEntityRequest {
+  oneof entity {
+    viam.common.v1.Transform transform = 1;
+    draw.v1.Drawing drawing = 2;
+  }
+}
+
+message AddEntityResponse {}
+
+message GetEntityRequest {
+  bytes uuid = 1;
+}
+
+message GetEntityResponse {
+  oneof entity {
+    viam.common.v1.Transform transform = 1;
+    draw.v1.Drawing drawing = 2;
+  }
+}
+
+message ListEntitiesRequest {}
+
+message ListEntitiesResponse {
+  repeated viam.common.v1.Transform transforms = 1;
+  repeated draw.v1.Drawing drawings = 2;
+}
+
+message RemoveEntityRequest {
+  bytes uuid = 1;
+}
+
+message RemoveEntityResponse {}
+
+message RemoveAllEntitiesRequest {}
+
+message RemoveAllEntitiesResponse {}
+
+message UpdateEntityRequest {
+  bytes uuid = 1;
+  oneof entity {
+    viam.common.v1.Transform transform = 2;
+    draw.v1.Drawing drawing = 3;
+  }
+}
+
+message UpdateEntityResponse {}
+
+enum ChangeType {
+  CHANGE_TYPE_UNSPECIFIED = 0;
+  CHANGE_TYPE_ADDED = 1;
+  CHANGE_TYPE_UPDATED = 2;
+  CHANGE_TYPE_REMOVED = 3;
+  CHANGE_TYPE_REMOVED_ALL = 4;
+}
+
+message EntityChange {
+  ChangeType change_type = 1 [json_name = "changeType"];
+  oneof entity {
+    viam.common.v1.Transform transform = 2;
+    draw.v1.Drawing drawing = 3;
+  }
+
+  google.protobuf.FieldMask updated_fields = 4 [json_name = "updatedFields"];
+}
+
+message StreamEntityChangesRequest {}
+
+message StreamEntityChangesResponse {
+  EntityChange entity_change = 1 [json_name = "entityChange"];
+}
+
+message SetSceneCameraRequest {
+  draw.v1.SceneCamera scene_camera = 1 [json_name = "sceneCamera"];
+}
+
+message SetSceneCameraResponse {}
+
+message StreamSceneCameraRequest {}
+
+message StreamSceneCameraResponse {
+  draw.v1.SceneCamera scene_camera = 1 [json_name = "sceneCamera"];
+}
+
+message RecordRequest {
+  string filename = 1;
+}
+
+message RecordResponse {}
+
+message StopRecordRequest {}
+
+message StopRecordResponse {}
+
+message ReplayRequest {
+  string filename = 1;
+  double playback_speed = 2 [json_name = "playbackSpeed"];
+}
+
+message ReplayResponse {}

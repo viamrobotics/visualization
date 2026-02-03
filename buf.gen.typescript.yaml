@@ -9,3 +9,9 @@ plugins:
       - target=ts
       - import_extension=none
     include_imports: true
+  - remote: buf.build/connectrpc/es:v1.4.0
+    out: src/lib
+    opt:
+      - target=ts
+      - import_extension=none
+    include_imports: true

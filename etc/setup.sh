@@ -202,7 +202,11 @@ install_go_tools() {
     # Ensure Go bin is in PATH
     export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"
     
+    # Protobuf code generation (required by buf.gen.go.yaml)
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    
+    # Documentation generation
     go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
     
     log_success "Go tools installed successfully"
