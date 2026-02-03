@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.6.0
+
+### Minor Changes
+
+- 2086308: general availability for 3d model arms
+
 ## 1.5.0
 
 ### Minor Changes
