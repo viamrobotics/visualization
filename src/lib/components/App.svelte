@@ -26,6 +26,7 @@
 		provideDrawConnectionConfig,
 		type DrawConnectionConfig,
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
+	import Camera from './widgets/Camera.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -63,6 +64,8 @@
 	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
+
+	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
 
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
@@ -136,6 +139,15 @@
 
 				{#if !focus && settings.current.enableArmPositionsWidget}
 					<ArmPositions {@attach domPortal(root)} />
+				{/if}
+
+				{#if !focus}
+					{#each currentRobotCameraWidgets as cameraName (cameraName)}
+						<Camera
+							name={cameraName}
+							{@attach domPortal(root)}
+						/>
+					{/each}
 				{/if}
 
 				<FileDrop {@attach domPortal(root)} />
