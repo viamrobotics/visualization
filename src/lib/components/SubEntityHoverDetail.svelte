@@ -125,7 +125,7 @@
 	})
 </script>
 
-{#if entity === hoverInfo.entity}
+{#if hoverInfo.entity && entity === hoverInfo.entity}
 	<h3 class="text-subtle-2 pt-3 pb-2">Sub-entity Hover Info</h3>
 
 	{#if closestArrow}
