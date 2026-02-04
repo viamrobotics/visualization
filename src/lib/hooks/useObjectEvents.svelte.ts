@@ -3,6 +3,7 @@ import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
+import { useHoverInfo } from './useHoverPosition.svelte'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -11,6 +12,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const focusedEntity = useFocusedEntity()
 	const visibility = useVisibility()
 	const cursor = useCursor()
+	const hoverInfo = useHoverInfo()
 
 	const currentEntity = $derived(entity())
 	const visible = $derived(currentEntity ? (visibility.get(currentEntity) ?? true) : true)
@@ -18,6 +20,12 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 		cursor.onPointerEnter()
+		hoverInfo.entity = currentEntity
+	}
+
+	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+		hoverInfo.position = event.point.clone()
 	}
 
 	const onpointerleave = (event: IntersectionEvent<MouseEvent>) => {
@@ -53,6 +61,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 			return visible
 		},
 		onpointerenter,
+		onpointermove,
 		onpointerleave,
 		ondblclick,
 		onpointerdown,

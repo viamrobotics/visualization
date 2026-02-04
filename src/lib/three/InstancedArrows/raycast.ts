@@ -75,23 +75,17 @@ export function meshBoundsRaycast(
 	if (this.geometry.boundingBox === null) {
 		this.geometry.computeBoundingBox()
 	}
-
 	box.copy(this.geometry.boundingBox ?? box)
-	box.applyMatrix4(this.matrixWorld)
 
 	if (!raycaster.ray.intersectsBox(box)) {
 		return
 	}
 
-	inverseMatrix.copy(this.matrixWorld).invert()
-
-	ray.copy(raycaster.ray).applyMatrix4(inverseMatrix)
-
+	raycaster.ray.intersectBox(box, vec3)
 	const distance = vec3.distanceTo(raycaster.ray.origin)
-	const point = vec3.clone()
 	intersects.push({
 		distance,
-		point,
+		point: vec3.clone(),
 		object: this,
 	})
 }

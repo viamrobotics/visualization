@@ -28,7 +28,6 @@
 	import { traits, useTrait, useWorld } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-
 	const { ...rest } = $props()
 
 	const world = useWorld()
