@@ -51,18 +51,19 @@
 	})
 	leftPad.trigger.on('up', () => (dragging = false))
 
-	rightPad.trigger.on('down', () => {
-		const grip = $right?.grip
+	// Right trigger rotation disabled
+	// rightPad.trigger.on('down', () => {
+	// 	const grip = $right?.grip
 
-		if (!grip) {
-			return
-		}
+	// 	if (!grip) {
+	// 		return
+	// 	}
 
-		rotating = true
-		rotateDown.copy($right?.grip.position)
-		currentDistance = euler.z
-	})
-	rightPad.trigger.on('up', () => (rotating = false))
+	// 	rotating = true
+	// 	rotateDown.copy($right?.grip.position)
+	// 	currentDistance = euler.z
+	// })
+	// rightPad.trigger.on('up', () => (rotating = false))
 
 	const dragTask = useTask(
 		() => {

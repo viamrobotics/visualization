@@ -8,11 +8,16 @@
 	import HandCollider from './HandCollider.svelte'
 	import ArmTeleop from './ArmTeleop.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-	// import { usePartID } from '$lib/hooks/usePartID.svelte'
-	// import { useResourceNames, useRobotClient } from '@viamrobotics/svelte-sdk'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 
 	const armClient = useArmClient()
 	const armName = $derived(armClient?.names[0])
+
+	const partID = usePartID()
+	const resources = useResourceNames(() => partID.current)
+	const gripperResource = $derived(resources.current.find((r) => r.subtype === 'gripper'))
+	const gripperName = $derived(gripperResource?.name)
 
 	// const gamepadLeft = useGamepad({ xr: true, hand: 'left' })
 
@@ -66,6 +71,7 @@
 {#if armName}
 	<ArmTeleop
 		{armName}
+		{gripperName}
 		hand="right"
 	/>
 {/if}

@@ -3,24 +3,23 @@
 	import { useController, useXR } from '@threlte/xr'
 	import { Vector3, Quaternion } from 'three'
 	import { createResourceClient } from '@viamrobotics/svelte-sdk'
-	import { ArmClient } from '@viamrobotics/sdk'
+	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import {
 		getFrameTransformationQuaternion,
 		calculatePositionTarget,
-		orientationVectorToQuaternion,
-		quaternionToOrientationVector,
-		type OrientationVector,
 	} from '$lib/utils/vr-math'
+	import { OrientationVector } from '$lib/three/OrientationVector'
 
 	interface Props {
 		armName: string
+		gripperName?: string
 		scaleFactor?: number
 		hand?: 'left' | 'right'
 		rotationEnabled?: boolean
 	}
 
-	let { armName, scaleFactor = 1.0, hand = 'right', rotationEnabled = true }: Props = $props()
+	let { armName, gripperName, scaleFactor = 1.0, hand = 'right', rotationEnabled = true }: Props = $props()
 
 	const partID = usePartID()
 	// Create Viam Arm Client
@@ -30,13 +29,24 @@
 		() => armName
 	)
 
+	// Create Viam Gripper Client (optional)
+	const gripperClient = gripperName
+		? createResourceClient(
+			GripperClient,
+			() => partID.current,
+			() => gripperName
+		)
+		: undefined
+
 	// Get XR Context for Raw Input
 	const { session } = useXR()
 	const controller = useController(hand)
 
 	let isControlling = $state(false)
-	let wasPressed = false // Frame-to-frame state for edge detection
+	let wasPressed = false // Frame-to-frame state for edge detection (squeeze button)
+	let wasTriggerPressed = false // Frame-to-frame state for trigger
 	let isSending = false
+	let gripperStopTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Reference States
 	let controllerRefPos = new Vector3()
@@ -46,7 +56,11 @@
 	// Robot Reference (Viam Checkpoint)
 	let robotRefPos = { x: 0, y: 0, z: 0 }
 	let robotRefQuat = new Quaternion()
-	let robotRefOV: OrientationVector = { x: 0, y: 0, z: 0, theta: 0 } // Store original OV
+	let robotRefOV = new OrientationVector() // Store original OV
+
+	// Offset from controller orientation to arm orientation
+	// This maintains the relationship: armRot = controllerRot * offset
+	let controllerToArmOffset = new Quaternion()
 
 	// Transformation Frame
 	const qTransform = getFrameTransformationQuaternion()
@@ -75,12 +89,15 @@
 
 		if (!inputSource || !inputSource.gamepad) return
 
-		// 2. Poll Buttons (Trigger: 0, Grip/Squeeze: 1)
+		// 2. Poll Buttons
+		// Trigger (button 0) - Gripper control
+		// Squeeze/Grip (button 1) - Arm control
 		const trigger = inputSource.gamepad.buttons[0]
 		const squeeze = inputSource.gamepad.buttons[1]
-		const isPressed = (trigger && trigger.pressed) || (squeeze && squeeze.pressed)
+		const isPressed = squeeze && squeeze.pressed
+		const isTriggerPressed = trigger && trigger.pressed
 
-		// 3. Edge Detection & State Machine
+		// 3. Edge Detection & State Machine - ARM CONTROL (Squeeze)
 		if (isPressed && !wasPressed) {
 			// Rising Edge: Start Control
 			if (armClient.current) {
@@ -94,7 +111,45 @@
 			}
 		}
 
+		// 4. Edge Detection - GRIPPER CONTROL (Trigger)
+		if (gripperClient?.current) {
+			if (isTriggerPressed && !wasTriggerPressed) {
+				// Trigger pressed: Grab/close gripper, then stop after 0.5s
+				// Clear any pending stop timeout
+				if (gripperStopTimeout) {
+					clearTimeout(gripperStopTimeout)
+					gripperStopTimeout = null
+				}
+				console.log('[ArmTeleop] Trigger pressed - Closing gripper')
+				gripperClient.current.grab().catch((e) => console.warn('Gripper grab failed:', e))
+
+				// Schedule stop after 0.5 seconds
+				gripperStopTimeout = setTimeout(() => {
+					console.log('[ArmTeleop] Stopping gripper after 0.5s')
+					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
+					gripperStopTimeout = null
+				}, 500)
+			} else if (!isTriggerPressed && wasTriggerPressed) {
+				// Trigger released: Open gripper, then stop after 0.5s
+				// Clear any pending stop timeout
+				if (gripperStopTimeout) {
+					clearTimeout(gripperStopTimeout)
+					gripperStopTimeout = null
+				}
+				console.log('[ArmTeleop] Trigger released - Opening gripper')
+				gripperClient.current.open().catch((e) => console.warn('Gripper open failed:', e))
+
+				// Schedule stop after 0.5 seconds
+				gripperStopTimeout = setTimeout(() => {
+					console.log('[ArmTeleop] Stopping gripper after 0.5s')
+					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
+					gripperStopTimeout = null
+				}, 500)
+			}
+		}
+
 		wasPressed = isPressed
+		wasTriggerPressed = isTriggerPressed
 
 		// 4. Control Loop
 		if (isControlling && armClient.current) {
@@ -127,8 +182,8 @@
 			const { x, y, z, oX, oY, oZ, theta } = currentPose
 
 			robotRefPos = { x, y, z }
-			robotRefOV = { x: oX, y: oY, z: oZ, theta } // Store original orientation vector
-			robotRefQuat = orientationVectorToQuaternion(robotRefOV).normalize()
+			robotRefOV.set(oX, oY, oZ, theta) // Store original orientation vector
+			robotRefQuat = robotRefOV.toQuaternion(new Quaternion()).normalize()
 
 			// Use grip space for tracking
 			const grip = c.grip
@@ -154,10 +209,21 @@
 				w: controllerRefRotRobot.w
 			}))
 
+			// 2. Compute offset from controller orientation to arm orientation
+			// This maintains: armRot = controllerRot * offset
+			// So: offset = inverse(controllerRot) * armRot
+			controllerToArmOffset = controllerRefRotRobot.clone().invert().multiply(robotRefQuat).normalize()
+			console.log('[ArmTeleop] Controller→Arm Offset Quaternion: ' + JSON.stringify({
+				x: controllerToArmOffset.x,
+				y: controllerToArmOffset.y,
+				z: controllerToArmOffset.z,
+				w: controllerToArmOffset.w
+			}))
+
 			errorTimeout = 0
 
 			isControlling = true
-			console.log('[ArmTeleop] Teleop Engaged - Tracking deltas from reference')
+			console.log('[ArmTeleop] Teleop Engaged - Absolute rotation with offset')
 		} catch (e) {
 			console.error('Failed to start teleop:', e)
 		}
@@ -187,36 +253,19 @@
 		// --- Rotation Step ---
 		let targetOV
 		if (rotationEnabled) {
-			// 1. Convert Current Controller Rotation to Robot Frame
-			// Matches Dart: currentRotationQuaternionViamPhone
-			const currentRotRobot = transformToRobotFrame(currentControllerRot, qTransform)
-			// Normalize to prevent accumulation errors
-			currentRotRobot.normalize()
+			// ABSOLUTE ROTATION: Transform controller orientation to robot frame, then apply offset
+			// 1. Transform VR Frame → Robot Frame using sandwich transform: T * q * T^-1
+			const currentRotRobot = transformToRobotFrame(currentControllerRot, qTransform).normalize()
 
-			// 2. Calculate Delta in Robot Frame: Current * Inv(Reference)
-			// Matches Dart: rotationDeltaViam
-			const refInverse = controllerRefRotRobot.clone().normalize().invert()
-			const deltaRotRobot = currentRotRobot.clone().multiply(refInverse).normalize()
+			// 2. Apply offset to maintain initial controller→arm relationship
+			// targetArmRot = currentControllerRot * offset
+			const targetArmRotQuat = currentRotRobot.clone().multiply(controllerToArmOffset).normalize()
 
-			// 3. Calculate rotation angle from delta quaternion
-			// Matches Dart: rotationAngle = 2 * acos(w)
-			const rotationAngle = 2 * Math.acos(Math.max(-1, Math.min(1, deltaRotRobot.w)))
+			// 3. Convert to Viam OrientationVector using proper Dart-matching algorithm
+			targetOV = new OrientationVector().setFromQuaternion(targetArmRotQuat)
+			console.log('[ArmTeleop]   Using ABSOLUTE rotation with offset')
 
-			// 4. Apply Deadband Filter (CRITICAL - matches Dart implementation)
-			if (rotationAngle < ROTATION_DEADBAND_RAD) {
-				// Rotation too small - keep ORIGINAL reference orientation to prevent jitter
-				// Use stored OV directly to avoid quaternion double-cover issues
-				targetOV = robotRefOV
-				console.log('[ArmTeleop]   Rotation angle below deadband:', rotationAngle.toFixed(4), 'rad - using ORIGINAL reference orientation')
-			} else {
-				// Rotation significant enough - apply delta to robot start orientation
-				// Matches Dart: newRotationQuaternionViam
-				const targetRotQuat = deltaRotRobot.clone().multiply(robotRefQuat).normalize()
-				targetOV = quaternionToOrientationVector(targetRotQuat)
-				console.log('[ArmTeleop]   Rotation angle:', rotationAngle.toFixed(4), 'rad - applying delta')
-			}
-
-			// Update Ghost Rotation (approximation for visualizer)
+			// Update Ghost Rotation for visualizer
 			ghostRot.copy(currentControllerRot)
 		} else {
 			// Keep orientation fixed to start - use original OV
@@ -244,7 +293,7 @@
 		lastCommandTime = now
 		isSending = true
 
-		if (isNaN(targetPos.x) || isNaN(targetOV.theta)) {
+		if (isNaN(targetPos.x) || isNaN(targetOV.th)) {
 			console.warn('Teleop Safety: NaN detected', targetPos, targetOV)
 			isSending = false
 			return
@@ -273,13 +322,13 @@
 			ox: robotRefOV.x.toFixed(4),
 			oy: robotRefOV.y.toFixed(4),
 			oz: robotRefOV.z.toFixed(4),
-			theta: robotRefOV.theta.toFixed(4)
+			theta: robotRefOV.th.toFixed(4)
 		}))
 		console.log('[ArmTeleop]   Target Orientation: ' + JSON.stringify({
 			ox: targetOV.x.toFixed(4),
 			oy: targetOV.y.toFixed(4),
 			oz: targetOV.z.toFixed(4),
-			theta: targetOV.theta.toFixed(4)
+			theta: targetOV.th.toFixed(4)
 		}))
 		console.log('[ArmTeleop] ========================================')
 
@@ -291,7 +340,7 @@
 				oX: targetOV.x,
 				oY: targetOV.y,
 				oZ: targetOV.z,
-				theta: targetOV.theta,
+				theta: targetOV.th,
 			})
 			.catch((e) => {
 				console.warn('Move failed:', e)
