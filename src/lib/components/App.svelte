@@ -7,7 +7,6 @@
 	import Scene from './Scene.svelte'
 	import TreeContainer from '$lib/components/Tree/TreeContainer.svelte'
 	import Details from '$lib/components/Details.svelte'
-	import HoverToolTip from '$lib/components/HoverToolTip.svelte'
 	import SceneProviders from './SceneProviders.svelte'
 	import XR from '$lib/components/xr/XR.svelte'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
@@ -130,7 +129,6 @@
 					{dashboard}
 				/>
 				<Details {@attach domPortal(root)} />
-				<HoverToolTip />
 				{#if environment.current.isStandalone}
 					<LiveUpdatesBanner {@attach domPortal(root)} />
 				{/if}

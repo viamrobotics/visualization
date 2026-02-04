@@ -3,7 +3,7 @@ import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
-import { useHoverInfo } from './useHoverPosition.svelte'
+import { useHoverInfo } from './useHoverInfo.svelte.ts'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -25,6 +25,7 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
+		hoverInfo.index = event.index // is only provided by intersections that have a bvh and provide deep raycasting
 		hoverInfo.position = event.point.clone()
 	}
 
