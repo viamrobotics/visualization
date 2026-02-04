@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { useXR, XR, XRButton } from '@threlte/xr'
+	import { World } from '@threlte/rapier'
 	import OriginMarker from './OriginMarker.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import Controllers from './Controllers.svelte'
@@ -12,13 +13,17 @@
 	const enableXR = $derived(settings.current.enableXR)
 </script>
 
-{#if enableXR}
+{#if enableXR || true}
 	<XR>
-		<T.Group rotation.x={$isPresenting ? -Math.PI / 2 : 0}>
-			<OriginMarker />
-		</T.Group>
+		<World>
+			<Controllers />
 
-		<Controllers />
+			<T.Group position.z={-2}>
+				<T.Group rotation.x={$isPresenting ? -Math.PI / 2 : 0}>
+					<OriginMarker />
+				</T.Group>
+			</T.Group>
+		</World>
 	</XR>
 
 	<XRButton

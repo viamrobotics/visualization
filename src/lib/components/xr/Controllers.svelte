@@ -6,8 +6,13 @@
 
 	import { RigidBody } from '@threlte/rapier'
 	import HandCollider from './HandCollider.svelte'
+	import ArmTeleop from './ArmTeleop.svelte'
+	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	// import { usePartID } from '$lib/hooks/usePartID.svelte'
 	// import { useResourceNames, useRobotClient } from '@viamrobotics/svelte-sdk'
+
+	const armClient = useArmClient()
+	const armName = $derived(armClient?.names[0])
 
 	// const gamepadLeft = useGamepad({ xr: true, hand: 'left' })
 
@@ -57,3 +62,10 @@
 		</RigidBody>
 	{/snippet}
 </Controller>
+
+{#if armName}
+	<ArmTeleop
+		{armName}
+		hand="right"
+	/>
+{/if}
