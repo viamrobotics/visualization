@@ -14,7 +14,6 @@ import type { InstancedArrows } from './InstancedArrows'
 const vec3 = new Vector3()
 const inverseMatrix = new Matrix4()
 const localRay = new Ray()
-const ray = new Ray()
 const box = new Box3()
 const segmentStart = new Vector3()
 const segmentEnd = new Vector3()

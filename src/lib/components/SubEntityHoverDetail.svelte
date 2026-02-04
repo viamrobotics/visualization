@@ -39,7 +39,7 @@
 		}
 
 		return {
-			index: Math.floor(index/6),
+			index: Math.floor(index / 6),
 			x: positions[index] / 1000,
 			y: positions[index + 1] / 1000,
 			z: positions[index + 2] / 1000,
@@ -67,7 +67,7 @@
 		}
 
 		return {
-			index: Math.floor(index/3),
+			index: Math.floor(index / 3),
 			x: positions[index],
 			y: positions[index + 1],
 			z: positions[index + 2],
@@ -126,8 +126,8 @@
 </script>
 
 {#if entity === hoverInfo.entity}
-    <h3 class="text-subtle-2 pt-3 pb-2">Sub-entity Hover Info</h3>
-    
+	<h3 class="text-subtle-2 pt-3 pb-2">Sub-entity Hover Info</h3>
+
 	{#if closestArrow}
 		<div>
 			<strong class="font-semibold">index</strong>
@@ -199,5 +199,3 @@
 		</div>
 	{/if}
 {/if}
-
-

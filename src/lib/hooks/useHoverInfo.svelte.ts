@@ -17,7 +17,7 @@ export const provideHoverInfo = (): HoverInfoContext => {
 	let position = $state.raw<Vector3>()
 	let entity = $state.raw<Entity>()
 	let index = $state.raw<number>()
-	
+
 	const context: HoverInfoContext = {
 		get index() {
 			return index
@@ -34,9 +34,9 @@ export const provideHoverInfo = (): HoverInfoContext => {
 		set entity(value: Entity | undefined) {
 			entity = value
 		},
-        set position(value: Vector3 | undefined) {
-            position = value
-        }
+		set position(value: Vector3 | undefined) {
+			position = value
+		},
 	}
 
 	setContext<HoverInfoContext>(hoverInfoKey, context)
@@ -47,4 +47,3 @@ export const provideHoverInfo = (): HoverInfoContext => {
 export const useHoverInfo = (): HoverInfoContext => {
 	return getContext<HoverInfoContext>(hoverInfoKey)
 }
-
