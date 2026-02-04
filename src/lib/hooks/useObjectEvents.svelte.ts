@@ -3,7 +3,7 @@ import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
-import { useHoverInfo } from './useHoverInfo.svelte.ts'
+import { useHoverInfo } from './useHoverInfo.svelte'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
