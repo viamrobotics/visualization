@@ -8,9 +8,11 @@
 
 	interface CameraFeedProps {
 		resourceName: string
+		offset?: { x?: number; y?: number; z?: number }
+		scale?: number
 	}
 
-	let { resourceName }: CameraFeedProps = $props()
+	let { resourceName, offset = {}, scale = 0.7 }: CameraFeedProps = $props()
 
 	const partID = usePartID()
 	const streamClient = createStreamClient(
@@ -28,39 +30,23 @@
 	})
 
 	$effect.pre(() => {
-		video.srcObject = streamClient.mediaStream
-		ready = true
-	})
-
-	const headset = useHeadset()
-
-	let group = new Group()
-	let mesh = new Mesh()
-	let euler = new Euler()
-	let quaternion = new Quaternion()
-	let direction = new Vector3()
-
-	const { start, stop } = useTask(
-		(delta) => {
-			group.position.lerp(headset.position, delta * 5)
-
-			headset.getWorldDirection(direction)
-			euler.set(0, Math.atan2(direction.x, direction.z), 0)
-			quaternion.setFromEuler(euler)
-			group.quaternion.slerp(quaternion, delta * 5)
-
-			mesh.lookAt(headset.position)
-		},
-		{
-			autoStart: false,
+		const mediaStream = streamClient.mediaStream
+		if (!mediaStream) {
+			ready = false
+			return
 		}
-	)
 
-	$effect(() => {
-		if (ready) {
-			start()
-		} else {
-			stop()
+		video.srcObject = mediaStream
+		ready = true
+
+		// Cleanup when component unmounts
+		return () => {
+			ready = false
+			video.pause()
+			video.srcObject = null
+			if (mediaStream) {
+				mediaStream.getTracks().forEach(track => track.stop())
+			}
 		}
 	})
 
@@ -68,16 +54,11 @@
 </script>
 
 {#if ready}
-	<T is={group}>
-		<T.Group>
-			<T
-				is={mesh}
-				position={[0, 0, -1.5]}
-				scale={0.7}
-			>
-				<BentPlaneGeometry args={[0.1, aspect, 1, 20, 20]} />
-				<T.MeshBasicMaterial map={texture} />
-			</T>
-		</T.Group>
-	</T>
+	<T.Mesh
+		position={[offset.x ?? 0, offset.y ?? 0, offset.z ?? -1.5]}
+		scale={scale}
+	>
+		<BentPlaneGeometry args={[0.1, aspect, 1, 20, 20]} />
+		<T.MeshBasicMaterial map={texture} />
+	</T.Mesh>
 {/if}

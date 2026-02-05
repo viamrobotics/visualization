@@ -74,19 +74,25 @@
 	let streamClient = $derived(client.current ? new StreamClient(client.current) : undefined)
 
 	$effect(() => {
-		if (streamClient) {
+		if (streamClient && client.current) {
 			isLoading = true
 			error = undefined
-			streamClient
-				.getOptions(name)
-				.then((options) => {
-					resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
-					isLoading = false
-				})
-				.catch((e) => {
-					error = e instanceof Error ? e.message : 'Failed to get stream options'
-					isLoading = false
-				})
+
+			// Add a small delay to ensure connection is ready
+			const timeoutId = setTimeout(() => {
+				streamClient
+					.getOptions(name)
+					.then((options) => {
+						resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
+						isLoading = false
+					})
+					.catch((e) => {
+						error = e instanceof Error ? e.message : 'Failed to get stream options'
+						isLoading = false
+					})
+			}, 100)
+
+			return () => clearTimeout(timeoutId)
 		}
 	})
 
