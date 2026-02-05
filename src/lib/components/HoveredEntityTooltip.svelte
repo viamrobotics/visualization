@@ -97,7 +97,11 @@
 
 	const world = useWorld()
 
-	let tooltipData: { subEntityPosition: Vector3 | undefined; closestArrow?: ClosestArrow; closestPoint?: ClosestPoint } | null = $state.raw(null)
+	let tooltipData: {
+		subEntityPosition: Vector3 | undefined
+		closestArrow?: ClosestArrow
+		closestPoint?: ClosestPoint
+	} | null = $state.raw(null)
 
 	const getTooltipData = (entity: Entity) => {
 		if (entity !== hoveredEntity) {
@@ -112,15 +116,14 @@
 
 		let closestArrow: ClosestArrow | undefined
 		let closestPoint: ClosestPoint | undefined
-		let subEntityPosition: Vector3 | undefined;
+		let subEntityPosition: Vector3 | undefined
 
 		if (entity.has(traits.Arrows)) {
 			// TODO: maybe we could store the arrows in a buffered geometry to avoid the slow getClosestArrow
 			closestArrow = getClosestArrow(entity.get(traits.Positions) as Float32Array, hoverPosition)
 			subEntityPosition = new Vector3(closestArrow.x, closestArrow.y, closestArrow.z)
 		} else if (entity.has(traits.Points)) {
-			const positions = entity.get(traits.BufferGeometry)?.attributes.position
-				.array as Float32Array
+			const positions = entity.get(traits.BufferGeometry)?.attributes.position.array as Float32Array
 
 			// we can skip the slow getClosestPoint if the points provided an index already
 			if (index !== undefined) {
@@ -135,7 +138,7 @@
 
 	const unsubChange = world.onChange(traits.Hover, (entity) => {
 		if (entity === hoveredEntity) {
-		   tooltipData = getTooltipData(entity);
+			tooltipData = getTooltipData(entity)
 		}
 	})
 
@@ -150,7 +153,6 @@
 		unsubRemove()
 	})
 </script>
-
 
 {#if tooltipData?.subEntityPosition}
 	<HTML
@@ -178,9 +180,15 @@
 							<span class="text-subtle-2"> (m)</span>
 						</div>
 						<div class="flex gap-3">
-							<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.x.toFixed(2)}</div>
-							<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.y.toFixed(2)}</div>
-							<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.z.toFixed(2)}</div>
+							<div>
+								<span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.x.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.y.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.z.toFixed(2)}
+							</div>
 						</div>
 					</div>
 
@@ -190,9 +198,15 @@
 							<span class="text-subtle-2"> (deg)</span>
 						</div>
 						<div class="flex gap-3">
-							<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.oX.toFixed(2)}</div>
-							<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.oY.toFixed(2)}</div>
-							<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.oZ.toFixed(2)}</div>
+							<div>
+								<span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.oX.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.oY.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.oZ.toFixed(2)}
+							</div>
 						</div>
 					</div>
 				{/if}
@@ -209,9 +223,15 @@
 							<span class="text-subtle-2"> (m)</span>
 						</div>
 						<div class="flex gap-3">
-							<div><span class="text-subtle-2">x </span>{tooltipData.closestPoint.x.toFixed(2)}</div>
-							<div><span class="text-subtle-2">y </span>{tooltipData.closestPoint.y.toFixed(2)}</div>
-							<div><span class="text-subtle-2">z </span>{tooltipData.closestPoint.z.toFixed(2)}</div>
+							<div>
+								<span class="text-subtle-2">x </span>{tooltipData.closestPoint.x.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2">y </span>{tooltipData.closestPoint.y.toFixed(2)}
+							</div>
+							<div>
+								<span class="text-subtle-2">z </span>{tooltipData.closestPoint.z.toFixed(2)}
+							</div>
 						</div>
 					</div>
 				{/if}
