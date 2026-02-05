@@ -3,7 +3,7 @@ import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
-import { useHoverInfo } from './useHoverInfo.svelte'
+import { traits } from '$lib/ecs'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -12,7 +12,6 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const focusedEntity = useFocusedEntity()
 	const visibility = useVisibility()
 	const cursor = useCursor()
-	const hoverInfo = useHoverInfo()
 
 	const currentEntity = $derived(entity())
 	const visible = $derived(currentEntity ? (visibility.get(currentEntity) ?? true) : true)
@@ -20,18 +19,39 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 		cursor.onPointerEnter()
-		hoverInfo.entity = currentEntity
+
+		if (currentEntity && !currentEntity.has(traits.Hover)) {
+			currentEntity.add(
+				traits.Hover({
+					index: -1,
+					x: event.point.x,
+					y: event.point.y,
+					z: event.point.z,
+				})
+			)
+		}
 	}
 
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
-		hoverInfo.index = event.index // is only provided by intersections that have a bvh and provide deep raycasting
-		hoverInfo.position = event.point.clone()
+
+		if (currentEntity && currentEntity.has(traits.Hover)) {
+			currentEntity.set(traits.Hover, {
+				index: event.index ?? -1,
+				x: event.point.x,
+				y: event.point.y,
+				z: event.point.z,
+			})
+		}
 	}
 
 	const onpointerleave = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 		cursor.onPointerLeave()
+
+		if (currentEntity?.has(traits.Hover)) {
+			currentEntity.remove(traits.Hover)
+		}
 	}
 
 	const ondblclick = (event: IntersectionEvent<MouseEvent>) => {
