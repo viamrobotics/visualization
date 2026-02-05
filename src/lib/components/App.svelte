@@ -27,7 +27,7 @@
 		type DrawConnectionConfig,
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
 	import Camera from './widgets/Camera.svelte'
-	import SubEntityHoverDetail from './SubEntityHoverDetail.svelte'
+	import HoveredEntities from './HoveredEntities.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -131,7 +131,7 @@
 				/>
 
 				{#if settings.current.renderSubEntityHoverDetail}
-					<SubEntityHoverDetail {@attach domPortal(root)} />
+					<HoveredEntities {@attach domPortal(root)} />
 				{/if}
 				<Details {@attach domPortal(root)} />
 				{#if environment.current.isStandalone}

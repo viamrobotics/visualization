@@ -83,24 +83,24 @@
 </script>
 
 <script lang="ts">
-	import { useSelectedEntity, useFocusedEntity } from '$lib/hooks/useSelection.svelte'
-	import { traits, useQuery } from '$lib/ecs'
+	import { traits } from '$lib/ecs'
 	import { HTML } from '@threlte/extras'
 	import type { Entity } from 'koota'
 	import { useWorld } from '$lib/ecs'
 	import { onDestroy } from 'svelte'
 
-	const selectedEntity = useSelectedEntity()
-	const focusedEntity = useFocusedEntity()
-	const hoveredEntities = useQuery(traits.Hover)
+	interface Props {
+		hoveredEntity: Entity
+	}
+
+	let { hoveredEntity }: Props = $props()
+
 	const world = useWorld()
 
-	const displayEntity = $derived(focusedEntity.current ?? selectedEntity.current)
 	let tooltipData: { subEntityPosition: Vector3 | undefined; closestArrow?: ClosestArrow; closestPoint?: ClosestPoint } | null = $state.raw(null)
 
 	const getTooltipData = (entity: Entity) => {
-		// Only show tooltip for selected/focused entity (maintains current UX)
-		if (entity !== displayEntity) {
+		if (entity !== hoveredEntity) {
 			return null
 		}
 
@@ -134,13 +134,13 @@
 	}
 
 	const unsubChange = world.onChange(traits.Hover, (entity) => {
-		if (entity === displayEntity) {
+		if (entity === hoveredEntity) {
 		   tooltipData = getTooltipData(entity);
 		}
 	})
 
 	const unsubRemove = world.onRemove(traits.Hover, (entity) => {
-		if (entity === displayEntity) {
+		if (entity === hoveredEntity) {
 			tooltipData = null
 		}
 	})
@@ -151,72 +151,71 @@
 	})
 </script>
 
-{#each hoveredEntities.current as entity (entity)}
-	{#if tooltipData?.subEntityPosition && entity === displayEntity}
-		<HTML
-			position={tooltipData.subEntityPosition.toArray()}
-			class="pointer-events-none"
+
+{#if tooltipData?.subEntityPosition}
+	<HTML
+		position={tooltipData.subEntityPosition.toArray()}
+		class="pointer-events-none"
+	>
+		<div
+			class="border-medium pointer-events-none relative -mb-2 -translate-x-1/2 -translate-y-full border bg-white px-3 py-2.5 text-xs shadow-md"
 		>
+			<!-- Arrow -->
 			<div
-				class="border-medium pointer-events-none relative -mb-2 -translate-x-1/2 -translate-y-full border bg-white px-3 py-2.5 text-xs shadow-md"
-			>
-				<!-- Arrow -->
-				<div
-					class="border-medium absolute -bottom-[5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-r border-b bg-white"
-				></div>
+				class="border-medium absolute -bottom-[5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-r border-b bg-white"
+			></div>
 
-				<div class="flex flex-col gap-2.5">
-					{#if tooltipData.closestArrow}
-						<div>
-							<div class="mb-1"><strong class="font-semibold">index</strong></div>
-							<div>{tooltipData.closestArrow.index}</div>
-						</div>
+			<div class="flex flex-col gap-2.5">
+				{#if tooltipData.closestArrow}
+					<div>
+						<div class="mb-1"><strong class="font-semibold">index</strong></div>
+						<div>{tooltipData.closestArrow.index}</div>
+					</div>
 
-						<div>
-							<div class="mb-1">
-								<strong class="font-semibold">world position</strong>
-								<span class="text-subtle-2"> (m)</span>
-							</div>
-							<div class="flex gap-3">
-								<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.x.toFixed(2)}</div>
-								<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.y.toFixed(2)}</div>
-								<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.z.toFixed(2)}</div>
-							</div>
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world position</strong>
+							<span class="text-subtle-2"> (m)</span>
 						</div>
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.x.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.y.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.z.toFixed(2)}</div>
+						</div>
+					</div>
 
-						<div>
-							<div class="mb-1">
-								<strong class="font-semibold">world orientation</strong>
-								<span class="text-subtle-2"> (deg)</span>
-							</div>
-							<div class="flex gap-3">
-								<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.oX.toFixed(2)}</div>
-								<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.oY.toFixed(2)}</div>
-								<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.oZ.toFixed(2)}</div>
-							</div>
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world orientation</strong>
+							<span class="text-subtle-2"> (deg)</span>
 						</div>
-					{/if}
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2 mr-1">x </span>{tooltipData.closestArrow.oX.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">y </span>{tooltipData.closestArrow.oY.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">z </span>{tooltipData.closestArrow.oZ.toFixed(2)}</div>
+						</div>
+					</div>
+				{/if}
 
-					{#if tooltipData.closestPoint}
-						<div>
-							<div class="mb-1"><strong class="font-semibold">index</strong></div>
-							<div>{tooltipData.closestPoint.index}</div>
-						</div>
+				{#if tooltipData.closestPoint}
+					<div>
+						<div class="mb-1"><strong class="font-semibold">index</strong></div>
+						<div>{tooltipData.closestPoint.index}</div>
+					</div>
 
-						<div>
-							<div class="mb-1">
-								<strong class="font-semibold">world position</strong>
-								<span class="text-subtle-2"> (m)</span>
-							</div>
-							<div class="flex gap-3">
-								<div><span class="text-subtle-2">x </span>{tooltipData.closestPoint.x.toFixed(2)}</div>
-								<div><span class="text-subtle-2">y </span>{tooltipData.closestPoint.y.toFixed(2)}</div>
-								<div><span class="text-subtle-2">z </span>{tooltipData.closestPoint.z.toFixed(2)}</div>
-							</div>
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world position</strong>
+							<span class="text-subtle-2"> (m)</span>
 						</div>
-					{/if}
-				</div>
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2">x </span>{tooltipData.closestPoint.x.toFixed(2)}</div>
+							<div><span class="text-subtle-2">y </span>{tooltipData.closestPoint.y.toFixed(2)}</div>
+							<div><span class="text-subtle-2">z </span>{tooltipData.closestPoint.z.toFixed(2)}</div>
+						</div>
+					</div>
+				{/if}
 			</div>
-		</HTML>
-	{/if}
-{/each}
+		</div>
+	</HTML>
+{/if}
