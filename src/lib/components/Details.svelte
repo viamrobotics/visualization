@@ -28,7 +28,6 @@
 	import { traits, useTrait, useWorld } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import SubEntityHoverDetail from '$lib/components/SubEntityHoverDetail.svelte'
 	const { ...rest } = $props()
 
 	const world = useWorld()
@@ -611,7 +610,7 @@
 			{/if}
 		</div>
 
-		<SubEntityHoverDetail />
+		<!-- <SubEntityHoverDetail /> -->
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 

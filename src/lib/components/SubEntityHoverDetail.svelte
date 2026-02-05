@@ -86,6 +86,7 @@
 	import { useSelectedEntity, useFocusedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useHoverInfo } from '$lib/hooks/useHoverInfo.svelte'
 	import { traits } from '$lib/ecs'
+	import { HTML } from '@threlte/extras'
 
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
@@ -125,77 +126,70 @@
 	})
 </script>
 
-{#if hoverInfo.entity && entity === hoverInfo.entity}
-	<h3 class="text-subtle-2 pt-3 pb-2">Sub-entity Hover Info</h3>
+{#if hoverInfo.entity && entity === hoverInfo.entity && hoverInfo.position}
+	<HTML
+		position={hoverInfo.position.toArray()}
+		class="pointer-events-none"
+	>
+		<div
+			class="border-medium pointer-events-none relative -mb-2 -translate-x-1/2 -translate-y-full border bg-white px-3 py-2.5 text-xs shadow-md"
+		>
+			<!-- Arrow -->
+			<div
+				class="border-medium absolute -bottom-[5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-r border-b bg-white"
+			></div>
 
-	{#if closestArrow}
-		<div>
-			<strong class="font-semibold">index</strong>
-			<div>{closestArrow.index}</div>
-		</div>
+			<div class="flex flex-col gap-2.5">
+				{#if closestArrow}
+					<div>
+						<div class="mb-1"><strong class="font-semibold">index</strong></div>
+						<div>{closestArrow.index}</div>
+					</div>
 
-		<div>
-			<strong class="font-semibold">world position</strong>
-			<span class="text-subtle-2">(m)</span>
-			<div class="flex gap-3">
-				<div>
-					<span class="text-subtle-2">x</span>
-					{closestArrow.x.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">y</span>
-					{closestArrow.y.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">z</span>
-					{closestArrow.z.toFixed(2)}
-				</div>
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world position</strong>
+							<span class="text-subtle-2"> (m)</span>
+						</div>
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2 mr-1">x </span>{closestArrow.x.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">y </span>{closestArrow.y.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">z </span>{closestArrow.z.toFixed(2)}</div>
+						</div>
+					</div>
+
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world orientation</strong>
+							<span class="text-subtle-2"> (deg)</span>
+						</div>
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2 mr-1">x </span>{closestArrow.oX.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">y </span>{closestArrow.oY.toFixed(2)}</div>
+							<div><span class="text-subtle-2 mr-1">z </span>{closestArrow.oZ.toFixed(2)}</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if closestPoint}
+					<div>
+						<div class="mb-1"><strong class="font-semibold">index</strong></div>
+						<div>{closestPoint.index}</div>
+					</div>
+
+					<div>
+						<div class="mb-1">
+							<strong class="font-semibold">world position</strong>
+							<span class="text-subtle-2"> (m)</span>
+						</div>
+						<div class="flex gap-3">
+							<div><span class="text-subtle-2">x </span>{closestPoint.x.toFixed(2)}</div>
+							<div><span class="text-subtle-2">y </span>{closestPoint.y.toFixed(2)}</div>
+							<div><span class="text-subtle-2">z </span>{closestPoint.z.toFixed(2)}</div>
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
-
-		<div>
-			<strong class="font-semibold">world orientation</strong>
-			<span class="text-subtle-2">(deg)</span>
-			<div class="flex gap-3">
-				<div>
-					<span class="text-subtle-2">x</span>
-					{closestArrow.oX.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">y</span>
-					{closestArrow.oY.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">z</span>
-					{closestArrow.oZ.toFixed(2)}
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	{#if closestPoint}
-		<div>
-			<strong class="font-semibold">index</strong>
-			<div>{closestPoint.index}</div>
-		</div>
-
-		<div>
-			<strong class="font-semibold">world position</strong>
-			<span class="text-subtle-2">(m)</span>
-			<div class="flex gap-3">
-				<div>
-					<span class="text-subtle-2">x</span>
-					{closestPoint.x.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">y</span>
-					{closestPoint.y.toFixed(2)}
-				</div>
-				<div>
-					<span class="text-subtle-2">z</span>
-					{closestPoint.z.toFixed(2)}
-				</div>
-			</div>
-		</div>
-	{/if}
+	</HTML>
 {/if}
