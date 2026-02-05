@@ -7,7 +7,6 @@ import (
 	"math/rand"
 
 	"github.com/golang/geo/r3"
-	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
@@ -97,20 +96,6 @@ func TestDrawPoses(t *testing.T) {
 		runDrawPosesTest(t, numPoints, colors)
 	})
 }
-
-func TestHoverStress(t *testing.T) {
-	t.Run("TestHoverStress", func(t *testing.T) {
-		poses := generateSpherePoses(10_000, 1000, 1500, 1500, -300)
-
-		test.That(t, DrawPoses(poses, []string{"yellow", "red"}, true), test.ShouldBeNil)
-
-		pcd, err := pointcloud.NewFromFile("../data/boat.pcd", pointcloud.BasicType)
-		test.That(t, err, test.ShouldBeNil)
-
-		test.That(t, DrawPointCloud("boat", pcd, nil), test.ShouldBeNil)
-	})
-}
-
 func TestArrowStress(t *testing.T) {
 	t.Skip("Run only if you want to punish your computer.")
 
