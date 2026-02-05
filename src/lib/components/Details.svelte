@@ -28,7 +28,7 @@
 	import { traits, useTrait, useWorld } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	
+
 	const { ...rest } = $props()
 
 	const world = useWorld()
@@ -610,7 +610,6 @@
 				</div>
 			{/if}
 		</div>
-
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
