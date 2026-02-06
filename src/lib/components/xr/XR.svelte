@@ -29,10 +29,10 @@
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}
 			{@const spacing = 1.2}
-			{@const centerOffset = (enabledCameras.length - 1) * spacing / 2}
+			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
 			<CameraFeed
 				resourceName={cameraName}
-				offset={{ x: (index * spacing) - centerOffset, y: 1.5, z: -2.5 }}
+				offset={{ x: index * spacing - centerOffset, y: 1.5, z: -2.5 }}
 				scale={0.8}
 			/>
 		{/each}
