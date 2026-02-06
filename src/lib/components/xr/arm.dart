@@ -490,3 +490,358 @@ class ARKitArmViewModel extends ChangeNotifier {
     return isReferenceSet ? "CONTROLLING - RELEASE TO STOP" : "HOLD TO CONTROL";
   }
 }
+
+
+import 'dart:math' as math;
+// The spatial math code is part of the arkit arm controller experiment.
+
+part 'common.dart';
+part 'euler_angles.dart';
+part 'orientation_vector.dart';
+part 'quaternion.dart';
+
+part of 'spatial_math.dart';
+
+class Quaternion {
+  double real; // W
+  double imag; // X
+  double jmag; // Y
+  double kmag; // Z
+
+  Quaternion(this.real, this.imag, this.jmag, this.kmag);
+
+  Quaternion.identity() : real = 1.0, imag = 0.0, jmag = 0.0, kmag = 0.0;
+
+  Quaternion.zero() : real = 0.0, imag = 0.0, jmag = 0.0, kmag = 0.0;
+
+  OrientationVector toOrientationVectorRadians() {
+    return quatToOV(this);
+  }
+
+  Quaternion conj() {
+    return Quaternion(real, -imag, -jmag, -kmag);
+  }
+
+  // add quaternions by using this multiplication function
+  Quaternion mul(Quaternion other) {
+    return Quaternion(
+      real * other.real - imag * other.imag - jmag * other.jmag - kmag * other.kmag,
+      real * other.imag + imag * other.real + jmag * other.kmag - kmag * other.jmag,
+      real * other.jmag - imag * other.kmag + jmag * other.real + kmag * other.imag,
+      real * other.kmag + imag * other.jmag - jmag * other.imag + kmag * other.real,
+    );
+  }
+}
+
+OrientationVector quatToOV(Quaternion q) {
+  final xAxis = Quaternion(0, -1, 0, 0);
+  final zAxis = Quaternion(0, 0, 0, 1);
+  final ov = OrientationVector.zero();
+  // Get the transform of our +X and +Z points
+  final newX = q.mul(xAxis).mul(q.conj());
+  final newZ = q.mul(zAxis).mul(q.conj());
+  ov.ox = newZ.imag;
+  ov.oy = newZ.jmag;
+  ov.oz = newZ.kmag;
+
+  if (1 - newZ.kmag.abs() > orientationVectorPoleRadius) {
+    final v1 = Vec3(newZ.imag, newZ.jmag, newZ.kmag);
+    final v2 = Vec3(newX.imag, newX.jmag, newX.kmag);
+
+    final norm1 = v1.cross(v2);
+    final norm2 = v1.cross(Vec3(zAxis.imag, zAxis.jmag, zAxis.kmag));
+
+    double cosTheta = norm1.dot(norm2) / (norm1.len() * norm2.len());
+    if (cosTheta > 1) cosTheta = 1;
+    if (cosTheta < -1) cosTheta = -1;
+
+    final theta = math.acos(cosTheta);
+    if (theta > orientationVectorPoleRadius) {
+      final aa = R4AA(-theta, ov.ox, ov.oy, ov.oz);
+      final q2 = aa.toQuat();
+      final testZ = q2.mul(zAxis).mul(q2.conj());
+      final norm3 = v1.cross(Vec3(testZ.imag, testZ.jmag, testZ.kmag));
+      final cosTest = norm1.dot(norm3) / (norm1.len() * norm3.len());
+      if (1 - cosTest < defaultAngleEpsilon * defaultAngleEpsilon) {
+        ov.theta = -theta;
+      } else {
+        ov.theta = theta;
+      }
+    } else {
+      ov.theta = 0;
+    }
+  } else {
+    // Special case for when we point directly along the Z axis
+    ov.theta = -math.atan2(newX.jmag, -newX.imag);
+    if (newZ.kmag < 0) {
+      ov.theta = -math.atan2(newX.jmag, newX.imag);
+    }
+  }
+
+  if (ov.theta == -0.0) {
+    ov.theta = 0.0;
+  }
+
+  return ov;
+}
+
+bool quaternionAlmostEqual(Quaternion a, Quaternion b, double tol) {
+  return float64AlmostEqual(a.imag, b.imag, tol) &&
+      float64AlmostEqual(a.jmag, b.jmag, tol) &&
+      float64AlmostEqual(a.kmag, b.kmag, tol) &&
+      float64AlmostEqual(a.real, b.real, tol);
+}
+
+
+part of 'spatial_math.dart';
+
+class OrientationVector {
+  double theta;
+  double ox;
+  double oy;
+  double oz;
+
+  OrientationVector(this.theta, this.ox, this.oy, this.oz);
+
+  OrientationVector.zero() : theta = 0.0, ox = 0.0, oy = 0.0, oz = 1.0;
+
+  double _computeNormal() {
+    return math.sqrt(ox * ox + oy * oy + oz * oz);
+  }
+
+  String? isValid() {
+    if (_computeNormal() == 0.0) {
+      return "OrientationVector has a normal of 0, probably X, Y, and Z are all 0";
+    }
+    return null;
+  }
+
+  void normalize() {
+    final norm = _computeNormal();
+    if (norm == 0.0) {
+      oz = 1;
+      return;
+    }
+    ox /= norm;
+    oy /= norm;
+    oz /= norm;
+  }
+
+  Quaternion toQuaternion() {
+    normalize();
+
+    final lat = math.acos(oz);
+
+    double lon = 0.0;
+    final th = theta;
+
+    if (1 - oz.abs() > defaultAngleEpsilon) {
+      lon = math.atan2(oy, ox);
+    }
+
+    final q1 = MGLQuat.anglesToQuat(lon, lat, th);
+    return Quaternion(q1.w, q1.x(), q1.y(), q1.z());
+  }
+}
+
+part of 'spatial_math.dart';
+
+class EulerAngles {
+  double roll;
+  double pitch;
+  double yaw;
+
+  EulerAngles(this.roll, this.pitch, this.yaw);
+
+  EulerAngles.zero() : roll = 0.0, pitch = 0.0, yaw = 0.0;
+
+  Quaternion toQuaternion() {
+    final cy = math.cos(yaw * 0.5);
+    final sy = math.sin(yaw * 0.5);
+    final cp = math.cos(pitch * 0.5);
+    final sp = math.sin(pitch * 0.5);
+    final cr = math.cos(roll * 0.5);
+    final sr = math.sin(roll * 0.5);
+
+    final q = Quaternion.zero();
+    q.real = cr * cp * cy + sr * sp * sy;
+    q.imag = sr * cp * cy - cr * sp * sy;
+    q.jmag = cr * sp * cy + sr * cp * sy;
+    q.kmag = cr * cp * sy - sr * sp * cy;
+
+    return q;
+  }
+}
+
+
+part of 'spatial_math.dart';
+
+/// How close OZ must be to +/-1 in order to use pole math for computing theta.
+const double orientationVectorPoleRadius = 0.0001;
+
+/// A small epsilon value for float comparisons, assumed from context.
+const double defaultAngleEpsilon = 1e-9;
+
+/// Stub for utils.RadToDeg
+double radToDeg(double rad) {
+  return rad * (180.0 / math.pi);
+}
+
+/// Stub for utils.DegToRad
+double degToRad(double deg) {
+  return deg * (math.pi / 180.0);
+}
+
+/// Stub for utils.Float64AlmostEqual
+bool float64AlmostEqual(double a, double b, double tol) {
+  return (a - b).abs() <= tol;
+}
+
+/// Stub for r3.Vector
+class R3Vector {
+  double x, y, z;
+  R3Vector(this.x, this.y, this.z);
+}
+
+/// Stub for mgl64.Vec3
+class Vec3 {
+  double x, y, z;
+  Vec3(this.x, this.y, this.z);
+
+  double dot(Vec3 other) {
+    return x * other.x + y * other.y + z * other.z;
+  }
+
+  Vec3 cross(Vec3 other) {
+    return Vec3(
+      y * other.z - z * other.y,
+      z * other.x - x * other.z,
+      x * other.y - y * other.x,
+    );
+  }
+
+  double len() {
+    return math.sqrt(x * x + y * y + z * z);
+  }
+}
+
+/// Stub for mgl64.Quat
+class MGLQuat {
+  double w;
+  Vec3 v;
+
+  MGLQuat(this.w, this.v);
+
+  MGLQuat normalize() {
+    final l = math.sqrt(w * w + v.x * v.x + v.y * v.y + v.z * v.z);
+    if (l == 0) return MGLQuat(1, Vec3(0, 0, 0));
+    return MGLQuat(w / l, Vec3(v.x / l, v.y / l, v.z / l));
+  }
+
+  MGLQuat scale(double s) {
+    return MGLQuat(w * s, Vec3(v.x * s, v.y * s, v.z * s));
+  }
+
+  double x() => v.x;
+  double y() => v.y;
+  double z() => v.z;
+
+  /// Stub for mgl64.QuatSlerp
+  static MGLQuat slerp(MGLQuat q1, MGLQuat q2, double t) {
+    // A simplified slerp implementation
+    double cosHalfTheta = q1.w * q2.w + q1.v.dot(q2.v);
+
+    if (cosHalfTheta.abs() >= 1.0) {
+      return q1;
+    }
+
+    double halfTheta = math.acos(cosHalfTheta);
+    double sinHalfTheta = math.sqrt(1.0 - cosHalfTheta * cosHalfTheta);
+
+    if (sinHalfTheta.abs() < 0.001) {
+      return MGLQuat(
+        q1.w * 0.5 + q2.w * 0.5,
+        Vec3(
+          q1.v.x * 0.5 + q2.v.x * 0.5,
+          q1.v.y * 0.5 + q2.v.y * 0.5,
+          q1.v.z * 0.5 + q2.v.z * 0.5,
+        ),
+      );
+    }
+
+    double ratioA = math.sin((1 - t) * halfTheta) / sinHalfTheta;
+    double ratioB = math.sin(t * halfTheta) / sinHalfTheta;
+
+    return MGLQuat(
+      (q1.w * ratioA + q2.w * ratioB),
+      Vec3(
+        (q1.v.x * ratioA + q2.v.x * ratioB),
+        (q1.v.y * ratioA + q2.v.y * ratioB),
+        (q1.v.z * ratioA + q2.v.z * ratioB),
+      ),
+    );
+  }
+
+  /// Stub for mgl64.QuatNlerp
+  static MGLQuat nlerp(MGLQuat q1, MGLQuat q2, double t) {
+    // Simplified nlerp
+    final q = MGLQuat(
+      (1 - t) * q1.w + t * q2.w,
+      Vec3(
+        (1 - t) * q1.v.x + t * q2.v.x,
+        (1 - t) * q1.v.y + t * q2.v.y,
+        (1 - t) * q1.v.z + t * q2.v.z,
+      ),
+    );
+    return q.normalize();
+  }
+
+  /// Stub for mgl64.AnglesToQuat(lon, lat, theta, mgl64.ZYZ)
+  static MGLQuat anglesToQuat(double z1, double y, double z2) {
+    // ZYZ Euler to Quaternion
+    final c1 = math.cos(z1 / 2);
+    final s1 = math.sin(z1 / 2);
+    final c2 = math.cos(y / 2);
+    final s2 = math.sin(y / 2);
+    final c3 = math.cos(z2 / 2);
+    final s3 = math.sin(z2 / 2);
+
+    return MGLQuat(
+      c1 * c2 * c3 - s1 * c2 * s3, // w
+      Vec3(
+        c1 * s2 * c3 - s1 * s2 * s3, // x
+        c1 * s2 * s3 + s1 * s2 * c3, // y
+        s1 * c2 * c3 + c1 * c2 * s3, // z
+      ),
+    );
+  }
+}
+
+/// Stub for R4AA (Axis-Angle)
+class R4AA {
+  double theta, rx, ry, rz;
+  R4AA(this.theta, this.rx, this.ry, this.rz);
+
+  /// Stub for R4AA.ToQuat()
+  Quaternion toQuat() {
+    final halfAngle = theta / 2.0;
+    final s = math.sin(halfAngle);
+    return Quaternion(
+      math.cos(halfAngle),
+      rx * s,
+      ry * s,
+      rz * s,
+    );
+  }
+}
+
+/// Stub for RotationMatrix
+class RotationMatrix {
+  List<double> mat; // Expects a list of 9 doubles
+  RotationMatrix(this.mat);
+}
+
+/// Stub for NewZeroOrientation()
+Quaternion newZeroOrientation() {
+  return Quaternion(1, 0, 0, 0); // Identity quaternion
+}

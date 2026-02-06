@@ -123,12 +123,12 @@
 				console.log('[ArmTeleop] Trigger pressed - Closing gripper')
 				gripperClient.current.grab().catch((e) => console.warn('Gripper grab failed:', e))
 
-				// Schedule stop after 0.5 seconds
+				// Schedule stop after 1 second
 				gripperStopTimeout = setTimeout(() => {
-					console.log('[ArmTeleop] Stopping gripper after 0.5s')
+					console.log('[ArmTeleop] Stopping gripper after 1s')
 					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
 					gripperStopTimeout = null
-				}, 500)
+				}, 1000)
 			} else if (!isTriggerPressed && wasTriggerPressed) {
 				// Trigger released: Open gripper, then stop after 0.5s
 				// Clear any pending stop timeout
@@ -139,12 +139,12 @@
 				console.log('[ArmTeleop] Trigger released - Opening gripper')
 				gripperClient.current.open().catch((e) => console.warn('Gripper open failed:', e))
 
-				// Schedule stop after 0.5 seconds
+				// Schedule stop after 1 second
 				gripperStopTimeout = setTimeout(() => {
-					console.log('[ArmTeleop] Stopping gripper after 0.5s')
+					console.log('[ArmTeleop] Stopping gripper after 1s')
 					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
 					gripperStopTimeout = null
-				}, 500)
+				}, 1000)
 			}
 		}
 
