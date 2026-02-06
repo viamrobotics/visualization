@@ -41,6 +41,7 @@ export interface Settings {
 
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
+	renderSubEntityHoverDetail: boolean
 }
 
 interface Context {
@@ -78,6 +79,7 @@ const defaults = (): Settings => ({
 
 	renderStats: false,
 	renderArmModels: 'colliders+model',
+	renderSubEntityHoverDetail: false,
 })
 
 export const provideSettings = () => {

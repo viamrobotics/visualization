@@ -96,7 +96,6 @@ func TestDrawPoses(t *testing.T) {
 		runDrawPosesTest(t, numPoints, colors)
 	})
 }
-
 func TestArrowStress(t *testing.T) {
 	t.Skip("Run only if you want to punish your computer.")
 

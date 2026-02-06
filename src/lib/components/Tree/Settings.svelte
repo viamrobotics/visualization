@@ -194,6 +194,11 @@
 				Render stats <Switch bind:on={settings.current.renderStats} />
 			</label>
 			<label class="flex items-center justify-between gap-2">
+				Render sub-entity hover detail <Switch
+					bind:on={settings.current.renderSubEntityHoverDetail}
+				/>
+			</label>
+			<label class="flex items-center justify-between gap-2">
 				Render Arm Models
 				<Select
 					value={settings.current.renderArmModels}

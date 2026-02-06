@@ -12,6 +12,13 @@ export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
+export const Hover = trait({
+	index: -1, // Sub-entity index, -1 if not applicable
+	x: 0, // World position X in meters
+	y: 0, // World position Y in meters
+	z: 0, // World position Z in meters
+})
+
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
  * details panel may display all instances

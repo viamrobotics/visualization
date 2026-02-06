@@ -14,7 +14,6 @@ import type { InstancedArrows } from './InstancedArrows'
 const vec3 = new Vector3()
 const inverseMatrix = new Matrix4()
 const localRay = new Ray()
-const ray = new Ray()
 const box = new Box3()
 const segmentStart = new Vector3()
 const segmentEnd = new Vector3()
@@ -75,23 +74,17 @@ export function meshBoundsRaycast(
 	if (this.geometry.boundingBox === null) {
 		this.geometry.computeBoundingBox()
 	}
-
 	box.copy(this.geometry.boundingBox ?? box)
-	box.applyMatrix4(this.matrixWorld)
 
 	if (!raycaster.ray.intersectsBox(box)) {
 		return
 	}
 
-	inverseMatrix.copy(this.matrixWorld).invert()
-
-	ray.copy(raycaster.ray).applyMatrix4(inverseMatrix)
-
+	raycaster.ray.intersectBox(box, vec3)
 	const distance = vec3.distanceTo(raycaster.ray.origin)
-	const point = vec3.clone()
 	intersects.push({
 		distance,
-		point,
+		point: vec3.clone(),
 		object: this,
 	})
 }
