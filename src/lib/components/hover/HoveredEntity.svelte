@@ -1,39 +1,15 @@
 <script lang="ts">
-	import { traits } from '$lib/ecs'
-	import type { Entity } from 'koota'
-	import { useWorld } from '$lib/ecs'
-	import { onDestroy } from 'svelte'
+	import { traits, useTrait } from '$lib/ecs'
 	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
-	import type { HoverInfo } from '$lib/HoverUpdater.svelte'
+	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 
-	interface Props {
-		hoveredEntity: Entity
-	}
+	const selectedEntity = useSelectedEntity()
+	const focusedEntity = useFocusedEntity()
 
-	let { hoveredEntity }: Props = $props()
-
-	const world = useWorld()
-
-	let hoverInfo: HoverInfo | null = $state.raw(null)
-
-	const unsubChange = world.onChange(traits.Hover, (entity) => {
-		if (entity === hoveredEntity) {
-			hoverInfo = entity.get(traits.Hover) ?? null
-		}
-	})
-
-	const unsubRemove = world.onRemove(traits.Hover, (entity) => {
-		if (entity === hoveredEntity) {
-			hoverInfo = null
-		}
-	})
-
-	onDestroy(() => {
-		unsubChange()
-		unsubRemove()
-	})
+	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
+	const hoverInfo = useTrait(() => displayEntity, traits.Hover)
 </script>
 
-{#if hoverInfo}
-	<HoveredEntityTooltip {hoverInfo} />
+{#if hoverInfo.current}
+	<HoveredEntityTooltip hoverInfo={hoverInfo.current} />
 {/if}
