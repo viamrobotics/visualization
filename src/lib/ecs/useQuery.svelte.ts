@@ -1,15 +1,15 @@
 import { untrack } from 'svelte'
-import { $internal as internal, cacheQuery, type QueryParameter, type QueryResult } from 'koota'
+import { $internal as internal, createQuery, type QueryParameter, type QueryResult } from 'koota'
 import { useWorld } from './useWorld'
 
 export function useQuery<T extends QueryParameter[]>(
 	...parameters: T
 ): { current: QueryResult<T> } {
 	const world = useWorld()
-	const hash = cacheQuery(...parameters)
+	const hash = createQuery(...parameters)
 
 	// Using internals to get the query data.
-	const query = world[internal].queriesHashMap.get(hash)
+	const query = world[internal].queriesHashMap.get(hash.hash)
 	const initialQueryVersion = query?.version
 
 	let version = $state.raw(0)
@@ -21,7 +21,7 @@ export function useQuery<T extends QueryParameter[]>(
 
 		// Compare the initial version to the current version to
 		// see it the query has changed.
-		const query = world[internal].queriesHashMap.get(hash)
+		const query = world[internal].queriesHashMap.get(hash.hash)
 
 		if (query?.version !== initialQueryVersion) {
 			entities = world.query(hash)
