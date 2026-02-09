@@ -73,6 +73,10 @@
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
+	$inspect('isFrameNode', isFrameNode)
+	$inspect('partConfig.hasEditPermissions', partConfig.hasEditPermissions)
+	$inspect('showEditFrameOptions', showEditFrameOptions)
+
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $derived.by<'box' | 'sphere' | 'capsule' | 'none'>(() => {

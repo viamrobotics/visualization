@@ -1,5 +1,5 @@
-import { relation } from "koota";
+import { relation } from 'koota'
 
 export const HoverLink = relation({
-	store: { indexMapping: () => "index" },
+	store: { indexMapping: () => 'index' },
 })
