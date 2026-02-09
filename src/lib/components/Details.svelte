@@ -12,7 +12,6 @@
 </script>
 
 <script lang="ts">
-	import { relations } from '$lib/ecs'
 	import { draggable } from '@neodrag/svelte'
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask, isInstanceOf } from '@threlte/core'
@@ -27,10 +26,10 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld, useQuery } from '$lib/ecs'
+	import { traits, useTrait, useWorld, useQuery, relations } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { onDestroy } from 'svelte'
+	import { useHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
 
 	const { ...rest } = $props()
 
@@ -52,7 +51,7 @@
 	let selectedRelationshipType = $state<string>('')
 	let selectedRelationshipEntity = $state<string>('')
 	let relationshipFormula = $state('index')
-
+	const hoveredLinkedEntities = useHoveredLinkedEntities()
 	const name = useTrait(() => entity, traits.Name)
 	const allEntities = useQuery(traits.Name)
 	const entityNames = $derived.by(() => {
@@ -71,19 +70,6 @@
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
-	let hoverLinkedEntities = $derived(entity?.targetsFor(relations.HoverLink) ?? [])
-
-	const unsubAdd = world.onAdd(relations.HoverLink, (ent, target) => {
-		if (ent === entity) {
-			hoverLinkedEntities = [...hoverLinkedEntities, target]
-		}
-	})
-
-	const unsubRemove = world.onRemove(relations.HoverLink, (ent, target) => {
-		if (ent === entity) {
-			hoverLinkedEntities = hoverLinkedEntities.filter((e) => e !== target)
-		}
-	})
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
@@ -186,11 +172,6 @@
 			input.endsWith('.')
 		)
 	}
-
-	onDestroy(() => {
-		unsubAdd()
-		unsubRemove()
-	})
 </script>
 
 {#snippet ImmutableField({
@@ -646,11 +627,11 @@
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
 
-		{#if hoverLinkedEntities.length > 0}
+		{#if hoveredLinkedEntities.current.length > 0}
 			<div>
 				<div class="mt-0.5 flex flex-col gap-1">
 					<strong class="font-semibold">Hover linked entities</strong>
-					{#each hoverLinkedEntities as hoverLinkedEntity (hoverLinkedEntity)}
+					{#each hoveredLinkedEntities.current as hoverLinkedEntity (hoverLinkedEntity)}
 						{@const hoverLinkedEntityName = hoverLinkedEntity.get(traits.Name)}
 						<div class="flex items-center gap-1">
 							<span class="text-primary">{hoverLinkedEntityName}</span>

@@ -1,35 +1,17 @@
 <script lang="ts">
-	import { relations, useQuery, traits, useWorld } from '$lib/ecs'
+	import { useQuery, traits } from '$lib/ecs'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
 	import HoveredEntity from './HoveredEntity.svelte'
 	import LinkedHoveredEntity from './LinkedHoveredEntity.svelte'
-	import { onDestroy } from 'svelte'
+	import { useHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
 
 	const hoveredEntities = useQuery(traits.Hover)
-	const world = useWorld()
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
+	const hoveredLinkedEntities = useHoveredLinkedEntities()
 
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
-	let linkedEntities = $derived(displayEntity?.targetsFor(relations.HoverLink) ?? [])
-
-	const unsubAdd = world.onAdd(relations.HoverLink, (entity, target) => {
-		if (entity === displayEntity) {
-			linkedEntities = [...linkedEntities, target]
-		}
-	})
-
-	const unsubRemove = world.onRemove(relations.HoverLink, (entity, target) => {
-		if (entity === displayEntity) {
-			linkedEntities = linkedEntities.filter((e) => e !== target)
-		}
-	})
-
-	onDestroy(() => {
-		unsubAdd()
-		unsubRemove()
-	})
 </script>
 
 {#if displayEntity}
@@ -39,7 +21,7 @@
 		{/if}
 	{/each}
 
-	{#each linkedEntities as entity (entity)}
+	{#each hoveredLinkedEntities.current as entity (entity)}
 		<LinkedHoveredEntity
 			hoveredEntity={displayEntity}
 			linkedEntity={entity}
