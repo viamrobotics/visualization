@@ -4,6 +4,7 @@ import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
 import { traits } from '$lib/ecs'
+import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -21,14 +22,10 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		cursor.onPointerEnter()
 
 		if (currentEntity && !currentEntity.has(traits.Hover)) {
-			currentEntity.add(
-				traits.Hover({
-					index: -1,
-					x: event.point.x,
-					y: event.point.y,
-					z: event.point.z,
-				})
-			)
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			if (hoverInfo) {
+				currentEntity.add(traits.Hover(hoverInfo))
+			}
 		}
 	}
 
@@ -36,12 +33,10 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 
 		if (currentEntity && currentEntity.has(traits.Hover)) {
-			currentEntity.set(traits.Hover, {
-				index: event.index ?? -1,
-				x: event.point.x,
-				y: event.point.y,
-				z: event.point.z,
-			})
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			if (hoverInfo) {
+				currentEntity.set(traits.Hover, hoverInfo)
+			}
 		}
 	}
 

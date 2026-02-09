@@ -4,6 +4,7 @@
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
 	import { Quaternion, Vector3, MathUtils, BufferAttribute } from 'three'
+	import type { Entity } from 'koota'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -11,6 +12,7 @@
 </script>
 
 <script lang="ts">
+	import { relations } from '$lib/ecs'
 	import { draggable } from '@neodrag/svelte'
 	import { Check, Copy } from 'lucide-svelte'
 	import { useTask, isInstanceOf } from '@threlte/core'
@@ -25,7 +27,7 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld } from '$lib/ecs'
+	import { traits, useTrait, useWorld, useQuery } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
@@ -45,8 +47,18 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
+	let showRelationshipOptions = $state(false)
+	let selectedRelationshipEntity = $state<string>('')
 
 	const name = useTrait(() => entity, traits.Name)
+	const allEntities = useQuery(traits.Name)
+	const entityNames = $derived.by(() => {
+		const currentEntityName = name.current
+		return allEntities.current
+			.map((e: Entity) => e.get(traits.Name))
+			.filter((n: string | undefined): n is string => n !== undefined && n !== currentEntityName)
+			.sort()
+	})
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
 	const box = useTrait(() => entity, traits.Box)
@@ -630,6 +642,43 @@
 			>
 				Enter object view
 			</Button>
+		{/if}
+
+		<Button
+			class="w-full"
+			icon="plus"
+			variant="dark"
+			onclick={() => {
+				console.log(entity)
+				showRelationshipOptions = true
+			}}>Add Relationship</Button
+		>
+
+		{#if showRelationshipOptions}
+			<div class="mt-2">
+				<Select
+					aria-label="Select entity for relationship"
+					value={selectedRelationshipEntity}
+					onchange={(event: InputEvent) => {
+						selectedRelationshipEntity = (event.target as HTMLSelectElement).value
+						const selectedEntity = allEntities.current.find(
+							(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
+						)
+						if (selectedEntity) {
+							entity.add(
+								relations.HoverLink(selectedEntity, {
+									indexMapping: 'trunc(index/1000)',
+								})
+							)
+						}
+					}}
+				>
+					<option value="">Select an entity...</option>
+					{#each entityNames as entityName (entityName)}
+						<option value={entityName}>{entityName}</option>
+					{/each}
+				</Select>
+			</div>
 		{/if}
 
 		{#if showEditFrameOptions && environment.current.isStandalone}

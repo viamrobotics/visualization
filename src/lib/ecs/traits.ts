@@ -1,5 +1,5 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { trait } from 'koota'
+import { relation, trait } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -12,12 +12,11 @@ export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
-export const Hover = trait({
-	index: -1, // Sub-entity index, -1 if not applicable
-	x: 0, // World position X in meters
-	y: 0, // World position Y in meters
-	z: 0, // World position Z in meters
-})
+export const Hover = trait(() => ({
+	index: -1,
+	position: { x: 0, y: 0, z: 0 },
+	orientation: { x: 0, y: 0, z: 0 } as { x: 0, y: 0, z: 0 } | undefined,
+}))
 
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
