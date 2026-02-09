@@ -27,7 +27,7 @@
 		type DrawConnectionConfig,
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
 	import Camera from './widgets/Camera.svelte'
-	import HoveredEntities from './HoveredEntities.svelte'
+	import HoveredEntities from './hover/HoveredEntities.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct

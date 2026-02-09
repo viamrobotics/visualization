@@ -35,8 +35,6 @@
 		}
 	})
 
-	$inspect(hoverInfo)
-
 	const unsubRemove = world.onRemove(traits.Hover, (entity) => {
 		if (entity === hoveredEntity) {
 			hoverInfo = null
