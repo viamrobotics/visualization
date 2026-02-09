@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.8.0
+
+### Minor Changes
+
+- 93da1b7: enable sub entity hover info for poses and pcds
+
 ## 1.7.0
 
 ### Minor Changes
