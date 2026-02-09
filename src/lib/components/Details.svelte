@@ -30,6 +30,7 @@
 	import { traits, useTrait, useWorld, useQuery } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { onDestroy } from 'svelte'
 
 	const { ...rest } = $props()
 
@@ -48,7 +49,9 @@
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
 	let showRelationshipOptions = $state(false)
+	let selectedRelationshipType = $state<string>('')
 	let selectedRelationshipEntity = $state<string>('')
+	let relationshipFormula = $state('index')
 
 	const name = useTrait(() => entity, traits.Name)
 	const allEntities = useQuery(traits.Name)
@@ -68,6 +71,19 @@
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
+	let hoverLinkedEntities = $derived(entity?.targetsFor(relations.HoverLink) ?? [])
+
+	const unsubAdd = world.onAdd(relations.HoverLink, (ent, target) => {
+		if (ent === entity) {
+			hoverLinkedEntities = [...hoverLinkedEntities, target]
+		}
+	})
+
+	const unsubRemove = world.onRemove(relations.HoverLink, (ent, target) => {
+		if (ent === entity) {
+			hoverLinkedEntities = hoverLinkedEntities.filter((e) => e !== target)
+		}
+	})
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
@@ -170,6 +186,11 @@
 			input.endsWith('.')
 		)
 	}
+
+	onDestroy(() => {
+		unsubAdd()
+		unsubRemove()
+	})
 </script>
 
 {#snippet ImmutableField({
@@ -623,6 +644,29 @@
 			{/if}
 		</div>
 
+		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
+
+		{#if hoverLinkedEntities.length > 0}
+			<div>
+				<div class="mt-0.5 flex flex-col gap-1">
+					<strong class="font-semibold">Hover linked entities</strong>
+					{#each hoverLinkedEntities as hoverLinkedEntity (hoverLinkedEntity)}
+						{@const hoverLinkedEntityName = hoverLinkedEntity.get(traits.Name)}
+						<div class="flex items-center gap-1">
+							<span class="text-primary">{hoverLinkedEntityName}</span>
+							<Icon
+								name="trash-can-outline"
+								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
+								onclick={() => {
+									entity.remove(relations.HoverLink(hoverLinkedEntity))
+								}}
+							/>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
 		{#if focusedEntity.current}
@@ -645,39 +689,98 @@
 		{/if}
 
 		<Button
-			class="w-full"
-			icon="plus"
+			class="mt-2 w-full"
+			icon={showRelationshipOptions ? undefined : 'plus'}
 			variant="dark"
 			onclick={() => {
-				console.log(entity)
-				showRelationshipOptions = true
-			}}>Add Relationship</Button
+				if (showRelationshipOptions) {
+					showRelationshipOptions = false
+					selectedRelationshipType = 'HoverLink'
+					selectedRelationshipEntity = ''
+					relationshipFormula = 'index'
+				} else {
+					showRelationshipOptions = true
+				}
+			}}>{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}</Button
 		>
 
 		{#if showRelationshipOptions}
-			<div class="mt-2">
-				<Select
-					aria-label="Select entity for relationship"
-					value={selectedRelationshipEntity}
-					onchange={(event: InputEvent) => {
-						selectedRelationshipEntity = (event.target as HTMLSelectElement).value
-						const selectedEntity = allEntities.current.find(
-							(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
-						)
-						if (selectedEntity) {
-							entity.add(
-								relations.HoverLink(selectedEntity, {
-									indexMapping: 'trunc(index/1000)',
-								})
+			<div class="mt-2 flex flex-col gap-2">
+				<div>
+					<label
+						for="relationship-type-select"
+						class="text-subtle-2 mb-1 block text-xs">Relationship type</label
+					>
+					<Select
+						id="relationship-type-select"
+						aria-label="Select relationship type"
+						value={selectedRelationshipType}
+						onchange={(event: InputEvent) => {
+							selectedRelationshipType = (event.target as HTMLSelectElement).value as 'HoverLink'
+						}}
+					>
+						<option value="">Select a relationship type...</option>
+						<option value="HoverLink">HoverLink</option>
+					</Select>
+				</div>
+				<div>
+					<label
+						for="relationship-entity-select"
+						class="text-subtle-2 mb-1 block text-xs">Entity</label
+					>
+					<Select
+						id="relationship-entity-select"
+						aria-label="Select entity for relationship"
+						value={selectedRelationshipEntity}
+						onchange={(event: InputEvent) => {
+							selectedRelationshipEntity = (event.target as HTMLSelectElement).value
+						}}
+					>
+						<option value="">Select an entity...</option>
+						{#each entityNames as entityName (entityName)}
+							<option value={entityName}>{entityName}</option>
+						{/each}
+					</Select>
+				</div>
+				<div>
+					<label
+						for="relationship-formula-input"
+						class="text-subtle-2 mb-1 block text-xs">Index mapping</label
+					>
+					<Input
+						id="relationship-formula-input"
+						aria-label="Math formula for index mapping"
+						bind:value={relationshipFormula}
+						placeholder="index"
+					/>
+				</div>
+				<div>
+					<Button
+						class="w-full"
+						variant="primary"
+						onclick={() => {
+							if (!relationshipFormula.includes('index')) {
+								return
+							}
+							const selectedEntity = allEntities.current.find(
+								(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
 							)
-						}
-					}}
-				>
-					<option value="">Select an entity...</option>
-					{#each entityNames as entityName (entityName)}
-						<option value={entityName}>{entityName}</option>
-					{/each}
-				</Select>
+							if (selectedEntity) {
+								entity.add(
+									relations.HoverLink(selectedEntity, {
+										indexMapping: relationshipFormula || 'index',
+									})
+								)
+							}
+							showRelationshipOptions = false
+							selectedRelationshipType = 'HoverLink'
+							selectedRelationshipEntity = ''
+							relationshipFormula = 'index'
+						}}
+					>
+						Add
+					</Button>
+				</div>
 			</div>
 		{/if}
 
