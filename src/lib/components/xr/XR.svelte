@@ -34,6 +34,7 @@
 				resourceName={cameraName}
 				offset={{ x: index * spacing - centerOffset, y: 1.5, z: -2.5 }}
 				scale={0.8}
+				enableProfiling={false}
 			/>
 		{/each}
 
