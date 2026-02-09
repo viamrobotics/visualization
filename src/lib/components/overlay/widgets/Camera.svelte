@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
 	import { Icon, Select } from '@viamrobotics/prime-core'
-	import { CameraStream, useRobotClient } from '@viamrobotics/svelte-sdk'
-	import { StreamClient } from '@viamrobotics/sdk'
+	import { CameraStream, useRobotClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
+	import { StreamClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -17,6 +17,7 @@
 	const settings = useSettings()
 	const partID = usePartID()
 	const client = useRobotClient(() => partID.current)
+	const connectionStatus = useConnectionStatus(() => partID.current)
 	const environment = useEnvironment()
 
 	let dragElement = $state.raw<HTMLElement>()
@@ -70,29 +71,28 @@
 		}
 	}
 
-	// Create a single StreamClient instance per robot client
-	let streamClient = $derived(client.current ? new StreamClient(client.current) : undefined)
+	// Only create StreamClient when connection is fully established
+	let streamClient = $derived(
+		client.current && connectionStatus.current === MachineConnectionEvent.CONNECTED
+			? new StreamClient(client.current)
+			: undefined
+	)
 
 	$effect(() => {
-		if (streamClient && client.current) {
+		if (streamClient) {
 			isLoading = true
 			error = undefined
 
-			// Add a small delay to ensure connection is ready
-			const timeoutId = setTimeout(() => {
-				streamClient
-					.getOptions(name)
-					.then((options) => {
-						resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
-						isLoading = false
-					})
-					.catch((e) => {
-						error = e instanceof Error ? e.message : 'Failed to get stream options'
-						isLoading = false
-					})
-			}, 100)
-
-			return () => clearTimeout(timeoutId)
+			streamClient
+				.getOptions(name)
+				.then((options) => {
+					resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
+					isLoading = false
+				})
+				.catch((e) => {
+					error = e instanceof Error ? e.message : 'Failed to get stream options'
+					isLoading = false
+				})
 		}
 	})
 
@@ -170,14 +170,16 @@
 			class="relative min-h-0 w-full flex-1 overflow-hidden bg-black [&_img]:h-full [&_img]:w-full [&_img]:object-fill [&_video]:h-full [&_video]:w-full [&_video]:object-fill"
 			style:aspect-ratio={aspectRatio}
 		>
-			{#key environment.current.viewerMode === 'monitor'}
-				<CameraStream
-					{name}
-					partID={partID.current}
-					onloadedmetadata={onMediaLoad}
-					onload={onMediaLoad}
-				/>
-			{/key}
+			{#if connectionStatus.current === MachineConnectionEvent.CONNECTED}
+				{#key environment.current.viewerMode === 'monitor'}
+					<CameraStream
+						{name}
+						partID={partID.current}
+						onloadedmetadata={onMediaLoad}
+						onload={onMediaLoad}
+					/>
+				{/key}
+			{/if}
 
 			<!-- FPS Pill -->
 			{#if fps > 0}
