@@ -474,12 +474,12 @@
 				o_y: targetOV.y,
 				o_z: targetOV.z,
 				theta: (targetOV.th * 180) / Math.PI, // Convert radians to degrees for backend
-				// speed: 7,
-				// acceleration: 25,
+				speed: 7,
+				acceleration: 10,
 			},
 		}
 
-		let USE_UFACTORY_IK = false
+		let USE_UFACTORY_IK = true
 		if (USE_UFACTORY_IK) {
 			console.log('[ArmTeleop] Sending doCommand:', JSON.stringify(command, null, 2))
 
