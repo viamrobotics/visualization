@@ -121,4 +121,47 @@ describe('OrientationVector', () => {
 		expect(numAppxEqual(ov.z, actualOv.z)).toBe(true)
 		expect(numAppxEqual(ov.th, actualOv.th)).toBe(true)
 	})
+
+	describe('setUnits interaction with setFromQuaternion', () => {
+		it('CORRECT: setFromQuaternion THEN setUnits("degrees") returns theta in degrees', () => {
+			// Create a quaternion representing a 45° rotation around Z axis
+			const quat = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 4)
+
+			// CORRECT ORDER: setFromQuaternion first, then setUnits
+			const ov = new OrientationVector().setFromQuaternion(quat).setUnits('degrees')
+
+			// theta should be approximately 45 degrees (π/4 radians = 45°)
+			// The OV points along Z, so theta represents rotation around Z
+			expect(Math.abs(ov.th)).toBeGreaterThan(1) // Should be in degrees (tens), not radians (<1)
+		})
+
+		it('WRONG: setUnits("degrees") THEN setFromQuaternion corrupts theta', () => {
+			// Create a quaternion representing a 45° rotation around Z axis
+			const quat = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 4)
+
+			// WRONG ORDER: setUnits first corrupts the value
+			const ovWrong = new OrientationVector().setUnits('degrees').setFromQuaternion(quat)
+			const ovCorrect = new OrientationVector().setFromQuaternion(quat).setUnits('degrees')
+
+			// The wrong order produces a much smaller theta value
+			// because setFromQuaternion passes radians to set(), which interprets them as degrees
+			expect(Math.abs(ovWrong.th)).toBeLessThan(Math.abs(ovCorrect.th))
+		})
+
+		it('demonstrates the 57x difference in theta values', () => {
+			// A more dramatic example: 90° rotation
+			const quat = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2)
+
+			const ovCorrect = new OrientationVector().setFromQuaternion(quat).setUnits('degrees')
+			const ovWrong = new OrientationVector().setUnits('degrees').setFromQuaternion(quat)
+
+			// Correct should return ~90 degrees
+			// Wrong should return ~90 * (π/180)² ≈ 0.027 degrees (double conversion error)
+			const ratio = Math.abs(ovCorrect.th) / Math.abs(ovWrong.th)
+
+			// The ratio should be approximately (180/π)² ≈ 3283 for the double conversion
+			// or 180/π ≈ 57.3 for single conversion, depending on internal implementation
+			expect(ratio).toBeGreaterThan(50) // At least 50x difference shows the bug
+		})
+	})
 })

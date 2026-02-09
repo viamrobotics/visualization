@@ -74,7 +74,7 @@
 	// Robot Reference (Viam Checkpoint)
 	let robotRefPos = { x: 0, y: 0, z: 0 }
 	let robotRefQuat = new Quaternion()
-	let robotRefOV = new OrientationVector() // Store original OV
+	let robotRefOV = new OrientationVector() // Keep default radians - setUnits breaks toQuaternion!
 
 	// Offset from controller orientation to arm orientation
 	// This maintains the relationship: armRot = controllerRot * offset
@@ -247,7 +247,7 @@
 			const { x, y, z, oX, oY, oZ, theta } = currentPose
 
 			robotRefPos = { x, y, z }
-			robotRefOV.set(oX, oY, oZ, theta) // Store original orientation vector
+			robotRefOV.set(oX, oY, oZ, (theta * Math.PI) / 180) // SDK returns degrees, convert to radians
 			robotRefQuat = robotRefOV.toQuaternion(new Quaternion()).normalize()
 
 			// Save this pose to the stack for quick return
@@ -287,7 +287,7 @@
 			// 2. Compute offset from controller orientation to arm orientation (only once)
 			// This maintains: armRot = controllerRot * offset
 			// So: offset = inverse(controllerRot) * armRot
-			if (!offsetInitialized) {
+			if (!offsetInitialized || true) {
 				controllerToArmOffset = controllerRefRotRobot
 					.clone()
 					.invert()
@@ -380,6 +380,7 @@
 			const targetArmRotQuat = currentRotRobot.clone().multiply(controllerToArmOffset).normalize()
 
 			// 3. Convert to Viam OrientationVector using proper Dart-matching algorithm
+			// Keep radians - conversion to degrees happens when sending to backend
 			targetOV = new OrientationVector().setFromQuaternion(targetArmRotQuat)
 
 			// Update Ghost Rotation for visualizer
@@ -472,7 +473,7 @@
 				o_x: targetOV.x,
 				o_y: targetOV.y,
 				o_z: targetOV.z,
-				theta: targetOV.th,
+				theta: (targetOV.th * 180) / Math.PI, // Convert radians to degrees for backend
 				// speed: 7,
 				// acceleration: 25,
 			},
@@ -506,7 +507,7 @@
 					oX: targetOV.x,
 					oY: targetOV.y,
 					oZ: targetOV.z,
-					theta: targetOV.th,
+					theta: (targetOV.th * 180) / Math.PI, // Convert radians to degrees for SDK
 				})
 				.catch((e) => {
 					console.warn('Move failed:', e)
