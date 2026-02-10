@@ -22,7 +22,7 @@ export const Hover = trait(() => ({
  * Represents that an entity is composed of many instances, so that the treeview and
  * details panel may display all instances
  */
-export const Instanced = trait()
+export const Instanced = trait(() => true)
 
 export const Instance = trait({
 	meshID: -1,
@@ -36,7 +36,7 @@ export const Opacity = trait(() => 1)
  */
 export const Color = trait({ r: 0, g: 0, b: 0 })
 
-export const Arrow = trait()
+export const Arrow = trait(() => true)
 
 export const Positions = trait(() => new Float32Array())
 export const Colors = trait(() => new Uint8Array())
@@ -51,7 +51,7 @@ export const Arrows = trait({
 /**
  * Render entity as points
  */
-export const Points = trait()
+export const Points = trait(() => true)
 
 /**
  * A box, in mm
@@ -85,16 +85,16 @@ export const GLTF = trait(() => ({
 
 export const Scale = trait({ x: 1, y: 1, z: 1 })
 
-export const FramesAPI = trait()
-export const GeometriesAPI = trait()
-export const DrawAPI = trait()
-export const WorldStateStoreAPI = trait()
-export const SnapshotAPI = trait()
+export const FramesAPI = trait(() => true)
+export const GeometriesAPI = trait(() => true)
+export const DrawAPI = trait(() => true)
+export const WorldStateStoreAPI = trait(() => true)
+export const SnapshotAPI = trait(() => true)
 
 /**
  * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)
  */
-export const DroppedFile = trait()
+export const DroppedFile = trait(() => true)
 
 // === Shape Properties ===
 /**
@@ -107,12 +107,12 @@ export const PointSize = trait(() => 10)
  */
 export const LineWidth = trait(() => 5)
 
-export const ReferenceFrame = trait()
+export const ReferenceFrame = trait(() => true)
 
 /**
  * This entity can be safetly removed from the scene by the user
  */
-export const Removable = trait()
+export const Removable = trait(() => true)
 
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {

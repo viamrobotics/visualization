@@ -27,7 +27,12 @@ export interface Settings {
 	lineWidth: number
 	lineDotSize: number
 
+	// Measurement
 	enableMeasure: boolean
+	enableMeasureAxisX: boolean
+	enableMeasureAxisY: boolean
+	enableMeasureAxisZ: boolean
+
 	enableLabels: boolean
 	enableKeybindings: boolean
 	enableQueryDevtools: boolean
@@ -68,6 +73,10 @@ const defaults = (): Settings => ({
 	lineDotSize: 0.01,
 
 	enableMeasure: false,
+	enableMeasureAxisX: true,
+	enableMeasureAxisY: true,
+	enableMeasureAxisZ: true,
+
 	enableLabels: false,
 	enableKeybindings: true,
 	enableQueryDevtools: false,
