@@ -3,8 +3,7 @@
 	import { createStreamClient, useRobotClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
 	import { StreamClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 	import BentPlaneGeometry from '../BentPlaneGeometry.svelte'
-	import { useHeadset } from '@threlte/xr'
-	import { Euler, Group, Mesh, Vector3, Quaternion, VideoTexture } from 'three'
+	import { VideoTexture } from 'three'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 
 	interface CameraFeedProps {
@@ -69,9 +68,8 @@
 	video.playsInline = true
 
 	// Low-latency settings for teleoperation
-	// @ts-ignore - latencyHint is not in standard types but supported by browsers
+	// @ts-expect-error - latencyHint is not in standard types but supported by browsers
 	video.latencyHint = 0  // Minimize latency
-	// @ts-ignore
 	video.disableRemotePlayback = true
 
 	$effect.pre(() => {
@@ -148,7 +146,7 @@
 
 		stopFrameProfiling() // Clear any existing callback
 
-		const updateFrame = (now: number, metadata: any) => {
+		const updateFrame = (now: number, metadata: VideoFrameCallbackMetadata) => {
 			if (!texture || !ready) {
 				stopFrameProfiling()
 				return
@@ -165,13 +163,8 @@
 				// 'now' parameter is DOMHighResTimeStamp in milliseconds
 				const captureTime = metadata.captureTime || metadata.mediaTime
 				const presentationTime = metadata.presentationTime || metadata.expectedDisplayTime
-				const processingDuration = metadata.processingDuration || 0
 
 				if (captureTime) {
-					// TOTAL END-TO-END: From camera capture to now (when we're updating texture)
-					// Convert captureTime from microseconds to milliseconds
-					const captureMsRelative = captureTime / 1000
-
 					// The times might be in different epochs, so we can only reliably calculate
 					// the difference between capture and presentation
 					if (presentationTime) {

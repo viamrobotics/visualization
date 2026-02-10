@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useTask, T } from '@threlte/core'
-	import { useController, useXR } from '@threlte/xr'
+	import { useController, useXR, type XRController } from '@threlte/xr'
 	import { Vector3, Quaternion } from 'three'
 	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
@@ -26,6 +26,14 @@
 	}: Props = $props()
 
 	const partID = usePartID()
+
+	// Capture initial prop values — parent uses {#key} to force remount on changes.
+	// Wrapped in an IIFE to avoid Svelte's state_referenced_locally warning.
+	const { initialHand, initialGripperName } = (() => ({
+		initialHand: hand,
+		initialGripperName: gripperName,
+	}))()
+
 	// Create Viam Arm Client
 	const armClient = createResourceClient(
 		ArmClient,
@@ -34,17 +42,17 @@
 	)
 
 	// Create Viam Gripper Client (optional)
-	const gripperClient = gripperName
+	const gripperClient = initialGripperName
 		? createResourceClient(
 				GripperClient,
 				() => partID.current,
-				() => gripperName
+				() => initialGripperName
 			)
 		: undefined
 
 	// Get XR Context for Raw Input
 	const { session } = useXR()
-	const controller = useController(hand)
+	const controller = useController(initialHand)
 
 	let isControlling = $state(false)
 	let wasPressed = false // Frame-to-frame state for edge detection (squeeze button)
@@ -79,7 +87,6 @@
 	// Offset from controller orientation to arm orientation
 	// This maintains the relationship: armRot = controllerRot * offset
 	let controllerToArmOffset = new Quaternion()
-	let offsetInitialized = false // Track if offset has been calculated
 
 	// Transformation Frame
 	const qTransform = getFrameTransformationQuaternion()
@@ -92,15 +99,12 @@
 	const ERROR_COOLDOWN = 1000 // ms
 	const ERROR_HAPTIC_INTERVAL = 200 // ms between error haptic pulses
 
-	// Rotation Deadband - matches Dart implementation
-	const ROTATION_DEADBAND_RAD = 0.25 // ~14.3 degrees
-
 	// Haptic Feedback Helper
 	function triggerHapticFeedback(intensity: number = 0.5, duration: number = 100) {
 		const currentSession = $session
 		if (!currentSession) return
 
-		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === hand)
+		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === initialHand)
 		if (!inputSource?.gamepad?.hapticActuators?.length) return
 
 		const actuator = inputSource.gamepad.hapticActuators[0]
@@ -122,7 +126,7 @@
 		const currentSession = $session
 		if (!currentSession || !controller.current) return
 
-		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === hand)
+		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === initialHand)
 
 		if (!inputSource || !inputSource.gamepad) return
 
@@ -142,12 +146,6 @@
 			// Rising Edge: Start Control
 			if (armClient.current) {
 				handleStartControl(controller.current)
-			} else {
-				console.error('[ArmTeleop] ❌ armClient.current is NULL! Cannot start teleop.')
-				console.error('[ArmTeleop] Debug info:', {
-					armClientExists: !!armClient,
-					currentExists: !!armClient?.current,
-				})
 			}
 		} else if (!isPressed && wasPressed) {
 			// Falling Edge: Stop Control
@@ -211,7 +209,7 @@
 		return transform.clone().multiply(q).multiply(transformInv)
 	}
 
-	async function handleStartControl(c: any) {
+	async function handleStartControl(c: XRController) {
 		try {
 			const currentPose = await armClient.current!.getEndPosition()
 
@@ -242,17 +240,14 @@
 			// Matches Dart: referenceRotationQuaternionViamPhone
 			controllerRefRotRobot = transformToRobotFrame(grip.quaternion, qTransform).normalize()
 
-			// 2. Compute offset from controller orientation to arm orientation (only once)
+			// 2. Compute offset from controller orientation to arm orientation
 			// This maintains: armRot = controllerRot * offset
 			// So: offset = inverse(controllerRot) * armRot
-			if (!offsetInitialized || true) {
-				controllerToArmOffset = controllerRefRotRobot
-					.clone()
-					.invert()
-					.multiply(robotRefQuat)
-					.normalize()
-				offsetInitialized = true
-			}
+			controllerToArmOffset = controllerRefRotRobot
+				.clone()
+				.invert()
+				.multiply(robotRefQuat)
+				.normalize()
 
 			errorTimeout = 0
 
@@ -261,10 +256,7 @@
 			// Haptic feedback: short pulse on teleop start
 			triggerHapticFeedback(0.5, 100)
 		} catch (e) {
-			console.error('[ArmTeleop] ❌❌❌ FAILED TO START TELEOP ❌❌❌')
-			console.error('[ArmTeleop] Error:', e)
-			console.error('[ArmTeleop] Message:', e?.message)
-			console.error('[ArmTeleop] Code:', e?.code)
+			console.error('[ArmTeleop] Failed to start teleop:', e)
 		}
 	}
 
@@ -276,7 +268,7 @@
 		}
 	}
 
-	function handleControlFrame(c: any) {
+	function handleControlFrame(c: XRController) {
 		const now = Date.now()
 
 		const grip = c.grip
@@ -369,41 +361,13 @@
 			},
 		}
 
-		let USE_UFACTORY_IK = true
-		if (USE_UFACTORY_IK) {
-			// Use the client. Note: ensure armClient.current is checked for null
-			const client = armClient.current
-			if (client) {
-				// Wrap command in VIAM.Struct.fromJson() for proper gRPC serialization
-				client
-					.doCommand(VIAM.Struct.fromJson(command))
-					.catch((e) => {
-						console.warn('Move failed:', e)
-						errorTimeout = Date.now() + ERROR_COOLDOWN
-						// Strong haptic feedback for IK constraint error
-						triggerHapticFeedback(0.8, 200)
-						lastErrorHapticTime = Date.now()
-					})
-					.finally(() => {
-						isSending = false
-					})
-			}
-		} else {
-			// Commented out for servo_cartesian experiment
-			armClient
-				.current!.moveToPosition({
-					x: targetPos.x,
-					y: targetPos.y,
-					z: targetPos.z,
-					oX: targetOV.x,
-					oY: targetOV.y,
-					oZ: targetOV.z,
-					theta: (targetOV.th * 180) / Math.PI, // Convert radians to degrees for SDK
-				})
+		const client = armClient.current
+		if (client) {
+			client
+				.doCommand(VIAM.Struct.fromJson(command))
 				.catch((e) => {
 					console.warn('Move failed:', e)
 					errorTimeout = Date.now() + ERROR_COOLDOWN
-					// Strong haptic feedback for IK constraint error
 					triggerHapticFeedback(0.8, 200)
 					lastErrorHapticTime = Date.now()
 				})

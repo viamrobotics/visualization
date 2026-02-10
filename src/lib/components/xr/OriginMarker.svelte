@@ -36,7 +36,6 @@
 	const right = useController('right')
 
 	const leftPad = useGamepad({ xr: true, hand: 'left' })
-	const rightPad = useGamepad({ xr: true, hand: 'right' })
 
 	leftPad.trigger.on('down', () => {
 		const grip = $left?.grip
@@ -50,20 +49,6 @@
 		offset.copy($left!.grip.position).sub(vec3)
 	})
 	leftPad.trigger.on('up', () => (dragging = false))
-
-	// Right trigger rotation disabled
-	// rightPad.trigger.on('down', () => {
-	// 	const grip = $right?.grip
-
-	// 	if (!grip) {
-	// 		return
-	// 	}
-
-	// 	rotating = true
-	// 	rotateDown.copy($right?.grip.position)
-	// 	currentDistance = euler.z
-	// })
-	// rightPad.trigger.on('up', () => (rotating = false))
 
 	const dragTask = useTask(
 		() => {

@@ -7,7 +7,6 @@
 	import Controllers from './Controllers.svelte'
 	import CameraFeed from './CameraFeed.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
-	import VRConfigPanel from './VRConfigPanel.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 
@@ -31,7 +30,7 @@
 	const armNames = $derived(armClient.names)
 </script>
 
-{#if enableXR || true}
+{#if enableXR}
 	<XR>
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}

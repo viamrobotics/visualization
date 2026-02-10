@@ -47,10 +47,6 @@ describe('Rotation Engagement Stability', () => {
 		}
 
 		const complexDrift = Math.abs(complexOV.th - originalComplexTheta)
-		console.log(
-			`Theta drift for complex orientation after 5 roundtrips: ${complexDrift.toFixed(6)} rad (${(complexDrift * 180 / Math.PI).toFixed(2)}°)`
-		)
-
 		// The key point: even if drift is small, storing quaternions avoids this entirely
 		expect(complexDrift).toBeLessThan(0.1) // Should be small
 	})

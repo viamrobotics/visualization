@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { T, useThrelte, useTask } from '@threlte/core'
-	import { CanvasTexture, PlaneGeometry, Mesh, Raycaster, Vector2, Vector3 } from 'three'
+	import { T, useTask } from '@threlte/core'
+	import { CanvasTexture, PlaneGeometry, Mesh, Raycaster } from 'three'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useController } from '@threlte/xr'
+	import { useController, type XRController } from '@threlte/xr'
 
 	interface VRConfigPanelProps {
 		offset?: { x?: number; y?: number; z?: number }
@@ -38,18 +38,19 @@
 	// Get current config for selected hand
 	const currentConfig = $derived(settings.current.xrControllerConfig[selectedHand])
 
-	// Local form state (editable)
-	let formArmName = $state<string | undefined>(currentConfig.armName)
-	let formGripperName = $state<string | undefined>(currentConfig.gripperName)
-	let formScaleFactor = $state<number>(currentConfig.scaleFactor)
-	let formRotationEnabled = $state<boolean>(currentConfig.rotationEnabled)
+	// Local form state (editable) — synced from currentConfig via effect
+	let formArmName = $state<string | undefined>(undefined)
+	let formGripperName = $state<string | undefined>(undefined)
+	let formScaleFactor = $state<number>(1.0)
+	let formRotationEnabled = $state<boolean>(true)
 
-	// Sync form state when selected hand changes
+	// Sync form state when selected hand or config changes
 	$effect(() => {
-		formArmName = currentConfig.armName
-		formGripperName = currentConfig.gripperName
-		formScaleFactor = currentConfig.scaleFactor
-		formRotationEnabled = currentConfig.rotationEnabled
+		const cfg = currentConfig
+		formArmName = cfg.armName
+		formGripperName = cfg.gripperName
+		formScaleFactor = cfg.scaleFactor
+		formRotationEnabled = cfg.rotationEnabled
 	})
 
 	// Canvas setup
@@ -118,15 +119,17 @@
 		}
 	}
 
+	// Reusable raycaster to avoid per-frame allocation
+	const raycaster = new Raycaster()
+
 	// Check for ray intersection with panel
 	function checkIntersection(controllerRef: typeof rightController) {
 		if (!meshRef || !controllerRef.current) return
 
-		const raycaster = new Raycaster()
 		const controller = controllerRef.current
 
 		// Get controller's world position and direction
-		const tempMatrix = controller.matrixWorld
+		const tempMatrix = controller.targetRay.matrixWorld
 		if (!tempMatrix || !tempMatrix.elements) return
 
 		raycaster.ray.origin.setFromMatrixPosition(tempMatrix)
@@ -171,7 +174,7 @@
 		const hitElement = checkIntersection(rightController.current ? rightController : leftController)
 
 		// Check for A/X button press (rising edge) - gamepad button 4
-		const gamepad = (controller as any).gamepad
+		const gamepad = (controller as XRController & { gamepad?: Gamepad }).gamepad
 		const buttonPressed = gamepad?.buttons?.[4]?.pressed || false
 
 		if (buttonPressed && !lastButtonPressed && hitElement) {
@@ -269,7 +272,7 @@
 		ctx.textAlign = 'left'
 	}
 
-	function renderFormControls(ctx: CanvasRenderingContext2D, width: number, height: number) {
+	function renderFormControls(ctx: CanvasRenderingContext2D, width: number) {
 		const formY = 90
 		const rowHeight = 70
 		const labelX = 30
@@ -410,7 +413,7 @@
 			// Render components
 			renderHeader(ctx, canvas.width)
 			renderTabs(ctx, canvas.width)
-			renderFormControls(ctx, canvas.width, canvas.height)
+			renderFormControls(ctx, canvas.width)
 
 			// Mark texture for update
 			if (texture) {

@@ -22,7 +22,7 @@ interface Context {
 export const provideArmKinematics = (partID: () => string) => {
 	const arms = useResourceNames(partID, 'arm')
 	// Kinematics are static config data, so fetch once and cache indefinitely
-	const options = { staleTime: Infinity, refetchOnMount: false, refetchInterval: false }
+	const options = { staleTime: Infinity, refetchOnMount: false, refetchInterval: false as const }
 
 	const names = $derived(arms.current.map((arm) => arm.name))
 
@@ -33,7 +33,7 @@ export const provideArmKinematics = (partID: () => string) => {
 	const kinematicsQueries = $derived(
 		clients.map(
 			(client) =>
-				[client.current?.name, createResourceQuery(client, 'getKinematics', options)] as const
+				[client.current?.name, createResourceQuery(client, 'getKinematics', () => options)] as const
 		)
 	)
 

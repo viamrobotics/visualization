@@ -7,10 +7,10 @@ const vecB = new Vector3()
 
 const quatAppxEqual = (q1: Quaternion, q2: Quaternion) => {
 	return (
-		Math.abs(q1.x) - Math.abs(q2.x) < EPSILON &&
-		Math.abs(q1.y) - Math.abs(q2.y) < EPSILON &&
-		Math.abs(q1.z) - Math.abs(q2.z) < EPSILON &&
-		Math.abs(q1.w) - Math.abs(q2.w) < EPSILON
+		Math.abs(Math.abs(q1.x) - Math.abs(q2.x)) < EPSILON &&
+		Math.abs(Math.abs(q1.y) - Math.abs(q2.y)) < EPSILON &&
+		Math.abs(Math.abs(q1.z) - Math.abs(q2.z)) < EPSILON &&
+		Math.abs(Math.abs(q1.w) - Math.abs(q2.w)) < EPSILON
 	)
 }
 
@@ -21,7 +21,7 @@ const numAppxEqual = (a: number, b: number) => {
 const ovAppxEqual = (ov1: OrientationVector, ov2: OrientationVector) => {
 	const vecDiff = vecA.set(ov1.x, ov1.y, ov1.z).sub(vecB.set(ov2.x, ov2.y, ov2.z))
 
-	return Math.abs(vecDiff.lengthSq()) < EPSILON && Math.abs(ov1.th) - Math.abs(ov2.th) < EPSILON
+	return Math.abs(vecDiff.lengthSq()) < EPSILON && Math.abs(Math.abs(ov1.th) - Math.abs(ov2.th)) < EPSILON
 }
 
 describe('OrientationVector', () => {

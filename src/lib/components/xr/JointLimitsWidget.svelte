@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { T } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry } from 'three'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { useArmKinematics, type JointLimit } from '$lib/hooks/useArmKinematics.svelte'
+	import { useArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
 
 	interface JointLimitsWidgetProps {
 		armName: string

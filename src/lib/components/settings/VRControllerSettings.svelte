@@ -34,7 +34,7 @@
 		)
 	)
 
-	function updateConfig(hand: 'left' | 'right', key: string, value: any) {
+	function updateConfig(hand: 'left' | 'right', key: string, value: string | number | boolean | undefined) {
 		settings.current.xrControllerConfig[hand] = {
 			...settings.current.xrControllerConfig[hand],
 			[key]: value,
@@ -107,14 +107,14 @@
 		Arm
 		<Select
 			value={config.left.armName || ''}
-			onchange={(event) => {
+			onchange={(event: Event) => {
 				if (event.target instanceof HTMLSelectElement) {
 					updateConfig('left', 'armName', event.target.value || undefined)
 				}
 			}}
 		>
 			<option value="">None</option>
-			{#each leftAvailableArms as armName}
+			{#each leftAvailableArms as armName (armName)}
 				<option value={armName}>{armName}</option>
 			{/each}
 		</Select>
@@ -124,14 +124,14 @@
 		Gripper
 		<Select
 			value={config.left.gripperName || ''}
-			onchange={(event) => {
+			onchange={(event: Event) => {
 				if (event.target instanceof HTMLSelectElement) {
 					updateConfig('left', 'gripperName', event.target.value || undefined)
 				}
 			}}
 		>
 			<option value="">None</option>
-			{#each leftAvailableGrippers as gripperName}
+			{#each leftAvailableGrippers as gripperName (gripperName)}
 				<option value={gripperName}>{gripperName}</option>
 			{/each}
 		</Select>
@@ -168,14 +168,14 @@
 		Arm
 		<Select
 			value={config.right.armName || ''}
-			onchange={(event) => {
+			onchange={(event: Event) => {
 				if (event.target instanceof HTMLSelectElement) {
 					updateConfig('right', 'armName', event.target.value || undefined)
 				}
 			}}
 		>
 			<option value="">None</option>
-			{#each rightAvailableArms as armName}
+			{#each rightAvailableArms as armName (armName)}
 				<option value={armName}>{armName}</option>
 			{/each}
 		</Select>
@@ -185,14 +185,14 @@
 		Gripper
 		<Select
 			value={config.right.gripperName || ''}
-			onchange={(event) => {
+			onchange={(event: Event) => {
 				if (event.target instanceof HTMLSelectElement) {
 					updateConfig('right', 'gripperName', event.target.value || undefined)
 				}
 			}}
 		>
 			<option value="">None</option>
-			{#each rightAvailableGrippers as gripperName}
+			{#each rightAvailableGrippers as gripperName (gripperName)}
 				<option value={gripperName}>{gripperName}</option>
 			{/each}
 		</Select>
