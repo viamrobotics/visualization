@@ -1,5 +1,5 @@
 import { CameraClient } from '@viamrobotics/sdk'
-import { setContext, getContext } from 'svelte'
+import { setContext, getContext, untrack } from 'svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -90,7 +90,7 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const options = $derived({
-		refetchInterval: interval,
+		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
 
 	const queries = $derived(
@@ -98,6 +98,10 @@ export const providePointclouds = (partID: () => string) => {
 			(client) =>
 				[client.current.name, createResourceQuery(client, 'getPointCloud', () => options)] as const
 		)
+	)
+
+	const readyStatuses = $derived(
+		typeSafeObjectFromEntries(enabledClients.map((client) => [client.current.name, true]))
 	)
 
 	const queryMap = $derived(typeSafeObjectFromEntries(queries))
@@ -118,65 +122,48 @@ export const providePointclouds = (partID: () => string) => {
 		colors: Uint8Array<ArrayBuffer> | null
 	}
 
-	let pcObjects = $state.raw<PCObject[]>([])
+	let pcObjects = $state<PCObject[]>([])
 
 	$effect(() => {
-		const binaries: [string, Uint8Array][] = []
-
 		for (const [name, query] of queries) {
-			const { data } = query
-			if (name && data) {
-				binaries.push([name, data])
-			}
-		}
+			untrack(() => {
+				$effect(() => {
+					const { data } = query
 
-		Promise.allSettled(
-			binaries.map(async ([name, uint8array]) => {
-				const { positions, colors } = await parsePcdInWorker(new Uint8Array(uint8array))
+					if (!data || data.length === 0) return
 
-				return { name, positions, colors }
+					console.log(name, data)
+
+					parsePcdInWorker(data)
+						.then(({ positions, colors }) => {
+							const existing = entities.get(name)
+							console.log(existing)
+
+							if (existing) {
+								const geometry = existing.get(traits.BufferGeometry)
+
+								if (geometry) {
+									updateBufferGeometry(geometry, positions, colors)
+									return
+								}
+							}
+
+							const geometry = createBufferGeometry(positions, colors)
+
+							const entity = world.spawn(
+								traits.Parent(name),
+								traits.Name(`${name} pointcloud`),
+								traits.BufferGeometry(geometry),
+								traits.Points
+							)
+
+							entities.set(name, entity)
+						})
+						.catch((error) => {
+							logs.add(error.reason, 'error')
+						})
+				})
 			})
-		).then((results) => {
-			const fulfilledResults: PCObject[] = []
-
-			for (const result of results) {
-				if (result.status === 'fulfilled') {
-					fulfilledResults.push(result.value)
-				} else if (result.status === 'rejected') {
-					logs.add(result.reason, 'error')
-				}
-			}
-
-			pcObjects = fulfilledResults
-		})
-	})
-
-	const entities = new Map<string, Entity>()
-
-	$effect(() => {
-		// Create or update entities
-		for (const { name, positions, colors } of pcObjects) {
-			const existing = entities.get(name)
-
-			if (existing) {
-				const geometry = existing.get(traits.BufferGeometry)
-
-				if (geometry) {
-					updateBufferGeometry(geometry, positions, colors)
-					continue
-				}
-			}
-
-			const geometry = createBufferGeometry(positions, colors)
-
-			const entity = world.spawn(
-				traits.Parent(name),
-				traits.Name(`${name} pointcloud`),
-				traits.BufferGeometry(geometry),
-				traits.Points
-			)
-
-			entities.set(name, entity)
 		}
 
 		// Clean up old entities
@@ -189,6 +176,79 @@ export const providePointclouds = (partID: () => string) => {
 			}
 		}
 	})
+
+	// $effect(() => {
+	// 	const binaries: [string, Uint8Array][] = []
+
+	// 	for (const [name, query] of queries) {
+	// 		const { data } = query
+	// 		if (name && data) {
+	// 			binaries.push([name, data])
+	// 		}
+	// 	}
+
+	// 	Promise.allSettled(
+	// 		binaries
+	// 			.filter(([_name, uint8array]) => uint8array.length > 0)
+	// 			.map(async ([name, uint8array]) => {
+	// 				console.log(name, uint8array)
+	// 				const { positions, colors } = await parsePcdInWorker(uint8array)
+
+	// 				return { name, positions, colors }
+	// 			})
+	// 	).then((results) => {
+	// 		const fulfilledResults: PCObject[] = []
+
+	// 		for (const result of results) {
+	// 			if (result.status === 'fulfilled') {
+	// 				fulfilledResults.push(result.value)
+	// 			} else if (result.status === 'rejected') {
+	// 				logs.add(result.reason, 'error')
+	// 			}
+	// 		}
+
+	// 		pcObjects = fulfilledResults
+	// 	})
+	// })
+
+	const entities = new Map<string, Entity>()
+
+	// $effect(() => {
+	// 	// Create or update entities
+	// 	for (const { name, positions, colors } of pcObjects) {
+	// 		const existing = entities.get(name)
+
+	// 		if (existing) {
+	// 			const geometry = existing.get(traits.BufferGeometry)
+
+	// 			if (geometry) {
+	// 				updateBufferGeometry(geometry, positions, colors)
+	// 				continue
+	// 			}
+	// 		}
+
+	// 		const geometry = createBufferGeometry(positions, colors)
+
+	// 		const entity = world.spawn(
+	// 			traits.Parent(name),
+	// 			traits.Name(`${name} pointcloud`),
+	// 			traits.BufferGeometry(geometry),
+	// 			traits.Points
+	// 		)
+
+	// 		entities.set(name, entity)
+	// 	}
+
+	// 	// Clean up old entities
+	// 	for (const [name, entity] of entities) {
+	// 		if (!queryMap[name]?.data) {
+	// 			if (world.has(entity)) {
+	// 				entity.destroy()
+	// 			}
+	// 			entities.delete(name)
+	// 		}
+	// 	}
+	// })
 
 	setContext<Context>(key, {
 		refetch() {
