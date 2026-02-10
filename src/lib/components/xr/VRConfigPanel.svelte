@@ -99,8 +99,6 @@
 
 	// Handle click on UI element
 	function handleClick(element: UIElement) {
-		console.log('Clicked element:', element.id)
-
 		if (element.type === 'tab') {
 			selectedHand = element.id as Hand
 		} else if (element.type === 'button' && element.id === 'apply') {
@@ -191,7 +189,6 @@
 			scaleFactor: formScaleFactor,
 			rotationEnabled: formRotationEnabled,
 		}
-		console.log('Settings applied for', selectedHand, settings.current.xrControllerConfig[selectedHand])
 	}
 
 	// Render functions

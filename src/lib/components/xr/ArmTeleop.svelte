@@ -138,9 +138,7 @@
 		// 3. Edge Detection & State Machine - ARM CONTROL (Squeeze)
 		if (isPressed && !wasPressed) {
 			// Rising Edge: Start Control
-			console.log('[ArmTeleop] 🟡 Squeeze button pressed!')
 			if (armClient.current) {
-				console.log('[ArmTeleop] ✅ armClient exists, calling handleStartControl...')
 				handleStartControl(controller.current)
 			} else {
 				console.error('[ArmTeleop] ❌ armClient.current is NULL! Cannot start teleop.')
@@ -152,7 +150,6 @@
 		} else if (!isPressed && wasPressed) {
 			// Falling Edge: Stop Control
 			if (isControlling) {
-				console.log('[ArmTeleop] Button Released. Stopping.')
 				isControlling = false
 				// Haptic feedback: short pulse on teleop end
 				triggerHapticFeedback(0.3, 80)
@@ -170,7 +167,6 @@
 					clearTimeout(gripperStopTimeout)
 					gripperStopTimeout = null
 				}
-				console.log('[ArmTeleop] Trigger pressed - Closing gripper')
 				gripperClient.current.grab().catch((e) => console.warn('Gripper grab failed:', e))
 			} else if (!isTriggerPressed && wasTriggerPressed) {
 				// Trigger released: Open gripper, then stop after 1 second
@@ -179,12 +175,10 @@
 					clearTimeout(gripperStopTimeout)
 					gripperStopTimeout = null
 				}
-				console.log('[ArmTeleop] Trigger released - Opening gripper')
 				gripperClient.current.open().catch((e) => console.warn('Gripper open failed:', e))
 
 				// Schedule stop after 1 second
 				gripperStopTimeout = setTimeout(() => {
-					console.log('[ArmTeleop] Stopping gripper after 1s')
 					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
 					gripperStopTimeout = null
 				}, 1000)
@@ -196,8 +190,6 @@
 			// B button pressed: Pop last saved pose and return to it
 			if (poseStack.length > 0) {
 				handleReturnToPose()
-			} else {
-				console.log('[ArmTeleop] No saved poses to return to')
 			}
 		}
 
@@ -218,26 +210,8 @@
 	}
 
 	async function handleStartControl(c: any) {
-		console.log('[ArmTeleop] Input Start')
 		try {
 			const currentPose = await armClient.current!.getEndPosition()
-			console.log('[ArmTeleop] ========================================')
-			console.log('[ArmTeleop] 🟢 TELEOP SESSION STARTED')
-			console.log('[ArmTeleop] Starting Arm End Effector Position:')
-			console.log(
-				'[ArmTeleop]   Position (mm): ' +
-					JSON.stringify({ x: currentPose.x, y: currentPose.y, z: currentPose.z })
-			)
-			console.log(
-				'[ArmTeleop]   Orientation: ' +
-					JSON.stringify({
-						oX: currentPose.oX,
-						oY: currentPose.oY,
-						oZ: currentPose.oZ,
-						theta: currentPose.theta,
-					})
-			)
-			console.log('[ArmTeleop] ========================================')
 
 			if (!currentPose) {
 				console.warn('[ArmTeleop] Could not get end position')
@@ -252,7 +226,6 @@
 
 			// Save this pose to the stack for quick return
 			poseStack.push({ x, y, z, oX, oY, oZ, theta })
-			console.log(`[ArmTeleop] Saved pose to stack (${poseStack.length} poses saved)`)
 
 			// Use grip space for tracking
 			const grip = c.grip
@@ -262,27 +235,10 @@
 			}
 
 			controllerRefPos.copy(grip.position)
-			console.log(
-				'[ArmTeleop] Controller Reference Position (m): ' +
-					JSON.stringify({
-						x: controllerRefPos.x,
-						y: controllerRefPos.y,
-						z: controllerRefPos.z,
-					})
-			)
 
 			// 1. Capture Reference and Transform to Robot Frame straight away
 			// Matches Dart: referenceRotationQuaternionViamPhone
 			controllerRefRotRobot = transformToRobotFrame(grip.quaternion, qTransform).normalize()
-			console.log(
-				'[ArmTeleop] Controller Reference Rotation (robot frame): ' +
-					JSON.stringify({
-						x: controllerRefRotRobot.x,
-						y: controllerRefRotRobot.y,
-						z: controllerRefRotRobot.z,
-						w: controllerRefRotRobot.w,
-					})
-			)
 
 			// 2. Compute offset from controller orientation to arm orientation (only once)
 			// This maintains: armRot = controllerRot * offset
@@ -294,23 +250,11 @@
 					.multiply(robotRefQuat)
 					.normalize()
 				offsetInitialized = true
-				console.log(
-					'[ArmTeleop] ✨ Calculated NEW Controller→Arm Offset Quaternion: ' +
-						JSON.stringify({
-							x: controllerToArmOffset.x,
-							y: controllerToArmOffset.y,
-							z: controllerToArmOffset.z,
-							w: controllerToArmOffset.w,
-						})
-				)
-			} else {
-				console.log('[ArmTeleop] ♻️  Reusing existing Controller→Arm offset (no rotation jump)')
 			}
 
 			errorTimeout = 0
 
 			isControlling = true
-			console.log('[ArmTeleop] Teleop Engaged - Absolute rotation with offset')
 
 			// Haptic feedback: short pulse on teleop start
 			triggerHapticFeedback(0.5, 100)
@@ -324,24 +268,7 @@
 
 	async function handleStopControl() {
 		try {
-			const finalPose = await armClient.current!.getEndPosition()
-			console.log('[ArmTeleop] ========================================')
-			console.log('[ArmTeleop] 🔴 TELEOP SESSION ENDED')
-			console.log('[ArmTeleop] Final Arm End Effector Position:')
-			console.log(
-				'[ArmTeleop]   Position (mm): ' +
-					JSON.stringify({ x: finalPose.x, y: finalPose.y, z: finalPose.z })
-			)
-			console.log(
-				'[ArmTeleop]   Orientation: ' +
-					JSON.stringify({
-						oX: finalPose.oX,
-						oY: finalPose.oY,
-						oZ: finalPose.oZ,
-						theta: finalPose.theta,
-					})
-			)
-			console.log('[ArmTeleop] ========================================')
+			await armClient.current!.getEndPosition()
 		} catch (e) {
 			console.error('[ArmTeleop] Failed to get final position:', e)
 		}
@@ -417,54 +344,6 @@
 			return
 		}
 
-		// Enhanced logging: show reference, current controller state, and target
-		// console.log('[ArmTeleop] ========================================')
-		// console.log('[ArmTeleop] Frame Update:')
-		// console.log(
-		// 	'[ArmTeleop]   Controller Delta (m): ' +
-		// 		JSON.stringify({
-		// 			x: (currentControllerPos.x - controllerRefPos.x).toFixed(4),
-		// 			y: (currentControllerPos.y - controllerRefPos.y).toFixed(4),
-		// 			z: (currentControllerPos.z - controllerRefPos.z).toFixed(4),
-		// 		})
-		// )
-		// console.log('[ArmTeleop]   Robot Reference Pos (mm): ' + JSON.stringify(robotRefPos))
-		// console.log(
-		// 	'[ArmTeleop]   Target Pos (mm): ' +
-		// 		JSON.stringify({
-		// 			x: targetPos.x.toFixed(2),
-		// 			y: targetPos.y.toFixed(2),
-		// 			z: targetPos.z.toFixed(2),
-		// 		})
-		// )
-		// console.log(
-		// 	'[ArmTeleop]   Position Delta (mm): ' +
-		// 		JSON.stringify({
-		// 			x: (targetPos.x - robotRefPos.x).toFixed(2),
-		// 			y: (targetPos.y - robotRefPos.y).toFixed(2),
-		// 			z: (targetPos.z - robotRefPos.z).toFixed(2),
-		// 		})
-		// )
-		// console.log(
-		// 	'[ArmTeleop]   Reference Orientation: ' +
-		// 		JSON.stringify({
-		// 			ox: robotRefOV.x.toFixed(4),
-		// 			oy: robotRefOV.y.toFixed(4),
-		// 			oz: robotRefOV.z.toFixed(4),
-		// 			theta: robotRefOV.th.toFixed(4),
-		// 		})
-		// )
-		// console.log(
-		// 	'[ArmTeleop]   Target Orientation: ' +
-		// 		JSON.stringify({
-		// 			ox: targetOV.x.toFixed(4),
-		// 			oy: targetOV.y.toFixed(4),
-		// 			oz: targetOV.z.toFixed(4),
-		// 			theta: targetOV.th.toFixed(4),
-		// 		})
-		// )
-		// console.log('[ArmTeleop] ========================================')
-
 		const command = {
 			servo_cartesian: {
 				x: targetPos.x,
@@ -481,8 +360,6 @@
 
 		let USE_UFACTORY_IK = true
 		if (USE_UFACTORY_IK) {
-			console.log('[ArmTeleop] Sending doCommand:', JSON.stringify(command, null, 2))
-
 			// Use the client. Note: ensure armClient.current is checked for null
 			const client = armClient.current
 			if (client) {
@@ -524,22 +401,6 @@
 
 		// Pop the last saved pose
 		const savedPose = poseStack.pop()!
-		console.log('[ArmTeleop] ========================================')
-		console.log(`[ArmTeleop] Returning to saved pose (${poseStack.length} poses remaining)`)
-		console.log(
-			'[ArmTeleop]   Position (mm): ' +
-				JSON.stringify({ x: savedPose.x, y: savedPose.y, z: savedPose.z })
-		)
-		console.log(
-			'[ArmTeleop]   Orientation: ' +
-				JSON.stringify({
-					oX: savedPose.oX,
-					oY: savedPose.oY,
-					oZ: savedPose.oZ,
-					theta: savedPose.theta,
-				})
-		)
-		console.log('[ArmTeleop] ========================================')
 
 		isReturning = true
 
@@ -554,7 +415,6 @@
 				oZ: savedPose.oZ,
 				theta: savedPose.theta,
 			})
-			console.log('[ArmTeleop] Successfully returned to saved pose')
 		} catch (e) {
 			console.error('[ArmTeleop] Failed to return to saved pose:', e)
 		} finally {
