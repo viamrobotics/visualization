@@ -73,10 +73,6 @@
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
 
-	$inspect('isFrameNode', isFrameNode)
-	$inspect('partConfig.hasEditPermissions', partConfig.hasEditPermissions)
-	$inspect('showEditFrameOptions', showEditFrameOptions)
-
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
 	let geometryType = $derived.by<'box' | 'sphere' | 'capsule' | 'none'>(() => {
@@ -676,7 +672,7 @@
 		<Button
 			class="mt-2 w-full"
 			icon={showRelationshipOptions ? undefined : 'plus'}
-			variant="dark"
+			variant={showRelationshipOptions ? 'dark' : 'primary'}
 			onclick={() => {
 				if (showRelationshipOptions) {
 					showRelationshipOptions = false
@@ -733,6 +729,7 @@
 						class="text-subtle-2 mb-1 block text-xs">Index mapping</label
 					>
 					<Input
+						on:keydown={(e) => e.stopPropagation()}
 						id="relationship-formula-input"
 						aria-label="Math formula for index mapping"
 						bind:value={relationshipFormula}
