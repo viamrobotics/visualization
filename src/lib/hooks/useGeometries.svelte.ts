@@ -13,7 +13,7 @@ import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
-import { RefetchRates } from '$lib/components/overlay2/left-pane/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay/left-pane/RefreshRate.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 
 const key = Symbol('geometries-context')

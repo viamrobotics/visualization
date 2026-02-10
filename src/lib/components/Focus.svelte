@@ -4,7 +4,7 @@
 	import { Box3, type Object3D, Vector3 } from 'three'
 	import { TrackballControls as ThreeTrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 	import Camera from './Camera.svelte'
-	import Button from '$lib/components/overlay2/dashboard/Button.svelte'
+	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 
 	interface Props {
 		object3d: Object3D
