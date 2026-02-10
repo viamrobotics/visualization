@@ -8,9 +8,10 @@
 		armName: string
 		offset?: { x?: number; y?: number; z?: number }
 		scale?: number
+		rotationY?: number
 	}
 
-	let { armName, offset = {}, scale = 0.6 }: JointLimitsWidgetProps = $props()
+	let { armName, offset = {}, scale = 0.6, rotationY = -15 * (Math.PI / 180) }: JointLimitsWidgetProps = $props()
 
 	const armClient = useArmClient()
 	const armKinematics = useArmKinematics()
@@ -202,7 +203,7 @@
 {#if texture && geometry && jointData && jointData.length > 0}
 	<T.Mesh
 		position={[offset.x ?? 0, offset.y ?? 1.5, offset.z ?? -2.5]}
-		rotation.y={-15 * (Math.PI / 180)}
+		rotation.y={rotationY}
 		scale={scale}
 	>
 		<T is={geometry} />

@@ -8,7 +8,6 @@
 	import CameraFeed from './CameraFeed.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 
 	const { ...rest } = $props()
 
@@ -17,7 +16,6 @@
 	const enableXR = $derived(settings.current.enableXR)
 
 	const partID = usePartID()
-	const armClient = useArmClient()
 
 	// Get all enabled camera widgets for the current part
 	const enabledCameras = $derived.by(() => {
@@ -26,11 +24,13 @@
 		return openWidgets[currentPartID] || []
 	})
 
-	// Get all available arms
-	const armNames = $derived(armClient.names)
+	// Get arms assigned to controllers
+	const controllerConfig = $derived(settings.current.xrControllerConfig)
+	const leftArmName = $derived(controllerConfig.left.armName)
+	const rightArmName = $derived(controllerConfig.right.armName)
 </script>
 
-{#if enableXR}
+{#if true}
 	<XR>
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}
@@ -44,18 +44,28 @@
 			/>
 		{/each}
 
-		<!-- Render joint limits widget for each arm to the right of cameras -->
-		{#each armNames as armName, index (armName)}
+		<!-- Render joint limits widgets only for arms assigned to controllers, on the matching side -->
+		{#if leftArmName}
+			{@const spacing = 1.2}
+			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
+			{@const widgetX = -(centerOffset + spacing + 0.3)}
+			<JointLimitsWidget
+				armName={leftArmName}
+				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
+				scale={0.6}
+				rotationY={15 * (Math.PI / 180)}
+			/>
+		{/if}
+		{#if rightArmName}
 			{@const spacing = 1.2}
 			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
 			{@const widgetX = centerOffset + spacing + 0.3}
-			{@const widgetY = 1.5 - index * 0.5}
 			<JointLimitsWidget
-				{armName}
-				offset={{ x: widgetX, y: widgetY, z: -2.5 }}
+				armName={rightArmName}
+				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
 				scale={0.6}
 			/>
-		{/each}
+		{/if}
 
 		<!-- VR Controller Configuration Panel -->
 		<!-- Temporarily disabled due to connection issues -->
