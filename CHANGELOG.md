@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.9.0
+
+### Minor Changes
+
+- 1f3de95: Feature: measurement tool axis snapping
+- 2606cf8: bump koota version to 0.6.5
+
 ## 1.8.0
 
 ### Minor Changes
