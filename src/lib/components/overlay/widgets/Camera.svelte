@@ -107,7 +107,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 flex resize-x flex-col overflow-hidden border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-10 m-2 flex resize-x flex-col overflow-hidden border text-xs"
 	style:width="320px"
 	style:height="auto !important"
 	use:draggable={{
