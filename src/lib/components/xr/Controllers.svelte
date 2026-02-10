@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Controller } from '@threlte/xr'
+	import { T } from '@threlte/core'
 	// import { useGamepad } from '@threlte/extras'
 
 	// import { BaseClient } from '@viamrobotics/sdk'
@@ -10,14 +11,29 @@
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
+	const settings = useSettings()
 	const armClient = useArmClient()
-	const armName = $derived(armClient?.names[0])
 
 	const partID = usePartID()
 	const resources = useResourceNames(() => partID.current)
-	const gripperResource = $derived(resources.current.find((r) => r.subtype === 'gripper'))
-	const gripperName = $derived(gripperResource?.name)
+	const grippers = $derived(resources.current.filter((r) => r.subtype === 'gripper'))
+
+	// Get controller config from settings
+	const config = $derived(settings.current.xrControllerConfig)
+
+	// Left controller configuration
+	const leftArmName = $derived(config.left.armName)
+	const leftGripperName = $derived(config.left.gripperName)
+	const leftScaleFactor = $derived(config.left.scaleFactor)
+	const leftRotationEnabled = $derived(config.left.rotationEnabled)
+
+	// Right controller configuration
+	const rightArmName = $derived(config.right.armName)
+	const rightGripperName = $derived(config.right.gripperName)
+	const rightScaleFactor = $derived(config.right.scaleFactor)
+	const rightRotationEnabled = $derived(config.right.rotationEnabled)
 
 	// const gamepadLeft = useGamepad({ xr: true, hand: 'left' })
 
@@ -68,10 +84,28 @@
 	{/snippet}
 </Controller>
 
-{#if armName}
-	<ArmTeleop
-		{armName}
-		{gripperName}
-		hand="right"
-	/>
+<!-- Left Controller Arm Teleop -->
+{#if leftArmName}
+	{#key `${leftArmName}-${leftGripperName}-${leftScaleFactor}-${leftRotationEnabled}`}
+		<ArmTeleop
+			armName={leftArmName}
+			gripperName={leftGripperName}
+			scaleFactor={leftScaleFactor}
+			rotationEnabled={leftRotationEnabled}
+			hand="left"
+		/>
+	{/key}
+{/if}
+
+<!-- Right Controller Arm Teleop -->
+{#if rightArmName}
+	{#key `${rightArmName}-${rightGripperName}-${rightScaleFactor}-${rightRotationEnabled}`}
+		<ArmTeleop
+			armName={rightArmName}
+			gripperName={rightGripperName}
+			scaleFactor={rightScaleFactor}
+			rotationEnabled={rightRotationEnabled}
+			hand="right"
+		/>
+	{/key}
 {/if}

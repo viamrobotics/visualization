@@ -58,9 +58,9 @@
 	})
 
 	// Canvas setup
-	const CANVAS_WIDTH = 400
-	const HEADER_HEIGHT = 40
-	const ROW_HEIGHT = 60
+	const CANVAS_WIDTH = 800
+	const HEADER_HEIGHT = 80
+	const ROW_HEIGHT = 120
 	let canvasHeight = $derived(HEADER_HEIGHT + (jointData?.length ?? 0) * ROW_HEIGHT)
 
 	let canvas: HTMLCanvasElement | undefined = $state()
@@ -105,13 +105,13 @@
 
 		// Arm name
 		ctx.fillStyle = '#ffffff'
-		ctx.font = 'bold 18px monospace'
+		ctx.font = 'bold 36px monospace'
 		ctx.textBaseline = 'middle'
-		ctx.fillText(armName, 10, HEADER_HEIGHT / 2)
+		ctx.fillText(armName, 20, HEADER_HEIGHT / 2)
 
 		// Separator line
 		ctx.strokeStyle = '#444444'
-		ctx.lineWidth = 2
+		ctx.lineWidth = 4
 		ctx.beginPath()
 		ctx.moveTo(0, HEADER_HEIGHT)
 		ctx.lineTo(width, HEADER_HEIGHT)
@@ -136,15 +136,15 @@
 
 			// Joint label
 			ctx.fillStyle = '#ffffff'
-			ctx.font = 'bold 16px monospace'
+			ctx.font = 'bold 32px monospace'
 			ctx.textBaseline = 'middle'
-			ctx.fillText(joint.jointId, 10, y + rowHeight / 2)
+			ctx.fillText(joint.jointId, 20, y + rowHeight / 2)
 
 			// Progress bar dimensions
-			const barX = 120
-			const barY = y + (rowHeight - 30) / 2
-			const barWidth = 180
-			const barHeight = 30
+			const barX = 240
+			const barY = y + (rowHeight - 60) / 2
+			const barWidth = 360
+			const barHeight = 60
 
 			// Progress bar background
 			ctx.fillStyle = '#333333'
@@ -158,13 +158,13 @@
 
 			// Progress bar border
 			ctx.strokeStyle = '#666666'
-			ctx.lineWidth = 2
+			ctx.lineWidth = 4
 			ctx.strokeRect(barX, barY, barWidth, barHeight)
 
 			// Current value text
 			ctx.fillStyle = '#ffffff'
-			ctx.font = '14px monospace'
-			ctx.fillText(`${joint.currentPosition.toFixed(1)}°`, barX + barWidth + 10, y + rowHeight / 2)
+			ctx.font = '28px monospace'
+			ctx.fillText(`${joint.currentPosition.toFixed(1)}°`, barX + barWidth + 20, y + rowHeight / 2)
 		})
 	}
 
@@ -200,7 +200,11 @@
 </script>
 
 {#if texture && geometry && jointData && jointData.length > 0}
-	<T.Mesh position={[offset.x ?? 0, offset.y ?? 1.5, offset.z ?? -2.5]} scale={scale}>
+	<T.Mesh
+		position={[offset.x ?? 0, offset.y ?? 1.5, offset.z ?? -2.5]}
+		rotation.y={-15 * (Math.PI / 180)}
+		scale={scale}
+	>
 		<T is={geometry} />
 		<T.MeshBasicMaterial map={texture} />
 	</T.Mesh>

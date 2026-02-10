@@ -47,6 +47,22 @@ export interface Settings {
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
 	renderSubEntityHoverDetail: boolean
+
+	// XR Controller Configuration
+	xrControllerConfig: {
+		left: {
+			armName?: string
+			gripperName?: string
+			scaleFactor: number
+			rotationEnabled: boolean
+		}
+		right: {
+			armName?: string
+			gripperName?: string
+			scaleFactor: number
+			rotationEnabled: boolean
+		}
+	}
 }
 
 interface Context {
@@ -89,6 +105,17 @@ const defaults = (): Settings => ({
 	renderStats: false,
 	renderArmModels: 'colliders+model',
 	renderSubEntityHoverDetail: false,
+
+	xrControllerConfig: {
+		left: {
+			scaleFactor: 1.0,
+			rotationEnabled: true,
+		},
+		right: {
+			scaleFactor: 1.0,
+			rotationEnabled: true,
+		},
+	},
 })
 
 export const provideSettings = () => {
