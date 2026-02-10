@@ -257,6 +257,7 @@ export const provideFrames = (partID: () => string) => {
 				traits.Pose(pose),
 				traits.EditedPose(pose),
 				traits.FramesAPI,
+				traits.ShowAxesHelper,
 			]
 
 			if (parent && parent !== 'world') {

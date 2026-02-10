@@ -46,6 +46,7 @@
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const center = useTrait(() => entity, traits.Center)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 
 	const geometryType = $derived.by(() => {
 		if (box.current) return 'box'
@@ -124,10 +125,12 @@
 	{...rest}
 >
 	{#if geometryType}
-		<AxesHelper
-			width={3}
-			length={0.1}
-		/>
+		{#if showAxesHelper.current}
+			<AxesHelper
+				width={3}
+				length={0.1}
+			/>
+		{/if}
 
 		<T
 			is={mesh}
@@ -196,7 +199,7 @@
 				{/if}
 			{/if}
 		</T>
-	{:else}
+	{:else if showAxesHelper.current}
 		<AxesHelper
 			name={name.current}
 			width={3}
