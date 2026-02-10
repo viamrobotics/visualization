@@ -116,13 +116,7 @@ export const providePointclouds = (partID: () => string) => {
 		}
 	})
 
-	interface PCObject {
-		name: string
-		positions: Float32Array<ArrayBuffer>
-		colors: Uint8Array<ArrayBuffer> | null
-	}
-
-	let pcObjects = $state<PCObject[]>([])
+	const entities = new Map<string, Entity>()
 
 	$effect(() => {
 		for (const [name, query] of queries) {
@@ -132,12 +126,9 @@ export const providePointclouds = (partID: () => string) => {
 
 					if (!data || data.length === 0) return
 
-					console.log(name, data)
-
 					parsePcdInWorker(data)
 						.then(({ positions, colors }) => {
 							const existing = entities.get(name)
-							console.log(existing)
 
 							if (existing) {
 								const geometry = existing.get(traits.BufferGeometry)
@@ -176,79 +167,6 @@ export const providePointclouds = (partID: () => string) => {
 			}
 		}
 	})
-
-	// $effect(() => {
-	// 	const binaries: [string, Uint8Array][] = []
-
-	// 	for (const [name, query] of queries) {
-	// 		const { data } = query
-	// 		if (name && data) {
-	// 			binaries.push([name, data])
-	// 		}
-	// 	}
-
-	// 	Promise.allSettled(
-	// 		binaries
-	// 			.filter(([_name, uint8array]) => uint8array.length > 0)
-	// 			.map(async ([name, uint8array]) => {
-	// 				console.log(name, uint8array)
-	// 				const { positions, colors } = await parsePcdInWorker(uint8array)
-
-	// 				return { name, positions, colors }
-	// 			})
-	// 	).then((results) => {
-	// 		const fulfilledResults: PCObject[] = []
-
-	// 		for (const result of results) {
-	// 			if (result.status === 'fulfilled') {
-	// 				fulfilledResults.push(result.value)
-	// 			} else if (result.status === 'rejected') {
-	// 				logs.add(result.reason, 'error')
-	// 			}
-	// 		}
-
-	// 		pcObjects = fulfilledResults
-	// 	})
-	// })
-
-	const entities = new Map<string, Entity>()
-
-	// $effect(() => {
-	// 	// Create or update entities
-	// 	for (const { name, positions, colors } of pcObjects) {
-	// 		const existing = entities.get(name)
-
-	// 		if (existing) {
-	// 			const geometry = existing.get(traits.BufferGeometry)
-
-	// 			if (geometry) {
-	// 				updateBufferGeometry(geometry, positions, colors)
-	// 				continue
-	// 			}
-	// 		}
-
-	// 		const geometry = createBufferGeometry(positions, colors)
-
-	// 		const entity = world.spawn(
-	// 			traits.Parent(name),
-	// 			traits.Name(`${name} pointcloud`),
-	// 			traits.BufferGeometry(geometry),
-	// 			traits.Points
-	// 		)
-
-	// 		entities.set(name, entity)
-	// 	}
-
-	// 	// Clean up old entities
-	// 	for (const [name, entity] of entities) {
-	// 		if (!queryMap[name]?.data) {
-	// 			if (world.has(entity)) {
-	// 				entity.destroy()
-	// 			}
-	// 			entities.delete(name)
-	// 		}
-	// 	}
-	// })
 
 	setContext<Context>(key, {
 		refetch() {
