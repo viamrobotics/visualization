@@ -100,10 +100,6 @@ export const providePointclouds = (partID: () => string) => {
 		)
 	)
 
-	const readyStatuses = $derived(
-		typeSafeObjectFromEntries(enabledClients.map((client) => [client.current.name, true]))
-	)
-
 	const queryMap = $derived(typeSafeObjectFromEntries(queries))
 
 	$effect(() => {
