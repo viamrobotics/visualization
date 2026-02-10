@@ -14,7 +14,7 @@
 	import { useOrigin } from './xr/useOrigin.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import CameraControls from './CameraControls.svelte'
-	import MeasureTool from './MeasureTool.svelte'
+	import MeasureTool from './MeasureTool/MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
 	import BatchedArrows from './BatchedArrows.svelte'
 	import Arrows from './Arrows/ArrowGroups.svelte'
