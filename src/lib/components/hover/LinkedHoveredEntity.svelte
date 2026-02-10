@@ -26,8 +26,9 @@
 
 	$effect(() => {
 		if (displayEntity && displayedHoverInfo.current) {
+			// Index  Mapping is a formula with the variable 'index' in it, available operations can be found here: https://github.com/silentmatt/expr-eval/tree/master
 			const indexMapping =
-				displayEntity?.get(relations.HoverLink(linkedEntity))?.indexMapping ?? '*1'
+				displayEntity?.get(relations.HoverLink(linkedEntity))?.indexMapping ?? 'index'
 			const expression = parser.parse(indexMapping)
 			const resolvedIndex = expression.evaluate({ index: displayedHoverInfo.current.index })
 			const linkedHoverInfo = getLinkedHoverInfo(resolvedIndex, linkedEntity)

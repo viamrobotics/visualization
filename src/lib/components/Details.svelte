@@ -4,7 +4,6 @@
 >
 	import { OrientationVector } from '$lib/three/OrientationVector'
 	import { Quaternion, Vector3, MathUtils, BufferAttribute } from 'three'
-	import type { Entity } from 'koota'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -26,10 +25,11 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld, useQuery, relations } from '$lib/ecs'
+	import { traits, useTrait, useWorld, relations } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
+	import AddRelationship from '$lib/components/AddRelationship.svelte'
 
 	const { ...rest } = $props()
 
@@ -47,20 +47,8 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
-	let showRelationshipOptions = $state(false)
-	let selectedRelationshipType = $state<string>('')
-	let selectedRelationshipEntity = $state<string>('')
-	let relationshipFormula = $state('index')
 	const hoveredLinkedEntities = useHoveredLinkedEntities()
 	const name = useTrait(() => entity, traits.Name)
-	const allEntities = useQuery(traits.Name)
-	const entityNames = $derived.by(() => {
-		const currentEntityName = name.current
-		return allEntities.current
-			.map((e: Entity) => e.get(traits.Name))
-			.filter((n: string | undefined): n is string => n !== undefined && n !== currentEntityName)
-			.sort()
-	})
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
 	const box = useTrait(() => entity, traits.Box)
@@ -669,102 +657,7 @@
 			</Button>
 		{/if}
 
-		<Button
-			class="mt-2 w-full"
-			icon={showRelationshipOptions ? undefined : 'plus'}
-			variant={showRelationshipOptions ? 'dark' : 'primary'}
-			onclick={() => {
-				if (showRelationshipOptions) {
-					showRelationshipOptions = false
-					selectedRelationshipType = 'HoverLink'
-					selectedRelationshipEntity = ''
-					relationshipFormula = 'index'
-				} else {
-					showRelationshipOptions = true
-				}
-			}}>{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}</Button
-		>
-
-		{#if showRelationshipOptions}
-			<div class="mt-2 flex flex-col gap-2">
-				<div>
-					<label
-						for="relationship-type-select"
-						class="text-subtle-2 mb-1 block text-xs">Relationship type</label
-					>
-					<Select
-						id="relationship-type-select"
-						aria-label="Select relationship type"
-						value={selectedRelationshipType}
-						onchange={(event: InputEvent) => {
-							selectedRelationshipType = (event.target as HTMLSelectElement).value as 'HoverLink'
-						}}
-					>
-						<option value="">Select a relationship type...</option>
-						<option value="HoverLink">HoverLink</option>
-					</Select>
-				</div>
-				<div>
-					<label
-						for="relationship-entity-select"
-						class="text-subtle-2 mb-1 block text-xs">Entity</label
-					>
-					<Select
-						id="relationship-entity-select"
-						aria-label="Select entity for relationship"
-						value={selectedRelationshipEntity}
-						onchange={(event: InputEvent) => {
-							selectedRelationshipEntity = (event.target as HTMLSelectElement).value
-						}}
-					>
-						<option value="">Select an entity...</option>
-						{#each entityNames as entityName (entityName)}
-							<option value={entityName}>{entityName}</option>
-						{/each}
-					</Select>
-				</div>
-				<div>
-					<label
-						for="relationship-formula-input"
-						class="text-subtle-2 mb-1 block text-xs">Index mapping</label
-					>
-					<Input
-						on:keydown={(e) => e.stopPropagation()}
-						id="relationship-formula-input"
-						aria-label="Math formula for index mapping"
-						bind:value={relationshipFormula}
-						placeholder="index"
-					/>
-				</div>
-				<div>
-					<Button
-						class="w-full"
-						variant="primary"
-						onclick={() => {
-							if (!relationshipFormula.includes('index')) {
-								return
-							}
-							const selectedEntity = allEntities.current.find(
-								(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
-							)
-							if (selectedEntity) {
-								entity.add(
-									relations.HoverLink(selectedEntity, {
-										indexMapping: relationshipFormula || 'index',
-									})
-								)
-							}
-							showRelationshipOptions = false
-							selectedRelationshipType = 'HoverLink'
-							selectedRelationshipEntity = ''
-							relationshipFormula = 'index'
-						}}
-					>
-						Add
-					</Button>
-				</div>
-			</div>
-		{/if}
+		<AddRelationship entity={entity} />
 
 		{#if showEditFrameOptions && environment.current.isStandalone}
 			<Button
