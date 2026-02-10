@@ -55,11 +55,14 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const removable = useTrait(() => entity, traits.Removable)
+	const points = useTrait(() => entity, traits.Points)
+	const arrows = useTrait(() => entity, traits.Arrows)
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
+	const showRelationshipOptions = $derived(points.current || arrows.current)
 
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
@@ -657,7 +660,9 @@
 			</Button>
 		{/if}
 
-		<AddRelationship {entity} />
+		{#if showRelationshipOptions}
+			<AddRelationship {entity} />
+		{/if}
 
 		{#if showEditFrameOptions && environment.current.isStandalone}
 			<Button
