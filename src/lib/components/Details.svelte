@@ -657,7 +657,7 @@
 			</Button>
 		{/if}
 
-		<AddRelationship entity={entity} />
+		<AddRelationship {entity} />
 
 		{#if showEditFrameOptions && environment.current.isStandalone}
 			<Button

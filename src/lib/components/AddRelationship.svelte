@@ -25,8 +25,7 @@
 	let relationshipFormula = $state('index')
 
 	function resetForm() {
-		showRelationshipOptions = false
-		selectedRelationshipType = 'HoverLink'
+		selectedRelationshipType = ''
 		selectedRelationshipEntity = ''
 		relationshipFormula = 'index'
 	}
@@ -39,7 +38,7 @@
 		if (selectedEntity) {
 			entity.add(
 				relations.HoverLink(selectedEntity, {
-					indexMapping: relationshipFormula || 'index',
+					indexMapping: relationshipFormula,
 				})
 			)
 		}
@@ -54,11 +53,9 @@
 	onclick={() => {
 		if (showRelationshipOptions) {
 			resetForm()
-		} else {
-			showRelationshipOptions = true
 		}
-	}}
-	>{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}</Button
+		showRelationshipOptions = !showRelationshipOptions
+	}}>{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}</Button
 >
 
 {#if showRelationshipOptions}
@@ -66,8 +63,7 @@
 		<div>
 			<label
 				for="relationship-type-select"
-				class="text-subtle-2 mb-1 block text-xs"
-				>Relationship type</label
+				class="text-subtle-2 mb-1 block text-xs">Relationship type</label
 			>
 			<Select
 				id="relationship-type-select"
@@ -84,8 +80,7 @@
 		<div>
 			<label
 				for="relationship-entity-select"
-				class="text-subtle-2 mb-1 block text-xs"
-				>Entity</label
+				class="text-subtle-2 mb-1 block text-xs">Entity</label
 			>
 			<Select
 				id="relationship-entity-select"
@@ -104,8 +99,7 @@
 		<div>
 			<label
 				for="relationship-formula-input"
-				class="text-subtle-2 mb-1 block text-xs"
-				>Index mapping</label
+				class="text-subtle-2 mb-1 block text-xs">Index mapping</label
 			>
 			<Input
 				on:keydown={(e) => e.stopPropagation()}
@@ -116,7 +110,11 @@
 			/>
 		</div>
 		<div>
-			<Button class="w-full" variant="primary" onclick={handleAdd}>
+			<Button
+				class="w-full"
+				variant="primary"
+				onclick={handleAdd}
+			>
 				Add
 			</Button>
 		</div>
