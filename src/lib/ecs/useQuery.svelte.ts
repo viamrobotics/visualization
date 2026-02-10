@@ -6,7 +6,7 @@ export function useQuery<T extends QueryParameter[]>(
 	...parameters: T
 ): { current: QueryResult<T> } {
 	const world = useWorld()
-	const hash = createQuery(...parameters)
+	const { hash } = createQuery(...parameters)
 
 	// Using internals to get the query data.
 	const query = world[internal].queriesHashMap.get(hash.hash)
