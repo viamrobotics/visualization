@@ -4,12 +4,12 @@
 	import { T } from '@threlte/core'
 	import { HTML, MeshLineGeometry, MeshLineMaterial, Portal } from '@threlte/extras'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import Button from '$lib/components/overlay/dashboard/Button.svelte'
+	import Button from '$lib/components/overlay2/dashboard/Button.svelte'
 	import MeasurePoint from './MeasurePoint.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
-	import ToggleGroup from '../overlay/ToggleGroup.svelte'
-	import Popover from '../overlay/Popover.svelte'
+	import ToggleGroup from '../overlay2/ToggleGroup.svelte'
+	import Popover from '../overlay2/Popover.svelte'
 
 	const focusedEntity = useFocusedEntity()
 	const settings = useSettings()

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
 	import { formatNumeric } from '$lib/format'
-	import Table from '$lib/components/overlay/Table.svelte'
+	import Table from '$lib/components/overlay2/Table.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { Icon, Label, Select } from '@viamrobotics/prime-core'
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
+	import DashboardButton from '$lib/components/overlay2/dashboard/Button.svelte'
 	import { Input, Switch, Button, Icon, IconButton } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'

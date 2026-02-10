@@ -8,7 +8,7 @@ import {
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefetchRates } from '$lib/components/overlay/left-pane/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay2/left-pane/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
