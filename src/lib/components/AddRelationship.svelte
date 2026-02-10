@@ -42,6 +42,7 @@
 				})
 			)
 		}
+		showRelationshipOptions = false
 		resetForm()
 	}
 </script>

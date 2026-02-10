@@ -24,7 +24,13 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		if (currentEntity && !currentEntity.has(traits.Hover)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
 			if (hoverInfo) {
-				currentEntity.add(traits.Hover(hoverInfo))
+				currentEntity.add(
+					traits.Hover({
+						index: hoverInfo.index,
+						position: hoverInfo.position,
+						orientation: hoverInfo.orientation,
+					})
+				)
 			}
 		}
 	}
@@ -35,7 +41,11 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		if (currentEntity && currentEntity.has(traits.Hover)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
 			if (hoverInfo) {
-				currentEntity.set(traits.Hover, hoverInfo)
+				currentEntity.set(traits.Hover, {
+					index: hoverInfo.index,
+					position: hoverInfo.position,
+					orientation: hoverInfo.orientation,
+				})
 			}
 		}
 	}
