@@ -87,8 +87,10 @@
 	// Throttling
 	let lastCommandTime = 0
 	let errorTimeout = 0
+	let lastErrorHapticTime = 0
 	const COMMAND_INTERVAL = 11 // ms (90Hz)
 	const ERROR_COOLDOWN = 1000 // ms
+	const ERROR_HAPTIC_INTERVAL = 200 // ms between error haptic pulses
 
 	// Rotation Deadband - matches Dart implementation
 	const ROTATION_DEADBAND_RAD = 0.25 // ~14.3 degrees
@@ -333,7 +335,16 @@
 		// --- Send Command ---
 		if (now - lastCommandTime < COMMAND_INTERVAL) return
 		if (isSending) return
-		if (now < errorTimeout) return
+
+		// If in error state, provide haptic feedback and skip sending
+		if (now < errorTimeout) {
+			// Buzz controller to indicate IK constraint error (throttled)
+			if (now - lastErrorHapticTime > ERROR_HAPTIC_INTERVAL) {
+				triggerHapticFeedback(0.7, 150) // Stronger, longer pulse for errors
+				lastErrorHapticTime = now
+			}
+			return
+		}
 
 		lastCommandTime = now
 		isSending = true
@@ -369,6 +380,9 @@
 					.catch((e) => {
 						console.warn('Move failed:', e)
 						errorTimeout = Date.now() + ERROR_COOLDOWN
+						// Strong haptic feedback for IK constraint error
+						triggerHapticFeedback(0.8, 200)
+						lastErrorHapticTime = Date.now()
 					})
 					.finally(() => {
 						isSending = false
@@ -389,6 +403,9 @@
 				.catch((e) => {
 					console.warn('Move failed:', e)
 					errorTimeout = Date.now() + ERROR_COOLDOWN
+					// Strong haptic feedback for IK constraint error
+					triggerHapticFeedback(0.8, 200)
+					lastErrorHapticTime = Date.now()
 				})
 				.finally(() => {
 					isSending = false
