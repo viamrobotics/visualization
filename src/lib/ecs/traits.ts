@@ -97,6 +97,8 @@ export const SnapshotAPI = trait(() => true)
  */
 export const DroppedFile = trait(() => true)
 
+export const ShowAxesHelper = trait(() => true)
+
 // === Shape Properties ===
 /**
  * Point size, in mm

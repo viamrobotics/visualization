@@ -128,6 +128,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		entityTraits.push(
 			traits.Name(transform.referenceFrame),
 			traits.Pose(pose),
+			traits.ShowAxesHelper,
 			traits.WorldStateStoreAPI
 		)
 
