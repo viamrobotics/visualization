@@ -25,7 +25,7 @@
 
 {#if partConfig.isDirty}
 	<div
-		class="absolute bottom-8 z-10 flex w-full justify-center gap-2"
+		class="absolute bottom-8 z-4 flex w-full justify-center gap-2"
 		{...rest}
 	>
 		<div

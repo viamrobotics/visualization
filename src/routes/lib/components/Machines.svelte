@@ -49,8 +49,11 @@
 	/>
 </fieldset>
 
-<FloatingPanel bind:isOpen>
-	<div class="flex grow flex-col gap-2 overflow-y-auto p-2">
+<FloatingPanel
+	title="Connection configurations"
+	bind:isOpen
+>
+	<div class="flex h-full grow flex-col gap-2 overflow-y-auto p-2">
 		{#each connectionConfigs.current as config, index (index)}
 			<form class="flex flex-col gap-2">
 				<div class="flex justify-between gap-2">

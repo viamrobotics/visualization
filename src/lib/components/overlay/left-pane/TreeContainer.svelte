@@ -58,7 +58,7 @@
 
 <div
 	bind:this={container}
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 resize overflow-y-auto border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 resize overflow-y-auto border text-xs"
 	style:min-width="{MIN_DIMENSIONS.width}px"
 	style:min-height="{MIN_DIMENSIONS.height}px"
 	style:width={resizable.current ? `${resizable.current.width}px` : undefined}

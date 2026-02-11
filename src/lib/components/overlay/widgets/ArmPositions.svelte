@@ -17,7 +17,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 overflow-y-auto border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 overflow-y-auto border text-xs"
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,
