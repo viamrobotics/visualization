@@ -3,17 +3,16 @@
 	import * as toggle from '@zag-js/toggle-group'
 
 	interface Props {
-		multiple: boolean
+		multiple?: boolean
 		options: {
 			selected?: boolean
-			disabled?: boolean
 			label: string
 			value?: string
 		}[]
 		onSelect: (details: string[]) => void
 	}
 
-	let { multiple, options, onSelect }: Props = $props()
+	let { multiple = false, options, onSelect }: Props = $props()
 
 	const id = $props.id()
 	const service = useMachine(toggle.machine, () => ({
@@ -51,12 +50,6 @@
 </div>
 
 <style>
-	button[data-disabled] {
-		opacity: 0.5;
-
-		filter: grayscale(100%);
-	}
-
 	button[data-focus] {
 		outline: none;
 	}
