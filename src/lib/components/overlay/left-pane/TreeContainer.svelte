@@ -3,7 +3,6 @@
 	import Tree from './Tree.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
-	import Settings from './Settings.svelte'
 	import Logs from './Logs.svelte'
 	import Widgets from './Widgets.svelte'
 	import AddFrames from './AddFrames.svelte'
@@ -86,6 +85,5 @@
 	{/if}
 
 	<Logs />
-	<Settings />
 	<Widgets />
 </div>

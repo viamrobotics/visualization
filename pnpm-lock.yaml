@@ -144,6 +144,9 @@ importers:
       '@zag-js/svelte':
         specifier: 1.22.1
         version: 1.22.1(svelte@5.45.9)
+      '@zag-js/tabs':
+        specifier: 1.22.1
+        version: 1.22.1
       '@zag-js/toggle-group':
         specifier: 1.22.1
         version: 1.22.1
@@ -1782,8 +1785,8 @@ packages:
   '@zag-js/switch@1.27.1':
     resolution: {integrity: sha512-IuYacFHlQsxkFCU8ABGjwhtvWARexAYS/BMQkD5W8s0cwNHR3uOLPGjrJhSkJqvx3ENpSTRRKqTwawXVeFg2BQ==}
 
-  '@zag-js/tabs@1.27.1':
-    resolution: {integrity: sha512-jI+frE9z+wVfoqYA/7Xxr+SWix3OmjpfA7+F8GK1XPdN8atD/uYRgE7CbqwPc24fhIO/xkl1sNKRv83HaCMjvw==}
+  '@zag-js/tabs@1.22.1':
+    resolution: {integrity: sha512-B0WHW36uuR+pu/24X0yI4eyvSwo7WmqOc5C3ohZHOf03zkmMJdtMtVQSotKr7qhGMt5updCgs68MR7jAmmc1Lw==}
 
   '@zag-js/tags-input@1.27.1':
     resolution: {integrity: sha512-+XUOwKFWfGwmJpl3hWK8kHq5IeuZUZaR1FgNzbO029ll3p5unBOGzEL51oCH1dpeuMY/FyXEssNLrvVgId6E3Q==}
@@ -5048,7 +5051,7 @@ snapshots:
       '@zag-js/slider': 1.27.1
       '@zag-js/svelte': 1.22.1(svelte@5.45.9)
       '@zag-js/switch': 1.27.1
-      '@zag-js/tabs': 1.27.1
+      '@zag-js/tabs': 1.22.1
       '@zag-js/tags-input': 1.27.1
       '@zag-js/toast': 1.27.1
       '@zag-js/tooltip': 1.27.1
@@ -5831,13 +5834,13 @@ snapshots:
       '@zag-js/types': 1.27.1
       '@zag-js/utils': 1.27.1
 
-  '@zag-js/tabs@1.27.1':
+  '@zag-js/tabs@1.22.1':
     dependencies:
-      '@zag-js/anatomy': 1.27.1
-      '@zag-js/core': 1.27.1
-      '@zag-js/dom-query': 1.27.1
-      '@zag-js/types': 1.27.1
-      '@zag-js/utils': 1.27.1
+      '@zag-js/anatomy': 1.22.1
+      '@zag-js/core': 1.22.1
+      '@zag-js/dom-query': 1.22.1
+      '@zag-js/types': 1.22.1
+      '@zag-js/utils': 1.22.1
 
   '@zag-js/tags-input@1.27.1':
     dependencies:
