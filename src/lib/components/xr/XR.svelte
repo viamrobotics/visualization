@@ -30,7 +30,7 @@
 	const rightArmName = $derived(controllerConfig.right.armName)
 </script>
 
-{#if true}
+{#if enableXR}
 	<XR>
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}
