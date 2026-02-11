@@ -34,70 +34,17 @@
 		)
 	)
 
-	function updateConfig(hand: 'left' | 'right', key: string, value: string | number | boolean | undefined) {
+	function updateConfig(
+		hand: 'left' | 'right',
+		key: string,
+		value: string | number | boolean | undefined
+	) {
 		settings.current.xrControllerConfig[hand] = {
 			...settings.current.xrControllerConfig[hand],
 			[key]: value,
 		}
 	}
 </script>
-
-<style>
-	input[type='range'] {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 100%;
-		background: linear-gradient(
-			to right,
-			#3d7d3f 0%,
-			#3d7d3f var(--value),
-			#d1d5db var(--value),
-			#d1d5db 100%
-		);
-		border-radius: 0.25rem;
-		height: 0.5rem;
-		cursor: pointer;
-		outline: none;
-	}
-
-	/* Webkit browsers (Chrome, Safari, Edge) */
-	input[type='range']::-webkit-slider-track {
-		background: transparent;
-		height: 0.5rem;
-		border-radius: 0.25rem;
-	}
-
-	input[type='range']::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		background: #3d7d3f;
-		height: 1.25rem;
-		width: 1.25rem;
-		border-radius: 50%;
-		border: 2px solid white;
-	}
-
-	/* Firefox */
-	input[type='range']::-moz-range-track {
-		background: transparent;
-		height: 0.5rem;
-		border-radius: 0.25rem;
-	}
-
-	input[type='range']::-moz-range-thumb {
-		background: #3d7d3f;
-		height: 1.25rem;
-		width: 1.25rem;
-		border-radius: 50%;
-		border: 2px solid white;
-	}
-
-	input[type='range']::-moz-range-progress {
-		background: #3d7d3f;
-		height: 0.5rem;
-		border-radius: 0.25rem;
-	}
-</style>
 
 <div class="flex flex-col gap-2.5">
 	<!-- Left Controller -->
@@ -222,3 +169,60 @@
 		/>
 	</label>
 </div>
+
+<style>
+	input[type='range'] {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		background: linear-gradient(
+			to right,
+			#3d7d3f 0%,
+			#3d7d3f var(--value),
+			#d1d5db var(--value),
+			#d1d5db 100%
+		);
+		border-radius: 0.25rem;
+		height: 0.5rem;
+		cursor: pointer;
+		outline: none;
+	}
+
+	/* Webkit browsers (Chrome, Safari, Edge) */
+	input[type='range']::-webkit-slider-track {
+		background: transparent;
+		height: 0.5rem;
+		border-radius: 0.25rem;
+	}
+
+	input[type='range']::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		background: #3d7d3f;
+		height: 1.25rem;
+		width: 1.25rem;
+		border-radius: 50%;
+		border: 2px solid white;
+	}
+
+	/* Firefox */
+	input[type='range']::-moz-range-track {
+		background: transparent;
+		height: 0.5rem;
+		border-radius: 0.25rem;
+	}
+
+	input[type='range']::-moz-range-thumb {
+		background: #3d7d3f;
+		height: 1.25rem;
+		width: 1.25rem;
+		border-radius: 50%;
+		border: 2px solid white;
+	}
+
+	input[type='range']::-moz-range-progress {
+		background: #3d7d3f;
+		height: 0.5rem;
+		border-radius: 0.25rem;
+	}
+</style>

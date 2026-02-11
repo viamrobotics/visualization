@@ -104,7 +104,9 @@
 		const currentSession = $session
 		if (!currentSession) return
 
-		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === initialHand)
+		const inputSource = Array.from(currentSession.inputSources).find(
+			(s) => s.handedness === initialHand
+		)
 		if (!inputSource?.gamepad?.hapticActuators?.length) return
 
 		const actuator = inputSource.gamepad.hapticActuators[0]
@@ -126,7 +128,9 @@
 		const currentSession = $session
 		if (!currentSession || !controller.current) return
 
-		const inputSource = Array.from(currentSession.inputSources).find((s) => s.handedness === initialHand)
+		const inputSource = Array.from(currentSession.inputSources).find(
+			(s) => s.handedness === initialHand
+		)
 
 		if (!inputSource || !inputSource.gamepad) return
 

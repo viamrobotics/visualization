@@ -13,7 +13,12 @@
 		enableProfiling?: boolean
 	}
 
-	let { resourceName, offset = {}, scale = 0.7, enableProfiling = false }: CameraFeedProps = $props()
+	let {
+		resourceName,
+		offset = {},
+		scale = 0.7,
+		enableProfiling = false,
+	}: CameraFeedProps = $props()
 
 	const partID = usePartID()
 	const robotClient = useRobotClient(() => partID.current)
@@ -51,9 +56,9 @@
 		streamConnectTime?: number
 		videoReadyTime?: number
 		firstFrameTime?: number
-		captureToPresent?: number  // Camera capture → browser decode (from metadata)
-		presentToRender?: number   // Browser decode → Three.js texture update
-		totalLatency?: number      // End-to-end
+		captureToPresent?: number // Camera capture → browser decode (from metadata)
+		presentToRender?: number // Browser decode → Three.js texture update
+		totalLatency?: number // End-to-end
 		fps?: number
 	}
 	let metrics = $state<LatencyMetrics>({})
@@ -69,7 +74,7 @@
 
 	// Low-latency settings for teleoperation
 	// @ts-expect-error - latencyHint is not in standard types but supported by browsers
-	video.latencyHint = 0  // Minimize latency
+	video.latencyHint = 0 // Minimize latency
 	video.disableRemotePlayback = true
 
 	$effect.pre(() => {
@@ -99,14 +104,16 @@
 			}
 
 			// Force play to ensure stream is active
-			video.play().catch(e => console.warn('Video play failed:', e))
+			video.play().catch((e) => console.warn('Video play failed:', e))
 			ready = true
 
 			// PROFILING: Video ready
 			if (enableProfiling) {
 				metrics.videoReadyTime = videoReadyTime
 				const setupLatency = videoReadyTime - streamConnectTime
-				console.log(`[🎥 ${resourceName}] Ready: ${video.videoWidth}x${video.videoHeight} (setup: ${setupLatency.toFixed(0)}ms)`)
+				console.log(
+					`[🎥 ${resourceName}] Ready: ${video.videoWidth}x${video.videoHeight} (setup: ${setupLatency.toFixed(0)}ms)`
+				)
 			}
 
 			// Start frame-by-frame profiling using requestVideoFrameCallback
@@ -233,7 +240,7 @@
 {#if ready && texture}
 	<T.Mesh
 		position={[offset.x ?? 0, offset.y ?? 0, offset.z ?? -1.5]}
-		scale={scale}
+		{scale}
 	>
 		<BentPlaneGeometry args={[0.1, aspect, 1, 20, 20]} />
 		<T.MeshBasicMaterial map={texture} />

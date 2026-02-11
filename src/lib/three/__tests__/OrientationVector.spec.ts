@@ -21,7 +21,10 @@ const numAppxEqual = (a: number, b: number) => {
 const ovAppxEqual = (ov1: OrientationVector, ov2: OrientationVector) => {
 	const vecDiff = vecA.set(ov1.x, ov1.y, ov1.z).sub(vecB.set(ov2.x, ov2.y, ov2.z))
 
-	return Math.abs(vecDiff.lengthSq()) < EPSILON && Math.abs(Math.abs(ov1.th) - Math.abs(ov2.th)) < EPSILON
+	return (
+		Math.abs(vecDiff.lengthSq()) < EPSILON &&
+		Math.abs(Math.abs(ov1.th) - Math.abs(ov2.th)) < EPSILON
+	)
 }
 
 describe('OrientationVector', () => {

@@ -310,7 +310,11 @@
 		ctx.fillStyle = hoveredElement?.id === 'gripper-dropdown' ? '#444444' : '#333333'
 		ctx.fillRect(controlX, gripperDropdownY, controlWidth, 40)
 		ctx.fillStyle = '#ffffff'
-		ctx.fillText(formGripperName || 'None (click to cycle)', controlX + 10, formY + rowHeight * 1 + 30)
+		ctx.fillText(
+			formGripperName || 'None (click to cycle)',
+			controlX + 10,
+			formY + rowHeight * 1 + 30
+		)
 
 		uiElements.push({
 			x: controlX,
@@ -429,14 +433,13 @@
 			geometry?.dispose()
 		}
 	})
-
 </script>
 
 {#if texture && geometry}
 	<T.Mesh
 		bind:ref={meshRef}
 		position={[offset.x ?? 0, offset.y ?? 2.5, offset.z ?? -2.5]}
-		scale={scale}
+		{scale}
 	>
 		<T is={geometry} />
 		<T.MeshBasicMaterial map={texture} />
