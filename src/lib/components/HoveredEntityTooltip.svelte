@@ -158,7 +158,7 @@
 	<HTML
 		position={tooltipData.subEntityPosition.toArray()}
 		class="pointer-events-none"
-		zIndexRange={[9, 0]}
+		zIndexRange={[3, 0]}
 	>
 		<div
 			class="border-medium pointer-events-none relative -mb-2 -translate-x-1/2 -translate-y-full border bg-white px-3 py-2.5 text-xs shadow-md"

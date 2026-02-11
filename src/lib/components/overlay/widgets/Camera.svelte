@@ -107,7 +107,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-10 m-2 flex resize-x flex-col overflow-hidden border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 flex resize-x flex-col overflow-hidden border text-xs"
 	style:width="320px"
 	style:height="auto !important"
 	use:draggable={{
@@ -176,7 +176,7 @@
 			<!-- FPS Pill -->
 			{#if fps > 0}
 				<div
-					class="absolute bottom-2 left-2 z-10 rounded-[3px] bg-black/30 px-1 py-0.5 text-right font-mono text-xs text-white"
+					class="absolute bottom-2 left-2 z-4 rounded-[3px] bg-black/30 px-1 py-0.5 text-right font-mono text-xs text-white"
 				>
 					{fps.toFixed(1)}fps
 				</div>
