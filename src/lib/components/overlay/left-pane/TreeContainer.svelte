@@ -12,7 +12,6 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { IsExcluded, type Entity } from 'koota'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 	import { MIN_DIMENSIONS, useResizable } from '$lib/hooks/useResizable.svelte'
@@ -30,7 +29,6 @@
 		() => 'treeview',
 		() => ({ width: 240, height: window.innerHeight - 20 })
 	)
-	const settings = useSettings()
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const frames = useFrames()
@@ -90,7 +88,7 @@
 	<Logs />
 	<Widgets />
 
-	{#if 'xr' in navigator && settings.current.enableXR}
+	{#if 'xr' in navigator}
 		<VR />
 	{/if}
 </div>

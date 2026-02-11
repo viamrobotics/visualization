@@ -40,9 +40,9 @@
 		if (optionsClient && resourceName) {
 			// Match robot camera config: 640x480 for both cameras
 			// This avoids transcoding overhead and maximizes framerate
-			optionsClient.setOptions(resourceName, 640, 480).catch(() => {
-				// Using default resolution
-			})
+			// optionsClient.setOptions(resourceName, 640, 480).catch(() => {
+			// 	// Using default resolution
+			// })
 		}
 	})
 

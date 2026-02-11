@@ -8,6 +8,7 @@
 	import CameraFeed from './CameraFeed.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import VRToast from './VRToast.svelte'
 
 	const { ...rest } = $props()
 
@@ -30,7 +31,7 @@
 	const rightArmName = $derived(controllerConfig.right.armName)
 </script>
 
-{#if enableXR}
+{#if enableXR || true}
 	<XR>
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}
@@ -70,6 +71,8 @@
 		<!-- VR Controller Configuration Panel -->
 		<!-- Temporarily disabled due to connection issues -->
 		<!-- <VRConfigPanel offset={{ x: 0, y: 2.5, z: -2.5 }} scale={0.7} /> -->
+
+		<VRToast />
 
 		<World>
 			<Controllers />

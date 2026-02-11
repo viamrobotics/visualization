@@ -8,6 +8,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { getFrameTransformationQuaternion, calculatePositionTarget } from '$lib/utils/vr-math'
 	import { OrientationVector } from '$lib/three/OrientationVector'
+	import { vrToast } from '$lib/stores/vrToast.svelte'
 
 	interface Props {
 		armName: string
@@ -98,6 +99,8 @@
 	const COMMAND_INTERVAL = 11 // ms (90Hz)
 	const ERROR_COOLDOWN = 1000 // ms
 	const ERROR_HAPTIC_INTERVAL = 200 // ms between error haptic pulses
+	let lastErrorToastTime = 0
+	const ERROR_TOAST_COOLDOWN = 3000 // ms - don't spam error toasts
 
 	// Haptic Feedback Helper
 	function triggerHapticFeedback(intensity: number = 0.5, duration: number = 100) {
@@ -114,6 +117,22 @@
 			actuator
 				.pulse(intensity, duration)
 				.catch((e) => console.warn('[ArmTeleop] Haptic pulse failed:', e))
+		}
+	}
+
+	function showArmErrorToast(error: unknown) {
+		const now = Date.now()
+		if (now - lastErrorToastTime < ERROR_TOAST_COOLDOWN) return
+		lastErrorToastTime = now
+
+		const msg = String(error).toLowerCase()
+		if (
+			msg.includes('motion') &&
+			(msg.includes('not found') || msg.includes('not registered') || msg.includes('not configured'))
+		) {
+			vrToast.danger('Motion service not registered')
+		} else {
+			vrToast.warning('Position not reachable (IK error)')
 		}
 	}
 
@@ -191,9 +210,10 @@
 
 		// 5. Edge Detection - RETURN TO SAVED POSE (B Button)
 		if (isBPressed && !wasBPressed) {
-			// B button pressed: Pop last saved pose and return to it
 			if (poseStack.length > 0) {
 				handleReturnToPose()
+			} else {
+				vrToast.warning('No saved positions to return to')
 			}
 		}
 
@@ -376,6 +396,7 @@
 						errorTimeout = Date.now() + ERROR_COOLDOWN
 						triggerHapticFeedback(0.8, 200)
 						lastErrorHapticTime = Date.now()
+						showArmErrorToast(e)
 					})
 					.finally(() => {
 						isSending = false
@@ -397,6 +418,7 @@
 					errorTimeout = Date.now() + ERROR_COOLDOWN
 					triggerHapticFeedback(0.8, 200)
 					lastErrorHapticTime = Date.now()
+					showArmErrorToast(e)
 				})
 				.finally(() => {
 					isSending = false
@@ -423,8 +445,10 @@
 				oZ: savedPose.oZ,
 				theta: savedPose.theta,
 			})
+			vrToast.success('Returned to saved position')
 		} catch (e) {
 			console.error('[ArmTeleop] Failed to return to saved pose:', e)
+			vrToast.danger('Failed to return to position')
 		} finally {
 			isReturning = false
 		}

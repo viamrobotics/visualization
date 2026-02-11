@@ -28,7 +28,9 @@
 	// Get available arms and grippers
 	const armNames = $derived(armClient.names || [])
 	const gripperNames = $derived(
-		resources?.current?.filter((r) => r.subtype === 'gripper').map((r) => r.name) || []
+		resources?.current
+			?.filter((r) => r.subtype === 'gripper' && r.type === 'component')
+			.map((r) => r.name) || []
 	)
 
 	// Local state for UI

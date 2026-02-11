@@ -8,10 +8,14 @@
 	const settings = useSettings()
 	const armClient = useArmClient()
 	const partID = usePartID()
-	const grippers = useResourceNames(() => partID.current, 'gripper')
+	const resources = useResourceNames(() => partID.current, 'gripper')
 
 	const armNames = $derived(armClient.names || [])
-	const gripperNames = $derived(grippers.current.map((r) => r.name))
+	const gripperNames = $derived(
+		resources.current
+			.filter((r) => r.subtype === 'gripper' && r.type === 'component')
+			.map((r) => r.name)
+	)
 
 	const config = $derived(settings.current.xrControllerConfig)
 
