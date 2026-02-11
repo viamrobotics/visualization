@@ -361,10 +361,33 @@
 			},
 		}
 
-		const client = armClient.current
-		if (client) {
-			client
-				.doCommand(VIAM.Struct.fromJson(command))
+		let USE_UFACTORY_IK = false
+		if (USE_UFACTORY_IK) {
+			const client = armClient.current
+			if (client) {
+				client
+					.doCommand(VIAM.Struct.fromJson(command))
+					.catch((e) => {
+						console.warn('Move failed:', e)
+						errorTimeout = Date.now() + ERROR_COOLDOWN
+						triggerHapticFeedback(0.8, 200)
+						lastErrorHapticTime = Date.now()
+					})
+					.finally(() => {
+						isSending = false
+					})
+			}
+		} else {
+			armClient
+				.current!.moveToPosition({
+					x: targetPos.x,
+					y: targetPos.y,
+					z: targetPos.z,
+					oX: targetOV.x,
+					oY: targetOV.y,
+					oZ: targetOV.z,
+					theta: (targetOV.th * 180) / Math.PI,
+				})
 				.catch((e) => {
 					console.warn('Move failed:', e)
 					errorTimeout = Date.now() + ERROR_COOLDOWN
