@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Drawer from './Drawer.svelte'
-	import VRControllerSettings from '../settings/VRControllerSettings.svelte'
+	import VRControllerSettings from '$lib/components/settings/VRControllerSettings.svelte'
 </script>
 
 <Drawer name="VR">
