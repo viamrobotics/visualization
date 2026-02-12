@@ -66,6 +66,7 @@
 		"@zag-js/floating-panel": "1.22.1",
 		"@zag-js/popover": "1.22.1",
 		"@zag-js/svelte": "1.22.1",
+		"@zag-js/tabs": "1.22.1",
 		"@zag-js/toggle-group": "1.22.1",
 		"@zag-js/tree-view": "1.22.1",
 		"camera-controls": "3.1.0",
@@ -115,6 +116,7 @@
 		"@zag-js/floating-panel": ">=1",
 		"@zag-js/popover": ">=1",
 		"@zag-js/svelte": ">=1",
+		"@zag-js/tabs": ">=1",
 		"@zag-js/toggle-group": ">=1",
 		"@zag-js/tree-view": ">=1",
 		"camera-controls": ">=3",
@@ -166,6 +168,7 @@
 		"@connectrpc/connect-web": "1.7.0",
 		"@neodrag/svelte": "^2.3.3",
 		"@tanstack/svelte-query-devtools": "^6.0.2",
+		"expr-eval": "^2.0.2",
 		"koota": "0.6.5",
 		"lodash-es": "4.17.23",
 		"uuid-tool": "^2.0.3"

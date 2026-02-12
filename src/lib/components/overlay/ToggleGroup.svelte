@@ -3,25 +3,26 @@
 	import * as toggle from '@zag-js/toggle-group'
 
 	interface Props {
-		multiple: boolean
-		buttons: {
-			on?: boolean
-			disabled?: boolean
-			label?: string
-			value: string
+		multiple?: boolean
+		options: {
+			selected?: boolean
+			label: string
+			value?: string
 		}[]
-		onclick: (details: string[]) => void
+		onSelect: (details: string[]) => void
 	}
 
-	let { multiple, buttons, onclick }: Props = $props()
+	let { multiple = false, options, onSelect }: Props = $props()
 
 	const id = $props.id()
 	const service = useMachine(toggle.machine, () => ({
 		id,
-		value: buttons.filter((button) => button.on).map((button) => button.value),
+		value: options
+			.filter((option) => option.selected)
+			.map((button) => button.value ?? button.label),
 		multiple,
 		onValueChange(details) {
-			onclick(details.value)
+			onSelect(details.value)
 		},
 	}))
 	const api = $derived(toggle.connect(service, normalizeProps))
@@ -31,29 +32,24 @@
 	class="flex items-center"
 	{...api.getRootProps()}
 >
-	{#each buttons as button (button.value)}
+	{#each options as option (option.label)}
+		{@const value = option.value ?? option.label}
+
 		<button
-			class="-ml-px flex h-5 w-5 items-center justify-center border text-xs"
-			{...api.getItemProps({ value: button.value })}
+			class={[
+				'border-gray-8 -ml-px flex items-center justify-center border px-2 py-0.5 text-xs',
+				{
+					'bg-green-700 text-white': api.value.includes(value),
+				},
+			]}
+			{...api.getItemProps({ value })}
 		>
-			{button.label ?? button.value}
+			{value}
 		</button>
 	{/each}
 </div>
 
 <style>
-	button[data-state='on'] {
-		background: green;
-		border-color: black;
-		color: white;
-	}
-
-	button[data-disabled] {
-		opacity: 0.5;
-
-		filter: grayscale(100%);
-	}
-
 	button[data-focus] {
 		outline: none;
 	}

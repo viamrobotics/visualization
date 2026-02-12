@@ -12,7 +12,7 @@ import { traits, useWorld } from '$lib/ecs'
 import type { Entity, ConfigurableTrait } from 'koota'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { useEnvironment } from './useEnvironment.svelte'
-import { RefetchRates } from '$lib/components/overlay/left-pane/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { createPose } from '$lib/transform'
 
 const key = Symbol('pointcloud-object-context')

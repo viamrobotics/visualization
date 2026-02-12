@@ -25,9 +25,11 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld } from '$lib/ecs'
+	import { traits, useTrait, useWorld, relations } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 
 	const { ...rest } = $props()
 
@@ -45,7 +47,7 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
-
+	const linkedEntities = useLinkedEntities()
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
@@ -53,11 +55,14 @@
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const removable = useTrait(() => entity, traits.Removable)
+	const points = useTrait(() => entity, traits.Points)
+	const arrows = useTrait(() => entity, traits.Arrows)
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
 
 	const showEditFrameOptions = $derived(isFrameNode && partConfig.hasEditPermissions)
+	const showRelationshipOptions = $derived(points.current || arrows.current)
 
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 
@@ -611,6 +616,30 @@
 			{/if}
 		</div>
 
+		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
+
+		{#if linkedEntities.current.length > 0}
+			<div>
+				<div class="mt-0.5 flex flex-col gap-1">
+					<strong class="font-semibold">Linked entities</strong>
+					{#each linkedEntities.current as linkedEntity (linkedEntity)}
+						{@const linkedEntityName = linkedEntity.get(traits.Name)}
+						{@const linkType = entity.get(relations.SubEntityLink(linkedEntity))?.type}
+						<div class="flex items-center gap-1">
+							<span class="text-primary">{linkedEntityName} ({linkType})</span>
+							<Icon
+								name="trash-can-outline"
+								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
+								onclick={() => {
+									entity.remove(relations.SubEntityLink(linkedEntity))
+								}}
+							/>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 
 		{#if focusedEntity.current}
@@ -630,6 +659,10 @@
 			>
 				Enter object view
 			</Button>
+		{/if}
+
+		{#if showRelationshipOptions}
+			<AddRelationship {entity} />
 		{/if}
 
 		{#if showEditFrameOptions && environment.current.isStandalone}
