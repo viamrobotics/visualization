@@ -1,7 +1,6 @@
 // Components
 // NOTE: These components should be pure and not use any hooks if you add a new component to export here
 // ensure you write a corresponding unit test to assert the component works in absence of parent providers in /src/lib/__tests__/PureComponents.svelte.spec.ts
-export { default as Geometry } from './components/Geometry.svelte'
 export { default as AxesHelper } from './components/AxesHelper.svelte'
 
 // Snapshot component (uses context, requires MotionTools parent)

@@ -17,7 +17,7 @@
 {#if labels && text}
 	<HTML
 		center
-		zIndexRange={[100, 0]}
+		zIndexRange={[3, 0]}
 		class="border-gray-7 border bg-white px-2 py-1 text-xs"
 	>
 		{text}

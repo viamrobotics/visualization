@@ -4,7 +4,7 @@ import { pcdDropper } from './pcd-dropper'
 import { plyDropper } from './ply-dropper'
 import { snapshotDropper } from './snapshot-dropper'
 
-export type DropStates = 'inactive' | 'hovering' | 'loading'
+type DropStates = 'inactive' | 'hovering' | 'loading'
 
 const createFileDropper = (extension: string, prefix: string | undefined) => {
 	switch (prefix) {

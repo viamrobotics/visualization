@@ -195,7 +195,8 @@ export const provideDrawAPI = () => {
 				traits.Pose(pose),
 				traits.DrawAPI,
 				traits.ReferenceFrame,
-				traits.Removable
+				traits.Removable,
+				traits.ShowAxesHelper
 			)
 
 			const entity = world.spawn(...entityTraits)

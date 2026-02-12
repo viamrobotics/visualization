@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardButton from '$lib/components/dashboard/Button.svelte'
+	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import { Input, Switch, Button, Icon, IconButton } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
@@ -67,7 +67,7 @@
 	>
 		<div
 			{...api.getDragTriggerProps()}
-			class="sticky top-0 z-10 bg-white"
+			class="sticky top-0 bg-white"
 		>
 			<div
 				{...api.getHeaderProps()}

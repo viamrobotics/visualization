@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
 	import { createStreamClient } from '@viamrobotics/svelte-sdk'
-	import BentPlaneGeometry from '../BentPlaneGeometry.svelte'
 	import { useHeadset } from '@threlte/xr'
 	import { Euler, Group, Mesh, Vector3, Quaternion, VideoTexture } from 'three'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import BentPlaneGeometry from './BentPlaneGeometry.svelte'
 
 	interface CameraFeedProps {
 		resourceName: string

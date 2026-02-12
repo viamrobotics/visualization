@@ -41,24 +41,6 @@ global.ResizeObserver = class {
 }
 
 describe('PureComponents component', () => {
-	it('should render geometry component', () => {
-		render(MockCanvas, {
-			child: Geometry,
-			uuid: '123',
-			name: 'test',
-			pose: {
-				x: 0,
-				y: 0,
-				z: 0,
-				oX: 0,
-				oY: 0,
-				oZ: 0,
-				theta: 0,
-			},
-			metadata: {},
-		})
-	})
-
 	it('should render axes helper component', () => {
 		render(MockCanvas, {
 			child: AxesHelper,

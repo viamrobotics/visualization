@@ -1,5 +1,27 @@
 # motion-tools
 
+## 1.9.1
+
+### Patch Changes
+
+- 03bb508: Fix: do not show axes on geos from useGeomtries resources
+- 006bd88: Fix: use cloned instance of 3d model when displaying multiple arms of the same type
+- fde7471: Fix: pointcloud memory leak with high refresh rates
+- f946fbc: Fix: z-index sorting for overlay items
+
+## 1.9.0
+
+### Minor Changes
+
+- 1f3de95: Feature: measurement tool axis snapping
+- 2606cf8: bump koota version to 0.6.5
+
+## 1.8.0
+
+### Minor Changes
+
+- 93da1b7: enable sub entity hover info for poses and pcds
+
 ## 1.7.0
 
 ### Minor Changes

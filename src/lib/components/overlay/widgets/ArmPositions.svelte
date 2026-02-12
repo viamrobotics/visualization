@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
-	import { formatNumeric } from '../../format'
-	import Table from '../shared/Table.svelte'
+	import { formatNumeric } from '$lib/format'
+	import Table from '$lib/components/overlay/Table.svelte'
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { Icon, Label, Select } from '@viamrobotics/prime-core'
 
@@ -17,7 +17,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-1000 m-2 overflow-y-auto border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 overflow-y-auto border text-xs"
 	use:draggable={{
 		bounds: 'body',
 		handle: dragElement,

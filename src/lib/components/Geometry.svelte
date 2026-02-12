@@ -1,57 +1,84 @@
-<!--
-
-This component is consumed as a library export
-and should remain pure, i.e. no hooks should be used.
-
--->
 <script lang="ts">
-	import { T, type Props as ThrelteProps } from '@threlte/core'
+	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
 	import { type Snippet } from 'svelte'
-	import { meshBounds, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
-	import { BufferGeometry, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { meshBounds } from '@threlte/extras'
+	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
-	import { poseToObject3d } from '$lib/transform'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
-	import type { WorldObject } from '$lib/WorldObject.svelte'
-	import { parsePlyInput } from '$lib/ply'
+	import type { Entity } from 'koota'
+	import { traits, useTrait } from '$lib/ecs'
+	import { poseToObject3d } from '$lib/transform'
+	import type { Pose } from '@viamrobotics/sdk'
 
 	interface Props extends ThrelteProps<Group> {
-		uuid: string
-		name: string
-		geometry?: WorldObject['geometry']
-		pose: WorldObject['pose']
-		metadata: WorldObject['metadata']
+		entity: Entity
 		color?: string
 		model?: Group
+		pose?: Pose
 		renderMode?: 'model' | 'colliders' | 'colliders+model'
+		ref?: Group
 		children?: Snippet<[{ ref: Group }]>
 	}
 
 	let {
-		uuid,
-		name,
-		geometry,
-		metadata,
-		pose,
+		entity,
 		color: overrideColor,
 		model,
 		renderMode = 'colliders',
+		pose,
+		ref = $bindable(),
 		children,
 		...rest
 	}: Props = $props()
 
-	const type = $derived(geometry?.geometryType?.case)
-	const color = $derived(overrideColor ?? metadata.color ?? colors.default)
+	const colorUtil = new Color()
+
+	const { invalidate } = useThrelte()
+	const name = useTrait(() => entity, traits.Name)
+	const entityColor = useTrait(() => entity, traits.Color)
+	const opacity = useTrait(() => entity, traits.Opacity)
+	const box = useTrait(() => entity, traits.Box)
+	const capsule = useTrait(() => entity, traits.Capsule)
+	const sphere = useTrait(() => entity, traits.Sphere)
+	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
+	const linePositions = useTrait(() => entity, traits.LinePositions)
+	const lineWidth = useTrait(() => entity, traits.LineWidth)
+	const center = useTrait(() => entity, traits.Center)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+
+	const geometryType = $derived.by(() => {
+		if (box.current) return 'box'
+		if (capsule.current) return 'capsule'
+		if (sphere.current) return 'sphere'
+		if (bufferGeometry.current) return 'buffer'
+		if (linePositions.current) return 'line'
+	})
+
+	const color = $derived.by(() => {
+		if (overrideColor) {
+			return overrideColor
+		}
+		if (entityColor.current) {
+			return colorUtil
+				.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+				.getHexString()
+		}
+		return colors.default
+	})
 
 	const group = new Group()
+	ref = group
+
 	const mesh = $derived.by(() => {
-		if (type === undefined) {
+		if (geometryType === undefined) {
 			return
 		}
-		const result = new Mesh()
 
-		if (type === 'mesh' || type === 'points' || type === 'line') {
+		const result = geometryType === 'line' ? new Line2() : new Mesh()
+
+		if (geometryType === 'line') {
 			result.raycast = meshBounds
 		}
 
@@ -59,90 +86,106 @@ and should remain pure, i.e. no hooks should be used.
 	})
 
 	$effect.pre(() => {
-		if (geometry?.center && mesh) {
-			poseToObject3d(geometry.center, mesh)
+		if (mesh && center.current) {
+			poseToObject3d(center.current, mesh)
+			invalidate()
 		}
 	})
 
+	const entityPose = useTrait(() => entity, traits.Pose)
+	const resolvedPose = $derived(pose ?? entityPose.current)
 	$effect.pre(() => {
-		poseToObject3d(pose, group)
+		if (resolvedPose) {
+			poseToObject3d(resolvedPose, group)
+			invalidate()
+		}
 	})
 
 	let geo = $state.raw<BufferGeometry>()
 
-	const oncreate = (ref: BufferGeometry) => {
-		geo = ref
+	const oncreate = (bufferGeometry: BufferGeometry) => {
+		geo = bufferGeometry
 	}
+
+	$effect.pre(() => {
+		if (mesh && bufferGeometry.current) {
+			mesh.geometry = bufferGeometry.current
+			oncreate(bufferGeometry.current)
+
+			return () => {
+				geo = undefined
+				mesh?.geometry?.dispose()
+			}
+		}
+	})
 </script>
 
 <T
 	is={group}
 	{...rest}
 >
-	{#if geometry?.geometryType}
-		<AxesHelper
-			width={3}
-			length={0.1}
-		/>
+	{#if geometryType}
+		{#if showAxesHelper.current}
+			<AxesHelper
+				width={3}
+				length={0.1}
+			/>
+		{/if}
 
 		<T
 			is={mesh}
-			{name}
-			{uuid}
-			bvh={{ enabled: false }}
+			name={entity}
+			userData.name={name}
+			bvh={{ enabled: geometryType === 'buffer' }}
 		>
 			{#if model && renderMode.includes('model')}
 				<T is={model} />
 			{/if}
 
-			{#if renderMode.includes('colliders')}
-				{#if geometry.geometryType.case === 'bufferGeometry'}
+			{#if !model || renderMode.includes('colliders')}
+				{#if linePositions.current}
 					<T
-						is={geometry.geometryType.value}
-						{oncreate}
+						is={LineGeometry}
+						oncreate={(ref) => {
+							if (linePositions.current) {
+								ref.setPositions(linePositions.current)
+							}
+						}}
 					/>
-				{:else if geometry.geometryType.case === 'mesh'}
-					{@const mesh = geometry.geometryType.value.mesh}
-					{@const meshGeometry = parsePlyInput(mesh)}
-					<T
-						is={meshGeometry}
-						{oncreate}
-					/>
-				{:else if geometry.geometryType.case === 'line' && metadata.points}
-					<MeshLineGeometry points={metadata.points} />
-				{:else if geometry.geometryType.case === 'box'}
-					{@const dimsMm = geometry.geometryType.value.dimsMm ?? { x: 0, y: 0, z: 0 }}
+				{:else if box.current}
+					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
-						args={[dimsMm.x * 0.001, dimsMm.y * 0.001, dimsMm.z * 0.001]}
+						args={[x * 0.001, y * 0.001, z * 0.001]}
 						{oncreate}
 					/>
-				{:else if geometry.geometryType.case === 'sphere'}
-					{@const radiusMm = geometry.geometryType.value.radiusMm ?? 0}
+				{:else if sphere.current}
+					{@const { r } = sphere.current ?? { r: 0 }}
 					<T.SphereGeometry
-						args={[radiusMm * 0.001]}
+						args={[r * 0.001]}
 						{oncreate}
 					/>
-				{:else if geometry.geometryType.case === 'capsule'}
-					{@const { lengthMm, radiusMm } = geometry.geometryType.value}
+				{:else if capsule.current}
+					{@const { r, l } = capsule.current ?? { r: 0, l: 0 }}
 					<T
 						is={CapsuleGeometry}
-						args={[radiusMm * 0.001, lengthMm * 0.001]}
+						args={[r * 0.001, l * 0.001]}
 						{oncreate}
 					/>
 				{/if}
 			{/if}
 
-			{#if geometry.geometryType.case === 'line'}
-				<MeshLineMaterial
+			{#if linePositions.current}
+				<T
+					is={LineMaterial}
 					{color}
-					width={metadata.lineWidth ?? 0.005}
+					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
 				/>
 			{:else}
 				<T.MeshToonMaterial
 					{color}
-					side={geometry.geometryType.case === 'mesh' ? DoubleSide : FrontSide}
-					transparent
-					opacity={metadata.opacity ?? 0.7}
+					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+					transparent={(opacity.current ?? 0.7) < 1}
+					opacity={opacity.current ?? 0.7}
 				/>
 
 				{#if geo && renderMode.includes('colliders')}
@@ -156,10 +199,9 @@ and should remain pure, i.e. no hooks should be used.
 				{/if}
 			{/if}
 		</T>
-	{:else}
+	{:else if showAxesHelper.current}
 		<AxesHelper
-			{name}
-			{uuid}
+			name={name.current}
 			width={3}
 			length={0.1}
 		/>

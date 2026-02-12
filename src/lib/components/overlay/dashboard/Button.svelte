@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { Icon, type IconName, Tooltip } from '@viamrobotics/prime-core'
 	import { Ruler } from 'lucide-svelte'
-	import type { ClassValue, MouseEventHandler } from 'svelte/elements'
+	import type { ClassValue, HTMLButtonAttributes, MouseEventHandler } from 'svelte/elements'
 
-	interface Props {
+	interface Props extends HTMLButtonAttributes {
 		icon: IconName | 'ruler'
 		active?: boolean
 		description: string
 		hotkey?: string
 		class?: ClassValue | null | undefined
+		tooltipLocation?: 'bottom' | 'right'
 		onclick?: MouseEventHandler<HTMLButtonElement> | null | undefined
 	}
 
@@ -18,19 +19,21 @@
 		description,
 		hotkey = '',
 		class: className = '',
+		tooltipLocation,
 		onclick,
+		...rest
 	}: Props = $props()
 </script>
 
 <Tooltip
 	let:tooltipID
-	location="bottom"
+	location={tooltipLocation ?? 'bottom'}
 >
 	<label
 		class={[
 			className,
 			'relative block border',
-			active ? 'border-gray-5 text-gray-8 z-10 bg-white' : 'bg-light border-medium text-disabled',
+			active ? 'border-gray-5 text-gray-8 z-4 bg-white' : 'bg-light border-medium text-disabled',
 		]}
 		aria-describedby={tooltipID}
 	>
@@ -40,6 +43,7 @@
 			aria-label={description}
 			aria-checked={active}
 			{onclick}
+			{...rest}
 		>
 			{#if icon === 'ruler'}
 				<Ruler size="16" />

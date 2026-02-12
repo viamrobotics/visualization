@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import { Color, Group, type Object3D } from 'three'
-	import Geometry from './Geometry2.svelte'
+	import Geometry from './Geometry.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
@@ -62,7 +62,7 @@
 		if (!componentName || !id) {
 			return
 		}
-		return componentModels.current?.[componentName]?.[id]
+		return componentModels.current?.[componentName]?.[id].clone()
 	})
 </script>
 

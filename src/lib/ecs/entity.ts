@@ -21,6 +21,7 @@ export const spawnTransformEntity = (
 		traits.Name(transform.referenceFrame),
 		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
 		traits.Center(transform.physicalObject?.center),
+		traits.ShowAxesHelper,
 		api,
 	]
 
@@ -480,4 +481,3 @@ export const getColorTraits = (colors: Uint8Array<ArrayBuffer>): ConfigurableTra
 		return [traits.DrawServiceVertexColors(colors as Uint8Array<ArrayBuffer>)]
 	}
 }
-

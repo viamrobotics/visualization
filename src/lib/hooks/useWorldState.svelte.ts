@@ -15,12 +15,7 @@ import { traits, useWorld, spawnTransformEntity, updateTransformEntity } from '$
 import type { Entity } from 'koota'
 import { useThrelte } from '@threlte/core'
 
-export type ChangeMessage = {
-	type: 'change'
-	events: TransformChangeEvent[]
-}
-
-export type TransformEvent = TransformChangeEvent & {
+type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
 }
 

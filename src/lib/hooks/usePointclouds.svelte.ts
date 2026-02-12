@@ -1,5 +1,5 @@
 import { CameraClient } from '@viamrobotics/sdk'
-import { setContext, getContext } from 'svelte'
+import { setContext, getContext, untrack } from 'svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -8,7 +8,7 @@ import {
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefetchRates } from '$lib/components/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay/left-pane/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
@@ -90,7 +90,7 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const options = $derived({
-		refetchInterval: interval,
+		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
 
 	const queries = $derived(
@@ -112,71 +112,45 @@ export const providePointclouds = (partID: () => string) => {
 		}
 	})
 
-	interface PCObject {
-		name: string
-		positions: Float32Array<ArrayBuffer>
-		colors: Uint8Array<ArrayBuffer> | null
-	}
-
-	let pcObjects = $state.raw<PCObject[]>([])
-
-	$effect(() => {
-		const binaries: [string, Uint8Array][] = []
-
-		for (const [name, query] of queries) {
-			const { data } = query
-			if (name && data) {
-				binaries.push([name, data])
-			}
-		}
-
-		Promise.allSettled(
-			binaries.map(async ([name, uint8array]) => {
-				const { positions, colors } = await parsePcdInWorker(new Uint8Array(uint8array))
-
-				return { name, positions, colors }
-			})
-		).then((results) => {
-			const fulfilledResults: PCObject[] = []
-
-			for (const result of results) {
-				if (result.status === 'fulfilled') {
-					fulfilledResults.push(result.value)
-				} else if (result.status === 'rejected') {
-					logs.add(result.reason, 'error')
-				}
-			}
-
-			pcObjects = fulfilledResults
-		})
-	})
-
 	const entities = new Map<string, Entity>()
 
 	$effect(() => {
-		// Create or update entities
-		for (const { name, positions, colors } of pcObjects) {
-			const existing = entities.get(name)
+		for (const [name, query] of queries) {
+			untrack(() => {
+				$effect(() => {
+					const { data } = query
 
-			if (existing) {
-				const geometry = existing.get(traits.BufferGeometry)
+					if (!data || data.length === 0) return
 
-				if (geometry) {
-					updateBufferGeometry(geometry, positions, colors)
-					continue
-				}
-			}
+					parsePcdInWorker(data)
+						.then(({ positions, colors }) => {
+							const existing = entities.get(name)
 
-			const geometry = createBufferGeometry(positions, colors)
+							if (existing) {
+								const geometry = existing.get(traits.BufferGeometry)
 
-			const entity = world.spawn(
-				traits.Parent(name),
-				traits.Name(`${name} pointcloud`),
-				traits.BufferGeometry(geometry),
-				traits.Points
-			)
+								if (geometry) {
+									updateBufferGeometry(geometry, positions, colors)
+									return
+								}
+							}
 
-			entities.set(name, entity)
+							const geometry = createBufferGeometry(positions, colors)
+
+							const entity = world.spawn(
+								traits.Parent(name),
+								traits.Name(`${name} pointcloud`),
+								traits.BufferGeometry(geometry),
+								traits.Points
+							)
+
+							entities.set(name, entity)
+						})
+						.catch((error) => {
+							logs.add(error.reason, 'error')
+						})
+				})
+			})
 		}
 
 		// Clean up old entities

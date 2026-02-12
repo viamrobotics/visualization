@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import type { ColorRepresentation, Vector3Tuple, Group } from 'three'
+	import type { Vector3Tuple, Group } from 'three'
 	import { HTML } from '@threlte/extras'
 
 	interface Props extends ThrelteProps<typeof Group> {
 		position: Vector3Tuple
-		color?: ColorRepresentation
-		opacity?: number
 	}
 
-	let { position, color, opacity = 1, ref = $bindable(), ...rest }: Props = $props()
+	let { position, ref = $bindable(), ...rest }: Props = $props()
 </script>
 
 <T.Group
@@ -17,23 +15,15 @@
 	{...rest}
 	{position}
 >
-	<T.Mesh
-		bvh={{ enabled: false }}
-		raycast={() => null}
-		scale={0.01}
-		renderOrder={1}
-	>
-		<T.SphereGeometry />
-		<T.MeshBasicMaterial
-			color={color ?? 'black'}
-			transparent
-			depthTest={false}
-			{opacity}
-		/>
-	</T.Mesh>
+	<HTML
+		center
+		zIndexRange={[3, 0]}
+		class="h-2.5 w-2.5 rounded-full bg-black/70"
+	/>
 
 	<HTML
 		class="pointer-events-none mb-2 w-16 -translate-x-1/2 -translate-y-[calc(100%+10px)] border border-black bg-white px-1 py-0.5 text-xs text-wrap"
+		zIndexRange={[3, 0]}
 	>
 		<div class="flex justify-between">
 			<span class="text-subtle-2">x</span>
