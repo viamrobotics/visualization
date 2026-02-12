@@ -43,7 +43,6 @@
 			(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
 		)
 		if (selectedEntity) {
-			console.log('linkType', linkType)
 			entity.add(
 				relations.SubEntityLink(selectedEntity, {
 					indexMapping: relationshipFormula,

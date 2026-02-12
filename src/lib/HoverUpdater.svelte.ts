@@ -46,7 +46,6 @@ export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverI
 }
 
 export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverInfo => {
-	console.log('getClosestPoint', positions, point)
 	let smallestDistance = Infinity
 	let index = -1
 
@@ -62,9 +61,6 @@ export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverI
 			index = i
 		}
 	}
-
-	console.log('smallestDistance', smallestDistance)
-	console.log('index', index)
 
 	return {
 		index: Math.floor(index / 3),

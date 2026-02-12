@@ -11,7 +11,7 @@
 	const linkedEntities = useLinkedEntities()
 
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
-	const isHovered = useTrait(() => displayEntity, traits.InstancedPose)
+	const isHovered = useTrait(() => displayEntity, traits.Hovered)
 </script>
 
 {#if isHovered}
