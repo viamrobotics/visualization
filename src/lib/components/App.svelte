@@ -27,7 +27,7 @@
 		type DrawConnectionConfig,
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
 	import Camera from './overlay/widgets/Camera.svelte'
-	import HoveredEntities from './HoveredEntities.svelte'
+	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import Settings from '$lib/components/overlay/settings/Settings.svelte'
 
 	interface LocalConfigProps {
