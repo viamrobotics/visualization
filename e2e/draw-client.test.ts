@@ -33,7 +33,7 @@ const assertNoFailedScreenshots = (failedScreenshots: string[]) => {
 
 const cleanup = () => {
 	execSync(
-		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAllSpatialObjectsHelper github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAllHelper github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
@@ -342,11 +342,45 @@ test('remove all spatial objects', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAllSpatialObjects github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAll github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
 	await takeScreenshot(page, testPrefix, failedScreenshots)
+	cleanup()
+})
+
+test('remove transforms', async ({ browser }) => {
+	const testPrefix = 'REMOVE_TRANSFORMS'
+	const failedScreenshots = [] as string[]
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveTransforms$/RemoveTransforms github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+	await takeScreenshot(page, testPrefix, failedScreenshots)
+
+	assertNoFailedScreenshots(failedScreenshots)
+	cleanup()
+})
+
+test('remove drawings', async ({ browser }) => {
+	const testPrefix = 'REMOVE_DRAWINGS'
+	const failedScreenshots = [] as string[]
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveDrawings$/RemoveDrawings github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+	await takeScreenshot(page, testPrefix, failedScreenshots)
+
+	assertNoFailedScreenshots(failedScreenshots)
 	cleanup()
 })

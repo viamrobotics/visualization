@@ -49,9 +49,6 @@ up-check:
 .PHONY: up
 up: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
-
-.PHONY: up-grpc
-up-grpc: up-check
 	@go run ./cmd/draw-server -port 3030 -production
 
 .PHONY: build-clean

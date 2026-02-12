@@ -1,0 +1,26 @@
+package server
+
+import (
+	"context"
+	"fmt"
+
+	"connectrpc.com/connect"
+	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+)
+
+// RemoveDrawings clears all drawn Drawings from the visualizer.
+// Returns the number of Drawings removed, or an error if the server is not running or the removal fails
+func RemoveDrawings() (int32, error) {
+	client := GetClient()
+	if client == nil {
+		return 0, fmt.Errorf("server is not running; call server.Start() first")
+	}
+
+	req := connect.NewRequest(&drawv1.RemoveAllDrawingsRequest{})
+	resp, err := client.RemoveAllDrawings(context.Background(), req)
+	if err != nil {
+		return 0, fmt.Errorf("RemoveAll failed: %w", err)
+	}
+
+	return resp.Msg.Count, nil
+}

@@ -8,10 +8,9 @@ import (
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 )
 
-// RemoveAllSpatialObjects clears all drawn items from the visualizer.
-//
+// RemoveAll clears all drawn items from the visualizer.
 // Returns the number of items removed, or an error if the server is not running or the removal fails
-func RemoveAllSpatialObjects() (int32, error) {
+func RemoveAll() (int32, error) {
 	client := GetClient()
 	if client == nil {
 		return 0, fmt.Errorf("server is not running; call server.Start() first")

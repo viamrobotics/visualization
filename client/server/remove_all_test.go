@@ -9,8 +9,8 @@ import (
 	"go.viam.com/test"
 )
 
-func TestRemoveAllSpatialObjects(t *testing.T) {
-	t.Run("RemoveAllSpatialObjects", func(t *testing.T) {
+func TestRemoveAll(t *testing.T) {
+	t.Run("RemoveAll", func(t *testing.T) {
 		startTestServer(t)
 
 		box, err := spatialmath.NewBox(
@@ -23,20 +23,22 @@ func TestRemoveAllSpatialObjects(t *testing.T) {
 		)
 		test.That(t, err, test.ShouldBeNil)
 
-		uuid, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.NewColor(draw.WithName("black"))})
+		boxUUID, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.NewColor(draw.WithName("black"))})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+		test.That(t, boxUUID, test.ShouldNotBeNil)
 
-		count, err := RemoveAllSpatialObjects()
+		pointsUUID, err := DrawPoints(DrawPointsOptions{Positions: []r3.Vector{
+			{X: 2000, Y: 2000, Z: 100},
+			{X: 101, Y: 100, Z: 200},
+		},
+			PointSize: 10,
+			Colors:    []draw.Color{draw.NewColor(draw.WithName("black"))},
+		})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, count, test.ShouldBeGreaterThanOrEqualTo, 1)
-	})
+		test.That(t, pointsUUID, test.ShouldNotBeNil)
 
-	t.Run("RemoveAllSpatialObjectsHelper", func(t *testing.T) {
-		t.Helper()
-		startTestServer(t)
-
-		_, err := RemoveAllSpatialObjects()
+		count, err := RemoveAll()
 		test.That(t, err, test.ShouldBeNil)
+		test.That(t, count, test.ShouldEqual, 2)
 	})
 }

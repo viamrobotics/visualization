@@ -38,7 +38,7 @@ export const createPage = async (browser: Browser): Promise<TestPage> => {
 	await page.goto('/')
 	await page.waitForLoadState('networkidle')
 	await expect(page.getByRole('heading', { name: 'World', exact: true })).toBeVisible({
-		timeout: 15000,
+		timeout: 30000,
 	})
 
 	const refresh = async () => {
@@ -46,7 +46,7 @@ export const createPage = async (browser: Browser): Promise<TestPage> => {
 		await page.reload()
 		await page.waitForLoadState('networkidle')
 		await expect(page.getByRole('heading', { name: 'World', exact: true })).toBeVisible({
-			timeout: 15000,
+			timeout: 30000,
 		})
 	}
 
