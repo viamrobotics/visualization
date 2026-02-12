@@ -8,7 +8,7 @@
 	import CameraFeed from './CameraFeed.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import VRToast from './VRToast.svelte'
+	import XRToast from './XRToast.svelte'
 
 	const { ...rest } = $props()
 
@@ -68,11 +68,11 @@
 			/>
 		{/if}
 
-		<!-- VR Controller Configuration Panel -->
+		<!-- XR Controller Configuration Panel -->
 		<!-- Temporarily disabled due to connection issues -->
-		<!-- <VRConfigPanel offset={{ x: 0, y: 2.5, z: -2.5 }} scale={0.7} /> -->
+		<!-- <XRConfigPanel offset={{ x: 0, y: 2.5, z: -2.5 }} scale={0.7} /> -->
 
-		<VRToast />
+		<XRToast />
 
 		<World>
 			<Controllers />

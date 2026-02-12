@@ -7,12 +7,12 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useController, type XRController } from '@threlte/xr'
 
-	interface VRConfigPanelProps {
+	interface XRConfigPanelProps {
 		offset?: { x?: number; y?: number; z?: number }
 		scale?: number
 	}
 
-	let { offset = {}, scale = 0.8 }: VRConfigPanelProps = $props()
+	let { offset = {}, scale = 0.8 }: XRConfigPanelProps = $props()
 
 	const settings = useSettings()
 	const armClient = useArmClient()
@@ -206,7 +206,7 @@
 		ctx.fillStyle = '#ffffff'
 		ctx.font = 'bold 20px sans-serif'
 		ctx.textBaseline = 'middle'
-		ctx.fillText('VR Controller Configuration', 20, 20)
+		ctx.fillText('XR Controller Configuration', 20, 20)
 
 		// Instruction text
 		ctx.font = '12px sans-serif'

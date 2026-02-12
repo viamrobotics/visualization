@@ -21,11 +21,11 @@ export function calculatePositionTarget(
 	qTransform: Quaternion,
 	scaleFactor: number
 ) {
-	// 1. Get delta in VR space (Meters)
-	const deltaVR = currentControllerPos.clone().sub(referenceControllerPos)
+	// 1. Get delta in XR space (Meters)
+	const deltaXR = currentControllerPos.clone().sub(referenceControllerPos)
 
 	// 2. Convert to Robot Frame
-	const deltaRobot = deltaVR.clone().applyQuaternion(qTransform)
+	const deltaRobot = deltaXR.clone().applyQuaternion(qTransform)
 
 	// 3. Scale (Meters -> Millimeters) and Apply
 	const scaleMM = scaleFactor * 1000

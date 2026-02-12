@@ -218,7 +218,7 @@
 		}
 	})
 
-	// Helper to transform VR Quaternion to Robot Frame: T * q * inv(T)
+	// Helper to transform XR Quaternion to Robot Frame: T * q * inv(T)
 	function transformToRobotFrame(q: Quaternion, transform: Quaternion) {
 		const transformInv = transform.clone().invert()
 		return transform.clone().multiply(q).multiply(transformInv)
@@ -292,8 +292,8 @@
 		const currentControllerPos = grip.position
 		const currentControllerRot = grip.quaternion
 
-		// Calculate Delta VR for visualizer
-		const deltaVR = currentControllerPos.clone().sub(controllerRefPos)
+		// Calculate Delta XR for visualizer
+		const deltaXR = currentControllerPos.clone().sub(controllerRefPos)
 
 		// --- Position Step ---
 		const targetPos = calculatePositionTarget(
@@ -308,7 +308,7 @@
 		let targetOV
 		if (rotationEnabled) {
 			// ABSOLUTE ROTATION: Transform controller orientation to robot frame, then apply offset
-			// 1. Transform VR Frame → Robot Frame using sandwich transform: T * q * T^-1
+			// 1. Transform XR Frame → Robot Frame using sandwich transform: T * q * T^-1
 			const currentRotRobot = transformToRobotFrame(currentControllerRot, qTransform).normalize()
 
 			// 2. Apply offset to maintain initial controller→arm relationship
@@ -328,11 +328,11 @@
 		}
 
 		// --- Update Ghost Visualizer ---
-		ghostPos.copy(controllerRefPos).add(deltaVR.multiplyScalar(scaleFactor))
+		ghostPos.copy(controllerRefPos).add(deltaXR.multiplyScalar(scaleFactor))
 
 		/* 
 		   Ghost Rotation is handled above for simplicity.
-		   Strictly, visualizer should probably show the Robot Frame rotation mapped back to VR,
+		   Strictly, visualizer should probably show the Robot Frame rotation mapped back to XR,
 		   but showing raw controller rotation is better for "feeling" where your hand is.
 		*/
 
@@ -439,7 +439,7 @@
 </script>
 
 {#if isControlling}
-	<!-- Ghost Marker (Target Position in VR Space) -->
+	<!-- Ghost Marker (Target Position in XR Space) -->
 	<T.Mesh
 		position={ghostPosArray}
 		quaternion={ghostRotArray}

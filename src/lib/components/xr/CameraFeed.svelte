@@ -35,7 +35,7 @@
 			: undefined
 	)
 
-	// Request optimal resolution for low-latency VR streaming
+	// Request optimal resolution for low-latency XR streaming
 	$effect(() => {
 		if (optionsClient && resourceName) {
 			// Match robot camera config: 640x480 for both cameras
