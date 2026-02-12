@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry, Vector3, Quaternion } from 'three'
-	import { vrToast, type VRToastItem, type ToastVariant } from '$lib/stores/vrToast.svelte'
+	import { xrToast as xrToast, type XRToastItem as XRToastItem, type ToastVariant } from '$lib/components/xrToast.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
@@ -19,7 +19,7 @@
 
 	let geometry: PlaneGeometry | undefined = $state()
 
-	const visibleToasts = $derived(vrToast.toasts.slice(-MAX_VISIBLE))
+	const visibleToasts = $derived(xrToast.toasts.slice(-MAX_VISIBLE))
 	const hasToasts = $derived(visibleToasts.length > 0)
 
 	// Camera-following state
@@ -128,7 +128,7 @@
 		}
 	}
 
-	function renderToasts(toasts: VRToastItem[]) {
+	function renderToasts(toasts: XRToastItem[]) {
 		const ctx = canvas.getContext('2d')!
 		ctx.clearRect(0, 0, canvas.width, canvas.height)
 

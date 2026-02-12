@@ -5,7 +5,7 @@
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 	import Logs from './Logs.svelte'
 	import Widgets from './Widgets.svelte'
-	import VR from './VR.svelte'
+	import XR from './XR.svelte'
 	import AddFrames from './AddFrames.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -89,6 +89,6 @@
 	<Widgets />
 
 	{#if 'xr' in navigator}
-		<VR />
+		<XR />
 	{/if}
 </div>

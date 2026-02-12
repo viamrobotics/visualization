@@ -6,9 +6,9 @@
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { getFrameTransformationQuaternion, calculatePositionTarget } from '$lib/utils/vr-math'
+	import { getFrameTransformationQuaternion, calculatePositionTarget } from '$lib/components/xr/math'
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { vrToast } from '$lib/stores/vrToast.svelte'
+	import { xrToast } from '$lib/components/xrToast.svelte'
 
 	interface Props {
 		armName: string
@@ -64,16 +64,7 @@
 	let gripperStopTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Stack to store saved poses - can return to previous positions
-	interface SavedPose {
-		x: number
-		y: number
-		z: number
-		oX: number
-		oY: number
-		oZ: number
-		theta: number
-	}
-	let poseStack: SavedPose[] = []
+	let poseStack: VIAM.Pose[] = []
 
 	// Reference States
 	let controllerRefPos = new Vector3()
@@ -130,9 +121,9 @@
 			msg.includes('motion') &&
 			(msg.includes('not found') || msg.includes('not registered') || msg.includes('not configured'))
 		) {
-			vrToast.danger('Motion service not registered')
+			xrToast.danger('Motion service not registered')
 		} else {
-			vrToast.warning('Position not reachable (IK error)')
+			xrToast.warning('Position not reachable (IK error)')
 		}
 	}
 
@@ -213,7 +204,7 @@
 			if (poseStack.length > 0) {
 				handleReturnToPose()
 			} else {
-				vrToast.warning('No saved positions to return to')
+				xrToast.warning('No saved positions to return to')
 			}
 		}
 
@@ -436,19 +427,11 @@
 
 		try {
 			// Use moveToPosition to return to the saved pose
-			await armClient.current.moveToPosition({
-				x: savedPose.x,
-				y: savedPose.y,
-				z: savedPose.z,
-				oX: savedPose.oX,
-				oY: savedPose.oY,
-				oZ: savedPose.oZ,
-				theta: savedPose.theta,
-			})
-			vrToast.success('Returned to saved position')
+			await armClient.current.moveToPosition(savedPose)
+			xrToast.success('Returned to saved position')
 		} catch (e) {
 			console.error('[ArmTeleop] Failed to return to saved pose:', e)
-			vrToast.danger('Failed to return to position')
+			xrToast.danger('Failed to return to position')
 		} finally {
 			isReturning = false
 		}

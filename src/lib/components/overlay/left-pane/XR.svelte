@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Drawer from './Drawer.svelte'
-	import VRControllerSettings from '$lib/components/settings/VRControllerSettings.svelte'
+	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
 </script>
 
-<Drawer name="VR">
+<Drawer name="XR">
 	<div class="flex h-100 flex-col gap-2 overflow-scroll p-3">
-		<VRControllerSettings />
+		<XRControllerSettings />
 	</div>
 </Drawer>

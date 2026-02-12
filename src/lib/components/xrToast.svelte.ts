@@ -1,6 +1,6 @@
 export type ToastVariant = 'success' | 'danger' | 'warning' | 'info'
 
-export interface VRToastItem {
+export interface XRToastItem {
 	id: number
 	message: string
 	variant: ToastVariant
@@ -9,7 +9,7 @@ export interface VRToastItem {
 }
 
 class VRToastStore {
-	toasts = $state<VRToastItem[]>([])
+	toasts = $state<XRToastItem[]>([])
 	private nextId = 0
 
 	add(message: string, variant: ToastVariant = 'info', duration = 3000): number {
@@ -46,4 +46,4 @@ class VRToastStore {
 	}
 }
 
-export const vrToast = new VRToastStore()
+export const xrToast = new VRToastStore()

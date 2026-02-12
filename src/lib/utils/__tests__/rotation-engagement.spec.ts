@@ -1,7 +1,7 @@
 import { expect, describe, it } from 'vitest'
 import { Quaternion, Euler } from 'three'
 import { OrientationVector } from '$lib/three/OrientationVector'
-import { getFrameTransformationQuaternion } from '$lib/utils/vr-math'
+import { getFrameTransformationQuaternion } from '$lib/components/xr/math'
 
 describe('Rotation Engagement Stability', () => {
 	const EPSILON = 1e-6

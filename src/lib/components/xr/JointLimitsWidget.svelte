@@ -195,14 +195,6 @@
 			}
 		}
 	})
-
-	// Clean up on unmount
-	$effect(() => {
-		return () => {
-			texture?.dispose()
-			geometry?.dispose()
-		}
-	})
 </script>
 
 {#if texture && geometry && jointData && jointData.length > 0}
