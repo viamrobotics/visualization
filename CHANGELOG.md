@@ -4,8 +4,8 @@
 
 ### Patch Changes
 
-- 03bb508: do not show axes on geos from useGemmetries resources"
-- 006bd88: fix: use cloned instance of 3d model when displaying
+- 03bb508: Fix: do not show axes on geos from useGeomtries resources
+- 006bd88: Fix: use cloned instance of 3d model when displaying multiple arms of the same type
 - fde7471: Fix: pointcloud memory leak with high refresh rates
 - f946fbc: Fix: z-index sorting for overlay items
 
