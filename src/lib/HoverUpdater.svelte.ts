@@ -5,19 +5,16 @@ import type { IntersectionEvent } from '@threlte/extras'
 
 export interface HoverInfo {
 	index: number
-	position: {
-		x: number
-		y: number
-		z: number
-	}
-	orientation?: {
-		x: number
-		y: number
-		z: number
-	}
+	x: number
+	y: number
+	z: number
+	ox: number
+	oY: number
+	oZ: number
+	theta: number
 }
 
-const vec3 = new Vector3()
+const hoverPosition = new Vector3()
 
 export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverInfo => {
 	let smallestDistance = Infinity
@@ -28,7 +25,7 @@ export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverI
 		const y = positions[i + 1] / 1000
 		const z = positions[i + 2] / 1000
 
-		const distance = point.distanceToSquared(vec3.set(x, y, z))
+		const distance = point.distanceToSquared({ x, y, z })
 
 		if (distance < smallestDistance) {
 			smallestDistance = distance
@@ -38,20 +35,18 @@ export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverI
 
 	return {
 		index: Math.floor(index / 6),
-		position: {
-			x: positions[index] / 1000,
-			y: positions[index + 1] / 1000,
-			z: positions[index + 2] / 1000,
-		},
-		orientation: {
-			x: positions[index + 3],
-			y: positions[index + 4],
-			z: positions[index + 5],
-		},
+		x: positions[index] / 1000,
+		y: positions[index + 1] / 1000,
+		z: positions[index + 2] / 1000,
+		ox: positions[index + 3],
+		oY: positions[index + 4],
+		oZ: positions[index + 5],
+		theta: 0,
 	}
 }
 
 export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverInfo => {
+	console.log('getClosestPoint', positions, point)
 	let smallestDistance = Infinity
 	let index = -1
 
@@ -60,7 +55,7 @@ export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverI
 		const y = positions[i + 1]
 		const z = positions[i + 2]
 
-		const distance = point.distanceToSquared(vec3.set(x, y, z))
+		const distance = point.distanceToSquared({ x, y, z })
 
 		if (distance < smallestDistance) {
 			smallestDistance = distance
@@ -68,13 +63,18 @@ export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverI
 		}
 	}
 
+	console.log('smallestDistance', smallestDistance)
+	console.log('index', index)
+
 	return {
 		index: Math.floor(index / 3),
-		position: {
-			x: positions[index],
-			y: positions[index + 1],
-			z: positions[index + 2],
-		},
+		x: positions[index],
+		y: positions[index + 1],
+		z: positions[index + 2],
+		ox: 0,
+		oY: 0,
+		oZ: 0,
+		theta: 0,
 	}
 }
 
@@ -84,11 +84,13 @@ export const getPointAtIndex = (positions: Float32Array, index: number): HoverIn
 	}
 	return {
 		index,
-		position: {
-			x: positions[index * 3],
-			y: positions[index * 3 + 1],
-			z: positions[index * 3 + 2],
-		},
+		x: positions[index * 3],
+		y: positions[index * 3 + 1],
+		z: positions[index * 3 + 2],
+		ox: 0,
+		oY: 0,
+		oZ: 0,
+		theta: 0,
 	}
 }
 export const getArrowAtIndex = (positions: Float32Array, index: number): HoverInfo | null => {
@@ -97,16 +99,13 @@ export const getArrowAtIndex = (positions: Float32Array, index: number): HoverIn
 	}
 	return {
 		index,
-		position: {
-			x: positions[index * 6] / 1000,
-			y: positions[index * 6 + 1] / 1000,
-			z: positions[index * 6 + 2] / 1000,
-		},
-		orientation: {
-			x: positions[index * 6 + 3],
-			y: positions[index * 6 + 4],
-			z: positions[index * 6 + 5],
-		},
+		x: positions[index * 6] / 1000,
+		y: positions[index * 6 + 1] / 1000,
+		z: positions[index * 6 + 2] / 1000,
+		ox: positions[index * 6 + 3],
+		oY: positions[index * 6 + 4],
+		oZ: positions[index * 6 + 5],
+		theta: 0,
 	}
 }
 
@@ -119,7 +118,7 @@ export const updateHoverInfo = (
 		return null
 	}
 
-	const hoverPosition = vec3.set(point.x, point.y, point.z)
+	hoverPosition.set(point.x, point.y, point.z)
 
 	let hoverInfo: HoverInfo | null = null
 
@@ -132,12 +131,15 @@ export const updateHoverInfo = (
 			hoverInfo = closestArrow
 		}
 	} else if (entity.has(traits.Points)) {
+		console.log('entity has points')
 		const positions = entity.get(traits.BufferGeometry)?.attributes.position.array as Float32Array
 		const closestPoint = getClosestPoint(positions, hoverPosition)
 		if (closestPoint) {
 			hoverInfo = closestPoint
 		}
 	}
+
+	console.log('hoverInfo 1', hoverInfo)
 
 	return hoverInfo
 }

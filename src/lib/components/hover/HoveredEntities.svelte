@@ -4,20 +4,20 @@
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
 	import HoveredEntity from './HoveredEntity.svelte'
 	import LinkedHoveredEntity from './LinkedHoveredEntity.svelte'
-	import { useHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
-	const hoveredLinkedEntities = useHoveredLinkedEntities()
+	const linkedEntities = useLinkedEntities()
 
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
-	const isHovered = useTrait(() => displayEntity, traits.Hover)
+	const isHovered = useTrait(() => displayEntity, traits.InstancedPose)
 </script>
 
 {#if isHovered}
 	<HoveredEntity />
 
-	{#each hoveredLinkedEntities.current as entity (entity)}
+	{#each linkedEntities.current as entity (entity)}
 		<LinkedHoveredEntity linkedEntity={entity} />
 	{/each}
 {/if}

@@ -1,3 +1,12 @@
+<script
+	lang="ts"
+	module
+>
+	import { Parser } from 'expr-eval'
+
+	export const parser = new Parser()
+</script>
+
 <script lang="ts">
 	import { relations, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
@@ -5,10 +14,7 @@
 	import { getLinkedHoverInfo, type HoverInfo } from '$lib/HoverUpdater.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
-	import { Parser } from 'expr-eval'
 	import { useTrait } from '$lib/ecs'
-
-	const parser = new Parser()
 
 	interface Props {
 		linkedEntity: Entity
@@ -20,9 +26,9 @@
 	const focusedEntity = useFocusedEntity()
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
 
-	const displayedHoverInfo = useTrait(() => displayEntity, traits.Hover)
+	const displayedHoverInfo = useTrait(() => displayEntity, traits.InstancedPose)
 
-	let hoverInfo: HoverInfo | null = $state.raw(null)
+	let hoverInfo = $state.raw<HoverInfo | null>(null)
 
 	$effect(() => {
 		if (displayEntity && displayedHoverInfo.current) {

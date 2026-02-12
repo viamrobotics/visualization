@@ -7,7 +7,7 @@
 	const focusedEntity = useFocusedEntity()
 
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
-	const hoverInfo = useTrait(() => displayEntity, traits.Hover)
+	const hoverInfo = useTrait(() => displayEntity, traits.InstancedPose)
 </script>
 
 {#if hoverInfo.current}

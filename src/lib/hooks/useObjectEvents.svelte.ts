@@ -21,14 +21,19 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 		cursor.onPointerEnter()
 
-		if (currentEntity && !currentEntity.has(traits.Hover)) {
+		if (currentEntity && !currentEntity.has(traits.InstancedPose)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
 			if (hoverInfo) {
 				currentEntity.add(
-					traits.Hover({
+					traits.InstancedPose({
 						index: hoverInfo.index,
-						position: hoverInfo.position,
-						orientation: hoverInfo.orientation,
+						x: hoverInfo.x,
+						y: hoverInfo.y,
+						z: hoverInfo.z,
+						ox: hoverInfo.ox,
+						oY: hoverInfo.oY,
+						oZ: hoverInfo.oZ,
+						theta: hoverInfo.theta,
 					})
 				)
 			}
@@ -38,13 +43,20 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 
-		if (currentEntity && currentEntity.has(traits.Hover)) {
+		if (currentEntity && currentEntity.has(traits.InstancedPose)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
 			if (hoverInfo) {
-				currentEntity.set(traits.Hover, {
+				console.log('hoverInfo', hoverInfo)
+				console.log('currentEntity', currentEntity)
+				currentEntity.set(traits.InstancedPose, {
 					index: hoverInfo.index,
-					position: hoverInfo.position,
-					orientation: hoverInfo.orientation,
+					x: hoverInfo.x,
+					y: hoverInfo.y,
+					z: hoverInfo.z,
+					ox: hoverInfo.ox,
+					oY: hoverInfo.oY,
+					oZ: hoverInfo.oZ,
+					theta: hoverInfo.theta,
 				})
 			}
 		}
@@ -54,8 +66,8 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 		cursor.onPointerLeave()
 
-		if (currentEntity?.has(traits.Hover)) {
-			currentEntity.remove(traits.Hover)
+		if (currentEntity?.has(traits.InstancedPose)) {
+			currentEntity.remove(traits.InstancedPose)
 		}
 	}
 

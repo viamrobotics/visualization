@@ -21,7 +21,7 @@
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
-	import { provideHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
+	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -52,7 +52,7 @@
 	provideFramelessComponents()
 
 	const { focus } = provideSelection()
-	provideHoveredLinkedEntities()
+	provideLinkedEntities()
 </script>
 
 {@render children({ focus: focus.current !== undefined })}

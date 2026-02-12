@@ -3,13 +3,13 @@ import type { Entity } from 'koota'
 import { relations, useWorld } from '$lib/ecs'
 import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 
-const hoveredLinkedKey = Symbol('hovered-linked-context')
+const linkedKey = Symbol('linked-context')
 
-interface HoveredLinkedEntitiesContext {
+interface LinkedEntitiesContext {
 	readonly current: Entity[]
 }
 
-export const provideHoveredLinkedEntities = () => {
+export const provideLinkedEntities = () => {
 	const world = useWorld()
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
@@ -36,13 +36,13 @@ export const provideHoveredLinkedEntities = () => {
 		}
 	})
 
-	setContext<HoveredLinkedEntitiesContext>(hoveredLinkedKey, {
+	setContext<LinkedEntitiesContext>(linkedKey, {
 		get current() {
 			return linkedEntities
 		},
 	})
 }
 
-export const useHoveredLinkedEntities = (): HoveredLinkedEntitiesContext => {
-	return getContext<HoveredLinkedEntitiesContext>(hoveredLinkedKey)
+export const useLinkedEntities = (): LinkedEntitiesContext => {
+	return getContext<LinkedEntitiesContext>(linkedKey)
 }

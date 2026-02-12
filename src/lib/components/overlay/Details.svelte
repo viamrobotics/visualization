@@ -28,7 +28,7 @@
 	import { traits, useTrait, useWorld, relations } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useHoveredLinkedEntities } from '$lib/hooks/useHoverLinked.svelte'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import AddRelationship from '$lib/components/AddRelationship.svelte'
 
 	const { ...rest } = $props()
@@ -47,7 +47,7 @@
 	const object3d = $derived(focusedObject3d.current ?? selectedObject3d.current)
 	const worldPosition = $state({ x: 0, y: 0, z: 0 })
 	const worldOrientation = $state({ x: 0, y: 0, z: 1, th: 0 })
-	const hoveredLinkedEntities = useHoveredLinkedEntities()
+	const linkedEntities = useLinkedEntities()
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const localPose = useTrait(() => entity, traits.EditedPose)
@@ -618,19 +618,19 @@
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
 
-		{#if hoveredLinkedEntities.current.length > 0}
+		{#if linkedEntities.current.length > 0}
 			<div>
 				<div class="mt-0.5 flex flex-col gap-1">
-					<strong class="font-semibold">Hover linked entities</strong>
-					{#each hoveredLinkedEntities.current as hoverLinkedEntity (hoverLinkedEntity)}
-						{@const hoverLinkedEntityName = hoverLinkedEntity.get(traits.Name)}
+					<strong class="font-semibold">Linked entities</strong>
+					{#each linkedEntities.current as linkedEntity (linkedEntity)}
+						{@const linkedEntityName = linkedEntity.get(traits.Name)}
 						<div class="flex items-center gap-1">
-							<span class="text-primary">{hoverLinkedEntityName}</span>
+							<span class="text-primary">{linkedEntityName}</span>
 							<Icon
 								name="trash-can-outline"
 								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
 								onclick={() => {
-									entity.remove(relations.HoverLink(hoverLinkedEntity))
+									entity.remove(relations.HoverLink(linkedEntity))
 								}}
 							/>
 						</div>

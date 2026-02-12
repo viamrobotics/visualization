@@ -9,9 +9,9 @@
 	let { hoverInfo }: Props = $props()
 </script>
 
-{#if hoverInfo?.position}
+{#if hoverInfo}
 	<HTML
-		position={[hoverInfo.position.x, hoverInfo.position.y, hoverInfo.position.z]}
+		position={[hoverInfo.x, hoverInfo.y, hoverInfo.z]}
 		class="pointer-events-none"
 		zIndexRange={[3, 0]}
 	>
@@ -36,36 +36,34 @@
 					</div>
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2 mr-1">x </span>{hoverInfo.position.x.toFixed(2)}
+							<span class="text-subtle-2 mr-1">x </span>{hoverInfo.x.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2 mr-1">y </span>{hoverInfo.position.y.toFixed(2)}
+							<span class="text-subtle-2 mr-1">y </span>{hoverInfo.y.toFixed(2)}
 						</div>
 						<div>
-							<span class="text-subtle-2 mr-1">z </span>{hoverInfo.position.z.toFixed(2)}
+							<span class="text-subtle-2 mr-1">z </span>{hoverInfo.z.toFixed(2)}
 						</div>
 					</div>
 				</div>
 
-				{#if hoverInfo.orientation}
-					<div>
-						<div class="mb-1">
-							<strong class="font-semibold">world orientation</strong>
-							<span class="text-subtle-2"> (deg)</span>
+				<div>
+					<div class="mb-1">
+						<strong class="font-semibold">world orientation</strong>
+						<span class="text-subtle-2"> (deg)</span>
+					</div>
+					<div class="flex gap-3">
+						<div>
+							<span class="text-subtle-2 mr-1">x </span>{hoverInfo.ox.toFixed(2)}
 						</div>
-						<div class="flex gap-3">
-							<div>
-								<span class="text-subtle-2 mr-1">x </span>{hoverInfo.orientation?.x.toFixed(2)}
-							</div>
-							<div>
-								<span class="text-subtle-2 mr-1">y </span>{hoverInfo.orientation?.y.toFixed(2)}
-							</div>
-							<div>
-								<span class="text-subtle-2 mr-1">z </span>{hoverInfo.orientation?.z.toFixed(2)}
-							</div>
+						<div>
+							<span class="text-subtle-2 mr-1">y </span>{hoverInfo.oY.toFixed(2)}
+						</div>
+						<div>
+							<span class="text-subtle-2 mr-1">z </span>{hoverInfo.oZ.toFixed(2)}
 						</div>
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 	</HTML>

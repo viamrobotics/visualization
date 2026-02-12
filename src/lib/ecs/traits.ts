@@ -12,11 +12,16 @@ export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
-export const Hover = trait(() => ({
+export const InstancedPose = trait({
+	x: 0,
+	y: 0,
+	z: 0,
+	ox: 0,
+	oY: 0,
+	oZ: 1,
+	theta: 0,
 	index: -1,
-	position: { x: 0, y: 0, z: 0 },
-	orientation: { x: 0, y: 0, z: 0 } as { x: number; y: number; z: number } | undefined,
-}))
+})
 
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
