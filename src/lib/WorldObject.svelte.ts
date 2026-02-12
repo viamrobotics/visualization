@@ -1,15 +1,15 @@
-import type { Geometry, PlainMessage, Pose, Struct } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, Vector3, type BufferGeometry } from 'three'
+import type { PlainMessage, Struct } from '@viamrobotics/sdk'
+import { BatchedMesh, Color, Vector3 } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
 
-const SupportedShapes = {
-	points: 'points',
-	line: 'line',
-	arrow: 'arrow',
-} as const
+enum SupportedShapes {
+	points = 'points',
+	line = 'line',
+	arrow = 'arrow',
+}
 
 type Metadata = {
 	colors?: Float32Array<ArrayBufferLike>
@@ -24,7 +24,7 @@ type Metadata = {
 		id: number
 		object: BatchedMesh
 	}
-	shape?: ValueOf<typeof SupportedShapes>
+	shape?: SupportedShapes
 	getBoundingBoxAt?: (box: OBB) => void
 }
 
