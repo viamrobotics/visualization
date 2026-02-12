@@ -16,7 +16,7 @@ export const InstancedPose = trait({
 	x: 0,
 	y: 0,
 	z: 0,
-	ox: 0,
+	oX: 0,
 	oY: 0,
 	oZ: 1,
 	theta: 0,

@@ -54,7 +54,7 @@
 					</div>
 					<div class="flex gap-3">
 						<div>
-							<span class="text-subtle-2 mr-1">x </span>{hoverInfo.ox.toFixed(2)}
+							<span class="text-subtle-2 mr-1">x </span>{hoverInfo.oX.toFixed(2)}
 						</div>
 						<div>
 							<span class="text-subtle-2 mr-1">y </span>{hoverInfo.oY.toFixed(2)}

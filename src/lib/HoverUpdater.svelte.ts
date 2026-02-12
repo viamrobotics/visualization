@@ -8,7 +8,7 @@ export interface HoverInfo {
 	x: number
 	y: number
 	z: number
-	ox: number
+	oX: number
 	oY: number
 	oZ: number
 	theta: number
@@ -38,7 +38,7 @@ export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverI
 		x: positions[index] / 1000,
 		y: positions[index + 1] / 1000,
 		z: positions[index + 2] / 1000,
-		ox: positions[index + 3],
+		oX: positions[index + 3],
 		oY: positions[index + 4],
 		oZ: positions[index + 5],
 		theta: 0,
@@ -67,7 +67,7 @@ export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverI
 		x: positions[index],
 		y: positions[index + 1],
 		z: positions[index + 2],
-		ox: 0,
+		oX: 0,
 		oY: 0,
 		oZ: 0,
 		theta: 0,
@@ -83,7 +83,7 @@ export const getPointAtIndex = (positions: Float32Array, index: number): HoverIn
 		x: positions[index * 3],
 		y: positions[index * 3 + 1],
 		z: positions[index * 3 + 2],
-		ox: 0,
+		oX: 0,
 		oY: 0,
 		oZ: 0,
 		theta: 0,
@@ -98,7 +98,7 @@ export const getArrowAtIndex = (positions: Float32Array, index: number): HoverIn
 		x: positions[index * 6] / 1000,
 		y: positions[index * 6 + 1] / 1000,
 		z: positions[index * 6 + 2] / 1000,
-		ox: positions[index * 6 + 3],
+		oX: positions[index * 6 + 3],
 		oY: positions[index * 6 + 4],
 		oZ: positions[index * 6 + 5],
 		theta: 0,
