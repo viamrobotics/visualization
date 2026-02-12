@@ -1,35 +1,17 @@
-import type { Geometry, PlainMessage, Pose, Struct, TransformWithUUID } from '@viamrobotics/sdk'
-import { BatchedMesh, Color, MathUtils, Vector3, type BufferGeometry } from 'three'
+import type { Geometry, PlainMessage, Pose, Struct } from '@viamrobotics/sdk'
+import { BatchedMesh, Color, Vector3, type BufferGeometry } from 'three'
 import type { GLTF } from 'three/examples/jsm/Addons.js'
-import { createPose } from './transform'
 import type { ValueOf } from 'type-fest'
 import { isColorRepresentation, isRGB, parseColor, parseOpacity, parseRGB } from './color'
 import type { OBB } from 'three/addons/math/OBB.js'
 
-export type PointsGeometry = {
-	center: undefined
-	geometryType: { case: 'points'; value: Float32Array<ArrayBuffer> }
-}
-
-export type LinesGeometry = {
-	center: undefined
-	geometryType: { case: 'line'; value: Float32Array }
-}
-
-export type ThreeBufferGeometry = {
-	center: undefined
-	geometryType: { case: 'bufferGeometry'; value: BufferGeometry }
-}
-
-export type Geometries = Geometry | PointsGeometry | LinesGeometry | ThreeBufferGeometry
-
-export const SupportedShapes = {
+const SupportedShapes = {
 	points: 'points',
 	line: 'line',
 	arrow: 'arrow',
 } as const
 
-export type Metadata = {
+type Metadata = {
 	colors?: Float32Array<ArrayBufferLike>
 	color?: Color
 	opacity?: number
@@ -59,56 +41,8 @@ const METADATA_KEYS = [
 	'shape',
 ] as const
 
-export const isMetadataKey = (key: string): key is keyof Metadata => {
+const isMetadataKey = (key: string): key is keyof Metadata => {
 	return METADATA_KEYS.includes(key as (typeof METADATA_KEYS)[number])
-}
-
-export class WorldObject<T extends Geometries = Geometries> {
-	uuid = MathUtils.generateUUID()
-	name = ''
-	referenceFrame = $state.raw<string>()
-	pose = $state.raw<Pose>(createPose())
-	geometry?: T = $state()
-	metadata = $state<Metadata>({})
-	localEditedPose = $state.raw<Pose>(createPose())
-
-	constructor(name = '', pose?: Pose, parent = 'world', geometry?: T, metadata?: Metadata) {
-		this.name = name
-		this.referenceFrame = parent
-
-		this.geometry = geometry
-		if (metadata) {
-			this.metadata = metadata
-		}
-
-		if (pose) {
-			this.pose = pose
-			this.localEditedPose = { ...pose }
-		}
-	}
-
-	toJSON(): Omit<WorldObject, 'toJSON' | 'fromJSON' | 'metadata'> {
-		return {
-			uuid: this.uuid,
-			name: this.name,
-			referenceFrame: $state.snapshot(this.referenceFrame),
-			pose: $state.snapshot(this.pose),
-			geometry: $state.snapshot(this.geometry) as Geometry,
-			localEditedPose: $state.snapshot(this.localEditedPose),
-		}
-	}
-
-	fromJSON(json: WorldObject) {
-		this.uuid = json.uuid
-		this.name = json.name
-		this.referenceFrame = json.referenceFrame
-		this.pose = json.pose
-		this.geometry = json.geometry as T
-		this.localEditedPose = json.localEditedPose
-		this.metadata = {}
-
-		return this
-	}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,18 +138,4 @@ const readColor = (color: unknown): Color => {
 	if (isColorRepresentation(color)) return parseColor(color)
 	if (isRGB(color)) return parseRGB(color)
 	return new Color('black')
-}
-
-export const fromTransform = (transform: TransformWithUUID) => {
-	const metadata: Metadata = transform.metadata ? parseMetadata(transform.metadata.fields) : {}
-
-	const worldObject = new WorldObject(
-		transform.referenceFrame,
-		transform.poseInObserverFrame?.pose,
-		transform.poseInObserverFrame?.referenceFrame,
-		transform.physicalObject,
-		metadata
-	)
-	worldObject.uuid = transform.uuidString
-	return worldObject
 }
