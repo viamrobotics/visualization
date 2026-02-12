@@ -137,7 +137,14 @@ export const Geometry = (geometry: ViamGeometry) => {
 	return ReferenceFrame
 }
 
-export const updateGeometry = (geometry: ViamGeometry) => {
+export const updateGeometry = (
+	geometry: ViamGeometry
+):
+	| []
+	| [typeof Box, ReturnType<typeof createBox>]
+	| [typeof Capsule, ReturnType<typeof createCapsule>]
+	| [typeof Sphere, ReturnType<typeof createSphere>]
+	| [typeof BufferGeometry, ReturnType<typeof parsePlyInput>] => {
 	if (geometry.geometryType.case === 'box') {
 		return [Box, createBox(geometry.geometryType.value)]
 	} else if (geometry.geometryType.case === 'capsule') {

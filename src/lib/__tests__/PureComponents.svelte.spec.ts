@@ -1,7 +1,6 @@
 import { vi, describe, it } from 'vitest'
 import { render } from '@testing-library/svelte'
 import AxesHelper from '$lib/components/AxesHelper.svelte'
-import Geometry from '$lib/components/Geometry.svelte'
 import MockCanvas from './fixtures/MockCanvas.svelte'
 
 // TODO: move this to use @threlte/test instead of mocking once it is fixed for this use case

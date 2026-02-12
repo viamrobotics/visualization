@@ -4,6 +4,9 @@ pnpm-lock.yaml
 yarn.lock
 .changeset
 
+# Fixtures
+draw/__snapshots__
+
 # Protobuf
 draw/v1
 src/lib/common/v1

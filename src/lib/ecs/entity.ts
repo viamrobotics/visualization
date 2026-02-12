@@ -1,5 +1,5 @@
 import { Geometry, Transform, type TransformWithUUID } from '@viamrobotics/sdk'
-import type { Trait, Entity, ConfigurableTrait, World } from 'koota'
+import type { Trait, Entity, ConfigurableTrait, World, TraitTuple } from 'koota'
 import { Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/examples/jsm/Addons.js'
 import { createBufferGeometry } from '../attribute'
@@ -8,6 +8,7 @@ import type { Drawing } from '../draw/v1/drawing_pb'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { parseMetadata } from '../metadata'
 import * as traits from './traits'
+import { snakeCase } from 'lodash-es'
 
 const vec3 = new Vector3()
 
@@ -231,79 +232,96 @@ export const spawnDrawingEntities = (
 	return entities
 }
 
+// Helper to check if a field path should be updated based on the FieldMask
+const shouldUpdate = (changes: (string | number)[] | undefined, ...paths: string[]): boolean => {
+	if (!changes || changes.length === 0) return true
+	const path = paths.map((value) => snakeCase(value)).join('.')
+	return changes.some((change) => typeof change === 'string' && change.startsWith(path))
+}
+
 export const updateTransformEntity = (
 	world: World,
 	entity: Entity,
 	transform: Transform | TransformWithUUID,
-	invalidate?: () => void
+	options?: { invalidate?: () => void; changes?: (string | number)[] }
 ): void => {
 	if (!world.has(entity)) {
 		console.error('Cannot update entity that does not exist')
 		return
 	}
 
-	const poseInFrame = transform.poseInObserverFrame
-	if (poseInFrame?.pose) {
-		entity.set(traits.Pose, poseInFrame.pose)
-	}
+	const { invalidate, changes } = options ?? {}
 
-	const parent = poseInFrame?.referenceFrame
-	if (parent && parent !== 'world') {
-		entity.set(traits.Parent, parent)
-	} else if (entity.has(traits.Parent)) {
-		entity.remove(traits.Parent)
-	}
-
-	if (transform.physicalObject) {
-		const geometryUpdate = traits.updateGeometry(transform.physicalObject)
-		if (geometryUpdate.length === 2) {
-			const [traitConstructor, value] = geometryUpdate
-			entity.set(traitConstructor as any, value)
+	if (shouldUpdate(changes, 'poseInObserverFrame', 'pose')) {
+		const poseInFrame = transform.poseInObserverFrame
+		if (poseInFrame?.pose) {
+			entity.set(traits.Pose, poseInFrame.pose)
 		}
 	}
 
-	if (transform.physicalObject?.center) {
-		entity.set(traits.Center, transform.physicalObject.center)
+	if (shouldUpdate(changes, 'poseInObserverFrame', 'referenceFrame')) {
+		const poseInFrame = transform.poseInObserverFrame
+		const parent = poseInFrame?.referenceFrame
+		if (parent && parent !== 'world') {
+			entity.set(traits.Parent, parent)
+		} else if (entity.has(traits.Parent)) {
+			entity.remove(traits.Parent)
+		}
 	}
 
-	// Update color/opacity from metadata
-	if (transform.metadata?.fields) {
-		const colors = transform.metadata.fields['colors']
-		if (colors) {
-			const value = colors.kind?.value
-			if (typeof value === 'string') {
-				const binary = atob(value)
-				const colorBytes = new Uint8Array(binary.length)
-				for (let i = 0; i < binary.length; i++) {
-					colorBytes[i] = binary.charCodeAt(i)
-				}
+	if (shouldUpdate(changes, 'physicalObject')) {
+		if (transform.physicalObject) {
+			const geometryUpdate = traits.updateGeometry(transform.physicalObject)
+			if (geometryUpdate.length === 2) {
+				const [traitConstructor, value] = geometryUpdate
+				entity.set(traitConstructor as any, value)
+			}
 
-				const colorTraits = getColorTraits(colorBytes)
-				for (const trait of colorTraits) {
-					const [traitFn, traitValue] = trait as any
-					entity.set(traitFn, traitValue)
-				}
+			if (transform.physicalObject.center) {
+				entity.set(traits.Center, transform.physicalObject.center)
+			}
+
+			if (transform.physicalObject.geometryType?.case === 'pointcloud') {
+				parsePcdInWorker(
+					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
+				).then((pointcloud) => {
+					if (!world.has(entity)) {
+						console.error('Entity was destroyed before pointcloud could be added')
+						return
+					}
+					const vertexColors = entity.get(traits.DrawServiceVertexColors)
+					const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
+					const geometry = createBufferGeometry(pointcloud.positions, colors)
+					entity.set(traits.BufferGeometry, geometry)
+					if (!entity.has(traits.Points)) {
+						entity.add(traits.Points)
+					}
+					invalidate?.()
+				})
 			}
 		}
 	}
 
-	if (transform.physicalObject?.geometryType?.case === 'pointcloud') {
-		parsePcdInWorker(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)).then(
-			(pointcloud) => {
-				if (!world.has(entity)) {
-					console.error('Entity was destroyed before pointcloud could be added')
-					return
+	if (shouldUpdate(changes, 'metadata')) {
+		if (transform.metadata?.fields) {
+			const colors = transform.metadata.fields['colors']
+			if (colors) {
+				const value = colors.kind?.value
+				if (typeof value === 'string') {
+					const binary = atob(value)
+					const colorBytes = new Uint8Array(binary.length)
+					for (let i = 0; i < binary.length; i++) {
+						colorBytes[i] = binary.charCodeAt(i)
+					}
+
+					const colorTraits = getColorTraits(colorBytes)
+					for (const trait of colorTraits) {
+						const [traitFn, traitValue] = trait as any
+						entity.set(traitFn, traitValue)
+					}
 				}
-				const vertexColors = entity.get(traits.DrawServiceVertexColors)
-				const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
-				const geometry = createBufferGeometry(pointcloud.positions, colors)
-				entity.set(traits.BufferGeometry, geometry)
-				if (!entity.has(traits.Points)) {
-					entity.add(traits.Points)
-				}
-				invalidate?.()
 			}
-		)
+		}
 	}
 }
 
@@ -373,9 +391,8 @@ export const updateDrawingEntities = (
 
 				if (drawing.metadata?.colors) {
 					const colorTraits = getColorTraits(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-					for (const trait of colorTraits) {
-						const [traitFn, traitValue] = trait as any
-						entity.set(traitFn, traitValue)
+					for (const [trait, value] of colorTraits) {
+						entity.set(trait, value)
 					}
 				}
 
@@ -467,7 +484,7 @@ function getDrawingGeometryType(entity: Entity): string | undefined {
 	return undefined
 }
 
-export const getColorTraits = (colors: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {
+export const getColorTraits = (colors: Uint8Array<ArrayBuffer>): TraitTuple[] => {
 	if (colors.length === 4) {
 		return [
 			traits.Color({

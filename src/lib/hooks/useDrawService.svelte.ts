@@ -77,7 +77,7 @@ export function provideDrawService(baseUrl = 'http://localhost:3030') {
 					} else if (changeType === ChangeType.UPDATED) {
 						const entity = transformEntities.get(uuidStr)
 						if (entity) {
-							updateTransformEntity(world, entity, transform, invalidate)
+							updateTransformEntity(world, entity, transform, { invalidate })
 						}
 					}
 				}

@@ -82,7 +82,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 
 		if (!entity) return
 
-		updateTransformEntity(world, entity, transform, invalidate)
+		updateTransformEntity(world, entity, transform, { invalidate, changes })
 	}
 
 	let initialized = false
