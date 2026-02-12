@@ -28,21 +28,21 @@
 		<div class="flex justify-between">
 			<span class="text-subtle-2">x</span>
 			<div>
-				{position[0].toFixed(2)}<span class="text-subtle-2">m</span>
+				{position[0].toFixed(3)}<span class="text-subtle-2">m</span>
 			</div>
 		</div>
 
 		<div class="flex justify-between">
 			<span class="text-subtle-2">y</span>
 			<div>
-				{position[1].toFixed(2)}<span class="text-subtle-2">m</span>
+				{position[1].toFixed(3)}<span class="text-subtle-2">m</span>
 			</div>
 		</div>
 
 		<div class="flex justify-between">
 			<span class="text-subtle-2">z</span>
 			<div>
-				{position[2].toFixed(2)}<span class="text-subtle-2">m</span>
+				{position[2].toFixed(3)}<span class="text-subtle-2">m</span>
 			</div>
 		</div>
 	</HTML>
