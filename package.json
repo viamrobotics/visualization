@@ -160,6 +160,7 @@
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
 		"@tanstack/svelte-query-devtools": "^6.0.2",
+		"expr-eval": "^2.0.2",
 		"koota": "0.6.5",
 		"lodash-es": "4.17.23",
 		"uuid-tool": "^2.0.3"
