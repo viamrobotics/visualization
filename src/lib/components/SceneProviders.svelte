@@ -21,6 +21,7 @@
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
+	import { provideDrawService } from '$lib/hooks/useDrawService.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -39,6 +40,7 @@
 
 	provideOrigin()
 	provideDrawAPI()
+	provideDrawService()
 
 	provideResourceByName(() => partID.current)
 	provideFrames(() => partID.current)

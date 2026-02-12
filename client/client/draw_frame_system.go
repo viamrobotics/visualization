@@ -13,7 +13,8 @@ import (
 func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
 
 	colorMap := make(map[string]draw.Color)
-	transforms, err := draw.DrawFrameSystemGeometries(fs, inputs, colorMap)
+	drawnFrameSystem := draw.NewDrawnFrameSystem(fs, inputs, draw.WithFrameSystemColors(colorMap))
+	transforms, err := drawnFrameSystem.Draw("")
 	if err != nil {
 		return err
 	}

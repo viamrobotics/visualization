@@ -21,7 +21,7 @@ func TestArrows(t *testing.T) {
 		test.That(t, len(arrows.Poses), test.ShouldEqual, 1)
 		test.That(t, arrows.Colors[0], test.ShouldResemble, NewColor(WithName("red")))
 
-		drawing := arrows.Draw("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
+		drawing := arrows.Draw("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
 		test.That(t, drawing, test.ShouldNotBeNil)
 		test.That(t, drawing.Shape.Arrows, test.ShouldNotBeNil)
 		test.That(t, drawing.Shape.Arrows.Poses[0], test.ShouldResemble, spatialmath.NewPose(r3.Vector{X: 1, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
@@ -46,7 +46,7 @@ func TestArrows(t *testing.T) {
 		test.That(t, arrows.Colors[1], test.ShouldResemble, NewColor(WithName("green")))
 		test.That(t, arrows.Colors[2], test.ShouldResemble, NewColor(WithName("blue")))
 
-		drawing := arrows.Draw("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
+		drawing := arrows.Draw("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
 		test.That(t, drawing, test.ShouldNotBeNil)
 		test.That(t, drawing.Shape.Arrows, test.ShouldNotBeNil)
 		test.That(t, len(drawing.Shape.Arrows.Poses), test.ShouldEqual, 3)

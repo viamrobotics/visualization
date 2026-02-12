@@ -40,10 +40,11 @@
 	})
 
 	$effect.pre(() => {
-		if (geometry.current?.getAttribute('color')) {
-			material.color.set(0xffffff)
-		} else if (color.current) {
+		if (color.current) {
+			// Apply override color
 			material.color.setRGB(color.current.r, color.current.g, color.current.b)
+		} else if (geometry.current?.getAttribute('color')) {
+			material.color.set(0xffffff)
 		} else {
 			material.color.set(settings.current.pointColor)
 		}
@@ -68,7 +69,7 @@
 		const colors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
 
-		material.vertexColors = colors !== undefined
+		material.vertexColors = colors !== undefined && !color.current
 
 		if (colors && positions) {
 			const hasAlphaChannel = positions.array.length / colors.array.length === 0.75

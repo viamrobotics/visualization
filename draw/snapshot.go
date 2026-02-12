@@ -167,7 +167,8 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	inputs referenceframe.FrameSystemInputs,
 	colors map[string]Color,
 ) error {
-	transforms, err := DrawFrameSystemGeometries(frameSystem, inputs, colors)
+	drawnFrameSystem := NewDrawnFrameSystem(frameSystem, inputs, WithFrameSystemColors(colors))
+	transforms, err := drawnFrameSystem.Draw("")
 	if err != nil {
 		return err
 	}
@@ -191,13 +192,9 @@ func (snapshot *Snapshot) DrawFrame(
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-) error {
-	transform, err := NewTransform(id, name, parent, pose, geometry, metadata)
-	if err != nil {
-		return err
-	}
+) {
+	transform := NewTransform(id, name, parent, pose, geometry, metadata)
 	snapshot.transforms = append(snapshot.transforms, transform)
-	return nil
 }
 
 // DrawGeometry draws a geometry to the snapshot
@@ -212,7 +209,12 @@ func (snapshot *Snapshot) DrawGeometry(
 	parent string,
 	color Color,
 ) error {
-	transform, err := DrawGeometry("", geometry, pose, parent, color)
+	drawnGeometry, err := NewDrawnGeometry(geometry, WithGeometryColor(color))
+	if err != nil {
+		return err
+	}
+
+	transform, err := drawnGeometry.Draw("", geometry.Label(), parent, pose)
 	if err != nil {
 		return err
 	}
@@ -233,14 +235,14 @@ func (snapshot *Snapshot) DrawArrows(
 	parent string,
 	pose spatialmath.Pose,
 	poses []spatialmath.Pose,
-	options ...drawArrowsOption,
+	options ...DrawArrowsOption,
 ) error {
 	arrows, err := NewArrows(poses, options...)
 	if err != nil {
 		return err
 	}
 
-	drawing := arrows.Draw(name, parent, pose)
+	drawing := arrows.Draw("", name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
@@ -264,7 +266,7 @@ func (snapshot *Snapshot) DrawLine(
 		return err
 	}
 
-	drawing := line.Draw(name, parent, pose)
+	drawing := line.Draw("", name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
@@ -286,7 +288,7 @@ func (snapshot *Snapshot) DrawModel(
 		return err
 	}
 
-	drawing := model.Draw(name, parent, pose)
+	drawing := model.Draw("", name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
@@ -310,7 +312,7 @@ func (snapshot *Snapshot) DrawPoints(
 		return err
 	}
 
-	drawing := points.Draw(name, parent, pose)
+	drawing := points.Draw("", name, parent, pose)
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }

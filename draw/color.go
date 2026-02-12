@@ -1,8 +1,10 @@
 package draw
 
 import (
+	"encoding/hex"
 	"fmt"
 	"image/color"
+	"strings"
 
 	"golang.org/x/image/colornames"
 )
@@ -122,6 +124,24 @@ func WithHSV(h, s, v float32) colorOption {
 	}
 }
 
+// WithHex creates a color option that sets the color from a hex string.
+func WithHex(value string) colorOption {
+	return func(config *colorConfig) {
+		hexStr := strings.TrimPrefix(value, "#")
+		if len(hexStr) != 6 {
+			WithRGB(0, 0, 0)(config)
+			return
+		}
+		bytes, err := hex.DecodeString(hexStr)
+		if err != nil {
+			WithRGB(0, 0, 0)(config)
+			return
+		}
+
+		WithRGB(bytes[0], bytes[1], bytes[2])(config)
+	}
+}
+
 // NewColor creates a new Color with the given options. If no options are provided,
 // returns black with full opacity (0, 0, 0, 255).
 func NewColor(options ...colorOption) Color {
@@ -211,7 +231,7 @@ func (config *DrawColorsConfig) SetColors(colors []Color) {
 }
 
 // WithColors creates a configuration option that sets colors for any type implementing ConfigurableColors.
-func WithColors[T ConfigurableColors](colors []Color) func(T) {
+func withColors[T ConfigurableColors](colors []Color) func(T) {
 	return func(config T) {
 		config.SetColors(colors)
 	}

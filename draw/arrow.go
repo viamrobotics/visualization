@@ -27,30 +27,30 @@ func newDrawArrowsConfig() *drawArrowsConfig {
 	}
 }
 
-type drawArrowsOption func(*drawArrowsConfig)
+type DrawArrowsOption func(*drawArrowsConfig)
 
 // WithSingleArrowColor sets the color for all arrows.
-func WithSingleArrowColor(color Color) drawArrowsOption {
-	return WithColors[*drawArrowsConfig]([]Color{color})
+func WithSingleArrowColor(color Color) DrawArrowsOption {
+	return withColors[*drawArrowsConfig]([]Color{color})
 }
 
 // WithPerArrowColors sets the color for each arrow.
-func WithPerArrowColors(colors ...Color) drawArrowsOption {
-	return WithColors[*drawArrowsConfig](colors)
+func WithPerArrowColors(colors ...Color) DrawArrowsOption {
+	return withColors[*drawArrowsConfig](colors)
 }
 
-func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
+func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption {
 	finalColors := make([]Color, numPoses)
 	for i := range numPoses {
 		finalColors[i] = palette[i%len(palette)]
 	}
-	return WithColors[*drawArrowsConfig](finalColors)
+	return withColors[*drawArrowsConfig](finalColors)
 
 }
 
 // NewArrows creates a new Arrows object from the given poses and optional configuration.
 // Returns an error if the number of colors doesn't match the requirements (must be 1 or equal to number of poses).
-func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, error) {
+func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, error) {
 	config := newDrawArrowsConfig()
 	for _, option := range options {
 		option(config)
@@ -64,9 +64,9 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 }
 
 // Draw creates a Drawing from this Arrows object, positioned at the given pose within the specified
-// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Drawing {
+// parent frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
+func (arrows Arrows) Draw(id string, name string, parent string, pose spatialmath.Pose) *Drawing {
 	shape := NewShape(pose, name, WithArrows(arrows))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
+	drawing := NewDrawing(id, name, parent, pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
 	return drawing
 }

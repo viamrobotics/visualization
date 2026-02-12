@@ -5,7 +5,12 @@ export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Arra
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
 	if (colors) {
-		geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
+		// Auto-detect RGB vs RGBA from position/color count ratio
+		// RGB: positions.length / colors.length === 1.0 (3 position coords, 3 color channels)
+		// RGBA: positions.length / colors.length === 0.75 (3 position coords, 4 color channels)
+		const numPositions = positions.length / 3
+		const colorStride = colors.length / numPositions
+		geometry.setAttribute('color', new BufferAttribute(colors, colorStride, true))
 	}
 
 	return geometry
@@ -33,7 +38,10 @@ export const updateBufferGeometry = (
 			colorAttr.array.set(colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
+			// Auto-detect RGB vs RGBA from position/color count ratio
+			const numPositions = positions.length / 3
+			const colorStride = colors.length / numPositions
+			geometry.setAttribute('color', new BufferAttribute(colors, colorStride, true))
 		}
 	}
 }

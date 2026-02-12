@@ -24,7 +24,7 @@ func TestLine(t *testing.T) {
 		test.That(t, line.LineWidth, test.ShouldEqual, 10)
 		test.That(t, line.PointSize, test.ShouldEqual, 10)
 
-		drawing := line.Draw("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
+		drawing := line.Draw("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
 		test.That(t, drawing, test.ShouldNotBeNil)
 
 		proto := drawing.ToProto()

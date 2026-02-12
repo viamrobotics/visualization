@@ -168,8 +168,8 @@ func NewModel(options ...drawModelOption) (*Model, error) {
 
 // Draw creates a Drawing from this Model object, positioned at the given pose within the specified
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (model Model) Draw(name string, parent string, pose spatialmath.Pose) *Drawing {
+func (model Model) Draw(id string, name string, parent string, pose spatialmath.Pose) *Drawing {
 	shape := NewShape(pose, name, WithModel(model))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata())
+	drawing := NewDrawing(id, name, parent, pose, shape, NewMetadata())
 	return drawing
 }

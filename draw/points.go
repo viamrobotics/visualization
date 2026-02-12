@@ -54,12 +54,21 @@ func WithPointsSize(size float32) drawPointsOption {
 
 // WithSinglePointColor creates a points option that sets the color for all points.
 func WithSinglePointColor(color Color) drawPointsOption {
-	return WithColors[*drawPointsConfig]([]Color{color})
+	return withColors[*drawPointsConfig]([]Color{color})
 }
 
 // WithPerPointColors creates a points option that sets the colors for each point.
 func WithPerPointColors(colors ...Color) drawPointsOption {
-	return WithColors[*drawPointsConfig](colors)
+	return withColors[*drawPointsConfig](colors)
+}
+
+// WithPointColorPalette creates a points option that sets the colors for a points.
+func WithPointColorPalette(palette []Color, numPoints int) drawPointsOption {
+	finalColors := make([]Color, numPoints)
+	for i := range numPoints {
+		finalColors[i] = palette[i%len(palette)]
+	}
+	return withColors[*drawPointsConfig](finalColors)
 }
 
 // NewPoints creates a new Points object from the given positions and optional configuration.
@@ -93,11 +102,12 @@ func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, err
 // Draw creates a Drawing from this Points object, positioned at the given pose within the specified
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (points Points) Draw(
+	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithPoints(points))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
+	drawing := NewDrawing(id, name, parent, pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
 	return drawing
 }

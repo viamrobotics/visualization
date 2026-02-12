@@ -5,45 +5,78 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 )
 
-// DrawFrameSystemGeometries renders all geometries in a frame system to the world frame.
-// The colors map allows you to specify colors for specific frames by name; frames without
-// specified colors inherit their parent's color or default to magenta. Returns the rendered
-// transforms or an error if the frame system cannot be converted.
-func DrawFrameSystemGeometries(
-	frameSystem *referenceframe.FrameSystem,
-	inputs referenceframe.FrameSystemInputs,
-	colors map[string]Color,
-) (*drawv1.Transforms, error) {
+type DrawnFrameSystem struct {
+	FrameSystem *referenceframe.FrameSystem
+	Inputs      referenceframe.FrameSystemInputs
+	Colors      map[string]Color
+}
+
+type drawnFrameSystemConfig struct {
+	colors map[string]Color
+}
+
+func newDrawnFrameSystemConfig(frameSystem *referenceframe.FrameSystem) *drawnFrameSystemConfig {
+	names := frameSystem.FrameNames()
+	colors := make(map[string]Color)
+	for _, name := range names {
+		colors[name] = NewColor(WithName("magenta"))
+	}
+
+	return &drawnFrameSystemConfig{
+		colors: colors,
+	}
+}
+
+type DrawFrameSystemOption func(*drawnFrameSystemConfig)
+
+func WithFrameSystemColors(colors map[string]Color) DrawFrameSystemOption {
+	return func(config *drawnFrameSystemConfig) {
+		config.colors = colors
+	}
+}
+
+func WithFrameSystemColor(frameName string, color Color) DrawFrameSystemOption {
+	return func(config *drawnFrameSystemConfig) {
+		config.colors[frameName] = color
+	}
+}
+
+func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption) *DrawnFrameSystem {
+	config := newDrawnFrameSystemConfig(frameSystem)
+	for _, option := range options {
+		option(config)
+	}
+
+	return &DrawnFrameSystem{FrameSystem: frameSystem, Inputs: inputs, Colors: config.colors}
+}
+
+func (drawnFrameSystem *DrawnFrameSystem) Draw(id string) (*drawv1.Transforms, error) {
 	transforms := &drawv1.Transforms{
 		Transforms: make([]*commonv1.Transform, 0),
 	}
 
-	frameMap, err := referenceframe.FrameSystemGeometries(frameSystem, inputs)
+	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, frameName := range slices.Sorted(maps.Keys(frameMap)) {
 		geometries := frameMap[frameName]
-		color := getFrameColor(frameName, colors, frameSystem)
+		color := getFrameColor(frameName, drawnFrameSystem.Colors, drawnFrameSystem.FrameSystem)
 
 		for _, geometry := range geometries.Geometries() {
-			label := geometry.Label()
-			pose := spatialmath.NewZeroPose()
-			metadata := NewMetadata(WithMetadataColors(color))
-			metadataStruct, err := MetadataToStruct(metadata)
+			drawnGeometry, err := NewDrawnGeometry(geometry, WithGeometryColor(color))
 			if err != nil {
 				return nil, err
 			}
 
-			transform, err := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
+			transform, err := drawnGeometry.Draw(id, fmt.Sprintf("%s:%s", frameName, geometry.Label()), referenceframe.World, spatialmath.NewZeroPose())
 			if err != nil {
 				return nil, err
 			}

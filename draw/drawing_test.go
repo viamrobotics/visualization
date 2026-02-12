@@ -18,7 +18,7 @@ func TestDrawing(t *testing.T) {
 			WithSingleArrowColor(NewColor(WithName("red"))),
 		)
 
-		drawing := NewDrawing("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), NewShape(spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), "test", WithArrows(*arrows)), NewMetadata(WithMetadataColors(arrows.Colors...)))
+		drawing := NewDrawing("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), NewShape(spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), "test", WithArrows(*arrows)), NewMetadata(WithMetadataColors(arrows.Colors...)))
 		test.That(t, drawing, test.ShouldNotBeNil)
 
 		proto := drawing.ToProto()
@@ -36,7 +36,7 @@ func TestDrawing(t *testing.T) {
 			WithModelAssets(modelAsset),
 			WithModelScale(r3.Vector{X: 10, Y: 10, Z: 10}),
 		)
-		drawing := NewDrawing("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), NewShape(spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), "test", WithModel(*model)), NewMetadata())
+		drawing := NewDrawing("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), NewShape(spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), "test", WithModel(*model)), NewMetadata())
 		test.That(t, drawing, test.ShouldNotBeNil)
 
 		proto := drawing.ToProto()

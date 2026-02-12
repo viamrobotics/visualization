@@ -82,7 +82,7 @@ func WithNurbsWeights(weights []float64) drawNurbsOption {
 func WithNurbsColors(defaultColor Color, perPointColors ...Color) drawNurbsOption {
 	colors := []Color{defaultColor}
 	colors = append(colors, perPointColors...)
-	return WithColors[*drawNurbsConfig](colors)
+	return withColors[*drawNurbsConfig](colors)
 }
 
 // NewNurbs creates a new NURBS curve with the given control points, knot vector, and options.
@@ -138,11 +138,12 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...draw
 // Draw creates a Drawing from this NURBS object, positioned at the given pose within the specified
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (nurbs Nurbs) Draw(
+	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithNurbs(nurbs))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
+	drawing := NewDrawing(id, name, parent, pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
 	return drawing
 }

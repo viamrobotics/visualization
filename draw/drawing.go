@@ -1,11 +1,16 @@
 package draw
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 )
+
+// drawingNamespace is the namespace UUID used for deterministic drawing ID generation
+var drawingNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 // Shape represents a drawable geometric shape or object in 3D space. A Shape contains
 // exactly one geometry type (Arrows, Line, Points, Model, or Nurbs), positioned at Center with a Label.
@@ -211,6 +216,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 // Drawing represents a complete drawable object in 3D space, consisting of a Shape positioned
 // at a Pose within a reference frame (Parent), along with associated Metadata like colors.
 type Drawing struct {
+	UUID     []byte
 	Name     string
 	Parent   string
 	Pose     spatialmath.Pose
@@ -218,32 +224,48 @@ type Drawing struct {
 	Metadata Metadata
 }
 
-// Drawable is an interface for types that can create a Drawing representation of themselves.
-type Drawable interface {
-	// Draw creates a Drawing of this object with the given name, parent reference frame, and pose.
-	Draw(name string, parent string, pose spatialmath.Pose) *Drawing
-}
-
-// NewDrawing creates a new Drawing with the specified name, parent reference frame, pose, shape, and metadata.
+// NewDrawing creates a new Drawing representing a non-physical object in 3D space.
 func NewDrawing(
+	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	shape Shape,
 	metadata Metadata,
 ) *Drawing {
-	return &Drawing{Name: name, Parent: parent, Pose: pose, Shape: shape, Metadata: metadata}
+	var idBytes []byte
+	if id == "" {
+		// If the id is empty, generate a deterministic UUID based on name and parent
+		key := fmt.Sprintf("%s:%s", name, parent)
+		newId := uuid.NewSHA1(transformNamespace, []byte(key))
+		idBytes = newId[:]
+	} else if parsedId, err := uuid.Parse(id); err == nil {
+		// If the id is a UUID, use it
+		idBytes = parsedId[:]
+	} else {
+		// If the id is not a UUID, use it to generate a new UUID
+		newId := uuid.NewSHA1(transformNamespace, []byte(id))
+		idBytes = newId[:]
+	}
+
+	return &Drawing{
+		UUID:     idBytes,
+		Name:     name,
+		Parent:   parent,
+		Pose:     pose,
+		Shape:    shape,
+		Metadata: metadata,
+	}
 }
 
 // ToProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
 func (drawing Drawing) ToProto() *drawv1.Drawing {
 	pose := poseInFrameToProtobuf(drawing.Pose, drawing.Parent)
-	uuidBytes := uuid.New()
 	return &drawv1.Drawing{
 		ReferenceFrame:      drawing.Name,
 		PoseInObserverFrame: pose,
 		PhysicalObject:      drawing.Shape.ToProto(),
-		Uuid:                uuidBytes[:],
+		Uuid:                drawing.UUID,
 		Metadata:            drawing.Metadata.ToProto(),
 	}
 }
@@ -274,7 +296,7 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 
 // WithMetadataColors creates a metadata option that sets the color list for the metadata.
 func WithMetadataColors(colors ...Color) drawMetadataOption {
-	return WithColors[*drawMetadataConfig](colors)
+	return withColors[*drawMetadataConfig](colors)
 }
 
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.

@@ -29,10 +29,10 @@ func TestDrawFrameSystem(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		fs.AddFrame(otherChildFrame, frame)
 
-		transforms, err := DrawFrameSystemGeometries(fs, referenceframe.NewZeroInputs(fs), map[string]Color{
+		transforms, err := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
 			"test":        NewColor(WithName("red")),
 			"other_child": NewColor(WithName("blue")),
-		})
+		})).Draw("")
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, transforms, test.ShouldNotBeNil)
 		test.That(t, len(transforms.Transforms), test.ShouldEqual, 3)

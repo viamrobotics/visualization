@@ -1,14 +1,16 @@
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
-	webServer: {
-		command: 'pnpm run dev',
-		port: 5173,
-		env: {
-			VITE_CONFIGS: '{}',
+	webServer: [
+		{
+			command: 'pnpm dev',
+			env: {
+				VITE_CONFIGS: '{}',
+			},
 		},
-	},
+	],
 	use: {
+		baseURL: 'http://localhost:5173',
 		trace: 'on',
 	},
 	testDir: 'e2e',

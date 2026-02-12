@@ -22,7 +22,7 @@ func TestPoints(t *testing.T) {
 		test.That(t, points.PointSize, test.ShouldEqual, 10)
 		test.That(t, points.Colors, test.ShouldResemble, []Color{NewColor(WithName("red"))})
 
-		drawing := points.Draw("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
+		drawing := points.Draw("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
 		test.That(t, drawing, test.ShouldNotBeNil)
 
 		proto := drawing.ToProto()
@@ -45,7 +45,7 @@ func TestPoints(t *testing.T) {
 		test.That(t, points.PointSize, test.ShouldEqual, 10)
 		test.That(t, points.Colors, test.ShouldResemble, []Color{NewColor(WithName("red")), NewColor(WithName("blue")), NewColor(WithName("green"))})
 
-		drawing := points.Draw("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
+		drawing := points.Draw("", "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}))
 		test.That(t, drawing, test.ShouldNotBeNil)
 	})
 

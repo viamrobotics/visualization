@@ -77,7 +77,7 @@ func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
 		colors[1] = *pointColor
 	}
 
-	return WithColors[*drawLineConfig](colors)
+	return withColors[*drawLineConfig](colors)
 }
 
 // NewLine creates a new Line from the given vertex positions and optional configuration.
@@ -112,11 +112,12 @@ func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
 // Draw creates a Drawing from this Line object, positioned at the given pose within the specified
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (line Line) Draw(
+	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithLine(line))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
+	drawing := NewDrawing(id, name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
 	return drawing
 }

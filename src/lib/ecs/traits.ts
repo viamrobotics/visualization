@@ -79,6 +79,12 @@ export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 /** format [r, g, b, ...] */
 export const VertexColors = trait(() => new Float32Array())
 
+/**
+ * format [r, g, b, a, r, g, b, a, ...]
+ * TODO: Replace VertexColors with this trait
+ */
+export const DrawServiceVertexColors = trait(() => new Uint8Array())
+
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
 	animationName: '',
@@ -91,6 +97,7 @@ export const GeometriesAPI = trait()
 export const DrawAPI = trait()
 export const WorldStateStoreAPI = trait()
 export const SnapshotAPI = trait()
+export const DrawServiceAPI = trait()
 
 /**
  * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)

@@ -23,8 +23,9 @@ help:
 	@echo ''
 	@echo 'Available targets:'
 	@echo '  setup          - Set up development environment (install pnpm, bun, dependencies)'
-	@echo '  up             - Build (if needed) and start a local server'
-	@echo '  build 			- Build the application for production'
+	@echo '  up             - Build (if needed) and start Bun server (legacy WebSocket)'
+	@echo '  up-grpc        - Build (if needed) and start Go gRPC server (new DrawService)'
+	@echo '  build          - Build the application for production'
 	@echo '  proto          - Generate protobuf code'
 	@echo '  docs           - Generate documentation'
 	@echo '  help           - Show this help message'
@@ -48,6 +49,10 @@ up-check:
 .PHONY: up
 up: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
+
+.PHONY: up-grpc
+up-grpc: up-check
+	@go run ./cmd/draw-server -port 3030 -production
 
 .PHONY: build-clean
 build-clean:

@@ -21,12 +21,17 @@ import (
 //   - geometry: a geometry
 //   - color: a corresponding color
 func DrawGeometry(geometry spatialmath.Geometry, color string) error {
-
 	rgbColor, err := colorutil.NamedColorToRGB(color)
 	if err != nil {
 		return err
 	}
-	transform, err := draw.DrawGeometry("", geometry, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2])))
+
+	drawnGeometry, err := draw.NewDrawnGeometry(geometry, draw.WithGeometryColor(draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))))
+	if err != nil {
+		return err
+	}
+
+	transform, err := drawnGeometry.Draw("", geometry.Label(), "world", spatialmath.NewZeroPose())
 	if err != nil {
 		return err
 	}
