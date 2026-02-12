@@ -8,7 +8,7 @@
 	const settings = useSettings()
 
 	// Get controller config from settings
-	const config = $derived(settings.current.xrControllerConfig)
+	const config = $derived(settings.current.xrController)
 
 	// Left controller configuration
 	const leftArmName = $derived(config.left.armName)

@@ -38,7 +38,7 @@
 	let selectedHand = $state<Hand>('right')
 
 	// Get current config for selected hand
-	const currentConfig = $derived(settings.current.xrControllerConfig[selectedHand])
+	const currentConfig = $derived(settings.current.xrController[selectedHand])
 
 	// Local form state (editable) — synced from currentConfig via effect
 	let formArmName = $state<string | undefined>(undefined)
@@ -188,7 +188,7 @@
 
 	// Apply settings
 	function applySettings() {
-		settings.current.xrControllerConfig[selectedHand] = {
+		settings.current.xrController[selectedHand] = {
 			armName: formArmName,
 			gripperName: formGripperName,
 			scaleFactor: formScaleFactor,

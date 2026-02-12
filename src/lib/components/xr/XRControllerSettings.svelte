@@ -17,7 +17,7 @@
 			.map((r) => r.name)
 	)
 
-	const config = $derived(settings.current.xrControllerConfig)
+	const config = $derived(settings.current.xrController)
 
 	// Filter available arms/grippers - exclude what the other controller has selected
 	const leftAvailableArms = $derived(
@@ -43,8 +43,8 @@
 		key: string,
 		value: string | number | boolean | undefined
 	) {
-		settings.current.xrControllerConfig[hand] = {
-			...settings.current.xrControllerConfig[hand],
+		settings.current.xrController[hand] = {
+			...settings.current.xrController[hand],
 			[key]: value,
 		}
 	}

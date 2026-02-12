@@ -26,7 +26,7 @@
 	})
 
 	// Get arms assigned to controllers
-	const controllerConfig = $derived(settings.current.xrControllerConfig)
+	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
 	const rightArmName = $derived(controllerConfig.right.armName)
 </script>

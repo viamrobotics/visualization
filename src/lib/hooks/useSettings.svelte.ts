@@ -49,7 +49,7 @@ export interface Settings {
 	renderSubEntityHoverDetail: boolean
 
 	// XR Controller Configuration
-	xrControllerConfig: {
+	xrController: {
 		left: {
 			armName?: string
 			gripperName?: string
@@ -106,7 +106,7 @@ const defaults = (): Settings => ({
 	renderArmModels: 'colliders+model',
 	renderSubEntityHoverDetail: false,
 
-	xrControllerConfig: {
+	xrController: {
 		left: {
 			scaleFactor: 1.0,
 			rotationEnabled: true,
