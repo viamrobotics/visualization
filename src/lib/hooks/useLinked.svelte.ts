@@ -15,15 +15,15 @@ export const provideLinkedEntities = () => {
 	const focusedEntity = useFocusedEntity()
 
 	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
-	let linkedEntities = $derived(displayEntity?.targetsFor(relations.HoverLink) ?? [])
+	let linkedEntities = $derived(displayEntity?.targetsFor(relations.SubEntityLink) ?? [])
 
-	const unsubAdd = world.onAdd(relations.HoverLink, (entity, target) => {
+	const unsubAdd = world.onAdd(relations.SubEntityLink, (entity, target) => {
 		if (entity === displayEntity) {
 			linkedEntities = [...linkedEntities, target]
 		}
 	})
 
-	const unsubRemove = world.onRemove(relations.HoverLink, (entity, target) => {
+	const unsubRemove = world.onRemove(relations.SubEntityLink, (entity, target) => {
 		if (entity === displayEntity) {
 			linkedEntities = linkedEntities.filter((e) => e !== target)
 		}

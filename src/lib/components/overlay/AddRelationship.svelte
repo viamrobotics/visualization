@@ -2,6 +2,7 @@
 	import type { Entity } from 'koota'
 	import { Button, Select, Input } from '@viamrobotics/prime-core'
 	import { traits, useQuery, relations, useTrait } from '$lib/ecs'
+	import { SubEntityLinkType } from '$lib/ecs/relations'
 
 	interface Props {
 		entity: Entity | undefined
@@ -24,6 +25,12 @@
 	let selectedRelationshipEntity = $state<string>('')
 	let relationshipFormula = $state('index')
 
+	const linkType = $derived.by(() => {
+		return selectedRelationshipType === SubEntityLinkType.HoverLink
+			? SubEntityLinkType.HoverLink
+			: null
+	})
+
 	function resetForm() {
 		selectedRelationshipType = ''
 		selectedRelationshipEntity = ''
@@ -36,9 +43,11 @@
 			(e: Entity) => e.get(traits.Name) === selectedRelationshipEntity
 		)
 		if (selectedEntity) {
+			console.log('linkType', linkType)
 			entity.add(
-				relations.HoverLink(selectedEntity, {
+				relations.SubEntityLink(selectedEntity, {
 					indexMapping: relationshipFormula,
+					type: linkType,
 				})
 			)
 		}

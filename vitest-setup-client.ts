@@ -44,8 +44,8 @@ vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	},
 }))
 
-vi.mock('$lib/hooks/useHoverLinked.svelte', () => ({
-	useHoveredLinkedEntities: vi.fn(() => ({ current: [] })),
+vi.mock('$lib/hooks/useLinked.svelte', () => ({
+	useLinkedEntities: vi.fn(() => ({ current: [] })),
 }))
 // required for svelte5 + jsdom as jsdom does not support matchMedia
 Object.defineProperty(window, 'matchMedia', {

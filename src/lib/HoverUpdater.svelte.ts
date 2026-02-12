@@ -131,15 +131,12 @@ export const updateHoverInfo = (
 			hoverInfo = closestArrow
 		}
 	} else if (entity.has(traits.Points)) {
-		console.log('entity has points')
 		const positions = entity.get(traits.BufferGeometry)?.attributes.position.array as Float32Array
 		const closestPoint = getClosestPoint(positions, hoverPosition)
 		if (closestPoint) {
 			hoverInfo = closestPoint
 		}
 	}
-
-	console.log('hoverInfo 1', hoverInfo)
 
 	return hoverInfo
 }

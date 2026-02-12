@@ -23,6 +23,8 @@ export const InstancedPose = trait({
 	index: -1,
 })
 
+export const Hovered = trait(() => true)
+
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
  * details panel may display all instances

@@ -29,7 +29,7 @@
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
-	import AddRelationship from '$lib/components/AddRelationship.svelte'
+	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 
 	const { ...rest } = $props()
 
@@ -624,13 +624,14 @@
 					<strong class="font-semibold">Linked entities</strong>
 					{#each linkedEntities.current as linkedEntity (linkedEntity)}
 						{@const linkedEntityName = linkedEntity.get(traits.Name)}
+						{@const linkType = entity.get(relations.SubEntityLink(linkedEntity))?.type}
 						<div class="flex items-center gap-1">
-							<span class="text-primary">{linkedEntityName}</span>
+							<span class="text-primary">{linkedEntityName} ({linkType})</span>
 							<Icon
 								name="trash-can-outline"
 								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
 								onclick={() => {
-									entity.remove(relations.HoverLink(linkedEntity))
+									entity.remove(relations.SubEntityLink(linkedEntity))
 								}}
 							/>
 						</div>
