@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry, Vector3, Quaternion } from 'three'
-	import { xrToast as xrToast, type XRToastItem as XRToastItem, type ToastVariant } from '$lib/components/xrToast.svelte'
+	import { xrToast as xrToast, type XRToastItem as XRToastItem, type ToastVariant } from '$lib/components/xr/xrToast.sveltelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80

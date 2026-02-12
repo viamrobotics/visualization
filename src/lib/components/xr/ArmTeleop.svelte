@@ -8,7 +8,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { getFrameTransformationQuaternion, calculatePositionTarget } from '$lib/components/xr/math'
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { xrToast } from '$lib/components/xrToast.svelte'
+	import { xrToast } from '$lib/components/xr/xrToast.sveltelte'
 
 	interface Props {
 		armName: string
