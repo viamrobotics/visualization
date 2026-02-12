@@ -33,7 +33,7 @@
 		class={[
 			className,
 			'relative block border',
-			active ? 'border-gray-5 text-gray-8 z-10 bg-white' : 'bg-light border-medium text-disabled',
+			active ? 'border-gray-5 text-gray-8 z-4 bg-white' : 'bg-light border-medium text-disabled',
 		]}
 		aria-describedby={tooltipID}
 	>

@@ -67,7 +67,7 @@
 	>
 		<div
 			{...api.getDragTriggerProps()}
-			class="sticky top-0 z-10 bg-white"
+			class="sticky top-0 bg-white"
 		>
 			<div
 				{...api.getHeaderProps()}
