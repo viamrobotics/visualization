@@ -17,6 +17,8 @@ export interface HoverInfo {
 	}
 }
 
+const vec3 = new Vector3()
+
 export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverInfo => {
 	let smallestDistance = Infinity
 	let index = -1
@@ -26,7 +28,7 @@ export const getClosestArrow = (positions: Float32Array, point: Vector3): HoverI
 		const y = positions[i + 1] / 1000
 		const z = positions[i + 2] / 1000
 
-		const distance = point.distanceToSquared(new Vector3(x, y, z))
+		const distance = point.distanceToSquared(vec3.set(x, y, z))
 
 		if (distance < smallestDistance) {
 			smallestDistance = distance
@@ -58,7 +60,7 @@ export const getClosestPoint = (positions: Float32Array, point: Vector3): HoverI
 		const y = positions[i + 1]
 		const z = positions[i + 2]
 
-		const distance = point.distanceToSquared(new Vector3(x, y, z))
+		const distance = point.distanceToSquared(vec3.set(x, y, z))
 
 		if (distance < smallestDistance) {
 			smallestDistance = distance
@@ -117,7 +119,7 @@ export const updateHoverInfo = (
 		return null
 	}
 
-	const hoverPosition = new Vector3(point.x, point.y, point.z)
+	const hoverPosition = vec3.set(point.x, point.y, point.z)
 
 	let hoverInfo: HoverInfo | null = null
 
