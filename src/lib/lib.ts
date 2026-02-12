@@ -8,6 +8,7 @@ export { default as Snapshot } from './components/Snapshot.svelte'
 export { Snapshot as SnapshotProto } from '$lib/draw/v1/snapshot_pb'
 
 // Classes
+export { BatchedArrow } from './three/BatchedArrow'
 export { CapsuleGeometry } from './three/CapsuleGeometry'
 export { OrientationVector } from './three/OrientationVector'
 
