@@ -4,6 +4,7 @@ import { useVisibility } from './useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
 import { traits } from '$lib/ecs'
+import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -20,28 +21,43 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 		cursor.onPointerEnter()
 
-		if (currentEntity && !currentEntity.has(traits.Hover)) {
-			currentEntity.add(
-				traits.Hover({
-					index: -1,
-					x: event.point.x,
-					y: event.point.y,
-					z: event.point.z,
-				})
-			)
+		if (currentEntity && !currentEntity.has(traits.Hovered)) {
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			if (hoverInfo) {
+				currentEntity.add(
+					traits.InstancedPose({
+						index: hoverInfo.index,
+						x: hoverInfo.x,
+						y: hoverInfo.y,
+						z: hoverInfo.z,
+						oX: hoverInfo.oX,
+						oY: hoverInfo.oY,
+						oZ: hoverInfo.oZ,
+						theta: hoverInfo.theta,
+					})
+				)
+			}
+			currentEntity.add(traits.Hovered)
 		}
 	}
 
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 
-		if (currentEntity && currentEntity.has(traits.Hover)) {
-			currentEntity.set(traits.Hover, {
-				index: event.index ?? -1,
-				x: event.point.x,
-				y: event.point.y,
-				z: event.point.z,
-			})
+		if (currentEntity && currentEntity.has(traits.Hovered)) {
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			if (hoverInfo) {
+				currentEntity.set(traits.InstancedPose, {
+					index: hoverInfo.index,
+					x: hoverInfo.x,
+					y: hoverInfo.y,
+					z: hoverInfo.z,
+					oX: hoverInfo.oX,
+					oY: hoverInfo.oY,
+					oZ: hoverInfo.oZ,
+					theta: hoverInfo.theta,
+				})
+			}
 		}
 	}
 
@@ -49,8 +65,11 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 		cursor.onPointerLeave()
 
-		if (currentEntity?.has(traits.Hover)) {
-			currentEntity.remove(traits.Hover)
+		if (currentEntity?.has(traits.Hovered)) {
+			currentEntity.remove(traits.Hovered)
+		}
+		if (currentEntity?.has(traits.InstancedPose)) {
+			currentEntity.remove(traits.InstancedPose)
 		}
 	}
 

@@ -10,6 +10,7 @@ import { Struct } from '@viamrobotics/sdk'
 import * as useFrames from '$lib/hooks/useFrames.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
+import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
 import { createEntityFixture } from './__fixtures__/entity'
 import { createWorld, type Entity } from 'koota'
 import { resource } from './__fixtures__/resource'
@@ -52,6 +53,9 @@ describe('Details component', () => {
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
+		})
+		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
+			current: [],
 		})
 	})
 
