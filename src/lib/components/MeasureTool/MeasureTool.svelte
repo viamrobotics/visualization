@@ -104,12 +104,12 @@
 						Enabled axes
 						<ToggleGroup
 							multiple
-							buttons={[
-								{ value: 'x', on: settings.current.enableMeasureAxisX },
-								{ value: 'y', on: settings.current.enableMeasureAxisY },
-								{ value: 'z', on: settings.current.enableMeasureAxisZ },
+							options={[
+								{ label: 'x', selected: settings.current.enableMeasureAxisX },
+								{ label: 'y', selected: settings.current.enableMeasureAxisY },
+								{ label: 'z', selected: settings.current.enableMeasureAxisZ },
 							]}
-							onclick={(details) => {
+							onSelect={(details) => {
 								settings.current.enableMeasureAxisX = details.includes('x')
 								settings.current.enableMeasureAxisY = details.includes('y')
 								settings.current.enableMeasureAxisZ = details.includes('z')
