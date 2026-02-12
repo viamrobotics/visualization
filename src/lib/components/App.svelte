@@ -80,7 +80,6 @@
 
 	let root = $state.raw<HTMLElement>()
 
-	$inspect(localConfigProps)
 	providePartConfig(() => {
 		if (localConfigProps) {
 			return {
