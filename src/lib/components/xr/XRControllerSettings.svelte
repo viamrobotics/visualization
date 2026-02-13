@@ -50,9 +50,17 @@
 	}
 </script>
 
+{#snippet SectionTitle(title: string)}
+	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>{title}</strong></h3>
+{/snippet}
+
 <div class="flex flex-col gap-2.5">
+	<label class="flex items-center justify-between gap-2">
+		Enable VR / AR mode <Switch bind:on={settings.current.enableXR} />
+	</label>
+
 	<!-- Left Controller -->
-	<h3 class="pt-2 text-sm"><strong>Left Controller</strong></h3>
+	{@render SectionTitle('Left Controller')}
 
 	<label class="flex items-center justify-between gap-2">
 		Arm
@@ -113,7 +121,7 @@
 	</label>
 
 	<!-- Right Controller -->
-	<h3 class="pt-2 text-sm"><strong>Right Controller</strong></h3>
+	{@render SectionTitle('Right Controller')}
 
 	<label class="flex items-center justify-between gap-2">
 		Arm

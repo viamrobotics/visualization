@@ -10,7 +10,7 @@ interface Context {
 }
 
 export const provideOrigin = () => {
-	const position = $state<Vector3Tuple>([0, 0, -2])
+	const position = $state<Vector3Tuple>([0, 0, 0])
 	let rotation = $state(0)
 
 	setContext<Context>(key, {

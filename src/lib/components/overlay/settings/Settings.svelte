@@ -278,7 +278,7 @@
 			{ label: 'Pointclouds', content: Pointclouds },
 			{ label: 'Vision', content: Vision },
 			{ label: 'Stats', content: Stats },
-			...('xr' in navigator ? [{ label: 'XR', content: XR }] : []),
+			...('xr' in navigator ? [{ label: 'VR / AR', content: XR }] : []),
 		]}
 		onValueChange={(value) => {
 			activeTab.current = value
