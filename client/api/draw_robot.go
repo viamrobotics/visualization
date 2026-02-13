@@ -49,7 +49,7 @@ type DrawRobotOptions struct {
 func DrawRobot(options DrawRobotOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
-		return nil, fmt.Errorf("server is not running; call server.Start() first")
+		return nil, ErrVisualizerNotRunning
 	}
 
 	// Get frame system configuration from robot

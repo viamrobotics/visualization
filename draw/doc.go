@@ -9,19 +9,19 @@
 //
 // # Drawing Client Workflow
 //
-// For real-time drawing during development or integration testing, use the client SDK:
+// For real-time drawing during development or integration testing, start the visualizer
+// and use the client SDK:
+//
+//	// Start the visualizer: make up
 //
 //	import "github.com/viam-labs/motion-tools/client/api"
-//	import "github.com/viam-labs/motion-tools/client/server"
-//
-//	server.Start(3030, false)
-//	defer server.Stop()
 //
 //	api.DrawLine(api.DrawLineOptions{
 //	    Name:      "my-line",
 //	    Positions: []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}},
 //	})
 //
+// The visualizer will be available at http://localhost:5173.
 // See the client package documentation for the complete drawing client API.
 //
 // # Snapshot Workflow

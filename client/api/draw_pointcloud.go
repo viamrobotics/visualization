@@ -44,7 +44,7 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 
 	client := server.GetClient()
 	if client == nil {
-		return nil, fmt.Errorf("server is not running; call server.Start() first")
+		return nil, ErrVisualizerNotRunning
 	}
 
 	drawOptions := make([]draw.DrawPointCloudOption, 0)

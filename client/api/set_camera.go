@@ -29,7 +29,7 @@ type SetCameraPoseOptions struct {
 func SetCamera(options SetCameraPoseOptions) error {
 	client := server.GetClient()
 	if client == nil {
-		return fmt.Errorf("server is not running; call server.Start() first")
+		return ErrVisualizerNotRunning
 	}
 
 	sceneCamera := draw.NewSceneCamera(
@@ -60,7 +60,7 @@ func SetCamera(options SetCameraPoseOptions) error {
 func ResetCamera() error {
 	client := server.GetClient()
 	if client == nil {
-		return fmt.Errorf("server is not running; call server.Start() first")
+		return ErrVisualizerNotRunning
 	}
 
 	sceneCamera := draw.NewSceneCamera(

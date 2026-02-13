@@ -100,10 +100,11 @@ import (
 )
 
 func main() {
+    // The visualizer must be running: make up
     api.DrawLine(api.DrawLineOptions{
         Name:      "my-line",
         Positions: []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}},
-        Colors:    []draw.Color{draw.NewColor(draw.WithName("blue"))},
+        Colors:    []draw.Color{draw.ColorFromName("blue")},
     })
 }
 ```

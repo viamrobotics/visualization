@@ -31,7 +31,7 @@ func Record(filename string) error {
 	// Get the recorder from the server
 	recorder := server.GetRecorder()
 	if recorder == nil {
-		return fmt.Errorf("server is not running; call server.Start() first")
+		return ErrVisualizerNotRunning
 	}
 
 	// Start recording to the specified file
@@ -69,7 +69,7 @@ func Replay(filename string, playbackSpeed float64) error {
 
 	client := server.GetClient()
 	if client == nil {
-		return fmt.Errorf("server is not running; call server.Start() first")
+		return ErrVisualizerNotRunning
 	}
 
 	// Open the recording file

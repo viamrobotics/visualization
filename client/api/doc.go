@@ -4,14 +4,13 @@
 // motion-tools visualizer instance. All functions communicate with the DrawService via Connect-RPC,
 // allowing real-time updates to geometric primitives, 3D models, reference frames, and robot states.
 //
-// # Server Lifecycle
+// # Getting Started
 //
-// Before using any drawing functions, start the DrawService server using the server package:
+// Before using any drawing functions, start the visualizer:
 //
-//	import "github.com/viam-labs/motion-tools/client/server"
+//	make up
 //
-//	server.Start(3030, false)
-//	defer server.Stop()
+// The visualizer will be available at http://localhost:5173.
 //
 // # Drawing API
 //
@@ -31,13 +30,11 @@
 //	import (
 //	    "github.com/golang/geo/r3"
 //	    "github.com/viam-labs/motion-tools/client/api"
-//	    "github.com/viam-labs/motion-tools/client/server"
 //	    "github.com/viam-labs/motion-tools/draw"
 //	)
 //
 //	func main() {
-//	    server.Start(3030, false)
-//	    defer server.Stop()
+//	    // The visualizer must be running: make up
 //
 //	    // Draw a line
 //	    positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}}

@@ -14,7 +14,7 @@ import (
 func RemoveTransforms() (int32, error) {
 	client := server.GetClient()
 	if client == nil {
-		return 0, fmt.Errorf("server is not running; call server.Start() first")
+		return 0, ErrVisualizerNotRunning
 	}
 
 	req := connect.NewRequest(&drawv1.RemoveAllTransformsRequest{})

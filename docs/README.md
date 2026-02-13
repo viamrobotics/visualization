@@ -103,12 +103,17 @@ Any instance of the visualizer can accept snapshot files via drag-and-drop.
 
 ## Real-Time Drawing (`client/api` package)
 
-The client SDK draws directly to a running visualizer over Connect-RPC. It consists of two packages:
-
-- `client/server` -- Server lifecycle management (`Start`, `Stop`, `GetClient`)
-- `client/api` -- Drawing functions for primitives, geometries, frames, and robots
+The client SDK draws directly to a running visualizer over Connect-RPC.
 
 ### Quick Start
+
+Start the visualizer:
+
+```bash
+make up
+```
+
+Then use the `client/api` package to draw:
 
 ```go
 package main
@@ -116,25 +121,17 @@ package main
 import (
     "github.com/golang/geo/r3"
     "github.com/viam-labs/motion-tools/client/api"
-    "github.com/viam-labs/motion-tools/client/server"
     "github.com/viam-labs/motion-tools/draw"
 )
 
 func main() {
-    // Start server on port 3030
-    err := server.Start(3030, false)
-    if err != nil {
-        panic(err)
-    }
-    defer server.Stop()
-
     // Draw a line
     positions := []r3.Vector{
         {X: 0, Y: 0, Z: 0},
         {X: 100, Y: 100, Z: 100},
         {X: 200, Y: 0, Z: 200},
     }
-    _, err = api.DrawLine(api.DrawLineOptions{
+    _, err := api.DrawLine(api.DrawLineOptions{
         Name:      "my-line",
         Positions: positions,
         Colors:    []draw.Color{draw.ColorFromName("blue")},
@@ -157,13 +154,10 @@ func main() {
     if err != nil {
         panic(err)
     }
-
-    // Keep the server running
-    select {}
 }
 ```
 
-While your Go program is running, start the visualizer UI with `pnpm dev` and open http://localhost:5173.
+The visualizer will be available at http://localhost:5173.
 
 ### Drawing Functions
 
@@ -249,9 +243,9 @@ Most drawing functions accept `[]draw.Color` with flexible semantics:
 
 ## API Reference
 
-| Document                         | Package                                        | Description                                            |
-| -------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
-| [draw-api.md](draw-api.md)             | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
+| Document                       | Package                                        | Description                                            |
+| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
+| [draw-api.md](draw-api.md)     | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
 | [client-api.md](client-api.md) | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
 
 ## Regenerating

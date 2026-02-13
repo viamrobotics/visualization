@@ -33,7 +33,7 @@ type DrawGeometryOptions struct {
 func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 	client := server.GetClient()
 	if client == nil {
-		return nil, fmt.Errorf("server is not running; call server.Start() first")
+		return nil, ErrVisualizerNotRunning
 	}
 
 	drawnGeometry, err := draw.NewDrawnGeometry(options.Geometry, draw.WithGeometryColor(options.Color))

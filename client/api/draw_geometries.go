@@ -33,7 +33,7 @@ type DrawGeometriesInFrameOptions struct {
 func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
-		return nil, fmt.Errorf("server is not running; call server.Start() first")
+		return nil, ErrVisualizerNotRunning
 	}
 
 	var uuids [][]byte
