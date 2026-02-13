@@ -13,14 +13,15 @@ import (
 func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs) error {
 
 	colorMap := make(map[string]draw.Color)
-	transforms, err := draw.DrawFrameSystemGeometries(fs, inputs, colorMap)
+	drawnFrameSystem := draw.NewDrawnFrameSystem(fs, inputs, draw.WithFrameSystemColors(colorMap))
+	transforms, err := drawnFrameSystem.Draw()
 	if err != nil {
 		return err
 	}
 
 	geometries := make([]spatialmath.Geometry, 0)
 	colors := make([]string, 0)
-	for _, transform := range transforms.Transforms {
+	for _, transform := range transforms {
 		geometry, err := referenceframe.NewGeometryFromProto(transform.GetPhysicalObject())
 		if err != nil {
 			return err

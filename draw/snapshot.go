@@ -167,12 +167,13 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	inputs referenceframe.FrameSystemInputs,
 	colors map[string]Color,
 ) error {
-	transforms, err := DrawFrameSystemGeometries(frameSystem, inputs, colors)
+	drawnFrameSystem := NewDrawnFrameSystem(frameSystem, inputs, WithFrameSystemColors(colors))
+	transforms, err := drawnFrameSystem.Draw()
 	if err != nil {
 		return err
 	}
 
-	snapshot.transforms = append(snapshot.transforms, transforms.Transforms...)
+	snapshot.transforms = append(snapshot.transforms, transforms...)
 	return nil
 }
 

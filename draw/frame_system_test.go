@@ -29,16 +29,18 @@ func TestDrawFrameSystem(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		fs.AddFrame(otherChildFrame, frame)
 
-		transforms, err := DrawFrameSystemGeometries(fs, referenceframe.NewZeroInputs(fs), map[string]Color{
+		drawnFrameSystem := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
 			"test":        NewColor(WithName("red")),
 			"other_child": NewColor(WithName("blue")),
-		})
+		}))
+
+		transforms, err := drawnFrameSystem.Draw()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, transforms, test.ShouldNotBeNil)
-		test.That(t, len(transforms.Transforms), test.ShouldEqual, 3)
-		test.That(t, transforms.Transforms[2].PhysicalObject.Label, test.ShouldEqual, "box")
-		test.That(t, transforms.Transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
-		test.That(t, transforms.Transforms[2].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
+		test.That(t, len(transforms), test.ShouldEqual, 3)
+		test.That(t, transforms[2].PhysicalObject.Label, test.ShouldEqual, "box")
+		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
+		test.That(t, transforms[2].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
 			X:     0,
 			Y:     0,
 			Z:     0,
@@ -47,24 +49,24 @@ func TestDrawFrameSystem(t *testing.T) {
 			OZ:    1,
 			Theta: 0,
 		})
-		test.That(t, transforms.Transforms[2].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
+		test.That(t, transforms[2].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
 			DimsMm: &commonv1.Vector3{
 				X: 100,
 				Y: 100,
 				Z: 100,
 			},
 		})
-		test.That(t, transforms.Transforms[2].Metadata, test.ShouldNotBeNil)
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		test.That(t, transforms[2].Metadata, test.ShouldNotBeNil)
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
 
-		for _, transform := range transforms.Transforms {
+		for _, transform := range transforms {
 			fmt.Println(transform.ReferenceFrame)
 		}
 
-		test.That(t, transforms.Transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
 
-		test.That(t, transforms.Transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
 	})
 }
