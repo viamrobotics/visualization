@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
-	import { createStreamClient, useRobotClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
-	import { StreamClient, MachineConnectionEvent } from '@viamrobotics/sdk'
+	import { createStreamClient } from '@viamrobotics/svelte-sdk'
 	import BentPlaneGeometry from '../BentPlaneGeometry.svelte'
 	import { VideoTexture } from 'three'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -21,30 +20,10 @@
 	}: CameraFeedProps = $props()
 
 	const partID = usePartID()
-	const robotClient = useRobotClient(() => partID.current)
-	const connectionStatus = useConnectionStatus(() => partID.current)
 	const streamClient = createStreamClient(
 		() => partID.current,
 		() => resourceName
 	)
-
-	// Create a StreamClient for setting options only when connected
-	let optionsClient = $derived(
-		robotClient.current && connectionStatus.current === MachineConnectionEvent.CONNECTED
-			? new StreamClient(robotClient.current)
-			: undefined
-	)
-
-	// Request optimal resolution for low-latency XR streaming
-	$effect(() => {
-		if (optionsClient && resourceName) {
-			// Match robot camera config: 640x480 for both cameras
-			// This avoids transcoding overhead and maximizes framerate
-			// optionsClient.setOptions(resourceName, 640, 480).catch(() => {
-			// 	// Using default resolution
-			// })
-		}
-	})
 
 	let video = document.createElement('video')
 	let aspect = $state(1)
