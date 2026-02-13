@@ -12,5 +12,8 @@ src/lib/draw/v1
 # Docs
 draw/DOCS.md
 
+# Snapshots
+draw/__snapshots__
+
 # IDE
 .cursor
