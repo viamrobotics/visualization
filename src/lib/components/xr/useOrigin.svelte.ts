@@ -6,7 +6,7 @@ const key = Symbol('origin-context')
 interface Context {
 	position: Vector3Tuple
 	rotation: number
-	set: (pos?: Vector3, rot?: number) => void
+	set: (pos?: Vector3Tuple, rot?: number) => void
 }
 
 export const provideOrigin = () => {
@@ -20,11 +20,11 @@ export const provideOrigin = () => {
 		get rotation() {
 			return rotation
 		},
-		set(pos?: Vector3, rot?: number) {
+		set(pos?: Vector3Tuple, rot?: number) {
 			if (pos) {
-				position[0] = pos.x
-				position[1] = pos.y
-				position[2] = pos.z
+				position[0] = pos[0]
+				position[1] = pos[1]
+				position[2] = pos[2]
 			}
 
 			if (rot !== undefined) {

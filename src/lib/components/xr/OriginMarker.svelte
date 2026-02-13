@@ -56,7 +56,7 @@
 
 			position.copy($left.grip.position).sub(offset)
 
-			origin.set(position)
+			origin.set([position.x, position.y, position.z])
 
 			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
 		},

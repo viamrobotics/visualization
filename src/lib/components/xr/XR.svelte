@@ -9,11 +9,13 @@
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import XRToast from './XRToast.svelte'
+	import { useOrigin } from './useOrigin.svelte'
 
 	const { ...rest } = $props()
 
 	const { isPresenting } = useXR()
 	const settings = useSettings()
+	const origin = useOrigin()
 	const enableXR = $derived(settings.current.enableXR)
 
 	const partID = usePartID()
@@ -32,7 +34,14 @@
 </script>
 
 {#if enableXR}
-	<XR>
+	<XR
+		onsessionstart={() => {
+			origin.set([0, 0, -2])
+		}}
+		onsessionend={() => {
+			origin.set([0, 0, 0])
+		}}
+	>
 		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
 		{#each enabledCameras as cameraName, index (cameraName)}
 			{@const spacing = 1.2}
