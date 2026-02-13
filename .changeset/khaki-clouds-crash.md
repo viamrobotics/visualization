@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Update NewTransforms to accept arbitrary IDs (used to generate UUIDs)
+Update NewTransform to accept arbitrary IDs (used to generate UUIDs)
