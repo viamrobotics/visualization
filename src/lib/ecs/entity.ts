@@ -4,7 +4,7 @@ import { Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/examples/jsm/Addons.js'
 import { createBufferGeometry } from '../attribute'
 import { asFloat32Array, STRIDE } from '../buffer'
-import type { Drawing } from '../draw/v1/drawing_pb'
+import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { parseMetadata } from '../metadata'
 import * as traits from './traits'
@@ -51,7 +51,7 @@ export const spawnTransformEntity = (
 					console.error('Entity was destroyed before pointcloud could be added')
 					return
 				}
-				const vertexColors = entity.get(traits.DrawServiceVertexColors)
+				const vertexColors = entity.get(traits.Colors)
 				const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
 				const geometry = createBufferGeometry(pointcloud.positions, colors)
 				entity.add(traits.BufferGeometry(geometry))
@@ -71,39 +71,40 @@ export const spawnDrawingEntities = (
 	options?: { removable?: boolean }
 ): Entity[] => {
 	const { removable = true } = options ?? {}
-	const entities: Entity[] = []
 	const poseInFrame = drawing.poseInObserverFrame
 	const parent = poseInFrame?.referenceFrame
 	const { geometryType } = drawing.physicalObject ?? {}
 
+	const entityTraits: ConfigurableTrait[] = [
+		traits.Name(drawing.referenceFrame),
+		traits.Pose(poseInFrame?.pose),
+		api,
+	]
+
+	if (removable) entityTraits.push(traits.Removable)
+	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
+
 	if (geometryType?.case === 'arrows') {
-		const poses = asFloat32Array(geometryType.value.poses)
 		const colors = drawing.metadata?.colors
-		const entityTraits: ConfigurableTrait[] = [
-			traits.Name(drawing.referenceFrame),
-			traits.Pose(poseInFrame?.pose),
-			traits.Positions(poses as Float32Array<ArrayBuffer>),
-			traits.Arrows({ headAtPose: true }),
-			traits.Instances({ count: poses.length / STRIDE.ARROWS }),
-			api,
-		]
+		if (colors) {
+			entityTraits.push(...getColorTraits(colors as Uint8Array<ArrayBuffer>))
+		}
+
+		const poses = asFloat32Array(geometryType.value.poses)
+		entityTraits.push(traits.Positions(poses as Float32Array<ArrayBuffer>))
+		entityTraits.push(traits.Arrows({ headAtPose: true }))
+		entityTraits.push(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
 
 		if (removable) entityTraits.push(traits.Removable)
 		if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
-		if (colors) entityTraits.push(traits.Colors(colors as Uint8Array<ArrayBuffer>))
 
 		const entity = world.spawn(...entityTraits)
-		entities.push(entity)
-	} else if (geometryType?.case === 'model') {
-		const rootEntityTraits: ConfigurableTrait[] = [
-			traits.Name(drawing.referenceFrame),
-			traits.Pose(poseInFrame?.pose),
-			traits.ReferenceFrame,
-			api,
-		]
+		return [entity]
+	}
 
-		if (removable) rootEntityTraits.push(traits.Removable)
-		if (parent && parent !== 'world') rootEntityTraits.push(traits.Parent(parent))
+	if (geometryType?.case === 'model') {
+		const entities: Entity[] = []
+		const rootEntityTraits: ConfigurableTrait[] = [...entityTraits, traits.ReferenceFrame]
 
 		const rootEntity = world.spawn(...rootEntityTraits)
 		entities.push(rootEntity)
@@ -138,98 +139,121 @@ export const spawnDrawingEntities = (
 			const entity = world.spawn(...subEntityTraits)
 			entities.push(entity)
 		}
-	} else {
-		const entityTraits: ConfigurableTrait[] = [
-			traits.Name(drawing.referenceFrame),
-			traits.Pose(poseInFrame?.pose),
-			api,
-		]
 
-		if (removable) entityTraits.push(traits.Removable)
-		if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
+		return entities
+	}
 
-		if (drawing.metadata?.colors) {
+	if (drawing.physicalObject?.center) {
+		entityTraits.push(traits.Center(drawing.physicalObject.center))
+	}
+
+	if (geometryType?.case === 'line') {
+		const positions = asFloat32Array(geometryType.value.positions)
+		for (let i = 0, l = positions.length; i < l; i += 1) {
+			positions[i] *= 0.001
+		}
+
+		entityTraits.push(traits.LinePositions(positions as Float32Array<ArrayBuffer>))
+		if (geometryType.value.lineWidth) {
+			entityTraits.push(traits.LineWidth(geometryType.value.lineWidth * 0.001))
+		}
+
+		if (geometryType.value.pointSize) {
+			entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+		}
+
+		if (drawing.metadata?.colors && drawing.metadata.colors.length >= 8) {
+			const colors = drawing.metadata.colors
+			entityTraits.push(
+				traits.Color({
+					r: colors[0] / 255,
+					g: colors[1] / 255,
+					b: colors[2] / 255,
+				}),
+				traits.PointColor({
+					r: colors[4] / 255,
+					g: colors[5] / 255,
+					b: colors[6] / 255,
+				}),
+				traits.Opacity(colors[3] / 255)
+			)
+		} else if (drawing.metadata?.colors) {
 			entityTraits.push(...getColorTraits(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
 		}
 
-		if (drawing.physicalObject?.center) {
-			entityTraits.push(traits.Center(drawing.physicalObject.center))
-		}
-
-		if (geometryType?.case === 'line') {
-			const positions = asFloat32Array(geometryType.value.positions)
-			for (let i = 0, l = positions.length; i < l; i += 1) {
-				positions[i] *= 0.001
-			}
-
-			entityTraits.push(
-				traits.LinePositions(positions as Float32Array<ArrayBuffer>),
-				traits.LineWidth(geometryType.value.lineWidth),
-				traits.PointSize(geometryType.value.pointSize)
-			)
-
-			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
-			}
-		} else if (geometryType?.case === 'points') {
-			const positions = asFloat32Array(geometryType.value.positions)
-			for (let i = 0, l = positions.length; i < l; i += 1) {
-				positions[i] *= 0.001
-			}
-
-			const colors = drawing.metadata?.colors
-			const geometry = createBufferGeometry(positions, colors)
-			entityTraits.push(traits.BufferGeometry(geometry))
-			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
-			}
-
-			entityTraits.push(traits.Points)
-		} else if (geometryType?.case === 'nurbs') {
-			const {
-				degree = 3,
-				knots: knotsBuffer,
-				weights: weightsBuffer,
-				controlPoints: controlPointsBuffer,
-			} = geometryType.value
-
-			const knots = [...asFloat32Array(knotsBuffer)]
-			const weights = weightsBuffer
-				? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
-				: []
-
-			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
-			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
-			const controlPoints: Vector4[] = new Array(numControlPoints)
-			for (let j = 0; j < numControlPoints; j += 1) {
-				const idx = j * STRIDE.NURBS_CONTROL_POINTS
-				vec3
-					.set(controlPointsArray[idx], controlPointsArray[idx + 1], controlPointsArray[idx + 2])
-					.multiplyScalar(0.001)
-				// FIX: Create new Vector4 for each control point instead of reusing module-level vec4
-				controlPoints[j] = new Vector4(vec3.x, vec3.y, vec3.z, weights[j] ?? 1)
-			}
-
-			const curve = new NURBSCurve(degree, knots, controlPoints)
-			const numPoints = 600
-			const points = new Float32Array(numPoints * 3)
-			const l = numPoints * 3
-			for (let i = 0; i < l; i += 3) {
-				curve.getPointAt(i / (l - 1), vec3)
-				points[i + 0] = vec3.x
-				points[i + 1] = vec3.y
-				points[i + 2] = vec3.z
-			}
-
-			entityTraits.push(traits.LineWidth(10))
-			entityTraits.push(traits.LinePositions(points))
-		}
-
 		const entity = world.spawn(...entityTraits)
-		entities.push(entity)
+		return [entity]
 	}
 
-	return entities
+	if (drawing.metadata?.colors) {
+		entityTraits.push(...getColorTraits(drawing.metadata.colors as Uint8Array<ArrayBuffer>))
+	}
+
+	if (geometryType?.case === 'points') {
+		const positions = asFloat32Array(geometryType.value.positions)
+		for (let i = 0, l = positions.length; i < l; i += 1) {
+			positions[i] *= 0.001
+		}
+
+		const colors = drawing.metadata?.colors
+		const geometry = createBufferGeometry(positions, colors)
+		entityTraits.push(traits.BufferGeometry(geometry))
+		if (geometryType.value.pointSize) {
+			entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+		}
+
+		entityTraits.push(traits.Points)
+
+		const entity = world.spawn(...entityTraits)
+		return [entity]
+	}
+
+	if (geometryType?.case === 'nurbs') {
+		const {
+			degree = 3,
+			knots: knotsBuffer,
+			weights: weightsBuffer,
+			controlPoints: controlPointsBuffer,
+		} = geometryType.value
+
+		const knots = [...asFloat32Array(knotsBuffer)]
+		const weights = weightsBuffer
+			? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
+			: []
+
+		const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
+		const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
+		const controlPoints: Vector4[] = new Array(numControlPoints)
+		for (let j = 0; j < numControlPoints; j += 1) {
+			const idx = j * STRIDE.NURBS_CONTROL_POINTS
+			vec3
+				.set(controlPointsArray[idx], controlPointsArray[idx + 1], controlPointsArray[idx + 2])
+				.multiplyScalar(0.001)
+			controlPoints[j] = new Vector4(vec3.x, vec3.y, vec3.z, weights[j] ?? 1)
+		}
+
+		const curve = new NURBSCurve(degree, knots, controlPoints)
+		const numPoints = 600
+		const points = new Float32Array(numPoints * 3)
+		const l = numPoints * 3
+		for (let i = 0; i < l; i += 3) {
+			const pointIndex = i / 3
+			const t = pointIndex / (numPoints - 1)
+			curve.getPointAt(t, vec3)
+			points[i + 0] = vec3.x
+			points[i + 1] = vec3.y
+			points[i + 2] = vec3.z
+		}
+
+		const lineWidth = geometryType.value.lineWidth ?? 5
+		entityTraits.push(traits.LineWidth(lineWidth * 0.001))
+		entityTraits.push(traits.LinePositions(points))
+
+		const entity = world.spawn(...entityTraits)
+		return [entity]
+	}
+
+	return []
 }
 
 // Helper to check if a field path should be updated based on the FieldMask
@@ -289,7 +313,7 @@ export const updateTransformEntity = (
 						console.error('Entity was destroyed before pointcloud could be added')
 						return
 					}
-					const vertexColors = entity.get(traits.DrawServiceVertexColors)
+					const vertexColors = entity.get(traits.Colors)
 					const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
 					const geometry = createBufferGeometry(pointcloud.positions, colors)
 					entity.set(traits.BufferGeometry, geometry)
@@ -333,7 +357,7 @@ export const updateDrawingEntities = (
 	options?: { removable?: boolean }
 ): Entity[] => {
 	const { geometryType } = drawing.physicalObject ?? {}
-	const oldGeometryType = entities.length > 0 ? getDrawingGeometryType(entities[0]) : undefined
+	const oldGeometryType = entities.length > 0 ? getDrawingType(entities[0]) : undefined
 	if (oldGeometryType !== geometryType?.case) {
 		for (const entity of entities) {
 			if (world.has(entity)) {
@@ -460,13 +484,16 @@ export const updateDrawingEntities = (
 					const points = new Float32Array(numPoints * 3)
 					const l = numPoints * 3
 					for (let i = 0; i < l; i += 3) {
-						curve.getPointAt(i / (l - 1), vec3)
-						points[i + 0] = vec3.x
+						const pointIndex = i / 3
+						const t = pointIndex / (numPoints - 1)
+						curve.getPointAt(t, vec3)
+						points[i] = vec3.x
 						points[i + 1] = vec3.y
 						points[i + 2] = vec3.z
 					}
 
-					entity.set(traits.LineWidth, 10)
+					const lineWidth = geometryType.value.lineWidth ?? 5
+					entity.set(traits.LineWidth, lineWidth * 0.001)
 					entity.set(traits.LinePositions, points)
 				}
 			}
@@ -475,7 +502,7 @@ export const updateDrawingEntities = (
 	}
 }
 
-function getDrawingGeometryType(entity: Entity): string | undefined {
+const getDrawingType = (entity: Entity): string | undefined => {
 	if (entity.has(traits.Arrows)) return 'arrows'
 	if (entity.has(traits.ReferenceFrame) && entity.has(traits.GLTF)) return 'model'
 	if (entity.has(traits.LinePositions)) return 'line'
@@ -484,7 +511,7 @@ function getDrawingGeometryType(entity: Entity): string | undefined {
 	return undefined
 }
 
-export const getColorTraits = (colors: Uint8Array<ArrayBuffer>): TraitTuple[] => {
+const getColorTraits = (colors: Uint8Array<ArrayBuffer>): TraitTuple[] => {
 	if (colors.length === 4) {
 		return [
 			traits.Color({
@@ -495,6 +522,6 @@ export const getColorTraits = (colors: Uint8Array<ArrayBuffer>): TraitTuple[] =>
 			traits.Opacity(colors[3] / 255),
 		]
 	} else {
-		return [traits.DrawServiceVertexColors(colors as Uint8Array<ArrayBuffer>)]
+		return [traits.Colors(colors as Uint8Array<ArrayBuffer>)]
 	}
 }

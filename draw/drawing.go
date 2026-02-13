@@ -196,6 +196,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 			},
 		}
 	case shape.Nurbs != nil:
+		lineWidth := shape.Nurbs.LineWidth
 		return &drawv1.Shape{
 			Label:  shape.Label,
 			Center: poseToProtobuf(shape.Center),
@@ -205,6 +206,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 					Degree:        &shape.Nurbs.Degree,
 					Weights:       packFloats(shape.Nurbs.Weights),
 					Knots:         packFloats(shape.Nurbs.Knots),
+					LineWidth:     &lineWidth,
 				},
 			},
 		}

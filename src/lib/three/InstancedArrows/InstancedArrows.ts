@@ -116,14 +116,18 @@ export class InstancedArrows extends Group {
 		const headGeometry = toInstanced(createHeadGeometry(), this.count, this.attributes)
 		headGeometry.computeBoundingBox = computeBoundingBox.bind(this, headGeometry)
 
+		const useColorAttribute = !options.uniformColor
 		const shaftMaterial = createMaterial({
 			isHead: false,
-			useColorAttribute: !options.uniformColor,
+			useColorAttribute,
 		})
 		const headMaterial = createMaterial({
 			isHead: true,
-			useColorAttribute: !options.uniformColor,
+			useColorAttribute,
 		})
+
+		// @ts-ignore - debug logging
+		fetch('http://127.0.0.1:7242/ingest/a63a6a05-e8a1-404f-93cb-508b8525b6ee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'InstancedArrows.ts:132',message:'InstancedArrows constructor',data:{count:this.count,hasUniformColor:!!options.uniformColor,uniformColorValue:options.uniformColor?{r:options.uniformColor.r,g:options.uniformColor.g,b:options.uniformColor.b}:null,useColorAttribute},hypothesisId:'I',timestamp:Date.now()})}).catch(()=>{});
 
 		for (const { uniforms } of [shaftMaterial, headMaterial]) {
 			uniforms.shaftRadius.value = this.shaftRadius

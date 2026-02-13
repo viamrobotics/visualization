@@ -94,6 +94,8 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 		return nil, err
 	}
 
+	drawnGeometry.SetLabel(proto.GetLabel())
+
 	return &DrawnGeometry{Geometry: drawnGeometry, Color: config.color}, nil
 }
 

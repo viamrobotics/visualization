@@ -45,7 +45,7 @@ func GetAddress() string {
 	return address
 }
 
-// Start starts the Connect-RPC server with the DrawService
+// Start starts the server with the DrawService
 // If production is true, also serves static files from the /build directory
 // Returns nil if the server is already running (idempotent)
 func Start(port int, production bool) error {
@@ -105,7 +105,7 @@ func Start(port int, production bool) error {
 	go func() {
 		// Signal that the goroutine has started
 		close(readyChan)
-		
+
 		log.Printf("DrawService server listening on %s", address)
 		if production {
 			log.Printf("Static files available at http://%s", address)
@@ -122,7 +122,7 @@ func Start(port int, production bool) error {
 
 	// Wait for the goroutine to start
 	<-readyChan
-	
+
 	// Give the server a moment to bind to the port
 	time.Sleep(100 * time.Millisecond)
 

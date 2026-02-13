@@ -40,11 +40,11 @@ func newDrawModelAssetConfig() *drawModelAssetConfig {
 	}
 }
 
-// drawModelAssetOption is a function that configures a draw model asset configuration
-type drawModelAssetOption func(*drawModelAssetConfig)
+// DrawModelAssetOption is a function that configures a draw model asset configuration
+type DrawModelAssetOption func(*drawModelAssetConfig)
 
 // WithModelAssetSizeBytes creates a model asset option that sets the file size in bytes.
-func WithModelAssetSizeBytes(sizeBytes uint64) drawModelAssetOption {
+func WithModelAssetSizeBytes(sizeBytes uint64) DrawModelAssetOption {
 	return func(config *drawModelAssetConfig) {
 		config.sizeBytes = &sizeBytes
 	}
@@ -52,7 +52,7 @@ func WithModelAssetSizeBytes(sizeBytes uint64) drawModelAssetOption {
 
 // NewURLModelAsset creates a ModelAsset that references a 3D model from a URL.
 // Common MIME types include "model/gltf-binary" for GLB files. Returns an error if the URL is empty.
-func NewURLModelAsset(mimeType string, url string, options ...drawModelAssetOption) (*ModelAsset, error) {
+func NewURLModelAsset(mimeType string, url string, options ...DrawModelAssetOption) (*ModelAsset, error) {
 	if url == "" {
 		return nil, fmt.Errorf("url cannot be empty")
 	}
@@ -71,7 +71,7 @@ func NewURLModelAsset(mimeType string, url string, options ...drawModelAssetOpti
 
 // NewBinaryModelAsset creates a ModelAsset from binary data (e.g., an embedded file or loaded file).
 // Common MIME types include "model/gltf-binary" for GLB files. Returns an error if the binary content is empty.
-func NewBinaryModelAsset(mimeType string, binaryContent []byte, options ...drawModelAssetOption) (*ModelAsset, error) {
+func NewBinaryModelAsset(mimeType string, binaryContent []byte, options ...DrawModelAssetOption) (*ModelAsset, error) {
 	if len(binaryContent) == 0 {
 		return nil, fmt.Errorf("binary content cannot be empty")
 	}

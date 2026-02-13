@@ -42,28 +42,28 @@ func newDrawPointsConfig() *drawPointsConfig {
 	}
 }
 
-// drawPointsOption is a function that configures a draw points configuration
-type drawPointsOption func(*drawPointsConfig)
+// DrawPointsOption is a function that configures a draw points configuration
+type DrawPointsOption func(*drawPointsConfig)
 
 // WithPointsSize creates a points option that sets the size of each point in millimeters.
-func WithPointsSize(size float32) drawPointsOption {
+func WithPointsSize(size float32) DrawPointsOption {
 	return func(config *drawPointsConfig) {
 		config.pointSize = size
 	}
 }
 
 // WithSinglePointColor creates a points option that sets the color for all points.
-func WithSinglePointColor(color Color) drawPointsOption {
+func WithSinglePointColor(color Color) DrawPointsOption {
 	return withColors[*drawPointsConfig]([]Color{color})
 }
 
 // WithPerPointColors creates a points option that sets the colors for each point.
-func WithPerPointColors(colors ...Color) drawPointsOption {
+func WithPerPointColors(colors ...Color) DrawPointsOption {
 	return withColors[*drawPointsConfig](colors)
 }
 
 // WithPointColorPalette creates a points option that sets the colors for a points.
-func WithPointColorPalette(palette []Color, numPoints int) drawPointsOption {
+func WithPointColorPalette(palette []Color, numPoints int) DrawPointsOption {
 	finalColors := make([]Color, numPoints)
 	for i := range numPoints {
 		finalColors[i] = palette[i%len(palette)]
@@ -74,7 +74,7 @@ func WithPointColorPalette(palette []Color, numPoints int) drawPointsOption {
 // NewPoints creates a new Points object from the given positions and optional configuration.
 // Returns an error if positions are empty, if the point size is non-positive, or if the number
 // of colors doesn't match requirements (must be 1 or equal to number of positions).
-func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, error) {
+func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("positions cannot be empty")
 	}

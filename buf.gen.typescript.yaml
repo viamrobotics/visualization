@@ -4,14 +4,14 @@ managed:
 plugins:
   # TypeScript code generation (v1 - matches Viam SDK)
   - remote: buf.build/bufbuild/es:v1.10.0
-    out: src/lib
+    out: src/lib/buf
     opt:
       - target=ts
       - import_extension=none
     include_imports: true
   # Connect-RPC code generation (v1 - matches Viam SDK)
   - remote: buf.build/connectrpc/es:v1.6.1
-    out: src/lib
+    out: src/lib/buf
     opt:
       - target=ts
       - import_extension=none

@@ -147,10 +147,6 @@
 		"./lib": {
 			"types": "./dist/lib.d.ts",
 			"svelte": "./dist/lib.js"
-		},
-		"./test": {
-			"types": "./dist/test.d.ts",
-			"svelte": "./dist/test.js"
 		}
 	},
 	"repository": {

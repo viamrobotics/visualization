@@ -259,7 +259,7 @@ func (snapshot *Snapshot) DrawLine(
 	parent string,
 	pose spatialmath.Pose,
 	points []r3.Vector,
-	options ...drawLineOption,
+	options ...DrawLineOption,
 ) error {
 	line, err := NewLine(points, options...)
 	if err != nil {
@@ -305,7 +305,7 @@ func (snapshot *Snapshot) DrawPoints(
 	parent string,
 	pose spatialmath.Pose,
 	positions []r3.Vector,
-	options ...drawPointsOption,
+	options ...DrawPointsOption,
 ) error {
 	points, err := NewPoints(positions, options...)
 	if err != nil {

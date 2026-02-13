@@ -52,18 +52,18 @@ func newDrawLineConfig(lineWidth float32, pointSize float32, colors ...Color) *d
 	}
 }
 
-// drawLineOption is a functional option for configuring a Line
-type drawLineOption func(*drawLineConfig)
+// DrawLineOption is a functional option for configuring a Line
+type DrawLineOption func(*drawLineConfig)
 
 // WithLineWidth creates a line option that sets the line segment width in millimeters.
-func WithLineWidth(width float32) drawLineOption {
+func WithLineWidth(width float32) DrawLineOption {
 	return func(config *drawLineConfig) {
 		config.lineWidth = width
 	}
 }
 
 // WithPointSize creates a line option that sets the size of vertex points in millimeters.
-func WithPointSize(size float32) drawLineOption {
+func WithPointSize(size float32) DrawLineOption {
 	return func(config *drawLineConfig) {
 		config.pointSize = size
 	}
@@ -71,7 +71,7 @@ func WithPointSize(size float32) drawLineOption {
 
 // WithLineColors creates a line option that sets colors for the line segments and vertex points.
 // If pointColor is nil, the line color is used for both.
-func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
+func WithLineColors(lineColor Color, pointColor *Color) DrawLineOption {
 	colors := []Color{lineColor, lineColor}
 	if pointColor != nil {
 		colors[1] = *pointColor
@@ -82,7 +82,7 @@ func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
 
 // NewLine creates a new Line from the given vertex positions and optional configuration.
 // Returns an error if there are fewer than 2 positions or if the point size is non-positive.
-func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
+func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 	config := newDrawLineConfig(DefaultLineWidth, DefaultPointSize, DefaultLineColor, DefaultLinePointColor)
 	for _, option := range options {
 		option(config)

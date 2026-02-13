@@ -1,6 +1,6 @@
 import type { World, Entity } from 'koota'
-import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
-import { RenderArmModels, type SceneMetadata } from '$lib/draw/v1/scene_pb'
+import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
 import { traits, spawnTransformEntity, spawnDrawingEntities } from '$lib/ecs'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { rgbaToHex } from './color'

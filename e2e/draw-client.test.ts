@@ -12,7 +12,9 @@ const createPage = async (browser: Browser): Promise<Page> => {
 	return page
 }
 
-const takeScreenshot = async (page: Page, testPrefix: string, failedScreenshots: string[]) => {
+const assertTestSuccess = async (page: Page, testPrefix: string) => {
+	const failedScreenshots = [] as string[]
+
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}.png`, {
 			fullPage: true,
@@ -22,27 +24,26 @@ const takeScreenshot = async (page: Page, testPrefix: string, failedScreenshots:
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}.png`)
 	}
-}
 
-const assertNoFailedScreenshots = (failedScreenshots: string[]) => {
+	execSync(
+		'go test -run ^TestRemoveAll$/RemoveAllHelper github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
+		timeout: 15000,
+	})
+
 	if (failedScreenshots.length > 0) {
 		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
 		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
 	}
 }
 
-const cleanup = () => {
-	execSync(
-		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAllHelper github.com/viam-labs/motion-tools/client/server -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-}
-
 test('draw frame system', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAME_SYSTEM'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -52,15 +53,13 @@ test('draw frame system', async ({ browser }) => {
 		}
 	)
 
-	await takeScreenshot(page, testPrefix, failedScreenshots)
+	await expect(page.getByText('No objects displayed', { exact: true })).not.toBeVisible()
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw frames', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAMES'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -69,15 +68,16 @@ test('draw frames', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('DrawFrames Axes')).toBeVisible()
+	await expect(page.getByText('DrawFrames Sphere')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw geometries', async ({ browser }) => {
 	const testPrefix = 'DRAW_GEOMETRIES'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -86,15 +86,18 @@ test('draw geometries', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('DrawGeometries Box')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Sphere')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Mesh')).toBeVisible()
+	await expect(page.getByText('DrawGeometries PointCloud')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw geometries updating', async ({ browser }) => {
 	const testPrefix = 'DRAW_GEOMETRIES_UPDATING'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -103,15 +106,16 @@ test('draw geometries updating', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('DrawGeometries box1 updating')).toBeVisible()
+	await expect(page.getByText('DrawGeometries box2 updating')).toBeVisible()
+	await expect(page.getByText('DrawGeometries box3 updating')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw gltf', async ({ browser }) => {
 	const testPrefix = 'DRAW_GLTF'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -120,32 +124,94 @@ test('draw gltf', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('flamingo', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw lines', async ({ browser }) => {
 	const testPrefix = 'DRAW_LINE'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawLine$/DrawLine github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestDrawLine$/DrawLine$ github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('upwardSpiral')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineColor$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPointColor$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPointColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line width', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_WIDTH'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineWidth$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineWidth')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with point size', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_POINT_SIZE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPointSize$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPointSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw nurbs', async ({ browser }) => {
 	const testPrefix = 'DRAW_NURBS'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -154,15 +220,14 @@ test('draw nurbs', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('nurbs-1')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw point clouds', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -177,15 +242,11 @@ test('draw point clouds', async ({ browser }) => {
 	await page.getByText('simple').waitFor({ state: 'visible' })
 	await page.getByText('boat').waitFor({ state: 'visible' })
 
-	await takeScreenshot(page, testPrefix, failedScreenshots)
-
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw point clouds with downscaling', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_DOWNSCALING'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -194,15 +255,14 @@ test('draw point clouds with downscaling', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('boat_downscaled')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw point clouds with single color', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_SINGLE_COLOR'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -211,15 +271,14 @@ test('draw point clouds with single color', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('octagon_single_color')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw point clouds with color palette', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_COLOR_PALETTE'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -228,15 +287,14 @@ test('draw point clouds with color palette', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('Zaghetto_palette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw point clouds with per point color', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_PER_POINT_COLOR'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -245,83 +303,162 @@ test('draw point clouds with per point color', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('simple_per_point')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw points', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINTS'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPoints$/DrawPoints github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestDrawPoints$/DrawPoints$ github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('myPoints')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw poses', async ({ browser }) => {
-	const testPrefix = 'DRAW_POSES'
-	const failedScreenshots = [] as string[]
+test('draw points with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_SINGLE_COLOR'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPosesAsArrows$/DrawPoses$ github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestDrawPoints$/DrawPointsWithSingleColor$ github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('myPointsSingleColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw poses with color palette', async ({ browser }) => {
-	const testPrefix = 'DRAW_POSES_WITH_COLOR_PALETTE'
-	const failedScreenshots = [] as string[]
+test('draw points with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_COLOR_PALETTE'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPosesAsArrows$/DrawAlternatingColorsPoses$ github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestDrawPoints$/DrawPointsWithColorPalette$ github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('myPointsPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw poses with single color', async ({ browser }) => {
-	const testPrefix = 'DRAW_POSES_WITH_SINGLE_COLOR'
-	const failedScreenshots = [] as string[]
+test('draw points with per point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_PER_POINT_COLOR'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawPosesAsArrows$/DrawSingleColorPoses$ github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestDrawPoints$/DrawPointsWithPerPointColors$ github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('myPointsPerPoint')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points with point size', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_POINT_SIZE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPointsWithPointSize$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPointsWithSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrows$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithColorPalette$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_SINGLE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithSingleColor$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with per point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_PER_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithPerPointColors$ github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('draw world state', async ({ browser }) => {
 	const testPrefix = 'DRAW_WORLD_STATE'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -330,47 +467,30 @@ test('draw world state', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await expect(page.getByText('box0')).toBeVisible()
+	await expect(page.getByText('box1')).toBeVisible()
+	await expect(page.getByText('box2')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
 })
 
-test('remove all spatial objects', async ({ browser }) => {
-	const testPrefix = 'REMOVE_ALL_SPATIAL_OBJECTS'
-	const failedScreenshots = [] as string[]
+test('remove all', async ({ browser }) => {
+	const testPrefix = 'REMOVE_ALL'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestRemoveAllSpatialObjects$/RemoveAll github.com/viam-labs/motion-tools/client/server -count=1',
+		'go test -run ^TestRemoveAll$/RemoveAll github.com/viam-labs/motion-tools/client/server -count=1',
 		{
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
-	cleanup()
-})
 
-test('remove transforms', async ({ browser }) => {
-	const testPrefix = 'REMOVE_TRANSFORMS'
-	const failedScreenshots = [] as string[]
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestRemoveTransforms$/RemoveTransforms github.com/viam-labs/motion-tools/client/server -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
-
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await assertTestSuccess(page, testPrefix)
 })
 
 test('remove drawings', async ({ browser }) => {
 	const testPrefix = 'REMOVE_DRAWINGS'
-	const failedScreenshots = [] as string[]
 	const page = await createPage(browser)
 
 	execSync(
@@ -379,8 +499,20 @@ test('remove drawings', async ({ browser }) => {
 			encoding: 'utf-8',
 		}
 	)
-	await takeScreenshot(page, testPrefix, failedScreenshots)
 
-	assertNoFailedScreenshots(failedScreenshots)
-	cleanup()
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('remove transforms', async ({ browser }) => {
+	const testPrefix = 'REMOVE_TRANSFORMS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveTransforms$/RemoveTransforms github.com/viam-labs/motion-tools/client/server -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await assertTestSuccess(page, testPrefix)
 })

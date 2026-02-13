@@ -389,7 +389,9 @@ type Nurbs struct {
 	Degree *int32 `protobuf:"varint,3,opt,name=degree,proto3,oneof" json:"degree,omitempty"`
 	// The weights of the NURBS, defaults to [1, 1, 1, ...]
 	// float32 array of weights: [weight, ...]
-	Weights       []byte `protobuf:"bytes,4,opt,name=weights,proto3,oneof" json:"weights,omitempty"`
+	Weights []byte `protobuf:"bytes,4,opt,name=weights,proto3,oneof" json:"weights,omitempty"`
+	// optional width of the line in millimeters, defaults to 5
+	LineWidth     *float32 `protobuf:"fixed32,5,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -450,6 +452,13 @@ func (x *Nurbs) GetWeights() []byte {
 		return x.Weights
 	}
 	return nil
+}
+
+func (x *Nurbs) GetLineWidth() float32 {
+	if x != nil && x.LineWidth != nil {
+		return *x.LineWidth
+	}
+	return 0
 }
 
 type Shape struct {
@@ -718,15 +727,18 @@ const file_draw_v1_drawing_proto_rawDesc = "" +
 	"\x05scale\x18\x02 \x01(\v2\x17.viam.common.v1.Vector3H\x00R\x05scale\x88\x01\x01\x12*\n" +
 	"\x0eanimation_name\x18\x03 \x01(\tH\x01R\ranimationName\x88\x01\x01B\b\n" +
 	"\x06_scaleB\x11\n" +
-	"\x0f_animation_name\"\x97\x01\n" +
+	"\x0f_animation_name\"\xca\x01\n" +
 	"\x05Nurbs\x12%\n" +
 	"\x0econtrol_points\x18\x01 \x01(\fR\rcontrolPoints\x12\x14\n" +
 	"\x05knots\x18\x02 \x01(\fR\x05knots\x12\x1b\n" +
 	"\x06degree\x18\x03 \x01(\x05H\x00R\x06degree\x88\x01\x01\x12\x1d\n" +
-	"\aweights\x18\x04 \x01(\fH\x01R\aweights\x88\x01\x01B\t\n" +
+	"\aweights\x18\x04 \x01(\fH\x01R\aweights\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"line_width\x18\x05 \x01(\x02H\x02R\tlineWidth\x88\x01\x01B\t\n" +
 	"\a_degreeB\n" +
 	"\n" +
-	"\b_weights\"\xa7\x02\n" +
+	"\b_weightsB\r\n" +
+	"\v_line_width\"\xa7\x02\n" +
 	"\x05Shape\x12,\n" +
 	"\x06center\x18\x01 \x01(\v2\x14.viam.common.v1.PoseR\x06center\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12)\n" +

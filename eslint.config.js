@@ -28,7 +28,7 @@ export default ts.config(
 	includeIgnoreFile(gitignorePath),
 	{
 		name: 'ignores',
-		ignores: ['draw/DOCS.md'],
+		ignores: ['docs/*.md', '!docs/README.md'],
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

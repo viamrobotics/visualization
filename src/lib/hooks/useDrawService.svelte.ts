@@ -1,7 +1,7 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { DrawService } from '$lib/draw/v1/service_connect'
-import { ChangeType } from '$lib/draw/v1/service_pb'
+import { DrawService } from '$lib/buf/draw/v1/service_connect'
+import { ChangeType } from '$lib/buf/draw/v1/service_pb'
 import { getContext, setContext } from 'svelte'
 import {
 	traits,

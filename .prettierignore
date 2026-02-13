@@ -9,11 +9,11 @@ draw/__snapshots__
 
 # Protobuf
 draw/v1
-src/lib/common/v1
-src/lib/draw/v1
+src/lib/buf
 
 # Docs
-draw/DOCS.md
+docs/*.md
+!docs/README.md
 
 # IDE
 .cursor

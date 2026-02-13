@@ -26,9 +26,7 @@
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 
-	const pointSize = $derived(
-		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
-	)
+	const pointSize = $derived(entityPointSize.current ?? settings.current.pointSize)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const points = new Points()

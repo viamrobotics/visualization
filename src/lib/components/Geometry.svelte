@@ -35,7 +35,7 @@
 
 	const colorUtil = new Color()
 
-	const { invalidate } = useThrelte()
+	const { invalidate, size } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const opacity = useTrait(() => entity, traits.Opacity)
@@ -178,7 +178,9 @@
 				<T
 					is={LineMaterial}
 					{color}
-					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+					worldUnits={true}
+					linewidth={lineWidth.current ?? 0.005}
+					resolution={[size.current.width, size.current.height]}
 				/>
 			{:else}
 				<T.MeshToonMaterial

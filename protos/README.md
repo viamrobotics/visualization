@@ -21,8 +21,7 @@ The protos use separate buf templates for different languages:
 - **`buf.gen.go.yaml`**: Go code generation using `protoc-gen-go`, outputs:
   - `draw/v1/`
 - **`buf.gen.typescript.yaml`**: TypeScript code generation using Buf's ES plugin, outputs:
-  - `src/lib/common/v1/` (Viam dependency)
-  - `src/lib/draw/v1/`
+  - `src/lib/buf`
 
 ### Generate Code
 

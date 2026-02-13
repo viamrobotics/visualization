@@ -4,6 +4,7 @@ node_modules
 static/Big_Buck_Bunny_4K.webm
 
 # Output
+.bin
 .output
 .vercel
 .netlify
@@ -13,7 +14,6 @@ static/Big_Buck_Bunny_4K.webm
 /coverage
 /dist
 viamrobotics-motion-tools-*.tgz
-.build-stamp
 
 # OS
 .DS_Store
@@ -35,8 +35,7 @@ vite.config.ts.timestamp-*
 .env.sentry-build-plugin
 
 # Protobuf
-src/lib/common/v1
-src/lib/draw/v1
+src/lib/buf
 protos/vendor
 
 # IDE

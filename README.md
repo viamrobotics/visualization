@@ -1,6 +1,6 @@
 # motion-tools
 
-`motion-tools` aims to provide a visualization interface for any spatial information using Viam's APIs. This typically means motion-related monitoring, testing, and debugging.
+`motion-tools` provides a 3D visualization interface for spatial data using Viam's APIs. Use it for motion-related monitoring, testing, and debugging.
 
 ## Getting started
 
@@ -15,18 +15,12 @@ The easiest way to get started is using our automated setup script:
 make setup
 ```
 
-This single command will:
-
-1. Install **fnm** (Fast Node Manager) and **Node.js 22**
-2. Install **pnpm** package manager
-3. Install **bun** runtime
-4. Install **Go** and **buf** (for protobuf generation)
-5. Install all project dependencies
-6. Generate protobuf code
+This will install all required dependencies (Node.js, pnpm, bun, Go, buf), install project packages, and generate protobuf code.
 
 After setup completes, add the shell configuration it prints to your shell config file (`~/.zshrc` or `~/.bashrc`), then restart your terminal.
 
-#### Manual setup
+<details>
+<summary>Manual setup</summary>
 
 If the above does not work for you, or if you prefer to install dependencies manually:
 
@@ -40,9 +34,11 @@ If the above does not work for you, or if you prefer to install dependencies man
 8. Install dependencies: `pnpm install`
 9. Generate protobufs: `make proto`
 
-### Env files for machine configs
+</details>
 
-To add a list of connection configs in an `.env.local` file, use the following format:
+### Configure machines (optional)
+
+To connect the visualizer to your machines, create an `.env.local` file with connection configs:
 
 ```
 VITE_CONFIGS='
@@ -58,29 +54,24 @@ VITE_CONFIGS='
 '
 ```
 
-### Running the app locally
+You can also add machine configs directly in the visualizer UI via the machine config page (bottom right).
 
-After setup completes, you can start a local app server with:
+### Start the visualizer
 
 ```bash
 make up
 ```
 
-This starts the app as a static site. The build part of the process will only run if you have not built the app yet as a part of `make up`, or your build is out of date.
+This builds the app (if needed) and starts the server. Visit http://localhost:5173/ to open the visualizer.
 
-#### Running multiple apps
+#### Running multiple instances
 
-If you want to be able to run multiple versions of the app, you can configure how the servers run. The `make up` command can accept two options:
+The `make up` command accepts two options:
 
-1. `STATIC_PORT` is the port for the static file server, and defaults to `5173`
-2. `WS_PORT` is the port for the websocket server used to communicate with the draw client API
+1. `STATIC_PORT` -- port for the static file server (default: `5173`)
+2. `WS_PORT` -- port for the websocket server used by the draw client API
 
-> [!NOTE]
-> The `WS_PORT` is not fully configurable at the moment, so passing it will only affect where the frontend listens for the websocket server, but calls with the draw client API are currently hardcoded to point to `"http://localhost:3000/"`. If this is a feature you require, please submit a request to the viz team!
-
-To run two apps using the same web socket server, run:
-
-```
+```bash
 # in one terminal
 make up
 
@@ -88,32 +79,56 @@ make up
 make up STATIC_PORT=5174
 ```
 
-The apps should be available on `http://localhost:5173/` and `http://localhost:5174/`, and calls to the draw client API should render in both.
+Both instances will be available at their respective ports, and draw client API calls will render in both.
 
-### Local development
+> [!NOTE]
+> The `WS_PORT` is not fully configurable at the moment, so passing it will only affect where the frontend listens for the websocket server, but calls with the draw client API are currently hardcoded to point to `"http://localhost:3000/"`. If this is a feature you require, please submit a request to the viz team!
 
-If you are contributing to `motion-tools`, you should just run the development web server with:
+### Draw to the visualizer
 
+With the visualizer running, use the Go SDK to draw programmatically:
+
+```bash
+go get github.com/viam-labs/motion-tools
 ```
-pnpm dev
+
+```go
+import (
+    "github.com/golang/geo/r3"
+    "github.com/viam-labs/motion-tools/client/api"
+    "github.com/viam-labs/motion-tools/draw"
+)
+
+func main() {
+    api.DrawLine(api.DrawLineOptions{
+        Name:      "my-line",
+        Positions: []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}},
+        Colors:    []draw.Color{draw.NewColor(draw.WithName("blue"))},
+    })
+}
 ```
 
-## Running the visualizer
+The SDK provides two packages:
 
-To visit the visualizer, go to `http://localhost:5173/`
+- **`draw`** -- Scene primitives, snapshots, colors, and serialization
+- **`client/api`** -- Real-time drawing functions for the live visualizer
 
-Open the machine config page (bottom right) and enter in connection details to visualize a specific machine. You can also add machine configs from an env file (see below).
-
-## Executing drawing commands
-
-The visualizer includes a golang package that allows executing commands to the visualizer.
-
-The list of available commands [can be found here](https://pkg.go.dev/github.com/viam-labs/motion-tools@v0.9.0/client/client).
+For guides, examples, and full API reference, see the **[documentation](docs/)**.
 
 ## Programmatic camera control
 
-It is possible to programmatically move the viewer camera and even modify the camera settings during runtime.
+It is possible to programmatically move the viewer camera and modify camera settings during runtime.
 
 To do this, open the Javascript console while using the visualizer and call methods or set properties on the `cameraControls` object.
 
 The following APIs are available: https://github.com/yomotsu/camera-controls?tab=readme-ov-file#properties
+
+## Contributing
+
+If you are contributing to `motion-tools`, run the development web server instead of `make up`:
+
+```bash
+pnpm dev
+```
+
+This starts the app with hot-reloading for frontend changes.
