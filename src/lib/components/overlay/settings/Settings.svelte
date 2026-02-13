@@ -15,6 +15,7 @@
 	import Tabs from './Tabs.svelte'
 	import { PersistedState } from 'runed'
 	import ToggleGroup from '../ToggleGroup.svelte'
+	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
 
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
@@ -258,6 +259,12 @@
 	</div>
 {/snippet}
 
+{#snippet XR()}
+	<div class="flex flex-col gap-2.5 text-xs">
+		<XRControllerSettings />
+	</div>
+{/snippet}
+
 <FloatingPanel
 	title="Settings"
 	bind:isOpen={isOpen.current}
@@ -271,6 +278,7 @@
 			{ label: 'Pointclouds', content: Pointclouds },
 			{ label: 'Vision', content: Vision },
 			{ label: 'Stats', content: Stats },
+			...('xr' in navigator ? [{ label: 'XR', content: XR }] : []),
 		]}
 		onValueChange={(value) => {
 			activeTab.current = value

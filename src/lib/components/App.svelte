@@ -66,7 +66,6 @@
 	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
-
 	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
 
 	$effect(() => {

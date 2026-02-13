@@ -17,6 +17,7 @@
 	import { provideOrigin } from './xr/useOrigin.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
+	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
@@ -48,6 +49,7 @@
 	providePointclouds(() => partID.current)
 	providePointcloudObjects(() => partID.current)
 	provideArmClient(() => partID.current)
+	provideArmKinematics(() => partID.current)
 	provideWorldStates()
 	provideFramelessComponents()
 
