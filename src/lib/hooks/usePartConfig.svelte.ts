@@ -304,7 +304,7 @@ interface AppEmbeddedPartConfigProps {
 	setLocalPartConfig: (config: Struct) => void
 	getComponentToFragId: () => Record<string, string>
 }
-export class AppEmbeddedPartConfig implements LocalPartConfig {
+class AppEmbeddedPartConfig implements LocalPartConfig {
 	private _appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
 	constructor(appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps) {
 		this._appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
@@ -335,7 +335,7 @@ interface StandalonePartConfigProps {
 	viamClient: () => ViamClient | undefined
 	partID: () => string
 }
-export class StandalonePartConfig implements LocalPartConfig {
+class StandalonePartConfig implements LocalPartConfig {
 	private _standalonePartConfigProps: StandalonePartConfigProps
 	private _isDirty = $state(false)
 	private _hasEditPermissions = $state(false)

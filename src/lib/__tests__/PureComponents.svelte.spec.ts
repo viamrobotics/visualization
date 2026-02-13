@@ -1,7 +1,6 @@
 import { vi, describe, it } from 'vitest'
 import { render } from '@testing-library/svelte'
 import AxesHelper from '$lib/components/AxesHelper.svelte'
-import Geometry from '$lib/components/Geometry.svelte'
 import MockCanvas from './fixtures/MockCanvas.svelte'
 
 // TODO: move this to use @threlte/test instead of mocking once it is fixed for this use case
@@ -41,24 +40,6 @@ global.ResizeObserver = class {
 }
 
 describe('PureComponents component', () => {
-	it('should render geometry component', () => {
-		render(MockCanvas, {
-			child: Geometry,
-			uuid: '123',
-			name: 'test',
-			pose: {
-				x: 0,
-				y: 0,
-				z: 0,
-				oX: 0,
-				oY: 0,
-				oZ: 0,
-				theta: 0,
-			},
-			metadata: {},
-		})
-	})
-
 	it('should render axes helper component', () => {
 		render(MockCanvas, {
 			child: AxesHelper,

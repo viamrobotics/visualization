@@ -1,7 +1,6 @@
 // TODO: replace with types exported from the sdk when created
 
 import type { Transform } from '@viamrobotics/sdk'
-import type { ValueOf } from 'type-fest'
 import { UuidTool } from 'uuid-tool'
 import { createPoseFromFrame } from './transform'
 import { createGeometryFromFrame } from './geometry'
@@ -14,7 +13,6 @@ type FrameGeometryMap = {
 }
 
 export type FrameGeometry = keyof FrameGeometryMap
-export type FrameGeometries = ValueOf<FrameGeometryMap>
 
 type FrameOrientationMap = {
 	quaternion: { type: 'quaternion'; value: { x: number; y: number; z: number; w: number } }
@@ -24,7 +22,6 @@ type FrameOrientationMap = {
 }
 
 export type FrameOrientation = keyof FrameOrientationMap
-export type FrameOrientations = ValueOf<FrameOrientationMap>
 
 export interface Frame<
 	T extends FrameGeometry = FrameGeometry,

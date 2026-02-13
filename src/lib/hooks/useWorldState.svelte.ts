@@ -21,12 +21,7 @@ import { parsePlyInput } from '$lib/ply'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { createBufferGeometry } from '$lib/attribute'
 
-export type ChangeMessage = {
-	type: 'change'
-	events: TransformChangeEvent[]
-}
-
-export type TransformEvent = TransformChangeEvent & {
+type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
 }
 
