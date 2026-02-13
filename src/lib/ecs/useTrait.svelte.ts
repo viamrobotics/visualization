@@ -1,9 +1,9 @@
 import { $internal as internal, type Entity, type Trait, type World } from 'koota'
 import { useWorld } from './useWorld'
 
-export type AoSFactory = () => unknown
+type AoSFactory = () => unknown
 
-export type Schema =
+type Schema =
 	| {
 			[key: string]: number | bigint | string | boolean | null | undefined | (() => unknown)
 	  }
@@ -21,7 +21,7 @@ type TraitRecordFromSchema<T extends Schema> = T extends AoSFactory
  * For SoA it is a snapshot of the state for a single entity.
  * For AoS it is the state instance for a single entity.
  */
-export type TraitRecord<T extends Trait | Schema> = T extends Trait
+type TraitRecord<T extends Trait | Schema> = T extends Trait
 	? TraitRecordFromSchema<T['schema']>
 	: TraitRecordFromSchema<T>
 

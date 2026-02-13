@@ -1,6 +1,6 @@
 import type { DialWebRTCConf } from '@viamrobotics/sdk'
 
-export type PlaygroundRobotsConfig = Record<
+type PlaygroundRobotsConfig = Record<
 	string,
 	{
 		host: string
