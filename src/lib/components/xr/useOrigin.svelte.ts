@@ -27,7 +27,7 @@ export const provideOrigin = () => {
 				position[2] = pos.z
 			}
 
-			if (rot) {
+			if (rot !== undefined) {
 				rotation = rot
 			}
 		},

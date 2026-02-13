@@ -59,7 +59,6 @@ export const providePointclouds = (partID: () => string) => {
 
 		for (const client of clients) {
 			if (
-				environment.current.viewerMode === 'monitor' &&
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
@@ -90,6 +89,7 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const options = $derived({
+		enabled: environment.current.viewerMode === 'monitor',
 		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
 
