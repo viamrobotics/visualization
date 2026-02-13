@@ -1,15 +1,15 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry, Vector3, Quaternion } from 'three'
 	import { xrToast, type XRToastItem, type ToastVariant } from '$lib/components/xr/toasts.svelte'
+	import { Headset } from '@threlte/xr'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
 	const TOAST_GAP = 10
 	const MAX_VISIBLE = 5
 	const PLANE_WIDTH = 0.7
-
-	const { camera } = useThrelte()
 
 	// Offscreen canvas (created once)
 	const canvas = document.createElement('canvas')
@@ -21,16 +21,6 @@
 
 	const visibleToasts = $derived(xrToast.toasts.slice(-MAX_VISIBLE))
 	const hasToasts = $derived(visibleToasts.length > 0)
-
-	// Camera-following state
-	let position = $state<[number, number, number]>([0, -0.3, -1.5])
-	let rotation = $state<[number, number, number, number]>([0, 0, 0, 1])
-
-	// Reusable math objects to avoid GC pressure
-	const _offset = new Vector3()
-	const _pos = new Vector3()
-	const _tempQuat = new Quaternion()
-	const _yFlip = new Quaternion(0, 1, 0, 0) // 180° around Y to face camera
 
 	// Variant styling matching Prime design tokens
 	const VARIANT_STYLES: Record<ToastVariant, { accent: string; bg: string }> = {
@@ -192,48 +182,34 @@
 		const h = toasts.length * (TOAST_HEIGHT + TOAST_GAP) - TOAST_GAP
 		canvas.height = h
 
-		geometry?.dispose()
+		untrack(() => geometry?.dispose())
 		const aspect = CANVAS_WIDTH / h
 		geometry = new PlaneGeometry(PLANE_WIDTH, PLANE_WIDTH / aspect)
 
 		renderToasts(toasts)
 	})
 
-	// Position toast in front of camera
-	useTask(() => {
-		if (!hasToasts) return
-		const cam = camera.current
-		if (!cam) return
-
-		_offset.set(0, -0.3, -1.5)
-		_offset.applyQuaternion(cam.quaternion)
-		_pos.copy(cam.position).add(_offset)
-		position = _pos.toArray() as [number, number, number]
-
-		_tempQuat.copy(cam.quaternion).multiply(_yFlip)
-		rotation = _tempQuat.toArray() as [number, number, number, number]
-	})
-
 	// Cleanup
 	$effect(() => {
 		return () => {
 			texture.dispose()
-			geometry?.dispose()
+			untrack(() => geometry?.dispose())
 		}
 	})
 </script>
 
-{#if hasToasts && geometry}
-	<T.Mesh
-		{position}
-		quaternion={rotation}
-		renderOrder={999}
-	>
-		<T is={geometry} />
-		<T.MeshBasicMaterial
-			map={texture}
-			transparent
-			depthTest={false}
-		/>
-	</T.Mesh>
-{/if}
+<Headset>
+	{#if hasToasts && geometry}
+		<T.Mesh
+			position={[0, -0.3, -1.5]}
+			renderOrder={999}
+		>
+			<T is={geometry} />
+			<T.MeshBasicMaterial
+				map={texture}
+				transparent
+				depthTest={false}
+			/>
+		</T.Mesh>
+	{/if}
+</Headset>
