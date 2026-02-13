@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { createWorld } from 'koota'
-import { Snapshot } from '$lib/draw/v1/snapshot_pb'
-import { Drawing, Shape, Arrows, Line, Points, Model, ModelAsset } from '$lib/draw/v1/drawing_pb'
-import { Transform, Geometry } from '$lib/common/v1/common_pb'
-import { Metadata } from '$lib/draw/v1/metadata_pb'
+import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import {
+	Drawing,
+	Shape,
+	Arrows,
+	Line,
+	Points,
+	Model,
+	ModelAsset,
+} from '$lib/buf/draw/v1/drawing_pb'
+import { Transform, Geometry } from '$lib/buf/common/v1/common_pb'
+import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { spawnSnapshotEntities } from '../snapshot'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'

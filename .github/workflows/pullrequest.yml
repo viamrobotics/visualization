@@ -66,8 +66,7 @@ jobs:
         with:
           name: protos-ts
           path: |
-            src/lib/common/v1/
-            src/lib/draw/v1/
+            src/lib/buf/
 
       - name: Upload Go proto artifacts
         uses: actions/upload-artifact@v4
