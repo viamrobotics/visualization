@@ -12,6 +12,7 @@ vi.mock('@viamrobotics/svelte-sdk', () => ({
 		$$render: () => '<div data-testid="camera-stream"></div>',
 	})),
 	useRobotClient: vi.fn(() => ({ current: {} })),
+	useConnectionStatus: vi.fn(() => ({ current: 'CONNECTED' })),
 }))
 
 vi.mock('@viamrobotics/sdk', () => ({
@@ -19,6 +20,13 @@ vi.mock('@viamrobotics/sdk', () => ({
 		getOptions: vi.fn().mockResolvedValue([{ width: 640, height: 480 }]),
 		setOptions: vi.fn().mockResolvedValue(undefined),
 	})),
+	MachineConnectionEvent: {
+		DISCONNECTED: 'DISCONNECTED',
+		DIALING: 'DIALING',
+		CONNECTING: 'CONNECTING',
+		CONNECTED: 'CONNECTED',
+		DISCONNECTING: 'DISCONNECTING',
+	},
 }))
 
 vi.mock('$lib/hooks/useSettings.svelte', () => ({

@@ -28,6 +28,7 @@
 	} from '$lib/hooks/useDrawConnectionConfig.svelte'
 	import Camera from './overlay/widgets/Camera.svelte'
 	import HoveredEntities from './hover/HoveredEntities.svelte'
+	import Settings from '$lib/components/overlay/settings/Settings.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -65,7 +66,6 @@
 	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
-
 	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
 
 	$effect(() => {
@@ -125,37 +125,35 @@
 
 				<XR {@attach domPortal(root)} />
 
-				<Dashboard
-					{@attach domPortal(root)}
-					{dashboard}
-				/>
-
 				{#if settings.current.renderSubEntityHoverDetail}
-					<HoveredEntities {@attach domPortal(root)} />
-				{/if}
-				<Details {@attach domPortal(root)} />
-				{#if environment.current.isStandalone}
-					<LiveUpdatesBanner {@attach domPortal(root)} />
+					<HoveredEntities />
 				{/if}
 
-				{#if !focus}
-					<TreeContainer {@attach domPortal(root)} />
-				{/if}
+				<!-- Overlays that need Threlte context -->
+				<div {@attach domPortal(root)}>
+					<FileDrop />
+					<Dashboard {dashboard} />
+					<Details />
+					<Settings />
 
-				{#if !focus && settings.current.enableArmPositionsWidget}
-					<ArmPositions {@attach domPortal(root)} />
-				{/if}
+					{#if environment.current.isStandalone}
+						<LiveUpdatesBanner />
+					{/if}
 
-				{#if !focus}
-					{#each currentRobotCameraWidgets as cameraName (cameraName)}
-						<Camera
-							name={cameraName}
-							{@attach domPortal(root)}
-						/>
-					{/each}
-				{/if}
+					{#if !focus}
+						<TreeContainer />
+					{/if}
 
-				<FileDrop {@attach domPortal(root)} />
+					{#if !focus && settings.current.enableArmPositionsWidget}
+						<ArmPositions />
+					{/if}
+
+					{#if !focus}
+						{#each currentRobotCameraWidgets as cameraName (cameraName)}
+							<Camera name={cameraName} />
+						{/each}
+					{/if}
+				</div>
 			{/snippet}
 		</SceneProviders>
 	</Canvas>

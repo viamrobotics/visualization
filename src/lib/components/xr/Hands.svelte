@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { Hand } from '@threlte/xr'
 
-	console.log('hands')
-
 	const onpinchstart = () => {
-		console.log('start')
+		// Pinch started
 	}
 
 	const onpinchend = () => {
-		console.log('end')
+		// Pinch ended
 	}
 </script>
 
