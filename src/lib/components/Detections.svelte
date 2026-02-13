@@ -34,7 +34,6 @@
 			])
 		)
 	)
-	
 	$inspect(queries)
 </script>
 
