@@ -1,14 +1,10 @@
 package draw
 
 import (
-	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 )
-
-// drawingNamespace is the namespace UUID used for deterministic drawing ID generation
-var drawingNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 // Shape represents a drawable geometric shape or object in 3D space. A Shape contains
 // exactly one geometry type (Arrows, Line, Points, Model, or Nurbs), positioned at Center with a Label.
