@@ -3,6 +3,7 @@ package draw
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
@@ -18,6 +19,11 @@ func DrawGeometry(
 	parent string,
 	color Color,
 ) (*commonv1.Transform, error) {
+	idBytes, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID string %s for geometry %s: %w", id, geometry.Label(), err)
+	}
+
 	label := geometry.Label()
 	metadata := NewMetadata(WithMetadataColors(color))
 	metadataStruct, err := MetadataToStruct(metadata)
@@ -25,7 +31,7 @@ func DrawGeometry(
 		return nil, err
 	}
 
-	return NewTransform(id, label, parent, pose, geometry, metadataStruct), nil
+	return NewTransform(label, parent, pose, geometry, metadataStruct, WithUUID(idBytes[:])), nil
 }
 
 // DrawGeometries creates transforms for rendering multiple geometries, each with its own color.

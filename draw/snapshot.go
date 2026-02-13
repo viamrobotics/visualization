@@ -177,7 +177,6 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 }
 
 // DrawFrame draws a frame transform to the snapshot
-//   - id is the ID of the frame
 //   - name is the name of the frame
 //   - parent is the parent of the frame
 //   - pose is the pose of the frame
@@ -185,14 +184,13 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 //   - metadata is visualizer metadata for the frame
 //   - Returns an error if the frame transform cannot be drawn
 func (snapshot *Snapshot) DrawFrame(
-	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
 ) {
-	transform := NewTransform(id, name, parent, pose, geometry, metadata)
+	transform := NewTransform(name, parent, pose, geometry, metadata)
 	snapshot.transforms = append(snapshot.transforms, transform)
 }
 

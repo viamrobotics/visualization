@@ -13,33 +13,50 @@ import (
 // transformNamespace is the namespace UUID used for deterministic transform ID generation
 var transformNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
+type transformConfig struct {
+	uuid []byte
+}
+
+func newTransformConfig(name string, parent string) *transformConfig {
+	key := fmt.Sprintf("%s:%s", name, parent)
+	id := uuid.NewSHA1(transformNamespace, []byte(key))
+	return &transformConfig{
+		uuid: id[:],
+	}
+}
+
+type TransformOption func(*transformConfig)
+
+func WithUUID(uuid []byte) TransformOption {
+	return func(config *transformConfig) {
+		config.uuid = uuid
+	}
+}
+
+func WithID(id string) TransformOption {
+	fromID := uuid.NewSHA1(transformNamespace, []byte(id))
+	return func(config *transformConfig) {
+		config.uuid = fromID[:]
+	}
+}
+
 // NewTransform creates a Viam Transform representing an object in 3D space.
 func NewTransform(
-	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
+	options ...TransformOption,
 ) *commonv1.Transform {
-	var idBytes []byte
-	if id == "" {
-		// If the id is empty, generate a deterministic UUID based on name and parent
-		key := fmt.Sprintf("%s:%s", name, parent)
-		newId := uuid.NewSHA1(transformNamespace, []byte(key))
-		idBytes = newId[:]
-	} else if parsedId, err := uuid.Parse(id); err == nil {
-		// If the id is a UUID, use it
-		idBytes = parsedId[:]
-	} else {
-		// If the id is not a UUID, use it to generate a new UUID
-		newId := uuid.NewSHA1(transformNamespace, []byte(id))
-		idBytes = newId[:]
+	config := newTransformConfig(name, parent)
+	for _, option := range options {
+		option(config)
 	}
 
 	poseInFrame := poseInFrameToProtobuf(pose, parent)
 	transform := &commonv1.Transform{
-		Uuid:                idBytes,
+		Uuid:                config.uuid,
 		ReferenceFrame:      name,
 		PoseInObserverFrame: poseInFrame,
 		Metadata:            metadata,
