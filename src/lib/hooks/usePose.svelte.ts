@@ -27,7 +27,8 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const resource = $derived(currentName ? resourceByName.current[currentName] : undefined)
 	const parentResource = $derived(currentParent ? resourceByName.current[currentParent] : undefined)
 	const frames = useFrames()
-	let pose = $state<Pose | undefined>(undefined)
+
+	let pose = $state<Pose>()
 
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
@@ -62,6 +63,10 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	$effect(() => addQueryToRefetch(query))
 
 	$effect(() => {
+		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
+			return logs.add(`Fetching pose for ${currentName} every ${interval}ms...`)
+		}
+
 		if (query.isFetching) {
 			logs.add(`Fetching pose for ${currentName}...`)
 		} else if (query.error) {
