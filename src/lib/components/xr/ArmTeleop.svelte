@@ -6,7 +6,10 @@
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { getFrameTransformationQuaternion, calculatePositionTarget } from '$lib/components/xr/math'
+	import {
+		getFrameTransformationQuaternion,
+		calculatePositionTarget,
+	} from '$lib/components/xr/math'
 	import { OrientationVector } from '$lib/three/OrientationVector'
 	import { xrToast } from '$lib/components/xr/toasts.svelte'
 
@@ -119,7 +122,9 @@
 		const msg = String(error).toLowerCase()
 		if (
 			msg.includes('motion') &&
-			(msg.includes('not found') || msg.includes('not registered') || msg.includes('not configured'))
+			(msg.includes('not found') ||
+				msg.includes('not registered') ||
+				msg.includes('not configured'))
 		) {
 			xrToast.danger('Motion service not registered')
 		} else {
