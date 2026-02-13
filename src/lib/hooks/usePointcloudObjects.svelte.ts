@@ -1,4 +1,4 @@
-import { GeometriesInFrame, PointCloudObject, VisionClient } from '@viamrobotics/sdk'
+import { VisionClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
