@@ -117,6 +117,6 @@ func (line Line) Draw(
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithLine(line))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
+	drawing := NewDrawing("", name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
 	return drawing
 }

@@ -67,6 +67,6 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Drawing {
 	shape := NewShape(pose, name, WithArrows(arrows))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
+	drawing := NewDrawing("", name, parent, pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
 	return drawing
 }
