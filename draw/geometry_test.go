@@ -22,14 +22,18 @@ func TestGeometry(t *testing.T) {
 		geometries := []spatialmath.Geometry{box, sphere, capsule}
 		geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
 		colors := []Color{NewColor(WithName("red")), NewColor(WithRGB(0, 255, 0)), NewColor(WithName("blue"))}
-		transforms, err := DrawGeometries(geometriesInFrame, colors)
+		drawing, err := NewDrawnGeometriesInFrame(geometriesInFrame, WithPerGeometriesColors(colors...))
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, transforms, test.ShouldNotBeNil)
-		test.That(t, len(transforms.Transforms), test.ShouldEqual, 3)
+		test.That(t, drawing, test.ShouldNotBeNil)
+		test.That(t, len(drawing.DrawnGeometries), test.ShouldEqual, 3)
 
-		test.That(t, transforms.Transforms[0].PhysicalObject.Label, test.ShouldEqual, "box")
-		test.That(t, transforms.Transforms[0].ReferenceFrame, test.ShouldEqual, "box")
-		test.That(t, transforms.Transforms[0].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
+		transforms, err := drawing.Draw()
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, len(transforms), test.ShouldEqual, 3)
+
+		test.That(t, transforms[0].PhysicalObject.Label, test.ShouldEqual, "box")
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "box")
+		test.That(t, transforms[0].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
 			X:     0,
 			Y:     0,
 			Z:     0,
@@ -38,28 +42,28 @@ func TestGeometry(t *testing.T) {
 			OZ:    1,
 			Theta: 0,
 		})
-		test.That(t, transforms.Transforms[0].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
+		test.That(t, transforms[0].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
 			DimsMm: &commonv1.Vector3{
 				X: 100,
 				Y: 100,
 				Z: 100,
 			},
 		})
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
 
-		test.That(t, transforms.Transforms[1].PhysicalObject.Label, test.ShouldEqual, "sphere")
-		test.That(t, transforms.Transforms[1].ReferenceFrame, test.ShouldEqual, "sphere")
-		test.That(t, transforms.Transforms[1].PhysicalObject.GetSphere(), test.ShouldResemble, &commonv1.Sphere{
+		test.That(t, transforms[1].PhysicalObject.Label, test.ShouldEqual, "sphere")
+		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "sphere")
+		test.That(t, transforms[1].PhysicalObject.GetSphere(), test.ShouldResemble, &commonv1.Sphere{
 			RadiusMm: 100,
 		})
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\xff\x00\xff")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\xff\x00\xff")
 
-		test.That(t, transforms.Transforms[2].PhysicalObject.Label, test.ShouldEqual, "capsule")
-		test.That(t, transforms.Transforms[2].ReferenceFrame, test.ShouldEqual, "capsule")
-		test.That(t, transforms.Transforms[2].PhysicalObject.GetCapsule(), test.ShouldResemble, &commonv1.Capsule{
+		test.That(t, transforms[2].PhysicalObject.Label, test.ShouldEqual, "capsule")
+		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "capsule")
+		test.That(t, transforms[2].PhysicalObject.GetCapsule(), test.ShouldResemble, &commonv1.Capsule{
 			RadiusMm: 100,
 			LengthMm: 300,
 		})
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
 	})
 }

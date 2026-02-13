@@ -206,12 +206,17 @@ func (snapshot *Snapshot) DrawGeometry(
 	parent string,
 	color Color,
 ) error {
-	transform, err := DrawGeometry(geometry, pose, parent, color)
+	drawing, err := NewDrawnGeometry(geometry, WithGeometryColor(color))
 	if err != nil {
 		return err
 	}
 
-	snapshot.transforms = append(snapshot.transforms, transform)
+	transforms, err := drawing.Draw(geometry.Label(), parent, pose, WithUUID(snapshot.uuid))
+	if err != nil {
+		return err
+	}
+
+	snapshot.transforms = append(snapshot.transforms, transforms)
 	return nil
 }
 
