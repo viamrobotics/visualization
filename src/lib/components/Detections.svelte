@@ -34,8 +34,6 @@
 			])
 		)
 	)
-
-	$inspect(queries)
 </script>
 
 <DetectionsPlane detections={[]} />

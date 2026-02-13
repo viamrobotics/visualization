@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { T, useTask, useThrelte } from '@threlte/core'
-	import { CanvasTexture, PlaneGeometry, Vector3, Quaternion } from 'three'
+	import { T } from '@threlte/core'
+	import { CanvasTexture, PlaneGeometry } from 'three'
 	import { xrToast, type XRToastItem, type ToastVariant } from '$lib/components/xr/toasts.svelte'
 	import { Headset } from '@threlte/xr'
 
