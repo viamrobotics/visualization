@@ -2,46 +2,11 @@ package draw
 
 import (
 	"encoding/base64"
-	"fmt"
 
-	"github.com/google/uuid"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-// transformNamespace is the namespace UUID used for deterministic transform ID generation
-var transformNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
-
-type transformConfig struct {
-	uuid []byte
-}
-
-func newTransformConfig(name string, parent string) *transformConfig {
-	key := fmt.Sprintf("%s:%s", name, parent)
-	id := uuid.NewSHA1(transformNamespace, []byte(key))
-	return &transformConfig{
-		uuid: id[:],
-	}
-}
-
-// TransformOption is a function that configures a transform configuration.
-type TransformOption func(*transformConfig)
-
-// WithUUID creates a transform option that sets the UUID of the transform.
-func WithUUID(uuid []byte) TransformOption {
-	return func(config *transformConfig) {
-		config.uuid = uuid
-	}
-}
-
-// WithID creates a transform option that generates a UUID from the given ID for the transform.
-func WithID(id string) TransformOption {
-	fromID := uuid.NewSHA1(transformNamespace, []byte(id))
-	return func(config *transformConfig) {
-		config.uuid = fromID[:]
-	}
-}
 
 // NewTransform creates a Viam Transform representing an object in 3D space.
 // The transform will have a UUID generated from the name and parent unless a UUID option is provided.
@@ -51,9 +16,9 @@ func NewTransform(
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-	options ...TransformOption,
+	options ...UuidOption,
 ) *commonv1.Transform {
-	config := newTransformConfig(name, parent)
+	config := newUuidConfig(name, parent)
 	for _, option := range options {
 		option(config)
 	}
