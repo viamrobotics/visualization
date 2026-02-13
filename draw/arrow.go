@@ -31,12 +31,12 @@ type drawArrowsOption func(*drawArrowsConfig)
 
 // WithSingleArrowColor sets the color for all arrows.
 func WithSingleArrowColor(color Color) drawArrowsOption {
-	return WithColors[*drawArrowsConfig]([]Color{color})
+	return withColors[*drawArrowsConfig]([]Color{color})
 }
 
 // WithPerArrowColors sets the color for each arrow.
 func WithPerArrowColors(colors ...Color) drawArrowsOption {
-	return WithColors[*drawArrowsConfig](colors)
+	return withColors[*drawArrowsConfig](colors)
 }
 
 func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
@@ -44,7 +44,7 @@ func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
 	for i := range numPoses {
 		finalColors[i] = palette[i%len(palette)]
 	}
-	return WithColors[*drawArrowsConfig](finalColors)
+	return withColors[*drawArrowsConfig](finalColors)
 
 }
 

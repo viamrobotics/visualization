@@ -77,7 +77,7 @@ func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
 		colors[1] = *pointColor
 	}
 
-	return WithColors[*drawLineConfig](colors)
+	return withColors[*drawLineConfig](colors)
 }
 
 // NewLine creates a new Line from the given vertex positions and optional configuration.
