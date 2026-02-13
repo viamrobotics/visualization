@@ -466,6 +466,82 @@ func (s *Service) StreamSceneChanges(
 	}
 }
 
+func (s *Service) SetSceneMetadata(
+	ctx context.Context,
+	req *connect.Request[drawv1.SetSceneMetadataRequest],
+) (*connect.Response[drawv1.SetSceneMetadataResponse], error) {
+	if req.Msg.SceneMetadata == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("scene_metadata is required"))
+	}
+
+	s.mu.Lock()
+	// Merge semantics: only update fields that are non-nil in the request
+	// The proto uses optional for all SceneMetadata fields, so we check each one
+	incoming := req.Msg.SceneMetadata
+
+	if incoming.SceneCamera != nil {
+		if s.sceneMetadata.SceneCamera == nil {
+			s.sceneMetadata.SceneCamera = incoming.SceneCamera
+		} else {
+			// Merge camera fields
+			if incoming.SceneCamera.Position != nil {
+				s.sceneMetadata.SceneCamera.Position = incoming.SceneCamera.Position
+			}
+			if incoming.SceneCamera.LookAt != nil {
+				s.sceneMetadata.SceneCamera.LookAt = incoming.SceneCamera.LookAt
+			}
+			if incoming.SceneCamera.Animated != nil {
+				s.sceneMetadata.SceneCamera.Animated = incoming.SceneCamera.Animated
+			}
+			if incoming.SceneCamera.CameraType != nil {
+				s.sceneMetadata.SceneCamera.CameraType = incoming.SceneCamera.CameraType
+			}
+		}
+	}
+
+	if incoming.Grid != nil {
+		s.sceneMetadata.Grid = incoming.Grid
+	}
+	if incoming.GridCellSize != nil {
+		s.sceneMetadata.GridCellSize = incoming.GridCellSize
+	}
+	if incoming.GridSectionSize != nil {
+		s.sceneMetadata.GridSectionSize = incoming.GridSectionSize
+	}
+	if incoming.GridFadeDistance != nil {
+		s.sceneMetadata.GridFadeDistance = incoming.GridFadeDistance
+	}
+	if incoming.PointSize != nil {
+		s.sceneMetadata.PointSize = incoming.PointSize
+	}
+	if incoming.PointColor != nil {
+		s.sceneMetadata.PointColor = incoming.PointColor
+	}
+	if incoming.LineWidth != nil {
+		s.sceneMetadata.LineWidth = incoming.LineWidth
+	}
+	if incoming.LinePointSize != nil {
+		s.sceneMetadata.LinePointSize = incoming.LinePointSize
+	}
+	if incoming.RenderArmModels != nil {
+		s.sceneMetadata.RenderArmModels = incoming.RenderArmModels
+	}
+	if incoming.RenderShapes != nil {
+		s.sceneMetadata.RenderShapes = incoming.RenderShapes
+	}
+
+	// Make a copy for broadcasting
+	updatedMetadata := s.sceneMetadata
+	s.mu.Unlock()
+
+	// Broadcast the scene metadata change
+	s.broadcast(Event{
+		SceneMetadata: updatedMetadata,
+	})
+
+	return connect.NewResponse(&drawv1.SetSceneMetadataResponse{}), nil
+}
+
 func (s *Service) RemoveAll(
 	ctx context.Context,
 	req *connect.Request[drawv1.RemoveAllRequest],

@@ -22,6 +22,7 @@ service DrawService {
   rpc RemoveAllDrawings(RemoveAllDrawingsRequest) returns (RemoveAllDrawingsResponse);
   rpc StreamDrawingChanges(StreamDrawingChangesRequest) returns (stream StreamDrawingChangesResponse);
 
+  rpc SetSceneMetadata(SetSceneMetadataRequest) returns (SetSceneMetadataResponse);
   rpc StreamSceneChanges(StreamSceneChangesRequest) returns (stream StreamSceneChangesResponse);
 
   rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
@@ -97,6 +98,12 @@ message StreamDrawingChangesResponse {
   ChangeType change_type = 1;
   Drawing drawing = 2;
 }
+
+message SetSceneMetadataRequest {
+  SceneMetadata scene_metadata = 1;
+}
+
+message SetSceneMetadataResponse {}
 
 message StreamSceneChangesRequest {}
 message StreamSceneChangesResponse {

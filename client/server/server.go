@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/viam-labs/motion-tools/draw"
 	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
 	"golang.org/x/net/http2"
@@ -22,6 +23,7 @@ var (
 	serverRunning bool
 	httpServer    *http.Server
 	drawClient    drawv1connect.DrawServiceClient
+	recorder      *RecordingInterceptor
 	address       = "localhost:3030" // Default address
 	readyChan     chan struct{}
 )
@@ -90,10 +92,14 @@ func Start(port int, production bool) error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	// Initialize the package-level Connect client
+	// Initialize the recording interceptor
+	recorder = NewRecordingInterceptor()
+
+	// Initialize the package-level Connect client with recording interceptor
 	drawClient = drawv1connect.NewDrawServiceClient(
 		http.DefaultClient,
 		fmt.Sprintf("http://%s", address),
+		connect.WithInterceptors(recorder),
 	)
 
 	serverRunning = true
@@ -153,6 +159,7 @@ func Stop() error {
 	serverRunning = false
 	httpServer = nil
 	drawClient = nil
+	recorder = nil
 	readyChan = nil
 
 	log.Println("Server stopped")
@@ -165,6 +172,14 @@ func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
 	return drawClient
+}
+
+// GetRecorder returns the package-level recording interceptor
+// Returns nil if the server is not running
+func GetRecorder() *RecordingInterceptor {
+	mu.Lock()
+	defer mu.Unlock()
+	return recorder
 }
 
 // corsMiddleware adds CORS headers to support browser requests from different origins

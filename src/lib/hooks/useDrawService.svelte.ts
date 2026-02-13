@@ -14,6 +14,7 @@ import {
 import type { Entity } from 'koota'
 import { useThrelte } from '@threlte/core'
 import { UuidTool } from 'uuid-tool'
+import { useCameraControls } from './useControls.svelte'
 
 const DRAW_SERVICE_CONTEXT = Symbol('draw-service-context')
 
@@ -24,6 +25,7 @@ type DrawServiceContext = {
 export function provideDrawService(baseUrl = 'http://localhost:3030') {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
+	const cameraControls = useCameraControls()
 
 	let connectionStatus = $state<'connected' | 'disconnected' | 'connecting'>('connecting')
 
@@ -134,9 +136,20 @@ export function provideDrawService(baseUrl = 'http://localhost:3030') {
 					const { sceneMetadata } = response
 					if (!sceneMetadata) continue
 
-					// TODO: Apply scene metadata to settings
-					// For now, just log it
-					console.log('Scene metadata update:', sceneMetadata)
+					// Apply camera pose if present in the scene metadata
+					if (sceneMetadata.sceneCamera?.position && sceneMetadata.sceneCamera?.lookAt) {
+						const position = sceneMetadata.sceneCamera.position
+						const lookAt = sceneMetadata.sceneCamera.lookAt
+						const animate = sceneMetadata.sceneCamera.animated ?? false
+
+						cameraControls.setPose(
+							{
+								position: [position.x * 0.001, position.y * 0.001, position.z * 0.001],
+								lookAt: [lookAt.x * 0.001, lookAt.y * 0.001, lookAt.z * 0.001],
+							},
+							animate
+						)
+					}
 				}
 			} catch (err) {
 				if (active) {

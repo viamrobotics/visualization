@@ -1002,6 +1002,86 @@ func (x *StreamSceneChangesResponse) GetSceneMetadata() *SceneMetadata {
 	return nil
 }
 
+type SetSceneMetadataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SceneMetadata *SceneMetadata         `protobuf:"bytes,1,opt,name=scene_metadata,json=sceneMetadata,proto3" json:"scene_metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSceneMetadataRequest) Reset() {
+	*x = SetSceneMetadataRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSceneMetadataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSceneMetadataRequest) ProtoMessage() {}
+
+func (x *SetSceneMetadataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSceneMetadataRequest.ProtoReflect.Descriptor instead.
+func (*SetSceneMetadataRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetSceneMetadataRequest) GetSceneMetadata() *SceneMetadata {
+	if x != nil {
+		return x.SceneMetadata
+	}
+	return nil
+}
+
+type SetSceneMetadataResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSceneMetadataResponse) Reset() {
+	*x = SetSceneMetadataResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSceneMetadataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSceneMetadataResponse) ProtoMessage() {}
+
+func (x *SetSceneMetadataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSceneMetadataResponse.ProtoReflect.Descriptor instead.
+func (*SetSceneMetadataResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
+}
+
 type RemoveAllRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1010,7 +1090,7 @@ type RemoveAllRequest struct {
 
 func (x *RemoveAllRequest) Reset() {
 	*x = RemoveAllRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1022,7 +1102,7 @@ func (x *RemoveAllRequest) String() string {
 func (*RemoveAllRequest) ProtoMessage() {}
 
 func (x *RemoveAllRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +1115,7 @@ func (x *RemoveAllRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllRequest.ProtoReflect.Descriptor instead.
 func (*RemoveAllRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{24}
 }
 
 type RemoveAllResponse struct {
@@ -1048,7 +1128,7 @@ type RemoveAllResponse struct {
 
 func (x *RemoveAllResponse) Reset() {
 	*x = RemoveAllResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1060,7 +1140,7 @@ func (x *RemoveAllResponse) String() string {
 func (*RemoveAllResponse) ProtoMessage() {}
 
 func (x *RemoveAllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1073,7 +1153,7 @@ func (x *RemoveAllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllResponse.ProtoReflect.Descriptor instead.
 func (*RemoveAllResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *RemoveAllResponse) GetTransformCount() int32 {
@@ -1135,7 +1215,10 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingR\adrawing\"\x1b\n" +
 	"\x19StreamSceneChangesRequest\"[\n" +
 	"\x1aStreamSceneChangesResponse\x12=\n" +
-	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"\x12\n" +
+	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"X\n" +
+	"\x17SetSceneMetadataRequest\x12=\n" +
+	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"\x1a\n" +
+	"\x18SetSceneMetadataResponse\"\x12\n" +
 	"\x10RemoveAllRequest\"a\n" +
 	"\x11RemoveAllResponse\x12'\n" +
 	"\x0ftransform_count\x18\x01 \x01(\x05R\x0etransformCount\x12#\n" +
@@ -1145,7 +1228,7 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x17CHANGE_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11CHANGE_TYPE_ADDED\x10\x01\x12\x17\n" +
 	"\x13CHANGE_TYPE_REMOVED\x10\x02\x12\x17\n" +
-	"\x13CHANGE_TYPE_UPDATED\x10\x032\xa4\b\n" +
+	"\x13CHANGE_TYPE_UPDATED\x10\x032\xfd\b\n" +
 	"\vDrawService\x12K\n" +
 	"\fAddTransform\x12\x1c.draw.v1.AddTransformRequest\x1a\x1d.draw.v1.AddTransformResponse\x12T\n" +
 	"\x0fUpdateTransform\x12\x1f.draw.v1.UpdateTransformRequest\x1a .draw.v1.UpdateTransformResponse\x12T\n" +
@@ -1158,7 +1241,8 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\rRemoveDrawing\x12\x1d.draw.v1.RemoveDrawingRequest\x1a\x1e.draw.v1.RemoveDrawingResponse\x12Z\n" +
 	"\x11RemoveAllDrawings\x12!.draw.v1.RemoveAllDrawingsRequest\x1a\".draw.v1.RemoveAllDrawingsResponse\x12e\n" +
 	"\x14StreamDrawingChanges\x12$.draw.v1.StreamDrawingChangesRequest\x1a%.draw.v1.StreamDrawingChangesResponse0\x01\x12_\n" +
-	"\x12StreamSceneChanges\x12\".draw.v1.StreamSceneChangesRequest\x1a#.draw.v1.StreamSceneChangesResponse0\x01\x12B\n" +
+	"\x12StreamSceneChanges\x12\".draw.v1.StreamSceneChangesRequest\x1a#.draw.v1.StreamSceneChangesResponse0\x01\x12W\n" +
+	"\x10SetSceneMetadata\x12 .draw.v1.SetSceneMetadataRequest\x1a!.draw.v1.SetSceneMetadataResponse\x12B\n" +
 	"\tRemoveAll\x12\x19.draw.v1.RemoveAllRequest\x1a\x1a.draw.v1.RemoveAllResponseB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
@@ -1174,7 +1258,7 @@ func file_draw_v1_service_proto_rawDescGZIP() []byte {
 }
 
 var file_draw_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_draw_v1_service_proto_goTypes = []any{
 	(ChangeType)(0),                        // 0: draw.v1.ChangeType
 	(*AddTransformRequest)(nil),            // 1: draw.v1.AddTransformRequest
@@ -1199,51 +1283,56 @@ var file_draw_v1_service_proto_goTypes = []any{
 	(*StreamDrawingChangesResponse)(nil),   // 20: draw.v1.StreamDrawingChangesResponse
 	(*StreamSceneChangesRequest)(nil),      // 21: draw.v1.StreamSceneChangesRequest
 	(*StreamSceneChangesResponse)(nil),     // 22: draw.v1.StreamSceneChangesResponse
-	(*RemoveAllRequest)(nil),               // 23: draw.v1.RemoveAllRequest
-	(*RemoveAllResponse)(nil),              // 24: draw.v1.RemoveAllResponse
-	(*v1.Transform)(nil),                   // 25: viam.common.v1.Transform
-	(*Drawing)(nil),                        // 26: draw.v1.Drawing
-	(*SceneMetadata)(nil),                  // 27: draw.v1.SceneMetadata
+	(*SetSceneMetadataRequest)(nil),        // 23: draw.v1.SetSceneMetadataRequest
+	(*SetSceneMetadataResponse)(nil),       // 24: draw.v1.SetSceneMetadataResponse
+	(*RemoveAllRequest)(nil),               // 25: draw.v1.RemoveAllRequest
+	(*RemoveAllResponse)(nil),              // 26: draw.v1.RemoveAllResponse
+	(*v1.Transform)(nil),                   // 27: viam.common.v1.Transform
+	(*Drawing)(nil),                        // 28: draw.v1.Drawing
+	(*SceneMetadata)(nil),                  // 29: draw.v1.SceneMetadata
 }
 var file_draw_v1_service_proto_depIdxs = []int32{
-	25, // 0: draw.v1.AddTransformRequest.transform:type_name -> viam.common.v1.Transform
-	25, // 1: draw.v1.UpdateTransformRequest.transform:type_name -> viam.common.v1.Transform
+	27, // 0: draw.v1.AddTransformRequest.transform:type_name -> viam.common.v1.Transform
+	27, // 1: draw.v1.UpdateTransformRequest.transform:type_name -> viam.common.v1.Transform
 	0,  // 2: draw.v1.StreamTransformChangesResponse.change_type:type_name -> draw.v1.ChangeType
-	25, // 3: draw.v1.StreamTransformChangesResponse.transform:type_name -> viam.common.v1.Transform
-	26, // 4: draw.v1.AddDrawingRequest.drawing:type_name -> draw.v1.Drawing
-	26, // 5: draw.v1.UpdateDrawingRequest.drawing:type_name -> draw.v1.Drawing
+	27, // 3: draw.v1.StreamTransformChangesResponse.transform:type_name -> viam.common.v1.Transform
+	28, // 4: draw.v1.AddDrawingRequest.drawing:type_name -> draw.v1.Drawing
+	28, // 5: draw.v1.UpdateDrawingRequest.drawing:type_name -> draw.v1.Drawing
 	0,  // 6: draw.v1.StreamDrawingChangesResponse.change_type:type_name -> draw.v1.ChangeType
-	26, // 7: draw.v1.StreamDrawingChangesResponse.drawing:type_name -> draw.v1.Drawing
-	27, // 8: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	1,  // 9: draw.v1.DrawService.AddTransform:input_type -> draw.v1.AddTransformRequest
-	3,  // 10: draw.v1.DrawService.UpdateTransform:input_type -> draw.v1.UpdateTransformRequest
-	5,  // 11: draw.v1.DrawService.RemoveTransform:input_type -> draw.v1.RemoveTransformRequest
-	7,  // 12: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
-	9,  // 13: draw.v1.DrawService.StreamTransformChanges:input_type -> draw.v1.StreamTransformChangesRequest
-	11, // 14: draw.v1.DrawService.AddDrawing:input_type -> draw.v1.AddDrawingRequest
-	13, // 15: draw.v1.DrawService.UpdateDrawing:input_type -> draw.v1.UpdateDrawingRequest
-	15, // 16: draw.v1.DrawService.RemoveDrawing:input_type -> draw.v1.RemoveDrawingRequest
-	17, // 17: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
-	19, // 18: draw.v1.DrawService.StreamDrawingChanges:input_type -> draw.v1.StreamDrawingChangesRequest
-	21, // 19: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	23, // 20: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
-	2,  // 21: draw.v1.DrawService.AddTransform:output_type -> draw.v1.AddTransformResponse
-	4,  // 22: draw.v1.DrawService.UpdateTransform:output_type -> draw.v1.UpdateTransformResponse
-	6,  // 23: draw.v1.DrawService.RemoveTransform:output_type -> draw.v1.RemoveTransformResponse
-	8,  // 24: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
-	10, // 25: draw.v1.DrawService.StreamTransformChanges:output_type -> draw.v1.StreamTransformChangesResponse
-	12, // 26: draw.v1.DrawService.AddDrawing:output_type -> draw.v1.AddDrawingResponse
-	14, // 27: draw.v1.DrawService.UpdateDrawing:output_type -> draw.v1.UpdateDrawingResponse
-	16, // 28: draw.v1.DrawService.RemoveDrawing:output_type -> draw.v1.RemoveDrawingResponse
-	18, // 29: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
-	20, // 30: draw.v1.DrawService.StreamDrawingChanges:output_type -> draw.v1.StreamDrawingChangesResponse
-	22, // 31: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	24, // 32: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
-	21, // [21:33] is the sub-list for method output_type
-	9,  // [9:21] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	28, // 7: draw.v1.StreamDrawingChangesResponse.drawing:type_name -> draw.v1.Drawing
+	29, // 8: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
+	29, // 9: draw.v1.SetSceneMetadataRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	1,  // 10: draw.v1.DrawService.AddTransform:input_type -> draw.v1.AddTransformRequest
+	3,  // 11: draw.v1.DrawService.UpdateTransform:input_type -> draw.v1.UpdateTransformRequest
+	5,  // 12: draw.v1.DrawService.RemoveTransform:input_type -> draw.v1.RemoveTransformRequest
+	7,  // 13: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
+	9,  // 14: draw.v1.DrawService.StreamTransformChanges:input_type -> draw.v1.StreamTransformChangesRequest
+	11, // 15: draw.v1.DrawService.AddDrawing:input_type -> draw.v1.AddDrawingRequest
+	13, // 16: draw.v1.DrawService.UpdateDrawing:input_type -> draw.v1.UpdateDrawingRequest
+	15, // 17: draw.v1.DrawService.RemoveDrawing:input_type -> draw.v1.RemoveDrawingRequest
+	17, // 18: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
+	19, // 19: draw.v1.DrawService.StreamDrawingChanges:input_type -> draw.v1.StreamDrawingChangesRequest
+	21, // 20: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
+	23, // 21: draw.v1.DrawService.SetSceneMetadata:input_type -> draw.v1.SetSceneMetadataRequest
+	25, // 22: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
+	2,  // 23: draw.v1.DrawService.AddTransform:output_type -> draw.v1.AddTransformResponse
+	4,  // 24: draw.v1.DrawService.UpdateTransform:output_type -> draw.v1.UpdateTransformResponse
+	6,  // 25: draw.v1.DrawService.RemoveTransform:output_type -> draw.v1.RemoveTransformResponse
+	8,  // 26: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
+	10, // 27: draw.v1.DrawService.StreamTransformChanges:output_type -> draw.v1.StreamTransformChangesResponse
+	12, // 28: draw.v1.DrawService.AddDrawing:output_type -> draw.v1.AddDrawingResponse
+	14, // 29: draw.v1.DrawService.UpdateDrawing:output_type -> draw.v1.UpdateDrawingResponse
+	16, // 30: draw.v1.DrawService.RemoveDrawing:output_type -> draw.v1.RemoveDrawingResponse
+	18, // 31: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
+	20, // 32: draw.v1.DrawService.StreamDrawingChanges:output_type -> draw.v1.StreamDrawingChangesResponse
+	22, // 33: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
+	24, // 34: draw.v1.DrawService.SetSceneMetadata:output_type -> draw.v1.SetSceneMetadataResponse
+	26, // 35: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
+	23, // [23:36] is the sub-list for method output_type
+	10, // [10:23] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_service_proto_init() }
@@ -1259,7 +1348,7 @@ func file_draw_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_draw_v1_service_proto_rawDesc), len(file_draw_v1_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   24,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

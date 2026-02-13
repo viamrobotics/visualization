@@ -65,6 +65,9 @@ const (
 	// DrawServiceStreamSceneChangesProcedure is the fully-qualified name of the DrawService's
 	// StreamSceneChanges RPC.
 	DrawServiceStreamSceneChangesProcedure = "/draw.v1.DrawService/StreamSceneChanges"
+	// DrawServiceSetSceneMetadataProcedure is the fully-qualified name of the DrawService's
+	// SetSceneMetadata RPC.
+	DrawServiceSetSceneMetadataProcedure = "/draw.v1.DrawService/SetSceneMetadata"
 	// DrawServiceRemoveAllProcedure is the fully-qualified name of the DrawService's RemoveAll RPC.
 	DrawServiceRemoveAllProcedure = "/draw.v1.DrawService/RemoveAll"
 )
@@ -82,6 +85,7 @@ type DrawServiceClient interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	StreamDrawingChanges(context.Context, *connect.Request[v1.StreamDrawingChangesRequest]) (*connect.ServerStreamForClient[v1.StreamDrawingChangesResponse], error)
 	StreamSceneChanges(context.Context, *connect.Request[v1.StreamSceneChangesRequest]) (*connect.ServerStreamForClient[v1.StreamSceneChangesResponse], error)
+	SetSceneMetadata(context.Context, *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error)
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
 }
 
@@ -162,6 +166,12 @@ func NewDrawServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(drawServiceMethods.ByName("StreamSceneChanges")),
 			connect.WithClientOptions(opts...),
 		),
+		setSceneMetadata: connect.NewClient[v1.SetSceneMetadataRequest, v1.SetSceneMetadataResponse](
+			httpClient,
+			baseURL+DrawServiceSetSceneMetadataProcedure,
+			connect.WithSchema(drawServiceMethods.ByName("SetSceneMetadata")),
+			connect.WithClientOptions(opts...),
+		),
 		removeAll: connect.NewClient[v1.RemoveAllRequest, v1.RemoveAllResponse](
 			httpClient,
 			baseURL+DrawServiceRemoveAllProcedure,
@@ -184,6 +194,7 @@ type drawServiceClient struct {
 	removeAllDrawings      *connect.Client[v1.RemoveAllDrawingsRequest, v1.RemoveAllDrawingsResponse]
 	streamDrawingChanges   *connect.Client[v1.StreamDrawingChangesRequest, v1.StreamDrawingChangesResponse]
 	streamSceneChanges     *connect.Client[v1.StreamSceneChangesRequest, v1.StreamSceneChangesResponse]
+	setSceneMetadata       *connect.Client[v1.SetSceneMetadataRequest, v1.SetSceneMetadataResponse]
 	removeAll              *connect.Client[v1.RemoveAllRequest, v1.RemoveAllResponse]
 }
 
@@ -242,6 +253,11 @@ func (c *drawServiceClient) StreamSceneChanges(ctx context.Context, req *connect
 	return c.streamSceneChanges.CallServerStream(ctx, req)
 }
 
+// SetSceneMetadata calls draw.v1.DrawService.SetSceneMetadata.
+func (c *drawServiceClient) SetSceneMetadata(ctx context.Context, req *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error) {
+	return c.setSceneMetadata.CallUnary(ctx, req)
+}
+
 // RemoveAll calls draw.v1.DrawService.RemoveAll.
 func (c *drawServiceClient) RemoveAll(ctx context.Context, req *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error) {
 	return c.removeAll.CallUnary(ctx, req)
@@ -260,6 +276,7 @@ type DrawServiceHandler interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	StreamDrawingChanges(context.Context, *connect.Request[v1.StreamDrawingChangesRequest], *connect.ServerStream[v1.StreamDrawingChangesResponse]) error
 	StreamSceneChanges(context.Context, *connect.Request[v1.StreamSceneChangesRequest], *connect.ServerStream[v1.StreamSceneChangesResponse]) error
+	SetSceneMetadata(context.Context, *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error)
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
 }
 
@@ -336,6 +353,12 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(drawServiceMethods.ByName("StreamSceneChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
+	drawServiceSetSceneMetadataHandler := connect.NewUnaryHandler(
+		DrawServiceSetSceneMetadataProcedure,
+		svc.SetSceneMetadata,
+		connect.WithSchema(drawServiceMethods.ByName("SetSceneMetadata")),
+		connect.WithHandlerOptions(opts...),
+	)
 	drawServiceRemoveAllHandler := connect.NewUnaryHandler(
 		DrawServiceRemoveAllProcedure,
 		svc.RemoveAll,
@@ -366,6 +389,8 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 			drawServiceStreamDrawingChangesHandler.ServeHTTP(w, r)
 		case DrawServiceStreamSceneChangesProcedure:
 			drawServiceStreamSceneChangesHandler.ServeHTTP(w, r)
+		case DrawServiceSetSceneMetadataProcedure:
+			drawServiceSetSceneMetadataHandler.ServeHTTP(w, r)
 		case DrawServiceRemoveAllProcedure:
 			drawServiceRemoveAllHandler.ServeHTTP(w, r)
 		default:
@@ -419,6 +444,10 @@ func (UnimplementedDrawServiceHandler) StreamDrawingChanges(context.Context, *co
 
 func (UnimplementedDrawServiceHandler) StreamSceneChanges(context.Context, *connect.Request[v1.StreamSceneChangesRequest], *connect.ServerStream[v1.StreamSceneChangesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.StreamSceneChanges is not implemented"))
+}
+
+func (UnimplementedDrawServiceHandler) SetSceneMetadata(context.Context, *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.SetSceneMetadata is not implemented"))
 }
 
 func (UnimplementedDrawServiceHandler) RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error) {
