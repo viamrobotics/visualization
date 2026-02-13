@@ -25,14 +25,17 @@ func newTransformConfig(name string, parent string) *transformConfig {
 	}
 }
 
+// TransformOption is a function that configures a transform configuration.
 type TransformOption func(*transformConfig)
 
+// WithUUID creates a transform option that sets the UUID of the transform.
 func WithUUID(uuid []byte) TransformOption {
 	return func(config *transformConfig) {
 		config.uuid = uuid
 	}
 }
 
+// WithID creates a transform option that generates a UUID from the given ID for the transform.
 func WithID(id string) TransformOption {
 	fromID := uuid.NewSHA1(transformNamespace, []byte(id))
 	return func(config *transformConfig) {
@@ -41,6 +44,7 @@ func WithID(id string) TransformOption {
 }
 
 // NewTransform creates a Viam Transform representing an object in 3D space.
+// The transform will have a UUID generated from the name and parent unless a UUID option is provided.
 func NewTransform(
 	name string,
 	parent string,
@@ -92,7 +96,6 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 		colors := unpackColors(colorsBytes)
 		metadata.SetColors(colors)
 	}
-	// TODO: add other metadata fields
 
 	return metadata, nil
 }
