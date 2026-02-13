@@ -1,8 +1,6 @@
 package draw
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
@@ -226,30 +224,20 @@ type Drawing struct {
 
 // NewDrawing creates a new Drawing representing a non-physical object in 3D space.
 func NewDrawing(
-	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	shape Shape,
 	metadata Metadata,
+	options ...UuidOption,
 ) *Drawing {
-	var idBytes []byte
-	if id == "" {
-		// If the id is empty, generate a deterministic UUID based on name and parent
-		key := fmt.Sprintf("%s:%s", name, parent)
-		newId := uuid.NewSHA1(drawingNamespace, []byte(key))
-		idBytes = newId[:]
-	} else if parsedId, err := uuid.Parse(id); err == nil {
-		// If the id is a UUID, use it
-		idBytes = parsedId[:]
-	} else {
-		// If the id is not a UUID, use it to generate a new UUID
-		newId := uuid.NewSHA1(drawingNamespace, []byte(id))
-		idBytes = newId[:]
+	config := newUuidConfig(name, parent)
+	for _, option := range options {
+		option(config)
 	}
 
 	return &Drawing{
-		UUID:     idBytes,
+		UUID:     config.uuid,
 		Name:     name,
 		Parent:   parent,
 		Pose:     pose,

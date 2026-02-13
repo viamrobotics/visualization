@@ -170,6 +170,6 @@ func NewModel(options ...drawModelOption) (*Model, error) {
 // reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
 func (model Model) Draw(name string, parent string, pose spatialmath.Pose) *Drawing {
 	shape := NewShape(pose, name, WithModel(model))
-	drawing := NewDrawing("", name, parent, pose, shape, NewMetadata())
+	drawing := NewDrawing(name, parent, pose, shape, NewMetadata())
 	return drawing
 }

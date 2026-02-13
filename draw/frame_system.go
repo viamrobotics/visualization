@@ -5,7 +5,6 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
@@ -43,11 +42,7 @@ func DrawFrameSystemGeometries(
 				return nil, err
 			}
 
-			transform, err := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
-			if err != nil {
-				return nil, err
-			}
-
+			transform := NewTransform(fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
 			transforms.Transforms = append(transforms.Transforms, transform)
 		}
 	}

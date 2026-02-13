@@ -3,38 +3,29 @@ package draw
 import (
 	"encoding/base64"
 
-	"github.com/google/uuid"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// NewTransform creates a Protocol Buffer Transform message representing an object in 3D space.
-// The id can be empty (auto-generated UUID) or a valid UUID string. The geometry and metadata
-// parameters are optional (can be nil). Returns an error if the id is not a valid UUID.
+// NewTransform creates a Viam Transform representing an object in 3D space.
+// The transform will have a UUID generated from the name and parent unless a UUID option is provided.
 func NewTransform(
-	id string,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-) (*commonv1.Transform, error) {
-	var idBytes []byte
-	if id == "" {
-		newId := uuid.New()
-		idBytes = newId[:]
-	} else {
-		parsedId, err := uuid.Parse(id)
-		if err != nil {
-			return nil, err
-		}
-		idBytes = parsedId[:]
+	options ...UuidOption,
+) *commonv1.Transform {
+	config := newUuidConfig(name, parent)
+	for _, option := range options {
+		option(config)
 	}
 
 	poseInFrame := poseInFrameToProtobuf(pose, parent)
 	transform := &commonv1.Transform{
-		Uuid:                idBytes,
+		Uuid:                config.uuid,
 		ReferenceFrame:      name,
 		PoseInObserverFrame: poseInFrame,
 		Metadata:            metadata,
@@ -45,7 +36,7 @@ func NewTransform(
 		transform.PhysicalObject = geometryToProtobuf(geometry)
 	}
 
-	return transform, nil
+	return transform
 }
 
 // MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable
@@ -70,7 +61,6 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 		colors := unpackColors(colorsBytes)
 		metadata.SetColors(colors)
 	}
-	// TODO: add other metadata fields
 
 	return metadata, nil
 }

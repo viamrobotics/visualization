@@ -143,6 +143,6 @@ func (nurbs Nurbs) Draw(
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithNurbs(nurbs))
-	drawing := NewDrawing("", name, parent, pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
+	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
 	return drawing
 }

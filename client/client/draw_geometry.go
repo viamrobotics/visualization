@@ -26,7 +26,7 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 	if err != nil {
 		return err
 	}
-	transform, err := draw.DrawGeometry("", geometry, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2])))
+	transform, err := draw.DrawGeometry(geometry, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2])))
 	if err != nil {
 		return err
 	}

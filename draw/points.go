@@ -98,6 +98,6 @@ func (points Points) Draw(
 	pose spatialmath.Pose,
 ) *Drawing {
 	shape := NewShape(pose, name, WithPoints(points))
-	drawing := NewDrawing("", name, parent, pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
+	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
 	return drawing
 }
