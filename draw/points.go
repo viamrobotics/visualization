@@ -54,12 +54,12 @@ func WithPointsSize(size float32) drawPointsOption {
 
 // WithSinglePointColor creates a points option that sets the color for all points.
 func WithSinglePointColor(color Color) drawPointsOption {
-	return WithColors[*drawPointsConfig]([]Color{color})
+	return withColors[*drawPointsConfig]([]Color{color})
 }
 
 // WithPerPointColors creates a points option that sets the colors for each point.
 func WithPerPointColors(colors ...Color) drawPointsOption {
-	return WithColors[*drawPointsConfig](colors)
+	return withColors[*drawPointsConfig](colors)
 }
 
 // NewPoints creates a new Points object from the given positions and optional configuration.

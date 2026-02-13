@@ -274,7 +274,7 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 
 // WithMetadataColors creates a metadata option that sets the color list for the metadata.
 func WithMetadataColors(colors ...Color) drawMetadataOption {
-	return WithColors[*drawMetadataConfig](colors)
+	return withColors[*drawMetadataConfig](colors)
 }
 
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
