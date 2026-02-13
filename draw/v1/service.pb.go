@@ -922,86 +922,6 @@ func (x *StreamDrawingChangesResponse) GetDrawing() *Drawing {
 	return nil
 }
 
-type StreamSceneChangesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StreamSceneChangesRequest) Reset() {
-	*x = StreamSceneChangesRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StreamSceneChangesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StreamSceneChangesRequest) ProtoMessage() {}
-
-func (x *StreamSceneChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StreamSceneChangesRequest.ProtoReflect.Descriptor instead.
-func (*StreamSceneChangesRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{20}
-}
-
-type StreamSceneChangesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SceneMetadata *SceneMetadata         `protobuf:"bytes,1,opt,name=scene_metadata,json=sceneMetadata,proto3" json:"scene_metadata,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StreamSceneChangesResponse) Reset() {
-	*x = StreamSceneChangesResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StreamSceneChangesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StreamSceneChangesResponse) ProtoMessage() {}
-
-func (x *StreamSceneChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StreamSceneChangesResponse.ProtoReflect.Descriptor instead.
-func (*StreamSceneChangesResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *StreamSceneChangesResponse) GetSceneMetadata() *SceneMetadata {
-	if x != nil {
-		return x.SceneMetadata
-	}
-	return nil
-}
-
 type SetSceneMetadataRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneMetadata *SceneMetadata         `protobuf:"bytes,1,opt,name=scene_metadata,json=sceneMetadata,proto3" json:"scene_metadata,omitempty"`
@@ -1011,7 +931,7 @@ type SetSceneMetadataRequest struct {
 
 func (x *SetSceneMetadataRequest) Reset() {
 	*x = SetSceneMetadataRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1023,7 +943,7 @@ func (x *SetSceneMetadataRequest) String() string {
 func (*SetSceneMetadataRequest) ProtoMessage() {}
 
 func (x *SetSceneMetadataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1036,7 +956,7 @@ func (x *SetSceneMetadataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSceneMetadataRequest.ProtoReflect.Descriptor instead.
 func (*SetSceneMetadataRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *SetSceneMetadataRequest) GetSceneMetadata() *SceneMetadata {
@@ -1054,7 +974,7 @@ type SetSceneMetadataResponse struct {
 
 func (x *SetSceneMetadataResponse) Reset() {
 	*x = SetSceneMetadataResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1066,7 +986,7 @@ func (x *SetSceneMetadataResponse) String() string {
 func (*SetSceneMetadataResponse) ProtoMessage() {}
 
 func (x *SetSceneMetadataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1079,7 +999,87 @@ func (x *SetSceneMetadataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSceneMetadataResponse.ProtoReflect.Descriptor instead.
 func (*SetSceneMetadataResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{21}
+}
+
+type StreamSceneChangesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamSceneChangesRequest) Reset() {
+	*x = StreamSceneChangesRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamSceneChangesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamSceneChangesRequest) ProtoMessage() {}
+
+func (x *StreamSceneChangesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamSceneChangesRequest.ProtoReflect.Descriptor instead.
+func (*StreamSceneChangesRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+}
+
+type StreamSceneChangesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SceneMetadata *SceneMetadata         `protobuf:"bytes,1,opt,name=scene_metadata,json=sceneMetadata,proto3" json:"scene_metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamSceneChangesResponse) Reset() {
+	*x = StreamSceneChangesResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamSceneChangesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamSceneChangesResponse) ProtoMessage() {}
+
+func (x *StreamSceneChangesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamSceneChangesResponse.ProtoReflect.Descriptor instead.
+func (*StreamSceneChangesResponse) Descriptor() ([]byte, []int) {
 	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StreamSceneChangesResponse) GetSceneMetadata() *SceneMetadata {
+	if x != nil {
+		return x.SceneMetadata
+	}
+	return nil
 }
 
 type RemoveAllRequest struct {
@@ -1212,13 +1212,13 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x1cStreamDrawingChangesResponse\x124\n" +
 	"\vchange_type\x18\x01 \x01(\x0e2\x13.draw.v1.ChangeTypeR\n" +
 	"changeType\x12*\n" +
-	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingR\adrawing\"\x1b\n" +
-	"\x19StreamSceneChangesRequest\"[\n" +
-	"\x1aStreamSceneChangesResponse\x12=\n" +
-	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"X\n" +
+	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingR\adrawing\"X\n" +
 	"\x17SetSceneMetadataRequest\x12=\n" +
 	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"\x1a\n" +
-	"\x18SetSceneMetadataResponse\"\x12\n" +
+	"\x18SetSceneMetadataResponse\"\x1b\n" +
+	"\x19StreamSceneChangesRequest\"[\n" +
+	"\x1aStreamSceneChangesResponse\x12=\n" +
+	"\x0escene_metadata\x18\x01 \x01(\v2\x16.draw.v1.SceneMetadataR\rsceneMetadata\"\x12\n" +
 	"\x10RemoveAllRequest\"a\n" +
 	"\x11RemoveAllResponse\x12'\n" +
 	"\x0ftransform_count\x18\x01 \x01(\x05R\x0etransformCount\x12#\n" +
@@ -1240,9 +1240,9 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\rUpdateDrawing\x12\x1d.draw.v1.UpdateDrawingRequest\x1a\x1e.draw.v1.UpdateDrawingResponse\x12N\n" +
 	"\rRemoveDrawing\x12\x1d.draw.v1.RemoveDrawingRequest\x1a\x1e.draw.v1.RemoveDrawingResponse\x12Z\n" +
 	"\x11RemoveAllDrawings\x12!.draw.v1.RemoveAllDrawingsRequest\x1a\".draw.v1.RemoveAllDrawingsResponse\x12e\n" +
-	"\x14StreamDrawingChanges\x12$.draw.v1.StreamDrawingChangesRequest\x1a%.draw.v1.StreamDrawingChangesResponse0\x01\x12_\n" +
-	"\x12StreamSceneChanges\x12\".draw.v1.StreamSceneChangesRequest\x1a#.draw.v1.StreamSceneChangesResponse0\x01\x12W\n" +
-	"\x10SetSceneMetadata\x12 .draw.v1.SetSceneMetadataRequest\x1a!.draw.v1.SetSceneMetadataResponse\x12B\n" +
+	"\x14StreamDrawingChanges\x12$.draw.v1.StreamDrawingChangesRequest\x1a%.draw.v1.StreamDrawingChangesResponse0\x01\x12W\n" +
+	"\x10SetSceneMetadata\x12 .draw.v1.SetSceneMetadataRequest\x1a!.draw.v1.SetSceneMetadataResponse\x12_\n" +
+	"\x12StreamSceneChanges\x12\".draw.v1.StreamSceneChangesRequest\x1a#.draw.v1.StreamSceneChangesResponse0\x01\x12B\n" +
 	"\tRemoveAll\x12\x19.draw.v1.RemoveAllRequest\x1a\x1a.draw.v1.RemoveAllResponseB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
@@ -1281,10 +1281,10 @@ var file_draw_v1_service_proto_goTypes = []any{
 	(*RemoveAllDrawingsResponse)(nil),      // 18: draw.v1.RemoveAllDrawingsResponse
 	(*StreamDrawingChangesRequest)(nil),    // 19: draw.v1.StreamDrawingChangesRequest
 	(*StreamDrawingChangesResponse)(nil),   // 20: draw.v1.StreamDrawingChangesResponse
-	(*StreamSceneChangesRequest)(nil),      // 21: draw.v1.StreamSceneChangesRequest
-	(*StreamSceneChangesResponse)(nil),     // 22: draw.v1.StreamSceneChangesResponse
-	(*SetSceneMetadataRequest)(nil),        // 23: draw.v1.SetSceneMetadataRequest
-	(*SetSceneMetadataResponse)(nil),       // 24: draw.v1.SetSceneMetadataResponse
+	(*SetSceneMetadataRequest)(nil),        // 21: draw.v1.SetSceneMetadataRequest
+	(*SetSceneMetadataResponse)(nil),       // 22: draw.v1.SetSceneMetadataResponse
+	(*StreamSceneChangesRequest)(nil),      // 23: draw.v1.StreamSceneChangesRequest
+	(*StreamSceneChangesResponse)(nil),     // 24: draw.v1.StreamSceneChangesResponse
 	(*RemoveAllRequest)(nil),               // 25: draw.v1.RemoveAllRequest
 	(*RemoveAllResponse)(nil),              // 26: draw.v1.RemoveAllResponse
 	(*v1.Transform)(nil),                   // 27: viam.common.v1.Transform
@@ -1300,8 +1300,8 @@ var file_draw_v1_service_proto_depIdxs = []int32{
 	28, // 5: draw.v1.UpdateDrawingRequest.drawing:type_name -> draw.v1.Drawing
 	0,  // 6: draw.v1.StreamDrawingChangesResponse.change_type:type_name -> draw.v1.ChangeType
 	28, // 7: draw.v1.StreamDrawingChangesResponse.drawing:type_name -> draw.v1.Drawing
-	29, // 8: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	29, // 9: draw.v1.SetSceneMetadataRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	29, // 8: draw.v1.SetSceneMetadataRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	29, // 9: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
 	1,  // 10: draw.v1.DrawService.AddTransform:input_type -> draw.v1.AddTransformRequest
 	3,  // 11: draw.v1.DrawService.UpdateTransform:input_type -> draw.v1.UpdateTransformRequest
 	5,  // 12: draw.v1.DrawService.RemoveTransform:input_type -> draw.v1.RemoveTransformRequest
@@ -1312,8 +1312,8 @@ var file_draw_v1_service_proto_depIdxs = []int32{
 	15, // 17: draw.v1.DrawService.RemoveDrawing:input_type -> draw.v1.RemoveDrawingRequest
 	17, // 18: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
 	19, // 19: draw.v1.DrawService.StreamDrawingChanges:input_type -> draw.v1.StreamDrawingChangesRequest
-	21, // 20: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	23, // 21: draw.v1.DrawService.SetSceneMetadata:input_type -> draw.v1.SetSceneMetadataRequest
+	21, // 20: draw.v1.DrawService.SetSceneMetadata:input_type -> draw.v1.SetSceneMetadataRequest
+	23, // 21: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
 	25, // 22: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
 	2,  // 23: draw.v1.DrawService.AddTransform:output_type -> draw.v1.AddTransformResponse
 	4,  // 24: draw.v1.DrawService.UpdateTransform:output_type -> draw.v1.UpdateTransformResponse
@@ -1325,8 +1325,8 @@ var file_draw_v1_service_proto_depIdxs = []int32{
 	16, // 30: draw.v1.DrawService.RemoveDrawing:output_type -> draw.v1.RemoveDrawingResponse
 	18, // 31: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
 	20, // 32: draw.v1.DrawService.StreamDrawingChanges:output_type -> draw.v1.StreamDrawingChangesResponse
-	22, // 33: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	24, // 34: draw.v1.DrawService.SetSceneMetadata:output_type -> draw.v1.SetSceneMetadataResponse
+	22, // 33: draw.v1.DrawService.SetSceneMetadata:output_type -> draw.v1.SetSceneMetadataResponse
+	24, // 34: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
 	26, // 35: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
 	23, // [23:36] is the sub-list for method output_type
 	10, // [10:23] is the sub-list for method input_type
