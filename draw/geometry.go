@@ -3,7 +3,6 @@ package draw
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
@@ -12,18 +11,13 @@ import (
 
 // DrawGeometry creates a transform for rendering a single geometry with the specified id, pose,
 // parent reference frame, and color. Returns an error if the metadata cannot be converted to a struct.
+// If id is empty, a new UUID is generated.
 func DrawGeometry(
-	id string,
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
 	parent string,
 	color Color,
 ) (*commonv1.Transform, error) {
-	idBytes, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("invalid UUID string %s for geometry %s: %w", id, geometry.Label(), err)
-	}
-
 	label := geometry.Label()
 	metadata := NewMetadata(WithMetadataColors(color))
 	metadataStruct, err := MetadataToStruct(metadata)
@@ -31,7 +25,7 @@ func DrawGeometry(
 		return nil, err
 	}
 
-	return NewTransform(label, parent, pose, geometry, metadataStruct, WithUUID(idBytes[:])), nil
+	return NewTransform(label, parent, pose, geometry, metadataStruct), nil
 }
 
 // DrawGeometries creates transforms for rendering multiple geometries, each with its own color.
@@ -47,7 +41,7 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 	}
 
 	for i, geometry := range geometries {
-		transform, err := DrawGeometry("", geometry, geometry.Pose(), geometriesInFrame.Parent(), colors[i])
+		transform, err := DrawGeometry(geometry, geometry.Pose(), geometriesInFrame.Parent(), colors[i])
 		if err != nil {
 			return nil, err
 		}

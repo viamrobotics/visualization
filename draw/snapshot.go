@@ -206,7 +206,7 @@ func (snapshot *Snapshot) DrawGeometry(
 	parent string,
 	color Color,
 ) error {
-	transform, err := DrawGeometry("", geometry, pose, parent, color)
+	transform, err := DrawGeometry(geometry, pose, parent, color)
 	if err != nil {
 		return err
 	}
