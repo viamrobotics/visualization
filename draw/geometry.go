@@ -25,7 +25,7 @@ func DrawGeometry(
 		return nil, err
 	}
 
-	return NewTransform(id, label, parent, pose, geometry, metadataStruct)
+	return NewTransform(id, label, parent, pose, geometry, metadataStruct), nil
 }
 
 // DrawGeometries creates transforms for rendering multiple geometries, each with its own color.

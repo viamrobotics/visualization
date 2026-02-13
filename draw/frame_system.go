@@ -43,11 +43,7 @@ func DrawFrameSystemGeometries(
 				return nil, err
 			}
 
-			transform, err := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
-			if err != nil {
-				return nil, err
-			}
-
+			transform := NewTransform(uuid.New().String(), fmt.Sprintf("%s:%s", frameName, label), referenceframe.World, pose, geometry, metadataStruct)
 			transforms.Transforms = append(transforms.Transforms, transform)
 		}
 	}

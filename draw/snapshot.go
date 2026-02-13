@@ -191,13 +191,9 @@ func (snapshot *Snapshot) DrawFrame(
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-) error {
-	transform, err := NewTransform(id, name, parent, pose, geometry, metadata)
-	if err != nil {
-		return err
-	}
+) {
+	transform := NewTransform(id, name, parent, pose, geometry, metadata)
 	snapshot.transforms = append(snapshot.transforms, transform)
-	return nil
 }
 
 // DrawGeometry draws a geometry to the snapshot

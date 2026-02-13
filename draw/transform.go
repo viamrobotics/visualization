@@ -2,6 +2,7 @@ package draw
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	"github.com/google/uuid"
 	commonv1 "go.viam.com/api/common/v1"
@@ -9,9 +10,10 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// NewTransform creates a Protocol Buffer Transform message representing an object in 3D space.
-// The id can be empty (auto-generated UUID) or a valid UUID string. The geometry and metadata
-// parameters are optional (can be nil). Returns an error if the id is not a valid UUID.
+// transformNamespace is the namespace UUID used for deterministic transform ID generation
+var transformNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+
+// NewTransform creates a Viam Transform representing an object in 3D space.
 func NewTransform(
 	id string,
 	name string,
@@ -19,17 +21,20 @@ func NewTransform(
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-) (*commonv1.Transform, error) {
+) *commonv1.Transform {
 	var idBytes []byte
 	if id == "" {
-		newId := uuid.New()
+		// If the id is empty, generate a deterministic UUID based on name and parent
+		key := fmt.Sprintf("%s:%s", name, parent)
+		newId := uuid.NewSHA1(transformNamespace, []byte(key))
 		idBytes = newId[:]
-	} else {
-		parsedId, err := uuid.Parse(id)
-		if err != nil {
-			return nil, err
-		}
+	} else if parsedId, err := uuid.Parse(id); err == nil {
+		// If the id is a UUID, use it
 		idBytes = parsedId[:]
+	} else {
+		// If the id is not a UUID, use it to generate a new UUID
+		newId := uuid.NewSHA1(transformNamespace, []byte(id))
+		idBytes = newId[:]
 	}
 
 	poseInFrame := poseInFrameToProtobuf(pose, parent)
@@ -45,7 +50,7 @@ func NewTransform(
 		transform.PhysicalObject = geometryToProtobuf(geometry)
 	}
 
-	return transform, nil
+	return transform
 }
 
 // MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable
