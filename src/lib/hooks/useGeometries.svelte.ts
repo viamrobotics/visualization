@@ -1,5 +1,5 @@
 import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
-import { setContext, getContext } from 'svelte'
+import { untrack, setContext, getContext } from 'svelte'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import {
 	createResourceClient,
@@ -51,8 +51,9 @@ export const provideGeometries = (partID: () => string) => {
 		gantries.current.map((gantry) => createResourceClient(GantryClient, partID, () => gantry.name))
 	)
 
+	const interval = $derived(refreshRates.get(RefreshRates.poses))
+
 	const options = $derived.by(() => {
-		const interval = refreshRates.get(RefreshRates.poses)
 		return {
 			enabled:
 				refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF &&
@@ -87,12 +88,20 @@ export const provideGeometries = (partID: () => string) => {
 	)
 
 	$effect(() => {
+		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
+			return logs.add(`Fetching geometries every ${interval}ms...`)
+		}
+
 		for (const [name, query] of queries) {
-			if (query.isFetching) {
-				logs.add(`Fetching geometries for ${name}...`)
-			} else if (query.error) {
-				logs.add(`Error fetching geometries from ${name}: ${query.error.message}`, 'error')
-			}
+			untrack(() => {
+				$effect(() => {
+					if (query.isFetching) {
+						logs.add(`Fetching geometries for ${name}...`)
+					} else if (query.error) {
+						logs.add(`Error fetching geometries from ${name}: ${query.error.message}`, 'error')
+					}
+				})
+			})
 		}
 	})
 
@@ -104,46 +113,50 @@ export const provideGeometries = (partID: () => string) => {
 		const active: Record<string, boolean> = {}
 
 		for (const [name, query] of queries) {
-			if (name && query.data) {
-				let index = 0
+			untrack(() => {
+				$effect(() => {
+					if (name && query.data) {
+						let index = 0
 
-				for (const geometry of query.data) {
-					index += 1
+						for (const geometry of query.data) {
+							index += 1
 
-					const resourceName = resources.current[name]
-					const label = geometry.label ? geometry.label : `${name} geometry ${index}`
+							const resourceName = resources.current[name]
+							const label = geometry.label ? geometry.label : `${name} geometry ${index}`
 
-					active[`${name}:${label}`] = true
+							active[`${name}:${label}`] = true
 
-					const pose = createPose(geometry.center)
-					const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
+							const pose = createPose(geometry.center)
+							const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
-					const existing = entities.get(`${name}:${label}`)
+							const existing = entities.get(`${name}:${label}`)
 
-					if (existing) {
-						existing.set(traits.Pose, pose)
-						continue
+							if (existing) {
+								existing.set(traits.Pose, pose)
+								continue
+							}
+
+							const entityTraits: ConfigurableTrait[] = [
+								traits.Parent(name),
+								traits.Name(label),
+								traits.Pose(pose),
+								traits.GeometriesAPI,
+								traits.Geometry(geometry),
+							]
+
+							if (subtype) {
+								entityTraits.push(
+									traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
+								)
+							}
+
+							const entity = world.spawn(...entityTraits)
+
+							entities.set(`${name}:${label}`, entity)
+						}
 					}
-
-					const entityTraits: ConfigurableTrait[] = [
-						traits.Parent(name),
-						traits.Name(label),
-						traits.Pose(pose),
-						traits.GeometriesAPI,
-						traits.Geometry(geometry),
-					]
-
-					if (subtype) {
-						entityTraits.push(
-							traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
-						)
-					}
-
-					const entity = world.spawn(...entityTraits)
-
-					entities.set(`${name}:${label}`, entity)
-				}
-			}
+				})
+			})
 		}
 
 		// Clean up non-active entities

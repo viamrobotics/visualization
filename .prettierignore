@@ -11,5 +11,8 @@ src/lib/buf
 # Docs
 draw/DOCS.md
 
+# Snapshots
+draw/__snapshots__
+
 # IDE
 .cursor
