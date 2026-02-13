@@ -104,12 +104,12 @@
 						Enabled axes
 						<ToggleGroup
 							multiple
-							buttons={[
-								{ value: 'x', on: settings.current.enableMeasureAxisX },
-								{ value: 'y', on: settings.current.enableMeasureAxisY },
-								{ value: 'z', on: settings.current.enableMeasureAxisZ },
+							options={[
+								{ label: 'x', selected: settings.current.enableMeasureAxisX },
+								{ label: 'y', selected: settings.current.enableMeasureAxisY },
+								{ label: 'z', selected: settings.current.enableMeasureAxisZ },
 							]}
-							onclick={(details) => {
+							onSelect={(details) => {
 								settings.current.enableMeasureAxisX = details.includes('x')
 								settings.current.enableMeasureAxisY = details.includes('y')
 								settings.current.enableMeasureAxisZ = details.includes('z')
@@ -168,7 +168,7 @@
 				zIndexRange={[3, 0]}
 			>
 				<div class="border border-black bg-white px-1 py-0.5 text-xs">
-					{p1.distanceTo(p2).toFixed(2)}<span class="text-subtle-2">m</span>
+					{p1.distanceTo(p2).toFixed(3)}<span class="text-subtle-2">m</span>
 				</div>
 			</HTML>
 		{/if}

@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "1.9.1",
+	"version": "1.10.0",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -64,6 +64,7 @@
 		"@zag-js/floating-panel": "1.22.1",
 		"@zag-js/popover": "1.22.1",
 		"@zag-js/svelte": "1.22.1",
+		"@zag-js/tabs": "1.22.1",
 		"@zag-js/toggle-group": "1.22.1",
 		"@zag-js/tree-view": "1.22.1",
 		"camera-controls": "3.1.0",
@@ -112,6 +113,7 @@
 		"@zag-js/floating-panel": ">=1",
 		"@zag-js/popover": ">=1",
 		"@zag-js/svelte": ">=1",
+		"@zag-js/tabs": ">=1",
 		"@zag-js/toggle-group": ">=1",
 		"@zag-js/tree-view": ">=1",
 		"camera-controls": ">=3",

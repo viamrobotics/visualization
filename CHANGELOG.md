@@ -1,5 +1,17 @@
 # motion-tools
 
+## 1.10.0
+
+### Minor Changes
+
+- 2e43ecd: Feature: settings panel
+- 3022029: enable hoverlinking for pcds and poses
+
+### Patch Changes
+
+- 15fb951: Fix: preserve last pointcloud fetch when entering edit mode
+- 7cf4e8b: Show millimeter level precision in measuring tool
+
 ## 1.9.1
 
 ### Patch Changes

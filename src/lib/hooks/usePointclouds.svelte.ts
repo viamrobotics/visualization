@@ -8,7 +8,7 @@ import {
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefetchRates } from '$lib/components/overlay/left-pane/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
@@ -59,7 +59,6 @@ export const providePointclouds = (partID: () => string) => {
 
 		for (const client of clients) {
 			if (
-				environment.current.viewerMode === 'monitor' &&
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
@@ -90,6 +89,7 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const options = $derived({
+		enabled: environment.current.viewerMode === 'monitor',
 		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
 
