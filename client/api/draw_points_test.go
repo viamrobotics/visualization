@@ -116,14 +116,14 @@ func TestDrawPoints(t *testing.T) {
 	})
 
 	t.Run("DrawPointsWithSingleColor", func(t *testing.T) {
-		runDrawPointsTest(t, "myPointsSingleColor", &[]draw.Color{draw.NewColor(draw.WithName("yellow"))})
+		runDrawPointsTest(t, "myPointsSingleColor", &[]draw.Color{draw.ColorFromName("yellow")})
 	})
 
 	t.Run("DrawPointsWithColorPalette", func(t *testing.T) {
 		runDrawPointsTest(t, "myPointsPalette", &[]draw.Color{
-			draw.NewColor(draw.WithName("yellow")),
-			draw.NewColor(draw.WithName("red")),
-			draw.NewColor(draw.WithName("blue")),
+			draw.ColorFromName("yellow"),
+			draw.ColorFromName("red"),
+			draw.ColorFromName("blue"),
 		})
 	})
 
@@ -145,7 +145,7 @@ func TestDrawPoints(t *testing.T) {
 			Name:      "myPointsWithSize",
 			Positions: points,
 			PointSize: 50,
-			Colors:    []draw.Color{draw.NewColor(draw.WithName("green"))},
+			Colors:    []draw.Color{draw.ColorFromName("green")},
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

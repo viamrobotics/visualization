@@ -27,5 +27,5 @@ type ColorChooser struct {
 func (cc *ColorChooser) Next() draw.Color {
 	c := ColorfulNames[cc.count%len(ColorfulNames)]
 	cc.count++
-	return draw.NewColor(draw.WithName(c))
+	return draw.ColorFromName(c)
 }

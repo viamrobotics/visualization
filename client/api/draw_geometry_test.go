@@ -31,7 +31,7 @@ func TestDrawGeometry(t *testing.T) {
 		uuid, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "box",
 			Geometry: box,
-			Color:    draw.NewColor(draw.WithName("purple")),
+			Color:    draw.ColorFromName("purple"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -50,7 +50,7 @@ func TestDrawGeometry(t *testing.T) {
 		uuid, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "sphere",
 			Geometry: box,
-			Color:    draw.NewColor(draw.WithName("red")),
+			Color:    draw.ColorFromName("red"),
 		})
 
 		test.That(t, err, test.ShouldBeNil)
@@ -72,7 +72,7 @@ func TestDrawGeometry(t *testing.T) {
 		uuid, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "capsule",
 			Geometry: capsule,
-			Color:    draw.NewColor(draw.WithName("orange")),
+			Color:    draw.ColorFromName("orange"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -92,7 +92,7 @@ func TestDrawGeometry(t *testing.T) {
 		uuid, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "mesh",
 			Geometry: meshInWorld,
-			Color:    draw.NewColor(draw.WithName("blue")),
+			Color:    draw.ColorFromName("blue"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -113,7 +113,7 @@ func TestDrawGeometry(t *testing.T) {
 			uuid, err := DrawGeometry(DrawGeometryOptions{
 				ID:       "box",
 				Geometry: box,
-				Color:    draw.NewColor(draw.WithName("purple")),
+				Color:    draw.ColorFromName("purple"),
 			})
 			test.That(t, err, test.ShouldBeNil)
 			test.That(t, uuid, test.ShouldNotBeNil)

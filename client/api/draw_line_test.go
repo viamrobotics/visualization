@@ -55,7 +55,7 @@ func TestDrawLine(t *testing.T) {
 
 	t.Run("DrawLineWithLineColor", func(t *testing.T) {
 		points := generateSpiralPoints()
-		lineColor := draw.NewColor(draw.WithName("yellow"))
+		lineColor := draw.ColorFromName("yellow")
 
 		uuid, err := DrawLine(DrawLineOptions{
 			Name:      "upwardSpiralLineColor",
@@ -68,8 +68,8 @@ func TestDrawLine(t *testing.T) {
 
 	t.Run("DrawLineWithPointColor", func(t *testing.T) {
 		points := generateSpiralPoints()
-		lineColor := draw.NewColor(draw.WithRGB(255, 0, 0))
-		pointColor := draw.NewColor(draw.WithRGB(0, 255, 0))
+		lineColor := draw.ColorFromRGB(255, 0, 0)
+		pointColor := draw.ColorFromRGB(0, 255, 0)
 
 		uuid, err := DrawLine(DrawLineOptions{
 			Name:      "upwardSpiralPointColor",
@@ -82,7 +82,7 @@ func TestDrawLine(t *testing.T) {
 
 	t.Run("DrawLineWithLineWidth", func(t *testing.T) {
 		points := generateSpiralPoints()
-		lineColor := draw.NewColor(draw.WithName("blue"))
+		lineColor := draw.ColorFromName("blue")
 
 		uuid, err := DrawLine(DrawLineOptions{
 			Name:      "upwardSpiralLineWidth",
@@ -96,7 +96,7 @@ func TestDrawLine(t *testing.T) {
 
 	t.Run("DrawLineWithPointSize", func(t *testing.T) {
 		points := generateSpiralPoints()
-		lineColor := draw.NewColor(draw.WithName("purple"))
+		lineColor := draw.ColorFromName("purple")
 
 		uuid, err := DrawLine(DrawLineOptions{
 			Name:      "upwardSpiralPointSize",

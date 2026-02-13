@@ -126,6 +126,8 @@ func Replay(filename string, playbackSpeed float64) error {
 func replayCall(client drawv1connect.DrawServiceClient, procedure string, payload []byte) error {
 	ctx := context.Background()
 
+	// TODO: This is big switch statement that could be refactored to use a map of procedures to functions.
+	// We don't have that many RPCs, so this is fine for now.
 	switch procedure {
 	case drawv1connect.DrawServiceAddTransformProcedure:
 		var msg drawv1.AddTransformRequest

@@ -23,7 +23,7 @@ func TestRemoveAll(t *testing.T) {
 		)
 		test.That(t, err, test.ShouldBeNil)
 
-		boxUUID, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.NewColor(draw.WithName("black"))})
+		boxUUID, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.ColorFromName("black")})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, boxUUID, test.ShouldNotBeNil)
 
@@ -32,7 +32,7 @@ func TestRemoveAll(t *testing.T) {
 			{X: 101, Y: 100, Z: 200},
 		},
 			PointSize: 10,
-			Colors:    []draw.Color{draw.NewColor(draw.WithName("black"))},
+			Colors:    []draw.Color{draw.ColorFromName("black")},
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, pointsUUID, test.ShouldNotBeNil)

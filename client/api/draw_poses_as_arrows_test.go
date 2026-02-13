@@ -78,7 +78,7 @@ func runDrawPosesAsArrowsTest(t *testing.T, numPoints int, colors *[]draw.Color)
 		"mySphere",
 	)
 
-	uuid, err = DrawGeometry(DrawGeometryOptions{Geometry: sphere, Color: draw.NewColor(draw.WithName("aqua"))})
+	uuid, err = DrawGeometry(DrawGeometryOptions{Geometry: sphere, Color: draw.ColorFromName("aqua")})
 	test.That(t, err, test.ShouldBeNil)
 	test.That(t, uuid, test.ShouldNotBeNil)
 }
@@ -91,11 +91,11 @@ func TestDrawPosesAsArrows(t *testing.T) {
 	})
 
 	t.Run("DrawPosesAsArrowsWithSingleColor", func(t *testing.T) {
-		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.NewColor(draw.WithName("yellow"))})
+		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.ColorFromName("yellow")})
 	})
 
 	t.Run("DrawPosesAsArrowsWithColorPalette", func(t *testing.T) {
-		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.NewColor(draw.WithName("yellow")), draw.NewColor(draw.WithName("red"))})
+		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.ColorFromName("yellow"), draw.ColorFromName("red")})
 	})
 
 	t.Run("DrawPosesAsArrowsWithPerPointColors", func(t *testing.T) {
@@ -123,12 +123,12 @@ func TestPosesAsArrowStress(t *testing.T) {
 		var poses []spatialmath.Pose
 		var colors []draw.Color
 		pallet := []draw.Color{
-			draw.NewColor(draw.WithHex("#6200EA")),
-			draw.NewColor(draw.WithHex("#EF5350")),
-			draw.NewColor(draw.WithHex("#0091EA")),
-			draw.NewColor(draw.WithHex("#E53935")),
-			draw.NewColor(draw.WithHex("#D32F2F")),
-			draw.NewColor(draw.WithName("blue")),
+			draw.ColorFromHex("#6200EA"),
+			draw.ColorFromHex("#EF5350"),
+			draw.ColorFromHex("#0091EA"),
+			draw.ColorFromHex("#E53935"),
+			draw.ColorFromHex("#D32F2F"),
+			draw.ColorFromName("blue"),
 		}
 
 		for i := range numPoints {

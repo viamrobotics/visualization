@@ -54,7 +54,7 @@ func main() {
         r3.Vector{X: 100, Y: 100, Z: 100},
         "my-box",
     )
-    snapshot.DrawGeometry(box, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithName("red")))
+    snapshot.DrawGeometry(box, spatialmath.NewZeroPose(), "world", draw.ColorFromName("red"))
 
     // Draw some points
     positions := []r3.Vector{
@@ -63,7 +63,7 @@ func main() {
         {X: 200, Y: 100, Z: 100},
     }
     snapshot.DrawPoints("my-points", "world", spatialmath.NewZeroPose(), positions,
-        draw.WithPointsColors(draw.NewColor(draw.WithName("blue"))))
+        draw.WithPointsColors(draw.ColorFromName("blue")))
 
     // Draw a line connecting points
     linePoints := []r3.Vector{
@@ -73,7 +73,7 @@ func main() {
     }
     snapshot.DrawLine("my-line", "world", spatialmath.NewZeroPose(), linePoints,
         draw.WithLineWidth(3.0),
-        draw.WithLineColors(draw.NewColor(draw.WithName("green")), nil))
+        draw.WithLineColors(draw.ColorFromName("green"), nil))
 
     // Export to JSON for rendering
     jsonData, _ := snapshot.MarshalJSON()
@@ -137,7 +137,7 @@ func main() {
     _, err = api.DrawLine(api.DrawLineOptions{
         Name:      "my-line",
         Positions: positions,
-        Colors:    []draw.Color{draw.NewColor(draw.WithName("blue"))},
+        Colors:    []draw.Color{draw.ColorFromName("blue")},
     })
     if err != nil {
         panic(err)
@@ -151,7 +151,7 @@ func main() {
     _, err = api.DrawPoints(api.DrawPointsOptions{
         Name:      "my-points",
         Positions: points,
-        Colors:    []draw.Color{draw.NewColor(draw.WithName("red"))},
+        Colors:    []draw.Color{draw.ColorFromName("red")},
         PointSize: 10.0,
     })
     if err != nil {
@@ -225,13 +225,20 @@ api.DrawLine(api.DrawLineOptions{
 
 ## Color Options
 
-Colors can be created from names, hex codes, or RGB values:
+Colors can be created from names, hex codes, or RGB values using the convenience helpers:
 
 ```go
-colorByName := draw.NewColor(draw.WithName("red"))
-colorByHex  := draw.NewColor(draw.WithHex("#FF5733"))
-colorByRGB  := draw.NewColor(draw.WithRGB(255, 87, 51))
-colorByRGBA := draw.NewColor(draw.WithRGBA(255, 87, 51, 180))
+colorByName := draw.ColorFromName("red")
+colorByHex  := draw.ColorFromHex("#FF5733")
+colorByRGB  := draw.ColorFromRGB(255, 87, 51)
+colorByRGBA := draw.ColorFromRGBA(255, 87, 51, 180)
+colorByHSV  := draw.ColorFromHSV(0.5, 0.8, 1.0)
+```
+
+For advanced use cases, the functional options constructor is also available:
+
+```go
+draw.NewColor(draw.WithRGB(255, 87, 51))
 ```
 
 Most drawing functions accept `[]draw.Color` with flexible semantics:

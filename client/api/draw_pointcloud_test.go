@@ -64,23 +64,23 @@ func TestDrawPointCloud(t *testing.T) {
 			t,
 			"../data/Zaghetto.pcd",
 			"octagon_single_color",
-			[]draw.Color{draw.NewColor(draw.WithName("red"))},
+			[]draw.Color{draw.ColorFromName("red")},
 			0,
 		)
 	})
 
 	t.Run("DrawPaletteColorPointCloud", func(t *testing.T) {
 		palette := []draw.Color{
-			draw.NewColor(draw.WithName("blue")),
-			draw.NewColor(draw.WithName("cyan")),
-			draw.NewColor(draw.WithName("green")),
-			draw.NewColor(draw.WithName("lime")),
-			draw.NewColor(draw.WithName("yellow")),
-			draw.NewColor(draw.WithName("gold")),
-			draw.NewColor(draw.WithName("orange")),
-			draw.NewColor(draw.WithName("orangered")),
-			draw.NewColor(draw.WithName("red")),
-			draw.NewColor(draw.WithName("purple")),
+			draw.ColorFromName("blue"),
+			draw.ColorFromName("cyan"),
+			draw.ColorFromName("green"),
+			draw.ColorFromName("lime"),
+			draw.ColorFromName("yellow"),
+			draw.ColorFromName("gold"),
+			draw.ColorFromName("orange"),
+			draw.ColorFromName("orangered"),
+			draw.ColorFromName("red"),
+			draw.ColorFromName("purple"),
 		}
 
 		runDrawPointCloudTest(
@@ -123,7 +123,7 @@ func TestDrawPointCloud(t *testing.T) {
 				b = 0
 			}
 
-			colors[i] = draw.NewColor(draw.WithRGB(r, g, b))
+			colors[i] = draw.ColorFromRGB(r, g, b)
 		}
 
 		runDrawPointCloudTest(

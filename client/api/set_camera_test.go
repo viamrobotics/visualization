@@ -35,7 +35,7 @@ func TestSetCamera(t *testing.T) {
 
 		_, err = DrawGeometry(DrawGeometryOptions{
 			Geometry: box,
-			Color:    draw.NewColor(draw.WithName("blue")),
+			Color:    draw.ColorFromName("blue"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 

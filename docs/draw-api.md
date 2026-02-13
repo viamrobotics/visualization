@@ -15,11 +15,11 @@ This package supports two primary workflows for visualization:
 1. Real\-time: Use with the client SDK for live updates to a running visualizer
 2. Snapshot\-based: Create static scenes that can be exported to files or embedded in applications
 
-The package includes support for various geometric primitives \(arrows, lines, points, NURBS curves\), 3D models, reference frames, and robot states, with flexible color management and scene configuration. All shapes can be serialized to Protobuf for rendering.
+All drawn objects can be serialized to Protobuf for rendering.
 
-### Real\\\-Time Drawing
+### Drawing Client Workflow
 
-For real\-time updates during development or integration testing, use the client SDK:
+For real\-time drawing during development or integration testing, use the client SDK:
 
 ```
 import "github.com/viam-labs/motion-tools/client/api"
@@ -34,7 +34,7 @@ api.DrawLine(api.DrawLineOptions{
 })
 ```
 
-See the client package documentation for the complete real\-time drawing API.
+See the client package documentation for the complete drawing client API.
 
 ### Snapshot Workflow
 
@@ -104,6 +104,12 @@ Many drawing functions support flexible color options:
   - [func \(packer \*BufferPacker\[T\]\) Read\(\) \[\]byte](<#BufferPacker[T].Read>)
   - [func \(packer \*BufferPacker\[T\]\) Write\(values ...T\)](<#BufferPacker[T].Write>)
 - [type Color](<#Color>)
+  - [func ColorFromColorRGBA\(rgba color.RGBA\) Color](<#ColorFromColorRGBA>)
+  - [func ColorFromHSV\(h, s, v float32\) Color](<#ColorFromHSV>)
+  - [func ColorFromHex\(hex string\) Color](<#ColorFromHex>)
+  - [func ColorFromName\(name string\) Color](<#ColorFromName>)
+  - [func ColorFromRGB\(r, g, b uint8\) Color](<#ColorFromRGB>)
+  - [func ColorFromRGBA\(r, g, b, a uint8\) Color](<#ColorFromRGBA>)
   - [func NewColor\(options ...colorOption\) Color](<#NewColor>)
   - [func \(color Color\) SetAlpha\(alpha uint8\) Color](<#Color.SetAlpha>)
   - [func \(color Color\) SetRGB\(r, g, b uint8\) Color](<#Color.SetRGB>)
@@ -206,6 +212,7 @@ Many drawing functions support flexible color options:
   - [func \(s \*Service\) RemoveAllTransforms\(ctx context.Context, req \*connect.Request\[drawv1.RemoveAllTransformsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllTransformsResponse\], error\)](<#Service.RemoveAllTransforms>)
   - [func \(s \*Service\) RemoveDrawing\(ctx context.Context, req \*connect.Request\[drawv1.RemoveDrawingRequest\]\) \(\*connect.Response\[drawv1.RemoveDrawingResponse\], error\)](<#Service.RemoveDrawing>)
   - [func \(s \*Service\) RemoveTransform\(ctx context.Context, req \*connect.Request\[drawv1.RemoveTransformRequest\]\) \(\*connect.Response\[drawv1.RemoveTransformResponse\], error\)](<#Service.RemoveTransform>)
+  - [func \(s \*Service\) SetSceneMetadata\(ctx context.Context, req \*connect.Request\[drawv1.SetSceneMetadataRequest\]\) \(\*connect.Response\[drawv1.SetSceneMetadataResponse\], error\)](<#Service.SetSceneMetadata>)
   - [func \(s \*Service\) StreamDrawingChanges\(ctx context.Context, req \*connect.Request\[drawv1.StreamDrawingChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamDrawingChangesResponse\]\) error](<#Service.StreamDrawingChanges>)
   - [func \(s \*Service\) StreamSceneChanges\(ctx context.Context, req \*connect.Request\[drawv1.StreamSceneChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamSceneChangesResponse\]\) error](<#Service.StreamSceneChanges>)
   - [func \(s \*Service\) StreamTransformChanges\(ctx context.Context, req \*connect.Request\[drawv1.StreamTransformChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamTransformChangesResponse\]\) error](<#Service.StreamTransformChanges>)
@@ -450,8 +457,62 @@ type Color struct {
 }
 ```
 
+<a name="ColorFromColorRGBA"></a>
+### func [ColorFromColorRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L208>)
+
+```go
+func ColorFromColorRGBA(rgba color.RGBA) Color
+```
+
+ColorFromColorRGBA creates a color from a standard library color.RGBA struct.
+
+<a name="ColorFromHSV"></a>
+### func [ColorFromHSV](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L218>)
+
+```go
+func ColorFromHSV(h, s, v float32) Color
+```
+
+ColorFromHSV creates a color from HSV values.
+
+<a name="ColorFromHex"></a>
+### func [ColorFromHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L223>)
+
+```go
+func ColorFromHex(hex string) Color
+```
+
+ColorFromHex creates a color from a hex string.
+
+<a name="ColorFromName"></a>
+### func [ColorFromName](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L213>)
+
+```go
+func ColorFromName(name string) Color
+```
+
+ColorFromName creates a color from a standard web color name.
+
+<a name="ColorFromRGB"></a>
+### func [ColorFromRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L198>)
+
+```go
+func ColorFromRGB(r, g, b uint8) Color
+```
+
+ColorFromRGB creates a color from RGB values.
+
+<a name="ColorFromRGBA"></a>
+### func [ColorFromRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L203>)
+
+```go
+func ColorFromRGBA(r, g, b, a uint8) Color
+```
+
+ColorFromRGBA creates a color from RGBA values.
+
 <a name="NewColor"></a>
-### func [NewColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L147>)
+### func [NewColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L157>)
 
 ```go
 func NewColor(options ...colorOption) Color
@@ -460,7 +521,7 @@ func NewColor(options ...colorOption) Color
 NewColor creates a new Color with the given options. If no options are provided, returns black with full opacity \(0, 0, 0, 255\).
 
 <a name="Color.SetAlpha"></a>
-### func \(Color\) [SetAlpha](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L177>)
+### func \(Color\) [SetAlpha](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L187>)
 
 ```go
 func (color Color) SetAlpha(alpha uint8) Color
@@ -469,7 +530,7 @@ func (color Color) SetAlpha(alpha uint8) Color
 SetAlpha returns a new Color with the specified alpha value, preserving the RGB values.
 
 <a name="Color.SetRGB"></a>
-### func \(Color\) [SetRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L162>)
+### func \(Color\) [SetRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L172>)
 
 ```go
 func (color Color) SetRGB(r, g, b uint8) Color
@@ -478,7 +539,7 @@ func (color Color) SetRGB(r, g, b uint8) Color
 SetRGB returns a new Color with the specified RGB values, preserving the original alpha value.
 
 <a name="Color.SetRGBA"></a>
-### func \(Color\) [SetRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L170>)
+### func \(Color\) [SetRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L180>)
 
 ```go
 func (color Color) SetRGBA(r, g, b, a uint8) Color
@@ -487,16 +548,16 @@ func (color Color) SetRGBA(r, g, b, a uint8) Color
 SetRGBA returns a new Color with all RGBA values set.
 
 <a name="Color.ToHex"></a>
-### func \(Color\) [ToHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L182>)
+### func \(Color\) [ToHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L193>)
 
 ```go
 func (color Color) ToHex() string
 ```
 
-
+ToHex returns the color as a hex string.
 
 <a name="ColorChooser"></a>
-## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L188-L191>)
+## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L229-L232>)
 
 ColorChooser cycles through a list of colors, useful for automatically assigning different colors to multiple objects. Each call to Next\(\) returns the next color in sequence, wrapping around to the start.
 
@@ -507,7 +568,7 @@ type ColorChooser struct {
 ```
 
 <a name="NewDefaultColorChooser"></a>
-### func [NewDefaultColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L201>)
+### func [NewDefaultColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L242>)
 
 ```go
 func NewDefaultColorChooser() ColorChooser
@@ -516,7 +577,7 @@ func NewDefaultColorChooser() ColorChooser
 NewDefaultColorChooser creates a ColorChooser populated with all standard web color names.
 
 <a name="ColorChooser.Next"></a>
-### func \(ColorChooser\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L194>)
+### func \(ColorChooser\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L235>)
 
 ```go
 func (chooser ColorChooser) Next() Color
@@ -525,7 +586,7 @@ func (chooser ColorChooser) Next() Color
 Next returns the next color in the sequence, cycling back to the first color after reaching the end.
 
 <a name="ConfigurableColors"></a>
-## type [ConfigurableColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L211-L214>)
+## type [ConfigurableColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L252-L255>)
 
 ConfigurableColors is an interface for types that can have their colors configured.
 
@@ -573,7 +634,7 @@ func WithSingleArrowColor(color Color) DrawArrowsOption
 WithSingleArrowColor sets the color for all arrows.
 
 <a name="DrawColorsConfig"></a>
-## type [DrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L217-L219>)
+## type [DrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L258-L260>)
 
 DrawColorsConfig stores color configuration for drawable objects.
 
@@ -584,7 +645,7 @@ type DrawColorsConfig struct {
 ```
 
 <a name="NewDrawColorsConfig"></a>
-### func [NewDrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L222>)
+### func [NewDrawColorsConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L263>)
 
 ```go
 func NewDrawColorsConfig(colors ...Color) DrawColorsConfig
@@ -593,7 +654,7 @@ func NewDrawColorsConfig(colors ...Color) DrawColorsConfig
 NewDrawColorsConfig creates a new color configuration with the given colors.
 
 <a name="DrawColorsConfig.SetColors"></a>
-### func \(\*DrawColorsConfig\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L229>)
+### func \(\*DrawColorsConfig\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L270>)
 
 ```go
 func (config *DrawColorsConfig) SetColors(colors []Color)
@@ -1460,7 +1521,7 @@ func (s *Service) AddTransform(ctx context.Context, req *connect.Request[drawv1.
 
 
 <a name="Service.RemoveAll"></a>
-### func \(\*Service\) [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L469-L472>)
+### func \(\*Service\) [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L545-L548>)
 
 ```go
 func (s *Service) RemoveAll(ctx context.Context, req *connect.Request[drawv1.RemoveAllRequest]) (*connect.Response[drawv1.RemoveAllResponse], error)
@@ -1500,6 +1561,15 @@ func (s *Service) RemoveDrawing(ctx context.Context, req *connect.Request[drawv1
 
 ```go
 func (s *Service) RemoveTransform(ctx context.Context, req *connect.Request[drawv1.RemoveTransformRequest]) (*connect.Response[drawv1.RemoveTransformResponse], error)
+```
+
+
+
+<a name="Service.SetSceneMetadata"></a>
+### func \(\*Service\) [SetSceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L469-L472>)
+
+```go
+func (s *Service) SetSceneMetadata(ctx context.Context, req *connect.Request[drawv1.SetSceneMetadataRequest]) (*connect.Response[drawv1.SetSceneMetadataResponse], error)
 ```
 
 

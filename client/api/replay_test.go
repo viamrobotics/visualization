@@ -38,7 +38,7 @@ func TestReplay(t *testing.T) {
 			uuid, err := DrawGeometry(DrawGeometryOptions{
 				ID:       "ball",
 				Geometry: sphere,
-				Color:    draw.NewColor(draw.WithName("orange")),
+				Color:    draw.ColorFromName("orange"),
 			})
 			test.That(t, err, test.ShouldBeNil)
 			test.That(t, uuid, test.ShouldNotBeNil)
@@ -82,7 +82,7 @@ func TestReplay(t *testing.T) {
 		_, err = DrawGeometry(DrawGeometryOptions{
 			ID:       "helper",
 			Geometry: sphere,
-			Color:    draw.NewColor(draw.WithName("green")),
+			Color:    draw.ColorFromName("green"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 

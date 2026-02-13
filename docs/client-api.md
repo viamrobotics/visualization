@@ -73,9 +73,14 @@ func main() {
 - [func DrawPosesAsArrows\(options DrawPosesAsArrowsOptions\) \(\[\]byte, error\)](<#DrawPosesAsArrows>)
 - [func DrawRobot\(options DrawRobotOptions\) \(\[\]\[\]byte, error\)](<#DrawRobot>)
 - [func DrawWorldState\(options DrawWorldStateOptions\) \(\[\]\[\]byte, error\)](<#DrawWorldState>)
+- [func Record\(filename string\) error](<#Record>)
 - [func RemoveAll\(\) \(int32, error\)](<#RemoveAll>)
 - [func RemoveDrawings\(\) \(int32, error\)](<#RemoveDrawings>)
 - [func RemoveTransforms\(\) \(int32, error\)](<#RemoveTransforms>)
+- [func Replay\(filename string, playbackSpeed float64\) error](<#Replay>)
+- [func ResetCamera\(\) error](<#ResetCamera>)
+- [func SetCamera\(options SetCameraPoseOptions\) error](<#SetCamera>)
+- [func StopRecord\(\)](<#StopRecord>)
 - [type ColorChooser](<#ColorChooser>)
   - [func \(cc \*ColorChooser\) Next\(\) draw.Color](<#ColorChooser.Next>)
 - [type DrawFrameSystemOptions](<#DrawFrameSystemOptions>)
@@ -90,6 +95,7 @@ func main() {
 - [type DrawPosesAsArrowsOptions](<#DrawPosesAsArrowsOptions>)
 - [type DrawRobotOptions](<#DrawRobotOptions>)
 - [type DrawWorldStateOptions](<#DrawWorldStateOptions>)
+- [type SetCameraPoseOptions](<#SetCameraPoseOptions>)
 
 
 ## Variables
@@ -216,6 +222,15 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error)
 
 DrawWorldState will draw a world state in the visualizer. Returns the UUIDs of the drawn geometries, or an error if the server is not running or the drawing fails.
 
+<a name="Record"></a>
+## func [Record](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L24>)
+
+```go
+func Record(filename string) error
+```
+
+Record starts recording all drawing operations to the specified file. The recording starts from a clean state \(all existing objects are removed\). Call StopRecord\(\) to finish recording.
+
 <a name="RemoveAll"></a>
 ## func [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_all.go#L14>)
 
@@ -242,6 +257,42 @@ func RemoveTransforms() (int32, error)
 ```
 
 RemoveTransforms clears all drawn transforms from the visualizer. Returns the number of transforms removed, or an error if the server is not running or the removal fails.
+
+<a name="Replay"></a>
+## func [Replay](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L57>)
+
+```go
+func Replay(filename string, playbackSpeed float64) error
+```
+
+Replay replays a previously recorded session from the specified file. The playbackSpeed parameter controls replay speed \(1.0 = normal, 2.0 = 2x, 0.5 = half speed\). The scene is cleared before replay to match the recording's initial state.
+
+<a name="ResetCamera"></a>
+## func [ResetCamera](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L60>)
+
+```go
+func ResetCamera() error
+```
+
+ResetCamera resets the visualizer's camera pose to the default. The camera position and look\-at point are specified in millimeters. Returns an error if the server is not running or the RPC fails.
+
+<a name="SetCamera"></a>
+## func [SetCamera](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L29>)
+
+```go
+func SetCamera(options SetCameraPoseOptions) error
+```
+
+SetCamera sets the visualizer's camera pose. The camera position and look\-at point are specified in millimeters. Returns an error if the server is not running or the RPC fails.
+
+<a name="StopRecord"></a>
+## func [StopRecord](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L47>)
+
+```go
+func StopRecord()
+```
+
+StopRecord stops the current recording session.
 
 <a name="ColorChooser"></a>
 ## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/client/api/color_chooser.go#L22-L24>)
@@ -558,6 +609,24 @@ type DrawWorldStateOptions struct {
     // Colors for the geometries in the world state.
     // If not provided, the geometries will be colored using the default color chooser.
     Colors []draw.Color
+}
+```
+
+<a name="SetCameraPoseOptions"></a>
+## type [SetCameraPoseOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L15-L24>)
+
+SetCameraPoseOptions configures a SetCameraPose call.
+
+```go
+type SetCameraPoseOptions struct {
+    // The camera position in millimeters (world coordinates).
+    Position r3.Vector
+
+    // The point the camera should look at in millimeters (world coordinates).
+    LookAt r3.Vector
+
+    // Whether to animate the camera movement to this pose.
+    Animate bool
 }
 ```
 

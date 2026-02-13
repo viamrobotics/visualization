@@ -65,7 +65,7 @@ func TestDrawNurbs(t *testing.T) {
 			Knots:         knots,
 			Degree:        int32(degree),
 			Weights:       weights,
-			Color:         draw.NewColor(draw.WithHex("#40E0D0")),
+			Color:         draw.ColorFromHex("#40E0D0"),
 			LineWidth:     20.0, // 20mm for visibility
 		})
 		test.That(t, err, test.ShouldBeNil)

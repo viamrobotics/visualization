@@ -11,9 +11,9 @@ draw/__snapshots__
 draw/v1
 src/lib/buf
 
-# Docs
-docs/*.md
-!docs/README.md
+# Generated docs
+docs/client-api.md
+docs/draw-api.md
 
 # IDE
 .cursor

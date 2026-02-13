@@ -71,8 +71,18 @@ func WithRGB(r, g, b uint8) colorOption {
 	}
 }
 
-// WithRGBA creates a color option that sets RGBA values from a standard library color.RGBA struct.
-func WithRGBA(rgba color.RGBA) colorOption {
+// WithRGBA creates a color option that sets RGBA values.
+func WithRGBA(r, g, b, a uint8) colorOption {
+	return func(config *colorConfig) {
+		config.r = r
+		config.g = g
+		config.b = b
+		config.a = a
+	}
+}
+
+// WithRGBA creates a color option that sets RGBA from a standard library color.RGBA struct.
+func WithColorRGBA(rgba color.RGBA) colorOption {
 	return func(config *colorConfig) {
 		config.r = rgba.R
 		config.g = rgba.G
@@ -87,7 +97,7 @@ func WithRGBA(rgba color.RGBA) colorOption {
 func WithName(name string) colorOption {
 	return func(config *colorConfig) {
 		color := colornames.Map[name]
-		WithRGBA(color)(config)
+		WithColorRGBA(color)(config)
 	}
 }
 
@@ -179,8 +189,39 @@ func (color Color) SetAlpha(alpha uint8) Color {
 	return color
 }
 
+// ToHex returns the color as a hex string.
 func (color Color) ToHex() string {
 	return fmt.Sprintf("#%02X%02X%02X", color.R, color.G, color.B)
+}
+
+// ColorFromRGB creates a color from RGB values.
+func ColorFromRGB(r, g, b uint8) Color {
+	return NewColor(WithRGB(r, g, b))
+}
+
+// ColorFromRGBA creates a color from RGBA values.
+func ColorFromRGBA(r, g, b, a uint8) Color {
+	return NewColor(WithRGBA(r, g, b, a))
+}
+
+// ColorFromColorRGBA creates a color from a standard library color.RGBA struct.
+func ColorFromColorRGBA(rgba color.RGBA) Color {
+	return NewColor(WithColorRGBA(rgba))
+}
+
+// ColorFromName creates a color from a standard web color name.
+func ColorFromName(name string) Color {
+	return NewColor(WithName(name))
+}
+
+// ColorFromHSV creates a color from HSV values.
+func ColorFromHSV(h, s, v float32) Color {
+	return NewColor(WithHSV(h, s, v))
+}
+
+// ColorFromHex creates a color from a hex string.
+func ColorFromHex(hex string) Color {
+	return NewColor(WithHex(hex))
 }
 
 // ColorChooser cycles through a list of colors, useful for automatically assigning different colors
@@ -201,7 +242,7 @@ func (chooser ColorChooser) Next() Color {
 func NewDefaultColorChooser() ColorChooser {
 	colors := make([]Color, len(colornames.Map))
 	for _, rgba := range colornames.Map {
-		colors = append(colors, NewColor(WithRGBA(rgba)))
+		colors = append(colors, NewColor(WithColorRGBA(rgba)))
 	}
 
 	return ColorChooser{colors: colors}

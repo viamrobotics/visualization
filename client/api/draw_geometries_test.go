@@ -68,11 +68,11 @@ func TestDrawGeometries(t *testing.T) {
 		geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
 
 		colors := []draw.Color{
-			draw.NewColor(draw.WithHex("#EF9A9A")),
-			draw.NewColor(draw.WithHex("#EF5350")),
-			draw.NewColor(draw.WithHex("#F44336")),
-			draw.NewColor(draw.WithName("lime")),
-			draw.NewColor(draw.WithName("red")),
+			draw.ColorFromHex("#EF9A9A"),
+			draw.ColorFromHex("#EF5350"),
+			draw.ColorFromHex("#F44336"),
+			draw.ColorFromName("lime"),
+			draw.ColorFromName("red"),
 		}
 
 		uuids, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{Geometries: geometriesInFrame, Colors: colors, DownscalingThreshold: 25})
@@ -119,9 +119,9 @@ func TestDrawGeometriesUpdating(t *testing.T) {
 			geometries := []spatialmath.Geometry{box1, box2, box3}
 			geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
 			colors := []draw.Color{
-				draw.NewColor(draw.WithHex("#EF9A9A")),
-				draw.NewColor(draw.WithHex("#EF5350")),
-				draw.NewColor(draw.WithHex("#F44336")),
+				draw.ColorFromHex("#EF9A9A"),
+				draw.ColorFromHex("#EF5350"),
+				draw.ColorFromHex("#F44336"),
 			}
 
 			uuids, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{ID: "test", Geometries: geometriesInFrame, Colors: colors})

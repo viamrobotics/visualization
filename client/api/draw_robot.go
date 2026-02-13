@@ -14,15 +14,15 @@ import (
 
 // defaultColorPalette is a list of sensible colors to cycle between
 var defaultColorPalette = []draw.Color{
-	draw.NewColor(draw.WithHex("#E41A1C")),
-	draw.NewColor(draw.WithHex("#377EB8")),
-	draw.NewColor(draw.WithHex("#4DAF4A")),
-	draw.NewColor(draw.WithHex("#984EA3")),
-	draw.NewColor(draw.WithHex("#FF7F00")),
-	draw.NewColor(draw.WithHex("#FFFF33")),
-	draw.NewColor(draw.WithHex("#A65628")),
-	draw.NewColor(draw.WithHex("#F781BF")),
-	draw.NewColor(draw.WithHex("#999999")),
+	draw.ColorFromHex("#E41A1C"),
+	draw.ColorFromHex("#377EB8"),
+	draw.ColorFromHex("#4DAF4A"),
+	draw.ColorFromHex("#984EA3"),
+	draw.ColorFromHex("#FF7F00"),
+	draw.ColorFromHex("#FFFF33"),
+	draw.ColorFromHex("#A65628"),
+	draw.ColorFromHex("#F781BF"),
+	draw.ColorFromHex("#999999"),
 }
 
 // DrawRobotOptions configures a DrawRobot call.
