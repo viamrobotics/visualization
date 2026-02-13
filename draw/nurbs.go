@@ -82,7 +82,7 @@ func WithNurbsWeights(weights []float64) drawNurbsOption {
 func WithNurbsColors(defaultColor Color, perPointColors ...Color) drawNurbsOption {
 	colors := []Color{defaultColor}
 	colors = append(colors, perPointColors...)
-	return WithColors[*drawNurbsConfig](colors)
+	return withColors[*drawNurbsConfig](colors)
 }
 
 // NewNurbs creates a new NURBS curve with the given control points, knot vector, and options.
