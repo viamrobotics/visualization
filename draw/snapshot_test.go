@@ -142,10 +142,7 @@ func createBody(
 	y := orbitRadius * math.Sin(angleRad)
 
 	orbitFrameName := name + "-orbit"
-	err := snapshot.DrawFrame("", orbitFrameName, parent, spatialmath.NewPoseFromPoint(r3.Vector{X: x, Y: y, Z: 0}), nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	snapshot.DrawFrame(orbitFrameName, parent, spatialmath.NewPoseFromPoint(r3.Vector{X: x, Y: y, Z: 0}), nil, nil)
 
 	geometry, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), bodyRadius, name)
 	if err != nil {
@@ -447,10 +444,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		)
 
 		sunOrbitFrame := "sun-orbit"
-		err := snapshot.DrawFrame("", sunOrbitFrame, "world", spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: 2000}), nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		snapshot.DrawFrame(sunOrbitFrame, "world", spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: 2000}), nil, nil)
 
 		sunGeometry, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), 2000, "sun")
 		if err != nil {
