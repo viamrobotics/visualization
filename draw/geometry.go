@@ -5,7 +5,6 @@ import (
 
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/pointcloud"
-	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 )
 
@@ -14,15 +13,15 @@ type DrawnGeometry struct {
 	// The geometry to draw.
 	Geometry spatialmath.Geometry
 
-	// The color to draw the geometry with.
-	// For point clouds, this acts as a single-color override to the point cloud's color data.
-	// For more complex pointcloud rendering, use the DrawnPointCloud.
-	Color *Color
+	// The colors to draw the geometry with.
+	// Should be a single color for simple geometries.
+	// For complex geometries, this can be a single color, a color palette, or a color per vertex.
+	Colors []Color
 }
 
 // DrawnGeometryConfig holds configuration options for drawing a geometry.
 type DrawnGeometryConfig struct {
-	color *Color
+	DrawColorsConfig
 
 	// The threshold in millimeters for downscaling, defaults to 0.
 	// Currently only supported for point clouds.
@@ -32,15 +31,11 @@ type DrawnGeometryConfig struct {
 // newDrawGeometryConfig creates a new draw geometry configuration
 func newDrawGeometryConfig(isPointCloud bool) *DrawnGeometryConfig {
 	config := &DrawnGeometryConfig{
-		color:                nil,
+		DrawColorsConfig:     NewDrawColorsConfig(),
 		downscalingThreshold: 0,
 	}
 
-	if !isPointCloud {
-		red := NewColor(WithName("red"))
-		config.color = &red
-	}
-
+	config.SetColors([]Color{ColorFromName("red")})
 	return config
 }
 
@@ -49,9 +44,12 @@ type DrawGeometryOption func(*DrawnGeometryConfig)
 
 // WithGeometryColor creates a geometry option that sets the color for the geometry.
 func WithGeometryColor(color Color) DrawGeometryOption {
-	return func(config *DrawnGeometryConfig) {
-		config.color = &color
-	}
+	return withColors[*DrawnGeometryConfig]([]Color{color})
+}
+
+// WithGeometryColors creates a geometry option that sets the colors for the geometry.
+func WithGeometryColors(colors ...Color) DrawGeometryOption {
+	return withColors[*DrawnGeometryConfig](colors)
 }
 
 // WithPointCloudDownscaling creates a geometry option for point clouds that sets the threshold in millimeters below which points are not rendered from one another.
@@ -72,7 +70,7 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 	}
 
 	if !isPointCloud {
-		return &DrawnGeometry{Geometry: geometry, Color: config.color}, nil
+		return &DrawnGeometry{Geometry: geometry, Colors: config.colors}, nil
 	}
 
 	if config.downscalingThreshold < 0 {
@@ -80,7 +78,7 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 	}
 
 	if config.downscalingThreshold == 0 {
-		return &DrawnGeometry{Geometry: geometry, Color: config.color}, nil
+		return &DrawnGeometry{Geometry: geometry, Colors: config.colors}, nil
 	}
 
 	pc, err := pointcloud.NewPointCloudFromProto(proto.GetPointcloud(), proto.GetLabel())
@@ -96,133 +94,20 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 
 	drawnGeometry.SetLabel(proto.GetLabel())
 
-	return &DrawnGeometry{Geometry: drawnGeometry, Color: config.color}, nil
+	return &DrawnGeometry{Geometry: drawnGeometry, Colors: config.colors}, nil
 }
 
 // Draw creates a Transform from this DrawnGeometry object, positioned at the given pose within the specified reference frame.
-func (drawnGeometry *DrawnGeometry) Draw(name string, parent string, pose spatialmath.Pose, options ...UuidOption) (*commonv1.Transform, error) {
-	if drawnGeometry.Color != nil {
-		metadata := NewMetadata(WithMetadataColors(*drawnGeometry.Color))
+func (drawnGeometry *DrawnGeometry) Draw(name string, parent string, pose spatialmath.Pose, options ...TransformOption) (*commonv1.Transform, error) {
+	if len(drawnGeometry.Colors) > 0 {
+		metadata := NewMetadata(WithMetadataColors(drawnGeometry.Colors...))
 		metadataStruct, err := MetadataToStruct(metadata)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create metadata: %w", err)
 		}
+
 		return NewTransform(name, parent, pose, drawnGeometry.Geometry, metadataStruct, options...), nil
 	}
 
 	return NewTransform(name, parent, pose, drawnGeometry.Geometry, nil, options...), nil
-}
-
-type DrawnGeometriesInFrame struct {
-	// The parent frame of the geometries.
-	Parent string
-
-	// The geometries to draw.
-	DrawnGeometries []*DrawnGeometry
-}
-
-type drawnGeometriesInFrameConfig struct {
-	DrawColorsConfig
-
-	// The threshold in millimeters for downscaling, defaults to 0.
-	// Currently only supported for point clouds.
-	downscalingThreshold float64
-}
-
-// newDrawnGeometriesInFrameConfig creates a new draw geometries in frame configuration
-func newDrawnGeometriesInFrameConfig() *drawnGeometriesInFrameConfig {
-	return &drawnGeometriesInFrameConfig{
-		DrawColorsConfig:     NewDrawColorsConfig(),
-		downscalingThreshold: 0,
-	}
-}
-
-// DrawGeometriesInFrameOption is a functional option for configuring a DrawGeometriesInFrame
-type DrawGeometriesInFrameOption func(*drawnGeometriesInFrameConfig)
-
-// WithSingleGeometriesColor creates a geometries in frame option that sets the color for all geometries.
-func WithSingleGeometriesColor(color Color) DrawGeometriesInFrameOption {
-	return withColors[*drawnGeometriesInFrameConfig]([]Color{color})
-}
-
-// WithPerGeometriesColors creates a geometries in frame option that sets the colors for each geometry.
-func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption {
-	return withColors[*drawnGeometriesInFrameConfig](colors)
-}
-
-// WithGeometriesColorPalette creates a geometries in frame option that iterates through colors for geometries.
-func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometriesInFrameOption {
-	finalColors := make([]Color, numGeometries)
-	for i := range numGeometries {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*drawnGeometriesInFrameConfig](finalColors)
-}
-
-// WithGeometriesDownscalingThreshold creates a geometries in frame option that sets the threshold in millimeters for downscaling.
-func WithGeometriesDownscalingThreshold(threshold float64) DrawGeometriesInFrameOption {
-	return func(config *drawnGeometriesInFrameConfig) {
-		config.downscalingThreshold = threshold
-	}
-}
-
-// NewDrawnGeometriesInFrame creates a new DrawnGeometriesInFrame object from the given geometries and options.
-// Returns an error if the number of colors doesn't match the number of geometries.
-func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFrame, options ...DrawGeometriesInFrameOption) (*DrawnGeometriesInFrame, error) {
-	geometries := geometriesInFrame.Geometries()
-	config := newDrawnGeometriesInFrameConfig()
-	for _, option := range options {
-		option(config)
-	}
-
-	if !(len(config.colors) == 1 || len(config.colors) == len(geometries)) {
-		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-geometry colors), got %d", len(geometries), len(config.colors))
-	}
-
-	drawnGeometries := make([]*DrawnGeometry, len(geometries))
-	for i, geometry := range geometries {
-		// Use single color for all geometries, or per-geometry color
-		colorIndex := 0
-		if len(config.colors) > 1 {
-			colorIndex = i
-		}
-
-		// Apply downscaling threshold if configured
-		var drawnGeometry *DrawnGeometry
-		var err error
-		if config.downscalingThreshold > 0 {
-			drawnGeometry, err = NewDrawnGeometry(geometry, WithGeometryColor(config.colors[colorIndex]), WithGeometryDownscaling(config.downscalingThreshold))
-		} else {
-			drawnGeometry, err = NewDrawnGeometry(geometry, WithGeometryColor(config.colors[colorIndex]))
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		drawnGeometries[i] = drawnGeometry
-	}
-
-	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
-}
-
-// Draw creates a list of transforms from this DrawnGeometriesInFrame object, positioned at the given pose within the specified reference frame.
-// The id can be any string, it will be used to generate a UUID for each geometry along with its name and parent.
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) Draw(options ...UuidOption) ([]*commonv1.Transform, error) {
-	config := newUuidConfig(drawnGeometriesInFrame.Parent, drawnGeometriesInFrame.Parent)
-	for _, option := range options {
-		option(config)
-	}
-
-	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
-	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
-		key := fmt.Sprintf("%s:%s:%s", config.uuid, drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent)
-		transform, err := drawnGeometry.Draw(drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent, spatialmath.NewZeroPose(), WithID(key))
-		if err != nil {
-			return nil, err
-		}
-
-		transforms[i] = transform
-	}
-
-	return transforms, nil
 }

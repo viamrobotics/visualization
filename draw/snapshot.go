@@ -212,7 +212,7 @@ func (snapshot *Snapshot) DrawGeometry(
 		return err
 	}
 
-	transforms, err := drawing.Draw(geometry.Label(), parent, pose, WithUUID(snapshot.uuid))
+	transforms, err := drawing.Draw(geometry.Label(), parent, pose)
 	if err != nil {
 		return err
 	}
