@@ -62,7 +62,7 @@
 		if (!componentName || !id) {
 			return
 		}
-		return componentModels.current?.[componentName]?.[id].clone()
+		return componentModels.current?.[componentName]?.[id]?.clone()
 	})
 </script>
 

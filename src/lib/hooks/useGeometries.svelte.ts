@@ -1,6 +1,13 @@
-import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
+import {
+	ArmClient,
+	CameraClient,
+	GantryClient,
+	GripperClient,
+	type Geometry,
+} from '@viamrobotics/sdk'
 import { untrack, setContext, getContext } from 'svelte'
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import type { QueryObserverResult } from '@tanstack/svelte-query'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -19,6 +26,9 @@ import { useEnvironment } from './useEnvironment.svelte'
 const key = Symbol('geometries-context')
 
 interface Context {
+	queries: {
+		current: Record<string, QueryObserverResult<Geometry[]> | undefined>
+	}
 	refetch: () => void
 }
 
@@ -168,7 +178,13 @@ export const provideGeometries = (partID: () => string) => {
 		}
 	})
 
+	const queryMap = $derived(Object.fromEntries(queries))
 	setContext<Context>(key, {
+		queries: {
+			get current() {
+				return queryMap
+			},
+		},
 		refetch() {
 			for (const [, query] of queries) {
 				query.refetch()
