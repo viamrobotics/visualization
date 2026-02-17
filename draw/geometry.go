@@ -12,7 +12,6 @@ import (
 // DrawGeometry creates a transform for rendering a single geometry with the specified id, pose,
 // parent reference frame, and color. Returns an error if the metadata cannot be converted to a struct.
 func DrawGeometry(
-	id string,
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
 	parent string,
@@ -25,7 +24,7 @@ func DrawGeometry(
 		return nil, err
 	}
 
-	return NewTransform(id, label, parent, pose, geometry, metadataStruct)
+	return NewTransform(label, parent, pose, geometry, metadataStruct), nil
 }
 
 // DrawGeometries creates transforms for rendering multiple geometries, each with its own color.
@@ -41,7 +40,7 @@ func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors 
 	}
 
 	for i, geometry := range geometries {
-		transform, err := DrawGeometry("", geometry, geometry.Pose(), geometriesInFrame.Parent(), colors[i])
+		transform, err := DrawGeometry(geometry, geometry.Pose(), geometriesInFrame.Parent(), colors[i])
 		if err != nil {
 			return nil, err
 		}
