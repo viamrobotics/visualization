@@ -104,11 +104,15 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 	$effect(() => {
 		for (const [name, query] of queries) {
-			if (query.isFetching) {
-				logs.add(`Fetching pointcloud for ${name}...`)
-			} else if (query.error) {
-				logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
-			}
+			untrack(() => {
+				$effect(() => {
+					if (query.isFetching) {
+						logs.add(`Fetching pointcloud for ${name}...`)
+					} else if (query.error) {
+						logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
+					}
+				})
+			})
 		}
 	})
 
