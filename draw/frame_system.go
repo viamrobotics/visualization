@@ -62,8 +62,8 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 
 // Draw draws the frame system to a list of transforms.
 // The options can be used to configure the UUID generation for the transforms.
-func (drawnFrameSystem *DrawnFrameSystem) Draw(options ...UuidOption) ([]*commonv1.Transform, error) {
-	config := newUuidConfig(drawnFrameSystem.FrameSystem.Name(), referenceframe.World)
+func (drawnFrameSystem *DrawnFrameSystem) Draw(options ...TransformOption) ([]*commonv1.Transform, error) {
+	config := newTransformConfig(drawnFrameSystem.FrameSystem.Name(), referenceframe.World)
 	for _, option := range options {
 		option(config)
 	}
@@ -86,7 +86,7 @@ func (drawnFrameSystem *DrawnFrameSystem) Draw(options ...UuidOption) ([]*common
 
 			key := fmt.Sprintf("%s:%s:%s", config.uuid, frameName, geometry.Label())
 			id := uuid.NewSHA1(uuidNamespace, []byte(key))
-			transform, err := drawnGeometry.Draw(fmt.Sprintf("%s:%s", frameName, geometry.Label()), referenceframe.World, spatialmath.NewZeroPose(), WithUUID(id[:]))
+			transform, err := drawnGeometry.Draw(fmt.Sprintf("%s:%s", frameName, geometry.Label()), referenceframe.World, spatialmath.NewZeroPose(), WithTransformUUID(id[:]))
 			if err != nil {
 				return nil, err
 			}
