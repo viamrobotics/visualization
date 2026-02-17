@@ -11,7 +11,6 @@ import (
 
 // DrawGeometry creates a transform for rendering a single geometry with the specified id, pose,
 // parent reference frame, and color. Returns an error if the metadata cannot be converted to a struct.
-// If id is empty, a new UUID is generated.
 func DrawGeometry(
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
