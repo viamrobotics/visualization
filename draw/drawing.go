@@ -1,7 +1,6 @@
 package draw
 
 import (
-	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
@@ -211,6 +210,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 // Drawing represents a complete drawable object in 3D space, consisting of a Shape positioned
 // at a Pose within a reference frame (Parent), along with associated Metadata like colors.
 type Drawing struct {
+	UUID     []byte
 	Name     string
 	Parent   string
 	Pose     spatialmath.Pose
@@ -218,32 +218,64 @@ type Drawing struct {
 	Metadata Metadata
 }
 
-// Drawable is an interface for types that can create a Drawing representation of themselves.
-type Drawable interface {
-	// Draw creates a Drawing of this object with the given name, parent reference frame, and pose.
-	Draw(name string, parent string, pose spatialmath.Pose) *Drawing
+type drawingConfig struct {
+	uuidConfig
 }
 
-// NewDrawing creates a new Drawing with the specified name, parent reference frame, pose, shape, and metadata.
+func newDrawingConfig(name, parent string) *drawingConfig {
+	return &drawingConfig{
+		uuidConfig: newUuidConfig(name, parent),
+	}
+}
+
+type drawingOption func(*drawingConfig)
+
+// WithDrawingUUID creates a drawing option that sets the UUID.
+func WithDrawingUUID(uuid []byte) drawingOption {
+	return func(config *drawingConfig) {
+		withUUID(uuid)(&config.uuidConfig)
+	}
+}
+
+// WithDrawingID creates a drawing option that sets the UUID based on the given ID.
+func WithDrawingID(id string) drawingOption {
+	return func(config *drawingConfig) {
+		withID(id)(&config.uuidConfig)
+	}
+}
+
+// NewDrawing creates a new Drawing representing a non-physical object in 3D space.
 func NewDrawing(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	shape Shape,
 	metadata Metadata,
+	options ...drawingOption,
 ) *Drawing {
-	return &Drawing{Name: name, Parent: parent, Pose: pose, Shape: shape, Metadata: metadata}
+	config := newDrawingConfig(name, parent)
+	for _, option := range options {
+		option(config)
+	}
+
+	return &Drawing{
+		UUID:     config.uuid,
+		Name:     name,
+		Parent:   parent,
+		Pose:     pose,
+		Shape:    shape,
+		Metadata: metadata,
+	}
 }
 
 // ToProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
 func (drawing Drawing) ToProto() *drawv1.Drawing {
 	pose := poseInFrameToProtobuf(drawing.Pose, drawing.Parent)
-	uuidBytes := uuid.New()
 	return &drawv1.Drawing{
 		ReferenceFrame:      drawing.Name,
 		PoseInObserverFrame: pose,
 		PhysicalObject:      drawing.Shape.ToProto(),
-		Uuid:                uuidBytes[:],
+		Uuid:                drawing.UUID,
 		Metadata:            drawing.Metadata.ToProto(),
 	}
 }
