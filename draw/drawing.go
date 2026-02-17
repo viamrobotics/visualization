@@ -218,6 +218,32 @@ type Drawing struct {
 	Metadata Metadata
 }
 
+type drawingConfig struct {
+	uuidConfig
+}
+
+func newDrawingConfig(name, parent string) *drawingConfig {
+	return &drawingConfig{
+		uuidConfig: newUuidConfig(name, parent),
+	}
+}
+
+type drawingOption func(*drawingConfig)
+
+// WithDrawingUUID creates a drawing option that sets the UUID.
+func WithDrawingUUID(uuid []byte) drawingOption {
+	return func(config *drawingConfig) {
+		withUUID(uuid)(&config.uuidConfig)
+	}
+}
+
+// WithDrawingID creates a drawing option that sets the UUID based on the given ID.
+func WithDrawingID(id string) drawingOption {
+	return func(config *drawingConfig) {
+		withID(id)(&config.uuidConfig)
+	}
+}
+
 // NewDrawing creates a new Drawing representing a non-physical object in 3D space.
 func NewDrawing(
 	name string,
@@ -225,9 +251,9 @@ func NewDrawing(
 	pose spatialmath.Pose,
 	shape Shape,
 	metadata Metadata,
-	options ...UuidOption,
+	options ...drawingOption,
 ) *Drawing {
-	config := newUuidConfig(name, parent)
+	config := newDrawingConfig(name, parent)
 	for _, option := range options {
 		option(config)
 	}
