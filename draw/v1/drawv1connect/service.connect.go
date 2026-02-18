@@ -65,15 +65,25 @@ const (
 
 // DrawServiceClient is a client for the draw.v1.DrawService service.
 type DrawServiceClient interface {
+	// Add an entity to the scene.
 	AddEntity(context.Context, *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error)
+	// Update an entity in the scene.
 	UpdateEntity(context.Context, *connect.Request[v1.UpdateEntityRequest]) (*connect.Response[v1.UpdateEntityResponse], error)
+	// Remove an entity from the scene.
 	RemoveEntity(context.Context, *connect.Request[v1.RemoveEntityRequest]) (*connect.Response[v1.RemoveEntityResponse], error)
+	// Set the camera and/or metadata for the scene.
 	SetSceneMetadata(context.Context, *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error)
+	// Stream changes to the transforms in the scene.
 	StreamTransformChanges(context.Context, *connect.Request[v1.StreamTransformChangesRequest]) (*connect.ServerStreamForClient[v1.StreamTransformChangesResponse], error)
+	// Stream changes to the drawings in the scene.
 	StreamDrawingChanges(context.Context, *connect.Request[v1.StreamDrawingChangesRequest]) (*connect.ServerStreamForClient[v1.StreamDrawingChangesResponse], error)
+	// Stream changes to the camera and/or metadata for the scene.
 	StreamSceneChanges(context.Context, *connect.Request[v1.StreamSceneChangesRequest]) (*connect.ServerStreamForClient[v1.StreamSceneChangesResponse], error)
+	// Remove all transforms from the scene.
 	RemoveAllTransforms(context.Context, *connect.Request[v1.RemoveAllTransformsRequest]) (*connect.Response[v1.RemoveAllTransformsResponse], error)
+	// Remove all drawings from the scene.
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
+	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
 }
 
@@ -217,15 +227,25 @@ func (c *drawServiceClient) RemoveAll(ctx context.Context, req *connect.Request[
 
 // DrawServiceHandler is an implementation of the draw.v1.DrawService service.
 type DrawServiceHandler interface {
+	// Add an entity to the scene.
 	AddEntity(context.Context, *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error)
+	// Update an entity in the scene.
 	UpdateEntity(context.Context, *connect.Request[v1.UpdateEntityRequest]) (*connect.Response[v1.UpdateEntityResponse], error)
+	// Remove an entity from the scene.
 	RemoveEntity(context.Context, *connect.Request[v1.RemoveEntityRequest]) (*connect.Response[v1.RemoveEntityResponse], error)
+	// Set the camera and/or metadata for the scene.
 	SetSceneMetadata(context.Context, *connect.Request[v1.SetSceneMetadataRequest]) (*connect.Response[v1.SetSceneMetadataResponse], error)
+	// Stream changes to the transforms in the scene.
 	StreamTransformChanges(context.Context, *connect.Request[v1.StreamTransformChangesRequest], *connect.ServerStream[v1.StreamTransformChangesResponse]) error
+	// Stream changes to the drawings in the scene.
 	StreamDrawingChanges(context.Context, *connect.Request[v1.StreamDrawingChangesRequest], *connect.ServerStream[v1.StreamDrawingChangesResponse]) error
+	// Stream changes to the camera and/or metadata for the scene.
 	StreamSceneChanges(context.Context, *connect.Request[v1.StreamSceneChangesRequest], *connect.ServerStream[v1.StreamSceneChangesResponse]) error
+	// Remove all transforms from the scene.
 	RemoveAllTransforms(context.Context, *connect.Request[v1.RemoveAllTransformsRequest]) (*connect.Response[v1.RemoveAllTransformsResponse], error)
+	// Remove all drawings from the scene.
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
+	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
 }
 
