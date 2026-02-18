@@ -11,18 +11,34 @@ option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 // DrawService provides visualization APIs for managing transforms and custom drawing primitives
 service DrawService {
+  // Add an entity to the scene.
   rpc AddEntity(AddEntityRequest) returns (AddEntityResponse);
+
+  // Update an entity in the scene.
   rpc UpdateEntity(UpdateEntityRequest) returns (UpdateEntityResponse);
+
+  // Remove an entity from the scene.
   rpc RemoveEntity(RemoveEntityRequest) returns (RemoveEntityResponse);
 
+  // Set the camera and/or metadata for the scene.
   rpc SetSceneMetadata(SetSceneMetadataRequest) returns (SetSceneMetadataResponse);
 
+  // Stream changes to the transforms in the scene.
   rpc StreamTransformChanges(StreamTransformChangesRequest) returns (stream StreamTransformChangesResponse);
+
+  // Stream changes to the drawings in the scene.
   rpc StreamDrawingChanges(StreamDrawingChangesRequest) returns (stream StreamDrawingChangesResponse);
+
+  // Stream changes to the camera and/or metadata for the scene.
   rpc StreamSceneChanges(StreamSceneChangesRequest) returns (stream StreamSceneChangesResponse);
 
+  // Remove all transforms from the scene.
   rpc RemoveAllTransforms(RemoveAllTransformsRequest) returns (RemoveAllTransformsResponse);
+
+  // Remove all drawings from the scene.
   rpc RemoveAllDrawings(RemoveAllDrawingsRequest) returns (RemoveAllDrawingsResponse);
+
+  // Remove all entities from the scene.
   rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
 }
 
