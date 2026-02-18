@@ -1,4 +1,4 @@
-import { GeometriesInFrame, PointCloudObject, VisionClient } from '@viamrobotics/sdk'
+import { VisionClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -7,7 +7,7 @@ import {
 import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useLogs } from './useLogs.svelte'
 import { parsePcdInWorker } from '$lib/lib'
-import { getContext, setContext } from 'svelte'
+import { getContext, setContext, untrack } from 'svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { Entity, ConfigurableTrait } from 'koota'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
@@ -104,64 +104,16 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 	$effect(() => {
 		for (const [name, query] of queries) {
-			if (query.isFetching) {
-				logs.add(`Fetching pointcloud for ${name}...`)
-			} else if (query.error) {
-				logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
-			}
-		}
-	})
-
-	interface PCResult {
-		name: string
-		pointclouds: {
-			positions: Float32Array
-			colors?: Uint8Array | null
-		}[]
-		geometries: (GeometriesInFrame | undefined)[]
-	}
-
-	let pcResults = $state.raw<PCResult[]>([])
-
-	$effect(() => {
-		const responses: [string, PointCloudObject[]][] = []
-
-		for (const [name, query] of queries) {
-			const { data } = query
-			if (name && data) {
-				responses.push([name, data])
-			}
-		}
-
-		Promise.allSettled(
-			responses.map(async ([name, pointcloudObjects]) => {
-				const pointclouds = await Promise.all(
-					pointcloudObjects
-						.filter((value) => value !== undefined)
-						.map((value) => {
-							return parsePcdInWorker(new Uint8Array(value.pointCloud))
-						})
-				)
-
-				return {
-					name,
-					pointclouds,
-					geometries: pointcloudObjects.map((value) => value.geometries),
-				}
+			untrack(() => {
+				$effect(() => {
+					if (query.isFetching) {
+						logs.add(`Fetching pointcloud for ${name}...`)
+					} else if (query.error) {
+						logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
+					}
+				})
 			})
-		).then((results) => {
-			const fulfilledResults: PCResult[] = []
-
-			for (const result of results) {
-				if (result.status === 'fulfilled') {
-					fulfilledResults.push(result.value)
-				} else if (result.status === 'rejected') {
-					logs.add(result.reason, 'error')
-				}
-			}
-
-			pcResults = fulfilledResults
-		})
+		}
 	})
 
 	const entities = new Map<string, Entity>()
@@ -169,36 +121,45 @@ export const providePointcloudObjects = (partID: () => string) => {
 	$effect(() => {
 		const active: Record<string, boolean> = {}
 
-		for (const { name, pointclouds, geometries } of pcResults) {
-			for (const [pointcloudIndex, pointcloud] of pointclouds.entries()) {
-				const poincloudLabel = `${name} pointcloud ${pointcloudIndex + 1}`
-				const existing = entities.get(poincloudLabel)
+		for (const [name, query] of queries) {
+			untrack(() => {
+				$effect(() => {
+					const { data } = query
 
-				active[poincloudLabel] = true
+					if (!data || data.length === 0) return
 
-				if (existing) {
-					const geometry = existing.get(traits.BufferGeometry)
+					let index = 0
+					for (const { geometries: geometriesInFrame, pointCloud } of data) {
+						if (pointCloud.length > 0) {
+							parsePcdInWorker(pointCloud).then(({ positions, colors }) => {
+								const poincloudLabel = `${name} pointcloud ${index + 1}`
+								const existing = entities.get(poincloudLabel)
 
-					if (geometry) {
-						updateBufferGeometry(geometry, pointcloud.positions, pointcloud.colors)
-					}
-				} else {
-					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
+								if (existing) {
+									const geometry = existing.get(traits.BufferGeometry)
 
-					const entity = world.spawn(
-						traits.Name(poincloudLabel),
-						traits.BufferGeometry(geometry),
-						traits.Points
-					)
+									if (geometry) {
+										updateBufferGeometry(geometry, positions, colors)
+									}
+								} else {
+									const geometry = createBufferGeometry(positions, colors)
 
-					entities.set(poincloudLabel, entity)
-				}
+									const entity = world.spawn(
+										traits.Name(poincloudLabel),
+										traits.BufferGeometry(geometry),
+										traits.Points
+									)
 
-				if (geometries) {
-					for (const geometriesInFrame of geometries) {
+									entities.set(poincloudLabel, entity)
+								}
+							})
+						}
+
 						if (geometriesInFrame) {
-							for (const [geometryIndex, geometry] of geometriesInFrame.geometries.entries()) {
-								const geometryLabel = `${name} pointcloud ${pointcloudIndex} geometry ${geometryIndex + 1}`
+							let geometryIndex = 0
+
+							for (const geometry of geometriesInFrame.geometries) {
+								const geometryLabel = `${name} pointcloud ${index} geometry ${geometryIndex + 1}`
 								const pose = createPose(geometry.center)
 
 								active[geometryLabel] = true
@@ -225,11 +186,15 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 									entities.set(geometryLabel, entity)
 								}
+
+								geometryIndex += 1
 							}
 						}
+
+						index += 1
 					}
-				}
-			}
+				})
+			})
 		}
 
 		// Clean up old entities

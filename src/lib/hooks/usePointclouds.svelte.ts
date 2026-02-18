@@ -104,11 +104,15 @@ export const providePointclouds = (partID: () => string) => {
 
 	$effect(() => {
 		for (const [name, query] of queries) {
-			if (query.isFetching) {
-				logs.add(`Fetching pointcloud for ${name}...`)
-			} else if (query.error) {
-				logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
-			}
+			untrack(() => {
+				$effect(() => {
+					if (query.isFetching) {
+						logs.add(`Fetching pointcloud for ${name}...`)
+					} else if (query.error) {
+						logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
+					}
+				})
+			})
 		}
 	})
 
@@ -159,6 +163,7 @@ export const providePointclouds = (partID: () => string) => {
 				if (world.has(entity)) {
 					entity.destroy()
 				}
+
 				entities.delete(name)
 			}
 		}
