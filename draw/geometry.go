@@ -3,50 +3,111 @@ package draw
 import (
 	"fmt"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
-	"go.viam.com/rdk/referenceframe"
+	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/spatialmath"
 )
 
-// DrawGeometry creates a transform for rendering a single geometry with the specified id, pose,
-// parent reference frame, and color. Returns an error if the metadata cannot be converted to a struct.
-func DrawGeometry(
-	geometry spatialmath.Geometry,
-	pose spatialmath.Pose,
-	parent string,
-	color Color,
-) (*commonv1.Transform, error) {
-	label := geometry.Label()
-	metadata := NewMetadata(WithMetadataColors(color))
-	metadataStruct, err := MetadataToStruct(metadata)
+// DrawnGeometry is a geometry that has been drawn.
+type DrawnGeometry struct {
+	// The geometry to draw.
+	Geometry spatialmath.Geometry
+
+	// The colors to draw the geometry with.
+	// Should be a single color for simple geometries.
+	// For complex geometries, this can be a single color, a color palette, or a color per vertex.
+	Colors []Color
+}
+
+// DrawnGeometryConfig holds configuration options for drawing a geometry.
+type DrawnGeometryConfig struct {
+	DrawColorsConfig
+
+	// The threshold in millimeters for downscaling, defaults to 0.
+	// Currently only supported for point clouds.
+	downscalingThreshold float64
+}
+
+// newDrawGeometryConfig creates a new draw geometry configuration
+func newDrawGeometryConfig(isPointCloud bool) *DrawnGeometryConfig {
+	config := &DrawnGeometryConfig{
+		DrawColorsConfig:     NewDrawColorsConfig(),
+		downscalingThreshold: 0,
+	}
+
+	config.SetColors([]Color{ColorFromName("red")})
+	return config
+}
+
+// DrawGeometryOption is a functional option for configuring a Geometry
+type DrawGeometryOption func(*DrawnGeometryConfig)
+
+// WithGeometryColor creates a geometry option that sets the color for the geometry.
+func WithGeometryColor(color Color) DrawGeometryOption {
+	return withColors[*DrawnGeometryConfig]([]Color{color})
+}
+
+// WithGeometryColors creates a geometry option that sets the colors for the geometry.
+func WithGeometryColors(colors ...Color) DrawGeometryOption {
+	return withColors[*DrawnGeometryConfig](colors)
+}
+
+// WithPointCloudDownscaling creates a geometry option for point clouds that sets the threshold in millimeters below which points are not rendered from one another.
+func WithGeometryDownscaling(threshold float64) DrawGeometryOption {
+	return func(config *DrawnGeometryConfig) {
+		config.downscalingThreshold = threshold
+	}
+}
+
+// NewDrawnGeometry creates a new DrawnGeometry object from the given geometry and options.
+func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOption) (*DrawnGeometry, error) {
+	proto := geometry.ToProtobuf()
+	isPointCloud := proto.GetPointcloud() != nil
+
+	config := newDrawGeometryConfig(isPointCloud)
+	for _, option := range options {
+		option(config)
+	}
+
+	if !isPointCloud {
+		return &DrawnGeometry{Geometry: geometry, Colors: config.colors}, nil
+	}
+
+	if config.downscalingThreshold < 0 {
+		return nil, fmt.Errorf("downscaling threshold must be greater than or equal to 0 for point clouds")
+	}
+
+	if config.downscalingThreshold == 0 {
+		return &DrawnGeometry{Geometry: geometry, Colors: config.colors}, nil
+	}
+
+	pc, err := pointcloud.NewPointCloudFromProto(proto.GetPointcloud(), proto.GetLabel())
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTransform(label, parent, pose, geometry, metadataStruct), nil
+	downscaled := downscalePointCloud(pc, config.downscalingThreshold)
+	drawnGeometry, err := pointcloud.ToBasicOctree(downscaled, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	drawnGeometry.SetLabel(proto.GetLabel())
+
+	return &DrawnGeometry{Geometry: drawnGeometry, Colors: config.colors}, nil
 }
 
-// DrawGeometries creates transforms for rendering multiple geometries, each with its own color.
-// Returns an error if the number of colors doesn't match the number of geometries.
-func DrawGeometries(geometriesInFrame *referenceframe.GeometriesInFrame, colors []Color) (*drawv1.Transforms, error) {
-	geometries := geometriesInFrame.Geometries()
-	if len(colors) != len(geometries) {
-		return nil, fmt.Errorf("number of colors must match number of geometries")
-	}
-
-	transforms := &drawv1.Transforms{
-		Transforms: make([]*commonv1.Transform, len(geometries)),
-	}
-
-	for i, geometry := range geometries {
-		transform, err := DrawGeometry(geometry, geometry.Pose(), geometriesInFrame.Parent(), colors[i])
+// Draw creates a Transform from this DrawnGeometry object, positioned at the given pose within the specified reference frame.
+func (drawnGeometry *DrawnGeometry) Draw(name string, parent string, pose spatialmath.Pose, options ...TransformOption) (*commonv1.Transform, error) {
+	if len(drawnGeometry.Colors) > 0 {
+		metadata := NewMetadata(WithMetadataColors(drawnGeometry.Colors...))
+		metadataStruct, err := MetadataToStruct(metadata)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create metadata: %w", err)
 		}
 
-		transforms.Transforms[i] = transform
+		return NewTransform(name, parent, pose, drawnGeometry.Geometry, metadataStruct, options...), nil
 	}
 
-	return transforms, nil
+	return NewTransform(name, parent, pose, drawnGeometry.Geometry, nil, options...), nil
 }

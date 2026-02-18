@@ -26,7 +26,12 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 	if err != nil {
 		return err
 	}
-	transform, err := draw.DrawGeometry(geometry, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2])))
+	drawing, err := draw.NewDrawnGeometry(geometry, draw.WithGeometryColor(draw.NewColor(draw.WithRGB(rgbColor[0], rgbColor[1], rgbColor[2]))))
+	if err != nil {
+		return err
+	}
+
+	transform, err := drawing.Draw(geometry.Label(), "world", spatialmath.NewZeroPose())
 	if err != nil {
 		return err
 	}
