@@ -1,4 +1,4 @@
-import type { Snapshot } from '$lib/draw/v1/snapshot_pb'
+import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import type { SuccessMessage } from '$lib/loaders/pcd/worker'
 import type { BufferGeometry } from 'three'
 

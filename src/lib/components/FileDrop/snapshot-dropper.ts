@@ -1,4 +1,4 @@
-import { Snapshot } from '$lib/draw/v1/snapshot_pb'
+import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import { isArrayBuffer, isString } from 'lodash-es'
 import {
 	type FileDropper,

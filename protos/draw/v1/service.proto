@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package draw.v1;
+
+import "common/v1/common.proto";
+import "draw/v1/drawing.proto";
+import "draw/v1/scene.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
+
+// DrawService provides visualization APIs for managing transforms and custom drawing primitives
+service DrawService {
+  // Add an entity to the scene.
+  rpc AddEntity(AddEntityRequest) returns (AddEntityResponse);
+
+  // Update an entity in the scene.
+  rpc UpdateEntity(UpdateEntityRequest) returns (UpdateEntityResponse);
+
+  // Remove an entity from the scene.
+  rpc RemoveEntity(RemoveEntityRequest) returns (RemoveEntityResponse);
+
+  // Set the camera and/or metadata for the scene.
+  rpc SetSceneMetadata(SetSceneMetadataRequest) returns (SetSceneMetadataResponse);
+
+  // Stream changes to the transforms in the scene.
+  rpc StreamTransformChanges(StreamTransformChangesRequest) returns (stream StreamTransformChangesResponse);
+
+  // Stream changes to the drawings in the scene.
+  rpc StreamDrawingChanges(StreamDrawingChangesRequest) returns (stream StreamDrawingChangesResponse);
+
+  // Stream changes to the camera and/or metadata for the scene.
+  rpc StreamSceneChanges(StreamSceneChangesRequest) returns (stream StreamSceneChangesResponse);
+
+  // Remove all transforms from the scene.
+  rpc RemoveAllTransforms(RemoveAllTransformsRequest) returns (RemoveAllTransformsResponse);
+
+  // Remove all drawings from the scene.
+  rpc RemoveAllDrawings(RemoveAllDrawingsRequest) returns (RemoveAllDrawingsResponse);
+
+  // Remove all entities from the scene.
+  rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
+}
+
+enum ChangeType {
+  CHANGE_TYPE_UNSPECIFIED = 0;
+  CHANGE_TYPE_ADDED = 1;
+  CHANGE_TYPE_REMOVED = 2;
+  CHANGE_TYPE_UPDATED = 3;
+}
+
+message AddEntityRequest {
+  oneof entity {
+    viam.common.v1.Transform transform = 1;
+    Drawing drawing = 2;
+  }
+}
+
+message AddEntityResponse {
+  bytes uuid = 1;
+}
+
+message UpdateEntityRequest {
+  bytes uuid = 1;
+  oneof entity {
+    viam.common.v1.Transform transform = 2;
+    Drawing drawing = 3;
+  }
+
+  // The fields to update on the entity. If empty, all fields are replaced.
+  google.protobuf.FieldMask updated_fields = 4;
+}
+
+message UpdateEntityResponse {}
+
+message RemoveEntityRequest {
+  bytes uuid = 1;
+}
+
+message RemoveEntityResponse {}
+
+message RemoveAllTransformsRequest {}
+message RemoveAllTransformsResponse {
+  int32 count = 1;
+}
+
+message StreamTransformChangesRequest {}
+message StreamTransformChangesResponse {
+  ChangeType change_type = 1;
+  viam.common.v1.Transform transform = 2;
+}
+
+message RemoveAllDrawingsRequest {}
+message RemoveAllDrawingsResponse {
+  int32 count = 1;
+}
+
+message StreamDrawingChangesRequest {}
+message StreamDrawingChangesResponse {
+  ChangeType change_type = 1;
+  Drawing drawing = 2;
+}
+
+message SetSceneMetadataRequest {
+  SceneMetadata scene_metadata = 1;
+}
+
+message SetSceneMetadataResponse {}
+
+message StreamSceneChangesRequest {}
+message StreamSceneChangesResponse {
+  SceneMetadata scene_metadata = 1;
+}
+
+message RemoveAllRequest {}
+message RemoveAllResponse {
+  int32 transform_count = 1;
+  int32 drawing_count = 2;
+}

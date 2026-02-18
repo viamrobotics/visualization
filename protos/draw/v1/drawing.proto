@@ -99,6 +99,9 @@ message Nurbs {
   // The weights of the NURBS, defaults to [1, 1, 1, ...]
   // float32 array of weights: [weight, ...]
   optional bytes weights = 4;
+
+  // optional width of the line in millimeters, defaults to 5
+  optional float line_width = 5;
 }
 
 message Shape {

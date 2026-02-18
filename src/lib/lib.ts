@@ -5,7 +5,7 @@ export { default as AxesHelper } from './components/AxesHelper.svelte'
 
 // Snapshot component (uses context, requires MotionTools parent)
 export { default as Snapshot } from './components/Snapshot.svelte'
-export { Snapshot as SnapshotProto } from '$lib/draw/v1/snapshot_pb'
+export { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
 
 // Classes
 export { BatchedArrow } from './three/BatchedArrow'

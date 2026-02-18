@@ -14,7 +14,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 ```
 -->
 <script lang="ts">
-	import type { Snapshot as SnapshotProto } from '$lib/draw/v1/snapshot_pb'
+	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
 	import { useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { spawnSnapshotEntities, destroyEntities, applySceneMetadata } from '$lib/snapshot'
