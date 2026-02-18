@@ -204,6 +204,7 @@ install_go_tools() {
     
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
     go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+    go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
     
     log_success "Go tools installed successfully"
 }
