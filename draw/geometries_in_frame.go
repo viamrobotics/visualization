@@ -5,7 +5,6 @@ import (
 
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
-	"go.viam.com/rdk/spatialmath"
 )
 
 // DrawnGeometriesInFrame is a collection of geometries that have been drawn from a referenceframe.GeometriesInFrame.
@@ -18,8 +17,7 @@ type DrawnGeometriesInFrame struct {
 }
 
 type drawnGeometriesInFrameConfig struct {
-	uuidConfig
-	DrawColorsConfig
+	drawColorsConfig
 
 	// The threshold in millimeters for downscaling, defaults to 0.
 	// Currently only supported for point clouds.
@@ -29,7 +27,7 @@ type drawnGeometriesInFrameConfig struct {
 // newDrawnGeometriesInFrameConfig creates a new draw geometries in frame configuration
 func newDrawnGeometriesInFrameConfig() *drawnGeometriesInFrameConfig {
 	return &drawnGeometriesInFrameConfig{
-		DrawColorsConfig:     NewDrawColorsConfig(),
+		drawColorsConfig:     newDrawColorsConfig(),
 		downscalingThreshold: 0,
 	}
 }
@@ -102,18 +100,19 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
 }
 
-// Draw creates a list of transforms from this DrawnGeometriesInFrame object, positioned at the given pose within the specified reference frame.
-// The id can be any string, it will be used to generate a UUID for each geometry along with its name and parent.
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) Draw(options ...TransformOption) ([]*commonv1.Transform, error) {
-	config := newTransformConfig(drawnGeometriesInFrame.Parent, drawnGeometriesInFrame.Parent)
-	for _, option := range options {
-		option(config)
-	}
-
+// Draw creates a list of transforms from this DrawnGeometriesInFrame object.
+// The name is used to create the UUID for each geometry along with its label and parent.
+// If the name is not empty, it is used as the prefix for the geometry label.
+func (drawnGeometriesInFrame *DrawnGeometriesInFrame) Draw(name string, options ...drawableOption) ([]*commonv1.Transform, error) {
+	config := NewDrawConfig(name, options...)
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
-		key := fmt.Sprintf("%s:%s:%s", config.uuid, drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent)
-		transform, err := drawnGeometry.Draw(drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent, spatialmath.NewZeroPose(), WithTransformID(key))
+		label := drawnGeometry.Geometry.Label()
+		if config.Name != "" {
+			label = fmt.Sprintf("%s:%s", config.Name, label)
+		}
+		id := fmt.Sprintf("%s:%s", label, config.Parent)
+		transform, err := drawnGeometry.Draw(label, WithParent(config.Parent), WithID(id))
 		if err != nil {
 			return nil, err
 		}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/golang/geo/r3"
-	"go.viam.com/rdk/spatialmath"
 )
 
 var (
@@ -31,39 +30,33 @@ type Line struct {
 	PointColor Color
 }
 
-// drawLineConfig holds configuration options for creating a Line.
 type drawLineConfig struct {
+	drawColorsConfig
+
 	lineWidth float32
 	pointSize float32
-	DrawColorsConfig
 }
 
-// newDrawLineConfig creates a new draw line configuration
-//   - lineWidth is the width of the line in millimeters
-//   - pointSize is the size of the points at line vertices in millimeters
-//   - colors are the colors to set for the line
-//
-// Returns the draw line configuration
 func newDrawLineConfig(lineWidth float32, pointSize float32, colors ...Color) *drawLineConfig {
 	return &drawLineConfig{
 		lineWidth:        lineWidth,
 		pointSize:        pointSize,
-		DrawColorsConfig: NewDrawColorsConfig(colors...),
+		drawColorsConfig: newDrawColorsConfig(colors...),
 	}
 }
 
-// drawLineOption is a functional option for configuring a Line
-type drawLineOption func(*drawLineConfig)
+// DrawLineOption is a functional option for configuring a Line
+type DrawLineOption func(*drawLineConfig)
 
 // WithLineWidth creates a line option that sets the line segment width in millimeters.
-func WithLineWidth(width float32) drawLineOption {
+func WithLineWidth(width float32) DrawLineOption {
 	return func(config *drawLineConfig) {
 		config.lineWidth = width
 	}
 }
 
 // WithPointSize creates a line option that sets the size of vertex points in millimeters.
-func WithPointSize(size float32) drawLineOption {
+func WithPointSize(size float32) DrawLineOption {
 	return func(config *drawLineConfig) {
 		config.pointSize = size
 	}
@@ -71,7 +64,7 @@ func WithPointSize(size float32) drawLineOption {
 
 // WithLineColors creates a line option that sets colors for the line segments and vertex points.
 // If pointColor is nil, the line color is used for both.
-func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
+func WithLineColors(lineColor Color, pointColor *Color) DrawLineOption {
 	colors := []Color{lineColor, lineColor}
 	if pointColor != nil {
 		colors[1] = *pointColor
@@ -82,7 +75,7 @@ func WithLineColors(lineColor Color, pointColor *Color) drawLineOption {
 
 // NewLine creates a new Line from the given vertex positions and optional configuration.
 // Returns an error if there are fewer than 2 positions or if the point size is non-positive.
-func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
+func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 	config := newDrawLineConfig(DefaultLineWidth, DefaultPointSize, DefaultLineColor, DefaultLinePointColor)
 	for _, option := range options {
 		option(config)
@@ -109,14 +102,9 @@ func NewLine(positions []r3.Vector, options ...drawLineOption) (*Line, error) {
 	}, nil
 }
 
-// Draw creates a Drawing from this Line object, positioned at the given pose within the specified
-// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (line Line) Draw(
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-) *Drawing {
-	shape := NewShape(pose, name, WithLine(line))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
-	return drawing
+// Draw creates a Drawing from this Line object.
+func (line Line) Draw(name string, options ...drawableOption) *Drawing {
+	config := NewDrawConfig(name, options...)
+	shape := NewShape(config.Center, config.Name, WithLine(line))
+	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))
 }

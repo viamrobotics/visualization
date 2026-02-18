@@ -73,7 +73,7 @@ func TestDrawnGeometriesInFrame_Draw(t *testing.T) {
 	drawing, err := NewDrawnGeometriesInFrame(geometriesInFrame, WithPerGeometriesColors(colors...))
 	test.That(t, err, test.ShouldBeNil)
 
-	transforms, err := drawing.Draw()
+	transforms, err := drawing.Draw("")
 	test.That(t, err, test.ShouldBeNil)
 	test.That(t, len(transforms), test.ShouldEqual, 3)
 
@@ -104,5 +104,32 @@ func TestDrawnGeometriesInFrame_Draw(t *testing.T) {
 		test.That(t, transforms[2].PhysicalObject.GetCapsule(), test.ShouldResemble, &commonv1.Capsule{RadiusMm: 100, LengthMm: 300})
 		// blue = \x00\x00\xff\xff
 		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+	})
+
+	t.Run("WithName_PrefixesReferenceFrame", func(t *testing.T) {
+		named, err := drawing.Draw("test")
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, len(named), test.ShouldEqual, 3)
+		test.That(t, named[0].ReferenceFrame, test.ShouldEqual, "test:box")
+		test.That(t, named[1].ReferenceFrame, test.ShouldEqual, "test:sphere")
+		test.That(t, named[2].ReferenceFrame, test.ShouldEqual, "test:capsule")
+	})
+
+	t.Run("WithName_PhysicalObjectLabelRemainsRawGeometryLabel", func(t *testing.T) {
+		named, err := drawing.Draw("test")
+		test.That(t, err, test.ShouldBeNil)
+		// ReferenceFrame is prefixed, but PhysicalObject.Label stays as the raw geometry label
+		test.That(t, named[0].ReferenceFrame, test.ShouldEqual, "test:box")
+		test.That(t, named[0].PhysicalObject.Label, test.ShouldEqual, "box")
+		test.That(t, named[1].ReferenceFrame, test.ShouldEqual, "test:sphere")
+		test.That(t, named[1].PhysicalObject.Label, test.ShouldEqual, "sphere")
+	})
+
+	t.Run("WithParent_PropagatesParentToAllTransforms", func(t *testing.T) {
+		transforms, err := drawing.Draw("test", WithParent("robot-base"))
+		test.That(t, err, test.ShouldBeNil)
+		for _, transform := range transforms {
+			test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "robot-base")
+		}
 	})
 }

@@ -218,48 +218,17 @@ type Drawing struct {
 	Metadata Metadata
 }
 
-type drawingConfig struct {
-	uuidConfig
-}
-
-func newDrawingConfig(name, parent string) *drawingConfig {
-	return &drawingConfig{
-		uuidConfig: newUuidConfig(name, parent),
-	}
-}
-
-type drawingOption func(*drawingConfig)
-
-// WithDrawingUUID creates a drawing option that sets the UUID.
-func WithDrawingUUID(uuid []byte) drawingOption {
-	return func(config *drawingConfig) {
-		withUUID(uuid)(&config.uuidConfig)
-	}
-}
-
-// WithDrawingID creates a drawing option that sets the UUID based on the given ID.
-func WithDrawingID(id string) drawingOption {
-	return func(config *drawingConfig) {
-		withID(id)(&config.uuidConfig)
-	}
-}
-
 // NewDrawing creates a new Drawing representing a non-physical object in 3D space.
 func NewDrawing(
+	uuid []byte,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	shape Shape,
 	metadata Metadata,
-	options ...drawingOption,
 ) *Drawing {
-	config := newDrawingConfig(name, parent)
-	for _, option := range options {
-		option(config)
-	}
-
 	return &Drawing{
-		UUID:     config.uuid,
+		UUID:     uuid,
 		Name:     name,
 		Parent:   parent,
 		Pose:     pose,
@@ -291,7 +260,7 @@ func (metadata *Metadata) SetColors(colors []Color) {
 
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
-	DrawColorsConfig
+	drawColorsConfig
 }
 
 // drawMetadataOption is a function that configures a draw metadata configuration
@@ -300,7 +269,7 @@ type drawMetadataOption func(*drawMetadataConfig)
 // newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
 	return &drawMetadataConfig{
-		DrawColorsConfig: NewDrawColorsConfig(),
+		drawColorsConfig: newDrawColorsConfig(),
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	"github.com/golang/geo/r3"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/pointcloud"
-	"go.viam.com/rdk/spatialmath"
 )
 
 // DrawnPointCloud is a point cloud that has been drawn.
@@ -22,7 +21,7 @@ type DrawnPointCloud struct {
 
 // DrawnPointCloudConfig holds configuration options for drawing a point cloud.
 type DrawnPointCloudConfig struct {
-	DrawColorsConfig
+	drawColorsConfig
 
 	// The threshold in millimeters for downscaling, defaults to 0.
 	downscalingThreshold float64
@@ -31,7 +30,7 @@ type DrawnPointCloudConfig struct {
 // newDrawGeometryConfig creates a new draw geometry configuration
 func newDrawPointCloudConfig() *DrawnPointCloudConfig {
 	return &DrawnPointCloudConfig{
-		DrawColorsConfig:     NewDrawColorsConfig(),
+		drawColorsConfig:     newDrawColorsConfig(),
 		downscalingThreshold: 0,
 	}
 }
@@ -85,7 +84,8 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 }
 
 // Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
-func (drawnPointCloud *DrawnPointCloud) Draw(name string, parent string, pose spatialmath.Pose, options ...TransformOption) (*commonv1.Transform, error) {
+func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...drawableOption) (*commonv1.Transform, error) {
+	config := NewDrawConfig(name, options...)
 	metadata := NewMetadata(WithMetadataColors(drawnPointCloud.Colors...))
 	metadataStruct, err := MetadataToStruct(metadata)
 	if err != nil {
@@ -97,7 +97,7 @@ func (drawnPointCloud *DrawnPointCloud) Draw(name string, parent string, pose sp
 		return nil, fmt.Errorf("failed to create basic octree: %w", err)
 	}
 
-	return NewTransform(name, parent, pose, octree, metadataStruct, options...), nil
+	return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, octree, metadataStruct), nil
 }
 
 // downscalePointCloud downscales a point cloud to a given threshold in millimeters.
