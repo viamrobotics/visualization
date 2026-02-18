@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { snapshotDropper } from '../snapshot-dropper'
-import { Snapshot } from '$lib/draw/v1/snapshot_pb'
+import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import { FileDropperError, type SnapshotFileDropSuccess } from '../file-dropper'
 
 describe('snapshotDropper', () => {

@@ -3,13 +3,14 @@ module github.com/viam-labs/motion-tools
 go 1.25.1
 
 require (
+	connectrpc.com/connect v1.19.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/google/uuid v1.6.0
 	go.viam.com/api v0.1.496
 	go.viam.com/rdk v0.101.1-0.20251112202028-569325736177
 	go.viam.com/test v1.2.4
 	golang.org/x/image v0.25.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 )
 
 require (

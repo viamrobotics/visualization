@@ -35,8 +35,7 @@ vite.config.ts.timestamp-*
 .env.sentry-build-plugin
 
 # Protobuf
-src/lib/common/v1
-src/lib/draw/v1
+src/lib/buf
 protos/vendor
 
 # IDE
