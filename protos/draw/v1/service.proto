@@ -50,7 +50,7 @@ message UpdateEntityRequest {
     viam.common.v1.Transform transform = 2;
     Drawing drawing = 3;
   }
-  
+
   // The fields to update on the entity. If empty, all fields are replaced.
   google.protobuf.FieldMask updated_fields = 4;
 }
