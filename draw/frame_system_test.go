@@ -1,7 +1,6 @@
 package draw
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/golang/geo/r3"
@@ -12,59 +11,123 @@ import (
 	"go.viam.com/test"
 )
 
-func TestDrawFrameSystem(t *testing.T) {
-	t.Run("DrawFrameSystem", func(t *testing.T) {
-		fs := referenceframe.NewEmptyFrameSystem("test")
-		box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 100, Y: 100, Z: 100}, "box")
-		test.That(t, err, test.ShouldBeNil)
-		frame, err := referenceframe.NewStaticFrameWithGeometry("test", spatialmath.NewZeroPose(), box)
-		test.That(t, err, test.ShouldBeNil)
-		fs.AddFrame(frame, fs.World())
+// makeTestFrameSystem builds a three-frame system:
+//
+//	world → test → child
+//	             → other_child
+func makeTestFrameSystem(t *testing.T) *referenceframe.FrameSystem {
+	t.Helper()
+	box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 100, Y: 100, Z: 100}, "box")
+	test.That(t, err, test.ShouldBeNil)
 
-		childFrame, err := referenceframe.NewStaticFrameWithGeometry("child", spatialmath.NewZeroPose(), box)
-		test.That(t, err, test.ShouldBeNil)
-		fs.AddFrame(childFrame, frame)
+	fs := referenceframe.NewEmptyFrameSystem("test")
 
-		otherChildFrame, err := referenceframe.NewStaticFrameWithGeometry("other_child", spatialmath.NewZeroPose(), box)
-		test.That(t, err, test.ShouldBeNil)
-		fs.AddFrame(otherChildFrame, frame)
+	frame, err := referenceframe.NewStaticFrameWithGeometry("test", spatialmath.NewZeroPose(), box)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, fs.AddFrame(frame, fs.World()), test.ShouldBeNil)
 
-		transforms, err := DrawFrameSystemGeometries(fs, referenceframe.NewZeroInputs(fs), map[string]Color{
+	childFrame, err := referenceframe.NewStaticFrameWithGeometry("child", spatialmath.NewZeroPose(), box)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, fs.AddFrame(childFrame, frame), test.ShouldBeNil)
+
+	otherChildFrame, err := referenceframe.NewStaticFrameWithGeometry("other_child", spatialmath.NewZeroPose(), box)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, fs.AddFrame(otherChildFrame, frame), test.ShouldBeNil)
+
+	return fs
+}
+
+func TestNewDrawnFrameSystem(t *testing.T) {
+	fs := makeTestFrameSystem(t)
+
+	t.Run("DefaultColorIsMagenta", func(t *testing.T) {
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs))
+		magenta := NewColor(WithName("magenta"))
+		for _, color := range drawn.Colors {
+			test.That(t, color, test.ShouldResemble, magenta)
+		}
+	})
+
+	t.Run("WithFrameSystemColors", func(t *testing.T) {
+		red := NewColor(WithName("red"))
+		blue := NewColor(WithName("blue"))
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
+			"test":        red,
+			"other_child": blue,
+		}))
+		test.That(t, drawn.Colors["test"], test.ShouldResemble, red)
+		test.That(t, drawn.Colors["other_child"], test.ShouldResemble, blue)
+	})
+
+	t.Run("WithFrameSystemColor", func(t *testing.T) {
+		green := NewColor(WithRGB(0, 255, 0))
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColor("test", green))
+		test.That(t, drawn.Colors["test"], test.ShouldResemble, green)
+		// Other frames should still be magenta
+		test.That(t, drawn.Colors["child"], test.ShouldResemble, NewColor(WithName("magenta")))
+	})
+}
+
+func TestDrawnFrameSystem_Draw(t *testing.T) {
+	fs := makeTestFrameSystem(t)
+
+	t.Run("ProducesTransformPerGeometry", func(t *testing.T) {
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
 			"test":        NewColor(WithName("red")),
 			"other_child": NewColor(WithName("blue")),
-		})
+		}))
+
+		transforms, err := drawn.Draw()
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, transforms, test.ShouldNotBeNil)
-		test.That(t, len(transforms.Transforms), test.ShouldEqual, 3)
-		test.That(t, transforms.Transforms[2].PhysicalObject.Label, test.ShouldEqual, "box")
-		test.That(t, transforms.Transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
-		test.That(t, transforms.Transforms[2].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
-			X:     0,
-			Y:     0,
-			Z:     0,
-			OX:    0,
-			OY:    0,
-			OZ:    1,
-			Theta: 0,
+		test.That(t, len(transforms), test.ShouldEqual, 3)
+
+		// Transforms are sorted by frame name: child < other_child < test
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
+		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
+		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
+
+		test.That(t, transforms[2].PhysicalObject.Label, test.ShouldEqual, "box")
+		test.That(t, transforms[2].PoseInObserverFrame.GetPose(), test.ShouldResemble, &commonv1.Pose{
+			X: 0, Y: 0, Z: 0, OX: 0, OY: 0, OZ: 1, Theta: 0,
 		})
-		test.That(t, transforms.Transforms[2].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
-			DimsMm: &commonv1.Vector3{
-				X: 100,
-				Y: 100,
-				Z: 100,
-			},
+		test.That(t, transforms[2].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
+			DimsMm: &commonv1.Vector3{X: 100, Y: 100, Z: 100},
 		})
-		test.That(t, transforms.Transforms[2].Metadata, test.ShouldNotBeNil)
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		test.That(t, transforms[2].Metadata, test.ShouldNotBeNil)
+	})
 
-		for _, transform := range transforms.Transforms {
-			fmt.Println(transform.ReferenceFrame)
-		}
+	t.Run("AppliesExplicitColors", func(t *testing.T) {
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
+			"test":        NewColor(WithName("red")),
+			"other_child": NewColor(WithName("blue")),
+		}))
 
-		test.That(t, transforms.Transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		transforms, err := drawn.Draw()
+		test.That(t, err, test.ShouldBeNil)
 
-		test.That(t, transforms.Transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
-		test.That(t, fixtures.Byte64EncodedToString(transforms.Transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+		// "other_child" explicitly set to blue
+		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
+		// blue = \x00\x00\xff\xff
+		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+
+		// "test" explicitly set to red
+		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
+		// red = \xff\x00\x00\xff
+		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+	})
+
+	t.Run("InheritsParentColor", func(t *testing.T) {
+		// "child" has no explicit color; it should inherit red from its parent "test"
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
+			"test": NewColor(WithName("red")),
+		}))
+
+		transforms, err := drawn.Draw()
+		test.That(t, err, test.ShouldBeNil)
+
+		// "child" is first alphabetically
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
+		// red = \xff\x00\x00\xff (inherited from "test")
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
 	})
 }
