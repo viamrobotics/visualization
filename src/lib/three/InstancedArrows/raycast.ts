@@ -1,14 +1,4 @@
-import {
-	Object3D,
-	BufferGeometry,
-	Ray,
-	Matrix4,
-	Raycaster,
-	Vector3,
-	type Intersection,
-	Box3,
-	RawShaderMaterial,
-} from 'three'
+import { Ray, Matrix4, Raycaster, Vector3, type Intersection, Box3, RawShaderMaterial } from 'three'
 import type { InstancedArrows } from './InstancedArrows'
 
 const vec3 = new Vector3()
@@ -67,14 +57,14 @@ function closestPointsRaySegment(
 }
 
 export function meshBoundsRaycast(
-	this: Object3D & { geometry: BufferGeometry },
+	this: InstancedArrows,
 	raycaster: Raycaster,
 	intersects: Intersection[]
 ) {
-	if (this.geometry.boundingBox === null) {
-		this.geometry.computeBoundingBox()
+	if (this.shaftMesh.geometry.boundingBox === null) {
+		this.shaftMesh.geometry.computeBoundingBox()
 	}
-	box.copy(this.geometry.boundingBox ?? box)
+	box.copy(this.shaftMesh.geometry.boundingBox ?? box)
 
 	if (!raycaster.ray.intersectsBox(box)) {
 		return
@@ -172,7 +162,7 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 			distance: bestDistance,
 			point: bestPointWorld,
 			object: this.shaftMesh,
-			instanceId: bestInstanceId,
+			index: bestInstanceId,
 		})
 	}
 }

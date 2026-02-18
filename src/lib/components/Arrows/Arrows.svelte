@@ -5,7 +5,8 @@
 	import { traits } from '$lib/ecs'
 	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
 	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
-	import { meshBoundsRaycast } from '$lib/three/InstancedArrows/raycast'
+	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { meshBoundsRaycast, raycast } from '$lib/three/InstancedArrows/raycast'
 
 	interface Props {
 		entity: Entity
@@ -15,12 +16,25 @@
 	let { entity, arrows }: Props = $props()
 
 	const events = useObjectEvents(() => entity)
+	const selectedEntity = useSelectedEntity()
+	const focusedEntity = useFocusedEntity()
+
+	const displayEntity = $derived(selectedEntity.current ?? focusedEntity.current)
+
+	const raycastFunction = $derived.by(() => {
+		if (displayEntity) {
+			return raycast
+		}
+		return meshBoundsRaycast
+	})
 </script>
 
 <Portal id={entity.get(traits.Parent)}>
 	<T
 		is={arrows}
 		name={entity}
+		{...events}
+		raycast={raycastFunction}
 	>
 		<T
 			is={arrows.headMesh}
@@ -31,8 +45,7 @@
 		<T
 			is={arrows.shaftMesh}
 			bvh={{ enabled: false }}
-			raycast={meshBoundsRaycast}
-			{...events}
+			raycast={() => null}
 		/>
 	</T>
 </Portal>
