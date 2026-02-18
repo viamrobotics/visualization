@@ -119,16 +119,24 @@ export const updateHoverInfo = (
 	let hoverInfo: HoverInfo | null = null
 
 	if (entity.has(traits.Arrows)) {
-		const closestArrow = getClosestArrow(
-			entity.get(traits.Positions) as Float32Array,
-			hoverPosition
-		)
+		let closestArrow: HoverInfo | null = null
+		if (index && index > 0) {
+			closestArrow = getArrowAtIndex(entity.get(traits.Positions) as Float32Array, index)
+		} else {
+			closestArrow = getClosestArrow(entity.get(traits.Positions) as Float32Array, hoverPosition)
+		}
 		if (closestArrow) {
 			hoverInfo = closestArrow
 		}
 	} else if (entity.has(traits.Points)) {
+		console.log(entity.get(traits.InstancedPose))
 		const positions = entity.get(traits.BufferGeometry)?.attributes.position.array as Float32Array
-		const closestPoint = getClosestPoint(positions, hoverPosition)
+		let closestPoint: HoverInfo | null = null
+		if (index && index > 0) {
+			closestPoint = getPointAtIndex(positions, index)
+		} else {
+			closestPoint = getClosestPoint(positions, hoverPosition)
+		}
 		if (closestPoint) {
 			hoverInfo = closestPoint
 		}
