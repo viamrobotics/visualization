@@ -23,6 +23,16 @@ export const InstancedPose = trait({
 	index: -1,
 })
 
+export const WorldPose = trait({
+	x: 0,
+	y: 0,
+	z: 0,
+	oX: 0,
+	oY: 0,
+	oZ: 1,
+	theta: 0,
+})
+
 export const Hovered = trait(() => true)
 
 /**

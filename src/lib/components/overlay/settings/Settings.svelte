@@ -37,6 +37,10 @@
 		invalidate()
 	})
 
+	const currentRobotCameraWidgets = $derived(
+		settings.current.openCameraWidgets[partID.current] || []
+	)
+
 	const isOpen = new PersistedState('settings-is-open', false)
 	const activeTab = new PersistedState('settings-active-tab', 'Connection')
 </script>
@@ -265,6 +269,44 @@
 	</div>
 {/snippet}
 
+{#snippet Widgets()}
+	<div class="text-gray-9 flex flex-col gap-1 text-xs">
+		<label class="flex items-center justify-between gap-2 py-1">
+			Arm positions
+			<Switch bind:on={settings.current.enableArmPositionsWidget} />
+		</label>
+
+		{@render SectionTitle('Camera widgets')}
+
+		{#each cameras.current as camera (camera)}
+			{@const isWidgetOpen = currentRobotCameraWidgets.includes(camera.name)}
+			<div class="flex items-center justify-between gap-2 py-0.5">
+				<span class="min-w-0 truncate">{camera.name}</span>
+				<Switch
+					on={isWidgetOpen}
+					on:change={(event) => {
+						if (event.detail) {
+							settings.current.openCameraWidgets = {
+								...settings.current.openCameraWidgets,
+								[partID.current]: [...currentRobotCameraWidgets, camera.name],
+							}
+						} else {
+							settings.current.openCameraWidgets = {
+								...settings.current.openCameraWidgets,
+								[partID.current]: currentRobotCameraWidgets.filter(
+									(widget) => widget !== camera.name
+								),
+							}
+						}
+					}}
+				/>
+			</div>
+		{:else}
+			No cameras detected
+		{/each}
+	</div>
+{/snippet}
+
 <FloatingPanel
 	title="Settings"
 	bind:isOpen={isOpen.current}
@@ -277,6 +319,7 @@
 			{ label: 'Scene', content: Scene },
 			{ label: 'Pointclouds', content: Pointclouds },
 			{ label: 'Vision', content: Vision },
+			{ label: 'Widgets', content: Widgets },
 			{ label: 'Stats', content: Stats },
 			...('xr' in navigator ? [{ label: 'VR / AR', content: XR }] : []),
 		]}
