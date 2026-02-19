@@ -35,9 +35,7 @@
 	const CAMERA_GAP = 0.15 // gap between feed edges
 
 	// Compute spacing from the widest camera feed (default 16:9 before any aspect is known)
-	const maxAspect = $derived(
-		cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9
-	)
+	const maxAspect = $derived(cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9)
 	const feedSpacing = $derived(maxAspect * CAMERA_SCALE + CAMERA_GAP)
 
 	// Get arms assigned to controllers
