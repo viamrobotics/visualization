@@ -4,7 +4,6 @@
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 	import Logs from './Logs.svelte'
-	import Widgets from './Widgets.svelte'
 	import AddFrames from './AddFrames.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -85,5 +84,4 @@
 	{/if}
 
 	<Logs />
-	<Widgets />
 </div>
