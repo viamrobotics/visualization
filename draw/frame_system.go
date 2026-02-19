@@ -1,7 +1,6 @@
 package draw
 
 import (
-	"fmt"
 	"maps"
 	"slices"
 
@@ -58,12 +57,11 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 	return &DrawnFrameSystem{FrameSystem: frameSystem, Inputs: inputs, Colors: config.colors}
 }
 
-// Draw draws the frame system to a list of transforms.
-// The name is used to create the UUID for each frame along with its label and parent.
-// Options are passed to each geometry in the frame system, but the ID is derived from the frame name and the geometry label.
-// If the name is not empty, it is used as the prefix for the frame name.
-func (drawnFrameSystem *DrawnFrameSystem) Draw(name string, options ...drawableOption) ([]*commonv1.Transform, error) {
-	config := NewDrawConfig(name, options...)
+// ToTransforms produces a flat []*commonv1.Transform for every geometry in the frame system.
+// Each frame's geometries are prefixed with their frame name (e.g. "child:box").
+// Use WithParent to set the parent reference frame for all transforms (defaults to referenceframe.World).
+func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+	config := NewDrawConfig("", options...)
 
 	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)
 	if err != nil {
@@ -79,19 +77,13 @@ func (drawnFrameSystem *DrawnFrameSystem) Draw(name string, options ...drawableO
 			return nil, err
 		}
 
-		label := frameName
-		if config.Name != "" {
-			label = fmt.Sprintf("%s:%s", config.Name, label)
-		}
-
-		id := fmt.Sprintf("%s:%s", label, config.Parent)
-		opts := append(options, WithID(id))
-		drawings, err := drawing.Draw(frameName, opts...)
+		drawing.Name = frameName
+		frameTransforms, err := drawing.ToTransforms(WithParent(config.Parent))
 		if err != nil {
 			return nil, err
 		}
 
-		transforms = append(transforms, drawings...)
+		transforms = append(transforms, frameTransforms...)
 	}
 
 	return transforms, nil

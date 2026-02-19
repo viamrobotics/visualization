@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
@@ -23,15 +22,25 @@ type DrawConfig struct {
 	Center spatialmath.Pose
 }
 
-// drawable is implemented by any type that can produce a T (Drawing or Transform) from a name
-// and optional configuration. name is used as both the reference frame identifier and the shape label.
-type drawable[T commonv1.Transform | drawv1.Drawing] interface {
-	Draw(name string, options ...drawableOption) *T
+type drawableDrawing interface {
+	Draw(name string, options ...drawableOption) *Drawing
 }
 
-// drawableConfig holds option state accumulated before NewDrawConfig resolves it.
-// uuid is nil until explicitly set via WithUUID or WithID; if still nil after all options
-// are applied, a deterministic UUID is derived from name:parent.
+type drawableTransform interface {
+	Draw(name string, options ...drawableOption) (*commonv1.Transform, error)
+}
+
+// Compile-time interface conformance checks.
+var (
+	_ drawableDrawing   = Arrows{}
+	_ drawableDrawing   = Line{}
+	_ drawableDrawing   = Points{}
+	_ drawableDrawing   = Nurbs{}
+	_ drawableDrawing   = Model{}
+	_ drawableTransform = &DrawnGeometry{}
+	_ drawableTransform = &DrawnPointCloud{}
+)
+
 type drawableConfig struct {
 	uuid   []byte
 	parent string

@@ -66,14 +66,14 @@ func TestNewDrawnGeometriesInFrame(t *testing.T) {
 	})
 }
 
-func TestDrawnGeometriesInFrame_Draw(t *testing.T) {
+func TestDrawnGeometriesInFrame_ToTransforms(t *testing.T) {
 	geometriesInFrame := makeTestGeometriesInFrame(t)
 
 	colors := []Color{NewColor(WithName("red")), NewColor(WithRGB(0, 255, 0)), NewColor(WithName("blue"))}
 	drawing, err := NewDrawnGeometriesInFrame(geometriesInFrame, WithPerGeometriesColors(colors...))
 	test.That(t, err, test.ShouldBeNil)
 
-	transforms, err := drawing.Draw("")
+	transforms, err := drawing.ToTransforms()
 	test.That(t, err, test.ShouldBeNil)
 	test.That(t, len(transforms), test.ShouldEqual, 3)
 
@@ -106,27 +106,22 @@ func TestDrawnGeometriesInFrame_Draw(t *testing.T) {
 		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
 	})
 
-	t.Run("WithName_PrefixesReferenceFrame", func(t *testing.T) {
-		named, err := drawing.Draw("test")
+	t.Run("Name_PrefixesReferenceFrame", func(t *testing.T) {
+		drawing.Name = "test"
+		defer func() { drawing.Name = "" }()
+		named, err := drawing.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, len(named), test.ShouldEqual, 3)
-		test.That(t, named[0].ReferenceFrame, test.ShouldEqual, "test:box")
-		test.That(t, named[1].ReferenceFrame, test.ShouldEqual, "test:sphere")
-		test.That(t, named[2].ReferenceFrame, test.ShouldEqual, "test:capsule")
-	})
-
-	t.Run("WithName_PhysicalObjectLabelRemainsRawGeometryLabel", func(t *testing.T) {
-		named, err := drawing.Draw("test")
-		test.That(t, err, test.ShouldBeNil)
-		// ReferenceFrame is prefixed, but PhysicalObject.Label stays as the raw geometry label
 		test.That(t, named[0].ReferenceFrame, test.ShouldEqual, "test:box")
 		test.That(t, named[0].PhysicalObject.Label, test.ShouldEqual, "box")
 		test.That(t, named[1].ReferenceFrame, test.ShouldEqual, "test:sphere")
 		test.That(t, named[1].PhysicalObject.Label, test.ShouldEqual, "sphere")
+		test.That(t, named[2].ReferenceFrame, test.ShouldEqual, "test:capsule")
+		test.That(t, named[2].PhysicalObject.Label, test.ShouldEqual, "capsule")
 	})
 
 	t.Run("WithParent_PropagatesParentToAllTransforms", func(t *testing.T) {
-		transforms, err := drawing.Draw("test", WithParent("robot-base"))
+		transforms, err := drawing.ToTransforms(WithParent("robot-base"))
 		test.That(t, err, test.ShouldBeNil)
 		for _, transform := range transforms {
 			test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "robot-base")

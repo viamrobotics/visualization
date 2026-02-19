@@ -14,7 +14,7 @@ func DrawFrameSystem(fs *referenceframe.FrameSystem, inputs referenceframe.Frame
 
 	colorMap := make(map[string]draw.Color)
 	drawnFrameSystem := draw.NewDrawnFrameSystem(fs, inputs, draw.WithFrameSystemColors(colorMap))
-	transforms, err := drawnFrameSystem.Draw(fs.Name())
+	transforms, err := drawnFrameSystem.ToTransforms()
 	if err != nil {
 		return err
 	}

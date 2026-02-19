@@ -165,7 +165,7 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	colors map[string]Color,
 ) error {
 	drawnFrameSystem := NewDrawnFrameSystem(frameSystem, inputs, WithFrameSystemColors(colors))
-	transforms, err := drawnFrameSystem.Draw(frameSystem.Name())
+	transforms, err := drawnFrameSystem.ToTransforms()
 	if err != nil {
 		return err
 	}

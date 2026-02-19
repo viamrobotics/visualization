@@ -9,10 +9,14 @@ import (
 
 // DrawnGeometriesInFrame is a collection of geometries that have been drawn from a referenceframe.GeometriesInFrame.
 type DrawnGeometriesInFrame struct {
-	// The parent frame of the geometries.
+	// Name is an optional prefix applied to each geometry's reference frame label when calling ToTransforms.
+	// Empty means no prefix (reference frames are just the raw geometry labels).
+	Name string
+
+	// Parent is the parent reference frame of the geometries.
 	Parent string
 
-	// The geometries to draw.
+	// DrawnGeometries holds the individual drawn geometries.
 	DrawnGeometries []*DrawnGeometry
 }
 
@@ -100,19 +104,21 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
 }
 
-// Draw creates a list of transforms from this DrawnGeometriesInFrame object.
-// The name is used to create the UUID for each geometry along with its label and parent.
-// If the name is not empty, it is used as the prefix for the geometry label.
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) Draw(name string, options ...drawableOption) ([]*commonv1.Transform, error) {
-	config := NewDrawConfig(name, options...)
+// ToTransforms produces a []*commonv1.Transform for each geometry in the collection.
+// The Name field is used as a prefix for each geometry's reference frame label (empty = no prefix).
+// Use WithParent to set the parent reference frame (defaults to referenceframe.World).
+func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+	config := NewDrawConfig("", options...)
+	parent := config.Parent
+
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
-		if config.Name != "" {
-			label = fmt.Sprintf("%s:%s", config.Name, label)
+		if drawnGeometriesInFrame.Name != "" {
+			label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
 		}
-		id := fmt.Sprintf("%s:%s", label, config.Parent)
-		transform, err := drawnGeometry.Draw(label, WithParent(config.Parent), WithID(id))
+		id := fmt.Sprintf("%s:%s", label, parent)
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithID(id))
 		if err != nil {
 			return nil, err
 		}
