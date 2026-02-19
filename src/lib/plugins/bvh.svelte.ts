@@ -55,7 +55,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					if (helper) ref.remove(helper)
 				}
 			} else if (isInstanceOf(ref, 'BatchedMesh')) {
-				/* @ts-expect-error */
+				/* @ts-expect-error Some sort of ambient type is conflicing here, likely from @threlte/extras */
 				ref.geometry.computeBoundsTree = computeBatchedBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBatchedBoundsTree
 				ref.raycast = acceleratedRaycast
