@@ -27,6 +27,18 @@
 		return openWidgets[currentPartID] || []
 	})
 
+	// Track camera aspect ratios to compute proper spacing
+	let cameraAspects = $state<Map<string, number>>(new Map())
+
+	const CAMERA_SCALE = 0.8
+	const CAMERA_GAP = 0.15 // gap between feed edges
+
+	// Compute spacing from the widest camera feed (default 16:9 before any aspect is known)
+	const maxAspect = $derived(
+		cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9
+	)
+	const feedSpacing = $derived(maxAspect * CAMERA_SCALE + CAMERA_GAP)
+
 	// Get arms assigned to controllers
 	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
@@ -42,17 +54,22 @@
 			origin.set([0, 0, 0])
 		}}
 	>
-		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
-		{#each enabledCameras as cameraName, index (cameraName)}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			<CameraFeed
-				resourceName={cameraName}
-				offset={{ x: index * spacing - centerOffset, y: 1.5, z: -2.5 }}
-				scale={0.8}
-				enableProfiling={false}
-			/>
-		{/each}
+		<!-- Render camera feeds only when presenting to avoid conflicting with overlay Camera widgets -->
+		{#if $isPresenting}
+			{#each enabledCameras as cameraName, index (cameraName)}
+				{@const centerOffset = ((enabledCameras.length - 1) * feedSpacing) / 2}
+				<CameraFeed
+					resourceName={cameraName}
+					offset={{ x: index * feedSpacing - centerOffset, y: 1.5, z: -2.5 }}
+					scale={CAMERA_SCALE}
+					enableProfiling={false}
+					onAspectChange={(a) => {
+						cameraAspects.set(cameraName, a)
+						cameraAspects = cameraAspects
+					}}
+				/>
+			{/each}
+		{/if}
 
 		<!-- Render joint limits widgets only for arms assigned to controllers, on the matching side -->
 		{#if leftArmName}

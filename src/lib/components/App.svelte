@@ -29,6 +29,7 @@
 	import Camera from './overlay/widgets/Camera.svelte'
 	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import Settings from '$lib/components/overlay/settings/Settings.svelte'
+	import { useXR } from '@threlte/xr'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -67,6 +68,7 @@
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
+	const { isPresenting } = useXR()
 
 	$effect(() => {
 		settings.current.enableKeybindings = enableKeybindings
@@ -148,7 +150,7 @@
 						<ArmPositions />
 					{/if}
 
-					{#if !focus}
+					{#if !focus && !$isPresenting}
 						{#each currentRobotCameraWidgets as cameraName (cameraName)}
 							<Camera name={cameraName} />
 						{/each}
