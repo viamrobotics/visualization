@@ -11,12 +11,7 @@
 		rotationY?: number
 	}
 
-	let {
-		armName,
-		offset = {},
-		scale = 0.6,
-		rotationY = 0,
-	}: JointLimitsWidgetProps = $props()
+	let { armName, offset = {}, scale = 0.6, rotationY = 0 }: JointLimitsWidgetProps = $props()
 
 	const armClient = useArmClient()
 	const armKinematics = useArmKinematics()
@@ -174,7 +169,11 @@
 			// Current value text
 			ctx.fillStyle = '#ffffff'
 			ctx.font = `${28 * s}px monospace`
-			ctx.fillText(`${joint.currentPosition.toFixed(1)}°`, barX + barWidth + 20 * s, y + rowHeight / 2)
+			ctx.fillText(
+				`${joint.currentPosition.toFixed(1)}°`,
+				barX + barWidth + 20 * s,
+				y + rowHeight / 2
+			)
 		})
 	}
 
