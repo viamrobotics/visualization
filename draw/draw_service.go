@@ -102,11 +102,7 @@ func (svc *DrawService) removeSceneSub(id uint64) {
 }
 
 // AddEntity adds a transform or drawing to the scene and returns its UUID.
-//
-// If the entity carries a non-empty Uuid field, AddEntity performs an upsert:
-// the entity is inserted when the UUID is not yet known, or the existing entry
-// is fully replaced when it is. Callers that omit a UUID receive a
-// server-generated one on every call (always insert).
+// If the entity carries a non-empty Uuid field, AddEntity performs an upsert.
 func (svc *DrawService) AddEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.AddEntityRequest],
@@ -155,8 +151,6 @@ func (svc *DrawService) AddEntity(
 	return connect.NewResponse(&drawv1.AddEntityResponse{Uuid: id[:]}), nil
 }
 
-// resolveEntityUUID returns a UUID parsed from the provided bytes when they
-// form a valid 16-byte UUID, or a freshly generated UUID otherwise.
 func resolveEntityUUID(raw []byte) uuid.UUID {
 	if id, err := uuid.FromBytes(raw); err == nil {
 		return id
@@ -164,8 +158,6 @@ func resolveEntityUUID(raw []byte) uuid.UUID {
 	return uuid.New()
 }
 
-// addedOrUpdated returns ENTITY_CHANGE_TYPE_UPDATED when the entity already
-// exists, ENTITY_CHANGE_TYPE_ADDED when it does not.
 func addedOrUpdated(exists bool) drawv1.EntityChangeType {
 	if exists {
 		return drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED
@@ -173,6 +165,7 @@ func addedOrUpdated(exists bool) drawv1.EntityChangeType {
 	return drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED
 }
 
+// UpdateEntity replaces or partially updates an existing entity identified by UUID.
 func (svc *DrawService) UpdateEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.UpdateEntityRequest],
@@ -253,9 +246,6 @@ func applyDrawingUpdate(existing, incoming *drawv1.Drawing, mask interface{ GetP
 	return dst
 }
 
-// applyFieldMask copies only the top-level fields named in paths from src into
-// dst. Fields present in the mask but absent in src are cleared on dst,
-// matching standard FieldMask semantics. Unknown paths are silently ignored.
 func applyFieldMask(dst, src proto.Message, paths []string) {
 	dstRef := dst.ProtoReflect()
 	srcRef := src.ProtoReflect()
@@ -273,6 +263,7 @@ func applyFieldMask(dst, src proto.Message, paths []string) {
 	}
 }
 
+// RemoveEntity removes the entity with the given UUID from the scene.
 func (svc *DrawService) RemoveEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.RemoveEntityRequest],
@@ -314,6 +305,7 @@ func (svc *DrawService) RemoveEntity(
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
 
+// StreamEntityChanges streams entity change events (add/update/remove) to the caller until the context is cancelled.
 func (svc *DrawService) StreamEntityChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamEntityChangesRequest],
@@ -344,6 +336,7 @@ func (svc *DrawService) StreamEntityChanges(
 	}
 }
 
+// SetScene stores scene metadata and notifies scene subscribers.
 func (svc *DrawService) SetScene(
 	_ context.Context,
 	req *connect.Request[drawv1.SetSceneRequest],
@@ -363,6 +356,7 @@ func (svc *DrawService) SetScene(
 	return connect.NewResponse(&drawv1.SetSceneResponse{}), nil
 }
 
+// StreamSceneChanges streams scene metadata changes to the caller until the context is cancelled.
 func (svc *DrawService) StreamSceneChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamSceneChangesRequest],
@@ -393,6 +387,7 @@ func (svc *DrawService) StreamSceneChanges(
 	}
 }
 
+// RemoveAllTransforms removes all transform entities from the scene and returns the count removed.
 func (svc *DrawService) RemoveAllTransforms(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllTransformsRequest],
@@ -416,6 +411,7 @@ func (svc *DrawService) RemoveAllTransforms(
 	return connect.NewResponse(&drawv1.RemoveAllTransformsResponse{Count: count}), nil
 }
 
+// RemoveAllDrawings removes all drawing entities from the scene and returns the count removed.
 func (svc *DrawService) RemoveAllDrawings(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllDrawingsRequest],
@@ -439,6 +435,7 @@ func (svc *DrawService) RemoveAllDrawings(
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil
 }
 
+// RemoveAll removes all entities (transforms and drawings) from the scene.
 func (svc *DrawService) RemoveAll(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllRequest],

@@ -2,6 +2,8 @@ package draw
 
 import (
 	"context"
+	"crypto/tls"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -19,8 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// newTestServer starts an in-process HTTP/2 test server backed by svc and returns
-// a client connected to it. The server is cleaned up via t.Cleanup.
 func newTestServer(t *testing.T, svc *DrawService) drawv1connect.DrawServiceClient {
 	t.Helper()
 
@@ -32,14 +32,56 @@ func newTestServer(t *testing.T, svc *DrawService) drawv1connect.DrawServiceClie
 	srv.Start()
 	t.Cleanup(srv.Close)
 
+	h2cTransport := &http2.Transport{
+		AllowHTTP: true,
+		DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, network, addr)
+		},
+	}
+
 	return drawv1connect.NewDrawServiceClient(
-		srv.Client(),
+		&http.Client{Transport: h2cTransport},
 		srv.URL,
 		connect.WithGRPC(),
 	)
 }
 
-// sampleTransform returns a minimal transform proto for testing.
+func waitForEntitySubs(t *testing.T, svc *DrawService, count int) {
+	t.Helper()
+	deadline := time.After(2 * time.Second)
+	for {
+		svc.mu.RLock()
+		n := len(svc.entitySubs)
+		svc.mu.RUnlock()
+		if n >= count {
+			return
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("timed out waiting for %d entity subscriber(s), got %d", count, n)
+		case <-time.After(5 * time.Millisecond):
+		}
+	}
+}
+
+func waitForSceneSubs(t *testing.T, svc *DrawService, count int) {
+	t.Helper()
+	deadline := time.After(2 * time.Second)
+	for {
+		svc.mu.RLock()
+		n := len(svc.sceneSubs)
+		svc.mu.RUnlock()
+		if n >= count {
+			return
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("timed out waiting for %d scene subscriber(s), got %d", count, n)
+		case <-time.After(5 * time.Millisecond):
+		}
+	}
+}
+
 func sampleTransform(name string) *commonv1.Transform {
 	return &commonv1.Transform{
 		ReferenceFrame: name,
@@ -53,7 +95,6 @@ func sampleTransform(name string) *commonv1.Transform {
 	}
 }
 
-// sampleDrawing returns a minimal drawing proto for testing.
 func sampleDrawing(name string) *drawv1.Drawing {
 	return &drawv1.Drawing{
 		ReferenceFrame: name,
@@ -187,29 +228,19 @@ func TestDrawService_AddEntity(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var events []*drawv1.StreamEntityChangesResponse
-		var mu sync.Mutex
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			for stream.Receive() {
-				mu.Lock()
-				events = append(events, stream.Msg())
-				n := len(events)
-				mu.Unlock()
-				if n == 2 {
-					return
-				}
-			}
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 1)
 
-		_, err = client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+		_, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
 			Entity: &drawv1.AddEntityRequest_Transform{Transform: transform},
 		}))
 		test.That(t, err, test.ShouldBeNil)
@@ -221,10 +252,14 @@ func TestDrawService_AddEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
-		wg.Wait()
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
 
-		mu.Lock()
-		defer mu.Unlock()
+		var events []*drawv1.StreamEntityChangesResponse
+		for i := 0; i < 2; i++ {
+			test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+			events = append(events, sr.stream.Msg())
+		}
 		test.That(t, events, test.ShouldHaveLength, 2)
 		test.That(t, events[0].ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED)
 		test.That(t, events[1].ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -496,29 +531,28 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var received *drawv1.StreamEntityChangesResponse
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			if stream.Receive() {
-				received = stream.Msg()
-			}
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		// Give the stream goroutine a moment to register.
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 1)
 
 		_, addErr := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
 			Entity: &drawv1.AddEntityRequest_Transform{Transform: sampleTransform("frame-1")},
 		}))
 		test.That(t, addErr, test.ShouldBeNil)
 
-		wg.Wait()
-		test.That(t, received, test.ShouldNotBeNil)
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED)
 		test.That(t, received.GetTransform(), test.ShouldNotBeNil)
 		test.That(t, received.GetTransform().ReferenceFrame, test.ShouldEqual, "frame-1")
@@ -536,28 +570,28 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var received *drawv1.StreamEntityChangesResponse
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			if stream.Receive() {
-				received = stream.Msg()
-			}
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 1)
 
 		_, removeErr := client.RemoveEntity(context.Background(), connect.NewRequest(&drawv1.RemoveEntityRequest{
 			Uuid: addResp.Msg.GetUuid(),
 		}))
 		test.That(t, removeErr, test.ShouldBeNil)
 
-		wg.Wait()
-		test.That(t, received, test.ShouldNotBeNil)
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
 	})
 
@@ -573,20 +607,17 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var received *drawv1.StreamEntityChangesResponse
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			if stream.Receive() {
-				received = stream.Msg()
-			}
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 1)
 
 		_, updateErr := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:   addResp.Msg.GetUuid(),
@@ -594,8 +625,11 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		}))
 		test.That(t, updateErr, test.ShouldBeNil)
 
-		wg.Wait()
-		test.That(t, received, test.ShouldNotBeNil)
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
 	})
 
@@ -605,22 +639,29 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 
-		stream, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var streamDone bool
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			streamDone = !stream.Receive()
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 1)
+
 		cancel()
 
-		wg.Wait()
-		test.That(t, streamDone, test.ShouldBeTrue)
+		select {
+		case sr := <-sCh:
+			if sr.err != nil {
+				return
+			}
+			test.That(t, sr.stream.Receive(), test.ShouldBeFalse)
+		case <-time.After(5 * time.Second):
+			t.Fatal("stream did not close within 5s after context cancellation")
+		}
 	})
 
 	t.Run("MultipleSubscribersAllReceiveEvents", func(t *testing.T) {
@@ -630,40 +671,35 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream1, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-		stream2, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var mu sync.Mutex
-		received := make([]*drawv1.StreamEntityChangesResponse, 0, 2)
-
-		var wg sync.WaitGroup
-		for _, s := range []interface {
-			Receive() bool
-			Msg() *drawv1.StreamEntityChangesResponse
-		}{stream1, stream2} {
-			wg.Add(1)
-			s := s
-			go func() {
-				defer wg.Done()
-				if s.Receive() {
-					mu.Lock()
-					received = append(received, s.Msg())
-					mu.Unlock()
-				}
-			}()
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
 		}
+		sCh1 := make(chan streamResult, 1)
+		sCh2 := make(chan streamResult, 1)
+		go func() {
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh1 <- streamResult{s, err}
+		}()
+		go func() {
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh2 <- streamResult{s, err}
+		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForEntitySubs(t, svc, 2)
 
 		_, addErr := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
 			Entity: &drawv1.AddEntityRequest_Transform{Transform: sampleTransform("broadcast")},
 		}))
 		test.That(t, addErr, test.ShouldBeNil)
 
-		wg.Wait()
-		test.That(t, received, test.ShouldHaveLength, 2)
+		sr1 := <-sCh1
+		test.That(t, sr1.err, test.ShouldBeNil)
+		sr2 := <-sCh2
+		test.That(t, sr2.err, test.ShouldBeNil)
+
+		test.That(t, sr1.stream.Receive(), test.ShouldBeTrue)
+		test.That(t, sr2.stream.Receive(), test.ShouldBeTrue)
 	})
 }
 
@@ -703,28 +739,28 @@ func TestDrawService_StreamSceneChanges(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamSceneChanges(ctx, connect.NewRequest(&drawv1.StreamSceneChangesRequest{}))
-		test.That(t, err, test.ShouldBeNil)
-
-		var received *drawv1.StreamSceneChangesResponse
-		var wg sync.WaitGroup
-		wg.Add(1)
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamSceneChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
 		go func() {
-			defer wg.Done()
-			if stream.Receive() {
-				received = stream.Msg()
-			}
+			s, err := client.StreamSceneChanges(ctx, connect.NewRequest(&drawv1.StreamSceneChangesRequest{}))
+			sCh <- streamResult{s, err}
 		}()
 
-		time.Sleep(50 * time.Millisecond)
+		waitForSceneSubs(t, svc, 1)
 
 		_, setErr := client.SetScene(context.Background(), connect.NewRequest(&drawv1.SetSceneRequest{
 			SceneMetadata: &drawv1.SceneMetadata{Grid: boolPtr(false)},
 		}))
 		test.That(t, setErr, test.ShouldBeNil)
 
-		wg.Wait()
-		test.That(t, received, test.ShouldNotBeNil)
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
 		test.That(t, received.GetSceneMetadata(), test.ShouldNotBeNil)
 		test.That(t, received.GetSceneMetadata().GetGrid(), test.ShouldBeFalse)
 	})
