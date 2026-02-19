@@ -20,14 +20,11 @@ service DrawService {
   // Remove an entity from the scene.
   rpc RemoveEntity(RemoveEntityRequest) returns (RemoveEntityResponse);
 
+  // Stream changes to entities in the scene.
+  rpc StreamEntityChanges(StreamEntityChangesRequest) returns (stream StreamEntityChangesResponse);
+
   // Set the camera and/or metadata for the scene.
-  rpc SetSceneMetadata(SetSceneMetadataRequest) returns (SetSceneMetadataResponse);
-
-  // Stream changes to the transforms in the scene.
-  rpc StreamTransformChanges(StreamTransformChangesRequest) returns (stream StreamTransformChangesResponse);
-
-  // Stream changes to the drawings in the scene.
-  rpc StreamDrawingChanges(StreamDrawingChangesRequest) returns (stream StreamDrawingChangesResponse);
+  rpc SetScene(SetSceneRequest) returns (SetSceneResponse);
 
   // Stream changes to the camera and/or metadata for the scene.
   rpc StreamSceneChanges(StreamSceneChangesRequest) returns (stream StreamSceneChangesResponse);
@@ -42,11 +39,11 @@ service DrawService {
   rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
 }
 
-enum ChangeType {
-  CHANGE_TYPE_UNSPECIFIED = 0;
-  CHANGE_TYPE_ADDED = 1;
-  CHANGE_TYPE_REMOVED = 2;
-  CHANGE_TYPE_UPDATED = 3;
+enum EntityChangeType {
+  ENTITY_CHANGE_TYPE_UNSPECIFIED = 0;
+  ENTITY_CHANGE_TYPE_ADDED = 1;
+  ENTITY_CHANGE_TYPE_REMOVED = 2;
+  ENTITY_CHANGE_TYPE_UPDATED = 3;
 }
 
 message AddEntityRequest {
@@ -84,10 +81,13 @@ message RemoveAllTransformsResponse {
   int32 count = 1;
 }
 
-message StreamTransformChangesRequest {}
-message StreamTransformChangesResponse {
-  ChangeType change_type = 1;
-  viam.common.v1.Transform transform = 2;
+message StreamEntityChangesRequest {}
+message StreamEntityChangesResponse {
+  EntityChangeType change_type = 1;
+  oneof entity {
+    viam.common.v1.Transform transform = 2;
+    Drawing drawing = 3;
+  }
 }
 
 message RemoveAllDrawingsRequest {}
@@ -95,17 +95,11 @@ message RemoveAllDrawingsResponse {
   int32 count = 1;
 }
 
-message StreamDrawingChangesRequest {}
-message StreamDrawingChangesResponse {
-  ChangeType change_type = 1;
-  Drawing drawing = 2;
-}
-
-message SetSceneMetadataRequest {
+message SetSceneRequest {
   SceneMetadata scene_metadata = 1;
 }
 
-message SetSceneMetadataResponse {}
+message SetSceneResponse {}
 
 message StreamSceneChangesRequest {}
 message StreamSceneChangesResponse {
