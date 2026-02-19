@@ -10,6 +10,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import XRToast from './XRToast.svelte'
 	import { useOrigin } from './useOrigin.svelte'
+	import { SvelteMap } from 'svelte/reactivity'
 
 	const { ...rest } = $props()
 
@@ -28,7 +29,7 @@
 	})
 
 	// Track camera aspect ratios to compute proper spacing
-	let cameraAspects = $state<Map<string, number>>(new Map())
+	const cameraAspects = new SvelteMap<string, number>()
 
 	const CAMERA_SCALE = 0.8
 	const CAMERA_GAP = 0.15 // gap between feed edges
@@ -65,7 +66,6 @@
 					enableProfiling={false}
 					onAspectChange={(a) => {
 						cameraAspects.set(cameraName, a)
-						cameraAspects = cameraAspects
 					}}
 				/>
 			{/each}
