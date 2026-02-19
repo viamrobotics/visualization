@@ -14,6 +14,7 @@ export const createPose = (pose?: Partial<Pose>): Pose => {
 	const oZ =
 		pose?.oX === undefined && pose?.oY === undefined && pose?.oZ === undefined ? 1 : (pose?.oZ ?? 0)
 
+	// pose expects theta in degrees
 	return {
 		x: pose?.x ?? 0,
 		y: pose?.y ?? 0,

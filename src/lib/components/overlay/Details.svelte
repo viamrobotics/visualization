@@ -30,6 +30,7 @@
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
+	import { createPose } from '$lib/transform'
 
 	const { ...rest } = $props()
 
@@ -121,6 +122,25 @@
 			start()
 		} else {
 			stop()
+		}
+	})
+
+	$effect(() => {
+		if (entity) {
+			const worldPose = createPose({
+				x: worldPosition.x,
+				y: worldPosition.y,
+				z: worldPosition.z,
+				oX: worldOrientation.x,
+				oY: worldOrientation.y,
+				oZ: worldOrientation.z,
+				theta: MathUtils.radToDeg(worldOrientation.th),
+			})
+			if (entity.has(traits.WorldPose)) {
+				entity.set(traits.WorldPose, worldPose)
+			} else {
+				entity.add(traits.WorldPose(worldPose))
+			}
 		}
 	})
 
