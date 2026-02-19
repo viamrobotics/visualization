@@ -5,6 +5,7 @@ import { Vector2 } from 'three'
 import type { Entity } from 'koota'
 import { traits } from '$lib/ecs'
 import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
+import { createPose, matrixToPose, poseToMatrix } from '../transform'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
@@ -13,7 +14,6 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const focusedEntity = useFocusedEntity()
 	const visibility = useVisibility()
 	const cursor = useCursor()
-
 	const currentEntity = $derived(entity())
 	const visible = $derived(currentEntity ? (visibility.get(currentEntity) ?? true) : true)
 
@@ -46,16 +46,36 @@ export const useObjectEvents = (entity: () => Entity | undefined) => {
 
 		if (currentEntity && currentEntity.has(traits.Hovered)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
+			const hoverPose = createPose(
+				hoverInfo
+					? {
+							x: hoverInfo.x,
+							y: hoverInfo.y,
+							z: hoverInfo.z,
+							oX: 0,
+							oY: 0,
+							oZ: 1,
+							theta: 0,
+						}
+					: undefined
+			)
+
+			const worldPose = currentEntity.get(traits.WorldPose) ?? createPose()
+			const hoverPoseMatrix = poseToMatrix(hoverPose)
+			const worldPoseMatrix = poseToMatrix(worldPose)
+			const resultMatrix = worldPoseMatrix.multiply(hoverPoseMatrix)
+			const resultPose = matrixToPose(resultMatrix)
+
 			if (hoverInfo) {
 				currentEntity.set(traits.InstancedPose, {
 					index: hoverInfo.index,
-					x: hoverInfo.x,
-					y: hoverInfo.y,
-					z: hoverInfo.z,
-					oX: hoverInfo.oX,
-					oY: hoverInfo.oY,
-					oZ: hoverInfo.oZ,
-					theta: hoverInfo.theta,
+					x: resultPose.x,
+					y: resultPose.y,
+					z: resultPose.z,
+					oX: resultPose.oX,
+					oY: resultPose.oY,
+					oZ: resultPose.oZ,
+					theta: resultPose.theta,
 				})
 			}
 		}
