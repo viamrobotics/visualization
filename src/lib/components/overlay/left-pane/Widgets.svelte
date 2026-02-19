@@ -36,7 +36,7 @@
 				{#if camera}
 					{@const isOpen = currentRobotCameraWidgets.includes(camera.name)}
 					<div class="flex items-center justify-between gap-4 py-2">
-						{camera.name}
+						<span class="min-w-0 truncate">{camera.name}</span>
 						<Switch
 							on={isOpen}
 							on:change={(event) => {
