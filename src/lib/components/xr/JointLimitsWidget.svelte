@@ -15,7 +15,7 @@
 		armName,
 		offset = {},
 		scale = 0.6,
-		rotationY = -15 * (Math.PI / 180),
+		rotationY = 0,
 	}: JointLimitsWidgetProps = $props()
 
 	const armClient = useArmClient()
@@ -63,10 +63,11 @@
 		})
 	})
 
-	// Canvas setup
-	const CANVAS_WIDTH = 800
-	const HEADER_HEIGHT = 80
-	const ROW_HEIGHT = 120
+	// Canvas setup — use 2x resolution for sharper XR text
+	const RESOLUTION_SCALE = 4
+	const CANVAS_WIDTH = 800 * RESOLUTION_SCALE
+	const HEADER_HEIGHT = 80 * RESOLUTION_SCALE
+	const ROW_HEIGHT = 120 * RESOLUTION_SCALE
 	let canvasHeight = $derived(HEADER_HEIGHT + (jointData?.length ?? 0) * ROW_HEIGHT)
 
 	let canvas: HTMLCanvasElement | undefined = $state()
@@ -105,19 +106,21 @@
 
 	// Render header with arm name
 	function renderHeader(ctx: CanvasRenderingContext2D, width: number) {
+		const s = RESOLUTION_SCALE
+
 		// Header background
 		ctx.fillStyle = '#0a0a0a'
 		ctx.fillRect(0, 0, width, HEADER_HEIGHT)
 
 		// Arm name
 		ctx.fillStyle = '#ffffff'
-		ctx.font = 'bold 36px monospace'
+		ctx.font = `bold ${36 * s}px monospace`
 		ctx.textBaseline = 'middle'
-		ctx.fillText(armName, 20, HEADER_HEIGHT / 2)
+		ctx.fillText(armName, 20 * s, HEADER_HEIGHT / 2)
 
 		// Separator line
 		ctx.strokeStyle = '#444444'
-		ctx.lineWidth = 4
+		ctx.lineWidth = 4 * s
 		ctx.beginPath()
 		ctx.moveTo(0, HEADER_HEIGHT)
 		ctx.lineTo(width, HEADER_HEIGHT)
@@ -131,6 +134,7 @@
 		width: number,
 		height: number
 	) {
+		const s = RESOLUTION_SCALE
 		const rowHeight = (height - HEADER_HEIGHT) / joints.length
 
 		joints.forEach((joint, index) => {
@@ -142,15 +146,15 @@
 
 			// Joint label
 			ctx.fillStyle = '#ffffff'
-			ctx.font = 'bold 32px monospace'
+			ctx.font = `bold ${32 * s}px monospace`
 			ctx.textBaseline = 'middle'
-			ctx.fillText(joint.jointId, 20, y + rowHeight / 2)
+			ctx.fillText(joint.jointId, 20 * s, y + rowHeight / 2)
 
 			// Progress bar dimensions
-			const barX = 240
-			const barY = y + (rowHeight - 60) / 2
-			const barWidth = 360
-			const barHeight = 60
+			const barX = 240 * s
+			const barY = y + (rowHeight - 60 * s) / 2
+			const barWidth = 360 * s
+			const barHeight = 60 * s
 
 			// Progress bar background
 			ctx.fillStyle = '#333333'
@@ -164,13 +168,13 @@
 
 			// Progress bar border
 			ctx.strokeStyle = '#666666'
-			ctx.lineWidth = 4
+			ctx.lineWidth = 4 * s
 			ctx.strokeRect(barX, barY, barWidth, barHeight)
 
 			// Current value text
 			ctx.fillStyle = '#ffffff'
-			ctx.font = '28px monospace'
-			ctx.fillText(`${joint.currentPosition.toFixed(1)}°`, barX + barWidth + 20, y + rowHeight / 2)
+			ctx.font = `${28 * s}px monospace`
+			ctx.fillText(`${joint.currentPosition.toFixed(1)}°`, barX + barWidth + 20 * s, y + rowHeight / 2)
 		})
 	}
 

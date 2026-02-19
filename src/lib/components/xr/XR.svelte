@@ -56,23 +56,16 @@
 
 		<!-- Render joint limits widgets only for arms assigned to controllers, on the matching side -->
 		{#if leftArmName}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			{@const widgetX = -(centerOffset + spacing + 0.3)}
 			<JointLimitsWidget
 				armName={leftArmName}
-				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
+				offset={{ x: -0.5, y: 2.5, z: -2.5 }}
 				scale={0.6}
-				rotationY={15 * (Math.PI / 180)}
 			/>
 		{/if}
 		{#if rightArmName}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			{@const widgetX = centerOffset + spacing + 0.3}
 			<JointLimitsWidget
 				armName={rightArmName}
-				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
+				offset={{ x: 0.5, y: 2.5, z: -2.5 }}
 				scale={0.6}
 			/>
 		{/if}
