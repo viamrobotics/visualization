@@ -1,22 +1,19 @@
 <script lang="ts">
-	import { T, useThrelte } from '@threlte/core'
+	import { T } from '@threlte/core'
 	import type { IntersectionEvent } from '@threlte/extras'
 	import Line from './Line.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import earcut from 'earcut'
-	import { Box3, BufferAttribute, Triangle, Vector3, type Points } from 'three'
+	import { Box3, BufferAttribute, Vector3 } from 'three'
 
 	interface Props {
 		debug?: boolean
 	}
 
-	const { scene } = useThrelte()
-
 	let { debug = true }: Props = $props()
 
 	const controls = useCameraControls()
 
-	const triangle = new Triangle()
 	const box3 = new Box3()
 	const a = new Vector3()
 	const b = new Vector3()
@@ -69,7 +66,6 @@
 		requestAnimationFrame(() => {
 			const { x, y } = event.point
 			line.positions.push(x, y, 0)
-			// line.positions = [...line.positions, x, y, 0]
 
 			if (x < line.min.x) line.min.x = x
 			else if (x > line.max.x) line.max.x = x
@@ -96,10 +92,11 @@
 
 		requestAnimationFrame(() => {
 			// Close the loop
-			const positions = [...lasso.positions, x, y, 0]
-			lasso.positions = positions
+			lasso.positions.push(x, y, 0)
 
-			const indices = earcut(lasso.positions, undefined, 3)
+			const { positions } = lasso
+
+			const indices = earcut(positions, undefined, 3)
 			lasso.indices = new Uint16Array(indices)
 
 			for (let i = 0; i < indices.length; i += 6) {
@@ -109,23 +106,12 @@
 				const ic = indices[i + 2] * stride
 
 				a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
-
 				b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
-
 				c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
-				triangle.set(c, b, a)
-
 				box3.setFromPoints([a, b, c])
 
 				lasso.boxes.push(box3.clone())
 			}
-
-			const allPoints: Points[] = []
-			scene.traverse((object) => {
-				if ((object as Points).isPoints) {
-					allPoints.push(object as Points)
-				}
-			})
 		})
 	}
 </script>
@@ -139,6 +125,8 @@
 	<T.MeshBasicMaterial
 		wireframe
 		color="blue"
+		transparent
+		opacity={debug ? 1 : 0}
 	/>
 </T.Mesh>
 
