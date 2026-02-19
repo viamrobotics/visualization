@@ -4,7 +4,6 @@
 	import RefreshRate from '../RefreshRate.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
@@ -37,12 +36,6 @@
 
 		invalidate()
 	})
-
-	const resourceByName = useResourceByName()
-
-	const widgetCameras = $derived(
-		Object.values(resourceByName.current).filter((resource) => resource?.subtype === 'camera')
-	)
 
 	const currentRobotCameraWidgets = $derived(
 		settings.current.openCameraWidgets[partID.current] || []
@@ -290,33 +283,31 @@
 
 		{@render SectionTitle('Camera widgets')}
 
-		{#each widgetCameras as camera (camera?.name)}
-			{#if camera}
-				{@const isWidgetOpen = currentRobotCameraWidgets.includes(camera.name)}
-				<div class="flex items-center justify-between gap-2 py-0.5">
-					<span class="min-w-0 truncate">{camera.name}</span>
-					<Switch
-						on={isWidgetOpen}
-						on:change={(event) => {
-							if (event.detail) {
-								settings.current.openCameraWidgets = {
-									...settings.current.openCameraWidgets,
-									[partID.current]: [...currentRobotCameraWidgets, camera.name],
-								}
-							} else {
-								settings.current.openCameraWidgets = {
-									...settings.current.openCameraWidgets,
-									[partID.current]: currentRobotCameraWidgets.filter(
-										(widget) => widget !== camera.name
-									),
-								}
+		{#each cameras.current as camera (camera)}
+			{@const isWidgetOpen = currentRobotCameraWidgets.includes(camera.name)}
+			<div class="flex items-center justify-between gap-2 py-0.5">
+				<span class="min-w-0 truncate">{camera.name}</span>
+				<Switch
+					on={isWidgetOpen}
+					on:change={(event) => {
+						if (event.detail) {
+							settings.current.openCameraWidgets = {
+								...settings.current.openCameraWidgets,
+								[partID.current]: [...currentRobotCameraWidgets, camera.name],
 							}
-						}}
-					/>
-				</div>
-			{/if}
+						} else {
+							settings.current.openCameraWidgets = {
+								...settings.current.openCameraWidgets,
+								[partID.current]: currentRobotCameraWidgets.filter(
+									(widget) => widget !== camera.name
+								),
+							}
+						}
+					}}
+				/>
+			</div>
 		{:else}
-			<div class="py-1">No cameras detected</div>
+			No cameras detected
 		{/each}
 	</div>
 {/snippet}
