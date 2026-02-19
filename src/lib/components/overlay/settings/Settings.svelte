@@ -273,12 +273,7 @@
 	<div class="text-gray-9 flex flex-col gap-1 text-xs">
 		<label class="flex items-center justify-between gap-2 py-1">
 			Arm positions
-			<Switch
-				bind:on={settings.current.enableArmPositionsWidget}
-				on:change={(event) => {
-					settings.current.enableArmPositionsWidget = event.detail
-				}}
-			/>
+			<Switch bind:on={settings.current.enableArmPositionsWidget} />
 		</label>
 
 		{@render SectionTitle('Camera widgets')}
