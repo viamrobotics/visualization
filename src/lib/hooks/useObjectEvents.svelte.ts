@@ -5,7 +5,7 @@ import { Vector2 } from 'three'
 import type { Entity } from 'koota'
 import { traits } from '$lib/ecs'
 import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { createPose, matrixToPose, poseToMatrix } from '../transform.ts'
+import { createPose, matrixToPose, poseToMatrix } from '../transform'
 
 export const useObjectEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
