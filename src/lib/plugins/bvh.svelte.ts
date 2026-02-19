@@ -42,7 +42,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 			}
 
 			if (isInstanceOf(ref, 'Points')) {
-				ref.geometry.computeBoundsTree = computeBoundsTree as any
+				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
 				computeBoundsTree.call(ref.geometry, { type: PointsBVH, ...opts })
@@ -55,7 +55,8 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					if (helper) ref.remove(helper)
 				}
 			} else if (isInstanceOf(ref, 'BatchedMesh')) {
-				ref.geometry.computeBoundsTree = computeBatchedBoundsTree as any
+				/* @ts-expect-error */
+				ref.geometry.computeBoundsTree = computeBatchedBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBatchedBoundsTree
 				ref.raycast = acceleratedRaycast
 
@@ -67,7 +68,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					if (helper) ref.remove(helper)
 				}
 			} else if (isInstanceOf(ref, 'Mesh')) {
-				ref.geometry.computeBoundsTree = computeBoundsTree as any
+				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
 				computeBoundsTree.call(ref.geometry, opts)
