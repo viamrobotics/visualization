@@ -4,8 +4,6 @@ import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 const plyLoader = new PLYLoader()
 
 export const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry => {
-	console.log(mesh)
-
 	// Case 1: already a base64 or ASCII string
 	if (typeof mesh === 'string') {
 		return plyLoader.parse(atob(mesh))
