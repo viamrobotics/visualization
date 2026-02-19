@@ -96,7 +96,6 @@
 		<T
 			is={batch.mesh}
 			dispose={false}
-			bvh={{ enabled: false }}
 		/>
 	</Portal>
 {/each}
