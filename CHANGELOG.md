@@ -1,5 +1,27 @@
 # motion-tools
 
+## 1.11.0
+
+### Minor Changes
+
+- 076823c: add hybrid poses raycasting
+- f071d0b: Add DrawService protos
+- b9c0aa6: Add point cloud API to draw, add ability to downscale geometries (just point clouds for now)
+- 20d5e57: Add new color helper functions
+- 3222384: Add experimental VR controller support for arm teleoperation
+
+### Patch Changes
+
+- 75025f8: Update draw frame system API to be consistent with other draw APIs
+- b9c0aa6: Update draw geometry API to be consistent with other draw APIs
+- 305f09b: Update NewTransform to accept arbitrary IDs (used to generate UUIDs)
+- b710cee: Update NewDrawing to accept arbitrary IDs (used to generate UUIDs)
+- 24b3b62: Logs performance improvements
+- 098fbe1: Move widgets section from left pane drawer to settings overlay
+- a801570: fix sub-entity hover when entity in framesystem
+- 0a39009: Truncate long camera names in widgets panel to prevent horizontal scrolling
+- 82a5161: Improve Pointcloud Object performance
+
 ## 1.10.0
 
 ### Minor Changes
