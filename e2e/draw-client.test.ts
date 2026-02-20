@@ -123,3 +123,86 @@ test('draw geometries updating', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
+
+test('draw point clouds', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUDS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawPointClouds github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await page.getByText('octagon').waitFor({ state: 'visible' })
+	await page.getByText('Zaghetto').waitFor({ state: 'visible' })
+	await page.getByText('simple').waitFor({ state: 'visible' })
+	await page.getByText('boat').waitFor({ state: 'visible' })
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point clouds with downscaling', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_DOWNSCALING'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawPointCloudWithDownscaling github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('boat_downscaled')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point clouds with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_SINGLE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawSingleColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('octagon_single_color')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point clouds with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawPaletteColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('Zaghetto_palette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point clouds with per point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_PER_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawPerPointColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('simple_per_point')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
