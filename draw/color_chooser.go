@@ -17,11 +17,13 @@ func (chooser ColorChooser) Next() Color {
 }
 
 // NewColorChooser creates a ColorChooser populated with all standard web color names.
-func NewColorChooser() ColorChooser {
-	colors := make([]Color, len(colornames.Map))
-	for _, rgba := range colornames.Map {
-		colors = append(colors, NewColor(WithColorRGBA(rgba)))
+func NewColorChooser(colors []Color) ColorChooser {
+	if colors == nil || len(colors) == 0 {
+		colors = make([]Color, len(colornames.Map))
+		for _, rgba := range colornames.Map {
+			colors = append(colors, NewColor(WithColorRGBA(rgba)))
+		}
 	}
 
-	return ColorChooser{colors: colors}
+	return ColorChooser{colors: colors, count: 0}
 }
