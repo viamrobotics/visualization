@@ -124,6 +124,22 @@ test('draw geometries updating', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw gltf', async ({ browser }) => {
+	const testPrefix = 'DRAW_GLTF'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawGLTF$/DrawGLTF github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('flamingo', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw point clouds', async ({ browser }) => {
 	const testPrefix = 'DRAW_POINT_CLOUDS'
 	const page = await createPage(browser)
