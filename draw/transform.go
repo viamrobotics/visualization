@@ -8,59 +8,24 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// TransformConfig is a configuration for a Transform.
-type TransformConfig struct {
-	uuidConfig
-}
-
-// TransformOption is a function that configures a Transform configuration.
-type TransformOption func(*TransformConfig)
-
-// newTransformConfig creates a new Transform configuration.
-func newTransformConfig(name, parent string) *TransformConfig {
-	return &TransformConfig{
-		uuidConfig: newUuidConfig(name, parent),
-	}
-}
-
-// WithUUID creates a Transform option that sets the UUID.
-func WithTransformUUID(uuid []byte) TransformOption {
-	return func(config *TransformConfig) {
-		withUUID(uuid)(&config.uuidConfig)
-	}
-}
-
-// WithTransformID creates a Transform option that sets the uuid based on the given id.
-func WithTransformID(id string) TransformOption {
-	return func(config *TransformConfig) {
-		withID(id)(&config.uuidConfig)
-	}
-}
-
 // NewTransform creates a Viam Transform representing an object in 3D space.
 // The transform will have a UUID generated from the name and parent unless a UUID option is provided.
 func NewTransform(
+	uuid []byte,
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
-	options ...TransformOption,
 ) *commonv1.Transform {
-	config := newTransformConfig(name, parent)
-	for _, option := range options {
-		option(config)
-	}
-
 	poseInFrame := poseInFrameToProtobuf(pose, parent)
 	transform := &commonv1.Transform{
-		Uuid:                config.uuid,
+		Uuid:                uuid,
 		ReferenceFrame:      name,
 		PoseInObserverFrame: poseInFrame,
 		Metadata:            metadata,
 	}
 
-	// Only set PhysicalObject if geometry is provided
 	if geometry != nil {
 		transform.PhysicalObject = geometryToProtobuf(geometry)
 	}

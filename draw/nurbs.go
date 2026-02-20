@@ -43,7 +43,7 @@ type Nurbs struct {
 type drawNurbsConfig struct {
 	degree  int32
 	weights []float64
-	DrawColorsConfig
+	drawColorsConfig
 }
 
 // newDrawNurbsConfig creates a new draw NURBS curve configuration
@@ -53,7 +53,7 @@ func newDrawNurbsConfig() *drawNurbsConfig {
 	return &drawNurbsConfig{
 		degree:           DefaultNurbsDegree,
 		weights:          []float64{},
-		DrawColorsConfig: NewDrawColorsConfig(DefaultNurbsColor),
+		drawColorsConfig: newDrawColorsConfig(DefaultNurbsColor),
 	}
 }
 
@@ -135,14 +135,9 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...draw
 	}, nil
 }
 
-// Draw creates a Drawing from this NURBS object, positioned at the given pose within the specified
-// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (nurbs Nurbs) Draw(
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-) *Drawing {
-	shape := NewShape(pose, name, WithNurbs(nurbs))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
-	return drawing
+// Draw creates a Drawing from this Nurbs object.
+func (nurbs Nurbs) Draw(name string, options ...drawableOption) *Drawing {
+	config := NewDrawConfig(name, options...)
+	shape := NewShape(config.Center, config.Name, WithNurbs(nurbs))
+	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
 }

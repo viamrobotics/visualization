@@ -6,6 +6,7 @@ import (
 	"github.com/golang/geo/r3"
 	fixtures "github.com/viam-labs/motion-tools/draw/fixtures"
 	commonv1 "go.viam.com/api/common/v1"
+	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
@@ -52,9 +53,10 @@ func TestDrawnGeometry_Draw(t *testing.T) {
 		drawn, err := NewDrawnGeometry(box, WithGeometryColor(blue))
 		test.That(t, err, test.ShouldBeNil)
 
-		transform, err := drawn.Draw("box", "world", spatialmath.NewZeroPose())
+		transform, err := drawn.Draw("box")
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, transform.ReferenceFrame, test.ShouldEqual, "box")
+		test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, referenceframe.World)
 		test.That(t, transform.PhysicalObject.Label, test.ShouldEqual, "box")
 		test.That(t, transform.PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
 			DimsMm: &commonv1.Vector3{X: 100, Y: 100, Z: 100},
@@ -69,9 +71,39 @@ func TestDrawnGeometry_Draw(t *testing.T) {
 		drawn, err := NewDrawnGeometry(box, WithGeometryColors(red, green))
 		test.That(t, err, test.ShouldBeNil)
 
-		transform, err := drawn.Draw("box", "world", spatialmath.NewZeroPose())
+		transform, err := drawn.Draw("box")
 		test.That(t, err, test.ShouldBeNil)
 		// red = \xff\x00\x00\xff, green = \x00\xff\x00\xff, both packed together
 		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff\x00\xff\x00\xff")
+	})
+
+	t.Run("DrawWithPose", func(t *testing.T) {
+		drawn, err := NewDrawnGeometry(box)
+		test.That(t, err, test.ShouldBeNil)
+
+		pose := spatialmath.NewPose(r3.Vector{X: 100, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 45})
+		transform, err := drawn.Draw("box", WithPose(pose))
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, transform.PoseInObserverFrame.Pose.X, test.ShouldEqual, 100)
+		test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, referenceframe.World)
+	})
+
+	t.Run("DrawWithParent", func(t *testing.T) {
+		drawn, err := NewDrawnGeometry(box)
+		test.That(t, err, test.ShouldBeNil)
+
+		transform, err := drawn.Draw("box", WithParent("robot-base"))
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "robot-base")
+	})
+
+	t.Run("EmptyNameFallsBackToGeometryLabel", func(t *testing.T) {
+		drawn, err := NewDrawnGeometry(box)
+		test.That(t, err, test.ShouldBeNil)
+
+		transform, err := drawn.Draw("")
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, transform.ReferenceFrame, test.ShouldEqual, "box")
+		test.That(t, transform.PhysicalObject.Label, test.ShouldEqual, "box")
 	})
 }

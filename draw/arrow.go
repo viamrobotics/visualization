@@ -18,28 +18,28 @@ type Arrows struct {
 }
 
 type drawArrowsConfig struct {
-	DrawColorsConfig
+	drawColorsConfig
 }
 
 func newDrawArrowsConfig() *drawArrowsConfig {
 	return &drawArrowsConfig{
-		DrawColorsConfig: NewDrawColorsConfig(DefaultArrowColor),
+		drawColorsConfig: newDrawColorsConfig(DefaultArrowColor),
 	}
 }
 
-type drawArrowsOption func(*drawArrowsConfig)
+type DrawArrowsOption func(*drawArrowsConfig)
 
 // WithSingleArrowColor sets the color for all arrows.
-func WithSingleArrowColor(color Color) drawArrowsOption {
+func WithSingleArrowColor(color Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig]([]Color{color})
 }
 
 // WithPerArrowColors sets the color for each arrow.
-func WithPerArrowColors(colors ...Color) drawArrowsOption {
+func WithPerArrowColors(colors ...Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig](colors)
 }
 
-func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
+func WithColorPalette(palette []Color, numPoses int) DrawArrowsOption {
 	finalColors := make([]Color, numPoses)
 	for i := range numPoses {
 		finalColors[i] = palette[i%len(palette)]
@@ -50,7 +50,7 @@ func WithColorPalette(palette []Color, numPoses int) drawArrowsOption {
 
 // NewArrows creates a new Arrows object from the given poses and optional configuration.
 // Returns an error if the number of colors doesn't match the requirements (must be 1 or equal to number of poses).
-func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, error) {
+func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, error) {
 	config := newDrawArrowsConfig()
 	for _, option := range options {
 		option(config)
@@ -63,10 +63,10 @@ func NewArrows(poses []spatialmath.Pose, options ...drawArrowsOption) (*Arrows, 
 	return &Arrows{Poses: poses, Colors: config.colors}, nil
 }
 
-// Draw creates a Drawing from this Arrows object, positioned at the given pose within the specified
-// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (arrows Arrows) Draw(name string, parent string, pose spatialmath.Pose) *Drawing {
-	shape := NewShape(pose, name, WithArrows(arrows))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
+// Draw creates a Drawing from this Arrows object.
+func (arrows Arrows) Draw(name string, options ...drawableOption) *Drawing {
+	config := NewDrawConfig(name, options...)
+	shape := NewShape(config.Center, config.Name, WithArrows(arrows))
+	drawing := NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
 	return drawing
 }

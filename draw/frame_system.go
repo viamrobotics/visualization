@@ -1,14 +1,11 @@
 package draw
 
 import (
-	"fmt"
 	"maps"
 	"slices"
 
-	"github.com/google/uuid"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
-	"go.viam.com/rdk/spatialmath"
 )
 
 type DrawnFrameSystem struct {
@@ -60,13 +57,11 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 	return &DrawnFrameSystem{FrameSystem: frameSystem, Inputs: inputs, Colors: config.colors}
 }
 
-// Draw draws the frame system to a list of transforms.
-// The options can be used to configure the UUID generation for the transforms.
-func (drawnFrameSystem *DrawnFrameSystem) Draw(options ...TransformOption) ([]*commonv1.Transform, error) {
-	config := newTransformConfig(drawnFrameSystem.FrameSystem.Name(), referenceframe.World)
-	for _, option := range options {
-		option(config)
-	}
+// ToTransforms produces a flat []*commonv1.Transform for every geometry in the frame system.
+// Each frame's geometries are prefixed with their frame name (e.g. "child:box").
+// Use WithParent to set the parent reference frame for all transforms (defaults to referenceframe.World).
+func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+	config := NewDrawConfig("", options...)
 
 	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)
 	if err != nil {
@@ -77,22 +72,18 @@ func (drawnFrameSystem *DrawnFrameSystem) Draw(options ...TransformOption) ([]*c
 	for _, frameName := range slices.Sorted(maps.Keys(frameMap)) {
 		geometries := frameMap[frameName]
 		color := getFrameColor(frameName, drawnFrameSystem.Colors, drawnFrameSystem.FrameSystem)
-
-		for _, geometry := range geometries.Geometries() {
-			drawnGeometry, err := NewDrawnGeometry(geometry, WithGeometryColor(color))
-			if err != nil {
-				return nil, err
-			}
-
-			key := fmt.Sprintf("%s:%s:%s", config.uuid, frameName, geometry.Label())
-			id := uuid.NewSHA1(uuidNamespace, []byte(key))
-			transform, err := drawnGeometry.Draw(fmt.Sprintf("%s:%s", frameName, geometry.Label()), referenceframe.World, spatialmath.NewZeroPose(), WithTransformUUID(id[:]))
-			if err != nil {
-				return nil, err
-			}
-
-			transforms = append(transforms, transform)
+		drawing, err := NewDrawnGeometriesInFrame(geometries, WithSingleGeometriesColor(color))
+		if err != nil {
+			return nil, err
 		}
+
+		drawing.Name = frameName
+		frameTransforms, err := drawing.ToTransforms(WithParent(config.Parent))
+		if err != nil {
+			return nil, err
+		}
+
+		transforms = append(transforms, frameTransforms...)
 	}
 
 	return transforms, nil

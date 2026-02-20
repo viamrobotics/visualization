@@ -157,18 +157,15 @@ func (snapshot *Snapshot) Validate() error {
 	return nil
 }
 
-// DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot
-//   - frameSystem is the frame system to draw
-//   - inputs are the inputs to the frame system
-//   - colors are the colors to use for the frame system geometries, mapped by frame name
-//   - Returns an error if the frame system geometries cannot be drawn
+// DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot.
+// Returns an error if the frame system geometries cannot be drawn.
 func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	frameSystem *referenceframe.FrameSystem,
 	inputs referenceframe.FrameSystemInputs,
 	colors map[string]Color,
 ) error {
 	drawnFrameSystem := NewDrawnFrameSystem(frameSystem, inputs, WithFrameSystemColors(colors))
-	transforms, err := drawnFrameSystem.Draw()
+	transforms, err := drawnFrameSystem.ToTransforms()
 	if err != nil {
 		return err
 	}
@@ -178,12 +175,7 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 }
 
 // DrawFrame draws a frame transform to the snapshot
-//   - name is the name of the frame
-//   - parent is the parent of the frame
-//   - pose is the pose of the frame
-//   - geometry is the geometry of the frame
-//   - metadata is visualizer metadata for the frame
-//   - Returns an error if the frame transform cannot be drawn
+// Returns an error if the frame transform cannot be drawn.
 func (snapshot *Snapshot) DrawFrame(
 	name string,
 	parent string,
@@ -191,16 +183,13 @@ func (snapshot *Snapshot) DrawFrame(
 	geometry spatialmath.Geometry,
 	metadata *structpb.Struct,
 ) {
-	transform := NewTransform(name, parent, pose, geometry, metadata)
+	id := uuid.New()
+	transform := NewTransform(id[:], name, parent, pose, geometry, metadata)
 	snapshot.transforms = append(snapshot.transforms, transform)
 }
 
 // DrawGeometry draws a geometry to the snapshot
-//   - geometry is the geometry to draw
-//   - pose is the pose of the geometry
-//   - parent is the parent of the geometry
-//   - color is the color of the geometry
-//   - Returns an error if the geometry cannot be drawn
+// Returns an error if the geometry cannot be drawn.
 func (snapshot *Snapshot) DrawGeometry(
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
@@ -212,7 +201,7 @@ func (snapshot *Snapshot) DrawGeometry(
 		return err
 	}
 
-	transforms, err := drawing.Draw(geometry.Label(), parent, pose)
+	transforms, err := drawing.Draw(geometry.Label(), WithParent(parent), WithPose(pose))
 	if err != nil {
 		return err
 	}
@@ -222,95 +211,76 @@ func (snapshot *Snapshot) DrawGeometry(
 }
 
 // DrawArrows draws arrows to the snapshot
-//   - name is the name of the arrows
-//   - parent is the parent of the arrows
-//   - pose is the pose of the arrows
-//   - poses are the poses of the arrows
-//   - options are the options for the arrows
-//   - Returns an error if the arrows cannot be drawn
+// Returns an error if the arrows cannot be drawn.
 func (snapshot *Snapshot) DrawArrows(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	poses []spatialmath.Pose,
-	options ...drawArrowsOption,
+	options ...DrawArrowsOption,
 ) error {
 	arrows, err := NewArrows(poses, options...)
 	if err != nil {
 		return err
 	}
 
-	drawing := arrows.Draw(name, parent, pose)
+	drawing := arrows.Draw(name, WithParent(parent), WithPose(pose))
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
 
 // DrawLine draws a line to the snapshot
-//   - name is the name of the line
-//   - parent is the parent of the line
-//   - pose is the pose of the line
-//   - points are the points of the line
-//   - options are the options for the line
-//   - Returns an error if the line cannot be drawn
+// Returns an error if the line cannot be drawn.
 func (snapshot *Snapshot) DrawLine(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	points []r3.Vector,
-	options ...drawLineOption,
+	options ...DrawLineOption,
 ) error {
 	line, err := NewLine(points, options...)
 	if err != nil {
 		return err
 	}
 
-	drawing := line.Draw(name, parent, pose)
+	drawing := line.Draw(name, WithParent(parent), WithPose(pose))
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
 
 // DrawModelFromURL draws a model from a URL to the snapshot
-//   - name is the name of the model
-//   - parent is the parent of the model
-//   - pose is the pose of the model
-//   - options are the options for the model
-//   - Returns an error if the model cannot be drawn
+// Returns an error if the model cannot be drawn.
 func (snapshot *Snapshot) DrawModel(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
-	options ...drawModelOption,
+	options ...DrawModelOption,
 ) error {
 	model, err := NewModel(options...)
 	if err != nil {
 		return err
 	}
 
-	drawing := model.Draw(name, parent, pose)
+	drawing := model.Draw(name, WithParent(parent), WithPose(pose))
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
 
 // DrawPoints draws a set of points to the snapshot
-//   - name is the name of the points
-//   - parent is the parent of the points
-//   - pose is the pose of the points
-//   - positions are the positions of the points
-//   - options are the options for the points
-//   - Returns an error if the points cannot be drawn
+// Returns an error if the points cannot be drawn.
 func (snapshot *Snapshot) DrawPoints(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	positions []r3.Vector,
-	options ...drawPointsOption,
+	options ...DrawPointsOption,
 ) error {
 	points, err := NewPoints(positions, options...)
 	if err != nil {
 		return err
 	}
 
-	drawing := points.Draw(name, parent, pose)
+	drawing := points.Draw(name, WithParent(parent), WithPose(pose))
 	snapshot.drawings = append(snapshot.drawings, drawing)
 	return nil
 }
