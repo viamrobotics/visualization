@@ -6,7 +6,7 @@
 //
 // Typical usage:
 //
-//	if err := server.Start(server.Config{Port: 3030}); err != nil {
+//	if err := server.Start(server.DrawServerConfig{Port: 3030}); err != nil {
 //	    log.Fatal(err)
 //	}
 //	defer server.Stop()
