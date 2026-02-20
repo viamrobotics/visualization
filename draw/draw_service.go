@@ -435,6 +435,14 @@ func (svc *DrawService) RemoveAllDrawings(
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil
 }
 
+// EntitySubCount returns the number of active entity-change stream subscribers.
+// Intended for use in tests to synchronise before firing mutations.
+func (svc *DrawService) EntitySubCount() int {
+	svc.mu.RLock()
+	defer svc.mu.RUnlock()
+	return len(svc.entitySubs)
+}
+
 // RemoveAll removes all entities (transforms and drawings) from the scene.
 func (svc *DrawService) RemoveAll(
 	_ context.Context,
