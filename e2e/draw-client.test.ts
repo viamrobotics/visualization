@@ -85,3 +85,41 @@ test('draw frames', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
+
+test('draw geometries', async ({ browser }) => {
+	const testPrefix = 'DRAW_GEOMETRIES'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawGeometries$/DrawGeometries github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('DrawGeometries Box')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Sphere')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
+	await expect(page.getByText('DrawGeometries Mesh')).toBeVisible()
+	await expect(page.getByText('DrawGeometries PointCloud')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw geometries updating', async ({ browser }) => {
+	const testPrefix = 'DRAW_GEOMETRIES_UPDATING'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawGeometriesUpdating$/DrawGeometriesUpdating github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('DrawGeometries box1 updating')).toBeVisible()
+	await expect(page.getByText('DrawGeometries box2 updating')).toBeVisible()
+	await expect(page.getByText('DrawGeometries box3 updating')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
