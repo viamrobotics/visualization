@@ -35,6 +35,9 @@ importers:
       lodash-es:
         specifier: 4.17.23
         version: 4.17.23
+      three-mesh-bvh:
+        specifier: ^0.9.8
+        version: 0.9.8(three@0.182.0)
       uuid-tool:
         specifier: ^2.0.3
         version: 2.0.3
