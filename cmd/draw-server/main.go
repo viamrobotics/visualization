@@ -17,12 +17,12 @@ func main() {
 	buildDir := flag.String("build-dir", "build", "path to the built frontend assets directory")
 	flag.Parse()
 
-	var opts []server.ServerOption
-	if *production {
-		opts = append(opts, server.WithProduction(*buildDir), server.WithStaticPort(*staticPort))
-	}
-
-	if err := server.Start(*port, opts...); err != nil {
+	if err := server.Start(server.DrawServerConfig{
+		Port:       *port,
+		Production: *production,
+		StaticPort: *staticPort,
+		BuildDir:   *buildDir,
+	}); err != nil {
 		log.Fatal(err)
 	}
 

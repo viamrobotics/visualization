@@ -6,7 +6,7 @@
 //
 // Typical usage:
 //
-//	if err := server.Start(3030); err != nil {
+//	if err := server.Start(server.Config{Port: 3030}); err != nil {
 //	    log.Fatal(err)
 //	}
 //	defer server.Stop()
@@ -35,39 +35,23 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-// ErrNotRunning is returned by Stop and GetClient when the server has not been started.
+// ErrNotRunning is returned by Stop when the server has not been started.
 var ErrNotRunning = errors.New("draw server is not running")
 
-type serverConfig struct {
-	production bool
-	staticPort int
-	buildDir   string
-}
+// DrawServerConfig holds the configuration for the draw server.
+type DrawServerConfig struct {
+	// Port is the port for the Connect-RPC API server.
+	Port int
 
-// ServerOption configures the draw server.
-type ServerOption func(*serverConfig)
+	// Production enables the static file server on StaticPort, serving the
+	// built frontend assets from BuildDir.
+	Production bool
 
-// WithProduction enables the static file server, serving files from buildDir.
-func WithProduction(buildDir string) ServerOption {
-	return func(c *serverConfig) {
-		c.production = true
-		c.buildDir = buildDir
-	}
-}
+	// StaticPort is the port for the static file server (Production mode only).
+	StaticPort int
 
-// WithStaticPort sets the port for the static file server (default 5173).
-// Only relevant when WithProduction is also provided.
-func WithStaticPort(port int) ServerOption {
-	return func(c *serverConfig) {
-		c.staticPort = port
-	}
-}
-
-func defaultConfig() serverConfig {
-	return serverConfig{
-		staticPort: 5173,
-		buildDir:   "build",
-	}
+	// BuildDir is the path to the built frontend assets directory (Production mode only).
+	BuildDir string
 }
 
 var (
@@ -76,16 +60,15 @@ var (
 	rpcSrv     *http.Server
 	staticSrv  *http.Server
 	drawClient drawv1connect.DrawServiceClient
-	drawSvc    *draw.DrawService
 	address    string
 )
 
-// Start starts the Connect-RPC draw server on port. It is idempotent: calling
-// Start when the server is already running returns nil immediately.
+// Start starts the Connect-RPC draw server using the provided Config. It is
+// idempotent: calling Start when the server is already running returns nil.
 //
-// In production mode (WithProduction option), a separate static file server is
-// started on the static port (default 5173) to serve the built frontend assets.
-func Start(port int, opts ...ServerOption) error {
+// When cfg.Production is true, a separate static file server is also started
+// on cfg.StaticPort serving frontend assets from cfg.BuildDir.
+func Start(cfg DrawServerConfig) error {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -93,15 +76,9 @@ func Start(port int, opts ...ServerOption) error {
 		return nil
 	}
 
-	cfg := defaultConfig()
-	for _, o := range opts {
-		o(&cfg)
-	}
-
 	svc := draw.NewDrawService()
-	drawSvc = svc
-	rpcAddr := fmt.Sprintf(":%d", port)
-	address = fmt.Sprintf("localhost:%d", port)
+	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
+	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
 	rpcListener, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
@@ -119,8 +96,8 @@ func Start(port int, opts ...ServerOption) error {
 		}
 	}()
 
-	if cfg.production {
-		staticAddr := fmt.Sprintf(":%d", cfg.staticPort)
+	if cfg.Production {
+		staticAddr := fmt.Sprintf(":%d", cfg.StaticPort)
 		staticListener, err := net.Listen("tcp", staticAddr)
 		if err != nil {
 			// RPC server is already started; clean it up before returning.
@@ -131,7 +108,7 @@ func Start(port int, opts ...ServerOption) error {
 
 		staticSrv = &http.Server{
 			Addr:    staticAddr,
-			Handler: staticFileHandler(cfg.buildDir),
+			Handler: staticFileHandler(cfg.BuildDir),
 		}
 
 		go func() {
@@ -140,7 +117,7 @@ func Start(port int, opts ...ServerOption) error {
 			}
 		}()
 
-		log.Printf("draw server static files on http://localhost:%d (serving %q)", cfg.staticPort, cfg.buildDir)
+		log.Printf("draw server static files on http://localhost:%d (serving %q)", cfg.StaticPort, cfg.BuildDir)
 	}
 
 	// Give the listeners a moment to be ready before clients connect.
@@ -199,7 +176,6 @@ func Stop() error {
 	rpcSrv = nil
 	staticSrv = nil
 	drawClient = nil
-	drawSvc = nil
 	address = ""
 	running = false
 
@@ -212,15 +188,6 @@ func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
 	return drawClient
-}
-
-// GetService returns the underlying DrawService of the running server.
-// Returns nil if the server has not been started.
-// Primarily intended for testing.
-func GetService() *draw.DrawService {
-	mu.Lock()
-	defer mu.Unlock()
-	return drawSvc
 }
 
 // GetAddress returns the host:port address of the running RPC server, or an

@@ -15,7 +15,7 @@ func TestGetClient_NilBeforeStart(t *testing.T) {
 }
 
 func TestGetClient_LifecycleNonNilThenNil(t *testing.T) {
-	if err := server.Start(19101); err != nil {
+	if err := server.Start(server.DrawServerConfig{Port: 19101}); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
 	if got := server.GetClient(); got == nil {
@@ -30,21 +30,23 @@ func TestGetClient_LifecycleNonNilThenNil(t *testing.T) {
 }
 
 func TestStart_Idempotent(t *testing.T) {
-	if err := server.Start(19102); err != nil {
+	if err := server.Start(server.DrawServerConfig{Port: 19102}); err != nil {
 		t.Fatalf("first Start: %v", err)
 	}
 	t.Cleanup(func() { _ = server.Stop() })
 
-	if err := server.Start(19102); err != nil {
+	if err := server.Start(server.DrawServerConfig{Port: 19102}); err != nil {
 		t.Errorf("second Start should be a no-op but returned: %v", err)
 	}
 }
 
 func TestProductionMode_StaticServerOnSeparatePort(t *testing.T) {
-	if err := server.Start(19110,
-		server.WithProduction(t.TempDir()),
-		server.WithStaticPort(19111),
-	); err != nil {
+	if err := server.Start(server.DrawServerConfig{
+		Port:       19110,
+		Production: true,
+		StaticPort: 19111,
+		BuildDir:   t.TempDir(),
+	}); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
 	t.Cleanup(func() { _ = server.Stop() })
