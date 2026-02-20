@@ -45,7 +45,7 @@ help:
 	@echo ''
 	@echo 'Available targets:'
 	@echo '  setup          - Set up development environment (install pnpm, bun, dependencies)'
-	@echo '  up             - Build (if needed) and start Bun server (legacy WebSocket)'
+	@echo '  up             - Build (if needed) and start the draw server'
 	@echo '  build          - Build the application for production'
 	@echo '  proto          - Generate protobuf code'
 	@echo '  docs           - Generate documentation'
