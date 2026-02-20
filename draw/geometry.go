@@ -21,7 +21,7 @@ type DrawnGeometry struct {
 
 // DrawnGeometryConfig holds configuration options for drawing a geometry.
 type DrawnGeometryConfig struct {
-	DrawColorsConfig
+	drawColorsConfig
 
 	// The threshold in millimeters for downscaling, defaults to 0.
 	// Currently only supported for point clouds.
@@ -31,7 +31,7 @@ type DrawnGeometryConfig struct {
 // newDrawGeometryConfig creates a new draw geometry configuration
 func newDrawGeometryConfig(isPointCloud bool) *DrawnGeometryConfig {
 	config := &DrawnGeometryConfig{
-		DrawColorsConfig:     NewDrawColorsConfig(),
+		drawColorsConfig:     newDrawColorsConfig(),
 		downscalingThreshold: 0,
 	}
 
@@ -98,7 +98,13 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 }
 
 // Draw creates a Transform from this DrawnGeometry object, positioned at the given pose within the specified reference frame.
-func (drawnGeometry *DrawnGeometry) Draw(name string, parent string, pose spatialmath.Pose, options ...TransformOption) (*commonv1.Transform, error) {
+// If the name is empty, the geometry label is used as the name.
+func (drawnGeometry *DrawnGeometry) Draw(name string, options ...drawableOption) (*commonv1.Transform, error) {
+	config := NewDrawConfig(name, options...)
+	if config.Name == "" {
+		config.Name = drawnGeometry.Geometry.Label()
+	}
+
 	if len(drawnGeometry.Colors) > 0 {
 		metadata := NewMetadata(WithMetadataColors(drawnGeometry.Colors...))
 		metadataStruct, err := MetadataToStruct(metadata)
@@ -106,8 +112,8 @@ func (drawnGeometry *DrawnGeometry) Draw(name string, parent string, pose spatia
 			return nil, fmt.Errorf("failed to create metadata: %w", err)
 		}
 
-		return NewTransform(name, parent, pose, drawnGeometry.Geometry, metadataStruct, options...), nil
+		return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, drawnGeometry.Geometry, metadataStruct), nil
 	}
 
-	return NewTransform(name, parent, pose, drawnGeometry.Geometry, nil, options...), nil
+	return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, drawnGeometry.Geometry, nil), nil
 }

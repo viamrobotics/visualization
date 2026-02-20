@@ -166,6 +166,7 @@
 		"expr-eval": "^2.0.2",
 		"koota": "0.6.5",
 		"lodash-es": "4.17.23",
+		"three-mesh-bvh": "^0.9.8",
 		"uuid-tool": "^2.0.3"
 	}
 }

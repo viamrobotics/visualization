@@ -68,7 +68,7 @@ func TestNewDrawnFrameSystem(t *testing.T) {
 	})
 }
 
-func TestDrawnFrameSystem_Draw(t *testing.T) {
+func TestDrawnFrameSystem_ToTransforms(t *testing.T) {
 	fs := makeTestFrameSystem(t)
 
 	t.Run("ProducesTransformPerGeometry", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestDrawnFrameSystem_Draw(t *testing.T) {
 			"other_child": NewColor(WithName("blue")),
 		}))
 
-		transforms, err := drawn.Draw()
+		transforms, err := drawn.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, len(transforms), test.ShouldEqual, 3)
 
@@ -102,7 +102,7 @@ func TestDrawnFrameSystem_Draw(t *testing.T) {
 			"other_child": NewColor(WithName("blue")),
 		}))
 
-		transforms, err := drawn.Draw()
+		transforms, err := drawn.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 
 		// "other_child" explicitly set to blue
@@ -122,12 +122,34 @@ func TestDrawnFrameSystem_Draw(t *testing.T) {
 			"test": NewColor(WithName("red")),
 		}))
 
-		transforms, err := drawn.Draw()
+		transforms, err := drawn.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 
 		// "child" is first alphabetically
 		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
 		// red = \xff\x00\x00\xff (inherited from "test")
 		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+	})
+
+	t.Run("FrameNamesUsedAsPrefix", func(t *testing.T) {
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs))
+
+		// Frame names are always used as the prefix for geometry labels
+		transforms, err := drawn.ToTransforms()
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, len(transforms), test.ShouldEqual, 3)
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
+		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
+		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
+	})
+
+	t.Run("WithParent_PropagatesParentToAllTransforms", func(t *testing.T) {
+		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs))
+
+		transforms, err := drawn.ToTransforms(WithParent("robot-base"))
+		test.That(t, err, test.ShouldBeNil)
+		for _, transform := range transforms {
+			test.That(t, transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "robot-base")
+		}
 	})
 }

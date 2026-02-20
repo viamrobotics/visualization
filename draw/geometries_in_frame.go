@@ -5,21 +5,23 @@ import (
 
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
-	"go.viam.com/rdk/spatialmath"
 )
 
 // DrawnGeometriesInFrame is a collection of geometries that have been drawn from a referenceframe.GeometriesInFrame.
 type DrawnGeometriesInFrame struct {
-	// The parent frame of the geometries.
+	// Name is an optional prefix applied to each geometry's reference frame label when calling ToTransforms.
+	// Empty means no prefix (reference frames are just the raw geometry labels).
+	Name string
+
+	// Parent is the parent reference frame of the geometries.
 	Parent string
 
-	// The geometries to draw.
+	// DrawnGeometries holds the individual drawn geometries.
 	DrawnGeometries []*DrawnGeometry
 }
 
 type drawnGeometriesInFrameConfig struct {
-	uuidConfig
-	DrawColorsConfig
+	drawColorsConfig
 
 	// The threshold in millimeters for downscaling, defaults to 0.
 	// Currently only supported for point clouds.
@@ -29,7 +31,7 @@ type drawnGeometriesInFrameConfig struct {
 // newDrawnGeometriesInFrameConfig creates a new draw geometries in frame configuration
 func newDrawnGeometriesInFrameConfig() *drawnGeometriesInFrameConfig {
 	return &drawnGeometriesInFrameConfig{
-		DrawColorsConfig:     NewDrawColorsConfig(),
+		drawColorsConfig:     newDrawColorsConfig(),
 		downscalingThreshold: 0,
 	}
 }
@@ -102,18 +104,20 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
 }
 
-// Draw creates a list of transforms from this DrawnGeometriesInFrame object, positioned at the given pose within the specified reference frame.
-// The id can be any string, it will be used to generate a UUID for each geometry along with its name and parent.
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) Draw(options ...TransformOption) ([]*commonv1.Transform, error) {
-	config := newTransformConfig(drawnGeometriesInFrame.Parent, drawnGeometriesInFrame.Parent)
-	for _, option := range options {
-		option(config)
-	}
+// ToTransforms produces a []*commonv1.Transform for each geometry in the collection.
+// The Name field is used as a prefix for each geometry's reference frame label (empty = no prefix).
+func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+	config := NewDrawConfig("", options...)
+	parent := config.Parent
 
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
-		key := fmt.Sprintf("%s:%s:%s", config.uuid, drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent)
-		transform, err := drawnGeometry.Draw(drawnGeometry.Geometry.Label(), drawnGeometriesInFrame.Parent, spatialmath.NewZeroPose(), WithTransformID(key))
+		label := drawnGeometry.Geometry.Label()
+		if drawnGeometriesInFrame.Name != "" {
+			label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
+		}
+		id := fmt.Sprintf("%s:%s", label, parent)
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithID(id))
 		if err != nil {
 			return nil, err
 		}

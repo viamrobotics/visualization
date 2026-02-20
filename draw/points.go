@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/golang/geo/r3"
-	"go.viam.com/rdk/spatialmath"
 )
 
 var (
@@ -29,7 +28,7 @@ type Points struct {
 // drawPointsConfig is a configuration for drawing a set of points
 type drawPointsConfig struct {
 	pointSize float32
-	DrawColorsConfig
+	drawColorsConfig
 }
 
 // newDrawPointsConfig creates a new draw points configuration
@@ -38,34 +37,34 @@ type drawPointsConfig struct {
 func newDrawPointsConfig() *drawPointsConfig {
 	return &drawPointsConfig{
 		pointSize:        DefaultPointSize,
-		DrawColorsConfig: NewDrawColorsConfig(DefaultPointColor),
+		drawColorsConfig: newDrawColorsConfig(DefaultPointColor),
 	}
 }
 
-// drawPointsOption is a function that configures a draw points configuration
-type drawPointsOption func(*drawPointsConfig)
+// DrawPointsOption is a function that configures a draw points configuration
+type DrawPointsOption func(*drawPointsConfig)
 
 // WithPointsSize creates a points option that sets the size of each point in millimeters.
-func WithPointsSize(size float32) drawPointsOption {
+func WithPointsSize(size float32) DrawPointsOption {
 	return func(config *drawPointsConfig) {
 		config.pointSize = size
 	}
 }
 
 // WithSinglePointColor creates a points option that sets the color for all points.
-func WithSinglePointColor(color Color) drawPointsOption {
+func WithSinglePointColor(color Color) DrawPointsOption {
 	return withColors[*drawPointsConfig]([]Color{color})
 }
 
 // WithPerPointColors creates a points option that sets the colors for each point.
-func WithPerPointColors(colors ...Color) drawPointsOption {
+func WithPerPointColors(colors ...Color) DrawPointsOption {
 	return withColors[*drawPointsConfig](colors)
 }
 
 // NewPoints creates a new Points object from the given positions and optional configuration.
 // Returns an error if positions are empty, if the point size is non-positive, or if the number
 // of colors doesn't match requirements (must be 1 or equal to number of positions).
-func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, error) {
+func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("positions cannot be empty")
 	}
@@ -90,14 +89,9 @@ func NewPoints(positions []r3.Vector, options ...drawPointsOption) (*Points, err
 	}, nil
 }
 
-// Draw creates a Drawing from this Points object, positioned at the given pose within the specified
-// reference frame. The name identifies this drawing and parent specifies the reference frame it's attached to.
-func (points Points) Draw(
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-) *Drawing {
-	shape := NewShape(pose, name, WithPoints(points))
-	drawing := NewDrawing(name, parent, pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
-	return drawing
+// Draw creates a Drawing from this Points object.
+func (points Points) Draw(name string, options ...drawableOption) *Drawing {
+	config := NewDrawConfig(name, options...)
+	shape := NewShape(config.Center, config.Name, WithPoints(points))
+	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
 }

@@ -31,7 +31,7 @@ func DrawGeometry(geometry spatialmath.Geometry, color string) error {
 		return err
 	}
 
-	transform, err := drawing.Draw(geometry.Label(), "world", spatialmath.NewZeroPose())
+	transform, err := drawing.Draw("")
 	if err != nil {
 		return err
 	}

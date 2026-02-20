@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/geo/r3"
+	"github.com/google/uuid"
 	fixtures "github.com/viam-labs/motion-tools/draw/fixtures"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
@@ -17,7 +18,9 @@ func TestTransform(t *testing.T) {
 		metadata := NewMetadata(WithMetadataColors(NewColor(WithName("red"))))
 		metadataStruct, err := MetadataToStruct(metadata)
 		test.That(t, err, test.ShouldBeNil)
-		transform := NewTransform("test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), geometry, metadataStruct)
+
+		id := uuid.New()
+		transform := NewTransform(id[:], "test", "world", spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}), geometry, metadataStruct)
 		test.That(t, transform, test.ShouldNotBeNil)
 		test.That(t, transform.Uuid, test.ShouldNotBeEmpty)
 		test.That(t, transform.ReferenceFrame, test.ShouldEqual, "test")
