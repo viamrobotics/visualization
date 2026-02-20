@@ -19,7 +19,6 @@
 
 <T.Mesh
 	raycast={enabled ? Mesh.prototype.raycast : () => null}
-	bvh={{ enabled: false }}
 	onpointerdown={() => {
 		cameraDown.copy(camera.current.position)
 	}}
