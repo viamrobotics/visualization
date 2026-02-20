@@ -106,7 +106,7 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 
 // ToTransforms produces a []*commonv1.Transform for each geometry in the collection.
 // The Name field is used as a prefix for each geometry's reference frame label (empty = no prefix).
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
 
