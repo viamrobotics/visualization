@@ -19,14 +19,17 @@
 	const { invalidate } = useThrelte()
 
 	$effect(() => {
+		untrack(() => {
+			geometry = new LineGeometry()
+			invalidate()
+		})
+
 		if (!positions || positions.length === 0) {
 			return
 		}
 
 		untrack(() => {
-			geometry = new LineGeometry()
 			geometry.setPositions(positions)
-			invalidate()
 		})
 	})
 </script>

@@ -32,8 +32,6 @@
 		}[]
 	>([])
 
-	let pending = false
-
 	const onpointerdown = (event: IntersectionEvent<PointerEvent>) => {
 		drawing = true
 
@@ -55,26 +53,20 @@
 	const onpointermove = (event: IntersectionEvent<PointerEvent>) => {
 		event.point.toArray(position)
 
-		if (!drawing || pending) return
+		if (!drawing) return
 
 		let line = lassos.at(-1)
 
 		if (!line) return
 
-		pending = true
+		const { x, y } = event.point
+		line.positions.push(x, y, 0)
 
-		requestAnimationFrame(() => {
-			const { x, y } = event.point
-			line.positions.push(x, y, 0)
+		if (x < line.min.x) line.min.x = x
+		else if (x > line.max.x) line.max.x = x
 
-			if (x < line.min.x) line.min.x = x
-			else if (x > line.max.x) line.max.x = x
-
-			if (y < line.min.y) line.min.y = y
-			else if (y > line.max.y) line.max.y = y
-
-			pending = false
-		})
+		if (y < line.min.y) line.min.y = y
+		else if (y > line.max.y) line.max.y = y
 	}
 
 	const onpointerup = () => {
@@ -90,29 +82,27 @@
 			controls.current.enabled = true
 		}
 
-		requestAnimationFrame(() => {
-			// Close the loop
-			lasso.positions.push(x, y, 0)
+		// Close the loop
+		lasso.positions.push(x, y, 0)
 
-			const { positions } = lasso
+		const { positions } = lasso
 
-			const indices = earcut(positions, undefined, 3)
-			lasso.indices = new Uint16Array(indices)
+		const indices = earcut(positions, undefined, 3)
+		lasso.indices = new Uint16Array(indices)
 
-			for (let i = 0; i < indices.length; i += 6) {
-				const stride = 3
-				const ia = indices[i + 0] * stride
-				const ib = indices[i + 1] * stride
-				const ic = indices[i + 2] * stride
+		for (let i = 0; i < indices.length; i += 6) {
+			const stride = 3
+			const ia = indices[i + 0] * stride
+			const ib = indices[i + 1] * stride
+			const ic = indices[i + 2] * stride
 
-				a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
-				b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
-				c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
-				box3.setFromPoints([a, b, c])
+			a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
+			b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
+			c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
+			box3.setFromPoints([a, b, c])
 
-				lasso.boxes.push(box3.clone())
-			}
-		})
+			lasso.boxes.push(box3.clone())
+		}
 	}
 </script>
 
