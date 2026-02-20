@@ -2,10 +2,16 @@
 .DEFAULT_GOAL := help
 
 DRAW_DIR := draw
-DRAW_FILES := $(shell find $(DRAW_DIR) -not -name "DOCS.md")
+DRAW_FILES := $(shell find $(DRAW_DIR) -name "*.go" -not -name "*_test.go")
 
-# Calculate hash of all source files that affect the build
-define calculate_hash
+# Calculate hash of protobuf files that affect the build
+define calculate_proto_hash
+	(find protos -type f -exec cat {} \; 2>/dev/null) \
+	 | shasum -a 256 | cut -d' ' -f1
+endef
+
+# Calculate hash of all app source files that affect the build
+define calculate_app_hash
 	(find src -type f -exec cat {} \; 2>/dev/null; \
 	 find static -type f -exec cat {} \; 2>/dev/null; \
 	 find protos -type f -exec cat {} \; 2>/dev/null; \
@@ -13,8 +19,24 @@ define calculate_hash
 	 | shasum -a 256 | cut -d' ' -f1
 endef
 
-CURRENT_HASH := $(shell $(call calculate_hash))
-STORED_HASH := $(shell cat .build-stamp 2>/dev/null)
+# Calculate hash of all server source files that affect the build
+define calculate_server_hash
+	(find client -type f -exec cat {} \; 2>/dev/null; \
+	 find draw -type f -exec cat {} \; 2>/dev/null; \
+	 find protos -type f -exec cat {} \; 2>/dev/null; \
+	 find cmd/draw-server -type f -exec cat {} \; 2>/dev/null; \
+	 cat go.mod go.sum 2>/dev/null) \
+	 | shasum -a 256 | cut -d' ' -f1
+endef
+
+CURRENT_PROTO_HASH := $(shell $(call calculate_proto_hash))
+STORED_PROTO_HASH := $(shell cat .bin/.proto-build-stamp 2>/dev/null)
+
+CURRENT_APP_HASH := $(shell $(call calculate_app_hash))
+STORED_APP_HASH := $(shell cat .bin/.app-build-stamp 2>/dev/null)
+
+CURRENT_SERVER_HASH := $(shell $(call calculate_server_hash))
+STORED_SERVER_HASH := $(shell cat .bin/.server-build-stamp 2>/dev/null)
 
 .PHONY: help
 help:
@@ -23,8 +45,8 @@ help:
 	@echo ''
 	@echo 'Available targets:'
 	@echo '  setup          - Set up development environment (install pnpm, bun, dependencies)'
-	@echo '  up             - Build (if needed) and start a local server'
-	@echo '  build 			- Build the application for production'
+	@echo '  up             - Build (if needed) and start Bun server (legacy WebSocket)'
+	@echo '  build          - Build the application for production'
 	@echo '  proto          - Generate protobuf code'
 	@echo '  docs           - Generate documentation'
 	@echo '  help           - Show this help message'
@@ -33,21 +55,25 @@ help:
 setup:
 	@./etc/setup.sh
 
-.PHONY: up-build
-up-build:
-	@$(MAKE) proto
-	@pnpm run build
-
 .PHONY: up-check
 up-check:
-	@if [ "$(CURRENT_HASH)" != "$(STORED_HASH)" ]; then \
-		$(MAKE) up-build; \
-		echo "$(CURRENT_HASH)" > .build-stamp; \
+	@if [ "$(CURRENT_PROTO_HASH)" != "$(STORED_PROTO_HASH)" ]; then \
+		$(MAKE) proto; \
+		echo "$(CURRENT_PROTO_HASH)" > .bin/.proto-build-stamp; \
+	fi
+	@if [ "$(CURRENT_APP_HASH)" != "$(STORED_APP_HASH)" ]; then \
+		pnpm build; \
+		echo "$(CURRENT_APP_HASH)" > .bin/.app-build-stamp; \
+	fi
+	@if [ "$(CURRENT_SERVER_HASH)" != "$(STORED_SERVER_HASH)" ]; then \
+		go build -o .bin/draw-server ./cmd/draw-server; \
+		echo "$(CURRENT_SERVER_HASH)" > .bin/.server-build-stamp; \
 	fi
 
 .PHONY: up
 up: up-check
-	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
+	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production > /dev/null 2>&1 &
+	@.bin/draw-server -port 3030 
 
 .PHONY: build-clean
 build-clean:
@@ -57,11 +83,12 @@ build-clean:
 .PHONY: build
 build: build-clean
 	@$(MAKE) proto
+	@go build -o .bin/draw-server ./cmd/draw-server
 	@pnpm run build
 
 .PHONY: proto-clean
 proto-clean:
-	@rm -rf draw/v1 src/lib/common/v1 src/lib/draw/v1 protos/vendor
+	@rm -rf draw/v1 src/lib/buf protos/vendor
 
 .PHONY: proto-gen-go
 proto-gen-go:
