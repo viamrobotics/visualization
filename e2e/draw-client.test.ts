@@ -124,6 +124,22 @@ test('draw geometries updating', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw nurbs', async ({ browser }) => {
+	const testPrefix = 'DRAW_NURBS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawNurbs$/DrawNurbs github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('nurbs-1')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw lines', async ({ browser }) => {
 	const testPrefix = 'DRAW_LINE'
 	const page = await createPage(browser)
