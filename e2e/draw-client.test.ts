@@ -484,3 +484,45 @@ test('draw point clouds with per point color', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
+
+test('remove all', async ({ browser }) => {
+	const testPrefix = 'REMOVE_ALL'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveAll$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('remove drawings', async ({ browser }) => {
+	const testPrefix = 'REMOVE_DRAWINGS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveDrawings$/RemoveDrawings github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('remove transforms', async ({ browser }) => {
+	const testPrefix = 'REMOVE_TRANSFORMS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestRemoveTransforms$/RemoveTransforms github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await assertTestSuccess(page, testPrefix)
+})
