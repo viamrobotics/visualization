@@ -81,7 +81,7 @@ test('draw frames', async ({ browser }) => {
 
 	await expect(page.getByText('DrawFrames Axes')).toBeVisible()
 	await expect(page.getByText('DrawFrames Sphere')).toBeVisible()
-	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
+	await expect(page.getByText('DrawFrames Capsule')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
@@ -557,4 +557,40 @@ test('remove transforms', async ({ browser }) => {
 	)
 
 	await assertTestSuccess(page, testPrefix)
+})
+
+test('replay', async ({ browser }) => {
+	const testPrefix = 'REPLAY'
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestReplay$/ReplayRecord github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('bouncing_ball')).toBeVisible()
+
+	const recordScreenshot = await takeScreenshot(page, `${testPrefix}_RECORD`)
+	failedScreenshots.push(recordScreenshot)
+
+	await cleanup(page)
+
+	execSync(
+		'go test -run ^TestReplay$/ReplayPlayback github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('bouncing_ball')).toBeVisible()
+
+	const playbackScreenshot = await takeScreenshot(page, `${testPrefix}_PLAYBACK`)
+	failedScreenshots.push(playbackScreenshot)
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
