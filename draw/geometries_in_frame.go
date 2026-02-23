@@ -109,15 +109,21 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
+	pose := config.Pose
 
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
 		if drawnGeometriesInFrame.Name != "" {
-			label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
+			if label == "" {
+				label = drawnGeometriesInFrame.Name
+			} else {
+				label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
+			}
 		}
+
 		id := fmt.Sprintf("%s:%s", label, parent)
-		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithID(id))
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
 		if err != nil {
 			return nil, err
 		}
