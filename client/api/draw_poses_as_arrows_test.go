@@ -98,10 +98,7 @@ func TestDrawPosesAsArrows(t *testing.T) {
 
 	t.Run("DrawPosesAsArrowsWithPerPointColors", func(t *testing.T) {
 		cc := NewColorfulColorChooser()
-		colors := make([]draw.Color, 10_000)
-		for i := range 10_000 {
-			colors[i] = cc.Next()
-		}
+		colors := cc.Get(10_000)
 
 		runDrawPosesAsArrowsTest(t, 10_000, &colors)
 	})
