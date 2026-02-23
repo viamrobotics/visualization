@@ -8,7 +8,7 @@ import type { Transform } from '$lib/buf/common/v1/common_pb'
 import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
-import { parseMetadata } from '$lib/WorldObject.svelte'
+import { parseMetadata } from '$lib/metadata'
 import { rgbaBytesToFloat32, rgbaToHex } from './color'
 import { asFloat32Array, STRIDE } from './buffer'
 import { createBufferGeometry } from './attribute'
@@ -108,12 +108,8 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 
 	if (transform.metadata) {
 		const metadata = parseMetadata(transform.metadata.fields)
-		if (metadata.color) {
-			entityTraits.push(traits.Color(metadata.color))
-		}
-
-		if (metadata.opacity !== undefined) {
-			entityTraits.push(traits.Opacity(metadata.opacity))
+		if (metadata.colors) {
+			entityTraits.push(traits.Colors(metadata.colors))
 		}
 	}
 
