@@ -61,6 +61,11 @@ func WithPerPointColors(colors ...Color) DrawPointsOption {
 	return withColors[*drawPointsConfig](colors)
 }
 
+// WithPointColorPalette creates a points option that sets the colors for each point using a color palette.
+func WithPointColorPalette(palette []Color, numPoints int) DrawPointsOption {
+	return withColorPalette[*drawPointsConfig](palette, numPoints)
+}
+
 // NewPoints creates a new Points object from the given positions and optional configuration.
 // Returns an error if positions are empty, if the point size is non-positive, or if the number
 // of colors doesn't match requirements (must be 1 or equal to number of positions).

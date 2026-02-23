@@ -204,6 +204,86 @@ test('draw lines with point size', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw points', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPoints$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPoints')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_SINGLE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPointsWithSingleColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPointsSingleColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPointsWithColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPointsPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points with per point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_PER_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPointsWithPerPointColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPointsPerPoint')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points with point size', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINTS_WITH_POINT_SIZE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPoints$/DrawPointsWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('myPointsWithSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw poses as arrows', async ({ browser }) => {
 	const testPrefix = 'DRAW_POSES_AS_ARROWS'
 	const page = await createPage(browser)
