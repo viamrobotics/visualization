@@ -485,6 +485,38 @@ test('draw point clouds with per point color', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('set camera pose', async ({ browser }) => {
+	const testPrefix = 'SET_CAMERA_POSE'
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestSetCamera$/SetCameraTopDown github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('reference_box')).toBeVisible()
+
+	const setCameraScreenshot = await takeScreenshot(page, `${testPrefix}_SET_CAMERA`)
+	failedScreenshots.push(setCameraScreenshot)
+
+	execSync(
+		'go test -run ^TestSetCamera$/ResetCamera github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	const resetCameraScreenshot = await takeScreenshot(page, `${testPrefix}_RESET_CAMERA`)
+	failedScreenshots.push(resetCameraScreenshot)
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
 test('remove all', async ({ browser }) => {
 	const testPrefix = 'REMOVE_ALL'
 	const page = await createPage(browser)
