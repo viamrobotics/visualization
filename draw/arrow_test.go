@@ -42,11 +42,11 @@ func TestNewArrows(t *testing.T) {
 		test.That(t, arrows.Colors[2], test.ShouldResemble, blue)
 	})
 
-	t.Run("WithColorPalette", func(t *testing.T) {
+	t.Run("WithArrowColorPalette", func(t *testing.T) {
 		red := NewColor(WithName("red"))
 		blue := NewColor(WithName("blue"))
 		// 3 poses, palette of 2 colors: red, blue, red (wraps around)
-		arrows, err := NewArrows(poses, WithColorPalette([]Color{red, blue}, 3))
+		arrows, err := NewArrows(poses, WithArrowColorPalette([]Color{red, blue}, 3))
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, arrows.Colors[0], test.ShouldResemble, red)
 		test.That(t, arrows.Colors[1], test.ShouldResemble, blue)

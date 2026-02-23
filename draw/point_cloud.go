@@ -50,11 +50,7 @@ func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption {
 
 // WithPointCloudColorPalette creates a point cloud option that iterates through colors for a point cloud.
 func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOption {
-	finalColors := make([]Color, numPoints)
-	for i := range numPoints {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*DrawnPointCloudConfig](finalColors)
+	return withColorPalette[*DrawnPointCloudConfig](palette, numPoints)
 }
 
 // WithPointCloudDownscaling creates a point cloud option that sets the threshold in millimeters below which points are not rendered from one another.

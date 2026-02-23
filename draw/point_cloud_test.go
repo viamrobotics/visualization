@@ -68,7 +68,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 		test.That(t, drawnPC.Colors, test.ShouldResemble, colors)
 	})
 
-	t.Run("WithColorPalette", func(t *testing.T) {
+	t.Run("WithPointCloudColorPalette", func(t *testing.T) {
 		points := []r3.Vector{
 			{X: 0, Y: 0, Z: 0},
 			{X: 1, Y: 0, Z: 0},

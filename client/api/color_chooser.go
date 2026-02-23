@@ -17,10 +17,12 @@ var ColorfulNames = slices.DeleteFunc(slices.Clone(colornames.Names), func(name 
 		strings.Contains(lower, "gray")
 })
 
-var ClientColorChooser = draw.NewColorChooser(func() []draw.Color {
+// NewColorfulColorChooser creates a ColorChooser that cycles through the `ColorfulNames` slice.
+func NewColorfulColorChooser() draw.ColorChooser {
 	colors := make([]draw.Color, len(ColorfulNames))
 	for i, name := range ColorfulNames {
 		colors[i] = draw.ColorFromName(name)
 	}
-	return colors
-}())
+
+	return draw.NewColorChooser(colors)
+}

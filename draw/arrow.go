@@ -39,13 +39,9 @@ func WithPerArrowColors(colors ...Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig](colors)
 }
 
-func WithColorPalette(palette []Color, numPoses int) DrawArrowsOption {
-	finalColors := make([]Color, numPoses)
-	for i := range numPoses {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*drawArrowsConfig](finalColors)
-
+// WithArrowColorPalette sets the color for each arrow using a color palette.
+func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption {
+	return withColorPalette[*drawArrowsConfig](palette, numPoses)
 }
 
 // NewArrows creates a new Arrows object from the given poses and optional configuration.

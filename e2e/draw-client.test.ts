@@ -124,6 +124,74 @@ test('draw geometries updating', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw poses as arrows', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrows$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with single color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_SINGLE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithSingleColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw poses as arrows with per point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_POSES_AS_ARROWS_WITH_PER_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPosesAsArrows$/DrawPosesAsArrowsWithPerPointColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf-8',
+		}
+	)
+
+	await expect(page.getByText('mySpherePoses', { exact: true })).toBeVisible()
+	await expect(page.getByText('mySphere', { exact: true })).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw gltf', async ({ browser }) => {
 	const testPrefix = 'DRAW_GLTF'
 	const page = await createPage(browser)
