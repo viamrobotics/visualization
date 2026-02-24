@@ -53,8 +53,6 @@ export const Opacity = trait(() => 1)
  */
 export const Color = trait({ r: 0, g: 0, b: 0 })
 
-export const Arrow = trait(() => true)
-
 export const Positions = trait(() => new Float32Array())
 export const Colors = trait(() => new Uint8Array())
 export const Instances = trait({

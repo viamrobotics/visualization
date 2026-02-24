@@ -1,5 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createWorld, type World } from 'koota'
+
+vi.mock('$lib/loaders/pcd', () => ({
+	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
+}))
+
 import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import {
 	Drawing,
