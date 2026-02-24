@@ -63,6 +63,13 @@ export interface Settings {
 			rotationEnabled: boolean
 		}
 	}
+
+	// SteamVR Bridge
+	steamvrBridge: {
+		enabled: boolean
+		host: string
+		port: number
+	}
 }
 
 interface Context {
@@ -115,6 +122,12 @@ const defaults = (): Settings => ({
 			scaleFactor: 1.0,
 			rotationEnabled: true,
 		},
+	},
+
+	steamvrBridge: {
+		enabled: false,
+		host: 'localhost',
+		port: 9090,
 	},
 })
 
