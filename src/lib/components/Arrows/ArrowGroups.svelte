@@ -2,7 +2,7 @@
 	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 	import { traits, useWorld } from '$lib/ecs'
 	import type { Entity } from 'koota'
-	import { STRIDE } from '$lib/buffer'
+	import { STRIDE, asColor } from '$lib/buffer'
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
 	import Arrows from './Arrows.svelte'
@@ -10,6 +10,7 @@
 	const world = useWorld()
 
 	const map = new SvelteMap<Entity, InstancedArrows>()
+	const colorUtil = new Color()
 
 	const onAdd = (entity: Entity) => {
 		const poses = entity.get(traits.Positions)
@@ -21,10 +22,9 @@
 		const total = poses.length / STRIDE.ARROWS
 		const alpha = colors && colors.length / STRIDE.COLORS_RGBA === total
 		const uniformColor =
-			colors && (colors.length === 3 || colors.length === 4)
-				? new Color(colors[0], colors[1], colors[2])
+			colors && (colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA)
+				? asColor(colors, colorUtil)
 				: undefined
-
 		const arrows = new InstancedArrows({ count: total, alpha, uniformColor })
 		map.set(entity, arrows)
 		arrows.update({ poses, colors, headAtPose })

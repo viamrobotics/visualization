@@ -11,6 +11,8 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 import { parseMetadata } from '$lib/metadata'
+import { asColor, asOpacity, STRIDE } from '$lib/buffer'
+import { Color } from 'three'
 import { usePartID } from './usePartID.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait, Entity } from 'koota'
@@ -20,6 +22,8 @@ import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { createBufferGeometry } from '$lib/attribute'
+
+const colorUtil = new Color()
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
@@ -74,7 +78,13 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (metadata.colors) {
-			entityTraits.push(traits.Colors(metadata.colors))
+			const bytes = metadata.colors
+			asColor(bytes, colorUtil)
+			entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+			const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
+			if (isRgba) {
+				entityTraits.push(traits.Opacity(asOpacity(bytes)))
+			}
 		}
 
 		if (transform.physicalObject) {

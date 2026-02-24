@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { asFloat32Array, normalizeColorsRGBA } from '../buffer'
+import { Color } from 'three'
+import { asFloat32Array, asColor, asOpacity } from '../buffer'
 
 describe('asFloat32Array', () => {
 	it('converts aligned bytes to Float32Array', () => {
@@ -44,35 +45,77 @@ describe('asFloat32Array', () => {
 	})
 })
 
-describe('normalizeColorsRGBA', () => {
-	it('normalizes uint8 RGBA to 0-1 range', () => {
-		const result = normalizeColorsRGBA(new Float32Array([255, 128, 0, 255]))
+describe('asColor', () => {
+	it('sets RGB from uint8 bytes into the target Color', () => {
+		const target = new Color()
+		const result = asColor(new Uint8Array([255, 128, 0]), target)
 
-		expect(result.length).toBe(4)
-		expect(result[0]).toBeCloseTo(1.0) // 255/255
-		expect(result[1]).toBeCloseTo(0.502, 2) // 128/255
-		expect(result[2]).toBeCloseTo(0.0) // 0/255
-		expect(result[3]).toBeCloseTo(1.0) // 255/255
+		expect(result).toBe(target)
+		expect(result.r).toBeCloseTo(1.0)
+		expect(result.g).toBeCloseTo(0.502, 2)
+		expect(result.b).toBeCloseTo(0.0)
 	})
 
-	it('handles multiple colors', () => {
-		const result = normalizeColorsRGBA(new Float32Array([255, 0, 0, 255, 0, 255, 0, 128]))
+	it('ignores alpha byte when present', () => {
+		const target = new Color()
+		asColor(new Uint8Array([0, 255, 0, 128]), target)
 
-		expect(result.length).toBe(8)
-		// First color: red
-		expect(result[0]).toBeCloseTo(1.0)
-		expect(result[1]).toBeCloseTo(0.0)
-		expect(result[2]).toBeCloseTo(0.0)
-		expect(result[3]).toBeCloseTo(1.0)
-		// Second color: green with 50% alpha
-		expect(result[4]).toBeCloseTo(0.0)
-		expect(result[5]).toBeCloseTo(1.0)
-		expect(result[6]).toBeCloseTo(0.0)
-		expect(result[7]).toBeCloseTo(0.502, 2)
+		expect(target.r).toBeCloseTo(0.0)
+		expect(target.g).toBeCloseTo(1.0)
+		expect(target.b).toBeCloseTo(0.0)
 	})
 
-	it('returns empty array for empty input', () => {
-		const result = normalizeColorsRGBA(new Float32Array(0))
-		expect(result.length).toBe(0)
+	it('reads from a byte offset into a packed two-color array', () => {
+		// [lineR, lineG, lineB, dotR, dotG, dotB]
+		const bytes = new Uint8Array([255, 0, 0, 0, 255, 0])
+		const target = new Color()
+
+		asColor(bytes, target, 0)
+		expect(target.r).toBeCloseTo(1.0)
+		expect(target.g).toBeCloseTo(0.0)
+		expect(target.b).toBeCloseTo(0.0)
+
+		asColor(bytes, target, 3)
+		expect(target.r).toBeCloseTo(0.0)
+		expect(target.g).toBeCloseTo(1.0)
+		expect(target.b).toBeCloseTo(0.0)
+	})
+
+	it('returns black when the array is too short for the given offset', () => {
+		const target = new Color(1, 1, 1)
+		asColor(new Uint8Array([255, 0, 0]), target, 1)
+
+		expect(target.r).toBeCloseTo(0.0)
+		expect(target.g).toBeCloseTo(0.0)
+		expect(target.b).toBeCloseTo(0.0)
+	})
+})
+
+describe('asOpacity', () => {
+	it('returns normalized alpha from index 3', () => {
+		expect(asOpacity(new Uint8Array([255, 0, 0, 128]))).toBeCloseTo(0.502, 2)
+		expect(asOpacity(new Uint8Array([255, 0, 0, 255]))).toBeCloseTo(1.0)
+		expect(asOpacity(new Uint8Array([255, 0, 0, 0]))).toBeCloseTo(0.0)
+	})
+
+	it('returns default fallback (1) when array has fewer than 4 elements', () => {
+		expect(asOpacity(new Uint8Array([255, 0, 0]))).toBe(1)
+		expect(asOpacity(new Uint8Array([]))).toBe(1)
+	})
+
+	it('accepts a custom fallback value', () => {
+		expect(asOpacity(new Uint8Array([255, 0, 0]), 0.7)).toBeCloseTo(0.7)
+	})
+
+	it('reads from a byte offset for alpha in a packed two-color RGBA array', () => {
+		// [lineR, lineG, lineB, lineA, dotR, dotG, dotB, dotA]
+		const bytes = new Uint8Array([255, 0, 0, 204, 0, 255, 0, 128])
+
+		expect(asOpacity(bytes, 1, 3)).toBeCloseTo(0.8, 1) // lineA = 204
+		expect(asOpacity(bytes, 1, 7)).toBeCloseTo(0.502, 2) // dotA = 128
+	})
+
+	it('returns fallback when array is too short for the given offset', () => {
+		expect(asOpacity(new Uint8Array([255, 0, 0]), 0.5, 5)).toBeCloseTo(0.5)
 	})
 })

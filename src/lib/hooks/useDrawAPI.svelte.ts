@@ -14,7 +14,7 @@ import { useLogs } from './useLogs.svelte'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { STRIDE } from '$lib/buffer'
+import { STRIDE, asColor, asOpacity } from '$lib/buffer'
 
 const colorUtil = new Color()
 
@@ -334,7 +334,6 @@ export const provideDrawAPI = () => {
 		const rawColors = reader.readU8Array(nColorsElements)
 
 		let colors: Uint8Array | null = null
-
 		if (nColors > 1) {
 			colors = new Uint8Array(nPointsElements)
 			colors.set(rawColors)
@@ -361,6 +360,9 @@ export const provideDrawAPI = () => {
 
 			if (geometry) {
 				updateBufferGeometry(geometry, positions, colors)
+				if (colors === null) {
+					entity.set(traits.Color, { r, g, b })
+				}
 				return
 			}
 		}
@@ -369,7 +371,7 @@ export const provideDrawAPI = () => {
 
 		world.spawn(
 			traits.Name(label),
-			traits.Color(colorUtil.set(r, g, b)),
+			...(colors === null ? [traits.Color({ r, g, b })] : []),
 			traits.BufferGeometry(geometry),
 			traits.Points,
 			traits.DrawAPI,
@@ -392,7 +394,7 @@ export const provideDrawAPI = () => {
 		// Read counts
 		const nPoints = reader.read()
 
-		// Read default color
+		// Read line and dot colors as 0-1 floats (already normalized by Go client)
 		const r = reader.read()
 		const g = reader.read()
 		const b = reader.read()
@@ -412,8 +414,8 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.Name(label),
 			traits.Color({ r, g, b }),
-			traits.LinePositions(points),
 			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
+			traits.LinePositions(points),
 			traits.DrawAPI,
 			traits.Removable
 		)

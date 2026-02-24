@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { createWorld } from 'koota'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createWorld, type World } from 'koota'
 import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import {
 	Drawing,
@@ -16,11 +16,13 @@ import { spawnSnapshotEntities } from '../snapshot'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 import { asFloat32Array } from '$lib/buffer'
-import { rgbaBytesToFloat32 } from '$lib/color'
 
 describe('spawnSnapshotEntities', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
 	it('spawns entities for transforms', () => {
-		const world = createWorld()
+		world = createWorld()
 		const transform = new Transform({
 			referenceFrame: 'arm',
 			poseInObserverFrame: {
@@ -37,7 +39,7 @@ describe('spawnSnapshotEntities', () => {
 	})
 
 	it('spawns entities for drawings', () => {
-		const world = createWorld()
+		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'drawing1',
 			poseInObserverFrame: {
@@ -57,7 +59,7 @@ describe('spawnSnapshotEntities', () => {
 	})
 
 	it('spawns entities for both transforms and drawings', () => {
-		const world = createWorld()
+		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'frame1' })
 		const drawing = new Drawing({
 			referenceFrame: 'drawing1',
@@ -75,7 +77,7 @@ describe('spawnSnapshotEntities', () => {
 	})
 
 	it('returns empty array for empty snapshot', () => {
-		const world = createWorld()
+		world = createWorld()
 		const snapshot = new Snapshot({})
 
 		const entities = spawnSnapshotEntities(world, snapshot)
@@ -86,8 +88,11 @@ describe('spawnSnapshotEntities', () => {
 })
 
 describe('spawnTransformEntity (via spawnSnapshotEntities)', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
 	it('spawns with name and pose traits', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const name = 'gripper'
 		const parent = 'arm'
 		const pose = createPose({ x: 1, y: 2, z: 3, oX: 0, oY: 0, oZ: 1, theta: 45 })
@@ -109,7 +114,7 @@ describe('spawnTransformEntity (via spawnSnapshotEntities)', () => {
 	})
 
 	it('spawns with geometry trait', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const box = { x: 100, y: 200, z: 300 }
 		const geometry = new Geometry({
 			geometryType: { case: 'box', value: { dimsMm: box } },
@@ -127,8 +132,11 @@ describe('spawnTransformEntity (via spawnSnapshotEntities)', () => {
 })
 
 describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
 	it('spawns arrows shape with Arrow trait', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const posesData = new Uint8Array(24) // 1 arrow pose
 		const drawing = new Drawing({
 			referenceFrame: 'arrows1',
@@ -144,7 +152,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 	})
 
 	it('spawns line shape with Positions, LineWidth, PointSize traits', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const positionsData = new Uint8Array(24) // 2 points
 		const drawing = new Drawing({
 			referenceFrame: 'line1',
@@ -165,7 +173,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 	})
 
 	it('spawns points shape with BufferGeometry, PointSize traits', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const positionsData = new Uint8Array(36) // 3 points
 		const floats = asFloat32Array(positionsData)
 		const pointSize = 8
@@ -187,7 +195,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 	})
 
 	it('spawns with center pose if shape has center', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const centerPose = createPose({ x: 10, y: 20, z: 30 })
 		const drawing = new Drawing({
 			referenceFrame: 'centered',
@@ -203,13 +211,14 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(entity.get(traits.Center)).toStrictEqual(centerPose)
 	})
 
-	it('spawns with Colors from metadata', async () => {
-		const world = createWorld()
-		const colors = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 255])
+	it('spawns points with uniform Color + Opacity traits from metadata', async () => {
+		world = createWorld()
+		// [r, g, b, a] — single RGBA color; use 2 points so 4 bytes is NOT per-vertex count
+		const colors = new Uint8Array([255, 0, 0, 128])
 		const drawing = new Drawing({
-			referenceFrame: 'colored',
+			referenceFrame: 'colored-points',
 			physicalObject: new Shape({
-				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(12) }) },
+				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(24) }) },
 			}),
 			metadata: new Metadata({ colors }),
 		})
@@ -217,13 +226,112 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
+		expect(entity.get(traits.Color)?.r).toBeCloseTo(1.0)
+		expect(entity.get(traits.Color)?.g).toBeCloseTo(0.0)
+		expect(entity.get(traits.Color)?.b).toBeCloseTo(0.0)
+		expect(entity.get(traits.Opacity)).toBeCloseTo(128 / 255, 3)
+	})
+
+	it('spawns points with per-vertex Colors in BufferGeometry when colors match point count', async () => {
+		world = createWorld()
+		const positions = new Uint8Array(12) // 1 point (3 floats)
+		// 1 point → vertex colors = numPoints * 3 = 3 bytes
+		const perVertexColors = new Uint8Array([255, 128, 0])
+		const drawing = new Drawing({
+			referenceFrame: 'vertex-colored-points',
+			physicalObject: new Shape({
+				geometryType: { case: 'points', value: new Points({ positions }) },
+			}),
+			metadata: new Metadata({ colors: perVertexColors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		// Vertex colors go into BufferGeometry, not the Color trait
+		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.get(traits.BufferGeometry)?.getAttribute('color')).toBeTruthy()
+	})
+
+	it('spawns line with Color and PointColor traits from metadata', async () => {
+		world = createWorld()
+		// [lineR, lineG, lineB, dotR, dotG, dotB] — two RGB colors
+		const colors = new Uint8Array([255, 0, 0, 0, 0, 255])
+		const positions = new Uint8Array(24) // 2 points
+		const drawing = new Drawing({
+			referenceFrame: 'line-colored',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions, lineWidth: 3, pointSize: 5 }),
+				},
+			}),
+			metadata: new Metadata({ colors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.get(traits.Color)?.r).toBeCloseTo(1.0)
+		expect(entity.get(traits.Color)?.g).toBeCloseTo(0.0)
+		expect(entity.get(traits.Color)?.b).toBeCloseTo(0.0)
+		expect(entity.get(traits.PointColor)?.r).toBeCloseTo(0.0)
+		expect(entity.get(traits.PointColor)?.g).toBeCloseTo(0.0)
+		expect(entity.get(traits.PointColor)?.b).toBeCloseTo(1.0)
+		// RGB (no alpha) — no Opacity trait
+		expect(entity.has(traits.Opacity)).toBe(false)
+	})
+
+	it('spawns arrows with single Color trait when metadata has one color', async () => {
+		world = createWorld()
+		// Single RGBA color for all arrows
+		const colors = new Uint8Array([0, 255, 0, 180])
+		const posesData = new Uint8Array(24) // 1 arrow
+		const drawing = new Drawing({
+			referenceFrame: 'arrows-single-color',
+			physicalObject: new Shape({
+				geometryType: { case: 'arrows', value: new Arrows({ poses: posesData }) },
+			}),
+			metadata: new Metadata({ colors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.get(traits.Color)?.r).toBeCloseTo(0.0)
+		expect(entity.get(traits.Color)?.g).toBeCloseTo(1.0)
+		expect(entity.get(traits.Color)?.b).toBeCloseTo(0.0)
+		expect(entity.get(traits.Opacity)).toBeCloseTo(180 / 255, 3)
+		expect(entity.has(traits.Colors)).toBe(false)
+	})
+
+	it('spawns arrows with Colors trait when metadata has multiple colors', async () => {
+		world = createWorld()
+		// Two RGB colors — one per arrow
+		const colors = new Uint8Array([255, 0, 0, 0, 255, 0])
+		const posesData = new Uint8Array(48) // 2 arrows
+		const drawing = new Drawing({
+			referenceFrame: 'arrows-multi-color',
+			physicalObject: new Shape({
+				geometryType: { case: 'arrows', value: new Arrows({ poses: posesData }) },
+			}),
+			metadata: new Metadata({ colors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.has(traits.Color)).toBe(false)
 		expect(entity.get(traits.Colors)).toStrictEqual(colors)
 	})
 })
 
 describe('model shape handling', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
 	it('spawns model with URL content', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const url = 'https://example.com/model.gltf'
 		const scale = { x: 1, y: 1, z: 1 }
 
@@ -256,7 +364,7 @@ describe('model shape handling', () => {
 	})
 
 	it('spawns model with data content', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const binaryData = new Uint8Array([0x47, 0x4c, 0x54, 0x46]) // "GLTF" magic
 		const drawing = new Drawing({
 			referenceFrame: 'model2',
@@ -288,7 +396,7 @@ describe('model shape handling', () => {
 	})
 
 	it('spawns multiple entities for multiple model assets', async () => {
-		const world = createWorld()
+		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'multi-model',
 			physicalObject: new Shape({

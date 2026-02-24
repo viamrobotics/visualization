@@ -76,9 +76,7 @@ export const resourceNameToColor = (resourceName?: ResourceName) => {
 
 const darkness = '600'
 
-export const colors = {
-	default: oklchToHex(twColors.red[darkness]),
-} as const
+export const defaultColor = oklchToHex(twColors.red[darkness])
 
 export const resourceColors = {
 	arm: oklchToHex(twColors.amber[darkness]),
@@ -180,12 +178,4 @@ export const rgbaToHex = (rgba: Uint8Array): string => {
 	const g = rgba[1]!.toString(16).padStart(2, '0')
 	const b = rgba[2]!.toString(16).padStart(2, '0')
 	return `#${r}${g}${b}`
-}
-
-export const rgbaBytesToFloat32 = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
-	const out = new Float32Array(bytes.length)
-	for (let i = 0; i < bytes.length; i++) {
-		out[i] = bytes[i] / 255
-	}
-	return out
 }

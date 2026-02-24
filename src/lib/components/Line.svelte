@@ -10,7 +10,7 @@
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import LineDots from './LineDots.svelte'
-	import { darkenColor } from '$lib/color'
+	import { darkenColor, defaultColor } from '$lib/color'
 
 	interface Props {
 		entity: Entity
@@ -21,13 +21,21 @@
 
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const color = useTrait(() => entity, traits.Color)
+	const pointColor = useTrait(() => entity, traits.PointColor)
+	const opacity = useTrait(() => entity, traits.Opacity)
 	const pointSize = useTrait(() => entity, traits.PointSize)
 
-	const resolvedColor = $derived(
-		colorUtil
-			.setRGB(color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0)
-			.getHexString()
-	)
+	const resolvedColor = $derived.by(() => {
+		if (!color.current) return defaultColor
+		const { r, g, b } = color.current
+		return colorUtil.setRGB(r, g, b).getHexString()
+	})
+
+	const resolvedPointColor = $derived.by(() => {
+		if (!pointColor.current) return darkenColor(resolvedColor, 10).getHexString()
+		const { r, g, b } = pointColor.current
+		return colorUtil.setRGB(r, g, b).getHexString()
+	})
 </script>
 
 <Frame {entity}>
@@ -36,8 +44,9 @@
 
 {#if linePositions.current && pointSize.current}
 	<LineDots
-		color={darkenColor(resolvedColor, 10)}
+		color={resolvedPointColor}
 		positions={linePositions.current}
 		scale={pointSize.current * 0.001}
+		opacity={opacity.current ?? 1}
 	/>
 {/if}

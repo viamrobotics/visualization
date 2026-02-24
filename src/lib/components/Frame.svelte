@@ -6,7 +6,7 @@
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { colors, darkenColor, resourceColors } from '$lib/color'
+	import { defaultColor, darkenColor, resourceColors } from '$lib/color'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
@@ -44,13 +44,8 @@
 	})
 
 	const color = $derived.by(() => {
-		if (entityColor.current) {
-			return colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
-		}
-		if (resourceColor) {
-			return resourceColor
-		}
-		return colors.default
+		if (!entityColor.current) return resourceColor ?? defaultColor
+		return colorUtil.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
 	})
 
 	const model = $derived.by(() => {

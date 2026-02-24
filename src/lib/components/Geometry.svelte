@@ -5,7 +5,7 @@
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
 	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
-	import { colors, darkenColor } from '$lib/color'
+	import { defaultColor, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
@@ -38,7 +38,7 @@
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
 	const entityColor = useTrait(() => entity, traits.Color)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const entityOpacity = useTrait(() => entity, traits.Opacity)
 	const box = useTrait(() => entity, traits.Box)
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const sphere = useTrait(() => entity, traits.Sphere)
@@ -56,16 +56,14 @@
 		if (linePositions.current) return 'line'
 	})
 
+	const opacity = $derived((entityOpacity.current ?? geometryType === 'line') ? 1 : 0.7)
+
 	const color = $derived.by(() => {
-		if (overrideColor) {
-			return overrideColor
-		}
-		if (entityColor.current) {
-			return colorUtil
-				.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
-				.getHexString()
-		}
-		return colors.default
+		if (overrideColor) return overrideColor
+		if (!entityColor.current) return defaultColor
+		return colorUtil
+			.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+			.getHexString()
 	})
 
 	const group = new Group()
@@ -179,13 +177,15 @@
 					is={LineMaterial}
 					{color}
 					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+					transparent={opacity < 1}
+					{opacity}
 				/>
 			{:else}
 				<T.MeshToonMaterial
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={(opacity.current ?? 0.7) < 1}
-					opacity={opacity.current ?? 0.7}
+					transparent={opacity < 1}
+					{opacity}
 				/>
 
 				{#if geo && renderMode.includes('colliders')}

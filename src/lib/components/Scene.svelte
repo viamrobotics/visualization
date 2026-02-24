@@ -16,7 +16,6 @@
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool/MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
-	import BatchedArrows from './BatchedArrows.svelte'
 	import Arrows from './Arrows/ArrowGroups.svelte'
 
 	interface Props {
@@ -97,7 +96,6 @@
 		<PortalTarget />
 
 		<Entities />
-		<BatchedArrows />
 		<Arrows />
 	</T.Group>
 

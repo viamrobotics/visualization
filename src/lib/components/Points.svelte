@@ -50,7 +50,7 @@
 	})
 
 	/**
-	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
+	 * Points transparency is very costly for the GPU, so we turn it on conservatively
 	 */
 	$effect.pre(() => {
 		if (opacity.current && opacity.current < 1) {

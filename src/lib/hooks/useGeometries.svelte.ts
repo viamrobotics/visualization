@@ -145,9 +145,7 @@ export const provideGeometries = (partID: () => string) => {
 							]
 
 							if (subtype) {
-								entityTraits.push(
-									traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
-								)
+								entityTraits.push(traits.Color(colorUtil.set(resourceColors[subtype])))
 							}
 
 							const entity = world.spawn(...entityTraits)

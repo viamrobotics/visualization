@@ -6,9 +6,10 @@
 		color: ColorRepresentation
 		positions: Float32Array
 		scale: number
+		opacity?: number
 	}
 
-	let { color, positions, scale }: Props = $props()
+	let { color, positions, scale, opacity = 1 }: Props = $props()
 
 	const geometry = new SphereGeometry(1, 16, 16)
 	const vertexCount = geometry.getAttribute('position').count
@@ -41,5 +42,9 @@
 	bvh={{ enabled: false }}
 	raycast={() => null}
 >
-	<T.MeshBasicMaterial {color} />
+	<T.MeshBasicMaterial
+		{color}
+		transparent={opacity < 1}
+		{opacity}
+	/>
 </T>

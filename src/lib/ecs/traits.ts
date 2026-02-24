@@ -85,10 +85,11 @@ export const Capsule = trait({ l: 200, r: 50 })
  */
 export const Sphere = trait({ r: 200 })
 
-export const PointColor = trait({ r: 0, g: 0, b: 0 })
-
 /** format [x, y, z, ...] */
 export const LinePositions = trait(() => new Float32Array())
+
+/** Optional colors for line points/dots */
+export const PointColor = trait({ r: 0, g: 0, b: 0 })
 
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 

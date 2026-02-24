@@ -1,5 +1,5 @@
 import type { World, Entity, ConfigurableTrait } from 'koota'
-import { Vector3, Vector4 } from 'three'
+import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
@@ -9,11 +9,12 @@ import { traits } from '$lib/ecs'
 import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/metadata'
-import { rgbaBytesToFloat32, rgbaToHex } from './color'
-import { asFloat32Array, STRIDE } from './buffer'
+import { rgbaToHex } from './color'
+import { asColor, asFloat32Array, asOpacity, STRIDE } from './buffer'
 import { createBufferGeometry } from './attribute'
 
 const vec3 = new Vector3()
+const colorUtil = new Color()
 
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }
@@ -108,9 +109,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 
 	if (transform.metadata) {
 		const metadata = parseMetadata(transform.metadata.fields)
-		if (metadata.colors) {
-			entityTraits.push(traits.Colors(metadata.colors))
-		}
+		if (metadata.colors) addColorTraits(entityTraits, metadata.colors)
 	}
 
 	return world.spawn(...entityTraits)
@@ -124,7 +123,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 
 	if (geometryType?.case === 'arrows') {
 		const poses = asFloat32Array(geometryType.value.poses)
-		const colors = drawing.metadata?.colors
+		const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
 
 		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(drawing.referenceFrame),
@@ -137,7 +136,13 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (colors) {
-			entityTraits.push(traits.Colors(colors as Uint8Array<ArrayBuffer>))
+			const isSingleColor =
+				colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA
+			if (isSingleColor) {
+				addColorTraits(entityTraits, colors)
+			} else {
+				entityTraits.push(traits.Colors(colors))
+			}
 		}
 
 		const entity = world.spawn(
@@ -206,18 +211,6 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			entityTraits.push(traits.Parent)
 		}
 
-		if (drawing.metadata?.colors) {
-			const colors = drawing.metadata.colors as Uint8Array<ArrayBuffer>
-			if (colors.length === 3 || colors.length === 4) {
-				entityTraits.push(
-					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
-					traits.Opacity(colors.length === 4 ? colors[3] : 255)
-				)
-			} else {
-				entityTraits.push(traits.Colors(colors))
-			}
-		}
-
 		if (drawing.physicalObject?.center) {
 			entityTraits.push(traits.Center(drawing.physicalObject.center))
 		}
@@ -238,6 +231,22 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			if (geometryType.value.pointSize) {
 				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
 			}
+
+			// Lines pack exactly 2 colors: [lineColor, pointColor]
+			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+			if (colors && colors.length >= STRIDE.COLORS_RGB) {
+				const stride =
+					colors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+				asColor(colors, colorUtil, 0)
+				entityTraits.push(traits.Color(colorUtil))
+				if (colors.length >= stride * 2) {
+					asColor(colors, colorUtil, stride)
+					entityTraits.push(traits.PointColor(colorUtil))
+					if (stride === STRIDE.COLORS_RGBA) {
+						entityTraits.push(traits.Opacity(asOpacity(colors, 1, stride + 3)))
+					}
+				}
+			}
 		} else if (geometryType?.case === 'points') {
 			const positions = asFloat32Array(geometryType.value.positions)
 
@@ -245,10 +254,17 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				positions[i] *= 0.001
 			}
 
-			const colors = drawing.metadata?.colors
-			const geometry = createBufferGeometry(positions, colors)
+			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+			const numPoints = positions.length / 3
+			const hasVertexColors =
+				colors && (colors.length === numPoints * 3 || colors.length === numPoints * 4)
+			const geometry = createBufferGeometry(positions, hasVertexColors ? colors : undefined)
 
 			entityTraits.push(traits.BufferGeometry(geometry))
+
+			if (!hasVertexColors && colors) {
+				addColorTraits(entityTraits, colors)
+			}
 
 			if (geometryType.value.pointSize) {
 				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
@@ -294,6 +310,17 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			}
 
 			entityTraits.push(traits.LinePositions(points))
+
+			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+			if (colors) {
+				addColorTraits(entityTraits, colors)
+			}
+		} else {
+			// Box, sphere, capsule, and other geometry shapes with a single color
+			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+			if (colors) {
+				addColorTraits(entityTraits, colors)
+			}
 		}
 
 		const entity = world.spawn(...entityTraits, traits.SnapshotAPI, traits.Removable)
@@ -302,4 +329,17 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 	}
 
 	return entities
+}
+
+const addColorTraits = (
+	entityTraits: ConfigurableTrait[],
+	bytes: Uint8Array<ArrayBuffer>,
+	offset = 0
+) => {
+	asColor(bytes, colorUtil, offset)
+	entityTraits.push(traits.Color(colorUtil))
+	const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
+	if (isRgba) {
+		entityTraits.push(traits.Opacity(asOpacity(bytes, 1, offset + 3)))
+	}
 }
