@@ -207,15 +207,14 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (drawing.metadata?.colors) {
-			const colors = rgbaBytesToFloat32(drawing.metadata.colors as Uint8Array<ArrayBuffer>)
-
-			if (colors.length === 4) {
+			const colors = drawing.metadata.colors as Uint8Array<ArrayBuffer>
+			if (colors.length === 3 || colors.length === 4) {
 				entityTraits.push(
 					traits.Color({ r: colors[0], g: colors[1], b: colors[2] }),
-					traits.Opacity(colors[3])
+					traits.Opacity(colors.length === 4 ? colors[3] : 255)
 				)
 			} else {
-				entityTraits.push(traits.VertexColors(colors))
+				entityTraits.push(traits.Colors(colors))
 			}
 		}
 

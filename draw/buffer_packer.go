@@ -116,26 +116,53 @@ func packPoses(poses []spatialmath.Pose, theta bool) []byte {
 }
 
 // packColors packs a slice of Color values into a uint8 byte representation.
-// Each color is packed as [r, g, b, a] with values in the range 0-255.
+// When all colors are fully opaque (A=255), each color is packed as [r, g, b] (3 bytes).
+// When any color has a non-255 alpha, all colors are packed as [r, g, b, a] (4 bytes).
 func packColors(colors []Color) []byte {
-	packer := NewBufferPacker[uint8](len(colors), 4)
-
-	for _, rgba := range colors {
-		packer.Write(rgba.R, rgba.G, rgba.B, rgba.A)
+	allOpaque := true
+	for _, c := range colors {
+		if c.A != 255 {
+			allOpaque = false
+			break
+		}
 	}
 
+	stride := 4
+	if allOpaque {
+		stride = 3
+	}
+
+	packer := NewBufferPacker[uint8](len(colors), stride)
+	for _, rgba := range colors {
+		packer.Write(rgba.R, rgba.G, rgba.B)
+		if !allOpaque {
+			packer.Write(rgba.A)
+		}
+	}
 	return packer.Read()
 }
 
+// unpackColors unpacks a byte slice into a slice of Color values.
+// Missing alpha values default to DefaultAlpha.
 func unpackColors(colorsBytes []byte) []Color {
-	bytesPerColor := 4
-	colors := make([]Color, len(colorsBytes)/bytesPerColor)
-	for i := 0; i < len(colors); i++ {
+	if len(colorsBytes) == 0 {
+		return nil
+	}
+	stride := 4
+	if len(colorsBytes)%4 != 0 {
+		stride = 3
+	}
+	numColors := len(colorsBytes) / stride
+	colors := make([]Color, numColors)
+	for i := range colors {
 		colors[i] = Color{
-			R: colorsBytes[i*bytesPerColor],
-			G: colorsBytes[i*bytesPerColor+1],
-			B: colorsBytes[i*bytesPerColor+2],
-			A: colorsBytes[i*bytesPerColor+3],
+			R: colorsBytes[i*stride],
+			G: colorsBytes[i*stride+1],
+			B: colorsBytes[i*stride+2],
+			A: DefaultAlpha,
+		}
+		if stride == 4 {
+			colors[i].A = colorsBytes[i*stride+3]
 		}
 	}
 	return colors

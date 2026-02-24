@@ -115,7 +115,6 @@ func TestLine_Draw(t *testing.T) {
 		test.That(t, protoLine, test.ShouldNotBeNil)
 		test.That(t, *protoLine.LineWidth, test.ShouldEqual, float32(10))
 		test.That(t, *protoLine.PointSize, test.ShouldEqual, float32(5))
-		// red (255, 0, 0, 255) + blue (0, 0, 255, 255) packed as [r, g, b, a, r, g, b, a]
-		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff})
+		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00, 0x00, 0x00, 0xff})
 	})
 }

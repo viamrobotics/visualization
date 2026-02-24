@@ -203,10 +203,9 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(entity.get(traits.Center)).toStrictEqual(centerPose)
 	})
 
-	it('spawns with VertexColors from metadata', async () => {
+	it('spawns with Colors from metadata', async () => {
 		const world = createWorld()
 		const colors = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 255])
-		const colorsFloat = rgbaBytesToFloat32(colors)
 		const drawing = new Drawing({
 			referenceFrame: 'colored',
 			physicalObject: new Shape({
@@ -218,7 +217,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
-		expect(entity.get(traits.VertexColors)).toStrictEqual(colorsFloat)
+		expect(entity.get(traits.Colors)).toStrictEqual(colors)
 	})
 })
 

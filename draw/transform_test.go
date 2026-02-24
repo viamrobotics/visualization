@@ -42,7 +42,7 @@ func TestTransform(t *testing.T) {
 			},
 		})
 		test.That(t, transform.Metadata, test.ShouldNotBeNil)
-		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
 	})
 
 	t.Run("RoundtripMetadata", func(t *testing.T) {

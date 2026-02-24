@@ -7,7 +7,7 @@ import type { PlainMessage, Struct } from '@viamrobotics/sdk'
  * fields we use and how we expect them to be defined.
  */
 export type Metadata = {
-	// format [r, g, b, a, ...]
+	// format [r, g, b, ...] or [r, g, b, a, ...]
 	colors?: Uint8Array<ArrayBuffer>
 }
 
