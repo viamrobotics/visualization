@@ -14,9 +14,10 @@
 		position={[hoverInfo.x, hoverInfo.y, hoverInfo.z]}
 		class="pointer-events-none"
 		zIndexRange={[3, 0]}
+		center
 	>
 		<div
-			class="border-medium pointer-events-none relative -mb-2 -translate-x-1/2 -translate-y-full border bg-white px-3 py-2.5 text-xs shadow-md"
+			class="border-medium pointer-events-none relative -translate-y-1/2 border bg-white px-3 py-2.5 text-xs shadow-md"
 		>
 			<!-- Arrow -->
 			<div
