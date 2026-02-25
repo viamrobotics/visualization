@@ -49,7 +49,12 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	const entities: Entity[] = []
 
 	for (const transform of snapshot.transforms) {
-		entities.push(spawnTransformEntity(world, transform, traits.SnapshotAPI, { removable: true }))
+		entities.push(
+			spawnTransformEntity(world, transform, traits.SnapshotAPI, {
+				removable: true,
+				showAxesHelper: false,
+			})
+		)
 	}
 
 	for (const drawing of snapshot.drawings) {

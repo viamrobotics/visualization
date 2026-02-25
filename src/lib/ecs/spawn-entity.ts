@@ -19,9 +19,9 @@ export const spawnTransformEntity = (
 	world: World,
 	transform: Transform | TransformWithUUID,
 	api: Trait,
-	options?: { removable?: boolean; invalidate?: () => void }
+	options?: { removable?: boolean; invalidate?: () => void; showAxesHelper?: boolean }
 ): Entity => {
-	const { removable = true, invalidate } = options ?? {}
+	const { removable = true, invalidate, showAxesHelper = true } = options ?? {}
 	const poseInFrame = transform.poseInObserverFrame
 
 	const entityTraits: ConfigurableTrait[] = [
@@ -29,11 +29,11 @@ export const spawnTransformEntity = (
 		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
 		traits.Center(transform.physicalObject?.center),
 		traits.Pose(createPose(poseInFrame?.pose)),
-		traits.ShowAxesHelper,
 		api,
 	]
 
 	if (removable) entityTraits.push(traits.Removable)
+	if (showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 
 	const parent = poseInFrame?.referenceFrame
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
