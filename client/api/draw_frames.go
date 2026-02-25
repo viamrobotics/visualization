@@ -18,10 +18,15 @@ type DrawFramesOptions struct {
 
 	// The frames to draw.
 	Frames []referenceframe.Frame
+
+	// Optional per-frame geometry colors keyed by frame name.
+	// Frames not present in the map default to draw.DefaultFrameColor.
+	Colors map[string]draw.Color
 }
 
 // DrawFrames draws multiple frames in the visualizer.
-// Each frame is rendered as a coordinate system with optional geometry.
+// Frames with no geometry are rendered as axes. Frames with geometry produce one transform per
+// geometry, named "frameName:geoLabel", or just "frameName" when the geometry has no distinct label.
 // Returns the UUIDs of all drawn transforms, or an error if the server is not running or the drawing fails.
 func DrawFrames(options DrawFramesOptions) ([][]byte, error) {
 	client := server.GetClient()
@@ -29,63 +34,20 @@ func DrawFrames(options DrawFramesOptions) ([][]byte, error) {
 		return nil, ErrVisualizerNotRunning
 	}
 
-	uuids := make([][]byte, 0)
+	drawnFrames := draw.NewDrawnFrames(options.Frames, draw.WithFramesColors(options.Colors))
+	transforms, err := drawnFrames.ToTransforms()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create frame transforms: %w", err)
+	}
 
-	for _, frame := range options.Frames {
-		// Get the frame's pose using Transform with nil inputs for static frames
-		pose, err := frame.Transform(nil)
+	uuids := make([][]byte, 0, len(transforms))
+	for _, transform := range transforms {
+		req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Transform{Transform: transform}})
+		resp, err := client.AddEntity(context.Background(), req)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get transform for frame %s: %w", frame.Name(), err)
+			return nil, fmt.Errorf("AddEntity RPC failed: %w", err)
 		}
-
-		// Draw the frame's geometry if it has one
-		geometries, err := frame.Geometries(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get geometries for frame %s: %w", frame.Name(), err)
-		}
-
-		opts := []draw.DrawableOption{draw.WithPose(pose)}
-		if options.ID != "" {
-			opts = append(opts, draw.WithID(options.ID))
-		}
-
-		if geometries != nil && len(geometries.Geometries()) > 0 {
-			// Frame has geometries - draw them
-			for _, geometry := range geometries.Geometries() {
-				drawnGeometry, err := draw.NewDrawnGeometry(geometry)
-				if err != nil {
-					return nil, fmt.Errorf("failed to create drawn geometry: %w", err)
-				}
-				transform, err := drawnGeometry.Draw("", opts...)
-				if err != nil {
-					return nil, fmt.Errorf("failed to create transform: %w", err)
-				}
-
-				req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Transform{Transform: transform}})
-				resp, err := client.AddEntity(context.Background(), req)
-				if err != nil {
-					return nil, fmt.Errorf("AddEntity RPC failed for frame %s: %w", frame.Name(), err)
-				}
-				uuids = append(uuids, resp.Msg.Uuid)
-			}
-		} else {
-			config := draw.NewDrawConfig(frame.Name(), opts...)
-			transform := draw.NewTransform(
-				config.UUID,
-				config.Name,
-				config.Parent,
-				config.Pose,
-				nil,
-				nil,
-			)
-
-			req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Transform{Transform: transform}})
-			resp, err := client.AddEntity(context.Background(), req)
-			if err != nil {
-				return nil, fmt.Errorf("AddTransform RPC failed for frame %s: %w", frame.Name(), err)
-			}
-			uuids = append(uuids, resp.Msg.Uuid)
-		}
+		uuids = append(uuids, resp.Msg.Uuid)
 	}
 
 	return uuids, nil
