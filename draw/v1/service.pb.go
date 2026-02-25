@@ -540,6 +540,7 @@ type StreamEntityChangesResponse struct {
 	//	*StreamEntityChangesResponse_Transform
 	//	*StreamEntityChangesResponse_Drawing
 	Entity        isStreamEntityChangesResponse_Entity `protobuf_oneof:"entity"`
+	UpdatedFields *fieldmaskpb.FieldMask               `protobuf:"bytes,4,opt,name=updated_fields,json=updatedFields,proto3" json:"updated_fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -602,6 +603,13 @@ func (x *StreamEntityChangesResponse) GetDrawing() *Drawing {
 		if x, ok := x.Entity.(*StreamEntityChangesResponse_Drawing); ok {
 			return x.Drawing
 		}
+	}
+	return nil
+}
+
+func (x *StreamEntityChangesResponse) GetUpdatedFields() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdatedFields
 	}
 	return nil
 }
@@ -974,12 +982,13 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x1aRemoveAllTransformsRequest\"3\n" +
 	"\x1bRemoveAllTransformsResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"\x1c\n" +
-	"\x1aStreamEntityChangesRequest\"\xcc\x01\n" +
+	"\x1aStreamEntityChangesRequest\"\x8f\x02\n" +
 	"\x1bStreamEntityChangesResponse\x12:\n" +
 	"\vchange_type\x18\x01 \x01(\x0e2\x19.draw.v1.EntityChangeTypeR\n" +
 	"changeType\x129\n" +
 	"\ttransform\x18\x02 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
-	"\adrawing\x18\x03 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawingB\b\n" +
+	"\adrawing\x18\x03 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawing\x12A\n" +
+	"\x0eupdated_fields\x18\x04 \x01(\v2\x1a.google.protobuf.FieldMaskR\rupdatedFieldsB\b\n" +
 	"\x06entity\"\x1a\n" +
 	"\x18RemoveAllDrawingsRequest\"1\n" +
 	"\x19RemoveAllDrawingsResponse\x12\x14\n" +
@@ -1058,31 +1067,32 @@ var file_draw_v1_service_proto_depIdxs = []int32{
 	0,  // 5: draw.v1.StreamEntityChangesResponse.change_type:type_name -> draw.v1.EntityChangeType
 	19, // 6: draw.v1.StreamEntityChangesResponse.transform:type_name -> viam.common.v1.Transform
 	20, // 7: draw.v1.StreamEntityChangesResponse.drawing:type_name -> draw.v1.Drawing
-	22, // 8: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
-	22, // 9: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	1,  // 10: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
-	3,  // 11: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
-	5,  // 12: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
-	9,  // 13: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
-	13, // 14: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
-	15, // 15: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	7,  // 16: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
-	11, // 17: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
-	17, // 18: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
-	2,  // 19: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
-	4,  // 20: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
-	6,  // 21: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
-	10, // 22: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
-	14, // 23: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
-	16, // 24: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	8,  // 25: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
-	12, // 26: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
-	18, // 27: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
-	19, // [19:28] is the sub-list for method output_type
-	10, // [10:19] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	21, // 8: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
+	22, // 9: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	22, // 10: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
+	1,  // 11: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
+	3,  // 12: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
+	5,  // 13: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
+	9,  // 14: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
+	13, // 15: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
+	15, // 16: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
+	7,  // 17: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
+	11, // 18: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
+	17, // 19: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
+	2,  // 20: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
+	4,  // 21: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
+	6,  // 22: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
+	10, // 23: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
+	14, // 24: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
+	16, // 25: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
+	8,  // 26: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
+	12, // 27: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
+	18, // 28: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
+	20, // [20:29] is the sub-list for method output_type
+	11, // [11:20] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_service_proto_init() }
