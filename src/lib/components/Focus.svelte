@@ -49,14 +49,7 @@
 	</TrackballControls>
 </Camera>
 
-<T
-	is={object3d}
-	bvh={{
-		enabled: object3d.type === 'Points',
-		maxDepth: 40,
-		maxLeafTris: 20,
-	}}
-/>
+<T is={object3d} />
 
 <T.BoxHelper
 	args={[object3d, 'red']}
