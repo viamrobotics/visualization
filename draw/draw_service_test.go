@@ -631,6 +631,48 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
+		test.That(t, received.UpdatedFields, test.ShouldBeNil)
+	})
+
+	t.Run("UpdatedFieldMaskPropagatedToStream", func(t *testing.T) {
+		svc := NewDrawService()
+		client := newTestServer(t, svc)
+
+		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+			Entity: &drawv1.AddEntityRequest_Transform{Transform: sampleTransform("original")},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
+		go func() {
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
+		}()
+
+		waitForEntitySubs(t, svc, 1)
+
+		_, updateErr := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
+			Uuid:          addResp.Msg.GetUuid(),
+			Entity:        &drawv1.UpdateEntityRequest_Transform{Transform: sampleTransform("patched")},
+			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"reference_frame"}},
+		}))
+		test.That(t, updateErr, test.ShouldBeNil)
+
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
+		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
+		test.That(t, received.UpdatedFields, test.ShouldNotBeNil)
+		test.That(t, received.UpdatedFields.Paths, test.ShouldResemble, []string{"reference_frame"})
 	})
 
 	t.Run("StreamClosesOnContextCancellation", func(t *testing.T) {

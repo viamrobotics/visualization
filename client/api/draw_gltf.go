@@ -26,7 +26,7 @@ type DrawGLTFOptions struct {
 	// The name of the parent frame. If empty, the model will be parented to the "world" frame.
 	Parent string
 
-	// Scale specifies the scaling factors for each axis. If zero, defaults to (1,1,1).
+	// Scale specifies the scaling factors for each axis. All dimensions must be non-zero.
 	Scale r3.Vector
 }
 
@@ -54,8 +54,8 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error) {
 	}
 
 	scale := options.Scale
-	if scale.X == 0 && scale.Y == 0 && scale.Z == 0 {
-		scale = r3.Vector{X: 1, Y: 1, Z: 1}
+	if scale.X == 0 || scale.Y == 0 || scale.Z == 0 {
+		return nil, fmt.Errorf("scale dimensions must be non-zero, got %v; use (1,1,1) to apply no scaling", scale)
 	}
 
 	model, err := draw.NewModel(draw.WithModelAssets(asset), draw.WithModelScale(scale))

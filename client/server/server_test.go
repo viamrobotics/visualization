@@ -45,7 +45,6 @@ func TestProductionMode_StaticServerOnSeparatePort(t *testing.T) {
 		Port:       19110,
 		Production: true,
 		StaticPort: 19111,
-		BuildDir:   t.TempDir(),
 	}); err != nil {
 		t.Fatalf("Start: %v", err)
 	}

@@ -38,20 +38,19 @@ import (
 // ErrNotRunning is returned by Stop when the server has not been started.
 var ErrNotRunning = errors.New("draw server is not running")
 
+var buildDir = "build"
+
 // DrawServerConfig holds the configuration for the draw server.
 type DrawServerConfig struct {
 	// Port is the port for the Connect-RPC API server.
 	Port int
 
 	// Production enables the static file server on StaticPort, serving the
-	// built frontend assets from BuildDir.
+	// built frontend assets from "build".
 	Production bool
 
 	// StaticPort is the port for the static file server (Production mode only).
 	StaticPort int
-
-	// BuildDir is the path to the built frontend assets directory (Production mode only).
-	BuildDir string
 }
 
 var (
@@ -68,7 +67,7 @@ var (
 // idempotent: calling Start when the server is already running returns nil.
 //
 // When cfg.Production is true, a separate static file server is also started
-// on cfg.StaticPort serving frontend assets from cfg.BuildDir.
+// on cfg.StaticPort serving frontend assets from "build".
 func Start(cfg DrawServerConfig) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -91,11 +90,14 @@ func Start(cfg DrawServerConfig) error {
 		Handler: newRPCHandler(svc),
 	}
 
+	rpcReady := make(chan struct{})
 	go func() {
+		close(rpcReady)
 		if err := rpcSrv.Serve(rpcListener); !errors.Is(err, http.ErrServerClosed) {
 			log.Printf("draw server rpc error: %v", err)
 		}
 	}()
+	<-rpcReady
 
 	if cfg.Production {
 		staticAddr := fmt.Sprintf(":%d", cfg.StaticPort)
@@ -109,20 +111,20 @@ func Start(cfg DrawServerConfig) error {
 
 		staticSrv = &http.Server{
 			Addr:    staticAddr,
-			Handler: staticFileHandler(cfg.BuildDir),
+			Handler: staticFileHandler(buildDir),
 		}
 
+		staticReady := make(chan struct{})
 		go func() {
+			close(staticReady)
 			if err := staticSrv.Serve(staticListener); !errors.Is(err, http.ErrServerClosed) {
 				log.Printf("draw server static error: %v", err)
 			}
 		}()
+		<-staticReady
 
-		log.Printf("draw server static files on http://localhost:%d (serving %q)", cfg.StaticPort, cfg.BuildDir)
+		log.Printf("draw server static files on http://localhost:%d (serving %q)", cfg.StaticPort, buildDir)
 	}
-
-	// Give the listeners a moment to be ready before clients connect.
-	time.Sleep(10 * time.Millisecond)
 
 	recorder = NewRecordingInterceptor()
 
