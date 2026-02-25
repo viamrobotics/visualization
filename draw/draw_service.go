@@ -203,8 +203,9 @@ func (svc *DrawService) UpdateEntity(
 		updated := applyTransformUpdate(existing.transform, e.Transform, req.Msg.UpdatedFields)
 		svc.entities[id] = storedEntity{kind: entityKindTransform, transform: updated}
 		changeMsg = &drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: updated},
+			ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
+			Entity:        &drawv1.StreamEntityChangesResponse_Transform{Transform: updated},
+			UpdatedFields: req.Msg.UpdatedFields,
 		}
 	case *drawv1.UpdateEntityRequest_Drawing:
 		if e.Drawing == nil {
@@ -216,8 +217,9 @@ func (svc *DrawService) UpdateEntity(
 		updated := applyDrawingUpdate(existing.drawing, e.Drawing, req.Msg.UpdatedFields)
 		svc.entities[id] = storedEntity{kind: entityKindDrawing, drawing: updated}
 		changeMsg = &drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: updated},
+			ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
+			Entity:        &drawv1.StreamEntityChangesResponse_Drawing{Drawing: updated},
+			UpdatedFields: req.Msg.UpdatedFields,
 		}
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity must be a transform or drawing"))

@@ -26,6 +26,9 @@ importers:
       '@zag-js/dialog':
         specifier: '>=1.31'
         version: 1.32.0
+      earcut:
+        specifier: ^3.0.2
+        version: 3.0.2
       expr-eval:
         specifier: ^2.0.2
         version: 2.0.2
@@ -35,6 +38,9 @@ importers:
       lodash-es:
         specifier: 4.17.23
         version: 4.17.23
+      three-mesh-bvh:
+        specifier: ^0.9.8
+        version: 0.9.8(three@0.182.0)
       uuid-tool:
         specifier: ^2.0.3
         version: 2.0.3
@@ -114,6 +120,9 @@ importers:
       '@types/bun':
         specifier: 1.2.21
         version: 1.2.21(@types/react@19.2.2)
+      '@types/earcut':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -1478,6 +1487,9 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
+  '@types/earcut@3.0.0':
+    resolution: {integrity: sha512-k/9fOUGO39yd2sCjrbAJvGDEQvRwRnQIZlBz43roGwUZo5SHAmyVvSFyaVVZkicRVCaDXPKlbxrUcBuJoSWunQ==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -2186,6 +2198,9 @@ packages:
 
   earcut@2.2.4:
     resolution: {integrity: sha512-/pjZsA1b4RPHbeWZQn66SWS8nZZWLQQ23oE3Eam7aroEFGEvwKAsJfZ9ytiEMycfzXWpca4FA9QIOehf7PocBQ==}
+
+  earcut@3.0.2:
+    resolution: {integrity: sha512-X7hshQbLyMJ/3RPhyObLARM2sNxxmRALLKx1+NVFFnQ9gKzmCrxm9+uLIAdBcvc8FNLpctqlQ2V6AE92Ol9UDQ==}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -5320,6 +5335,8 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
+  '@types/earcut@3.0.0': {}
+
   '@types/estree@1.0.8': {}
 
   '@types/json-schema@7.0.15': {}
@@ -6223,6 +6240,8 @@ snapshots:
       gopd: 1.2.0
 
   earcut@2.2.4: {}
+
+  earcut@3.0.2: {}
 
   eastasianwidth@0.2.0: {}
 
