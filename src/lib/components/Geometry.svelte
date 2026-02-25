@@ -136,7 +136,6 @@
 			is={mesh}
 			name={entity}
 			userData.name={name}
-			bvh={{ enabled: geometryType === 'buffer' }}
 		>
 			{#if model && renderMode.includes('model')}
 				<T is={model} />
