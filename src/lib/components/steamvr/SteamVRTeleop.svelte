@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { useTask, T } from '@threlte/core'
-	import { Vector3, Quaternion } from 'three'
+	import { useTask, useThrelte, T } from '@threlte/core'
+	import { Vector3, Quaternion, type Object3D } from 'three'
 	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'
@@ -30,6 +30,7 @@
 
 	const partID = usePartID()
 	const bridge = useSteamVRBridge()
+	const { scene } = useThrelte()
 
 	// Capture initial prop values — parent uses {#key} to force remount on changes.
 	const { initialHand, initialGripperName } = (() => ({
@@ -91,11 +92,33 @@
 	const COMMAND_INTERVAL = 11 // ms (90Hz)
 	const ERROR_COOLDOWN = 1000 // ms
 
-	// Ghost Visualization State
-	let ghostPos = new Vector3()
-	let ghostRot = new Quaternion()
-	let ghostPosArray = $state<[number, number, number]>([0, 0, 0])
-	let ghostRotArray = $state<[number, number, number, number]>([0, 0, 0, 1])
+	// End effector tracking — render controller at the arm's end effector in the scene
+	let endEffectorObj: Object3D | null = null
+	const eeWorldPosVec = new Vector3()
+	const eeWorldQuatVec = new Quaternion()
+	let eeWorldPos = $state<[number, number, number]>([0, 0, 0])
+	let eeWorldQuat = $state<[number, number, number, number]>([0, 0, 0, 1])
+
+	/**
+	 * Traverse the scene once to find the arm's end effector Object3D.
+	 * Geometry.svelte sets userData.name to the ECS Name trait wrapper;
+	 * the AxesHelper fallback sets the Three.js .name directly.
+	 */
+	function findEndEffectorObject(): Object3D | null {
+		let found: Object3D | null = null
+		const targetName = `${armName}_origin`
+		scene.traverse((obj) => {
+			if (found) return
+			if (obj.userData.name?.current === targetName) {
+				found = obj.parent ?? obj
+				return
+			}
+			if (obj.name === targetName) {
+				found = obj.parent ?? obj
+			}
+		})
+		return found
+	}
 
 	// Helper to transform quaternion to Robot Frame: T * q * inv(T)
 	function transformToRobotFrame(q: Quaternion, transform: Quaternion) {
@@ -160,6 +183,14 @@
 		if (isControlling && armClient.current && !isReturning) {
 			handleControlFrame(ctrl)
 		}
+
+		// Track end effector world position for controller visualization
+		if (isControlling && endEffectorObj) {
+			endEffectorObj.getWorldPosition(eeWorldPosVec)
+			endEffectorObj.getWorldQuaternion(eeWorldQuatVec)
+			eeWorldPos = eeWorldPosVec.toArray()
+			eeWorldQuat = eeWorldQuatVec.toArray()
+		}
 	})
 
 	async function handleStartControl(ctrl: SteamVRController) {
@@ -169,6 +200,9 @@
 				console.warn('[SteamVRTeleop] Could not get end position')
 				return
 			}
+
+			// Find the end effector Object3D so we can render the controller on it
+			endEffectorObj = findEndEffectorObject()
 
 			const { x, y, z, oX, oY, oZ, theta } = currentPose
 
@@ -211,9 +245,6 @@
 		const currentControllerPos = ctrl.position
 		const currentControllerRot = ctrl.rotation
 
-		// Calculate Delta for visualizer
-		const deltaXR = currentControllerPos.clone().sub(controllerRefPos)
-
 		// --- Position ---
 		const targetPos = calculatePositionTarget(
 			currentControllerPos,
@@ -229,16 +260,9 @@
 			const currentRotRobot = transformToRobotFrame(currentControllerRot, qTransform).normalize()
 			const targetArmRotQuat = currentRotRobot.clone().multiply(controllerToArmOffset).normalize()
 			targetOV = new OrientationVector().setFromQuaternion(targetArmRotQuat)
-			ghostRot.copy(currentControllerRot)
 		} else {
 			targetOV = robotRefOV
-			ghostRot.copy(ctrl.rotation)
 		}
-
-		// --- Update Ghost ---
-		ghostPos.copy(controllerRefPos).add(deltaXR.multiplyScalar(scaleFactor))
-		ghostPosArray = ghostPos.toArray()
-		ghostRotArray = ghostRot.toArray()
 
 		// --- Send Command ---
 		if (now - lastCommandTime < COMMAND_INTERVAL) return
@@ -293,26 +317,12 @@
 </script>
 
 {#if isControlling}
-	<!-- Ghost Marker (Target Position) -->
-	<T.Mesh
-		position={ghostPosArray}
-		quaternion={ghostRotArray}
-	>
-		<T.BoxGeometry args={[0.05, 0.05, 0.1]} />
-		<T.MeshBasicMaterial
-			color="hotpink"
-			wireframe
-		/>
-		<T.AxesHelper args={[0.2]} />
-	</T.Mesh>
-
-	<!-- Original Reference Marker -->
-	<T.Mesh position={controllerRefPos.toArray()}>
-		<T.SphereGeometry args={[0.02]} />
-		<T.MeshBasicMaterial
-			color="gray"
-			opacity={0.5}
-			transparent
-		/>
-	</T.Mesh>
+	<!-- Controller rendered at the arm's end effector position -->
+	<T.Group position={eeWorldPos} quaternion={eeWorldQuat}>
+		<T.Mesh>
+			<T.BoxGeometry args={[0.04, 0.04, 0.15]} />
+			<T.MeshStandardMaterial color={initialHand === 'left' ? '#4488ff' : '#ff4488'} />
+		</T.Mesh>
+		<T.AxesHelper args={[0.1]} />
+	</T.Group>
 {/if}
