@@ -18,7 +18,12 @@ import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 import { asFloat32Array } from '$lib/buffer'
-import { spawnTransformEntity, spawnDrawingEntities } from '../spawn-entity'
+import {
+	spawnTransformEntity,
+	spawnDrawingEntities,
+	applyTransformGeometry,
+	applyDrawingShape,
+} from '../spawn-entity'
 
 describe('spawnTransformEntity', () => {
 	let world: World
@@ -292,6 +297,36 @@ describe('spawnDrawingEntities', () => {
 		expect(assetEntity.get(traits.GLTF)).toStrictEqual({ source: { url }, animationName: 'idle' })
 	})
 
+	it('spawns model with binary GLB data content', () => {
+		world = createWorld()
+		const binaryData = new Uint8Array([0x47, 0x4c, 0x54, 0x46]) // "GLTF" magic
+		const drawing = new Drawing({
+			referenceFrame: 'model-glb',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'model',
+					value: new Model({
+						assets: [
+							new ModelAsset({
+								mimeType: 'model/gltf-binary',
+								sizeBytes: BigInt(4),
+								content: { case: 'data', value: binaryData },
+							}),
+						],
+					}),
+				},
+			}),
+		})
+
+		const entities = spawnDrawingEntities(world, drawing, traits.SnapshotAPI)
+		const assetEntity = entities[1]
+
+		expect(assetEntity.get(traits.GLTF)).toStrictEqual({
+			animationName: '',
+			source: { glb: binaryData },
+		})
+	})
+
 	it('spawns model asset with Scale trait when scale is provided', () => {
 		world = createWorld()
 		const scale = { x: 2, y: 2, z: 2 }
@@ -514,5 +549,158 @@ describe('spawnDrawingEntities', () => {
 
 		expect(entities).toHaveLength(1)
 		expect(world.query()).toHaveLength(1)
+	})
+})
+
+describe('applyTransformGeometry', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('adds Box trait from box geometry', () => {
+		world = createWorld()
+		const entity = world.spawn()
+		const box = { x: 100, y: 200, z: 300 }
+		const geometry = new Geometry({ geometryType: { case: 'box', value: { dimsMm: box } } })
+
+		applyTransformGeometry(world, entity, geometry)
+
+		expect(entity.get(traits.Box)).toStrictEqual(box)
+	})
+
+	it('removes old shape trait when switching geometry type', () => {
+		world = createWorld()
+		const sphere = new Geometry({ geometryType: { case: 'sphere', value: { radiusMm: 50 } } })
+		const entity = world.spawn(traits.Sphere({ r: 50 }))
+
+		const box = new Geometry({
+			geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 10, z: 10 } } },
+		})
+		applyTransformGeometry(world, entity, box)
+
+		expect(entity.has(traits.Sphere)).toBe(false)
+		expect(entity.has(traits.Box)).toBe(true)
+		// avoid unused variable lint
+		void sphere
+	})
+
+	it('clears all shape traits when physicalObject is undefined', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Box({ x: 10, y: 10, z: 10 }), traits.Center(createPose()))
+
+		applyTransformGeometry(world, entity, undefined)
+
+		expect(entity.has(traits.Box)).toBe(false)
+		expect(entity.has(traits.Sphere)).toBe(false)
+		expect(entity.has(traits.Capsule)).toBe(false)
+		expect(entity.has(traits.Center)).toBe(false)
+	})
+
+	it('adds Center trait when physicalObject has a center', () => {
+		world = createWorld()
+		const entity = world.spawn()
+		const center = createPose({ x: 5, y: 10, z: 15 })
+		const geometry = new Geometry({
+			center,
+			geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 10, z: 10 } } },
+		})
+
+		applyTransformGeometry(world, entity, geometry)
+
+		expect(entity.get(traits.Center)).toStrictEqual(center)
+	})
+
+	it('removes Center trait when new physicalObject has no center', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Center(createPose({ x: 1, y: 2, z: 3 })))
+		const geometry = new Geometry({
+			geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 10, z: 10 } } },
+		})
+
+		applyTransformGeometry(world, entity, geometry)
+
+		expect(entity.has(traits.Center)).toBe(false)
+	})
+})
+
+describe('applyDrawingShape', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('sets arrows traits on an existing entity', () => {
+		world = createWorld()
+		const entity = world.spawn()
+		const drawing = new Drawing({
+			referenceFrame: 'arrows',
+			physicalObject: new Shape({
+				geometryType: { case: 'arrows', value: new Arrows({ poses: new Uint8Array(24) }) },
+			}),
+		})
+
+		applyDrawingShape(entity, drawing)
+
+		expect(entity.has(traits.Arrows)).toBe(true)
+		expect(entity.has(traits.Positions)).toBe(true)
+	})
+
+	it('replaces arrows traits with line traits on cross-type update', () => {
+		world = createWorld()
+		const entity = world.spawn(
+			traits.Arrows({ headAtPose: true }),
+			traits.Positions(new Float32Array(6)),
+			traits.Instances({ count: 1 })
+		)
+		const drawing = new Drawing({
+			referenceFrame: 'line',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24), lineWidth: 2, pointSize: 4 }),
+				},
+			}),
+		})
+
+		applyDrawingShape(entity, drawing)
+
+		expect(entity.has(traits.Arrows)).toBe(false)
+		expect(entity.has(traits.Instances)).toBe(false)
+		expect(entity.has(traits.LinePositions)).toBe(true)
+		expect(entity.has(traits.LineWidth)).toBe(true)
+	})
+
+	it('replaces line traits with points traits on cross-type update', () => {
+		world = createWorld()
+		const entity = world.spawn(
+			traits.LinePositions(new Float32Array(6)),
+			traits.LineWidth(2),
+			traits.PointSize(4)
+		)
+		const drawing = new Drawing({
+			referenceFrame: 'pts',
+			physicalObject: new Shape({
+				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(12) }) },
+			}),
+		})
+
+		applyDrawingShape(entity, drawing)
+
+		expect(entity.has(traits.LinePositions)).toBe(false)
+		expect(entity.has(traits.LineWidth)).toBe(false)
+		expect(entity.has(traits.Points)).toBe(true)
+		expect(entity.has(traits.BufferGeometry)).toBe(true)
+	})
+
+	it('clears all drawing traits when drawing has no geometry', () => {
+		world = createWorld()
+		const entity = world.spawn(
+			traits.Arrows({ headAtPose: true }),
+			traits.Color({ r: 1, g: 0, b: 0 }),
+			traits.Opacity(0.5)
+		)
+
+		applyDrawingShape(entity, new Drawing({ referenceFrame: 'empty' }))
+
+		expect(entity.has(traits.Arrows)).toBe(false)
+		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.has(traits.Opacity)).toBe(false)
 	})
 })

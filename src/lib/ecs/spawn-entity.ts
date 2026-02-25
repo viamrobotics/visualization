@@ -1,7 +1,6 @@
 import type { World, Entity, Trait, ConfigurableTrait } from 'koota'
 import type { Transform } from '$lib/buf/common/v1/common_pb'
 import type { TransformWithUUID } from '@viamrobotics/sdk'
-import { Geometry } from '@viamrobotics/sdk'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
@@ -23,14 +22,20 @@ export const spawnTransformEntity = (
 ): Entity => {
 	const { removable = true, invalidate, showAxesHelper = true } = options ?? {}
 	const poseInFrame = transform.poseInObserverFrame
-
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(transform.referenceFrame),
-		traits.Geometry(transform.physicalObject ?? Geometry.fromJson({})),
-		traits.Center(transform.physicalObject?.center),
 		traits.Pose(createPose(poseInFrame?.pose)),
 		api,
 	]
+
+	if (transform.physicalObject) {
+		entityTraits.push(traits.Geometry(transform.physicalObject))
+		if (transform.physicalObject.center) {
+			entityTraits.push(traits.Center(transform.physicalObject.center))
+		}
+	} else {
+		entityTraits.push(traits.ReferenceFrame)
+	}
 
 	if (removable) entityTraits.push(traits.Removable)
 	if (showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
@@ -46,23 +51,43 @@ export const spawnTransformEntity = (
 	const entity = world.spawn(...entityTraits)
 
 	if (transform.physicalObject?.geometryType?.case === 'pointcloud') {
-		parsePcdInWorker(new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)).then(
-			(pointcloud) => {
-				if (!world.has(entity)) {
-					console.error('Entity was destroyed before pointcloud could be added')
-					return
-				}
-				const vertexColors = entity.get(traits.Colors)
-				const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
-				const geometry = createBufferGeometry(pointcloud.positions, colors)
-				entity.add(traits.BufferGeometry(geometry))
-				entity.add(traits.Points)
-				invalidate?.()
-			}
+		spawnPointcloud(
+			world,
+			entity,
+			transform.physicalObject.geometryType.value.pointCloud,
+			invalidate
 		)
 	}
 
 	return entity
+}
+
+export const applyTransformGeometry = (
+	world: World,
+	entity: Entity,
+	physicalObject: Transform['physicalObject'],
+	options?: { invalidate?: () => void }
+): void => {
+	const { invalidate } = options ?? {}
+
+	entity.remove(
+		traits.Box,
+		traits.Sphere,
+		traits.Capsule,
+		traits.BufferGeometry,
+		traits.Points,
+		traits.Center
+	)
+
+	if (!physicalObject) return
+
+	if (physicalObject.center) entity.add(traits.Center(physicalObject.center))
+
+	entity.add(traits.Geometry(physicalObject))
+
+	if (physicalObject.geometryType.case === 'pointcloud') {
+		spawnPointcloud(world, entity, physicalObject.geometryType.value.pointCloud, invalidate)
+	}
 }
 
 export const spawnDrawingEntities = (
@@ -72,69 +97,55 @@ export const spawnDrawingEntities = (
 	options?: { removable?: boolean }
 ): Entity[] => {
 	const { removable = true } = options ?? {}
-	const entities: Entity[] = []
 	const poseInFrame = drawing.poseInObserverFrame
 	const parent = poseInFrame?.referenceFrame
 	const { geometryType } = drawing.physicalObject ?? {}
 
-	const entityTraits: ConfigurableTrait[] = [
+	if (geometryType?.case === 'model') return spawnModelDrawing(world, drawing, api, { removable })
+
+	const entity = world.spawn(
 		traits.Name(drawing.referenceFrame),
 		traits.Pose(createPose(poseInFrame?.pose)),
-		api,
-	]
+		api
+	)
 
-	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
-	if (removable) entityTraits.push(traits.Removable)
+	if (parent && parent !== 'world') entity.add(traits.Parent(parent))
+	if (removable) entity.add(traits.Removable)
+
+	applyDrawingShape(entity, drawing)
+
+	return [entity]
+}
+
+export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
+	entity.remove(
+		traits.Positions,
+		traits.Arrows,
+		traits.Instances,
+		traits.Colors,
+		traits.Color,
+		traits.Opacity,
+		traits.PointColor,
+		traits.LinePositions,
+		traits.LineWidth,
+		traits.PointSize,
+		traits.BufferGeometry,
+		traits.Points,
+		traits.Center
+	)
+
+	const { geometryType } = drawing.physicalObject ?? {}
 
 	switch (geometryType?.case) {
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses)
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
 
-			if (colors) entityTraits.push(traits.Colors(colors))
+			if (colors) entity.add(traits.Colors(colors))
 
-			entities.push(
-				world.spawn(
-					...entityTraits,
-					traits.Positions(poses),
-					traits.Arrows({ headAtPose: true }),
-					traits.Instances({ count: poses.length / STRIDE.ARROWS })
-				)
-			)
-			break
-		}
-
-		case 'model': {
-			entities.push(world.spawn(...entityTraits, traits.ReferenceFrame))
-
-			let i = 1
-			for (const asset of geometryType.value.assets) {
-				const subEntityTraits: ConfigurableTrait[] = [
-					traits.Name(`${drawing.referenceFrame} model ${i++}`),
-					traits.Parent(drawing.referenceFrame),
-					api,
-				]
-
-				if (geometryType.value.scale) subEntityTraits.push(traits.Scale(geometryType.value.scale))
-
-				if (asset.content.case === 'url') {
-					subEntityTraits.push(
-						traits.GLTF({
-							source: { url: asset.content.value },
-							animationName: geometryType.value.animationName ?? '',
-						})
-					)
-				} else if (asset.content.value) {
-					subEntityTraits.push(
-						traits.GLTF({
-							source: { glb: asset.content.value as Uint8Array<ArrayBuffer> },
-							animationName: geometryType.value.animationName ?? '',
-						})
-					)
-				}
-
-				entities.push(world.spawn(...subEntityTraits))
-			}
+			entity.add(traits.Positions(poses))
+			entity.add(traits.Arrows({ headAtPose: true }))
+			entity.add(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
 			break
 		}
 
@@ -143,7 +154,7 @@ export const spawnDrawingEntities = (
 			for (let i = 0, l = positions.length; i < l; i += 1) positions[i] *= 0.001
 
 			if (drawing.physicalObject?.center) {
-				entityTraits.push(traits.Center(drawing.physicalObject.center))
+				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
@@ -151,24 +162,19 @@ export const spawnDrawingEntities = (
 				const stride =
 					colors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
 				asColor(colors, colorUtil, 0)
-				entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+				entity.add(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
 				if (colors.length >= stride * 2) {
 					asColor(colors, colorUtil, stride)
-					entityTraits.push(traits.PointColor({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+					entity.add(traits.PointColor({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
 					if (stride === STRIDE.COLORS_RGBA) {
-						entityTraits.push(traits.Opacity(asOpacity(colors, 1, 3)))
+						entity.add(traits.Opacity(asOpacity(colors, 1, 3)))
 					}
 				}
 			}
 
-			entities.push(
-				world.spawn(
-					...entityTraits,
-					traits.LinePositions(positions),
-					traits.LineWidth(geometryType.value.lineWidth),
-					traits.PointSize(geometryType.value.pointSize)
-				)
-			)
+			entity.add(traits.LinePositions(positions))
+			entity.add(traits.LineWidth(geometryType.value.lineWidth))
+			entity.add(traits.PointSize(geometryType.value.pointSize))
 			break
 		}
 
@@ -177,7 +183,7 @@ export const spawnDrawingEntities = (
 			for (let i = 0, l = positions.length; i < l; i += 1) positions[i] *= 0.001
 
 			if (drawing.physicalObject?.center) {
-				entityTraits.push(traits.Center(drawing.physicalObject.center))
+				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
@@ -185,20 +191,17 @@ export const spawnDrawingEntities = (
 			const hasVertexColors =
 				colors && (colors.length === numPoints * 3 || colors.length === numPoints * 4)
 
-			if (!hasVertexColors && colors) entityTraits.push(...getColorTraits(colors))
+			if (!hasVertexColors && colors) {
+				for (const t of getColorTraits(colors)) entity.add(t)
+			}
 			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
+				entity.add(traits.PointSize(geometryType.value.pointSize * 0.001))
 			}
 
-			entities.push(
-				world.spawn(
-					...entityTraits,
-					traits.BufferGeometry(
-						createBufferGeometry(positions, hasVertexColors ? colors : undefined)
-					),
-					traits.Points
-				)
+			entity.add(
+				traits.BufferGeometry(createBufferGeometry(positions, hasVertexColors ? colors : undefined))
 			)
+			entity.add(traits.Points)
 			break
 		}
 
@@ -240,31 +243,107 @@ export const spawnDrawingEntities = (
 			}
 
 			if (drawing.physicalObject?.center) {
-				entityTraits.push(traits.Center(drawing.physicalObject.center))
+				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
-			if (colors) entityTraits.push(...getColorTraits(colors))
+			if (colors) {
+				for (const t of getColorTraits(colors)) entity.add(t)
+			}
 
-			entities.push(world.spawn(...entityTraits, traits.LinePositions(points)))
+			entity.add(traits.LinePositions(points))
 			break
 		}
 
 		default: {
 			// Box, sphere, capsule, and other geometry shapes with a single color
 			if (drawing.physicalObject?.center) {
-				entityTraits.push(traits.Center(drawing.physicalObject.center))
+				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
-			if (colors) entityTraits.push(...getColorTraits(colors))
-
-			entities.push(world.spawn(...entityTraits))
+			if (colors) {
+				for (const t of getColorTraits(colors)) entity.add(t)
+			}
 			break
 		}
 	}
+}
+
+const spawnModelDrawing = (
+	world: World,
+	drawing: Drawing,
+	api: Trait,
+	options?: { removable?: boolean }
+): Entity[] => {
+	const { removable = true } = options ?? {}
+	const entities: Entity[] = []
+	const poseInFrame = drawing.poseInObserverFrame
+	const parent = poseInFrame?.referenceFrame
+	const geometryType = drawing.physicalObject?.geometryType
+
+	if (geometryType?.case !== 'model') return entities
+
+	const baseTraits: ConfigurableTrait[] = [
+		traits.Name(drawing.referenceFrame),
+		traits.Pose(createPose(poseInFrame?.pose)),
+		api,
+	]
+	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
+	if (removable) baseTraits.push(traits.Removable)
+
+	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
+
+	let i = 1
+	for (const asset of geometryType.value.assets) {
+		const subEntityTraits: ConfigurableTrait[] = [
+			traits.Name(`${drawing.referenceFrame} model ${i++}`),
+			traits.Parent(drawing.referenceFrame),
+			api,
+		]
+
+		if (geometryType.value.scale) subEntityTraits.push(traits.Scale(geometryType.value.scale))
+
+		if (asset.content.case === 'url') {
+			subEntityTraits.push(
+				traits.GLTF({
+					source: { url: asset.content.value },
+					animationName: geometryType.value.animationName ?? '',
+				})
+			)
+		} else if (asset.content.value) {
+			subEntityTraits.push(
+				traits.GLTF({
+					source: { glb: asset.content.value as Uint8Array<ArrayBuffer> },
+					animationName: geometryType.value.animationName ?? '',
+				})
+			)
+		}
+
+		entities.push(world.spawn(...subEntityTraits))
+	}
 
 	return entities
+}
+
+const spawnPointcloud = (
+	world: World,
+	entity: Entity,
+	pointCloud: Uint8Array,
+	invalidate?: () => void
+): void => {
+	parsePcdInWorker(new Uint8Array(pointCloud)).then((pointcloud) => {
+		if (!world.has(entity)) {
+			console.error('Entity was destroyed before pointcloud could be added')
+			return
+		}
+		const vertexColors = entity.get(traits.Colors)
+		const colors = vertexColors && vertexColors.length > 0 ? vertexColors : pointcloud.colors
+		const geometry = createBufferGeometry(pointcloud.positions, colors)
+		entity.add(traits.BufferGeometry(geometry))
+		entity.add(traits.Points)
+		invalidate?.()
+	})
 }
 
 const getColorTraits = (colors: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {
