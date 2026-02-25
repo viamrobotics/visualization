@@ -122,7 +122,7 @@
 		<T
 			is={points}
 			name={entity}
-			bvh={{ maxDepth: 40, maxLeafTris: 20 }}
+			bvh={{ maxDepth: 40, maxLeafSize: 20 }}
 			{...events}
 		>
 			<T is={geometry.current} />

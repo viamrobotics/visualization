@@ -81,7 +81,7 @@ test('draw frames', async ({ browser }) => {
 
 	await expect(page.getByText('DrawFrames Axes')).toBeVisible()
 	await expect(page.getByText('DrawFrames Sphere')).toBeVisible()
-	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
+	await expect(page.getByText('DrawFrames Capsule:Capsule')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
