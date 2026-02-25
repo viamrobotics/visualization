@@ -233,7 +233,7 @@ describe('spawnDrawingEntities', () => {
 		expect(entities[0].has(traits.DrawAPI)).toBe(true)
 	})
 
-	it('spawns arrows with single Color trait for one RGBA color', () => {
+	it('spawns arrows with Colors trait for one RGBA color', () => {
 		world = createWorld()
 		const colors = new Uint8Array([0, 255, 0, 180])
 		const drawing = new Drawing({
@@ -246,9 +246,8 @@ describe('spawnDrawingEntities', () => {
 
 		const [entity] = spawnDrawingEntities(world, drawing, traits.SnapshotAPI)
 
-		expect(entity.get(traits.Color)?.g).toBeCloseTo(1.0)
-		expect(entity.get(traits.Opacity)).toBeCloseTo(180 / 255, 3)
-		expect(entity.has(traits.Colors)).toBe(false)
+		expect(entity.has(traits.Colors)).toBe(true)
+		expect(entity.has(traits.Color)).toBe(false)
 	})
 
 	it('spawns arrows with Colors trait for multiple per-arrow colors', () => {
