@@ -14,14 +14,12 @@ func main() {
 	port := flag.Int("port", 3030, "port for the Connect-RPC API server")
 	staticPort := flag.Int("static-port", 5173, "port for the static file server (production mode only)")
 	production := flag.Bool("production", false, "serve static files on -static-port from -build-dir")
-	buildDir := flag.String("build-dir", "build", "path to the built frontend assets directory")
 	flag.Parse()
 
 	if err := server.Start(server.DrawServerConfig{
 		Port:       *port,
 		Production: *production,
 		StaticPort: *staticPort,
-		BuildDir:   *buildDir,
 	}); err != nil {
 		log.Fatal(err)
 	}
