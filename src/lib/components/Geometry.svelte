@@ -56,7 +56,7 @@
 		if (linePositions.current) return 'line'
 	})
 
-	const opacity = $derived((entityOpacity.current ?? geometryType === 'line') ? 1 : 0.7)
+	const opacity = $derived(entityOpacity.current ?? (geometryType === 'line' ? 1 : 0.7))
 
 	const color = $derived.by(() => {
 		if (overrideColor) return overrideColor

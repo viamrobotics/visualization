@@ -136,13 +136,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (colors) {
-			const isSingleColor =
-				colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA
-			if (isSingleColor) {
-				addColorTraits(entityTraits, colors)
-			} else {
-				entityTraits.push(traits.Colors(colors))
-			}
+			entityTraits.push(traits.Colors(colors))
 		}
 
 		const entity = world.spawn(
@@ -228,22 +222,20 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				traits.PointSize(geometryType.value.pointSize)
 			)
 
-			if (geometryType.value.pointSize) {
-				entityTraits.push(traits.PointSize(geometryType.value.pointSize * 0.001))
-			}
-
 			// Lines pack exactly 2 colors: [lineColor, pointColor]
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
 			if (colors && colors.length >= STRIDE.COLORS_RGB) {
 				const stride =
 					colors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+
 				asColor(colors, colorUtil, 0)
-				entityTraits.push(traits.Color(colorUtil))
+				entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+
 				if (colors.length >= stride * 2) {
 					asColor(colors, colorUtil, stride)
-					entityTraits.push(traits.PointColor(colorUtil))
+					entityTraits.push(traits.PointColor({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
 					if (stride === STRIDE.COLORS_RGBA) {
-						entityTraits.push(traits.Opacity(asOpacity(colors, 1, stride + 3)))
+						entityTraits.push(traits.Opacity(asOpacity(colors, 1, 3)))
 					}
 				}
 			}
@@ -331,15 +323,9 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 	return entities
 }
 
-const addColorTraits = (
-	entityTraits: ConfigurableTrait[],
-	bytes: Uint8Array<ArrayBuffer>,
-	offset = 0
-) => {
-	asColor(bytes, colorUtil, offset)
+const addColorTraits = (entityTraits: ConfigurableTrait[], bytes: Uint8Array<ArrayBuffer>) => {
+	asColor(bytes, colorUtil)
 	entityTraits.push(traits.Color(colorUtil))
 	const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
-	if (isRgba) {
-		entityTraits.push(traits.Opacity(asOpacity(bytes, 1, offset + 3)))
-	}
+	if (isRgba) entityTraits.push(traits.Opacity(asOpacity(bytes)))
 }

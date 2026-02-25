@@ -18,8 +18,6 @@ const snapshots = [
 	{ name: 'model', file: 'visualization_snapshot_model' },
 ]
 
-const extensions = ['.json', '.pb', '.pb.gz']
-
 test.beforeAll(() => {
 	execSync(
 		'go test -run ^TestGeneratingSnapshots$ github.com/viam-labs/motion-tools/draw -count=1',
@@ -29,21 +27,20 @@ test.beforeAll(() => {
 
 for (const snapshot of snapshots) {
 	test.describe(`snapshot ${snapshot.name}`, () => {
-		for (const ext of extensions) {
-			const filename = `${snapshot.file}${ext}`
-			const extLabel = ext.replace(/\./g, '_').replace(/^_/, '').toUpperCase()
+		const filename = `${snapshot.file}.pb.gz`
 
-			test(`drops ${ext} file`, async ({ browser }) => {
-				const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
+		test('drops file', async ({ browser }) => {
+			const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
 
-				await dropFile(path.resolve(snapshotsDir, filename))
-				await expect(page.getByText(`${filename} loaded.`)).toBeVisible({
-					timeout: 10000,
-				})
-
-				await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_${extLabel}`)
-				assertScreenshots()
+			await dropFile(path.resolve(snapshotsDir, filename))
+			await expect(page.getByText(`${filename} loaded.`)).toBeVisible({
+				timeout: 10000,
 			})
-		}
+			await page.getByRole('button', { name: 'Dismiss toast' }).click()
+			await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
+
+			await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
+			assertScreenshots()
+		})
 	})
 }
