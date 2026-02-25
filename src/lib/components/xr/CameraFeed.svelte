@@ -10,6 +10,7 @@
 		offset?: { x?: number; y?: number; z?: number }
 		scale?: number
 		enableProfiling?: boolean
+		onAspectChange?: (aspect: number) => void
 	}
 
 	let {
@@ -17,6 +18,7 @@
 		offset = {},
 		scale = 0.7,
 		enableProfiling = false,
+		onAspectChange,
 	}: CameraFeedProps = $props()
 
 	const partID = usePartID()
@@ -77,6 +79,7 @@
 		const onReady = () => {
 			const videoReadyTime = performance.now()
 			aspect = video.videoWidth / video.videoHeight
+			onAspectChange?.(aspect)
 
 			if (!texture) {
 				texture = new VideoTexture(video)
