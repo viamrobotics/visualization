@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor, bvh, PortalTarget } from '@threlte/extras'
+	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import Entities from '$lib/components/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
@@ -10,7 +10,7 @@
 	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import type { Snippet } from 'svelte'
 	import { useXR } from '@threlte/xr'
-
+	import { bvh } from '$lib/plugins/bvh.svelte'
 	import { useOrigin } from './xr/useOrigin.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import CameraControls from './CameraControls.svelte'
@@ -42,10 +42,7 @@
 		enabled.set(!settings.current.enableMeasure)
 	})
 
-	raycaster.firstHitOnly = true
-	raycaster.params.Points.threshold = 0.005
-
-	bvh(() => ({ helper: false }))
+	bvh(raycaster, () => ({ helper: false }))
 
 	const focusedObject = $derived(focusedObject3d.current)
 
