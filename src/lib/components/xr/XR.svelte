@@ -10,6 +10,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import XRToast from './XRToast.svelte'
 	import { useOrigin } from './useOrigin.svelte'
+	import { SvelteMap } from 'svelte/reactivity'
 
 	const { ...rest } = $props()
 
@@ -27,6 +28,16 @@
 		return openWidgets[currentPartID] || []
 	})
 
+	// Track camera aspect ratios to compute proper spacing
+	const cameraAspects = new SvelteMap<string, number>()
+
+	const CAMERA_SCALE = 0.8
+	const CAMERA_GAP = 0.15 // gap between feed edges
+
+	// Compute spacing from the widest camera feed (default 16:9 before any aspect is known)
+	const maxAspect = $derived(cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9)
+	const feedSpacing = $derived(maxAspect * CAMERA_SCALE + CAMERA_GAP)
+
 	// Get arms assigned to controllers
 	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
@@ -42,37 +53,34 @@
 			origin.set([0, 0, 0])
 		}}
 	>
-		<!-- Render all enabled camera feeds with horizontal spacing behind origin -->
-		{#each enabledCameras as cameraName, index (cameraName)}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			<CameraFeed
-				resourceName={cameraName}
-				offset={{ x: index * spacing - centerOffset, y: 1.5, z: -2.5 }}
-				scale={0.8}
-				enableProfiling={false}
-			/>
-		{/each}
+		<!-- Render camera feeds only when presenting to avoid conflicting with overlay Camera widgets -->
+		{#if $isPresenting}
+			{#each enabledCameras as cameraName, index (cameraName)}
+				{@const centerOffset = ((enabledCameras.length - 1) * feedSpacing) / 2}
+				<CameraFeed
+					resourceName={cameraName}
+					offset={{ x: index * feedSpacing - centerOffset, y: 1.5, z: -2.5 }}
+					scale={CAMERA_SCALE}
+					enableProfiling={false}
+					onAspectChange={(a) => {
+						cameraAspects.set(cameraName, a)
+					}}
+				/>
+			{/each}
+		{/if}
 
 		<!-- Render joint limits widgets only for arms assigned to controllers, on the matching side -->
 		{#if leftArmName}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			{@const widgetX = -(centerOffset + spacing + 0.3)}
 			<JointLimitsWidget
 				armName={leftArmName}
-				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
+				offset={{ x: -0.5, y: 2.5, z: -2.5 }}
 				scale={0.6}
-				rotationY={15 * (Math.PI / 180)}
 			/>
 		{/if}
 		{#if rightArmName}
-			{@const spacing = 1.2}
-			{@const centerOffset = ((enabledCameras.length - 1) * spacing) / 2}
-			{@const widgetX = centerOffset + spacing + 0.3}
 			<JointLimitsWidget
 				armName={rightArmName}
-				offset={{ x: widgetX, y: 1.5, z: -2.5 }}
+				offset={{ x: 0.5, y: 2.5, z: -2.5 }}
 				scale={0.6}
 			/>
 		{/if}
