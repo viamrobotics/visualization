@@ -88,6 +88,8 @@ message StreamEntityChangesResponse {
     viam.common.v1.Transform transform = 2;
     Drawing drawing = 3;
   }
+
+  google.protobuf.FieldMask updated_fields = 4;
 }
 
 message RemoveAllDrawingsRequest {}

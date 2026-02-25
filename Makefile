@@ -57,6 +57,9 @@ setup:
 
 .PHONY: up-check
 up-check:
+	@if [ ! -d ".bin" ]; then \
+		mkdir -p .bin; \
+	fi
 	@if [ "$(CURRENT_PROTO_HASH)" != "$(STORED_PROTO_HASH)" ]; then \
 		$(MAKE) proto; \
 		echo "$(CURRENT_PROTO_HASH)" > .bin/.proto-build-stamp; \
@@ -72,6 +75,10 @@ up-check:
 
 .PHONY: up
 up: up-check
+	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
+
+.PHONY: up-next
+up-next: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production > /dev/null 2>&1 &
 	@.bin/draw-server -port 3030 
 
