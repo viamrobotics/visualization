@@ -67,7 +67,14 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					ref.raycast = BatchedMesh.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
-			} else if (isInstanceOf(ref, 'Mesh') && ref.geometry.attributes.position) {
+			} else if (
+				isInstanceOf(ref, 'Mesh') &&
+				/**
+				 * (mp) Line2s sort of suck. Their buffer attribute design internally is much different
+				 * but they give no indication other than this that they are different.
+				 */
+				ref.geometry.attributes.position
+			) {
 				console.log(ref)
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
