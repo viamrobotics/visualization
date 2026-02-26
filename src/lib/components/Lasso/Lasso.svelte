@@ -235,6 +235,10 @@
 			lassoTraits.PointsCapturedBy(lasso)
 		)
 
+		/**
+		 * (mp) I'd much rather eventually incorporate material properties into the ECS,
+		 * but that requires more design thought than I want to do here
+		 */
 		requestAnimationFrame(() => {
 			const resultPoints = scene.getObjectByName(lassoResultEntity as unknown as string) as Points
 			const material = resultPoints.material as PointsMaterial
