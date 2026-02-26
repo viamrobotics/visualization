@@ -18,16 +18,14 @@
 	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import type { ShapecastCallbacks } from 'three-mesh-bvh'
 	import { createBufferGeometry } from '$lib/attribute'
-	import { Or, type Entity } from 'koota'
 	import * as lassoTraits from './traits'
 	import Debug from './Debug.svelte'
-	import { draw } from 'svelte/transition'
 
 	interface Props {
 		debug?: boolean
 	}
 
-	let { debug = true }: Props = $props()
+	let { debug = false }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
@@ -108,7 +106,6 @@
 			nextPositions.set(positions)
 			nextPositions[positions.length] = x
 			nextPositions[positions.length + 1] = y
-
 			lasso.set(traits.LinePositions, nextPositions)
 
 			if (x < box.minX) box.minX = x
@@ -151,7 +148,7 @@
 		nextPositions.set(positions)
 		nextPositions[positions.length] = startX
 		nextPositions[positions.length + 1] = startY
-		lasso.set(traits.LinePositions, positions)
+		lasso.set(traits.LinePositions, nextPositions)
 		positions = nextPositions
 
 		const indices = earcut(positions, undefined, 3)
@@ -200,8 +197,6 @@
 			if (!points) {
 				return
 			}
-
-			const inverseWorld = new Matrix4().copy(points.matrixWorld).invert()
 
 			geometry.boundsTree?.shapecast({
 				intersectsBounds: (box) => {
