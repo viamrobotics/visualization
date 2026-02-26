@@ -3,7 +3,7 @@
 	import { type Snippet } from 'svelte'
 	import { meshBounds } from '@threlte/extras'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
-	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
+	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
 	import AxesHelper from './AxesHelper.svelte'
@@ -11,6 +11,7 @@
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 	import type { Pose } from '@viamrobotics/sdk'
+	import LineGeometry from './LineGeometry.svelte'
 
 	interface Props extends ThrelteProps<Group> {
 		entity: Entity
@@ -143,14 +144,7 @@
 
 			{#if !model || renderMode.includes('colliders')}
 				{#if linePositions.current}
-					<T
-						is={LineGeometry}
-						oncreate={(ref) => {
-							if (linePositions.current) {
-								ref.setPositions(linePositions.current)
-							}
-						}}
-					/>
+					<LineGeometry positions={linePositions.current} />
 				{:else if box.current}
 					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry

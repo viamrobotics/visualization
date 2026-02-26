@@ -67,7 +67,8 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					ref.raycast = BatchedMesh.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
-			} else if (isInstanceOf(ref, 'Mesh')) {
+			} else if (isInstanceOf(ref, 'Mesh') && ref.geometry.attributes.position) {
+				console.log(ref)
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast

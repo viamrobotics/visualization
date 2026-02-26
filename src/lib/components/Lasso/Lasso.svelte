@@ -1,10 +1,27 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
-	import type { IntersectionEvent } from '@threlte/extras'
-	import Line from './Line.svelte'
+	import {
+		Raycaster,
+		Box3,
+		Vector3,
+		Vector2,
+		Plane,
+		Matrix4,
+		Triangle,
+		Points,
+		PointsMaterial,
+	} from 'three'
+	import { useThrelte } from '@threlte/core'
+	import { useInteractivity } from '@threlte/extras'
+	import { untrack } from 'svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import earcut from 'earcut'
-	import { Box3, BufferAttribute, Vector3 } from 'three'
+	import { traits, useQuery, useWorld } from '$lib/ecs'
+	import type { ShapecastCallbacks } from 'three-mesh-bvh'
+	import { createBufferGeometry } from '$lib/attribute'
+	import { Or, type Entity } from 'koota'
+	import * as lassoTraits from './traits'
+	import Debug from './Debug.svelte'
+	import { draw } from 'svelte/transition'
 
 	interface Props {
 		debug?: boolean
@@ -12,142 +29,259 @@
 
 	let { debug = true }: Props = $props()
 
+	const world = useWorld()
 	const controls = useCameraControls()
+	const { scene, dom, camera } = useThrelte()
+	const { enabled: interactivityEnabled } = useInteractivity()
 
 	const box3 = new Box3()
+	const min = new Vector3()
+	const max = new Vector3()
+
+	const triangle = new Triangle()
+	const triangleBox = new Box3()
 	const a = new Vector3()
 	const b = new Vector3()
 	const c = new Vector3()
 
+	let frameScheduled = false
 	let drawing = false
 
-	let position = $state<[number, number, number]>([0, 0, 0])
-	let lassos = $state<
-		{
-			positions: number[]
-			indices: Uint16Array
-			boxes: Box3[]
-			min: { x: number; y: number }
-			max: { x: number; y: number }
-		}[]
-	>([])
+	const raycaster = new Raycaster()
+	const mouse = new Vector2()
+	const plane = new Plane(new Vector3(0, 0, 1), 0)
+	const point = new Vector3()
 
-	const onpointerdown = (event: IntersectionEvent<PointerEvent>) => {
+	const raycast = (event: PointerEvent) => {
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+		raycaster.setFromCamera(mouse, camera.current)
+		raycaster.ray.intersectPlane(plane, point)
+		return point
+	}
+
+	const onpointerdown = (event: PointerEvent) => {
+		if (!event.shiftKey) return
+
+		const { x, y } = raycast(event)
+
 		drawing = true
 
-		const { x, y } = event.point
-
-		lassos.push({
-			positions: [x, y, 0],
-			indices: new Uint16Array(),
-			boxes: [],
-			min: { x, y },
-			max: { x, y },
-		})
+		world.spawn(
+			traits.LinePositions(new Float32Array([x, y, 0])),
+			traits.Color({ r: 1, g: 0, b: 0 }),
+			lassoTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
+			lassoTraits.Lasso
+		)
 
 		if (controls.current) {
 			controls.current.enabled = false
 		}
 	}
 
-	const onpointermove = (event: IntersectionEvent<PointerEvent>) => {
-		event.point.toArray(position)
-
+	const onpointermove = (event: PointerEvent) => {
 		if (!drawing) return
 
-		let line = lassos.at(-1)
-
-		if (!line) return
-
-		const { x, y } = event.point
-		line.positions.push(x, y, 0)
-
-		if (x < line.min.x) line.min.x = x
-		else if (x > line.max.x) line.max.x = x
-
-		if (y < line.min.y) line.min.y = y
-		else if (y > line.max.y) line.max.y = y
-	}
-
-	const onpointerup = () => {
-		drawing = false
-
-		let lasso = lassos.at(-1)
+		let lasso = world.query(lassoTraits.Lasso).at(-1)
 
 		if (!lasso) return
 
-		const [x, y] = lasso.positions
+		if (frameScheduled) return
+
+		frameScheduled = true
+
+		/**
+		 * pointermove can execute at a rate much higher than screen
+		 * refresh, creating huge polygon vertex counts, so we cap it.
+		 */
+		requestAnimationFrame(() => {
+			frameScheduled = false
+
+			const { x, y } = raycast(event)
+			const positions = lasso.get(traits.LinePositions)
+			const box = lasso.get(lassoTraits.Box)
+
+			if (!positions || !box) return
+
+			const nextPositions = new Float32Array(positions.length + 3)
+			nextPositions.set(positions)
+			nextPositions[positions.length] = x
+			nextPositions[positions.length + 1] = y
+
+			lasso.set(traits.LinePositions, nextPositions)
+
+			if (x < box.minX) box.minX = x
+			else if (x > box.maxX) box.maxX = x
+
+			if (y < box.minY) box.minY = y
+			else if (y > box.maxY) box.maxY = y
+
+			lasso.set(lassoTraits.Box, box)
+		})
+	}
+
+	const onpointerleave = () => {
+		if (!drawing) return
+
+		onpointerup()
+	}
+
+	const onpointerup = () => {
+		if (!drawing) return
+
+		drawing = false
+
+		let lasso = world.query(lassoTraits.Lasso).at(-1)
+
+		if (!lasso) return
+
+		let positions = lasso.get(traits.LinePositions)
+
+		if (!positions) return
+
+		const [startX, startY] = positions
 
 		if (controls.current) {
 			controls.current.enabled = true
 		}
 
 		// Close the loop
-		lasso.positions.push(x, y, 0)
-
-		const { positions } = lasso
+		const nextPositions = new Float32Array(positions.length + 3)
+		nextPositions.set(positions)
+		nextPositions[positions.length] = startX
+		nextPositions[positions.length + 1] = startY
+		lasso.set(traits.LinePositions, positions)
+		positions = nextPositions
 
 		const indices = earcut(positions, undefined, 3)
-		lasso.indices = new Uint16Array(indices)
+		if (debug) {
+			lasso.add(lassoTraits.Indices(new Uint16Array(indices)))
+		}
 
-		for (let i = 0; i < indices.length; i += 6) {
+		const getTriangleFromIndex = (i: number, triangle: Triangle) => {
 			const stride = 3
 			const ia = indices[i + 0] * stride
 			const ib = indices[i + 1] * stride
 			const ic = indices[i + 2] * stride
-
 			a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
 			b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
 			c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
-			box3.setFromPoints([a, b, c])
-
-			lasso.boxes.push(box3.clone())
+			triangle.set(a, b, c)
 		}
+
+		const boxes: lassoTraits.AABB[] = []
+		for (let i = 0, l = indices.length; i < l; i += 3) {
+			getTriangleFromIndex(i, triangle)
+			box3.setFromPoints([triangle.a, triangle.b, triangle.c])
+			boxes.push({ minX: box3.min.x, minY: box3.min.y, maxX: box3.max.x, maxY: box3.max.y })
+		}
+		if (debug) {
+			lasso.add(lassoTraits.Boxes(boxes))
+		}
+
+		const lassoBox = lasso.get(lassoTraits.Box)
+
+		if (!lassoBox) return
+
+		min.set(lassoBox.minX, lassoBox.minY, Number.NEGATIVE_INFINITY)
+		max.set(lassoBox.maxX, lassoBox.maxY, Number.POSITIVE_INFINITY)
+		box3.set(min, max)
+
+		const enclosedPoints: number[] = []
+
+		for (const pointsEntity of world.query(traits.Points)) {
+			const geometry = pointsEntity.get(traits.BufferGeometry)
+
+			if (!geometry) return
+
+			const points = scene.getObjectByName(pointsEntity as unknown as string)
+
+			if (!points) {
+				return
+			}
+
+			const inverseWorld = new Matrix4().copy(points.matrixWorld).invert()
+
+			geometry.boundsTree?.shapecast({
+				intersectsBounds: (box) => {
+					return box.intersectsBox(box3)
+				},
+
+				intersectsPoint: (point: Vector3) => {
+					for (let i = 0, j = 0, l = indices.length; i < l; i += 3, j += 1) {
+						const { minX, minY, maxX, maxY } = boxes[j]
+
+						min.set(minX, minY, Number.NEGATIVE_INFINITY)
+						max.set(maxX, maxY, Number.POSITIVE_INFINITY)
+						triangleBox.set(min, max) //.applyMatrix4(inverseWorld)
+
+						if (triangleBox.containsPoint(point)) {
+							getTriangleFromIndex(i, triangle)
+
+							if (triangle.containsPoint(point)) {
+								enclosedPoints.push(point.x, point.y, point.z)
+							}
+						}
+					}
+				},
+				// intersectsPoint is not yet in typedef, this can be removed when it is added
+			} as ShapecastCallbacks)
+		}
+
+		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
+		const lassoResultEntity = world.spawn(
+			traits.Name('Lasso result'),
+			traits.BufferGeometry(lassoResultGeometry),
+			traits.Color({ r: 1, g: 0, b: 0 }),
+			traits.Points,
+			traits.Removable,
+			lassoTraits.LassoEnclosedPoints,
+			lassoTraits.PointsCapturedBy(lasso)
+		)
+
+		requestAnimationFrame(() => {
+			const resultPoints = scene.getObjectByName(lassoResultEntity as unknown as string) as Points
+			const material = resultPoints.material as PointsMaterial
+			material.depthTest = false
+		})
 	}
+
+	$effect(() => {
+		const lastEnabled = untrack(() => $interactivityEnabled)
+		interactivityEnabled.set(false)
+
+		dom.addEventListener('pointerdown', onpointerdown)
+		dom.addEventListener('pointermove', onpointermove)
+		dom.addEventListener('pointerup', onpointerup)
+		dom.addEventListener('pointerleave', onpointerleave)
+
+		return () => {
+			interactivityEnabled.set(lastEnabled)
+
+			dom.removeEventListener('pointerdown', onpointerdown)
+			dom.removeEventListener('pointermove', onpointermove)
+			dom.removeEventListener('pointerup', onpointerup)
+			dom.removeEventListener('pointerleave', onpointerleave)
+		}
+	})
+
+	const lassos = useQuery(lassoTraits.Lasso)
+
+	// On unmount, destroy all lasso related entities
+	$effect(() => {
+		return () => {
+			for (const entity of world.query(lassoTraits.LassoEnclosedPoints)) {
+				if (world.has(entity)) {
+					entity.destroy()
+				}
+			}
+		}
+	})
 </script>
 
-<T.Mesh
-	{onpointerdown}
-	{onpointerup}
-	{onpointermove}
->
-	<T.PlaneGeometry args={[7, 7, 10, 10]} />
-	<T.MeshBasicMaterial
-		wireframe
-		color="blue"
-		transparent
-		opacity={debug ? 1 : 0}
-	/>
-</T.Mesh>
-
-{#each lassos as lasso (lasso)}
-	<Line positions={lasso.positions} />
-
-	{#if debug}
-		{#if lasso.indices.length > 0}
-			<T.Mesh>
-				<T.BufferGeometry
-					oncreate={(ref) => {
-						ref.setIndex(new BufferAttribute(lasso.indices, 1))
-						ref.setAttribute('position', new BufferAttribute(new Float32Array(lasso.positions), 3))
-					}}
-				/>
-				<T.MeshBasicMaterial
-					wireframe
-					color="green"
-				/>
-			</T.Mesh>
-		{/if}
-
-		{#each lasso.boxes as box (box)}
-			<T.Box3Helper args={[box, 'lightgreen']} />
-		{/each}
-
-		<T.Box3Helper
-			args={[
-				new Box3(a.set(lasso.min.x, lasso.min.y, 0), b.set(lasso.max.x, lasso.max.y, 0)),
-				'red',
-			]}
-		/>
-	{/if}
-{/each}
+{#if debug}
+	{#each lassos.current as lasso (lasso)}
+		<Debug {lasso} />
+	{/each}
+{/if}
