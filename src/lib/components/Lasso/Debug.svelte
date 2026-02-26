@@ -1,3 +1,8 @@
+<!--
+@component
+
+Shows all steps for querying points within a lasso selection
+-->
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { Box3, BufferAttribute, BufferGeometry, Vector3 } from 'three'
