@@ -209,7 +209,7 @@
 
 						min.set(minX, minY, Number.NEGATIVE_INFINITY)
 						max.set(maxX, maxY, Number.POSITIVE_INFINITY)
-						triangleBox.set(min, max) //.applyMatrix4(inverseWorld)
+						triangleBox.set(min, max)
 
 						if (triangleBox.containsPoint(point)) {
 							getTriangleFromIndex(i, triangle)
