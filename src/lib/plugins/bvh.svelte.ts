@@ -75,7 +75,6 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				 */
 				ref.geometry.attributes.position
 			) {
-				console.log(ref)
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
