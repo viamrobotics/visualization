@@ -1,15 +1,5 @@
 <script lang="ts">
-	import {
-		Raycaster,
-		Box3,
-		Vector3,
-		Vector2,
-		Plane,
-		Matrix4,
-		Triangle,
-		Points,
-		PointsMaterial,
-	} from 'three'
+	import { Raycaster, Box3, Vector3, Vector2, Plane, Triangle, Points, PointsMaterial } from 'three'
 	import { useThrelte } from '@threlte/core'
 	import { useInteractivity } from '@threlte/extras'
 	import { untrack } from 'svelte'
