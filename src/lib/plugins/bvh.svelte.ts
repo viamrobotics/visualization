@@ -37,7 +37,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 		const opts = $derived<Options>(props.bvh ? { ...bvhOptions, ...props.bvh } : bvhOptions)
 
 		$effect(() => {
-			const ref = args.ref
+			const { ref } = args
 
 			if (opts.enabled === false) {
 				return
