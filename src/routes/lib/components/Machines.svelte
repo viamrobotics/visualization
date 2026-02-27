@@ -17,8 +17,6 @@
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 
-	$inspect(connectionConfigs.current)
-
 	const onpaste = (event: ClipboardEvent) => {
 		try {
 			const config = JSON.parse(event.clipboardData?.getData('text') ?? '')
