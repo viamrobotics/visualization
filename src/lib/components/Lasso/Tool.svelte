@@ -39,6 +39,12 @@
 		const pcd = createBinaryPCD(positions)
 
 		onSelection(pcd)
+
+		for (const entity of entities) {
+			if (world.has(entity)) {
+				entity.destroy()
+			}
+		}
 	}
 </script>
 
