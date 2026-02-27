@@ -180,11 +180,13 @@
 					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
 				/>
 			{:else}
+				{@const currentOpacity = opacity.current ?? 0.7}
 				<T.MeshToonMaterial
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={(opacity.current ?? 0.7) < 1}
-					opacity={opacity.current ?? 0.7}
+					transparent={currentOpacity < 1}
+					depthWrite={currentOpacity === 1}
+					opacity={currentOpacity ?? 0.7}
 				/>
 
 				{#if geo && renderMode.includes('colliders')}
