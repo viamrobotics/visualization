@@ -8,6 +8,8 @@
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
+		defaultPosition?: { x: number; y: number }
+		exitable?: boolean
 		isOpen?: boolean
 		children: Snippet
 	}
@@ -15,6 +17,8 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		defaultPosition,
+		exitable = true,
 		isOpen = $bindable(false),
 		children,
 	}: Props = $props()
@@ -23,6 +27,7 @@
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
+		defaultPosition,
 		resizable: false,
 		allowOverflow: false,
 		open: isOpen,
@@ -54,17 +59,19 @@
 					{title}
 				</p>
 
-				<div
-					{...api.getControlProps()}
-					class="flex gap-3"
-				>
-					<button
-						aria-label="Close connection configs panel"
-						onclick={() => (isOpen = false)}
+				{#if exitable}
+					<div
+						{...api.getControlProps()}
+						class="flex gap-3"
 					>
-						<Icon name="close" />
-					</button>
-				</div>
+						<button
+							aria-label="Close connection configs panel"
+							onclick={() => (isOpen = false)}
+						>
+							<Icon name="close" />
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 
