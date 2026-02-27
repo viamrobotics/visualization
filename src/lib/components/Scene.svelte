@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ShaderMaterial, Vector3 } from 'three'
-	import { T, useThrelte } from '@threlte/core'
+	import { T } from '@threlte/core'
 	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import Entities from '$lib/components/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
@@ -24,8 +24,6 @@
 	}
 
 	let { children }: Props = $props()
-
-	const { renderer } = useThrelte()
 
 	const settings = useSettings()
 	const focusedObject3d = useFocusedObject3d()
