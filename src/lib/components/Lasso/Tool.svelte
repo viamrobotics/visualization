@@ -11,6 +11,12 @@
 	import { createBinaryPCD } from '$lib/pcd'
 	import type { BufferGeometry } from 'three'
 
+	interface Props {
+		onSelection: (pcd: Blob) => void
+	}
+
+	let { onSelection }: Props = $props()
+
 	const world = useWorld()
 	const settings = useSettings()
 	const enabled = $derived(settings.current.interactionMode === 'lasso')
@@ -28,8 +34,11 @@
 		}
 
 		const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
+		const positions = mergedGeometry.getAttribute('position').array as Float32Array
 
-		createBinaryPCD()
+		const pcd = createBinaryPCD(positions)
+
+		onSelection(pcd)
 	}
 </script>
 
