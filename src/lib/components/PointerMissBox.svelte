@@ -12,7 +12,7 @@
 	const transformControls = useTransformControls()
 	const cameraDown = new Vector3()
 
-	const enabled = $derived(!settings.current.enableMeasure)
+	const enabled = $derived(settings.current.interactionMode === 'navigate')
 
 	const size = 1_000
 </script>

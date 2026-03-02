@@ -40,7 +40,7 @@
 	})
 
 	$effect(() => {
-		enabled.set(!settings.current.enableMeasure)
+		enabled.set(settings.current.interactionMode === 'navigate')
 	})
 
 	bvh(raycaster, () => ({ helper: false }))
