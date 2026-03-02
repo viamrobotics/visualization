@@ -1,5 +1,16 @@
 # motion-tools
 
+## 1.12.0
+
+### Minor Changes
+
+- 247d5c3: Add `<LassoTool>` plugin
+
+### Patch Changes
+
+- 0fac3d8: Fix: Render lasso lines on top of other objects
+- 71e14fa: Fix transparency flickering
+
 ## 1.11.1
 
 ### Patch Changes
