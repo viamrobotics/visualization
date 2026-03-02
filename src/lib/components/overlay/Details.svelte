@@ -636,9 +636,9 @@
 			{/if}
 		</div>
 
-		{#if linkedEntities.current.length > 0}
-			<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
+		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
 
+		{#if linkedEntities.current.length > 0}
 			<div>
 				<div class="mt-0.5 flex flex-col gap-1">
 					<strong class="font-semibold">Linked entities</strong>
