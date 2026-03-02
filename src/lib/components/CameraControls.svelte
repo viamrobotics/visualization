@@ -20,7 +20,7 @@
 			icon="camera-outline"
 			description="Reset camera"
 			onclick={() => {
-				cameraControls.current?.reset(true)
+				cameraControls.setInitialPose()
 			}}
 		/>
 	</fieldset>
