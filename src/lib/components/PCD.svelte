@@ -5,17 +5,17 @@
 	import type { Entity } from 'koota'
 
 	interface Props {
-		buffer: Uint8Array
+		data: Uint8Array
 	}
 
-	let { buffer }: Props = $props()
+	let { data }: Props = $props()
 
 	const world = useWorld()
 
 	let entity: Entity
 
 	$effect(() => {
-		parsePcdInWorker(buffer).then(({ positions, colors }) => {
+		parsePcdInWorker(data).then(({ positions, colors }) => {
 			const geometry = createBufferGeometry(positions, colors)
 
 			entity = world.spawn(
