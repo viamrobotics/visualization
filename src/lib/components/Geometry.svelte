@@ -186,7 +186,7 @@
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
 					transparent={currentOpacity < 1}
 					depthWrite={currentOpacity === 1}
-					opacity={currentOpacity ?? 0.7}
+					opacity={currentOpacity}
 				/>
 
 				{#if geo && (renderMode.includes('colliders') || !model)}
