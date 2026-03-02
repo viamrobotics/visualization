@@ -381,7 +381,7 @@ class StandalonePartConfig implements LocalPartConfig {
 						if (!fragmentId) {
 							continue
 						}
-						const components = fragmentResponse?.fragment?.fields['components'].kind
+						const components = fragmentResponse?.fragment?.fields['components']?.kind
 
 						if (components?.case === 'listValue') {
 							for (const component of components.value.values) {

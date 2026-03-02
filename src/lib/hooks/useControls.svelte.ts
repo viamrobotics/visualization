@@ -14,9 +14,10 @@ interface CameraControlsContext {
 	current: CameraControlsRef | undefined
 	set(current: CameraControlsRef): void
 	setPose(pose: CameraPose, animate?: boolean): void
+	setInitialPose(): void
 }
 
-export const provideCameraControls = (cameraPose: () => CameraPose | undefined) => {
+export const provideCameraControls = (initialCameraPose: () => CameraPose | undefined) => {
 	let controls = $state.raw<CameraControlsRef>()
 
 	const setPose = (pose: CameraPose, animate = false) => {
@@ -27,8 +28,13 @@ export const provideCameraControls = (cameraPose: () => CameraPose | undefined) 
 		controls?.setLookAt(x, y, z, lookAtX, lookAtY, lookAtZ, animate)
 	}
 
+	const setInitialPose = () => {
+		const pose = initialCameraPose()
+		setPose(pose ?? { position: [3, 3, 3], lookAt: [0, 0, 0] }, true)
+	}
+
 	$effect(() => {
-		const pose = cameraPose()
+		const pose = initialCameraPose()
 
 		if (pose) {
 			setPose(pose)
@@ -43,6 +49,7 @@ export const provideCameraControls = (cameraPose: () => CameraPose | undefined) 
 			controls = current
 		},
 		setPose,
+		setInitialPose,
 	})
 }
 
