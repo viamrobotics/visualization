@@ -16,7 +16,6 @@
 	import FileDrop from './FileDrop/FileDrop.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './overlay/LiveUpdatesBanner.svelte'
 	import ArmPositions from './overlay/widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -32,10 +31,10 @@
 	import { useXR } from '@threlte/xr'
 
 	interface LocalConfigProps {
-		getLocalPartConfig: () => Struct
+		current: Struct
+		isDirty: boolean
+		componentToFragId: Record<string, string>
 		setLocalPartConfig: (config: Struct) => void
-		isDirty: () => boolean
-		getComponentToFragId: () => Record<string, string>
 	}
 
 	interface Props {
@@ -64,7 +63,6 @@
 
 	provideWorld()
 
-	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
@@ -81,25 +79,10 @@
 
 	let root = $state.raw<HTMLElement>()
 
-	providePartConfig(() => {
-		if (localConfigProps) {
-			return {
-				appEmbeddedPartConfigProps: {
-					isDirty: () => localConfigProps.isDirty(),
-					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
-					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
-				},
-			}
-		} else {
-			return {
-				standalonePartConfigProps: {
-					viamClient: () => appClient?.current,
-					partID: () => partID,
-				},
-			}
-		}
-	})
+	providePartConfig(
+		() => partID,
+		() => localConfigProps
+	)
 
 	$effect.pre(() => {
 		if (localConfigProps) {

@@ -13,7 +13,7 @@ export const provideFramelessComponents = () => {
 	const frames = useFrames()
 
 	const current = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
+		const { components } = partConfig.current
 		const partComponentsWIthNoFrame =
 			components
 				?.filter((component) => component.frame === undefined)
