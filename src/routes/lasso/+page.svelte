@@ -18,4 +18,8 @@
 	init()
 </script>
 
-<LassoTool />
+<LassoTool
+	onSelection={() => {
+		/* do something */
+	}}
+/>
