@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Raycaster, Box3, Vector3, Vector2, Plane, Triangle, Points, PointsMaterial } from 'three'
+	import { Raycaster, Box3, Vector3, Vector2, Plane, Triangle } from 'three'
 	import { useThrelte } from '@threlte/core'
 	import { Not } from 'koota'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
@@ -56,6 +56,9 @@
 
 		world.spawn(
 			traits.LinePositions(new Float32Array([x, y, 0])),
+			traits.LineWidth(1.5),
+			traits.RenderOrder(999),
+			traits.Material({ depthTest: false }),
 			traits.Color({ r: 1, g: 0, b: 0 }),
 			lassoTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
 			lassoTraits.Lasso
@@ -213,25 +216,18 @@
 		}
 
 		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
-		const lassoResultEntity = world.spawn(
+
+		world.spawn(
 			traits.Name('Lasso result'),
 			traits.BufferGeometry(lassoResultGeometry),
 			traits.Color({ r: 1, g: 0, b: 0 }),
+			traits.RenderOrder(999),
+			traits.Material({ depthTest: false }),
 			traits.Points,
 			traits.Removable,
 			lassoTraits.LassoEnclosedPoints,
 			lassoTraits.PointsCapturedBy(lasso)
 		)
-
-		/**
-		 * (mp) I'd much rather eventually incorporate material properties into the ECS,
-		 * but that requires more design thought than I want to do here
-		 */
-		requestAnimationFrame(() => {
-			const resultPoints = scene.getObjectByName(lassoResultEntity as unknown as string) as Points
-			const material = resultPoints.material as PointsMaterial
-			material.depthTest = false
-		})
 	}
 
 	const onkeydown = (event: KeyboardEvent) => {
