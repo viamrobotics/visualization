@@ -28,7 +28,7 @@
 				'apiKeyValue' in config &&
 				'signalingAddress' in config
 			) {
-				connectionConfigs.current.push(config)
+				connectionConfigs.add(config)
 			}
 		} catch {
 			// Do nothing
@@ -54,7 +54,7 @@
 	bind:isOpen
 >
 	<div class="flex h-full grow flex-col gap-2 overflow-y-auto p-2">
-		{#each connectionConfigs.current as config, index (index)}
+		{#each connectionConfigs.current as config, index (config.host)}
 			<form class="flex flex-col gap-2">
 				<div class="flex justify-between gap-2">
 					<Switch
@@ -65,9 +65,15 @@
 					/>
 
 					<Input
-						bind:value={config.host}
 						class="input w-full grow text-xs"
 						placeholder="Host"
+						value={config.host}
+						on:change={(event) => {
+							connectionConfigs.update(index, {
+								...config,
+								host: (event.target as HTMLInputElement).value,
+							})
+						}}
 					/>
 
 					{#if !connectionConfigs.isEnvConfig(config)}
@@ -99,8 +105,14 @@
 						<div class="col-span-2">
 							<Input
 								id="{config.host}-partId"
-								bind:value={config.partId}
 								placeholder="Part ID"
+								value={config.partId}
+								on:change={(event) => {
+									connectionConfigs.update(index, {
+										...config,
+										partId: (event.target as HTMLInputElement).value,
+									})
+								}}
 							/>
 						</div>
 
@@ -111,8 +123,14 @@
 						<div class="col-span-2">
 							<Input
 								id="{config.host}-apiKeyId"
-								bind:value={config.apiKeyId}
 								placeholder="API key ID"
+								value={config.apiKeyId}
+								on:change={(event) => {
+									connectionConfigs.update(index, {
+										...config,
+										apiKeyId: (event.target as HTMLInputElement).value,
+									})
+								}}
 							/>
 						</div>
 
@@ -123,8 +141,14 @@
 						<div class="col-span-2">
 							<Input
 								id="{config.host}-apiKeyValue"
-								bind:value={config.apiKeyValue}
 								placeholder="API key value"
+								value={config.apiKeyValue}
+								on:change={(event) => {
+									connectionConfigs.update(index, {
+										...config,
+										apiKeyValue: (event.target as HTMLInputElement).value,
+									})
+								}}
 							/>
 						</div>
 
@@ -135,8 +159,14 @@
 						<div class="col-span-2">
 							<Input
 								id="{config.host}-address"
-								bind:value={config.signalingAddress}
 								placeholder="Signaling address"
+								value={config.signalingAddress}
+								on:change={(event) => {
+									connectionConfigs.update(index, {
+										...config,
+										signalingAddress: (event.target as HTMLInputElement).value,
+									})
+								}}
 							/>
 						</div>
 					</div>
