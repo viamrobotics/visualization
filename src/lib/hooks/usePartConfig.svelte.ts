@@ -276,7 +276,7 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 			return _localPartConfig.componentNameToFragmentId()
 		},
 		get isDirty() {
-			return _localPartConfig.isDirty()
+			return _localPartConfig.isDirty
 		},
 		get hasEditPermissions() {
 			return _localPartConfig.hasEditPermissions()
@@ -289,7 +289,7 @@ export const usePartConfig = (): PartConfigContext => {
 }
 
 interface LocalPartConfig {
-	isDirty: () => boolean
+	isDirty: boolean
 	hasEditPermissions: () => boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
@@ -299,7 +299,7 @@ interface LocalPartConfig {
 }
 
 interface AppEmbeddedPartConfigProps {
-	isDirty: () => boolean
+	isDirty: boolean
 	getLocalPartConfig: () => Struct
 	setLocalPartConfig: (config: Struct) => void
 	getComponentToFragId: () => Record<string, string>
@@ -310,8 +310,8 @@ class AppEmbeddedPartConfig implements LocalPartConfig {
 		this._appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
 	}
 
-	public isDirty(): boolean {
-		return this._appEmbeddedPartConfigProps.isDirty()
+	get isDirty(): boolean {
+		return this._appEmbeddedPartConfigProps.isDirty
 	}
 
 	public getLocalPartConfig(): Struct {
@@ -336,8 +336,9 @@ interface StandalonePartConfigProps {
 	partID: () => string
 }
 class StandalonePartConfig implements LocalPartConfig {
+	isDirty = $state(false)
+
 	private _standalonePartConfigProps: StandalonePartConfigProps
-	private _isDirty = $state(false)
 	private _hasEditPermissions = $state(false)
 	private _networkPartConfig = $state<Struct>()
 	private _localPartConfig = $state<Struct>()
@@ -407,11 +408,7 @@ class StandalonePartConfig implements LocalPartConfig {
 	}
 	public setLocalPartConfig(config: Struct): void {
 		this._localPartConfig = config
-		this._isDirty = true
-	}
-
-	public isDirty(): boolean {
-		return this._isDirty
+		this.isDirty = true
 	}
 
 	public hasEditPermissions(): boolean {
@@ -434,7 +431,7 @@ class StandalonePartConfig implements LocalPartConfig {
 				this._partName,
 				this._localPartConfig
 			)
-		this._isDirty = false
+		this.isDirty = false
 	}
 
 	public async resetLocalPartConfig(): Promise<void> {
@@ -442,6 +439,6 @@ class StandalonePartConfig implements LocalPartConfig {
 			return
 		}
 		this._localPartConfig = this._networkPartConfig
-		this._isDirty = false
+		this.isDirty = false
 	}
 }

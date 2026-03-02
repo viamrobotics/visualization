@@ -34,7 +34,7 @@
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
 		setLocalPartConfig: (config: Struct) => void
-		isDirty: () => boolean
+		isDirty: boolean
 		getComponentToFragId: () => Record<string, string>
 	}
 
@@ -85,7 +85,7 @@
 		if (localConfigProps) {
 			return {
 				appEmbeddedPartConfigProps: {
-					isDirty: () => localConfigProps.isDirty(),
+					isDirty: localConfigProps.isDirty,
 					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
 					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
 					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
