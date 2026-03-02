@@ -1,5 +1,5 @@
 import { injectPlugin, isInstanceOf } from '@threlte/core'
-import { BatchedMesh, Points, type Raycaster } from 'three'
+import { BatchedMesh, Points, Mesh, type Raycaster } from 'three'
 import {
 	type BVHOptions,
 	acceleratedRaycast,
@@ -33,10 +33,12 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 	raycaster.params.Points.threshold = 0.005
 
 	injectPlugin('bvh', (args) => {
-		const { ref, props } = $derived(args)
+		const { props } = $derived(args)
 		const opts = $derived<Options>(props.bvh ? { ...bvhOptions, ...props.bvh } : bvhOptions)
 
 		$effect(() => {
+			const { ref } = args
+
 			if (opts.enabled === false) {
 				return
 			}
@@ -77,7 +79,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				if (helper) ref.add(helper)
 
 				return () => {
-					ref.raycast = Points.prototype.raycast
+					ref.raycast = Mesh.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
 			}
