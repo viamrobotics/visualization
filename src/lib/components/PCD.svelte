@@ -15,6 +15,7 @@
 	let entity: Entity
 
 	$effect(() => {
+		console.log(data)
 		parsePcdInWorker(data).then(({ positions, colors }) => {
 			const geometry = createBufferGeometry(positions, colors)
 

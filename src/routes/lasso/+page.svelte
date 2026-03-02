@@ -3,13 +3,13 @@
 	import { createRandomPcdBinary } from '$lib/test/createRandomPcdBinary'
 </script>
 
+<LassoTool
+	enabled
+	onSelection={() => {
+		/* do something */
+	}}
+/>
+
 {#await createRandomPcdBinary(10_000, 1) then data}
-	<LassoTool
-		enabled
-		onSelection={() => {
-			/* do something */
-		}}
-	>
-		<PCD {data} />
-	</LassoTool>
+	<PCD {data} />
 {/await}
