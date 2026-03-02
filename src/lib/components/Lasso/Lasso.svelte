@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { Raycaster, Box3, Vector3, Vector2, Plane, Triangle, Points, PointsMaterial } from 'three'
 	import { useThrelte } from '@threlte/core'
-	import { useInteractivity } from '@threlte/extras'
-	import { untrack } from 'svelte'
 	import { Not } from 'koota'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import earcut from 'earcut'
@@ -21,7 +19,6 @@
 	const world = useWorld()
 	const controls = useCameraControls()
 	const { scene, dom, camera } = useThrelte()
-	const { enabled: interactivityEnabled } = useInteractivity()
 
 	const box3 = new Box3()
 	const min = new Vector3()
@@ -237,18 +234,29 @@
 		})
 	}
 
-	$effect(() => {
-		const lastEnabled = untrack(() => $interactivityEnabled)
-		interactivityEnabled.set(false)
+	const onkeydown = (event: KeyboardEvent) => {
+		if (event.key === 'Shift') {
+			dom.style.cursor = 'crosshair'
+		}
+	}
 
+	const onkeyup = (event: KeyboardEvent) => {
+		if (event.key === 'Shift') {
+			dom.style.removeProperty('cursor')
+		}
+	}
+
+	$effect(() => {
+		window.addEventListener('keydown', onkeydown)
+		window.addEventListener('keyup', onkeyup)
 		dom.addEventListener('pointerdown', onpointerdown)
 		dom.addEventListener('pointermove', onpointermove)
 		dom.addEventListener('pointerup', onpointerup)
 		dom.addEventListener('pointerleave', onpointerleave)
 
 		return () => {
-			interactivityEnabled.set(lastEnabled)
-
+			window.removeEventListener('keydown', onkeydown)
+			window.removeEventListener('keyup', onkeyup)
 			dom.removeEventListener('pointerdown', onpointerdown)
 			dom.removeEventListener('pointermove', onpointermove)
 			dom.removeEventListener('pointerup', onpointerup)
