@@ -19,6 +19,7 @@
 </script>
 
 <LassoTool
+	enabled
 	onSelection={() => {
 		/* do something */
 	}}

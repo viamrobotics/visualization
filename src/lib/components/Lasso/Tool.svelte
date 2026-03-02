@@ -15,7 +15,7 @@
 		/** Whether to auto-enable lasso mode when the component mounts */
 		enabled?: boolean
 
-		/** Fires  */
+		/** Fires when the user has committed to a lasso selection */
 		onSelection: (pcd: Blob) => void
 	}
 
