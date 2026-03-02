@@ -3,6 +3,7 @@
 	import { useThrelte } from '@threlte/core'
 	import { useInteractivity } from '@threlte/extras'
 	import { untrack } from 'svelte'
+	import { Not } from 'koota'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import earcut from 'earcut'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
@@ -177,7 +178,7 @@
 
 		const enclosedPoints: number[] = []
 
-		for (const pointsEntity of world.query(traits.Points)) {
+		for (const pointsEntity of world.query(traits.Points, Not(lassoTraits.LassoEnclosedPoints))) {
 			const geometry = pointsEntity.get(traits.BufferGeometry)
 
 			if (!geometry) return
@@ -256,6 +257,24 @@
 	})
 
 	const lassos = useQuery(lassoTraits.Lasso)
+
+	$effect(() => {
+		if (!controls.current) return
+
+		const currentControls = controls.current
+
+		const { minPolarAngle, maxPolarAngle } = currentControls
+
+		// Locks the camera to top down while this component is mounted
+		currentControls.polarAngle = 0
+		currentControls.minPolarAngle = 0
+		currentControls.maxPolarAngle = 0
+
+		return () => {
+			currentControls.minPolarAngle = minPolarAngle
+			currentControls.maxPolarAngle = maxPolarAngle
+		}
+	})
 
 	// On unmount, destroy all lasso related entities
 	$effect(() => {

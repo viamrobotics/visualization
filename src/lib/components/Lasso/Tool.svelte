@@ -12,14 +12,18 @@
 	import type { BufferGeometry } from 'three'
 
 	interface Props {
+		/** Whether to auto-enable lasso mode when the component mounts */
+		enabled?: boolean
+
+		/** Fires  */
 		onSelection: (pcd: Blob) => void
 	}
 
-	let { onSelection }: Props = $props()
+	let { enabled = false, onSelection }: Props = $props()
 
 	const world = useWorld()
 	const settings = useSettings()
-	const enabled = $derived(settings.current.interactionMode === 'lasso')
+	const isLassoMode = $derived(settings.current.interactionMode === 'lasso')
 
 	const onCommitClick = () => {
 		const entities = world.query(lassoTraits.LassoEnclosedPoints)
@@ -46,22 +50,28 @@
 			}
 		}
 	}
+
+	$effect(() => {
+		if (enabled) {
+			settings.current.interactionMode = 'lasso'
+		}
+	})
 </script>
 
 <Portal id="dashboard">
 	<fieldset>
 		<DashboardButton
-			active={enabled}
+			active={isLassoMode}
 			icon="selection-drag"
-			description="{enabled ? 'Disable' : 'Enable'} lasso selection"
+			description="{isLassoMode ? 'Disable' : 'Enable'} lasso selection"
 			onclick={() => {
-				settings.current.interactionMode = enabled ? 'navigate' : 'lasso'
+				settings.current.interactionMode = isLassoMode ? 'navigate' : 'lasso'
 			}}
 		/>
 	</fieldset>
 </Portal>
 
-{#if enabled}
+{#if isLassoMode}
 	<Lasso />
 
 	<Portal id="dom">
