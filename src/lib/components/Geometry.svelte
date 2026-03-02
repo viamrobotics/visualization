@@ -174,14 +174,16 @@
 					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
 				/>
 			{:else}
+				{@const currentOpacity = opacity.current ?? 0.7}
 				<T.MeshToonMaterial
 					{color}
 					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={(opacity.current ?? 0.7) < 1}
-					opacity={opacity.current ?? 0.7}
+					transparent={currentOpacity < 1}
+					depthWrite={currentOpacity === 1}
+					opacity={currentOpacity}
 				/>
 
-				{#if geo && renderMode.includes('colliders')}
+				{#if geo && (renderMode.includes('colliders') || !model)}
 					<T.LineSegments
 						raycast={() => null}
 						bvh={{ enabled: false }}

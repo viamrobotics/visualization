@@ -1,5 +1,14 @@
 # motion-tools
 
+## 1.11.1
+
+### Patch Changes
+
+- 3f609ff: Reposition joint limits widgets above camera feeds, centered, and remove tilt
+- a5135ea: Fix: detached mesh reference when performing bvh cleanup
+- 828c53f: Standardize draw APIs
+- 8f79b03: Use `three-mesh-bvh` directly
+
 ## 1.11.0
 
 ### Minor Changes
