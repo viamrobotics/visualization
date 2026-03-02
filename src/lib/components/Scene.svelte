@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Vector3 } from 'three'
+	import { ShaderMaterial, Vector3 } from 'three'
 	import { T } from '@threlte/core'
 	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import Entities from '$lib/components/Entities.svelte'
@@ -76,11 +76,16 @@
 
 		{#if !$isPresenting && settings.current.grid}
 			<Grid
+				oncreate={(ref) => {
+					const material = ref.material as ShaderMaterial
+					material.depthWrite = false
+				}}
 				raycast={() => null}
 				bvh={{ enabled: false }}
 				plane="xy"
 				sectionColor="#333"
 				infiniteGrid
+				renderOrder={999}
 				cellSize={settings.current.gridCellSize}
 				sectionSize={settings.current.gridSectionSize}
 				fadeOrigin={new Vector3()}
