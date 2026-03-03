@@ -48,10 +48,7 @@ for (const file of distFiles) {
 		})
 
 		const bundledCode = bundle.outputFiles[0].text
-		const escaped = bundledCode
-			.replace(/\\/g, '\\\\')
-			.replace(/`/g, '\\`')
-			.replace(/\$/g, '\\$')
+		const escaped = bundledCode.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
 
 		const replacement = [
 			`(function() {`,
