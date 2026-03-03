@@ -19,6 +19,7 @@ export const setupMachineConfig = async (page: Page, testConfig: TestConfig) => 
 
 	await expect(page.getByPlaceholder(/host/iu)).toBeVisible()
 	await page.getByPlaceholder(/host/iu).fill(testConfig.host)
+	await page.getByPlaceholder(/host/iu).blur()
 	await page.getByRole('button', { name: 'Expand connection config' }).click()
 	await expect(page.getByPlaceholder(/part id/iu)).toBeVisible()
 	await page.getByPlaceholder(/part id/iu).fill(testConfig.partId)
@@ -29,5 +30,5 @@ export const setupMachineConfig = async (page: Page, testConfig: TestConfig) => 
 	await expect(page.getByPlaceholder(/signaling address/iu)).toBeVisible()
 	await page.getByPlaceholder(/signaling address/iu).fill(testConfig.signalingAddress)
 
-	await page.getByLabel('Close connection configs panel').click()
+	await page.getByRole('button', { name: 'Close connection configs panel' }).click()
 }

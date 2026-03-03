@@ -69,10 +69,7 @@
 						placeholder="Host"
 						value={config.host}
 						on:change={(event) => {
-							connectionConfigs.update(index, {
-								...config,
-								host: (event.target as HTMLInputElement).value,
-							})
+							connectionConfigs.current[index].host = (event.target as HTMLInputElement).value
 						}}
 					/>
 
@@ -108,10 +105,7 @@
 								placeholder="Part ID"
 								value={config.partId}
 								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										partId: (event.target as HTMLInputElement).value,
-									})
+									connectionConfigs.current[index].partId = (event.target as HTMLInputElement).value
 								}}
 							/>
 						</div>
@@ -126,10 +120,9 @@
 								placeholder="API key ID"
 								value={config.apiKeyId}
 								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										apiKeyId: (event.target as HTMLInputElement).value,
-									})
+									connectionConfigs.current[index].apiKeyId = (
+										event.target as HTMLInputElement
+									).value
 								}}
 							/>
 						</div>
@@ -144,10 +137,9 @@
 								placeholder="API key value"
 								value={config.apiKeyValue}
 								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										apiKeyValue: (event.target as HTMLInputElement).value,
-									})
+									connectionConfigs.current[index].apiKeyValue = (
+										event.target as HTMLInputElement
+									).value
 								}}
 							/>
 						</div>
@@ -162,10 +154,9 @@
 								placeholder="Signaling address"
 								value={config.signalingAddress}
 								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										signalingAddress: (event.target as HTMLInputElement).value,
-									})
+									connectionConfigs.current[index].signalingAddress = (
+										event.target as HTMLInputElement
+									).value
 								}}
 							/>
 						</div>
