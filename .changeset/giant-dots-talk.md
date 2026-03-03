@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-fix: have PCD component take in already loaded positions and colors
+fix: have PCD component load pcd not in web worker

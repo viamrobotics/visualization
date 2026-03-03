@@ -1,32 +1,20 @@
 <script lang="ts">
 	import { traits, useWorld } from '$lib/ecs'
-	import type { Entity } from 'koota'
 	import { createBufferGeometry } from '$lib/attribute'
+	import { parsePcd } from '$lib/loaders/pcd'
 
 	interface Props {
-		positions: Float32Array
-		colors: Uint8Array | null
+		data: Uint8Array
 	}
 
-	let { positions, colors }: Props = $props()
+	let { data }: Props = $props()
 
 	const world = useWorld()
 
-	let entity: Entity
-
 	$effect(() => {
+		const { positions, colors } = parsePcd(data)
 		const geometry = createBufferGeometry(positions, colors)
 
-		entity = world.spawn(
-			traits.Name('Random points'),
-			traits.Points,
-			traits.BufferGeometry(geometry)
-		)
-
-		return () => {
-			if (entity && world.has(entity)) {
-				entity.destroy()
-			}
-		}
+		world.spawn(traits.Name('Random points'), traits.Points, traits.BufferGeometry(geometry))
 	})
 </script>
