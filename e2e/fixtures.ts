@@ -29,5 +29,5 @@ export const setupMachineConfig = async (page: Page, testConfig: TestConfig) => 
 	await expect(page.getByPlaceholder(/signaling address/iu)).toBeVisible()
 	await page.getByPlaceholder(/signaling address/iu).fill(testConfig.signalingAddress)
 
-	await page.getByLabel('Close connection configs panel').click()
+	await page.getByLabel('Close connection configs panel').first().click()
 }

@@ -67,13 +67,7 @@
 					<Input
 						class="input w-full grow text-xs"
 						placeholder="Host"
-						value={config.host}
-						on:change={(event) => {
-							connectionConfigs.update(index, {
-								...config,
-								host: (event.target as HTMLInputElement).value,
-							})
-						}}
+						bind:value={config.host}
 					/>
 
 					{#if !connectionConfigs.isEnvConfig(config)}
@@ -106,13 +100,7 @@
 							<Input
 								id="{config.host}-partId"
 								placeholder="Part ID"
-								value={config.partId}
-								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										partId: (event.target as HTMLInputElement).value,
-									})
-								}}
+								bind:value={config.partId}
 							/>
 						</div>
 
@@ -124,13 +112,7 @@
 							<Input
 								id="{config.host}-apiKeyId"
 								placeholder="API key ID"
-								value={config.apiKeyId}
-								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										apiKeyId: (event.target as HTMLInputElement).value,
-									})
-								}}
+								bind:value={config.apiKeyId}
 							/>
 						</div>
 
@@ -142,13 +124,7 @@
 							<Input
 								id="{config.host}-apiKeyValue"
 								placeholder="API key value"
-								value={config.apiKeyValue}
-								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										apiKeyValue: (event.target as HTMLInputElement).value,
-									})
-								}}
+								bind:value={config.apiKeyValue}
 							/>
 						</div>
 
@@ -160,13 +136,7 @@
 							<Input
 								id="{config.host}-address"
 								placeholder="Signaling address"
-								value={config.signalingAddress}
-								on:change={(event) => {
-									connectionConfigs.update(index, {
-										...config,
-										signalingAddress: (event.target as HTMLInputElement).value,
-									})
-								}}
+								bind:value={config.signalingAddress}
 							/>
 						</div>
 					</div>
