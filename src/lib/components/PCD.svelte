@@ -1,29 +1,27 @@
 <script lang="ts">
-	import { parsePcdInWorker } from '$lib/lib'
 	import { traits, useWorld } from '$lib/ecs'
-	import { createBufferGeometry } from '$lib/attribute'
 	import type { Entity } from 'koota'
+	import { createBufferGeometry } from '$lib/attribute'
 
 	interface Props {
-		data: Uint8Array
+		positions: Float32Array
+		colors: Uint8Array | null
 	}
 
-	let { data }: Props = $props()
+	let { positions, colors }: Props = $props()
 
 	const world = useWorld()
 
 	let entity: Entity
 
 	$effect(() => {
-		parsePcdInWorker(data).then(({ positions, colors }) => {
-			const geometry = createBufferGeometry(positions, colors)
+		const geometry = createBufferGeometry(positions, colors)
 
-			entity = world.spawn(
-				traits.Name('Random points'),
-				traits.Points,
-				traits.BufferGeometry(geometry)
-			)
-		})
+		entity = world.spawn(
+			traits.Name('Random points'),
+			traits.Points,
+			traits.BufferGeometry(geometry)
+		)
 
 		return () => {
 			if (entity && world.has(entity)) {
