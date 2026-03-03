@@ -57,9 +57,8 @@ export const providePartConfig = (
 
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
 		const newConfig = current
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		newConfig.fragment_mods ??= []
+
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
 			fragmentMod = {
@@ -97,9 +96,8 @@ export const providePartConfig = (
 		frameGeometry?: Frame['geometry']
 	) => {
 		const newConfig = current
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		newConfig.fragment_mods ??= []
+
 		let fragmentMod = newConfig.fragment_mods.find(
 			(mod: { fragment_id: string }) => mod.fragment_id === fragmentId
 		)
@@ -213,9 +211,8 @@ export const providePartConfig = (
 
 	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
 		const newConfig = current
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		newConfig.fragment_mods ??= []
+
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
