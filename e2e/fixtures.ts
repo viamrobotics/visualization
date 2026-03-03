@@ -10,7 +10,7 @@ interface TestConfig {
 }
 
 export const setupMachineConfig = async (page: Page, testConfig: TestConfig) => {
-	const machineConfigButton = page.getByRole('radio', { name: 'Machine connection configs' })
+	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
 	await expect(machineConfigButton).toBeVisible()
 	await machineConfigButton.click()
 
