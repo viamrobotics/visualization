@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 import { useFrames } from './useFrames.svelte'
 
 interface FramelessComponents {

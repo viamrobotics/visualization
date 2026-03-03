@@ -2,7 +2,7 @@ import { type Frame, createFrame } from '$lib/frame'
 import { createPoseFromFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue } from '@viamrobotics/sdk'
-import { createAppMutation, createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
+import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('part-config-context')
@@ -11,6 +11,7 @@ export interface PartConfig {
 	components: { name: string; frame?: Frame }[]
 	fragment_mods?: {
 		fragment_id: string
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		mods: any[]
 	}[]
 }
