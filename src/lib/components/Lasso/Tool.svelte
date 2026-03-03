@@ -61,8 +61,6 @@
 	})
 
 	const rect = new ElementRect(() => dom)
-
-	$inspect(rect.height)
 </script>
 
 <Portal id="dashboard">
