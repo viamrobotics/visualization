@@ -64,6 +64,7 @@
 
 <T
 	is={line}
+	isAxesHelper={true}
 	{...rest}
 	bvh={{ enabled: false }}
 >
