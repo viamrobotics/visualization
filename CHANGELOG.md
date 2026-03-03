@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.12.2
+
+### Patch Changes
+
+- 3cddd9e: Create inline versions of workers to work outside of project boundaries
+- 4dbb986: fix: force orthographic cam mode when enter lasso tool
+
 ## 1.12.1
 
 ### Patch Changes
