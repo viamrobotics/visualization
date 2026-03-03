@@ -60,8 +60,9 @@ export const provide3DModels = (partID: () => string) => {
 							if (isInstanceOf(object, 'Mesh')) {
 								const { material } = object
 
+								console.log(material)
 								if (isInstanceOf(material, 'MeshStandardMaterial')) {
-									material.roughness = 0.1
+									material.roughness = 0.3
 									material.metalness = 0.1
 								}
 							}
