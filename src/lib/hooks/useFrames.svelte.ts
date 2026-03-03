@@ -41,10 +41,6 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const frames = $derived.by(() => {
-		if (isEditMode) {
-			return configFrames.current
-		}
-
 		const frames: Record<string, Transform> = {}
 
 		for (const { frame } of query.data ?? []) {
@@ -55,7 +51,14 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
-		return frames
+		if (!isEditMode) {
+			return frames
+		}
+
+		return {
+			...frames,
+			...configFrames.current,
+		}
 	})
 
 	const current = $derived(Object.values(frames))

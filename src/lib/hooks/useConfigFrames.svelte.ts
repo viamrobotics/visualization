@@ -25,7 +25,7 @@ export const provideConfigFrames = () => {
 	})
 
 	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
+		const { components } = partConfig.current
 
 		const results: Record<string, Transform> = {}
 		const unsetResults: string[] = []
@@ -43,8 +43,7 @@ export const provideConfigFrames = () => {
 	})
 
 	const [fragmentFrames, fragmentUnsetFrameNames] = $derived.by(() => {
-		const { fragment_mods: fragmentMods = [] } =
-			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
+		const { fragment_mods: fragmentMods = [] } = partConfig.current
 		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
 
 		const results: Record<string, Transform> = {}
