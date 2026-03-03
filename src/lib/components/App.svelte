@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
+	import { PortalTarget } from '@threlte/extras'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import type { Struct } from '@viamrobotics/sdk'
@@ -138,6 +139,8 @@
 							<Camera name={cameraName} />
 						{/each}
 					{/if}
+
+					<PortalTarget id="dom" />
 				</div>
 			{/snippet}
 		</SceneProviders>

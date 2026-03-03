@@ -370,7 +370,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 					if (components?.case === 'listValue') {
 						for (const component of components.value.values) {
 							if (component.kind.case === 'structValue') {
-								const componentName = component.kind.value.fields['name'].kind
+								const componentName = component.kind.value.fields['name']?.kind
 								if (componentName.case === 'stringValue') {
 									componentNameToFragmentId[componentName.value] = fragmentId
 								}
