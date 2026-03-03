@@ -2,4 +2,4 @@
 "@viamrobotics/motion-tools": patch
 ---
 
-Fix transparency flickering
+[APP-15201] (1/2) Clean up usePartConfig

@@ -48,6 +48,8 @@
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const center = useTrait(() => entity, traits.Center)
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+	const materialProps = useTrait(() => entity, traits.Material)
+	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 
 	const geometryType = $derived.by(() => {
 		if (box.current) return 'box'
@@ -137,6 +139,7 @@
 			is={mesh}
 			name={entity}
 			userData.name={name}
+			renderOrder={renderOrder.current}
 		>
 			{#if model && renderMode.includes('model')}
 				<T is={model} />
@@ -172,6 +175,7 @@
 					is={LineMaterial}
 					{color}
 					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+					depthTest={materialProps.current?.depthTest}
 				/>
 			{:else}
 				{@const currentOpacity = opacity.current ?? 0.7}
@@ -181,6 +185,7 @@
 					transparent={currentOpacity < 1}
 					depthWrite={currentOpacity === 1}
 					opacity={currentOpacity}
+					depthTest={materialProps.current?.depthTest}
 				/>
 
 				{#if geo && (renderMode.includes('colliders') || !model)}

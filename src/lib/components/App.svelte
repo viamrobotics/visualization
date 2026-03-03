@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import { Canvas } from '@threlte/core'
+	import { PortalTarget } from '@threlte/extras'
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import type { Struct } from '@viamrobotics/sdk'
@@ -16,7 +17,6 @@
 	import FileDrop from './FileDrop/FileDrop.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useViamClient } from '@viamrobotics/svelte-sdk'
 	import LiveUpdatesBanner from './overlay/LiveUpdatesBanner.svelte'
 	import ArmPositions from './overlay/widgets/ArmPositions.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -32,10 +32,10 @@
 	import { useXR } from '@threlte/xr'
 
 	interface LocalConfigProps {
-		getLocalPartConfig: () => Struct
-		setLocalPartConfig: (config: Struct) => void
+		current: Struct
 		isDirty: boolean
-		getComponentToFragId: () => Record<string, string>
+		componentToFragId: Record<string, string>
+		setLocalPartConfig: (config: Struct) => void
 	}
 
 	interface Props {
@@ -64,7 +64,6 @@
 
 	provideWorld()
 
-	const appClient = useViamClient()
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 	const currentRobotCameraWidgets = $derived(settings.current.openCameraWidgets[partID] || [])
@@ -81,25 +80,10 @@
 
 	let root = $state.raw<HTMLElement>()
 
-	providePartConfig(() => {
-		if (localConfigProps) {
-			return {
-				appEmbeddedPartConfigProps: {
-					isDirty: localConfigProps.isDirty,
-					getLocalPartConfig: () => localConfigProps.getLocalPartConfig(),
-					setLocalPartConfig: (config: Struct) => localConfigProps.setLocalPartConfig(config),
-					getComponentToFragId: () => localConfigProps.getComponentToFragId(),
-				},
-			}
-		} else {
-			return {
-				standalonePartConfigProps: {
-					viamClient: () => appClient?.current,
-					partID: () => partID,
-				},
-			}
-		}
-	})
+	providePartConfig(
+		() => partID,
+		() => localConfigProps
+	)
 
 	$effect.pre(() => {
 		if (localConfigProps) {
@@ -155,6 +139,8 @@
 							<Camera name={cameraName} />
 						{/each}
 					{/if}
+
+					<PortalTarget id="dom" />
 				</div>
 			{/snippet}
 		</SceneProviders>

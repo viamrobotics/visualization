@@ -1,5 +1,29 @@
 # motion-tools
 
+## 1.12.2
+
+### Patch Changes
+
+- 3cddd9e: Create inline versions of workers to work outside of project boundaries
+- 4dbb986: fix: force orthographic cam mode when enter lasso tool
+
+## 1.12.1
+
+### Patch Changes
+
+- f9c41ec: Fix: Lasso object layout
+
+## 1.12.0
+
+### Minor Changes
+
+- 247d5c3: Add `<LassoTool>` plugin
+
+### Patch Changes
+
+- 0fac3d8: Fix: Render lasso lines on top of other objects
+- 71e14fa: Fix transparency flickering
+
 ## 1.11.1
 
 ### Patch Changes
