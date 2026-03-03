@@ -10,6 +10,7 @@
 		defaultSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
+		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
 		children: Snippet
 	}
@@ -17,20 +18,20 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
-		defaultPosition,
 		exitable = true,
 		isOpen = $bindable(false),
 		children,
+		...props
 	}: Props = $props()
 
 	const id = $props.id()
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		defaultPosition,
 		resizable: false,
 		allowOverflow: false,
 		open: isOpen,
+		...props,
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))

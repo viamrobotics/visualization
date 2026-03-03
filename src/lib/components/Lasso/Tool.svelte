@@ -10,6 +10,8 @@
 	import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js'
 	import { createBinaryPCD } from '$lib/pcd'
 	import type { BufferGeometry } from 'three'
+	import { useThrelte } from '@threlte/core'
+	import { ElementRect } from 'runed'
 
 	interface Props {
 		/** Whether to auto-enable lasso mode when the component mounts */
@@ -21,6 +23,7 @@
 
 	let { enabled = false, onSelection }: Props = $props()
 
+	const { dom } = useThrelte()
 	const world = useWorld()
 	const settings = useSettings()
 	const isLassoMode = $derived(settings.current.interactionMode === 'lasso')
@@ -56,6 +59,10 @@
 			settings.current.interactionMode = 'lasso'
 		}
 	})
+
+	const rect = new ElementRect(() => dom)
+
+	$inspect(rect.height)
 </script>
 
 <Portal id="dashboard">
@@ -71,7 +78,7 @@
 	</fieldset>
 </Portal>
 
-{#if isLassoMode}
+{#if isLassoMode && rect.height > 0 && rect.width > 0}
 	<Lasso />
 
 	<Portal id="dom">
@@ -79,8 +86,9 @@
 			isOpen
 			exitable={false}
 			title="Lasso"
+			strategy="absolute"
 			defaultSize={{ width: 445, height: 100 }}
-			defaultPosition={{ x: window.innerWidth / 2 - 200, y: window.innerHeight - 10 - 100 }}
+			defaultPosition={{ x: rect.width / 2 - 200, y: rect.height - 10 - 100 }}
 		>
 			<div class="flex items-center gap-4 p-4 text-xs">
 				Shift + click and drag to make a lasso selection.
