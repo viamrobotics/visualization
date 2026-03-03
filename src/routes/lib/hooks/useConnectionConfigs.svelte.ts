@@ -16,10 +16,9 @@ const key = Symbol('connection-config-context')
 const activeConfig = new PersistedState<number>('active-connection-config', 0)
 
 interface Context {
-	current: readonly ConnectionConfig[]
+	current: ConnectionConfig[]
 	add: (config?: ConnectionConfig) => void
 	remove: (index: number) => void
-	update: (index: number, config: ConnectionConfig) => void
 	isEnvConfig: (config: ConnectionConfig) => boolean
 }
 
@@ -52,10 +51,6 @@ export const provideConnectionConfigs = () => {
 		connectionConfigs.splice(index - envConfigs.length, 1)
 	}
 
-	const update = (index: number, config: ConnectionConfig) => {
-		connectionConfigs[index - envConfigs.length] = config
-	}
-
 	const isEnvConfig = (config: ConnectionConfig) => {
 		return envConfigs.some((value) => isEqual(config, value))
 	}
@@ -68,7 +63,6 @@ export const provideConnectionConfigs = () => {
 		},
 		add,
 		remove,
-		update,
 		isEnvConfig,
 	})
 }
