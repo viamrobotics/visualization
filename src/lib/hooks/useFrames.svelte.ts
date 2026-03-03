@@ -5,7 +5,7 @@ import type { ConfigurableTrait, Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
 import { createTransformFromFrame, type Frame } from '$lib/frame'
-import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPose } from '$lib/transform'
 import { useResourceByName } from './useResourceByName.svelte'
@@ -71,7 +71,7 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
+		const { components } = partConfig.current
 
 		const results: Record<string, FrameTransform> = {}
 		const unsetResults: string[] = []
@@ -92,8 +92,7 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const [fragmentFrames, fragmentUnsetFrameNames] = $derived.by(() => {
-		const { fragment_mods: fragmentMods = [] } =
-			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
+		const { fragment_mods: fragmentMods = [] } = partConfig.current
 		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
 
 		const results: Record<string, FrameTransform> = {}
