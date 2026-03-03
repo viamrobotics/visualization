@@ -2,7 +2,7 @@ import { type Frame, createFrame } from '$lib/frame'
 import { createPoseFromFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue } from '@viamrobotics/sdk'
-import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
+import { createAppMutation, createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('part-config-context')
@@ -49,8 +49,8 @@ export const providePartConfig = (
 	params: () => AppEmbeddedPartConfigProps | undefined
 ) => {
 	const props = $derived(params())
+	const config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
 
-	let config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
 	const current = $derived(
 		(config.current.toJson?.() ?? { components: [] }) as unknown as PartConfig
 	)
