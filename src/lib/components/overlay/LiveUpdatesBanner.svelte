@@ -9,8 +9,6 @@
 	const isMacDevice = /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 	const iconName = isMacDevice ? ('apple-keyboard-command' as const) : ('chevron-up' as const)
 	const iconLabel = isMacDevice ? 'command' : 'control'
-
-	$inspect(partConfig.isDirty)
 </script>
 
 <svelte:window

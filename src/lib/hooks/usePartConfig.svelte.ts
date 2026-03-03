@@ -336,7 +336,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 	})
 
 	let networkPartConfig = $derived(configJSON ? Struct.fromJson(configJSON) : undefined)
-	let current = $state<Struct>()
+	let current = $state.raw<Struct>()
 	let isDirty = $state(false)
 
 	const hasEditPermissions = $derived(networkPartConfig !== undefined)
