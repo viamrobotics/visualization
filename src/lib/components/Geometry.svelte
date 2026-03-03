@@ -175,7 +175,7 @@
 					is={LineMaterial}
 					{color}
 					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
-					depthTest={materialProps.current?.depthTest}
+					depthTest={materialProps.current?.depthTest ?? true}
 				/>
 			{:else}
 				{@const currentOpacity = opacity.current ?? 0.7}
@@ -185,7 +185,7 @@
 					transparent={currentOpacity < 1}
 					depthWrite={currentOpacity === 1}
 					opacity={currentOpacity}
-					depthTest={materialProps.current?.depthTest}
+					depthTest={materialProps.current?.depthTest ?? true}
 				/>
 
 				{#if geo && (renderMode.includes('colliders') || !model)}
