@@ -66,7 +66,7 @@
 				class={[
 					'flex items-center gap-2 border px-2.5 py-1.5 text-xs ',
 					{
-						'border-gray-5': !connected && !disconnected,
+						'border-gray-5 bg-white': !connected && !disconnected,
 						'border-success-medium bg-success-light text-success-dark hover:bg-[#D6F2D9] focus:bg-[#D6F2D9]':
 							connected,
 						'border-danger-medium bg-danger-light text-danger-dark hover:bg-[#F8E1DF] focus:bg-[#F8E1DF]':
