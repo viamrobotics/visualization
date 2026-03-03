@@ -2,7 +2,7 @@ import { type Frame, createFrame } from '$lib/frame'
 import { createPoseFromFrame } from '$lib/transform'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue } from '@viamrobotics/sdk'
-import { useViamClient } from '@viamrobotics/svelte-sdk'
+import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('part-config-context')
@@ -275,12 +275,8 @@ export const providePartConfig = (
 				createPartFrame(componentName)
 			}
 		},
-		save: () => {
-			config.save?.()
-		},
-		discardChanges: () => {
-			config.discardChanges?.()
-		},
+		save: () => config.save?.(),
+		discardChanges: () => config.discardChanges?.(),
 	})
 }
 
@@ -319,67 +315,69 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 }
 
 const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
-	const appClient = useViamClient()
-	const viamClient = $derived(appClient.current?.appClient)
+	const partQuery = createAppQuery('getRobotPart', () => [partID()] as const)
+	const partName = $derived(partQuery.data?.part?.name)
 
-	let networkPartConfig = $state.raw<Struct>({} as Struct)
+	const configJSON = $derived.by(() => {
+		if (!partQuery.data?.configJson) {
+			return {}
+		}
+
+		try {
+			return JSON.parse(partQuery.data.configJson)
+		} catch {
+			return {}
+		}
+	})
+
+	let networkPartConfig = $derived(Struct.fromJson(configJSON))
 	let current = $state.raw<Struct>({} as Struct)
-	let partName = $state<string>()
 	let isDirty = $state(false)
-	let hasEditPermissions = $state(false)
-	let componentNameToFragmentId = $state<Record<string, string>>({})
 
-	$effect.pre(() => {
-		const initLocalConfig = async () => {
-			const partResponse = await viamClient?.getRobotPart(partID())
+	const hasEditPermissions = $derived(networkPartConfig !== undefined)
 
-			if (JSON.parse(partResponse?.configJson ?? 'null') === null) {
-				// no config returned here indicates this api key has no permission to update config
-				return
+	const fragmentQueries = $derived(
+		((configJSON.fragments ?? []) as (string | { id: string })[]).map((fragmentId) => {
+			const id = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
+			return createAppQuery('getFragment', () => [id] as const)
+		})
+	)
+
+	const componentNameToFragmentId = $derived.by(() => {
+		const results: Record<string, string> = {}
+		for (const query of fragmentQueries) {
+			if (!query.data) {
+				continue
 			}
-			hasEditPermissions = true
 
-			const configJson = JSON.parse(partResponse?.configJson ?? '{}')
-			networkPartConfig = Struct.fromJson(configJson)
-			current = Struct.fromJson(configJson)
+			const fragmentId = query.data.id
+			const components = query.data?.fragment?.fields['components']?.kind
 
-			partName = partResponse?.part?.name
-			componentNameToFragmentId = {}
-
-			const fragmentRequests = []
-
-			if (configJson.fragments) {
-				for (const fragmentId of configJson.fragments) {
-					//TODO: right now the json could be just a list of strings or an object with an id prop
-					const fragId = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
-					fragmentRequests.push(viamClient?.getFragment(fragId))
-				}
-
-				const fragementResponses = await Promise.all(fragmentRequests)
-
-				for (const fragmentResponse of fragementResponses) {
-					const fragmentId = fragmentResponse?.id
-					if (!fragmentId) {
-						continue
-					}
-					const components = fragmentResponse?.fragment?.fields['components']?.kind
-
-					if (components?.case === 'listValue') {
-						for (const component of components.value.values) {
-							if (component.kind.case === 'structValue') {
-								const componentName = component.kind.value.fields['name']?.kind
-								if (componentName.case === 'stringValue') {
-									componentNameToFragmentId[componentName.value] = fragmentId
-								}
-							}
+			if (components?.case === 'listValue') {
+				for (const component of components.value.values) {
+					if (component.kind.case === 'structValue') {
+						const componentName = component.kind.value.fields['name']?.kind
+						if (componentName.case === 'stringValue') {
+							results[componentName.value] = fragmentId
 						}
 					}
 				}
 			}
 		}
 
-		initLocalConfig()
+		return results
 	})
+
+	$effect.pre(() => {
+		if (!networkPartConfig) {
+			// no config returned here indicates this api key has no permission to update config
+			return
+		}
+
+		current = networkPartConfig
+	})
+
+	const updateRobotPartMutation = createAppMutation('updateRobotPart')
 
 	return {
 		get current() {
@@ -406,16 +404,11 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 			}
 
 			networkPartConfig = current
-			await viamClient?.updateRobotPart(partID(), partName, current)
-
+			await updateRobotPartMutation.mutateAsync([partID(), partName, current])
 			isDirty = false
 		},
 
 		discardChanges() {
-			if (!networkPartConfig) {
-				return
-			}
-
 			current = networkPartConfig
 			isDirty = false
 		},
