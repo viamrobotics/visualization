@@ -55,6 +55,12 @@
 	}
 
 	$effect(() => {
+		if (isLassoMode) {
+			settings.current.cameraMode = 'orthographic'
+		}
+	})
+
+	$effect(() => {
 		if (enabled) {
 			settings.current.interactionMode = 'lasso'
 		}
