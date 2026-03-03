@@ -63,6 +63,7 @@
 	<div class="text-default relative">
 		<div class="flex items-center">
 			<button
+				aria-label="Machine connection configs"
 				class={[
 					'flex items-center gap-2 border px-2.5 py-1.5 text-xs ',
 					{
