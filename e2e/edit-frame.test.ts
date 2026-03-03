@@ -187,8 +187,8 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// RESTORE THE ORIGINAL FRAME
-	await expect(page.getByText('None', { exact: true })).toBeVisible()
-	await page.getByText('None', { exact: true }).click()
+	await expect(page.getByText('None', { exact: true }).first()).toBeVisible()
+	await page.getByText('None', { exact: true }).first().click()
 
 	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
 	await page.getByLabel('mutable local position x coordinate').fill('0')
