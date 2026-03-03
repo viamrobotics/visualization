@@ -1,5 +1,6 @@
 import { type Frame, createFrame } from '$lib/frame'
 import { createPoseFromFrame } from '$lib/transform'
+import type { JsonObject } from '@bufbuild/protobuf'
 import { Struct, Pose } from '@viamrobotics/sdk'
 import type { JsonValue } from '@viamrobotics/sdk'
 import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
@@ -52,12 +53,14 @@ export const providePartConfig = (
 	const props = $derived(params())
 	const config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
 
-	const current = $derived(
-		(config.current.toJson?.() ?? { components: [] }) as unknown as PartConfig
-	)
+	const getCurrent = () => {
+		return (config.current.toJson?.() ?? { components: [] }) as unknown as PartConfig
+	}
+
+	const current = $derived(getCurrent())
 
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = current
+		const newConfig = getCurrent()
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
@@ -81,7 +84,7 @@ export const providePartConfig = (
 	}
 
 	const createPartFrame = (componentName: string) => {
-		const newConfig = current
+		const newConfig = getCurrent()
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
 		if (component) {
 			component.frame = createFrame()
@@ -96,7 +99,7 @@ export const providePartConfig = (
 		framePosition: Pose,
 		frameGeometry?: Frame['geometry']
 	) => {
-		const newConfig = current
+		const newConfig = getCurrent()
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find(
@@ -161,11 +164,10 @@ export const providePartConfig = (
 		pose: Pose,
 		geometry?: Frame['geometry']
 	) => {
-		const newConfig = current
-		const component = newConfig?.components?.find(
-			(comp: { name: string }) => comp.name === componentName
-		)
+		const newConfig = getCurrent()
+		const component = newConfig.components?.find(({ name }) => name === componentName)
 
+		console.log('hi', newConfig, componentName)
 		if (!component) {
 			return
 		}
@@ -199,7 +201,7 @@ export const providePartConfig = (
 	}
 
 	const deletePartFrame = (componentName: string) => {
-		const newConfig = current
+		const newConfig = getCurrent()
 		const component = newConfig?.components?.find(
 			(comp: { name: string }) => comp.name === componentName
 		)
@@ -211,7 +213,7 @@ export const providePartConfig = (
 	}
 
 	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = current
+		const newConfig = getCurrent()
 		newConfig.fragment_mods ??= []
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -316,31 +318,33 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 }
 
 const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
-	const partQuery = createAppQuery('getRobotPart', () => [partID()] as const)
+	const partQuery = createAppQuery('getRobotPart', () => [partID()] as const, {
+		refetchInterval: false,
+	})
 	const partName = $derived(partQuery.data?.part?.name)
 
 	const configJSON = $derived.by(() => {
 		if (!partQuery.data?.configJson) {
-			return {}
+			return undefined
 		}
 
 		try {
-			return JSON.parse(partQuery.data.configJson)
+			return JSON.parse(partQuery.data.configJson) as JsonObject
 		} catch {
-			return {}
+			return undefined
 		}
 	})
 
-	let networkPartConfig = $derived(Struct.fromJson(configJSON))
-	let current = $state.raw<Struct>({} as Struct)
+	let networkPartConfig = $derived(configJSON ? Struct.fromJson(configJSON) : undefined)
+	let current = $state<Struct>()
 	let isDirty = $state(false)
 
 	const hasEditPermissions = $derived(networkPartConfig !== undefined)
 
 	const fragmentQueries = $derived(
-		((configJSON.fragments ?? []) as (string | { id: string })[]).map((fragmentId) => {
+		((configJSON?.fragments ?? []) as (string | { id: string })[]).map((fragmentId) => {
 			const id = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
-			return createAppQuery('getFragment', () => [id] as const)
+			return createAppQuery('getFragment', () => [id] as const, { refetchInterval: false })
 		})
 	)
 
