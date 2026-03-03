@@ -1,5 +1,5 @@
 import { useEnvironment } from './useEnvironment.svelte'
-import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 import { createTransformFromFrame, type Frame } from '$lib/frame'
 
 import { Transform } from '@viamrobotics/sdk'
@@ -97,8 +97,6 @@ export const provideConfigFrames = () => {
 	})
 
 	const frameValues = $derived(Object.values(frames))
-
-	$inspect(frames)
 
 	const getParentFrameOptions = (componentName: string) => {
 		const validFrames = new Set(frameValues.map((frame) => frame.referenceFrame))
