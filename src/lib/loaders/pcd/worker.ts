@@ -1,19 +1,7 @@
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js'
+import type { Message } from './messages'
 
 const loader = new PCDLoader()
-
-export interface SuccessMessage {
-	id: number
-	positions: Float32Array<ArrayBuffer>
-	colors: Uint8Array<ArrayBuffer> | null
-}
-
-export type Message =
-	| SuccessMessage
-	| {
-			id: number
-			error: string
-	  }
 
 self.onmessage = async (event) => {
 	const { data, id } = event.data

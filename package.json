@@ -7,9 +7,10 @@
 	"scripts": {
 		"dev": "tsx server/check-bun && bun run server/server.ts",
 		"build": "vite build && npm run prepack",
-		"prepack": "svelte-kit sync && svelte-package && publint",
+		"build:worker": "node scripts/build-worker.mjs",
+		"prepack": "svelte-kit sync && npm run build:worker && svelte-package && publint",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "svelte-kit sync && npm run build:worker || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
