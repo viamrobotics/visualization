@@ -39,8 +39,10 @@
 	const point = new Vector3()
 
 	const raycast = (event: PointerEvent) => {
-		mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+		const element = event.target as HTMLElement
+		const rect = element.getBoundingClientRect()
+		mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+		mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
 		raycaster.setFromCamera(mouse, camera.current)
 		raycaster.ray.intersectPlane(plane, point)

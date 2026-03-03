@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.12.1
+
+### Patch Changes
+
+- f9c41ec: Fix: Lasso object layout
+
 ## 1.12.0
 
 ### Minor Changes
