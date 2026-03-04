@@ -201,7 +201,7 @@
 		</T>
 	{:else if showAxesHelper.current}
 		<AxesHelper
-			name={entity}
+			name={name.current}
 			width={3}
 			length={0.1}
 		/>
