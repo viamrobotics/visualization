@@ -8,6 +8,7 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('config-frames-context')
 
 interface ConfigFramesContext {
+	unsetFrames: string[]
 	current: Record<string, Transform>
 	getParentFrameOptions: (componentName: string) => string[]
 }
@@ -83,16 +84,6 @@ export const provideConfigFrames = () => {
 			...fragmentFrames,
 		}
 
-		// Remove frames that have just been deleted locally for optimistic updates
-		for (const name of configUnsetFrameNames) {
-			delete result[name]
-		}
-
-		// Remove frames that have been removed by fragment overrides
-		for (const name of fragmentUnsetFrameNames) {
-			delete result[name]
-		}
-
 		return result
 	})
 
@@ -119,8 +110,13 @@ export const provideConfigFrames = () => {
 		return Array.from(validFrames)
 	}
 
+	const unsetFrames = $derived([...new Set([...configUnsetFrameNames, ...fragmentUnsetFrameNames])])
+
 	setContext<ConfigFramesContext>(key, {
 		getParentFrameOptions,
+		get unsetFrames() {
+			return unsetFrames
+		},
 		get current() {
 			return frames
 		},
