@@ -202,9 +202,7 @@ export const providePartConfig = (
 
 	const deletePartFrame = (componentName: string) => {
 		const newConfig = getCurrent()
-		const component = newConfig?.components?.find(
-			(comp: { name: string }) => comp.name === componentName
-		)
+		const component = newConfig?.components?.find(({ name }) => name === componentName)
 		if (!component) {
 			return
 		}
