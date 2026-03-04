@@ -135,17 +135,17 @@
 			/>
 		{/if}
 
-		<T
-			is={mesh}
-			name={entity}
-			userData.name={name}
-			renderOrder={renderOrder.current}
-		>
-			{#if model && renderMode.includes('model')}
-				<T is={model} />
-			{/if}
+		{#if model && renderMode.includes('model')}
+			<T is={model} />
+		{/if}
 
-			{#if !model || renderMode.includes('colliders')}
+		{#if !model || renderMode.includes('colliders')}
+			<T
+				is={mesh}
+				name={entity}
+				userData.name={name}
+				renderOrder={renderOrder.current}
+			>
 				{#if linePositions.current}
 					<LineGeometry positions={linePositions.current} />
 				{:else if box.current}
@@ -168,40 +168,40 @@
 						{oncreate}
 					/>
 				{/if}
-			{/if}
 
-			{#if linePositions.current}
-				<T
-					is={LineMaterial}
-					{color}
-					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
-					depthTest={materialProps.current?.depthTest ?? true}
-				/>
-			{:else}
-				{@const currentOpacity = opacity.current ?? 0.7}
-				<T.MeshToonMaterial
-					{color}
-					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={currentOpacity < 1}
-					depthWrite={currentOpacity === 1}
-					opacity={currentOpacity}
-					depthTest={materialProps.current?.depthTest ?? true}
-				/>
+				{#if linePositions.current}
+					<T
+						is={LineMaterial}
+						{color}
+						width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+						depthTest={materialProps.current?.depthTest ?? true}
+					/>
+				{:else}
+					{@const currentOpacity = opacity.current ?? 0.7}
+					<T.MeshToonMaterial
+						{color}
+						side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+						transparent={currentOpacity < 1}
+						depthWrite={currentOpacity === 1}
+						opacity={currentOpacity}
+						depthTest={materialProps.current?.depthTest ?? true}
+					/>
 
-				{#if geo && (renderMode.includes('colliders') || !model)}
-					<T.LineSegments
-						raycast={() => null}
-						bvh={{ enabled: false }}
-					>
-						<T.EdgesGeometry args={[geo, 0]} />
-						<T.LineBasicMaterial color={darkenColor(color, 10)} />
-					</T.LineSegments>
+					{#if geo && (renderMode.includes('colliders') || !model)}
+						<T.LineSegments
+							raycast={() => null}
+							bvh={{ enabled: false }}
+						>
+							<T.EdgesGeometry args={[geo, 0]} />
+							<T.LineBasicMaterial color={darkenColor(color, 10)} />
+						</T.LineSegments>
+					{/if}
 				{/if}
-			{/if}
-		</T>
+			</T>
+		{/if}
 	{:else if showAxesHelper.current}
 		<AxesHelper
-			name={name.current}
+			name={entity}
 			width={3}
 			length={0.1}
 		/>
