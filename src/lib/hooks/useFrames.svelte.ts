@@ -1,6 +1,11 @@
 import { getContext, setContext, untrack } from 'svelte'
-import { Transform } from '@viamrobotics/sdk'
-import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import { MachineConnectionEvent, Transform } from '@viamrobotics/sdk'
+import {
+	useRobotClient,
+	createRobotQuery,
+	useMachineStatus,
+	useConnectionStatus,
+} from '@viamrobotics/svelte-sdk'
 import type { ConfigurableTrait, Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
@@ -22,6 +27,7 @@ export const provideFrames = (partID: () => string) => {
 	const world = useWorld()
 	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
+	const connectionStatus = useConnectionStatus(partID)
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 
@@ -51,7 +57,11 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
-		if (!isEditMode) {
+		/**
+		 * If we're not in edit mode and we have a robot connection,
+		 * we only use frames reported by the machine
+		 */
+		if (!isEditMode && connectionStatus.current !== MachineConnectionEvent.DISCONNECTED) {
 			return frames
 		}
 
