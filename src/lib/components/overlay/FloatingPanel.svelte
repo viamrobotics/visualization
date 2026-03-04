@@ -10,6 +10,7 @@
 		defaultSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
+		persistRect?: boolean
 		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
 		children: Snippet
@@ -19,6 +20,7 @@
 		title = '',
 		defaultSize = { width: 700, height: 500 },
 		exitable = true,
+		persistRect = true,
 		isOpen = $bindable(false),
 		children,
 		...props
@@ -30,6 +32,7 @@
 		defaultSize,
 		resizable: false,
 		allowOverflow: false,
+		persistRect,
 		open: isOpen,
 		...props,
 	}))
