@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ShaderMaterial, Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
+	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import Entities from '$lib/components/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
@@ -18,6 +18,7 @@
 	import PointerMissBox from './PointerMissBox.svelte'
 	import BatchedArrows from './BatchedArrows.svelte'
 	import Arrows from './Arrows/ArrowGroups.svelte'
+	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 
 	interface Props {
 		children?: Snippet
@@ -53,6 +54,8 @@
 {#if settings.current.renderStats}
 	<PerfMonitor anchorX="right" />
 {/if}
+
+<Environment url={hdrImage} />
 
 <T.Group
 	position={origin.position}

@@ -5,6 +5,7 @@ import { useSettings } from './useSettings.svelte'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import type { Group } from 'three'
+import { isInstanceOf } from '@threlte/core'
 
 const gltfLoader = new GLTFLoader()
 const dracoLoader = new DRACOLoader()
@@ -54,6 +55,18 @@ export const provide3DModels = (partID: () => string) => {
 						)
 						const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
 						next[prefix][id] = gltfModel.scene
+
+						gltfModel.scene.traverse((object) => {
+							if (isInstanceOf(object, 'Mesh')) {
+								const { material } = object
+
+								console.log(material)
+								if (isInstanceOf(material, 'MeshStandardMaterial')) {
+									material.roughness = 0.3
+									material.metalness = 0.1
+								}
+							}
+						})
 					}
 					current = next
 				} catch (error) {
