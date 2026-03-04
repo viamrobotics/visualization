@@ -30,6 +30,7 @@
 	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import Settings from '$lib/components/overlay/settings/Settings.svelte'
 	import { useXR } from '@threlte/xr'
+	import Logs from './overlay/Logs.svelte'
 
 	interface LocalConfigProps {
 		current: Struct
@@ -120,7 +121,6 @@
 					<FileDrop />
 					<Dashboard {dashboard} />
 					<Details />
-					<Settings />
 
 					{#if environment.current.isStandalone}
 						<LiveUpdatesBanner />
@@ -141,6 +141,9 @@
 					{/if}
 
 					<PortalTarget id="dom" />
+
+					<Settings />
+					<Logs />
 				</div>
 			{/snippet}
 		</SceneProviders>
