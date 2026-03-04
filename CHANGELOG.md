@@ -1,5 +1,15 @@
 # motion-tools
 
+## 1.12.3
+
+### Patch Changes
+
+- 0fba953: fix machine config reactivity for e2e tests
+- 373155b: Add connection status in dashboard
+- 86d5aa2: Fix: Depth test sorting
+- 6918e3c: [APP-15201] (1/2) Clean up usePartConfig
+- 535c559: Add HDR environment map for more realistic arm rendering
+
 ## 1.12.2
 
 ### Patch Changes
