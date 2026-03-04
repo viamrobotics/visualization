@@ -1,5 +1,17 @@
 # motion-tools
 
+## 1.13.0
+
+### Minor Changes
+
+- 3ef8369: Feat: logs panel
+
+### Patch Changes
+
+- 31e25d8: Fix: Update selected bounding boxes so that they move as objects move
+- aa7aad8: Remove disk persistence for visibility
+- bb97ee2: Fix: use machine connection only for frame data unless editing frames
+
 ## 1.12.3
 
 ### Patch Changes
