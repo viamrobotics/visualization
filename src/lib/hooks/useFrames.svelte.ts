@@ -57,28 +57,29 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
+		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+			const mergedFrames = {
+				...frames,
+				...configFrames.current,
+			}
+
+			/**
+			 * Remove frames that have just been deleted locally for optimistic updates,
+			 * or frames that have been removed by fragment overrides
+			 */
+			for (const name of configFrames.unsetFrames) {
+				delete mergedFrames[name]
+			}
+
+			return mergedFrames
+		}
+
 		/**
 		 * If we're not in edit mode and we have a robot connection,
 		 * we only use frames reported by the machine
+		 *
 		 */
-		if (!isEditMode && connectionStatus.current !== MachineConnectionEvent.DISCONNECTED) {
-			return frames
-		}
-
-		const mergedFrames = {
-			...frames,
-			...configFrames.current,
-		}
-
-		/**
-		 * Remove frames that have just been deleted locally for optimistic updates,
-		 * or frames that have been removed by fragment overrides
-		 */
-		for (const name of configFrames.unsetFrames) {
-			delete mergedFrames[name]
-		}
-
-		return mergedFrames
+		return frames
 	})
 
 	const current = $derived(Object.values(frames))
