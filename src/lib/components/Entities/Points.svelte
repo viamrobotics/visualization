@@ -2,7 +2,7 @@
 	import { Points, PointsMaterial, OrthographicCamera } from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
-	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import { useEntityEvents } from './hooks/useEntityEvents'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
@@ -93,7 +93,7 @@
 		}
 	})
 
-	const events = useObjectEvents(() => entity)
+	const events = useEntityEvents(() => entity)
 
 	const { start, stop } = useTask(
 		() => {

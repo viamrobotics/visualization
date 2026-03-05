@@ -2,7 +2,7 @@
 	import { ShaderMaterial, Vector3 } from 'three'
 	import { T } from '@threlte/core'
 	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
-	import Entities from '$lib/components/Entities.svelte'
+	import Entities from '$lib/components/Entities/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'

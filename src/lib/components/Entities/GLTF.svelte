@@ -16,7 +16,7 @@
 	import { Portal, PortalTarget, useGltfAnimations, type ThrelteGltf } from '@threlte/extras'
 	import type { Snippet } from 'svelte'
 	import { Group, type Object3D } from 'three'
-	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
@@ -35,7 +35,7 @@
 	const pose = useTrait(() => entity, traits.Pose)
 	const gltfTrait = useTrait(() => entity, traits.GLTF)
 	const scale = useTrait(() => entity, traits.Scale)
-	const objectProps = useObjectEvents(() => entity)
+	const objectProps = useEntityEvents(() => entity)
 
 	const animationName = $derived(gltfTrait.current?.animationName)
 
