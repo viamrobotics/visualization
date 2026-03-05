@@ -1,6 +1,9 @@
-import type { Message, SuccessMessage } from './worker'
+import { workerCode } from './worker.inline'
+import type { Message, SuccessMessage } from './messages'
 
-const worker = new Worker(new URL('./worker', import.meta.url), { type: 'module' })
+const blob = new Blob([workerCode], { type: 'text/javascript' })
+const url = URL.createObjectURL(blob)
+const worker = new Worker(url)
 
 let requestId = 0
 const pending = new Map<

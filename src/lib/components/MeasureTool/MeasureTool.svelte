@@ -21,7 +21,7 @@
 	let p1 = $state.raw<Vector3>()
 	let p2 = $state.raw<Vector3>()
 
-	const enabled = $derived(settings.current.enableMeasure)
+	const enabled = $derived(settings.current.interactionMode === 'measure')
 
 	const { onclick, onmove, raycaster } = useMouseRaycaster(() => ({
 		enabled,
@@ -85,7 +85,7 @@
 				icon="ruler"
 				description="{enabled ? 'Disable' : 'Enable'} measurement"
 				onclick={() => {
-					settings.current.enableMeasure = !settings.current.enableMeasure
+					settings.current.interactionMode = enabled ? 'navigate' : 'measure'
 				}}
 			/>
 			<Popover>

@@ -46,28 +46,14 @@
 	}}
 	{dialConfigs}
 >
-	{#if connectionConfig.current}
-		<ViamAppProvider
-			serviceHost="https://app.viam.com"
-			credentials={{
-				type: 'api-key',
-				payload: connectionConfig.current.apiKeyValue,
-				authEntity: connectionConfig.current.apiKeyId,
-			}}
-		>
-			<MotionTools
-				{partID}
-				enableKeybindings={!isMachinesPageOpen}
-				drawConnectionConfig={{ backendIP, websocketPort }}
-			>
-				{@render children()}
-
-				{#snippet dashboard()}
-					<Machines bind:isOpen={isMachinesPageOpen} />
-				{/snippet}
-			</MotionTools>
-		</ViamAppProvider>
-	{:else}
+	<ViamAppProvider
+		serviceHost="https://app.viam.com"
+		credentials={{
+			type: 'api-key',
+			payload: connectionConfig.current?.apiKeyValue ?? '',
+			authEntity: connectionConfig.current?.apiKeyId ?? '',
+		}}
+	>
 		<MotionTools
 			{partID}
 			enableKeybindings={!isMachinesPageOpen}
@@ -79,5 +65,5 @@
 				<Machines bind:isOpen={isMachinesPageOpen} />
 			{/snippet}
 		</MotionTools>
-	{/if}
+	</ViamAppProvider>
 </ViamProvider>
