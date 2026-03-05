@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { useEntityEvents } from './hooks/useEntityEvents'
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { Color, Group, type Object3D } from 'three'
 	import Geometry from './Geometry.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'

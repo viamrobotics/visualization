@@ -2,7 +2,7 @@
 	import { Points, PointsMaterial, OrthographicCamera } from 'three'
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
-	import { useEntityEvents } from './hooks/useEntityEvents'
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import type { Snippet } from 'svelte'
