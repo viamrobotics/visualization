@@ -12,7 +12,7 @@
 	import { PressedKeys } from 'runed'
 	import { quaternionToPose, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
-	import Frame from './Frame.svelte'
+	import Frame from './Entities/Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWorld, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
