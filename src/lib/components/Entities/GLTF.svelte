@@ -16,7 +16,7 @@
 	import { Portal, PortalTarget, useGltfAnimations, type ThrelteGltf } from '@threlte/extras'
 	import type { Snippet } from 'svelte'
 	import { Group, type Object3D } from 'three'
-	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents'
+	import { useEntityEvents } from './hooks/useEntityEvents'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'

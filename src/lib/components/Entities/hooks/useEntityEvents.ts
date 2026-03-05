@@ -1,11 +1,11 @@
 import { useCursor, type IntersectionEvent } from '@threlte/extras'
-import { useFocusedEntity, useSelectedEntity } from '../../../hooks/useSelection.svelte'
-import { useVisibility } from '../../../hooks/useVisibility.svelte'
+import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 import { Vector2 } from 'three'
 import type { Entity } from 'koota'
 import { traits } from '$lib/ecs'
 import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { createPose, matrixToPose, poseToMatrix } from '../../../transform'
+import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
 
 export const useEntityEvents = (entity: () => Entity | undefined) => {
 	const down = new Vector2()
