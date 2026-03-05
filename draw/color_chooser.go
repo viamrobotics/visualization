@@ -75,7 +75,7 @@ type ColorChooser struct {
 }
 
 // Next returns the next color in the sequence, cycling back to the first color after reaching the end.
-func (chooser ColorChooser) Next() Color {
+func (chooser *ColorChooser) Next() Color {
 	color := chooser.colors[chooser.count%len(chooser.colors)]
 	chooser.count++
 	return color

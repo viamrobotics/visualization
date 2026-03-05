@@ -74,7 +74,7 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 		option(config)
 	}
 
-	if !(len(config.colors) == 1 || len(config.colors) == len(geometries)) {
+	if len(config.colors) != 1 && len(config.colors) != len(geometries) {
 		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-geometry colors), got %d", len(geometries), len(config.colors))
 	}
 
