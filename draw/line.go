@@ -103,7 +103,7 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 }
 
 // Draw creates a Drawing from this Line object.
-func (line Line) Draw(name string, options ...drawableOption) *Drawing {
+func (line Line) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithLine(line))
 	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(line.LineColor, line.PointColor)))

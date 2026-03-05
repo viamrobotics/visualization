@@ -84,7 +84,7 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 }
 
 // Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
-func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...drawableOption) (*commonv1.Transform, error) {
+func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	config := NewDrawConfig(name, options...)
 	metadata := NewMetadata(WithMetadataColors(drawnPointCloud.Colors...))
 	metadataStruct, err := MetadataToStruct(metadata)
