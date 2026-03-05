@@ -51,11 +51,7 @@ func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption {
 
 // WithGeometriesColorPalette creates a geometries in frame option that iterates through colors for geometries.
 func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometriesInFrameOption {
-	finalColors := make([]Color, numGeometries)
-	for i := range numGeometries {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*drawnGeometriesInFrameConfig](finalColors)
+	return withColorPalette[*drawnGeometriesInFrameConfig](palette, numGeometries)
 }
 
 // WithGeometriesDownscalingThreshold creates a geometries in frame option that sets the threshold in millimeters for downscaling.
