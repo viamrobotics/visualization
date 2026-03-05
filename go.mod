@@ -6,10 +6,12 @@ require (
 	connectrpc.com/connect v1.19.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/google/uuid v1.6.0
+	github.com/rs/cors v1.11.1
 	go.viam.com/api v0.1.496
 	go.viam.com/rdk v0.101.1-0.20251112202028-569325736177
 	go.viam.com/test v1.2.4
 	golang.org/x/image v0.25.0
+	golang.org/x/net v0.47.0
 	google.golang.org/protobuf v1.36.9
 )
 
@@ -99,7 +101,6 @@ require (
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rs/cors v1.11.1 // indirect
 	github.com/samber/lo v1.51.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
@@ -135,7 +136,6 @@ require (
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect

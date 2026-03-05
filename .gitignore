@@ -12,8 +12,9 @@ static/Big_Buck_Bunny_4K.webm
 /build
 /coverage
 /dist
+.bin
+/draw-server
 viamrobotics-motion-tools-*.tgz
-.build-stamp
 
 # OS
 .DS_Store
