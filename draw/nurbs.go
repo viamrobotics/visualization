@@ -35,14 +35,19 @@ type Nurbs struct {
 	// Defaults to 1.0 for each control point (uniform weighting).
 	Weights []float64
 
-	// Color specifies the rendering color for the curve.
-	Color Color
+	// Colors specifies the rendering colors for the curve. Can be a single color (applied to all points)
+	// No other color options are currently supported.
+	Colors []Color
+
+	// LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
+	LineWidth float32
 }
 
 // drawNurbsConfig is a configuration for drawing a NURBS curve
 type drawNurbsConfig struct {
-	degree  int32
-	weights []float64
+	degree    int32
+	weights   []float64
+	lineWidth float32
 	drawColorsConfig
 }
 
@@ -53,16 +58,17 @@ func newDrawNurbsConfig() *drawNurbsConfig {
 	return &drawNurbsConfig{
 		degree:           DefaultNurbsDegree,
 		weights:          []float64{},
+		lineWidth:        DefaultLineWidth,
 		drawColorsConfig: newDrawColorsConfig(DefaultNurbsColor),
 	}
 }
 
-// drawNurbsOption is a function that configures a draw NURBS curve configuration
-type drawNurbsOption func(*drawNurbsConfig)
+// DrawNurbsOption is a function that configures a draw NURBS curve configuration
+type DrawNurbsOption func(*drawNurbsConfig)
 
 // WithNurbsDegree creates a NURBS option that sets the polynomial degree of the curve.
 // Higher degrees create smoother curves but require more control points.
-func WithNurbsDegree(degree int32) drawNurbsOption {
+func WithNurbsDegree(degree int32) DrawNurbsOption {
 	return func(config *drawNurbsConfig) {
 		config.degree = degree
 	}
@@ -70,7 +76,7 @@ func WithNurbsDegree(degree int32) drawNurbsOption {
 
 // WithNurbsWeights creates a NURBS option that sets the weight for each control point.
 // Weights control the influence of each point on the curve (higher weights pull the curve closer).
-func WithNurbsWeights(weights []float64) drawNurbsOption {
+func WithNurbsWeights(weights []float64) DrawNurbsOption {
 	return func(config *drawNurbsConfig) {
 		config.weights = weights
 	}
@@ -79,17 +85,24 @@ func WithNurbsWeights(weights []float64) drawNurbsOption {
 // WithNurbsColors creates a NURBS option that sets the color for the curve.
 // If only defaultColor is provided, it applies to the entire curve.
 // Note: Per-point colors are not currently supported in rendering.
-func WithNurbsColors(defaultColor Color, perPointColors ...Color) drawNurbsOption {
+func WithNurbsColors(defaultColor Color, perPointColors ...Color) DrawNurbsOption {
 	colors := []Color{defaultColor}
 	colors = append(colors, perPointColors...)
 	return withColors[*drawNurbsConfig](colors)
+}
+
+// WithNurbsLineWidth creates a NURBS option that sets the line width.
+func WithNurbsLineWidth(width float32) DrawNurbsOption {
+	return func(config *drawNurbsConfig) {
+		config.lineWidth = width
+	}
 }
 
 // NewNurbs creates a new NURBS curve with the given control points, knot vector, and options.
 // Returns an error if control points or knots are empty, if the degree is non-positive,
 // if the weights don't match the number of control points, or if the knot vector length
 // is incorrect (must be len(controlPoints) + degree + 1).
-func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...drawNurbsOption) (*Nurbs, error) {
+func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...DrawNurbsOption) (*Nurbs, error) {
 	if len(controlPoints) == 0 {
 		return nil, fmt.Errorf("control points cannot be empty")
 	}
@@ -131,7 +144,8 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...draw
 		Degree:        config.degree,
 		Weights:       weights,
 		Knots:         knots,
-		Color:         config.colors[0],
+		Colors:        config.colors,
+		LineWidth:     config.lineWidth,
 	}, nil
 }
 
@@ -139,5 +153,5 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...draw
 func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithNurbs(nurbs))
-	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))
+	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(nurbs.Colors...)))
 }
