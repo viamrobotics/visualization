@@ -91,7 +91,7 @@ build-clean:
 build: build-clean
 	@$(MAKE) proto
 	@go build -o .bin/draw-server ./cmd/draw-server
-	@pnpm run build
+	@pnpm build
 
 .PHONY: proto-clean
 proto-clean:
@@ -116,6 +116,10 @@ proto-lint:
 .PHONY: proto-format
 proto-format:
 	@pnpm exec buf format -w
+
+.PHONY: proto-format-check
+proto-format-check:
+	@pnpm exec buf format --diff --exit-code
 
 .PHONY: proto
 proto: proto-clean proto-vendor 

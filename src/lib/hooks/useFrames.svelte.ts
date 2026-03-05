@@ -6,7 +6,7 @@ import {
 	useMachineStatus,
 	useConnectionStatus,
 } from '@viamrobotics/svelte-sdk'
-import type { ConfigurableTrait, Entity } from 'koota'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
 import { useEnvironment } from './useEnvironment.svelte'
@@ -93,86 +93,94 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		for (const frame of current) {
-			if (frame === undefined) {
-				continue
-			}
+		if (current.length === 0) return
 
-			const name = frame.referenceFrame
-			const parent = frame.poseInObserverFrame?.referenceFrame
-			const pose = createPose(frame.poseInObserverFrame?.pose)
-			const center = frame.physicalObject?.center
-				? createPose(frame.physicalObject.center)
-				: undefined
-			const resourceName = resourceByName.current[frame.referenceFrame]
-			const color = resourceNameToColor(resourceName)
+		const currentResourcesByName = resourceByName.current
 
-			const existing = entities.get(name)
+		// We only want to update whenever "current" or "resourceByName.current" changes
+		untrack(() => {
+			const active: Record<string, boolean> = {}
 
-			if (existing) {
-				if (!parent || parent === 'world') {
-					existing.remove(traits.Parent)
-				} else if (parent && existing.has(traits.Parent)) {
-					existing.set(traits.Parent, parent)
-				} else {
-					existing.add(traits.Parent(parent))
+			for (const frame of current) {
+				const name = frame.referenceFrame
+				active[name] = true
+
+				const parent = frame.poseInObserverFrame?.referenceFrame
+				const pose = createPose(frame.poseInObserverFrame?.pose)
+				const center = frame.physicalObject?.center
+					? createPose(frame.physicalObject.center)
+					: undefined
+				const resourceName = currentResourcesByName[frame.referenceFrame]
+				const color = resourceNameToColor(resourceName)
+
+				const existing = entities.get(name)
+
+				if (existing) {
+					if (!parent || parent === 'world') {
+						existing.remove(traits.Parent)
+					} else if (parent && existing.has(traits.Parent)) {
+						existing.set(traits.Parent, parent)
+					} else {
+						existing.add(traits.Parent(parent))
+					}
+
+					if (color) {
+						existing.set(traits.Color, color)
+					}
+
+					if (center) {
+						existing.set(traits.Center, center)
+					}
+
+					existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
+					if (frame.physicalObject) {
+						const geometry = traits.Geometry(frame.physicalObject)
+						existing.add(geometry)
+					}
+
+					existing.set(traits.EditedPose, pose)
+
+					continue
+				}
+
+				const entityTraits: ConfigurableTrait[] = [
+					traits.Name(name),
+					traits.Pose(pose),
+					traits.EditedPose(pose),
+					traits.FramesAPI,
+					traits.ShowAxesHelper,
+				]
+
+				if (parent && parent !== 'world') {
+					entityTraits.push(traits.Parent(parent))
 				}
 
 				if (color) {
-					existing.set(traits.Color, color)
+					entityTraits.push(traits.Color(color))
 				}
 
 				if (center) {
-					existing.set(traits.Center, center)
+					entityTraits.push(traits.Center(center))
 				}
 
-				existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
 				if (frame.physicalObject) {
-					const geometry = traits.Geometry(frame.physicalObject)
-					existing.add(geometry)
+					entityTraits.push(traits.Geometry(frame.physicalObject))
 				}
 
-				existing.set(traits.EditedPose, pose)
+				const entity = world.spawn(...entityTraits)
 
-				continue
+				entities.set(name, entity)
 			}
 
-			const entityTraits: ConfigurableTrait[] = [
-				traits.Name(name),
-				traits.Pose(pose),
-				traits.EditedPose(pose),
-				traits.FramesAPI,
-				traits.ShowAxesHelper,
-			]
-
-			if (parent && parent !== 'world') {
-				entityTraits.push(traits.Parent(parent))
+			// Clean up non-active entities
+			for (const [name, entity] of entities) {
+				if (!active[name]) {
+					entity?.destroy()
+					entities.delete(name)
+					continue
+				}
 			}
-
-			if (color) {
-				entityTraits.push(traits.Color(color))
-			}
-
-			if (center) {
-				entityTraits.push(traits.Center(center))
-			}
-
-			if (frame.physicalObject) {
-				entityTraits.push(traits.Geometry(frame.physicalObject))
-			}
-
-			const entity = world.spawn(...entityTraits)
-
-			entities.set(name, entity)
-		}
-
-		// Clean up non-active entities
-		for (const [name, entity] of entities) {
-			if (!frames[name]) {
-				entity?.destroy()
-				entities.delete(name)
-			}
-		}
+		})
 	})
 
 	setContext<FramesContext>(key, {

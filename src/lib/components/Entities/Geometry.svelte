@@ -6,7 +6,7 @@
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
-	import AxesHelper from './AxesHelper.svelte'
+	import AxesHelper from '../AxesHelper.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
@@ -128,13 +128,6 @@
 	{...rest}
 >
 	{#if geometryType}
-		{#if showAxesHelper.current}
-			<AxesHelper
-				width={3}
-				length={0.1}
-			/>
-		{/if}
-
 		{#if model && renderMode.includes('model')}
 			<T is={model} />
 		{/if}
@@ -199,7 +192,9 @@
 				{/if}
 			</T>
 		{/if}
-	{:else if showAxesHelper.current}
+	{/if}
+
+	{#if showAxesHelper.current}
 		<AxesHelper
 			name={entity}
 			width={3}

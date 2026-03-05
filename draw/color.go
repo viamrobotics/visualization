@@ -178,7 +178,7 @@ func (color Color) SetRGB(r, g, b uint8) Color {
 
 // SetRGBA returns a new Color with all RGBA values set.
 func (color Color) SetRGBA(r, g, b, a uint8) Color {
-	color.SetRGB(r, g, b)
+	color = color.SetRGB(r, g, b)
 	color.A = a
 	return color
 }
