@@ -25,7 +25,14 @@ vi.mock('$lib/hooks/useSelection.svelte', () => ({
 
 // Mock useFrames hook
 vi.mock('$lib/hooks/useFrames.svelte', () => ({
-	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
+	useFrames: vi.fn(() => ({ current: [], fetching: false })),
+}))
+vi.mock('$lib/hooks/useConfigFrames.svelte', () => ({
+	useConfigFrames: vi.fn(() => ({
+		getParentFrameOptions: vi.fn(),
+		unsetFrames: [],
+		current: {},
+	})),
 }))
 vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
 	useResourceByName: vi.fn(() => ({ current: {} })),
@@ -33,8 +40,8 @@ vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	usePartConfig: vi.fn(() => ({
-		getLocalPartConfig: vi.fn(() => ({ components: [] })),
-		setLocalPartConfig: vi.fn(),
+		current: { components: [] },
+		set: vi.fn(),
 	})),
 	LocalPartConfigState: {
 		dirty: 'DIRTY',

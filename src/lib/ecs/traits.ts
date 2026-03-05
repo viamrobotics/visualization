@@ -45,6 +45,9 @@ export const Instance = trait({
 	meshID: -1,
 	instanceID: -1,
 })
+
+export const RenderOrder = trait(() => 0)
+
 export const Opacity = trait(() => 1)
 
 /**
@@ -52,6 +55,15 @@ export const Opacity = trait(() => 1)
  * @default { r: 1, g: 0, b: 0 }
  */
 export const Color = trait({ r: 0, g: 0, b: 0 })
+
+/**
+ * Material properties
+ */
+export const Material = trait({
+	depthTest: false,
+})
+
+export const DepthTest = trait(() => true)
 
 export const Arrow = trait(() => true)
 

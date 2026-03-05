@@ -3,7 +3,6 @@
 	import Tree from './Tree.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
-	import Logs from './Logs.svelte'
 	import AddFrames from './AddFrames.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -82,6 +81,4 @@
 	{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
 		<AddFrames />
 	{/if}
-
-	<Logs />
 </div>
