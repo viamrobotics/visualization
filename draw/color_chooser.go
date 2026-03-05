@@ -75,10 +75,19 @@ type ColorChooser struct {
 }
 
 // Next returns the next color in the sequence, cycling back to the first color after reaching the end.
-func (chooser ColorChooser) Next() Color {
+func (chooser *ColorChooser) Next() Color {
 	color := chooser.colors[chooser.count%len(chooser.colors)]
 	chooser.count++
 	return color
+}
+
+// Get returns a slice of colors of the given length, cycling back to the first color after reaching the end.
+func (chooser *ColorChooser) Get(count int) []Color {
+	finalColors := make([]Color, count)
+	for i := range count {
+		finalColors[i] = chooser.Next()
+	}
+	return finalColors
 }
 
 // NewColorChooser creates a ColorChooser populated with all standard web color names.
