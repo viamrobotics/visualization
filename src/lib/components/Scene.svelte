@@ -17,7 +17,6 @@
 	import MeasureTool from './MeasureTool/MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
 	import BatchedArrows from './BatchedArrows.svelte'
-	import Arrows from './Arrows/ArrowGroups.svelte'
 	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 
 	interface Props {
@@ -103,7 +102,6 @@
 
 		<Entities />
 		<BatchedArrows />
-		<Arrows />
 	</T.Group>
 
 	{@render children?.()}
