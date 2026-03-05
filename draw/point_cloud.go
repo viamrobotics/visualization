@@ -79,12 +79,15 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 		return &DrawnPointCloud{PointCloud: pointCloud, Colors: config.colors}, nil
 	}
 
-	downscaled := downscalePointCloud(pointCloud, config.downscalingThreshold)
+	downscaled, err := downscalePointCloud(pointCloud, config.downscalingThreshold)
+	if err != nil {
+		return nil, err
+	}
 	return &DrawnPointCloud{PointCloud: downscaled, Colors: config.colors}, nil
 }
 
 // Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
-func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...drawableOption) (*commonv1.Transform, error) {
+func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	config := NewDrawConfig(name, options...)
 	metadata := NewMetadata(WithMetadataColors(drawnPointCloud.Colors...))
 	metadataStruct, err := MetadataToStruct(metadata)
@@ -101,7 +104,7 @@ func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...drawableOpt
 }
 
 // downscalePointCloud downscales a point cloud to a given threshold in millimeters.
-func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) pointcloud.PointCloud {
+func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) (pointcloud.PointCloud, error) {
 	addedPoints := make([]struct {
 		point r3.Vector
 		data  pointcloud.Data
@@ -134,8 +137,10 @@ func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) pointclo
 
 	downscaled := pointcloud.NewBasicPointCloud(len(addedPoints))
 	for _, point := range addedPoints {
-		downscaled.Set(point.point, point.data)
+		if err := downscaled.Set(point.point, point.data); err != nil {
+			return nil, fmt.Errorf("failed to set point in downscaled point cloud: %w", err)
+		}
 	}
 
-	return downscaled
+	return downscaled, nil
 }

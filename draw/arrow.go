@@ -56,7 +56,7 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 		option(config)
 	}
 
-	if !(len(config.colors) == 1 || len(config.colors) == len(poses)) {
+	if len(config.colors) != 1 && len(config.colors) != len(poses) {
 		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-arrow colors), got %d", len(poses), len(config.colors))
 	}
 
@@ -64,7 +64,7 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 }
 
 // Draw creates a Drawing from this Arrows object.
-func (arrows Arrows) Draw(name string, options ...drawableOption) *Drawing {
+func (arrows Arrows) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithArrows(arrows))
 	drawing := NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))

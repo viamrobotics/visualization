@@ -136,7 +136,7 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...draw
 }
 
 // Draw creates a Drawing from this Nurbs object.
-func (nurbs Nurbs) Draw(name string, options ...drawableOption) *Drawing {
+func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithNurbs(nurbs))
 	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(nurbs.Color)))

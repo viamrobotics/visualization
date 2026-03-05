@@ -90,7 +90,7 @@ func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, err
 }
 
 // Draw creates a Drawing from this Points object.
-func (points Points) Draw(name string, options ...drawableOption) *Drawing {
+func (points Points) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithPoints(points))
 	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
