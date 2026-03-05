@@ -87,11 +87,7 @@
 	)
 
 	$effect.pre(() => {
-		if (localConfigProps) {
-			environment.current.isStandalone = false
-		} else {
-			environment.current.isStandalone = true
-		}
+		environment.current.isStandalone = !localConfigProps
 	})
 </script>
 

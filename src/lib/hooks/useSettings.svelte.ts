@@ -110,11 +110,11 @@ const defaults = (): Settings => ({
 
 	xrController: {
 		left: {
-			scaleFactor: 1.0,
+			scaleFactor: 1,
 			rotationEnabled: true,
 		},
 		right: {
-			scaleFactor: 1.0,
+			scaleFactor: 1,
 			rotationEnabled: true,
 		},
 	},

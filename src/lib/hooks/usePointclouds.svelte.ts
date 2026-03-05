@@ -80,10 +80,8 @@ export const providePointclouds = (partID: () => string) => {
 	 */
 	$effect(() => {
 		for (const [name, query] of propQueries) {
-			if (name && query.data?.supportsPcd === false) {
-				if (disabledCameras.get(name) === undefined) {
-					disabledCameras.set(name, true)
-				}
+			if (name && query.data?.supportsPcd === false && disabledCameras.get(name) === undefined) {
+				disabledCameras.set(name, true)
 			}
 		}
 	})

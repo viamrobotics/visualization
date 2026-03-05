@@ -20,9 +20,10 @@ export const provideFramelessComponents = () => {
 				.map((component) => component.name) ?? []
 		const fragmentComponentsWithNoFrame = []
 		for (const fragmentComponentName of Object.keys(partConfig.componentNameToFragmentId)) {
-			if (frames.current.find((frame) => frame.referenceFrame === fragmentComponentName)) {
+			if (frames.current.some((frame) => frame.referenceFrame === fragmentComponentName)) {
 				continue
 			}
+
 			fragmentComponentsWithNoFrame.push(fragmentComponentName)
 		}
 		return [...partComponentsWIthNoFrame, ...fragmentComponentsWithNoFrame]

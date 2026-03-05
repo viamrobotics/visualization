@@ -30,8 +30,8 @@
 	enabled={!transformControls.active}
 	oncreate={(ref) => {
 		cameraControls.set(ref)
-		;(window as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
-		;(window as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
+		;(globalThis as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
+		;(globalThis as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
 	}}
 >
 	{#snippet children({ ref }: { ref: CameraControlsRef })}

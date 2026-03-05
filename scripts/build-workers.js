@@ -1,5 +1,5 @@
 import { build } from 'esbuild'
-import { writeFileSync } from 'fs'
+import { writeFileSync } from 'node:fs'
 
 const workerPaths = ['src/lib/loaders/pcd/worker.ts']
 
@@ -13,7 +13,10 @@ for (const workerPath of workerPaths) {
 	})
 
 	const code = result.outputFiles[0].text
-	const escaped = code.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
+	const escaped = code
+		.replaceAll('\\', '\\\\')
+		.replaceAll('`', '\\`')
+		.replaceAll('$', String.raw`\$`)
 	const outFile = `${workerPath.replace('.ts', '.inline.ts')}`
 
 	writeFileSync(
