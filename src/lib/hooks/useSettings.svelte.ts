@@ -27,8 +27,9 @@ export interface Settings {
 	lineWidth: number
 	lineDotSize: number
 
+	interactionMode: 'navigate' | 'measure' | 'lasso'
+
 	// Measurement
-	enableMeasure: boolean
 	enableMeasureAxisX: boolean
 	enableMeasureAxisY: boolean
 	enableMeasureAxisZ: boolean
@@ -88,7 +89,8 @@ const defaults = (): Settings => ({
 	lineWidth: 0.005,
 	lineDotSize: 0.01,
 
-	enableMeasure: false,
+	interactionMode: 'navigate',
+
 	enableMeasureAxisX: true,
 	enableMeasureAxisY: true,
 	enableMeasureAxisZ: true,

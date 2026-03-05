@@ -13,6 +13,7 @@ dns.setDefaultResultOrder('verbatim')
 const https = false
 
 export default defineConfig({
+	assetsInclude: ['**/*.hdr'],
 	plugins: [
 		glsl(),
 		sentrySvelteKit({

@@ -1,41 +1,42 @@
 import { getContext, setContext, untrack } from 'svelte'
-import { Transform } from '@viamrobotics/sdk'
-import { useRobotClient, createRobotQuery, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import { MachineConnectionEvent, Transform } from '@viamrobotics/sdk'
+import {
+	useRobotClient,
+	createRobotQuery,
+	useMachineStatus,
+	useConnectionStatus,
+} from '@viamrobotics/svelte-sdk'
 import type { ConfigurableTrait, Entity } from 'koota'
 import { useLogs } from './useLogs.svelte'
 import { resourceNameToColor } from '$lib/color'
-import { createTransformFromFrame, type Frame } from '$lib/frame'
-import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createPose } from '$lib/transform'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-
-interface FrameTransform {
-	type: 'machine' | 'config' | 'fragment'
-	transform: Transform
-}
+import { useConfigFrames } from './useConfigFrames.svelte'
 
 interface FramesContext {
-	current: FrameTransform[]
-	getParentFrameOptions: (componentName: string) => string[]
+	current: Transform[]
 }
 
 const key = Symbol('frames-context')
 
 export const provideFrames = (partID: () => string) => {
+	const configFrames = useConfigFrames()
 	const environment = useEnvironment()
 	const world = useWorld()
 	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
+	const connectionStatus = useConnectionStatus(partID)
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
+
+	const isEditMode = $derived(environment.current.viewerMode === 'edit')
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
-		enabled: partID() !== '' && environment.current.viewerMode === 'monitor',
+		enabled: partID() !== '' && !isEditMode,
 	}))
 
 	const revision = $derived(machineStatus.current?.config?.revision)
-	const partConfig = usePartConfig()
 
 	$effect(() => {
 		if (query.isFetching) {
@@ -45,109 +46,40 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	$effect(() => {
-		if (partConfig.isDirty) {
-			environment.current.viewerMode = 'edit'
-		} else {
-			environment.current.viewerMode = 'monitor'
-		}
-	})
-
-	const machineFrames = $derived.by(() => {
-		const frames: Record<string, FrameTransform> = {}
+	const frames = $derived.by(() => {
+		const frames: Record<string, Transform> = {}
 
 		for (const { frame } of query.data ?? []) {
 			if (frame === undefined) {
 				continue
 			}
 
-			frames[frame.referenceFrame] = {
-				type: 'machine',
-				transform: frame,
-			}
+			frames[frame.referenceFrame] = frame
 		}
 
+		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+			const mergedFrames = {
+				...frames,
+				...configFrames.current,
+			}
+
+			/**
+			 * Remove frames that have just been deleted locally for optimistic updates,
+			 * or frames that have been removed by fragment overrides
+			 */
+			for (const name of configFrames.unsetFrames) {
+				delete mergedFrames[name]
+			}
+
+			return mergedFrames
+		}
+
+		/**
+		 * If we're not in edit mode and we have a robot connection,
+		 * we only use frames reported by the machine
+		 *
+		 */
 		return frames
-	})
-
-	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig).components
-
-		const results: Record<string, FrameTransform> = {}
-		const unsetResults: string[] = []
-
-		for (const { name, frame } of components ?? []) {
-			if (!frame) {
-				unsetResults.push(name)
-				continue
-			}
-
-			results[name] = {
-				type: 'config',
-				transform: createTransformFromFrame(name, frame),
-			}
-		}
-
-		return [results, unsetResults]
-	})
-
-	const [fragmentFrames, fragmentUnsetFrameNames] = $derived.by(() => {
-		const { fragment_mods: fragmentMods = [] } =
-			(partConfig.localPartConfig.toJson() as unknown as PartConfig) ?? {}
-		const fragmentDefinedComponents = Object.keys(partConfig.componentNameToFragmentId)
-
-		const results: Record<string, FrameTransform> = {}
-		const unsetResults: string[] = []
-
-		// deal with fragment defined components
-		for (const fragmentComponentName of fragmentDefinedComponents || []) {
-			const fragmentId = partConfig.componentNameToFragmentId[fragmentComponentName]
-			const fragmentMod = fragmentMods?.find((mod) => mod.fragment_id === fragmentId)
-
-			if (!fragmentMod) {
-				continue
-			}
-
-			const setComponentModIndex = fragmentMod.mods.findLastIndex(
-				(mod) => mod['$set']?.[`components.${fragmentComponentName}.frame`] !== undefined
-			)
-			const unsetComponentModIndex = fragmentMod.mods.findLastIndex(
-				(mod) => mod['$unset']?.[`components.${fragmentComponentName}.frame`] !== undefined
-			)
-
-			if (setComponentModIndex < unsetComponentModIndex) {
-				unsetResults.push(fragmentComponentName)
-			} else if (unsetComponentModIndex < setComponentModIndex) {
-				const frameData = fragmentMod.mods[setComponentModIndex]['$set'][
-					`components.${fragmentComponentName}.frame`
-				] as Frame
-				results[fragmentComponentName] = {
-					type: 'fragment',
-					transform: createTransformFromFrame(fragmentComponentName, frameData),
-				}
-			}
-		}
-		return [results, unsetResults]
-	})
-
-	const frames = $derived.by(() => {
-		const result = {
-			...machineFrames,
-			...configFrames,
-			...fragmentFrames,
-		}
-
-		// Remove frames that have just been deleted locally for optimistic updates
-		for (const name of configUnsetFrameNames) {
-			delete result[name]
-		}
-
-		// Remove frames that have been removed by fragment overrides
-		for (const name of fragmentUnsetFrameNames) {
-			delete result[name]
-		}
-
-		return result
 	})
 
 	const current = $derived(Object.values(frames))
@@ -156,56 +88,7 @@ export const provideFrames = (partID: () => string) => {
 
 	$effect.pre(() => {
 		if (revision) {
-			untrack(async () => {
-				await query.refetch()
-				for (const [name, machineFrame] of Object.entries(machineFrames)) {
-					if (machineFrame === undefined) {
-						continue
-					}
-
-					const existing = entities.get(name)
-
-					if (existing) {
-						const pose = createPose(machineFrame.transform.poseInObserverFrame?.pose)
-						existing.set(traits.Pose, pose)
-
-						if (environment.current.viewerMode === 'monitor') {
-							// if we are in monitor mode, we want the network pose to overwrite any leftover edited poses
-							existing.set(traits.EditedPose, pose)
-						}
-					}
-				}
-			})
-		}
-	})
-
-	$effect.pre(() => {
-		for (const [name, configFrame] of Object.entries(configFrames)) {
-			if (configFrame === undefined) {
-				continue
-			}
-
-			const existing = entities.get(name)
-
-			if (existing) {
-				const pose = createPose(configFrame.transform.poseInObserverFrame?.pose)
-				existing.set(traits.EditedPose, pose)
-			}
-		}
-	})
-
-	$effect.pre(() => {
-		for (const [name, fragmentFrame] of Object.entries(fragmentFrames)) {
-			if (fragmentFrame === undefined) {
-				continue
-			}
-
-			const existing = entities.get(name)
-
-			if (existing) {
-				const pose = createPose(fragmentFrame.transform.poseInObserverFrame?.pose)
-				existing.set(traits.EditedPose, pose)
-			}
+			untrack(() => query.refetch())
 		}
 	})
 
@@ -215,13 +98,13 @@ export const provideFrames = (partID: () => string) => {
 				continue
 			}
 
-			const name = frame.transform.referenceFrame
-			const parent = frame.transform.poseInObserverFrame?.referenceFrame
-			const pose = createPose(frame.transform.poseInObserverFrame?.pose)
-			const center = frame.transform.physicalObject?.center
-				? createPose(frame.transform.physicalObject.center)
+			const name = frame.referenceFrame
+			const parent = frame.poseInObserverFrame?.referenceFrame
+			const pose = createPose(frame.poseInObserverFrame?.pose)
+			const center = frame.physicalObject?.center
+				? createPose(frame.physicalObject.center)
 				: undefined
-			const resourceName = resourceByName.current[frame.transform.referenceFrame]
+			const resourceName = resourceByName.current[frame.referenceFrame]
 			const color = resourceNameToColor(resourceName)
 
 			const existing = entities.get(name)
@@ -244,10 +127,12 @@ export const provideFrames = (partID: () => string) => {
 				}
 
 				existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
-				if (frame.transform.physicalObject) {
-					const geometry = traits.Geometry(frame.transform.physicalObject)
+				if (frame.physicalObject) {
+					const geometry = traits.Geometry(frame.physicalObject)
 					existing.add(geometry)
 				}
+
+				existing.set(traits.EditedPose, pose)
 
 				continue
 			}
@@ -272,8 +157,8 @@ export const provideFrames = (partID: () => string) => {
 				entityTraits.push(traits.Center(center))
 			}
 
-			if (frame.transform.physicalObject) {
-				entityTraits.push(traits.Geometry(frame.transform.physicalObject))
+			if (frame.physicalObject) {
+				entityTraits.push(traits.Geometry(frame.physicalObject))
 			}
 
 			const entity = world.spawn(...entityTraits)
@@ -290,29 +175,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	const getParentFrameOptions = (componentName: string) => {
-		const validFrames = new Set(current.map((frame) => frame.transform.referenceFrame))
-		validFrames.add('world')
-
-		const frameNameQueue = [componentName]
-		while (frameNameQueue.length > 0) {
-			const frameName = frameNameQueue.shift()
-			if (frameName) {
-				validFrames.delete(frameName)
-				const frames = current.filter(
-					(frame) => frame.transform.poseInObserverFrame?.referenceFrame === frameName
-				)
-				for (const frame of frames) {
-					frameNameQueue.push(frame.transform.referenceFrame)
-				}
-			}
-		}
-
-		return Array.from(validFrames)
-	}
-
 	setContext<FramesContext>(key, {
-		getParentFrameOptions,
 		get current() {
 			return current
 		},

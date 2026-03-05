@@ -23,6 +23,7 @@
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { provideConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -43,6 +44,7 @@
 	provideDrawAPI()
 
 	provideResourceByName(() => partID.current)
+	provideConfigFrames()
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)
