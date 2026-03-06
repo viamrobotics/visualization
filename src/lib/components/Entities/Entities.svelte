@@ -9,6 +9,10 @@
 
 	import { traits, useQuery } from '$lib/ecs'
 	import { Not, Or } from 'koota'
+	import GeometryModel from './GeometryModel.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+	const settings = useSettings()
 
 	/**
 	 * Frames from a live machine are bucketed into their own query
@@ -61,12 +65,6 @@
 	</Pose>
 {/each}
 
-{#each resourceGeometriesEntities.current as entity (entity)}
-	<Frame {entity}>
-		<Label text={entity.get(traits.Name)} />
-	</Frame>
-{/each}
-
 {#each worldStateEntities.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
@@ -95,6 +93,18 @@
 	<GLTF {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
+{/each}
+
+{#each resourceGeometriesEntities.current as entity (entity)}
+	{#if settings.current.renderArmModels.includes('colliders')}
+		<Frame {entity}>
+			<Label text={entity.get(traits.Name)} />
+		</Frame>
+	{/if}
+
+	{#if settings.current.renderArmModels.includes('model')}
+		<GeometryModel {entity} />
+	{/if}
 {/each}
 
 <Arrows />

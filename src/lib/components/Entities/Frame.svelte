@@ -26,7 +26,6 @@
 	const colorUtil = new Color()
 
 	const settings = useSettings()
-	const componentModels = use3DModels()
 	const selectedEntity = useSelectedEntity()
 	const resourceByName = useResourceByName()
 
@@ -52,27 +51,13 @@
 		}
 		return colors.default
 	})
-
-	const model = $derived.by(() => {
-		if (!name.current) {
-			return
-		}
-
-		const [componentName, id] = name.current.split(':')
-		if (!componentName || !id) {
-			return
-		}
-		return componentModels.current?.[componentName]?.[id].clone()
-	})
 </script>
 
 <Portal id={parent.current}>
 	<Geometry
 		bind:ref
 		{entity}
-		{model}
 		{pose}
-		renderMode={settings.current.renderArmModels}
 		color={selectedEntity.current === entity
 			? `#${darkenColor(color, 75).getHexString()}`
 			: `#${colorUtil.set(color).getHexString()}`}

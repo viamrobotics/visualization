@@ -13,9 +13,7 @@
 	interface Props extends ThrelteProps<Group> {
 		entity: Entity
 		color?: string
-		model?: Group
 		pose?: Pose
-		renderMode?: 'model' | 'colliders' | 'colliders+model'
 		ref?: Group
 		children?: Snippet<[{ ref: Group }]>
 	}
@@ -23,7 +21,6 @@
 	let {
 		entity,
 		color: overrideColor,
-		model,
 		renderMode = 'colliders',
 		pose,
 		ref = $bindable(),
@@ -111,59 +108,57 @@
 	{...rest}
 >
 	{#if geometryType}
-		{#if model && renderMode.includes('model')}
-			<T is={model} />
-		{/if}
-
-		{#if !model || renderMode.includes('colliders')}
-			<T
-				is={mesh}
-				name={entity}
-				userData.name={name}
-				renderOrder={renderOrder.current}
-			>
-				{#if box.current}
-					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
-					<T.BoxGeometry
-						args={[x * 0.001, y * 0.001, z * 0.001]}
-						{oncreate}
-					/>
-				{:else if sphere.current}
-					{@const { r } = sphere.current ?? { r: 0 }}
-					<T.SphereGeometry
-						args={[r * 0.001]}
-						{oncreate}
-					/>
-				{:else if capsule.current}
-					{@const { r, l } = capsule.current ?? { r: 0, l: 0 }}
-					<T
-						is={CapsuleGeometry}
-						args={[r * 0.001, l * 0.001]}
-						{oncreate}
-					/>
-				{/if}
-
-				{@const currentOpacity = opacity.current ?? 0.7}
-				<T.MeshToonMaterial
-					{color}
-					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={currentOpacity < 1}
-					depthWrite={currentOpacity === 1}
-					opacity={currentOpacity}
-					depthTest={materialProps.current?.depthTest ?? true}
+		<T
+			is={mesh}
+			name={entity}
+			userData.name={name}
+			renderOrder={renderOrder.current}
+		>
+			{#if box.current}
+				{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
+				<T.BoxGeometry
+					args={[x * 0.001, y * 0.001, z * 0.001]}
+					{oncreate}
 				/>
+			{:else if sphere.current}
+				{@const { r } = sphere.current ?? { r: 0 }}
+				<T.SphereGeometry
+					args={[r * 0.001]}
+					{oncreate}
+				/>
+			{:else if capsule.current}
+				{@const { r, l } = capsule.current ?? { r: 0, l: 0 }}
+				<T
+					is={CapsuleGeometry}
+					args={[r * 0.001, l * 0.001]}
+					{oncreate}
+				/>
+			{/if}
 
-				{#if geo && (renderMode.includes('colliders') || !model)}
-					<T.LineSegments
-						raycast={() => null}
-						bvh={{ enabled: false }}
-					>
-						<T.EdgesGeometry args={[geo, 0]} />
-						<T.LineBasicMaterial color={darkenColor(color, 10)} />
-					</T.LineSegments>
-				{/if}
-			</T>
-		{/if}
+			{@const currentOpacity = opacity.current ?? 0.7}
+			<T.MeshToonMaterial
+				{color}
+				side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+				transparent={currentOpacity < 1}
+				depthWrite={currentOpacity === 1}
+				opacity={currentOpacity}
+				depthTest={materialProps.current?.depthTest ?? true}
+			/>
+
+			<!-- 
+					TODO(mp) currently some bufferGeometries are coming in empty, 
+					this is a quick fix but this should be handled upstream
+				-->
+			{#if geo && geo.getAttribute('position').array.length > 0}
+				<T.LineSegments
+					raycast={() => null}
+					bvh={{ enabled: false }}
+				>
+					<T.EdgesGeometry args={[geo, 0]} />
+					<T.LineBasicMaterial color={darkenColor(color, 10)} />
+				</T.LineSegments>
+			{/if}
+		</T>
 	{/if}
 
 	{#if showAxesHelper.current}
