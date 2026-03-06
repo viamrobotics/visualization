@@ -6,13 +6,9 @@
 	import Line from './Line.svelte'
 	import Points from './Points.svelte'
 	import Arrows from './Arrows/ArrowGroups.svelte'
-
 	import { traits, useQuery } from '$lib/ecs'
 	import { Not, Or } from 'koota'
-	import GeometryModel from './GeometryModel.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-
-	const settings = useSettings()
+	import Geometry from './Geometry.svelte'
 
 	/**
 	 * Frames from a live machine are bucketed into their own query
@@ -96,15 +92,7 @@
 {/each}
 
 {#each resourceGeometriesEntities.current as entity (entity)}
-	{#if settings.current.renderArmModels.includes('colliders')}
-		<Frame {entity}>
-			<Label text={entity.get(traits.Name)} />
-		</Frame>
-	{/if}
-
-	{#if settings.current.renderArmModels.includes('model')}
-		<GeometryModel {entity} />
-	{/if}
+	<Geometry {entity} />
 {/each}
 
 <Arrows />

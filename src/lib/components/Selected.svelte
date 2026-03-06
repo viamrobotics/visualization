@@ -15,6 +15,7 @@
 	const selectedObject3d = useSelectedObject3d()
 
 	const object = $derived.by(() => {
+		console.log(selectedObject3d.current)
 		if (!selectedObject3d.current) {
 			return
 		}
@@ -45,6 +46,8 @@
 			} else if (isInstanceOf(selectedObject3d.current, 'Mesh')) {
 				selectedObject3d.current?.getWorldPosition(object.position)
 				selectedObject3d.current?.getWorldQuaternion(object.quaternion)
+				obbHelper.setFromObject(object)
+			} else {
 				obbHelper.setFromObject(object)
 			}
 

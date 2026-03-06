@@ -2,11 +2,8 @@
 	import type { Snippet } from 'svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { Color, Group, type Object3D } from 'three'
-	import Geometry from './Geometry.svelte'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { colors, darkenColor, resourceColors } from '$lib/color'
+	import Mesh from './Mesh.svelte'
+	import { colors, resourceColors } from '$lib/color'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
@@ -25,8 +22,6 @@
 
 	const colorUtil = new Color()
 
-	const settings = useSettings()
-	const selectedEntity = useSelectedEntity()
 	const resourceByName = useResourceByName()
 
 	const name = useTrait(() => entity, traits.Name)
@@ -46,21 +41,21 @@
 		if (entityColor.current) {
 			return colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
 		}
+
 		if (resourceColor) {
 			return resourceColor
 		}
+
 		return colors.default
 	})
 </script>
 
 <Portal id={parent.current}>
-	<Geometry
+	<Mesh
 		bind:ref
 		{entity}
 		{pose}
-		color={selectedEntity.current === entity
-			? `#${darkenColor(color, 75).getHexString()}`
-			: `#${colorUtil.set(color).getHexString()}`}
+		color={`#${colorUtil.set(color).getHexString()}`}
 		{...events}
 	>
 		{#if name.current}
@@ -70,5 +65,5 @@
 		{#if ref}
 			{@render children?.({ ref })}
 		{/if}
-	</Geometry>
+	</Mesh>
 </Portal>
