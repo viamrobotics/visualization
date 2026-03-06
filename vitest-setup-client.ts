@@ -55,7 +55,7 @@ vi.mock('$lib/hooks/useLinked.svelte', () => ({
 	useLinkedEntities: vi.fn(() => ({ current: [] })),
 }))
 // required for svelte5 + jsdom as jsdom does not support matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
 	writable: true,
 	enumerable: true,
 	value: vi.fn().mockImplementation((query) => ({
@@ -75,7 +75,7 @@ const mockDB = {
 		onupgradeneeded: null,
 	})),
 }
-;(global as unknown as { indexedDB: unknown }).indexedDB = mockDB
+;(globalThis as unknown as { indexedDB: unknown }).indexedDB = mockDB
 
 // Mock canvas context for Three.js
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({

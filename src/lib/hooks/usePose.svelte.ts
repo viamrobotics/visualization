@@ -11,7 +11,7 @@ import { useLogs } from './useLogs.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 
-const origingFrameComponentTypes = ['arm', 'gantry', 'gripper', 'base']
+const originFrameComponentTypes = new Set(['arm', 'gantry', 'gripper', 'base'])
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const environment = useEnvironment()
@@ -33,15 +33,11 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 	const interval = $derived(refreshRates.get(RefreshRates.poses))
 
 	const resolvedParent = $derived(
-		origingFrameComponentTypes.includes(parentResource?.subtype ?? '')
-			? `${parent()}_origin`
-			: parent()
+		originFrameComponentTypes.has(parentResource?.subtype ?? '') ? `${parent()}_origin` : parent()
 	)
 
 	const resolvedName = $derived(
-		origingFrameComponentTypes.includes(resource?.subtype ?? '')
-			? `${currentName}_origin`
-			: currentName
+		originFrameComponentTypes.has(resource?.subtype ?? '') ? `${currentName}_origin` : currentName
 	)
 
 	const query = createRobotQuery(
