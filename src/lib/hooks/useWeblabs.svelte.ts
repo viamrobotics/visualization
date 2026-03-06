@@ -23,6 +23,7 @@ const addCookie = (name: string, value: string, days?: number, path: string = '/
 		expires = '; expires=' + date.toUTCString()
 	}
 
+	// eslint-disable-next-line unicorn/no-document-cookie
 	document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}${expires}; path=${path}`
 }
 
@@ -61,11 +62,11 @@ export const createWeblabs = (): Context => {
 }
 
 export const provideWeblabs = () => {
-	const urlExperiment = new URLSearchParams(window.location.search).get('experiment')
+	const urlExperiment = new URLSearchParams(globalThis.location.search).get('experiment')
 
 	if (urlExperiment) {
 		const experimentSet = new Set([...getCookieExperiments(), urlExperiment])
-		addCookie('weblab_experiments', Array.from(experimentSet).join(','))
+		addCookie('weblab_experiments', [...experimentSet].join(','))
 	}
 
 	setContext<Context>(WEBLABS_CONTEXT_KEY, createWeblabs())

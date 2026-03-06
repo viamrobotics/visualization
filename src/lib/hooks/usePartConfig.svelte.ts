@@ -145,14 +145,14 @@ export const providePartConfig = (
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(mod: any) => mod?.['$set']?.[modSetPath] !== undefined
 		)
-		if (existingFrameIndex !== -1) {
+		if (existingFrameIndex === -1) {
+			fragmentMod.mods.push(frame)
+		} else {
 			const existingGeometry = fragmentMod.mods[existingFrameIndex]['$set']?.[modSetPath].geometry
 			if (existingGeometry && !frameGeometry) {
 				frame['$set'][modSetPath].geometry = existingGeometry
 			}
 			fragmentMod.mods[existingFrameIndex] = frame
-		} else {
-			fragmentMod.mods.push(frame)
 		}
 
 		config.set(newConfig)
@@ -203,11 +203,11 @@ export const providePartConfig = (
 	const deletePartFrame = (componentName: string) => {
 		const newConfig = getCurrent()
 		const component = newConfig?.components?.find(({ name }) => name === componentName)
-		if (!component) {
-			return
+
+		if (component) {
+			delete component.frame
+			config.set(newConfig)
 		}
-		delete component.frame
-		config.set(newConfig)
 	}
 
 	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
@@ -254,26 +254,27 @@ export const providePartConfig = (
 			frameGeometry?: Frame['geometry']
 		) => {
 			const fragmentId = config.componentNameToFragmentId[componentName]
-			if (fragmentId !== undefined) {
-				updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
-			} else {
+			if (fragmentId === undefined) {
 				updatePartFrame(componentName, referenceFrame, framePosition, frameGeometry)
+			} else {
+				updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
 			}
 		},
+
 		deleteFrame: (componentName: string) => {
 			const fragmentId = config.componentNameToFragmentId[componentName]
-			if (fragmentId !== undefined) {
-				deleteFragmentFrame(fragmentId, componentName)
-			} else {
+			if (fragmentId === undefined) {
 				deletePartFrame(componentName)
+			} else {
+				deleteFragmentFrame(fragmentId, componentName)
 			}
 		},
 		createFrame: (componentName: string) => {
 			const fragmentId = config.componentNameToFragmentId[componentName]
-			if (fragmentId !== undefined) {
-				createFragmentFrame(fragmentId, componentName)
-			} else {
+			if (fragmentId === undefined) {
 				createPartFrame(componentName)
+			} else {
+				createFragmentFrame(fragmentId, componentName)
 			}
 		},
 		save: () => config.save?.(),

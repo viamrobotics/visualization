@@ -18,11 +18,7 @@ export const provideConfigFrames = () => {
 	const partConfig = usePartConfig()
 
 	$effect(() => {
-		if (partConfig.isDirty) {
-			environment.current.viewerMode = 'edit'
-		} else {
-			environment.current.viewerMode = 'monitor'
-		}
+		environment.current.viewerMode = partConfig.isDirty ? 'edit' : 'monitor'
 	})
 
 	const [configFrames, configUnsetFrameNames] = $derived.by(() => {
@@ -107,7 +103,7 @@ export const provideConfigFrames = () => {
 			}
 		}
 
-		return Array.from(validFrames)
+		return [...validFrames]
 	}
 
 	const unsetFrames = $derived([...new Set([...configUnsetFrameNames, ...fragmentUnsetFrameNames])])

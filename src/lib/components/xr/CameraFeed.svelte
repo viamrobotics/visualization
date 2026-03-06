@@ -86,7 +86,7 @@
 			}
 
 			// Force play to ensure stream is active
-			video.play().catch((e) => console.warn('Video play failed:', e))
+			video.play().catch((error) => console.warn('Video play failed:', error))
 			ready = true
 
 			// PROFILING: Video ready
@@ -153,28 +153,26 @@
 				const captureTime = metadata.captureTime || metadata.mediaTime
 				const presentationTime = metadata.presentationTime || metadata.expectedDisplayTime
 
-				if (captureTime) {
-					// The times might be in different epochs, so we can only reliably calculate
-					// the difference between capture and presentation
-					if (presentationTime) {
-						// Encoding + Network + Decoding time
-						const captureToPresentMs = (presentationTime - captureTime) / 1000
-						metrics.captureToPresent = captureToPresentMs
+				// The times might be in different epochs, so we can only reliably calculate
+				// the difference between capture and presentation
+				if (captureTime && presentationTime) {
+					// Encoding + Network + Decoding time
+					const captureToPresentMs = (presentationTime - captureTime) / 1000
+					metrics.captureToPresent = captureToPresentMs
 
-						// Time since video element presented the frame to when we render it
-						// This should be very small (< 16ms ideally)
-						const presentMsRelative = presentationTime / 1000
-						const timeSincePresentation = now - presentMsRelative
+					// Time since video element presented the frame to when we render it
+					// This should be very small (< 16ms ideally)
+					const presentMsRelative = presentationTime / 1000
+					const timeSincePresentation = now - presentMsRelative
 
-						// Only use this if the time domains seem aligned (value is reasonable)
-						if (Math.abs(timeSincePresentation) < 1000) {
-							metrics.presentToRender = timeSincePresentation
-							metrics.totalLatency = captureToPresentMs + timeSincePresentation
-						} else {
-							// Time domains don't align - just use capture to present as approximation
-							metrics.presentToRender = undefined
-							metrics.totalLatency = captureToPresentMs
-						}
+					// Only use this if the time domains seem aligned (value is reasonable)
+					if (Math.abs(timeSincePresentation) < 1000) {
+						metrics.presentToRender = timeSincePresentation
+						metrics.totalLatency = captureToPresentMs + timeSincePresentation
+					} else {
+						// Time domains don't align - just use capture to present as approximation
+						metrics.presentToRender = undefined
+						metrics.totalLatency = captureToPresentMs
 					}
 				}
 			}
