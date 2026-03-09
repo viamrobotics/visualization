@@ -245,16 +245,16 @@
 	}
 
 	$effect(() => {
-		window.addEventListener('keydown', onkeydown)
-		window.addEventListener('keyup', onkeyup)
+		globalThis.addEventListener('keydown', onkeydown)
+		globalThis.addEventListener('keyup', onkeyup)
 		dom.addEventListener('pointerdown', onpointerdown)
 		dom.addEventListener('pointermove', onpointermove)
 		dom.addEventListener('pointerup', onpointerup)
 		dom.addEventListener('pointerleave', onpointerleave)
 
 		return () => {
-			window.removeEventListener('keydown', onkeydown)
-			window.removeEventListener('keyup', onkeyup)
+			globalThis.removeEventListener('keydown', onkeydown)
+			globalThis.removeEventListener('keyup', onkeyup)
 			dom.removeEventListener('pointerdown', onpointerdown)
 			dom.removeEventListener('pointermove', onpointermove)
 			dom.removeEventListener('pointerup', onpointerup)

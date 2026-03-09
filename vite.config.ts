@@ -44,7 +44,7 @@ export default defineConfig({
 
 	server: {
 		host: true,
-		port: parseInt(process.env.STATIC_PORT || '5173', 10),
+		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
 		cors: true,
 		https: https ? {} : undefined,

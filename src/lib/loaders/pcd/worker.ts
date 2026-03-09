@@ -3,7 +3,7 @@ import type { Message } from './messages'
 
 const loader = new PCDLoader()
 
-self.onmessage = async (event) => {
+globalThis.onmessage = async (event) => {
 	const { data, id } = event.data
 	if (!(data instanceof Uint8Array)) {
 		postMessage({ id, error: 'Invalid data format' } satisfies Message)

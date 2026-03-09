@@ -3,7 +3,7 @@ export const formatNumeric = (value?: number, decimals = 2) => {
 		return '––'
 	}
 
-	if (isNaN(value)) {
+	if (Number.isNaN(value)) {
 		return 'NaN'
 	}
 

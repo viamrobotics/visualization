@@ -13,12 +13,10 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.metaKey) {
-			if (event.key.toLowerCase() === 's') {
-				event.preventDefault()
-				event.stopImmediatePropagation()
-				partConfig.save()
-			}
+		if (event.metaKey && event.key.toLowerCase() === 's') {
+			event.preventDefault()
+			event.stopImmediatePropagation()
+			partConfig.save()
 		}
 	}}
 />

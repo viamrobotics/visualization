@@ -23,7 +23,7 @@ function closestPointsRaySegment(
 	const D = ray.direction // assume normalized
 	const AB = direction.copy(b).sub(a)
 
-	const a0 = 1.0 // D·D
+	const a0 = 1 // D·D
 	const b0 = D.dot(AB)
 	const c0 = AB.dot(AB)
 
@@ -35,20 +35,20 @@ function closestPointsRaySegment(
 
 	const denom = a0 * c0 - b0 * b0
 
-	let t = 0.0
-	let u = 0.0
+	let t = 0
+	let u = 0
 
 	if (denom > 1e-8) {
 		t = (b0 * e0 - c0 * d0) / denom
 		u = (a0 * e0 - b0 * d0) / denom
 	} else {
-		t = 0.0
-		u = c0 > 0.0 ? e0 / c0 : 0.0
+		t = 0
+		u = c0 > 0 ? e0 / c0 : 0
 	}
 
-	if (t < 0.0) t = 0.0
-	if (u < 0.0) u = 0.0
-	else if (u > 1.0) u = 1.0
+	if (t < 0) t = 0
+	if (u < 0) u = 0
+	else if (u > 1) u = 1
 
 	outRay.copy(D).multiplyScalar(t).add(O)
 	outSeg.copy(AB).multiplyScalar(u).add(a)
@@ -92,7 +92,7 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 	localRay.direction.normalize()
 	const material = this.shaftMesh.material as RawShaderMaterial
 	const poseScale = material.uniforms?.poseScale?.value ?? 0.001
-	const headAtOrigin = material.uniforms?.headAtOrigin?.value ?? 0.0
+	const headAtOrigin = material.uniforms?.headAtOrigin?.value ?? 0
 
 	// pick radius in local space (same units as rendered)
 	const radius = Math.max(this.shaftRadius, this.headWidth)
