@@ -1,5 +1,5 @@
 import { Browser, expect, Page, test } from '@playwright/test'
-import { execSync } from 'child_process'
+import { execSync } from 'node:child_process'
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
@@ -29,7 +29,7 @@ const cleanup = async (page: Page) => {
 	execSync(
 		'go test -run ^TestRemoveAll$/RemoveAllHelper github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -59,7 +59,7 @@ test('draw frame system', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrameSystem$/DrawFrameSystem github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -75,7 +75,7 @@ test('draw frames', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrames$/DrawFrames github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
