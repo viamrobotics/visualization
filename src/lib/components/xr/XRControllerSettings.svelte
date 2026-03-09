@@ -105,8 +105,8 @@
 			max="3.0"
 			step="0.1"
 			value={config.left.scaleFactor}
-			style="--value: {((config.left.scaleFactor - 0.1) / (3.0 - 0.1)) * 100}%"
-			oninput={(e) => updateConfig('left', 'scaleFactor', parseFloat(e.currentTarget.value))}
+			style="--value: {((config.left.scaleFactor - 0.1) / (3 - 0.1)) * 100}%"
+			oninput={(e) => updateConfig('left', 'scaleFactor', Number.parseFloat(e.currentTarget.value))}
 		/>
 	</label>
 
@@ -166,8 +166,9 @@
 			max="3.0"
 			step="0.1"
 			value={config.right.scaleFactor}
-			style="--value: {((config.right.scaleFactor - 0.1) / (3.0 - 0.1)) * 100}%"
-			oninput={(e) => updateConfig('right', 'scaleFactor', parseFloat(e.currentTarget.value))}
+			style="--value: {((config.right.scaleFactor - 0.1) / (3 - 0.1)) * 100}%"
+			oninput={(e) =>
+				updateConfig('right', 'scaleFactor', Number.parseFloat(e.currentTarget.value))}
 		/>
 	</label>
 

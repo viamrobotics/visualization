@@ -29,11 +29,13 @@ export const provideLinkedEntities = () => {
 		}
 	})
 
+	const unsub = () => {
+		unsubAdd()
+		unsubRemove()
+	}
+
 	$effect(() => {
-		return () => {
-			unsubAdd()
-			unsubRemove()
-		}
+		return unsub
 	})
 
 	setContext<LinkedEntitiesContext>(linkedKey, {

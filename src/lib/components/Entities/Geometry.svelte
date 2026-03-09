@@ -3,14 +3,15 @@
 	import { type Snippet } from 'svelte'
 	import { meshBounds } from '@threlte/extras'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
-	import { Line2, LineGeometry, LineMaterial } from 'three/examples/jsm/Addons.js'
+	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { colors, darkenColor } from '$lib/color'
-	import AxesHelper from './AxesHelper.svelte'
+	import AxesHelper from '../AxesHelper.svelte'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 	import type { Pose } from '@viamrobotics/sdk'
+	import LineGeometry from './LineGeometry.svelte'
 
 	interface Props extends ThrelteProps<Group> {
 		entity: Entity
@@ -47,6 +48,8 @@
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const center = useTrait(() => entity, traits.Center)
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+	const materialProps = useTrait(() => entity, traits.Material)
+	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 
 	const geometryType = $derived.by(() => {
 		if (box.current) return 'box'
@@ -125,32 +128,19 @@
 	{...rest}
 >
 	{#if geometryType}
-		{#if showAxesHelper.current}
-			<AxesHelper
-				width={3}
-				length={0.1}
-			/>
+		{#if model && renderMode.includes('model')}
+			<T is={model} />
 		{/if}
 
-		<T
-			is={mesh}
-			name={entity}
-			userData.name={name}
-		>
-			{#if model && renderMode.includes('model')}
-				<T is={model} />
-			{/if}
-
-			{#if !model || renderMode.includes('colliders')}
+		{#if !model || renderMode.includes('colliders')}
+			<T
+				is={mesh}
+				name={entity}
+				userData.name={name}
+				renderOrder={renderOrder.current}
+			>
 				{#if linePositions.current}
-					<T
-						is={LineGeometry}
-						oncreate={(ref) => {
-							if (linePositions.current) {
-								ref.setPositions(linePositions.current)
-							}
-						}}
-					/>
+					<LineGeometry positions={linePositions.current} />
 				{:else if box.current}
 					{@const { x, y, z } = box.current ?? { x: 0, y: 0, z: 0 }}
 					<T.BoxGeometry
@@ -171,36 +161,42 @@
 						{oncreate}
 					/>
 				{/if}
-			{/if}
 
-			{#if linePositions.current}
-				<T
-					is={LineMaterial}
-					{color}
-					width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
-				/>
-			{:else}
-				<T.MeshToonMaterial
-					{color}
-					side={geometryType === 'buffer' ? DoubleSide : FrontSide}
-					transparent={(opacity.current ?? 0.7) < 1}
-					opacity={opacity.current ?? 0.7}
-				/>
+				{#if linePositions.current}
+					<T
+						is={LineMaterial}
+						{color}
+						width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+						depthTest={materialProps.current?.depthTest ?? true}
+					/>
+				{:else}
+					{@const currentOpacity = opacity.current ?? 0.7}
+					<T.MeshToonMaterial
+						{color}
+						side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+						transparent={currentOpacity < 1}
+						depthWrite={currentOpacity === 1}
+						opacity={currentOpacity}
+						depthTest={materialProps.current?.depthTest ?? true}
+					/>
 
-				{#if geo && renderMode.includes('colliders')}
-					<T.LineSegments
-						raycast={() => null}
-						bvh={{ enabled: false }}
-					>
-						<T.EdgesGeometry args={[geo, 0]} />
-						<T.LineBasicMaterial color={darkenColor(color, 10)} />
-					</T.LineSegments>
+					{#if geo && (renderMode.includes('colliders') || !model)}
+						<T.LineSegments
+							raycast={() => null}
+							bvh={{ enabled: false }}
+						>
+							<T.EdgesGeometry args={[geo, 0]} />
+							<T.LineBasicMaterial color={darkenColor(color, 10)} />
+						</T.LineSegments>
+					{/if}
 				{/if}
-			{/if}
-		</T>
-	{:else if showAxesHelper.current}
+			</T>
+		{/if}
+	{/if}
+
+	{#if showAxesHelper.current}
 		<AxesHelper
-			name={name.current}
+			name={entity}
 			width={3}
 			length={0.1}
 		/>
