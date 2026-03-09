@@ -13,12 +13,10 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (event.metaKey) {
-			if (event.key.toLowerCase() === 's') {
-				event.preventDefault()
-				event.stopImmediatePropagation()
-				partConfig.saveLocalPartConfig()
-			}
+		if (event.metaKey && event.key.toLowerCase() === 's') {
+			event.preventDefault()
+			event.stopImmediatePropagation()
+			partConfig.save()
 		}
 	}}
 />
@@ -43,7 +41,7 @@
 				<Button
 					class="cursor-pointer text-blue-600"
 					onclick={() => {
-						partConfig.resetLocalPartConfig()
+						partConfig.discardChanges()
 					}}
 				>
 					Discard
@@ -54,7 +52,7 @@
 					aria-label="Save"
 					class="cursor-pointer text-blue-600"
 					onclick={() => {
-						partConfig.saveLocalPartConfig()
+						partConfig.save()
 					}}
 				>
 					<div class="flex gap-2">

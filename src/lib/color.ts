@@ -22,9 +22,9 @@ const oklchToHex = (raw: string) => {
 		return raw
 	}
 
-	const l = parseFloat(match[1]) / 100
-	const c = parseFloat(match[2])
-	const h = parseFloat(match[3])
+	const l = Number.parseFloat(match[1]) / 100
+	const c = Number.parseFloat(match[2])
+	const h = Number.parseFloat(match[3])
 
 	// Convert h from degrees to radians
 	const hRad = (h * Math.PI) / 180

@@ -1,7 +1,9 @@
 import { type Frame, createFrame } from '$lib/frame'
 import { createPoseFromFrame } from '$lib/transform'
+import type { JsonObject } from '@bufbuild/protobuf'
 import { Struct, Pose } from '@viamrobotics/sdk'
-import type { JsonValue, ViamClient } from '@viamrobotics/sdk'
+import type { JsonValue } from '@viamrobotics/sdk'
+import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('part-config-context')
@@ -15,44 +17,52 @@ export interface PartConfig {
 	}[]
 }
 
-interface PartConfigParams {
-	appEmbeddedPartConfigProps?: AppEmbeddedPartConfigProps
-	standalonePartConfigProps?: StandalonePartConfigProps
+interface LocalPartConfig {
+	isDirty: boolean
+	hasEditPermissions: boolean
+	current: Struct
+	componentNameToFragmentId: Record<string, string>
+
+	set: (config: PartConfig) => void
+	save?: () => void
+	discardChanges?: () => void
 }
 
 interface PartConfigContext {
+	current: PartConfig
+	isDirty: boolean
+	hasEditPermissions: boolean
+	componentNameToFragmentId: Record<string, string>
+
 	updateFrame: (
 		componentName: string,
 		referenceFrame: string,
 		pose: Pose,
 		geometry?: Frame['geometry']
 	) => void
-	saveLocalPartConfig: () => void
-	resetLocalPartConfig: () => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
-	componentNameToFragmentId: Record<string, string>
-	localPartConfig: Struct
-	isDirty: boolean
-	hasEditPermissions: boolean
+	save: () => void
+	discardChanges: () => void
 }
 
-export const providePartConfig = (params: () => PartConfigParams) => {
-	const { appEmbeddedPartConfigProps, standalonePartConfigProps } = params()
-	let _localPartConfig: LocalPartConfig
-	if (appEmbeddedPartConfigProps) {
-		_localPartConfig = new AppEmbeddedPartConfig(appEmbeddedPartConfigProps)
-	} else if (standalonePartConfigProps) {
-		_localPartConfig = new StandalonePartConfig(standalonePartConfigProps)
-	} else {
-		throw new Error('No part config provided')
+export const providePartConfig = (
+	partID: () => string,
+	params: () => AppEmbeddedPartConfigProps | undefined
+) => {
+	const props = $derived(params())
+	const config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
+
+	const getCurrent = () => {
+		return (config.current.toJson?.() ?? { components: [] }) as unknown as PartConfig
 	}
 
+	const current = $derived(getCurrent())
+
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		const newConfig = getCurrent()
+		newConfig.fragment_mods ??= []
+
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
 			fragmentMod = {
@@ -70,18 +80,16 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 		}
 
 		fragmentMod.mods.push(frame)
-		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-		_localPartConfig.setLocalPartConfig(configStruct)
+		config.set(newConfig)
 	}
 
 	const createPartFrame = (componentName: string) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
+		const newConfig = getCurrent()
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
 		if (component) {
 			component.frame = createFrame()
 		}
-		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-		_localPartConfig.setLocalPartConfig(configStruct)
+		config.set(newConfig)
 	}
 
 	const updateFragmentFrame = (
@@ -91,10 +99,9 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 		framePosition: Pose,
 		frameGeometry?: Frame['geometry']
 	) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		const newConfig = getCurrent()
+		newConfig.fragment_mods ??= []
+
 		let fragmentMod = newConfig.fragment_mods.find(
 			(mod: { fragment_id: string }) => mod.fragment_id === fragmentId
 		)
@@ -138,17 +145,17 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(mod: any) => mod?.['$set']?.[modSetPath] !== undefined
 		)
-		if (existingFrameIndex !== -1) {
+		if (existingFrameIndex === -1) {
+			fragmentMod.mods.push(frame)
+		} else {
 			const existingGeometry = fragmentMod.mods[existingFrameIndex]['$set']?.[modSetPath].geometry
 			if (existingGeometry && !frameGeometry) {
 				frame['$set'][modSetPath].geometry = existingGeometry
 			}
 			fragmentMod.mods[existingFrameIndex] = frame
-		} else {
-			fragmentMod.mods.push(frame)
 		}
 
-		_localPartConfig.setLocalPartConfig(Struct.fromJson(newConfig as unknown as JsonValue))
+		config.set(newConfig)
 	}
 
 	const updatePartFrame = (
@@ -157,11 +164,10 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 		pose: Pose,
 		geometry?: Frame['geometry']
 	) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-		const component = newConfig?.components?.find(
-			(comp: { name: string }) => comp.name === componentName
-		)
+		const newConfig = getCurrent()
+		const component = newConfig.components?.find(({ name }) => name === componentName)
 
+		console.log('hi', newConfig, componentName)
 		if (!component) {
 			return
 		}
@@ -191,28 +197,23 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 			}
 		}
 
-		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-		_localPartConfig.setLocalPartConfig(configStruct)
+		config.set(newConfig)
 	}
 
 	const deletePartFrame = (componentName: string) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-		const component = newConfig?.components?.find(
-			(comp: { name: string }) => comp.name === componentName
-		)
-		if (!component) {
-			return
+		const newConfig = getCurrent()
+		const component = newConfig?.components?.find(({ name }) => name === componentName)
+
+		if (component) {
+			delete component.frame
+			config.set(newConfig)
 		}
-		delete component.frame
-		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-		_localPartConfig.setLocalPartConfig(configStruct)
 	}
 
 	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = _localPartConfig.getLocalPartConfig().toJson() as unknown as PartConfig
-		if (newConfig.fragment_mods === undefined) {
-			newConfig.fragment_mods = []
-		}
+		const newConfig = getCurrent()
+		newConfig.fragment_mods ??= []
+
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
@@ -229,58 +230,55 @@ export const providePartConfig = (params: () => PartConfigParams) => {
 				[modUnSetPath]: '',
 			},
 		})
-		const configStruct = Struct.fromJson(newConfig as unknown as JsonValue)
-		_localPartConfig.setLocalPartConfig(configStruct)
+		config.set(newConfig)
 	}
 
 	setContext<PartConfigContext>(key, {
+		get current() {
+			return current
+		},
+		get componentNameToFragmentId() {
+			return config.componentNameToFragmentId
+		},
+		get isDirty() {
+			return config.isDirty
+		},
+		get hasEditPermissions() {
+			return config.hasEditPermissions
+		},
+
 		updateFrame: (
 			componentName: string,
 			referenceFrame: string,
 			framePosition: Pose,
 			frameGeometry?: Frame['geometry']
 		) => {
-			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-			if (fragmentId !== undefined) {
-				updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
-			} else {
+			const fragmentId = config.componentNameToFragmentId[componentName]
+			if (fragmentId === undefined) {
 				updatePartFrame(componentName, referenceFrame, framePosition, frameGeometry)
+			} else {
+				updateFragmentFrame(fragmentId, componentName, referenceFrame, framePosition, frameGeometry)
 			}
 		},
+
 		deleteFrame: (componentName: string) => {
-			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-			if (fragmentId !== undefined) {
-				deleteFragmentFrame(fragmentId, componentName)
-			} else {
+			const fragmentId = config.componentNameToFragmentId[componentName]
+			if (fragmentId === undefined) {
 				deletePartFrame(componentName)
+			} else {
+				deleteFragmentFrame(fragmentId, componentName)
 			}
 		},
 		createFrame: (componentName: string) => {
-			const fragmentId = _localPartConfig.componentNameToFragmentId()[componentName]
-			if (fragmentId !== undefined) {
-				createFragmentFrame(fragmentId, componentName)
-			} else {
+			const fragmentId = config.componentNameToFragmentId[componentName]
+			if (fragmentId === undefined) {
 				createPartFrame(componentName)
+			} else {
+				createFragmentFrame(fragmentId, componentName)
 			}
 		},
-		saveLocalPartConfig: () => {
-			_localPartConfig.saveLocalPartConfig?.()
-		},
-		resetLocalPartConfig: () => {
-			_localPartConfig.resetLocalPartConfig?.()
-		},
-		get localPartConfig() {
-			return _localPartConfig.getLocalPartConfig()
-		},
-		get componentNameToFragmentId() {
-			return _localPartConfig.componentNameToFragmentId()
-		},
-		get isDirty() {
-			return _localPartConfig.isDirty()
-		},
-		get hasEditPermissions() {
-			return _localPartConfig.hasEditPermissions()
-		},
+		save: () => config.save?.(),
+		discardChanges: () => config.discardChanges?.(),
 	})
 }
 
@@ -288,160 +286,135 @@ export const usePartConfig = (): PartConfigContext => {
 	return getContext<PartConfigContext>(key)
 }
 
-interface LocalPartConfig {
-	isDirty: () => boolean
-	hasEditPermissions: () => boolean
-	getLocalPartConfig: () => Struct
-	setLocalPartConfig: (config: Struct) => void
-	componentNameToFragmentId: () => Record<string, string>
-	saveLocalPartConfig?: () => void
-	resetLocalPartConfig?: () => void
-}
-
 interface AppEmbeddedPartConfigProps {
-	isDirty: () => boolean
-	getLocalPartConfig: () => Struct
+	current: Struct
+	isDirty: boolean
+	componentToFragId: Record<string, string>
+
 	setLocalPartConfig: (config: Struct) => void
-	getComponentToFragId: () => Record<string, string>
 }
-class AppEmbeddedPartConfig implements LocalPartConfig {
-	private _appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps
-	constructor(appEmbeddedPartConfigProps: AppEmbeddedPartConfigProps) {
-		this._appEmbeddedPartConfigProps = appEmbeddedPartConfigProps
-	}
 
-	public isDirty(): boolean {
-		return this._appEmbeddedPartConfigProps.isDirty()
-	}
+const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConfig => {
+	return {
+		hasEditPermissions: true,
+		get isDirty() {
+			return props.isDirty
+		},
 
-	public getLocalPartConfig(): Struct {
-		return this._appEmbeddedPartConfigProps.getLocalPartConfig()
-	}
+		get current() {
+			return props.current ?? new Struct()
+		},
 
-	public setLocalPartConfig(config: Struct): void {
-		return this._appEmbeddedPartConfigProps.setLocalPartConfig(config)
-	}
+		get componentNameToFragmentId() {
+			return props.componentToFragId
+		},
 
-	public componentNameToFragmentId(): Record<string, string> {
-		return this._appEmbeddedPartConfigProps.getComponentToFragId()
-	}
-
-	public hasEditPermissions(): boolean {
-		return true
+		set(config: PartConfig): void {
+			const struct = Struct.fromJson(config as unknown as JsonValue)
+			return props.setLocalPartConfig(struct)
+		},
 	}
 }
 
-interface StandalonePartConfigProps {
-	viamClient: () => ViamClient | undefined
-	partID: () => string
-}
-class StandalonePartConfig implements LocalPartConfig {
-	private _standalonePartConfigProps: StandalonePartConfigProps
-	private _isDirty = $state(false)
-	private _hasEditPermissions = $state(false)
-	private _networkPartConfig = $state<Struct>()
-	private _localPartConfig = $state<Struct>()
-	private _partName = $state<string>()
-	private _componentNameToFragmentId = $state<Record<string, string>>()
+const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
+	const partQuery = createAppQuery('getRobotPart', () => [partID()] as const, {
+		refetchInterval: false,
+	})
+	const partName = $derived(partQuery.data?.part?.name)
 
-	constructor(standalonePartConfigProps: StandalonePartConfigProps) {
-		this._standalonePartConfigProps = standalonePartConfigProps
+	const configJSON = $derived.by(() => {
+		if (!partQuery.data?.configJson) {
+			return undefined
+		}
 
-		$effect.pre(() => {
-			const initLocalConfig = async () => {
-				const partResponse = await standalonePartConfigProps
-					.viamClient()
-					?.appClient.getRobotPart(standalonePartConfigProps.partID())
-				if (JSON.parse(partResponse?.configJson ?? 'null') === null) {
-					// no config returned here indicates this api key has no permission to update config
-					return
-				}
-				this._hasEditPermissions = true
-				const configJson = JSON.parse(partResponse?.configJson ?? '{}')
-				this._networkPartConfig = Struct.fromJson(configJson)
-				this._localPartConfig = Struct.fromJson(configJson)
-				this._partName = partResponse?.part?.name
+		try {
+			return JSON.parse(partQuery.data.configJson) as JsonObject
+		} catch {
+			return undefined
+		}
+	})
 
-				const componentNameToFragmentId: Record<string, string> = {}
-				const fragmentRequests = []
+	let networkPartConfig = $derived(configJSON ? Struct.fromJson(configJSON) : undefined)
+	let current = $state.raw<Struct>()
+	let isDirty = $state(false)
 
-				if (configJson.fragments) {
-					for (const fragmentId of configJson.fragments) {
-						//TODO: right now the json could be just a list of strings or an object with an id prop
-						const fragId = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
-						fragmentRequests.push(
-							standalonePartConfigProps.viamClient()?.appClient.getFragment(fragId)
-						)
-					}
+	const hasEditPermissions = $derived(networkPartConfig !== undefined)
 
-					const fragementResponses = await Promise.all(fragmentRequests)
+	const fragmentQueries = $derived(
+		((configJSON?.fragments ?? []) as (string | { id: string })[]).map((fragmentId) => {
+			const id = typeof fragmentId === 'string' ? fragmentId : fragmentId.id
+			return createAppQuery('getFragment', () => [id] as const, { refetchInterval: false })
+		})
+	)
 
-					for (const fragmentResponse of fragementResponses) {
-						const fragmentId = fragmentResponse?.id
-						if (!fragmentId) {
-							continue
-						}
-						const components = fragmentResponse?.fragment?.fields['components'].kind
-
-						if (components?.case === 'listValue') {
-							for (const component of components.value.values) {
-								if (component.kind.case === 'structValue') {
-									const componentName = component.kind.value.fields['name'].kind
-									if (componentName.case === 'stringValue') {
-										componentNameToFragmentId[componentName.value] = fragmentId
-									}
-								}
-							}
-						}
-					}
-					this._componentNameToFragmentId = componentNameToFragmentId
-				}
+	const componentNameToFragmentId = $derived.by(() => {
+		const results: Record<string, string> = {}
+		for (const query of fragmentQueries) {
+			if (!query.data) {
+				continue
 			}
 
-			initLocalConfig()
-		})
-	}
+			const fragmentId = query.data.id
+			const components = query.data?.fragment?.fields['components']?.kind
 
-	public getLocalPartConfig(): Struct {
-		return this._localPartConfig ?? new Struct()
-	}
-	public setLocalPartConfig(config: Struct): void {
-		this._localPartConfig = config
-		this._isDirty = true
-	}
+			if (components?.case === 'listValue') {
+				for (const component of components.value.values) {
+					if (component.kind.case === 'structValue') {
+						const componentName = component.kind.value.fields['name']?.kind
+						if (componentName.case === 'stringValue') {
+							results[componentName.value] = fragmentId
+						}
+					}
+				}
+			}
+		}
 
-	public isDirty(): boolean {
-		return this._isDirty
-	}
+		return results
+	})
 
-	public hasEditPermissions(): boolean {
-		return this._hasEditPermissions
-	}
-
-	public componentNameToFragmentId(): Record<string, string> {
-		return this._componentNameToFragmentId ?? {}
-	}
-
-	public async saveLocalPartConfig(): Promise<void> {
-		if (!this._localPartConfig || !this._partName) {
+	$effect.pre(() => {
+		if (!networkPartConfig) {
+			// no config returned here indicates this api key has no permission to update config
 			return
 		}
-		this._networkPartConfig = this._localPartConfig
-		await this._standalonePartConfigProps
-			.viamClient()
-			?.appClient.updateRobotPart(
-				this._standalonePartConfigProps.partID(),
-				this._partName,
-				this._localPartConfig
-			)
-		this._isDirty = false
-	}
 
-	public async resetLocalPartConfig(): Promise<void> {
-		if (!this._networkPartConfig) {
-			return
-		}
-		this._localPartConfig = this._networkPartConfig
-		this._isDirty = false
+		current = networkPartConfig
+	})
+
+	const updateRobotPartMutation = createAppMutation('updateRobotPart')
+
+	return {
+		get current() {
+			return current ?? new Struct()
+		},
+		get isDirty() {
+			return isDirty
+		},
+		get hasEditPermissions() {
+			return hasEditPermissions
+		},
+		get componentNameToFragmentId() {
+			return componentNameToFragmentId
+		},
+
+		set(config: PartConfig): void {
+			current = Struct.fromJson(config as unknown as JsonValue)
+			isDirty = true
+		},
+
+		async save() {
+			if (!current || !partName) {
+				return
+			}
+
+			networkPartConfig = current
+			await updateRobotPartMutation.mutateAsync([partID(), partName, current])
+			isDirty = false
+		},
+
+		discardChanges() {
+			current = networkPartConfig
+			isDirty = false
+		},
 	}
 }

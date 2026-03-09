@@ -52,8 +52,9 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 	switch (value.kind.case) {
 		case 'numberValue':
 		case 'stringValue':
-		case 'boolValue':
+		case 'boolValue': {
 			return value.kind.value
+		}
 		case 'structValue': {
 			const result: Record<string, unknown> = {}
 			for (const [key, val] of Object.entries(value.kind.value.fields || {})) {
@@ -62,12 +63,16 @@ const unwrapValue = (value: PlainMessage<any>): unknown => {
 			}
 			return result
 		}
-		case 'listValue':
-			return value.kind.value.values?.map(unwrapValue) || []
-		case 'nullValue':
+		case 'listValue': {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			return value.kind.value.values?.map((value: any) => unwrapValue(value)) || []
+		}
+		case 'nullValue': {
 			return null
-		default:
+		}
+		default: {
 			return value.kind.value
+		}
 	}
 }
 
@@ -80,9 +85,10 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 
 		switch (k) {
 			case 'color':
-			case 'lineDotColor':
+			case 'lineDotColor': {
 				json[k] = readColor(unwrappedValue)
 				break
+			}
 			case 'colors': {
 				let colorBytes: number[] | Uint8Array | undefined
 
@@ -107,27 +113,34 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}) => {
 				}
 				break
 			}
-			case 'opacity':
+			case 'opacity': {
 				json[k] = parseOpacity(unwrappedValue)
 				break
-			case 'gltf':
+			}
+			case 'gltf': {
 				json[k] = unwrappedValue as GLTF
 				break
-			case 'points':
+			}
+			case 'points': {
 				json[k] = unwrappedValue as Vector3[]
 				break
-			case 'pointSize':
+			}
+			case 'pointSize': {
 				json[k] = unwrappedValue as number
 				break
-			case 'lineWidth':
+			}
+			case 'lineWidth': {
 				json[k] = unwrappedValue as number
 				break
-			case 'batched':
+			}
+			case 'batched': {
 				json[k] = unwrappedValue as { id: number; object: BatchedMesh }
 				break
-			case 'shape':
+			}
+			case 'shape': {
 				json[k] = unwrappedValue as ValueOf<typeof SupportedShapes>
 				break
+			}
 		}
 	}
 

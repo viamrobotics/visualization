@@ -8,10 +8,13 @@ import (
 	"go.viam.com/test"
 )
 
-func createTestPointCloud(points []r3.Vector) pointcloud.PointCloud {
+func createTestPointCloud(t *testing.T, points []r3.Vector) pointcloud.PointCloud {
+	t.Helper()
 	pc := pointcloud.NewBasicPointCloud(len(points))
 	for _, p := range points {
-		pc.Set(p, pointcloud.NewBasicData())
+		if err := pc.Set(p, pointcloud.NewBasicData()); err != nil {
+			t.Fatal(err)
+		}
 	}
 	return pc
 }
@@ -23,7 +26,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 
 		drawnPC, err := NewDrawnPointCloud(pc)
 		test.That(t, err, test.ShouldBeNil)
@@ -38,7 +41,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 		color := NewColor(WithName("red"))
 
 		drawnPC, err := NewDrawnPointCloud(pc, WithSinglePointCloudColor(color))
@@ -54,7 +57,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 		colors := []Color{
 			NewColor(WithName("red")),
 			NewColor(WithName("green")),
@@ -76,7 +79,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 0, Y: 0, Z: 1},
 			{X: 1, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 		palette := []Color{
 			NewColor(WithName("red")),
 			NewColor(WithName("blue")),
@@ -100,7 +103,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 
 		drawnPC, err := NewDrawnPointCloud(pc, WithPointCloudDownscaling(5.0))
 		test.That(t, err, test.ShouldBeNil)
@@ -114,7 +117,7 @@ func TestNewDrawnPointCloud(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pc := createTestPointCloud(points)
+		pc := createTestPointCloud(t, points)
 
 		drawnPC, err := NewDrawnPointCloud(pc, WithPointCloudDownscaling(-1.0))
 		test.That(t, err, test.ShouldNotBeNil)
