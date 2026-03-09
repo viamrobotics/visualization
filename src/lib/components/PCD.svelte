@@ -2,13 +2,15 @@
 	import { parsePcdInWorker } from '$lib/lib'
 	import { traits, useWorld } from '$lib/ecs'
 	import { createBufferGeometry } from '$lib/attribute'
-	import type { Entity } from 'koota'
+	import type { ConfigurableTrait, Entity } from 'koota'
 
 	interface Props {
 		data: Uint8Array
+		name?: string
+		renderOrder?: number
 	}
 
-	let { data }: Props = $props()
+	let { data, name, renderOrder }: Props = $props()
 
 	const world = useWorld()
 
@@ -18,11 +20,17 @@
 		parsePcdInWorker(data).then(({ positions, colors }) => {
 			const geometry = createBufferGeometry(positions, colors)
 
-			entity = world.spawn(
-				traits.Name('Random points'),
+			const entityTraits: ConfigurableTrait[] = [
+				traits.Name(name ?? 'Random points'),
 				traits.Points,
-				traits.BufferGeometry(geometry)
-			)
+				traits.BufferGeometry(geometry),
+			]
+
+			if (renderOrder) {
+				entityTraits.push(traits.RenderOrder(renderOrder))
+			}
+
+			entity = world.spawn(...entityTraits)
 		})
 
 		return () => {
