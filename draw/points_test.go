@@ -46,6 +46,18 @@ func TestNewPoints(t *testing.T) {
 		test.That(t, points.Colors[2], test.ShouldResemble, green)
 	})
 
+	t.Run("WithPointColorPalette", func(t *testing.T) {
+		red := NewColor(WithName("red"))
+		blue := NewColor(WithName("blue"))
+		palette := []Color{red, blue}
+		points, err := NewPoints(pointPositions, WithPointColorPalette(palette, 3))
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, points.Colors, test.ShouldHaveLength, 3)
+		test.That(t, points.Colors[0], test.ShouldResemble, red)
+		test.That(t, points.Colors[1], test.ShouldResemble, blue)
+		test.That(t, points.Colors[2], test.ShouldResemble, red)
+	})
+
 	t.Run("ErrorEmptyPositions", func(t *testing.T) {
 		_, err := NewPoints([]r3.Vector{})
 		test.That(t, err, test.ShouldNotBeNil)

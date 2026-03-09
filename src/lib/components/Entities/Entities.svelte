@@ -5,6 +5,8 @@
 	import Label from './Label.svelte'
 	import Line from './Line.svelte'
 	import Points from './Points.svelte'
+	import Arrows from './Arrows/ArrowGroups.svelte'
+
 	import { traits, useQuery } from '$lib/ecs'
 	import { Not, Or } from 'koota'
 
@@ -94,3 +96,5 @@
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
 {/each}
+
+<Arrows />

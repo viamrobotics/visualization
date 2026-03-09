@@ -21,8 +21,8 @@
 	let resources: ReturnType<typeof useResourceNames> | undefined
 	try {
 		resources = useResourceNames(() => partID.current)
-	} catch (e) {
-		console.warn('Failed to get resources, robot may not be connected yet:', e)
+	} catch (error) {
+		console.warn('Failed to get resources, robot may not be connected yet:', error)
 	}
 
 	// Get available arms and grippers
@@ -41,9 +41,9 @@
 	const currentConfig = $derived(settings.current.xrController[selectedHand])
 
 	// Local form state (editable) — synced from currentConfig via effect
-	let formArmName = $state<string | undefined>(undefined)
-	let formGripperName = $state<string | undefined>(undefined)
-	let formScaleFactor = $state<number>(1.0)
+	let formArmName = $state<string>()
+	let formGripperName = $state<string>()
+	let formScaleFactor = $state<number>(1)
 	let formRotationEnabled = $state<boolean>(true)
 
 	// Sync form state when selected hand or config changes
@@ -59,9 +59,9 @@
 	const CANVAS_WIDTH = 600
 	const CANVAS_HEIGHT = 500
 
-	let canvas: HTMLCanvasElement | undefined = $state()
-	let texture: CanvasTexture | undefined = $state()
-	let geometry: PlaneGeometry | undefined = $state()
+	let canvas = $state<HTMLCanvasElement>()
+	let texture = $state<CanvasTexture>()
+	let geometry = $state<PlaneGeometry>()
 
 	// Initialize canvas
 	$effect(() => {
@@ -90,14 +90,14 @@
 	let uiElements: UIElement[] = []
 
 	// Mesh ref for raycasting
-	let meshRef = $state<Mesh | undefined>()
+	let meshRef = $state<Mesh>()
 
 	// Controller interaction
 	const rightController = useController('right')
 	const leftController = useController('left')
 
 	// Interaction state
-	let hoveredElement = $state<UIElement | undefined>()
+	let hoveredElement = $state<UIElement>()
 	let lastButtonPressed = $state(false)
 
 	// Handle click on UI element
@@ -340,7 +340,7 @@
 		ctx.fillRect(sliderX, sliderY, sliderWidth, sliderHeight)
 
 		// Slider thumb
-		const thumbPos = ((formScaleFactor - 0.1) / (3.0 - 0.1)) * sliderWidth
+		const thumbPos = ((formScaleFactor - 0.1) / (3 - 0.1)) * sliderWidth
 		ctx.fillStyle = '#4CAF50'
 		ctx.beginPath()
 		ctx.arc(sliderX + thumbPos, sliderY + sliderHeight / 2, 12, 0, Math.PI * 2)
@@ -428,12 +428,13 @@
 		}
 	})
 
-	// Clean up on unmount
+	const cleanup = () => {
+		texture?.dispose()
+		geometry?.dispose()
+	}
+
 	$effect(() => {
-		return () => {
-			texture?.dispose()
-			geometry?.dispose()
-		}
+		return cleanup
 	})
 </script>
 

@@ -48,6 +48,7 @@ type drawableConfig struct {
 	center spatialmath.Pose
 }
 
+// DrawableOption is a function that configures a drawable.
 type DrawableOption func(*drawableConfig)
 
 // WithParent sets the parent reference frame for the Drawing or Transform.
