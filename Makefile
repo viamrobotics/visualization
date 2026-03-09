@@ -27,6 +27,8 @@ help:
 	@echo '  build 			- Build the application for production'
 	@echo '  proto          - Generate protobuf code'
 	@echo '  docs           - Generate documentation'
+	@echo '  bridge         - Build and run the Go SteamVR WebSocket bridge'
+	@echo '  bridge-build   - Build the Go bridge binary only'
 	@echo '  help           - Show this help message'
 
 .PHONY: setup
@@ -90,6 +92,43 @@ proto: proto-clean proto-vendor
 	@$(MAKE) proto-format
 	@$(MAKE) proto-gen-go
 	@$(MAKE) proto-gen-ts
+
+GO             := $(shell which go 2>/dev/null || echo /usr/local/go/bin/go)
+BRIDGE_BIN     := bridge/openvr_bridge
+BRIDGE_PORT    ?= 9090
+BRIDGE_HZ      ?= 90
+OPENVR_VERSION ?= v2.5.1
+OPENVR_SDK_DIR := bridge/openvr-sdk
+OPENVR_SDK_URL := https://github.com/ValveSoftware/openvr/archive/refs/tags/$(OPENVR_VERSION).tar.gz
+
+.PHONY: bridge-deps
+bridge-deps:
+	@if [ ! -f $(OPENVR_SDK_DIR)/headers/openvr_capi.h ]; then \
+		echo '[bridge] Downloading OpenVR SDK $(OPENVR_VERSION)...'; \
+		mkdir -p $(OPENVR_SDK_DIR); \
+		curl -fsSL $(OPENVR_SDK_URL) \
+			| tar -xz --strip-components=1 -C $(OPENVR_SDK_DIR) \
+			    --wildcards \
+			    '*/headers/openvr_capi.h' \
+			    '*/lib/linux64/libopenvr_api.so'; \
+		echo '[bridge] OpenVR SDK ready at $(OPENVR_SDK_DIR)'; \
+	else \
+		echo '[bridge] OpenVR SDK already present ($(OPENVR_SDK_DIR))'; \
+	fi
+	@echo '[bridge] Tidying Go modules...'
+	@$(GO) mod tidy
+
+.PHONY: bridge-build
+bridge-build: bridge-deps
+	@echo '[bridge] Building Go bridge...'
+	@$(GO) build -o $(BRIDGE_BIN) ./bridge
+	@echo '[bridge] Built: $(BRIDGE_BIN)'
+
+.PHONY: bridge
+bridge: bridge-build
+	@echo '[bridge] Starting on port $(BRIDGE_PORT) at $(BRIDGE_HZ) Hz...'
+	@LD_LIBRARY_PATH=$(PWD)/$(OPENVR_SDK_DIR)/lib/linux64:$$LD_LIBRARY_PATH \
+		./$(BRIDGE_BIN) --port $(BRIDGE_PORT) --hz $(BRIDGE_HZ)
 
 draw/DOCS.md: $(DRAW_FILES)
 	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md

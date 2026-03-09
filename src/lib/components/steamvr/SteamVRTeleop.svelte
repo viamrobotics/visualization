@@ -128,11 +128,36 @@
 
 	useTask(() => {
 		const ctrl = getController()
-		if (!ctrl.connected || bridge.state.status !== 'connected') return
+		const bridgeConnected = bridge.state.status === 'connected'
+
+		// Trigger: gripper control works even without full pose tracking.
+		if (bridgeConnected && gripperClient?.current) {
+			const triggerPressed = ctrl.trigger > 0.8
+			if (triggerPressed && !wasTriggerPressed) {
+				if (gripperStopTimeout) {
+					clearTimeout(gripperStopTimeout)
+					gripperStopTimeout = null
+				}
+				gripperClient.current.grab().catch((e: unknown) => console.warn('Gripper grab failed:', e))
+			} else if (!triggerPressed && wasTriggerPressed) {
+				if (gripperStopTimeout) {
+					clearTimeout(gripperStopTimeout)
+					gripperStopTimeout = null
+				}
+				gripperClient.current.open().catch((e: unknown) => console.warn('Gripper open failed:', e))
+				gripperStopTimeout = setTimeout(() => {
+					gripperClient?.current?.stop().catch((e: unknown) => console.warn('Gripper stop failed:', e))
+					gripperStopTimeout = null
+				}, 1000)
+			}
+			wasTriggerPressed = triggerPressed
+		}
+
+		// Arm teleop requires full pose tracking.
+		if (!ctrl.connected || !bridgeConnected) return
 
 		// --- Edge Detection ---
 		const gripPressed = ctrl.grip
-		const triggerPressed = ctrl.triggerPressed
 		const menuPressed = ctrl.menu
 
 		// Grip: start/stop arm control
@@ -147,27 +172,6 @@
 			}
 		}
 
-		// Trigger: gripper control
-		if (gripperClient?.current) {
-			if (triggerPressed && !wasTriggerPressed) {
-				if (gripperStopTimeout) {
-					clearTimeout(gripperStopTimeout)
-					gripperStopTimeout = null
-				}
-				gripperClient.current.grab().catch((e) => console.warn('Gripper grab failed:', e))
-			} else if (!triggerPressed && wasTriggerPressed) {
-				if (gripperStopTimeout) {
-					clearTimeout(gripperStopTimeout)
-					gripperStopTimeout = null
-				}
-				gripperClient.current.open().catch((e) => console.warn('Gripper open failed:', e))
-				gripperStopTimeout = setTimeout(() => {
-					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
-					gripperStopTimeout = null
-				}, 1000)
-			}
-		}
-
 		// Menu: return to saved pose
 		if (menuPressed && !wasMenuPressed) {
 			if (poseStack.length > 0) {
@@ -176,7 +180,6 @@
 		}
 
 		wasGripPressed = gripPressed
-		wasTriggerPressed = triggerPressed
 		wasMenuPressed = menuPressed
 
 		// Control Loop

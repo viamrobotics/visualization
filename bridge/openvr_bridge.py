@@ -82,7 +82,7 @@ def read_controller(vr_system, device_index):
 
     # Axis 0 = trackpad (x, y), Axis 1 = trigger (x = value)
     trackpad_x = state.rAxis[0].x
-    trackpad_y = state.rAxis[0].y
+    trackpad_y = -state.rAxis[0].y  # Negate: OpenVR +y=up, WebXR axes[3] +y=down
     trigger_val = state.rAxis[1].x
 
     return {

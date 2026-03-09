@@ -38,5 +38,9 @@ vite.config.ts.timestamp-*
 src/lib/buf
 protos/vendor
 
+# Bridge — vendored OpenVR SDK and compiled binary
+bridge/openvr-sdk/
+bridge/openvr_bridge
+
 # IDE
 .cursor

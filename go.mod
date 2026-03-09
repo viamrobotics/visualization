@@ -11,6 +11,7 @@ require (
 	go.viam.com/test v1.2.4
 	golang.org/x/image v0.25.0
 	google.golang.org/protobuf v1.36.9
+	nhooyr.io/websocket v1.8.7
 )
 
 require (
@@ -151,5 +152,4 @@ require (
 	google.golang.org/grpc v1.75.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
 )
