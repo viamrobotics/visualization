@@ -201,7 +201,7 @@ test('draw lines', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawLine$/DrawLine$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -217,7 +217,7 @@ test('draw lines with line color', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawLine$/DrawLineWithLineColor$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -233,7 +233,7 @@ test('draw lines with point color', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawLine$/DrawLineWithPointColor$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -249,7 +249,7 @@ test('draw lines with line width', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawLine$/DrawLineWithLineWidth$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -265,7 +265,7 @@ test('draw lines with point size', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawLine$/DrawLineWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
