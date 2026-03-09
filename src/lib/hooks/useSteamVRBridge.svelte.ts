@@ -79,6 +79,7 @@ interface Context {
 	readonly state: SteamVRBridgeState
 	connect: (host: string, port: number) => void
 	disconnect: () => void
+	sendHaptic: (hand: 'left' | 'right', intensity: number, durationMs: number) => void
 }
 
 export const provideSteamVRBridge = () => {
@@ -170,12 +171,18 @@ export const provideSteamVRBridge = () => {
 		state.right = defaultController()
 	}
 
+	function sendHaptic(hand: 'left' | 'right', intensity: number, durationMs: number) {
+		if (!ws || ws.readyState !== WebSocket.OPEN) return
+		ws.send(JSON.stringify({ haptic: { hand, intensity, duration: durationMs } }))
+	}
+
 	const context: Context = {
 		get state() {
 			return state
 		},
 		connect,
 		disconnect,
+		sendHaptic,
 	}
 
 	setContext<Context>(key, context)

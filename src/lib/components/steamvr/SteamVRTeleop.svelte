@@ -91,6 +91,11 @@
 	let lastErrorHapticTime = 0
 	const COMMAND_INTERVAL = 11 // ms (90Hz)
 	const ERROR_COOLDOWN = 1000 // ms
+	const ERROR_HAPTIC_INTERVAL = 200 // ms between error haptic pulses
+
+	function triggerHapticFeedback(intensity: number = 0.5, duration: number = 100) {
+		bridge.sendHaptic(initialHand, intensity, duration)
+	}
 
 	// End effector tracking — render controller at the arm's end effector in the scene
 	let endEffectorObj: Object3D | null = null
@@ -168,6 +173,7 @@
 		} else if (!gripPressed && wasGripPressed) {
 			if (isControlling) {
 				isControlling = false
+				triggerHapticFeedback(0.3, 80)
 				handleStopControl()
 			}
 		}
@@ -229,6 +235,7 @@
 
 			errorTimeout = 0
 			isControlling = true
+			triggerHapticFeedback(0.5, 100)
 		} catch (e) {
 			console.error('[SteamVRTeleop] Failed to start teleop:', e)
 		}
@@ -272,6 +279,10 @@
 		if (isSending) return
 
 		if (now < errorTimeout) {
+			if (now - lastErrorHapticTime > ERROR_HAPTIC_INTERVAL) {
+				triggerHapticFeedback(0.7, 150)
+				lastErrorHapticTime = now
+			}
 			return
 		}
 
@@ -297,6 +308,8 @@
 			.catch((e) => {
 				console.warn('Move failed:', e)
 				errorTimeout = Date.now() + ERROR_COOLDOWN
+				triggerHapticFeedback(0.8, 200)
+				lastErrorHapticTime = Date.now()
 			})
 			.finally(() => {
 				isSending = false
