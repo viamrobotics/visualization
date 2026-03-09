@@ -1,5 +1,22 @@
 # motion-tools
 
+## 1.13.1
+
+### Patch Changes
+
+- f656483: Add colors and line width to nurbs
+- 2b8da5f: Add DrawnFrames to draw API
+- d171cf0: Add DrawnFrames type and use that in the draw frames API
+- d888c1d: Standardize colorables in draw API
+- a75ce2c: Add DrawableOption to public draw API
+- d171cf0: Add draw frame system and draw frames APIs
+- 6e34aa0: Add draw client API helpers
+- ec39781: Fix: reduce over-eager state evaluation of frame updates
+- c02782f: export name and render order props form PCD
+- 6e34aa0: Add ChromaticColorChooser and AchromaticColorChooser to the draw API
+- af2a313: Add server for new draw service and to host static assets in production mode
+- 8796d64: Add DrawService
+
 ## 1.13.0
 
 ### Minor Changes
