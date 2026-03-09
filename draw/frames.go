@@ -93,4 +93,3 @@ func getFrameDrawColor(frameName string, colors map[string]Color) Color {
 	}
 	return DefaultFrameColor
 }
-
