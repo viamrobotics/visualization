@@ -49,7 +49,7 @@ const validatePrefix = (
 	prefix: string
 ): FileNameError | undefined => {
 	switch (prefix) {
-		case Prefixes.Snapshot:
+		case Prefixes.Snapshot: {
 			if (
 				extension !== Extensions.JSON &&
 				extension !== Extensions.PB &&
@@ -60,6 +60,7 @@ const validatePrefix = (
 				)
 			}
 			break
+		}
 	}
 
 	return undefined
@@ -114,12 +115,14 @@ export const readFile = (
 ) => {
 	if (!extension) return
 	switch (extension) {
-		case Extensions.JSON:
+		case Extensions.JSON: {
 			return reader.readAsText(file)
+		}
 		case Extensions.PCD:
 		case Extensions.PLY:
 		case Extensions.PB:
-		case Extensions.PB_GZ:
+		case Extensions.PB_GZ: {
 			return reader.readAsArrayBuffer(file)
+		}
 	}
 }

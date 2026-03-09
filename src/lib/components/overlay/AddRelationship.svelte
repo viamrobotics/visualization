@@ -17,7 +17,7 @@
 		return allEntities.current
 			.map((e: Entity) => e.get(traits.Name))
 			.filter((n: string | undefined): n is string => n !== undefined && n !== currentEntityName)
-			.sort()
+			.toSorted()
 	})
 
 	let showRelationshipOptions = $state(false)

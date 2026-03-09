@@ -36,7 +36,7 @@ const createMaterial = (options: { isHead: boolean; useColorAttribute: boolean }
 		vertexShader,
 		fragmentShader,
 		uniforms: {
-			headAtOrigin: { value: 1.0 },
+			headAtOrigin: { value: 1 },
 			shaftRadius: { value: defaults.SHAFT_RADIUS },
 			headLength: { value: defaults.HEAD_LENGTH },
 			headWidth: { value: defaults.HEAD_WIDTH },

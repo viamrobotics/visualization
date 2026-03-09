@@ -51,7 +51,7 @@ func nurbsToJSON(drawNurbs *draw.Nurbs, name string) ([]byte, error) {
 		"Degree":     drawNurbs.Degree,
 		"Weights":    drawNurbs.Weights,
 		"Knots":      drawNurbs.Knots,
-		"Color":      drawNurbs.Color.ToHex(),
+		"Color":      drawNurbs.Colors[0].ToHex(),
 		"Name":       name,
 	})
 }

@@ -29,7 +29,7 @@ type DrawnGeometryConfig struct {
 }
 
 // newDrawGeometryConfig creates a new draw geometry configuration
-func newDrawGeometryConfig(isPointCloud bool) *DrawnGeometryConfig {
+func newDrawGeometryConfig() *DrawnGeometryConfig {
 	config := &DrawnGeometryConfig{
 		drawColorsConfig:     newDrawColorsConfig(),
 		downscalingThreshold: 0,
@@ -64,7 +64,7 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 	proto := geometry.ToProtobuf()
 	isPointCloud := proto.GetPointcloud() != nil
 
-	config := newDrawGeometryConfig(isPointCloud)
+	config := newDrawGeometryConfig()
 	for _, option := range options {
 		option(config)
 	}
@@ -86,7 +86,10 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 		return nil, err
 	}
 
-	downscaled := downscalePointCloud(pc, config.downscalingThreshold)
+	downscaled, err := downscalePointCloud(pc, config.downscalingThreshold)
+	if err != nil {
+		return nil, err
+	}
 	drawnGeometry, err := pointcloud.ToBasicOctree(downscaled, 0)
 	if err != nil {
 		return nil, err

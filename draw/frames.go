@@ -72,15 +72,12 @@ func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*comm
 			if err != nil {
 				return nil, fmt.Errorf("failed to create drawn geometries for frame %s: %w", frame.Name(), err)
 			}
-			for _, drawnGeometry := range drawing.DrawnGeometries {
-				label := frameGeometryLabel(frame.Name(), drawnGeometry.Geometry)
-				id := fmt.Sprintf("%s:%s", label, parent)
-				transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
-				if err != nil {
-					return nil, fmt.Errorf("failed to create transform for frame %s: %w", frame.Name(), err)
-				}
-				transforms = append(transforms, transform)
+			drawing.Name = frame.Name()
+			frameTransforms, err := drawing.ToTransforms(WithParent(parent), WithPose(pose))
+			if err != nil {
+				return nil, fmt.Errorf("failed to create transforms for frame %s: %w", frame.Name(), err)
 			}
+			transforms = append(transforms, frameTransforms...)
 		} else {
 			drawConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
 			transforms = append(transforms, NewTransform(drawConfig.UUID, drawConfig.Name, drawConfig.Parent, drawConfig.Pose, nil, nil))
@@ -95,12 +92,4 @@ func getFrameDrawColor(frameName string, colors map[string]Color) Color {
 		return color
 	}
 	return DefaultFrameColor
-}
-
-func frameGeometryLabel(frameName string, geometry spatialmath.Geometry) string {
-	geoLabel := geometry.Label()
-	if geoLabel == "" || geoLabel == frameName {
-		return frameName
-	}
-	return fmt.Sprintf("%s:%s", frameName, geoLabel)
 }

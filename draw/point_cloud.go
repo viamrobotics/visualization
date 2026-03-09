@@ -50,11 +50,7 @@ func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption {
 
 // WithPointCloudColorPalette creates a point cloud option that iterates through colors for a point cloud.
 func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOption {
-	finalColors := make([]Color, numPoints)
-	for i := range numPoints {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*DrawnPointCloudConfig](finalColors)
+	return withColorPalette[*DrawnPointCloudConfig](palette, numPoints)
 }
 
 // WithPointCloudDownscaling creates a point cloud option that sets the threshold in millimeters below which points are not rendered from one another.
@@ -79,7 +75,10 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 		return &DrawnPointCloud{PointCloud: pointCloud, Colors: config.colors}, nil
 	}
 
-	downscaled := downscalePointCloud(pointCloud, config.downscalingThreshold)
+	downscaled, err := downscalePointCloud(pointCloud, config.downscalingThreshold)
+	if err != nil {
+		return nil, err
+	}
 	return &DrawnPointCloud{PointCloud: downscaled, Colors: config.colors}, nil
 }
 
@@ -101,7 +100,7 @@ func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOpt
 }
 
 // downscalePointCloud downscales a point cloud to a given threshold in millimeters.
-func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) pointcloud.PointCloud {
+func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) (pointcloud.PointCloud, error) {
 	addedPoints := make([]struct {
 		point r3.Vector
 		data  pointcloud.Data
@@ -134,8 +133,10 @@ func downscalePointCloud(pc pointcloud.PointCloud, minDistance float64) pointclo
 
 	downscaled := pointcloud.NewBasicPointCloud(len(addedPoints))
 	for _, point := range addedPoints {
-		downscaled.Set(point.point, point.data)
+		if err := downscaled.Set(point.point, point.data); err != nil {
+			return nil, fmt.Errorf("failed to set point in downscaled point cloud: %w", err)
+		}
 	}
 
-	return downscaled
+	return downscaled, nil
 }
