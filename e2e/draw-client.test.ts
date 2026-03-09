@@ -194,6 +194,86 @@ test('draw geometries updating', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw lines', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLine$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiral')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with point color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_POINT_COLOR'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPointColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPointColor')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line width', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_WIDTH'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineWidth$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineWidth')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with point size', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_POINT_SIZE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPointSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw poses as arrows', async ({ browser }) => {
 	const testPrefix = 'DRAW_POSES_AS_ARROWS'
 	const page = await createPage(browser)
