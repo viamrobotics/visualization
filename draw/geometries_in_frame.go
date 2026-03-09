@@ -111,7 +111,7 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
 		if drawnGeometriesInFrame.Name != "" {
-			if label == "" {
+			if label == "" || label == drawnGeometriesInFrame.Name {
 				label = drawnGeometriesInFrame.Name
 			} else {
 				label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
