@@ -1,9 +1,5 @@
 import { Browser, expect, Page, test } from '@playwright/test'
-<<<<<<< HEAD
-import { execSync } from 'child_process'
-=======
 import { execSync } from 'node:child_process'
->>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
@@ -33,11 +29,7 @@ const cleanup = async (page: Page) => {
 	execSync(
 		'go test -run ^TestRemoveAll$/RemoveAllHelper github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-<<<<<<< HEAD
-			encoding: 'utf-8',
-=======
 			encoding: 'utf8',
->>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -67,11 +59,7 @@ test('draw frame system', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrameSystem$/DrawFrameSystem github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-<<<<<<< HEAD
-			encoding: 'utf-8',
-=======
 			encoding: 'utf8',
->>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -87,11 +75,7 @@ test('draw frames', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrames$/DrawFrames github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-<<<<<<< HEAD
-			encoding: 'utf-8',
-=======
 			encoding: 'utf8',
->>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -101,127 +85,3 @@ test('draw frames', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
-<<<<<<< HEAD
-
-test('draw geometries', async ({ browser }) => {
-	const testPrefix = 'DRAW_GEOMETRIES'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawGeometries$/DrawGeometries github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('DrawGeometries Box')).toBeVisible()
-	await expect(page.getByText('DrawGeometries Sphere')).toBeVisible()
-	await expect(page.getByText('DrawGeometries Capsule')).toBeVisible()
-	await expect(page.getByText('DrawGeometries Mesh')).toBeVisible()
-	await expect(page.getByText('DrawGeometries PointCloud')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw geometries updating', async ({ browser }) => {
-	const testPrefix = 'DRAW_GEOMETRIES_UPDATING'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawGeometriesUpdating$/DrawGeometriesUpdating github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('DrawGeometries box1 updating')).toBeVisible()
-	await expect(page.getByText('DrawGeometries box2 updating')).toBeVisible()
-	await expect(page.getByText('DrawGeometries box3 updating')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw point clouds', async ({ browser }) => {
-	const testPrefix = 'DRAW_POINT_CLOUDS'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawPointCloud$/DrawPointClouds github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await page.getByText('octagon').waitFor({ state: 'visible' })
-	await page.getByText('Zaghetto').waitFor({ state: 'visible' })
-	await page.getByText('simple').waitFor({ state: 'visible' })
-	await page.getByText('boat').waitFor({ state: 'visible' })
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw point clouds with downscaling', async ({ browser }) => {
-	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_DOWNSCALING'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawPointCloud$/DrawPointCloudWithDownscaling github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('boat_downscaled')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw point clouds with single color', async ({ browser }) => {
-	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_SINGLE_COLOR'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawPointCloud$/DrawSingleColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('octagon_single_color')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw point clouds with color palette', async ({ browser }) => {
-	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_COLOR_PALETTE'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawPointCloud$/DrawPaletteColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('Zaghetto_palette')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-
-test('draw point clouds with per point color', async ({ browser }) => {
-	const testPrefix = 'DRAW_POINT_CLOUDS_WITH_PER_POINT_COLOR'
-	const page = await createPage(browser)
-
-	execSync(
-		'go test -run ^TestDrawPointCloud$/DrawPerPointColorPointCloud github.com/viam-labs/motion-tools/client/api -count=1',
-		{
-			encoding: 'utf-8',
-		}
-	)
-
-	await expect(page.getByText('simple_per_point')).toBeVisible()
-
-	await assertTestSuccess(page, testPrefix)
-})
-=======
->>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
