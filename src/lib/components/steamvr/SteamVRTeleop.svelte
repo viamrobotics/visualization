@@ -130,6 +130,17 @@
 		const ctrl = getController()
 		const bridgeConnected = bridge.state.status === 'connected'
 
+		// DEBUG — remove after diagnosis
+		console.log('[SteamVRTeleop debug]', {
+			hand: initialHand,
+			bridgeConnected,
+			ctrlConnected: ctrl.connected,
+			trigger: ctrl.trigger,
+			triggerPressed: ctrl.triggerPressed,
+			grip: ctrl.grip,
+			gripperClientReady: !!gripperClient?.current,
+		})
+
 		// Trigger: gripper control works even without full pose tracking.
 		if (bridgeConnected && gripperClient?.current) {
 			const triggerPressed = ctrl.trigger > 0.8
