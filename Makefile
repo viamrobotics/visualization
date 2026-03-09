@@ -122,6 +122,7 @@ bridge-deps:
 bridge-build: bridge-deps
 	@echo '[bridge] Building Go bridge...'
 	@$(GO) build -o $(BRIDGE_BIN) ./bridge
+	@cp -n bridge/actions.json bridge/bindings_vive_controller.json $(dir $(BRIDGE_BIN)) 2>/dev/null || true
 	@echo '[bridge] Built: $(BRIDGE_BIN)'
 
 .PHONY: bridge

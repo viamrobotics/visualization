@@ -11,6 +11,21 @@ export function getFrameTransformationQuaternion(): Quaternion {
 	return rotZ.multiply(rotX)
 }
 
+export function getSteamVRFrameTransformationQuaternion(): Quaternion {
+	// OpenVR standing universe → robot frame (Viam: X=forward, Y=left, Z=up).
+	// Without room calibration the standing universe is anchored to the HMD's
+	// initial facing direction.  Empirically derived mapping:
+	//   Room +Y → Robot +Z  (up ✓)
+	//   Room -Z → Robot -Y  (operator's right → robot right)
+	//   Room +Z → Robot +Y  (operator's left → robot left)
+	//   Room -X → Robot +X  (operator forward → robot forward)
+	//   Room +X → Robot -X  (operator backward → robot backward)
+	// rotX(90°) then rotZ(180°): first swap Y↔Z, then negate X and Y.
+	const rotX = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
+	const rotZ = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI)
+	return rotZ.multiply(rotX) // apply rotX first, then rotZ
+}
+
 /**
  * Calculates the delta position in Robot Frame
  */

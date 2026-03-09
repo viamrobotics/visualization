@@ -1,0 +1,70 @@
+{
+  "controller_type": "vive_controller",
+  "description": "Default bindings for HTC Vive wands",
+  "name": "Bridge Default Vive Wand Bindings",
+  "options": {},
+  "bindings": {
+    "/actions/bridge": {
+      "sources": [
+        {
+          "path": "/user/hand/left/input/trigger",
+          "mode": "trigger",
+          "inputs": {
+            "pull": { "output": "/actions/bridge/in/left_trigger" }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/trigger",
+          "mode": "trigger",
+          "inputs": {
+            "pull": { "output": "/actions/bridge/in/right_trigger" }
+          }
+        },
+        {
+          "path": "/user/hand/left/input/grip",
+          "mode": "button",
+          "inputs": {
+            "click": { "output": "/actions/bridge/in/left_grip" }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/grip",
+          "mode": "button",
+          "inputs": {
+            "click": { "output": "/actions/bridge/in/right_grip" }
+          }
+        },
+        {
+          "path": "/user/hand/left/input/application_menu",
+          "mode": "button",
+          "inputs": {
+            "click": { "output": "/actions/bridge/in/left_menu" }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/application_menu",
+          "mode": "button",
+          "inputs": {
+            "click": { "output": "/actions/bridge/in/right_menu" }
+          }
+        },
+        {
+          "path": "/user/hand/left/input/trackpad",
+          "mode": "trackpad",
+          "inputs": {
+            "position": { "output": "/actions/bridge/in/left_trackpad" },
+            "click":    { "output": "/actions/bridge/in/left_trackpad_press" }
+          }
+        },
+        {
+          "path": "/user/hand/right/input/trackpad",
+          "mode": "trackpad",
+          "inputs": {
+            "position": { "output": "/actions/bridge/in/right_trackpad" },
+            "click":    { "output": "/actions/bridge/in/right_trackpad_press" }
+          }
+        }
+      ]
+    }
+  }
+}

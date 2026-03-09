@@ -1,0 +1,21 @@
+{
+  "actions": [
+    { "name": "/actions/bridge/in/left_trigger",         "type": "vector1"  },
+    { "name": "/actions/bridge/in/right_trigger",        "type": "vector1"  },
+    { "name": "/actions/bridge/in/left_grip",            "type": "boolean"  },
+    { "name": "/actions/bridge/in/right_grip",           "type": "boolean"  },
+    { "name": "/actions/bridge/in/left_menu",            "type": "boolean"  },
+    { "name": "/actions/bridge/in/right_menu",           "type": "boolean"  },
+    { "name": "/actions/bridge/in/left_trackpad",        "type": "vector2"  },
+    { "name": "/actions/bridge/in/right_trackpad",       "type": "vector2"  },
+    { "name": "/actions/bridge/in/left_trackpad_press",  "type": "boolean"  },
+    { "name": "/actions/bridge/in/right_trackpad_press", "type": "boolean"  }
+  ],
+  "action_sets": [
+    { "name": "/actions/bridge", "usage": "leftright" }
+  ],
+  "default_bindings": [
+    { "controller_type": "vive_controller", "binding_url": "bindings_vive_controller.json" }
+  ],
+  "localization": []
+}

@@ -6,7 +6,7 @@
 	import * as VIAM from '@viamrobotics/sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import {
-		getFrameTransformationQuaternion,
+		getSteamVRFrameTransformationQuaternion,
 		calculatePositionTarget,
 	} from '$lib/components/xr/math'
 	import { OrientationVector } from '$lib/three/OrientationVector'
@@ -83,7 +83,7 @@
 	let controllerToArmOffset = new Quaternion()
 
 	// Transformation Frame
-	const qTransform = getFrameTransformationQuaternion()
+	const qTransform = getSteamVRFrameTransformationQuaternion()
 
 	// Throttling
 	let lastCommandTime = 0
@@ -129,17 +129,6 @@
 	useTask(() => {
 		const ctrl = getController()
 		const bridgeConnected = bridge.state.status === 'connected'
-
-		// DEBUG — remove after diagnosis
-		console.log('[SteamVRTeleop debug]', {
-			hand: initialHand,
-			bridgeConnected,
-			ctrlConnected: ctrl.connected,
-			trigger: ctrl.trigger,
-			triggerPressed: ctrl.triggerPressed,
-			grip: ctrl.grip,
-			gripperClientReady: !!gripperClient?.current,
-		})
 
 		// Trigger: gripper control works even without full pose tracking.
 		if (bridgeConnected && gripperClient?.current) {
