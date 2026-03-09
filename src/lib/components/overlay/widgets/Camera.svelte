@@ -31,12 +31,14 @@
 	let fpsInterval: ReturnType<typeof setInterval> | undefined
 	let fpsCounterActive = false
 
+	const cleanup = () => {
+		if (fpsInterval) clearInterval(fpsInterval)
+		fpsCounterActive = false
+	}
+
 	// Cleanup on destroy
 	$effect(() => {
-		return () => {
-			if (fpsInterval) clearInterval(fpsInterval)
-			fpsCounterActive = false
-		}
+		return cleanup
 	})
 
 	const onMediaLoad = (e: Event) => {
@@ -89,8 +91,8 @@
 					resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
 					isLoading = false
 				})
-				.catch((e) => {
-					error = e instanceof Error ? e.message : 'Failed to get stream options'
+				.catch((error_) => {
+					error = error_ instanceof Error ? error_.message : 'Failed to get stream options'
 					isLoading = false
 				})
 		}
@@ -101,13 +103,13 @@
 		if (!target.value || !streamClient) return
 
 		const [w, h] = target.value.split('x').map(Number)
-		if (isNaN(w) || isNaN(h)) return
+		if (Number.isNaN(w) || Number.isNaN(h)) return
 
 		try {
 			await streamClient.setOptions(name, w, h)
 			error = undefined
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to set resolution'
+		} catch (error_) {
+			error = error_ instanceof Error ? error_.message : 'Failed to set resolution'
 		}
 	}
 </script>

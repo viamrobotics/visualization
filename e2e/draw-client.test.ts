@@ -1,5 +1,9 @@
 import { Browser, expect, Page, test } from '@playwright/test'
+<<<<<<< HEAD
 import { execSync } from 'child_process'
+=======
+import { execSync } from 'node:child_process'
+>>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
@@ -29,7 +33,11 @@ const cleanup = async (page: Page) => {
 	execSync(
 		'go test -run ^TestRemoveAll$/RemoveAllHelper github.com/viam-labs/motion-tools/client/api -count=1',
 		{
+<<<<<<< HEAD
 			encoding: 'utf-8',
+=======
+			encoding: 'utf8',
+>>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -59,7 +67,11 @@ test('draw frame system', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrameSystem$/DrawFrameSystem github.com/viam-labs/motion-tools/client/api -count=1',
 		{
+<<<<<<< HEAD
 			encoding: 'utf-8',
+=======
+			encoding: 'utf8',
+>>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -75,7 +87,11 @@ test('draw frames', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawFrames$/DrawFrames github.com/viam-labs/motion-tools/client/api -count=1',
 		{
+<<<<<<< HEAD
 			encoding: 'utf-8',
+=======
+			encoding: 'utf8',
+>>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6
 		}
 	)
 
@@ -85,6 +101,7 @@ test('draw frames', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
+<<<<<<< HEAD
 
 test('draw geometries', async ({ browser }) => {
 	const testPrefix = 'DRAW_GEOMETRIES'
@@ -206,3 +223,5 @@ test('draw point clouds with per point color', async ({ browser }) => {
 
 	await assertTestSuccess(page, testPrefix)
 })
+=======
+>>>>>>> d171cf056d832fa0c8a68211ec63013b30a31ce6

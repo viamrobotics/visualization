@@ -39,13 +39,9 @@ func WithPerArrowColors(colors ...Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig](colors)
 }
 
-func WithColorPalette(palette []Color, numPoses int) DrawArrowsOption {
-	finalColors := make([]Color, numPoses)
-	for i := range numPoses {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*drawArrowsConfig](finalColors)
-
+// WithArrowColorPalette sets the color for each arrow using a color palette.
+func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption {
+	return withColorPalette[*drawArrowsConfig](palette, numPoses)
 }
 
 // NewArrows creates a new Arrows object from the given poses and optional configuration.
@@ -56,7 +52,7 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 		option(config)
 	}
 
-	if !(len(config.colors) == 1 || len(config.colors) == len(poses)) {
+	if len(config.colors) != 1 && len(config.colors) != len(poses) {
 		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-arrow colors), got %d", len(poses), len(config.colors))
 	}
 

@@ -44,7 +44,7 @@ jobs:
         run: |
           pnpm i
           make proto-gen-ts
-          pnpm run build
+          pnpm build
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets

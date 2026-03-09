@@ -1,5 +1,60 @@
 # motion-tools
 
+## 1.13.0
+
+### Minor Changes
+
+- 3ef8369: Feat: logs panel
+
+### Patch Changes
+
+- 31e25d8: Fix: Update selected bounding boxes so that they move as objects move
+- aa7aad8: Remove disk persistence for visibility
+- bb97ee2: Fix: use machine connection only for frame data unless editing frames
+
+## 1.12.3
+
+### Patch Changes
+
+- 0fba953: fix machine config reactivity for e2e tests
+- 373155b: Add connection status in dashboard
+- 86d5aa2: Fix: Depth test sorting
+- 6918e3c: [APP-15201] (1/2) Clean up usePartConfig
+- 535c559: Add HDR environment map for more realistic arm rendering
+
+## 1.12.2
+
+### Patch Changes
+
+- 3cddd9e: Create inline versions of workers to work outside of project boundaries
+- 4dbb986: fix: force orthographic cam mode when enter lasso tool
+
+## 1.12.1
+
+### Patch Changes
+
+- f9c41ec: Fix: Lasso object layout
+
+## 1.12.0
+
+### Minor Changes
+
+- 247d5c3: Add `<LassoTool>` plugin
+
+### Patch Changes
+
+- 0fac3d8: Fix: Render lasso lines on top of other objects
+- 71e14fa: Fix transparency flickering
+
+## 1.11.1
+
+### Patch Changes
+
+- 3f609ff: Reposition joint limits widgets above camera feeds, centered, and remove tilt
+- a5135ea: Fix: detached mesh reference when performing bvh cleanup
+- 828c53f: Standardize draw APIs
+- 8f79b03: Use `three-mesh-bvh` directly
+
 ## 1.11.0
 
 ### Minor Changes

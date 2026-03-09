@@ -285,19 +285,17 @@
 				<Switch
 					on={isWidgetOpen}
 					on:change={(event) => {
-						if (event.detail) {
-							settings.current.openCameraWidgets = {
-								...settings.current.openCameraWidgets,
-								[partID.current]: [...currentRobotCameraWidgets, camera.name],
-							}
-						} else {
-							settings.current.openCameraWidgets = {
-								...settings.current.openCameraWidgets,
-								[partID.current]: currentRobotCameraWidgets.filter(
-									(widget) => widget !== camera.name
-								),
-							}
-						}
+						settings.current.openCameraWidgets = event.detail
+							? {
+									...settings.current.openCameraWidgets,
+									[partID.current]: [...currentRobotCameraWidgets, camera.name],
+								}
+							: {
+									...settings.current.openCameraWidgets,
+									[partID.current]: currentRobotCameraWidgets.filter(
+										(widget) => widget !== camera.name
+									),
+								}
 					}}
 				/>
 			</div>

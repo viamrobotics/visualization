@@ -8,6 +8,10 @@
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
+		defaultPosition?: { x: number; y: number }
+		exitable?: boolean
+		persistRect?: boolean
+		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
 		children: Snippet
 	}
@@ -15,8 +19,11 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		exitable = true,
+		persistRect = true,
 		isOpen = $bindable(false),
 		children,
+		...props
 	}: Props = $props()
 
 	const id = $props.id()
@@ -25,7 +32,9 @@
 		defaultSize,
 		resizable: false,
 		allowOverflow: false,
+		persistRect,
 		open: isOpen,
+		...props,
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
@@ -54,17 +63,19 @@
 					{title}
 				</p>
 
-				<div
-					{...api.getControlProps()}
-					class="flex gap-3"
-				>
-					<button
-						aria-label="Close connection configs panel"
-						onclick={() => (isOpen = false)}
+				{#if exitable}
+					<div
+						{...api.getControlProps()}
+						class="flex gap-3"
 					>
-						<Icon name="close" />
-					</button>
-				</div>
+						<button
+							aria-label="Close connection configs panel"
+							onclick={() => (isOpen = false)}
+						>
+							<Icon name="close" />
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 

@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Standardize draw APIs
+Add colors and line width to nurbs

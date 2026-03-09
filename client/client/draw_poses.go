@@ -31,7 +31,7 @@ func DrawPoses(poses []spatialmath.Pose, colors []string, arrowHeadAtPose bool) 
 	} else if len(drawColors) == len(poses) {
 		arrows, err = draw.NewArrows(poses, draw.WithPerArrowColors(drawColors...))
 	} else {
-		arrows, err = draw.NewArrows(poses, draw.WithColorPalette(drawColors, len(poses)))
+		arrows, err = draw.NewArrows(poses, draw.WithArrowColorPalette(drawColors, len(poses)))
 	}
 
 	if err != nil {
