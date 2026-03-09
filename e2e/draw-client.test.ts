@@ -281,7 +281,7 @@ test('draw points', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawPoints$/DrawPoints$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -297,7 +297,7 @@ test('draw points with single color', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawPoints$/DrawPointsWithSingleColor$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -313,7 +313,7 @@ test('draw points with color palette', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawPoints$/DrawPointsWithColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -329,7 +329,7 @@ test('draw points with per point color', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawPoints$/DrawPointsWithPerPointColors$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -345,7 +345,7 @@ test('draw points with point size', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawPoints$/DrawPointsWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
