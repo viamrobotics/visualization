@@ -229,7 +229,7 @@ import (
 // ---------------------------------------------------------------------------
 
 const (
-	maxTrackedDevices   = 64 // k_unMaxTrackedDeviceCount
+	maxTrackedDevices     = 64 // k_unMaxTrackedDeviceCount
 	deviceClassController = 2  // ETrackedDeviceClass_Controller
 	controllerRoleLeft    = 1  // ETrackedControllerRole_LeftHand
 	controllerRoleRight   = 2  // ETrackedControllerRole_RightHand
@@ -355,6 +355,15 @@ func readController(idx uint32, isLeft bool) *ControllerState {
 		}
 		pos, rot := mat34ToQuat(flat)
 		cs.Pos = [3]float64{round5(pos[0]), round5(pos[1]), round5(pos[2])}
+		// Vive Wands have mirrored local coordinate systems: the left controller's
+		// local +X points world-left and local +Z also inverts (det = +1 preserved).
+		// Negate qx and qz so identical physical gestures produce identical
+		// quaternions from both controllers.
+		if isLeft {
+			rot[0] = -rot[0] // qx
+			rot[2] = -rot[2] // qz
+			rot[3] = -rot[3] // qz
+		}
 		cs.Rot = [4]float64{round5(rot[0]), round5(rot[1]), round5(rot[2]), round5(rot[3])}
 	}
 
@@ -557,7 +566,8 @@ func setCalib(yaw float64, dir string) {
 
 // computeCalibYaw returns the Y-axis rotation that maps the controller's
 // pointing direction (local -Z axis) to Room -X (expected robot forward).
-// yaw = atan2(-cfz, -cfx) where (cfx, cfz) is the horizontal controller forward.
+// applyCalib rotates XZ as x'=x·cos-z·sin, z'=x·sin+z·cos (CCW by θ).
+// To map (cfx,cfz) → (-1,0): θ = π - atan2(cfz, cfx).
 func computeCalibYaw(rot [4]float64) (float64, bool) {
 	cx, cy, cz, cw := rot[0], rot[1], rot[2], rot[3]
 	// Controller -Z axis in world: -(R col2)
@@ -567,7 +577,7 @@ func computeCalibYaw(rot [4]float64) (float64, bool) {
 	if mag < 1e-6 {
 		return 0, false // pointing straight up/down
 	}
-	return math.Atan2(-cfz/mag, -cfx/mag) - math.Pi/2, true
+	return math.Pi - math.Atan2(cfz/mag, cfx/mag), true
 }
 
 // applyCalib rotates a ControllerState's position and rotation by the stored
@@ -586,20 +596,17 @@ func applyCalib(cs ControllerState) ControllerState {
 	qy := math.Sin(yaw / 2)
 	qw := math.Cos(yaw / 2)
 	cosY := 1 - 2*qy*qy // cos(yaw)
-	sinY := 2 * qw * qy  // sin(yaw)
+	sinY := 2 * qw * qy // sin(yaw)
 
 	// Rotate position around Y axis
 	x, z := cs.Pos[0], cs.Pos[2]
 	cs.Pos = [3]float64{round5(x*cosY - z*sinY), cs.Pos[1], round5(x*sinY + z*cosY)}
 
-	// Quaternion: calib(0, qy, 0, qw) * rot(cx, cy, cz, cw)
-	cx, cy, cz, cw := cs.Rot[0], cs.Rot[1], cs.Rot[2], cs.Rot[3]
-	cs.Rot = [4]float64{
-		round5(qw*cx + qy*cz),
-		round5(qw*cy + qy*cw),
-		round5(qw*cz - qy*cx),
-		round5(qw*cw - qy*cy),
-	}
+	// Do NOT rotate the orientation quaternion by calibration yaw.
+	// Calibration only corrects the position frame (operator's facing direction).
+	// Left-multiplying CALIB * q does not cancel in the frontend sandwich
+	// transform T * q * T⁻¹ used for relative rotation control — it would
+	// introduce a spurious conjugation that inverts pitch and roll.
 	return cs
 }
 
@@ -624,6 +631,8 @@ func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
 
 	var leftIdx, rightIdx *uint32
 	var wasLeftTrackpad, wasRightTrackpad bool
+	var wasLeftGrip, wasRightGrip bool
+	var wasLeftTrigger, wasRightTrigger bool
 	lastScan := time.Time{}
 	vrOK := initBridge(manifestPath) == 0
 	if vrOK {
@@ -688,6 +697,26 @@ func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
 		}
 		wasLeftTrackpad = leftRaw.Connected && leftRaw.TrackpadPressed
 		wasRightTrackpad = rightRaw.Connected && rightRaw.TrackpadPressed
+
+		// Grip rising edge: log which hand pressed grip
+		if leftRaw.Connected && leftRaw.Grip && !wasLeftGrip {
+			fmt.Println("[bridge] LEFT grip pressed")
+		}
+		if rightRaw.Connected && rightRaw.Grip && !wasRightGrip {
+			fmt.Println("[bridge] RIGHT grip pressed")
+		}
+		wasLeftGrip = leftRaw.Connected && leftRaw.Grip
+		wasRightGrip = rightRaw.Connected && rightRaw.Grip
+
+		// Trigger rising edge: log which hand pressed trigger
+		if leftRaw.Connected && leftRaw.TriggerPressed && !wasLeftTrigger {
+			fmt.Println("[bridge] LEFT trigger pressed")
+		}
+		if rightRaw.Connected && rightRaw.TriggerPressed && !wasRightTrigger {
+			fmt.Println("[bridge] RIGHT trigger pressed")
+		}
+		wasLeftTrigger = leftRaw.Connected && leftRaw.TriggerPressed
+		wasRightTrigger = rightRaw.Connected && rightRaw.TriggerPressed
 
 		f := frame{
 			TS: float64(time.Now().UnixMilli()) / 1000.0,
