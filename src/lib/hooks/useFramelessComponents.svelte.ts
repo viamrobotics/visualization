@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { usePartConfig, type PartConfig } from './usePartConfig.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 import { useFrames } from './useFrames.svelte'
 
 interface FramelessComponents {
@@ -13,18 +13,17 @@ export const provideFramelessComponents = () => {
 	const frames = useFrames()
 
 	const current = $derived.by(() => {
-		const components = (partConfig.localPartConfig.toJson() as unknown as PartConfig)?.components
+		const { components } = partConfig.current
 		const partComponentsWIthNoFrame =
 			components
 				?.filter((component) => component.frame === undefined)
 				.map((component) => component.name) ?? []
 		const fragmentComponentsWithNoFrame = []
 		for (const fragmentComponentName of Object.keys(partConfig.componentNameToFragmentId)) {
-			if (
-				frames.current.find((frame) => frame.transform.referenceFrame === fragmentComponentName)
-			) {
+			if (frames.current.some((frame) => frame.referenceFrame === fragmentComponentName)) {
 				continue
 			}
+
 			fragmentComponentsWithNoFrame.push(fragmentComponentName)
 		}
 		return [...partComponentsWIthNoFrame, ...fragmentComponentsWithNoFrame]
