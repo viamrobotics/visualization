@@ -132,7 +132,8 @@
 		const iconCenterX = accentBarWidth + 30
 		const textStartX = accentBarWidth + 56
 
-		toasts.forEach((toast, index) => {
+		let index = 0
+		for (const toast of toasts) {
 			const y = index * (TOAST_HEIGHT + TOAST_GAP)
 			const style = VARIANT_STYLES[toast.variant]
 
@@ -165,7 +166,9 @@
 			ctx.font = '28px sans-serif'
 			ctx.textBaseline = 'middle'
 			ctx.fillText(toast.message, textStartX, y + TOAST_HEIGHT / 2)
-		})
+
+			index += 1
+		}
 
 		texture.needsUpdate = true
 	}
@@ -189,12 +192,14 @@
 		renderToasts(toasts)
 	})
 
+	const dispose = () => {
+		texture.dispose()
+		untrack(() => geometry?.dispose())
+	}
+
 	// Cleanup
 	$effect(() => {
-		return () => {
-			texture.dispose()
-			untrack(() => geometry?.dispose())
-		}
+		return dispose
 	})
 </script>
 

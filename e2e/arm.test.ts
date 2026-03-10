@@ -6,7 +6,7 @@ import {
 	ViamClientOptions,
 } from '@viamrobotics/sdk'
 import { expect, test } from '@playwright/test'
-import { execSync } from 'child_process'
+import { execSync } from 'node:child_process'
 import { setupMachineConfig } from './fixtures'
 
 const testConfig = {
@@ -142,7 +142,7 @@ test('arm', async ({ browser }) => {
 
 	// MOVE ARM
 	execSync('go run e2e/go-scripts/main.go moveArmJointPositions', {
-		encoding: 'utf-8',
+		encoding: 'utf8',
 	})
 
 	await page.waitForTimeout(1000) // wait for arm pose refetch

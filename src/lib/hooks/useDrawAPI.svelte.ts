@@ -50,7 +50,7 @@ const tryParse = (json: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lowercaseKeys = <T>(obj: T): any => {
 	if (Array.isArray(obj)) {
-		return obj.map(lowercaseKeys)
+		return obj.map((item) => lowercaseKeys(item))
 	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
 		return Object.fromEntries(
 			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])

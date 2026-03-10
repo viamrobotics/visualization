@@ -33,7 +33,7 @@ vi.mock('three', async () => {
 	}
 })
 
-global.ResizeObserver = class {
+globalThis.ResizeObserver = class {
 	observe() {}
 	unobserve() {}
 	disconnect() {}

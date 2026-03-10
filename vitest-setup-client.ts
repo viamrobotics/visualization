@@ -25,7 +25,14 @@ vi.mock('$lib/hooks/useSelection.svelte', () => ({
 
 // Mock useFrames hook
 vi.mock('$lib/hooks/useFrames.svelte', () => ({
-	useFrames: vi.fn(() => ({ current: [], fetching: false, getParentFrameOptions: vi.fn() })),
+	useFrames: vi.fn(() => ({ current: [], fetching: false })),
+}))
+vi.mock('$lib/hooks/useConfigFrames.svelte', () => ({
+	useConfigFrames: vi.fn(() => ({
+		getParentFrameOptions: vi.fn(),
+		unsetFrames: [],
+		current: {},
+	})),
 }))
 vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
 	useResourceByName: vi.fn(() => ({ current: {} })),
@@ -33,8 +40,8 @@ vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
 // Mock usePartConfig hook
 vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	usePartConfig: vi.fn(() => ({
-		getLocalPartConfig: vi.fn(() => ({ components: [] })),
-		setLocalPartConfig: vi.fn(),
+		current: { components: [] },
+		set: vi.fn(),
 	})),
 	LocalPartConfigState: {
 		dirty: 'DIRTY',
@@ -48,7 +55,7 @@ vi.mock('$lib/hooks/useLinked.svelte', () => ({
 	useLinkedEntities: vi.fn(() => ({ current: [] })),
 }))
 // required for svelte5 + jsdom as jsdom does not support matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
 	writable: true,
 	enumerable: true,
 	value: vi.fn().mockImplementation((query) => ({
@@ -68,7 +75,7 @@ const mockDB = {
 		onupgradeneeded: null,
 	})),
 }
-;(global as unknown as { indexedDB: unknown }).indexedDB = mockDB
+;(globalThis as unknown as { indexedDB: unknown }).indexedDB = mockDB
 
 // Mock canvas context for Three.js
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
