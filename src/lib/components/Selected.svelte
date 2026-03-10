@@ -15,7 +15,6 @@
 	const selectedObject3d = useSelectedObject3d()
 
 	const object = $derived.by(() => {
-		console.log(selectedObject3d.current)
 		if (!selectedObject3d.current) {
 			return
 		}
