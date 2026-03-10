@@ -637,7 +637,7 @@ test('replay', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestReplay$/ReplayRecord github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -651,7 +651,7 @@ test('replay', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestReplay$/ReplayPlayback github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
