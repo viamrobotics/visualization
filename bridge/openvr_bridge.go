@@ -287,13 +287,17 @@ func transformToRobotFrame(q, T quat) quat {
 }
 
 // steamVRTransform is the SteamVR standing universe → Viam robot frame quaternion.
-// Equivalent to rotZ(180°) * rotX(90°) applied to the right (rotX first).
-// Maps: Room+Y→Robot+Z, Room-Z→Robot-Y, Room-X→Robot+X.
+// Equivalent to rotZ(-90°) * rotX(90°) (same as the WebXR transform in the TS code).
+// Combined with calibration yaw (applied on the right), this maps:
+//   User forward → Robot +X, Up(+Y) → Robot +Z, User left → Robot +Y.
+// Without calibration (user facing SteamVR -Z):
+//   -Z → +X, +Y → +Z, +X → +Y.
 var steamVRTransform = func() quat {
 	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
-	rotZ := qFromAxisAngle(0, 0, 1, math.Pi)
+	rotZ := qFromAxisAngle(0, 0, 1, -math.Pi/2)
 	return qNorm(qMul(rotZ, rotX))
 }()
+
 
 // quatToOVDeg converts a unit quaternion to a Viam orientation vector (theta in degrees).
 // Port of OrientationVector.setFromQuaternion from OrientationVector.ts.
@@ -517,6 +521,7 @@ func saveCalib(yaw float64, dir string) {
 }
 
 func computeCalibYaw(rot quat) (float64, bool) {
+	// Extract controller's -Z axis (forward direction) projected onto XZ plane.
 	cx, cy, cz, cw := rot[0], rot[1], rot[2], rot[3]
 	cfx := -2 * (cx*cz + cy*cw)
 	cfz := -(1 - 2*(cx*cx+cy*cy))
@@ -524,7 +529,10 @@ func computeCalibYaw(rot quat) (float64, bool) {
 	if mag < 1e-6 {
 		return 0, false
 	}
-	return math.Pi - math.Atan2(cfz/mag, cfx/mag), true
+	// Yaw = angle from SteamVR -Z to the user's forward, around +Y axis.
+	// steamVRTransform without yaw maps -Z → Robot +X.  With yawQ applied,
+	// the user's forward (cfx, cfz) gets rotated to align with -Z first.
+	return math.Atan2(cfx/mag, -cfz/mag), true
 }
 
 func applyCalib(cs ControllerState) ControllerState {
@@ -542,6 +550,10 @@ func applyCalib(cs ControllerState) ControllerState {
 	sinY := math.Sin(yaw)
 	x, z := cs.Pos[0], cs.Pos[2]
 	cs.Pos = [3]float64{x*cosY - z*sinY, cs.Pos[1], x*sinY + z*cosY}
+	// Rotation is NOT modified here — calibration yaw only affects position.
+	// The rotation offset is computed as a delta (curRot * inv(ctrlRef)) which
+	// is independent of any global yaw, so applying yaw here would conjugate
+	// the delta and change its axis incorrectly.
 	return cs
 }
 
@@ -580,6 +592,7 @@ type teleopHand struct {
 	// reference capture (on grip press)
 	ctrlRefPos       [3]float64
 	ctrlRefRotRobot  quat
+	calibTransform   quat // steamVRTransform * calibYaw, captured at grip press
 	robotRefPos      [3]float64
 	robotRefQuat     quat
 	ctrlToArmOffset  quat
@@ -672,8 +685,10 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 	h.wasMenu = cs.Menu
 
 	// --- Control frame ---
-	if h.isControlling && !h.isSending {
-		h.controlFrame(ctx, cs)
+	if h.isControlling {
+		if !h.isSending {
+			h.controlFrame(ctx, cs)
+		}
 	}
 }
 
@@ -705,9 +720,23 @@ func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 		})
 
 		h.ctrlRefPos = cs.Pos
-		h.ctrlRefRotRobot = transformToRobotFrame(cs.Rot, steamVRTransform)
 
-		// offset = ctrlRot^-1 * robotRefQuat
+		// Build calibrated rotation transform: steamVRTransform * yawQ.
+		// This maps SteamVR axes to robot axes accounting for the user's
+		// facing direction.  Used only for rotation (position uses applyCalib).
+		calibMu.RLock()
+		yaw := calibYaw
+		calibMu.RUnlock()
+		h.calibTransform = steamVRTransform
+		if yaw != 0 {
+			yawQ := qFromAxisAngle(0, 1, 0, yaw)
+			h.calibTransform = qNorm(qMul(steamVRTransform, yawQ))
+		}
+
+		// Matches TS: controllerRefRotRobot = transformToRobotFrame(grip.quaternion, qTransform)
+		h.ctrlRefRotRobot = transformToRobotFrame(cs.Rot, h.calibTransform)
+
+		// Matches TS: offset = inverse(controllerRefRotRobot) * robotRefQuat
 		h.ctrlToArmOffset = qNorm(qMul(qConj(h.ctrlRefRotRobot), h.robotRefQuat))
 
 		h.errorTimeout = time.Time{}
@@ -726,11 +755,12 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 		return
 	}
 
-	// Position: delta controller → robot frame → scale → mm
+	// Position: delta in SteamVR space → rotate by calibTransform → robot frame.
+	// Matches TS: deltaRobot = deltaXR.applyQuaternion(qTransform)
 	dx := cs.Pos[0] - h.ctrlRefPos[0]
 	dy := cs.Pos[1] - h.ctrlRefPos[1]
 	dz := cs.Pos[2] - h.ctrlRefPos[2]
-	rx, ry, rz := qRotateVec(steamVRTransform, dx, dy, dz)
+	rx, ry, rz := qRotateVec(h.calibTransform, dx, dy, dz)
 	scaleMM := h.scale * 1000
 	tx := h.robotRefPos[0] + rx*scaleMM
 	ty := h.robotRefPos[1] + ry*scaleMM
@@ -739,8 +769,11 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	// Rotation: T * q * T^-1, then apply offset
 	var tox, toy, toz, thetaDeg float64
 	if h.rotEnabled {
-		curRot := transformToRobotFrame(cs.Rot, steamVRTransform)
-		targetRot := qNorm(qMul(curRot, h.ctrlToArmOffset))
+		// Matches TS exactly:
+		// 1. Transform current controller rot to robot frame: T * q * T^-1
+		curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
+		// 2. Apply offset: targetArmRot = currentRotRobot * offset
+		targetRot := qNorm(qMul(curRotRobot, h.ctrlToArmOffset))
 		tox, toy, toz, thetaDeg = quatToOVDeg(targetRot)
 	} else {
 		// Keep arm at reference orientation
@@ -867,14 +900,14 @@ func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *tel
 		wasLeftTrackpad = leftRaw.Connected && leftRaw.TrackpadPressed
 		wasRightTrackpad = rightRaw.Connected && rightRaw.TrackpadPressed
 
-		leftCS := applyCalib(leftRaw)
-		rightCS := applyCalib(rightRaw)
-
+		// Pass raw (uncalibrated) controller state to teleop hands.
+		// The teleop hand uses calibTransform for both position and rotation,
+		// matching the TS/WebXR approach where qTransform handles everything.
 		if left != nil && left.arm != nil {
-			left.tick(ctx, leftCS)
+			left.tick(ctx, leftRaw)
 		}
 		if right != nil && right.arm != nil {
-			right.tick(ctx, rightCS)
+			right.tick(ctx, rightRaw)
 		}
 
 		elapsed := time.Since(start)

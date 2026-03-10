@@ -138,34 +138,15 @@ func TestApplyCalib_Pos180(t *testing.T) {
 // applyCalib — quaternion rotation
 // ---------------------------------------------------------------------------
 
-// identity quat with 90° yaw calib → pure Y-rotation quat (0, sin45, 0, cos45)
-func TestApplyCalib_RotIdentity90(t *testing.T) {
-	cs := calibState([3]float64{0, 0, 0}, [4]float64{0, 0, 0, 1})
+// applyCalib must NOT modify rotation — the rotation delta is computed from
+// raw SteamVR quaternions and is independent of calibration yaw.
+func TestApplyCalib_RotUnchanged(t *testing.T) {
 	s := math.Sqrt2 / 2
+	cs := calibState([3]float64{1, 2, 3}, [4]float64{s, 0, 0, s})
 	withCalib(math.Pi/2, func() {
 		out := applyCalib(cs)
-		quatEq(t, "rot", out.Rot, [4]float64{0, s, 0, s})
+		quatEq(t, "rot", out.Rot, cs.Rot)
 	})
-}
-
-// 90° calib applied twice to identity should equal 180° calib applied once
-func TestApplyCalib_RotComposition(t *testing.T) {
-	cs := calibState([3]float64{0, 0, 0}, [4]float64{0, 0, 0, 1})
-
-	// Apply 90° once
-	var after90 ControllerState
-	withCalib(math.Pi/2, func() { after90 = applyCalib(cs) })
-
-	// Apply 90° again to the result
-	var after180 ControllerState
-	after90.Connected = true
-	withCalib(math.Pi/2, func() { after180 = applyCalib(after90) })
-
-	// Direct 180°
-	var direct180 ControllerState
-	withCalib(math.Pi, func() { direct180 = applyCalib(cs) })
-
-	quatEq(t, "rot", after180.Rot, direct180.Rot)
 }
 
 // calib rotation must not affect Y component of position
@@ -287,15 +268,16 @@ func TestTransformToRobotFrame_Conjugation(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSteamVRTransform_Value(t *testing.T) {
-	// steamVRTransform = rotZ(180°) * rotX(90°)
+	// steamVRTransform = rotZ(-90°) * rotX(90°)
 	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
-	rotZ := qFromAxisAngle(0, 0, 1, math.Pi)
+	rotZ := qFromAxisAngle(0, 0, 1, -math.Pi/2)
 	want := qNorm(qMul(rotZ, rotX))
 	quatEq(t, "steamVRTransform", steamVRTransform, want)
 }
 
 func TestSteamVRTransform_BasisVectors(t *testing.T) {
-	// Comment says: Room+Y→Robot+Z, Room-Z→Robot-Y, Room-X→Robot+X
+	// Without calibration (user facing SteamVR -Z):
+	//   -Z → +X (forward), +Y → +Z (up), +X → +Y (left)
 
 	// Room +Y (0,1,0) → Robot +Z (0,0,1)
 	x, y, z := qRotateVec(steamVRTransform, 0, 1, 0)
@@ -303,16 +285,16 @@ func TestSteamVRTransform_BasisVectors(t *testing.T) {
 		t.Errorf("Room+Y: got (%.5f, %.5f, %.5f), want (0, 0, 1)", x, y, z)
 	}
 
-	// Room -Z (0,0,-1) → Robot -Y (0,-1,0)
+	// Room -Z (0,0,-1) → Robot +X (1,0,0) [forward]
 	x, y, z = qRotateVec(steamVRTransform, 0, 0, -1)
-	if !approxEq(x, 0, eps) || !approxEq(y, -1, eps) || !approxEq(z, 0, eps) {
-		t.Errorf("Room-Z: got (%.5f, %.5f, %.5f), want (0, -1, 0)", x, y, z)
+	if !approxEq(x, 1, eps) || !approxEq(y, 0, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("Room-Z: got (%.5f, %.5f, %.5f), want (1, 0, 0)", x, y, z)
 	}
 
-	// Room -X (-1,0,0) → Robot +X (1,0,0)
-	x, y, z = qRotateVec(steamVRTransform, -1, 0, 0)
-	if !approxEq(x, 1, eps) || !approxEq(y, 0, eps) || !approxEq(z, 0, eps) {
-		t.Errorf("Room-X: got (%.5f, %.5f, %.5f), want (1, 0, 0)", x, y, z)
+	// Room +X (1,0,0) → Robot -Y (0,-1,0) [right]
+	x, y, z = qRotateVec(steamVRTransform, 1, 0, 0)
+	if !approxEq(x, 0, eps) || !approxEq(y, -1, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("Room+X: got (%.5f, %.5f, %.5f), want (0, -1, 0)", x, y, z)
 	}
 }
 
