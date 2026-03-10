@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process'
 import { readdirSync, copyFileSync, unlinkSync, mkdirSync, existsSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import path from 'node:path'
 import { exit } from 'node:process'
 
 /**
@@ -11,8 +11,8 @@ import { exit } from 'node:process'
  * 2. Move the Threlte components to the targetDir directory
  */
 const configuration = {
-	sourceDir: resolve(join('static', 'models')),
-	targetDir: resolve(join('src', 'lib', 'components', 'models')),
+	sourceDir: path.resolve(path.join('static', 'models')),
+	targetDir: path.resolve(path.join('src', 'lib', 'components', 'models')),
 	overwrite: false,
 	root: '/models/',
 	types: true,
@@ -64,7 +64,7 @@ if (gltfFiles.length === 0) {
 const filteredGltfFiles = gltfFiles.filter((file) => {
 	if (!configuration.overwrite) {
 		const componentFilename = file.split('.').slice(0, -1).join('.') + '.svelte'
-		const componentPath = join(configuration.targetDir, componentFilename)
+		const componentPath = path.join(configuration.targetDir, componentFilename)
 		if (existsSync(componentPath)) {
 			console.error(`File ${componentPath} already exists, skipping.`)
 			return false
@@ -78,9 +78,9 @@ if (filteredGltfFiles.length === 0) {
 	exit()
 }
 
-filteredGltfFiles.forEach((file) => {
+for (const file of filteredGltfFiles) {
 	// run the gltf transform command on every file
-	const path = join(configuration.sourceDir, file)
+	const path = path.join(configuration.sourceDir, file)
 
 	// parse the configuration
 	const args = []
@@ -89,20 +89,20 @@ filteredGltfFiles.forEach((file) => {
 	if (configuration.keepnames) args.push('--keepnames')
 	if (configuration.meta) args.push('--meta')
 	if (configuration.shadows) args.push('--shadows')
-	args.push(`--printwidth ${configuration.printwidth}`)
-	args.push(`--precision ${configuration.precision}`)
+	args.push(`--printwidth ${configuration.printwidth}`, `--precision ${configuration.precision}`)
 	if (configuration.draco) args.push(`--draco ${configuration.draco}`)
 	if (configuration.preload) args.push('--preload')
 	if (configuration.suspense) args.push('--suspense')
 	if (configuration.isolated) args.push('--isolated')
 	if (configuration.transform.enabled) {
-		args.push(`--transform`)
-		args.push(`--resolution ${configuration.transform.resolution}`)
+		args.push(`--transform`, `--resolution ${configuration.transform.resolution}`)
 		if (configuration.transform.simplify.enabled) {
-			args.push(`--simplify`)
-			args.push(`--weld ${configuration.transform.simplify.weld}`)
-			args.push(`--ratio ${configuration.transform.simplify.ratio}`)
-			args.push(`--error ${configuration.transform.simplify.error}`)
+			args.push(
+				`--simplify`,
+				`--weld ${configuration.transform.simplify.weld}`,
+				`--ratio ${configuration.transform.simplify.ratio}`,
+				`--error ${configuration.transform.simplify.error}`
+			)
 		}
 	}
 	const formattedArgs = args.join(' ')
@@ -116,24 +116,24 @@ filteredGltfFiles.forEach((file) => {
 	} catch (error) {
 		console.error(`Error transforming model: ${error}`)
 	}
-})
+}
 
 // read dir again, but search for .svelte files only.
 const svelteFiles = readdirSync(configuration.sourceDir).filter((file) => file.endsWith('.svelte'))
 
-svelteFiles.forEach((file) => {
+for (const file of svelteFiles) {
 	// now move every file to /src/components/models
-	const path = join(configuration.sourceDir, file)
-	const newPath = join(configuration.targetDir, file)
+	const path = path.join(configuration.sourceDir, file)
+	const newPath = path.join(configuration.targetDir, file)
 	copyFile: try {
 		// Sanity check, we checked earlier if the file exists. Still, the CLI takes
 		// a while, so who knows what happens in the meantime.
-		if (!configuration.overwrite) {
-			// check if file already exists
-			if (existsSync(newPath)) {
-				console.error(`File ${newPath} already exists, skipping.`)
-				break copyFile
-			}
+		if (
+			!configuration.overwrite && // check if file already exists
+			existsSync(newPath)
+		) {
+			console.error(`File ${newPath} already exists, skipping.`)
+			break copyFile
 		}
 		copyFileSync(path, newPath)
 	} catch (error) {
@@ -146,4 +146,4 @@ svelteFiles.forEach((file) => {
 	} catch (error) {
 		console.error(`Error removing file: ${error}`)
 	}
-})
+}

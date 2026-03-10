@@ -10,7 +10,7 @@ export function computeBoundingBox(this: InstancedArrows, geometry: BufferGeomet
 		(this.shaftMesh.material as RawShaderMaterial).uniforms.poseScale?.value ?? 0.001
 
 	const headAtOrigin =
-		(this.shaftMesh.material as RawShaderMaterial).uniforms.headAtOrigin?.value ?? 1.0
+		(this.shaftMesh.material as RawShaderMaterial).uniforms.headAtOrigin?.value ?? 1
 
 	const r = Math.max(this.shaftRadius, this.headWidth)
 

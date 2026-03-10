@@ -24,7 +24,9 @@ type DrawGeometriesInFrameOptions struct {
 	// per-geometry colors, or any other count to cycle through as a palette.
 	Colors []draw.Color
 
-	// The downscaling threshold for point clouds in millimeters.
+	// The downscaling threshold for point clouds in millimeters. Points closer than this
+	// distance to one another are culled, reducing the total point count and improving
+	// rendering performance. Set to 0 (default) to disable downscaling.
 	DownscalingThreshold float64
 }
 

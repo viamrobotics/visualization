@@ -84,13 +84,18 @@ const getRenderArmModels = (
 	renderArmModels: RenderArmModels
 ): 'colliders' | 'colliders+model' | 'model' => {
 	switch (renderArmModels) {
-		case RenderArmModels.COLLIDERS:
+		case RenderArmModels.COLLIDERS: {
 			return 'colliders'
+		}
+
 		case RenderArmModels.UNSPECIFIED:
-		case RenderArmModels.COLLIDERS_AND_MODEL:
+		case RenderArmModels.COLLIDERS_AND_MODEL: {
 			return 'colliders+model'
-		case RenderArmModels.MODEL:
+		}
+
+		case RenderArmModels.MODEL: {
 			return 'model'
+		}
 	}
 }
 
@@ -104,8 +109,7 @@ const spawnTransformEntity = (world: World, transform: Transform): Entity => {
 	]
 
 	const poseInFrame = transform.poseInObserverFrame
-	entityTraits.push(traits.Pose(poseInFrame?.pose))
-	entityTraits.push(traits.Parent(poseInFrame?.referenceFrame))
+	entityTraits.push(traits.Pose(poseInFrame?.pose), traits.Parent(poseInFrame?.referenceFrame))
 
 	if (transform.metadata) {
 		const metadata = parseMetadata(transform.metadata.fields)

@@ -36,7 +36,7 @@
 		return jointLimits.map((limit, index) => {
 			const current = currentPositions[index] ?? 0
 			const range = limit.max - limit.min
-			const percentage = range !== 0 ? ((current - limit.min) / range) * 100 : 50
+			const percentage = range === 0 ? 50 : ((current - limit.min) / range) * 100
 
 			let status: 'safe' | 'caution' | 'danger'
 			if (percentage < 10 || percentage > 90) {
@@ -122,6 +122,18 @@
 		ctx.stroke()
 	}
 
+	const getJointColor = (status: 'safe' | 'caution' | 'danger') => {
+		if (status === 'danger') {
+			return '#ff4444'
+		}
+
+		if (status === 'caution') {
+			return '#ffaa00'
+		}
+
+		return '#44ff44'
+	}
+
 	// Render joint data to canvas
 	function renderJointLimits(
 		ctx: CanvasRenderingContext2D,
@@ -132,7 +144,8 @@
 		const s = RESOLUTION_SCALE
 		const rowHeight = (height - HEADER_HEIGHT) / joints.length
 
-		joints.forEach((joint, index) => {
+		let index = 0
+		for (const joint of joints) {
 			const y = HEADER_HEIGHT + index * rowHeight
 
 			// Background row
@@ -157,8 +170,7 @@
 
 			// Progress bar fill (colored by status)
 			const fillWidth = barWidth * (joint.percentage / 100)
-			ctx.fillStyle =
-				joint.status === 'danger' ? '#ff4444' : joint.status === 'caution' ? '#ffaa00' : '#44ff44'
+			ctx.fillStyle = getJointColor(joint.status)
 			ctx.fillRect(barX, barY, fillWidth, barHeight)
 
 			// Progress bar border
@@ -174,7 +186,9 @@
 				barX + barWidth + 20 * s,
 				y + rowHeight / 2
 			)
-		})
+
+			index += 1
+		}
 	}
 
 	// Update canvas when joint data changes

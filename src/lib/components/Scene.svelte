@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Vector3 } from 'three'
+	import { ShaderMaterial, Vector3 } from 'three'
 	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
-	import Entities from '$lib/components/Entities.svelte'
+	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
+	import Entities from '$lib/components/Entities/Entities.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
@@ -39,7 +39,7 @@
 	})
 
 	$effect(() => {
-		enabled.set(!settings.current.enableMeasure)
+		enabled.set(settings.current.interactionMode === 'navigate')
 	})
 
 	bvh(raycaster, () => ({ helper: false }))
@@ -52,6 +52,8 @@
 {#if settings.current.renderStats}
 	<PerfMonitor anchorX="right" />
 {/if}
+
+<Environment url={hdrImage} />
 
 <T.Group
 	position={origin.position}
@@ -75,11 +77,16 @@
 
 		{#if !$isPresenting && settings.current.grid}
 			<Grid
+				oncreate={(ref) => {
+					const material = ref.material as ShaderMaterial
+					material.depthWrite = false
+				}}
 				raycast={() => null}
 				bvh={{ enabled: false }}
 				plane="xy"
 				sectionColor="#333"
 				infiniteGrid
+				renderOrder={999}
 				cellSize={settings.current.gridCellSize}
 				sectionSize={settings.current.gridSectionSize}
 				fadeOrigin={new Vector3()}

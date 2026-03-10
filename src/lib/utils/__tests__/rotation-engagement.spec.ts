@@ -107,7 +107,7 @@ describe('Rotation Engagement Stability', () => {
 
 			// Verify OV is reasonable
 			expect(targetOV.th).toBeDefined()
-			expect(isFinite(targetOV.th)).toBe(true)
+			expect(Number.isFinite(targetOV.th)).toBe(true)
 		}
 	})
 

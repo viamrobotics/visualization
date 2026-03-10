@@ -130,6 +130,21 @@ func TestDrawnGeometriesInFrame_ToTransforms(t *testing.T) {
 		test.That(t, transforms[0].PhysicalObject.Label, test.ShouldEqual, "")
 	})
 
+	t.Run("Name_DeduplicatesWhenLabelEqualsName", func(t *testing.T) {
+		// When the RDK assigns the frame name as the geometry label, the reference frame
+		// should collapse to just the name rather than producing "name:name".
+		sphere, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), 50, "MyFrame")
+		test.That(t, err, test.ShouldBeNil)
+		gif := referenceframe.NewGeometriesInFrame("world", []spatialmath.Geometry{sphere})
+		d, err := NewDrawnGeometriesInFrame(gif, WithSingleGeometriesColor(ColorFromName("red")))
+		test.That(t, err, test.ShouldBeNil)
+		d.Name = "MyFrame"
+		transforms, err := d.ToTransforms()
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "MyFrame")
+		test.That(t, transforms[0].PhysicalObject.Label, test.ShouldEqual, "MyFrame")
+	})
+
 	t.Run("WithParent_PropagatesParentToAllTransforms", func(t *testing.T) {
 		transforms, err := drawing.ToTransforms(WithParent("robot-base"))
 		test.That(t, err, test.ShouldBeNil)

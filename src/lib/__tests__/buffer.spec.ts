@@ -5,20 +5,20 @@ import { asFloat32Array, asColor, asOpacity } from '../buffer'
 describe('asFloat32Array', () => {
 	it('converts aligned bytes to Float32Array', () => {
 		// Create a Float32Array and get its byte representation
-		const original = new Float32Array([1.0, 2.5, -3.0])
+		const original = new Float32Array([1, 2.5, -3])
 		const bytes = new Uint8Array(original.buffer)
 
 		const result = asFloat32Array(bytes)
 
 		expect(result.length).toBe(3)
-		expect(result[0]).toBeCloseTo(1.0)
+		expect(result[0]).toBeCloseTo(1)
 		expect(result[1]).toBeCloseTo(2.5)
-		expect(result[2]).toBeCloseTo(-3.0)
+		expect(result[2]).toBeCloseTo(-3)
 	})
 
 	it('handles unaligned bytes by copying', () => {
 		// Create a buffer with extra byte at the start to force misalignment
-		const original = new Float32Array([1.0, 2.0])
+		const original = new Float32Array([1, 2])
 		const originalBytes = new Uint8Array(original.buffer)
 
 		// Create a larger buffer and copy at offset 1 (misaligned)
@@ -29,19 +29,19 @@ describe('asFloat32Array', () => {
 		const result = asFloat32Array(misalignedView)
 
 		expect(result.length).toBe(2)
-		expect(result[0]).toBeCloseTo(1.0)
-		expect(result[1]).toBeCloseTo(2.0)
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
 	})
 
 	it('creates a view over the same buffer when aligned (zero-copy)', () => {
-		const original = new Float32Array([1.0, 2.0, 3.0])
+		const original = new Float32Array([1, 2, 3])
 		const bytes = new Uint8Array(original.buffer)
 
 		const result = asFloat32Array(bytes)
 
 		// Modify original and check result is affected (same buffer)
-		original[0] = 99.0
-		expect(result[0]).toBeCloseTo(99.0)
+		original[0] = 99
+		expect(result[0]).toBeCloseTo(99)
 	})
 })
 

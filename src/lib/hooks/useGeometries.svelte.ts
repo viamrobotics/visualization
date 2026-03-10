@@ -122,7 +122,7 @@ export const provideGeometries = (partID: () => string) => {
 							index += 1
 
 							const resourceName = resources.current[name]
-							const label = geometry.label ? geometry.label : `${name} geometry ${index}`
+							const label = geometry.label || `${name} geometry ${index}`
 
 							active[`${name}:${label}`] = true
 

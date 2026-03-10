@@ -240,17 +240,19 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			}
 
 			switch (event.changeType) {
-				case TransformChangeType.REMOVED:
+				case TransformChangeType.REMOVED: {
 					eventsByUUID.set(uuid, event as TransformEvent)
 					break
+				}
 
-				case TransformChangeType.ADDED:
+				case TransformChangeType.ADDED: {
 					if (existing.changeType !== TransformChangeType.REMOVED) {
 						eventsByUUID.set(uuid, event as TransformEvent)
 					}
 					break
+				}
 
-				case TransformChangeType.UPDATED:
+				case TransformChangeType.UPDATED: {
 					// merge with existing updated event
 					if (existing.changeType === TransformChangeType.UPDATED) {
 						existing.updatedFields ??= { paths: [] }
@@ -270,6 +272,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 						eventsByUUID.set(uuid, event as TransformEvent)
 					}
 					break
+				}
 			}
 		}
 

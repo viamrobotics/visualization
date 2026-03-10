@@ -117,7 +117,9 @@ func addVoxelFrame(t *testing.T, frameSystem *referenceframe.FrameSystem, parent
 		t.Fatal(err)
 	}
 
-	frameSystem.AddFrame(frame, parent)
+	if err := frameSystem.AddFrame(frame, parent); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func createBody(
@@ -252,12 +254,16 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create frame system and house root frame
 		fs := referenceframe.NewEmptyFrameSystem("world")
 		houseFrame, _ := referenceframe.NewStaticFrame("house", spatialmath.NewZeroPose())
-		fs.AddFrame(houseFrame, fs.World())
+		if err := fs.AddFrame(houseFrame, fs.World()); err != nil {
+			t.Fatal(err)
+		}
 
 		// Create floor parent frame (origin at the corner of the floor)
 		floorOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -4 * voxelScale, Y: -3 * voxelScale, Z: 0})
 		floorParent, _ := referenceframe.NewStaticFrame("floor", floorOrigin)
-		fs.AddFrame(floorParent, houseFrame)
+		if err := fs.AddFrame(floorParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Floor voxels (positioned relative to floor origin)
 		for x := range 8 {
@@ -269,13 +275,15 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create walls parent frame (origin at corner of the walls at ground level)
 		wallsOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -4 * voxelScale, Y: -3 * voxelScale, Z: 1 * voxelScale})
 		wallsParent, _ := referenceframe.NewStaticFrame("walls", wallsOrigin)
-		fs.AddFrame(wallsParent, houseFrame)
+		if err := fs.AddFrame(wallsParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Front wall (Y = 0 relative to walls origin) with door opening
 		for x := 0; x < 8; x++ {
 			for z := 0; z < 4; z++ {
 				// Skip door opening (originally at x=-1 to 0, z=1-2 in world, now x=3-4, z=0-1 in walls frame)
-				if !(z <= 1 && x >= 3 && x <= 4) {
+				if z > 1 || x < 3 || x > 4 {
 					addVoxelFrame(t, fs, wallsParent, fmt.Sprintf("front_wall_%d_%d", x, z), x, 0, z, voxelScale)
 				}
 			}
@@ -285,7 +293,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		for x := 0; x < 8; x++ {
 			for z := 0; z < 4; z++ {
 				// Skip window positions (originally at x=-1 to 0, z=2 in world, now x=3-4, z=1 in walls frame)
-				if !(z == 1 && x >= 3 && x <= 4) {
+				if z != 1 || x < 3 || x > 4 {
 					addVoxelFrame(t, fs, wallsParent, fmt.Sprintf("back_wall_%d_%d", x, z), x, 5, z, voxelScale)
 				}
 			}
@@ -295,7 +303,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		for y := 0; y < 6; y++ {
 			for z := 0; z < 4; z++ {
 				// Skip window position (originally at y=0, z=2 in world, now y=3, z=1 in walls frame)
-				if !(z == 1 && y == 3) {
+				if z != 1 || y != 3 {
 					addVoxelFrame(t, fs, wallsParent, fmt.Sprintf("left_wall_%d_%d", y, z), 0, y, z, voxelScale)
 				}
 			}
@@ -311,11 +319,12 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create windows parent frame (origin at first window position)
 		windowsOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -1 * 500, Y: 2 * 500, Z: 2 * 500})
 		windowsParent, _ := referenceframe.NewStaticFrame("windows", windowsOrigin)
-		fs.AddFrame(windowsParent, houseFrame)
+		if err := fs.AddFrame(windowsParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Back wall windows (relative to windows origin)
 		addVoxelFrame(t, fs, windowsParent, "back_window_1", 0, 0, 0, voxelScale)
-		addVoxelFrame(t, fs, windowsParent, "back_window_2", 1, 0, 0, voxelScale)
 		addVoxelFrame(t, fs, windowsParent, "back_window_2", 1, 0, 0, voxelScale)
 
 		// Left wall window (relative to windows origin)
@@ -324,7 +333,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create roof parent frame (origin at corner of the roof base)
 		roofOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -5 * 500, Y: -4 * 500, Z: 5 * 500})
 		roofParent, _ := referenceframe.NewStaticFrame("roof", roofOrigin)
-		fs.AddFrame(roofParent, houseFrame)
+		if err := fs.AddFrame(roofParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Roof layer 1 (base layer, relative to roof origin)
 		for x := 0; x < 10; x++ {
@@ -354,7 +365,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create door parent frame (origin at door position)
 		doorOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: 1 * 500, Y: -5 * 500, Z: 1 * 500})
 		doorParent, _ := referenceframe.NewStaticFrame("door", doorOrigin)
-		fs.AddFrame(doorParent, houseFrame)
+		if err := fs.AddFrame(doorParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Door voxels (1x2x2 grid, relative to door origin)
 		addVoxelFrame(t, fs, doorParent, "door_1", 0, 0, 0, voxelScale)
@@ -365,7 +378,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create chimney parent frame (origin at chimney base)
 		chimneyOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: 2 * 500, Y: 1 * 500, Z: 6 * 500})
 		chimneyParent, _ := referenceframe.NewStaticFrame("chimney", chimneyOrigin)
-		fs.AddFrame(chimneyParent, houseFrame)
+		if err := fs.AddFrame(chimneyParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Chimney voxels (vertical stack, relative to chimney origin)
 		addVoxelFrame(t, fs, chimneyParent, "chimney_1", 0, 0, 0, voxelScale)
@@ -376,7 +391,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create table parent frame (origin at table position)
 		tableOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -1 * 500, Y: 0, Z: 1 * 500})
 		tableParent, _ := referenceframe.NewStaticFrame("table", tableOrigin)
-		fs.AddFrame(tableParent, houseFrame)
+		if err := fs.AddFrame(tableParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Table voxels (2 blocks side by side, relative to table origin)
 		addVoxelFrame(t, fs, tableParent, "table_1", 0, 0, 0, voxelScale)
@@ -385,7 +402,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create bench parent frame (origin at bench position)
 		benchOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -3 * 500, Y: -2 * 500, Z: 1 * 500})
 		benchParent, _ := referenceframe.NewStaticFrame("bench", benchOrigin)
-		fs.AddFrame(benchParent, houseFrame)
+		if err := fs.AddFrame(benchParent, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Bench voxels (2 blocks stacked vertically, relative to bench origin)
 		addVoxelFrame(t, fs, benchParent, "bench_1", 0, 0, 0, voxelScale)
@@ -399,7 +418,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 			"chest",
 		)
 		chestFrame, _ := referenceframe.NewStaticFrameWithGeometry("chest", chestOrigin, chestVoxel)
-		fs.AddFrame(chestFrame, houseFrame)
+		if err := fs.AddFrame(chestFrame, houseFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		// Create color map for the frame system
 		// Include "house" so the entire frame hierarchy is rendered
@@ -522,7 +543,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Create frame system
 		fs := referenceframe.NewEmptyFrameSystem("world")
 		rootFrame, _ := referenceframe.NewStaticFrame("root", spatialmath.NewZeroPose())
-		fs.AddFrame(rootFrame, fs.World())
+		if err := fs.AddFrame(rootFrame, fs.World()); err != nil {
+			t.Fatal(err)
+		}
 
 		// Create color map
 		frameColors := map[string]Color{
@@ -559,7 +582,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 					plotName,
 				)
 				plotFrame, _ := referenceframe.NewStaticFrameWithGeometry(plotName, spatialmath.NewZeroPose(), plot)
-				fs.AddFrame(plotFrame, rootFrame)
+				if err := fs.AddFrame(plotFrame, rootFrame); err != nil {
+					t.Fatal(err)
+				}
 				frameColors[plotName] = plotColor
 
 				// Add buildings on some non-road plots
@@ -579,7 +604,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 						buildingName,
 					)
 					buildingFrame, _ := referenceframe.NewStaticFrameWithGeometry(buildingName, spatialmath.NewZeroPose(), building)
-					fs.AddFrame(buildingFrame, rootFrame)
+					if err := fs.AddFrame(buildingFrame, rootFrame); err != nil {
+						t.Fatal(err)
+					}
 					frameColors[buildingName] = buildingColor
 				}
 			}
@@ -587,7 +614,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 		// Create people parent frame
 		peopleFrame, _ := referenceframe.NewStaticFrame("people", spatialmath.NewZeroPose())
-		fs.AddFrame(peopleFrame, rootFrame)
+		if err := fs.AddFrame(peopleFrame, rootFrame); err != nil {
+			t.Fatal(err)
+		}
 
 		numCitizens := 150 // Many citizens walking around
 		citizenHeight := 200.0
@@ -613,7 +642,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 				personName,
 			)
 			personFrame, _ := referenceframe.NewStaticFrameWithGeometry(personName, spatialmath.NewZeroPose(), citizen)
-			fs.AddFrame(personFrame, peopleFrame)
+			if err := fs.AddFrame(personFrame, peopleFrame); err != nil {
+				t.Fatal(err)
+			}
 			frameColors[personName] = citizenColor
 		}
 

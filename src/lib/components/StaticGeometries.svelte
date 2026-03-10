@@ -12,7 +12,7 @@
 	import { PressedKeys } from 'runed'
 	import { quaternionToPose, vector3ToPose } from '$lib/transform'
 	import { Quaternion, Vector3 } from 'three'
-	import Frame from './Frame.svelte'
+	import Frame from './Entities/Frame.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWorld, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
@@ -39,7 +39,7 @@
 		const entity = world.spawn(
 			traits.Name(`custom geometry ${++index}`),
 			traits.Pose,
-			traits.Box({ x: 0.1, y: 0.1, z: 0.1 }),
+			traits.Box({ x: 100, y: 100, z: 100 }),
 			traits.Removable
 		)
 
@@ -87,7 +87,10 @@
 								ref.quaternion.copy(quaternion)
 								entity.set(traits.Pose, pose)
 							} else if (box && mode === 'scale') {
-								entity.set(traits.Box, ref.scale)
+								box.x *= ref.scale.x
+								box.y *= ref.scale.y
+								box.z *= ref.scale.z
+								entity.set(traits.Box, box)
 								ref.scale.setScalar(1)
 							}
 						}}

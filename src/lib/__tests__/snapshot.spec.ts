@@ -344,7 +344,7 @@ describe('model shape handling', () => {
 						assets: [
 							new ModelAsset({
 								mimeType: 'model/gltf+json',
-								sizeBytes: BigInt(1024),
+								sizeBytes: 1024n,
 								content: { case: 'url', value: url },
 							}),
 						],
@@ -375,7 +375,7 @@ describe('model shape handling', () => {
 						assets: [
 							new ModelAsset({
 								mimeType: 'model/gltf-binary',
-								sizeBytes: BigInt(4),
+								sizeBytes: 4n,
 								content: { case: 'data', value: binaryData },
 							}),
 						],

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { Color, Group, type Object3D } from 'three'
 	import Geometry from './Geometry.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
@@ -34,7 +34,7 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const entityColor = useTrait(() => entity, traits.Color)
 
-	const events = useObjectEvents(() => entity)
+	const events = useEntityEvents(() => entity)
 	const resourceColor = $derived.by(() => {
 		if (!name.current) {
 			return undefined
