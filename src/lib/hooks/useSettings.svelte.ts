@@ -64,12 +64,6 @@ export interface Settings {
 		}
 	}
 
-	// SteamVR Bridge
-	steamvrBridge: {
-		enabled: boolean
-		host: string
-		port: number
-	}
 }
 
 interface Context {
@@ -124,11 +118,6 @@ const defaults = (): Settings => ({
 		},
 	},
 
-	steamvrBridge: {
-		enabled: false,
-		host: 'localhost',
-		port: 9090,
-	},
 })
 
 export const provideSettings = () => {

@@ -30,8 +30,6 @@
 	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import Settings from '$lib/components/overlay/settings/Settings.svelte'
 	import { useXR } from '@threlte/xr'
-	import { provideSteamVRBridge } from '$lib/hooks/useSteamVRBridge.svelte'
-	import SteamVRControllers from './steamvr/SteamVRControllers.svelte'
 
 	interface LocalConfigProps {
 		getLocalPartConfig: () => Struct
@@ -81,17 +79,6 @@
 	provideWeblabs()
 	provideToast()
 
-	const steamvrBridge = provideSteamVRBridge()
-
-	$effect(() => {
-		const cfg = settings.current.steamvrBridge
-		if (cfg.enabled) {
-			steamvrBridge.connect(cfg.host, cfg.port)
-		} else {
-			steamvrBridge.disconnect()
-		}
-	})
-
 	let root = $state.raw<HTMLElement>()
 
 	providePartConfig(() => {
@@ -139,10 +126,6 @@
 				</Scene>
 
 				<XR {@attach domPortal(root)} />
-
-				{#if settings.current.steamvrBridge.enabled}
-					<SteamVRControllers />
-				{/if}
 
 				{#if settings.current.renderSubEntityHoverDetail}
 					<HoveredEntities />

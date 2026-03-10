@@ -16,10 +16,6 @@
 	import { PersistedState } from 'runed'
 	import ToggleGroup from '../ToggleGroup.svelte'
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
-	import { useSteamVRBridge } from '$lib/hooks/useSteamVRBridge.svelte'
-
-	const steamvrBridge = useSteamVRBridge()
-
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
 	const cameras = useResourceNames(() => partID.current, 'camera')
@@ -272,62 +268,6 @@
 	</div>
 {/snippet}
 
-{#snippet SteamVR()}
-	<div class="flex flex-col gap-2.5 text-xs">
-		<label class="flex items-center justify-between gap-2">
-			Enable bridge
-			<Switch bind:on={settings.current.steamvrBridge.enabled} />
-		</label>
-
-		<label class="flex items-center justify-between gap-2">
-			Host
-			<div class="w-32">
-				<Input
-					bind:value={settings.current.steamvrBridge.host}
-					on:keydown={(event) => event.stopImmediatePropagation()}
-				/>
-			</div>
-		</label>
-
-		<label class="flex items-center justify-between gap-2">
-			Port
-			<div class="w-20">
-				<Input
-					bind:value={settings.current.steamvrBridge.port}
-					on:keydown={(event) => event.stopImmediatePropagation()}
-				/>
-			</div>
-		</label>
-
-		{@render SectionTitle('Status')}
-
-		<div class="flex items-center gap-2 py-1">
-			{#if steamvrBridge.state.status === 'connected'}
-				<span class="inline-block h-2 w-2 rounded-full bg-green-500"></span>
-				Connected
-			{:else if steamvrBridge.state.status === 'connecting'}
-				<span class="inline-block h-2 w-2 rounded-full bg-yellow-500"></span>
-				Connecting...
-			{:else}
-				<span class="inline-block h-2 w-2 rounded-full bg-gray-400"></span>
-				Disconnected
-			{/if}
-		</div>
-
-		{#if steamvrBridge.state.status === 'connected'}
-			<div class="text-gray-6 flex flex-col gap-0.5 text-[10px]">
-				<span>L: {steamvrBridge.state.left.connected ? 'tracking' : 'not found'}</span>
-				<span>R: {steamvrBridge.state.right.connected ? 'tracking' : 'not found'}</span>
-			</div>
-		{/if}
-
-		{#if settings.current.steamvrBridge.enabled}
-			{@render SectionTitle('Controller Assignment')}
-			<XRControllerSettings />
-		{/if}
-	</div>
-{/snippet}
-
 {#snippet Widgets()}
 	<div class="text-gray-9 flex flex-col gap-1 text-xs">
 		<label class="flex items-center justify-between gap-2 py-1">
@@ -381,7 +321,6 @@
 			{ label: 'Widgets', content: Widgets },
 			{ label: 'Stats', content: Stats },
 			...('xr' in navigator ? [{ label: 'VR / AR', content: XR }] : []),
-			{ label: 'SteamVR', content: SteamVR },
 		]}
 		onValueChange={(value) => {
 			activeTab.current = value
