@@ -48,10 +48,12 @@ export const useResizable = (name: () => string, defaultDimensions?: () => Dimen
 		observer.observe(target)
 	}
 
+	const disconnect = () => {
+		observer?.disconnect()
+	}
+
 	$effect(() => {
-		return () => {
-			observer?.disconnect()
-		}
+		return disconnect
 	})
 
 	return {
