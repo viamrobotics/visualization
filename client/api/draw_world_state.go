@@ -53,7 +53,7 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 	} else if len(options.Colors) > 1 {
 		colorOption = draw.WithGeometriesColorPalette(options.Colors, len(geometries))
 	} else {
-		colors := NewColorfulColorChooser().Get(len(geometries))
+		colors := draw.ChromaticColorChooser.Get(len(geometries))
 		colorOption = draw.WithPerGeometriesColors(colors...)
 	}
 

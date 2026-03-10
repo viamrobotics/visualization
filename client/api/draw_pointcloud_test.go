@@ -2,6 +2,7 @@ package api
 
 import (
 	"testing"
+	"time"
 
 	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/pointcloud"
@@ -143,5 +144,36 @@ func TestDrawPointCloud(t *testing.T) {
 			[]draw.Color{},
 			25.0,
 		)
+	})
+}
+
+func TestDrawPointCloudUpdating(t *testing.T) {
+	startTestServer(t)
+
+	t.Run("DrawPointCloudUpdating", func(t *testing.T) {
+		pc, err := pointcloud.NewFromFile("../data/octagon.pcd", pointcloud.BasicType)
+		test.That(t, err, test.ShouldBeNil)
+
+		palette := []draw.Color{
+			draw.ColorFromName("blue"),
+			draw.ColorFromName("cyan"),
+			draw.ColorFromName("green"),
+			draw.ColorFromName("yellow"),
+			draw.ColorFromName("orange"),
+			draw.ColorFromName("red"),
+			draw.ColorFromName("purple"),
+		}
+
+		for i := range 100 {
+			uuid, err := DrawPointCloud(DrawPointCloudOptions{
+				ID:         "updating",
+				Label:      "DrawPointCloud updating",
+				PointCloud: pc,
+				Colors:     []draw.Color{palette[i%len(palette)]},
+			})
+			test.That(t, err, test.ShouldBeNil)
+			test.That(t, uuid, test.ShouldNotBeNil)
+			time.Sleep(16 * time.Millisecond)
+		}
 	})
 }

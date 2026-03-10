@@ -21,7 +21,7 @@
 		useFocusedObject3d,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -37,7 +37,7 @@
 	const world = useWorld()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
-	const frames = useFrames()
+	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
@@ -402,7 +402,7 @@
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
-						options: frames.getParentFrameOptions(name.current ?? ''),
+						options: configFrames.getParentFrameOptions(name.current ?? ''),
 						onChange: (value) => {
 							detailConfigUpdater.setFrameParent(entity, value)
 						},

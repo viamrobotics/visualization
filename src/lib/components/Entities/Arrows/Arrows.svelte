@@ -3,7 +3,7 @@
 	import { Portal } from '@threlte/extras'
 	import type { Entity } from 'koota'
 	import { traits } from '$lib/ecs'
-	import { useObjectEvents } from '$lib/hooks/useObjectEvents.svelte'
+	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents.svelte'
 	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { meshBoundsRaycast, raycast } from '$lib/three/InstancedArrows/raycast'
@@ -15,7 +15,7 @@
 
 	let { entity, arrows }: Props = $props()
 
-	const events = useObjectEvents(() => entity)
+	const events = useEntityEvents(() => entity)
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
 
