@@ -1,5 +1,4 @@
 import {
-	LineBasicMaterial,
 	EdgesGeometry,
 	BoxGeometry,
 	Vector3,

@@ -3,9 +3,15 @@
 
 Renders a Viam Frame object
 -->
+<script module>
+	import { Color } from 'three'
+
+	const colorUtil = new Color()
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { Color, Group, type Object3D } from 'three'
+	import { Group, type Object3D } from 'three'
 	import { T, useThrelte } from '@threlte/core'
 	import { Portal, PortalTarget } from '@threlte/extras'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
@@ -25,8 +31,6 @@ Renders a Viam Frame object
 
 	let { entity, pose, children }: Props = $props()
 
-	const colorUtil = new Color()
-
 	const { invalidate } = useThrelte()
 	const resourceByName = useResourceByName()
 
@@ -36,19 +40,14 @@ Renders a Viam Frame object
 	const entityPose = useTrait(() => entity, traits.Pose)
 
 	const events = useEntityEvents(() => entity)
-	const resourceColor = $derived.by(() => {
-		if (!name.current) {
-			return undefined
-		}
-
-		const subtype = resourceByName.current[name.current]?.subtype
-		return resourceColors[subtype as keyof typeof resourceColors]
-	})
 
 	const color = $derived.by(() => {
 		if (entityColor.current) {
-			return colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+			return `#${colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b).getHexString()}`
 		}
+
+		const subtype = resourceByName.current[name.current ?? '']?.subtype
+		const resourceColor = resourceColors[subtype as keyof typeof resourceColors]
 
 		if (resourceColor) {
 			return resourceColor
@@ -72,8 +71,7 @@ Renders a Viam Frame object
 	<T is={group}>
 		<Mesh
 			{entity}
-			{pose}
-			color={`#${colorUtil.set(color).getHexString()}`}
+			{color}
 			{...events}
 		>
 			{#if name.current}

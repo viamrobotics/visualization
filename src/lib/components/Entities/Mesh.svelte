@@ -17,7 +17,7 @@
 		children?: Snippet
 	}
 
-	let { entity, color: overrideColor, pose, ...rest }: Props = $props()
+	let { entity, color: overrideColor, pose, children, ...rest }: Props = $props()
 
 	const colorUtil = new Color()
 
@@ -29,7 +29,6 @@
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
-
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
@@ -126,7 +125,7 @@
 		</T.LineSegments>
 	{/if}
 
-	{@render rest.children?.()}
+	{@render children?.()}
 </T>
 
 {#if showAxesHelper.current}
