@@ -194,6 +194,24 @@ test('draw geometries updating', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw world state', async ({ browser }) => {
+	const testPrefix = 'DRAW_WORLD_STATE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawWorldState$/DrawWorldState github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('box0')).toBeVisible()
+	await expect(page.getByText('box1')).toBeVisible()
+	await expect(page.getByText('box2')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
 test('draw nurbs', async ({ browser }) => {
 	const testPrefix = 'DRAW_NURBS'
 	const page = await createPage(browser)
