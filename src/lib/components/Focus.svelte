@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { TrackballControls, Gizmo, Portal } from '@threlte/extras'
+	import { TrackballControls, Portal } from '@threlte/extras'
+	import Gizmo from './Gizmo.svelte'
 	import { Box3, type Object3D, Vector3 } from 'three'
 	import { TrackballControls as ThreeTrackballControls } from 'three/examples/jsm/controls/TrackballControls.js'
 	import Camera from './Camera.svelte'

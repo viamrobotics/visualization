@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MathUtils } from 'three'
-	import { CameraControls, type CameraControlsRef, Gizmo, Portal } from '@threlte/extras'
+	import { CameraControls, type CameraControlsRef, Portal } from '@threlte/extras'
+	import Gizmo from './Gizmo.svelte'
 	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
 	import KeyboardControls from './KeyboardControls.svelte'
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
