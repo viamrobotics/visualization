@@ -563,7 +563,7 @@ test('set camera pose', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestSetCamera$/SetCameraTopDown github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
@@ -575,7 +575,7 @@ test('set camera pose', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestSetCamera$/ResetCamera github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
