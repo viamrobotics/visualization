@@ -1,6 +1,9 @@
 # Default target - show help when no target is specified
 .DEFAULT_GOAL := help
 
+# Local overrides (credentials, personal settings) — gitignored
+-include Makefile.local
+
 DRAW_DIR := draw
 DRAW_FILES := $(shell find $(DRAW_DIR) -not -name "DOCS.md")
 
@@ -127,9 +130,9 @@ bridge-build: bridge-deps
 
 .PHONY: bridge
 bridge: bridge-build
-	@echo '[bridge] Starting on port $(BRIDGE_PORT) at $(BRIDGE_HZ) Hz...'
+	@echo '[bridge] Starting at $(BRIDGE_HZ) Hz...'
 	@LD_LIBRARY_PATH=$(PWD)/$(OPENVR_SDK_DIR)/lib/linux64:$$LD_LIBRARY_PATH \
-		./$(BRIDGE_BIN) --port $(BRIDGE_PORT) --hz $(BRIDGE_HZ)
+		./$(BRIDGE_BIN) --hz $(BRIDGE_HZ) $(BRIDGE_ARGS)
 
 draw/DOCS.md: $(DRAW_FILES)
 	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md

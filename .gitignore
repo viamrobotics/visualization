@@ -44,3 +44,5 @@ bridge/openvr_bridge
 
 # IDE
 .cursor
+# Local dev overrides (credentials, personal settings)
+Makefile.local

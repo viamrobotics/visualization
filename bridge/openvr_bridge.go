@@ -1,7 +1,8 @@
-// SteamVR → WebSocket bridge (Go version).
+// SteamVR → Viam robot bridge (Go, E2E).
 //
 // Reads Vive Wand controller poses and button states from SteamVR/OpenVR
-// and broadcasts them to connected WebSocket clients at ~90 Hz.
+// and sends arm/gripper commands directly to a Viam robot at ~90 Hz.
+// No frontend or WebSocket required.
 //
 // Build requirements:
 //
@@ -212,7 +213,6 @@ import (
 	"flag"
 	"fmt"
 	"math"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -221,7 +221,13 @@ import (
 	"time"
 	"unsafe"
 
-	"nhooyr.io/websocket"
+	"github.com/golang/geo/r3"
+	"go.viam.com/rdk/components/arm"
+	"go.viam.com/rdk/components/gripper"
+	"go.viam.com/rdk/logging"
+	"go.viam.com/rdk/robot/client"
+	"go.viam.com/rdk/spatialmath"
+	"go.viam.com/utils/rpc"
 )
 
 // ---------------------------------------------------------------------------
@@ -240,51 +246,138 @@ const (
 )
 
 // ---------------------------------------------------------------------------
-// JSON types
+// Quaternion math (x, y, z, w layout)
 // ---------------------------------------------------------------------------
 
-// ControllerState mirrors the dict produced by the Python bridge.
+type quat [4]float64 // x, y, z, w
+
+func qMul(a, b quat) quat {
+	return quat{
+		a[3]*b[0] + a[0]*b[3] + a[1]*b[2] - a[2]*b[1],
+		a[3]*b[1] - a[0]*b[2] + a[1]*b[3] + a[2]*b[0],
+		a[3]*b[2] + a[0]*b[1] - a[1]*b[0] + a[2]*b[3],
+		a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2],
+	}
+}
+
+func qConj(q quat) quat { return quat{-q[0], -q[1], -q[2], q[3]} }
+
+func qNorm(q quat) quat {
+	mag := math.Sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3])
+	if mag < 1e-10 {
+		return quat{0, 0, 0, 1}
+	}
+	return quat{q[0] / mag, q[1] / mag, q[2] / mag, q[3] / mag}
+}
+
+func qFromAxisAngle(ax, ay, az, angle float64) quat {
+	s := math.Sin(angle / 2)
+	return quat{ax * s, ay * s, az * s, math.Cos(angle / 2)}
+}
+
+// qRotateVec rotates (vx,vy,vz) by q: v' = q * (v,0) * q^-1
+func qRotateVec(q quat, vx, vy, vz float64) (float64, float64, float64) {
+	r := qMul(qMul(q, quat{vx, vy, vz, 0}), qConj(q))
+	return r[0], r[1], r[2]
+}
+
+// transformToRobotFrame: T * q * T^-1
+func transformToRobotFrame(q, T quat) quat {
+	return qNorm(qMul(qMul(T, q), qConj(T)))
+}
+
+// steamVRTransform is the SteamVR standing universe → Viam robot frame quaternion.
+// Equivalent to rotZ(180°) * rotX(90°) applied to the right (rotX first).
+// Maps: Room+Y→Robot+Z, Room-Z→Robot-Y, Room-X→Robot+X.
+var steamVRTransform = func() quat {
+	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
+	rotZ := qFromAxisAngle(0, 0, 1, math.Pi)
+	return qNorm(qMul(rotZ, rotX))
+}()
+
+// quatToOVDeg converts a unit quaternion to a Viam orientation vector (theta in degrees).
+// Port of OrientationVector.setFromQuaternion from OrientationVector.ts.
+func quatToOVDeg(q quat) (ox, oy, oz, thetaDeg float64) {
+	const eps = 0.0001
+	conj := qConj(q)
+	xAxis := quat{-1, 0, 0, 0}
+	zAxis := quat{0, 0, 1, 0}
+	newX := qMul(qMul(q, xAxis), conj)
+	newZ := qMul(qMul(q, zAxis), conj)
+
+	var th float64
+	nzx, nzy, nzz := newZ[0], newZ[1], newZ[2]
+	nxx, nxy, nxz := newX[0], newX[1], newX[2]
+
+	if 1-math.Abs(nzz) > eps {
+		// normal1 = newZimag × newXimag
+		n1x := nzy*nxz - nzz*nxy
+		n1y := nzz*nxx - nzx*nxz
+		n1z := nzx*nxy - nzy*nxx
+		// normal2 = newZimag × (0,0,1)
+		n2x := nzy
+		n2y := -nzx
+		n2z := 0.0
+		mag1 := math.Sqrt(n1x*n1x + n1y*n1y + n1z*n1z)
+		mag2 := math.Sqrt(n2x*n2x + n2y*n2y + n2z*n2z)
+		if mag1 > 1e-10 && mag2 > 1e-10 {
+			cosTheta := math.Max(-1, math.Min(1, (n1x*n2x+n1y*n2y+n1z*n2z)/(mag1*mag2)))
+			theta := math.Acos(cosTheta)
+			if theta > eps {
+				magNZ := math.Sqrt(nzx*nzx + nzy*nzy + nzz*nzz)
+				if magNZ > 1e-10 {
+					rotQ := qFromAxisAngle(nzx/magNZ, nzy/magNZ, nzz/magNZ, -theta)
+					testZ := qMul(qMul(rotQ, zAxis), qConj(rotQ))
+					n3x := nzy*testZ[2] - nzz*testZ[1]
+					n3y := nzz*testZ[0] - nzx*testZ[2]
+					n3z := nzx*testZ[1] - nzy*testZ[0]
+					mag3 := math.Sqrt(n3x*n3x + n3y*n3y + n3z*n3z)
+					if mag3 > 1e-10 {
+						cosTest := (n1x*n3x + n1y*n3y + n1z*n3z) / (mag1 * mag3)
+						if 1-cosTest < eps*eps {
+							th = -theta
+						} else {
+							th = theta
+						}
+					}
+				}
+			}
+		}
+	} else if nzz < 0 {
+		th = -math.Atan2(nxy, nxx)
+	} else {
+		th = -math.Atan2(nxy, -nxx)
+	}
+
+	mag := math.Sqrt(nzx*nzx + nzy*nzy + nzz*nzz)
+	if mag < 1e-10 {
+		mag = 1
+	}
+	return nzx / mag, nzy / mag, nzz / mag, th * 180 / math.Pi
+}
+
+// ---------------------------------------------------------------------------
+// Controller state
+// ---------------------------------------------------------------------------
+
 type ControllerState struct {
-	Connected       bool       `json:"connected"`
-	Pos             [3]float64 `json:"pos"`
-	Rot             [4]float64 `json:"rot"` // [qx, qy, qz, qw]
-	Trigger         float64    `json:"trigger"`
-	TriggerPressed  bool       `json:"triggerPressed"`
-	Grip            bool       `json:"grip"`
-	Trackpad        [2]float64 `json:"trackpad"`
-	TrackpadPressed bool       `json:"trackpadPressed"`
-	Menu            bool       `json:"menu"`
+	Connected       bool
+	Pos             [3]float64 // x, y, z (meters)
+	Rot             quat       // x, y, z, w
+	Trigger         float64
+	TriggerPressed  bool
+	Grip            bool
+	Trackpad        [2]float64
+	TrackpadPressed bool
+	Menu            bool
 }
 
-var nullController = ControllerState{
-	Connected: false,
-	Pos:       [3]float64{0, 0, 0},
-	Rot:       [4]float64{0, 0, 0, 1},
-}
+var nullController = ControllerState{Rot: quat{0, 0, 0, 1}}
 
-type frameControllers struct {
-	Left  ControllerState `json:"left"`
-	Right ControllerState `json:"right"`
-}
-
-type frame struct {
-	TS          float64          `json:"ts"`
-	Controllers frameControllers `json:"controllers"`
-}
-
-// ---------------------------------------------------------------------------
-// OpenVR helpers
-// ---------------------------------------------------------------------------
-
-// mat34ToQuat converts an OpenVR row-major 3×4 matrix (stored flat, row-major)
-// to (position [x,y,z], quaternion [qx,qy,qz,qw]) using Shepperd's method.
-// This is a direct port of the Python mat34_to_pos_quat function.
-func mat34ToQuat(m [12]float32) ([3]float64, [4]float64) {
-	// m[r*4+c] == matrix row r, column c
+// mat34ToQuat converts an OpenVR row-major 3×4 matrix to (position, quaternion).
+func mat34ToQuat(m [12]float32) ([3]float64, quat) {
 	pos := [3]float64{float64(m[3]), float64(m[7]), float64(m[11])}
-
 	trace := float64(m[0] + m[5] + m[10])
-
 	var qx, qy, qz, qw float64
 	switch {
 	case trace > 0:
@@ -312,15 +405,9 @@ func mat34ToQuat(m [12]float32) ([3]float64, [4]float64) {
 		qy = float64(m[9]+m[6]) / s
 		qz = 0.25 * s
 	}
-
-	return pos, [4]float64{qx, qy, qz, qw}
+	return pos, quat{qx, qy, qz, qw}
 }
 
-func round5(v float64) float64 { return math.Round(v*1e5) / 1e5 }
-func round3(v float64) float64 { return math.Round(v*1e3) / 1e3 }
-
-// readController reads pose and button state for a single tracked device.
-// Returns nil if the device is not present.
 func readController(idx uint32, isLeft bool) *ControllerState {
 	leftFlag := C.int(0)
 	if isLeft {
@@ -328,50 +415,31 @@ func readController(idx uint32, isLeft bool) *ControllerState {
 	}
 	data := C.bridge_get_controller(C.uint(idx), leftFlag)
 	if data.stateValid == 0 {
-		return nil // controller not present
+		return nil
 	}
-
 	pressed := uint64(data.pressed)
-
-	// Negate Y: OpenVR trackpad +y=up, but WebXR axes[3] is +y=down.
-	trackpadX := float64(data.axis0x)
-	trackpadY := -float64(data.axis0y)
 	trigger := float64(data.axis1x)
-
 	cs := &ControllerState{
 		Connected:       data.poseValid != 0,
-		Trigger:         round3(trigger),
+		Trigger:         trigger,
 		TriggerPressed:  trigger > 0.8,
 		Grip:            pressed&buttonGrip != 0,
-		Trackpad:        [2]float64{round3(trackpadX), round3(trackpadY)},
+		Trackpad:        [2]float64{float64(data.axis0x), -float64(data.axis0y)},
 		TrackpadPressed: pressed&buttonTrackpad != 0,
 		Menu:            pressed&buttonMenu != 0,
 	}
-
 	if data.poseValid != 0 {
 		var flat [12]float32
 		for i := 0; i < 12; i++ {
 			flat[i] = float32(data.mat[i])
 		}
 		pos, rot := mat34ToQuat(flat)
-		cs.Pos = [3]float64{round5(pos[0]), round5(pos[1]), round5(pos[2])}
-		// Vive Wands have mirrored local coordinate systems: the left controller's
-		// local +X points world-left and local +Z also inverts (det = +1 preserved).
-		// Negate qx and qz so identical physical gestures produce identical
-		// quaternions from both controllers.
-		if isLeft {
-			rot[0] = -rot[0] // qx
-			rot[2] = -rot[2] // qz
-			rot[3] = -rot[3] // qz
-		}
-		cs.Rot = [4]float64{round5(rot[0]), round5(rot[1]), round5(rot[2]), round5(rot[3])}
+		cs.Pos = pos
+		cs.Rot = rot
 	}
-
 	return cs
 }
 
-// findControllers scans all tracked-device slots and returns the device indices
-// of the left and right hand controllers (either may be nil if not found).
 func findControllers() (left, right *uint32) {
 	for i := uint32(0); i < maxTrackedDevices; i++ {
 		cls := uint32(C.bridge_get_device_class(C.uint(i)))
@@ -390,59 +458,7 @@ func findControllers() (left, right *uint32) {
 	return
 }
 
-// hapticReq is the inbound message shape for haptic feedback requests.
-// Example: {"haptic":{"hand":"left","intensity":0.5,"duration":100}}
-//
-// intensity: 0.0–1.0 (scales the pulse duration since TriggerHapticPulse has
-//
-//	no amplitude parameter)
-//
-// duration: milliseconds
-type hapticReq struct {
-	Haptic *struct {
-		Hand      string  `json:"hand"`      // "left" or "right"
-		Intensity float64 `json:"intensity"` // 0.0–1.0
-		Duration  float64 `json:"duration"`  // ms
-	} `json:"haptic"`
-}
-
-// ---------------------------------------------------------------------------
-// WebSocket hub
-// ---------------------------------------------------------------------------
-
-type hub struct {
-	mu       sync.RWMutex
-	clients  map[*websocket.Conn]struct{}
-	leftIdx  *uint32 // current left controller device index (nil = not found)
-	rightIdx *uint32 // current right controller device index
-}
-
-func newHub() *hub { return &hub{clients: make(map[*websocket.Conn]struct{})} }
-
-// setControllerIndices is called by pollLoop whenever it rescans devices.
-func (h *hub) setControllerIndices(left, right *uint32) {
-	h.mu.Lock()
-	h.leftIdx = left
-	h.rightIdx = right
-	h.mu.Unlock()
-}
-
-// triggerHaptic fires a haptic pulse on the named controller.
-// intensity (0–1) scales the microsecond duration since TriggerHapticPulse
-// has no amplitude control. Max hardware pulse is ~3999 µs per call.
-func (h *hub) triggerHaptic(hand string, intensity, durationMs float64) {
-	h.mu.RLock()
-	var idx *uint32
-	if hand == "left" {
-		idx = h.leftIdx
-	} else {
-		idx = h.rightIdx
-	}
-	h.mu.RUnlock()
-
-	if idx == nil {
-		return
-	}
+func hapticPulse(idx uint32, intensity, durationMs float64) {
 	us := intensity * durationMs * 1000
 	if us < 1 {
 		us = 1
@@ -450,75 +466,11 @@ func (h *hub) triggerHaptic(hand string, intensity, durationMs float64) {
 	if us > 65535 {
 		us = 65535
 	}
-	C.bridge_haptic_pulse(C.uint(*idx), C.ushort(us))
-}
-
-func (h *hub) add(c *websocket.Conn) {
-	h.mu.Lock()
-	h.clients[c] = struct{}{}
-	h.mu.Unlock()
-}
-
-func (h *hub) remove(c *websocket.Conn) {
-	h.mu.Lock()
-	delete(h.clients, c)
-	h.mu.Unlock()
-}
-
-func (h *hub) count() int {
-	h.mu.RLock()
-	n := len(h.clients)
-	h.mu.RUnlock()
-	return n
-}
-
-func (h *hub) broadcast(ctx context.Context, msg []byte) {
-	h.mu.RLock()
-	conns := make([]*websocket.Conn, 0, len(h.clients))
-	for c := range h.clients {
-		conns = append(conns, c)
-	}
-	h.mu.RUnlock()
-
-	for _, c := range conns {
-		_ = c.Write(ctx, websocket.MessageText, msg)
-	}
-}
-
-// handler upgrades an HTTP request to a WebSocket connection, adds it to the
-// hub, and reads incoming messages until the client disconnects.
-// Clients may send haptic requests:
-//
-//	{"haptic":{"hand":"left","intensity":0.5,"duration":100}}
-func (h *hub) handler(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		InsecureSkipVerify: true, // allow any Origin
-	})
-	if err != nil {
-		return
-	}
-	h.add(conn)
-	fmt.Printf("[bridge] Client connected (%d total)\n", h.count())
-
-	ctx := r.Context()
-	for {
-		_, msg, err := conn.Read(ctx)
-		if err != nil {
-			break
-		}
-		var req hapticReq
-		if json.Unmarshal(msg, &req) == nil && req.Haptic != nil {
-			h.triggerHaptic(req.Haptic.Hand, req.Haptic.Intensity, req.Haptic.Duration)
-		}
-	}
-
-	h.remove(conn)
-	_ = conn.Close(websocket.StatusNormalClosure, "")
-	fmt.Printf("[bridge] Client disconnected (%d total)\n", h.count())
+	C.bridge_haptic_pulse(C.uint(idx), C.ushort(us))
 }
 
 // ---------------------------------------------------------------------------
-// Calibration — forward direction (Y-axis yaw offset)
+// Calibration
 // ---------------------------------------------------------------------------
 
 var (
@@ -550,7 +502,7 @@ func loadCalib(dir string) {
 	fmt.Printf("[bridge] Calibration loaded: %.1f°\n", cd.Yaw*180/math.Pi)
 }
 
-func setCalib(yaw float64, dir string) {
+func saveCalib(yaw float64, dir string) {
 	calibMu.Lock()
 	calibYaw = yaw
 	calibSet = true
@@ -560,28 +512,21 @@ func setCalib(yaw float64, dir string) {
 	if err := os.WriteFile(path, b, 0644); err != nil {
 		fmt.Printf("[bridge] Failed to save calibration: %v\n", err)
 	} else {
-		fmt.Printf("[bridge] ✓ Calibrated forward: %.1f° (saved)\n", yaw*180/math.Pi)
+		fmt.Printf("[bridge] Calibrated forward: %.1f° (saved)\n", yaw*180/math.Pi)
 	}
 }
 
-// computeCalibYaw returns the Y-axis rotation that maps the controller's
-// pointing direction (local -Z axis) to Room -X (expected robot forward).
-// applyCalib rotates XZ as x'=x·cos-z·sin, z'=x·sin+z·cos (CCW by θ).
-// To map (cfx,cfz) → (-1,0): θ = π - atan2(cfz, cfx).
-func computeCalibYaw(rot [4]float64) (float64, bool) {
+func computeCalibYaw(rot quat) (float64, bool) {
 	cx, cy, cz, cw := rot[0], rot[1], rot[2], rot[3]
-	// Controller -Z axis in world: -(R col2)
 	cfx := -2 * (cx*cz + cy*cw)
 	cfz := -(1 - 2*(cx*cx+cy*cy))
 	mag := math.Sqrt(cfx*cfx + cfz*cfz)
 	if mag < 1e-6 {
-		return 0, false // pointing straight up/down
+		return 0, false
 	}
 	return math.Pi - math.Atan2(cfz/mag, cfx/mag), true
 }
 
-// applyCalib rotates a ControllerState's position and rotation by the stored
-// calibration yaw (Y-axis rotation) to align raw tracking space to robot forward.
 func applyCalib(cs ControllerState) ControllerState {
 	if !cs.Connected {
 		return cs
@@ -593,46 +538,279 @@ func applyCalib(cs ControllerState) ControllerState {
 	if !set || yaw == 0 {
 		return cs
 	}
-	qy := math.Sin(yaw / 2)
-	qw := math.Cos(yaw / 2)
-	cosY := 1 - 2*qy*qy // cos(yaw)
-	sinY := 2 * qw * qy // sin(yaw)
-
-	// Rotate position around Y axis
+	cosY := math.Cos(yaw)
+	sinY := math.Sin(yaw)
 	x, z := cs.Pos[0], cs.Pos[2]
-	cs.Pos = [3]float64{round5(x*cosY - z*sinY), cs.Pos[1], round5(x*sinY + z*cosY)}
-
-	// Do NOT rotate the orientation quaternion by calibration yaw.
-	// Calibration only corrects the position frame (operator's facing direction).
-	// Left-multiplying CALIB * q does not cancel in the frontend sandwich
-	// transform T * q * T⁻¹ used for relative rotation control — it would
-	// introduce a spurious conjugation that inverts pitch and roll.
+	cs.Pos = [3]float64{x*cosY - z*sinY, cs.Pos[1], x*sinY + z*cosY}
 	return cs
+}
+
+// ---------------------------------------------------------------------------
+// Teleop hand — controls one arm + optional gripper
+// ---------------------------------------------------------------------------
+
+type pose struct {
+	x, y, z              float64
+	ox, oy, oz, thetaDeg float64
+}
+
+type teleopHand struct {
+	name        string
+	armName     string
+	gripperName string
+	arm         arm.Arm
+	gripper     gripper.Gripper // nil if no gripper
+	deviceIdx   *uint32
+	scale       float64
+	rotEnabled  bool
+
+	// button edge state
+	wasGrip    bool
+	wasTrigger bool
+	wasMenu    bool
+
+	// control state
+	isControlling  bool
+	isSending      bool
+	errorTimeout   time.Time
+	lastCmdTime    time.Time
+	poseStack      []pose
+	gripStopTimer  *time.Timer
+
+	// reference capture (on grip press)
+	ctrlRefPos       [3]float64
+	ctrlRefRotRobot  quat
+	robotRefPos      [3]float64
+	robotRefQuat     quat
+	ctrlToArmOffset  quat
+}
+
+const (
+	cmdInterval      = 11 * time.Millisecond
+	errorCooldown    = 1 * time.Second
+	errorHapticIntvl = 200 * time.Millisecond
+)
+
+func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled bool) *teleopHand {
+	return &teleopHand{
+		name:        name,
+		armName:     armName,
+		gripperName: gripperName,
+		scale:       scale,
+		rotEnabled:  rotEnabled,
+		ctrlToArmOffset: quat{0, 0, 0, 1},
+	}
+}
+
+func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) error {
+	a, err := arm.FromRobot(robot, h.armName)
+	if err != nil {
+		return fmt.Errorf("arm %q: %w", h.armName, err)
+	}
+	h.arm = a
+	if h.gripperName != "" {
+		g, err := gripper.FromRobot(robot, h.gripperName)
+		if err != nil {
+			fmt.Printf("[%s] gripper %q not available: %v\n", h.name, h.gripperName, err)
+		} else {
+			h.gripper = g
+		}
+	}
+	return nil
+}
+
+func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
+	// --- Gripper (trigger) ---
+	if h.gripper != nil {
+		if cs.TriggerPressed && !h.wasTrigger {
+			if h.gripStopTimer != nil {
+				h.gripStopTimer.Stop()
+				h.gripStopTimer = nil
+			}
+			go func() {
+				if _, err := h.gripper.Grab(ctx, nil); err != nil {
+					fmt.Printf("[%s] gripper grab: %v\n", h.name, err)
+				}
+			}()
+		} else if !cs.TriggerPressed && h.wasTrigger {
+			if h.gripStopTimer != nil {
+				h.gripStopTimer.Stop()
+			}
+			go func() {
+				if err := h.gripper.Open(ctx, nil); err != nil {
+					fmt.Printf("[%s] gripper open: %v\n", h.name, err)
+					return
+				}
+			}()
+			h.gripStopTimer = time.AfterFunc(1*time.Second, func() {
+				if err := h.gripper.Stop(ctx, nil); err != nil {
+					fmt.Printf("[%s] gripper stop: %v\n", h.name, err)
+				}
+			})
+		}
+		h.wasTrigger = cs.TriggerPressed
+	}
+
+	// Arm requires connected pose.
+	if !cs.Connected {
+		return
+	}
+
+	// --- Grip: start/stop arm control ---
+	if cs.Grip && !h.wasGrip {
+		h.startControl(ctx, cs)
+	} else if !cs.Grip && h.wasGrip && h.isControlling {
+		h.isControlling = false
+		h.sendHaptic(0.3, 80)
+	}
+	h.wasGrip = cs.Grip
+
+	// --- Menu: return to saved pose ---
+	if cs.Menu && !h.wasMenu && len(h.poseStack) > 0 {
+		go h.returnToPose(ctx)
+	}
+	h.wasMenu = cs.Menu
+
+	// --- Control frame ---
+	if h.isControlling && !h.isSending {
+		h.controlFrame(ctx, cs)
+	}
+}
+
+func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
+	go func() {
+		currentPose, err := h.arm.EndPosition(ctx, nil)
+		if err != nil {
+			fmt.Printf("[%s] startControl: EndPosition: %v\n", h.name, err)
+			return
+		}
+		pt := currentPose.Point()
+		ori := currentPose.Orientation()
+		ovd := ori.OrientationVectorDegrees()
+
+		h.robotRefPos = [3]float64{pt.X, pt.Y, pt.Z}
+
+		// Reconstruct robot arm quaternion from orientation vector degrees.
+		ovRad := spatialmath.NewOrientationVector()
+		ovRad.OX = ovd.OX
+		ovRad.OY = ovd.OY
+		ovRad.OZ = ovd.OZ
+		ovRad.Theta = ovd.Theta * math.Pi / 180
+		rq := ovRad.Quaternion()
+		h.robotRefQuat = qNorm(quat{rq.Imag, rq.Jmag, rq.Kmag, rq.Real})
+
+		h.poseStack = append(h.poseStack, pose{
+			x: pt.X, y: pt.Y, z: pt.Z,
+			ox: ovd.OX, oy: ovd.OY, oz: ovd.OZ, thetaDeg: ovd.Theta,
+		})
+
+		h.ctrlRefPos = cs.Pos
+		h.ctrlRefRotRobot = transformToRobotFrame(cs.Rot, steamVRTransform)
+
+		// offset = ctrlRot^-1 * robotRefQuat
+		h.ctrlToArmOffset = qNorm(qMul(qConj(h.ctrlRefRotRobot), h.robotRefQuat))
+
+		h.errorTimeout = time.Time{}
+		h.isControlling = true
+		h.sendHaptic(0.5, 100)
+		fmt.Printf("[%s] control started at (%.1f, %.1f, %.1f)\n", h.name, pt.X, pt.Y, pt.Z)
+	}()
+}
+
+func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
+	now := time.Now()
+	if now.Sub(h.lastCmdTime) < cmdInterval {
+		return
+	}
+	if !h.errorTimeout.IsZero() && now.Before(h.errorTimeout) {
+		return
+	}
+
+	// Position: delta controller → robot frame → scale → mm
+	dx := cs.Pos[0] - h.ctrlRefPos[0]
+	dy := cs.Pos[1] - h.ctrlRefPos[1]
+	dz := cs.Pos[2] - h.ctrlRefPos[2]
+	rx, ry, rz := qRotateVec(steamVRTransform, dx, dy, dz)
+	scaleMM := h.scale * 1000
+	tx := h.robotRefPos[0] + rx*scaleMM
+	ty := h.robotRefPos[1] + ry*scaleMM
+	tz := h.robotRefPos[2] + rz*scaleMM
+
+	// Rotation: T * q * T^-1, then apply offset
+	var tox, toy, toz, thetaDeg float64
+	if h.rotEnabled {
+		curRot := transformToRobotFrame(cs.Rot, steamVRTransform)
+		targetRot := qNorm(qMul(curRot, h.ctrlToArmOffset))
+		tox, toy, toz, thetaDeg = quatToOVDeg(targetRot)
+	} else {
+		// Keep arm at reference orientation
+		tox, toy, toz, thetaDeg = quatToOVDeg(h.robotRefQuat)
+	}
+
+	if math.IsNaN(tx) || math.IsNaN(tox) || math.IsNaN(thetaDeg) {
+		return
+	}
+
+	h.lastCmdTime = now
+	h.isSending = true
+
+	go func() {
+		defer func() { h.isSending = false }()
+
+		p := spatialmath.NewPose(
+			r3.Vector{X: tx, Y: ty, Z: tz},
+			&spatialmath.OrientationVectorDegrees{OX: tox, OY: toy, OZ: toz, Theta: thetaDeg},
+		)
+		if err := h.arm.MoveToPosition(ctx, p, nil); err != nil {
+			fmt.Printf("[%s] MoveToPosition: %v\n", h.name, err)
+			h.errorTimeout = time.Now().Add(errorCooldown)
+			h.sendHaptic(0.8, 200)
+		}
+	}()
+}
+
+func (h *teleopHand) returnToPose(ctx context.Context) {
+	if len(h.poseStack) == 0 {
+		return
+	}
+	saved := h.poseStack[len(h.poseStack)-1]
+	h.poseStack = h.poseStack[:len(h.poseStack)-1]
+	h.isControlling = false
+
+	p := spatialmath.NewPose(
+		r3.Vector{X: saved.x, Y: saved.y, Z: saved.z},
+		&spatialmath.OrientationVectorDegrees{OX: saved.ox, OY: saved.oy, OZ: saved.oz, Theta: saved.thetaDeg},
+	)
+	if err := h.arm.MoveToPosition(ctx, p, nil); err != nil {
+		fmt.Printf("[%s] returnToPose: %v\n", h.name, err)
+	}
+}
+
+func (h *teleopHand) sendHaptic(intensity, durationMs float64) {
+	if h.deviceIdx != nil {
+		hapticPulse(*h.deviceIdx, intensity, durationMs)
+	}
 }
 
 // ---------------------------------------------------------------------------
 // Poll loop
 // ---------------------------------------------------------------------------
 
-// initBridge calls bridge_init with the action manifest path.
 func initBridge(manifestPath string) int {
 	cPath := C.CString(manifestPath)
 	defer C.free(unsafe.Pointer(cPath))
 	return int(C.bridge_init(cPath))
 }
 
-func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
+func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *teleopHand) {
 	interval := time.Duration(float64(time.Second) / float64(hz))
-	fmt.Printf("[bridge] Polling at %d Hz (interval %.1f ms)\n", hz,
-		float64(interval)/float64(time.Millisecond))
+	fmt.Printf("[bridge] Polling at %d Hz (%.1f ms)\n", hz, float64(interval)/float64(time.Millisecond))
 
 	dir := filepath.Dir(manifestPath)
 	loadCalib(dir)
 
 	var leftIdx, rightIdx *uint32
 	var wasLeftTrackpad, wasRightTrackpad bool
-	var wasLeftGrip, wasRightGrip bool
-	var wasLeftTrigger, wasRightTrigger bool
 	lastScan := time.Time{}
 	vrOK := initBridge(manifestPath) == 0
 	if vrOK {
@@ -644,30 +822,21 @@ func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
 	for {
 		start := time.Now()
 
-		// Re-scan for controllers (and retry OpenVR init) every 2 s.
 		if time.Since(lastScan) > 2*time.Second {
-			if !vrOK {
-				if initBridge(manifestPath) == 0 {
-					vrOK = true
-					fmt.Println("[bridge] OpenVR initialized")
-				}
+			if !vrOK && initBridge(manifestPath) == 0 {
+				vrOK = true
+				fmt.Println("[bridge] OpenVR initialized")
 			}
 			leftIdx, rightIdx = findControllers()
-			h.setControllerIndices(leftIdx, rightIdx)
-			lastScan = time.Now()
-			if leftIdx != nil || rightIdx != nil {
-				l, r := -1, -1
-				if leftIdx != nil {
-					l = int(*leftIdx)
-				}
-				if rightIdx != nil {
-					r = int(*rightIdx)
-				}
-				fmt.Printf("[bridge] Controllers: left=%d, right=%d\n", l, r)
+			if left != nil {
+				left.deviceIdx = leftIdx
 			}
+			if right != nil {
+				right.deviceIdx = rightIdx
+			}
+			lastScan = time.Now()
 		}
 
-		// Update IVRInput state once per frame before reading action data.
 		C.bridge_update_input()
 
 		resolve := func(idx *uint32, isLeft bool) ControllerState {
@@ -684,50 +853,28 @@ func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
 		leftRaw := resolve(leftIdx, true)
 		rightRaw := resolve(rightIdx, false)
 
-		// Trackpad rising edge: calibrate forward direction
+		// Trackpad rising edge: calibrate forward direction.
 		if leftRaw.Connected && leftRaw.TrackpadPressed && !wasLeftTrackpad {
 			if yaw, ok := computeCalibYaw(leftRaw.Rot); ok {
-				setCalib(yaw, dir)
+				saveCalib(yaw, dir)
 			}
 		}
 		if rightRaw.Connected && rightRaw.TrackpadPressed && !wasRightTrackpad {
 			if yaw, ok := computeCalibYaw(rightRaw.Rot); ok {
-				setCalib(yaw, dir)
+				saveCalib(yaw, dir)
 			}
 		}
 		wasLeftTrackpad = leftRaw.Connected && leftRaw.TrackpadPressed
 		wasRightTrackpad = rightRaw.Connected && rightRaw.TrackpadPressed
 
-		// Grip rising edge: log which hand pressed grip
-		if leftRaw.Connected && leftRaw.Grip && !wasLeftGrip {
-			fmt.Println("[bridge] LEFT grip pressed")
-		}
-		if rightRaw.Connected && rightRaw.Grip && !wasRightGrip {
-			fmt.Println("[bridge] RIGHT grip pressed")
-		}
-		wasLeftGrip = leftRaw.Connected && leftRaw.Grip
-		wasRightGrip = rightRaw.Connected && rightRaw.Grip
+		leftCS := applyCalib(leftRaw)
+		rightCS := applyCalib(rightRaw)
 
-		// Trigger rising edge: log which hand pressed trigger
-		if leftRaw.Connected && leftRaw.TriggerPressed && !wasLeftTrigger {
-			fmt.Println("[bridge] LEFT trigger pressed")
+		if left != nil && left.arm != nil {
+			left.tick(ctx, leftCS)
 		}
-		if rightRaw.Connected && rightRaw.TriggerPressed && !wasRightTrigger {
-			fmt.Println("[bridge] RIGHT trigger pressed")
-		}
-		wasLeftTrigger = leftRaw.Connected && leftRaw.TriggerPressed
-		wasRightTrigger = rightRaw.Connected && rightRaw.TriggerPressed
-
-		f := frame{
-			TS: float64(time.Now().UnixMilli()) / 1000.0,
-			Controllers: frameControllers{
-				Left:  applyCalib(leftRaw),
-				Right: applyCalib(rightRaw),
-			},
-		}
-
-		if msg, err := json.Marshal(f); err == nil {
-			h.broadcast(ctx, msg)
+		if right != nil && right.arm != nil {
+			right.tick(ctx, rightCS)
 		}
 
 		elapsed := time.Since(start)
@@ -752,11 +899,19 @@ func pollLoop(ctx context.Context, h *hub, hz int, manifestPath string) {
 // ---------------------------------------------------------------------------
 
 func main() {
-	port := flag.Int("port", 9090, "WebSocket port (default: 9090)")
-	hz := flag.Int("hz", 90, "Polling rate in Hz (default: 90)")
+	hz := flag.Int("hz", 90, "Polling rate in Hz")
+	address := flag.String("address", "project-cart-1-main.kssbd6djf3.viam.cloud", "Viam machine address")
+	keyID := flag.String("key-id", "", "Viam API key ID")
+	key := flag.String("key", "", "Viam API key")
+	// Left controller → right-arm/gripper; right controller → left-arm/gripper.
+	leftArm := flag.String("left-arm", "right-arm", "Arm controlled by the left controller")
+	rightArm := flag.String("right-arm", "left-arm", "Arm controlled by the right controller")
+	leftGripper := flag.String("left-gripper", "right-gripper", "Gripper controlled by the left controller (empty to disable)")
+	rightGripper := flag.String("right-gripper", "left-gripper", "Gripper controlled by the right controller (empty to disable)")
+	scale := flag.Float64("scale", 1.0, "Position scale factor (0.1–3.0)")
+	rotEnabled := flag.Bool("rotation", true, "Enable orientation tracking")
 	flag.Parse()
 
-	// Resolve the action manifest path relative to the binary.
 	exePath, err := os.Executable()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[bridge] Cannot determine executable path: %v\n", err)
@@ -768,34 +923,46 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	h := newHub()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", h.handler)
+	// Connect to Viam robot.
+	logger := logging.NewLogger("bridge")
+	fmt.Printf("[bridge] Connecting to %s ...\n", *address)
 
-	srv := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", *port),
-		Handler: mux,
+	dialOpts := []rpc.DialOption{}
+	if *keyID != "" && *key != "" {
+		dialOpts = append(dialOpts, rpc.WithEntityCredentials(*keyID, rpc.Credentials{
+			Type:    rpc.CredentialsTypeAPIKey,
+			Payload: *key,
+		}))
 	}
 
-	fmt.Printf("[bridge] WebSocket server listening on ws://0.0.0.0:%d\n", *port)
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Fprintf(os.Stderr, "[bridge] server error: %v\n", err)
-		}
-	}()
+	robot, err := client.New(ctx, *address, logger, client.WithDialOptions(dialOpts...))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[bridge] Failed to connect to robot: %v\n", err)
+		os.Exit(1)
+	}
+	defer robot.Close(ctx)
+	fmt.Println("[bridge] Connected to robot")
+
+	left := newTeleopHand("left", *leftArm, *leftGripper, *scale, *rotEnabled)
+	if err := left.connect(ctx, robot); err != nil {
+		fmt.Fprintf(os.Stderr, "[bridge] Left hand: %v\n", err)
+	}
+
+	right := newTeleopHand("right", *rightArm, *rightGripper, *scale, *rotEnabled)
+	if err := right.connect(ctx, robot); err != nil {
+		fmt.Fprintf(os.Stderr, "[bridge] Right hand: %v\n", err)
+	}
 
 	defer func() {
 		C.bridge_shutdown()
 		fmt.Println("[bridge] OpenVR shut down")
 	}()
 
-	go pollLoop(ctx, h, *hz, manifestPath)
+	go pollLoop(ctx, *hz, manifestPath, left, right)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
 	fmt.Println("\n[bridge] Stopped")
-
 	cancel()
-	_ = srv.Shutdown(context.Background())
 }
