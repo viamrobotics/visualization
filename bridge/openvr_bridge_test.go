@@ -211,3 +211,237 @@ func TestComputeCalibYaw_RoundTrip(t *testing.T) {
 		}
 	})
 }
+
+// ---------------------------------------------------------------------------
+// qRotateVec
+// ---------------------------------------------------------------------------
+
+func TestQRotateVec_Identity(t *testing.T) {
+	x, y, z := qRotateVec(quat{0, 0, 0, 1}, 1, 2, 3)
+	if !approxEq(x, 1, eps) || !approxEq(y, 2, eps) || !approxEq(z, 3, eps) {
+		t.Errorf("got (%.5f, %.5f, %.5f), want (1, 2, 3)", x, y, z)
+	}
+}
+
+func TestQRotateVec_90Z(t *testing.T) {
+	// 90° around Z: (1,0,0) → (0,1,0)
+	s := math.Sqrt2 / 2
+	q := quat{0, 0, s, s}
+	x, y, z := qRotateVec(q, 1, 0, 0)
+	if !approxEq(x, 0, eps) || !approxEq(y, 1, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("got (%.5f, %.5f, %.5f), want (0, 1, 0)", x, y, z)
+	}
+}
+
+func TestQRotateVec_90X(t *testing.T) {
+	// 90° around X: (0,1,0) → (0,0,1)
+	s := math.Sqrt2 / 2
+	q := quat{s, 0, 0, s}
+	x, y, z := qRotateVec(q, 0, 1, 0)
+	if !approxEq(x, 0, eps) || !approxEq(y, 0, eps) || !approxEq(z, 1, eps) {
+		t.Errorf("got (%.5f, %.5f, %.5f), want (0, 0, 1)", x, y, z)
+	}
+}
+
+func TestQRotateVec_180Y(t *testing.T) {
+	// 180° around Y: (1,0,0) → (-1,0,0)
+	q := quat{0, 1, 0, 0}
+	x, y, z := qRotateVec(q, 1, 0, 0)
+	if !approxEq(x, -1, eps) || !approxEq(y, 0, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("got (%.5f, %.5f, %.5f), want (-1, 0, 0)", x, y, z)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// transformToRobotFrame
+// ---------------------------------------------------------------------------
+
+func TestTransformToRobotFrame_IdentityT(t *testing.T) {
+	// T=identity: T*q*T^-1 = q
+	T := quat{0, 0, 0, 1}
+	q := qFromAxisAngle(1, 0, 0, math.Pi/2) // 90° around X
+	got := transformToRobotFrame(q, T)
+	quatEq(t, "rot", got, q)
+}
+
+func TestTransformToRobotFrame_IdentityQ(t *testing.T) {
+	// q=identity: T*I*T^-1 = I
+	T := qFromAxisAngle(0, 0, 1, math.Pi/2)
+	q := quat{0, 0, 0, 1}
+	got := transformToRobotFrame(q, T)
+	quatEq(t, "rot", got, [4]float64{0, 0, 0, 1})
+}
+
+func TestTransformToRobotFrame_Conjugation(t *testing.T) {
+	// T = 90° around Z, q = 90° around X
+	// T*q*T^-1 should be 90° around Y (Z rotates X axis to Y axis)
+	T := qFromAxisAngle(0, 0, 1, math.Pi/2)
+	q := qFromAxisAngle(1, 0, 0, math.Pi/2)
+	got := transformToRobotFrame(q, T)
+	want := qFromAxisAngle(0, 1, 0, math.Pi/2)
+	quatEq(t, "rot", got, want)
+}
+
+// ---------------------------------------------------------------------------
+// steamVRTransform constant
+// ---------------------------------------------------------------------------
+
+func TestSteamVRTransform_Value(t *testing.T) {
+	// steamVRTransform = rotZ(180°) * rotX(90°)
+	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
+	rotZ := qFromAxisAngle(0, 0, 1, math.Pi)
+	want := qNorm(qMul(rotZ, rotX))
+	quatEq(t, "steamVRTransform", steamVRTransform, want)
+}
+
+func TestSteamVRTransform_BasisVectors(t *testing.T) {
+	// Comment says: Room+Y→Robot+Z, Room-Z→Robot-Y, Room-X→Robot+X
+
+	// Room +Y (0,1,0) → Robot +Z (0,0,1)
+	x, y, z := qRotateVec(steamVRTransform, 0, 1, 0)
+	if !approxEq(x, 0, eps) || !approxEq(y, 0, eps) || !approxEq(z, 1, eps) {
+		t.Errorf("Room+Y: got (%.5f, %.5f, %.5f), want (0, 0, 1)", x, y, z)
+	}
+
+	// Room -Z (0,0,-1) → Robot -Y (0,-1,0)
+	x, y, z = qRotateVec(steamVRTransform, 0, 0, -1)
+	if !approxEq(x, 0, eps) || !approxEq(y, -1, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("Room-Z: got (%.5f, %.5f, %.5f), want (0, -1, 0)", x, y, z)
+	}
+
+	// Room -X (-1,0,0) → Robot +X (1,0,0)
+	x, y, z = qRotateVec(steamVRTransform, -1, 0, 0)
+	if !approxEq(x, 1, eps) || !approxEq(y, 0, eps) || !approxEq(z, 0, eps) {
+		t.Errorf("Room-X: got (%.5f, %.5f, %.5f), want (1, 0, 0)", x, y, z)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// quatToOVDeg
+// ---------------------------------------------------------------------------
+
+func TestQuatToOVDeg_Identity(t *testing.T) {
+	// Identity: Z axis stays at (0,0,1), no twist → theta=0
+	ox, oy, oz, th := quatToOVDeg(quat{0, 0, 0, 1})
+	if !approxEq(ox, 0, eps) || !approxEq(oy, 0, eps) || !approxEq(oz, 1, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (0, 0, 1)", ox, oy, oz)
+	}
+	if !approxEq(th, 0, eps) {
+		t.Errorf("theta: got %.5f, want 0", th)
+	}
+}
+
+func TestQuatToOVDeg_180Z(t *testing.T) {
+	// 180° around Z: Z axis stays at (0,0,1), X flips → theta = ±180°
+	ox, oy, oz, th := quatToOVDeg(quat{0, 0, 1, 0})
+	if !approxEq(ox, 0, eps) || !approxEq(oy, 0, eps) || !approxEq(oz, 1, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (0, 0, 1)", ox, oy, oz)
+	}
+	if !approxEq(math.Abs(th), 180, eps) {
+		t.Errorf("theta: got %.5f, want ±180", th)
+	}
+}
+
+func TestQuatToOVDeg_90Y(t *testing.T) {
+	// 90° around Y: Z axis → (1,0,0), theta = 0
+	s := math.Sqrt2 / 2
+	ox, oy, oz, th := quatToOVDeg(quat{0, s, 0, s})
+	if !approxEq(ox, 1, eps) || !approxEq(oy, 0, eps) || !approxEq(oz, 0, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (1, 0, 0)", ox, oy, oz)
+	}
+	if !approxEq(th, 0, eps) {
+		t.Errorf("theta: got %.5f, want 0", th)
+	}
+}
+
+func TestQuatToOVDeg_90X(t *testing.T) {
+	// 90° around X: Z axis → (0,-1,0), theta = 90°
+	s := math.Sqrt2 / 2
+	ox, oy, oz, th := quatToOVDeg(quat{s, 0, 0, s})
+	if !approxEq(ox, 0, eps) || !approxEq(oy, -1, eps) || !approxEq(oz, 0, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (0, -1, 0)", ox, oy, oz)
+	}
+	if !approxEq(th, 90, eps) {
+		t.Errorf("theta: got %.5f, want 90", th)
+	}
+}
+
+func TestQuatToOVDeg_Neg90X(t *testing.T) {
+	// -90° around X: Z axis → (0,1,0), theta = -90°
+	s := math.Sqrt2 / 2
+	ox, oy, oz, th := quatToOVDeg(quat{-s, 0, 0, s})
+	if !approxEq(ox, 0, eps) || !approxEq(oy, 1, eps) || !approxEq(oz, 0, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (0, 1, 0)", ox, oy, oz)
+	}
+	if !approxEq(th, -90, eps) {
+		t.Errorf("theta: got %.5f, want -90", th)
+	}
+}
+
+func TestQuatToOVDeg_90Z(t *testing.T) {
+	// 90° around Z: Z axis stays at (0,0,1), theta = 90°
+	// newX = rotate (-1,0,0) by 90° around Z = (0,-1,0)
+	// Special case nzz ≈ 1: th = -atan2(nxy, -nxx) = -atan2(-1, 0) = π/2 → 90°
+	s := math.Sqrt2 / 2
+	ox, oy, oz, th := quatToOVDeg(quat{0, 0, s, s})
+	if !approxEq(ox, 0, eps) || !approxEq(oy, 0, eps) || !approxEq(oz, 1, eps) {
+		t.Errorf("axis: got (%.5f, %.5f, %.5f), want (0, 0, 1)", ox, oy, oz)
+	}
+	if !approxEq(th, 90, eps) {
+		t.Errorf("theta: got %.5f, want 90", th)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// quatToOVDeg — Viam reference test vectors
+// From https://github.com/viamrobotics/three test/quat-to-ov.spec.ts
+// Theta values converted from radians to degrees for our function.
+// ---------------------------------------------------------------------------
+
+func ovEq(t *testing.T, label string, gotOX, gotOY, gotOZ, gotTh, wantOX, wantOY, wantOZ, wantThDeg float64) {
+	t.Helper()
+	const tol = 1e-3
+	if !approxEq(gotOX, wantOX, tol) || !approxEq(gotOY, wantOY, tol) || !approxEq(gotOZ, wantOZ, tol) {
+		t.Errorf("%s axis: got (%.6f, %.6f, %.6f), want (%.6f, %.6f, %.6f)",
+			label, gotOX, gotOY, gotOZ, wantOX, wantOY, wantOZ)
+	}
+	if !approxEq(math.Abs(gotTh), math.Abs(wantThDeg), tol) {
+		t.Errorf("%s theta: got %.6f, want %.6f", label, gotTh, wantThDeg)
+	}
+}
+
+func TestQuatToOVDeg_ViamRef(t *testing.T) {
+	rad2deg := 180.0 / math.Pi
+
+	// Case 1: quat(0.707, 0, 0, 0.707) → OV(0, -1, 0, π/2)
+	ox, oy, oz, th := quatToOVDeg(quat{0.7071067811865476, 0, 0, 0.7071067811865476})
+	ovEq(t, "case1", ox, oy, oz, th, 0, -1, 0, 1.5707963267948966*rad2deg)
+
+	// Case 2: quat(-0.707, 0, 0, 0.707) → OV(0, 1, 0, -π/2)
+	ox, oy, oz, th = quatToOVDeg(quat{-0.7071067811865476, 0, 0, 0.7071067811865476})
+	ovEq(t, "case2", ox, oy, oz, th, 0, 1, 0, -1.5707963267948966*rad2deg)
+
+	// Case 3: quat(0, -0.28, 0, 0.96) → OV(-0.5376, 0, 0.8432, -π)
+	ox, oy, oz, th = quatToOVDeg(quat{0, -0.28, 0, 0.96})
+	ovEq(t, "case3", ox, oy, oz, th, -0.5376, 0, 0.8432, -math.Pi*rad2deg)
+
+	// Case 4: quat(0, 0, -0.28, 0.96) → OV(0, 0, 1, -0.5676 rad)
+	ox, oy, oz, th = quatToOVDeg(quat{0, 0, -0.28, 0.96})
+	ovEq(t, "case4", ox, oy, oz, th, 0, 0, 1, -0.5675882184166557*rad2deg)
+
+	// Case 5: quat(-0.28, 0, 0, 0.96) → OV(0, 0.5376, 0.8432, -π/2)
+	ox, oy, oz, th = quatToOVDeg(quat{-0.28, 0, 0, 0.96})
+	ovEq(t, "case5", ox, oy, oz, th, 0, 0.5376, 0.8432, -1.5707963267948966*rad2deg)
+
+	// Case 6: quat(0.28, 0, 0, 0.96) → OV(0, -0.5376, 0.8432, π/2)
+	ox, oy, oz, th = quatToOVDeg(quat{0.28, 0, 0, 0.96})
+	ovEq(t, "case6", ox, oy, oz, th, 0, -0.5376, 0.8432, 1.5707963267948966*rad2deg)
+
+	// Case 7: quat(-0.5, -0.5, -0.5, 0.5) → OV(0, 1, 0, -π)
+	ox, oy, oz, th = quatToOVDeg(quat{-0.5, -0.5, -0.5, 0.5})
+	ovEq(t, "case7", ox, oy, oz, th, 0, 1, 0, -math.Pi*rad2deg)
+
+	// Case 8: arbitrary quat → OV(0.5048, 0.5890, 0.6311, 0.02 rad)
+	ox, oy, oz, th = quatToOVDeg(quat{-0.17555966025413142, 0.39198397193979817, 0.3855375485164001, 0.816632212270443})
+	ovEq(t, "case8", ox, oy, oz, th, 0.5048437942940054, 0.5889844266763397, 0.631054742867507, 0.02*rad2deg)
+}
