@@ -326,7 +326,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Back wall windows (relative to windows origin)
 		addVoxelFrame(t, fs, windowsParent, "back_window_1", 0, 0, 0, voxelScale)
 		addVoxelFrame(t, fs, windowsParent, "back_window_2", 1, 0, 0, voxelScale)
-		addVoxelFrame(t, fs, windowsParent, "back_window_2", 1, 0, 0, voxelScale)
 
 		// Left wall window (relative to windows origin)
 		addVoxelFrame(t, fs, windowsParent, "left_window", -3, -2, 0, voxelScale)
