@@ -61,6 +61,12 @@
 	</Pose>
 {/each}
 
+{#each resourceGeometriesEntities.current as entity (entity)}
+	<Geometry {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Geometry>
+{/each}
+
 {#each worldStateEntities.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
@@ -89,10 +95,6 @@
 	<GLTF {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</GLTF>
-{/each}
-
-{#each resourceGeometriesEntities.current as entity (entity)}
-	<Geometry {entity} />
 {/each}
 
 <Arrows />

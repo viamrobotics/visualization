@@ -12,15 +12,16 @@ Renders a Viam Geometry object
 	import { poseToObject3d } from '$lib/transform'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import Mesh from './Mesh.svelte'
-	import Label from './Label.svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import type { Entity } from 'koota'
+	import type { Snippet } from 'svelte'
 
 	interface Props {
 		entity: Entity
+		children?: Snippet
 	}
 
-	const { entity }: Props = $props()
+	const { entity, children }: Props = $props()
 
 	const settings = useSettings()
 
@@ -83,7 +84,7 @@ Renders a Viam Geometry object
 				pose={center.current}
 				{...events}
 			>
-				<Label text={name.current} />
+				{@render children?.()}
 			</Mesh>
 		{/if}
 	</T>
