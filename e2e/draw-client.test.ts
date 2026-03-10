@@ -201,7 +201,7 @@ test('draw nurbs', async ({ browser }) => {
 	execSync(
 		'go test -run ^TestDrawNurbs$/DrawNurbs github.com/viam-labs/motion-tools/client/api -count=1',
 		{
-			encoding: 'utf-8',
+			encoding: 'utf8',
 		}
 	)
 
