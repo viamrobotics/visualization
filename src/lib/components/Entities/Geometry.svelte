@@ -1,3 +1,8 @@
+<!--
+@component
+
+Renders a Viam Geometry object
+-->
 <script lang="ts">
 	import { Group } from 'three'
 	import { T, useThrelte } from '@threlte/core'
@@ -27,7 +32,7 @@
 	const pose = useTrait(() => entity, traits.Pose)
 	const center = useTrait(() => entity, traits.Center)
 
-	const outerGroup = new Group()
+	const group = new Group()
 	const innerGroup = new Group()
 
 	const model = $derived.by(() => {
@@ -49,7 +54,7 @@
 
 	$effect.pre(() => {
 		if (pose.current) {
-			poseToObject3d(pose.current, outerGroup)
+			poseToObject3d(pose.current, group)
 			invalidate()
 		}
 	})
@@ -65,20 +70,21 @@
 </script>
 
 <Portal id={parent.current}>
-	{#if model}
-		<T is={outerGroup}>
+	<T is={group}>
+		{#if model}
 			<T is={innerGroup}>
 				<T is={model} />
 			</T>
-		</T>
-	{/if}
+		{/if}
 
-	{#if settings.current.renderArmModels.includes('colliders') || !model}
-		<Mesh
-			{entity}
-			{...events}
-		>
-			<Label text={name.current} />
-		</Mesh>
-	{/if}
+		{#if settings.current.renderArmModels.includes('colliders') || !model}
+			<Mesh
+				{entity}
+				pose={center.current}
+				{...events}
+			>
+				<Label text={name.current} />
+			</Mesh>
+		{/if}
+	</T>
 </Portal>
