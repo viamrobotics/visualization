@@ -515,6 +515,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 	// generates a snapshot of a city simulation with plots, buildings, and citizens
 	t.Run("snapshot capsule", func(t *testing.T) {
+		rng := rand.New(rand.NewSource(42))
 		snapshot := NewSnapshot(
 			WithSceneCamera(
 				NewSceneCamera(
@@ -587,11 +588,11 @@ func TestGeneratingSnapshots(t *testing.T) {
 				frameColors[plotName] = plotColor
 
 				// Add buildings on some non-road plots
-				if !isRoad && rand.Float64() < 0.4 { // 40% chance of building
-					buildingHeight := 2000.0 + rand.Float64()*6000.0 // Random height 2-8m
-					buildingWidth := 2000.0 + rand.Float64()*800.0   // Random width 2-2.8m
-					buildingDepth := 2000.0 + rand.Float64()*800.0   // Random depth 2-2.8m
-					buildingColor := buildingColors[rand.Intn(len(buildingColors))]
+				if !isRoad && rng.Float64() < 0.4 { // 40% chance of building
+					buildingHeight := 2000.0 + rng.Float64()*6000.0 // Random height 2-8m
+					buildingWidth := 2000.0 + rng.Float64()*800.0   // Random width 2-2.8m
+					buildingDepth := 2000.0 + rng.Float64()*800.0   // Random depth 2-2.8m
+					buildingColor := buildingColors[rng.Intn(len(buildingColors))]
 					buildingName := plotName + "_building"
 
 					// Building geometry position relative to root (since plot frame is at root)
@@ -622,11 +623,11 @@ func TestGeneratingSnapshots(t *testing.T) {
 		cityBounds := (float64(gridSize)/2.0 - 0.5) * plotSize
 
 		for i := 0; i < numCitizens; i++ {
-			cx := (rand.Float64()*2.0 - 1.0) * cityBounds
-			cy := (rand.Float64()*2.0 - 1.0) * cityBounds
+			cx := (rng.Float64()*2.0 - 1.0) * cityBounds
+			cy := (rng.Float64()*2.0 - 1.0) * cityBounds
 			cz := plotThickness + citizenHeight/2.0 // Standing on top of ground plots
 
-			rotation := rand.Float64() * 360.0
+			rotation := rng.Float64() * 360.0
 			personName := fmt.Sprintf("person_%d", i)
 
 			// Per RDK's FrameSystemGeometries: geometry pose defines position relative to parent
@@ -880,6 +881,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 	// generates a snapshot showcasing lines navigating around obstacles
 	t.Run("snapshot lines", func(t *testing.T) {
+		rng := rand.New(rand.NewSource(42))
 		snapshot := NewSnapshot(
 			WithSceneCamera(
 				NewSceneCamera(
@@ -900,14 +902,14 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 		numObstacles := 15
 		for i := range numObstacles {
-			x := (rand.Float64()*2.0 - 1.0) * 3000.0
-			y := (rand.Float64()*2.0 - 1.0) * 3000.0
-			z := rand.Float64()*1500.0 + 500.0
+			x := (rng.Float64()*2.0 - 1.0) * 3000.0
+			y := (rng.Float64()*2.0 - 1.0) * 3000.0
+			z := rng.Float64()*1500.0 + 500.0
 
-			size := 300.0 + rand.Float64()*400.0
-			color := obstacleColors[rand.Intn(len(obstacleColors))]
+			size := 300.0 + rng.Float64()*400.0
+			color := obstacleColors[rng.Intn(len(obstacleColors))]
 
-			if rand.Float64() < 0.5 {
+			if rng.Float64() < 0.5 {
 				box, err := spatialmath.NewBox(
 					spatialmath.NewZeroPose(),
 					r3.Vector{X: size, Y: size, Z: size},
@@ -1059,6 +1061,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 	// generates a snapshot showcasing points shapes
 	t.Run("snapshot points", func(t *testing.T) {
+		rng := rand.New(rand.NewSource(42))
 		snapshot := NewSnapshot(
 			WithSceneCamera(
 				NewSceneCamera(
@@ -1099,9 +1102,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		radius := 1200.0
 
 		for i := 0; i < numPoints; i++ {
-			theta := rand.Float64() * 2 * math.Pi
-			phi := math.Acos(2*rand.Float64() - 1)
-			r := radius * math.Cbrt(rand.Float64())
+			theta := rng.Float64() * 2 * math.Pi
+			phi := math.Acos(2*rng.Float64() - 1)
+			r := radius * math.Cbrt(rng.Float64())
 
 			x := r * math.Sin(phi) * math.Cos(theta)
 			y := r * math.Sin(phi) * math.Sin(theta)
@@ -1220,12 +1223,11 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// 4. Animated Box - An animated box scene from GLB data
+		// 4. Animated Box - An animated box scene from GLB data (no animation for deterministic screenshots)
 		boxData, err := os.ReadFile(filepath.Join(".", fixturesDir, "BoxAnimated.glb"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		boxAnimationName := "animation_0"
 		boxAsset, err := NewBinaryModelAsset("model/gltf-binary", boxData, WithModelAssetSizeBytes(uint64(len(boxData))))
 		if err != nil {
 			t.Fatal(err)
@@ -1235,7 +1237,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			"world",
 			createPose(-2000, 2000, 600),
 			WithModelAssets(boxAsset),
-			WithModelAnimationName(boxAnimationName),
 		)
 		if err != nil {
 			t.Fatal(err)

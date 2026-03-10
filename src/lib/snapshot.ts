@@ -254,8 +254,11 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 				positions[i] *= 0.001
 			}
 
-			const colors = drawing.metadata?.colors
-			const geometry = createBufferGeometry(positions, colors)
+			const rawColors = drawing.metadata?.colors as Uint8Array | undefined
+			const vertexColors =
+				rawColors && rawColors.length > STRIDE.COLORS_RGBA ? rawColors : undefined
+
+			const geometry = createBufferGeometry(positions, vertexColors)
 
 			entityTraits.push(traits.BufferGeometry(geometry))
 
