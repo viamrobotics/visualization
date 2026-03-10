@@ -76,10 +76,12 @@ export const providePointcloudObjects = (partID: () => string) => {
 	 */
 	$effect(() => {
 		for (const [name, query] of propQueries) {
-			if (name && query.data?.objectPointCloudsSupported === false) {
-				if (disabledVisionServices.get(name) === undefined) {
-					disabledVisionServices.set(name, true)
-				}
+			if (
+				name &&
+				query.data?.objectPointCloudsSupported === false &&
+				disabledVisionServices.get(name) === undefined
+			) {
+				disabledVisionServices.set(name, true)
 			}
 		}
 	})

@@ -175,7 +175,7 @@ export class FrameConfigUpdater {
 			return undefined
 		}
 
-		const num = parseFloat(value.toFixed(2))
+		const num = Number.parseFloat(value.toFixed(2))
 
 		if (Number.isNaN(num)) {
 			return undefined

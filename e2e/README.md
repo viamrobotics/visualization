@@ -32,7 +32,7 @@ Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`
 Run the test suite using:
 
 ```bash
-pnpm run test:e2e
+pnpm test:e2e
 ```
 
 ## Understanding Test Results
@@ -58,7 +58,7 @@ When you make intentional UI changes that should result in different screenshots
 1. **Run tests with update flag:**
 
    ```bash
-   pnpm run test:e2e -u
+   pnpm test:e2e -u
    ```
 
 2. **Review the changes** in the updated snapshot files
