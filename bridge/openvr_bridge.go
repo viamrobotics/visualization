@@ -574,8 +574,9 @@ type teleopHand struct {
 	gripper     gripper.Gripper // nil if no gripper
 	deviceIdx   *uint32
 	scale       float64
-	rotEnabled  bool
-	absoluteRot bool
+	rotEnabled   bool
+	absoluteRot  bool
+	armFrameQuat quat // arm's frame orientation from FrameSystemConfig
 
 	// button edge state
 	wasGrip    bool
@@ -612,6 +613,7 @@ func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled 
 		gripperName:      gripperName,
 		scale:            scale,
 		rotEnabled:       rotEnabled,
+		armFrameQuat:    quat{0, 0, 0, 1},
 		ctrlToArmOffset: quat{0, 0, 0, 1},
 	}
 }
@@ -628,6 +630,21 @@ func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) err
 			fmt.Printf("[%s] gripper %q not available: %v\n", h.name, h.gripperName, err)
 		} else {
 			h.gripper = g
+		}
+	}
+	// Query arm's frame orientation for absolute rotation mode.
+	fsCfg, err := robot.FrameSystemConfig(ctx)
+	if err != nil {
+		fmt.Printf("[%s] FrameSystemConfig: %v (absolute mode may be inaccurate)\n", h.name, err)
+	} else {
+		for _, part := range fsCfg.Parts {
+			if part.FrameConfig.Name() == h.armName {
+				ori := part.FrameConfig.Pose().Orientation().Quaternion()
+				h.armFrameQuat = qNorm(quat{ori.Imag, ori.Jmag, ori.Kmag, ori.Real})
+				fmt.Printf("[%s] arm frame quat: (%.3f, %.3f, %.3f, %.3f)\n",
+					h.name, h.armFrameQuat[0], h.armFrameQuat[1], h.armFrameQuat[2], h.armFrameQuat[3])
+				break
+			}
 		}
 	}
 	return nil
@@ -785,9 +802,11 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	if h.rotEnabled {
 		curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
 		if h.absoluteRot {
-			// Absolute: controller orientation + 180° X to correct gripper mounting.
+			// Absolute: controller orientation + 180° X flip, corrected for arm frame.
 			flipX := qFromAxisAngle(1, 0, 0, math.Pi)
-			tox, toy, toz, thetaDeg = quatToOVDeg(qNorm(qMul(curRotRobot, flipX)))
+			frameInv := qConj(h.armFrameQuat)
+			corrected := qNorm(qMul(frameInv, qMul(curRotRobot, flipX)))
+			tox, toy, toz, thetaDeg = quatToOVDeg(corrected)
 		} else {
 			// Relative: apply offset from reference capture.
 			targetRot := qNorm(qMul(curRotRobot, h.ctrlToArmOffset))
