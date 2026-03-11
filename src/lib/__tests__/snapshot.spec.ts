@@ -12,7 +12,7 @@ import {
 } from '$lib/buf/draw/v1/drawing_pb'
 import { Transform, Geometry } from '$lib/buf/common/v1/common_pb'
 import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
-import { spawnSnapshotEntities } from '../snapshot'
+import { spawnSnapshotEntities, destroyEntities } from '../snapshot'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 import { asFloat32Array } from '$lib/buffer'
@@ -427,5 +427,142 @@ describe('model shape handling', () => {
 
 		// One entity for each model asset + a reference frame entity
 		expect(results).toHaveLength(3)
+	})
+})
+
+describe('destroyEntities', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('destroys all spawned entities', () => {
+		world = createWorld()
+		const snapshot = new Snapshot({
+			transforms: [new Transform({ referenceFrame: 'a' }), new Transform({ referenceFrame: 'b' })],
+		})
+
+		const entities = spawnSnapshotEntities(world, snapshot)
+		expect(world.query()).toHaveLength(2)
+
+		destroyEntities(world, entities)
+		expect(world.query()).toHaveLength(0)
+	})
+
+	it('silently skips already-destroyed entities', () => {
+		world = createWorld()
+		const snapshot = new Snapshot({
+			transforms: [new Transform({ referenceFrame: 'a' }), new Transform({ referenceFrame: 'b' })],
+		})
+		const entities = spawnSnapshotEntities(world, snapshot)
+		expect(world.query()).toHaveLength(2)
+
+		entities[0]!.destroy()
+		expect(() => destroyEntities(world, entities)).not.toThrow()
+	})
+})
+
+describe('colors', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('spawns points with per-vertex RGBA colors in BufferGeometry', async () => {
+		world = createWorld()
+		// 2 points, RGBA per-vertex: 2 * 4 = 8 bytes
+		const positions = new Uint8Array(24) // 2 points (2 * 3 floats * 4 bytes)
+		const perVertexColors = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 128])
+		const drawing = new Drawing({
+			referenceFrame: 'rgba-vertex-points',
+			physicalObject: new Shape({
+				geometryType: { case: 'points', value: new Points({ positions }) },
+			}),
+			metadata: new Metadata({ colors: perVertexColors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.get(traits.BufferGeometry)?.getAttribute('color')).toBeTruthy()
+	})
+
+	it('spawns arrows with no colors when metadata has no colors', async () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'no-color-arrows',
+			physicalObject: new Shape({
+				geometryType: { case: 'arrows', value: new Arrows({ poses: new Uint8Array(24) }) },
+			}),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.has(traits.Colors)).toBe(false)
+		expect(entity.has(traits.Color)).toBe(false)
+	})
+
+	it('spawns line with RGBA colors including opacity', async () => {
+		world = createWorld()
+		// Two RGBA colors: line + point
+		const colors = new Uint8Array([255, 0, 0, 200, 0, 0, 255, 100])
+		const drawing = new Drawing({
+			referenceFrame: 'line-rgba',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24), lineWidth: 2, pointSize: 3 }),
+				},
+			}),
+			metadata: new Metadata({ colors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.get(traits.Color)?.r).toBeCloseTo(1)
+		expect(entity.get(traits.PointColor)?.b).toBeCloseTo(1)
+		expect(entity.get(traits.Opacity)).toBeCloseTo(200 / 255, 3)
+	})
+
+	it('spawns line with only line color when metadata has one RGB entry', async () => {
+		world = createWorld()
+		const colors = new Uint8Array([0, 255, 0])
+		const drawing = new Drawing({
+			referenceFrame: 'line-single',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24), lineWidth: 1, pointSize: 1 }),
+				},
+			}),
+			metadata: new Metadata({ colors }),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.get(traits.Color)?.g).toBeCloseTo(1)
+		expect(entity.has(traits.PointColor)).toBe(false)
+		expect(entity.has(traits.Opacity)).toBe(false)
+	})
+
+	it('spawns points with no color traits when metadata is absent', async () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'plain-points',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'points',
+					value: new Points({ positions: new Uint8Array(12), pointSize: 5 }),
+				},
+			}),
+		})
+		const snapshot = new Snapshot({ drawings: [drawing] })
+
+		const [entity] = spawnSnapshotEntities(world, snapshot)
+
+		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.has(traits.Opacity)).toBe(false)
+		expect(entity.has(traits.BufferGeometry)).toBe(true)
+		expect(entity.has(traits.Points)).toBe(true)
 	})
 })

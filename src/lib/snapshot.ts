@@ -16,6 +16,11 @@ import { createBufferGeometry } from './attribute'
 const vec3 = new Vector3()
 const colorUtil = new Color()
 
+/**
+ * Merges scene-level metadata (grid, camera, point/line settings) into the
+ * current viewer settings. Millimetre values from the proto are converted
+ * to metres.
+ */
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }
 	if (metadata.grid !== undefined) {
@@ -55,6 +60,17 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
 	return next
 }
 
+/**
+ * Spawns ECS entities for every transform and drawing in a {@link Snapshot}.
+ *
+ * Each transform produces one entity with Name, Pose, Parent, Geometry, and
+ * optional Color/Opacity traits. Each drawing produces one or more entities
+ * depending on the geometry type (arrows, points, line, nurbs, model, or
+ * simple shapes like box/sphere/capsule).
+ *
+ * @returns The spawned entities — pass them to {@link destroyEntities} to
+ *          clean up before loading a new snapshot.
+ */
 export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
 	const entities: Entity[] = []
 
@@ -72,6 +88,10 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	return entities
 }
 
+/**
+ * Destroys a list of entities that are still alive in the given world.
+ * Silently skips entities that have already been removed.
+ */
 export const destroyEntities = (world: World, entities: Entity[]): void => {
 	for (const entity of entities) {
 		if (world.has(entity)) {
