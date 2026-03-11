@@ -575,6 +575,7 @@ type teleopHand struct {
 	deviceIdx   *uint32
 	scale       float64
 	rotEnabled  bool
+	absoluteRot bool
 
 	// button edge state
 	wasGrip    bool
@@ -606,11 +607,11 @@ const (
 
 func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled bool) *teleopHand {
 	return &teleopHand{
-		name:        name,
-		armName:     armName,
-		gripperName: gripperName,
-		scale:       scale,
-		rotEnabled:  rotEnabled,
+		name:             name,
+		armName:          armName,
+		gripperName:      gripperName,
+		scale:            scale,
+		rotEnabled:       rotEnabled,
 		ctrlToArmOffset: quat{0, 0, 0, 1},
 	}
 }
@@ -675,6 +676,19 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 	} else if !cs.Grip && h.wasGrip && h.isControlling {
 		h.isControlling = false
 		h.sendHaptic(0.3, 80)
+		// Debug: log arm pose and controller orientation on release.
+		go func() {
+			if p, err := h.arm.EndPosition(ctx, nil); err == nil {
+				pt := p.Point()
+				ov := p.Orientation().OrientationVectorDegrees()
+				fmt.Printf("[%s] arm pose: pos=(%.1f, %.1f, %.1f) ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
+					h.name, pt.X, pt.Y, pt.Z, ov.OX, ov.OY, ov.OZ, ov.Theta)
+			}
+			curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
+			cox, coy, coz, ctheta := quatToOVDeg(curRotRobot)
+			fmt.Printf("[%s] controller rot (robot frame): ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
+				h.name, cox, coy, coz, ctheta)
+		}()
 	}
 	h.wasGrip = cs.Grip
 
@@ -769,12 +783,16 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	// Rotation: T * q * T^-1, then apply offset
 	var tox, toy, toz, thetaDeg float64
 	if h.rotEnabled {
-		// Matches TS exactly:
-		// 1. Transform current controller rot to robot frame: T * q * T^-1
 		curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
-		// 2. Apply offset: targetArmRot = currentRotRobot * offset
-		targetRot := qNorm(qMul(curRotRobot, h.ctrlToArmOffset))
-		tox, toy, toz, thetaDeg = quatToOVDeg(targetRot)
+		if h.absoluteRot {
+			// Absolute: controller orientation + 180° X to correct gripper mounting.
+			flipX := qFromAxisAngle(1, 0, 0, math.Pi)
+			tox, toy, toz, thetaDeg = quatToOVDeg(qNorm(qMul(curRotRobot, flipX)))
+		} else {
+			// Relative: apply offset from reference capture.
+			targetRot := qNorm(qMul(curRotRobot, h.ctrlToArmOffset))
+			tox, toy, toz, thetaDeg = quatToOVDeg(targetRot)
+		}
 	} else {
 		// Keep arm at reference orientation
 		tox, toy, toz, thetaDeg = quatToOVDeg(h.robotRefQuat)
@@ -823,6 +841,16 @@ func (h *teleopHand) sendHaptic(intensity, durationMs float64) {
 	if h.deviceIdx != nil {
 		hapticPulse(*h.deviceIdx, intensity, durationMs)
 	}
+}
+
+func (h *teleopHand) toggleRotMode() {
+	h.absoluteRot = !h.absoluteRot
+	mode := "relative"
+	if h.absoluteRot {
+		mode = "absolute"
+	}
+	fmt.Printf("[%s] rotation mode: %s\n", h.name, mode)
+	h.sendHaptic(0.3, 80)
 }
 
 // ---------------------------------------------------------------------------
@@ -886,19 +914,34 @@ func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *tel
 		leftRaw := resolve(leftIdx, true)
 		rightRaw := resolve(rightIdx, false)
 
-		// Trackpad rising edge: calibrate forward direction.
-		if leftRaw.Connected && leftRaw.TrackpadPressed && !wasLeftTrackpad {
-			if yaw, ok := computeCalibYaw(leftRaw.Rot); ok {
-				saveCalib(yaw, dir)
+		// Trackpad rising edge: dispatch by region.
+		for _, tr := range []struct {
+			raw  ControllerState
+			was  *bool
+		}{
+			{leftRaw, &wasLeftTrackpad},
+			{rightRaw, &wasRightTrackpad},
+		} {
+			pressed := tr.raw.Connected && tr.raw.TrackpadPressed
+			if pressed && !*tr.was {
+				y := tr.raw.Trackpad[1]
+				if y < -0.3 {
+					// Up: calibrate forward direction.
+					if yaw, ok := computeCalibYaw(tr.raw.Rot); ok {
+						saveCalib(yaw, dir)
+					}
+				} else if y > 0.3 {
+					// Down: toggle rotation control mode.
+					if left != nil {
+						left.toggleRotMode()
+					}
+					if right != nil {
+						right.toggleRotMode()
+					}
+				}
 			}
+			*tr.was = pressed
 		}
-		if rightRaw.Connected && rightRaw.TrackpadPressed && !wasRightTrackpad {
-			if yaw, ok := computeCalibYaw(rightRaw.Rot); ok {
-				saveCalib(yaw, dir)
-			}
-		}
-		wasLeftTrackpad = leftRaw.Connected && leftRaw.TrackpadPressed
-		wasRightTrackpad = rightRaw.Connected && rightRaw.TrackpadPressed
 
 		// Pass raw (uncalibrated) controller state to teleop hands.
 		// The teleop hand uses calibTransform for both position and rotation,
