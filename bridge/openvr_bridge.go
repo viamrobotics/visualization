@@ -221,6 +221,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/go-gl/mathgl/mgl64"
 	"github.com/golang/geo/r3"
 	"go.viam.com/rdk/components/arm"
 	"go.viam.com/rdk/components/gripper"
@@ -246,47 +247,10 @@ const (
 )
 
 // ---------------------------------------------------------------------------
-// Quaternion math (x, y, z, w layout)
+// 4×4 matrix math (mgl64)
 // ---------------------------------------------------------------------------
 
-type quat [4]float64 // x, y, z, w
-
-func qMul(a, b quat) quat {
-	return quat{
-		a[3]*b[0] + a[0]*b[3] + a[1]*b[2] - a[2]*b[1],
-		a[3]*b[1] - a[0]*b[2] + a[1]*b[3] + a[2]*b[0],
-		a[3]*b[2] + a[0]*b[1] - a[1]*b[0] + a[2]*b[3],
-		a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2],
-	}
-}
-
-func qConj(q quat) quat { return quat{-q[0], -q[1], -q[2], q[3]} }
-
-func qNorm(q quat) quat {
-	mag := math.Sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3])
-	if mag < 1e-10 {
-		return quat{0, 0, 0, 1}
-	}
-	return quat{q[0] / mag, q[1] / mag, q[2] / mag, q[3] / mag}
-}
-
-func qFromAxisAngle(ax, ay, az, angle float64) quat {
-	s := math.Sin(angle / 2)
-	return quat{ax * s, ay * s, az * s, math.Cos(angle / 2)}
-}
-
-// qRotateVec rotates (vx,vy,vz) by q: v' = q * (v,0) * q^-1
-func qRotateVec(q quat, vx, vy, vz float64) (float64, float64, float64) {
-	r := qMul(qMul(q, quat{vx, vy, vz, 0}), qConj(q))
-	return r[0], r[1], r[2]
-}
-
-// transformToRobotFrame: T * q * T^-1
-func transformToRobotFrame(q, T quat) quat {
-	return qNorm(qMul(qMul(T, q), qConj(T)))
-}
-
-// steamVRTransform is the SteamVR standing universe → Viam robot frame quaternion.
+// steamVRTransform is the SteamVR standing universe → Viam robot frame matrix.
 // Equivalent to rotZ(-90°) * rotX(90°) (same as the WebXR transform in the TS code).
 // Combined with calibration yaw (applied on the right), this maps:
 //
@@ -295,25 +259,31 @@ func transformToRobotFrame(q, T quat) quat {
 // Without calibration (user facing SteamVR -Z):
 //
 //	-Z → +X, +Y → +Z, +X → +Y.
-var steamVRTransform = func() quat {
-	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
-	rotZ := qFromAxisAngle(0, 0, 1, -math.Pi/2)
-	return qNorm(qMul(rotZ, rotX))
+var steamVRTransform = func() mgl64.Mat4 {
+	rotX := mgl64.HomogRotate3DX(math.Pi / 2)
+	rotZ := mgl64.HomogRotate3DZ(-math.Pi / 2)
+	return rotZ.Mul4(rotX)
 }()
+
+// mat4ToOVDeg converts a rotation matrix to a Viam orientation vector (theta in degrees).
+// Extracts a quaternion from the matrix and delegates to quatToOVDeg.
+func mat4ToOVDeg(m mgl64.Mat4) (ox, oy, oz, thetaDeg float64) {
+	return quatToOVDeg(mgl64.Mat4ToQuat(m).Normalize())
+}
 
 // quatToOVDeg converts a unit quaternion to a Viam orientation vector (theta in degrees).
 // Port of OrientationVector.setFromQuaternion from OrientationVector.ts.
-func quatToOVDeg(q quat) (ox, oy, oz, thetaDeg float64) {
+func quatToOVDeg(q mgl64.Quat) (ox, oy, oz, thetaDeg float64) {
 	const eps = 0.0001
-	conj := qConj(q)
-	xAxis := quat{-1, 0, 0, 0}
-	zAxis := quat{0, 0, 1, 0}
-	newX := qMul(qMul(q, xAxis), conj)
-	newZ := qMul(qMul(q, zAxis), conj)
+	conj := q.Conjugate()
+	xAxis := mgl64.Quat{W: 0, V: mgl64.Vec3{-1, 0, 0}}
+	zAxis := mgl64.Quat{W: 0, V: mgl64.Vec3{0, 0, 1}}
+	newX := q.Mul(xAxis).Mul(conj)
+	newZ := q.Mul(zAxis).Mul(conj)
 
 	var th float64
-	nzx, nzy, nzz := newZ[0], newZ[1], newZ[2]
-	nxx, nxy, nxz := newX[0], newX[1], newX[2]
+	nzx, nzy, nzz := newZ.V[0], newZ.V[1], newZ.V[2]
+	nxx, nxy, nxz := newX.V[0], newX.V[1], newX.V[2]
 
 	if 1-math.Abs(nzz) > eps {
 		// normal1 = newZimag × newXimag
@@ -332,11 +302,11 @@ func quatToOVDeg(q quat) (ox, oy, oz, thetaDeg float64) {
 			if theta > eps {
 				magNZ := math.Sqrt(nzx*nzx + nzy*nzy + nzz*nzz)
 				if magNZ > 1e-10 {
-					rotQ := qFromAxisAngle(nzx/magNZ, nzy/magNZ, nzz/magNZ, -theta)
-					testZ := qMul(qMul(rotQ, zAxis), qConj(rotQ))
-					n3x := nzy*testZ[2] - nzz*testZ[1]
-					n3y := nzz*testZ[0] - nzx*testZ[2]
-					n3z := nzx*testZ[1] - nzy*testZ[0]
+					rotQ := mgl64.QuatRotate(-theta, mgl64.Vec3{nzx / magNZ, nzy / magNZ, nzz / magNZ})
+					testZ := rotQ.Mul(zAxis).Mul(rotQ.Conjugate())
+					n3x := nzy*testZ.V[2] - nzz*testZ.V[1]
+					n3y := nzz*testZ.V[0] - nzx*testZ.V[2]
+					n3z := nzx*testZ.V[1] - nzy*testZ.V[0]
 					mag3 := math.Sqrt(n3x*n3x + n3y*n3y + n3z*n3z)
 					if mag3 > 1e-10 {
 						cosTest := (n1x*n3x + n1y*n3y + n1z*n3z) / (mag1 * mag3)
@@ -369,7 +339,7 @@ func quatToOVDeg(q quat) (ox, oy, oz, thetaDeg float64) {
 type ControllerState struct {
 	Connected       bool
 	Pos             [3]float64 // x, y, z (meters)
-	Rot             quat       // x, y, z, w
+	Mat             mgl64.Mat4 // full 4×4 homogeneous transform
 	Trigger         float64
 	TriggerPressed  bool
 	Grip            bool
@@ -378,40 +348,17 @@ type ControllerState struct {
 	Menu            bool
 }
 
-var nullController = ControllerState{Rot: quat{0, 0, 0, 1}}
+var nullController = ControllerState{Mat: mgl64.Ident4()}
 
-// mat34ToQuat converts an OpenVR row-major 3×4 matrix to (position, quaternion).
-func mat34ToQuat(m [12]float32) ([3]float64, quat) {
-	pos := [3]float64{float64(m[3]), float64(m[7]), float64(m[11])}
-	trace := float64(m[0] + m[5] + m[10])
-	var qx, qy, qz, qw float64
-	switch {
-	case trace > 0:
-		s := 0.5 / math.Sqrt(trace+1.0)
-		qw = 0.25 / s
-		qx = float64(m[9]-m[6]) * s
-		qy = float64(m[2]-m[8]) * s
-		qz = float64(m[4]-m[1]) * s
-	case m[0] > m[5] && m[0] > m[10]:
-		s := 2.0 * math.Sqrt(1.0+float64(m[0]-m[5]-m[10]))
-		qw = float64(m[9]-m[6]) / s
-		qx = 0.25 * s
-		qy = float64(m[4]+m[1]) / s
-		qz = float64(m[2]+m[8]) / s
-	case m[5] > m[10]:
-		s := 2.0 * math.Sqrt(1.0+float64(m[5]-m[0]-m[10]))
-		qw = float64(m[2]-m[8]) / s
-		qx = float64(m[4]+m[1]) / s
-		qy = 0.25 * s
-		qz = float64(m[9]+m[6]) / s
-	default:
-		s := 2.0 * math.Sqrt(1.0+float64(m[10]-m[0]-m[5]))
-		qw = float64(m[4]-m[1]) / s
-		qx = float64(m[2]+m[8]) / s
-		qy = float64(m[9]+m[6]) / s
-		qz = 0.25 * s
+// mat34ToMat4 converts an OpenVR row-major 3×4 float32 matrix to an mgl64.Mat4.
+// OpenVR layout: m[row*4+col], mgl64 layout: column-major [col*4+row].
+func mat34ToMat4(m [12]float32) mgl64.Mat4 {
+	return mgl64.Mat4{
+		float64(m[0]), float64(m[4]), float64(m[8]), 0,  // column 0
+		float64(m[1]), float64(m[5]), float64(m[9]), 0,  // column 1
+		float64(m[2]), float64(m[6]), float64(m[10]), 0, // column 2
+		float64(m[3]), float64(m[7]), float64(m[11]), 1, // column 3 (translation + w=1)
 	}
-	return pos, quat{qx, qy, qz, qw}
 }
 
 func readController(idx uint32, isLeft bool) *ControllerState {
@@ -439,9 +386,9 @@ func readController(idx uint32, isLeft bool) *ControllerState {
 		for i := 0; i < 12; i++ {
 			flat[i] = float32(data.mat[i])
 		}
-		pos, rot := mat34ToQuat(flat)
-		cs.Pos = pos
-		cs.Rot = rot
+		m := mat34ToMat4(flat)
+		cs.Mat = m
+		cs.Pos = [3]float64{m.At(0, 3), m.At(1, 3), m.At(2, 3)}
 	}
 	return cs
 }
@@ -522,18 +469,15 @@ func saveCalib(yaw float64, dir string) {
 	}
 }
 
-func computeCalibYaw(rot quat) (float64, bool) {
-	// Extract controller's -Z axis (forward direction) projected onto XZ plane.
-	cx, cy, cz, cw := rot[0], rot[1], rot[2], rot[3]
-	cfx := -2 * (cx*cz + cy*cw)
-	cfz := -(1 - 2*(cx*cx+cy*cy))
+func computeCalibYaw(m mgl64.Mat4) (float64, bool) {
+	// Controller's -Z axis (forward) is the negated third column of the rotation.
+	cfx := -m.At(0, 2)
+	cfz := -m.At(2, 2)
 	mag := math.Sqrt(cfx*cfx + cfz*cfz)
 	if mag < 1e-6 {
 		return 0, false
 	}
 	// Yaw = angle from SteamVR -Z to the user's forward, around +Y axis.
-	// steamVRTransform without yaw maps -Z → Robot +X.  With yawQ applied,
-	// the user's forward (cfx, cfz) gets rotated to align with -Z first.
 	return math.Atan2(cfx/mag, -cfz/mag), true
 }
 
@@ -575,10 +519,10 @@ type teleopHand struct {
 	arm          arm.Arm
 	gripper      gripper.Gripper // nil if no gripper
 	deviceIdx    *uint32
-	scale        float64
-	rotEnabled   bool
-	absoluteRot  bool
-	armFrameQuat quat // arm's frame orientation from FrameSystemConfig
+	scale       float64
+	rotEnabled  bool
+	absoluteRot bool
+	armFrameMat mgl64.Mat4 // arm's frame orientation from FrameSystemConfig
 
 	// button edge state
 	wasGrip    bool
@@ -595,11 +539,11 @@ type teleopHand struct {
 
 	// reference capture (on grip press)
 	ctrlRefPos      [3]float64
-	ctrlRefRotRobot quat
-	calibTransform  quat // steamVRTransform * calibYaw, captured at grip press
+	ctrlRefRotRobot mgl64.Mat4
+	calibTransform  mgl64.Mat4 // steamVRTransform * calibYaw, captured at grip press
 	robotRefPos     [3]float64
-	robotRefQuat    quat
-	ctrlToArmOffset quat
+	robotRefMat     mgl64.Mat4
+	ctrlToArmOffset mgl64.Mat4
 }
 
 const (
@@ -615,8 +559,8 @@ func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled 
 		gripperName:     gripperName,
 		scale:           scale,
 		rotEnabled:      rotEnabled,
-		armFrameQuat:    quat{0, 0, 0, 1},
-		ctrlToArmOffset: quat{0, 0, 0, 1},
+		armFrameMat:     mgl64.Ident4(),
+		ctrlToArmOffset: mgl64.Ident4(),
 	}
 }
 
@@ -642,9 +586,10 @@ func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) err
 		for _, part := range fsCfg.Parts {
 			if part.FrameConfig.Name() == h.armName {
 				ori := part.FrameConfig.Pose().Orientation().Quaternion()
-				h.armFrameQuat = qNorm(quat{ori.Imag, ori.Jmag, ori.Kmag, ori.Real})
+				q := mgl64.Quat{W: ori.Real, V: mgl64.Vec3{ori.Imag, ori.Jmag, ori.Kmag}}.Normalize()
+				h.armFrameMat = q.Mat4()
 				fmt.Printf("[%s] arm frame quat: (%.3f, %.3f, %.3f, %.3f)\n",
-					h.name, h.armFrameQuat[0], h.armFrameQuat[1], h.armFrameQuat[2], h.armFrameQuat[3])
+					h.name, q.V[0], q.V[1], q.V[2], q.W)
 				break
 			}
 		}
@@ -703,8 +648,9 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 				fmt.Printf("[%s] arm pose: pos=(%.1f, %.1f, %.1f) ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
 					h.name, pt.X, pt.Y, pt.Z, ov.OX, ov.OY, ov.OZ, ov.Theta)
 			}
-			curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
-			cox, coy, coz, ctheta := quatToOVDeg(curRotRobot)
+			calibInv := h.calibTransform.Inv()
+			curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
+			cox, coy, coz, ctheta := mat4ToOVDeg(curRotRobot)
 			fmt.Printf("[%s] controller rot (robot frame): ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
 				h.name, cox, coy, coz, ctheta)
 		}()
@@ -738,14 +684,14 @@ func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 
 		h.robotRefPos = [3]float64{pt.X, pt.Y, pt.Z}
 
-		// Reconstruct robot arm quaternion from orientation vector degrees.
+		// Reconstruct robot arm rotation matrix from orientation vector degrees.
 		ovRad := spatialmath.NewOrientationVector()
 		ovRad.OX = ovd.OX
 		ovRad.OY = ovd.OY
 		ovRad.OZ = ovd.OZ
 		ovRad.Theta = ovd.Theta * math.Pi / 180
 		rq := ovRad.Quaternion()
-		h.robotRefQuat = qNorm(quat{rq.Imag, rq.Jmag, rq.Kmag, rq.Real})
+		h.robotRefMat = mgl64.Quat{W: rq.Real, V: mgl64.Vec3{rq.Imag, rq.Jmag, rq.Kmag}}.Normalize().Mat4()
 
 		h.poseStack = append(h.poseStack, pose{
 			x: pt.X, y: pt.Y, z: pt.Z,
@@ -754,23 +700,24 @@ func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 
 		h.ctrlRefPos = cs.Pos
 
-		// Build calibrated rotation transform: steamVRTransform * yawQ.
+		// Build calibrated rotation transform: steamVRTransform * yawM.
 		// This maps SteamVR axes to robot axes accounting for the user's
-		// facing direction.  Used only for rotation (position uses applyCalib).
+		// facing direction.
 		calibMu.RLock()
 		yaw := calibYaw
 		calibMu.RUnlock()
 		h.calibTransform = steamVRTransform
 		if yaw != 0 {
-			yawQ := qFromAxisAngle(0, 1, 0, yaw)
-			h.calibTransform = qNorm(qMul(steamVRTransform, yawQ))
+			yawM := mgl64.HomogRotate3DY(yaw)
+			h.calibTransform = steamVRTransform.Mul4(yawM)
 		}
 
-		// Matches TS: controllerRefRotRobot = transformToRobotFrame(grip.quaternion, qTransform)
-		h.ctrlRefRotRobot = transformToRobotFrame(cs.Rot, h.calibTransform)
+		// Similarity transform: T * M * T^-1 maps controller rotation to robot frame.
+		calibInv := h.calibTransform.Inv()
+		h.ctrlRefRotRobot = h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
 
-		// Matches TS: offset = inverse(controllerRefRotRobot) * robotRefQuat
-		h.ctrlToArmOffset = qNorm(qMul(qConj(h.ctrlRefRotRobot), h.robotRefQuat))
+		// Offset = inverse(ctrlRefRotRobot) * robotRefMat
+		h.ctrlToArmOffset = h.ctrlRefRotRobot.Inv().Mul4(h.robotRefMat)
 
 		h.errorTimeout = time.Time{}
 		h.isControlling = true
@@ -789,34 +736,34 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	}
 
 	// Position: delta in SteamVR space → rotate by calibTransform → robot frame.
-	// Matches TS: deltaRobot = deltaXR.applyQuaternion(qTransform)
 	dx := cs.Pos[0] - h.ctrlRefPos[0]
 	dy := cs.Pos[1] - h.ctrlRefPos[1]
 	dz := cs.Pos[2] - h.ctrlRefPos[2]
-	rx, ry, rz := qRotateVec(h.calibTransform, dx, dy, dz)
+	delta := h.calibTransform.Mul4x1(mgl64.Vec4{dx, dy, dz, 0})
 	scaleMM := h.scale * 1000
-	tx := h.robotRefPos[0] + rx*scaleMM
-	ty := h.robotRefPos[1] + ry*scaleMM
-	tz := h.robotRefPos[2] + rz*scaleMM
+	tx := h.robotRefPos[0] + delta[0]*scaleMM
+	ty := h.robotRefPos[1] + delta[1]*scaleMM
+	tz := h.robotRefPos[2] + delta[2]*scaleMM
 
-	// Rotation: T * q * T^-1, then apply offset
+	// Rotation: similarity transform T * M * T^-1, then apply offset.
 	var tox, toy, toz, thetaDeg float64
 	if h.rotEnabled {
-		curRotRobot := transformToRobotFrame(cs.Rot, h.calibTransform)
+		calibInv := h.calibTransform.Inv()
+		curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
 		if h.absoluteRot {
 			// Absolute: controller orientation + 180° X flip, corrected for arm frame.
-			flipX := qFromAxisAngle(1, 0, 0, math.Pi)
-			frameInv := qConj(h.armFrameQuat)
-			corrected := qNorm(qMul(frameInv, qMul(curRotRobot, flipX)))
-			tox, toy, toz, thetaDeg = quatToOVDeg(corrected)
+			flipX := mgl64.HomogRotate3DX(math.Pi)
+			frameInv := h.armFrameMat.Inv()
+			corrected := frameInv.Mul4(curRotRobot).Mul4(flipX)
+			tox, toy, toz, thetaDeg = mat4ToOVDeg(corrected)
 		} else {
 			// Relative: apply offset from reference capture.
-			targetRot := qNorm(qMul(curRotRobot, h.ctrlToArmOffset))
-			tox, toy, toz, thetaDeg = quatToOVDeg(targetRot)
+			targetRot := curRotRobot.Mul4(h.ctrlToArmOffset)
+			tox, toy, toz, thetaDeg = mat4ToOVDeg(targetRot)
 		}
 	} else {
 		// Keep arm at reference orientation
-		tox, toy, toz, thetaDeg = quatToOVDeg(h.robotRefQuat)
+		tox, toy, toz, thetaDeg = mat4ToOVDeg(h.robotRefMat)
 	}
 
 	if math.IsNaN(tx) || math.IsNaN(tox) || math.IsNaN(thetaDeg) {
@@ -948,7 +895,7 @@ func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *tel
 				y := tr.raw.Trackpad[1]
 				if y < -0.3 {
 					// Up: calibrate forward direction.
-					if yaw, ok := computeCalibYaw(tr.raw.Rot); ok {
+					if yaw, ok := computeCalibYaw(tr.raw.Mat); ok {
 						saveCalib(yaw, dir)
 						left.sendHaptic(0.3, 80)
 						right.sendHaptic(0.3, 80)
