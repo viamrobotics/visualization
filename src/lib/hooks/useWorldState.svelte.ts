@@ -10,7 +10,9 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { parseMetadata } from '$lib/WorldObject.svelte'
+import { parseMetadata } from '$lib/metadata'
+import { asColor, asOpacity, STRIDE } from '$lib/buffer'
+import { Color } from 'three'
 import { usePartID } from './usePartID.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import type { ConfigurableTrait, Entity } from 'koota'
@@ -20,6 +22,8 @@ import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { createBufferGeometry } from '$lib/attribute'
+
+const colorUtil = new Color()
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
@@ -73,12 +77,14 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			entityTraits.push(traits.Parent(parent))
 		}
 
-		if (metadata.color) {
-			entityTraits.push(traits.Color(metadata.color))
-		}
-
 		if (metadata.colors) {
-			entityTraits.push(traits.VertexColors(metadata.colors as Float32Array<ArrayBuffer>))
+			const bytes = metadata.colors
+			asColor(bytes, colorUtil)
+			entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+			const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
+			if (isRgba) {
+				entityTraits.push(traits.Opacity(asOpacity(bytes)))
+			}
 		}
 
 		if (transform.physicalObject) {
@@ -99,25 +105,6 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			} else {
 				entityTraits.push(traits.Geometry(transform.physicalObject))
 			}
-		}
-
-		if (metadata.shape === 'line' && metadata.points) {
-			const { points } = metadata
-			const positions = new Float32Array(points.length * 3)
-			for (let i = 0, j = 0, l = points.length * 3; i < l; i += 3, j += 1) {
-				positions[i + 0] = points[j].x
-				positions[i + 1] = points[j].y
-				positions[i + 2] = points[j].z
-			}
-			entityTraits.push(traits.LinePositions(positions), traits.PointColor(metadata.lineDotColor))
-		}
-
-		if (metadata.gltf) {
-			entityTraits.push(traits.GLTF({ source: { gltf: metadata.gltf }, animationName: '' }))
-		}
-
-		if (metadata.shape === 'arrow') {
-			entityTraits.push(traits.Arrow)
 		}
 
 		entityTraits.push(
