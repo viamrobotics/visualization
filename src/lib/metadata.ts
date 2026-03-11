@@ -11,10 +11,20 @@ export type Metadata = {
 	colors?: Uint8Array<ArrayBuffer>
 }
 
+/** Type guard that checks whether a string is a recognised {@link Metadata} field name. */
 export const isMetadataKey = (key: string): key is keyof Metadata => {
 	return key === 'colors'
 }
 
+/**
+ * Extracts typed {@link Metadata} from a proto `Struct` fields map.
+ *
+ * The `colors` field is expected as a base64-encoded string (the only way to
+ * represent binary data in a `google.protobuf.Value`), which is decoded into
+ * a `Uint8Array`.
+ *
+ * Unknown keys are silently ignored.
+ */
 export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
 	const json: Metadata = {}
 
@@ -31,8 +41,6 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 						colorBytes[i] = binary.charCodeAt(i)
 					}
 					json.colors = colorBytes
-				} else {
-					json.colors = unwrappedValue as Uint8Array<ArrayBuffer>
 				}
 				break
 			}

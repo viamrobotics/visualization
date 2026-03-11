@@ -114,3 +114,23 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
 	if (bytes.length < offset + 1) return fallback
 	return bytes[offset]! / 255
 }
+
+/**
+ * Returns true when `colors` contains exactly one color entry per point (RGB or RGBA).
+ * Use this to distinguish per-vertex color buffers from a single uniform color.
+ *
+ * @param colors - Uint8Array of packed color bytes
+ * @param numVertex - Number of points/vertices the color buffer should cover
+ *
+ * @example
+ * ```ts
+ * if (isPerVertexColors(colors, positions.length / STRIDE.POSITIONS)) {
+ *   // treat as per-vertex
+ * } else {
+ *   addColorTraits(entityTraits, colors)
+ * }
+ * ```
+ */
+export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
+	colors.length === numVertex * STRIDE.COLORS_RGB ||
+	colors.length === numVertex * STRIDE.COLORS_RGBA
