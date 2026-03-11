@@ -289,15 +289,17 @@ func transformToRobotFrame(q, T quat) quat {
 // steamVRTransform is the SteamVR standing universe → Viam robot frame quaternion.
 // Equivalent to rotZ(-90°) * rotX(90°) (same as the WebXR transform in the TS code).
 // Combined with calibration yaw (applied on the right), this maps:
-//   User forward → Robot +X, Up(+Y) → Robot +Z, User left → Robot +Y.
+//
+//	User forward → Robot +X, Up(+Y) → Robot +Z, User left → Robot +Y.
+//
 // Without calibration (user facing SteamVR -Z):
-//   -Z → +X, +Y → +Z, +X → +Y.
+//
+//	-Z → +X, +Y → +Z, +X → +Y.
 var steamVRTransform = func() quat {
 	rotX := qFromAxisAngle(1, 0, 0, math.Pi/2)
 	rotZ := qFromAxisAngle(0, 0, 1, -math.Pi/2)
 	return qNorm(qMul(rotZ, rotX))
 }()
-
 
 // quatToOVDeg converts a unit quaternion to a Viam orientation vector (theta in degrees).
 // Port of OrientationVector.setFromQuaternion from OrientationVector.ts.
@@ -567,13 +569,13 @@ type pose struct {
 }
 
 type teleopHand struct {
-	name        string
-	armName     string
-	gripperName string
-	arm         arm.Arm
-	gripper     gripper.Gripper // nil if no gripper
-	deviceIdx   *uint32
-	scale       float64
+	name         string
+	armName      string
+	gripperName  string
+	arm          arm.Arm
+	gripper      gripper.Gripper // nil if no gripper
+	deviceIdx    *uint32
+	scale        float64
 	rotEnabled   bool
 	absoluteRot  bool
 	armFrameQuat quat // arm's frame orientation from FrameSystemConfig
@@ -584,20 +586,20 @@ type teleopHand struct {
 	wasMenu    bool
 
 	// control state
-	isControlling  bool
-	isSending      bool
-	errorTimeout   time.Time
-	lastCmdTime    time.Time
-	poseStack      []pose
-	gripStopTimer  *time.Timer
+	isControlling bool
+	isSending     bool
+	errorTimeout  time.Time
+	lastCmdTime   time.Time
+	poseStack     []pose
+	gripStopTimer *time.Timer
 
 	// reference capture (on grip press)
-	ctrlRefPos       [3]float64
-	ctrlRefRotRobot  quat
-	calibTransform   quat // steamVRTransform * calibYaw, captured at grip press
-	robotRefPos      [3]float64
-	robotRefQuat     quat
-	ctrlToArmOffset  quat
+	ctrlRefPos      [3]float64
+	ctrlRefRotRobot quat
+	calibTransform  quat // steamVRTransform * calibYaw, captured at grip press
+	robotRefPos     [3]float64
+	robotRefQuat    quat
+	ctrlToArmOffset quat
 }
 
 const (
@@ -608,11 +610,11 @@ const (
 
 func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled bool) *teleopHand {
 	return &teleopHand{
-		name:             name,
-		armName:          armName,
-		gripperName:      gripperName,
-		scale:            scale,
-		rotEnabled:       rotEnabled,
+		name:            name,
+		armName:         armName,
+		gripperName:     gripperName,
+		scale:           scale,
+		rotEnabled:      rotEnabled,
 		armFrameQuat:    quat{0, 0, 0, 1},
 		ctrlToArmOffset: quat{0, 0, 0, 1},
 	}
@@ -935,8 +937,8 @@ func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *tel
 
 		// Trackpad rising edge: dispatch by region.
 		for _, tr := range []struct {
-			raw  ControllerState
-			was  *bool
+			raw ControllerState
+			was *bool
 		}{
 			{leftRaw, &wasLeftTrackpad},
 			{rightRaw, &wasRightTrackpad},
@@ -948,6 +950,8 @@ func pollLoop(ctx context.Context, hz int, manifestPath string, left, right *tel
 					// Up: calibrate forward direction.
 					if yaw, ok := computeCalibYaw(tr.raw.Rot); ok {
 						saveCalib(yaw, dir)
+						left.sendHaptic(0.3, 80)
+						right.sendHaptic(0.3, 80)
 					}
 				} else if y > 0.3 {
 					// Down: toggle rotation control mode.
