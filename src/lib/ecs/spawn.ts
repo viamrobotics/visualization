@@ -6,7 +6,14 @@ import type { Transform as SnapshotTransform } from '$lib/buf/common/v1/common_p
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 import { traits } from '$lib/ecs'
 import { parseMetadata } from '$lib/metadata'
-import { asColor, asFloat32Array, asOpacity, isPerVertexColors, STRIDE } from '$lib/buffer'
+import {
+	asColor,
+	asFloat32Array,
+	asOpacity,
+	inMetres,
+	isPerVertexColors,
+	STRIDE,
+} from '$lib/buffer'
 import { createBufferGeometry } from '$lib/attribute'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { createPose } from '$lib/transform'
@@ -19,7 +26,6 @@ type SpawnTransformInput = SnapshotTransform | TransformWithUUID
 type SpawnTransformOptions = {
 	showAxesHelper?: boolean
 	removable?: boolean
-	onComplete?: () => void
 }
 
 type SpawnDrawingOptions = {
@@ -60,12 +66,13 @@ export const spawnTransform = (
 		transform.physicalObject?.geometryType?.case === 'pointcloud'
 			? transform.physicalObject.geometryType.value.pointCloud
 			: undefined
-	if (metadata.colors && !pointCloud) entityTraits.push(...getColorTraits(metadata.colors))
+
+	if (metadata.colors && !pointCloud) entityTraits.push(...createColorTraits(metadata.colors))
 
 	const entity = world.spawn(...entityTraits)
 
 	if (pointCloud) {
-		spawnPointcloud(world, entity, pointCloud, metadata.colors, options.onComplete)
+		spawnPointcloud(world, entity, pointCloud, metadata.colors)
 	}
 
 	return entity
@@ -107,16 +114,15 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 	switch (geometryType?.case) {
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses)
-			if (colors) entity.add(traits.Colors(colors))
 			entity.add(traits.Positions(poses))
 			entity.add(traits.Arrows({ headAtPose: true }))
 			entity.add(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
+			if (colors) entity.add(traits.Colors(colors))
 			break
 		}
 
 		case 'line': {
-			const positions = asFloat32Array(geometryType.value.positions)
-			for (let i = 0, l = positions.length; i < l; i += 1) positions[i] *= 0.001
+			const positions = asFloat32Array(geometryType.value.positions, inMetres)
 
 			if (drawing.physicalObject?.center) {
 				entity.add(traits.Center(drawing.physicalObject.center))
@@ -143,8 +149,7 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 		}
 
 		case 'points': {
-			const positions = asFloat32Array(geometryType.value.positions)
-			for (let i = 0, l = positions.length; i < l; i += 1) positions[i] *= 0.001
+			const positions = asFloat32Array(geometryType.value.positions, inMetres)
 
 			if (drawing.physicalObject?.center) {
 				entity.add(traits.Center(drawing.physicalObject.center))
@@ -154,14 +159,17 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			const hasVertexColors = colors && isPerVertexColors(colors, numPoints)
 
 			if (!hasVertexColors && colors) {
-				for (const t of getColorTraits(colors)) entity.add(t)
+				for (const t of createColorTraits(colors)) entity.add(t)
 			}
+
 			if (geometryType.value.pointSize) {
 				entity.add(traits.PointSize(geometryType.value.pointSize * 0.001))
 			}
+
 			entity.add(
 				traits.BufferGeometry(createBufferGeometry(positions, hasVertexColors ? colors : undefined))
 			)
+
 			entity.add(traits.Points)
 			break
 		}
@@ -208,7 +216,7 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			if (colors) {
-				for (const t of getColorTraits(colors)) entity.add(t)
+				for (const t of createColorTraits(colors)) entity.add(t)
 			}
 
 			entity.add(traits.LinePositions(points))
@@ -221,7 +229,7 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			if (colors) {
-				for (const t of getColorTraits(colors)) entity.add(t)
+				for (const t of createColorTraits(colors)) entity.add(t)
 			}
 			break
 		}
@@ -288,8 +296,7 @@ const spawnPointcloud = (
 	world: World,
 	entity: Entity,
 	pointCloud: Uint8Array,
-	metadataColors?: Uint8Array<ArrayBuffer>,
-	onComplete?: () => void
+	metadataColors?: Uint8Array<ArrayBuffer>
 ): void => {
 	parsePcdInWorker(new Uint8Array(pointCloud)).then((pointcloud) => {
 		if (!world.has(entity)) {
@@ -308,19 +315,19 @@ const spawnPointcloud = (
 		entity.add(traits.Points)
 
 		if (metadataColors && !isPerVertexColors(metadataColors, numPoints)) {
-			for (const t of getColorTraits(metadataColors)) entity.add(t)
+			for (const t of createColorTraits(metadataColors)) entity.add(t)
 		}
-
-		onComplete?.()
 	})
 }
 
-const getColorTraits = (bytes: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {
+const createColorTraits = (bytes: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {
 	asColor(bytes, colorUtil)
 	const result: ConfigurableTrait[] = [
 		traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }),
 	]
+
 	const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
 	if (isRgba) result.push(traits.Opacity(asOpacity(bytes)))
+
 	return result
 }

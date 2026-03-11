@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Color } from 'three'
-import { asFloat32Array, asColor, asOpacity, isPerVertexColors } from '../buffer'
+import { asFloat32Array, asColor, asOpacity, inMetres, isPerVertexColors } from '../buffer'
 
 describe('asFloat32Array', () => {
 	it('converts aligned bytes to Float32Array', () => {
@@ -42,6 +42,30 @@ describe('asFloat32Array', () => {
 		// Modify original and check result is affected (same buffer)
 		original[0] = 99
 		expect(result[0]).toBeCloseTo(99)
+	})
+
+	it('applies a transform to each element (aligned path)', () => {
+		const original = new Float32Array([1000, 2000, 3000])
+		const bytes = new Uint8Array(original.buffer)
+		const result = asFloat32Array(bytes, (v) => v * 0.001)
+
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
+		expect(result[2]).toBeCloseTo(3)
+	})
+
+	it('applies a transform to each element (unaligned path)', () => {
+		const original = new Float32Array([1000, 2000])
+		const originalBytes = new Uint8Array(original.buffer)
+
+		const misalignedBuffer = new ArrayBuffer(originalBytes.length + 4)
+		const misalignedView = new Uint8Array(misalignedBuffer, 1, originalBytes.length)
+		misalignedView.set(originalBytes)
+
+		const result = asFloat32Array(misalignedView, (v) => v * 0.001)
+
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
 	})
 })
 
@@ -117,6 +141,24 @@ describe('asOpacity', () => {
 
 	it('returns fallback when array is too short for the given offset', () => {
 		expect(asOpacity(new Uint8Array([255, 0, 0]), 0.5, 5)).toBeCloseTo(0.5)
+	})
+})
+
+describe('inMetres', () => {
+	it('converts a millimetre value to metres', () => {
+		expect(inMetres(1000)).toBeCloseTo(1)
+		expect(inMetres(2500)).toBeCloseTo(2.5)
+		expect(inMetres(0)).toBe(0)
+	})
+
+	it('works as a transform passed to asFloat32Array', () => {
+		const floats = new Float32Array([1000, 2000, 3000])
+		const bytes = new Uint8Array(floats.buffer)
+		const result = asFloat32Array(bytes, inMetres)
+
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
+		expect(result[2]).toBeCloseTo(3)
 	})
 })
 

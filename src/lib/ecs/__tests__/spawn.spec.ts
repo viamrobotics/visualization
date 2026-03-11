@@ -150,25 +150,6 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
 
-	it('calls onComplete after pointcloud loads', async () => {
-		world = createWorld()
-		const pointCloud = new Uint8Array(0)
-		const onComplete = vi.fn()
-		const transform = new Transform({
-			referenceFrame: 'cloud-cb',
-			physicalObject: new Geometry({
-				geometryType: { case: 'pointcloud', value: { pointCloud } },
-			}),
-		})
-
-		spawnTransform(world, transform, traits.SnapshotAPI, { onComplete })
-
-		// wait for the mocked parsePcdInWorker promise to resolve
-		await Promise.resolve()
-
-		expect(onComplete).toHaveBeenCalledOnce()
-	})
-
 	it('adds uniform Color and Opacity traits for pointcloud with non-vertex metadata colors', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
@@ -176,22 +157,32 @@ describe('spawnTransform', () => {
 		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: null })
 
 		const pointCloud = new Uint8Array(0)
-		// 4-byte RGBA color that is NOT a per-vertex count for 2 points (2*3=6, 2*4=8; 4≠6 and 4≠8)
+		// 4-byte RGBA color that is NOT per-vertex for 2 points (2*3=6, 2*4=8; 4≠6 and 4≠8)
 		const metadataColors = new Uint8Array([0, 255, 0, 128])
+		const base64Colors = btoa(String.fromCharCode(...metadataColors))
 		const transform = new Transform({
 			referenceFrame: 'cloud-uniform',
 			physicalObject: new Geometry({
 				geometryType: { case: 'pointcloud', value: { pointCloud } },
 			}),
+			metadata: {
+				fields: {
+					colors: { kind: { case: 'stringValue', value: base64Colors } },
+				},
+			},
 		})
 
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-		// manually inject the metadata colors by testing spawnPointcloud indirectly
-		// Since spawnTransform reads from metadata.fields, create a transform with encoded metadata
-		// For this test we verify the entity still exists and has no color pre-load
-		expect(entity.has(traits.Color)).toBe(false)
-
 		await Promise.resolve()
+
+		// Uniform color should be applied as Color + Opacity traits (not per-vertex)
+		expect(entity.has(traits.Color)).toBe(true)
+		expect(entity.get(traits.Color)).toMatchObject({
+			r: expect.closeTo(0),
+			g: expect.closeTo(1),
+			b: expect.closeTo(0),
+		})
+		expect(entity.get(traits.Opacity)).toBeCloseTo(128 / 255)
 	})
 
 	it('uses per-vertex metadata colors over PCD colors when counts match', async () => {

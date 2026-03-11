@@ -29,28 +29,44 @@ export const STRIDE = {
  * Creates a Float32Array view over a Uint8Array without copying data.
  * Falls back to a copy if the buffer is not 4-byte aligned (rare with protobuf).
  *
+ * An optional `transform` applies a per-element function during conversion.
+ *
  * @param bytes - The raw bytes from a protobuf bytes field
+ * @param transform - Optional function applied to every float element
  * @returns A Float32Array view or copy of the data
  *
  * @example
  * ```ts
  * const positions = asFloat32Array(line.positions)
- * geometry.setAttribute('position', new BufferAttribute(positions, 3))
+ * const metrePositions = asFloat32Array(line.positions, inMetres)
  * ```
  */
-export const asFloat32Array = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
+export const asFloat32Array = (
+	bytes: Uint8Array<ArrayBuffer>,
+	transform?: (value: number) => number
+): Float32Array<ArrayBuffer> => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
 
 	if (bytes.byteOffset % 4 === 0 && bytes.byteLength % 4 === 0) {
-		return new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
+		const view = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
+		if (transform) {
+			for (let i = 0; i < view.length; i++) view[i] = transform(view[i]!)
+		}
+		return view
 	}
 
 	const aligned = new Float32Array(bytes.byteLength / 4)
-	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-	for (let i = 0; i < aligned.length; i++) {
-		aligned[i] = view.getFloat32(i * 4, true) // little-endian
+	const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+	if (transform) {
+		for (let i = 0; i < aligned.length; i++) {
+			aligned[i] = transform(dv.getFloat32(i * 4, true))
+		}
+	} else {
+		for (let i = 0; i < aligned.length; i++) {
+			aligned[i] = dv.getFloat32(i * 4, true)
+		}
 	}
 	return aligned
 }
@@ -134,3 +150,14 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
 export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
 	colors.length === numVertex * STRIDE.COLORS_RGB ||
 	colors.length === numVertex * STRIDE.COLORS_RGBA
+
+/**
+ * Per-element transform that converts a millimetre value to metres.
+ * Pass to {@link asFloat32Array} to fuse the conversion into a single pass.
+ *
+ * @example
+ * ```ts
+ * const positions = asFloat32Array(line.positions, inMetres)
+ * ```
+ */
+export const inMetres = (v: number): number => v * 0.001

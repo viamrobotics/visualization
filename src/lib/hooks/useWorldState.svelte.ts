@@ -64,10 +64,13 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 
 		const entity = spawnTransform(world, transform, traits.WorldStateStoreAPI, {
 			removable: false,
-			onComplete: () => invalidate(),
 		})
 
 		entities.set(transform.uuidString, entity)
+
+		if (transform.physicalObject?.geometryType?.case === 'pointcloud') {
+			invalidate()
+		}
 	}
 
 	const destroyEntity = (uuid: string) => {
