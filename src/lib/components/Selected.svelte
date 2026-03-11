@@ -46,6 +46,8 @@
 				selectedObject3d.current?.getWorldPosition(object.position)
 				selectedObject3d.current?.getWorldQuaternion(object.quaternion)
 				obbHelper.setFromObject(object)
+			} else {
+				obbHelper.setFromObject(object)
 			}
 
 			invalidate()
