@@ -124,78 +124,76 @@ export const providePointcloudObjects = (partID: () => string) => {
 		const active: Record<string, boolean> = {}
 
 		for (const [name, query] of queries) {
-			untrack(() => {
-				$effect(() => {
-					const { data } = query
+			$effect(() => {
+				const { data } = query
 
-					if (!data || data.length === 0) return
+				if (!data || data.length === 0) return
 
-					let index = 0
-					for (const { geometries: geometriesInFrame, pointCloud } of data) {
-						if (pointCloud.length > 0) {
-							parsePcdInWorker(pointCloud).then(({ positions, colors }) => {
-								const poincloudLabel = `${name} pointcloud ${index + 1}`
-								const existing = entities.get(poincloudLabel)
+				let index = 0
+				for (const { geometries: geometriesInFrame, pointCloud } of data) {
+					if (pointCloud.length > 0) {
+						parsePcdInWorker(pointCloud).then(({ positions, colors }) => {
+							const poincloudLabel = `${name} pointcloud ${index + 1}`
+							const existing = entities.get(poincloudLabel)
 
-								if (existing) {
-									const geometry = existing.get(traits.BufferGeometry)
+							if (existing) {
+								const geometry = existing.get(traits.BufferGeometry)
 
-									if (geometry) {
-										updateBufferGeometry(geometry, positions, colors)
-									}
-								} else {
-									const geometry = createBufferGeometry(positions, colors)
-
-									const entity = world.spawn(
-										traits.Name(poincloudLabel),
-										traits.BufferGeometry(geometry),
-										traits.Points
-									)
-
-									entities.set(poincloudLabel, entity)
+								if (geometry) {
+									updateBufferGeometry(geometry, positions, colors)
 								}
-							})
-						}
+							} else {
+								const geometry = createBufferGeometry(positions, colors)
 
-						if (geometriesInFrame) {
-							let geometryIndex = 0
+								const entity = world.spawn(
+									traits.Name(poincloudLabel),
+									traits.BufferGeometry(geometry),
+									traits.Points
+								)
 
-							for (const geometry of geometriesInFrame.geometries) {
-								const geometryLabel = `${name} pointcloud ${index} geometry ${geometryIndex + 1}`
-								const pose = createPose(geometry.center)
-
-								active[geometryLabel] = true
-
-								const existing = entities.get(geometryLabel)
-
-								if (existing) {
-									existing.set(traits.Pose, pose)
-								} else {
-									const entityTraits: ConfigurableTrait[] = [
-										traits.Name(geometryLabel),
-										traits.Pose(pose),
-										traits.GeometriesAPI,
-										traits.Geometry(geometry),
-										traits.Opacity(0.2),
-										traits.Color({ r: 0, g: 1, b: 0 }),
-									]
-
-									if (geometriesInFrame.referenceFrame) {
-										entityTraits.push(traits.Parent(geometriesInFrame.referenceFrame))
-									}
-
-									const entity = world.spawn(...entityTraits)
-
-									entities.set(geometryLabel, entity)
-								}
-
-								geometryIndex += 1
+								entities.set(poincloudLabel, entity)
 							}
-						}
-
-						index += 1
+						})
 					}
-				})
+
+					if (geometriesInFrame) {
+						let geometryIndex = 0
+
+						for (const geometry of geometriesInFrame.geometries) {
+							const geometryLabel = `${name} pointcloud ${index} geometry ${geometryIndex + 1}`
+							const center = createPose(geometry.center)
+
+							active[geometryLabel] = true
+
+							const existing = entities.get(geometryLabel)
+
+							if (existing) {
+								existing.set(traits.Pose, center)
+							} else {
+								const entityTraits: ConfigurableTrait[] = [
+									traits.Name(geometryLabel),
+									traits.Center(center),
+									traits.GeometriesAPI,
+									traits.Geometry(geometry),
+									traits.Opacity(0.2),
+									traits.Color({ r: 0, g: 1, b: 0 }),
+								]
+
+								if (geometriesInFrame.referenceFrame) {
+									entityTraits.push(traits.Parent(geometriesInFrame.referenceFrame))
+								}
+
+								const entity = world.spawn(...entityTraits)
+
+								entities.set(geometryLabel, entity)
+							}
+
+							geometryIndex += 1
+						}
+					}
+
+					index += 1
+				}
 			})
 		}
 
