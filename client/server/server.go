@@ -60,6 +60,7 @@ var (
 	staticSrv  *http.Server
 	drawClient drawv1connect.DrawServiceClient
 	address    string
+	recorder   *RecordingInterceptor
 )
 
 // Start starts the Connect-RPC draw server using the provided Config. It is
@@ -125,12 +126,15 @@ func Start(cfg DrawServerConfig) error {
 		log.Printf("draw server static files on http://localhost:%d (serving %q)", cfg.StaticPort, buildDir)
 	}
 
+	recorder = NewRecordingInterceptor()
+
 	// Use the Connect protocol over HTTP/1.1 (chunked streaming).  The h2c
 	// wrapper on the server still accepts HTTP/1.1 requests, so there is no
 	// need for a special transport on the Go side.
 	drawClient = drawv1connect.NewDrawServiceClient(
 		http.DefaultClient,
 		fmt.Sprintf("http://%s", address),
+		connect.WithInterceptors(recorder),
 	)
 
 	running = true
@@ -180,6 +184,10 @@ func Stop() error {
 	drawClient = nil
 	address = ""
 	running = false
+	if recorder != nil {
+		recorder.StopRecording()
+		recorder = nil
+	}
 
 	return nil
 }
@@ -190,6 +198,14 @@ func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
 	return drawClient
+}
+
+// GetRecorder returns the singleton RecordingInterceptor for the running server.
+// Returns nil if the server has not been started.
+func GetRecorder() *RecordingInterceptor {
+	mu.Lock()
+	defer mu.Unlock()
+	return recorder
 }
 
 // GetAddress returns the host:port address of the running RPC server, or an

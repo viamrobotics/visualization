@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Add draw client API helpers
+Add draw poses as arrows API

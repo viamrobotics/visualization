@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Standardize colorables in draw API
+Add draw geometry and draw geometries APIs

@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Add DrawService
+Add draw robot and draw world state APIs

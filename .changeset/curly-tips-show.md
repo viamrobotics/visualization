@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-Add DrawnFrames to draw API
+Add set camera API
