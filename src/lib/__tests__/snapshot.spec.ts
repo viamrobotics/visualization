@@ -282,7 +282,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(entity.has(traits.Opacity)).toBe(false)
 	})
 
-	it('spawns arrows with single Color trait when metadata has one color', async () => {
+	it('spawns arrows with Colors trait when metadata has one color', async () => {
 		world = createWorld()
 		// Single RGBA color for all arrows
 		const colors = new Uint8Array([0, 255, 0, 180])
@@ -298,11 +298,13 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 		const [entity] = spawnSnapshotEntities(world, snapshot)
 
-		expect(entity.get(traits.Color)?.r).toBeCloseTo(0)
-		expect(entity.get(traits.Color)?.g).toBeCloseTo(1)
-		expect(entity.get(traits.Color)?.b).toBeCloseTo(0)
-		expect(entity.get(traits.Opacity)).toBeCloseTo(180 / 255, 3)
-		expect(entity.has(traits.Colors)).toBe(false)
+		const entityColors = entity.get(traits.Colors)
+		expect(entityColors).toBeDefined()
+		expect(entityColors![0]).toBe(0)
+		expect(entityColors![1]).toBe(255)
+		expect(entityColors![2]).toBe(0)
+		expect(entityColors![3]).toBe(180)
+		expect(entity.has(traits.Color)).toBe(false)
 	})
 
 	it('spawns arrows with Colors trait when metadata has multiple colors', async () => {

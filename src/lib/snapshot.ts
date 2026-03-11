@@ -10,7 +10,7 @@ import { Geometry } from '@viamrobotics/sdk'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { parseMetadata } from '$lib/metadata'
 import { rgbaToHex } from './color'
-import { asColor, asFloat32Array, asOpacity, STRIDE } from './buffer'
+import { asColor, asFloat32Array, asOpacity, isPerVertexColors, STRIDE } from './buffer'
 import { createBufferGeometry } from './attribute'
 
 const vec3 = new Vector3()
@@ -140,11 +140,7 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (colors) {
-			if (colors.length <= STRIDE.COLORS_RGBA) {
-				addColorTraits(entityTraits, colors)
-			} else {
-				entityTraits.push(traits.Colors(colors))
-			}
+			entityTraits.push(traits.Colors(colors))
 		}
 
 		const entity = world.spawn(
@@ -256,10 +252,8 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
 			const numPoints = positions.length / STRIDE.POSITIONS
-			const vertexColors =
-				colors && colors.length === numPoints * STRIDE.COLORS_RGB ? colors : undefined
+			const vertexColors = colors && isPerVertexColors(colors, numPoints) ? colors : undefined
 			const geometry = createBufferGeometry(positions, vertexColors)
-
 			entityTraits.push(traits.BufferGeometry(geometry))
 
 			if (colors && !vertexColors) {
