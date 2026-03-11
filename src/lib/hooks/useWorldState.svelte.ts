@@ -11,7 +11,7 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 import { parseMetadata } from '$lib/metadata'
-import { asColor, asOpacity, STRIDE } from '$lib/buffer'
+import { asColor, asOpacity, isPerVertexColors, STRIDE } from '$lib/buffer'
 import { Color } from 'three'
 import { usePartID } from './usePartID.svelte'
 import { traits, useWorld } from '$lib/ecs'
@@ -77,32 +77,46 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			entityTraits.push(traits.Parent(parent))
 		}
 
-		if (metadata.colors) {
-			const bytes = metadata.colors
-			asColor(bytes, colorUtil)
-			entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-			const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
-			if (isRgba) {
-				entityTraits.push(traits.Opacity(asOpacity(bytes)))
-			}
-		}
-
 		if (transform.physicalObject) {
 			if (transform.physicalObject.geometryType.case === 'pointcloud') {
+				const metadataColors = metadata.colors
 				parsePcdInWorker(
 					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
 				).then((pointcloud) => {
-					// pcds are a special case since they have to be loaded in a worker and the trait will be added to the existing entity
 					const entity = entities.get(transform.uuidString)
 					if (!entity) {
 						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
 						return
 					}
-					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
+
+					const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
+					const vertexColors =
+						metadataColors && isPerVertexColors(metadataColors, numPoints)
+							? metadataColors
+							: pointcloud.colors
+
+					const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
 					entity.add(traits.BufferGeometry(geometry))
 					entity.add(traits.Points)
+
+					if (metadataColors && !isPerVertexColors(metadataColors, numPoints)) {
+						asColor(metadataColors, colorUtil)
+						entity.add(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+						if (metadataColors.length % STRIDE.COLORS_RGBA === 0) {
+							entity.add(traits.Opacity(asOpacity(metadataColors)))
+						}
+					}
+
+					invalidate()
 				})
 			} else {
+				if (metadata.colors) {
+					asColor(metadata.colors, colorUtil)
+					entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
+					if (metadata.colors.length % STRIDE.COLORS_RGBA === 0) {
+						entityTraits.push(traits.Opacity(asOpacity(metadata.colors)))
+					}
+				}
 				entityTraits.push(traits.Geometry(transform.physicalObject))
 			}
 		}
