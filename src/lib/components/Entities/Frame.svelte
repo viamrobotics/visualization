@@ -74,13 +74,13 @@ Renders a Viam Frame object
 			{entity}
 			{color}
 			{...events}
-			pose={center.current}
-		>
-			{#if name.current}
-				<PortalTarget id={name.current} />
-			{/if}
+			center={center.current}
+		/>
 
-			{@render children?.({ ref: group })}
-		</Mesh>
+		{#if name.current}
+			<PortalTarget id={name.current} />
+		{/if}
+
+		{@render children?.({ ref: group })}
 	</T>
 </Portal>

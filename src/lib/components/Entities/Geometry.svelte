@@ -4,7 +4,6 @@
 Renders a Viam Geometry object
 -->
 <script lang="ts">
-	import { Group } from 'three'
 	import { T, useThrelte } from '@threlte/core'
 	import { traits, useTrait } from '$lib/ecs'
 	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
@@ -32,8 +31,6 @@ Renders a Viam Geometry object
 	const parent = useTrait(() => entity, traits.Parent)
 	const center = useTrait(() => entity, traits.Center)
 
-	const group = new Group()
-
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
 			return
@@ -52,8 +49,8 @@ Renders a Viam Geometry object
 	})
 
 	$effect.pre(() => {
-		if (center.current) {
-			poseToObject3d(center.current, group)
+		if (model && center.current) {
+			poseToObject3d(center.current, model)
 			invalidate()
 		}
 	})
@@ -62,18 +59,17 @@ Renders a Viam Geometry object
 </script>
 
 <Portal id={parent.current}>
-	<T is={group}>
-		{#if model}
-			<T is={model} />
-		{/if}
+	{#if model}
+		<T is={model} />
+	{/if}
 
-		{#if settings.current.renderArmModels.includes('colliders') || !model}
-			<Mesh
-				{entity}
-				{...events}
-			>
-				{@render children?.()}
-			</Mesh>
-		{/if}
-	</T>
+	{#if settings.current.renderArmModels.includes('colliders') || !model}
+		<Mesh
+			{entity}
+			center={center.current}
+			{...events}
+		>
+			{@render children?.()}
+		</Mesh>
+	{/if}
 </Portal>

@@ -13,11 +13,11 @@
 	interface Props extends ThrelteProps<Mesh> {
 		entity: Entity
 		color?: string
-		pose?: Pose
+		center?: Pose
 		children?: Snippet
 	}
 
-	let { entity, color: overrideColor, pose, children, ...rest }: Props = $props()
+	let { entity, color: overrideColor, center, children, ...rest }: Props = $props()
 
 	const colorUtil = new Color()
 
@@ -55,8 +55,8 @@
 	const mesh = new Mesh()
 
 	$effect.pre(() => {
-		if (pose) {
-			poseToObject3d(pose, mesh)
+		if (center) {
+			poseToObject3d(center, mesh)
 			invalidate()
 		}
 	})

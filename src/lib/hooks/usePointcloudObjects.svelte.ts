@@ -162,18 +162,18 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 							for (const geometry of geometriesInFrame.geometries) {
 								const geometryLabel = `${name} pointcloud ${index} geometry ${geometryIndex + 1}`
-								const pose = createPose(geometry.center)
+								const center = createPose(geometry.center)
 
 								active[geometryLabel] = true
 
 								const existing = entities.get(geometryLabel)
 
 								if (existing) {
-									existing.set(traits.Pose, pose)
+									existing.set(traits.Pose, center)
 								} else {
 									const entityTraits: ConfigurableTrait[] = [
 										traits.Name(geometryLabel),
-										traits.Pose(pose),
+										traits.Center(center),
 										traits.GeometriesAPI,
 										traits.Geometry(geometry),
 										traits.Opacity(0.2),
