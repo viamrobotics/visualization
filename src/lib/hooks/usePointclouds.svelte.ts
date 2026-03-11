@@ -118,40 +118,38 @@ export const providePointclouds = (partID: () => string) => {
 
 	$effect(() => {
 		for (const [name, query] of queries) {
-			untrack(() => {
-				$effect(() => {
-					const { data } = query
+			$effect(() => {
+				const { data } = query
 
-					if (!data || data.length === 0) return
+				if (!data || data.length === 0) return
 
-					parsePcdInWorker(data)
-						.then(({ positions, colors }) => {
-							const existing = entities.get(name)
+				parsePcdInWorker(data)
+					.then(({ positions, colors }) => {
+						const existing = entities.get(name)
 
-							if (existing) {
-								const geometry = existing.get(traits.BufferGeometry)
+						if (existing) {
+							const geometry = existing.get(traits.BufferGeometry)
 
-								if (geometry) {
-									updateBufferGeometry(geometry, positions, colors)
-									return
-								}
+							if (geometry) {
+								updateBufferGeometry(geometry, positions, colors)
+								return
 							}
+						}
 
-							const geometry = createBufferGeometry(positions, colors)
+						const geometry = createBufferGeometry(positions, colors)
 
-							const entity = world.spawn(
-								traits.Parent(name),
-								traits.Name(`${name} pointcloud`),
-								traits.BufferGeometry(geometry),
-								traits.Points
-							)
+						const entity = world.spawn(
+							traits.Parent(name),
+							traits.Name(`${name} pointcloud`),
+							traits.BufferGeometry(geometry),
+							traits.Points
+						)
 
-							entities.set(name, entity)
-						})
-						.catch((error) => {
-							logs.add(error.reason, 'error')
-						})
-				})
+						entities.set(name, entity)
+					})
+					.catch((error) => {
+						logs.add(error.reason, 'error')
+					})
 			})
 		}
 

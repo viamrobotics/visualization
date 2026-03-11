@@ -113,49 +113,47 @@ export const provideGeometries = (partID: () => string) => {
 		const active: Record<string, boolean> = {}
 
 		for (const [name, query] of queries) {
-			untrack(() => {
-				$effect(() => {
-					if (name && query.data) {
-						let index = 0
+			$effect(() => {
+				if (name && query.data) {
+					let index = 0
 
-						for (const geometry of query.data) {
-							index += 1
+					for (const geometry of query.data) {
+						index += 1
 
-							const resourceName = resources.current[name]
-							const label = geometry.label || `${name} geometry ${index}`
+						const resourceName = resources.current[name]
+						const label = geometry.label || `${name} geometry ${index}`
 
-							active[`${name}:${label}`] = true
+						active[`${name}:${label}`] = true
 
-							const center = createPose(geometry.center)
-							const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
+						const center = createPose(geometry.center)
+						const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
-							const existing = entities.get(`${name}:${label}`)
+						const existing = entities.get(`${name}:${label}`)
 
-							if (existing) {
-								existing.set(traits.Center, center)
-								continue
-							}
-
-							const entityTraits: ConfigurableTrait[] = [
-								traits.Parent(name),
-								traits.Name(label),
-								traits.Center(center),
-								traits.GeometriesAPI,
-								traits.Geometry(geometry),
-							]
-
-							if (subtype) {
-								entityTraits.push(
-									traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
-								)
-							}
-
-							const entity = world.spawn(...entityTraits)
-
-							entities.set(`${name}:${label}`, entity)
+						if (existing) {
+							existing.set(traits.Center, center)
+							continue
 						}
+
+						const entityTraits: ConfigurableTrait[] = [
+							traits.Parent(name),
+							traits.Name(label),
+							traits.Center(center),
+							traits.GeometriesAPI,
+							traits.Geometry(geometry),
+						]
+
+						if (subtype) {
+							entityTraits.push(
+								traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
+							)
+						}
+
+						const entity = world.spawn(...entityTraits)
+
+						entities.set(`${name}:${label}`, entity)
 					}
-				})
+				}
 			})
 		}
 
