@@ -126,20 +126,20 @@ export const provideGeometries = (partID: () => string) => {
 
 							active[`${name}:${label}`] = true
 
-							const pose = createPose(geometry.center)
+							const center = createPose(geometry.center)
 							const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
 							const existing = entities.get(`${name}:${label}`)
 
 							if (existing) {
-								existing.set(traits.Pose, pose)
+								existing.set(traits.Center, center)
 								continue
 							}
 
 							const entityTraits: ConfigurableTrait[] = [
 								traits.Parent(name),
 								traits.Name(label),
-								traits.Pose(pose),
+								traits.Center(center),
 								traits.GeometriesAPI,
 								traits.Geometry(geometry),
 							]

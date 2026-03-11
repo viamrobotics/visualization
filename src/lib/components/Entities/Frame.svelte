@@ -38,6 +38,7 @@ Renders a Viam Frame object
 	const parent = useTrait(() => entity, traits.Parent)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const entityPose = useTrait(() => entity, traits.Pose)
+	const center = useTrait(() => entity, traits.Center)
 
 	const events = useEntityEvents(() => entity)
 
@@ -73,6 +74,7 @@ Renders a Viam Frame object
 			{entity}
 			{color}
 			{...events}
+			pose={center.current}
 		>
 			{#if name.current}
 				<PortalTarget id={name.current} />

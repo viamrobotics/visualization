@@ -30,11 +30,9 @@ Renders a Viam Geometry object
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
-	const pose = useTrait(() => entity, traits.Pose)
 	const center = useTrait(() => entity, traits.Center)
 
 	const group = new Group()
-	const innerGroup = new Group()
 
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
@@ -54,15 +52,8 @@ Renders a Viam Geometry object
 	})
 
 	$effect.pre(() => {
-		if (pose.current) {
-			poseToObject3d(pose.current, group)
-			invalidate()
-		}
-	})
-
-	$effect.pre(() => {
 		if (center.current) {
-			poseToObject3d(center.current, innerGroup)
+			poseToObject3d(center.current, group)
 			invalidate()
 		}
 	})
@@ -73,15 +64,12 @@ Renders a Viam Geometry object
 <Portal id={parent.current}>
 	<T is={group}>
 		{#if model}
-			<T is={innerGroup}>
-				<T is={model} />
-			</T>
+			<T is={model} />
 		{/if}
 
 		{#if settings.current.renderArmModels.includes('colliders') || !model}
 			<Mesh
 				{entity}
-				pose={center.current}
 				{...events}
 			>
 				{@render children?.()}
