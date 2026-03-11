@@ -140,7 +140,11 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 		}
 
 		if (colors) {
-			entityTraits.push(traits.Colors(colors))
+			if (colors.length <= STRIDE.COLORS_RGBA) {
+				addColorTraits(entityTraits, colors)
+			} else {
+				entityTraits.push(traits.Colors(colors))
+			}
 		}
 
 		const entity = world.spawn(
@@ -251,7 +255,9 @@ const spawnEntitiesFromDrawing = (world: World, drawing: Drawing): Entity[] => {
 			}
 
 			const colors = drawing.metadata?.colors as Uint8Array<ArrayBuffer> | undefined
-			const vertexColors = colors && colors.length > STRIDE.COLORS_RGBA ? colors : undefined
+			const numPoints = positions.length / STRIDE.POSITIONS
+			const vertexColors =
+				colors && colors.length === numPoints * STRIDE.COLORS_RGB ? colors : undefined
 			const geometry = createBufferGeometry(positions, vertexColors)
 
 			entityTraits.push(traits.BufferGeometry(geometry))
