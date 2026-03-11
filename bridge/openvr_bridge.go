@@ -640,19 +640,13 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 	} else if !cs.Grip && h.wasGrip && h.isControlling {
 		h.isControlling = false
 		h.sendHaptic(0.3, 80)
-		// Debug: log arm pose and controller orientation on release.
 		go func() {
 			if p, err := h.arm.EndPosition(ctx, nil); err == nil {
 				pt := p.Point()
 				ov := p.Orientation().OrientationVectorDegrees()
-				fmt.Printf("[%s] arm pose: pos=(%.1f, %.1f, %.1f) ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
+				fmt.Printf("[%s] released at (%.1f, %.1f, %.1f) ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
 					h.name, pt.X, pt.Y, pt.Z, ov.OX, ov.OY, ov.OZ, ov.Theta)
 			}
-			calibInv := h.calibTransform.Inv()
-			curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
-			cox, coy, coz, ctheta := mat4ToOVDeg(curRotRobot)
-			fmt.Printf("[%s] controller rot (robot frame): ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
-				h.name, cox, coy, coz, ctheta)
 		}()
 	}
 	h.wasGrip = cs.Grip
@@ -745,19 +739,21 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	ty := h.robotRefPos[1] + delta[1]*scaleMM
 	tz := h.robotRefPos[2] + delta[2]*scaleMM
 
-	// Rotation: similarity transform T * M * T^-1, then apply offset.
+	// Rotation.
 	var tox, toy, toz, thetaDeg float64
 	if h.rotEnabled {
-		calibInv := h.calibTransform.Inv()
-		curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
 		if h.absoluteRot {
-			// Absolute: controller orientation + 180° X flip, corrected for arm frame.
-			flipX := mgl64.HomogRotate3DX(math.Pi)
+			// Absolute: direct transform — calibTransform maps controller orientation
+			// into robot frame. gripCorrection rotates from handle-aligned to raycast-forward.
+			absRotRobot := h.calibTransform.Mul4(cs.Mat)
+			gripCorrection := mgl64.HomogRotate3DX(math.Pi / 2).Mul4(mgl64.HomogRotate3DZ(math.Pi / 2))
 			frameInv := h.armFrameMat.Inv()
-			corrected := frameInv.Mul4(curRotRobot).Mul4(flipX)
+			corrected := frameInv.Mul4(absRotRobot).Mul4(gripCorrection)
 			tox, toy, toz, thetaDeg = mat4ToOVDeg(corrected)
 		} else {
-			// Relative: apply offset from reference capture.
+			// Relative: similarity transform T * M * T^-1, then apply offset.
+			calibInv := h.calibTransform.Inv()
+			curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
 			targetRot := curRotRobot.Mul4(h.ctrlToArmOffset)
 			tox, toy, toz, thetaDeg = mat4ToOVDeg(targetRot)
 		}
