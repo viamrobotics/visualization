@@ -55,7 +55,13 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>) => {
 		sortNodes(node.children)
 	}
 
+	for (const node of childNodes) {
+		if (!node.children) continue
+		sortNodes(node.children)
+	}
+
 	sortNodes(rootNodes)
+	sortNodes(childNodes)
 
 	return { rootNodes, nodeMap }
 }
