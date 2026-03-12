@@ -15,7 +15,7 @@ import { type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
-import { updateGeometry } from '$lib/ecs/traits'
+import { updateGeometryTrait } from '$lib/ecs/traits'
 
 const key = Symbol('geometries-context')
 
@@ -143,7 +143,7 @@ export const provideGeometries = (partID: () => string) => {
 
 						if (existing) {
 							existing.set(traits.Center, center)
-							updateGeometry(existing, geometry)
+							updateGeometryTrait(existing, geometry)
 							continue
 						}
 
