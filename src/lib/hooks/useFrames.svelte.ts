@@ -59,7 +59,6 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
-			console.log('here')
 			const mergedFrames = {
 				...frames,
 				...configFrames.current,
