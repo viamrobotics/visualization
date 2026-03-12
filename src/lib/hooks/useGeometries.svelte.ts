@@ -111,12 +111,18 @@ export const provideGeometries = (partID: () => string) => {
 	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
-		for (const [name, query] of queries) {
-			$effect(() => {
-				if (!name) {
-					return
-				}
+		const activeQueryNames = new Set<string>()
+		const currentPartID = partID()
 
+		for (const [name, query] of queries) {
+			if (!name) {
+				continue
+			}
+
+			const ownerKey = `${currentPartID}:${name}`
+			activeQueryNames.add(name)
+
+			$effect(() => {
 				const nextKeys = new Set<string>()
 				const resourceName = resources.current[name]
 				const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
@@ -128,12 +134,11 @@ export const provideGeometries = (partID: () => string) => {
 						index += 1
 
 						const label = geometry.label || `${name} geometry ${index}`
-						const entityKey = `${name}:${label}`
-
+						const entityKey = `${currentPartID}:${name}:${label}`
 						nextKeys.add(entityKey)
 
 						const center = createPose(geometry.center)
-						const existing = entities.get(`${name}:${label}`)
+						const existing = entities.get(entityKey)
 
 						if (existing) {
 							existing.set(traits.Center, center)
@@ -155,11 +160,11 @@ export const provideGeometries = (partID: () => string) => {
 						}
 
 						const entity = world.spawn(...entityTraits)
-						entities.set(`${name}:${label}`, entity)
+						entities.set(entityKey, entity)
 					}
 				}
 
-				const prevKeys = queryEntityKeys.get(name) ?? new Set<string>()
+				const prevKeys = queryEntityKeys.get(ownerKey) ?? new Set<string>()
 
 				// Remove entities no longer present for this specific query
 				for (const key of prevKeys) {
@@ -170,6 +175,18 @@ export const provideGeometries = (partID: () => string) => {
 				}
 
 				queryEntityKeys.set(name, nextKeys)
+
+				return () => {
+					// destroy all entities owned by this query when effect is disposed
+					const ownedKeys = queryEntityKeys.get(ownerKey)
+					if (ownedKeys) {
+						for (const key of ownedKeys) {
+							entities.get(key)?.destroy()
+							entities.delete(key)
+						}
+						queryEntityKeys.delete(ownerKey)
+					}
+				}
 			})
 		}
 	})

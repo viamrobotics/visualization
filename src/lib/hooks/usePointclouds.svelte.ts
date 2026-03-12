@@ -98,8 +98,6 @@ export const providePointclouds = (partID: () => string) => {
 		)
 	)
 
-	const queryMap = $derived(typeSafeObjectFromEntries(queries))
-
 	$effect(() => {
 		for (const [name, query] of queries) {
 			untrack(() => {
@@ -115,36 +113,43 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const entities = new Map<string, Entity>()
-	const queryEntityKeys = new Map<string, Set<string>>()
+	const versions = new Map<string, number>()
 
 	$effect(() => {
 		for (const [name, query] of queries) {
 			$effect(() => {
 				const { data } = query
 
-				const nextKeys = new Set<string>()
+				const version = (versions.get(name) ?? 0) + 1
+				versions.set(name, version)
 
-				const cleanup = () => {
-					const prevKeys = queryEntityKeys.get(name) ?? new Set<string>()
+				let disposed = false
 
-					// Remove entities no longer present for this specific query
-					for (const key of prevKeys) {
-						if (!nextKeys.has(key)) {
-							entities.get(key)?.destroy()
-							entities.delete(key)
-						}
+				const destroyEntity = () => {
+					const entity = entities.get(name)
+					if (entity) {
+						if (world.has(entity)) entity.destroy()
+						entities.delete(name)
 					}
-
-					queryEntityKeys.set(name, nextKeys)
 				}
 
 				if (!data || data.length === 0) {
-					cleanup()
-					return
+					destroyEntity()
+					return () => {
+						disposed = true
+					}
 				}
 
 				parsePcdInWorker(data)
 					.then(({ positions, colors }) => {
+						if (disposed) {
+							return
+						}
+
+						if (versions.get(name) !== version) {
+							return
+						}
+
 						const existing = entities.get(name)
 
 						if (existing) {
@@ -168,23 +173,34 @@ export const providePointclouds = (partID: () => string) => {
 						entities.set(name, entity)
 					})
 					.catch((error) => {
+						if (disposed) {
+							return
+						}
+
+						if (versions.get(name) !== version) {
+							return
+						}
+
 						logs.add(error.reason, 'error')
 					})
-					.finally(() => {
-						cleanup()
-					})
+
+				return () => {
+					disposed = true
+
+					// invalidate older async work for this name
+					if (versions.get(name) === version) {
+						versions.set(name, version + 1)
+					}
+				}
 			})
 		}
 
-		// Clean up old entities
-		for (const [name, entity] of entities) {
-			if (!queryMap[name]?.data) {
-				if (world.has(entity)) {
-					entity.destroy()
-				}
-
-				entities.delete(name)
+		return () => {
+			for (const [, entity] of entities) {
+				if (world.has(entity)) entity.destroy()
 			}
+			entities.clear()
+			versions.clear()
 		}
 	})
 
