@@ -1,17 +1,27 @@
+<!--
+@component
+
+Renders a Viam Frame object
+-->
+<script module>
+	import { Color } from 'three'
+
+	const colorUtil = new Color()
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte'
+	import { Group, type Object3D } from 'three'
+	import { T, useThrelte } from '@threlte/core'
+	import { Portal, PortalTarget } from '@threlte/extras'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
-	import { Color, Group, type Object3D } from 'three'
-	import Geometry from './Geometry.svelte'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { colors, darkenColor, resourceColors } from '$lib/color'
+	import Mesh from './Mesh.svelte'
+	import { colors, resourceColors } from '$lib/color'
 	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
 	import type { Pose } from '@viamrobotics/sdk'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { Portal, PortalTarget } from '@threlte/extras'
+	import { poseToObject3d } from '$lib/transform'
 
 	interface Props {
 		entity: Entity
@@ -21,69 +31,56 @@
 
 	let { entity, pose, children }: Props = $props()
 
-	let ref = $state<Group>()
-
-	const colorUtil = new Color()
-
-	const settings = useSettings()
-	const componentModels = use3DModels()
-	const selectedEntity = useSelectedEntity()
+	const { invalidate } = useThrelte()
 	const resourceByName = useResourceByName()
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const entityColor = useTrait(() => entity, traits.Color)
+	const entityPose = useTrait(() => entity, traits.Pose)
+	const center = useTrait(() => entity, traits.Center)
 
 	const events = useEntityEvents(() => entity)
-	const resourceColor = $derived.by(() => {
-		if (!name.current) {
-			return undefined
-		}
-		const subtype = resourceByName.current[name.current]?.subtype
-		return resourceColors[subtype as keyof typeof resourceColors]
-	})
 
 	const color = $derived.by(() => {
 		if (entityColor.current) {
-			return colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b)
+			return `#${colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b).getHexString()}`
 		}
+
+		const subtype = resourceByName.current[name.current ?? '']?.subtype
+		const resourceColor = resourceColors[subtype as keyof typeof resourceColors]
+
 		if (resourceColor) {
 			return resourceColor
 		}
+
 		return colors.default
 	})
 
-	const model = $derived.by(() => {
-		if (!name.current) {
-			return
-		}
+	const group = new Group()
 
-		const [componentName, id] = name.current.split(':')
-		if (!componentName || !id) {
-			return
+	const resolvedPose = $derived(pose ?? entityPose.current)
+	$effect.pre(() => {
+		if (resolvedPose) {
+			poseToObject3d(resolvedPose, group)
+			invalidate()
 		}
-		return componentModels.current?.[componentName]?.[id].clone()
 	})
 </script>
 
 <Portal id={parent.current}>
-	<Geometry
-		bind:ref
-		{entity}
-		{model}
-		{pose}
-		renderMode={settings.current.renderArmModels}
-		color={selectedEntity.current === entity
-			? `#${darkenColor(color, 75).getHexString()}`
-			: `#${colorUtil.set(color).getHexString()}`}
-		{...events}
-	>
+	<T is={group}>
+		<Mesh
+			{entity}
+			{color}
+			{...events}
+			center={center.current}
+		/>
+
 		{#if name.current}
 			<PortalTarget id={name.current} />
 		{/if}
 
-		{#if ref}
-			{@render children?.({ ref })}
-		{/if}
-	</Geometry>
+		{@render children?.({ ref: group })}
+	</T>
 </Portal>
