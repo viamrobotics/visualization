@@ -288,7 +288,7 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 	it('spawns arrows with Colors trait when metadata has one color', async () => {
 		world = createWorld()
-		// Single RGBA color for all arrows — always Colors, never Color
+		// Single RGBA color for all arrows
 		const colors = new Uint8Array([0, 255, 0, 180])
 		const posesData = new Uint8Array(24) // 1 arrow
 		const drawing = new Drawing({
