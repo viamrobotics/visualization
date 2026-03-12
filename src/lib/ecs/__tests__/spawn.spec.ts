@@ -46,7 +46,7 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.ReferenceFrame)).toBe(false)
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 		expect(entity.has(traits.Removable)).toBe(true)
-		expect(entity.has(traits.Parent)).toBe('arm')
+		expect(entity.get(traits.Parent)).toBe('arm')
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})
 

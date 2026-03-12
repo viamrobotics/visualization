@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Color } from 'three'
-import { asFloat32Array, asColor, asOpacity, inMetres, isPerVertexColors } from '../buffer'
+import { asFloat32Array, asColor, asOpacity, isPerVertexColors } from '../buffer'
 
 describe('asFloat32Array', () => {
 	it('handles unaligned bytes by copying', () => {
