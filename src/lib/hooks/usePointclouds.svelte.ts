@@ -115,13 +115,33 @@ export const providePointclouds = (partID: () => string) => {
 	})
 
 	const entities = new Map<string, Entity>()
+	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
 		for (const [name, query] of queries) {
 			$effect(() => {
 				const { data } = query
 
-				if (!data || data.length === 0) return
+				const nextKeys = new Set<string>()
+
+				const cleanup = () => {
+					const prevKeys = queryEntityKeys.get(name) ?? new Set<string>()
+
+					// Remove entities no longer present for this specific query
+					for (const key of prevKeys) {
+						if (!nextKeys.has(key)) {
+							entities.get(key)?.destroy()
+							entities.delete(key)
+						}
+					}
+
+					queryEntityKeys.set(name, nextKeys)
+				}
+
+				if (!data || data.length === 0) {
+					cleanup()
+					return
+				}
 
 				parsePcdInWorker(data)
 					.then(({ positions, colors }) => {
@@ -149,6 +169,9 @@ export const providePointclouds = (partID: () => string) => {
 					})
 					.catch((error) => {
 						logs.add(error.reason, 'error')
+					})
+					.finally(() => {
+						cleanup()
 					})
 			})
 		}

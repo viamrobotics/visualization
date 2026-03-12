@@ -14,7 +14,7 @@
 		debug?: boolean
 	}
 
-	let { debug = false }: Props = $props()
+	let { debug = true }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()

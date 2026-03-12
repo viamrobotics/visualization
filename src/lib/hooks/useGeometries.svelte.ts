@@ -108,26 +108,31 @@ export const provideGeometries = (partID: () => string) => {
 	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
 
 	const entities = new Map<string, Entity | undefined>()
+	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
-		const active: Record<string, boolean> = {}
-
 		for (const [name, query] of queries) {
 			$effect(() => {
-				if (name && query.data) {
+				if (!name) {
+					return
+				}
+
+				const nextKeys = new Set<string>()
+				const resourceName = resources.current[name]
+				const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
+
+				if (query.data) {
 					let index = 0
 
 					for (const geometry of query.data) {
 						index += 1
 
-						const resourceName = resources.current[name]
 						const label = geometry.label || `${name} geometry ${index}`
+						const entityKey = `${name}:${label}`
 
-						active[`${name}:${label}`] = true
+						nextKeys.add(entityKey)
 
 						const center = createPose(geometry.center)
-						const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
-
 						const existing = entities.get(`${name}:${label}`)
 
 						if (existing) {
@@ -150,19 +155,22 @@ export const provideGeometries = (partID: () => string) => {
 						}
 
 						const entity = world.spawn(...entityTraits)
-
 						entities.set(`${name}:${label}`, entity)
 					}
 				}
-			})
-		}
 
-		// Clean up non-active entities
-		for (const [label, entity] of entities) {
-			if (!active[label]) {
-				entity?.destroy()
-				entities.delete(label)
-			}
+				const prevKeys = queryEntityKeys.get(name) ?? new Set<string>()
+
+				// Remove entities no longer present for this specific query
+				for (const key of prevKeys) {
+					if (!nextKeys.has(key)) {
+						entities.get(key)?.destroy()
+						entities.delete(key)
+					}
+				}
+
+				queryEntityKeys.set(name, nextKeys)
+			})
 		}
 	})
 
