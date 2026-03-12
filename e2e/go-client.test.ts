@@ -60,11 +60,9 @@ test('draw hierarchy', async ({ browser }) => {
 		}
 	)
 
-	// Root-level nodes are always visible
 	await expect(page.getByText('zulu', { exact: true })).toBeVisible()
 	await expect(page.getByText('bravo', { exact: true })).toBeVisible()
 
-	// Expand "zulu" to reveal its children
 	await page
 		.locator('[data-part="branch-control"]')
 		.filter({ hasText: 'zulu' })
@@ -75,7 +73,6 @@ test('draw hierarchy', async ({ browser }) => {
 
 	await takeScreenshot(page, `${testPrefix}_ZULU_EXPANDED`, failedScreenshots)
 
-	// Expand "tango" to reveal its children
 	await page
 		.locator('[data-part="branch-control"]')
 		.filter({ hasText: 'tango' })
