@@ -217,6 +217,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -525,9 +526,12 @@ type teleopHand struct {
 	armFrameMat mgl64.Mat4 // arm's frame orientation from FrameSystemConfig
 
 	// button edge state
-	wasGrip    bool
-	wasTrigger bool
-	wasMenu    bool
+	wasGrip bool
+	wasMenu bool
+
+	// gripper proportional control
+	gripperDesired atomic.Int64 // desired position (830=open, 10=closed)
+	gripperNotify  chan struct{}
 
 	// control state
 	isControlling bool
@@ -535,7 +539,6 @@ type teleopHand struct {
 	errorTimeout  time.Time
 	lastCmdTime   time.Time
 	poseStack     []pose
-	gripStopTimer *time.Timer
 
 	// reference capture (on grip press)
 	ctrlRefPos      [3]float64
@@ -553,7 +556,7 @@ const (
 )
 
 func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled bool) *teleopHand {
-	return &teleopHand{
+	h := &teleopHand{
 		name:            name,
 		armName:         armName,
 		gripperName:     gripperName,
@@ -561,7 +564,10 @@ func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled 
 		rotEnabled:      rotEnabled,
 		armFrameMat:     mgl64.Ident4(),
 		ctrlToArmOffset: mgl64.Ident4(),
+		gripperNotify:   make(chan struct{}, 1),
 	}
+	h.gripperDesired.Store(830) // start fully open
+	return h
 }
 
 func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) error {
@@ -594,39 +600,48 @@ func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) err
 			}
 		}
 	}
+	if h.gripper != nil {
+		go h.gripperLoop(ctx)
+	}
 	return nil
 }
 
-func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
-	// --- Gripper (trigger) ---
-	if h.gripper != nil {
-		if cs.TriggerPressed && !h.wasTrigger {
-			if h.gripStopTimer != nil {
-				h.gripStopTimer.Stop()
-				h.gripStopTimer = nil
-			}
-			go func() {
-				if _, err := h.gripper.Grab(ctx, nil); err != nil {
-					fmt.Printf("[%s] gripper grab: %v\n", h.name, err)
-				}
-			}()
-		} else if !cs.TriggerPressed && h.wasTrigger {
-			if h.gripStopTimer != nil {
-				h.gripStopTimer.Stop()
-			}
-			go func() {
-				if err := h.gripper.Open(ctx, nil); err != nil {
-					fmt.Printf("[%s] gripper open: %v\n", h.name, err)
-					return
-				}
-			}()
-			h.gripStopTimer = time.AfterFunc(1*time.Second, func() {
-				if err := h.gripper.Stop(ctx, nil); err != nil {
-					fmt.Printf("[%s] gripper stop: %v\n", h.name, err)
-				}
-			})
+// gripperLoop sends gripper DoCommand calls serially. After each round-trip
+// completes it immediately sends the latest desired position, so the gripper
+// is never more than one RTT behind the trigger.
+func (h *teleopHand) gripperLoop(ctx context.Context) {
+	lastSent := int64(-1)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-h.gripperNotify:
 		}
-		h.wasTrigger = cs.TriggerPressed
+		pos := h.gripperDesired.Load()
+		if pos == lastSent {
+			continue
+		}
+		lastSent = pos
+		cmd := map[string]interface{}{"set": int(pos)}
+		if _, err := h.gripper.DoCommand(ctx, cmd); err != nil {
+			fmt.Printf("[%s] gripper set %d: %v\n", h.name, int(pos), err)
+		}
+	}
+}
+
+func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
+	// --- Gripper (trigger → proportional position) ---
+	if h.gripper != nil {
+		// Map trigger 0.0–1.0 to gripper position 830 (open) – 10 (closed).
+		pos := 830 - int(cs.Trigger*820)
+		if pos < 10 {
+			pos = 10
+		}
+		h.gripperDesired.Store(int64(pos))
+		select {
+		case h.gripperNotify <- struct{}{}:
+		default:
+		}
 	}
 
 	// Arm requires connected pose.
