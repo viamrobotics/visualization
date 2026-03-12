@@ -562,6 +562,7 @@ func newTeleopHand(name, armName, gripperName string, scale float64, rotEnabled 
 		gripperName:     gripperName,
 		scale:           scale,
 		rotEnabled:      rotEnabled,
+		absoluteRot:     true,
 		armFrameMat:     mgl64.Ident4(),
 		ctrlToArmOffset: mgl64.Ident4(),
 		gripperNotify:   make(chan struct{}, 1),
