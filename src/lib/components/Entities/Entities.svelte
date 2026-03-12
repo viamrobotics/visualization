@@ -6,9 +6,9 @@
 	import Line from './Line.svelte'
 	import Points from './Points.svelte'
 	import Arrows from './Arrows/ArrowGroups.svelte'
-
 	import { traits, useQuery } from '$lib/ecs'
 	import { Not, Or } from 'koota'
+	import Geometry from './Geometry.svelte'
 
 	/**
 	 * Frames from a live machine are bucketed into their own query
@@ -62,9 +62,9 @@
 {/each}
 
 {#each resourceGeometriesEntities.current as entity (entity)}
-	<Frame {entity}>
+	<Geometry {entity}>
 		<Label text={entity.get(traits.Name)} />
-	</Frame>
+	</Geometry>
 {/each}
 
 {#each worldStateEntities.current as entity (entity)}
