@@ -17,7 +17,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
 	import { useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { spawnSnapshotEntities, destroyEntities, applySceneMetadata } from '$lib/snapshot'
+	import { spawnSnapshotEntities, applySceneMetadata } from '$lib/snapshot'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import type { Entity } from 'koota'
 	import { untrack } from 'svelte'
@@ -67,6 +67,10 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	})
 
 	onDestroy(() => {
-		destroyEntities(world, entities)
+		for (const entity of entities) {
+			if (world.has(entity)) {
+				entity.destroy()
+			}
+		}
 	})
 </script>

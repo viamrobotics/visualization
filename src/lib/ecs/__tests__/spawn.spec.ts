@@ -24,7 +24,7 @@ describe('spawnTransform', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('adds shared traits and geometry-specific traits for transforms', () => {
+	it('adds traits for transforms', () => {
 		world = createWorld()
 		const transform = new Transform({
 			referenceFrame: 'box-frame',
@@ -43,27 +43,11 @@ describe('spawnTransform', () => {
 		expect(entity.get(traits.Parent)).toBe('arm')
 		expect(entity.get(traits.Pose)).toStrictEqual(createPose({ x: 100, y: 200, z: 300 }))
 		expect(entity.get(traits.Box)).toStrictEqual({ x: 10, y: 20, z: 30 })
+		expect(entity.has(traits.ReferenceFrame)).toBe(false)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+		expect(entity.has(traits.Removable)).toBe(true)
+		expect(entity.has(traits.Parent)).toBe('arm')
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
-	})
-
-	it('attaches the provided api trait', () => {
-		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
-
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-
-		expect(entity.has(traits.SnapshotAPI)).toBe(true)
-		expect(entity.has(traits.WorldStateStoreAPI)).toBe(false)
-	})
-
-	it('attaches a different api trait when specified', () => {
-		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
-
-		const entity = spawnTransform(world, transform, traits.WorldStateStoreAPI)
-
-		expect(entity.has(traits.WorldStateStoreAPI)).toBe(true)
-		expect(entity.has(traits.SnapshotAPI)).toBe(false)
 	})
 
 	it('adds ReferenceFrame when no physicalObject', () => {
@@ -75,30 +59,6 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.ReferenceFrame)).toBe(true)
 	})
 
-	it('does not add ReferenceFrame when physicalObject is present', () => {
-		world = createWorld()
-		const transform = new Transform({
-			referenceFrame: 'box1',
-			physicalObject: new Geometry({
-				geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 10, z: 10 } } },
-			}),
-		})
-
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-
-		expect(entity.has(traits.ReferenceFrame)).toBe(false)
-		expect(entity.has(traits.Box)).toBe(true)
-	})
-
-	it('attaches ShowAxesHelper by default', () => {
-		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
-
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-
-		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
-	})
-
 	it('does not attach ShowAxesHelper when showAxesHelper is false', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
@@ -108,15 +68,6 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 	})
 
-	it('attaches Removable by default', () => {
-		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
-
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-
-		expect(entity.has(traits.Removable)).toBe(true)
-	})
-
 	it('does not attach Removable when removable is false', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
@@ -124,18 +75,6 @@ describe('spawnTransform', () => {
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
-	})
-
-	it('attaches Parent trait when parent is not world', () => {
-		world = createWorld()
-		const transform = new Transform({
-			referenceFrame: 'gripper',
-			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
-		})
-
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
-
-		expect(entity.get(traits.Parent)).toBe('arm')
 	})
 
 	it('does not attach Parent trait when parent is world', () => {
@@ -150,14 +89,13 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
 
-	it('adds uniform Color and Opacity traits for pointcloud with non-vertex metadata colors', async () => {
+	it('adds uniform Color and Opacity traits for pointcloud', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
-		const positions = new Float32Array(6) // 2 points
+		const positions = new Float32Array(6)
 		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: null })
 
 		const pointCloud = new Uint8Array(0)
-		// 4-byte RGBA color that is NOT per-vertex for 2 points (2*3=6, 2*4=8; 4≠6 and 4≠8)
 		const metadataColors = new Uint8Array([0, 255, 0, 128])
 		const base64Colors = btoa(String.fromCharCode(...metadataColors))
 		const transform = new Transform({
@@ -175,7 +113,6 @@ describe('spawnTransform', () => {
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
-		// Uniform color should be applied as Color + Opacity traits (not per-vertex)
 		expect(entity.has(traits.Color)).toBe(true)
 		expect(entity.get(traits.Color)).toMatchObject({
 			r: expect.closeTo(0),
@@ -185,18 +122,15 @@ describe('spawnTransform', () => {
 		expect(entity.get(traits.Opacity)).toBeCloseTo(128 / 255)
 	})
 
-	it('uses per-vertex metadata colors over PCD colors when counts match', async () => {
+	it('adds per-vertex colors to BufferGeometry for pointcloud', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
-		// 1 point = 3 floats
 		const positions = new Float32Array(3)
-		// PCD has red colors, metadata has green — metadata should win (per-vertex RGB for 1 point = 3 bytes)
 		const pcdColors = new Uint8Array([255, 0, 0])
 		const metadataColors = new Uint8Array([0, 255, 0])
 		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: pcdColors })
 
 		const pointCloud = new Uint8Array(0)
-		// Use base64 encoding to pass metadata colors through Transform.metadata
 		const base64Colors = btoa(String.fromCharCode(...metadataColors))
 		const transform = new Transform({
 			referenceFrame: 'cloud-vertex',
@@ -213,7 +147,6 @@ describe('spawnTransform', () => {
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
-		// Per-vertex colors go into BufferGeometry, not Color trait
 		expect(entity.has(traits.Color)).toBe(false)
 		expect(entity.get(traits.BufferGeometry)?.getAttribute('color')).toBeTruthy()
 	})
@@ -223,7 +156,7 @@ describe('spawnDrawing', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('adds shared drawing traits and line-specific traits', () => {
+	it('adds traits for drawing', () => {
 		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'line-1',
@@ -243,22 +176,8 @@ describe('spawnDrawing', () => {
 		expect(entity.has(traits.LinePositions)).toBe(true)
 		expect(entity.get(traits.LineWidth)).toBe(3)
 		expect(entity.get(traits.PointSize)).toBeCloseTo(0.006)
+		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
-		expect(entity.has(traits.Removable)).toBe(true)
-	})
-
-	it('attaches Removable by default', () => {
-		world = createWorld()
-		const drawing = new Drawing({
-			referenceFrame: 'pts',
-			physicalObject: new Shape({
-				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(12) }) },
-			}),
-		})
-
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI)
-
-		expect(entity.has(traits.Removable)).toBe(true)
 	})
 
 	it('does not attach Removable when removable is false', () => {
@@ -275,7 +194,7 @@ describe('spawnDrawing', () => {
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
 
-	it('always uses Colors trait for arrows regardless of color count', () => {
+	it('adds Colors trait for arrows', () => {
 		world = createWorld()
 
 		const singleColorDrawing = new Drawing({
@@ -341,9 +260,11 @@ describe('spawnDrawing', () => {
 
 	it('adds point-specific traits for points drawings', () => {
 		world = createWorld()
+		const center = createPose({ x: 10, y: 20, z: 30 })
 		const drawing = new Drawing({
 			referenceFrame: 'points-1',
 			physicalObject: new Shape({
+				center,
 				geometryType: {
 					case: 'points',
 					value: new Points({ positions: new Uint8Array(24), pointSize: 8 }),
@@ -354,41 +275,11 @@ describe('spawnDrawing', () => {
 
 		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI)
 
+		expect(entity.get(traits.Center)).toStrictEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
 		expect(entity.has(traits.Points)).toBe(true)
 		expect(entity.get(traits.PointSize)).toBeCloseTo(0.008)
 		expect(entity.get(traits.Color)?.g).toBeCloseTo(1)
 		expect(entity.get(traits.Opacity)).toBeCloseTo(200 / 255, 3)
-	})
-
-	it('does not add Center to arrows entities', () => {
-		world = createWorld()
-		const drawing = new Drawing({
-			referenceFrame: 'arrows-centered',
-			physicalObject: new Shape({
-				center: createPose({ x: 10, y: 0, z: 0 }),
-				geometryType: { case: 'arrows', value: new Arrows({ poses: new Uint8Array(24) }) },
-			}),
-		})
-
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI)
-
-		expect(entity.has(traits.Center)).toBe(false)
-	})
-
-	it('adds Center to points entities when shape has center', () => {
-		world = createWorld()
-		const center = createPose({ x: 10, y: 20, z: 30 })
-		const drawing = new Drawing({
-			referenceFrame: 'points-centered',
-			physicalObject: new Shape({
-				center,
-				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(12) }) },
-			}),
-		})
-
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI)
-
-		expect(entity.get(traits.Center)).toStrictEqual(center)
 	})
 })

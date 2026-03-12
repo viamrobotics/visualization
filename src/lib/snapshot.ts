@@ -58,8 +58,7 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
  * depending on the geometry type (arrows, points, line, nurbs, model, or
  * simple shapes like box/sphere/capsule).
  *
- * @returns The spawned entities — pass them to {@link destroyEntities} to
- *          clean up before loading a new snapshot.
+ * @returns The spawned entities
  */
 export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
 	const entities: Entity[] = []
@@ -81,18 +80,6 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	}
 
 	return entities
-}
-
-/**
- * Destroys a list of entities that are still alive in the given world.
- * Silently skips entities that have already been removed.
- */
-export const destroyEntities = (world: World, entities: Entity[]): void => {
-	for (const entity of entities) {
-		if (world.has(entity)) {
-			entity.destroy()
-		}
-	}
 }
 
 const getRenderArmModels = (
