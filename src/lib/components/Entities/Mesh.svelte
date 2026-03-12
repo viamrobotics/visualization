@@ -33,13 +33,6 @@
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 
-	const geometryType = $derived.by(() => {
-		if (box.current) return 'box'
-		if (capsule.current) return 'capsule'
-		if (sphere.current) return 'sphere'
-		if (bufferGeometry.current) return 'buffer'
-	})
-
 	const color = $derived.by(() => {
 		if (overrideColor) {
 			return overrideColor
@@ -104,7 +97,7 @@
 	{@const currentOpacity = opacity.current ?? 0.7}
 	<T.MeshToonMaterial
 		{color}
-		side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+		side={bufferGeometry.current ? DoubleSide : FrontSide}
 		transparent={currentOpacity < 1}
 		depthWrite={currentOpacity === 1}
 		opacity={currentOpacity}

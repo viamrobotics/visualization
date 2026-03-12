@@ -15,6 +15,7 @@ import { type ConfigurableTrait, type Entity } from 'koota'
 import { createPose } from '$lib/transform'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
+import { updateGeometry } from '$lib/ecs/traits'
 
 const key = Symbol('geometries-context')
 
@@ -87,6 +88,8 @@ export const provideGeometries = (partID: () => string) => {
 		)
 	)
 
+	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
+
 	$effect(() => {
 		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
 			return logs.add(`Fetching geometries every ${interval}ms...`)
@@ -105,13 +108,11 @@ export const provideGeometries = (partID: () => string) => {
 		}
 	})
 
-	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
-
-	const entities = new Map<string, Entity | undefined>()
+	const entities = new Map<string, Entity>()
 	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
-		const activeQueryNames = new Set<string>()
+		const activeOwnerKeys = new Set<string>()
 		const currentPartID = partID()
 
 		for (const [name, query] of queries) {
@@ -120,7 +121,7 @@ export const provideGeometries = (partID: () => string) => {
 			}
 
 			const ownerKey = `${currentPartID}:${name}`
-			activeQueryNames.add(name)
+			activeOwnerKeys.add(ownerKey)
 
 			$effect(() => {
 				const nextKeys = new Set<string>()
@@ -142,6 +143,7 @@ export const provideGeometries = (partID: () => string) => {
 
 						if (existing) {
 							existing.set(traits.Center, center)
+							updateGeometry(existing, geometry)
 							continue
 						}
 
@@ -174,20 +176,21 @@ export const provideGeometries = (partID: () => string) => {
 					}
 				}
 
-				queryEntityKeys.set(name, nextKeys)
-
-				return () => {
-					// destroy all entities owned by this query when effect is disposed
-					const ownedKeys = queryEntityKeys.get(ownerKey)
-					if (ownedKeys) {
-						for (const key of ownedKeys) {
-							entities.get(key)?.destroy()
-							entities.delete(key)
-						}
-						queryEntityKeys.delete(ownerKey)
-					}
-				}
+				queryEntityKeys.set(ownerKey, nextKeys)
 			})
+		}
+
+		// Clean up owners whose queries disappeared entirely
+		for (const [ownerKey, keys] of queryEntityKeys) {
+			if (!activeOwnerKeys.has(ownerKey)) {
+				for (const key of keys) {
+					const entity = entities.get(key)
+					if (entity && world.has(entity)) entity.destroy()
+					entities.delete(key)
+				}
+
+				queryEntityKeys.delete(ownerKey)
+			}
 		}
 	})
 

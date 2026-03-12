@@ -14,12 +14,6 @@ import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 
-const typeSafeObjectFromEntries = <const T extends ReadonlyArray<readonly [PropertyKey, unknown]>>(
-	entries: T
-): { [K in T[number] as K[0]]: K[1] } => {
-	return Object.fromEntries(entries) as { [K in T[number] as K[0]]: K[1] }
-}
-
 const key = Symbol('pointcloud-context')
 
 interface Context {
@@ -116,20 +110,26 @@ export const providePointclouds = (partID: () => string) => {
 	const versions = new Map<string, number>()
 
 	$effect(() => {
+		const currentPartID = partID()
+		const activeOwnerKeys = new Set<string>()
+
 		for (const [name, query] of queries) {
+			const ownerKey = `${currentPartID}:${name}`
+			activeOwnerKeys.add(ownerKey)
+
 			$effect(() => {
 				const { data } = query
 
-				const version = (versions.get(name) ?? 0) + 1
-				versions.set(name, version)
+				const version = (versions.get(ownerKey) ?? 0) + 1
+				versions.set(ownerKey, version)
 
 				let disposed = false
 
 				const destroyEntity = () => {
-					const entity = entities.get(name)
+					const entity = entities.get(ownerKey)
 					if (entity) {
 						if (world.has(entity)) entity.destroy()
-						entities.delete(name)
+						entities.delete(ownerKey)
 					}
 				}
 
@@ -137,6 +137,9 @@ export const providePointclouds = (partID: () => string) => {
 					destroyEntity()
 					return () => {
 						disposed = true
+						if (versions.get(ownerKey) === version) {
+							versions.set(ownerKey, version + 1)
+						}
 					}
 				}
 
@@ -146,11 +149,11 @@ export const providePointclouds = (partID: () => string) => {
 							return
 						}
 
-						if (versions.get(name) !== version) {
+						if (versions.get(ownerKey) !== version) {
 							return
 						}
 
-						const existing = entities.get(name)
+						const existing = entities.get(ownerKey)
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
@@ -170,14 +173,14 @@ export const providePointclouds = (partID: () => string) => {
 							traits.Points
 						)
 
-						entities.set(name, entity)
+						entities.set(ownerKey, entity)
 					})
 					.catch((error) => {
 						if (disposed) {
 							return
 						}
 
-						if (versions.get(name) !== version) {
+						if (versions.get(ownerKey) !== version) {
 							return
 						}
 
@@ -187,20 +190,20 @@ export const providePointclouds = (partID: () => string) => {
 				return () => {
 					disposed = true
 
-					// invalidate older async work for this name
-					if (versions.get(name) === version) {
-						versions.set(name, version + 1)
+					if (versions.get(ownerKey) === version) {
+						versions.set(ownerKey, version + 1)
 					}
 				}
 			})
 		}
 
-		return () => {
-			for (const [, entity] of entities) {
+		// clean up owners that disappeared entirely
+		for (const [ownerKey, entity] of entities) {
+			if (!activeOwnerKeys.has(ownerKey)) {
 				if (world.has(entity)) entity.destroy()
+				entities.delete(ownerKey)
+				versions.delete(ownerKey)
 			}
-			entities.clear()
-			versions.clear()
 		}
 	})
 
