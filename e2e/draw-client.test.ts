@@ -68,6 +68,46 @@ test('draw frame system', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw hierarchy', async ({ browser }) => {
+	const testPrefix = 'DRAW_HIERARCHY'
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestDrawHierarchy$/DrawHierarchy github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('zulu', { exact: true })).toBeVisible()
+	await expect(page.getByText('bravo', { exact: true })).toBeVisible()
+
+	await page
+		.locator('[data-part="branch-control"]')
+		.filter({ hasText: 'zulu' })
+		.locator('[data-part="branch-indicator"]')
+		.click()
+	await expect(page.getByText('tango', { exact: true })).toBeVisible()
+	await expect(page.getByText('delta', { exact: true })).toBeVisible()
+
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_ZULU_EXPANDED`))
+
+	await page
+		.locator('[data-part="branch-control"]')
+		.filter({ hasText: 'tango' })
+		.locator('[data-part="branch-indicator"]')
+		.click()
+	await expect(page.getByText('sierra', { exact: true })).toBeVisible()
+	await expect(page.getByText('foxtrot', { exact: true })).toBeVisible()
+
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_TANGO_EXPANDED`))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
 test('draw frames', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAMES'
 	const page = await createPage(browser)
