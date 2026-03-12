@@ -112,7 +112,7 @@ export const provideGeometries = (partID: () => string) => {
 	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
-		const activeOwnerKeys = new Set<string>()
+		const activeQueryKeys = new Set<string>()
 		const currentPartID = partID()
 
 		for (const [name, query] of queries) {
@@ -120,8 +120,8 @@ export const provideGeometries = (partID: () => string) => {
 				continue
 			}
 
-			const ownerKey = `${currentPartID}:${name}`
-			activeOwnerKeys.add(ownerKey)
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
 
 			$effect(() => {
 				const nextKeys = new Set<string>()
@@ -166,7 +166,7 @@ export const provideGeometries = (partID: () => string) => {
 					}
 				}
 
-				const prevKeys = queryEntityKeys.get(ownerKey) ?? new Set<string>()
+				const prevKeys = queryEntityKeys.get(queryKey) ?? new Set<string>()
 
 				// Remove entities no longer present for this specific query
 				for (const key of prevKeys) {
@@ -176,20 +176,20 @@ export const provideGeometries = (partID: () => string) => {
 					}
 				}
 
-				queryEntityKeys.set(ownerKey, nextKeys)
+				queryEntityKeys.set(queryKey, nextKeys)
 			})
 		}
 
 		// Clean up owners whose queries disappeared entirely
-		for (const [ownerKey, keys] of queryEntityKeys) {
-			if (!activeOwnerKeys.has(ownerKey)) {
+		for (const [queryKey, keys] of queryEntityKeys) {
+			if (!activeQueryKeys.has(queryKey)) {
 				for (const key of keys) {
 					const entity = entities.get(key)
 					if (entity && world.has(entity)) entity.destroy()
 					entities.delete(key)
 				}
 
-				queryEntityKeys.delete(ownerKey)
+				queryEntityKeys.delete(queryKey)
 			}
 		}
 	})

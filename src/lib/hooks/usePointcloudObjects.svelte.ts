@@ -14,6 +14,7 @@ import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { useEnvironment } from './useEnvironment.svelte'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { createPose } from '$lib/transform'
+import { updateGeometryTrait } from '$lib/ecs/traits'
 
 const key = Symbol('pointcloud-object-context')
 
@@ -90,8 +91,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
 
 	const options = $derived({
-		enabled: interval !== -1,
-		refetchInterval: (interval === 0 ? false : interval) as number | false,
+		enabled: interval !== RefetchRates.OFF,
+		refetchInterval: (interval === RefetchRates.MANUAL ? false : interval) as number | false,
 	})
 
 	const queries = $derived(
@@ -119,30 +120,36 @@ export const providePointcloudObjects = (partID: () => string) => {
 	})
 
 	const entities = new Map<string, Entity>()
+	const versions = new Map<string, number>()
 	const queryEntityKeys = new Map<string, Set<string>>()
-	const queryVersions = new Map<string, number>()
+
+	const destroyEntity = (key: string) => {
+		const entity = entities.get(key)
+		if (entity) {
+			if (world.has(entity)) entity.destroy()
+			entities.delete(key)
+		}
+	}
 
 	$effect(() => {
+		const currentPartID = partID()
+		const activeQueryKeys = new Set<string>()
+
 		for (const [name, query] of queries) {
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
+
 			$effect(() => {
 				const { data } = query
 
-				const version = (queryVersions.get(name) ?? 0) + 1
-				queryVersions.set(name, version)
+				const version = (versions.get(queryKey) ?? 0) + 1
+				versions.set(queryKey, version)
 
 				let disposed = false
 				const nextKeys = new Set<string>()
 
-				const destroyEntity = (key: string) => {
-					const entity = entities.get(key)
-					if (entity) {
-						if (world.has(entity)) entity.destroy()
-						entities.delete(key)
-					}
-				}
-
 				const reconcileRemovedKeys = () => {
-					const prevKeys = queryEntityKeys.get(name) ?? new Set<string>()
+					const prevKeys = queryEntityKeys.get(queryKey) ?? new Set<string>()
 
 					for (const key of prevKeys) {
 						if (!nextKeys.has(key)) {
@@ -150,7 +157,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 						}
 					}
 
-					queryEntityKeys.set(name, new Set(nextKeys))
+					queryEntityKeys.set(queryKey, new Set(nextKeys))
 				}
 
 				if (!data || data.length === 0) {
@@ -158,8 +165,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 					return () => {
 						disposed = true
-						if (queryVersions.get(name) === version) {
-							queryVersions.set(name, version + 1)
+						if (versions.get(queryKey) === version) {
+							versions.set(queryKey, version + 1)
 						}
 					}
 				}
@@ -173,11 +180,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 						parsePcdInWorker(pointCloud)
 							.then(({ positions, colors }) => {
-								if (disposed) {
-									return
-								}
-
-								if (queryVersions.get(name) !== version) {
+								if (disposed || versions.get(queryKey) !== version) {
 									return
 								}
 
@@ -210,11 +213,11 @@ export const providePointcloudObjects = (partID: () => string) => {
 									return
 								}
 
-								if (queryVersions.get(name) !== version) {
+								if (versions.get(queryKey) !== version) {
 									return
 								}
 
-								logs.add(error.reason, 'error')
+								logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error')
 							})
 					}
 
@@ -231,6 +234,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 							if (existing) {
 								existing.set(traits.Center, center)
+								updateGeometryTrait(existing, geometry)
 							} else {
 								const entityTraits: ConfigurableTrait[] = [
 									traits.Name(geometryLabel),
@@ -262,20 +266,22 @@ export const providePointcloudObjects = (partID: () => string) => {
 				return () => {
 					disposed = true
 
-					if (queryVersions.get(name) === version) {
-						queryVersions.set(name, version + 1)
+					if (versions.get(queryKey) === version) {
+						versions.set(queryKey, version + 1)
 					}
 				}
 			})
 		}
 
-		return () => {
-			for (const [, entity] of entities) {
-				if (world.has(entity)) entity.destroy()
+		// cleanup queries that disappeared entirely
+		for (const [queryKey, keys] of queryEntityKeys) {
+			if (!activeQueryKeys.has(queryKey)) {
+				for (const key of keys) {
+					destroyEntity(key)
+				}
+				queryEntityKeys.delete(queryKey)
+				versions.delete(queryKey)
 			}
-			entities.clear()
-			queryEntityKeys.clear()
-			queryVersions.clear()
 		}
 	})
 

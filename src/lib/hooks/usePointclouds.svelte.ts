@@ -111,25 +111,25 @@ export const providePointclouds = (partID: () => string) => {
 
 	$effect(() => {
 		const currentPartID = partID()
-		const activeOwnerKeys = new Set<string>()
+		const activeQueryKeys = new Set<string>()
 
 		for (const [name, query] of queries) {
-			const ownerKey = `${currentPartID}:${name}`
-			activeOwnerKeys.add(ownerKey)
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
 
 			$effect(() => {
 				const { data } = query
 
-				const version = (versions.get(ownerKey) ?? 0) + 1
-				versions.set(ownerKey, version)
+				const version = (versions.get(queryKey) ?? 0) + 1
+				versions.set(queryKey, version)
 
 				let disposed = false
 
 				const destroyEntity = () => {
-					const entity = entities.get(ownerKey)
+					const entity = entities.get(queryKey)
 					if (entity) {
 						if (world.has(entity)) entity.destroy()
-						entities.delete(ownerKey)
+						entities.delete(queryKey)
 					}
 				}
 
@@ -137,23 +137,19 @@ export const providePointclouds = (partID: () => string) => {
 					destroyEntity()
 					return () => {
 						disposed = true
-						if (versions.get(ownerKey) === version) {
-							versions.set(ownerKey, version + 1)
+						if (versions.get(queryKey) === version) {
+							versions.set(queryKey, version + 1)
 						}
 					}
 				}
 
 				parsePcdInWorker(data)
 					.then(({ positions, colors }) => {
-						if (disposed) {
+						if (disposed || versions.get(queryKey) !== version) {
 							return
 						}
 
-						if (versions.get(ownerKey) !== version) {
-							return
-						}
-
-						const existing = entities.get(ownerKey)
+						const existing = entities.get(queryKey)
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
@@ -173,36 +169,34 @@ export const providePointclouds = (partID: () => string) => {
 							traits.Points
 						)
 
-						entities.set(ownerKey, entity)
+						entities.set(queryKey, entity)
 					})
 					.catch((error) => {
-						if (disposed) {
+						if (disposed || versions.get(queryKey) !== version) {
 							return
 						}
 
-						if (versions.get(ownerKey) !== version) {
-							return
-						}
-
-						logs.add(error.reason, 'error')
+						logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error')
 					})
 
 				return () => {
 					disposed = true
 
-					if (versions.get(ownerKey) === version) {
-						versions.set(ownerKey, version + 1)
+					if (versions.get(queryKey) === version) {
+						versions.set(queryKey, version + 1)
 					}
 				}
 			})
 		}
 
-		// clean up owners that disappeared entirely
-		for (const [ownerKey, entity] of entities) {
-			if (!activeOwnerKeys.has(ownerKey)) {
-				if (world.has(entity)) entity.destroy()
-				entities.delete(ownerKey)
-				versions.delete(ownerKey)
+		// clean up queries that disappeared entirely
+		for (const [queryKey, entity] of entities) {
+			if (!activeQueryKeys.has(queryKey)) {
+				if (world.has(entity)) {
+					entity.destroy()
+				}
+				entities.delete(queryKey)
+				versions.delete(queryKey)
 			}
 		}
 	})
