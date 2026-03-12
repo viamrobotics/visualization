@@ -159,7 +159,12 @@ export const Geometry = (geometry: ViamGeometry) => {
 	return ReferenceFrame
 }
 
-export const updateGeometryTrait = (entity: Entity, geometry: ViamGeometry) => {
+export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {
+	if (!geometry) {
+		entity.remove(Box, Capsule, Sphere, BufferGeometry)
+		return
+	}
+
 	if (geometry.geometryType.case === 'box') {
 		if (entity.has(Box)) {
 			entity.set(Box, createBox(geometry.geometryType.value))

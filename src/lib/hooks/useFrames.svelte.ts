@@ -14,6 +14,7 @@ import { createPose } from '$lib/transform'
 import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import { useConfigFrames } from './useConfigFrames.svelte'
+import { updateGeometryTrait } from '$lib/ecs/traits'
 
 interface FramesContext {
 	current: Transform[]
@@ -58,6 +59,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+			console.log('here')
 			const mergedFrames = {
 				...frames,
 				...configFrames.current,
@@ -93,17 +95,20 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect.pre(() => {
-		if (current.length === 0) return
-
 		const currentResourcesByName = resourceByName.current
+		const currentPartID = partID()
 
 		// We only want to update whenever "current" or "resourceByName.current" changes
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		current.length
+
 		untrack(() => {
 			const active: Record<string, boolean> = {}
 
 			for (const frame of current) {
 				const name = frame.referenceFrame
-				active[name] = true
+				const entityKey = `${currentPartID}:${name}`
+				active[entityKey] = true
 
 				const parent = frame.poseInObserverFrame?.referenceFrame
 				const pose = createPose(frame.poseInObserverFrame?.pose)
@@ -113,7 +118,7 @@ export const provideFrames = (partID: () => string) => {
 				const resourceName = currentResourcesByName[frame.referenceFrame]
 				const color = resourceNameToColor(resourceName)
 
-				const existing = entities.get(name)
+				const existing = entities.get(entityKey)
 
 				if (existing) {
 					if (!parent || parent === 'world') {
@@ -132,11 +137,7 @@ export const provideFrames = (partID: () => string) => {
 						existing.set(traits.Center, center)
 					}
 
-					existing.remove(traits.Box, traits.Sphere, traits.BufferGeometry, traits.Capsule)
-					if (frame.physicalObject) {
-						const geometry = traits.Geometry(frame.physicalObject)
-						existing.add(geometry)
-					}
+					updateGeometryTrait(existing, frame.physicalObject)
 
 					existing.set(traits.EditedPose, pose)
 
@@ -169,14 +170,14 @@ export const provideFrames = (partID: () => string) => {
 
 				const entity = world.spawn(...entityTraits)
 
-				entities.set(name, entity)
+				entities.set(entityKey, entity)
 			}
 
 			// Clean up non-active entities
-			for (const [name, entity] of entities) {
-				if (!active[name]) {
+			for (const [entityKey, entity] of entities) {
+				if (!active[entityKey]) {
 					entity?.destroy()
-					entities.delete(name)
+					entities.delete(entityKey)
 					continue
 				}
 			}
