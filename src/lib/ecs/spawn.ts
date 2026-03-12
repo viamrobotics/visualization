@@ -115,9 +115,9 @@ export const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses)
 			entity.add(traits.Positions(poses))
-			entity.add(traits.Arrows({ headAtPose: true }))
 			entity.add(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
 			if (colors) entity.add(traits.Colors(colors))
+			entity.add(traits.Arrows({ headAtPose: true }))
 			break
 		}
 

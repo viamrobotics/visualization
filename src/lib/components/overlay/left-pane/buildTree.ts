@@ -7,6 +7,12 @@ export interface TreeNode {
 	children?: TreeNode[]
 }
 
+function sortNodes(nodes: TreeNode[]) {
+	nodes.sort(
+		(a, b) => a.entity.get(traits.Name)?.localeCompare(b.entity.get(traits.Name) ?? '') ?? 0
+	)
+}
+
 /**
  * Creates a tree representing parent child / relationships from a set of frames.
  */
@@ -43,6 +49,19 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>) => {
 			}
 		}
 	}
+
+	for (const node of rootNodes) {
+		if (!node.children) continue
+		sortNodes(node.children)
+	}
+
+	for (const node of childNodes) {
+		if (!node.children) continue
+		sortNodes(node.children)
+	}
+
+	sortNodes(rootNodes)
+	sortNodes(childNodes)
 
 	return { rootNodes, nodeMap }
 }
