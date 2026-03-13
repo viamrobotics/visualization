@@ -120,7 +120,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 	})
 
 	const entities = new Map<string, Entity>()
-	const versions = new Map<string, number>()
 	const queryEntityKeys = new Map<string, Set<string>>()
 
 	const destroyEntity = (key: string) => {
@@ -142,9 +141,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 			$effect(() => {
 				const { data } = query
 
-				const version = (versions.get(queryKey) ?? 0) + 1
-				versions.set(queryKey, version)
-
 				let disposed = false
 				const nextKeys = new Set<string>()
 
@@ -165,9 +161,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 					return () => {
 						disposed = true
-						if (versions.get(queryKey) === version) {
-							versions.set(queryKey, version + 1)
-						}
 					}
 				}
 
@@ -180,7 +173,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 						parsePcdInWorker(pointCloud)
 							.then(({ positions, colors }) => {
-								if (disposed || versions.get(queryKey) !== version) {
+								if (disposed) {
 									return
 								}
 
@@ -210,10 +203,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 							})
 							.catch((error) => {
 								if (disposed) {
-									return
-								}
-
-								if (versions.get(queryKey) !== version) {
 									return
 								}
 
@@ -265,10 +254,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 				return () => {
 					disposed = true
-
-					if (versions.get(queryKey) === version) {
-						versions.set(queryKey, version + 1)
-					}
 				}
 			})
 		}
@@ -280,7 +265,6 @@ export const providePointcloudObjects = (partID: () => string) => {
 					destroyEntity(key)
 				}
 				queryEntityKeys.delete(queryKey)
-				versions.delete(queryKey)
 			}
 		}
 	})
