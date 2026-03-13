@@ -227,7 +227,9 @@ import (
 	"go.viam.com/rdk/components/arm"
 	"go.viam.com/rdk/components/gripper"
 	"go.viam.com/rdk/logging"
+	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/robot/client"
+	"go.viam.com/rdk/services/motion"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/utils/rpc"
 )
@@ -355,8 +357,8 @@ var nullController = ControllerState{Mat: mgl64.Ident4()}
 // OpenVR layout: m[row*4+col], mgl64 layout: column-major [col*4+row].
 func mat34ToMat4(m [12]float32) mgl64.Mat4 {
 	return mgl64.Mat4{
-		float64(m[0]), float64(m[4]), float64(m[8]), 0,  // column 0
-		float64(m[1]), float64(m[5]), float64(m[9]), 0,  // column 1
+		float64(m[0]), float64(m[4]), float64(m[8]), 0, // column 0
+		float64(m[1]), float64(m[5]), float64(m[9]), 0, // column 1
 		float64(m[2]), float64(m[6]), float64(m[10]), 0, // column 2
 		float64(m[3]), float64(m[7]), float64(m[11]), 1, // column 3 (translation + w=1)
 	}
@@ -514,12 +516,13 @@ type pose struct {
 }
 
 type teleopHand struct {
-	name         string
-	armName      string
-	gripperName  string
-	arm          arm.Arm
-	gripper      gripper.Gripper // nil if no gripper
-	deviceIdx    *uint32
+	name        string
+	armName     string
+	gripperName string
+	arm         arm.Arm
+	gripper     gripper.Gripper // nil if no gripper
+	motionSvc   motion.Service
+	deviceIdx   *uint32
 	scale       float64
 	rotEnabled  bool
 	absoluteRot bool
@@ -535,10 +538,13 @@ type teleopHand struct {
 
 	// control state
 	isControlling bool
-	isSending     bool
+	teleopActive  bool // true between teleop_start and teleop_stop
 	errorTimeout  time.Time
 	lastCmdTime   time.Time
 	poseStack     []pose
+
+	// session logging
+	logFile *os.File
 
 	// reference capture (on grip press)
 	ctrlRefPos      [3]float64
@@ -550,7 +556,7 @@ type teleopHand struct {
 }
 
 const (
-	cmdInterval      = 11 * time.Millisecond
+	cmdInterval      = 1 * time.Millisecond // effectively no throttle — poll loop Hz is the rate limiter
 	errorCooldown    = 1 * time.Second
 	errorHapticIntvl = 200 * time.Millisecond
 )
@@ -601,10 +607,54 @@ func (h *teleopHand) connect(ctx context.Context, robot *client.RobotClient) err
 			}
 		}
 	}
+	ms, err := motion.FromProvider(robot, "builtin")
+	if err != nil {
+		fmt.Printf("[%s] motion service not available: %v\n", h.name, err)
+	} else {
+		h.motionSvc = ms
+	}
 	if h.gripper != nil {
 		go h.gripperLoop(ctx)
 	}
+	if h.motionSvc != nil {
+		go h.teleopStatusLoop(ctx)
+	}
 	return nil
+}
+
+// teleopStatusLoop polls teleop_status at 1Hz while a teleop session is active.
+func (h *teleopHand) teleopStatusLoop(ctx context.Context) {
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+		if !h.teleopActive {
+			continue
+		}
+		resp, err := h.motionSvc.DoCommand(ctx, map[string]interface{}{
+			"teleop_status": true,
+		})
+		if err != nil {
+			fmt.Printf("[%s] teleop_status: %v\n", h.name, err)
+			continue
+		}
+		// Parse {"teleop_status": {"running": bool, "error": ...}}
+		if statusVal, ok := resp["teleop_status"]; ok {
+			if statusMap, ok := statusVal.(map[string]interface{}); ok {
+				if errVal, ok := statusMap["error"]; ok && errVal != nil {
+					if errStr, ok := errVal.(string); ok && errStr != "" {
+						fmt.Printf("[%s] teleop error: %s\n", h.name, errStr)
+						h.sendHaptic(0.8, 200)
+					}
+				}
+			}
+		}
+		fmt.Printf("[%s] teleop_status: %v\n", h.name, resp)
+	}
 }
 
 // gripperLoop sends gripper DoCommand calls serially. After each round-trip
@@ -656,14 +706,7 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 	} else if !cs.Grip && h.wasGrip && h.isControlling {
 		h.isControlling = false
 		h.sendHaptic(0.3, 80)
-		go func() {
-			if p, err := h.arm.EndPosition(ctx, nil); err == nil {
-				pt := p.Point()
-				ov := p.Orientation().OrientationVectorDegrees()
-				fmt.Printf("[%s] released at (%.1f, %.1f, %.1f) ov=(%.3f, %.3f, %.3f, θ=%.1f°)\n",
-					h.name, pt.X, pt.Y, pt.Z, ov.OX, ov.OY, ov.OZ, ov.Theta)
-			}
-		}()
+		go h.stopTeleop(ctx)
 	}
 	h.wasGrip = cs.Grip
 
@@ -675,19 +718,49 @@ func (h *teleopHand) tick(ctx context.Context, cs ControllerState) {
 
 	// --- Control frame ---
 	if h.isControlling {
-		if !h.isSending {
-			h.controlFrame(ctx, cs)
-		}
+		h.controlFrame(ctx, cs)
 	}
+}
+
+// teleopComponentName returns the component name string for motion service
+// teleop commands (gripper if available, otherwise arm).
+func (h *teleopHand) teleopComponentName() string {
+	if h.gripperName != "" {
+		return h.gripperName
+	}
+	return h.armName
 }
 
 func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 	go func() {
-		currentPose, err := h.arm.EndPosition(ctx, nil)
-		if err != nil {
-			fmt.Printf("[%s] startControl: EndPosition: %v\n", h.name, err)
-			return
+		// Get current pose of the gripper (or arm) in world frame via motion service.
+		componentName := h.gripperName
+		if componentName == "" {
+			componentName = h.armName
 		}
+		var currentPose spatialmath.Pose
+		if h.motionSvc != nil {
+			pif, err := h.motionSvc.GetPose(ctx, componentName, "world", nil, nil)
+			if err != nil {
+				fmt.Printf("[%s] startControl: GetPose: %v (falling back to arm.EndPosition)\n", h.name, err)
+				ep, err2 := h.arm.EndPosition(ctx, nil)
+				if err2 != nil {
+					fmt.Printf("[%s] startControl: EndPosition: %v\n", h.name, err2)
+					return
+				}
+				currentPose = ep
+			} else {
+				currentPose = pif.Pose()
+			}
+		} else {
+			ep, err := h.arm.EndPosition(ctx, nil)
+			if err != nil {
+				fmt.Printf("[%s] startControl: EndPosition: %v\n", h.name, err)
+				return
+			}
+			currentPose = ep
+		}
+
 		pt := currentPose.Point()
 		ori := currentPose.Orientation()
 		ovd := ori.OrientationVectorDegrees()
@@ -711,8 +784,6 @@ func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 		h.ctrlRefPos = cs.Pos
 
 		// Build calibrated rotation transform: steamVRTransform * yawM.
-		// This maps SteamVR axes to robot axes accounting for the user's
-		// facing direction.
 		calibMu.RLock()
 		yaw := calibYaw
 		calibMu.RUnlock()
@@ -728,6 +799,34 @@ func (h *teleopHand) startControl(ctx context.Context, cs ControllerState) {
 
 		// Offset = inverse(ctrlRefRotRobot) * robotRefMat
 		h.ctrlToArmOffset = h.ctrlRefRotRobot.Inv().Mul4(h.robotRefMat)
+
+		// Send teleop_start to the motion service.
+		if h.motionSvc != nil {
+			compName := h.teleopComponentName()
+			startReq := fmt.Sprintf(
+				`{"name":"builtin","component_name":"%s","destination":{"reference_frame":"world","pose":{"x":%f,"y":%f,"z":%f,"o_x":%f,"o_y":%f,"o_z":%f,"theta":%f}}}`,
+				compName, pt.X, pt.Y, pt.Z, ovd.OX, ovd.OY, ovd.OZ, ovd.Theta,
+			)
+			fmt.Printf("[%s] teleop_start payload: %s\n", h.name, startReq)
+			if _, err := h.motionSvc.DoCommand(ctx, map[string]interface{}{
+				"teleop_start": startReq,
+			}); err != nil {
+				fmt.Printf("[%s] teleop_start failed: %v\n", h.name, err)
+				h.sendHaptic(0.8, 200)
+				return
+			}
+			h.teleopActive = true
+			fmt.Printf("[%s] teleop_start sent for %s\n", h.name, compName)
+
+			// Open session log file.
+			logName := fmt.Sprintf("teleop_%s_%s.jsonl", h.name, time.Now().Format("20060102_150405"))
+			if f, err := os.Create(logName); err != nil {
+				fmt.Printf("[%s] failed to create log file %s: %v\n", h.name, logName, err)
+			} else {
+				h.logFile = f
+				fmt.Printf("[%s] logging poses to %s\n", h.name, logName)
+			}
+		}
 
 		h.errorTimeout = time.Time{}
 		h.isControlling = true
@@ -759,22 +858,17 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	var tox, toy, toz, thetaDeg float64
 	if h.rotEnabled {
 		if h.absoluteRot {
-			// Absolute: direct transform — calibTransform maps controller orientation
-			// into robot frame. gripCorrection rotates from handle-aligned to raycast-forward.
 			absRotRobot := h.calibTransform.Mul4(cs.Mat)
 			gripCorrection := mgl64.HomogRotate3DX(math.Pi / 2).Mul4(mgl64.HomogRotate3DZ(math.Pi / 2))
-			frameInv := h.armFrameMat.Inv()
-			corrected := frameInv.Mul4(absRotRobot).Mul4(gripCorrection)
+			corrected := absRotRobot.Mul4(gripCorrection)
 			tox, toy, toz, thetaDeg = mat4ToOVDeg(corrected)
 		} else {
-			// Relative: similarity transform T * M * T^-1, then apply offset.
 			calibInv := h.calibTransform.Inv()
 			curRotRobot := h.calibTransform.Mul4(cs.Mat).Mul4(calibInv)
 			targetRot := curRotRobot.Mul4(h.ctrlToArmOffset)
 			tox, toy, toz, thetaDeg = mat4ToOVDeg(targetRot)
 		}
 	} else {
-		// Keep arm at reference orientation
 		tox, toy, toz, thetaDeg = mat4ToOVDeg(h.robotRefMat)
 	}
 
@@ -783,21 +877,48 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 	}
 
 	h.lastCmdTime = now
-	h.isSending = true
 
-	go func() {
-		defer func() { h.isSending = false }()
-
-		p := spatialmath.NewPose(
-			r3.Vector{X: tx, Y: ty, Z: tz},
-			&spatialmath.OrientationVectorDegrees{OX: tox, OY: toy, OZ: toz, Theta: thetaDeg},
+	// teleop_move is non-blocking server-side — fire async so poll loop
+	// doesn't block on gRPC round-trip.
+	if h.motionSvc != nil && h.teleopActive {
+		moveReq := fmt.Sprintf(
+			`{"reference_frame":"world","pose":{"x":%f,"y":%f,"z":%f,"o_x":%f,"o_y":%f,"o_z":%f,"theta":%f}}`,
+			tx, ty, tz, tox, toy, toz, thetaDeg,
 		)
-		if err := h.arm.MoveToPosition(ctx, p, nil); err != nil {
-			fmt.Printf("[%s] MoveToPosition: %v\n", h.name, err)
-			h.errorTimeout = time.Now().Add(errorCooldown)
-			h.sendHaptic(0.8, 200)
+		// fmt.Printf("[%s] teleop_move: %s\n", h.name, moveReq)
+		if h.logFile != nil {
+			logEntry := fmt.Sprintf(`{"t":%d,"x":%f,"y":%f,"z":%f,"o_x":%f,"o_y":%f,"o_z":%f,"theta":%f}`+"\n",
+				now.UnixMilli(), tx, ty, tz, tox, toy, toz, thetaDeg)
+			h.logFile.WriteString(logEntry)
 		}
-	}()
+		go func() {
+			if _, err := h.motionSvc.DoCommand(ctx, map[string]interface{}{
+				"teleop_move": moveReq,
+			}); err != nil {
+				fmt.Printf("[%s] teleop_move err: %v\n", h.name, err)
+				h.errorTimeout = time.Now().Add(errorCooldown)
+				h.sendHaptic(0.8, 200)
+			}
+		}()
+	}
+}
+
+func (h *teleopHand) stopTeleop(ctx context.Context) {
+	if h.motionSvc != nil && h.teleopActive {
+		if _, err := h.motionSvc.DoCommand(ctx, map[string]interface{}{
+			"teleop_stop": true,
+		}); err != nil {
+			fmt.Printf("[%s] teleop_stop: %v\n", h.name, err)
+		} else {
+			fmt.Printf("[%s] teleop_stop sent\n", h.name)
+		}
+		h.teleopActive = false
+	}
+	if h.logFile != nil {
+		h.logFile.Close()
+		fmt.Printf("[%s] session log closed\n", h.name)
+		h.logFile = nil
+	}
 }
 
 func (h *teleopHand) returnToPose(ctx context.Context) {
@@ -808,12 +929,32 @@ func (h *teleopHand) returnToPose(ctx context.Context) {
 	h.poseStack = h.poseStack[:len(h.poseStack)-1]
 	h.isControlling = false
 
-	p := spatialmath.NewPose(
+	// Stop any active teleop session before returning to pose.
+	h.stopTeleop(ctx)
+
+	componentName := h.gripperName
+	if componentName == "" {
+		componentName = h.armName
+	}
+	dest := referenceframe.NewPoseInFrame("world", spatialmath.NewPose(
 		r3.Vector{X: saved.x, Y: saved.y, Z: saved.z},
 		&spatialmath.OrientationVectorDegrees{OX: saved.ox, OY: saved.oy, OZ: saved.oz, Theta: saved.thetaDeg},
-	)
-	if err := h.arm.MoveToPosition(ctx, p, nil); err != nil {
-		fmt.Printf("[%s] returnToPose: %v\n", h.name, err)
+	))
+	if h.motionSvc != nil {
+		if _, err := h.motionSvc.Move(ctx, motion.MoveReq{
+			ComponentName: componentName,
+			Destination:   dest,
+		}); err != nil {
+			fmt.Printf("[%s] returnToPose motion.Move: %v\n", h.name, err)
+		}
+	} else {
+		p := spatialmath.NewPose(
+			r3.Vector{X: saved.x, Y: saved.y, Z: saved.z},
+			&spatialmath.OrientationVectorDegrees{OX: saved.ox, OY: saved.oy, OZ: saved.oz, Theta: saved.thetaDeg},
+		)
+		if err := h.arm.MoveToPosition(ctx, p, nil); err != nil {
+			fmt.Printf("[%s] returnToPose: %v\n", h.name, err)
+		}
 	}
 }
 
