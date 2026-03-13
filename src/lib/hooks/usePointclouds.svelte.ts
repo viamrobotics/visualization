@@ -14,12 +14,6 @@ import type { Entity } from 'koota'
 import { useEnvironment } from './useEnvironment.svelte'
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 
-const typeSafeObjectFromEntries = <const T extends ReadonlyArray<readonly [PropertyKey, unknown]>>(
-	entries: T
-): { [K in T[number] as K[0]]: K[1] } => {
-	return Object.fromEntries(entries) as { [K in T[number] as K[0]]: K[1] }
-}
-
 const key = Symbol('pointcloud-context')
 
 interface Context {
@@ -98,8 +92,6 @@ export const providePointclouds = (partID: () => string) => {
 		)
 	)
 
-	const queryMap = $derived(typeSafeObjectFromEntries(queries))
-
 	$effect(() => {
 		for (const [name, query] of queries) {
 			untrack(() => {
@@ -117,15 +109,40 @@ export const providePointclouds = (partID: () => string) => {
 	const entities = new Map<string, Entity>()
 
 	$effect(() => {
+		const currentPartID = partID()
+		const activeQueryKeys = new Set<string>()
+
 		for (const [name, query] of queries) {
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
+
 			$effect(() => {
 				const { data } = query
 
-				if (!data || data.length === 0) return
+				let disposed = false
+
+				const destroyEntity = () => {
+					const entity = entities.get(queryKey)
+					if (entity) {
+						if (world.has(entity)) entity.destroy()
+						entities.delete(queryKey)
+					}
+				}
+
+				if (!data || data.length === 0) {
+					destroyEntity()
+					return () => {
+						disposed = true
+					}
+				}
 
 				parsePcdInWorker(data)
 					.then(({ positions, colors }) => {
-						const existing = entities.get(name)
+						if (disposed) {
+							return
+						}
+
+						const existing = entities.get(queryKey)
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
@@ -145,22 +162,29 @@ export const providePointclouds = (partID: () => string) => {
 							traits.Points
 						)
 
-						entities.set(name, entity)
+						entities.set(queryKey, entity)
 					})
 					.catch((error) => {
-						logs.add(error.reason, 'error')
+						if (disposed) {
+							return
+						}
+
+						logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error')
 					})
+
+				return () => {
+					disposed = true
+				}
 			})
 		}
 
-		// Clean up old entities
-		for (const [name, entity] of entities) {
-			if (!queryMap[name]?.data) {
+		// clean up queries that disappeared entirely
+		for (const [queryKey, entity] of entities) {
+			if (!activeQueryKeys.has(queryKey)) {
 				if (world.has(entity)) {
 					entity.destroy()
 				}
-
-				entities.delete(name)
+				entities.delete(queryKey)
 			}
 		}
 	})
