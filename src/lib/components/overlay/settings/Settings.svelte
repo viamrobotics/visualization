@@ -17,9 +17,7 @@
 	import { PersistedState } from 'runed'
 	import ToggleGroup from '../ToggleGroup.svelte'
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
-
-	const weblabs = useWeblabs()
-	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)
+	import { onMount } from 'svelte'
 
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
@@ -30,6 +28,12 @@
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
 	const { refetchPoses } = useRefetchPoses()
+	const weblabs = useWeblabs()
+	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)
+
+	onMount(() => {
+		weblabs.load(knownWeblabs)
+	})
 
 	// Invalidate the renderer for any settings change
 	$effect(() => {
