@@ -10,7 +10,7 @@
 		"build:workers": "node scripts/build-workers.js",
 		"prepack": "svelte-kit sync && pnpm build:workers && svelte-package && publint",
 		"preview": "vite preview",
-		"prepare": "buf generate --template buf.gen.typescript.yaml; svelte-kit sync && pnpm build:workers || echo ''",
+		"prepare": "svelte-kit sync && pnpm build:workers || echo ''",
 		"check": "svelte-kit sync && pnpm build:workers && svelte-check --tsconfig ./tsconfig.json && pnpm vet",
 		"check:watch": "svelte-kit sync && pnpm build:workers && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
