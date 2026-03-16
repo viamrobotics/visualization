@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry } from 'three'
+
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { useArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
 

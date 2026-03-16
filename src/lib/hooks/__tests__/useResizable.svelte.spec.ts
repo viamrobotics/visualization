@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/svelte'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import ResizableTestWrapper from './fixtures/ResizableTestWrapper.svelte'
 
 // Mock store must be defined before vi.mock (which is hoisted)

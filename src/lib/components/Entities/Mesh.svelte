@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
+	import type { Pose } from '@viamrobotics/sdk'
+	import type { Entity } from 'koota'
+
+	import { T, type Props as ThrelteProps, useThrelte } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Mesh } from 'three'
-	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
+
 	import { colors, darkenColor } from '$lib/color'
-	import AxesHelper from '../AxesHelper.svelte'
-	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
-	import type { Pose } from '@viamrobotics/sdk'
+
+	import AxesHelper from '../AxesHelper.svelte'
 
 	interface Props extends ThrelteProps<Mesh> {
 		entity: Entity

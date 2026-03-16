@@ -1,4 +1,5 @@
-import { Ray, Matrix4, Raycaster, Vector3, type Intersection, Box3, RawShaderMaterial } from 'three'
+import { Box3, type Intersection, Matrix4, RawShaderMaterial, Ray, Raycaster, Vector3 } from 'three'
+
 import type { InstancedArrows } from './InstancedArrows'
 
 const vec3 = new Vector3()

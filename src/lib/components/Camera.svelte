@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
+
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	let { children, ...rest } = $props()

@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { MathUtils } from 'three'
-	import { useTask } from '@threlte/core'
 	import type { CameraControlsRef } from '@threlte/extras'
+
+	import { useTask } from '@threlte/core'
 	import { PressedKeys } from 'runed'
+	import { MathUtils } from 'three'
+
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useVisibility } from '$lib/hooks/useVisibility.svelte'

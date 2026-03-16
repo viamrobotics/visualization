@@ -1,8 +1,11 @@
+import type { ConfigurableTrait, Entity } from 'koota'
+
+import { useThrelte } from '@threlte/core'
 import {
-	WorldStateStoreClient,
-	TransformChangeType,
 	type TransformChangeEvent,
+	TransformChangeType,
 	type TransformWithUUID,
+	WorldStateStoreClient,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -10,18 +13,18 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { parseMetadata } from '$lib/metadata'
-import { asColor, asOpacity, isPerVertexColors, STRIDE } from '$lib/buffer'
 import { Color } from 'three'
-import { usePartID } from './usePartID.svelte'
-import { traits, useWorld } from '$lib/ecs'
-import type { ConfigurableTrait, Entity } from 'koota'
-import { createPose } from '$lib/transform'
-import { useThrelte } from '@threlte/core'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
-import { parsePlyInput } from '$lib/ply'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
+
 import { createBufferGeometry } from '$lib/attribute'
+import { asColor, asOpacity, isPerVertexColors, STRIDE } from '$lib/buffer'
+import { traits, useWorld } from '$lib/ecs'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { parseMetadata } from '$lib/metadata'
+import { parsePlyInput } from '$lib/ply'
+import { createPose } from '$lib/transform'
+
+import { usePartID } from './usePartID.svelte'
 
 const colorUtil = new Color()
 

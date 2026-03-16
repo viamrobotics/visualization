@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { Portal } from '@threlte/extras'
-	import { useLogs } from '$lib/hooks/useLogs.svelte'
-	import FloatingPanel from './FloatingPanel.svelte'
-	import DashboardButton from './dashboard/Button.svelte'
 	import { PersistedState } from 'runed'
+
+	import { useLogs } from '$lib/hooks/useLogs.svelte'
+
+	import DashboardButton from './dashboard/Button.svelte'
+	import FloatingPanel from './FloatingPanel.svelte'
 
 	const logs = useLogs()
 

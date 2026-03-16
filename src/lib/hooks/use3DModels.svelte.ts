@@ -1,11 +1,13 @@
+import type { Group } from 'three'
+
+import { isInstanceOf } from '@threlte/core'
 import { ArmClient } from '@viamrobotics/sdk'
 import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
-import { useSettings } from './useSettings.svelte'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import type { Group } from 'three'
-import { isInstanceOf } from '@threlte/core'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+
+import { useSettings } from './useSettings.svelte'
 
 const gltfLoader = new GLTFLoader()
 const dracoLoader = new DRACOLoader()

@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
-	import Tree from './Tree.svelte'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { provideTreeExpandedContext } from './useExpanded.svelte'
-	import AddFrames from './AddFrames.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { type Entity, IsExcluded } from 'koota'
+
 	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { IsExcluded, type Entity } from 'koota'
-	import { buildTreeNodes, type TreeNode } from './buildTree'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { MIN_DIMENSIONS, useResizable } from '$lib/hooks/useResizable.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+
+	import AddFrames from './AddFrames.svelte'
+	import { buildTreeNodes, type TreeNode } from './buildTree'
+	import Tree from './Tree.svelte'
+	import { provideTreeExpandedContext } from './useExpanded.svelte'
 
 	const { ...rest } = $props()
 

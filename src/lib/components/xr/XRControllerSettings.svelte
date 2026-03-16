@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Select, Switch } from '@viamrobotics/prime-core'
+	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const settings = useSettings()

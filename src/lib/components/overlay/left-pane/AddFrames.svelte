@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { IconButton } from '@viamrobotics/prime-core'
-	import Drawer from './Drawer.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+
 	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+
+	import Drawer from './Drawer.svelte'
 
 	const framelessComponents = useFramelessComponents()
 	const partConfig = usePartConfig()

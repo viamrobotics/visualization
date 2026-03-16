@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { useXR, XR, XRButton } from '@threlte/xr'
 	import { World } from '@threlte/rapier'
-	import OriginMarker from './OriginMarker.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import Controllers from './Controllers.svelte'
-	import CameraFeed from './CameraFeed.svelte'
-	import JointLimitsWidget from './JointLimitsWidget.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import XRToast from './XRToast.svelte'
-	import { useOrigin } from './useOrigin.svelte'
+	import { useXR, XR, XRButton } from '@threlte/xr'
 	import { SvelteMap } from 'svelte/reactivity'
+
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+	import CameraFeed from './CameraFeed.svelte'
+	import Controllers from './Controllers.svelte'
+	import JointLimitsWidget from './JointLimitsWidget.svelte'
+	import OriginMarker from './OriginMarker.svelte'
+	import { useOrigin } from './useOrigin.svelte'
+	import XRToast from './XRToast.svelte'
 
 	const { ...rest } = $props()
 

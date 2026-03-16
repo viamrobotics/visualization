@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
 	import { Icon, Select } from '@viamrobotics/prime-core'
-	import { CameraStream, useRobotClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
-	import { StreamClient, MachineConnectionEvent } from '@viamrobotics/sdk'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { MachineConnectionEvent, StreamClient } from '@viamrobotics/sdk'
+	import { CameraStream, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
+
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	interface Resolution {
 		width: number

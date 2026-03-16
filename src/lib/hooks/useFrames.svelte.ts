@@ -1,20 +1,22 @@
-import { getContext, setContext, untrack } from 'svelte'
 import { MachineConnectionEvent, Transform } from '@viamrobotics/sdk'
 import {
-	useRobotClient,
 	createRobotQuery,
-	useMachineStatus,
 	useConnectionStatus,
+	useMachineStatus,
+	useRobotClient,
 } from '@viamrobotics/svelte-sdk'
 import { type ConfigurableTrait, type Entity } from 'koota'
-import { useLogs } from './useLogs.svelte'
+import { getContext, setContext, untrack } from 'svelte'
+
 import { resourceNameToColor } from '$lib/color'
-import { useEnvironment } from './useEnvironment.svelte'
-import { createPose } from '$lib/transform'
-import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { useConfigFrames } from './useConfigFrames.svelte'
 import { updateGeometryTrait } from '$lib/ecs/traits'
+import { createPose } from '$lib/transform'
+
+import { useConfigFrames } from './useConfigFrames.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
 
 interface FramesContext {
 	current: Transform[]

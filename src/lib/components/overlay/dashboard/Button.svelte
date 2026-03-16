@@ -1,7 +1,8 @@
 <script lang="ts">
+	import type { ClassValue, HTMLButtonAttributes, MouseEventHandler } from 'svelte/elements'
+
 	import { Icon, type IconName, Tooltip } from '@viamrobotics/prime-core'
 	import { Ruler } from 'lucide-svelte'
-	import type { ClassValue, HTMLButtonAttributes, MouseEventHandler } from 'svelte/elements'
 
 	interface Props extends HTMLButtonAttributes {
 		icon: IconName | 'ruler'

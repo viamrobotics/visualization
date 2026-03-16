@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
 import { Color } from 'three'
-import { asFloat32Array, asColor, asOpacity, isPerVertexColors } from '../buffer'
+import { describe, expect, it } from 'vitest'
+
+import { asColor, asFloat32Array, asOpacity, isPerVertexColors } from '../buffer'
 
 describe('asFloat32Array', () => {
 	it('converts aligned bytes to Float32Array', () => {

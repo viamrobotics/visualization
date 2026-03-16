@@ -1,17 +1,21 @@
-import type { World, Entity, ConfigurableTrait } from 'koota'
+import type { ConfigurableTrait, Entity, World } from 'koota'
+
+import { Geometry } from '@viamrobotics/sdk'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
-import { type Drawing } from '$lib/buf/draw/v1/drawing_pb'
+
 import type { Transform } from '$lib/buf/common/v1/common_pb'
-import { traits } from '$lib/ecs'
-import { Geometry } from '@viamrobotics/sdk'
+import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
+
+import { type Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
+import { traits } from '$lib/ecs'
 import { parseMetadata } from '$lib/metadata'
-import { rgbaToHex } from './color'
-import { asColor, asFloat32Array, asOpacity, isPerVertexColors, STRIDE } from './buffer'
+
 import { createBufferGeometry } from './attribute'
+import { asColor, asFloat32Array, asOpacity, isPerVertexColors, STRIDE } from './buffer'
+import { rgbaToHex } from './color'
 
 const vec3 = new Vector3()
 const colorUtil = new Color()

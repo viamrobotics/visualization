@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
+
+	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tabs from '@zag-js/tabs'
-	import { useMachine, normalizeProps } from '@zag-js/svelte'
 
 	interface Props {
 		defaultTab?: string

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { untrack } from 'svelte'
 	import { T } from '@threlte/core'
-	import { CanvasTexture, PlaneGeometry } from 'three'
-	import { xrToast, type XRToastItem, type ToastVariant } from '$lib/components/xr/toasts.svelte'
 	import { Headset } from '@threlte/xr'
+	import { untrack } from 'svelte'
+	import { CanvasTexture, PlaneGeometry } from 'three'
+
+	import { type ToastVariant, xrToast, type XRToastItem } from '$lib/components/xr/toasts.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
