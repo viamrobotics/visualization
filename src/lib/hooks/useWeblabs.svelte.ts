@@ -38,6 +38,7 @@ const getCookieExperiments = () => {
 interface Context {
 	load: (experiments: string[]) => void
 	isActive(experiment: string): boolean
+	toggle(experiment: string): void
 }
 
 export const createWeblabs = (): Context => {
@@ -53,11 +54,24 @@ export const createWeblabs = (): Context => {
 		}
 	}
 
+	const toggle = (experiment: string) => {
+		const cookieExperiments = new Set(getCookieExperiments())
+
+		if (activeExperiments.has(experiment)) {
+			activeExperiments.delete(experiment)
+			cookieExperiments.delete(experiment)
+		} else {
+			activeExperiments.add(experiment)
+			cookieExperiments.add(experiment)
+		}
+
+		addCookie('weblab_experiments', [...cookieExperiments].join(','))
+	}
+
 	return {
 		load,
-		isActive: (experiment: string) => {
-			return activeExperiments.has(experiment)
-		},
+		isActive: (experiment: string) => activeExperiments.has(experiment),
+		toggle,
 	}
 }
 
@@ -78,6 +92,7 @@ export const useWeblabs = () => {
 		return {
 			load: () => {},
 			isActive: () => false,
+			toggle: () => {},
 		}
 	}
 	return context

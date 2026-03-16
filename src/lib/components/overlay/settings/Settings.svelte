@@ -3,6 +3,7 @@
 	import { Portal } from '@threlte/extras'
 	import RefreshRate from '../RefreshRate.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useWeblabs, WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
@@ -16,6 +17,7 @@
 	import { PersistedState } from 'runed'
 	import ToggleGroup from '../ToggleGroup.svelte'
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
+	import { onMount } from 'svelte'
 
 	const { invalidate } = useThrelte()
 	const partID = usePartID()
@@ -26,6 +28,12 @@
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
 	const { refetchPoses } = useRefetchPoses()
+	const weblabs = useWeblabs()
+	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)
+
+	onMount(() => {
+		weblabs.load(knownWeblabs)
+	})
 
 	// Invalidate the renderer for any settings change
 	$effect(() => {
@@ -269,6 +277,22 @@
 	</div>
 {/snippet}
 
+{#snippet Weblabs()}
+	<div class="flex flex-col gap-1 text-xs">
+		{#each knownWeblabs as experiment (experiment)}
+			<label class="flex items-center justify-between gap-2 py-0.5">
+				{experiment}
+				<Switch
+					on={weblabs.isActive(experiment)}
+					on:change={() => weblabs.toggle(experiment)}
+				/>
+			</label>
+		{:else}
+			No weblabs defined
+		{/each}
+	</div>
+{/snippet}
+
 {#snippet Widgets()}
 	<div class="text-gray-9 flex flex-col gap-1 text-xs">
 		<label class="flex items-center justify-between gap-2 py-1">
@@ -319,6 +343,7 @@
 			{ label: 'Vision', content: Vision },
 			{ label: 'Widgets', content: Widgets },
 			{ label: 'Stats', content: Stats },
+			{ label: 'Weblabs', content: Weblabs },
 			...('xr' in navigator ? [{ label: 'VR / AR', content: XR }] : []),
 		]}
 		onValueChange={(value) => {
