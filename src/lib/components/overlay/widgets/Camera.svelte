@@ -115,7 +115,7 @@
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 flex resize-x flex-col overflow-hidden border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 flex resize-x flex-col overflow-hidden border text-xs dark:text-black"
 	style:width="320px"
 	style:height="auto !important"
 	use:draggable={{

@@ -96,7 +96,7 @@
 {/if}
 
 <div
-	class="relative h-full w-full overflow-hidden"
+	class="relative h-full w-full overflow-hidden dark:bg-white"
 	bind:this={root}
 >
 	<Canvas renderMode="on-demand">
