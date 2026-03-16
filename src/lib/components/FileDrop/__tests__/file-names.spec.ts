@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { parseFileName, readFile, Extensions, Prefixes } from '../file-names'
+
+import { Extensions, parseFileName, Prefixes, readFile } from '../file-names'
 
 describe('parseFileName', () => {
 	describe('extension parsing', () => {

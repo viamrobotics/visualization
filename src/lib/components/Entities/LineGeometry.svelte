@@ -1,7 +1,7 @@
 <script>
-	import { LineGeometry } from 'three/examples/jsm/Addons.js'
 	import { T } from '@threlte/core'
 	import { untrack } from 'svelte'
+	import { LineGeometry } from 'three/examples/jsm/Addons.js'
 
 	let { positions } = $props()
 

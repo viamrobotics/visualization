@@ -1,7 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { pcdDropper } from '../pcd-dropper'
-import { FileDropperError, type PointcloudFileDropSuccess } from '../file-dropper'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { parsePcdInWorker } from '$lib/loaders/pcd'
+
+import { FileDropperError, type PointcloudFileDropSuccess } from '../file-dropper'
+import { pcdDropper } from '../pcd-dropper'
 
 vi.mock('$lib/loaders/pcd', () => ({
 	parsePcdInWorker: vi.fn(),

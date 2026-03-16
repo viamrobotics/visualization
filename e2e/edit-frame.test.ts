@@ -6,6 +6,7 @@ import {
 	ViamClient,
 	ViamClientOptions,
 } from '@viamrobotics/sdk'
+
 import { setupMachineConfig } from './fixtures'
 
 const testConfig = {

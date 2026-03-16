@@ -1,6 +1,8 @@
 import type { Capsule, Geometry, RectangularPrism, Sphere } from '@viamrobotics/sdk'
-import { createPose } from './transform'
+
 import type { Frame } from './frame'
+
+import { createPose } from './transform'
 
 export const createGeometry = (geometryType?: Geometry['geometryType'], label = ''): Geometry => {
 	return {

@@ -1,15 +1,17 @@
-import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
-import { usePartID } from './usePartID.svelte'
-import { commonApi, Pose } from '@viamrobotics/sdk'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { useEnvironment } from './useEnvironment.svelte'
 import { observe } from '@threlte/core'
+import { commonApi, Pose } from '@viamrobotics/sdk'
+import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
 import { untrack } from 'svelte'
-import { useFrames } from './useFrames.svelte'
+
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
+
+import { useEnvironment } from './useEnvironment.svelte'
+import { useFrames } from './useFrames.svelte'
 import { useLogs } from './useLogs.svelte'
-import { useResourceByName } from './useResourceByName.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { usePartID } from './usePartID.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
+import { useResourceByName } from './useResourceByName.svelte'
 
 const originFrameComponentTypes = new Set(['arm', 'gantry', 'gripper', 'base'])
 

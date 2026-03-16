@@ -1,6 +1,8 @@
 <script>
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { PortalTarget } from '@threlte/extras'
+
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
 	import Button from './Button.svelte'
 
 	let { dashboard, ...rest } = $props()

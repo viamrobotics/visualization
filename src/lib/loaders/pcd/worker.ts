@@ -1,4 +1,5 @@
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader.js'
+
 import type { Message } from './messages'
 
 const loader = new PCDLoader()

@@ -1,5 +1,5 @@
-import { Vector2, Raycaster, EventDispatcher, type Intersection } from 'three'
 import { useThrelte } from '@threlte/core'
+import { EventDispatcher, type Intersection, Raycaster, Vector2 } from 'three'
 
 const pointerDown = new Vector2()
 const pointerUp = new Vector2()

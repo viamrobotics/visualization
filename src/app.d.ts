@@ -1,7 +1,7 @@
+import type { InteractivityProps } from '@threlte/extras'
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 import type { BVHProps } from 'three-mesh-bvh'
-import type { InteractivityProps } from '@threlte/extras'
 
 declare global {
 	namespace App {

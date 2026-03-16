@@ -1,13 +1,13 @@
 import {
-	EdgesGeometry,
 	BoxGeometry,
-	Vector3,
-	Quaternion,
-	Matrix4,
-	Object3D,
-	Mesh,
 	BufferGeometry,
+	EdgesGeometry,
 	Matrix3,
+	Matrix4,
+	Mesh,
+	Object3D,
+	Quaternion,
+	Vector3,
 } from 'three'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'

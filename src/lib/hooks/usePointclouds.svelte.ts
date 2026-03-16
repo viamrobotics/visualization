@@ -1,18 +1,21 @@
+import type { Entity } from 'koota'
+
 import { CameraClient } from '@viamrobotics/sdk'
-import { setContext, getContext, untrack } from 'svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { useLogs } from './useLogs.svelte'
+import { getContext, setContext, untrack } from 'svelte'
+
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import type { Entity } from 'koota'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+
 import { useEnvironment } from './useEnvironment.svelte'
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { useLogs } from './useLogs.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 
 const key = Symbol('pointcloud-context')
 

@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
-import { theme } from '@viamrobotics/prime-core/theme'
+
 import { plugins } from '@viamrobotics/prime-core/plugins'
+import { theme } from '@viamrobotics/prime-core/theme'
 
 /** @type {import('tailwindcss').Config} */
 export default {

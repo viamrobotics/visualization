@@ -2,8 +2,9 @@
 	module
 	lang="ts"
 >
+	import { BufferAttribute, MathUtils, Quaternion, Vector3 } from 'three'
+
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils, BufferAttribute } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -12,24 +13,25 @@
 
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
+	import { isInstanceOf, useTask } from '@threlte/core'
+	import { Button, Icon, Input, Select, Tooltip } from '@viamrobotics/prime-core'
 	import { Check, Copy } from 'lucide-svelte'
-	import { useTask, isInstanceOf } from '@threlte/core'
-	import { Button, Icon, Select, Input, Tooltip } from '@viamrobotics/prime-core'
+
+	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
+	import { relations, traits, useTrait, useWorld } from '$lib/ecs'
+	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import {
-		useSelectedEntity,
 		useFocusedEntity,
 		useFocusedObject3d,
+		useSelectedEntity,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
-	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld, relations } from '$lib/ecs'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
-	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 	import { createPose } from '$lib/transform'
 
 	const { ...rest } = $props()

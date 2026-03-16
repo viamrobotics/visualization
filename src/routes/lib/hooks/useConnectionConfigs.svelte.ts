@@ -1,8 +1,9 @@
 import { get, set } from 'idb-keyval'
+import { isEqual } from 'lodash-es'
 import { PersistedState } from 'runed'
 import { getContext, setContext } from 'svelte'
+
 import { envConfigs } from '../configs'
-import { isEqual } from 'lodash-es'
 
 interface ConnectionConfig {
 	host: string

@@ -1,4 +1,5 @@
-import { $internal as internal, type Entity, type Trait, type World } from 'koota'
+import { type Entity, $internal as internal, type Trait, type World } from 'koota'
+
 import { useWorld } from './useWorld'
 
 type AoSFactory = () => unknown

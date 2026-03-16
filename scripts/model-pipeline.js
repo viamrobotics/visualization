@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { readdirSync, copyFileSync, unlinkSync, mkdirSync, existsSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { exit } from 'node:process'
 

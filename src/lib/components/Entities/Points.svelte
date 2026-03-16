@@ -1,13 +1,16 @@
 <script lang="ts">
-	import { Points, PointsMaterial, OrthographicCamera } from 'three'
+	import type { Entity } from 'koota'
+	import type { Snippet } from 'svelte'
+
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
-	import { poseToObject3d } from '$lib/transform'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import type { Snippet } from 'svelte'
-	import type { Entity } from 'koota'
+	import { OrthographicCamera, Points, PointsMaterial } from 'three'
+
 	import { traits, useTrait } from '$lib/ecs'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { poseToObject3d } from '$lib/transform'
+
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
 	interface Props {
 		entity: Entity

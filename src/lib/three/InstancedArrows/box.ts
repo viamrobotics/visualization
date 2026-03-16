@@ -1,4 +1,5 @@
-import { RawShaderMaterial, Box3, BufferGeometry } from 'three'
+import { Box3, BufferGeometry, RawShaderMaterial } from 'three'
+
 import type { InstancedArrows } from './InstancedArrows'
 
 const bounds = new Box3()

@@ -1,15 +1,15 @@
 import { injectPlugin, isInstanceOf } from '@threlte/core'
-import { BatchedMesh, Points, Mesh, type Raycaster } from 'three'
+import { BatchedMesh, Mesh, Points, type Raycaster } from 'three'
 import {
-	type BVHOptions,
 	acceleratedRaycast,
-	computeBoundsTree,
-	disposeBoundsTree,
+	BVHHelper,
+	type BVHOptions,
 	computeBatchedBoundsTree,
+	computeBoundsTree,
 	disposeBatchedBoundsTree,
+	disposeBoundsTree,
 	PointsBVH,
 	SAH,
-	BVHHelper,
 } from 'three-mesh-bvh'
 
 interface Options extends BVHOptions {

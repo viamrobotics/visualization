@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { traits, useTrait } from '$lib/ecs'
-	import { usePose } from '$lib/hooks/usePose.svelte'
-	import { matrixToPose, poseToMatrix } from '$lib/transform'
 	import type { Pose } from '@viamrobotics/sdk'
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
+
+	import { traits, useTrait } from '$lib/ecs'
+	import { usePose } from '$lib/hooks/usePose.svelte'
+	import { matrixToPose, poseToMatrix } from '$lib/transform'
 
 	interface Props {
 		entity: Entity

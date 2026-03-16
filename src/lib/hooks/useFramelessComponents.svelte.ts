@@ -1,6 +1,7 @@
 import { getContext, setContext } from 'svelte'
-import { usePartConfig } from './usePartConfig.svelte'
+
 import { useFrames } from './useFrames.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 
 interface FramelessComponents {
 	current: string[]

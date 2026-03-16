@@ -6,17 +6,20 @@
 </script>
 
 <script lang="ts">
-	import { TransformControls } from '@threlte/extras'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { PressedKeys } from 'runed'
-	import { quaternionToPose, vector3ToPose } from '$lib/transform'
-	import { Quaternion, Vector3 } from 'three'
-	import Frame from './Entities/Frame.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useWorld, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
+
+	import { TransformControls } from '@threlte/extras'
+	import { PressedKeys } from 'runed'
 	import { SvelteSet } from 'svelte/reactivity'
+	import { Quaternion, Vector3 } from 'three'
+
+	import { traits, useWorld } from '$lib/ecs'
+	import { useTransformControls } from '$lib/hooks/useControls.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { quaternionToPose, vector3ToPose } from '$lib/transform'
+
+	import Frame from './Entities/Frame.svelte'
 
 	const world = useWorld()
 	const settings = useSettings()

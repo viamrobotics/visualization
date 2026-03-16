@@ -4,10 +4,13 @@
 Shows all steps for querying points within a lasso selection
 -->
 <script lang="ts">
+	import type { Entity } from 'koota'
+
 	import { T } from '@threlte/core'
 	import { Box3, BufferAttribute, BufferGeometry, Vector3 } from 'three'
-	import { useTrait, traits } from '$lib/ecs'
-	import type { Entity } from 'koota'
+
+	import { traits, useTrait } from '$lib/ecs'
+
 	import * as lassoTraits from './traits'
 
 	const box3 = new Box3()

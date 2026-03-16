@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { isInstanceOf, T, useTask, useThrelte } from '@threlte/core'
+	import { BatchedMesh, Box3 } from 'three'
+	import { OBB } from 'three/addons/math/OBB.js'
+
+	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
+
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
-	import { OBB } from 'three/addons/math/OBB.js'
-	import { BatchedMesh, Box3 } from 'three'
-	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
 	const box3 = new Box3()
 	const obb = new OBB()
