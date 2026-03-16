@@ -259,7 +259,7 @@
 		id="details-panel"
 		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 {showEditFrameOptions
 			? 'w-80'
-			: 'w-60'} border p-2 text-xs"
+			: 'w-60'} border p-2 text-xs dark:text-black"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,

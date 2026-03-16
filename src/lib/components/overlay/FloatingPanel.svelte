@@ -46,7 +46,7 @@
 >
 	<div
 		{...api.getContentProps()}
-		class="border-medium border-1 bg-white"
+		class="border-medium border-1 bg-white dark:text-black"
 	>
 		<div
 			{...api.getDragTriggerProps()}
