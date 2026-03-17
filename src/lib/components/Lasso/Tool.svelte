@@ -93,7 +93,6 @@
 			isOpen
 			exitable={false}
 			title="Lasso"
-			strategy="absolute"
 			defaultSize={{ width: 445, height: 100 }}
 			defaultPosition={{ x: rect.width / 2 - 200, y: rect.height - 10 - 100 }}
 		>
