@@ -63,12 +63,12 @@
 				{...api.getHeaderProps()}
 				class="border-medium flex justify-between border-b p-2"
 			>
-				<p
+				<h3
 					{...api.getTitleProps()}
 					class="text-gray-7 text-xs"
 				>
 					{title}
-				</p>
+				</h3>
 
 				{#if exitable}
 					<div

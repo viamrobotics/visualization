@@ -280,9 +280,6 @@ test('create and delete frame', async ({ browser }) => {
 	await page.getByLabel('Save').click()
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeHidden()
 
-	// wait a couple seconds for the frame system to udpate
-	await page.waitForTimeout(5000)
-
 	// DELETE A FRAME
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
 	await page.getByText('base-1', { exact: true }).click()
