@@ -10,6 +10,7 @@
 		defaultSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
+		resizable?: boolean
 		persistRect?: boolean
 		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
@@ -20,6 +21,7 @@
 		title = '',
 		defaultSize = { width: 700, height: 500 },
 		exitable = true,
+		resizable = false,
 		persistRect = true,
 		isOpen = $bindable(false),
 		children,
@@ -30,7 +32,7 @@
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		resizable: false,
+		resizable,
 		allowOverflow: false,
 		persistRect,
 		open: isOpen,
@@ -85,5 +87,40 @@
 		>
 			{@render children()}
 		</div>
+
+		{#if resizable}
+			<div
+				{...api.getResizeTriggerProps({ axis: 'n' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'e' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'w' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 's' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'ne' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'se' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'sw' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'nw' })}
+				class="size-2.5"
+			></div>
+		{/if}
 	</div>
 </div>

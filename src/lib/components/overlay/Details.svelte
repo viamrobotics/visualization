@@ -268,11 +268,11 @@
 		}}
 		{...rest}
 	>
-		<div class="flex items-center justify-between gap-2 pb-2">
-			<div class="flex w-[80%] items-center gap-1">
-				<button bind:this={dragElement}>
-					<Icon name="drag" />
-				</button>
+		<div
+			class="flex cursor-move items-center justify-between gap-2 pb-2"
+			bind:this={dragElement}
+		>
+			<div class="flex w-[90%] items-center gap-1">
 				<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
 				<span class="text-subtle-2">{resourceName?.subtype}</span>
 			</div>
