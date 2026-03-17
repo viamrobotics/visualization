@@ -2,4 +2,4 @@
 "@viamrobotics/motion-tools": patch
 ---
 
-Use `<FloatingPanel>` for Treeview
+Move "add frame" to dashboard
