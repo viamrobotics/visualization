@@ -1,14 +1,15 @@
 <script lang="ts">
+	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tree from '@zag-js/tree-view'
-	import { useMachine, normalizeProps } from '@zag-js/svelte'
 	import { ChevronRight, Eye, EyeOff } from 'lucide-svelte'
-	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
-	import type { TreeNode } from './buildTree'
 	import { VirtualList } from 'svelte-virtuallists'
-	import { Icon } from '@viamrobotics/prime-core'
+	import { SvelteSet } from 'svelte/reactivity'
+
 	import { traits } from '$lib/ecs'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { SvelteSet } from 'svelte/reactivity'
+	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
+
+	import type { TreeNode } from './buildTree'
 
 	const selected = useSelectedEntity()
 	const visibility = useVisibility()
@@ -177,13 +178,6 @@
 
 <div class="root-node">
 	<div {...api.getRootProps() as object}>
-		<div class="border-medium flex items-center gap-1 border-b p-2">
-			<button bind:this={dragElement}>
-				<Icon name="drag" />
-			</button>
-			<h3 {...api.getLabelProps() as object}>{rootNode.entity.get(traits.Name)}</h3>
-		</div>
-
 		<div {...api.getTreeProps()}>
 			{#if rootChildren.length === 0}
 				<p class="text-subtle-2 px-2 py-4">No objects displayed</p>

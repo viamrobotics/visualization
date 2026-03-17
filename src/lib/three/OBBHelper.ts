@@ -1,16 +1,17 @@
 import {
-	LineSegments,
-	LineBasicMaterial,
-	EdgesGeometry,
 	BoxGeometry,
-	Vector3,
-	Quaternion,
-	Matrix4,
-	Object3D,
-	Mesh,
 	BufferGeometry,
+	EdgesGeometry,
 	Matrix3,
+	Matrix4,
+	Mesh,
+	Object3D,
+	Quaternion,
+	Vector3,
 } from 'three'
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 
 const center = new Vector3()
 const half = new Vector3()
@@ -20,15 +21,25 @@ const scale = new Vector3()
 const absScale = new Vector3()
 const worldCenter = new Vector3()
 
-export class OBBHelper extends LineSegments {
-	constructor(color = 0x000000, linewidth = 1) {
-		const geometry = new EdgesGeometry(new BoxGeometry())
-		const material = new LineBasicMaterial({ color, linewidth })
+export class OBBHelper extends LineSegments2 {
+	constructor(color = 0x000000, linewidth = 2) {
+		const edges = new EdgesGeometry(new BoxGeometry())
+		const geometry = new LineSegmentsGeometry()
+		geometry.setPositions(edges.getAttribute('position').array as Float32Array)
+
+		const material = new LineMaterial({
+			color,
+			linewidth,
+			depthTest: false,
+			depthWrite: false,
+			transparent: true,
+		})
 
 		super(geometry, material)
 
 		this.matrixAutoUpdate = false
 		this.frustumCulled = false
+		this.renderOrder = 999
 	}
 
 	setFromOBB(obb: { center: Vector3; halfSize: Vector3; rotation: { elements: number[] } }) {
@@ -95,6 +106,6 @@ export class OBBHelper extends LineSegments {
 
 	dispose() {
 		this.geometry.dispose()
-		;(this.material as LineBasicMaterial).dispose()
+		this.material.dispose()
 	}
 }

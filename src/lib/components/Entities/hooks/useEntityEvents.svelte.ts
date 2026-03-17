@@ -1,0 +1,132 @@
+import type { Entity } from 'koota'
+
+import { type IntersectionEvent, useCursor } from '@threlte/extras'
+import { Vector2 } from 'three'
+
+import { traits } from '$lib/ecs'
+import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+import { useVisibility } from '$lib/hooks/useVisibility.svelte'
+import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
+import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
+
+export const useEntityEvents = (entity: () => Entity | undefined) => {
+	const down = new Vector2()
+
+	const selectedEntity = useSelectedEntity()
+	const focusedEntity = useFocusedEntity()
+	const visibility = useVisibility()
+	const cursor = useCursor()
+	const currentEntity = $derived(entity())
+	const visible = $derived(currentEntity ? (visibility.get(currentEntity) ?? true) : true)
+
+	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+		cursor.onPointerEnter()
+
+		if (currentEntity && !currentEntity.has(traits.Hovered)) {
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			if (hoverInfo) {
+				currentEntity.add(
+					traits.InstancedPose({
+						index: hoverInfo.index,
+						x: hoverInfo.x,
+						y: hoverInfo.y,
+						z: hoverInfo.z,
+						oX: hoverInfo.oX,
+						oY: hoverInfo.oY,
+						oZ: hoverInfo.oZ,
+						theta: hoverInfo.theta,
+					})
+				)
+			}
+			currentEntity.add(traits.Hovered)
+		}
+	}
+
+	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+
+		if (currentEntity && currentEntity.has(traits.Hovered)) {
+			const hoverInfo = updateHoverInfo(currentEntity, event)
+			const hoverPose = createPose(
+				hoverInfo
+					? {
+							x: hoverInfo.x,
+							y: hoverInfo.y,
+							z: hoverInfo.z,
+							oX: 0,
+							oY: 0,
+							oZ: 1,
+							theta: 0,
+						}
+					: undefined
+			)
+
+			const worldPose = currentEntity.get(traits.WorldPose) ?? createPose()
+			const hoverPoseMatrix = poseToMatrix(hoverPose)
+			const worldPoseMatrix = poseToMatrix(worldPose)
+			const resultMatrix = worldPoseMatrix.multiply(hoverPoseMatrix)
+			const resultPose = matrixToPose(resultMatrix)
+
+			if (hoverInfo) {
+				currentEntity.set(traits.InstancedPose, {
+					index: hoverInfo.index,
+					x: resultPose.x,
+					y: resultPose.y,
+					z: resultPose.z,
+					oX: resultPose.oX,
+					oY: resultPose.oY,
+					oZ: resultPose.oZ,
+					theta: resultPose.theta,
+				})
+			}
+		}
+	}
+
+	const onpointerleave = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+		cursor.onPointerLeave()
+
+		if (currentEntity?.has(traits.Hovered)) {
+			currentEntity.remove(traits.Hovered)
+		}
+		if (currentEntity?.has(traits.InstancedPose)) {
+			currentEntity.remove(traits.InstancedPose)
+		}
+	}
+
+	const ondblclick = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+		focusedEntity.set(currentEntity, event.instanceId ?? event.batchId)
+	}
+
+	const onpointerdown = (event: IntersectionEvent<MouseEvent>) => {
+		down.copy(event.pointer)
+	}
+
+	const onclick = (event: IntersectionEvent<MouseEvent>) => {
+		event.stopPropagation()
+
+		if (down.distanceToSquared(event.pointer) < 0.1) {
+			selectedEntity.set(currentEntity, event.instanceId ?? event.batchId)
+		}
+	}
+
+	$effect(() => {
+		if (!visible) {
+			cursor.onPointerLeave()
+		}
+	})
+
+	return {
+		get visible() {
+			return visible
+		},
+		onpointerenter,
+		onpointermove,
+		onpointerleave,
+		ondblclick,
+		onpointerdown,
+		onclick,
+	}
+}

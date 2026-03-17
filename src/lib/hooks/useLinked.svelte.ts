@@ -1,6 +1,9 @@
-import { getContext, setContext } from 'svelte'
 import type { Entity } from 'koota'
+
+import { getContext, setContext } from 'svelte'
+
 import { relations, useWorld } from '$lib/ecs'
+
 import { useFocusedEntity, useSelectedEntity } from './useSelection.svelte'
 
 const linkedKey = Symbol('linked-context')
@@ -29,11 +32,13 @@ export const provideLinkedEntities = () => {
 		}
 	})
 
+	const unsub = () => {
+		unsubAdd()
+		unsubRemove()
+	}
+
 	$effect(() => {
-		return () => {
-			unsubAdd()
-			unsubRemove()
-		}
+		return unsub
 	})
 
 	setContext<LinkedEntitiesContext>(linkedKey, {

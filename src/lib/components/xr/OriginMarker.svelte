@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
 	import { T, useTask } from '@threlte/core'
 	import { Grid, useGamepad } from '@threlte/extras'
 	import { Collider, RigidBody } from '@threlte/rapier'
-	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
 	import { useController } from '@threlte/xr'
 	import { Euler, Group, Quaternion, Vector3 } from 'three'
+
 	import { useOrigin } from './useOrigin.svelte'
 
 	const origin = useOrigin()

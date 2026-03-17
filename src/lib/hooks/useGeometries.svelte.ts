@@ -1,20 +1,23 @@
 import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
-import { untrack, setContext, getContext } from 'svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { useLogs } from './useLogs.svelte'
-import { resourceColors } from '$lib/color'
-import { Color } from 'three'
-import { useResourceByName } from './useResourceByName.svelte'
-import { traits, useWorld } from '$lib/ecs'
 import { type ConfigurableTrait, type Entity } from 'koota'
-import { createPose } from '$lib/transform'
+import { getContext, setContext, untrack } from 'svelte'
+import { Color } from 'three'
+
+import { resourceColors } from '$lib/color'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { updateGeometryTrait } from '$lib/ecs/traits'
+import { createPose } from '$lib/transform'
+
 import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
 
 const key = Symbol('geometries-context')
 
@@ -87,6 +90,8 @@ export const provideGeometries = (partID: () => string) => {
 		)
 	)
 
+	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
+
 	$effect(() => {
 		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
 			return logs.add(`Fetching geometries every ${interval}ms...`)
@@ -105,65 +110,88 @@ export const provideGeometries = (partID: () => string) => {
 		}
 	})
 
-	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
-
-	const entities = new Map<string, Entity | undefined>()
+	const entities = new Map<string, Entity>()
+	const queryEntityKeys = new Map<string, Set<string>>()
 
 	$effect(() => {
-		const active: Record<string, boolean> = {}
+		const activeQueryKeys = new Set<string>()
+		const currentPartID = partID()
 
 		for (const [name, query] of queries) {
-			untrack(() => {
-				$effect(() => {
-					if (name && query.data) {
-						let index = 0
+			if (!name) {
+				continue
+			}
 
-						for (const geometry of query.data) {
-							index += 1
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
 
-							const resourceName = resources.current[name]
-							const label = geometry.label ? geometry.label : `${name} geometry ${index}`
+			$effect(() => {
+				const nextKeys = new Set<string>()
+				const resourceName = resources.current[name]
+				const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
 
-							active[`${name}:${label}`] = true
+				if (query.data) {
+					let index = 0
 
-							const pose = createPose(geometry.center)
-							const subtype = resourceName?.subtype as keyof typeof resourceColors | undefined
+					for (const geometry of query.data) {
+						index += 1
 
-							const existing = entities.get(`${name}:${label}`)
+						const label = geometry.label || `${name} geometry ${index}`
+						const entityKey = `${currentPartID}:${name}:${label}`
+						nextKeys.add(entityKey)
 
-							if (existing) {
-								existing.set(traits.Pose, pose)
-								continue
-							}
+						const center = createPose(geometry.center)
+						const existing = entities.get(entityKey)
 
-							const entityTraits: ConfigurableTrait[] = [
-								traits.Parent(name),
-								traits.Name(label),
-								traits.Pose(pose),
-								traits.GeometriesAPI,
-								traits.Geometry(geometry),
-							]
-
-							if (subtype) {
-								entityTraits.push(
-									traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
-								)
-							}
-
-							const entity = world.spawn(...entityTraits)
-
-							entities.set(`${name}:${label}`, entity)
+						if (existing) {
+							existing.set(traits.Center, center)
+							updateGeometryTrait(existing, geometry)
+							continue
 						}
+
+						const entityTraits: ConfigurableTrait[] = [
+							traits.Parent(name),
+							traits.Name(label),
+							traits.Center(center),
+							traits.GeometriesAPI,
+							traits.Geometry(geometry),
+						]
+
+						if (subtype) {
+							entityTraits.push(
+								traits.Color(subtype ? colorUtil.set(resourceColors[subtype]) : undefined)
+							)
+						}
+
+						const entity = world.spawn(...entityTraits)
+						entities.set(entityKey, entity)
 					}
-				})
+				}
+
+				const prevKeys = queryEntityKeys.get(queryKey) ?? new Set<string>()
+
+				// Remove entities no longer present for this specific query
+				for (const key of prevKeys) {
+					if (!nextKeys.has(key)) {
+						entities.get(key)?.destroy()
+						entities.delete(key)
+					}
+				}
+
+				queryEntityKeys.set(queryKey, nextKeys)
 			})
 		}
 
-		// Clean up non-active entities
-		for (const [label, entity] of entities) {
-			if (!active[label]) {
-				entity?.destroy()
-				entities.delete(label)
+		// Clean up owners whose queries disappeared entirely
+		for (const [queryKey, keys] of queryEntityKeys) {
+			if (!activeQueryKeys.has(queryKey)) {
+				for (const key of keys) {
+					const entity = entities.get(key)
+					if (entity && world.has(entity)) entity.destroy()
+					entities.delete(key)
+				}
+
+				queryEntityKeys.delete(queryKey)
 			}
 		}
 	})

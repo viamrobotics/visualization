@@ -1,5 +1,6 @@
+import { createQuery, $internal as internal, type QueryParameter, type QueryResult } from 'koota'
 import { untrack } from 'svelte'
-import { $internal as internal, createQuery, type QueryParameter, type QueryResult } from 'koota'
+
 import { useWorld } from './useWorld'
 
 export function useQuery<T extends QueryParameter[]>(
@@ -43,12 +44,12 @@ export function useQuery<T extends QueryParameter[]>(
 		})
 	})
 
+	const handler = () => {
+		version += 1
+	}
+
 	// Force reattaching event listeners when the world is reset.
 	$effect(() => {
-		const handler = () => {
-			version += 1
-		}
-
 		world[internal].resetSubscriptions.add(handler)
 
 		return () => {

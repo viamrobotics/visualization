@@ -1,13 +1,18 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { Icon } from '@viamrobotics/prime-core'
 
+	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
+		defaultPosition?: { x: number; y: number }
+		exitable?: boolean
+		resizable?: boolean
+		persistRect?: boolean
+		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
 		children: Snippet
 	}
@@ -15,17 +20,23 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		exitable = true,
+		resizable = false,
+		persistRect = true,
 		isOpen = $bindable(false),
 		children,
+		...props
 	}: Props = $props()
 
 	const id = $props.id()
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		resizable: false,
+		resizable,
 		allowOverflow: false,
+		persistRect,
 		open: isOpen,
+		...props,
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
@@ -37,7 +48,7 @@
 >
 	<div
 		{...api.getContentProps()}
-		class="border-medium border-1 bg-white"
+		class="border-medium border-1 bg-white dark:text-black"
 	>
 		<div
 			{...api.getDragTriggerProps()}
@@ -54,17 +65,19 @@
 					{title}
 				</p>
 
-				<div
-					{...api.getControlProps()}
-					class="flex gap-3"
-				>
-					<button
-						aria-label="Close connection configs panel"
-						onclick={() => (isOpen = false)}
+				{#if exitable}
+					<div
+						{...api.getControlProps()}
+						class="flex gap-3"
 					>
-						<Icon name="close" />
-					</button>
-				</div>
+						<button
+							aria-label="Close connection configs panel"
+							onclick={() => (isOpen = false)}
+						>
+							<Icon name="close" />
+						</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -74,5 +87,40 @@
 		>
 			{@render children()}
 		</div>
+
+		{#if resizable}
+			<div
+				{...api.getResizeTriggerProps({ axis: 'n' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'e' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'w' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 's' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'ne' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'se' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'sw' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'nw' })}
+				class="size-2.5"
+			></div>
+		{/if}
 	</div>
 </div>

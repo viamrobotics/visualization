@@ -23,3 +23,13 @@ func withColors[T colorable](colors []Color) func(T) {
 		config.SetColors(colors)
 	}
 }
+
+func withColorPalette[T colorable](palette []Color, numColors int) func(T) {
+	return func(config T) {
+		finalColors := make([]Color, numColors)
+		for i := range numColors {
+			finalColors[i] = palette[i%len(palette)]
+		}
+		config.SetColors(finalColors)
+	}
+}

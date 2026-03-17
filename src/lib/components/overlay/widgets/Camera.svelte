@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte'
 	import { Icon, Select } from '@viamrobotics/prime-core'
-	import { CameraStream, useRobotClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
-	import { StreamClient, MachineConnectionEvent } from '@viamrobotics/sdk'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { MachineConnectionEvent, StreamClient } from '@viamrobotics/sdk'
+	import { CameraStream, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
+
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	interface Resolution {
 		width: number
@@ -31,12 +32,14 @@
 	let fpsInterval: ReturnType<typeof setInterval> | undefined
 	let fpsCounterActive = false
 
+	const cleanup = () => {
+		if (fpsInterval) clearInterval(fpsInterval)
+		fpsCounterActive = false
+	}
+
 	// Cleanup on destroy
 	$effect(() => {
-		return () => {
-			if (fpsInterval) clearInterval(fpsInterval)
-			fpsCounterActive = false
-		}
+		return cleanup
 	})
 
 	const onMediaLoad = (e: Event) => {
@@ -89,8 +92,8 @@
 					resolutions = options.map((opt) => ({ width: opt.width, height: opt.height }))
 					isLoading = false
 				})
-				.catch((e) => {
-					error = e instanceof Error ? e.message : 'Failed to get stream options'
+				.catch((error_) => {
+					error = error_ instanceof Error ? error_.message : 'Failed to get stream options'
 					isLoading = false
 				})
 		}
@@ -101,19 +104,19 @@
 		if (!target.value || !streamClient) return
 
 		const [w, h] = target.value.split('x').map(Number)
-		if (isNaN(w) || isNaN(h)) return
+		if (Number.isNaN(w) || Number.isNaN(h)) return
 
 		try {
 			await streamClient.setOptions(name, w, h)
 			error = undefined
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to set resolution'
+		} catch (error_) {
+			error = error_ instanceof Error ? error_.message : 'Failed to set resolution'
 		}
 	}
 </script>
 
 <div
-	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 flex resize-x flex-col overflow-hidden border text-xs"
+	class="bg-extralight border-medium absolute top-0 left-0 z-4 m-2 flex resize-x flex-col overflow-hidden border text-xs dark:text-black"
 	style:width="320px"
 	style:height="auto !important"
 	use:draggable={{

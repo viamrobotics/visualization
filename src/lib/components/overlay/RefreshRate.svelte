@@ -16,9 +16,11 @@
 </script>
 
 <script lang="ts">
-	import { Select, IconButton } from '@viamrobotics/prime-core'
-	import { useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import type { Snippet } from 'svelte'
+
+	import { IconButton, Select } from '@viamrobotics/prime-core'
+
+	import { useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 
 	interface Props {
 		id: string

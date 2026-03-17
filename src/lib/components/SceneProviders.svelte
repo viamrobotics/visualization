@@ -1,28 +1,31 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
-	import { provideFrames } from '$lib/hooks/useFrames.svelte'
-	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
-	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { provideSelection } from '$lib/hooks/useSelection.svelte'
-	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
-	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
-	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
-	import {
-		provideCameraControls,
-		provideTransformControls,
-		type CameraPose,
-	} from '$lib/hooks/useControls.svelte'
-	import { provideLogs } from '$lib/hooks/useLogs.svelte'
-	import { provideOrigin } from './xr/useOrigin.svelte'
-	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
+
+	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
+	import { provideConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
+	import {
+		type CameraPose,
+		provideCameraControls,
+		provideTransformControls,
+	} from '$lib/hooks/useControls.svelte'
+	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
-	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
+	import { provideFrames } from '$lib/hooks/useFrames.svelte'
+	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
 	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { provideLogs } from '$lib/hooks/useLogs.svelte'
+	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
+	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
+	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { provideSelection } from '$lib/hooks/useSelection.svelte'
+	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
+	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
+
+	import { provideOrigin } from './xr/useOrigin.svelte'
 
 	interface Props {
 		cameraPose?: CameraPose
@@ -43,6 +46,7 @@
 	provideDrawAPI()
 
 	provideResourceByName(() => partID.current)
+	provideConfigFrames()
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)

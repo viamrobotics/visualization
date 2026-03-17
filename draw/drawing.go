@@ -9,7 +9,6 @@ import (
 // Shape represents a drawable geometric shape or object in 3D space. A Shape contains
 // exactly one geometry type (Arrows, Line, Points, Model, or Nurbs), positioned at Center with a Label.
 type Shape struct {
-	drawShapeConfig
 	Center spatialmath.Pose
 	Label  string
 	Arrows *Arrows

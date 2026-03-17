@@ -1,4 +1,4 @@
-import { type BufferGeometry, BoxGeometry, ConeGeometry } from 'three'
+import { BoxGeometry, type BufferGeometry, ConeGeometry } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 /**

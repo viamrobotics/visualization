@@ -1,4 +1,5 @@
 import type { Entity, World } from 'koota'
+
 import { traits } from '$lib/ecs'
 
 export const createEntityFixture = (world: World): Entity => {

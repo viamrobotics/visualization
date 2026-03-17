@@ -1,20 +1,23 @@
+import { useThrelte } from '@threlte/core'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext } from 'svelte'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
-import { UuidTool } from 'uuid-tool'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { UuidTool } from 'uuid-tool'
+
 import type { Frame } from '$lib/frame'
-import { createPose, createPoseFromFrame } from '$lib/transform'
-import { useCameraControls } from './useControls.svelte'
-import { useWorld, traits } from '$lib/ecs'
-import { useThrelte } from '@threlte/core'
-import { type ConfigurableTrait, type Entity } from 'koota'
-import { parsePlyInput } from '$lib/ply'
-import { useLogs } from './useLogs.svelte'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
-import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { STRIDE } from '$lib/buffer'
+import { traits, useWorld } from '$lib/ecs'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePlyInput } from '$lib/ply'
+import { createPose, createPoseFromFrame } from '$lib/transform'
+
+import { useCameraControls } from './useControls.svelte'
+import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import { useLogs } from './useLogs.svelte'
 
 const colorUtil = new Color()
 
@@ -50,7 +53,7 @@ const tryParse = (json: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lowercaseKeys = <T>(obj: T): any => {
 	if (Array.isArray(obj)) {
-		return obj.map(lowercaseKeys)
+		return obj.map((item) => lowercaseKeys(item))
 	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
 		return Object.fromEntries(
 			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])

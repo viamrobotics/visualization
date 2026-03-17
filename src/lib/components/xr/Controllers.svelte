@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { Controller } from '@threlte/xr'
 	import { RigidBody } from '@threlte/rapier'
-	import HandCollider from './HandCollider.svelte'
-	import ArmTeleop from './ArmTeleop.svelte'
+	import { Controller } from '@threlte/xr'
+
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+	import ArmTeleop from './ArmTeleop.svelte'
+	import HandCollider from './HandCollider.svelte'
 
 	const settings = useSettings()
 

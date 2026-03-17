@@ -93,7 +93,7 @@ func NewModel(options ...DrawModelOption) (*Model, error) {
 }
 
 // Draw creates a Drawing from this Model object.
-func (model Model) Draw(name string, options ...drawableOption) *Drawing {
+func (model Model) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithModel(model))
 	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata())

@@ -1,5 +1,111 @@
 # motion-tools
 
+## 1.15.0
+
+### Minor Changes
+
+- 99bcc28: add settings tab for weblabs
+
+### Patch Changes
+
+- fae30f6: force light mode
+- ccc7a20: Use `<FloatingPanel>` for Treeview
+- 2f357b2: Add automated import sorting
+
+## 1.14.0
+
+### Minor Changes
+
+- 40bf132: Simplify `Transform` metadata, fix line color handling
+
+### Patch Changes
+
+- eff4330: Add draw points API
+- a61c3e1: Add set camera API
+- eb259e0: Add draw poses as arrows API
+- a83ed6e: Add remove all, remove drawings, and remove transforms APIs
+- 2c4a40c: Add draw robot and draw world state APIs
+- 4a1c85f: Add draw nurbs API
+- 8202bd4: Add draw geometry and draw geometries APIs
+- 1a6df8f: Add replay API
+- 8475f5d: Sort world tree nodes
+- 41b4995: [APP-15201] Fix: entity disposing when connected to a machine
+- 9f1e1bd: Add draw line API
+- 3be3f7c: Update `createBufferGeometry` to handle RGBA and RGB
+- 8bda28b: Add draw GLTF API
+
+## 1.13.1
+
+### Patch Changes
+
+- f656483: Add colors and line width to nurbs
+- 2b8da5f: Add DrawnFrames to draw API
+- d171cf0: Add DrawnFrames type and use that in the draw frames API
+- d888c1d: Standardize colorables in draw API
+- a75ce2c: Add DrawableOption to public draw API
+- d171cf0: Add draw frame system and draw frames APIs
+- 6e34aa0: Add draw client API helpers
+- ec39781: Fix: reduce over-eager state evaluation of frame updates
+- c02782f: export name and render order props form PCD
+- 6e34aa0: Add ChromaticColorChooser and AchromaticColorChooser to the draw API
+- af2a313: Add server for new draw service and to host static assets in production mode
+- 8796d64: Add DrawService
+
+## 1.13.0
+
+### Minor Changes
+
+- 3ef8369: Feat: logs panel
+
+### Patch Changes
+
+- 31e25d8: Fix: Update selected bounding boxes so that they move as objects move
+- aa7aad8: Remove disk persistence for visibility
+- bb97ee2: Fix: use machine connection only for frame data unless editing frames
+
+## 1.12.3
+
+### Patch Changes
+
+- 0fba953: fix machine config reactivity for e2e tests
+- 373155b: Add connection status in dashboard
+- 86d5aa2: Fix: Depth test sorting
+- 6918e3c: [APP-15201] (1/2) Clean up usePartConfig
+- 535c559: Add HDR environment map for more realistic arm rendering
+
+## 1.12.2
+
+### Patch Changes
+
+- 3cddd9e: Create inline versions of workers to work outside of project boundaries
+- 4dbb986: fix: force orthographic cam mode when enter lasso tool
+
+## 1.12.1
+
+### Patch Changes
+
+- f9c41ec: Fix: Lasso object layout
+
+## 1.12.0
+
+### Minor Changes
+
+- 247d5c3: Add `<LassoTool>` plugin
+
+### Patch Changes
+
+- 0fac3d8: Fix: Render lasso lines on top of other objects
+- 71e14fa: Fix transparency flickering
+
+## 1.11.1
+
+### Patch Changes
+
+- 3f609ff: Reposition joint limits widgets above camera feeds, centered, and remove tilt
+- a5135ea: Fix: detached mesh reference when performing bvh cleanup
+- 828c53f: Standardize draw APIs
+- 8f79b03: Use `three-mesh-bvh` directly
+
 ## 1.11.0
 
 ### Minor Changes

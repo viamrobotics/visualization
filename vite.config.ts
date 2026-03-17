@@ -1,18 +1,19 @@
 import { sentrySvelteKit } from '@sentry/sveltekit'
-import devtoolsJson from 'vite-plugin-devtools-json'
-import tailwindcss from '@tailwindcss/vite'
-import basicSsl from '@vitejs/plugin-basic-ssl'
-import glsl from 'vite-plugin-glsl'
-import { svelteTesting } from '@testing-library/svelte/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
+import { svelteTesting } from '@testing-library/svelte/vite'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import dns from 'node:dns'
+import { defineConfig } from 'vite'
+import devtoolsJson from 'vite-plugin-devtools-json'
+import glsl from 'vite-plugin-glsl'
 
 dns.setDefaultResultOrder('verbatim')
 
 const https = false
 
 export default defineConfig({
+	assetsInclude: ['**/*.hdr'],
 	plugins: [
 		glsl(),
 		sentrySvelteKit({
@@ -43,7 +44,7 @@ export default defineConfig({
 
 	server: {
 		host: true,
-		port: parseInt(process.env.STATIC_PORT || '5173', 10),
+		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
 		cors: true,
 		https: https ? {} : undefined,

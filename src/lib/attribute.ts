@@ -1,11 +1,20 @@
-import { BufferGeometry, BufferAttribute } from 'three'
+import { BufferAttribute, BufferGeometry } from 'three'
+
+import { STRIDE } from './buffer'
+
+const colorStride = (colors: Uint8Array, positions: Float32Array): number => {
+	const numVertices = positions.length / STRIDE.POSITIONS
+	const stride = colors.length / numVertices
+	return stride === STRIDE.COLORS_RGBA ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+}
 
 export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Array | null) => {
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
 	if (colors) {
-		geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
+		const stride = colorStride(colors, positions)
+		geometry.setAttribute('color', new BufferAttribute(colors, stride, true))
 	}
 
 	return geometry
@@ -33,7 +42,8 @@ export const updateBufferGeometry = (
 			colorAttr.array.set(colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('color', new BufferAttribute(colors, 3, true))
+			const stride = colorStride(colors, positions)
+			geometry.setAttribute('color', new BufferAttribute(colors, stride, true))
 		}
 	}
 }

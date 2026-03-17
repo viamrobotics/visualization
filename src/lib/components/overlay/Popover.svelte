@@ -1,8 +1,9 @@
 <script lang="ts">
-	import * as popover from '@zag-js/popover'
-	import { portal, useMachine, normalizeProps } from '@zag-js/svelte'
 	import type { Snippet } from 'svelte'
 	import type { HTMLButtonAttributes } from 'svelte/elements'
+
+	import * as popover from '@zag-js/popover'
+	import { normalizeProps, portal, useMachine } from '@zag-js/svelte'
 
 	interface Props {
 		trigger: Snippet<[HTMLButtonAttributes]>
