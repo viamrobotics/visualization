@@ -14,7 +14,6 @@
 		persistRect?: boolean
 		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
-		header?: Snippet
 		children: Snippet
 	}
 
@@ -25,7 +24,6 @@
 		resizable = false,
 		persistRect = true,
 		isOpen = $bindable(false),
-		header,
 		children,
 		...props
 	}: Props = $props()
@@ -60,29 +58,25 @@
 				{...api.getHeaderProps()}
 				class="border-medium flex justify-between border-b p-2"
 			>
-				{#if header}
-					{@render header()}
-				{:else}
-					<p
-						{...api.getTitleProps()}
-						class="text-gray-7 text-xs"
-					>
-						{title}
-					</p>
+				<p
+					{...api.getTitleProps()}
+					class="text-gray-7 text-xs"
+				>
+					{title}
+				</p>
 
-					{#if exitable}
-						<div
-							{...api.getControlProps()}
-							class="flex gap-3"
+				{#if exitable}
+					<div
+						{...api.getControlProps()}
+						class="flex gap-3"
+					>
+						<button
+							aria-label="Close connection configs panel"
+							onclick={() => (isOpen = false)}
 						>
-							<button
-								aria-label="Close connection configs panel"
-								onclick={() => (isOpen = false)}
-							>
-								<Icon name="close" />
-							</button>
-						</div>
-					{/if}
+							<Icon name="close" />
+						</button>
+					</div>
 				{/if}
 			</div>
 		</div>
