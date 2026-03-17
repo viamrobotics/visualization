@@ -176,32 +176,27 @@
 	{/if}
 {/snippet}
 
-<div class="root-node">
-	<div {...api.getRootProps() as object}>
-		<div {...api.getTreeProps()}>
-			{#if rootChildren.length === 0}
-				<p class="text-subtle-2 px-2 py-4">No objects displayed</p>
-			{:else if rootChildren.length > 200}
-				<VirtualList
-					class="w-full"
-					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
-					items={rootChildren}
-				>
-					{#snippet vl_slot({ index, item })}
-						{@render treeNode({ node: item, indexPath: [Number(index)], api })}
-					{/snippet}
-				</VirtualList>
-			{:else}
-				<div
-					style="height:{Math.min(8, Math.max(rootChildren.length, 5)) * 32}px;"
-					class="overflow-auto"
-				>
-					{#each rootChildren as node, index (node.entity)}
-						{@render treeNode({ node, indexPath: [Number(index)], api })}
-					{/each}
-				</div>
-			{/if}
-		</div>
+<div
+	{...api.getRootProps()}
+	class="h-full overflow-auto text-xs"
+>
+	<div {...api.getTreeProps()}>
+		{#if rootChildren.length === 0}
+			<p class="text-subtle-2 px-2 py-4">No objects displayed</p>
+		{:else if rootChildren.length > 200}
+			<VirtualList
+				class="w-full"
+				items={rootChildren}
+			>
+				{#snippet vl_slot({ index, item })}
+					{@render treeNode({ node: item, indexPath: [Number(index)], api })}
+				{/snippet}
+			</VirtualList>
+		{:else}
+			{#each rootChildren as node, index (node.entity)}
+				{@render treeNode({ node, indexPath: [Number(index)], api })}
+			{/each}
+		{/if}
 	</div>
 </div>
 

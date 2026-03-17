@@ -20,6 +20,10 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		defaultPosition = {
+			x: globalThis.innerWidth / 2 - defaultSize.width / 2,
+			y: globalThis.innerHeight / 2 - defaultSize.height / 2,
+		},
 		exitable = true,
 		resizable = false,
 		persistRect = true,
@@ -32,6 +36,7 @@
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
+		defaultPosition,
 		resizable,
 		allowOverflow: false,
 		persistRect,
@@ -58,12 +63,12 @@
 				{...api.getHeaderProps()}
 				class="border-medium flex justify-between border-b p-2"
 			>
-				<p
+				<h3
 					{...api.getTitleProps()}
 					class="text-gray-7 text-xs"
 				>
 					{title}
-				</p>
+				</h3>
 
 				{#if exitable}
 					<div
