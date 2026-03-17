@@ -106,17 +106,17 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@threlte/core':
-        specifier: 8.3.0
-        version: 8.3.0(svelte@5.53.13)(three@0.182.0)
+        specifier: 8.5.0
+        version: 8.5.0(svelte@5.53.13)(three@0.182.0)
       '@threlte/extras':
-        specifier: 9.7.0
-        version: 9.7.0(@types/three@0.181.0)(svelte@5.53.13)(three@0.182.0)
+        specifier: 9.9.0
+        version: 9.9.0(@types/three@0.181.0)(svelte@5.53.13)(three@0.182.0)
       '@threlte/rapier':
-        specifier: 3.2.0
-        version: 3.2.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.53.13)(three@0.182.0)
+        specifier: 3.4.0
+        version: 3.4.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.53.13)(three@0.182.0)
       '@threlte/xr':
-        specifier: 1.0.8
-        version: 1.0.8(svelte@5.53.13)(three@0.182.0)
+        specifier: 1.4.0
+        version: 1.4.0(svelte@5.53.13)(three@0.182.0)
       '@types/bun':
         specifier: 1.2.21
         version: 1.2.21(@types/react@19.2.2)
@@ -236,7 +236,7 @@ importers:
         version: 0.182.0
       threlte-uikit:
         specifier: 1.2.1
-        version: 1.2.1(@threlte/core@8.3.0(svelte@5.53.13)(three@0.182.0))(svelte@5.53.13)(three@0.182.0)
+        version: 1.2.1(@threlte/core@8.5.0(svelte@5.53.13)(three@0.182.0))(svelte@5.53.13)(three@0.182.0)
       tsx:
         specifier: 4.20.5
         version: 4.20.5
@@ -1617,27 +1617,27 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.3.0':
-    resolution: {integrity: sha512-5APdWBjrUuk2sYFILsH8lfHOWCzQy2dcvploEx60uaGlf9ckj0zWolBEtuwx3Ab9fEyhWqw2HlJm6Ff8lgZozw==}
+  '@threlte/core@8.5.0':
+    resolution: {integrity: sha512-gEG5lOu6Rk00ISm5JdlTuo1AuX5u5N3iQ+LdbTLCzqsQmkr2iPJ/aM3pJkn9NJCC98hkK3sysBLHIHJVu5jOIw==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/extras@9.7.0':
-    resolution: {integrity: sha512-aAuroZR4sqTbSWJ6XtRiNG7ksOv0W9dCFC4TA0hvNwJ+5IRjqXgBg2Mr3pSxrINonAT3psUsYwLvuq0QgoehWA==}
+  '@threlte/extras@9.9.0':
+    resolution: {integrity: sha512-cTYXEfK+P2zj0eeBawkwZNVWyBMsoDuY341SU1z34KQcgCOwZDOIwlkJV+05f4AJMfgufSiT/582rOrdcuu9dQ==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/rapier@3.2.0':
-    resolution: {integrity: sha512-YBUXW6VFVyV9fWPJ9BXo4ALKuN2rj1vQQ3SZIXM1Pcp01apN4VOLGl9+L86QWx9zUcfFRVL+nazXmb3wkiQsBQ==}
+  '@threlte/rapier@3.4.0':
+    resolution: {integrity: sha512-UWtdQ7OsD0tujyJYo1eGjyZpQyDKIZ/D5r4PzY4oYKIs0GsW01rJ5gxXB2Lr/w+S2zr0EEhIJj/32qXPXTcnkA==}
     peerDependencies:
       '@dimforge/rapier3d-compat': '>=0.16'
       svelte: '>=5'
       three: '>=0.152'
 
-  '@threlte/xr@1.0.8':
-    resolution: {integrity: sha512-PL3MpnD59NqHZWx0Bco1zxgmC61OFH4XXeNrhES/4W28z+81vO42I2g84kVRc9p3FIzrN3tUzoxxNuKdP/BU9g==}
+  '@threlte/xr@1.4.0':
+    resolution: {integrity: sha512-AExmo39ANdS6STcn7C8ArlsuGQVLPgPkAbJS7pJDUoTCjpsj2QFUBbvlcZRkFpGQogWNi5LqrU7N/l1uBhbTmQ==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -2196,14 +2196,15 @@ packages:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
 
-  camera-controls@2.10.1:
-    resolution: {integrity: sha512-KnaKdcvkBJ1Irbrzl8XD6WtZltkRjp869Jx8c0ujs9K+9WD+1D7ryBsCiVqJYUqt6i/HR5FxT7RLASieUD+Q5w==}
-    peerDependencies:
-      three: '>=0.126.1'
-
   camera-controls@3.1.0:
     resolution: {integrity: sha512-w5oULNpijgTRH0ARFJJ0R5ct1nUM3R3WP7/b8A6j9uTGpRfnsypc/RBMPQV8JQDPayUe37p/TZZY1PcUr4czOQ==}
     engines: {node: '>=20.11.0', npm: '>=10.8.2'}
+    peerDependencies:
+      three: '>=0.126.1'
+
+  camera-controls@3.1.2:
+    resolution: {integrity: sha512-xkxfpG2ECZ6Ww5/9+kf4mfg1VEYAoe9aDSY+IwF0UEs7qEzwy0aVRfs2grImIECs/PoBtWFrh7RXsQkwG922JA==}
+    engines: {node: '>=22.0.0', npm: '>=10.5.1'}
     peerDependencies:
       three: '>=0.126.1'
 
@@ -5619,16 +5620,16 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.3.0(svelte@5.53.13)(three@0.182.0)':
+  '@threlte/core@8.5.0(svelte@5.53.13)(three@0.182.0)':
     dependencies:
       mitt: 3.0.1
       svelte: 5.53.13
       three: 0.182.0
 
-  '@threlte/extras@9.7.0(@types/three@0.181.0)(svelte@5.53.13)(three@0.182.0)':
+  '@threlte/extras@9.9.0(@types/three@0.181.0)(svelte@5.53.13)(three@0.182.0)':
     dependencies:
       '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.181.0)(three@0.182.0)
-      camera-controls: 2.10.1(three@0.182.0)
+      camera-controls: 3.1.2(three@0.182.0)
       svelte: 5.53.13
       three: 0.182.0
       three-mesh-bvh: 0.9.8(three@0.182.0)
@@ -5638,13 +5639,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/rapier@3.2.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.53.13)(three@0.182.0)':
+  '@threlte/rapier@3.4.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.53.13)(three@0.182.0)':
     dependencies:
       '@dimforge/rapier3d-compat': 0.18.2
       svelte: 5.53.13
       three: 0.182.0
 
-  '@threlte/xr@1.0.8(svelte@5.53.13)(three@0.182.0)':
+  '@threlte/xr@1.4.0(svelte@5.53.13)(three@0.182.0)':
     dependencies:
       svelte: 5.53.13
       three: 0.182.0
@@ -6420,11 +6421,11 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  camera-controls@2.10.1(three@0.182.0):
+  camera-controls@3.1.0(three@0.182.0):
     dependencies:
       three: 0.182.0
 
-  camera-controls@3.1.0(three@0.182.0):
+  camera-controls@3.1.2(three@0.182.0):
     dependencies:
       three: 0.182.0
 
@@ -7999,11 +8000,11 @@ snapshots:
 
   three@0.182.0: {}
 
-  threlte-uikit@1.2.1(@threlte/core@8.3.0(svelte@5.53.13)(three@0.182.0))(svelte@5.53.13)(three@0.182.0):
+  threlte-uikit@1.2.1(@threlte/core@8.5.0(svelte@5.53.13)(three@0.182.0))(svelte@5.53.13)(three@0.182.0):
     dependencies:
       '@pmndrs/uikit': 0.8.21(three@0.182.0)
       '@preact/signals-core': 1.12.1
-      '@threlte/core': 8.3.0(svelte@5.53.13)(three@0.182.0)
+      '@threlte/core': 8.5.0(svelte@5.53.13)(three@0.182.0)
       svelte: 5.53.13
       three: 0.182.0
     transitivePeerDependencies:
