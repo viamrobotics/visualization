@@ -106,7 +106,7 @@ export class OBBHelper extends LineSegments2 {
 		box.getCenter(center)
 		box.getSize(size)
 
-		// Helper local matrix = box inside root-local space
+		// Place the helper at the center of the bounding box, in root-local space
 		this.matrix.makeTranslation(center.x, center.y, center.z)
 
 		// Then inherit the root's full world transform
