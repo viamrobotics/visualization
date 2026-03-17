@@ -3,9 +3,11 @@ import {
 	BoxGeometry,
 	BufferGeometry,
 	EdgesGeometry,
+	type Matrix3,
 	Matrix4,
 	Mesh,
 	Object3D,
+	Quaternion,
 	Vector3,
 } from 'three'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
@@ -20,6 +22,8 @@ const relativeMatrix = new Matrix4()
 const scaleMatrix = new Matrix4()
 const center = new Vector3()
 const size = new Vector3()
+const basis = new Matrix4()
+const quaternion = new Quaternion()
 
 const corners = [
 	new Vector3(),
@@ -69,6 +73,18 @@ export class OBBHelper extends LineSegments2 {
 		this.matrixAutoUpdate = false
 		this.frustumCulled = false
 		this.renderOrder = 999
+	}
+
+	setFromOBB(obb: { center: Vector3; halfSize: Vector3; rotation: { elements: number[] } }) {
+		basis.setFromMatrix3(obb.rotation as Matrix3)
+		quaternion.setFromRotationMatrix(basis)
+
+		size.copy(obb.halfSize).multiplyScalar(2)
+
+		this.matrix.compose(obb.center, quaternion, size)
+		this.matrixWorld.copy(this.matrix)
+
+		return this
 	}
 
 	setFromObject(root: Object3D) {
