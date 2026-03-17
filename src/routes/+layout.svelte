@@ -39,36 +39,34 @@
 	let isMachinesPageOpen = $state(false)
 </script>
 
-<div class="absolute top-4 left-8 h-3/4 w-3/4 border">
-	<ViamProvider
-		config={{
-			defaultOptions: {
-				queries: {
-					staleTime: Infinity,
-				},
+<ViamProvider
+	config={{
+		defaultOptions: {
+			queries: {
+				staleTime: Infinity,
 			},
+		},
+	}}
+	{dialConfigs}
+>
+	<ViamAppProvider
+		serviceHost="https://app.viam.com"
+		credentials={{
+			type: 'api-key',
+			payload: connectionConfig.current?.apiKeyValue ?? '',
+			authEntity: connectionConfig.current?.apiKeyId ?? '',
 		}}
-		{dialConfigs}
 	>
-		<ViamAppProvider
-			serviceHost="https://app.viam.com"
-			credentials={{
-				type: 'api-key',
-				payload: connectionConfig.current?.apiKeyValue ?? '',
-				authEntity: connectionConfig.current?.apiKeyId ?? '',
-			}}
+		<MotionTools
+			{partID}
+			enableKeybindings={!isMachinesPageOpen}
+			drawConnectionConfig={{ backendIP, websocketPort }}
 		>
-			<MotionTools
-				{partID}
-				enableKeybindings={!isMachinesPageOpen}
-				drawConnectionConfig={{ backendIP, websocketPort }}
-			>
-				{@render children()}
+			{@render children()}
 
-				{#snippet dashboard()}
-					<Machines bind:isOpen={isMachinesPageOpen} />
-				{/snippet}
-			</MotionTools>
-		</ViamAppProvider>
-	</ViamProvider>
-</div>
+			{#snippet dashboard()}
+				<Machines bind:isOpen={isMachinesPageOpen} />
+			{/snippet}
+		</MotionTools>
+	</ViamAppProvider>
+</ViamProvider>
