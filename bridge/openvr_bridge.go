@@ -541,6 +541,7 @@ type teleopHand struct {
 	teleopActive  bool // true between teleop_start and teleop_stop
 	errorTimeout  time.Time
 	lastCmdTime   time.Time
+	movePending   atomic.Bool // true while a teleop_move goroutine is in flight
 	poseStack     []pose
 
 	// session logging
@@ -891,7 +892,11 @@ func (h *teleopHand) controlFrame(ctx context.Context, cs ControllerState) {
 				now.UnixMilli(), tx, ty, tz, tox, toy, toz, thetaDeg)
 			h.logFile.WriteString(logEntry)
 		}
+		if !h.movePending.CompareAndSwap(false, true) {
+			return // prior teleop_move still in flight; skip this frame
+		}
 		go func() {
+			defer h.movePending.Store(false)
 			if _, err := h.motionSvc.DoCommand(ctx, map[string]interface{}{
 				"teleop_move": moveReq,
 			}); err != nil {
