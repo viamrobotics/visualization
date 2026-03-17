@@ -63,7 +63,11 @@ Renders a Viam Geometry object
 
 <Portal id={parent.current}>
 	{#if model}
-		<T is={model} />
+		<T
+			is={model}
+			name={entity}
+			{...events}
+		/>
 	{/if}
 
 	{#if settings.current.renderArmModels.includes('colliders') || !model}
