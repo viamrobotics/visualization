@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.15.1
+
+### Patch Changes
+
+- 736a412: Move "add frame" to dashboard
+- 9c47a4d: Fix: selection bounding box for models
+
 ## 1.15.0
 
 ### Minor Changes
