@@ -10,9 +10,11 @@
 		defaultSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
+		resizable?: boolean
 		persistRect?: boolean
 		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
+		header?: Snippet
 		children: Snippet
 	}
 
@@ -20,8 +22,10 @@
 		title = '',
 		defaultSize = { width: 700, height: 500 },
 		exitable = true,
+		resizable = false,
 		persistRect = true,
 		isOpen = $bindable(false),
+		header,
 		children,
 		...props
 	}: Props = $props()
@@ -30,7 +34,7 @@
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		resizable: false,
+		resizable,
 		allowOverflow: false,
 		persistRect,
 		open: isOpen,
@@ -56,25 +60,29 @@
 				{...api.getHeaderProps()}
 				class="border-medium flex justify-between border-b p-2"
 			>
-				<p
-					{...api.getTitleProps()}
-					class="text-gray-7 text-xs"
-				>
-					{title}
-				</p>
-
-				{#if exitable}
-					<div
-						{...api.getControlProps()}
-						class="flex gap-3"
+				{#if header}
+					{@render header()}
+				{:else}
+					<p
+						{...api.getTitleProps()}
+						class="text-gray-7 text-xs"
 					>
-						<button
-							aria-label="Close connection configs panel"
-							onclick={() => (isOpen = false)}
+						{title}
+					</p>
+
+					{#if exitable}
+						<div
+							{...api.getControlProps()}
+							class="flex gap-3"
 						>
-							<Icon name="close" />
-						</button>
-					</div>
+							<button
+								aria-label="Close connection configs panel"
+								onclick={() => (isOpen = false)}
+							>
+								<Icon name="close" />
+							</button>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -85,5 +93,40 @@
 		>
 			{@render children()}
 		</div>
+
+		{#if resizable}
+			<div
+				{...api.getResizeTriggerProps({ axis: 'n' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'e' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'w' })}
+				class="max-h-[90%] w-1.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 's' })}
+				class="h-1.5 max-w-[90%]"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'ne' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'se' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'sw' })}
+				class="size-2.5"
+			></div>
+			<div
+				{...api.getResizeTriggerProps({ axis: 'nw' })}
+				class="size-2.5"
+			></div>
+		{/if}
 	</div>
 </div>
