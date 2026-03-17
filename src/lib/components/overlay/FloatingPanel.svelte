@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
+	import { useThrelte } from '@threlte/core'
 	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
-	import { useThrelte } from '@threlte/core'
 
 	interface Props {
 		title?: string
