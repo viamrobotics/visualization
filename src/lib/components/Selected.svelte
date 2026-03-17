@@ -16,19 +16,7 @@
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 
-	const object = $derived.by(() => {
-		if (!selectedObject3d.current) {
-			return
-		}
-
-		// Create a clone in the case of meshes, which could be frames with geometries,
-		// so that our bounding box doesn't include children
-		if (isInstanceOf(selectedObject3d.current, 'Mesh')) {
-			return selectedObject3d.current?.clone(false)
-		}
-
-		return selectedObject3d.current
-	})
+	const object = $derived(selectedObject3d.current)
 
 	const { start, stop } = useTask(
 		() => {
@@ -44,10 +32,6 @@
 				mesh.getBoundingBoxAt(selectedEntity.instance, box3)
 				obb.fromBox3(box3)
 				obbHelper.setFromOBB(obb)
-			} else if (isInstanceOf(selectedObject3d.current, 'Mesh')) {
-				selectedObject3d.current?.getWorldPosition(object.position)
-				selectedObject3d.current?.getWorldQuaternion(object.quaternion)
-				obbHelper.setFromObject(object)
 			} else {
 				obbHelper.setFromObject(object)
 			}
