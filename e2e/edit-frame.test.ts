@@ -85,11 +85,12 @@ test('basic edit frame', async ({ browser }) => {
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	let page = await context.newPage()
-	await page.waitForTimeout(5000)
+
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await page.waitForLoadState('domcontentloaded')
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
@@ -141,8 +142,6 @@ test('basic edit frame', async ({ browser }) => {
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}-1-saved.png`)
 	}
-	// give network some time to sync the config
-	await page.waitForTimeout(5000)
 
 	// RELOAD THE PAGE
 	page = await context.newPage()
@@ -150,6 +149,8 @@ test('basic edit frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await page.waitForLoadState('domcontentloaded')
+
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
 	await page.getByText('base-1', { exact: true }).click()
 	await expect(page.getByTestId('details-header')).toBeVisible()
@@ -250,22 +251,20 @@ test('create and delete frame', async ({ browser }) => {
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	const page = await context.newPage()
-	await page.waitForTimeout(5000)
+
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await page.waitForLoadState('domcontentloaded')
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	setupMachineConfig(page, testConfig)
 
-	// WAIT FOR THE TREE DRAWER TO LOAD
-	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
-
 	// ADD A FRAME & SAVE
-	await expect(page.getByText('Add frames', { exact: true })).toBeVisible()
-	page.getByText('Add frames', { exact: true }).click()
+	await expect(page.getByLabel('Add frames', { exact: true })).toBeVisible()
+	page.getByLabel('Add frames', { exact: true }).click()
 
 	await expect(page.getByRole('button', { name: 'Add frame', exact: true })).toBeVisible()
 	page.getByRole('button', { name: 'Add frame', exact: true }).click()
@@ -391,21 +390,18 @@ test('fragment edit frame', async ({ browser }) => {
 		Struct.fromJson(fragmentUsingConfig(resp.id) as unknown as JsonValue)
 	)
 
-	// WAIT FOR THE TREE DRAWER TO LOAD
+	// WAIT FOR THE TREE TO LOAD
 	const context = await browser.newContext()
 	const page = await context.newPage()
-	await page.waitForTimeout(5000)
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await page.waitForLoadState('domcontentloaded')
 	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
 	// SETUP CONFIG
 	setupMachineConfig(page, testConfig)
-
-	// WAIT FOR THE TREE DRAWER TO LOAD
-	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })

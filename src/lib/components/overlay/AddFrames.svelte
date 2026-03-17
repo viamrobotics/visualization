@@ -24,7 +24,7 @@
 			<DashboardButton
 				active
 				icon="axis-arrow"
-				description="Add frame"
+				description="Add frames"
 				onclick={() => {
 					isOpen = !isOpen
 				}}
@@ -33,7 +33,6 @@
 	</Portal>
 
 	<FloatingPanel
-		title="Add frame"
 		{isOpen}
 		defaultSize={{ width: 300, height: 150 }}
 	>
