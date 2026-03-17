@@ -2,25 +2,18 @@
 	import { type Entity, IsExcluded } from 'koota'
 
 	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 
 	import FloatingPanel from '../FloatingPanel.svelte'
-	import AddFrames from './AddFrames.svelte'
 	import { buildTreeNodes, type TreeNode } from './buildTree'
 	import Tree from './Tree.svelte'
 	import { provideTreeExpandedContext } from './useExpanded.svelte'
 
 	provideTreeExpandedContext()
 
-	const partID = usePartID()
 	const selectedEntity = useSelectedEntity()
 
-	const environment = useEnvironment()
-	const partConfig = usePartConfig()
 	const frames = useFrames()
 	const world = useWorld()
 
@@ -49,19 +42,13 @@
 	exitable={false}
 	resizable
 >
-	<div class="text-xs">
-		<Tree
-			{rootNode}
-			{nodeMap}
-			onSelectionChange={(event) => {
-				const value = event.selectedValue[0]
+	<Tree
+		{rootNode}
+		{nodeMap}
+		onSelectionChange={(event) => {
+			const value = event.selectedValue[0]
 
-				selectedEntity.set(value ? (Number(value) as Entity) : undefined)
-			}}
-		/>
-
-		{#if environment.current.isStandalone && partID.current && partConfig.hasEditPermissions}
-			<AddFrames />
-		{/if}
-	</div>
+			selectedEntity.set(value ? (Number(value) as Entity) : undefined)
+		}}
+	/>
 </FloatingPanel>
