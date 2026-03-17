@@ -90,6 +90,7 @@
 
 <FloatingPanel
 	title="Connection configurations"
+	defaultSize={{ width: 480, height: 400 }}
 	bind:isOpen
 >
 	<div class="flex h-full grow flex-col gap-2 overflow-y-auto p-2">

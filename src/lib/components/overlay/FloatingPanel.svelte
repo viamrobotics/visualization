@@ -4,6 +4,7 @@
 	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
+	import { useThrelte } from '@threlte/core'
 
 	interface Props {
 		title?: string
@@ -12,7 +13,6 @@
 		exitable?: boolean
 		resizable?: boolean
 		persistRect?: boolean
-		strategy?: 'absolute' | 'fixed'
 		isOpen?: boolean
 		children: Snippet
 	}
@@ -20,10 +20,7 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
-		defaultPosition = {
-			x: globalThis.innerWidth / 2 - defaultSize.width / 2,
-			y: globalThis.innerHeight / 2 - defaultSize.height / 2,
-		},
+		defaultPosition,
 		exitable = true,
 		resizable = false,
 		persistRect = true,
@@ -32,13 +29,19 @@
 		...props
 	}: Props = $props()
 
+	const { dom } = useThrelte()
+
 	const id = $props.id()
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		defaultPosition,
+		defaultPosition: defaultPosition ?? {
+			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
+			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
+		},
 		resizable,
 		allowOverflow: false,
+		strategy: 'absolute' as const,
 		persistRect,
 		open: isOpen,
 		...props,
