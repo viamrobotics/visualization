@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.15.2
+
+### Patch Changes
+
+- 0467cea: Improve floating panel behavior in embedded environments
+
 ## 1.15.1
 
 ### Patch Changes
