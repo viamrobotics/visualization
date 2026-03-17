@@ -1,5 +1,17 @@
 # motion-tools
 
+## 1.15.0
+
+### Minor Changes
+
+- 99bcc28: add settings tab for weblabs
+
+### Patch Changes
+
+- fae30f6: force light mode
+- ccc7a20: Use `<FloatingPanel>` for Treeview
+- 2f357b2: Add automated import sorting
+
 ## 1.14.0
 
 ### Minor Changes
