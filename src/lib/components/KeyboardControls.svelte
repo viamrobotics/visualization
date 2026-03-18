@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { CameraControlsRef } from '@threlte/extras'
 
-	import { useTask } from '@threlte/core'
+	import { isInstanceOf, useTask } from '@threlte/core'
 	import { PressedKeys } from 'runed'
-	import { MathUtils } from 'three'
+	import { MathUtils, Vector3 } from 'three'
 
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -35,7 +35,36 @@
 	const left = $derived(keys.has('arrowleft'))
 	const down = $derived(keys.has('arrowdown'))
 	const right = $derived(keys.has('arrowright'))
-	const any = $derived(w || s || a || d || r || f || up || left || down || right)
+	const anyKeysPressed = $derived(w || s || a || d || r || f || up || left || down || right)
+
+	const target = new Vector3()
+
+	const PERSPECTIVE_DISTANCE_FACTOR = 0.0001
+	const PERSPECTIVE_MIN_SPEED = 0.00001
+
+	const ORTHOGRAPHIC_ZOOM_FACTOR = 0.1
+	const ORTHOGRAPHIC_MIN_SPEED = 0.00005
+
+	const FALLBACK_SPEED = 0.001
+
+	const getMovementScale = () => {
+		const camera = cameraControls.camera
+
+		if (isInstanceOf(camera, 'PerspectiveCamera')) {
+			cameraControls.getTarget(target)
+
+			const distance = camera.position.distanceTo(target)
+			const scaled = distance * PERSPECTIVE_DISTANCE_FACTOR
+			return Math.max(scaled, PERSPECTIVE_MIN_SPEED)
+		}
+
+		if (isInstanceOf(camera, 'OrthographicCamera')) {
+			const scaled = ORTHOGRAPHIC_ZOOM_FACTOR / camera.zoom
+			return Math.max(scaled, ORTHOGRAPHIC_MIN_SPEED)
+		}
+
+		return FALLBACK_SPEED
+	}
 
 	const { start, stop } = useTask(
 		(delta) => {
@@ -46,44 +75,58 @@
 				return
 			}
 
+			const moveSpeed = getMovementScale() * dt
+			const rotateSpeed = 0.1 * MathUtils.DEG2RAD * dt
+			const tiltSpeed = 0.05 * MathUtils.DEG2RAD * dt
+			const dollySpeed = 0.005 * dt
+			const zoomSpeed = 0.5 * dt
+
 			if (a) {
-				cameraControls.truck(-0.01 * dt, 0, true)
+				cameraControls.truck(-moveSpeed * dt, 0, true)
 			}
 
 			if (d) {
-				cameraControls.truck(0.01 * dt, 0, true)
+				cameraControls.truck(moveSpeed * dt, 0, true)
 			}
 
 			if (w) {
-				cameraControls.forward(0.01 * dt, true)
+				cameraControls.forward(moveSpeed * dt, true)
 			}
 
 			if (s) {
-				cameraControls.forward(-0.01 * dt, true)
+				cameraControls.forward(-moveSpeed * dt, true)
 			}
 
 			if (r) {
-				cameraControls.dolly(0.01 * dt, true)
+				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
+					cameraControls.dolly(dollySpeed, true)
+				} else {
+					cameraControls.zoom(zoomSpeed, true)
+				}
 			}
 
 			if (f) {
-				cameraControls.dolly(-0.01 * dt, true)
+				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
+					cameraControls.dolly(-dollySpeed, true)
+				} else {
+					cameraControls.zoom(-zoomSpeed, true)
+				}
 			}
 
 			if (left) {
-				cameraControls.rotate(-0.1 * MathUtils.DEG2RAD * dt, 0, true)
+				cameraControls.rotate(-rotateSpeed, 0, true)
 			}
 
 			if (right) {
-				cameraControls.rotate(0.1 * MathUtils.DEG2RAD * dt, 0, true)
+				cameraControls.rotate(rotateSpeed, 0, true)
 			}
 
 			if (up) {
-				cameraControls.rotate(0, -0.05 * MathUtils.DEG2RAD * dt, true)
+				cameraControls.rotate(0, -tiltSpeed, true)
 			}
 
 			if (down) {
-				cameraControls.rotate(0, 0.05 * MathUtils.DEG2RAD * dt, true)
+				cameraControls.rotate(0, tiltSpeed, true)
 			}
 		},
 		{
@@ -93,7 +136,7 @@
 	)
 
 	$effect.pre(() => {
-		if (any) {
+		if (anyKeysPressed) {
 			start()
 		} else {
 			stop()
