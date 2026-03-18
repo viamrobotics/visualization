@@ -1,5 +1,6 @@
+import { createQuery, $internal as internal, type QueryParameter, type QueryResult } from 'koota'
 import { untrack } from 'svelte'
-import { $internal as internal, createQuery, type QueryParameter, type QueryResult } from 'koota'
+
 import { useWorld } from './useWorld'
 
 export function useQuery<T extends QueryParameter[]>(

@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { T, useThrelte, type Props as ThrelteProps } from '@threlte/core'
+	import type { Pose } from '@viamrobotics/sdk'
+	import type { Entity } from 'koota'
+
+	import { T, type Props as ThrelteProps, useThrelte } from '@threlte/core'
 	import { type Snippet } from 'svelte'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Mesh } from 'three'
-	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
+
 	import { colors, darkenColor } from '$lib/color'
-	import AxesHelper from '../AxesHelper.svelte'
-	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
+	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
 	import { poseToObject3d } from '$lib/transform'
-	import type { Pose } from '@viamrobotics/sdk'
+
+	import AxesHelper from '../AxesHelper.svelte'
 
 	interface Props extends ThrelteProps<Mesh> {
 		entity: Entity
@@ -32,13 +35,6 @@
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
-
-	const geometryType = $derived.by(() => {
-		if (box.current) return 'box'
-		if (capsule.current) return 'capsule'
-		if (sphere.current) return 'sphere'
-		if (bufferGeometry.current) return 'buffer'
-	})
 
 	const color = $derived.by(() => {
 		if (overrideColor) {
@@ -104,7 +100,7 @@
 	{@const currentOpacity = opacity.current ?? 0.7}
 	<T.MeshToonMaterial
 		{color}
-		side={geometryType === 'buffer' ? DoubleSide : FrontSide}
+		side={bufferGeometry.current ? DoubleSide : FrontSide}
 		transparent={currentOpacity < 1}
 		depthWrite={currentOpacity === 1}
 		opacity={currentOpacity}

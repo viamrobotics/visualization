@@ -1,11 +1,12 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte'
+
+	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
 	import { T, useTask } from '@threlte/core'
 	import { useGamepad } from '@threlte/extras'
-	import { useController } from '@threlte/xr'
-	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
-	import type { Snippet } from 'svelte'
-	import { Group, Vector3 } from 'three'
 	import { AutoColliders, RigidBody } from '@threlte/rapier'
+	import { useController } from '@threlte/xr'
+	import { Group, Vector3 } from 'three'
 
 	interface Props {
 		children: Snippet

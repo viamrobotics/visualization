@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
-	import { traits, useWorld } from '$lib/ecs'
 	import type { Entity } from 'koota'
-	import { STRIDE } from '$lib/buffer'
+
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
+
+	import { STRIDE } from '$lib/buffer'
+	import { traits, useWorld } from '$lib/ecs'
+	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
+
 	import Arrows from './Arrows.svelte'
 
 	const world = useWorld()

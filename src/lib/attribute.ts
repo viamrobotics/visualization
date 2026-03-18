@@ -1,4 +1,5 @@
-import { BufferGeometry, BufferAttribute } from 'three'
+import { BufferAttribute, BufferGeometry } from 'three'
+
 import { STRIDE } from './buffer'
 
 const colorStride = (colors: Uint8Array, positions: Float32Array): number => {

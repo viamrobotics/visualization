@@ -1,7 +1,9 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { trait, type Entity } from 'koota'
-import { BufferGeometry as ThreeBufferGeometry } from 'three'
+
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
+import { type Entity, trait } from 'koota'
+import { BufferGeometry as ThreeBufferGeometry } from 'three'
+
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 

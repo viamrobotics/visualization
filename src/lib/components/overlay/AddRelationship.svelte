@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
-	import { Button, Select, Input } from '@viamrobotics/prime-core'
-	import { traits, useQuery, relations, useTrait } from '$lib/ecs'
+
+	import { Button, Input, Select } from '@viamrobotics/prime-core'
+
+	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { SubEntityLinkType } from '$lib/ecs/relations'
 
 	interface Props {

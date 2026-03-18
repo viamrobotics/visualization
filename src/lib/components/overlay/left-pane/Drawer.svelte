@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { PersistedState } from 'runed'
-	import { Icon } from '@viamrobotics/prime-core'
 	import type { Snippet } from 'svelte'
+
+	import { Icon } from '@viamrobotics/prime-core'
+	import { PersistedState } from 'runed'
 
 	interface Props {
 		name: string

@@ -1,6 +1,6 @@
-import { Color, type ColorRepresentation, type RGB } from 'three'
-import twColors from 'tailwindcss/colors'
 import { ResourceName } from '@viamrobotics/sdk'
+import twColors from 'tailwindcss/colors'
+import { Color, type ColorRepresentation, type RGB } from 'three'
 
 // Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {

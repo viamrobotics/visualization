@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Vector2, PlaneGeometry } from 'three'
-	import { T } from '@threlte/core'
 	import type { BufferAttribute } from 'three'
+
+	import { T } from '@threlte/core'
+	import { PlaneGeometry, Vector2 } from 'three'
 
 	export let args: [
 		radius: number,

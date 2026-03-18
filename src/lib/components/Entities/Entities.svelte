@@ -1,14 +1,16 @@
 <script lang="ts">
-	import Pose from './Pose.svelte'
+	import { Not, Or } from 'koota'
+
+	import { traits, useQuery } from '$lib/ecs'
+
+	import Arrows from './Arrows/ArrowGroups.svelte'
 	import Frame from './Frame.svelte'
+	import Geometry from './Geometry.svelte'
 	import GLTF from './GLTF.svelte'
 	import Label from './Label.svelte'
 	import Line from './Line.svelte'
 	import Points from './Points.svelte'
-	import Arrows from './Arrows/ArrowGroups.svelte'
-	import { traits, useQuery } from '$lib/ecs'
-	import { Not, Or } from 'koota'
-	import Geometry from './Geometry.svelte'
+	import Pose from './Pose.svelte'
 
 	/**
 	 * Frames from a live machine are bucketed into their own query

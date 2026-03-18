@@ -1,23 +1,24 @@
 import {
-	RawShaderMaterial,
+	Box3,
+	BufferGeometry,
+	Color,
+	type ColorRepresentation,
+	DynamicDrawUsage,
 	FrontSide,
 	Group,
 	InstancedBufferAttribute,
-	DynamicDrawUsage,
-	Mesh,
-	BufferGeometry,
 	InstancedInterleavedBuffer,
 	InterleavedBufferAttribute,
 	Material,
-	type ColorRepresentation,
-	Color,
+	Mesh,
+	RawShaderMaterial,
 	Vector3,
-	Box3,
 } from 'three'
-import vertexShader from './vertex.glsl'
+
+import { computeBoundingBox } from './box'
 import fragmentShader from './fragment.glsl'
 import { createHeadGeometry, createShaftGeometry, toInstanced } from './geometry'
-import { computeBoundingBox } from './box'
+import vertexShader from './vertex.glsl'
 
 const defaults = {
 	LENGTH: 0.1,

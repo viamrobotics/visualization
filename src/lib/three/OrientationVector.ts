@@ -1,4 +1,4 @@
-import { Euler, Quaternion, Vector3, MathUtils } from 'three'
+import { Euler, MathUtils, Quaternion, Vector3 } from 'three'
 
 export const EPSILON = 0.0001
 

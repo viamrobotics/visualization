@@ -1,23 +1,24 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createWorld, type World } from 'koota'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('$lib/loaders/pcd', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
-import { Transform, Geometry } from '$lib/buf/common/v1/common_pb'
+import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
 import {
-	Drawing,
-	Shape,
 	Arrows,
+	Drawing,
 	Line,
-	Points,
 	Model,
 	ModelAsset,
+	Points,
+	Shape,
 } from '$lib/buf/draw/v1/drawing_pb'
 import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
-import { createPose } from '$lib/transform'
 import { traits } from '$lib/ecs'
+import { createPose } from '$lib/transform'
+
 import { spawnDrawing, spawnTransform } from '../spawn'
 
 describe('spawnTransform', () => {

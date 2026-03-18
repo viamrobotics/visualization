@@ -1,25 +1,58 @@
 import {
-	EdgesGeometry,
+	Box3,
 	BoxGeometry,
-	Vector3,
-	Quaternion,
-	Matrix4,
-	Object3D,
-	Mesh,
 	BufferGeometry,
-	Matrix3,
+	EdgesGeometry,
+	type Matrix3,
+	Matrix4,
+	Mesh,
+	Object3D,
+	Quaternion,
+	Vector3,
 } from 'three'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 
+const box = new Box3()
+const childBox = new Box3()
+const inverseRootMatrixWorld = new Matrix4()
+const rootMatrixWorld = new Matrix4()
+const relativeMatrix = new Matrix4()
+const scaleMatrix = new Matrix4()
 const center = new Vector3()
-const half = new Vector3()
 const size = new Vector3()
+const basis = new Matrix4()
 const quaternion = new Quaternion()
-const scale = new Vector3()
-const absScale = new Vector3()
-const worldCenter = new Vector3()
+
+const corners = [
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+	new Vector3(),
+]
+
+const expandBoxByTransformedBox = (box: Box3, childBox: Box3, matrix: Matrix4) => {
+	const min = childBox.min
+	const max = childBox.max
+
+	corners[0].set(min.x, min.y, min.z).applyMatrix4(matrix)
+	corners[1].set(min.x, min.y, max.z).applyMatrix4(matrix)
+	corners[2].set(min.x, max.y, min.z).applyMatrix4(matrix)
+	corners[3].set(min.x, max.y, max.z).applyMatrix4(matrix)
+	corners[4].set(max.x, min.y, min.z).applyMatrix4(matrix)
+	corners[5].set(max.x, min.y, max.z).applyMatrix4(matrix)
+	corners[6].set(max.x, max.y, min.z).applyMatrix4(matrix)
+	corners[7].set(max.x, max.y, max.z).applyMatrix4(matrix)
+
+	for (const corner of corners) {
+		box.expandByPoint(corner)
+	}
+}
 
 export class OBBHelper extends LineSegments2 {
 	constructor(color = 0x000000, linewidth = 2) {
@@ -43,63 +76,61 @@ export class OBBHelper extends LineSegments2 {
 	}
 
 	setFromOBB(obb: { center: Vector3; halfSize: Vector3; rotation: { elements: number[] } }) {
-		// position/rotation
-		const basis = new Matrix4().setFromMatrix3(obb.rotation as Matrix3)
+		basis.setFromMatrix3(obb.rotation as Matrix3)
 		quaternion.setFromRotationMatrix(basis)
 
-		// scale = full size
 		size.copy(obb.halfSize).multiplyScalar(2)
 
-		// compose
 		this.matrix.compose(obb.center, quaternion, size)
-		this.matrixWorld.copy(this.matrix) // no parent updates if used standalone
+		this.matrixWorld.copy(this.matrix)
+
 		return this
 	}
 
-	/** Set from a Mesh/Object3D assuming no shears. Uses geometry's local bbox + world rotation/scale. */
-	setFromObject(object: Object3D) {
-		// Find a geometry to read bbox from
-		let geometry: BufferGeometry | undefined
+	setFromObject(root: Object3D) {
+		root.updateWorldMatrix(true, true)
 
-		if ((object as Mesh).geometry) {
-			geometry = (object as Mesh).geometry
-		} else {
-			// try the first mesh child
-			object.traverse((child) => {
-				if (!geometry && (child as Mesh).geometry) {
-					geometry = (child as Mesh).geometry
-				}
-			})
-		}
+		rootMatrixWorld.copy(root.matrixWorld)
+		inverseRootMatrixWorld.copy(rootMatrixWorld).invert()
 
-		if (!geometry) {
+		box.makeEmpty()
+
+		root.traverse((child) => {
+			const mesh = child as Mesh
+			const geometry = mesh.geometry as BufferGeometry | undefined
+
+			if (!geometry) return
+
+			if (!geometry.boundingBox) {
+				geometry.computeBoundingBox()
+			}
+
+			if (!geometry.boundingBox) return
+
+			// Transform this mesh's local bounding box into root-local space
+			relativeMatrix.multiplyMatrices(inverseRootMatrixWorld, mesh.matrixWorld)
+			childBox.copy(geometry.boundingBox)
+
+			expandBoxByTransformedBox(box, childBox, relativeMatrix)
+		})
+
+		if (box.isEmpty()) {
 			console.warn('[OBBHelper] No geometry found on object to compute OBB.')
 			return this
 		}
 
-		if (!geometry.boundingBox) {
-			geometry.computeBoundingBox()
-		}
+		box.getCenter(center)
+		box.getSize(size)
 
-		if (geometry.boundingBox) {
-			geometry.boundingBox.getCenter(center)
+		// Place the helper at the center of the bounding box, in root-local space
+		this.matrix.makeTranslation(center.x, center.y, center.z)
 
-			// half size in local space
-			geometry.boundingBox.getSize(size).multiplyScalar(0.5)
-		}
+		// Then inherit the root's full world transform
+		this.matrix.premultiply(rootMatrixWorld)
 
-		object.getWorldQuaternion(quaternion)
-		object.getWorldScale(scale)
+		// Scale the unit box to the OBB extents in root-local axes
+		this.matrix.multiply(scaleMatrix.makeScale(size.x, size.y, size.z))
 
-		// non-uniform scale supported (no shear): enlarge halfSize by |scale|
-		half.copy(size).multiply(absScale.set(Math.abs(scale.x), Math.abs(scale.y), Math.abs(scale.z)))
-
-		worldCenter.copy(center)
-		object.localToWorld(worldCenter)
-
-		// compose transform (unit box -> oriented box)
-		const fullSize = half.multiplyScalar(2)
-		this.matrix.compose(worldCenter, quaternion, fullSize)
 		this.matrixWorld.copy(this.matrix)
 		return this
 	}

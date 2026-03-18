@@ -1,19 +1,21 @@
+import type { Entity } from 'koota'
+
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { getContext, setContext } from 'svelte'
 import { useThrelte } from '@threlte/core'
+import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
-import type { Entity } from 'koota'
 
 import { DrawService } from '$lib/buf/draw/v1/service_connect'
 import { EntityChangeType, type StreamEntityChangesResponse } from '$lib/buf/draw/v1/service_pb'
-import { useWorld, traits } from '$lib/ecs'
+import { traits, useWorld } from '$lib/ecs'
 import {
-	spawnTransform,
 	spawnDrawing,
-	updateTransformEntity,
+	spawnTransform,
 	updateDrawingEntity,
+	updateTransformEntity,
 } from '$lib/ecs/spawn'
+
 import { useCameraControls } from './useControls.svelte'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 
@@ -147,9 +149,9 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 							: undefined,
 					})
 				}
-			} catch (err) {
+			} catch (error) {
 				if (active) {
-					console.error('Draw service entity stream error:', err)
+					console.error('Draw service entity stream error:', error)
 					connectionStatus = 'disconnected'
 				}
 			}
@@ -173,9 +175,9 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 						)
 					}
 				}
-			} catch (err) {
+			} catch (error) {
 				if (active) {
-					console.error('Draw service scene stream error:', err)
+					console.error('Draw service scene stream error:', error)
 				}
 			}
 		})()

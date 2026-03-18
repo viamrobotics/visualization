@@ -1,5 +1,6 @@
-import { workerCode } from './worker.inline'
 import type { Message, SuccessMessage } from './messages'
+
+import { workerCode } from './worker.inline'
 
 const blob = new Blob([workerCode], { type: 'text/javascript' })
 const url = URL.createObjectURL(blob)

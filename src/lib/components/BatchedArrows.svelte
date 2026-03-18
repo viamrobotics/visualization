@@ -1,10 +1,12 @@
 <script lang="ts">
+	import type { Entity } from 'koota'
+
 	import { T } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
-	import { BatchedArrow } from '$lib/three/BatchedArrow'
-	import { traits, useWorld } from '$lib/ecs'
-	import type { Entity } from 'koota'
 	import { Color, Vector3 } from 'three'
+
+	import { traits, useWorld } from '$lib/ecs'
+	import { BatchedArrow } from '$lib/three/BatchedArrow'
 
 	const arrowBatchMap = $state<Record<string, BatchedArrow>>({
 		world: new BatchedArrow(),

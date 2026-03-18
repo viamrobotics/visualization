@@ -1,8 +1,11 @@
+import type { Entity } from 'koota'
+
+import { useThrelte } from '@threlte/core'
 import {
-	WorldStateStoreClient,
-	TransformChangeType,
 	type TransformChangeEvent,
+	TransformChangeType,
 	type TransformWithUUID,
+	WorldStateStoreClient,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -10,14 +13,13 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { usePartID } from './usePartID.svelte'
+
 import { traits, useWorld } from '$lib/ecs'
-import type { Entity } from 'koota'
-import { createPose } from '$lib/transform'
-import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
-import { spawnTransform } from '$lib/ecs/spawn'
+import { createPose } from '$lib/transform'
+
+import { usePartID } from './usePartID.svelte'
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID

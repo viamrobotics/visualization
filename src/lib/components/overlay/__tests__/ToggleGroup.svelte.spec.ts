@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/svelte'
-import { describe, expect, it, vi } from 'vitest'
-import ToggleGroup from '../ToggleGroup.svelte'
 import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+
+import ToggleGroup from '../ToggleGroup.svelte'
 
 import '@testing-library/jest-dom/vitest'
 

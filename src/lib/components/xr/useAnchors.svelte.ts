@@ -12,7 +12,7 @@ interface Context {
 export const provideAnchors = () => {
 	const matrix4 = new Matrix4()
 	const { renderer } = useThrelte()
-	const { xrFrame, isPresenting } = useXR()
+	const { isPresenting } = useXR()
 	const map = new WeakMap<XRAnchor, Object3D>()
 
 	let space = renderer.xr.getReferenceSpace()
@@ -23,7 +23,7 @@ export const provideAnchors = () => {
 		if (space === null) return
 
 		const pose = new XRRigidTransform(position, orientation)
-		return xrFrame.current.createAnchor?.(pose, space)
+		return renderer.xr.getFrame().createAnchor?.(pose, space)
 	}
 
 	const { start, stop } = useTask(() => {
@@ -33,7 +33,7 @@ export const provideAnchors = () => {
 			return
 		}
 
-		const frame = xrFrame.current
+		const frame = renderer.xr.getFrame()
 
 		if (!frame.trackedAnchors) {
 			return

@@ -1,11 +1,13 @@
-import type { Entity, World, ConfigurableTrait, Trait } from 'koota'
+import type { TransformWithUUID } from '@viamrobotics/sdk'
+import type { ConfigurableTrait, Entity, Trait, World } from 'koota'
+
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
-import type { TransformWithUUID } from '@viamrobotics/sdk'
+
 import type { Transform as SnapshotTransform } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
-import { traits } from '$lib/ecs'
-import { parseMetadata } from '$lib/metadata'
+
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import {
 	asColor,
 	asFloat32Array,
@@ -14,8 +16,9 @@ import {
 	isPerVertexColors,
 	STRIDE,
 } from '$lib/buffer'
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { parseMetadata } from '$lib/metadata'
 import { createPose } from '$lib/transform'
 
 const vec3 = new Vector3()
@@ -254,7 +257,7 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				: []
 			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
 			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
-			const controlPoints: Vector4[] = new Array(numControlPoints)
+			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
 
 			for (let j = 0; j < numControlPoints; j += 1) {
 				const idx = j * STRIDE.NURBS_CONTROL_POINTS
@@ -484,7 +487,7 @@ const updateDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				: []
 			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
 			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
-			const controlPoints: Vector4[] = new Array(numControlPoints)
+			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
 
 			for (let j = 0; j < numControlPoints; j += 1) {
 				const idx = j * STRIDE.NURBS_CONTROL_POINTS

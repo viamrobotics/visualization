@@ -1,8 +1,11 @@
+import type { Entity } from 'koota'
+
 import { useThrelte } from '@threlte/core'
 import { getContext, setContext, untrack } from 'svelte'
 import { Object3D } from 'three'
-import type { Entity } from 'koota'
+
 import { traits, useWorld } from '$lib/ecs'
+
 import { useEnvironment } from './useEnvironment.svelte'
 
 const selectedKey = Symbol('selected-frame-context')

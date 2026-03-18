@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { Raycaster, Box3, Vector3, Vector2, Plane, Triangle } from 'three'
-	import { useThrelte } from '@threlte/core'
-	import { Not } from 'koota'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import earcut from 'earcut'
-	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import type { ShapecastCallbacks } from 'three-mesh-bvh'
+
+	import { useThrelte } from '@threlte/core'
+	import earcut from 'earcut'
+	import { Not } from 'koota'
+	import { Box3, Plane, Raycaster, Triangle, Vector2, Vector3 } from 'three'
+
 	import { createBufferGeometry } from '$lib/attribute'
-	import * as lassoTraits from './traits'
+	import { traits, useQuery, useWorld } from '$lib/ecs'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+
 	import Debug from './Debug.svelte'
+	import * as lassoTraits from './traits'
 
 	interface Props {
 		debug?: boolean

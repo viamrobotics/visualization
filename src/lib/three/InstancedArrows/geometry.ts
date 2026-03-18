@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, InstancedBufferGeometry } from 'three'
+import { BufferAttribute, BufferGeometry, InstancedBufferGeometry } from 'three'
 
 export const createShaftGeometry = () => {
 	// Triangular prism aligned to +Y, base at y=0, top at y=1.

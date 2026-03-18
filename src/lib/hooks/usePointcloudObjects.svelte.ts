@@ -1,19 +1,23 @@
+import type { ConfigurableTrait, Entity } from 'koota'
+
 import { VisionClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { useLogs } from './useLogs.svelte'
-import { parsePcdInWorker } from '$lib/lib'
 import { getContext, setContext, untrack } from 'svelte'
-import { traits, useWorld } from '$lib/ecs'
-import type { Entity, ConfigurableTrait } from 'koota'
+
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { useEnvironment } from './useEnvironment.svelte'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
+import { traits, useWorld } from '$lib/ecs'
+import { updateGeometryTrait } from '$lib/ecs/traits'
+import { parsePcdInWorker } from '$lib/lib'
 import { createPose } from '$lib/transform'
+
+import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 
 const key = Symbol('pointcloud-object-context')
 
@@ -90,8 +94,8 @@ export const providePointcloudObjects = (partID: () => string) => {
 	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
 
 	const options = $derived({
-		enabled: interval !== -1,
-		refetchInterval: (interval === 0 ? false : interval) as number | false,
+		enabled: interval !== RefetchRates.OFF,
+		refetchInterval: (interval === RefetchRates.MANUAL ? false : interval) as number | false,
 	})
 
 	const queries = $derived(
@@ -119,56 +123,110 @@ export const providePointcloudObjects = (partID: () => string) => {
 	})
 
 	const entities = new Map<string, Entity>()
+	const queryEntityKeys = new Map<string, Set<string>>()
+
+	const destroyEntity = (key: string) => {
+		const entity = entities.get(key)
+		if (entity) {
+			if (world.has(entity)) entity.destroy()
+			entities.delete(key)
+		}
+	}
 
 	$effect(() => {
-		const active: Record<string, boolean> = {}
+		const currentPartID = partID()
+		const activeQueryKeys = new Set<string>()
 
 		for (const [name, query] of queries) {
+			const queryKey = `${currentPartID}:${name}`
+			activeQueryKeys.add(queryKey)
+
 			$effect(() => {
 				const { data } = query
 
-				if (!data || data.length === 0) return
+				let disposed = false
+				const nextKeys = new Set<string>()
+
+				const reconcileRemovedKeys = () => {
+					const prevKeys = queryEntityKeys.get(queryKey) ?? new Set<string>()
+
+					for (const key of prevKeys) {
+						if (!nextKeys.has(key)) {
+							destroyEntity(key)
+						}
+					}
+
+					queryEntityKeys.set(queryKey, new Set(nextKeys))
+				}
+
+				if (!data || data.length === 0) {
+					reconcileRemovedKeys()
+
+					return () => {
+						disposed = true
+					}
+				}
 
 				let index = 0
+
 				for (const { geometries: geometriesInFrame, pointCloud } of data) {
 					if (pointCloud.length > 0) {
-						parsePcdInWorker(pointCloud).then(({ positions, colors }) => {
-							const poincloudLabel = `${name} pointcloud ${index + 1}`
-							const existing = entities.get(poincloudLabel)
+						const pointcloudLabel = `${name} pointcloud ${index + 1}`
+						nextKeys.add(pointcloudLabel)
 
-							if (existing) {
-								const geometry = existing.get(traits.BufferGeometry)
-
-								if (geometry) {
-									updateBufferGeometry(geometry, positions, colors)
+						parsePcdInWorker(pointCloud)
+							.then(({ positions, colors }) => {
+								if (disposed) {
+									return
 								}
-							} else {
-								const geometry = createBufferGeometry(positions, colors)
 
-								const entity = world.spawn(
-									traits.Name(poincloudLabel),
-									traits.BufferGeometry(geometry),
-									traits.Points
-								)
+								if (!nextKeys.has(pointcloudLabel)) {
+									return
+								}
 
-								entities.set(poincloudLabel, entity)
-							}
-						})
+								const existing = entities.get(pointcloudLabel)
+
+								if (existing) {
+									const geometry = existing.get(traits.BufferGeometry)
+
+									if (geometry) {
+										updateBufferGeometry(geometry, positions, colors)
+									}
+								} else {
+									const geometry = createBufferGeometry(positions, colors)
+
+									const entity = world.spawn(
+										traits.Name(pointcloudLabel),
+										traits.BufferGeometry(geometry),
+										traits.Points
+									)
+
+									entities.set(pointcloudLabel, entity)
+								}
+							})
+							.catch((error) => {
+								if (disposed) {
+									return
+								}
+
+								logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error')
+							})
 					}
 
 					if (geometriesInFrame) {
 						let geometryIndex = 0
 
 						for (const geometry of geometriesInFrame.geometries) {
-							const geometryLabel = `${name} pointcloud ${index} geometry ${geometryIndex + 1}`
+							const geometryLabel = `${name} pointcloud ${index + 1} geometry ${geometryIndex + 1}`
+
+							nextKeys.add(geometryLabel)
+
 							const center = createPose(geometry.center)
-
-							active[geometryLabel] = true
-
 							const existing = entities.get(geometryLabel)
 
 							if (existing) {
-								existing.set(traits.Pose, center)
+								existing.set(traits.Center, center)
+								updateGeometryTrait(existing, geometry)
 							} else {
 								const entityTraits: ConfigurableTrait[] = [
 									traits.Name(geometryLabel),
@@ -194,16 +252,22 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 					index += 1
 				}
+
+				reconcileRemovedKeys()
+
+				return () => {
+					disposed = true
+				}
 			})
 		}
 
-		// Clean up old entities
-		for (const [label, entity] of entities) {
-			if (!active[label]) {
-				if (world.has(entity)) {
-					entity.destroy()
+		// cleanup queries that disappeared entirely
+		for (const [queryKey, keys] of queryEntityKeys) {
+			if (!activeQueryKeys.has(queryKey)) {
+				for (const key of keys) {
+					destroyEntity(key)
 				}
-				entities.delete(label)
+				queryEntityKeys.delete(queryKey)
 			}
 		}
 	})

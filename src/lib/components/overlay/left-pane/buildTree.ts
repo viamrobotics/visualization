@@ -1,5 +1,6 @@
-import { traits } from '$lib/ecs'
 import type { Entity, QueryResult, Trait } from 'koota'
+
+import { traits } from '$lib/ecs'
 
 export interface TreeNode {
 	entity: Entity

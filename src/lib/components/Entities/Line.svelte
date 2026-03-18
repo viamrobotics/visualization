@@ -7,17 +7,20 @@
 </script>
 
 <script lang="ts">
+	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
+
 	import { T, useThrelte } from '@threlte/core'
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
-	import type { Entity } from 'koota'
-	import { traits, useTrait } from '$lib/ecs'
-	import LineDots from './LineDots.svelte'
-	import { darkenColor } from '$lib/color'
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
-	import LineGeometry from './LineGeometry.svelte'
+
+	import { darkenColor } from '$lib/color'
+	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
+
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import LineDots from './LineDots.svelte'
+	import LineGeometry from './LineGeometry.svelte'
 
 	interface Props {
 		entity: Entity
@@ -52,7 +55,6 @@
 			invalidate()
 		}
 	})
-
 </script>
 
 <Portal id={parent.current}>
