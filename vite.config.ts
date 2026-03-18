@@ -48,6 +48,10 @@ export default defineConfig({
 		allowedHosts: true,
 		cors: true,
 		https: https ? {} : undefined,
+
+		fs: {
+			allow: ['./package.json'],
+		},
 	},
 
 	ssr: {
