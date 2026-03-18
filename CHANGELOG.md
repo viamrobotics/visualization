@@ -1,5 +1,13 @@
 # motion-tools
 
+## 1.15.3
+
+### Patch Changes
+
+- b151176: Fix issue with multiple meshes being rendered on entity add
+- 05d2934: Update useQuery hook to match Koota source
+- f9e2f84: Bump Threlte
+
 ## 1.15.2
 
 ### Patch Changes
