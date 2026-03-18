@@ -51,8 +51,9 @@
 
 	keys.onKeys('-', () => {
 		if (selectedCustomGeometry) {
-			selectedCustomGeometry.destroy()
-			entities.delete(selectedCustomGeometry)
+			const entity = selectedCustomGeometry
+			entity.destroy()
+			entities.delete(entity)
 			selectedEntity.set()
 		}
 	})
