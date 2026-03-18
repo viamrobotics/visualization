@@ -52,6 +52,36 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 	assertNoFailedScreenshots([failedScreenshot])
 }
 
+test('draw service events handled', async ({ browser }) => {
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/AddTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/UpdateTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
+	await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_UPDATED')
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
+		timeout: 15000,
+	})
+})
+
 test('draw frame system', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAME_SYSTEM'
 	const page = await createPage(browser)

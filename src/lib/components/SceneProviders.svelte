@@ -7,6 +7,7 @@
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
 	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
+	import { provideDrawService } from '$lib/hooks/useDrawService.svelte'
 	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import {
 		provideCameraControls,
@@ -42,6 +43,7 @@
 
 	provideOrigin()
 	provideDrawAPI()
+	provideDrawService()
 
 	provideResourceByName(() => partID.current)
 	provideConfigFrames()

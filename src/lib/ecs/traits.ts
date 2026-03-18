@@ -1,5 +1,5 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { trait } from 'koota'
+import { trait, type Entity } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -117,6 +117,7 @@ export const Scale = trait({ x: 1, y: 1, z: 1 })
 export const FramesAPI = trait(() => true)
 export const GeometriesAPI = trait(() => true)
 export const DrawAPI = trait(() => true)
+export const DrawServiceAPI = trait(() => true)
 export const WorldStateStoreAPI = trait(() => true)
 export const SnapshotAPI = trait(() => true)
 
@@ -159,16 +160,39 @@ export const Geometry = (geometry: ViamGeometry) => {
 	return ReferenceFrame
 }
 
-export const updateGeometry = (geometry: ViamGeometry) => {
-	if (geometry.geometryType.case === 'box') {
-		return [Box, createBox(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'capsule') {
-		return [Capsule, createCapsule(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'sphere') {
-		return [Sphere, createSphere(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'mesh') {
-		return [BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh)]
+export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {
+	if (!geometry) {
+		entity.remove(Box, Capsule, Sphere, BufferGeometry)
+		return
 	}
 
-	return []
+	if (geometry.geometryType.case === 'box') {
+		if (entity.has(Box)) {
+			entity.set(Box, createBox(geometry.geometryType.value))
+		} else {
+			entity.remove(Capsule, Sphere, BufferGeometry)
+			entity.add(Box(createBox(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'capsule') {
+		if (entity.has(Capsule)) {
+			entity.set(Capsule, createCapsule(geometry.geometryType.value))
+		} else {
+			entity.remove(Box, Sphere, BufferGeometry)
+			entity.add(Capsule(createCapsule(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'sphere') {
+		if (entity.has(Sphere)) {
+			entity.set(Sphere, createSphere(geometry.geometryType.value))
+		} else {
+			entity.remove(Box, Capsule, BufferGeometry)
+			entity.add(Sphere(createSphere(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'mesh') {
+		if (entity.has(BufferGeometry)) {
+			entity.set(BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh))
+		} else {
+			entity.remove(Box, Sphere, Capsule)
+			entity.add(BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh)))
+		}
+	}
 }

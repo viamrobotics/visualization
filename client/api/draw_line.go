@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/golang/geo/r3"
@@ -41,6 +43,12 @@ type DrawLineOptions struct {
 // Calling DrawLine with an ID that already exists will instead update the line.
 // Returns the UUID of the drawn line, or an error if the server is not running or the drawing fails.
 func DrawLine(options DrawLineOptions) ([]byte, error) {
+	// #region agent log
+	{
+		line := fmt.Sprintf("{\"sessionId\":\"23bd9f\",\"location\":\"draw_line.go:DrawLine\",\"message\":\"stage1-draw-line\",\"data\":{\"id\":\"%s\"},\"timestamp\":%d}\n", options.ID, time.Now().UnixMilli())
+		if f, err := os.OpenFile("/Users/devin/Projects/motion-tools/.cursor/debug-23bd9f.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(line); f.Close() }
+	}
+	// #endregion
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err
 	}

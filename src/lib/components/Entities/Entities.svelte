@@ -33,12 +33,23 @@
 	)
 
 	/**
+	 * Entities from the draw service API are bucketed into their own query
+	 * to avoid thrashing other query results due to them being streamed.
+	 */
+	const drawServiceEntities = useQuery(
+		traits.DrawServiceAPI,
+		Not(traits.Points, traits.LinePositions, traits.GLTF),
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
+	)
+
+	/**
 	 * All remaining meshes can be bucketed into a query due to lower frequency updates.
 	 */
 	const meshEntities = useQuery(
 		Not(traits.FramesAPI),
 		Not(traits.GeometriesAPI),
 		Not(traits.WorldStateStoreAPI),
+		Not(traits.DrawServiceAPI),
 		Not(traits.Points),
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
@@ -68,6 +79,12 @@
 {/each}
 
 {#each worldStateEntities.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
+{/each}
+
+{#each drawServiceEntities.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</Frame>

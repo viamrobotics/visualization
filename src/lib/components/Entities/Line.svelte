@@ -2,6 +2,8 @@
 	import { Color } from 'three'
 
 	const colorUtil = new Color()
+	const DEFAULT_LINE_COLOR = { r: 0, g: 0, b: 1 } as const
+	const DEFAULT_LINE_WIDTH = 5
 </script>
 
 <script lang="ts">
@@ -42,12 +44,15 @@
 
 	const mesh = new Line2()
 
+	const computedColor = $derived(color.current ?? DEFAULT_LINE_COLOR)
+
 	$effect.pre(() => {
 		if (pose.current) {
 			poseToObject3d(pose.current, mesh)
 			invalidate()
 		}
 	})
+
 </script>
 
 <Portal id={parent.current}>
@@ -62,21 +67,18 @@
 		<LineGeometry positions={linePositions.current} />
 		<T
 			is={LineMaterial}
-			color={[color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0]}
+			color={[computedColor.r, computedColor.g, computedColor.b]}
 			transparent={currentOpacity < 1}
 			depthWrite={currentOpacity === 1}
 			opacity={currentOpacity}
-			width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+			linewidth={lineWidth.current ?? DEFAULT_LINE_WIDTH}
 			depthTest={materialProps.current?.depthTest ?? true}
 		/>
 	</T>
 
 	{#if linePositions.current && pointSize.current}
 		<LineDots
-			color={darkenColor(
-				colorUtil.setRGB(color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0),
-				10
-			)}
+			color={darkenColor(colorUtil.setRGB(computedColor.r, computedColor.g, computedColor.b), 10)}
 			positions={linePositions.current}
 			scale={pointSize.current * 0.001}
 		/>

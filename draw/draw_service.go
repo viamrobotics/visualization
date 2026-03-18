@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
@@ -55,6 +57,20 @@ func NewDrawService() *DrawService {
 }
 
 func (svc *DrawService) notifyEntityChange(msg *drawv1.StreamEntityChangesResponse) {
+	// #region agent log
+	{
+		entityCase := "unknown"
+		switch msg.Entity.(type) {
+		case *drawv1.StreamEntityChangesResponse_Transform:
+			entityCase = "transform"
+		case *drawv1.StreamEntityChangesResponse_Drawing:
+			entityCase = "drawing"
+		}
+		line := fmt.Sprintf("{\"sessionId\":\"23bd9f\",\"location\":\"draw_service.go:notifyEntityChange\",\"message\":\"stage3-notify-entity-change\",\"data\":{\"changeType\":%d,\"entityCase\":\"%s\",\"numSubs\":%d},\"timestamp\":%d}\n",
+			msg.ChangeType, entityCase, len(svc.entitySubs), time.Now().UnixMilli())
+		if f, err := os.OpenFile("/Users/devin/Projects/motion-tools/.cursor/debug-23bd9f.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(line); f.Close() }
+	}
+	// #endregion
 	for _, ch := range svc.entitySubs {
 		select {
 		case ch <- msg:
@@ -200,6 +216,9 @@ func (svc *DrawService) UpdateEntity(
 		if existing.kind != entityKindTransform {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity type mismatch: existing entity is a drawing, not a transform"))
 		}
+		if err := validateTransformUpdate(existing.transform, e.Transform); err != nil {
+			return nil, err
+		}
 		updated := applyTransformUpdate(existing.transform, e.Transform, req.Msg.UpdatedFields)
 		svc.entities[id] = storedEntity{kind: entityKindTransform, transform: updated}
 		changeMsg = &drawv1.StreamEntityChangesResponse{
@@ -213,6 +232,9 @@ func (svc *DrawService) UpdateEntity(
 		}
 		if existing.kind != entityKindDrawing {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity type mismatch: existing entity is a transform, not a drawing"))
+		}
+		if err := validateDrawingUpdate(existing.drawing, e.Drawing); err != nil {
+			return nil, err
 		}
 		updated := applyDrawingUpdate(existing.drawing, e.Drawing, req.Msg.UpdatedFields)
 		svc.entities[id] = storedEntity{kind: entityKindDrawing, drawing: updated}
@@ -246,6 +268,86 @@ func applyDrawingUpdate(existing, incoming *drawv1.Drawing, mask interface{ GetP
 	dst := proto.Clone(existing).(*drawv1.Drawing)
 	applyFieldMask(dst, incoming, mask.GetPaths())
 	return dst
+}
+
+func transformGeometryTypeCase(g *commonv1.Geometry) string {
+	if g == nil {
+		return ""
+	}
+	switch g.GeometryType.(type) {
+	case *commonv1.Geometry_Box:
+		return "box"
+	case *commonv1.Geometry_Sphere:
+		return "sphere"
+	case *commonv1.Geometry_Capsule:
+		return "capsule"
+	case *commonv1.Geometry_Mesh:
+		return "mesh"
+	case *commonv1.Geometry_Pointcloud:
+		return "pointcloud"
+	default:
+		return ""
+	}
+}
+
+func drawingShapeTypeCase(s *drawv1.Shape) string {
+	if s == nil {
+		return ""
+	}
+	switch s.GeometryType.(type) {
+	case *drawv1.Shape_Arrows:
+		return "arrows"
+	case *drawv1.Shape_Line:
+		return "line"
+	case *drawv1.Shape_Points:
+		return "points"
+	case *drawv1.Shape_Model:
+		return "model"
+	case *drawv1.Shape_Nurbs:
+		return "nurbs"
+	default:
+		return ""
+	}
+}
+
+func validateTransformUpdate(existing, incoming *commonv1.Transform) error {
+	if incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"cannot change reference_frame from %q to %q remove the existing entity and add a new one instead",
+			existing.GetReferenceFrame(), incoming.GetReferenceFrame(),
+		))
+	}
+
+	existingCase := transformGeometryTypeCase(existing.GetPhysicalObject())
+	incomingCase := transformGeometryTypeCase(incoming.GetPhysicalObject())
+	if existingCase != "" && incomingCase != "" && existingCase != incomingCase {
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"cannot change physical_object geometry type from %q to %q remove the existing entity and add a new one instead",
+			existingCase, incomingCase,
+		))
+	}
+
+	return nil
+}
+
+func validateDrawingUpdate(existing, incoming *drawv1.Drawing) error {
+	if incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"cannot change reference_frame from %q to %q remove the existing entity and add a new one instead",
+			existing.GetReferenceFrame(), incoming.GetReferenceFrame(),
+		))
+	}
+
+	existingCase := drawingShapeTypeCase(existing.GetPhysicalObject())
+	incomingCase := drawingShapeTypeCase(incoming.GetPhysicalObject())
+	if existingCase != "" && incomingCase != "" && existingCase != incomingCase {
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"cannot change physical_object geometry type from %q to %q remove the existing entity and add a new one instead",
+			existingCase, incomingCase,
+		))
+	}
+
+	return nil
 }
 
 func applyFieldMask(dst, src proto.Message, paths []string) {
