@@ -98,23 +98,20 @@
 
 	const events = useEntityEvents(() => entity)
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			// If using an orthographic camera, points need to be
 			// resized to half zoom to take up the same screen space.
 			material.size = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
 		},
 		{
-			autoStart: false,
+			running: () => orthographic,
 			autoInvalidate: false,
 		}
 	)
 
 	$effect(() => {
-		if (orthographic) {
-			start()
-		} else {
-			stop()
+		if (!orthographic) {
 			material.size = pointSize
 		}
 	})

@@ -94,7 +94,7 @@
 		}
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			object3d?.getWorldPosition(vec3)
 			if (!vec3.equals(worldPosition)) {
@@ -114,18 +114,10 @@
 			}
 		},
 		{
-			autoStart: false,
+			running: () => object3d !== undefined,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (object3d) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	$effect(() => {
 		if (entity) {

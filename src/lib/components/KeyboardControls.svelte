@@ -35,9 +35,9 @@
 	const left = $derived(keys.has('arrowleft'))
 	const down = $derived(keys.has('arrowdown'))
 	const right = $derived(keys.has('arrowright'))
-	const any = $derived(w || s || a || d || r || f || up || left || down || right)
+	const anyKeysPressed = $derived(w || s || a || d || r || f || up || left || down || right)
 
-	const { start, stop } = useTask(
+	useTask(
 		(delta) => {
 			const dt = delta * 1000
 
@@ -87,18 +87,10 @@
 			}
 		},
 		{
-			autoStart: false,
+			running: () => anyKeysPressed,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (any) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	keys.onKeys('escape', () => {
 		if (keys.has('escape')) {

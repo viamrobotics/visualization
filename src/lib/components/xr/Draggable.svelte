@@ -71,7 +71,7 @@
 		onPointerLeave?.()
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			if (!$left || !rigidBody) return
 
@@ -79,10 +79,8 @@
 
 			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
 		},
-		{ autoStart: false }
+		{ running: () => hovering && dragging }
 	)
-
-	$effect(() => (hovering && dragging ? start() : stop()))
 </script>
 
 <T is={group}>
