@@ -2,7 +2,7 @@ import { useTask, useThrelte } from '@threlte/core'
 import { useXR } from '@threlte/xr'
 import { getContext, setContext } from 'svelte'
 import { fromStore } from 'svelte/store'
-import { Matrix4, type Object3D, type Quaternion, type Vector3 } from 'three'
+import { type Object3D, type Quaternion, type Vector3 } from 'three'
 
 const key = Symbol('anchors-context')
 
