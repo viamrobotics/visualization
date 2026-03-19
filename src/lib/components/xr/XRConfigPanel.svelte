@@ -18,13 +18,7 @@
 	const settings = useSettings()
 	const armClient = useArmClient()
 	const partID = usePartID()
-
-	let resources: ReturnType<typeof useResourceNames> | undefined
-	try {
-		resources = useResourceNames(() => partID.current)
-	} catch (error) {
-		console.warn('Failed to get resources, robot may not be connected yet:', error)
-	}
+	let resources = useResourceNames(() => partID.current)
 
 	// Get available arms and grippers
 	const armNames = $derived(armClient.names || [])

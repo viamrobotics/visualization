@@ -1,75 +1,84 @@
-import { useTask, useThrelte, watch } from '@threlte/core'
+import { useTask, useThrelte } from '@threlte/core'
 import { useXR } from '@threlte/xr'
 import { getContext, setContext } from 'svelte'
+import { fromStore } from 'svelte/store'
 import { Matrix4, type Object3D, type Quaternion, type Vector3 } from 'three'
 
 const key = Symbol('anchors-context')
 
 interface Context {
 	createAnchor: (position: Vector3, orientation: Quaternion) => Promise<XRAnchor> | undefined
+	bindAnchorObject: (anchor: XRAnchor, object: Object3D) => void
+	unbindAnchorObject: (anchor: XRAnchor) => void
 }
 
 export const provideAnchors = () => {
-	const matrix4 = new Matrix4()
 	const { renderer } = useThrelte()
-	const { isPresenting } = useXR()
+	const { isPresenting: isPresentingStore } = useXR()
+	const isPresenting = fromStore(isPresentingStore)
+
 	const map = new WeakMap<XRAnchor, Object3D>()
 
-	let space = renderer.xr.getReferenceSpace()
-
-	const createAnchor = (position: Vector3, orientation: Quaternion) => {
-		space ??= renderer.xr.getReferenceSpace()
-
-		if (space === null) return
-
-		const pose = new XRRigidTransform(position, orientation)
-		return renderer.xr.getFrame().createAnchor?.(pose, space)
-	}
-
-	const { start, stop } = useTask(() => {
-		space ??= renderer.xr.getReferenceSpace()
-
-		if (!space) {
-			return
-		}
-
+	const createAnchor = (position: Vector3, quaternion: Quaternion) => {
+		const space = renderer.xr.getReferenceSpace()
 		const frame = renderer.xr.getFrame()
 
-		if (!frame.trackedAnchors) {
-			return
-		}
+		if (!space || !frame) return
 
-		for (const anchor of frame.trackedAnchors) {
-			const object3d = map.get(anchor)
+		const pose = new XRRigidTransform(
+			{ x: position.x, y: position.y, z: position.z },
+			{ x: quaternion.x, y: quaternion.y, z: quaternion.z, w: quaternion.w }
+		)
 
-			if (!object3d) {
-				continue
+		return frame.createAnchor?.(pose, space)
+	}
+
+	const bindAnchorObject = (anchor: XRAnchor, object: Object3D) => {
+		map.set(anchor, object)
+	}
+
+	const unbindAnchorObject = (anchor: XRAnchor) => {
+		map.delete(anchor)
+	}
+
+	useTask(
+		() => {
+			const space = renderer.xr.getReferenceSpace()
+			const frame = renderer.xr.getFrame()
+
+			if (!space || !frame?.trackedAnchors) {
+				return
 			}
 
-			const anchorPose = frame.getPose(anchor.anchorSpace, space)
+			for (const anchor of frame.trackedAnchors) {
+				const object3d = map.get(anchor)
 
-			if (!anchorPose) {
-				continue
+				if (!object3d) {
+					continue
+				}
+
+				const anchorPose = frame.getPose(anchor.anchorSpace, space)
+
+				if (!anchorPose) {
+					continue
+				}
+
+				object3d.matrixAutoUpdate = false
+				object3d.matrix.fromArray(anchorPose.transform.matrix)
 			}
-
-			matrix4.fromArray(anchorPose.transform.matrix)
-			object3d.applyMatrix4(matrix4)
+		},
+		{
+			running: () => isPresenting.current,
 		}
-	})
-
-	watch(isPresenting, ($isPresenting) => {
-		if ($isPresenting) {
-			start()
-		} else {
-			stop()
-		}
-	})
+	)
 
 	setContext<Context>(key, {
 		createAnchor,
+		bindAnchorObject,
+		unbindAnchorObject,
 	})
 }
 
 export const useAnchors = () => {
-	getContext<Context>(key)
+	return getContext<Context>(key)
 }

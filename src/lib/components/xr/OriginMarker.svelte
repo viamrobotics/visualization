@@ -51,7 +51,7 @@
 	})
 	leftPad.trigger.on('up', () => (dragging = false))
 
-	const dragTask = useTask(
+	useTask(
 		() => {
 			if (!$left || !rigidBody) return
 
@@ -62,11 +62,11 @@
 			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
 		},
 		{
-			autoStart: false,
+			running: () => dragging,
 		}
 	)
 
-	const rotateTask = useTask(
+	useTask(
 		() => {
 			if (!$right || !rigidBody) return
 
@@ -80,24 +80,8 @@
 
 			rigidBody.setNextKinematicRotation(quaternion.setFromEuler(euler))
 		},
-		{ autoStart: false }
+		{ running: () => rotating }
 	)
-
-	$effect.pre(() => {
-		if (dragging) {
-			dragTask.start()
-		} else {
-			dragTask.stop()
-		}
-	})
-
-	$effect.pre(() => {
-		if (rotating) {
-			rotateTask.start()
-		} else {
-			rotateTask.stop()
-		}
-	})
 </script>
 
 <T
