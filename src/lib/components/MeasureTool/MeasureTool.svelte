@@ -35,7 +35,7 @@
 		intersection = event.intersections[0]
 
 		// Only handle axis restrictions if a first point has been placed
-		if (!p1) {
+		if (!p1 || !intersection) {
 			return
 		}
 
@@ -127,7 +127,7 @@
 {#if enabled}
 	{#if intersection && step !== 'p2'}
 		<MeasurePoint
-			position={intersection?.point.toArray()}
+			position={intersection.point.toArray()}
 			opacity={0.5}
 		/>
 	{/if}

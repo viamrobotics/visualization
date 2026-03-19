@@ -2,15 +2,15 @@ import { sentrySvelteKit } from '@sentry/sveltekit'
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { svelteTesting } from '@testing-library/svelte/vite'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import dns from 'node:dns'
 import { defineConfig } from 'vite'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import glsl from 'vite-plugin-glsl'
+import mkcert from 'vite-plugin-mkcert'
 
 dns.setDefaultResultOrder('verbatim')
 
-const https = false
+const https = process.argv.includes('--https')
 
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
@@ -23,7 +23,7 @@ export default defineConfig({
 			},
 		}),
 		devtoolsJson(),
-		...(https ? [basicSsl()] : []),
+		...(https ? [mkcert()] : []),
 		tailwindcss(),
 		sveltekit(),
 	],
