@@ -144,9 +144,6 @@ importers:
       '@viamrobotics/svelte-sdk':
         specifier: 1.0.1
         version: 1.0.1(@viamrobotics/sdk@0.58.0)(svelte@5.53.13)
-      '@vitejs/plugin-basic-ssl':
-        specifier: 2.1.0
-        version: 2.1.0(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -1789,12 +1786,6 @@ packages:
     peerDependencies:
       '@viamrobotics/sdk': '>=0.51'
       svelte: '>=5'
-
-  '@vitejs/plugin-basic-ssl@2.1.0':
-    resolution: {integrity: sha512-dOxxrhgyDIEUADhb/8OlV9JIqYLgos03YorAueTIeOUskLJSEsfwCByjbu98ctXitUN3znXKp0bYD/WHSudCeA==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    peerDependencies:
-      vite: ^6.0.0 || ^7.0.0
 
   '@vitest/coverage-v8@3.2.4':
     resolution: {integrity: sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ==}
@@ -5850,10 +5841,6 @@ snapshots:
       '@viamrobotics/sdk': 0.58.0
       runed: 0.29.2(svelte@5.53.13)
       svelte: 5.53.13
-
-  '@vitejs/plugin-basic-ssl@2.1.0(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
-    dependencies:
-      vite: 7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
   '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
