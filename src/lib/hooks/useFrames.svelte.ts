@@ -34,8 +34,11 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 
+	let didRecentlyEdit = $state(false)
+
 	const isEditMode = $derived(environment.current.viewerMode === 'edit')
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
+		refetchOnWindowFocus: false,
 		enabled: partID() !== '' && !isEditMode,
 	}))
 
@@ -60,7 +63,8 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
-		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+		// Let config frames take priority if the user has made edits
+		if (didRecentlyEdit || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
 			const mergedFrames = {
 				...frames,
 				...configFrames.current,
@@ -78,9 +82,8 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		/**
-		 * If we're not in edit mode and we have a robot connection,
+		 * If we haven't edited and we have a robot connection,
 		 * we only use frames reported by the machine
-		 *
 		 */
 		return frames
 	})
@@ -92,6 +95,12 @@ export const provideFrames = (partID: () => string) => {
 	$effect.pre(() => {
 		if (revision) {
 			untrack(() => query.refetch())
+		}
+	})
+
+	$effect(() => {
+		if (isEditMode) {
+			didRecentlyEdit = true
 		}
 	})
 
@@ -179,10 +188,20 @@ export const provideFrames = (partID: () => string) => {
 				if (!active[entityKey]) {
 					entity?.destroy()
 					entities.delete(entityKey)
-					continue
 				}
 			}
 		})
+	})
+
+	// Clear all entities on unmount
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity?.destroy()
+			}
+
+			entities.clear()
+		}
 	})
 
 	setContext<FramesContext>(key, {

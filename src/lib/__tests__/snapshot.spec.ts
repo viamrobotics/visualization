@@ -1,9 +1,6 @@
 import { createWorld, type World } from 'koota'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-vi.mock('$lib/loaders/pcd', () => ({
-	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
-}))
 import { Transform } from '$lib/buf/common/v1/common_pb'
 import { Arrows, Drawing, Shape } from '$lib/buf/draw/v1/drawing_pb'
 import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'

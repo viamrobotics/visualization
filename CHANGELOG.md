@@ -1,5 +1,19 @@
 # motion-tools
 
+## 1.15.5
+
+### Patch Changes
+
+- af76937: Fix edit mode issues and entity disposal
+
+## 1.15.4
+
+### Patch Changes
+
+- 89c0802: Improve keyboard controls when zoomed in
+- f353903: Fix "Cannot read properties of undefined" error
+- 01d106f: Send release version to sentry
+
 ## 1.15.3
 
 ### Patch Changes

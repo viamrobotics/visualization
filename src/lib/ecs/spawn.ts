@@ -75,7 +75,7 @@ export const spawnTransform = (
 	const entity = world.spawn(...entityTraits)
 
 	if (pointCloud) {
-		spawnPointcloud(world, entity, pointCloud, metadata.colors)
+		spawnPointCloud(world, entity, pointCloud, metadata.colors)
 	}
 
 	return entity
@@ -139,7 +139,7 @@ export const updateTransformEntity = (
 
 	if (metadata.colors) {
 		if (isPointCloud) {
-			updatePointcloudColors(entity, metadata.colors)
+			updatePointCloudColors(entity, metadata.colors)
 		} else {
 			entity.add(...createColorTraits(metadata.colors))
 		}
@@ -363,7 +363,7 @@ const spawnModelDrawing = (
 	return entities
 }
 
-const spawnPointcloud = (
+const spawnPointCloud = (
 	world: World,
 	entity: Entity,
 	pointCloud: Uint8Array,
@@ -376,7 +376,7 @@ const spawnPointcloud = (
 		}
 
 		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
-		const vertexColors = resolvePointcloudColors(metadataColors, numPoints, pointcloud.colors)
+		const vertexColors = getPointCloudColors(metadataColors, numPoints, pointcloud.colors)
 
 		const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
 		entity.add(traits.BufferGeometry(geometry))
@@ -384,12 +384,12 @@ const spawnPointcloud = (
 	})
 }
 
-const updatePointcloudColors = (entity: Entity, metadataColors: Uint8Array<ArrayBuffer>): void => {
+const updatePointCloudColors = (entity: Entity, metadataColors: Uint8Array<ArrayBuffer>): void => {
 	const buffer = entity.get(traits.BufferGeometry)
 
 	if (buffer) {
 		const numPoints = buffer.getAttribute('position')?.count ?? 0
-		const colors = resolvePointcloudColors(metadataColors, numPoints)
+		const colors = getPointCloudColors(metadataColors, numPoints)
 		if (colors) {
 			updateBufferGeometry(buffer, buffer.getAttribute('position').array as Float32Array, colors)
 		}
@@ -398,11 +398,7 @@ const updatePointcloudColors = (entity: Entity, metadataColors: Uint8Array<Array
 	}
 }
 
-/**
- * Resolves point cloud vertex colors from metadata, expanding a single color
- * to fill all vertices so it overrides any PCD-baked colors.
- */
-const resolvePointcloudColors = (
+const getPointCloudColors = (
 	metadataColors: Uint8Array<ArrayBuffer> | undefined,
 	numPoints: number,
 	pcdColors?: Uint8Array | null

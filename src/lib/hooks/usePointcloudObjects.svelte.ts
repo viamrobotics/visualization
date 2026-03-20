@@ -272,6 +272,16 @@ export const providePointcloudObjects = (partID: () => string) => {
 		}
 	})
 
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity.destroy()
+			}
+
+			entities.clear()
+		}
+	})
+
 	setContext<Context>(key, {
 		refetch() {
 			for (const [, query] of queries) {
