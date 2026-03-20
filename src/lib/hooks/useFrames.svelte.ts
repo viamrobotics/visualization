@@ -63,6 +63,7 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
+		// Let config frames take priority if the user has made edits
 		if (didRecentlyEdit || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
 			const mergedFrames = {
 				...frames,
@@ -81,9 +82,8 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		/**
-		 * If we're not in edit mode and we have a robot connection,
+		 * If we haven't edited and we have a robot connection,
 		 * we only use frames reported by the machine
-		 *
 		 */
 		return frames
 	})
