@@ -137,8 +137,12 @@ export const updateTransformEntity = (
 	const metadata = parseMetadata(transform.metadata?.fields)
 	const isPointCloud = transform.physicalObject?.geometryType?.case === 'pointcloud'
 
-	if (metadata.colors && !isPointCloud) {
-		entity.add(...createColorTraits(metadata.colors))
+	if (metadata.colors) {
+		if (isPointCloud) {
+			updatePointcloudColors(entity, metadata.colors)
+		} else {
+			entity.add(...createColorTraits(metadata.colors))
+		}
 	}
 
 	void options
@@ -372,19 +376,49 @@ const spawnPointcloud = (
 		}
 
 		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
-		const vertexColors =
-			metadataColors && isPerVertexColors(metadataColors, numPoints)
-				? metadataColors
-				: pointcloud.colors
+		const vertexColors = resolvePointcloudColors(metadataColors, numPoints, pointcloud.colors)
 
 		const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
-
-		if (metadataColors && !isPerVertexColors(metadataColors, numPoints)) {
-			for (const t of createColorTraits(metadataColors)) entity.add(t)
-		}
 	})
+}
+
+const updatePointcloudColors = (entity: Entity, metadataColors: Uint8Array<ArrayBuffer>): void => {
+	const buffer = entity.get(traits.BufferGeometry)
+
+	if (buffer) {
+		const numPoints = buffer.getAttribute('position')?.count ?? 0
+		const colors = resolvePointcloudColors(metadataColors, numPoints)
+		if (colors) {
+			updateBufferGeometry(buffer, buffer.getAttribute('position').array as Float32Array, colors)
+		}
+	} else {
+		entity.add(...createColorTraits(metadataColors))
+	}
+}
+
+/**
+ * Resolves point cloud vertex colors from metadata, expanding a single color
+ * to fill all vertices so it overrides any PCD-baked colors.
+ */
+const resolvePointcloudColors = (
+	metadataColors: Uint8Array<ArrayBuffer> | undefined,
+	numPoints: number,
+	pcdColors?: Uint8Array | null
+): Uint8Array | null | undefined => {
+	if (!metadataColors || metadataColors.length === 0) return pcdColors
+	if (isPerVertexColors(metadataColors, numPoints)) return metadataColors
+
+	const stride =
+		metadataColors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+	const expanded = new Uint8Array(numPoints * stride)
+	for (let i = 0; i < numPoints; i++) {
+		for (let c = 0; c < stride; c++) {
+			expanded[i * stride + c] = metadataColors[c]!
+		}
+	}
+	return expanded
 }
 
 const createColorTraits = (bytes: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {

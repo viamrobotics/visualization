@@ -28,7 +28,7 @@
 		}
 
 		return () => {
-			for (let i = 0, l = positions.length; i < l; i += 1) {
+			for (let i = 0, l = positions.length / 3; i < l; i += 1) {
 				mesh.deleteInstance(i)
 			}
 		}

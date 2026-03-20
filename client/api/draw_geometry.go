@@ -3,8 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
 
 	"connectrpc.com/connect"
 	"github.com/viam-labs/motion-tools/client/server"
@@ -33,12 +31,6 @@ type DrawGeometryOptions struct {
 //
 // Returns the UUID of the drawn geometry, or an error if the server is not running or the drawing fails.
 func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
-	// #region agent log
-	{
-		line := fmt.Sprintf("{\"sessionId\":\"23bd9f\",\"location\":\"draw_geometry.go:DrawGeometry\",\"message\":\"stage1-draw-geometry\",\"data\":{\"id\":\"%s\"},\"timestamp\":%d}\n", options.ID, time.Now().UnixMilli())
-		if f, err := os.OpenFile("/Users/devin/Projects/motion-tools/.cursor/debug-23bd9f.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(line); f.Close() }
-	}
-	// #endregion
 	client := server.GetClient()
 	if client == nil {
 		return nil, ErrVisualizerNotRunning

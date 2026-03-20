@@ -34,6 +34,7 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const color = useTrait(() => entity, traits.Color)
+	const pointColor = useTrait(() => entity, traits.PointColor)
 	const pointSize = useTrait(() => entity, traits.PointSize)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
@@ -79,8 +80,9 @@
 	</T>
 
 	{#if linePositions.current && pointSize.current}
+		{@const dotColor = pointColor.current ?? computedColor}
 		<LineDots
-			color={darkenColor(colorUtil.setRGB(computedColor.r, computedColor.g, computedColor.b), 10)}
+			color={darkenColor(colorUtil.setRGB(dotColor.r, dotColor.g, dotColor.b), 10)}
 			positions={linePositions.current}
 			scale={pointSize.current * 0.001}
 		/>

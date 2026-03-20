@@ -1,8 +1,7 @@
-import type { Entity } from 'koota'
-
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { useThrelte } from '@threlte/core'
+import { type Entity } from 'koota'
 import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 
@@ -27,7 +26,7 @@ interface Context {
 	connectionStatus: ConnectionStatus
 }
 
-interface PendingEvent {
+interface StreamEvent {
 	uuid: string
 	changeType: EntityChangeType
 	entity: StreamEntityChangesResponse['entity']
@@ -49,6 +48,134 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 				: undefined)
 	)
 
+	const transformEntities = new Map<string, Entity>()
+	const drawingEntities = new Map<string, Entity[]>()
+
+	let pendingEvents: StreamEvent[] = []
+	let flushScheduled = false
+
+	const destroyTransform = (uuidStr: string) => {
+		const entity = transformEntities.get(uuidStr)
+		if (!entity) return
+		if (world.has(entity)) entity.destroy()
+		transformEntities.delete(uuidStr)
+	}
+
+	const destroyDrawing = (uuidStr: string) => {
+		const entities = drawingEntities.get(uuidStr)
+		if (!entities) return
+		for (const entity of entities) {
+			if (world.has(entity)) entity.destroy()
+		}
+		drawingEntities.delete(uuidStr)
+	}
+
+	const processEvent = (event: StreamEvent) => {
+		const { changeType, entity, uuid } = event
+
+		if (entity.case === 'transform') {
+			const transform = entity.value
+
+			if (changeType === EntityChangeType.ADDED) {
+				if (!transformEntities.has(uuid)) {
+					const spawned = spawnTransform(world, transform, traits.DrawServiceAPI)
+					transformEntities.set(uuid, spawned)
+				}
+			} else if (changeType === EntityChangeType.REMOVED) {
+				destroyTransform(uuid)
+			} else if (changeType === EntityChangeType.UPDATED) {
+				const existing = transformEntities.get(uuid)
+				if (existing) {
+					updateTransformEntity(world, existing, transform)
+				} else {
+					const spawned = spawnTransform(world, transform, traits.DrawServiceAPI)
+					transformEntities.set(uuid, spawned)
+				}
+			}
+		} else if (entity.case === 'drawing') {
+			const drawing = entity.value
+
+			if (changeType === EntityChangeType.ADDED) {
+				if (!drawingEntities.has(uuid)) {
+					const spawned = spawnDrawing(world, drawing, traits.DrawServiceAPI)
+					drawingEntities.set(uuid, spawned)
+				}
+			} else if (changeType === EntityChangeType.REMOVED) {
+				destroyDrawing(uuid)
+			} else if (changeType === EntityChangeType.UPDATED) {
+				const existing = drawingEntities.get(uuid)
+				if (existing) {
+					const next = updateDrawingEntity(world, existing, drawing, traits.DrawServiceAPI)
+					drawingEntities.set(uuid, next)
+				} else {
+					const spawned = spawnDrawing(world, drawing, traits.DrawServiceAPI)
+					drawingEntities.set(uuid, spawned)
+				}
+			}
+		}
+
+		invalidate()
+	}
+
+	const applyEvents = (events: StreamEvent[]) => {
+		const eventsByUUID = new Map<string, StreamEvent>()
+
+		for (const event of events) {
+			const existing = eventsByUUID.get(event.uuid)
+			if (!existing) {
+				eventsByUUID.set(event.uuid, event)
+				continue
+			}
+
+			switch (event.changeType) {
+				case EntityChangeType.REMOVED: {
+					eventsByUUID.set(event.uuid, event)
+					break
+				}
+				case EntityChangeType.ADDED: {
+					if (existing.changeType !== EntityChangeType.REMOVED) {
+						eventsByUUID.set(event.uuid, event)
+					}
+					break
+				}
+				case EntityChangeType.UPDATED: {
+					if (existing.changeType === EntityChangeType.ADDED) {
+						// Entity added in this batch: apply the update's data but keep ADDED so it gets spawned
+						existing.entity = event.entity
+					} else if (existing.changeType === EntityChangeType.UPDATED) {
+						existing.updatedFields ??= { paths: [] }
+						const paths = event.updatedFields?.paths ?? []
+						for (const path of paths) {
+							if (!existing.updatedFields.paths.includes(path)) {
+								existing.updatedFields.paths.push(path)
+							}
+						}
+						existing.entity = event.entity
+					} else {
+						eventsByUUID.set(event.uuid, event)
+					}
+					break
+				}
+			}
+		}
+
+		for (const event of eventsByUUID.values()) {
+			processEvent(event)
+		}
+	}
+
+	const scheduleFlush = () => {
+		if (flushScheduled) return
+		flushScheduled = true
+
+		requestAnimationFrame(() => {
+			flushScheduled = false
+			const toApply = pendingEvents
+			pendingEvents = []
+			applyEvents(toApply)
+		})
+	}
+
 	$effect(() => {
 		if (!url) {
 			connectionStatus = 'disconnected'
@@ -57,90 +184,22 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 
 		connectionStatus = 'connecting'
 		let active = true
+		const controller = new AbortController()
+		const { signal } = controller
 
 		const transport = createConnectTransport({ baseUrl: url })
 		const client = createClient(DrawService, transport)
 
-		const transformEntities = new Map<string, Entity>()
-		const drawingEntities = new Map<string, Entity[]>()
-
-		const destroyTransform = (uuidStr: string) => {
-			const entity = transformEntities.get(uuidStr)
-			if (!entity) return
-			if (world.has(entity)) entity.destroy()
-			transformEntities.delete(uuidStr)
-		}
-
-		const destroyDrawing = (uuidStr: string) => {
-			const entities = drawingEntities.get(uuidStr)
-			if (!entities) return
-			for (const entity of entities) {
-				if (world.has(entity)) entity.destroy()
-			}
-			drawingEntities.delete(uuidStr)
-		}
-
-		const processEvent = (event: PendingEvent) => {
-			const { changeType, entity, uuid } = event
-
-			if (entity.case === 'transform') {
-				const transform = entity.value
-
-				if (changeType === EntityChangeType.ADDED) {
-					if (!transformEntities.has(uuid)) {
-						const spawned = spawnTransform(world, transform, traits.DrawServiceAPI)
-						transformEntities.set(uuid, spawned)
-					}
-				} else if (changeType === EntityChangeType.REMOVED) {
-					destroyTransform(uuid)
-				} else if (changeType === EntityChangeType.UPDATED) {
-					const existing = transformEntities.get(uuid)
-					if (existing) updateTransformEntity(world, existing, transform)
-				}
-			} else if (entity.case === 'drawing') {
-				const drawing = entity.value
-
-				if (changeType === EntityChangeType.ADDED) {
-					if (!drawingEntities.has(uuid)) {
-						const spawned = spawnDrawing(world, drawing, traits.DrawServiceAPI)
-						drawingEntities.set(uuid, spawned)
-					}
-				} else if (changeType === EntityChangeType.REMOVED) {
-					destroyDrawing(uuid)
-				} else if (changeType === EntityChangeType.UPDATED) {
-					const existing = drawingEntities.get(uuid) ?? []
-					const next = updateDrawingEntity(world, existing, drawing, traits.DrawServiceAPI)
-					drawingEntities.set(uuid, next)
-				}
-			}
-
-			invalidate()
-		}
-
 		;(async () => {
 			try {
-				for await (const response of client.streamEntityChanges({})) {
+				for await (const response of client.streamEntityChanges({}, { signal })) {
 					if (!active) break
 
 					const { entity } = response
 					if (!entity.case) continue
 
 					const uuid = UuidTool.toString([...(entity.value.uuid ?? [])])
-					// #region agent log
-					fetch('http://127.0.0.1:7242/ingest/c05387a2-98f8-475d-b72a-989751f8e9fc', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '23bd9f' },
-						body: JSON.stringify({
-							sessionId: '23bd9f',
-							location: 'useDrawService.svelte.ts:stream',
-							message: 'stream-event-process',
-							data: { uuid, changeType: response.changeType, entityCase: entity.case },
-							timestamp: Date.now(),
-							hypothesisId: 'H1-H2',
-						}),
-					}).catch(() => {})
-					// #endregion
-					processEvent({
+					pendingEvents.push({
 						uuid,
 						changeType: response.changeType,
 						entity: response.entity,
@@ -148,6 +207,7 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 							? { paths: [...response.updatedFields.paths] }
 							: undefined,
 					})
+					scheduleFlush()
 				}
 			} catch (error) {
 				if (active) {
@@ -158,7 +218,7 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 		})()
 		;(async () => {
 			try {
-				for await (const response of client.streamSceneChanges({})) {
+				for await (const response of client.streamSceneChanges({}, { signal })) {
 					if (!active) break
 
 					const { sceneMetadata } = response
@@ -186,6 +246,7 @@ export function provideDrawService(baseUrl?: () => string | undefined) {
 
 		return () => {
 			active = false
+			controller.abort()
 
 			for (const entity of transformEntities.values()) {
 				if (world.has(entity)) entity.destroy()

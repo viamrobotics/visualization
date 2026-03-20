@@ -14,7 +14,7 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 
-import { traits, useWorld } from '$lib/ecs'
+import { spawnTransform, traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { createPose } from '$lib/transform'

@@ -10,12 +10,12 @@ import (
 )
 
 func TestRemoveTransforms(t *testing.T) {
-	t.Run("RemoveTransforms", func(t *testing.T) {
+	t.Run("RemoveTransformsSetup", func(t *testing.T) {
 		startTestServer(t)
 
 		box, err := spatialmath.NewBox(
 			spatialmath.NewPose(
-				r3.Vector{X: 2000, Y: 2000, Z: 100},
+				r3.Vector{X: 0, Y: 0, Z: 100},
 				&spatialmath.OrientationVectorDegrees{Theta: 45, OX: 0, OY: 0, OZ: 1},
 			),
 			r3.Vector{X: 101, Y: 100, Z: 200},
@@ -23,20 +23,23 @@ func TestRemoveTransforms(t *testing.T) {
 		)
 		test.That(t, err, test.ShouldBeNil)
 
-		boxUUID, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.ColorFromName("black")})
+		boxUUID, err := DrawGeometry(DrawGeometryOptions{Geometry: box, Color: draw.ColorFromName("green")})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, boxUUID, test.ShouldNotBeNil)
 
-		pointsUUID, err := DrawPoints(DrawPointsOptions{
+		lineUUID, err := DrawLine(DrawLineOptions{
 			Positions: []r3.Vector{
 				{X: 2000, Y: 2000, Z: 100},
 				{X: 101, Y: 100, Z: 200},
 			},
-			PointSize: 10,
-			Colors:    []draw.Color{draw.ColorFromName("black")},
+			Name: "line2delete",
 		})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, pointsUUID, test.ShouldNotBeNil)
+		test.That(t, lineUUID, test.ShouldNotBeNil)
+	})
+
+	t.Run("RemoveTransforms", func(t *testing.T) {
+		startTestServer(t)
 
 		count, err := RemoveTransforms()
 		test.That(t, err, test.ShouldBeNil)

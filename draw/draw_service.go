@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
@@ -57,25 +55,11 @@ func NewDrawService() *DrawService {
 }
 
 func (svc *DrawService) notifyEntityChange(msg *drawv1.StreamEntityChangesResponse) {
-	// #region agent log
-	{
-		entityCase := "unknown"
-		switch msg.Entity.(type) {
-		case *drawv1.StreamEntityChangesResponse_Transform:
-			entityCase = "transform"
-		case *drawv1.StreamEntityChangesResponse_Drawing:
-			entityCase = "drawing"
-		}
-		line := fmt.Sprintf("{\"sessionId\":\"23bd9f\",\"location\":\"draw_service.go:notifyEntityChange\",\"message\":\"stage3-notify-entity-change\",\"data\":{\"changeType\":%d,\"entityCase\":\"%s\",\"numSubs\":%d},\"timestamp\":%d}\n",
-			msg.ChangeType, entityCase, len(svc.entitySubs), time.Now().UnixMilli())
-		if f, err := os.OpenFile("/Users/devin/Projects/motion-tools/.cursor/debug-23bd9f.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(line); f.Close() }
-	}
-	// #endregion
 	for _, ch := range svc.entitySubs {
 		select {
 		case ch <- msg:
 		default:
-			// Drop event for slow consumers rather than blocking mutations.
+			fmt.Println("Entity change dropped for slow consumer")
 		}
 	}
 }
@@ -85,6 +69,7 @@ func (svc *DrawService) notifySceneChange(msg *drawv1.StreamSceneChangesResponse
 		select {
 		case ch <- msg:
 		default:
+			fmt.Println("Scene change dropped for slow consumer")
 		}
 	}
 }

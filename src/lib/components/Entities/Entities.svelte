@@ -27,7 +27,7 @@
 
 	/**
 	 * Geometries from the world state API are bucketed into their own query
-	 * to avoid thrashing other query results due to them being potentially polled at 60fps.
+	 * to avoid thrashing other query results due to them being streamed.
 	 */
 	const worldStateEntities = useQuery(
 		traits.WorldStateStoreAPI,
