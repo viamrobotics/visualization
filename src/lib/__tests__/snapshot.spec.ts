@@ -2,7 +2,9 @@ import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('$lib/loaders/pcd', () => ({
-	parsePcdInWorker: vi.fn(() => Promise.resolve({ id: 0, positions: new Float32Array(), colors: null })),
+	parsePcdInWorker: vi.fn(() =>
+		Promise.resolve({ id: 0, positions: new Float32Array(), colors: null })
+	),
 }))
 
 import { Transform } from '$lib/buf/common/v1/common_pb'

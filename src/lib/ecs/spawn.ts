@@ -145,8 +145,8 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				}
 			}
 
-		entity.add(traits.LineWidth(geometryType.value.lineWidth))
-		entity.add(traits.PointSize(inMetres(geometryType.value.pointSize ?? 0)))
+			entity.add(traits.LineWidth(geometryType.value.lineWidth))
+			entity.add(traits.PointSize(inMetres(geometryType.value.pointSize ?? 0)))
 			entity.add(traits.LinePositions(positions))
 			break
 		}
@@ -165,9 +165,9 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.add(...createColorTraits(colors))
 			}
 
-		if (geometryType.value.pointSize) {
-			entity.add(traits.PointSize(inMetres(geometryType.value.pointSize)))
-		}
+			if (geometryType.value.pointSize) {
+				entity.add(traits.PointSize(inMetres(geometryType.value.pointSize)))
+			}
 
 			entity.add(
 				traits.BufferGeometry(createBufferGeometry(positions, hasVertexColors ? colors : undefined))
