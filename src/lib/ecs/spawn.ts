@@ -216,7 +216,7 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			entity.add(traits.LineWidth(geometryType.value.lineWidth))
-			entity.add(traits.PointSize(geometryType.value.pointSize ?? 0))
+			entity.add(traits.PointSize(inMetres(geometryType.value.pointSize ?? 0)))
 			entity.add(traits.LinePositions(positions))
 			break
 		}
@@ -236,7 +236,7 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			if (geometryType.value.pointSize) {
-				entity.add(traits.PointSize(geometryType.value.pointSize))
+				entity.add(traits.PointSize(inMetres(geometryType.value.pointSize)))
 			}
 
 			entity.add(
@@ -376,11 +376,20 @@ const spawnPointCloud = (
 		}
 
 		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
-		const vertexColors = getPointCloudColors(metadataColors, numPoints, pointcloud.colors)
+		const isUniformColor =
+			metadataColors !== undefined && !isPerVertexColors(metadataColors, numPoints)
+
+		const vertexColors = isUniformColor
+			? (pointcloud.colors ?? undefined)
+			: getPointCloudColors(metadataColors, numPoints, pointcloud.colors)
 
 		const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
+
+		if (isUniformColor) {
+			for (const t of createColorTraits(metadataColors!)) entity.add(t)
+		}
 	})
 }
 
