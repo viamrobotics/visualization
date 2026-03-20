@@ -2,8 +2,7 @@
 	import { Color } from 'three'
 
 	const colorUtil = new Color()
-	const DEFAULT_LINE_COLOR = { r: 0, g: 0, b: 1 } as const
-	const DEFAULT_LINE_WIDTH = 5
+	const dotColorUtil = new Color()
 </script>
 
 <script lang="ts">
@@ -14,6 +13,7 @@
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
+	import { asColor, asOpacity, isRgba, STRIDE } from '$lib/buffer'
 	import { darkenColor } from '$lib/color'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
@@ -33,22 +33,45 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
-	const color = useTrait(() => entity, traits.Color)
-	const pointColor = useTrait(() => entity, traits.PointColor)
+	const colors = useTrait(() => entity, traits.Colors)
 	const pointSize = useTrait(() => entity, traits.PointSize)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
-	const opacity = useTrait(() => entity, traits.Opacity)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+	const screenSpace = useTrait(() => entity, traits.ScreenSpace)
 
 	const events = useEntityEvents(() => entity)
 
-	const currentOpacity = $derived(opacity.current ?? 0.7)
+	const lineColor = $derived.by(() => {
+		if (!colors.current) return [0, 0, 1] as [number, number, number]
+		asColor(colors.current, colorUtil, 0)
+		return [colorUtil.r, colorUtil.g, colorUtil.b] as [number, number, number]
+	})
+
+	const dotColor = $derived.by((): [number, number, number] => {
+		if (!colors.current) {
+			const d = darkenColor(colorUtil.setRGB(0, 0, 1), 10)
+			return [d.r, d.g, d.b]
+		}
+		const rgba = isRgba(colors.current)
+		const stride = rgba ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+		if (colors.current.length >= stride * 2) {
+			asColor(colors.current, dotColorUtil, stride)
+		} else {
+			asColor(colors.current, dotColorUtil, 0)
+		}
+		const d = darkenColor(dotColorUtil, 10)
+		return [d.r, d.g, d.b]
+	})
+
+	const currentOpacity = $derived.by(() => {
+		if (!colors.current) return 0.7
+		if (!isRgba(colors.current)) return 0.7
+		return asOpacity(colors.current)
+	})
 
 	const mesh = new Line2()
-
-	const computedColor = $derived(color.current ?? DEFAULT_LINE_COLOR)
 
 	$effect.pre(() => {
 		if (pose.current) {
@@ -70,19 +93,19 @@
 		<LineGeometry positions={linePositions.current} />
 		<T
 			is={LineMaterial}
-			color={[computedColor.r, computedColor.g, computedColor.b]}
+			color={lineColor}
 			transparent={currentOpacity < 1}
 			depthWrite={currentOpacity === 1}
 			opacity={currentOpacity}
-			linewidth={lineWidth.current ?? DEFAULT_LINE_WIDTH}
+			worldUnits={!screenSpace.current}
+			linewidth={(lineWidth.current ?? 5) * (screenSpace.current ? 1 : 0.001)}
 			depthTest={materialProps.current?.depthTest ?? true}
 		/>
 	</T>
 
 	{#if linePositions.current && pointSize.current}
-		{@const dotColor = pointColor.current ?? computedColor}
 		<LineDots
-			color={darkenColor(colorUtil.setRGB(dotColor.r, dotColor.g, dotColor.b), 10)}
+			color={dotColor}
 			positions={linePositions.current}
 			scale={pointSize.current * 0.001}
 		/>

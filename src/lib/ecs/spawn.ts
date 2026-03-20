@@ -1,28 +1,20 @@
 import type { TransformWithUUID } from '@viamrobotics/sdk'
 import type { ConfigurableTrait, Entity, Trait, World } from 'koota'
 
-import { Color, Vector3, Vector4 } from 'three'
+import { Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 
 import type { Transform as SnapshotTransform } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import {
-	asColor,
-	asFloat32Array,
-	asOpacity,
-	inMetres,
-	isPerVertexColors,
-	STRIDE,
-} from '$lib/buffer'
+import { asFloat32Array, inMetres, isVertexColors, STRIDE } from '$lib/buffer'
 import { traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { parseMetadata } from '$lib/metadata'
 import { createPose } from '$lib/transform'
 
 const vec3 = new Vector3()
-const colorUtil = new Color()
 
 type SpawnTransformInput = SnapshotTransform | TransformWithUUID
 
@@ -70,7 +62,7 @@ export const spawnTransform = (
 			? transform.physicalObject.geometryType.value.pointCloud
 			: undefined
 
-	if (metadata.colors && !pointCloud) entityTraits.push(...createColorTraits(metadata.colors))
+	if (metadata.colors && !pointCloud) entityTraits.push(traits.Colors(metadata.colors))
 
 	const entity = world.spawn(...entityTraits)
 
@@ -141,7 +133,7 @@ export const updateTransformEntity = (
 		if (isPointCloud) {
 			updatePointCloudColors(entity, metadata.colors)
 		} else {
-			entity.add(...createColorTraits(metadata.colors))
+			entity.add(traits.Colors(metadata.colors))
 		}
 	}
 
@@ -201,22 +193,11 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
-			if (colors && colors.length >= STRIDE.COLORS_RGB) {
-				const stride =
-					colors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
-				asColor(colors, colorUtil, 0)
-				entity.add(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-				if (colors.length >= stride * 2) {
-					asColor(colors, colorUtil, stride)
-					entity.add(traits.PointColor({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-					if (stride === STRIDE.COLORS_RGBA) {
-						entity.add(traits.Opacity(asOpacity(colors, 1, 3)))
-					}
-				}
-			}
+			if (colors) entity.add(traits.Colors(colors))
 
-			entity.add(traits.LineWidth(geometryType.value.lineWidth))
-			entity.add(traits.PointSize(inMetres(geometryType.value.pointSize ?? 0)))
+			const lineWidth = geometryType.value.lineWidth ?? 5
+			entity.add(traits.LineWidth(lineWidth))
+			entity.add(traits.PointSize(geometryType.value.pointSize ?? lineWidth))
 			entity.add(traits.LinePositions(positions))
 			break
 		}
@@ -229,14 +210,12 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			const numPoints = positions.length / STRIDE.POSITIONS
-			const hasVertexColors = colors && isPerVertexColors(colors, numPoints)
+			const hasVertexColors = colors && isVertexColors(colors, numPoints)
 
-			if (!hasVertexColors && colors) {
-				entity.add(...createColorTraits(colors))
-			}
+			if (colors) entity.add(traits.Colors(colors))
 
 			if (geometryType.value.pointSize) {
-				entity.add(traits.PointSize(inMetres(geometryType.value.pointSize)))
+				entity.add(traits.PointSize(geometryType.value.pointSize))
 			}
 
 			entity.add(
@@ -286,9 +265,7 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
-			if (colors) {
-				for (const t of createColorTraits(colors)) entity.add(t)
-			}
+			if (colors) entity.add(traits.Colors(colors))
 
 			entity.add(traits.LinePositions(points))
 			break
@@ -299,9 +276,7 @@ const applyDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.add(traits.Center(drawing.physicalObject.center))
 			}
 
-			if (colors) {
-				for (const t of createColorTraits(colors)) entity.add(t)
-			}
+			if (colors) entity.add(traits.Colors(colors))
 			break
 		}
 	}
@@ -377,10 +352,9 @@ const spawnPointCloud = (
 
 		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
 		const isUniformColor =
-			metadataColors !== undefined && !isPerVertexColors(metadataColors, numPoints)
-
+			metadataColors !== undefined && !isVertexColors(metadataColors, numPoints)
 		const vertexColors = isUniformColor
-			? (pointcloud.colors ?? undefined)
+			? undefined
 			: getPointCloudColors(metadataColors, numPoints, pointcloud.colors)
 
 		const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
@@ -388,7 +362,7 @@ const spawnPointCloud = (
 		entity.add(traits.Points)
 
 		if (isUniformColor) {
-			for (const t of createColorTraits(metadataColors!)) entity.add(t)
+			entity.add(traits.Colors(metadataColors!))
 		}
 	})
 }
@@ -403,7 +377,7 @@ const updatePointCloudColors = (entity: Entity, metadataColors: Uint8Array<Array
 			updateBufferGeometry(buffer, buffer.getAttribute('position').array as Float32Array, colors)
 		}
 	} else {
-		entity.add(...createColorTraits(metadataColors))
+		entity.add(traits.Colors(metadataColors))
 	}
 }
 
@@ -413,7 +387,7 @@ const getPointCloudColors = (
 	pcdColors?: Uint8Array | null
 ): Uint8Array | null | undefined => {
 	if (!metadataColors || metadataColors.length === 0) return pcdColors
-	if (isPerVertexColors(metadataColors, numPoints)) return metadataColors
+	if (isVertexColors(metadataColors, numPoints)) return metadataColors
 
 	const stride =
 		metadataColors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
@@ -424,18 +398,6 @@ const getPointCloudColors = (
 		}
 	}
 	return expanded
-}
-
-const createColorTraits = (bytes: Uint8Array<ArrayBuffer>): ConfigurableTrait[] => {
-	asColor(bytes, colorUtil)
-	const result: ConfigurableTrait[] = [
-		traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }),
-	]
-
-	const isRgba = bytes.length % STRIDE.COLORS_RGBA === 0
-	if (isRgba) result.push(traits.Opacity(asOpacity(bytes)))
-
-	return result
 }
 
 const updateDrawingShape = (entity: Entity, drawing: Drawing): void => {
@@ -458,24 +420,11 @@ const updateDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.set(traits.Center, drawing.physicalObject.center)
 			}
 
-			if (colors && colors.length >= STRIDE.COLORS_RGB) {
-				const stride =
-					colors.length % STRIDE.COLORS_RGBA === 0 ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
-				asColor(colors, colorUtil, 0)
-				entity.set(traits.Color, { r: colorUtil.r, g: colorUtil.g, b: colorUtil.b })
-				if (colors.length >= stride * 2) {
-					asColor(colors, colorUtil, stride)
-					entity.set(traits.PointColor, { r: colorUtil.r, g: colorUtil.g, b: colorUtil.b })
-					if (stride === STRIDE.COLORS_RGBA) {
-						entity.set(traits.Opacity, asOpacity(colors, 1, 3))
-					}
-				}
-			}
+			if (colors) entity.set(traits.Colors, colors)
 
-			if (geometryType.value.lineWidth !== undefined) {
-				entity.set(traits.LineWidth, geometryType.value.lineWidth)
-			}
-			entity.set(traits.PointSize, geometryType.value.pointSize ?? 0)
+			const lineWidth = geometryType.value.lineWidth ?? 5
+			entity.set(traits.LineWidth, lineWidth)
+			entity.set(traits.PointSize, geometryType.value.pointSize ?? lineWidth)
 			entity.set(traits.LinePositions, positions)
 			break
 		}
@@ -488,11 +437,9 @@ const updateDrawingShape = (entity: Entity, drawing: Drawing): void => {
 			}
 
 			const numPoints = positions.length / STRIDE.POSITIONS
-			const hasVertexColors = colors && isPerVertexColors(colors, numPoints)
+			const hasVertexColors = colors && isVertexColors(colors, numPoints)
 
-			if (!hasVertexColors && colors) {
-				entity.add(...createColorTraits(colors))
-			}
+			if (colors) entity.set(traits.Colors, colors)
 
 			if (geometryType.value.pointSize) {
 				entity.set(traits.PointSize, geometryType.value.pointSize)
@@ -551,9 +498,7 @@ const updateDrawingShape = (entity: Entity, drawing: Drawing): void => {
 				entity.set(traits.Center, drawing.physicalObject.center)
 			}
 
-			if (colors) {
-				entity.add(...createColorTraits(colors))
-			}
+			if (colors) entity.set(traits.Colors, colors)
 
 			entity.set(traits.LinePositions, points)
 			break

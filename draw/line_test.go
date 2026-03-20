@@ -17,7 +17,7 @@ func TestNewLine(t *testing.T) {
 		line, err := NewLine(twoPositions)
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, line.LineWidth, test.ShouldEqual, DefaultLineWidth)
-		test.That(t, line.PointSize, test.ShouldEqual, DefaultPointSize)
+		test.That(t, line.PointSize, test.ShouldEqual, DefaultLinePointSize)
 		test.That(t, line.LineColor, test.ShouldResemble, DefaultLineColor)
 		test.That(t, line.PointColor, test.ShouldResemble, DefaultLinePointColor)
 	})

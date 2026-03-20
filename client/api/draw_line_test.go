@@ -57,6 +57,8 @@ func TestDrawLine(t *testing.T) {
 			Name:      "upwardSpiralLineColor",
 			Positions: points,
 			Colors:    []draw.Color{lineColor},
+			LineWidth: 50.0,
+			PointSize: 50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -71,6 +73,8 @@ func TestDrawLine(t *testing.T) {
 			Name:      "upwardSpiralPointColor",
 			Positions: points,
 			Colors:    []draw.Color{lineColor, pointColor},
+			LineWidth: 50.0,
+			PointSize: 50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

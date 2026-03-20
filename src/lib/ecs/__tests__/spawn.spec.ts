@@ -90,7 +90,7 @@ describe('spawnTransform', () => {
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
 
-	it('adds uniform Color and Opacity traits for pointcloud', async () => {
+	it('adds Colors trait for pointcloud with uniform color', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
 		const positions = new Float32Array(6)
@@ -114,13 +114,7 @@ describe('spawnTransform', () => {
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
-		expect(entity.has(traits.Color)).toBe(true)
-		expect(entity.get(traits.Color)).toMatchObject({
-			r: expect.closeTo(0),
-			g: expect.closeTo(1),
-			b: expect.closeTo(0),
-		})
-		expect(entity.get(traits.Opacity)).toBeCloseTo(128 / 255)
+		expect(entity.get(traits.Colors)).toStrictEqual(metadataColors)
 	})
 
 	it('adds per-vertex colors to BufferGeometry for pointcloud', async () => {
@@ -148,7 +142,7 @@ describe('spawnTransform', () => {
 		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
-		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.has(traits.Colors)).toBe(false)
 		expect(entity.get(traits.BufferGeometry)?.getAttribute('color')).toBeTruthy()
 	})
 })
@@ -176,7 +170,8 @@ describe('spawnDrawing', () => {
 		expect(entity.get(traits.Parent)).toBe('base')
 		expect(entity.has(traits.LinePositions)).toBe(true)
 		expect(entity.get(traits.LineWidth)).toBe(3)
-		expect(entity.get(traits.PointSize)).toBeCloseTo(0.006)
+		expect(entity.get(traits.PointSize)).toBe(6)
+		expect(entity.has(traits.Colors)).toBe(false)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})
@@ -217,10 +212,7 @@ describe('spawnDrawing', () => {
 		const [single] = spawnDrawing(world, singleColorDrawing, traits.SnapshotAPI)
 		const [multi] = spawnDrawing(world, multiColorDrawing, traits.SnapshotAPI)
 
-		expect(single.has(traits.Color)).toBe(false)
 		expect(single.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 128]))
-
-		expect(multi.has(traits.Color)).toBe(false)
 		expect(multi.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
 	})
 
@@ -279,8 +271,7 @@ describe('spawnDrawing', () => {
 		expect(entity.get(traits.Center)).toStrictEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
 		expect(entity.has(traits.Points)).toBe(true)
-		expect(entity.get(traits.PointSize)).toBeCloseTo(0.008)
-		expect(entity.get(traits.Color)?.g).toBeCloseTo(1)
-		expect(entity.get(traits.Opacity)).toBeCloseTo(200 / 255, 3)
+		expect(entity.get(traits.PointSize)).toBe(8)
+		expect(entity.get(traits.Colors)).toStrictEqual(new Uint8Array([0, 255, 0, 200]))
 	})
 })

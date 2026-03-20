@@ -662,6 +662,17 @@ test('set camera pose', async ({ browser }) => {
 test('remove all', async ({ browser }) => {
 	const testPrefix = 'REMOVE_ALL'
 	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestRemoveAll$/RemoveAllSetup github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('box2delete')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_SETUP`))
 
 	execSync(
 		'go test -run ^TestRemoveAll$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
@@ -670,7 +681,12 @@ test('remove all', async ({ browser }) => {
 		}
 	)
 
-	await assertTestSuccess(page, testPrefix)
+	await expect(page.getByText('box2delete')).not.toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 test('remove drawings', async ({ browser }) => {

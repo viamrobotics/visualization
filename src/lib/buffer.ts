@@ -147,7 +147,7 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
  * }
  * ```
  */
-export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
+export const isVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
 	colors.length === numVertex * STRIDE.COLORS_RGB ||
 	colors.length === numVertex * STRIDE.COLORS_RGBA
 
@@ -161,3 +161,30 @@ export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: nu
  * ```
  */
 export const inMetres = (v: number): number => v * 0.001
+
+/**
+ * Returns true when `colors` is encoded as RGBA (4 bytes per color).
+ * Prefers RGBA when length is divisible by both 3 and 4, matching the
+ * convention used throughout the draw API.
+ *
+ * @example
+ * ```ts
+ * const stride = isRgba(colors) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+ * ```
+ */
+export const isRgba = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length % STRIDE.COLORS_RGBA === 0
+
+/**
+ * Returns true when `colors` contains exactly one color (RGB or RGBA),
+ * as opposed to a per-vertex color array.
+ *
+ * @example
+ * ```ts
+ * if (isSingleColor(colors)) {
+ *   material.color = asColor(colors, colorUtil)
+ * }
+ * ```
+ */
+export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA

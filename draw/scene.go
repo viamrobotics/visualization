@@ -166,7 +166,7 @@ func newSceneMetadataConfig() *sceneMetadataConfig {
 		pointSize:        DefaultPointSize,
 		pointColor:       DefaultPointColor,
 		lineWidth:        DefaultLineWidth,
-		linePointSize:    DefaultPointSize,
+		linePointSize:    DefaultLinePointSize,
 		renderArmModels:  drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL,
 		renderShapes:     []drawv1.RenderShapes{drawv1.RenderShapes_RENDER_SHAPES_ARROWS, drawv1.RenderShapes_RENDER_SHAPES_POINTS, drawv1.RenderShapes_RENDER_SHAPES_LINES, drawv1.RenderShapes_RENDER_SHAPES_MODEL},
 	}

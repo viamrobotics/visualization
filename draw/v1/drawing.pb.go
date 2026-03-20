@@ -85,7 +85,7 @@ type Line struct {
 	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 	// optional width of the line in millimeters, defaults to 5
 	LineWidth *float32 `protobuf:"fixed32,2,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
-	// optional size of the points in millimeters, defaults to 10
+	// optional size of the points in millimeters, defaults to line_width (5)
 	PointSize     *float32 `protobuf:"fixed32,3,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -31,7 +31,7 @@ message Line {
   // optional width of the line in millimeters, defaults to 5
   optional float line_width = 2;
 
-  // optional size of the points in millimeters, defaults to 10
+  // optional size of the points in millimeters, defaults to line_width (5)
   optional float point_size = 3;
 }
 

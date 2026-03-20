@@ -6,6 +6,7 @@
 	import { type Snippet } from 'svelte'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Mesh } from 'three'
 
+	import { asColor, asOpacity, isRgba } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
 	import { traits, useTrait } from '$lib/ecs'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
@@ -26,6 +27,7 @@
 
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
+	const rawColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const box = useTrait(() => entity, traits.Box)
@@ -41,11 +43,22 @@
 			return overrideColor
 		}
 
+		if (rawColors.current) {
+			return asColor(rawColors.current, colorUtil)
+		}
+
 		if (entityColor.current) {
 			return colorUtil.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
 		}
 
 		return colors.default
+	})
+
+	const currentOpacity = $derived.by(() => {
+		if (rawColors.current && isRgba(rawColors.current)) {
+			return asOpacity(rawColors.current)
+		}
+		return opacity.current ?? 0.7
 	})
 
 	const mesh = new Mesh()
@@ -97,7 +110,6 @@
 		/>
 	{/if}
 
-	{@const currentOpacity = opacity.current ?? 0.7}
 	<T.MeshToonMaterial
 		{color}
 		side={bufferGeometry.current ? DoubleSide : FrontSide}

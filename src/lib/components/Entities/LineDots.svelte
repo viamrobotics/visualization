@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { BatchedMesh, type ColorRepresentation, Matrix4, SphereGeometry, Vector3 } from 'three'
+	import { BatchedMesh, Matrix4, SphereGeometry, Vector3 } from 'three'
 
 	interface Props {
-		color: ColorRepresentation
+		color: [r: number, g: number, b: number]
 		positions: Float32Array
 		scale: number
 	}
 
 	let { color, positions, scale }: Props = $props()
 
-	const geometry = new SphereGeometry(1, 16, 16)
+	const geometry = new SphereGeometry(0.5, 16, 16)
 	const vertexCount = geometry.getAttribute('position').count
 	const indexCount = geometry.index?.count ?? vertexCount
 	const mesh = new BatchedMesh(5000, vertexCount, indexCount)

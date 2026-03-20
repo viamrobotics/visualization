@@ -106,9 +106,6 @@ export const LinePositions = trait(() => new Float32Array())
 
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 
-/** format [r, g, b, ...] */
-export const VertexColors = trait(() => new Float32Array())
-
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
 	animationName: '',
@@ -130,11 +127,17 @@ export const DroppedFile = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 
+/**
+ * Marker trait for entities that should be rendered in screen space (CSS pixels)
+ * rather than world space. Used by UI overlays like the Lasso tool.
+ */
+export const ScreenSpace = trait(() => true)
+
 // === Shape Properties ===
 /**
  * Point size, in mm
  */
-export const PointSize = trait(() => 10)
+export const PointSize = trait(() => 5)
 
 /**
  * Line width, in mm

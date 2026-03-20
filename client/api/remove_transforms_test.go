@@ -32,7 +32,9 @@ func TestRemoveTransforms(t *testing.T) {
 				{X: 2000, Y: 2000, Z: 100},
 				{X: 101, Y: 100, Z: 200},
 			},
-			Name: "line2delete",
+			Name:      "line2delete",
+			LineWidth: 50.0,
+			PointSize: 50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, lineUUID, test.ShouldNotBeNil)

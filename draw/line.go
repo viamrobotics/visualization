@@ -9,6 +9,9 @@ import (
 var (
 	// DefaultLineWidth is the default line width in millimeters.
 	DefaultLineWidth float32 = 5.0
+
+	// DefaultLinePointSize is the default point size for Line vertices in millimeters.
+	DefaultLinePointSize float32 = DefaultLineWidth
 )
 
 // Line represents a polyline (connected line segments) in 3D space, with optional visible
@@ -20,7 +23,7 @@ type Line struct {
 	// LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
 	LineWidth float32
 
-	// PointSize specifies the size of points rendered at each vertex in millimeters (default: 10mm).
+	// PointSize specifies the size of points rendered at each vertex in millimeters (default: 5mm).
 	PointSize float32
 
 	// LineColor is the color used for rendering the line segments (default: blue).
@@ -76,7 +79,7 @@ func WithLineColors(lineColor Color, pointColor *Color) DrawLineOption {
 // NewLine creates a new Line from the given vertex positions and optional configuration.
 // Returns an error if there are fewer than 2 positions or if the point size is non-positive.
 func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
-	config := newDrawLineConfig(DefaultLineWidth, DefaultPointSize, DefaultLineColor, DefaultLinePointColor)
+	config := newDrawLineConfig(DefaultLineWidth, DefaultLinePointSize, DefaultLineColor, DefaultLinePointColor)
 	for _, option := range options {
 		option(config)
 	}

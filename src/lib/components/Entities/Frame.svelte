@@ -18,6 +18,7 @@ Renders a Viam Frame object
 	import { Portal, PortalTarget } from '@threlte/extras'
 	import { Group, type Object3D } from 'three'
 
+	import { asColor } from '$lib/buffer'
 	import { colors, resourceColors } from '$lib/color'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
@@ -39,6 +40,7 @@ Renders a Viam Frame object
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
+	const rawColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const entityPose = useTrait(() => entity, traits.Pose)
 	const center = useTrait(() => entity, traits.Center)
@@ -46,8 +48,12 @@ Renders a Viam Frame object
 	const events = useEntityEvents(() => entity)
 
 	const color = $derived.by(() => {
+		if (rawColors.current) {
+			return `#${asColor(rawColors.current, colorUtil).getHexString()}`
+		}
+
 		if (entityColor.current) {
-			return `#${colorUtil.set(entityColor.current.r, entityColor.current.g, entityColor.current.b).getHexString()}`
+			return `#${colorUtil.setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b).getHexString()}`
 		}
 
 		const subtype = resourceByName.current[name.current ?? '']?.subtype
