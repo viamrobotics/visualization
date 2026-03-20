@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.15.5
+
+### Patch Changes
+
+- af76937: Fix edit mode issues and entity disposal
+
 ## 1.15.4
 
 ### Patch Changes
