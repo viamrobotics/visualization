@@ -1,19 +1,21 @@
 import { render, screen } from '@testing-library/svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createWorld, type Entity } from 'koota'
 import '@testing-library/jest-dom/vitest'
-import Details from '../Details.svelte'
-import * as useSelection from '$lib/hooks/useSelection.svelte'
-import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
-import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { traits } from '$lib/ecs'
 import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
+import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
-import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
+import * as useSelection from '$lib/hooks/useSelection.svelte'
+import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
+
+import Details from '../Details.svelte'
 import { createEntityFixture } from './__fixtures__/entity'
-import { createWorld, type Entity } from 'koota'
 import { resource } from './__fixtures__/resource'
-import { traits } from '$lib/ecs'
 
 describe('Details component', () => {
 	const world = createWorld()

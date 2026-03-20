@@ -1,6 +1,7 @@
-import { expect, describe, it } from 'vitest'
 import { Quaternion, Vector3 } from 'three'
-import { OrientationVector, EPSILON } from '../OrientationVector'
+import { describe, expect, it } from 'vitest'
+
+import { EPSILON, OrientationVector } from '../OrientationVector'
 
 const vecA = new Vector3()
 const vecB = new Vector3()

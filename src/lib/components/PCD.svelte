@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { parsePcdInWorker } from '$lib/lib'
-	import { traits, useWorld } from '$lib/ecs'
-	import { createBufferGeometry } from '$lib/attribute'
 	import type { ConfigurableTrait, Entity } from 'koota'
+
+	import { createBufferGeometry } from '$lib/attribute'
+	import { traits, useWorld } from '$lib/ecs'
+	import { parsePcdInWorker } from '$lib/lib'
 
 	interface Props {
 		data: Uint8Array

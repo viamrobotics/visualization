@@ -4,16 +4,19 @@
 Renders a Viam Geometry object
 -->
 <script lang="ts">
-	import { T, useThrelte } from '@threlte/core'
-	import { traits, useTrait } from '$lib/ecs'
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { Portal } from '@threlte/extras'
-	import { poseToObject3d } from '$lib/transform'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import Mesh from './Mesh.svelte'
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
+
+	import { T, useThrelte } from '@threlte/core'
+	import { Portal } from '@threlte/extras'
+
+	import { traits, useTrait } from '$lib/ecs'
+	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { poseToObject3d } from '$lib/transform'
+
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import Mesh from './Mesh.svelte'
 
 	interface Props {
 		entity: Entity
@@ -60,7 +63,11 @@ Renders a Viam Geometry object
 
 <Portal id={parent.current}>
 	{#if model}
-		<T is={model} />
+		<T
+			is={model}
+			name={entity}
+			{...events}
+		/>
 	{/if}
 
 	{#if settings.current.renderArmModels.includes('colliders') || !model}

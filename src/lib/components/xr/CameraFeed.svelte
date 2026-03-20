@@ -2,7 +2,9 @@
 	import { T, useTask } from '@threlte/core'
 	import { createStreamClient } from '@viamrobotics/svelte-sdk'
 	import { VideoTexture } from 'three'
+
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+
 	import BentPlaneGeometry from './BentPlaneGeometry.svelte'
 
 	interface CameraFeedProps {

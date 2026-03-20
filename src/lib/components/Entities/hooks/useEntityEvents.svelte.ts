@@ -1,9 +1,11 @@
-import { useCursor, type IntersectionEvent } from '@threlte/extras'
+import type { Entity } from 'koota'
+
+import { type IntersectionEvent, useCursor } from '@threlte/extras'
+import { Vector2 } from 'three'
+
+import { traits } from '$lib/ecs'
 import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 import { useVisibility } from '$lib/hooks/useVisibility.svelte'
-import { Vector2 } from 'three'
-import type { Entity } from 'koota'
-import { traits } from '$lib/ecs'
 import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
 import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
 

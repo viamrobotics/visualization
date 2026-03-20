@@ -1,15 +1,17 @@
 <script lang="ts">
-	import { untrack } from 'svelte'
-	import { Vector3, type Intersection } from 'three'
 	import { T } from '@threlte/core'
 	import { HTML, MeshLineGeometry, MeshLineMaterial, Portal } from '@threlte/extras'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { untrack } from 'svelte'
+	import { type Intersection, Vector3 } from 'three'
+
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import MeasurePoint from './MeasurePoint.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
-	import ToggleGroup from '../overlay/ToggleGroup.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
 	import Popover from '../overlay/Popover.svelte'
+	import ToggleGroup from '../overlay/ToggleGroup.svelte'
+	import MeasurePoint from './MeasurePoint.svelte'
 
 	const focusedEntity = useFocusedEntity()
 	const settings = useSettings()
@@ -33,7 +35,7 @@
 		intersection = event.intersections[0]
 
 		// Only handle axis restrictions if a first point has been placed
-		if (!p1) {
+		if (!p1 || !intersection) {
 			return
 		}
 
@@ -125,7 +127,7 @@
 {#if enabled}
 	{#if intersection && step !== 'p2'}
 		<MeasurePoint
-			position={intersection?.point.toArray()}
+			position={intersection.point.toArray()}
 			opacity={0.5}
 		/>
 	{/if}

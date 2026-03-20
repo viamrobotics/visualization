@@ -1,19 +1,22 @@
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
-import js from '@eslint/js'
-import { defineConfig } from 'eslint/config'
 import { includeIgnoreFile } from '@eslint/compat'
+import js from '@eslint/js'
+import perfectionist from 'eslint-plugin-perfectionist'
 import svelte from 'eslint-plugin-svelte'
-import globals from 'globals'
-import ts from 'typescript-eslint'
-import svelteConfig from './svelte.config.js'
 import unicorn from 'eslint-plugin-unicorn'
+import { defineConfig } from 'eslint/config'
+import globals from 'globals'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import ts from 'typescript-eslint'
+
+import svelteConfig from './svelte.config.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const gitignorePath = path.resolve(__dirname, '.gitignore')
 
 export default defineConfig(
+	perfectionist.configs['recommended-natural'],
 	js.configs.recommended,
 	ts.configs.recommended,
 	unicorn.configs.recommended,
@@ -29,8 +32,8 @@ export default defineConfig(
 	},
 	includeIgnoreFile(gitignorePath),
 	{
-		name: 'ignores',
 		ignores: ['draw/DOCS.md', 'draw/__snapshots__'],
+		name: 'ignores',
 	},
 
 	{
@@ -38,9 +41,9 @@ export default defineConfig(
 		// See more details at: https://typescript-eslint.io/packages/parser/
 		languageOptions: {
 			parserOptions: {
-				projectService: true,
 				extraFileExtensions: ['.svelte'], // Add support for additional file extensions, such as .svelte
 				parser: ts.parser,
+				projectService: true,
 				// Specify a parser for each language, if needed:
 				// parser: {
 				//   ts: ts.parser,
@@ -73,29 +76,61 @@ export default defineConfig(
 	},
 
 	{
+		name: 'viam/perfectionist',
+		rules: {
+			'perfectionist/sort-array-includes': 'off',
+			'perfectionist/sort-classes': 'off',
+			'perfectionist/sort-decorators': 'off',
+			'perfectionist/sort-enums': 'off',
+			'perfectionist/sort-export-attributes': 'off',
+			'perfectionist/sort-exports': 'off',
+			'perfectionist/sort-heritage-clauses': 'off',
+			'perfectionist/sort-interfaces': 'off',
+			'perfectionist/sort-intersection-types': 'off',
+			'perfectionist/sort-jsx-props': 'off',
+			'perfectionist/sort-maps': 'off',
+			'perfectionist/sort-modules': 'off',
+			'perfectionist/sort-named-exports': 'off',
+			'perfectionist/sort-object-types': 'off',
+			'perfectionist/sort-objects': 'off',
+			'perfectionist/sort-sets': 'off',
+			'perfectionist/sort-switch-case': 'off',
+			'perfectionist/sort-union-types': 'off',
+			'perfectionist/sort-variable-declarations': 'off',
+
+			'perfectionist/sort-imports': [
+				'error',
+				{
+					internalPattern: [String.raw`^\$`],
+				},
+			],
+		},
+	},
+
+	{
 		name: 'viam/unicorn',
 		rules: {
+			'unicorn/consistent-function-scoping': 'off',
 			'unicorn/custom-error-definition': 'error',
+			'unicorn/escape-case': 'off',
+			'unicorn/filename-case': 'off',
+			'unicorn/no-for-loop': 'off',
+			'unicorn/no-hex-escape': 'off',
 			'unicorn/no-null': 'off',
+			'unicorn/no-object-as-default-parameter': 'off',
+			'unicorn/no-process-exit': 'off',
 			'unicorn/no-unused-properties': 'error',
 			'unicorn/no-useless-undefined': 'off',
+			'unicorn/number-literal-case': 'off',
+			'unicorn/numeric-separators-style': 'off',
+			'unicorn/prefer-add-event-listener': 'off',
+			'unicorn/prefer-blob-reading-methods': 'off',
+			'unicorn/prefer-code-point': 'off',
 			'unicorn/prefer-string-replace-all': 'error',
+			'unicorn/prefer-switch': 'off',
 			'unicorn/prefer-top-level-await': 'off',
 			'unicorn/prevent-abbreviations': 'off',
-			'unicorn/filename-case': 'off',
-			'unicorn/prefer-switch': 'off',
 			'unicorn/require-module-specifiers': 'off',
-			'unicorn/numeric-separators-style': 'off',
-			'unicorn/consistent-function-scoping': 'off',
-			'unicorn/prefer-add-event-listener': 'off',
-			'unicorn/number-literal-case': 'off',
-			'unicorn/prefer-code-point': 'off',
-			'unicorn/no-for-loop': 'off',
-			'unicorn/prefer-blob-reading-methods': 'off',
-			'unicorn/no-object-as-default-parameter': 'off',
-			'unicorn/escape-case': 'off',
-			'unicorn/no-process-exit': 'off',
-			'unicorn/no-hex-escape': 'off',
 
 			// TODO
 			// 'unicorn/filename-case': [

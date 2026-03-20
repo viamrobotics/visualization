@@ -1,5 +1,52 @@
 # motion-tools
 
+## 1.15.5
+
+### Patch Changes
+
+- af76937: Fix edit mode issues and entity disposal
+
+## 1.15.4
+
+### Patch Changes
+
+- 89c0802: Improve keyboard controls when zoomed in
+- f353903: Fix "Cannot read properties of undefined" error
+- 01d106f: Send release version to sentry
+
+## 1.15.3
+
+### Patch Changes
+
+- b151176: Fix issue with multiple meshes being rendered on entity add
+- 05d2934: Update useQuery hook to match Koota source
+- f9e2f84: Bump Threlte
+
+## 1.15.2
+
+### Patch Changes
+
+- 0467cea: Improve floating panel behavior in embedded environments
+
+## 1.15.1
+
+### Patch Changes
+
+- 736a412: Move "add frame" to dashboard
+- 9c47a4d: Fix: selection bounding box for models
+
+## 1.15.0
+
+### Minor Changes
+
+- 99bcc28: add settings tab for weblabs
+
+### Patch Changes
+
+- fae30f6: force light mode
+- ccc7a20: Use `<FloatingPanel>` for Treeview
+- 2f357b2: Add automated import sorting
+
 ## 1.14.0
 
 ### Minor Changes

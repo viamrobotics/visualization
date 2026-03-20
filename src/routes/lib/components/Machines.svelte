@@ -1,14 +1,16 @@
 <script lang="ts">
-	import { Input, Switch, Button, IconButton, Icon } from '@viamrobotics/prime-core'
+	import { Button, Icon, IconButton, Input, Switch } from '@viamrobotics/prime-core'
+	import { MachineConnectionEvent } from '@viamrobotics/sdk'
+	import { useConnectionStatus } from '@viamrobotics/svelte-sdk'
+
+	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+
 	import {
-		useConnectionConfigs,
 		useActiveConnectionConfig,
+		useConnectionConfigs,
 	} from '../hooks/useConnectionConfigs.svelte'
 	import Collapsible from './Collapsible.svelte'
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { useConnectionStatus } from '@viamrobotics/svelte-sdk'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { MachineConnectionEvent } from '@viamrobotics/sdk'
 
 	interface Props {
 		isOpen: boolean
@@ -88,6 +90,7 @@
 
 <FloatingPanel
 	title="Connection configurations"
+	defaultSize={{ width: 480, height: 400 }}
 	bind:isOpen
 >
 	<div class="flex h-full grow flex-col gap-2 overflow-y-auto p-2">

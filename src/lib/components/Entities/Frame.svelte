@@ -10,18 +10,21 @@ Renders a Viam Frame object
 </script>
 
 <script lang="ts">
+	import type { Pose } from '@viamrobotics/sdk'
+	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
-	import { Group, type Object3D } from 'three'
+
 	import { T, useThrelte } from '@threlte/core'
 	import { Portal, PortalTarget } from '@threlte/extras'
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
-	import Mesh from './Mesh.svelte'
+	import { Group, type Object3D } from 'three'
+
 	import { colors, resourceColors } from '$lib/color'
-	import type { Entity } from 'koota'
 	import { traits, useTrait } from '$lib/ecs'
-	import type { Pose } from '@viamrobotics/sdk'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { poseToObject3d } from '$lib/transform'
+
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import Mesh from './Mesh.svelte'
 
 	interface Props {
 		entity: Entity

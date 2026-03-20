@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
 	import { T, useTask } from '@threlte/core'
 	import { Grid, useGamepad } from '@threlte/extras'
 	import { Collider, RigidBody } from '@threlte/rapier'
-	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
 	import { useController } from '@threlte/xr'
 	import { Euler, Group, Quaternion, Vector3 } from 'three'
+
 	import { useOrigin } from './useOrigin.svelte'
 
 	const origin = useOrigin()
@@ -50,7 +51,7 @@
 	})
 	leftPad.trigger.on('up', () => (dragging = false))
 
-	const dragTask = useTask(
+	useTask(
 		() => {
 			if (!$left || !rigidBody) return
 
@@ -61,11 +62,11 @@
 			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
 		},
 		{
-			autoStart: false,
+			running: () => dragging,
 		}
 	)
 
-	const rotateTask = useTask(
+	useTask(
 		() => {
 			if (!$right || !rigidBody) return
 
@@ -79,24 +80,8 @@
 
 			rigidBody.setNextKinematicRotation(quaternion.setFromEuler(euler))
 		},
-		{ autoStart: false }
+		{ running: () => rotating }
 	)
-
-	$effect.pre(() => {
-		if (dragging) {
-			dragTask.start()
-		} else {
-			dragTask.stop()
-		}
-	})
-
-	$effect.pre(() => {
-		if (rotating) {
-			rotateTask.start()
-		} else {
-			rotateTask.stop()
-		}
-	})
 </script>
 
 <T

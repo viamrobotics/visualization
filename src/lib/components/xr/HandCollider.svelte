@@ -1,7 +1,8 @@
 <script lang="ts">
+	import type { Group } from 'three'
+
 	import { useParent, useTask } from '@threlte/core'
 	import { Collider, useRigidBody } from '@threlte/rapier'
-	import type { Group } from 'three'
 
 	const parent = useParent()
 	const rb = useRigidBody()

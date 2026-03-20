@@ -1,6 +1,7 @@
 import type { CameraControlsRef } from '@threlte/extras'
-import { getContext, setContext } from 'svelte'
 import type { Vector3Tuple } from 'three'
+
+import { getContext, setContext } from 'svelte'
 
 const TRANSFORM_CONTROLS_KEY = Symbol('tranform-controls-context')
 const CAMERA_CONTROLS_KEY = Symbol('camera-controls-context')

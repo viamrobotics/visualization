@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createWorld, type World } from 'koota'
 
@@ -8,6 +9,28 @@ import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import { Drawing, Shape, Arrows } from '$lib/buf/draw/v1/drawing_pb'
 import { Transform } from '$lib/buf/common/v1/common_pb'
 import { spawnSnapshotEntities } from '../snapshot'
+=======
+import { createWorld, type World } from 'koota'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
+import {
+	Arrows,
+	Drawing,
+	Line,
+	Model,
+	ModelAsset,
+	Points,
+	Shape,
+} from '$lib/buf/draw/v1/drawing_pb'
+import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
+import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import { asFloat32Array } from '$lib/buffer'
+import { traits } from '$lib/ecs'
+import { createPose } from '$lib/transform'
+
+import { destroyEntities, spawnSnapshotEntities } from '../snapshot'
+>>>>>>> 9aea4fa8a3b6027e86a6e4b6024e7629687c853a
 
 describe('spawnSnapshotEntities', () => {
 	let world: World

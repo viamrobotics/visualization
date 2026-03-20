@@ -2,15 +2,18 @@
 	import '../app.css'
 
 	import type { DialConf } from '@viamrobotics/sdk'
-	import { ViamProvider, ViamAppProvider } from '@viamrobotics/svelte-sdk'
+
+	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
+
 	import { MotionTools } from '$lib'
+	import { backendIP, websocketPort } from '$lib/defines'
+
+	import Machines from './lib/components/Machines.svelte'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
-	import Machines from './lib/components/Machines.svelte'
 	import { getDialConfs } from './lib/robots'
-	import { backendIP, websocketPort } from '$lib/defines'
 
 	provideConnectionConfigs()
 

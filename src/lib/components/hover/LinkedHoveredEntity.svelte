@@ -8,14 +8,16 @@
 </script>
 
 <script lang="ts">
-	import { relations, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
-	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
-	import { getLinkedHoverInfo, type HoverInfo } from '$lib/HoverUpdater.svelte'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
+
+	import { relations, traits } from '$lib/ecs'
 	import { useTrait } from '$lib/ecs'
 	import { SubEntityLinkType } from '$lib/ecs/relations'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
+	import { getLinkedHoverInfo, type HoverInfo } from '$lib/HoverUpdater.svelte'
+
+	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
 
 	interface Props {
 		linkedEntity: Entity

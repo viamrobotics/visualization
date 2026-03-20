@@ -1,5 +1,6 @@
-import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import type { FileDropperSuccess } from './file-dropper'
+
+import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import { pcdDropper } from './pcd-dropper'
 import { plyDropper } from './ply-dropper'
 import { snapshotDropper } from './snapshot-dropper'

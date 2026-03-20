@@ -2,7 +2,7 @@
 	module
 	lang="ts"
 >
-	import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
+	import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js'
 
 	const dracoLoader = new DRACOLoader()
 	const gltfLoader = new GLTFLoader()
@@ -12,14 +12,17 @@
 </script>
 
 <script lang="ts">
-	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import { Portal, PortalTarget, useGltfAnimations, type ThrelteGltf } from '@threlte/extras'
-	import type { Snippet } from 'svelte'
-	import { Group, type Object3D } from 'three'
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import type { Entity } from 'koota'
+	import type { Snippet } from 'svelte'
+
+	import { T, type Props as ThrelteProps } from '@threlte/core'
+	import { Portal, PortalTarget, type ThrelteGltf, useGltfAnimations } from '@threlte/extras'
+	import { Group, type Object3D } from 'three'
+
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
+
+	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
 	interface Props extends ThrelteProps<Object3D> {
 		entity: Entity

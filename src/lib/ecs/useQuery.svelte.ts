@@ -1,64 +1,73 @@
-import { untrack } from 'svelte'
-import { $internal as internal, createQuery, type QueryParameter, type QueryResult } from 'koota'
+import { createQuery, $internal as internalKey, type QueryParameter, type QueryResult } from 'koota'
+import { createSubscriber } from 'svelte/reactivity'
+
 import { useWorld } from './useWorld'
 
-export function useQuery<T extends QueryParameter[]>(
+export const useQuery = <T extends QueryParameter[]>(
 	...parameters: T
-): { current: QueryResult<T> } {
+): { current: QueryResult<T> } => {
 	const world = useWorld()
-	const createdQuery = createQuery(...parameters)
+	const queryRef = createQuery(...parameters)
 
-	// Using internals to get the query data.
-	const query = world[internal].queriesHashMap.get(createdQuery.hash)
-	const initialQueryVersion = query?.version
+	let cache: null | { version: number; hash: string; result: QueryResult<T> } = null
 
-	let version = $state.raw(0)
-	let entities = $state.raw<QueryResult<T>>(world.query(createdQuery))
+	const subscribe = createSubscriber((update) => {
+		let unsubAdd = () => {}
+		let unsubRemove = () => {}
 
-	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		version
+		const subscribe = () => {
+			unsubAdd = world.onQueryAdd(queryRef, update)
+			unsubRemove = world.onQueryRemove(queryRef, update)
 
-		// Compare the initial version to the current version to
-		// see it the query has changed.
-		const query = world[internal].queriesHashMap.get(createdQuery.hash)
-
-		if (query?.version !== initialQueryVersion) {
-			entities = world.query(createdQuery)
+			// Check if query changed before subscriptions were attached
+			const query = world[internalKey].queriesHashMap.get(queryRef.hash)
+			if (query && cache && query.version !== cache.version) {
+				update()
+			}
 		}
 
-		return untrack(() => {
-			const unsubAdd = world.onQueryAdd(createdQuery, () => {
-				entities = world.query(createdQuery)
-			})
+		const handleReset = () => {
+			cache = null
+			unsubAdd()
+			unsubRemove()
+			subscribe()
+			update()
+		}
 
-			const unsubRemove = world.onQueryRemove(createdQuery, () => {
-				entities = world.query(createdQuery)
-			})
-
-			return () => {
-				unsubAdd()
-				unsubRemove()
-			}
-		})
-	})
-
-	const handler = () => {
-		version += 1
-	}
-
-	// Force reattaching event listeners when the world is reset.
-	$effect(() => {
-		world[internal].resetSubscriptions.add(handler)
+		subscribe()
+		world[internalKey].resetSubscriptions.add(handleReset)
 
 		return () => {
-			world[internal].resetSubscriptions.delete(handler)
+			world[internalKey].resetSubscriptions.delete(handleReset)
+			unsubAdd()
+			unsubRemove()
 		}
 	})
+
+	const getResult = (): QueryResult<T> => {
+		const query = world[internalKey].queriesHashMap.get(queryRef.hash)
+
+		if (query && cache?.hash === queryRef.hash && cache.version === query.version) {
+			return cache.result
+		}
+
+		// eslint-disable-next-line unicorn/no-array-sort
+		const result = world.query<T>(queryRef).sort()
+		const registeredQuery = world[internalKey].queriesHashMap.get(queryRef.hash)!
+
+		cache = {
+			hash: queryRef.hash,
+			version: registeredQuery.version,
+			result,
+		}
+
+		return result
+	}
 
 	return {
 		get current() {
-			return entities
+			subscribe()
+			return getResult()
 		},
 	}
 }

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
-	import Draggable from './Draggable.svelte'
+	import { Billboard, Text } from '@threlte/extras'
 	import { Mesh, Vector3 } from 'three'
-	import { Text, Billboard } from '@threlte/extras'
+
+	import Draggable from './Draggable.svelte'
 
 	const mesh1 = new Mesh()
 	const mesh2 = new Mesh()

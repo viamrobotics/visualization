@@ -1,3 +1,4 @@
+import { expect, test } from '@playwright/test'
 import {
 	createViamClient,
 	JsonValue,
@@ -5,8 +6,8 @@ import {
 	ViamClient,
 	ViamClientOptions,
 } from '@viamrobotics/sdk'
-import { expect, test } from '@playwright/test'
 import { execSync } from 'node:child_process'
+
 import { setupMachineConfig } from './fixtures'
 
 const testConfig = {

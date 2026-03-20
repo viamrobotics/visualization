@@ -1,20 +1,23 @@
+import type { ConfigurableTrait, Entity } from 'koota'
+
 import { VisionClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
-import { useLogs } from './useLogs.svelte'
-import { parsePcdInWorker } from '$lib/lib'
 import { getContext, setContext, untrack } from 'svelte'
-import { traits, useWorld } from '$lib/ecs'
-import type { Entity, ConfigurableTrait } from 'koota'
+
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { useEnvironment } from './useEnvironment.svelte'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
-import { createPose } from '$lib/transform'
+import { traits, useWorld } from '$lib/ecs'
 import { updateGeometryTrait } from '$lib/ecs/traits'
+import { parsePcdInWorker } from '$lib/lib'
+import { createPose } from '$lib/transform'
+
+import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 
 const key = Symbol('pointcloud-object-context')
 
@@ -266,6 +269,16 @@ export const providePointcloudObjects = (partID: () => string) => {
 				}
 				queryEntityKeys.delete(queryKey)
 			}
+		}
+	})
+
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity.destroy()
+			}
+
+			entities.clear()
 		}
 	})
 

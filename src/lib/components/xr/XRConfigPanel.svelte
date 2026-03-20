@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
-	import { CanvasTexture, PlaneGeometry, Mesh, Raycaster } from 'three'
+	import { useController, type XRController } from '@threlte/xr'
+	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { CanvasTexture, Mesh, PlaneGeometry, Raycaster } from 'three'
+
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useController, type XRController } from '@threlte/xr'
 
 	interface XRConfigPanelProps {
 		offset?: { x?: number; y?: number; z?: number }
@@ -17,13 +18,7 @@
 	const settings = useSettings()
 	const armClient = useArmClient()
 	const partID = usePartID()
-
-	let resources: ReturnType<typeof useResourceNames> | undefined
-	try {
-		resources = useResourceNames(() => partID.current)
-	} catch (error) {
-		console.warn('Failed to get resources, robot may not be connected yet:', error)
-	}
+	let resources = useResourceNames(() => partID.current)
 
 	// Get available arms and grippers
 	const armNames = $derived(armClient.names || [])

@@ -1,21 +1,23 @@
 import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
-import { untrack, setContext, getContext } from 'svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import {
 	createResourceClient,
 	createResourceQuery,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { useLogs } from './useLogs.svelte'
-import { resourceColors } from '$lib/color'
-import { Color } from 'three'
-import { useResourceByName } from './useResourceByName.svelte'
-import { traits, useWorld } from '$lib/ecs'
 import { type ConfigurableTrait, type Entity } from 'koota'
-import { createPose } from '$lib/transform'
+import { getContext, setContext, untrack } from 'svelte'
+import { Color } from 'three'
+
+import { resourceColors } from '$lib/color'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
-import { useEnvironment } from './useEnvironment.svelte'
+import { traits, useWorld } from '$lib/ecs'
 import { updateGeometryTrait } from '$lib/ecs/traits'
+import { createPose } from '$lib/transform'
+
+import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
 
 const key = Symbol('geometries-context')
 
@@ -185,12 +187,26 @@ export const provideGeometries = (partID: () => string) => {
 			if (!activeQueryKeys.has(queryKey)) {
 				for (const key of keys) {
 					const entity = entities.get(key)
-					if (entity && world.has(entity)) entity.destroy()
+					if (entity && world.has(entity)) {
+						entity.destroy()
+					}
+
 					entities.delete(key)
 				}
 
 				queryEntityKeys.delete(queryKey)
 			}
+		}
+	})
+
+	// Clear all entities on unmount
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity?.destroy()
+			}
+
+			entities.clear()
 		}
 	})
 

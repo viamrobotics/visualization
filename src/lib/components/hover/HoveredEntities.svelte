@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { traits, useTrait } from '$lib/ecs'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useFocusedEntity } from '$lib/hooks/useSelection.svelte'
+
 	import HoveredEntity from './HoveredEntity.svelte'
 	import LinkedHoveredEntity from './LinkedHoveredEntity.svelte'
-	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()

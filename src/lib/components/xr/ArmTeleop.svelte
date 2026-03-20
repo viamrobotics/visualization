@@ -1,17 +1,18 @@
 <script lang="ts">
-	import { useTask, T } from '@threlte/core'
+	import { T, useTask } from '@threlte/core'
 	import { useController, useXR, type XRController } from '@threlte/xr'
-	import { Vector3, Quaternion } from 'three'
-	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { createResourceClient } from '@viamrobotics/svelte-sdk'
+	import { Quaternion, Vector3 } from 'three'
+
 	import {
-		getFrameTransformationQuaternion,
 		calculatePositionTarget,
+		getFrameTransformationQuaternion,
 	} from '$lib/components/xr/math'
-	import { OrientationVector } from '$lib/three/OrientationVector'
 	import { xrToast } from '$lib/components/xr/toasts.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { OrientationVector } from '$lib/three/OrientationVector'
 
 	interface Props {
 		armName: string

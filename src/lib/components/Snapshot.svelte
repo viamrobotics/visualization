@@ -14,14 +14,17 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 ```
 -->
 <script lang="ts">
-	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
-	import { useWorld } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { spawnSnapshotEntities, applySceneMetadata } from '$lib/snapshot'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import type { Entity } from 'koota'
+
 	import { untrack } from 'svelte'
 	import { onDestroy } from 'svelte'
+
+	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
+
+	import { useWorld } from '$lib/ecs'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { applySceneMetadata, spawnSnapshotEntities } from '$lib/snapshot'
 
 	interface Props {
 		snapshot: SnapshotProto

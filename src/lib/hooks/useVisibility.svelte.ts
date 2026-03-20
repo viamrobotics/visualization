@@ -1,4 +1,5 @@
 import type { Entity } from 'koota'
+
 import { getContext, setContext } from 'svelte'
 import { SvelteMap } from 'svelte/reactivity'
 

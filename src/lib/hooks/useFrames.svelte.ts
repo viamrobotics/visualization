@@ -1,20 +1,22 @@
-import { getContext, setContext, untrack } from 'svelte'
 import { MachineConnectionEvent, Transform } from '@viamrobotics/sdk'
 import {
-	useRobotClient,
 	createRobotQuery,
-	useMachineStatus,
 	useConnectionStatus,
+	useMachineStatus,
+	useRobotClient,
 } from '@viamrobotics/svelte-sdk'
 import { type ConfigurableTrait, type Entity } from 'koota'
-import { useLogs } from './useLogs.svelte'
+import { getContext, setContext, untrack } from 'svelte'
+
 import { resourceNameToColor } from '$lib/color'
-import { useEnvironment } from './useEnvironment.svelte'
-import { createPose } from '$lib/transform'
-import { useResourceByName } from './useResourceByName.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { useConfigFrames } from './useConfigFrames.svelte'
 import { updateGeometryTrait } from '$lib/ecs/traits'
+import { createPose } from '$lib/transform'
+
+import { useConfigFrames } from './useConfigFrames.svelte'
+import { useEnvironment } from './useEnvironment.svelte'
+import { useLogs } from './useLogs.svelte'
+import { useResourceByName } from './useResourceByName.svelte'
 
 interface FramesContext {
 	current: Transform[]
@@ -32,8 +34,11 @@ export const provideFrames = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
 
+	let didRecentlyEdit = $state(false)
+
 	const isEditMode = $derived(environment.current.viewerMode === 'edit')
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
+		refetchOnWindowFocus: false,
 		enabled: partID() !== '' && !isEditMode,
 	}))
 
@@ -58,7 +63,8 @@ export const provideFrames = (partID: () => string) => {
 			frames[frame.referenceFrame] = frame
 		}
 
-		if (isEditMode || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+		// Let config frames take priority if the user has made edits
+		if (didRecentlyEdit || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
 			const mergedFrames = {
 				...frames,
 				...configFrames.current,
@@ -76,9 +82,8 @@ export const provideFrames = (partID: () => string) => {
 		}
 
 		/**
-		 * If we're not in edit mode and we have a robot connection,
+		 * If we haven't edited and we have a robot connection,
 		 * we only use frames reported by the machine
-		 *
 		 */
 		return frames
 	})
@@ -90,6 +95,12 @@ export const provideFrames = (partID: () => string) => {
 	$effect.pre(() => {
 		if (revision) {
 			untrack(() => query.refetch())
+		}
+	})
+
+	$effect(() => {
+		if (isEditMode) {
+			didRecentlyEdit = true
 		}
 	})
 
@@ -177,10 +188,20 @@ export const provideFrames = (partID: () => string) => {
 				if (!active[entityKey]) {
 					entity?.destroy()
 					entities.delete(entityKey)
-					continue
 				}
 			}
 		})
+	})
+
+	// Clear all entities on unmount
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity?.destroy()
+			}
+
+			entities.clear()
+		}
 	})
 
 	setContext<FramesContext>(key, {

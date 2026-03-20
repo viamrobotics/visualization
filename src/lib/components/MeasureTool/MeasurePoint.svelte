@@ -1,6 +1,7 @@
 <script lang="ts">
+	import type { Group, Vector3Tuple } from 'three'
+
 	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import type { Vector3Tuple, Group } from 'three'
 	import { HTML } from '@threlte/extras'
 
 	interface Props extends ThrelteProps<typeof Group> {
