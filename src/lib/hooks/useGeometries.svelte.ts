@@ -187,12 +187,26 @@ export const provideGeometries = (partID: () => string) => {
 			if (!activeQueryKeys.has(queryKey)) {
 				for (const key of keys) {
 					const entity = entities.get(key)
-					if (entity && world.has(entity)) entity.destroy()
+					if (entity && world.has(entity)) {
+						entity.destroy()
+					}
+
 					entities.delete(key)
 				}
 
 				queryEntityKeys.delete(queryKey)
 			}
+		}
+	})
+
+	// Clear all entities on unmount
+	$effect(() => {
+		return () => {
+			for (const [, entity] of entities) {
+				entity?.destroy()
+			}
+
+			entities.clear()
 		}
 	})
 
