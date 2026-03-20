@@ -1,5 +1,27 @@
 # motion-tools
 
+## 1.14.0
+
+### Minor Changes
+
+- 40bf132: Simplify `Transform` metadata, fix line color handling
+
+### Patch Changes
+
+- eff4330: Add draw points API
+- a61c3e1: Add set camera API
+- eb259e0: Add draw poses as arrows API
+- a83ed6e: Add remove all, remove drawings, and remove transforms APIs
+- 2c4a40c: Add draw robot and draw world state APIs
+- 4a1c85f: Add draw nurbs API
+- 8202bd4: Add draw geometry and draw geometries APIs
+- 1a6df8f: Add replay API
+- 8475f5d: Sort world tree nodes
+- 41b4995: [APP-15201] Fix: entity disposing when connected to a machine
+- 9f1e1bd: Add draw line API
+- 3be3f7c: Update `createBufferGeometry` to handle RGBA and RGB
+- 8bda28b: Add draw GLTF API
+
 ## 1.13.1
 
 ### Patch Changes
