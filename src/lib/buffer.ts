@@ -58,14 +58,14 @@ export const asFloat32Array = (
 	}
 
 	const aligned = new Float32Array(bytes.byteLength / 4)
-	const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+	const dataView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
 	if (transform) {
 		for (let i = 0; i < aligned.length; i++) {
-			aligned[i] = transform(dv.getFloat32(i * 4, true))
+			aligned[i] = transform(dataView.getFloat32(i * 4, true))
 		}
 	} else {
 		for (let i = 0; i < aligned.length; i++) {
-			aligned[i] = dv.getFloat32(i * 4, true)
+			aligned[i] = dataView.getFloat32(i * 4, true)
 		}
 	}
 	return aligned
