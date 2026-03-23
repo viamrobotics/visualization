@@ -136,20 +136,21 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
  * Use this to distinguish per-vertex color buffers from a single uniform color.
  *
  * @param colors - Uint8Array of packed color bytes
- * @param numVertex - Number of points/vertices the color buffer should cover
  *
  * @example
  * ```ts
- * if (isPerVertexColors(colors, positions.length / STRIDE.POSITIONS)) {
+ * if (isVertexColors(colors)) {
  *   // treat as per-vertex
  * } else {
  *   addColorTraits(entityTraits, colors)
  * }
  * ```
  */
-export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
-	colors.length === numVertex * STRIDE.COLORS_RGB ||
-	colors.length === numVertex * STRIDE.COLORS_RGBA
+export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
+	if (!colors) return false
+	if (isSingleColor(colors)) return false
+	return isRgb(colors) || isRgba(colors)
+}
 
 /**
  * Per-element transform that converts a millimetre value to metres.
@@ -161,3 +162,41 @@ export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: nu
  * ```
  */
 export const inMetres = (v: number): number => v * 0.001
+
+/**
+ * Returns true when `colors` is encoded as RGB (3 bytes per color).
+ *
+ * @example
+ * ```ts
+ * const stride = isRgb(colors) ? STRIDE.COLORS_RGB : STRIDE.COLORS_RGBA
+ * ```
+ */
+export const isRgb = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length % STRIDE.COLORS_RGB === 0
+
+/**
+ * Returns true when `colors` is encoded as RGBA (4 bytes per color).
+ * Prefers RGBA when length is divisible by both 3 and 4, matching the
+ * convention used throughout the draw API.
+ *
+ * @example
+ * ```ts
+ * const stride = isRgba(colors) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+ * ```
+ */
+export const isRgba = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length % STRIDE.COLORS_RGBA === 0
+
+/**
+ * Returns true when `colors` contains exactly one color (RGB or RGBA),
+ * as opposed to a per-vertex color array.
+ *
+ * @example
+ * ```ts
+ * if (isSingleColor(colors)) {
+ *   material.color = asColor(colors, colorUtil)
+ * }
+ * ```
+ */
+export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA
