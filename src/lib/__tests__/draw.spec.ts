@@ -19,7 +19,7 @@ import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 
-import { spawnDrawing, spawnTransform } from '../spawn'
+import { drawDrawing, drawTransform } from '../draw'
 
 describe('spawnTransform', () => {
 	let world: World
@@ -38,7 +38,7 @@ describe('spawnTransform', () => {
 			}),
 		})
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.get(traits.Name)).toBe('box-frame')
 		expect(entity.get(traits.Parent)).toBe('arm')
@@ -55,7 +55,7 @@ describe('spawnTransform', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'orbit-frame' })
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.ReferenceFrame)).toBe(true)
 	})
@@ -64,7 +64,7 @@ describe('spawnTransform', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI, { showAxesHelper: false })
+		const entity = drawTransform(world, transform, traits.SnapshotAPI, { showAxesHelper: false })
 
 		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 	})
@@ -73,7 +73,7 @@ describe('spawnTransform', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI, { removable: false })
+		const entity = drawTransform(world, transform, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
@@ -85,7 +85,7 @@ describe('spawnTransform', () => {
 			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
 		})
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
@@ -111,7 +111,7 @@ describe('spawnTransform', () => {
 			},
 		})
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
 		expect(entity.get(traits.Colors)).toStrictEqual(metadataColors)
@@ -120,9 +120,9 @@ describe('spawnTransform', () => {
 	it('adds per-vertex colors to BufferGeometry for pointcloud', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
-		const positions = new Float32Array(3)
-		const pcdColors = new Uint8Array([255, 0, 0])
-		const metadataColors = new Uint8Array([0, 255, 0])
+		const positions = new Float32Array(6)
+		const pcdColors = new Uint8Array([255, 0, 0, 0, 255, 0])
+		const metadataColors = new Uint8Array([0, 255, 0, 0, 0, 255])
 		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: pcdColors })
 
 		const pointCloud = new Uint8Array(0)
@@ -139,7 +139,7 @@ describe('spawnTransform', () => {
 			},
 		})
 
-		const entity = spawnTransform(world, transform, traits.SnapshotAPI)
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
 		expect(entity.has(traits.Colors)).toBe(false)
@@ -164,14 +164,14 @@ describe('spawnDrawing', () => {
 			}),
 		})
 
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
 
 		expect(entity.get(traits.Name)).toBe('line-1')
 		expect(entity.get(traits.Parent)).toBe('base')
 		expect(entity.has(traits.LinePositions)).toBe(true)
 		expect(entity.get(traits.LineWidth)).toBe(3)
 		expect(entity.get(traits.PointSize)).toBe(6)
-		expect(entity.has(traits.Colors)).toBe(false)
+		expect(entity.has(traits.Colors)).toBe(true)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})
@@ -185,7 +185,7 @@ describe('spawnDrawing', () => {
 			}),
 		})
 
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
@@ -209,8 +209,8 @@ describe('spawnDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([255, 0, 0, 0, 255, 0]) }),
 		})
 
-		const [single] = spawnDrawing(world, singleColorDrawing, traits.SnapshotAPI)
-		const [multi] = spawnDrawing(world, multiColorDrawing, traits.SnapshotAPI)
+		const [single] = drawDrawing(world, singleColorDrawing, traits.SnapshotAPI)
+		const [multi] = drawDrawing(world, multiColorDrawing, traits.SnapshotAPI)
 
 		expect(single.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 128]))
 		expect(multi.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
@@ -234,7 +234,7 @@ describe('spawnDrawing', () => {
 			}),
 		})
 
-		const entities = spawnDrawing(world, drawing, traits.SnapshotAPI)
+		const entities = drawDrawing(world, drawing, traits.SnapshotAPI)
 		const [rootEntity, assetEntity] = entities
 
 		expect(entities).toHaveLength(2)
@@ -266,7 +266,7 @@ describe('spawnDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([0, 255, 0, 200]) }),
 		})
 
-		const [entity] = spawnDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.get(traits.Center)).toStrictEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)

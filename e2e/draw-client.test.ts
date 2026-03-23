@@ -54,6 +54,7 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 
 test('draw service events lifecycle', async ({ browser }) => {
 	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
 
 	execSync(
 		'go test -run ^TestDrawServiceEvents$/AddTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
@@ -62,7 +63,7 @@ test('draw service events lifecycle', async ({ browser }) => {
 
 	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
 	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
-	await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_ADDED')
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_ADDED'))
 
 	execSync(
 		'go test -run ^TestDrawServiceEvents$/UpdateTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
@@ -71,7 +72,7 @@ test('draw service events lifecycle', async ({ browser }) => {
 
 	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
 	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
-	await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_UPDATED')
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_UPDATED'))
 
 	execSync(
 		'go test -run ^TestDrawServiceEvents$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
@@ -81,7 +82,11 @@ test('draw service events lifecycle', async ({ browser }) => {
 	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
 		timeout: 15000,
 	})
-	await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_REMOVED')
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_REMOVED'))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 test('draw frame system', async ({ browser }) => {

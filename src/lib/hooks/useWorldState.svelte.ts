@@ -14,8 +14,10 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 
-import { spawnTransform, traits, useWorld } from '$lib/ecs'
+import { drawTransform } from '$lib/draw'
+import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { isPointCloud } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { createPose } from '$lib/transform'
 
@@ -64,15 +66,10 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			return
 		}
 
-		const entity = spawnTransform(world, transform, traits.WorldStateStoreAPI, {
-			removable: false,
-		})
-
+		const entity = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
 		entities.set(transform.uuidString, entity)
 
-		if (transform.physicalObject?.geometryType?.case === 'pointcloud') {
-			invalidate()
-		}
+		if (isPointCloud(transform.physicalObject?.geometryType)) invalidate()
 	}
 
 	const destroyEntity = (uuid: string) => {

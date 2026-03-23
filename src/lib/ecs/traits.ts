@@ -129,7 +129,6 @@ export const ShowAxesHelper = trait(() => true)
 
 /**
  * Marker trait for entities that should be rendered in screen space (CSS pixels)
- * rather than world space. Used by UI overlays like the Lasso tool.
  */
 export const ScreenSpace = trait(() => true)
 

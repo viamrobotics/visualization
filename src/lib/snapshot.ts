@@ -7,7 +7,7 @@ import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
 import { traits } from '$lib/ecs'
 
 import { rgbaToHex } from './color'
-import { spawnDrawing, spawnTransform } from './ecs/spawn'
+import { drawDrawing, drawTransform } from './draw'
 
 /**
  * Merges scene-level metadata (grid, camera, point/line settings) into the
@@ -65,18 +65,14 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
  */
 export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
 	const entities: Entity[] = []
+	const options = { removable: true, showAxesHelper: false }
 
 	for (const transform of snapshot.transforms) {
-		entities.push(
-			spawnTransform(world, transform, traits.SnapshotAPI, {
-				removable: true,
-				showAxesHelper: false,
-			})
-		)
+		entities.push(drawTransform(world, transform, traits.SnapshotAPI, options))
 	}
 
 	for (const drawing of snapshot.drawings) {
-		const drawingEntities = spawnDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
+		const drawingEntities = drawDrawing(world, drawing, traits.SnapshotAPI, options)
 		for (const e of drawingEntities) {
 			entities.push(e)
 		}
