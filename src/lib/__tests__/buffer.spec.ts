@@ -119,23 +119,21 @@ describe('asOpacity', () => {
 })
 
 describe('isVertexColors', () => {
-	it('returns true when colors length matches numPoints * 3 (RGB)', () => {
-		expect(isVertexColors(new Uint8Array(3))).toBe(true) // 1 point, RGB
-		expect(isVertexColors(new Uint8Array(30000))).toBe(true) // 10k points, RGB
-	})
-
-	it('returns true when colors length matches numPoints * 4 (RGBA)', () => {
-		expect(isVertexColors(new Uint8Array(4))).toBe(true) // 1 point, RGBA
-		expect(isVertexColors(new Uint8Array(40000))).toBe(true) // 10k points, RGBA
-	})
-
-	it('returns false for a single uniform color with multiple points', () => {
-		expect(isVertexColors(new Uint8Array(3))).toBe(false) // 1 RGB color, 2 points
-		expect(isVertexColors(new Uint8Array(4))).toBe(false) // 1 RGBA color, 2 points
+	it('returns false when colors is single color', () => {
+		expect(isVertexColors(new Uint8Array(3))).toBe(false)
+		expect(isVertexColors(new Uint8Array(4))).toBe(false)
 	})
 
 	it('returns false when color count does not align to any known stride', () => {
 		expect(isVertexColors(new Uint8Array(5))).toBe(false)
 		expect(isVertexColors(new Uint8Array(7))).toBe(false)
+	})
+
+	it('returns true when colors length matches numPoints * 3 (RGB)', () => {
+		expect(isVertexColors(new Uint8Array(30000))).toBe(true) // 10k points, RGB
+	})
+
+	it('returns true when colors length matches numPoints * 4 (RGBA)', () => {
+		expect(isVertexColors(new Uint8Array(40000))).toBe(true) // 10k points, RGBA
 	})
 })
