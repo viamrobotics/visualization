@@ -177,6 +177,8 @@ test('draw point cloud', async ({ browser }) => {
 			encoding: 'utf8',
 		}
 	)
+
+	await expect(page.getByText('Zaghetto10', { exact: true })).toBeVisible({ timeout: 10000 })
 	await takeScreenshot(page, testPrefix, failedScreenshots)
 
 	assertNoFailedScreenshots(failedScreenshots)

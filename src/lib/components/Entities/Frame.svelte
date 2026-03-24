@@ -40,7 +40,7 @@ Renders a Viam Frame object
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
-	const rawColors = useTrait(() => entity, traits.Colors)
+	const entityColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const entityPose = useTrait(() => entity, traits.Pose)
 	const center = useTrait(() => entity, traits.Center)
@@ -48,8 +48,8 @@ Renders a Viam Frame object
 	const events = useEntityEvents(() => entity)
 
 	const color = $derived.by(() => {
-		if (rawColors.current) {
-			return `#${asColor(rawColors.current, colorUtil).getHexString()}`
+		if (entityColors.current) {
+			return `#${asColor(entityColors.current, colorUtil).getHexString()}`
 		}
 
 		if (entityColor.current) {

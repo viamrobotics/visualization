@@ -27,7 +27,7 @@
 
 	const { invalidate } = useThrelte()
 	const name = useTrait(() => entity, traits.Name)
-	const rawColors = useTrait(() => entity, traits.Colors)
+	const entityColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const box = useTrait(() => entity, traits.Box)
@@ -43,8 +43,8 @@
 			return overrideColor
 		}
 
-		if (rawColors.current) {
-			return asColor(rawColors.current, colorUtil)
+		if (entityColors.current) {
+			return asColor(entityColors.current, colorUtil)
 		}
 
 		if (entityColor.current) {
@@ -55,10 +55,9 @@
 	})
 
 	const currentOpacity = $derived.by(() => {
-		if (rawColors.current && isRgba(rawColors.current)) {
-			return asOpacity(rawColors.current)
-		}
-		return opacity.current ?? 0.7
+		if (!entityColors.current) return opacity.current ?? 0.7
+		if (!isRgba(entityColors.current)) return opacity.current ?? 0.7
+		return asOpacity(entityColors.current)
 	})
 
 	const mesh = new Mesh()

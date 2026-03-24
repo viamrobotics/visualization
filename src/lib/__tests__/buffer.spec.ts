@@ -118,14 +118,14 @@ describe('asOpacity', () => {
 	})
 })
 
-describe('isPerVertexColors', () => {
+describe('isVertexColors', () => {
 	it('returns true when colors length matches numPoints * 3 (RGB)', () => {
-		expect(isVertexColors(new Uint8Array(6))).toBe(true) // 2 points, RGB
+		expect(isVertexColors(new Uint8Array(3))).toBe(true) // 1 point, RGB
 		expect(isVertexColors(new Uint8Array(30000))).toBe(true) // 10k points, RGB
 	})
 
 	it('returns true when colors length matches numPoints * 4 (RGBA)', () => {
-		expect(isVertexColors(new Uint8Array(8))).toBe(true) // 2 points, RGBA
+		expect(isVertexColors(new Uint8Array(4))).toBe(true) // 1 point, RGBA
 		expect(isVertexColors(new Uint8Array(40000))).toBe(true) // 10k points, RGBA
 	})
 

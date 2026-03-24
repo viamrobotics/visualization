@@ -208,9 +208,14 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
-			entity.add(traits.Colors(colors ?? DEFAULT_POINTS_COLORS))
+			const pointColors = colors ?? DEFAULT_POINTS_COLORS
+			entity.add(traits.Colors(pointColors))
 			entity.add(traits.PointSize(geometryType.value.pointSize ?? DEFAULT_POINT_SIZE))
-			entity.add(traits.BufferGeometry(createBufferGeometry(positions, isVertexColors(colors) ? colors : undefined)))
+			entity.add(
+				traits.BufferGeometry(
+					createBufferGeometry(positions, isVertexColors(colors) ? colors : undefined)
+				)
+			)
 			entity.add(traits.Points)
 			break
 		}

@@ -21,7 +21,7 @@ import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform } from '../draw'
 
-describe('spawnTransform', () => {
+describe('drawTransform', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
@@ -147,7 +147,7 @@ describe('spawnTransform', () => {
 	})
 })
 
-describe('spawnDrawing', () => {
+describe('drawDrawing', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
