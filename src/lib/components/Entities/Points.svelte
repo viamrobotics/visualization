@@ -46,8 +46,7 @@
 		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
 		} else if (colors.current && isSingleColor(colors.current)) {
-			const colorUtil = material.color
-			asColor(colors.current, colorUtil, 0)
+			asColor(colors.current, material.color, 0)
 		} else {
 			material.color.set(settings.current.pointColor)
 		}
@@ -119,9 +118,7 @@
 	)
 
 	$effect(() => {
-		if (!shouldResize) {
-			material.size = pointSize
-		}
+		if (!shouldResize) material.size = pointSize
 	})
 </script>
 

@@ -330,40 +330,39 @@ export const provideDrawAPI = () => {
 		const g = reader.read()
 		const b = reader.read()
 
+		// Normalize to uint8 immediately so the rest of the function works in a single color space.
+		const defaultColor =
+			r > -1
+				? new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
+				: null
+
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
 
 		const nColorsElements = nColors * 3
 		const rawColors = reader.readU8Array(nColorsElements)
 
-		let colors: Uint8Array | null = null
+		let vertexColors: Uint8Array | null = null
 		let uniformColor: Uint8Array<ArrayBuffer> | null = null
 
-		if (nColors > 1) {
-			colors = new Uint8Array(nPointsElements)
-			colors.set(rawColors)
+		if (nColors > 1 && nColors >= nPoints) {
+			vertexColors = rawColors
+		} else if (nColors > 1) {
+			vertexColors = new Uint8Array(nPointsElements)
+			vertexColors.set(rawColors)
 
-			// Cover the gap for any points not colored
-			for (let i = nColors; i < nPoints; i++) {
-				const offset = i * 3
-
-				colors[offset] = Math.round(r * 255)
-				colors[offset + 1] = Math.round(g * 255)
-				colors[offset + 2] = Math.round(b * 255)
+			if (defaultColor) {
+				for (let i = nColors; i < nPoints; i++) {
+					const offset = i * 3
+					vertexColors[offset] = defaultColor[0]!
+					vertexColors[offset + 1] = defaultColor[1]!
+					vertexColors[offset + 2] = defaultColor[2]!
+				}
 			}
 		} else if (nColors === 1) {
-			const buf = new ArrayBuffer(3)
-			uniformColor = new Uint8Array(buf)
-			uniformColor[0] = rawColors[0]!
-			uniformColor[1] = rawColors[1]!
-			uniformColor[2] = rawColors[2]!
-		} else if (r >= 0) {
-			// Valid override color (sentinel is -1.0)
-			const buf = new ArrayBuffer(3)
-			uniformColor = new Uint8Array(buf)
-			uniformColor[0] = Math.round(r * 255)
-			uniformColor[1] = Math.round(g * 255)
-			uniformColor[2] = Math.round(b * 255)
+			uniformColor = new Uint8Array([rawColors[0]!, rawColors[1]!, rawColors[2]!])
+		} else {
+			uniformColor = defaultColor
 		}
 
 		const entities = world.query(traits.DrawAPI)
@@ -373,13 +372,12 @@ export const provideDrawAPI = () => {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, colors)
+				updateBufferGeometry(geometry, positions, vertexColors)
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, colors)
-
+		const geometry = createBufferGeometry(positions, vertexColors)
 		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
 			traits.BufferGeometry(geometry),

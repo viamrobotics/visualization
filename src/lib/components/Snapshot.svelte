@@ -71,9 +71,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 
 	onDestroy(() => {
 		for (const entity of entities) {
-			if (world.has(entity)) {
-				entity.destroy()
-			}
+			if (world.has(entity)) entity.destroy()
 		}
 	})
 </script>

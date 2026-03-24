@@ -42,17 +42,18 @@
 
 	const events = useEntityEvents(() => entity)
 
-	const lineColor = $derived.by(() => {
-		if (!colors.current) return [0, 0, 1] as [number, number, number]
+	const lineColor = $derived.by<[number, number, number]>(() => {
+		if (!colors.current) return [0, 0, 1]
 		asColor(colors.current, colorUtil, 0)
-		return [colorUtil.r, colorUtil.g, colorUtil.b] as [number, number, number]
+		return [colorUtil.r, colorUtil.g, colorUtil.b]
 	})
 
 	const dotColor = $derived.by((): [number, number, number] => {
 		if (!colors.current) {
-			const d = darkenColor(colorUtil.setRGB(0, 0, 1), 10)
-			return [d.r, d.g, d.b]
+			const darkened = darkenColor(colorUtil.setRGB(0, 0, 1), 10)
+			return [darkened.r, darkened.g, darkened.b]
 		}
+
 		const rgba = isRgba(colors.current)
 		const stride = rgba ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
 		if (colors.current.length >= stride * 2) {
@@ -60,8 +61,9 @@
 		} else {
 			asColor(colors.current, dotColorUtil, 0)
 		}
-		const d = darkenColor(dotColorUtil, 10)
-		return [d.r, d.g, d.b]
+
+		const darkened = darkenColor(dotColorUtil, 10)
+		return [darkened.r, darkened.g, darkened.b]
 	})
 
 	const currentOpacity = $derived.by(() => {

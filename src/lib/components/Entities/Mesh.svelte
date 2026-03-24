@@ -55,11 +55,9 @@
 	})
 
 	const currentOpacity = $derived.by(() => {
-		if (entityColors.current && isRgba(entityColors.current)) {
-			return asOpacity(entityColors.current)
-		}
-
-		return opacity.current ?? 0.7
+		if (!entityColors.current) return opacity.current ?? 0.7
+		if (!isRgba(entityColors.current)) return opacity.current ?? 0.7
+		return asOpacity(entityColors.current)
 	})
 
 	const mesh = new Mesh()
