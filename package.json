@@ -5,7 +5,9 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
-		"dev": "tsx server/check-bun && bun run server/server.ts",
+		"dev": "pnpm dev:bun",
+		"dev:bun": "tsx server/check-bun && bun run server/server.ts",
+		"dev:next": "concurrently \"pnpm dev:bun\" \"go run cmd/draw-server/main.go -port 3030\"",
 		"dev:https": "vite dev -- --https",
 		"build": "vite build && npm run prepack",
 		"build:workers": "node scripts/build-workers.js",
@@ -77,6 +79,7 @@
 		"@zag-js/toggle-group": "1.22.1",
 		"@zag-js/tree-view": "1.22.1",
 		"camera-controls": "3.1.0",
+		"concurrently": "^9.2.1",
 		"esbuild": "^0.27.3",
 		"eslint": "10.0.2",
 		"eslint-config-prettier": "10.1.8",

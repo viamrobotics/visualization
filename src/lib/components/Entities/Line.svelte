@@ -2,6 +2,7 @@
 	import { Color } from 'three'
 
 	const colorUtil = new Color()
+	const dotColorUtil = new Color()
 </script>
 
 <script lang="ts">
@@ -12,6 +13,7 @@
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
+	import { asColor, asOpacity, isRgba, STRIDE } from '$lib/buffer'
 	import { darkenColor } from '$lib/color'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
@@ -31,17 +33,42 @@
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
-	const color = useTrait(() => entity, traits.Color)
+	const colors = useTrait(() => entity, traits.Colors)
 	const pointSize = useTrait(() => entity, traits.PointSize)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
-	const opacity = useTrait(() => entity, traits.Opacity)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 
 	const events = useEntityEvents(() => entity)
 
-	const currentOpacity = $derived(opacity.current ?? 0.7)
+	const lineColor = $derived.by(() => {
+		if (!colors.current) return [0, 0, 1] as [number, number, number]
+		asColor(colors.current, colorUtil, 0)
+		return [colorUtil.r, colorUtil.g, colorUtil.b] as [number, number, number]
+	})
+
+	const dotColor = $derived.by((): [number, number, number] => {
+		if (!colors.current) {
+			const d = darkenColor(colorUtil.setRGB(0, 0, 1), 10)
+			return [d.r, d.g, d.b]
+		}
+		const rgba = isRgba(colors.current)
+		const stride = rgba ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+		if (colors.current.length >= stride * 2) {
+			asColor(colors.current, dotColorUtil, stride)
+		} else {
+			asColor(colors.current, dotColorUtil, 0)
+		}
+		const d = darkenColor(dotColorUtil, 10)
+		return [d.r, d.g, d.b]
+	})
+
+	const currentOpacity = $derived.by(() => {
+		if (!colors.current) return 0.7
+		if (!isRgba(colors.current)) return 0.7
+		return asOpacity(colors.current)
+	})
 
 	const mesh = new Line2()
 
@@ -65,7 +92,7 @@
 		<LineGeometry positions={linePositions.current} />
 		<T
 			is={LineMaterial}
-			color={[color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0]}
+			color={lineColor}
 			transparent={currentOpacity < 1}
 			depthWrite={currentOpacity === 1}
 			opacity={currentOpacity}
@@ -76,10 +103,7 @@
 
 	{#if linePositions.current && pointSize.current}
 		<LineDots
-			color={darkenColor(
-				colorUtil.setRGB(color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0),
-				10
-			)}
+			color={dotColor}
 			positions={linePositions.current}
 			scale={pointSize.current * 0.001}
 		/>

@@ -326,9 +326,9 @@ export const provideDrawAPI = () => {
 		const nColors = reader.readU32()
 
 		// Read default color
-		let r = reader.read()
-		let g = reader.read()
-		let b = reader.read()
+		const r = reader.read()
+		const g = reader.read()
+		const b = reader.read()
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
@@ -337,6 +337,7 @@ export const provideDrawAPI = () => {
 		const rawColors = reader.readU8Array(nColorsElements)
 
 		let colors: Uint8Array | null = null
+		let uniformColor: Uint8Array<ArrayBuffer> | null = null
 
 		if (nColors > 1) {
 			colors = new Uint8Array(nPointsElements)
@@ -351,9 +352,18 @@ export const provideDrawAPI = () => {
 				colors[offset + 2] = Math.round(b * 255)
 			}
 		} else if (nColors === 1) {
-			r = rawColors[0] / 255
-			g = rawColors[1] / 255
-			b = rawColors[2] / 255
+			const buf = new ArrayBuffer(3)
+			uniformColor = new Uint8Array(buf)
+			uniformColor[0] = rawColors[0]!
+			uniformColor[1] = rawColors[1]!
+			uniformColor[2] = rawColors[2]!
+		} else if (r >= 0) {
+			// Valid override color (sentinel is -1.0)
+			const buf = new ArrayBuffer(3)
+			uniformColor = new Uint8Array(buf)
+			uniformColor[0] = Math.round(r * 255)
+			uniformColor[1] = Math.round(g * 255)
+			uniformColor[2] = Math.round(b * 255)
 		}
 
 		const entities = world.query(traits.DrawAPI)
@@ -370,14 +380,17 @@ export const provideDrawAPI = () => {
 
 		const geometry = createBufferGeometry(positions, colors)
 
-		world.spawn(
+		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
-			traits.Color(colorUtil.set(r, g, b)),
 			traits.BufferGeometry(geometry),
 			traits.Points,
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
+
+		if (uniformColor) spawnTraits.push(traits.Colors(uniformColor))
+
+		world.spawn(...spawnTraits)
 	}
 
 	const drawLine = async (reader: BinaryReader) => {
