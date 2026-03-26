@@ -33,6 +33,7 @@ Renders a Viam Geometry object
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const center = useTrait(() => entity, traits.Center)
+	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
@@ -62,21 +63,23 @@ Renders a Viam Geometry object
 </script>
 
 <Portal id={parent.current}>
-	{#if model}
-		<T
-			is={model}
-			name={entity}
-			{...events}
-		/>
-	{/if}
+	<T.Group visible={invisible.current !== true}>
+		{#if model}
+			<T
+				is={model}
+				name={entity}
+				{...events}
+			/>
+		{/if}
 
-	{#if settings.current.renderArmModels.includes('colliders') || !model}
-		<Mesh
-			{entity}
-			center={center.current}
-			{...events}
-		>
-			{@render children?.()}
-		</Mesh>
-	{/if}
+		{#if settings.current.renderArmModels.includes('colliders') || !model}
+			<Mesh
+				{entity}
+				center={center.current}
+				{...events}
+			>
+				{@render children?.()}
+			</Mesh>
+		{/if}
+	</T.Group>
 </Portal>

@@ -38,6 +38,7 @@
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const events = useEntityEvents(() => entity)
 
@@ -60,6 +61,7 @@
 		userData.name={name}
 		raycast={meshBounds}
 		renderOrder={renderOrder.current}
+		visible={invisible.current !== true}
 		{...events}
 	>
 		<LineGeometry positions={linePositions.current} />
