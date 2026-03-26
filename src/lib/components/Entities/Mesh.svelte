@@ -50,7 +50,7 @@
 
 	const mesh = new Mesh()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (center) {
 			poseToObject3d(center, mesh)
 			invalidate()

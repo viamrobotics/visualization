@@ -45,13 +45,13 @@
 
 	const group = new Group()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (pose.current) {
 			poseToObject3d(pose.current, group)
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (!gltfTrait.current) {
 			return
 		}
@@ -75,7 +75,7 @@
 		load()
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (animationName) {
 			$actions[animationName]?.play()
 		}

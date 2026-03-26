@@ -92,7 +92,7 @@ export const provideFrames = (partID: () => string) => {
 
 	const entities = new Map<string, Entity | undefined>()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (revision) {
 			untrack(() => query.refetch())
 		}
@@ -104,7 +104,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		const currentResourcesByName = resourceByName.current
 		const currentPartID = partID()
 

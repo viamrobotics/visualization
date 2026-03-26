@@ -44,7 +44,7 @@
 		}
 	)
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (selectedEntity.current) {
 			start()
 		} else {

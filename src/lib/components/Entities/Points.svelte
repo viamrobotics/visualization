@@ -39,11 +39,11 @@
 	const material = points.material as PointsMaterial
 	material.toneMapped = false
 
-	$effect.pre(() => {
+	$effect(() => {
 		material.size = pointSize
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
 		} else if (color.current) {
@@ -56,7 +56,7 @@
 	/**
 	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
 	 */
-	$effect.pre(() => {
+	$effect(() => {
 		if (opacity.current && opacity.current < 1) {
 			material.transparent = true
 			material.opacity = opacity.current
@@ -68,7 +68,7 @@
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		const colors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
 
@@ -91,7 +91,7 @@
 		}
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (pose.current) {
 			poseToObject3d(pose.current, points)
 		}

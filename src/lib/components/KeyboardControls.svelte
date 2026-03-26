@@ -134,7 +134,7 @@
 		}
 	)
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (anyKeysPressed) {
 			start()
 		} else {

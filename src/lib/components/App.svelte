@@ -91,7 +91,7 @@
 		() => localConfigProps
 	)
 
-	$effect.pre(() => {
+	$effect(() => {
 		environment.current.isStandalone = !localConfigProps
 	})
 </script>

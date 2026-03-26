@@ -64,7 +64,7 @@ Renders a Viam Frame object
 	const group = new Group()
 
 	const resolvedPose = $derived(pose ?? entityPose.current)
-	$effect.pre(() => {
+	$effect(() => {
 		if (resolvedPose) {
 			poseToObject3d(resolvedPose, group)
 			invalidate()

@@ -119,7 +119,7 @@
 		}
 	)
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (object3d) {
 			start()
 		} else {

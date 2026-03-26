@@ -12,7 +12,7 @@
 
 	const weblabs = useWeblabs()
 
-	$effect.pre(() => {
+	$effect(() => {
 		weblabs.load([experiment])
 	})
 </script>

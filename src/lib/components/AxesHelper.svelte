@@ -31,7 +31,7 @@
 	const positions = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)
 
 	// Assign colors per vertex
-	$effect.pre(() => {
+	$effect(() => {
 		for (let i = 0, l = axesColors.length; i < l; i += 1) {
 			const axis = axesColors[i]
 
@@ -54,7 +54,7 @@
 	const Y_AXIS_Y_COMPONENT_INDEX = 13
 	const Z_AXIS_Z_COMPONENT_INDEX = 23
 
-	$effect.pre(() => {
+	$effect(() => {
 		positions[X_AXIS_X_COMPONENT_INDEX] = length
 		positions[Y_AXIS_Y_COMPONENT_INDEX] = length
 		positions[Z_AXIS_Z_COMPONENT_INDEX] = length

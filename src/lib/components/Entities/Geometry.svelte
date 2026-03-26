@@ -52,7 +52,7 @@ Renders a Viam Geometry object
 		return models.current[componentName]?.[id].clone()
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (model && center.current) {
 			poseToObject3d(center.current, model)
 			invalidate()

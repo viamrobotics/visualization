@@ -22,7 +22,7 @@
 
 	let controls = $state.raw<ThreeTrackballControls>()
 
-	$effect.pre(() => {
+	$effect(() => {
 		box.setFromObject(object3d)
 		size = box.getSize(vec).toArray()
 		center = box.getCenter(vec).toArray()

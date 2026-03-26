@@ -374,7 +374,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 		return results
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (!networkPartConfig) {
 			// no config returned here indicates this api key has no permission to update config
 			return

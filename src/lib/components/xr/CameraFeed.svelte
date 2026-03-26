@@ -60,7 +60,7 @@
 	video.latencyHint = 0 // Minimize latency
 	video.disableRemotePlayback = true
 
-	$effect.pre(() => {
+	$effect(() => {
 		const mediaStream = streamClient.mediaStream
 		if (!mediaStream) {
 			ready = false

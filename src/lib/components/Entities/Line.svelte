@@ -46,7 +46,7 @@
 
 	const mesh = new Line2()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (pose.current) {
 			poseToObject3d(pose.current, mesh)
 			invalidate()

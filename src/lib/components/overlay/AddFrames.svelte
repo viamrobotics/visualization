@@ -15,6 +15,8 @@
 
 	let selectedComponent = $derived(framelessComponents.current[0] ?? '')
 
+	$inspect(framelessComponents.current)
+
 	let isOpen = $state(false)
 </script>
 
