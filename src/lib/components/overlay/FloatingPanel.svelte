@@ -15,6 +15,7 @@
 		persistRect?: boolean
 		isOpen?: boolean
 		children: Snippet
+		header?: Snippet
 	}
 
 	let {
@@ -26,6 +27,7 @@
 		persistRect = true,
 		isOpen = $bindable(false),
 		children,
+		header,
 		...props
 	}: Props = $props()
 
@@ -64,7 +66,7 @@
 		>
 			<div
 				{...api.getHeaderProps()}
-				class="border-medium flex justify-between border-b p-2"
+				class="border-medium flex items-center justify-between border-b p-2"
 			>
 				<h3
 					{...api.getTitleProps()}
@@ -72,6 +74,8 @@
 				>
 					{title}
 				</h3>
+
+				{@render header?.()}
 
 				{#if exitable}
 					<div
