@@ -3,9 +3,8 @@ import type { Entity } from 'koota'
 import { type IntersectionEvent, useCursor } from '@threlte/extras'
 import { Vector2 } from 'three'
 
-import { traits } from '$lib/ecs'
+import { traits, useTrait } from '$lib/ecs'
 import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 import { updateHoverInfo } from '$lib/HoverUpdater.svelte'
 import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
 
@@ -14,10 +13,8 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
-	const visibility = useVisibility()
 	const cursor = useCursor()
 	const currentEntity = $derived(entity())
-	const visible = $derived(currentEntity ? (visibility.get(currentEntity) ?? true) : true)
 
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
@@ -112,16 +109,14 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 		}
 	}
 
+	const invisible = useTrait(entity, traits.Invisible)
 	$effect(() => {
-		if (!visible) {
+		if (invisible.current) {
 			cursor.onPointerLeave()
 		}
 	})
 
 	return {
-		get visible() {
-			return visible
-		},
 		onpointerenter,
 		onpointermove,
 		onpointerleave,
