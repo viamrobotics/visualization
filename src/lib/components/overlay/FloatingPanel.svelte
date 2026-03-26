@@ -15,7 +15,6 @@
 		persistRect?: boolean
 		isOpen?: boolean
 		children: Snippet
-		header?: Snippet
 	}
 
 	let {
@@ -27,7 +26,6 @@
 		persistRect = true,
 		isOpen = $bindable(false),
 		children,
-		header,
 		...props
 	}: Props = $props()
 
@@ -74,8 +72,6 @@
 				>
 					{title}
 				</h3>
-
-				{@render header?.()}
 
 				{#if exitable}
 					<div
