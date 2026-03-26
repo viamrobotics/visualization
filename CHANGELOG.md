@@ -1,5 +1,14 @@
 # motion-tools
 
+## 1.15.6
+
+### Patch Changes
+
+- 59bb7f0: Enable log filtering by level
+- 292abe1: [APP-15769] Viz tab: toggling tree item visibility does not propagate to children, and axes are not hidden
+- e11e47d: Upgrade svelte to 5.55
+- ef24ccf: Dedupe results of useFramelessComponents
+
 ## 1.15.5
 
 ### Patch Changes
