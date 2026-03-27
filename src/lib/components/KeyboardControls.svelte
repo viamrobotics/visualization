@@ -5,9 +5,9 @@
 	import { PressedKeys } from 'runed'
 	import { MathUtils, Vector3 } from 'three'
 
+	import { traits } from '$lib/ecs'
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useVisibility } from '$lib/hooks/useVisibility.svelte'
 
 	interface Props {
 		cameraControls: CameraControlsRef
@@ -21,7 +21,6 @@
 	const entity = $derived(focusedEntity.current ?? selectedEntity.current)
 
 	const settings = useSettings()
-	const visibility = useVisibility()
 
 	const keys = new PressedKeys()
 	const meta = $derived(keys.has('meta'))
@@ -181,9 +180,12 @@
 
 			event.stopImmediatePropagation()
 
-			const visible = visibility.get(entity) ?? true
+			if (entity.has(traits.Invisible)) {
+				entity.remove(traits.Invisible)
+			} else {
+				entity.add(traits.Invisible)
+			}
 
-			visibility.set(entity, !visible)
 			return
 		}
 	}
