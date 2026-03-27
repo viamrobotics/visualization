@@ -12,7 +12,7 @@
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
-	import { asColor, asOpacity, isRgba } from '$lib/buffer'
+	import { asColor, asOpacity, isRgba, isVertexColors, STRIDE } from '$lib/buffer'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 
@@ -43,10 +43,26 @@
 
 	const events = useEntityEvents(() => entity)
 
+	const hasVertexColors = $derived(isVertexColors(colors.current))
+
 	const lineColor = $derived.by<[number, number, number]>(() => {
+		if (hasVertexColors) return [1, 1, 1]
 		if (!colors.current) return [0, 0, 1]
 		asColor(colors.current, colorUtil, 0)
 		return [colorUtil.r, colorUtil.g, colorUtil.b]
+	})
+
+	const lineColors = $derived.by<Float32Array | undefined>(() => {
+		if (!hasVertexColors || !colors.current) return undefined
+		const stride = isRgba(colors.current) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+		const numColors = colors.current.length / stride
+		const rgb = new Float32Array(numColors * 3)
+		for (let i = 0; i < numColors; i++) {
+			rgb[i * 3] = colors.current[i * stride]! / 255
+			rgb[i * 3 + 1] = colors.current[i * stride + 1]! / 255
+			rgb[i * 3 + 2] = colors.current[i * stride + 2]! / 255
+		}
+		return rgb
 	})
 
 	const currentOpacity = $derived.by(() => {
@@ -75,10 +91,14 @@
 		visible={invisible.current !== true}
 		{...events}
 	>
-		<LineGeometry positions={linePositions.current} />
+		<LineGeometry
+			positions={linePositions.current}
+			colors={lineColors}
+		/>
 		<T
 			is={LineMaterial}
 			color={lineColor}
+			vertexColors={hasVertexColors}
 			transparent={currentOpacity < 1}
 			depthWrite={currentOpacity === 1}
 			opacity={currentOpacity}

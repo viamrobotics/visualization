@@ -88,6 +88,8 @@ func TestDrawLine(t *testing.T) {
 				draw.ColorFromName("green"),
 				draw.ColorFromName("blue"),
 			},
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -101,6 +103,8 @@ func TestDrawLine(t *testing.T) {
 			Name:      "upwardSpiralPerLineColors",
 			Positions: points,
 			Colors:    colors,
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -117,6 +121,8 @@ func TestDrawLine(t *testing.T) {
 				draw.ColorFromName("magenta"),
 				draw.ColorFromName("yellow"),
 			},
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -130,6 +136,8 @@ func TestDrawLine(t *testing.T) {
 			Name:      "upwardSpiralPerDotColors",
 			Positions: points,
 			DotColors: colors,
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

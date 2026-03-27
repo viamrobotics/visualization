@@ -70,16 +70,21 @@ func DrawLine(options DrawLineOptions) ([]byte, error) {
 		lineOpts = append(lineOpts, draw.WithLineColorPalette(options.Colors, posCount))
 	}
 
-	dotColorCount := len(options.DotColors)
-	switch {
-	case dotColorCount == 0:
+	dotColors := options.DotColors
+	if len(dotColors) == 0 {
+		dotColors = options.Colors
+	}
+
+	dotColorCount := len(dotColors)
+	switch dotColorCount {
+	case 0:
 		// use default
-	case dotColorCount == 1:
-		lineOpts = append(lineOpts, draw.WithSingleDotColor(options.DotColors[0]))
-	case dotColorCount == posCount:
-		lineOpts = append(lineOpts, draw.WithPerDotColors(options.DotColors...))
+	case 1:
+		lineOpts = append(lineOpts, draw.WithSingleDotColor(dotColors[0]))
+	case posCount:
+		lineOpts = append(lineOpts, draw.WithPerDotColors(dotColors...))
 	default:
-		lineOpts = append(lineOpts, draw.WithDotColorPalette(options.DotColors, posCount))
+		lineOpts = append(lineOpts, draw.WithDotColorPalette(dotColors, posCount))
 	}
 
 	if options.LineWidth > 0 {
