@@ -24,8 +24,8 @@
 
 	const isPerDot = $derived(isVertexColors(colors))
 
-	// TODO: We can remove this when we are consistently using 0-255 color scaling
-	const uniformColor = $derived.by<[number, number, number]>(() => {
+	const meshColor = $derived.by<[number, number, number]>(() => {
+		if (isPerDot) return [1, 1, 1]
 		if (!isSingleColor(colors)) return [0, 0, 0.55]
 		return [colors[0]! / 255, colors[1]! / 255, colors[2]! / 255]
 	})
@@ -59,8 +59,5 @@
 	bvh={{ enabled: false }}
 	raycast={() => null}
 >
-	<T.MeshBasicMaterial
-		color={uniformColor}
-		vertexColors={isPerDot}
-	/>
+	<T.MeshBasicMaterial color={meshColor} />
 </T>
