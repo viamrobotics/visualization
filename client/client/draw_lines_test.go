@@ -26,7 +26,7 @@ func TestDrawLines(t *testing.T) {
 
 		maxT := 2 * math.Pi * nTurns
 
-		for i := 0; i < nPath; i++ {
+		for i := range nPath {
 			t := maxT * float64(i) / float64(nPath)
 
 			x := radius*math.Cos(t) + offset.X
@@ -40,9 +40,7 @@ func TestDrawLines(t *testing.T) {
 			}))
 		}
 
-		lineColor := [3]uint8{255, 0, 0}
-		dotColor := [3]uint8{0, 255, 0}
-		err := DrawLine("upwardSpiral", points, &lineColor, &dotColor)
+		err := DrawLine("upwardSpiral", points, nil, nil)
 		test.That(t, err, test.ShouldBeNil)
 	})
 
@@ -52,14 +50,17 @@ func TestDrawLines(t *testing.T) {
 			{X: 1, Y: 0, Z: 0},
 			{X: 0, Y: 1, Z: 0},
 		}
-		pointColor := draw.NewColor(draw.WithName("blue"))
-		line, err := draw.NewLine(positions, draw.WithLineColors(draw.NewColor(draw.WithName("red")), &pointColor))
+		dotColor := draw.NewColor(draw.WithName("blue"))
+		line, err := draw.NewLine(positions, draw.WithSingleLineColor(draw.NewColor(draw.WithName("red"))), draw.WithSingleDotColor(dotColor))
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, line, test.ShouldNotBeNil)
 
 		buf, err := lineToBytes(line, "test")
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, buf, test.ShouldNotBeNil)
+
+		lineColor := line.LineColors[0]
+		lineDotColor := line.DotColors[0]
 
 		expected := []float32{
 			float32(2),
@@ -69,12 +70,12 @@ func TestDrawLines(t *testing.T) {
 			float32('s'),
 			float32('t'),
 			float32(len(positions)),
-			float32(line.LineColor.R) / 255.0,
-			float32(line.LineColor.G) / 255.0,
-			float32(line.LineColor.B) / 255.0,
-			float32(line.PointColor.R) / 255.0,
-			float32(line.PointColor.G) / 255.0,
-			float32(line.PointColor.B) / 255.0,
+			float32(lineColor.R) / 255.0,
+			float32(lineColor.G) / 255.0,
+			float32(lineColor.B) / 255.0,
+			float32(lineDotColor.R) / 255.0,
+			float32(lineDotColor.G) / 255.0,
+			float32(lineDotColor.B) / 255.0,
 			float32(positions[0].X) / 1000.0,
 			float32(positions[0].Y) / 1000.0,
 			float32(positions[0].Z) / 1000.0,
