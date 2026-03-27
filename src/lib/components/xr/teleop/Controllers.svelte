@@ -1,11 +1,9 @@
 <script lang="ts">
-	import { RigidBody } from '@threlte/rapier'
 	import { Controller } from '@threlte/xr'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import ArmTeleop from '../ArmTeleop.svelte'
-	import HandCollider from '../HandCollider.svelte'
 
 	const settings = useSettings()
 
@@ -25,21 +23,8 @@
 	const rightRotationEnabled = $derived(config.right.rotationEnabled)
 </script>
 
-<Controller left>
-	{#snippet grip()}
-		<RigidBody type="kinematicPosition">
-			<HandCollider />
-		</RigidBody>
-	{/snippet}
-</Controller>
-
-<Controller right>
-	{#snippet grip()}
-		<RigidBody type="kinematicPosition">
-			<HandCollider />
-		</RigidBody>
-	{/snippet}
-</Controller>
+<Controller left />
+<Controller right />
 
 <!-- Left Controller Arm Teleop -->
 {#if leftArmName}

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
-	import { World } from '@threlte/rapier'
+	import { useThrelte } from '@threlte/core'
 	import { useXR, XR, XRButton } from '@threlte/xr'
 	import { SvelteMap } from 'svelte/reactivity'
+	import { Quaternion } from 'three'
 
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -47,6 +47,26 @@
 	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
 	const rightArmName = $derived(controllerConfig.right.armName)
+
+	const { renderer } = useThrelte()
+
+	// Move into Viam's coordinate system. This basically accomplishes
+	// the same thing as setting z up in the Camera component.
+	$effect(() => {
+		if ($isPresenting) {
+			const q = new Quaternion().setFromAxisAngle({ x: 1, y: 0, z: 0 }, -Math.PI / 2)
+
+			// after the XR session has started and a reference space exists:
+			const baseRefSpace = renderer.xr.getReferenceSpace()
+			if (baseRefSpace) {
+				const rotatedRefSpace = baseRefSpace.getOffsetReferenceSpace(
+					new XRRigidTransform({ x: 0, y: 0, z: 0, w: 1 }, { x: q.x, y: q.y, z: q.z, w: q.w })
+				)
+
+				renderer.xr.setReferenceSpace(rotatedRefSpace)
+			}
+		}
+	})
 </script>
 
 {#if enableXR}
@@ -96,19 +116,13 @@
 
 		<XRToast />
 
-		<World>
-			{#if settings.current.xrMode === 'arm-teleop'}
-				<TeleopControllers />
-			{:else if settings.current.xrMode === 'frame-configure'}
-				<FrameConfigureControllers />
-			{/if}
+		{#if settings.current.xrMode === 'arm-teleop'}
+			<TeleopControllers />
+		{:else if settings.current.xrMode === 'frame-configure'}
+			<FrameConfigureControllers />
+		{/if}
 
-			<T.Group position.z={-2}>
-				<T.Group rotation.x={$isPresenting ? -Math.PI / 2 : 0}>
-					<OriginMarker />
-				</T.Group>
-			</T.Group>
-		</World>
+		<OriginMarker />
 	</XR>
 
 	<XRButton
