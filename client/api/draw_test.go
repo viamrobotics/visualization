@@ -43,7 +43,7 @@ func TestDrawServiceEvents(t *testing.T) {
 			},
 			Colors:    []draw.Color{lineColor},
 			LineWidth: 50.0,
-			PointSize: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -78,7 +78,7 @@ func TestDrawServiceEvents(t *testing.T) {
 			},
 			Colors:    []draw.Color{lineColor},
 			LineWidth: 50.0,
-			PointSize: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
