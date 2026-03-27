@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
+
 	import { compileExpression } from 'filtrex'
 
 	import { relations, traits } from '$lib/ecs'
