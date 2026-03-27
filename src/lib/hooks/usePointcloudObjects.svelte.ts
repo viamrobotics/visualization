@@ -92,7 +92,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 	})
 
 	const logs = useLogs()
-	const interval = $derived(refreshRates[RefreshRates.pointclouds])
+	const interval = $derived(refreshRates[RefreshRates.vision])
 
 	const options = $derived({
 		enabled: interval !== RefetchRates.OFF,

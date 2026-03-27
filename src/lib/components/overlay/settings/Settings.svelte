@@ -10,6 +10,7 @@
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
 	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import { useRefetchPoses } from '$lib/hooks/useRefetchPoses'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
@@ -28,6 +29,7 @@
 	const { disabledCameras, disabledVisionServices } = $derived(settings.current)
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
+	const pointcloudObjects = usePointcloudObjects()
 	const { refetchPoses } = useRefetchPoses()
 	const weblabs = useWeblabs()
 	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)
@@ -92,10 +94,10 @@
 			}}
 		/>
 		<RefreshRate
-			id={RefreshRates.pointclouds}
+			id={RefreshRates.vision}
 			label="Vision service pointcloud segments and objects"
 			onManualRefetch={() => {
-				pointclouds.refetch()
+				pointcloudObjects.refetch()
 			}}
 		/>
 	</div>
