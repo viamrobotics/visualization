@@ -1,14 +1,6 @@
-<script
-	lang="ts"
-	module
->
-	import { Parser } from 'expr-eval'
-
-	export const parser = new Parser()
-</script>
-
 <script lang="ts">
 	import type { Entity } from 'koota'
+	import { compileExpression } from 'filtrex'
 
 	import { relations, traits } from '$lib/ecs'
 	import { useTrait } from '$lib/ecs'
@@ -39,11 +31,12 @@
 			if (linkType !== SubEntityLinkType.HoverLink) {
 				return
 			}
-			// Index  Mapping is a formula with the variable 'index' in it, available operations can be found here: https://github.com/silentmatt/expr-eval/tree/master
+			// Index mapping is a formula with the variable 'index' in it.
+			// Supported operations: https://github.com/cshaa/filtrex#expressions
 			const indexMapping =
 				displayEntity?.get(relations.SubEntityLink(linkedEntity))?.indexMapping ?? 'index'
-			const expression = parser.parse(indexMapping)
-			const resolvedIndex = expression.evaluate({ index: displayedHoverInfo.current.index })
+			const evaluate = compileExpression(indexMapping)
+			const resolvedIndex = evaluate({ index: displayedHoverInfo.current.index })
 			const linkedHoverInfo = getLinkedHoverInfo(resolvedIndex, linkedEntity)
 			hoverInfo = linkedHoverInfo
 		} else {
