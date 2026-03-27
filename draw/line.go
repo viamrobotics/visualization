@@ -41,12 +41,12 @@ type drawLineConfig struct {
 	dotColors  []Color
 }
 
-func newDrawLineConfig(lineWidth float32, dotSize float32) *drawLineConfig {
+func newDrawLineConfig(lineWidth float32, dotSize float32, lineColor Color, dotColor Color) *drawLineConfig {
 	return &drawLineConfig{
 		lineWidth:  lineWidth,
 		dotSize:    dotSize,
-		lineColors: []Color{DefaultLineColor},
-		dotColors:  []Color{DefaultLineDotColor},
+		lineColors: []Color{lineColor},
+		dotColors:  []Color{dotColor},
 	}
 }
 
@@ -124,7 +124,7 @@ func WithDotColorPalette(palette []Color, numPositions int) DrawLineOption {
 // if the line width is non-positive, or if color slice lengths are invalid (must be 1 or
 // equal to number of positions).
 func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
-	config := newDrawLineConfig(DefaultLineWidth, DefaultLineDotSize)
+	config := newDrawLineConfig(DefaultLineWidth, DefaultLineDotSize, DefaultLineColor, DefaultLineDotColor)
 	for _, option := range options {
 		option(config)
 	}
