@@ -10,6 +10,7 @@ const disabledVisionServicesKey = 'disabled-vision-services-object-pointcloud'
 export const RefreshRates = {
 	poses: 'poses',
 	pointclouds: 'pointclouds',
+	vision: 'vision',
 } as const
 
 type Context = {
@@ -29,7 +30,8 @@ const setFromEntries = (map: SvelteMap<string, unknown>, entries?: [string, unkn
 export const provideMachineSettings = () => {
 	const refreshRates = new SvelteMap<string, number>([
 		[RefreshRates.poses, 1000],
-		[RefreshRates.pointclouds, -1],
+		[RefreshRates.pointclouds, 5000],
+		[RefreshRates.vision, 5000],
 	])
 	const disabledCameras = new SvelteMap<string, boolean>()
 	const disabledVisionServices = new SvelteMap<string, boolean>()

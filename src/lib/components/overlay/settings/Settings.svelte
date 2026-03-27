@@ -87,7 +87,14 @@
 		/>
 		<RefreshRate
 			id={RefreshRates.pointclouds}
-			label="Pointclouds"
+			label="Pointclouds from cameras"
+			onManualRefetch={() => {
+				pointclouds.refetch()
+			}}
+		/>
+		<RefreshRate
+			id={RefreshRates.pointclouds}
+			label="Vision service pointcloud segments and objects"
 			onManualRefetch={() => {
 				pointclouds.refetch()
 			}}
