@@ -78,7 +78,7 @@ export const provide3DModels = (partID: () => string) => {
 
 	$effect(() => {
 		const shouldFetchModels =
-			settings.current.isLoaded && settings.current.renderArmModels.includes('model')
+			settings.isLoaded && settings.current.renderArmModels.includes('model')
 
 		if (shouldFetchModels) {
 			fetch3DModels()

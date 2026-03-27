@@ -7,7 +7,7 @@
 	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
 	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents.svelte'
-	import { traits } from '$lib/ecs'
+	import { traits, useTrait } from '$lib/ecs'
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { meshBoundsRaycast, raycast } from '$lib/three/InstancedArrows/raycast'
 
@@ -17,6 +17,9 @@
 	}
 
 	let { entity, arrows }: Props = $props()
+
+	const parent = useTrait(() => entity, traits.Parent)
+	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const events = useEntityEvents(() => entity)
 	const selectedEntity = useSelectedEntity()
@@ -32,7 +35,7 @@
 	})
 </script>
 
-<Portal id={entity.get(traits.Parent)}>
+<Portal id={parent.current}>
 	<T
 		is={arrows}
 		name={entity}
@@ -43,7 +46,7 @@
 			is={arrows.headMesh}
 			bvh={{ enabled: false }}
 			raycast={() => null}
-			visible={events.visible}
+			visible={invisible.current}
 		/>
 		<T
 			is={arrows.shaftMesh}

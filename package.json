@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "1.15.5",
+	"version": "1.15.6",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -95,7 +95,7 @@
 		"prettier-plugin-tailwindcss": "0.6.14",
 		"publint": "0.3.12",
 		"runed": "0.31.1",
-		"svelte": "5.53.13",
+		"svelte": "5.55.0",
 		"svelte-check": "4.4.5",
 		"svelte-virtuallists": "1.4.2",
 		"tailwindcss": "4.1.13",

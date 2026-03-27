@@ -38,6 +38,7 @@
 	const pose = useTrait(() => entity, traits.Pose)
 	const gltfTrait = useTrait(() => entity, traits.GLTF)
 	const scale = useTrait(() => entity, traits.Scale)
+	const invisible = useTrait(() => entity, traits.Invisible)
 	const events = useEntityEvents(() => entity)
 
 	const animationName = $derived(gltfTrait.current?.animationName)
@@ -88,6 +89,7 @@
 				is={$gltf.scene as Object3D}
 				scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
 				name={entity}
+				visible={invisible.current !== true}
 				{...events}
 				{...rest}
 			>

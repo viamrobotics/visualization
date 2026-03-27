@@ -23,7 +23,6 @@
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
-	import { provideVisibility } from '$lib/hooks/useVisibility.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 
 	import { provideOrigin } from './xr/useOrigin.svelte'
@@ -39,7 +38,6 @@
 
 	provideCameraControls(() => cameraPose)
 	provideTransformControls()
-	provideVisibility()
 	provideMachineSettings()
 	provideLogs()
 

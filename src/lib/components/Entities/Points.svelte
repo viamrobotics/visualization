@@ -28,6 +28,7 @@
 	const geometry = useTrait(() => entity, traits.BufferGeometry)
 	const colors = useTrait(() => entity, traits.Colors)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
+	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const pointSize = $derived(
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
@@ -128,6 +129,7 @@
 			is={points}
 			name={entity}
 			bvh={{ maxDepth: 40, maxLeafSize: 20 }}
+			visible={invisible.current !== true}
 			{...events}
 		>
 			<T is={geometry.current} />
