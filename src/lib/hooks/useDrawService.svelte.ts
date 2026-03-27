@@ -3,7 +3,7 @@ import { type Client, createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { useThrelte } from '@threlte/core'
 import { type Entity } from 'koota'
-import { getContext, setContext, untrack } from 'svelte'
+import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
@@ -43,50 +43,13 @@ interface StreamEvent {
 	updatedFields?: FieldMask
 }
 
-const TRANSITIONS: Record<ConnectionStatusType, ConnectionStatusType[]> = {
-	disconnected: ['connecting'],
-	connecting: ['connected', 'disconnected'],
-	connected: ['disconnected'],
-}
-
-const createConnectionMachine = (initial: ConnectionStatusType = ConnectionStatus.DISCONNECTED) => {
-	let current = $state<ConnectionStatusType>(initial)
-	let controller = new AbortController()
-
-	return {
-		get status() {
-			return current
-		},
-		get signal() {
-			return controller.signal
-		},
-		can(to: ConnectionStatusType) {
-			return TRANSITIONS[current]?.includes(to) ?? false
-		},
-		send(to: ConnectionStatusType) {
-			if (!this.can(to)) {
-				console.warn(`Invalid draw service connection transition: ${current} -> ${to}`)
-				return false
-			}
-
-			if (to === ConnectionStatus.CONNECTING) {
-				controller = new AbortController()
-			} else if (to === ConnectionStatus.DISCONNECTED) {
-				controller.abort()
-			}
-
-			current = to
-			return true
-		},
-	}
-}
-
 export function provideDrawService() {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
 	const cameraControls = useCameraControls()
 	const drawConnectionConfig = useDrawConnectionConfig()
-	const connection = createConnectionMachine()
+
+	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)
 
 	const url = $derived(
 		drawConnectionConfig.current?.backendIP
@@ -232,7 +195,7 @@ export function provideDrawService() {
 	const streamEntityChanges = async (client: Client<typeof DrawService>, signal: AbortSignal) => {
 		try {
 			for await (const response of client.streamEntityChanges({}, { signal })) {
-				connection.send(ConnectionStatus.CONNECTED)
+				connectionStatus = ConnectionStatus.CONNECTED
 
 				const { entity } = response
 				if (!entity.case) continue
@@ -249,7 +212,7 @@ export function provideDrawService() {
 		} catch (error) {
 			if (!signal.aborted) {
 				console.error('Draw service entity stream error:', error)
-				connection.send(ConnectionStatus.DISCONNECTED)
+				connectionStatus = ConnectionStatus.DISCONNECTED
 			}
 		}
 	}
@@ -280,20 +243,22 @@ export function provideDrawService() {
 
 	$effect(() => {
 		if (!url) {
-			untrack(() => connection.send(ConnectionStatus.DISCONNECTED))
+			connectionStatus = ConnectionStatus.DISCONNECTED
 			return
 		}
 
-		untrack(() => connection.send(ConnectionStatus.CONNECTING))
+		const controller = new AbortController()
+		connectionStatus = ConnectionStatus.CONNECTING
 
 		const transport = createConnectTransport({ baseUrl: url })
 		const client = createClient(DrawService, transport)
 
-		void streamEntityChanges(client, connection.signal)
-		void streamSceneChanges(client, connection.signal)
+		void streamEntityChanges(client, controller.signal)
+		void streamSceneChanges(client, controller.signal)
 
 		return () => {
-			connection.send(ConnectionStatus.DISCONNECTED)
+			controller.abort()
+			connectionStatus = ConnectionStatus.DISCONNECTED
 
 			for (const entity of transformEntities.values()) {
 				if (world.has(entity)) entity.destroy()
@@ -311,7 +276,7 @@ export function provideDrawService() {
 
 	setContext<Context>(DRAW_SERVICE_KEY, {
 		get connectionStatus() {
-			return connection.status
+			return connectionStatus
 		},
 	})
 }
