@@ -347,7 +347,7 @@ type SceneMetadata struct {
 	// defaults to 5mm
 	LineWidth *float32 `protobuf:"fixed32,8,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
 	// The size of the dots of the lines if not defined by a transform's
-	// metadata defaults to 5mm
+	// metadata defaults to 10mm
 	LineDotSize *float32 `protobuf:"fixed32,9,opt,name=line_dot_size,json=lineDotSize,proto3,oneof" json:"line_dot_size,omitempty"`
 	// The models to render
 	// defaults to COLLIDERS_AND_MODEL
