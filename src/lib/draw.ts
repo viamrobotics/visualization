@@ -25,7 +25,8 @@ const DEFAULT_NURBS_WEIGHT = 1
 const DEFAULT_ANIMATION_NAME = ''
 
 const DEFAULT_ARROWS_COLORS = new Uint8Array([0, 255, 0, 180])
-const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255, 180, 0, 77, 204, 180])
+const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255, 180])
+const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139, 180])
 const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51, 180])
 const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255, 180])
 
@@ -197,8 +198,11 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 			const lineWidth = geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH
 			entity.add(traits.LineWidth(lineWidth))
-			entity.add(traits.PointSize(geometryType.value.pointSize ?? lineWidth))
+			entity.add(traits.DotSize(geometryType.value.dotSize ?? lineWidth))
 			entity.add(traits.LinePositions(positions))
+
+			const dotColors = geometryType.value.dotColors as Uint8Array<ArrayBuffer> | undefined
+			entity.add(traits.DotColors(dotColors ?? DEFAULT_LINE_DOT_COLORS))
 			break
 		}
 
@@ -404,8 +408,11 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 
 			const lineWidth = geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH
 			entity.set(traits.LineWidth, lineWidth)
-			entity.set(traits.PointSize, geometryType.value.pointSize ?? lineWidth)
+			entity.set(traits.DotSize, geometryType.value.dotSize ?? lineWidth)
 			entity.set(traits.LinePositions, positions)
+
+			const dotColors = geometryType.value.dotColors as Uint8Array<ArrayBuffer> | undefined
+			entity.set(traits.DotColors, dotColors ?? DEFAULT_LINE_DOT_COLORS)
 			break
 		}
 

@@ -20,11 +20,11 @@ var (
 
 	// DefaultGridEnabled specifies whether the grid is visible by default.
 	DefaultGridEnabled = true
-	// DefaultGridCellSize is the default grid cell size in millimeters (500mm = 0.5m).
+	// DefaultGridCellSize is the default grid cell size in millimeters (500mm).
 	DefaultGridCellSize float32 = 500.0
-	// DefaultGridSectionSize is the default grid section size in millimeters (10000mm = 10m).
+	// DefaultGridSectionSize is the default grid section size in millimeters (10000mm).
 	DefaultGridSectionSize float32 = 10000.0
-	// DefaultGridFadeDistance is the default distance at which the grid fades out (25000mm = 25m).
+	// DefaultGridFadeDistance is the default distance at which the grid fades out (25000mm).
 	DefaultGridFadeDistance float32 = 25000.0
 )
 
@@ -133,7 +133,7 @@ type SceneMetadata struct {
 	PointSize        float32
 	PointColor       Color
 	LineWidth        float32
-	LinePointSize    float32
+	LineDotSize      float32
 	RenderArmModels  drawv1.RenderArmModels
 	RenderShapes     []drawv1.RenderShapes
 }
@@ -148,7 +148,7 @@ type sceneMetadataConfig struct {
 	pointSize        float32
 	pointColor       Color
 	lineWidth        float32
-	linePointSize    float32
+	lineDotSize      float32
 	renderArmModels  drawv1.RenderArmModels
 	renderShapes     []drawv1.RenderShapes
 }
@@ -166,7 +166,7 @@ func newSceneMetadataConfig() *sceneMetadataConfig {
 		pointSize:        DefaultPointSize,
 		pointColor:       DefaultPointColor,
 		lineWidth:        DefaultLineWidth,
-		linePointSize:    DefaultLinePointSize,
+		lineDotSize:      DefaultLineDotSize,
 		renderArmModels:  drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL,
 		renderShapes:     []drawv1.RenderShapes{drawv1.RenderShapes_RENDER_SHAPES_ARROWS, drawv1.RenderShapes_RENDER_SHAPES_POINTS, drawv1.RenderShapes_RENDER_SHAPES_LINES, drawv1.RenderShapes_RENDER_SHAPES_MODEL},
 	}
@@ -236,11 +236,11 @@ func WithSceneLineWidth(lineWidth float32) sceneMetadataOption {
 	}
 }
 
-// WithSceneLinePointSize creates a metadata option that sets the default size in millimeters
-// for vertex points on lines (can be overridden per-object).
-func WithSceneLinePointSize(linePointSize float32) sceneMetadataOption {
+// WithSceneLineDotSize creates a metadata option that sets the default size in millimeters
+// for vertex dots on lines (can be overridden per-object).
+func WithSceneLineDotSize(lineDotSize float32) sceneMetadataOption {
 	return func(config *sceneMetadataConfig) {
-		config.linePointSize = linePointSize
+		config.lineDotSize = lineDotSize
 	}
 }
 
@@ -277,7 +277,7 @@ func NewSceneMetadata(options ...sceneMetadataOption) SceneMetadata {
 		PointSize:        config.pointSize,
 		PointColor:       config.pointColor,
 		LineWidth:        config.lineWidth,
-		LinePointSize:    config.linePointSize,
+		LineDotSize:      config.lineDotSize,
 		RenderArmModels:  config.renderArmModels,
 		RenderShapes:     config.renderShapes,
 	}
@@ -294,7 +294,7 @@ func (metadata *SceneMetadata) ToProto() *drawv1.SceneMetadata {
 		PointSize:        &metadata.PointSize,
 		PointColor:       packColors([]Color{metadata.PointColor}),
 		LineWidth:        &metadata.LineWidth,
-		LinePointSize:    &metadata.LinePointSize,
+		LineDotSize:      &metadata.LineDotSize,
 		RenderArmModels:  &metadata.RenderArmModels,
 		RenderShapes:     metadata.RenderShapes,
 	}
@@ -323,8 +323,8 @@ func (metadata *SceneMetadata) Validate() error {
 	if metadata.LineWidth <= 0 {
 		return fmt.Errorf("line width must be positive, got %f", metadata.LineWidth)
 	}
-	if metadata.LinePointSize <= 0 {
-		return fmt.Errorf("line dot size must be positive, got %f", metadata.LinePointSize)
+	if metadata.LineDotSize <= 0 {
+		return fmt.Errorf("line dot size must be positive, got %f", metadata.LineDotSize)
 	}
 
 	if metadata.RenderArmModels != drawv1.RenderArmModels_RENDER_ARM_MODELS_COLLIDERS_AND_MODEL &&

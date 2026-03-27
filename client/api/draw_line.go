@@ -25,16 +25,21 @@ type DrawLineOptions struct {
 	// The name of the parent frame. If empty, the line will be parented to the "world" frame.
 	Parent string
 
-	// Colors is the colors to use for the line segments and vertex points.
-	// Provide no colors for defaults, one color to use for both segments and points,
-	// or two colors for [lineColor, pointColor].
+	// Colors is the colors to use for the line segments.
+	// Provide no colors for the default, one color to use for all segments,
+	// one color per vertex for per-vertex coloring, or a palette of colors to cycle through.
 	Colors []draw.Color
+
+	// DotColors is the colors to use for the vertex dots.
+	// Provide no colors for the default, one color to use for all dots,
+	// one color per dot for per-dot coloring, or a palette of colors to cycle through.
+	DotColors []draw.Color
 
 	// LineWidth is the width of the line segments in millimeters. If 0, uses the default.
 	LineWidth float32
 
-	// PointSize is the size of the vertex points in millimeters. If 0, uses the default.
-	PointSize float32
+	// DotSize is the size of the vertex dots in millimeters. If 0, uses the default.
+	DotSize float32
 }
 
 // DrawLine draws a line in the visualizer.
@@ -50,24 +55,38 @@ func DrawLine(options DrawLineOptions) ([]byte, error) {
 		return nil, ErrVisualizerNotRunning
 	}
 
-	if len(options.Colors) == 0 {
-		options.Colors = []draw.Color{draw.DefaultLineColor, draw.DefaultLinePointColor}
-	} else if len(options.Colors) == 1 {
-		options.Colors = []draw.Color{options.Colors[0], options.Colors[0]}
-	} else if len(options.Colors) == 2 {
-		options.Colors = []draw.Color{options.Colors[0], options.Colors[1]}
-	} else {
-		return nil, fmt.Errorf("invalid number of colors: %d", len(options.Colors))
+	lineOpts := []draw.DrawLineOption{}
+	posCount := len(options.Positions)
+
+	colorCount := len(options.Colors)
+	switch {
+	case colorCount == 0:
+		// use default
+	case colorCount == 1:
+		lineOpts = append(lineOpts, draw.WithSingleLineColor(options.Colors[0]))
+	case colorCount == posCount:
+		lineOpts = append(lineOpts, draw.WithPerLineColors(options.Colors...))
+	default:
+		lineOpts = append(lineOpts, draw.WithLineColorPalette(options.Colors, posCount))
 	}
 
-	lineColorOpt := draw.WithLineColors(options.Colors[0], &options.Colors[1])
+	dotColorCount := len(options.DotColors)
+	switch {
+	case dotColorCount == 0:
+		// use default
+	case dotColorCount == 1:
+		lineOpts = append(lineOpts, draw.WithSingleDotColor(options.DotColors[0]))
+	case dotColorCount == posCount:
+		lineOpts = append(lineOpts, draw.WithPerDotColors(options.DotColors...))
+	default:
+		lineOpts = append(lineOpts, draw.WithDotColorPalette(options.DotColors, posCount))
+	}
 
-	lineOpts := []draw.DrawLineOption{lineColorOpt}
 	if options.LineWidth > 0 {
 		lineOpts = append(lineOpts, draw.WithLineWidth(options.LineWidth))
 	}
-	if options.PointSize > 0 {
-		lineOpts = append(lineOpts, draw.WithPointSize(options.PointSize))
+	if options.DotSize > 0 {
+		lineOpts = append(lineOpts, draw.WithDotSize(options.DotSize))
 	}
 
 	line, err := draw.NewLine(options.Positions, lineOpts...)

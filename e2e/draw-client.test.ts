@@ -337,18 +337,18 @@ test('draw lines with line color', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw lines with point color', async ({ browser }) => {
-	const testPrefix = 'DRAW_LINE_WITH_POINT_COLOR'
+test('draw lines with dot color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_COLOR'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawLine$/DrawLineWithPointColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawLine$/DrawLineWithDotColor$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}
 	)
 
-	await expect(page.getByText('upwardSpiralPointColor')).toBeVisible()
+	await expect(page.getByText('upwardSpiralDotColor')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
@@ -369,18 +369,82 @@ test('draw lines with line width', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw lines with point size', async ({ browser }) => {
-	const testPrefix = 'DRAW_LINE_WITH_POINT_SIZE'
+test('draw lines with dot size', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_SIZE'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawLine$/DrawLineWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawLine$/DrawLineWithDotSize$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}
 	)
 
-	await expect(page.getByText('upwardSpiralPointSize')).toBeVisible()
+	await expect(page.getByText('upwardSpiralDotSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineColorPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with per-line colors', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_PER_LINE_COLORS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPerLineColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPerLineColors')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with dot color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithDotColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralDotColorPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with per-dot colors', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_PER_DOT_COLORS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPerDotColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPerDotColors')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
