@@ -61,7 +61,6 @@
 
 <T.Group
 	position={origin.position}
-	rotation.x={$isPresenting ? -Math.PI / 2 : 0}
 	rotation.z={origin.rotation}
 >
 	<PointerMissBox />
