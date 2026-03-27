@@ -85,7 +85,7 @@ type Line struct {
 	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 	// optional width of the line in millimeters, defaults to 5
 	LineWidth *float32 `protobuf:"fixed32,2,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
-	// optional size of the dots in millimeters, defaults to 5
+	// optional size of the dots in millimeters, defaults to 10
 	DotSize *float32 `protobuf:"fixed32,3,opt,name=dot_size,json=dotSize,proto3,oneof" json:"dot_size,omitempty"`
 	// optional colors for the line dots
 	// []uint8 of a single color: [r, g, b, a]
