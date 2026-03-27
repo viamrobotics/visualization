@@ -64,7 +64,7 @@
 		>
 			<div
 				{...api.getHeaderProps()}
-				class="border-medium flex justify-between border-b p-2"
+				class="border-medium flex items-center justify-between border-b p-2"
 			>
 				<h3
 					{...api.getTitleProps()}

@@ -44,6 +44,7 @@ Renders a Viam Frame object
 	const entityColor = useTrait(() => entity, traits.Color)
 	const entityPose = useTrait(() => entity, traits.Pose)
 	const center = useTrait(() => entity, traits.Center)
+	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const events = useEntityEvents(() => entity)
 
@@ -78,7 +79,10 @@ Renders a Viam Frame object
 </script>
 
 <Portal id={parent.current}>
-	<T is={group}>
+	<T
+		is={group}
+		visible={invisible.current !== true}
+	>
 		<Mesh
 			{entity}
 			{color}

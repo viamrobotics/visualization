@@ -36,6 +36,7 @@ export const WorldPose = trait({
 })
 
 export const Hovered = trait(() => true)
+export const Invisible = trait(() => true)
 
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
