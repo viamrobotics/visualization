@@ -8,9 +8,11 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import CameraFeed from './CameraFeed.svelte'
-	import Controllers from './Controllers.svelte'
+	import FrameConfigureControllers from './frame-configure/Controllers.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import OriginMarker from './OriginMarker.svelte'
+	import TeleopControllers from './teleop/Controllers.svelte'
+	import { provideAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'
 	import XRToast from './XRToast.svelte'
 
@@ -19,6 +21,7 @@
 	const { isPresenting } = useXR()
 	const settings = useSettings()
 	const origin = useOrigin()
+	provideAnchors()
 	const enableXR = $derived(settings.current.enableXR)
 
 	const partID = usePartID()
@@ -94,7 +97,11 @@
 		<XRToast />
 
 		<World>
-			<Controllers />
+			{#if settings.current.xrMode === 'arm-teleop'}
+				<TeleopControllers />
+			{:else if settings.current.xrMode === 'frame-configure'}
+				<FrameConfigureControllers />
+			{/if}
 
 			<T.Group position.z={-2}>
 				<T.Group rotation.x={$isPresenting ? -Math.PI / 2 : 0}>

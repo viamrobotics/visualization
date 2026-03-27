@@ -4,8 +4,8 @@
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	import ArmTeleop from './ArmTeleop.svelte'
-	import HandCollider from './HandCollider.svelte'
+	import ArmTeleop from '../ArmTeleop.svelte'
+	import HandCollider from '../HandCollider.svelte'
 
 	const settings = useSettings()
 
