@@ -4,7 +4,6 @@ import { getContext, setContext } from 'svelte'
 const key = Symbol('dashboard-context')
 
 export interface Settings {
-	isLoaded: boolean
 	// Camera
 	cameraMode: 'orthographic' | 'perspective'
 
@@ -38,9 +37,6 @@ export interface Settings {
 	enableKeybindings: boolean
 	enableQueryDevtools: boolean
 
-	// AR Mode
-	enableXR: boolean
-
 	// Widgets
 	enableArmPositionsWidget: boolean
 	openCameraWidgets: Record<string, string[]>
@@ -49,7 +45,9 @@ export interface Settings {
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
 	renderSubEntityHoverDetail: boolean
 
-	// XR Controller Configuration
+	// Webxr
+	enableXR: boolean
+	xrMode: 'frame-configure' | 'arm-teleop'
 	xrController: {
 		left: {
 			armName?: string
@@ -68,10 +66,11 @@ export interface Settings {
 
 interface Context {
 	current: Settings
+	isLoaded: boolean
+	merge(value: Settings): void
 }
 
 const defaults = (): Settings => ({
-	isLoaded: false,
 	cameraMode: 'perspective',
 
 	transforming: false,
@@ -99,8 +98,6 @@ const defaults = (): Settings => ({
 	enableKeybindings: true,
 	enableQueryDevtools: false,
 
-	enableXR: false,
-
 	enableArmPositionsWidget: false,
 	openCameraWidgets: {},
 
@@ -108,6 +105,8 @@ const defaults = (): Settings => ({
 	renderArmModels: 'colliders+model',
 	renderSubEntityHoverDetail: false,
 
+	enableXR: false,
+	xrMode: 'frame-configure',
 	xrController: {
 		left: {
 			scaleFactor: 1,
@@ -121,19 +120,21 @@ const defaults = (): Settings => ({
 })
 
 export const provideSettings = () => {
+	let isLoaded = $state(false)
 	let settings = $state<Settings>(defaults())
-	let settingsLoaded = $state(false)
 
-	get('motion-tools-settings').then((response: Settings) => {
-		if (response) {
-			settings = { ...settings, ...response }
-		}
-		settingsLoaded = true
-		settings.isLoaded = true
-	})
+	get('motion-tools-settings')
+		.then((response: Settings) => {
+			if (response) {
+				settings = { ...settings, ...response }
+			}
+		})
+		.finally(() => {
+			isLoaded = true
+		})
 
 	$effect(() => {
-		if (settingsLoaded) {
+		if (isLoaded) {
 			set('motion-tools-settings', $state.snapshot(settings))
 		}
 	})
@@ -142,9 +143,14 @@ export const provideSettings = () => {
 		get current() {
 			return settings
 		},
-
 		set current(value: Settings) {
 			settings = value
+		},
+		get isLoaded() {
+			return isLoaded
+		},
+		merge(value: Settings) {
+			settings = { ...settings, ...value }
 		},
 	}
 
