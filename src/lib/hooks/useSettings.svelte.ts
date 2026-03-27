@@ -88,7 +88,7 @@ const defaults = (): Settings => ({
 	refreshRates: {
 		poses: 1000,
 		pointclouds: 5000,
-		vision: 5000,
+		vision: 1000,
 	},
 
 	disabledCameras: {},
