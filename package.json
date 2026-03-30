@@ -174,7 +174,7 @@
 		"@neodrag/svelte": "^2.3.3",
 		"@tanstack/svelte-query-devtools": "^6.0.2",
 		"earcut": "^3.0.2",
-		"expr-eval": "^2.0.2",
+		"filtrex": "^3.1.0",
 		"koota": "0.6.5",
 		"lodash-es": "4.17.23",
 		"three-mesh-bvh": "^0.9.8",
