@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.15.7
+
+### Patch Changes
+
+- 89258c9: sec: replace expr-eval with filtrex
+- 89258c9: fix(deps): replace expr-eval with filtrex
+
 ## 1.15.6
 
 ### Patch Changes
