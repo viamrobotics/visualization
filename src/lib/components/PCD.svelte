@@ -12,7 +12,7 @@
 		oncreate?: (positions: Float32Array, colors: Uint8Array | null) => void
 	}
 
-	let { data, name, renderOrder, onComplete }: Props = $props()
+	let { data, name, renderOrder, oncreate }: Props = $props()
 
 	const world = useWorld()
 
@@ -34,7 +34,7 @@
 
 			entity = world.spawn(...entityTraits)
 
-			onComplete?.(positions, colors)
+			oncreate?.(positions, colors)
 		})
 
 		return () => {
