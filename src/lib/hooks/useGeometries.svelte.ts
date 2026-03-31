@@ -16,8 +16,8 @@ import { createPose } from '$lib/transform'
 
 import { useEnvironment } from './useEnvironment.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
+import { RefreshRates, useSettings } from './useSettings.svelte'
 
 const key = Symbol('geometries-context')
 
@@ -37,7 +37,8 @@ export const provideGeometries = (partID: () => string) => {
 	const grippers = useResourceNames(partID, 'gripper')
 	const gantries = useResourceNames(partID, 'gantry')
 
-	const { refreshRates } = useMachineSettings()
+	const settings = useSettings()
+	const { refreshRates } = $derived(settings.current)
 
 	const armClients = $derived(
 		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
@@ -54,15 +55,11 @@ export const provideGeometries = (partID: () => string) => {
 		gantries.current.map((gantry) => createResourceClient(GantryClient, partID, () => gantry.name))
 	)
 
-	const interval = $derived(refreshRates.get(RefreshRates.poses))
+	const interval = $derived(refreshRates[RefreshRates.poses])
 
-	const options = $derived.by(() => {
-		return {
-			enabled:
-				refreshRates.get(RefreshRates.poses) !== RefetchRates.OFF &&
-				environment.current.viewerMode === 'monitor',
-			refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
-		}
+	const options = $derived({
+		enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
+		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
 
 	const armQueries = $derived(
