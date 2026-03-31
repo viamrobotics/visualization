@@ -9,11 +9,11 @@
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
 	import { useGeometries } from '$lib/hooks/useGeometries.svelte'
-	import { RefreshRates, useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import { useRefetchPoses } from '$lib/hooks/useRefetchPoses'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useWeblabs, WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
 
 	import FloatingPanel from '../FloatingPanel.svelte'
@@ -26,9 +26,10 @@
 	const cameras = useResourceNames(() => partID.current, 'camera')
 	const visionServices = useResourceNames(() => partID.current, 'vision')
 	const settings = useSettings()
-	const { disabledCameras, disabledVisionServices } = useMachineSettings()
+	const { disabledCameras, disabledVisionServices } = $derived(settings.current)
 	const geometries = useGeometries()
 	const pointclouds = usePointClouds()
+	const pointcloudObjects = usePointcloudObjects()
 	const { refetchPoses } = useRefetchPoses()
 	const weblabs = useWeblabs()
 	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)
@@ -87,9 +88,16 @@
 		/>
 		<RefreshRate
 			id={RefreshRates.pointclouds}
-			label="Pointclouds"
+			label="Pointclouds from cameras"
 			onManualRefetch={() => {
 				pointclouds.refetch()
+			}}
+		/>
+		<RefreshRate
+			id={RefreshRates.vision}
+			label="Vision service pointcloud segments and objects"
+			onManualRefetch={() => {
+				pointcloudObjects.refetch()
 			}}
 		/>
 	</div>
@@ -126,9 +134,9 @@
 			<div class="flex items-center justify-between py-0.5 text-xs">
 				{camera.name}
 				<Switch
-					on={disabledCameras.get(camera.name) !== true}
+					on={disabledCameras[camera.name] !== true}
 					on:change={(event) => {
-						disabledCameras.set(camera.name, !event.detail)
+						disabledCameras[camera.name] = !event.detail
 					}}
 				/>
 			</div>
@@ -146,9 +154,9 @@
 			<div class="flex items-center justify-between py-0.5">
 				{visionService.name}
 				<Switch
-					on={disabledVisionServices.get(visionService.name) !== true}
+					on={disabledVisionServices[visionService.name] !== true}
 					on:change={(event) => {
-						disabledVisionServices.set(visionService.name, !event.detail)
+						disabledVisionServices[visionService.name] = !event.detail
 					}}
 				/>
 			</div>
