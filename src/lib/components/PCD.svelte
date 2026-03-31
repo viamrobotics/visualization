@@ -9,9 +9,10 @@
 		data: Uint8Array
 		name?: string
 		renderOrder?: number
+		onComplete?: (positions: Float32Array, colors: Uint8Array | null) => void
 	}
 
-	let { data, name, renderOrder }: Props = $props()
+	let { data, name, renderOrder, onComplete }: Props = $props()
 
 	const world = useWorld()
 
@@ -32,6 +33,8 @@
 			}
 
 			entity = world.spawn(...entityTraits)
+
+			onComplete?.(positions, colors)
 		})
 
 		return () => {
