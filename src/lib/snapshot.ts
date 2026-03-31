@@ -11,8 +11,8 @@ import { drawDrawing, drawTransform } from './draw'
 
 /**
  * Merges scene-level metadata (grid, camera, point/line settings) into the
- * current viewer settings. Millimetre values from the proto are converted
- * to metres.
+ * current viewer settings. Millimeter values from the proto are converted
+ * to meters.
  */
 export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata): Settings => {
 	const next: Settings = { ...settings }

@@ -38,7 +38,7 @@ export const STRIDE = {
  * @example
  * ```ts
  * const positions = asFloat32Array(line.positions)
- * const metrePositions = asFloat32Array(line.positions, inMetres)
+ * const meterPositions = asFloat32Array(line.positions, inMeters)
  * ```
  */
 export const asFloat32Array = (
@@ -153,15 +153,15 @@ export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boo
 }
 
 /**
- * Per-element transform that converts a millimetre value to metres.
+ * Per-element transform that converts a millimeter value to meters.
  * Pass to {@link asFloat32Array} to fuse the conversion into a single pass.
  *
  * @example
  * ```ts
- * const positions = asFloat32Array(line.positions, inMetres)
+ * const positions = asFloat32Array(line.positions, inMeters)
  * ```
  */
-export const inMetres = (v: number): number => v * 0.001
+export const inMeters = (v: number): number => v * 0.001
 
 /**
  * Returns true when `colors` is encoded as RGB (3 bytes per color).
