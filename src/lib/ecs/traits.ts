@@ -71,7 +71,15 @@ export const DepthTest = trait(() => true)
 export const Arrow = trait(() => true)
 
 export const Positions = trait(() => new Float32Array())
+
+/** Per-vertex RGB colors packed as [r, g, b, ...], stride of 3, values 0-255. */
 export const Colors = trait(() => new Uint8Array())
+
+/**
+ * Per-vertex opacity values packed as uint8 (0-255).
+ */
+export const Opacities = trait(() => new Uint8Array())
+
 export const Instances = trait({
 	count: 0,
 })
@@ -106,9 +114,6 @@ export const PointColor = trait({ r: 0, g: 0, b: 0 })
 export const LinePositions = trait(() => new Float32Array())
 
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
-
-/** format [r, g, b, ...] */
-export const VertexColors = trait(() => new Float32Array())
 
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },

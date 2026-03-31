@@ -358,17 +358,21 @@ export const provideDrawAPI = () => {
 
 		const entities = world.query(traits.DrawAPI)
 		const entity = entities.find((entity) => entity.get(traits.Name) === label)
+		const metadata = {
+			colors: new Uint8Array([r, g, b]),
+			opacities: new Uint8Array([180]),
+		}
 
 		if (entity) {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, colors)
+				updateBufferGeometry(geometry, positions, metadata)
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, colors)
+		const geometry = createBufferGeometry(positions, metadata)
 
 		world.spawn(
 			traits.Name(label),

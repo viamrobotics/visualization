@@ -19,9 +19,7 @@ export const STRIDE = {
 	NURBS_CONTROL_POINTS: 7,
 	/** Nurbs knots/weights: single float per element */
 	NURBS_KNOTS: 1,
-	/** Colors: [r, g, b, a] per color (uint8) */
-	COLORS_RGBA: 4,
-	/** Colors: [r, g, b] */
+	/** Colors: [r, g, b] per color (uint8) — always RGB */
 	COLORS_RGB: 3,
 } as const
 
@@ -56,7 +54,7 @@ export const asFloat32Array = (bytes: Uint8Array<ArrayBuffer>): Float32Array<Arr
 }
 
 /**
- * Sets a Three.js Color from 3 bytes of a uint8 color array starting at `offset`.
+ * Sets a Three.js Color from 3 bytes of a uint8 RGB color array starting at `offset`.
  * Mutates and returns `target` — pass a pre-allocated Color to avoid allocations
  * in hot paths.
  *
@@ -68,7 +66,7 @@ export const asFloat32Array = (bytes: Uint8Array<ArrayBuffer>): Float32Array<Arr
  * @example
  * ```ts
  * asColor(colors.current, material.color)
- * asColor(colors.current, pointColorUtil, stride) // read second color
+ * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
  * ```
  */
 export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {
@@ -77,49 +75,36 @@ export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 
 }
 
 /**
- * Creates a Uint8Array from a Three.js Color.
+ * Reads a byte from a uint8 opacities array at `index` and normalizes it to 0-1.
+ * Returns `fallback` when the array is absent or shorter than `index + 1`.
  *
- * @param color - The Three.js Color to convert
- * @returns A Uint8Array with the RGBA values
- *
- * @example
- * ```ts
- * const color = fromColor(new Color(0, 1, 0))
- * ```
- */
-export const fromColor = (color: Color): Uint8Array<ArrayBuffer> => {
-	return new Uint8Array([
-		Math.round(color.r * 255),
-		Math.round(color.g * 255),
-		Math.round(color.b * 255),
-	])
-}
-
-/**
- * Reads a byte from a uint8 color array at `offset` and normalizes it to 0-1.
- * Returns `fallback` when the array has fewer than `offset + 1` elements.
- *
- * @param bytes - ArrayLike of uint8 color values
- * @param fallback - Value to return when no alpha byte is present (default 1)
- * @param offset - Byte index to read from (default 3, the alpha channel of the first color)
+ * @param opacities - Uint8Array of opacity values (0-255). Length 1 = uniform. Length N = per-vertex.
+ * @param fallback - Value to return when no opacity byte is available (default 1)
+ * @param index - Index into the opacities array (default 0)
  * @returns Normalized opacity in 0-1 range, or the fallback value
  *
  * @example
  * ```ts
- * material.opacity = asOpacity(colors.current)
- * material.opacity = asOpacity(colors.current, 1, stride + 3) // alpha of second color
+ * material.opacity = asOpacity(metadata.opacities)
  * ```
  */
-export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset = 3): number => {
-	if (bytes.length < offset + 1) return fallback
-	return bytes[offset]! / 255
+export const asOpacity = (
+	opacities: Uint8Array<ArrayBuffer> | undefined,
+	fallback = 1,
+	index = 0
+): number => {
+	if (!opacities || opacities.length === 0) return fallback
+	// If only one opacity byte, it is the uniform opacity regardless of index
+	const i = opacities.length === 1 ? 0 : index
+	if (opacities.length <= i) return fallback
+	return opacities[i]! / 255
 }
 
 /**
- * Returns true when `colors` contains exactly one color entry per point (RGB or RGBA).
+ * Returns true when `colors` contains exactly one RGB color entry per vertex.
  * Use this to distinguish per-vertex color buffers from a single uniform color.
  *
- * @param colors - Uint8Array of packed color bytes
+ * @param colors - Uint8Array of packed RGB bytes (stride of 3)
  * @param numVertex - Number of points/vertices the color buffer should cover
  *
  * @example
@@ -127,10 +112,9 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
  * if (isPerVertexColors(colors, positions.length / STRIDE.POSITIONS)) {
  *   // treat as per-vertex
  * } else {
- *   addColorTraits(entityTraits, colors)
+ *   addColorTraits(entityTraits, colors, opacities)
  * }
  * ```
  */
 export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
-	colors.length === numVertex * STRIDE.COLORS_RGB ||
-	colors.length === numVertex * STRIDE.COLORS_RGBA
+	colors.length === numVertex * STRIDE.COLORS_RGB

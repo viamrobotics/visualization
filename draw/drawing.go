@@ -289,5 +289,22 @@ func NewMetadata(options ...drawMetadataOption) Metadata {
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
-	return &drawv1.Metadata{Colors: packColors(metadata.Colors)}
+	proto := &drawv1.Metadata{
+		Colors:      packColors(metadata.Colors),
+		ColorFormat: drawv1.ColorFormat_COLOR_FORMAT_RGB,
+	}
+	if metadata.hasNonDefaultOpacity() {
+		proto.Opacities = packOpacities(metadata.Colors)
+	}
+	return proto
+}
+
+// hasNonDefaultOpacity returns true if any color in the metadata has a non-default (non-255) alpha.
+func (metadata *Metadata) hasNonDefaultOpacity() bool {
+	for _, c := range metadata.Colors {
+		if c.A != DefaultAlpha {
+			return true
+		}
+	}
+	return false
 }

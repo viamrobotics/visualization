@@ -215,14 +215,15 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 	it('spawns points with uniform Color + Opacity traits from metadata', async () => {
 		world = createWorld()
-		// [r, g, b, a] — single RGBA color; use 2 points so 4 bytes is NOT per-vertex count
-		const colors = new Uint8Array([255, 0, 0, 128])
+		// RGB color + separate opacities field
+		const colors = new Uint8Array([255, 0, 0])
+		const opacities = new Uint8Array([128])
 		const drawing = new Drawing({
 			referenceFrame: 'colored-points',
 			physicalObject: new Shape({
 				geometryType: { case: 'points', value: new Points({ positions: new Uint8Array(24) }) },
 			}),
-			metadata: new Metadata({ colors }),
+			metadata: new Metadata({ colors, opacities }),
 		})
 		const snapshot = new Snapshot({ drawings: [drawing] })
 
@@ -286,8 +287,8 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 
 	it('spawns arrows with Colors trait when metadata has one color', async () => {
 		world = createWorld()
-		// Single RGBA color for all arrows
-		const colors = new Uint8Array([0, 255, 0, 180])
+		// Single RGB color for all arrows
+		const colors = new Uint8Array([0, 255, 0])
 		const posesData = new Uint8Array(24) // 1 arrow
 		const drawing = new Drawing({
 			referenceFrame: 'arrows-single-color',
@@ -305,7 +306,6 @@ describe('spawnDrawingEntity shapes (via spawnSnapshotEntities)', () => {
 		expect(entityColors![0]).toBe(0)
 		expect(entityColors![1]).toBe(255)
 		expect(entityColors![2]).toBe(0)
-		expect(entityColors![3]).toBe(180)
 		expect(entity.has(traits.Color)).toBe(false)
 	})
 
@@ -466,13 +466,13 @@ describe('colors', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('spawns points with per-vertex RGBA colors in BufferGeometry', async () => {
+	it('spawns points with per-vertex RGB colors in BufferGeometry', async () => {
 		world = createWorld()
-		// 2 points, RGBA per-vertex: 2 * 4 = 8 bytes
+		// 2 points, RGB per-vertex: 2 * 3 = 6 bytes
 		const positions = new Uint8Array(24) // 2 points (2 * 3 floats * 4 bytes)
-		const perVertexColors = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 128])
+		const perVertexColors = new Uint8Array([255, 0, 0, 0, 255, 0])
 		const drawing = new Drawing({
-			referenceFrame: 'rgba-vertex-points',
+			referenceFrame: 'rgb-vertex-points',
 			physicalObject: new Shape({
 				geometryType: { case: 'points', value: new Points({ positions }) },
 			}),
@@ -502,19 +502,20 @@ describe('colors', () => {
 		expect(entity.has(traits.Color)).toBe(false)
 	})
 
-	it('spawns line with RGBA colors including opacity', async () => {
+	it('spawns line with RGB colors and separate opacity', async () => {
 		world = createWorld()
-		// Two RGBA colors: line + point
-		const colors = new Uint8Array([255, 0, 0, 200, 0, 0, 255, 100])
+		// Two RGB colors: line + point, with uniform opacity
+		const colors = new Uint8Array([255, 0, 0, 0, 0, 255])
+		const opacities = new Uint8Array([200])
 		const drawing = new Drawing({
-			referenceFrame: 'line-rgba',
+			referenceFrame: 'line-opacity',
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'line',
 					value: new Line({ positions: new Uint8Array(24), lineWidth: 2, pointSize: 3 }),
 				},
 			}),
-			metadata: new Metadata({ colors }),
+			metadata: new Metadata({ colors, opacities }),
 		})
 		const snapshot = new Snapshot({ drawings: [drawing] })
 

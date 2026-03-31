@@ -107,13 +107,13 @@ func TestDrawnFrameSystem_ToTransforms(t *testing.T) {
 
 		// "other_child" explicitly set to blue
 		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
-		// blue = \x00\x00\xff\xff
-		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+		// blue = \x00\x00\xff, RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff")
 
 		// "test" explicitly set to red
 		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
-		// red = \xff\x00\x00\xff
-		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		// red = \xff\x00\x00, RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
 	})
 
 	t.Run("InheritsParentColor", func(t *testing.T) {
@@ -127,8 +127,8 @@ func TestDrawnFrameSystem_ToTransforms(t *testing.T) {
 
 		// "child" is first alphabetically
 		test.That(t, transforms[0].ReferenceFrame, test.ShouldEqual, "child:box")
-		// red = \xff\x00\x00\xff (inherited from "test")
-		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		// red = \xff\x00\x00 (inherited from "test"), RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
 	})
 
 	t.Run("FrameNamesUsedAsPrefix", func(t *testing.T) {

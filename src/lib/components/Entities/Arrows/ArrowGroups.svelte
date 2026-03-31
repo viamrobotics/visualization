@@ -22,13 +22,12 @@
 		if (!poses) return
 
 		const total = poses.length / STRIDE.ARROWS
-		const alpha = colors && colors.length / STRIDE.COLORS_RGBA === total
 		const uniformColor =
-			colors && (colors.length === 3 || colors.length === 4)
-				? new Color(colors[0], colors[1], colors[2])
+			colors && colors.length === STRIDE.COLORS_RGB
+				? new Color(colors[0]! / 255, colors[1]! / 255, colors[2]! / 255)
 				: undefined
 
-		const arrows = new InstancedArrows({ count: total, alpha, uniformColor })
+		const arrows = new InstancedArrows({ count: total, uniformColor })
 		map.set(entity, arrows)
 		arrows.update({ poses, colors, headAtPose })
 	}

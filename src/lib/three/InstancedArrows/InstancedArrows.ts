@@ -104,8 +104,8 @@ export class InstancedArrows extends Group {
 		}
 
 		if (!options.uniformColor) {
-			const colors = new Uint8Array(this.count * (options?.alpha ? 4 : 3))
-			const instanceColor = new InstancedBufferAttribute(colors, options?.alpha ? 4 : 3, true)
+			const colors = new Uint8Array(this.count * 3)
+			const instanceColor = new InstancedBufferAttribute(colors, 3, true)
 			instanceColor.setUsage(DynamicDrawUsage)
 
 			this.attributes.instanceColor = instanceColor

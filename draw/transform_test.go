@@ -42,7 +42,12 @@ func TestTransform(t *testing.T) {
 			},
 		})
 		test.That(t, transform.Metadata, test.ShouldNotBeNil)
-		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		// red packed as [r, g, b] — 3 bytes
+		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
+		// color_format set to COLOR_FORMAT_RGB (1)
+		test.That(t, transform.Metadata.Fields["color_format"].GetNumberValue(), test.ShouldEqual, 1)
+		// default alpha — no opacities field
+		test.That(t, transform.Metadata.Fields["opacities"], test.ShouldBeNil)
 	})
 
 	t.Run("RoundtripMetadata", func(t *testing.T) {

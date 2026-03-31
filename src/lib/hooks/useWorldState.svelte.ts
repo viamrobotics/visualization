@@ -98,16 +98,18 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 							? metadataColors
 							: pointcloud.colors
 
-					const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
+					const geometry = createBufferGeometry(pointcloud.positions, {
+						colors: vertexColors ?? undefined,
+						opacities: metadata.opacities,
+					})
 					entity.add(traits.BufferGeometry(geometry))
 					entity.add(traits.Points)
 
 					if (metadataColors && !isPerVertexColors(metadataColors, numPoints)) {
 						asColor(metadataColors, colorUtil)
 						entity.add(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-						if (metadataColors.length % STRIDE.COLORS_RGBA === 0) {
-							entity.add(traits.Opacity(asOpacity(metadataColors)))
-						}
+						const opacity = asOpacity(metadata.opacities)
+						if (opacity < 1) entity.add(traits.Opacity(opacity))
 					}
 
 					invalidate()
@@ -116,9 +118,8 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 				if (metadata.colors) {
 					asColor(metadata.colors, colorUtil)
 					entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-					if (metadata.colors.length % STRIDE.COLORS_RGBA === 0) {
-						entityTraits.push(traits.Opacity(asOpacity(metadata.colors)))
-					}
+					const opacity = asOpacity(metadata.opacities)
+					if (opacity < 1) entityTraits.push(traits.Opacity(opacity))
 				}
 				entityTraits.push(traits.Geometry(transform.physicalObject))
 			}

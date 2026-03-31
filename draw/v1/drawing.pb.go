@@ -24,9 +24,11 @@ const (
 
 // Arrows represents a set of arrows in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or a color per arrow: [r, g, b, a, ...]
-//     defaults to [0, 255, 0, 180] (green)
+//   - colors: []uint8 of a single color or a color per arrow
+//     defaults to [0, 255, 0] (green)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per arrow
+//     defaults to [180] (semi-transparent)
 type Arrows struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The poses of the arrows
@@ -75,9 +77,11 @@ func (x *Arrows) GetPoses() []byte {
 
 // Line represents a line in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or two colors for lines and points: [r, g, b, a, r, g, b, a]
-//     defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
+//   - colors: []uint8 of a single color or a color per line point
+//     defaults to [0, 128, 255] (blue)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per line point
+//     defaults to [180] (semi-transparent)
 type Line struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The positions of the line points
@@ -144,9 +148,11 @@ func (x *Line) GetPointSize() float32 {
 
 // Points represents a set of points in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or a color per point: [r, g, b, a, ...]
-//     defaults to [51, 51, 51, 180] (gray)
+//   - colors: []uint8 of a single color or a color per point
+//     defaults to [51, 51, 51] (gray)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per point
+//     defaults to [180] (semi-transparent)
 type Points struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The positions of the points
@@ -375,8 +381,11 @@ func (x *Model) GetAnimationName() string {
 
 // Nurbs represents a NURBS curve in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     defaults to [0, 255, 255, 180] (cyan)
+//   - colors: []uint8 of a single color or a color per NURBS control point
+//     defaults to [0, 255, 255] (cyan)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per NURBS control point
+//     defaults to [180] (semi-transparent)
 type Nurbs struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The control points of the NURBS

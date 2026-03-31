@@ -86,24 +86,24 @@ func TestDrawnGeometriesInFrame_ToTransforms(t *testing.T) {
 		test.That(t, transforms[0].PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
 			DimsMm: &commonv1.Vector3{X: 100, Y: 100, Z: 100},
 		})
-		// red = \xff\x00\x00\xff
-		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\xff")
+		// red = \xff\x00\x00, RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[0].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
 	})
 
 	t.Run("SphereTransform", func(t *testing.T) {
 		test.That(t, transforms[1].PhysicalObject.Label, test.ShouldEqual, "sphere")
 		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "sphere")
 		test.That(t, transforms[1].PhysicalObject.GetSphere(), test.ShouldResemble, &commonv1.Sphere{RadiusMm: 100})
-		// green = \x00\xff\x00\xff
-		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\xff\x00\xff")
+		// green = \x00\xff\x00, RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\xff\x00")
 	})
 
 	t.Run("CapsuleTransform", func(t *testing.T) {
 		test.That(t, transforms[2].PhysicalObject.Label, test.ShouldEqual, "capsule")
 		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "capsule")
 		test.That(t, transforms[2].PhysicalObject.GetCapsule(), test.ShouldResemble, &commonv1.Capsule{RadiusMm: 100, LengthMm: 300})
-		// blue = \x00\x00\xff\xff
-		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff\xff")
+		// blue = \x00\x00\xff, RGB-only
+		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff")
 	})
 
 	t.Run("Name_PrefixesReferenceFrame", func(t *testing.T) {
