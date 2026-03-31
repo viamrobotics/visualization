@@ -7,7 +7,7 @@ import (
 	"go.viam.com/rdk/robot"
 	"go.viam.com/rdk/spatialmath"
 
-	"github.com/viam-labs/motion-tools/mutils"
+	"github.com/viam-labs/motion-tools/client/mutils"
 )
 
 // DrawRobot will draw a robot in the visualizer.

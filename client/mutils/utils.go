@@ -1,3 +1,4 @@
+// Package mutils provides helper functions for working with Viam robot frame systems.
 package mutils
 
 import (
@@ -9,6 +10,8 @@ import (
 	"go.viam.com/rdk/robot/framesystem"
 )
 
+// GetInputs reads current joint positions from each frame's component on the robot
+// and returns them as FrameSystemInputs suitable for frame system transformations.
 func GetInputs(ctx context.Context, fs *referenceframe.FrameSystem, myRobot robot.Robot) (referenceframe.FrameSystemInputs, error) {
 	input := referenceframe.NewZeroInputs(fs)
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/viam-labs/motion-tools/client/mutils"
 	"github.com/viam-labs/motion-tools/client/server"
 	"github.com/viam-labs/motion-tools/draw"
-	"github.com/viam-labs/motion-tools/mutils"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/robot"
 	"go.viam.com/rdk/spatialmath"
