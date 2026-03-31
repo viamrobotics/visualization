@@ -8,11 +8,15 @@ yarn.lock
 draw/v1
 src/lib/buf
 
-# Docs
-draw/DOCS.md
+# Generated docs
+docs/client-api.md
+docs/draw-api.md
 
 # Snapshots
 draw/__snapshots__
+
+# VitePress
+docs/.vitepress
 
 # IDE
 .cursor

@@ -42,5 +42,9 @@ vite.config.ts.timestamp-*
 src/lib/buf
 protos/vendor
 
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache
+
 # IDE
 .cursor
