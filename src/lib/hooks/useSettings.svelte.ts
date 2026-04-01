@@ -156,7 +156,7 @@ export const provideSettings = () => {
 
 	$effect(() => {
 		if (isLoaded) {
-			set('motion-tools-settings', $state.snapshot({...settings, interactionMode: 'navigate'}))
+			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
 		}
 	})
 
