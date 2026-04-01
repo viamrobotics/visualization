@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Struct } from '@viamrobotics/sdk'
+	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools'
@@ -36,7 +37,6 @@
 	import Camera from './overlay/widgets/Camera.svelte'
 	import Scene from './Scene.svelte'
 	import SceneProviders from './SceneProviders.svelte'
-	import type { Entity } from 'koota'
 
 	interface LocalConfigProps {
 		current: Struct
