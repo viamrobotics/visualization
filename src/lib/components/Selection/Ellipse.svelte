@@ -61,6 +61,7 @@
 
 		world.spawn(
 			traits.LinePositions(new Float32Array([x, y, 0])),
+			selectionTraits.StartPoint({ x, y }),
 			traits.LineWidth(1.5),
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
@@ -94,38 +95,52 @@
 
 			const { x, y } = raycast(event)
 			const positions = ellipse.get(traits.LinePositions)
+			const startPoint = ellipse.get(selectionTraits.StartPoint)
 			const box = ellipse.get(selectionTraits.Box)
 
-			if (!positions || !box) return
+			if (!positions || !box || !startPoint) return
 
-			if (x < box.minX) box.minX = x
-			else if (x > box.maxX) box.maxX = x
+			let minX = startPoint.x
+			let minY = startPoint.y
+			let maxX = startPoint.x
+			let maxY = startPoint.y
 
-			if (y < box.minY) box.minY = y
-			else if (y > box.maxY) box.maxY = y
+			if (x < minX) minX = x
+			else if (x > maxX) maxX = x
 
-			const nextPositions = new Float32Array(15) // 5 points * 3 coordinates
-			nextPositions.set([
-				box.minX,
-				box.minY,
-				0,
-				box.maxX,
-				box.minY,
-				0,
-				box.maxX,
-				box.maxY,
-				0,
-				box.minX,
-				box.maxY,
-				0,
-				box.minX,
-				box.minY,
-				0,
-			])
+			if (y < minY) minY = y
+			else if (y > maxY) maxY = y
 
-			ellipse.set(selectionTraits.Box, box)
-			ellipse.set(traits.LinePositions, nextPositions)
+			const nextPositions = ellipsePoints(minX, maxX, minY, maxY, 100)
+
+			ellipse.set(traits.LinePositions, new Float32Array(nextPositions))
+			ellipse.set(selectionTraits.Box, { minX, minY, maxX, maxY })
 		})
+	}
+
+	const ellipsePoints = (
+		minX: number,
+		maxX: number,
+		minY: number,
+		maxY: number,
+		numPoints: number
+	): Float32Array => {
+		const cx = (minX + maxX) / 2
+		const cy = (minY + maxY) / 2
+		const rx = (maxX - minX) / 2
+		const ry = (maxY - minY) / 2
+
+		const points = new Float32Array(numPoints * 3)
+
+		for (let i = 0; i < numPoints; i++) {
+			const t = (i / numPoints) * 2 * Math.PI
+
+			points[i * 3] = cx + rx * Math.cos(t)
+			points[i * 3 + 1] = cy + ry * Math.sin(t)
+			points[i * 3 + 2] = 0
+		}
+
+		return points
 	}
 
 	const onpointerleave = () => {

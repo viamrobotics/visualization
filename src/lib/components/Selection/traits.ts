@@ -17,12 +17,22 @@ export interface AABB {
 	maxY: number
 }
 
+export interface Point {
+	x: number
+	y: number
+}
+
 export const Box = trait({
 	minX: 0,
 	minY: 0,
 	maxX: 0,
 	maxY: 0,
 } satisfies AABB)
+
+export const StartPoint = trait({
+	x: 0,
+	y: 0,
+} satisfies Point)
 
 export const Indices = trait(() => new Uint16Array())
 export const Boxes = trait(() => [] as AABB[])
