@@ -37,8 +37,8 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
 	if (metadata.lineWidth !== undefined) {
 		next.lineWidth = metadata.lineWidth / 1000
 	}
-	if (metadata.linePointSize !== undefined) {
-		next.lineDotSize = metadata.linePointSize / 1000
+	if (metadata.lineDotSize !== undefined) {
+		next.lineDotSize = metadata.lineDotSize / 1000
 	}
 	if (metadata.renderArmModels !== undefined) {
 		next.renderArmModels = getRenderArmModels(metadata.renderArmModels)

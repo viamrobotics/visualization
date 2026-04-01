@@ -423,11 +423,24 @@ export const provideDrawAPI = () => {
 			points[i + 2] = reader.read()
 		}
 
+		const lineColors = new Uint8Array([
+			Math.round(r * 255),
+			Math.round(g * 255),
+			Math.round(b * 255),
+			255,
+		])
+		const dotColors = new Uint8Array([
+			Math.round(dotR * 255),
+			Math.round(dotG * 255),
+			Math.round(dotB * 255),
+			255,
+		])
+
 		world.spawn(
 			traits.Name(label),
-			traits.Color({ r, g, b }),
+			traits.Colors(lineColors),
 			traits.LinePositions(points),
-			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
+			traits.DotColors(dotColors),
 			traits.DrawAPI,
 			traits.Removable
 		)
