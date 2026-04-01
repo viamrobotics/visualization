@@ -13,7 +13,10 @@
 	import { createBinaryPCD } from '$lib/pcd'
 
 	import FloatingPanel from '../overlay/FloatingPanel.svelte'
+	import Popover from '../overlay/Popover.svelte'
+	import ToggleGroup from '../overlay/ToggleGroup.svelte'
 	import Ellipse from './Ellipse.svelte'
+	import Lasso from './Lasso.svelte'
 	import * as selectionTraits from './traits'
 
 	interface Props {
@@ -24,12 +27,15 @@
 		onSelection: (pcd: Blob) => void
 	}
 
+	type SelectionType = 'lasso' | 'ellipse'
+
 	let { enabled = false, onSelection }: Props = $props()
 
 	const { dom } = useThrelte()
 	const world = useWorld()
 	const settings = useSettings()
 	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
+	let selectionType = $state<SelectionType>('lasso')
 
 	const onCommitClick = () => {
 		const entities = world.query(selectionTraits.SelectionEnclosedPoints)
@@ -74,20 +80,49 @@
 
 <Portal id="dashboard">
 	<fieldset>
-		<DashboardButton
-			active={isSelectionMode}
-			icon="selection-drag"
-			description="{isSelectionMode ? 'Disable' : 'Enable'} selection"
-			onclick={() => {
-				settings.current.interactionMode = isSelectionMode ? 'navigate' : 'select'
-			}}
-		/>
+		<div class="flex">
+			<DashboardButton
+				active={isSelectionMode}
+				icon="selection-drag"
+				description="{isSelectionMode ? 'Disable' : 'Enable'} selection"
+				onclick={() => {
+					settings.current.interactionMode = isSelectionMode ? 'navigate' : 'select'
+				}}
+			/>
+			<Popover>
+				{#snippet trigger(triggerProps)}
+					<DashboardButton
+						{...triggerProps}
+						active={isSelectionMode}
+						class="border-l-0"
+						icon="filter-sliders"
+						description="Selection settings"
+					/>
+				{/snippet}
+
+				<div class="border-medium m-2 border bg-white p-2 text-xs">
+					<div class="flex items-center gap-2">
+						Enabled axes
+						<ToggleGroup
+							options={[
+								{ label: 'Lasso', selected: selectionType === 'lasso' },
+								{ label: 'Ellipse', selected: selectionType === 'ellipse' },
+							]}
+							onSelect={(details) => {
+								selectionType = details.includes('Lasso') ? 'lasso' : 'ellipse'
+							}}
+						/>
+					</div>
+				</div>
+			</Popover>
+		</div>
 	</fieldset>
 </Portal>
 
 {#if isSelectionMode && rect.height > 0 && rect.width > 0}
-	<!-- <Lasso /> -->
-	<Ellipse />
+	<Ellipse active={selectionType === 'ellipse'} />
+	<Lasso active={selectionType === 'lasso'} />
+
 	<Portal id="dom">
 		<FloatingPanel
 			isOpen

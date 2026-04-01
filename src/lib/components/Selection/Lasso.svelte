@@ -4,7 +4,7 @@
 	import { useThrelte } from '@threlte/core'
 	import earcut from 'earcut'
 	import { Not } from 'koota'
-	import { Box3, Plane, Raycaster, Triangle, Vector2, Vector3 } from 'three'
+	import { Box3, Triangle, Vector3 } from 'three'
 
 	import { createBufferGeometry } from '$lib/attribute'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
@@ -12,12 +12,14 @@
 
 	import Debug from './Debug.svelte'
 	import * as selectionTraits from './traits'
+	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
 
 	interface Props {
+		active?: boolean
 		debug?: boolean
 	}
 
-	let { debug = false }: Props = $props()
+	let { active = false, debug = false }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
@@ -29,33 +31,14 @@
 
 	const triangle = new Triangle()
 	const triangleBox = new Box3()
-	const a = new Vector3()
-	const b = new Vector3()
-	const c = new Vector3()
 
 	let frameScheduled = false
 	let drawing = false
 
-	const raycaster = new Raycaster()
-	const mouse = new Vector2()
-	const plane = new Plane(new Vector3(0, 0, 1), 0)
-	const point = new Vector3()
-
-	const raycast = (event: PointerEvent) => {
-		const element = event.target as HTMLElement
-		const rect = element.getBoundingClientRect()
-		mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-		mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-
-		raycaster.setFromCamera(mouse, camera.current)
-		raycaster.ray.intersectPlane(plane, point)
-		return point
-	}
-
 	const onpointerdown = (event: PointerEvent) => {
-		if (!event.shiftKey) return
+		if (!event.shiftKey || !active) return
 
-		const { x, y } = raycast(event)
+		const { x, y } = raycast(event, camera.current)
 
 		drawing = true
 
@@ -75,7 +58,7 @@
 	}
 
 	const onpointermove = (event: PointerEvent) => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
 		let lasso = world.query(selectionTraits.Lasso).at(-1)
 
@@ -92,7 +75,7 @@
 		requestAnimationFrame(() => {
 			frameScheduled = false
 
-			const { x, y } = raycast(event)
+			const { x, y } = raycast(event, camera.current)
 			const positions = lasso.get(traits.LinePositions)
 			const box = lasso.get(selectionTraits.Box)
 
@@ -115,13 +98,13 @@
 	}
 
 	const onpointerleave = () => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
 		onpointerup()
 	}
 
 	const onpointerup = () => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
 		drawing = false
 
@@ -152,23 +135,7 @@
 			lasso.add(selectionTraits.Indices(new Uint16Array(indices)))
 		}
 
-		const getTriangleFromIndex = (i: number, triangle: Triangle) => {
-			const stride = 3
-			const ia = indices[i + 0] * stride
-			const ib = indices[i + 1] * stride
-			const ic = indices[i + 2] * stride
-			a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
-			b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
-			c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
-			triangle.set(a, b, c)
-		}
-
-		const boxes: selectionTraits.AABB[] = []
-		for (let i = 0, l = indices.length; i < l; i += 3) {
-			getTriangleFromIndex(i, triangle)
-			box3.setFromPoints([triangle.a, triangle.b, triangle.c])
-			boxes.push({ minX: box3.min.x, minY: box3.min.y, maxX: box3.max.x, maxY: box3.max.y })
-		}
+		const boxes: selectionTraits.AABB[] = getTriangleBoxesFromIndices(indices, positions)
 		if (debug) {
 			lasso.add(selectionTraits.Boxes(boxes))
 		}
@@ -211,7 +178,7 @@
 						triangleBox.set(min, max)
 
 						if (triangleBox.containsPoint(point)) {
-							getTriangleFromIndex(i, triangle)
+							getTriangleFromIndex(i, indices, positions, triangle)
 
 							if (triangle.containsPoint(point)) {
 								enclosedPoints.push(point.x, point.y, point.z)
