@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-fix: force to naviagte mode
+fix: force to navigate mode
