@@ -27,10 +27,20 @@
 
 	/**
 	 * Geometries from the world state API are bucketed into their own query
-	 * to avoid thrashing other query results due to them being potentially polled at 60fps.
+	 * to avoid thrashing other query results due to them being streamed.
 	 */
 	const worldStateEntities = useQuery(
 		traits.WorldStateStoreAPI,
+		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
+	)
+
+	/**
+	 * Entities from the draw service API are bucketed into their own query
+	 * to avoid thrashing other query results due to them being streamed.
+	 */
+	const drawServiceEntities = useQuery(
+		traits.DrawServiceAPI,
+		Not(traits.Points, traits.LinePositions, traits.GLTF),
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 
@@ -41,6 +51,7 @@
 		Not(traits.FramesAPI),
 		Not(traits.GeometriesAPI),
 		Not(traits.WorldStateStoreAPI),
+		Not(traits.DrawServiceAPI),
 		Not(traits.Points),
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
@@ -70,6 +81,12 @@
 {/each}
 
 {#each worldStateEntities.current as entity (entity)}
+	<Frame {entity}>
+		<Label text={entity.get(traits.Name)} />
+	</Frame>
+{/each}
+
+{#each drawServiceEntities.current as entity (entity)}
 	<Frame {entity}>
 		<Label text={entity.get(traits.Name)} />
 	</Frame>

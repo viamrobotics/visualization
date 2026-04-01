@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"connectrpc.com/connect"
@@ -82,6 +83,19 @@ func Start(cfg DrawServerConfig) error {
 
 	rpcListener, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
+		if isAddrInUse(err) {
+			// A server is already listening on this port (e.g. started by `make up-next`).
+			// Attach a client to it rather than failing — the test suite uses this path.
+			recorder = NewRecordingInterceptor()
+			drawClient = drawv1connect.NewDrawServiceClient(
+				http.DefaultClient,
+				fmt.Sprintf("http://%s", address),
+				connect.WithInterceptors(recorder),
+			)
+			running = true
+			log.Printf("draw server: attached client to existing server at http://%s", address)
+			return nil
+		}
 		return fmt.Errorf("failed to listen on %s: %w", rpcAddr, err)
 	}
 
@@ -159,13 +173,13 @@ func Stop() error {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := rpcSrv.Shutdown(ctx); err != nil {
-			log.Printf("draw server rpc shutdown error: %v", err)
-		}
-	}()
+	if rpcSrv != nil {
+		wg.Go(func() {
+			if err := rpcSrv.Shutdown(ctx); err != nil {
+				log.Printf("draw server rpc shutdown error: %v", err)
+			}
+		})
+	}
 
 	if staticSrv != nil {
 		wg.Add(1)
@@ -214,6 +228,17 @@ func GetAddress() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return address
+}
+
+func isAddrInUse(err error) bool {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		var syscallErr *os.SyscallError
+		if errors.As(opErr.Err, &syscallErr) {
+			return errors.Is(syscallErr.Err, syscall.EADDRINUSE)
+		}
+	}
+	return false
 }
 
 func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {

@@ -97,34 +97,11 @@ func TestDrawPointCloud(t *testing.T) {
 		pc, err := pointcloud.NewFromFile("../data/simple.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
+		n := float32(pc.Size())
 		colors := make([]draw.Color, pc.Size())
 		for i := range colors {
-			t := float64(i) / float64(pc.Size()-1)
-			var r, g, b uint8
-			switch {
-			case t < 0.25:
-				localT := t / 0.25
-				r = 0
-				g = uint8(255 * localT)
-				b = 255
-			case t < 0.5:
-				localT := (t - 0.25) / 0.25
-				r = 0
-				g = 255
-				b = uint8(255 * (1 - localT))
-			case t < 0.75:
-				localT := (t - 0.5) / 0.25
-				r = uint8(255 * localT)
-				g = 255
-				b = 0
-			default:
-				localT := (t - 0.75) / 0.25
-				r = 255
-				g = uint8(255 * (1 - localT))
-				b = 0
-			}
-
-			colors[i] = draw.ColorFromRGB(r, g, b)
+			t := float32(i) / n
+			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
 		}
 
 		runDrawPointCloudTest(
@@ -155,12 +132,12 @@ func TestDrawPointCloudUpdating(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 
 		palette := []draw.Color{
-			draw.ColorFromName("blue"),
-			draw.ColorFromName("cyan"),
-			draw.ColorFromName("green"),
-			draw.ColorFromName("yellow"),
-			draw.ColorFromName("orange"),
 			draw.ColorFromName("red"),
+			draw.ColorFromName("cyan"),
+			draw.ColorFromName("yellow"),
+			draw.ColorFromName("lime"),
+			draw.ColorFromName("blue"),
+			draw.ColorFromName("orange"),
 			draw.ColorFromName("purple"),
 		}
 

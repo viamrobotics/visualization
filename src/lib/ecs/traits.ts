@@ -112,6 +112,7 @@ export const Scale = trait({ x: 1, y: 1, z: 1 })
 export const FramesAPI = trait(() => true)
 export const GeometriesAPI = trait(() => true)
 export const DrawAPI = trait(() => true)
+export const DrawServiceAPI = trait(() => true)
 export const WorldStateStoreAPI = trait(() => true)
 export const SnapshotAPI = trait(() => true)
 
