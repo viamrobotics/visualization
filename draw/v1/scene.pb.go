@@ -134,6 +134,7 @@ func (RenderShapes) EnumDescriptor() ([]byte, []int) {
 
 type OrthographicCamera struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Zoom          *float32               `protobuf:"fixed32,1,opt,name=zoom,proto3,oneof" json:"zoom,omitempty"` // for orthographic camera props
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -166,6 +167,13 @@ func (x *OrthographicCamera) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrthographicCamera.ProtoReflect.Descriptor instead.
 func (*OrthographicCamera) Descriptor() ([]byte, []int) {
 	return file_draw_v1_scene_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *OrthographicCamera) GetZoom() float32 {
+	if x != nil && x.Zoom != nil {
+		return *x.Zoom
+	}
+	return 0
 }
 
 type PerspectiveCamera struct {
@@ -470,8 +478,10 @@ var File_draw_v1_scene_proto protoreflect.FileDescriptor
 
 const file_draw_v1_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x13draw/v1/scene.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\"\x14\n" +
-	"\x12OrthographicCamera\"\x13\n" +
+	"\x13draw/v1/scene.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\"6\n" +
+	"\x12OrthographicCamera\x12\x17\n" +
+	"\x04zoom\x18\x01 \x01(\x02H\x00R\x04zoom\x88\x01\x01B\a\n" +
+	"\x05_zoom\"\x13\n" +
 	"\x11PerspectiveCamera\"\xce\x02\n" +
 	"\vSceneCamera\x123\n" +
 	"\bposition\x18\x01 \x01(\v2\x17.viam.common.v1.Vector3R\bposition\x120\n" +
@@ -563,6 +573,7 @@ func file_draw_v1_scene_proto_init() {
 	if File_draw_v1_scene_proto != nil {
 		return
 	}
+	file_draw_v1_scene_proto_msgTypes[0].OneofWrappers = []any{}
 	file_draw_v1_scene_proto_msgTypes[2].OneofWrappers = []any{
 		(*SceneCamera_PerspectiveCamera)(nil),
 		(*SceneCamera_OrthographicCamera)(nil),

@@ -16,7 +16,6 @@
 	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
 	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import { provideLogs } from '$lib/hooks/useLogs.svelte'
-	import { provideMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
@@ -37,7 +36,6 @@
 
 	provideCameraControls(() => cameraPose)
 	provideTransformControls()
-	provideMachineSettings()
 	provideLogs()
 
 	provideOrigin()

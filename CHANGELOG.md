@@ -1,5 +1,21 @@
 # motion-tools
 
+## 1.15.8
+
+### Patch Changes
+
+- 3d93947: feat: expose zoom orthographic camera property
+- a15a7aa: Improve persistence for refresh rates and enable pointcloud polling by default
+- f2ae642: fix: make 3d models more resiliant
+- e76e34f: feat: expose pcd onComplete callback
+
+## 1.15.7
+
+### Patch Changes
+
+- 89258c9: sec: replace expr-eval with filtrex
+- 89258c9: fix(deps): replace expr-eval with filtrex
+
 ## 1.15.6
 
 ### Patch Changes
