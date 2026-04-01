@@ -1101,7 +1101,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		numPoints := 10000
 		radius := 1200.0
 
-		for i := 0; i < numPoints; i++ {
+		for range numPoints {
 			theta := rng.Float64() * 2 * math.Pi
 			phi := math.Acos(2*rng.Float64() - 1)
 			r := radius * math.Cbrt(rng.Float64())
