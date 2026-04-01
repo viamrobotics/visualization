@@ -11,12 +11,12 @@ Package draw provides Go types and APIs for 3D visualization with Viam's motion 
 The package is organized around three areas:
 
 - Types for drawable entities: visual primitives \(lines, points, arrows, NURBS curves, 3D models\) and spatial objects \(geometries, frames, point clouds\) that can be serialized to Protobuf.
-- A Connect\-RPC [DrawService](<#DrawService>) that manages the state of transforms and drawings in a scene, supporting add, update, remove, and streaming change events.
-- [Snapshot](<#Snapshot>) for building a complete static scene of transforms and drawings, with serialization to JSON, binary Protobuf, or gzip\-compressed Protobuf.
+- A Connect\-RPC [DrawService](#DrawService) that manages the state of transforms and drawings in a scene, supporting add, update, remove, and streaming change events.
+- [Snapshot](#Snapshot) for building a complete static scene of transforms and drawings, with serialization to JSON, binary Protobuf, or gzip\-compressed Protobuf.
 
 ### Creating Drawings and Transforms
 
-All drawable types follow the same pattern: construct with New\*, then call Draw to produce a [Drawing](<#Drawing>) \(for visual primitives\) or a \[\*commonv1.Transform\] \(for spatial objects\).
+All drawable types follow the same pattern: construct with New\*, then call Draw to produce a [Drawing](#Drawing) \(for visual primitives\) or a \[\*commonv1.Transform\] \(for spatial objects\).
 
 ```
 positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}}
@@ -31,7 +31,7 @@ proto := drawing.ToProto() // *drawv1.Drawing ready for the DrawService
 
 ### Snapshots
 
-Create a [Snapshot](<#Snapshot>) to build a complete 3D scene, then serialize it for rendering:
+Create a [Snapshot](#Snapshot) to build a complete 3D scene, then serialize it for rendering:
 
 ```
 camera := draw.NewSceneCamera(
@@ -82,169 +82,168 @@ Many drawing functions support flexible color options:
 
 ## Index
 
-- [Variables](<#variables>)
-- [func MetadataToStruct\(metadata Metadata\) \(\*structpb.Struct, error\)](<#MetadataToStruct>)
-- [func NewTransform\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\) \*commonv1.Transform](<#NewTransform>)
-- [type Arrows](<#Arrows>)
-  - [func NewArrows\(poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) \(\*Arrows, error\)](<#NewArrows>)
-  - [func \(arrows Arrows\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Arrows.Draw>)
-- [type BufferPackedEntry](<#BufferPackedEntry>)
-- [type BufferPacker](<#BufferPacker>)
-  - [func NewBufferPacker\[T BufferPackedEntry\]\(elementCount, fieldsPerElement int\) \*BufferPacker\[T\]](<#NewBufferPacker>)
-  - [func \(packer \*BufferPacker\[T\]\) Read\(\) \[\]byte](<#BufferPacker[T].Read>)
-  - [func \(packer \*BufferPacker\[T\]\) Write\(values ...T\)](<#BufferPacker[T].Write>)
-- [type Color](<#Color>)
-  - [func ColorFromColorRGBA\(rgba color.RGBA\) Color](<#ColorFromColorRGBA>)
-  - [func ColorFromHSV\(h, s, v float32\) Color](<#ColorFromHSV>)
-  - [func ColorFromHex\(hex string\) Color](<#ColorFromHex>)
-  - [func ColorFromName\(name string\) Color](<#ColorFromName>)
-  - [func ColorFromRGB\(r, g, b uint8\) Color](<#ColorFromRGB>)
-  - [func ColorFromRGBA\(r, g, b, a uint8\) Color](<#ColorFromRGBA>)
-  - [func NewColor\(options ...colorOption\) Color](<#NewColor>)
-  - [func \(color Color\) SetAlpha\(alpha uint8\) Color](<#Color.SetAlpha>)
-  - [func \(color Color\) SetRGB\(r, g, b uint8\) Color](<#Color.SetRGB>)
-  - [func \(color Color\) SetRGBA\(r, g, b, a uint8\) Color](<#Color.SetRGBA>)
-  - [func \(color Color\) ToHex\(\) string](<#Color.ToHex>)
-- [type ColorChooser](<#ColorChooser>)
-  - [func NewColorChooser\(colors \[\]Color\) ColorChooser](<#NewColorChooser>)
-  - [func \(chooser \*ColorChooser\) Get\(count int\) \[\]Color](<#ColorChooser.Get>)
-  - [func \(chooser \*ColorChooser\) Next\(\) Color](<#ColorChooser.Next>)
-- [type DrawArrowsOption](<#DrawArrowsOption>)
-  - [func WithArrowColorPalette\(palette \[\]Color, numPoses int\) DrawArrowsOption](<#WithArrowColorPalette>)
-  - [func WithPerArrowColors\(colors ...Color\) DrawArrowsOption](<#WithPerArrowColors>)
-  - [func WithSingleArrowColor\(color Color\) DrawArrowsOption](<#WithSingleArrowColor>)
-- [type DrawConfig](<#DrawConfig>)
-  - [func NewDrawConfig\(name string, options ...DrawableOption\) \*DrawConfig](<#NewDrawConfig>)
-- [type DrawFrameSystemOption](<#DrawFrameSystemOption>)
-  - [func WithFrameSystemColor\(frameName string, color Color\) DrawFrameSystemOption](<#WithFrameSystemColor>)
-  - [func WithFrameSystemColors\(colors map\[string\]Color\) DrawFrameSystemOption](<#WithFrameSystemColors>)
-- [type DrawFramesOption](<#DrawFramesOption>)
-  - [func WithFramesColors\(colors map\[string\]Color\) DrawFramesOption](<#WithFramesColors>)
-- [type DrawGeometriesInFrameOption](<#DrawGeometriesInFrameOption>)
-  - [func WithGeometriesColorPalette\(palette \[\]Color, numGeometries int\) DrawGeometriesInFrameOption](<#WithGeometriesColorPalette>)
-  - [func WithGeometriesDownscalingThreshold\(threshold float64\) DrawGeometriesInFrameOption](<#WithGeometriesDownscalingThreshold>)
-  - [func WithPerGeometriesColors\(colors ...Color\) DrawGeometriesInFrameOption](<#WithPerGeometriesColors>)
-  - [func WithSingleGeometriesColor\(color Color\) DrawGeometriesInFrameOption](<#WithSingleGeometriesColor>)
-- [type DrawGeometryOption](<#DrawGeometryOption>)
-  - [func WithGeometryColor\(color Color\) DrawGeometryOption](<#WithGeometryColor>)
-  - [func WithGeometryColors\(colors ...Color\) DrawGeometryOption](<#WithGeometryColors>)
-  - [func WithGeometryDownscaling\(threshold float64\) DrawGeometryOption](<#WithGeometryDownscaling>)
-- [type DrawLineOption](<#DrawLineOption>)
-  - [func WithDotColorPalette\(palette \[\]Color, numPositions int\) DrawLineOption](<#WithDotColorPalette>)
-  - [func WithDotSize\(size float32\) DrawLineOption](<#WithDotSize>)
-  - [func WithLineColorPalette\(palette \[\]Color, numPositions int\) DrawLineOption](<#WithLineColorPalette>)
-  - [func WithLineWidth\(width float32\) DrawLineOption](<#WithLineWidth>)
-  - [func WithPerDotColors\(colors ...Color\) DrawLineOption](<#WithPerDotColors>)
-  - [func WithPerLineColors\(colors ...Color\) DrawLineOption](<#WithPerLineColors>)
-  - [func WithSingleDotColor\(color Color\) DrawLineOption](<#WithSingleDotColor>)
-  - [func WithSingleLineColor\(color Color\) DrawLineOption](<#WithSingleLineColor>)
-- [type DrawModelAssetOption](<#DrawModelAssetOption>)
-  - [func WithModelAssetSizeBytes\(sizeBytes uint64\) DrawModelAssetOption](<#WithModelAssetSizeBytes>)
-- [type DrawModelOption](<#DrawModelOption>)
-  - [func WithModelAnimationName\(animationName string\) DrawModelOption](<#WithModelAnimationName>)
-  - [func WithModelAssets\(assets ...\*ModelAsset\) DrawModelOption](<#WithModelAssets>)
-  - [func WithModelScale\(scale r3.Vector\) DrawModelOption](<#WithModelScale>)
-- [type DrawNurbsOption](<#DrawNurbsOption>)
-  - [func WithNurbsColors\(defaultColor Color, perPointColors ...Color\) DrawNurbsOption](<#WithNurbsColors>)
-  - [func WithNurbsDegree\(degree int32\) DrawNurbsOption](<#WithNurbsDegree>)
-  - [func WithNurbsLineWidth\(width float32\) DrawNurbsOption](<#WithNurbsLineWidth>)
-  - [func WithNurbsWeights\(weights \[\]float64\) DrawNurbsOption](<#WithNurbsWeights>)
-- [type DrawPointCloudOption](<#DrawPointCloudOption>)
-  - [func WithPerPointCloudColors\(colors ...Color\) DrawPointCloudOption](<#WithPerPointCloudColors>)
-  - [func WithPointCloudColorPalette\(palette \[\]Color, numPoints int\) DrawPointCloudOption](<#WithPointCloudColorPalette>)
-  - [func WithPointCloudDownscaling\(threshold float64\) DrawPointCloudOption](<#WithPointCloudDownscaling>)
-  - [func WithSinglePointCloudColor\(color Color\) DrawPointCloudOption](<#WithSinglePointCloudColor>)
-- [type DrawPointsOption](<#DrawPointsOption>)
-  - [func WithPerPointColors\(colors ...Color\) DrawPointsOption](<#WithPerPointColors>)
-  - [func WithPointColorPalette\(palette \[\]Color, numPoints int\) DrawPointsOption](<#WithPointColorPalette>)
-  - [func WithPointsSize\(size float32\) DrawPointsOption](<#WithPointsSize>)
-  - [func WithSinglePointColor\(color Color\) DrawPointsOption](<#WithSinglePointColor>)
-- [type DrawService](<#DrawService>)
-  - [func NewDrawService\(\) \*DrawService](<#NewDrawService>)
-  - [func \(svc \*DrawService\) AddEntity\(\_ context.Context, req \*connect.Request\[drawv1.AddEntityRequest\]\) \(\*connect.Response\[drawv1.AddEntityResponse\], error\)](<#DrawService.AddEntity>)
-  - [func \(svc \*DrawService\) RemoveAll\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllRequest\]\) \(\*connect.Response\[drawv1.RemoveAllResponse\], error\)](<#DrawService.RemoveAll>)
-  - [func \(svc \*DrawService\) RemoveAllDrawings\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllDrawingsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllDrawingsResponse\], error\)](<#DrawService.RemoveAllDrawings>)
-  - [func \(svc \*DrawService\) RemoveAllTransforms\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllTransformsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllTransformsResponse\], error\)](<#DrawService.RemoveAllTransforms>)
-  - [func \(svc \*DrawService\) RemoveEntity\(\_ context.Context, req \*connect.Request\[drawv1.RemoveEntityRequest\]\) \(\*connect.Response\[drawv1.RemoveEntityResponse\], error\)](<#DrawService.RemoveEntity>)
-  - [func \(svc \*DrawService\) SetScene\(\_ context.Context, req \*connect.Request\[drawv1.SetSceneRequest\]\) \(\*connect.Response\[drawv1.SetSceneResponse\], error\)](<#DrawService.SetScene>)
-  - [func \(svc \*DrawService\) StreamEntityChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamEntityChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamEntityChangesResponse\]\) error](<#DrawService.StreamEntityChanges>)
-  - [func \(svc \*DrawService\) StreamSceneChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamSceneChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamSceneChangesResponse\]\) error](<#DrawService.StreamSceneChanges>)
-  - [func \(svc \*DrawService\) UpdateEntity\(\_ context.Context, req \*connect.Request\[drawv1.UpdateEntityRequest\]\) \(\*connect.Response\[drawv1.UpdateEntityResponse\], error\)](<#DrawService.UpdateEntity>)
-- [type DrawableOption](<#DrawableOption>)
-  - [func WithCenter\(center spatialmath.Pose\) DrawableOption](<#WithCenter>)
-  - [func WithID\(id string\) DrawableOption](<#WithID>)
-  - [func WithParent\(parent string\) DrawableOption](<#WithParent>)
-  - [func WithPose\(pose spatialmath.Pose\) DrawableOption](<#WithPose>)
-  - [func WithUUID\(id \[\]byte\) DrawableOption](<#WithUUID>)
-- [type Drawing](<#Drawing>)
-  - [func NewDrawing\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata\) \*Drawing](<#NewDrawing>)
-  - [func \(drawing Drawing\) ToProto\(\) \*drawv1.Drawing](<#Drawing.ToProto>)
-- [type DrawnFrameSystem](<#DrawnFrameSystem>)
-  - [func NewDrawnFrameSystem\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption\) \*DrawnFrameSystem](<#NewDrawnFrameSystem>)
-  - [func \(drawnFrameSystem \*DrawnFrameSystem\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](<#DrawnFrameSystem.ToTransforms>)
-- [type DrawnFrames](<#DrawnFrames>)
-  - [func NewDrawnFrames\(frames \[\]referenceframe.Frame, options ...DrawFramesOption\) \*DrawnFrames](<#NewDrawnFrames>)
-  - [func \(drawnFrames \*DrawnFrames\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](<#DrawnFrames.ToTransforms>)
-- [type DrawnGeometriesInFrame](<#DrawnGeometriesInFrame>)
-  - [func NewDrawnGeometriesInFrame\(geometriesInFrame \*referenceframe.GeometriesInFrame, options ...DrawGeometriesInFrameOption\) \(\*DrawnGeometriesInFrame, error\)](<#NewDrawnGeometriesInFrame>)
-  - [func \(drawnGeometriesInFrame \*DrawnGeometriesInFrame\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](<#DrawnGeometriesInFrame.ToTransforms>)
-- [type DrawnGeometry](<#DrawnGeometry>)
-  - [func NewDrawnGeometry\(geometry spatialmath.Geometry, options ...DrawGeometryOption\) \(\*DrawnGeometry, error\)](<#NewDrawnGeometry>)
-  - [func \(drawnGeometry \*DrawnGeometry\) Draw\(name string, options ...DrawableOption\) \(\*commonv1.Transform, error\)](<#DrawnGeometry.Draw>)
-- [type DrawnGeometryConfig](<#DrawnGeometryConfig>)
-- [type DrawnPointCloud](<#DrawnPointCloud>)
-  - [func NewDrawnPointCloud\(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption\) \(\*DrawnPointCloud, error\)](<#NewDrawnPointCloud>)
-  - [func \(drawnPointCloud \*DrawnPointCloud\) Draw\(name string, options ...DrawableOption\) \(\*commonv1.Transform, error\)](<#DrawnPointCloud.Draw>)
-- [type DrawnPointCloudConfig](<#DrawnPointCloudConfig>)
-- [type Line](<#Line>)
-  - [func NewLine\(positions \[\]r3.Vector, options ...DrawLineOption\) \(\*Line, error\)](<#NewLine>)
-  - [func \(line Line\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Line.Draw>)
-- [type Metadata](<#Metadata>)
-  - [func NewMetadata\(options ...drawMetadataOption\) Metadata](<#NewMetadata>)
-  - [func StructToMetadata\(structPb \*structpb.Struct\) \(Metadata, error\)](<#StructToMetadata>)
-  - [func \(metadata \*Metadata\) SetColors\(colors \[\]Color\)](<#Metadata.SetColors>)
-  - [func \(metadata Metadata\) ToProto\(\) \*drawv1.Metadata](<#Metadata.ToProto>)
-- [type Model](<#Model>)
-  - [func NewModel\(options ...DrawModelOption\) \(\*Model, error\)](<#NewModel>)
-  - [func \(model Model\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Model.Draw>)
-- [type ModelAsset](<#ModelAsset>)
-  - [func NewBinaryModelAsset\(mimeType string, binaryContent \[\]byte, options ...DrawModelAssetOption\) \(\*ModelAsset, error\)](<#NewBinaryModelAsset>)
-  - [func NewURLModelAsset\(mimeType string, url string, options ...DrawModelAssetOption\) \(\*ModelAsset, error\)](<#NewURLModelAsset>)
-- [type Nurbs](<#Nurbs>)
-  - [func NewNurbs\(controlPoints \[\]spatialmath.Pose, knots \[\]float64, options ...DrawNurbsOption\) \(\*Nurbs, error\)](<#NewNurbs>)
-  - [func \(nurbs Nurbs\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Nurbs.Draw>)
-- [type Points](<#Points>)
-  - [func NewPoints\(positions \[\]r3.Vector, options ...DrawPointsOption\) \(\*Points, error\)](<#NewPoints>)
-  - [func \(points Points\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Points.Draw>)
-- [type SceneCamera](<#SceneCamera>)
-  - [func NewSceneCamera\(position r3.Vector, lookAt r3.Vector, options ...sceneCameraOption\) SceneCamera](<#NewSceneCamera>)
-  - [func \(camera \*SceneCamera\) ToProto\(\) \*drawv1.SceneCamera](<#SceneCamera.ToProto>)
-- [type SceneMetadata](<#SceneMetadata>)
-  - [func NewSceneMetadata\(options ...sceneMetadataOption\) SceneMetadata](<#NewSceneMetadata>)
-  - [func \(metadata \*SceneMetadata\) ToProto\(\) \*drawv1.SceneMetadata](<#SceneMetadata.ToProto>)
-  - [func \(metadata \*SceneMetadata\) Validate\(\) error](<#SceneMetadata.Validate>)
-- [type Shape](<#Shape>)
-  - [func NewShape\(center spatialmath.Pose, label string, option drawShapeOption\) Shape](<#NewShape>)
-  - [func \(shape Shape\) ToProto\(\) \*drawv1.Shape](<#Shape.ToProto>)
-- [type Snapshot](<#Snapshot>)
-  - [func NewSnapshot\(sceneOptions ...sceneMetadataOption\) \*Snapshot](<#NewSnapshot>)
-  - [func \(snapshot \*Snapshot\) DrawArrows\(name string, parent string, pose spatialmath.Pose, poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) error](<#Snapshot.DrawArrows>)
-  - [func \(snapshot \*Snapshot\) DrawFrame\(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\)](<#Snapshot.DrawFrame>)
-  - [func \(snapshot \*Snapshot\) DrawFrameSystemGeometries\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map\[string\]Color\) error](<#Snapshot.DrawFrameSystemGeometries>)
-  - [func \(snapshot \*Snapshot\) DrawGeometry\(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color\) error](<#Snapshot.DrawGeometry>)
-  - [func \(snapshot \*Snapshot\) DrawLine\(name string, parent string, pose spatialmath.Pose, points \[\]r3.Vector, options ...DrawLineOption\) error](<#Snapshot.DrawLine>)
-  - [func \(snapshot \*Snapshot\) DrawModel\(name string, parent string, pose spatialmath.Pose, options ...DrawModelOption\) error](<#Snapshot.DrawModel>)
-  - [func \(snapshot \*Snapshot\) DrawPoints\(name string, parent string, pose spatialmath.Pose, positions \[\]r3.Vector, options ...DrawPointsOption\) error](<#Snapshot.DrawPoints>)
-  - [func \(snapshot \*Snapshot\) Drawings\(\) \[\]\*Drawing](<#Snapshot.Drawings>)
-  - [func \(snapshot \*Snapshot\) MarshalBinary\(\) \(\[\]byte, error\)](<#Snapshot.MarshalBinary>)
-  - [func \(snapshot \*Snapshot\) MarshalBinaryGzip\(\) \(\[\]byte, error\)](<#Snapshot.MarshalBinaryGzip>)
-  - [func \(snapshot \*Snapshot\) MarshalJSON\(\) \(\[\]byte, error\)](<#Snapshot.MarshalJSON>)
-  - [func \(snapshot \*Snapshot\) SceneMetadata\(\) SceneMetadata](<#Snapshot.SceneMetadata>)
-  - [func \(snapshot \*Snapshot\) ToProto\(\) \*drawv1.Snapshot](<#Snapshot.ToProto>)
-  - [func \(snapshot \*Snapshot\) Transforms\(\) \[\]\*commonv1.Transform](<#Snapshot.Transforms>)
-  - [func \(snapshot \*Snapshot\) UUID\(\) \[\]byte](<#Snapshot.UUID>)
-  - [func \(snapshot \*Snapshot\) Validate\(\) error](<#Snapshot.Validate>)
-
+- [Variables](#variables)
+- [func MetadataToStruct\(metadata Metadata\) \(\*structpb.Struct, error\)](#MetadataToStruct)
+- [func NewTransform\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\) \*commonv1.Transform](#NewTransform)
+- [type Arrows](#Arrows)
+  - [func NewArrows\(poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) \(\*Arrows, error\)](#NewArrows)
+  - [func \(arrows Arrows\) Draw\(name string, options ...DrawableOption\) \*Drawing](#Arrows.Draw)
+- [type BufferPackedEntry](#BufferPackedEntry)
+- [type BufferPacker](#BufferPacker)
+  - [func NewBufferPacker\[T BufferPackedEntry\]\(elementCount, fieldsPerElement int\) \*BufferPacker\[T\]](#NewBufferPacker)
+  - [func \(packer \*BufferPacker\[T\]\) Read\(\) \[\]byte](#BufferPacker[T].Read)
+  - [func \(packer \*BufferPacker\[T\]\) Write\(values ...T\)](#BufferPacker[T].Write)
+- [type Color](#Color)
+  - [func ColorFromColorRGBA\(rgba color.RGBA\) Color](#ColorFromColorRGBA)
+  - [func ColorFromHSV\(h, s, v float32\) Color](#ColorFromHSV)
+  - [func ColorFromHex\(hex string\) Color](#ColorFromHex)
+  - [func ColorFromName\(name string\) Color](#ColorFromName)
+  - [func ColorFromRGB\(r, g, b uint8\) Color](#ColorFromRGB)
+  - [func ColorFromRGBA\(r, g, b, a uint8\) Color](#ColorFromRGBA)
+  - [func NewColor\(options ...colorOption\) Color](#NewColor)
+  - [func \(color Color\) SetAlpha\(alpha uint8\) Color](#Color.SetAlpha)
+  - [func \(color Color\) SetRGB\(r, g, b uint8\) Color](#Color.SetRGB)
+  - [func \(color Color\) SetRGBA\(r, g, b, a uint8\) Color](#Color.SetRGBA)
+  - [func \(color Color\) ToHex\(\) string](#Color.ToHex)
+- [type ColorChooser](#ColorChooser)
+  - [func NewColorChooser\(colors \[\]Color\) ColorChooser](#NewColorChooser)
+  - [func \(chooser \*ColorChooser\) Get\(count int\) \[\]Color](#ColorChooser.Get)
+  - [func \(chooser \*ColorChooser\) Next\(\) Color](#ColorChooser.Next)
+- [type DrawArrowsOption](#DrawArrowsOption)
+  - [func WithArrowColorPalette\(palette \[\]Color, numPoses int\) DrawArrowsOption](#WithArrowColorPalette)
+  - [func WithPerArrowColors\(colors ...Color\) DrawArrowsOption](#WithPerArrowColors)
+  - [func WithSingleArrowColor\(color Color\) DrawArrowsOption](#WithSingleArrowColor)
+- [type DrawConfig](#DrawConfig)
+  - [func NewDrawConfig\(name string, options ...DrawableOption\) \*DrawConfig](#NewDrawConfig)
+- [type DrawFrameSystemOption](#DrawFrameSystemOption)
+  - [func WithFrameSystemColor\(frameName string, color Color\) DrawFrameSystemOption](#WithFrameSystemColor)
+  - [func WithFrameSystemColors\(colors map\[string\]Color\) DrawFrameSystemOption](#WithFrameSystemColors)
+- [type DrawFramesOption](#DrawFramesOption)
+  - [func WithFramesColors\(colors map\[string\]Color\) DrawFramesOption](#WithFramesColors)
+- [type DrawGeometriesInFrameOption](#DrawGeometriesInFrameOption)
+  - [func WithGeometriesColorPalette\(palette \[\]Color, numGeometries int\) DrawGeometriesInFrameOption](#WithGeometriesColorPalette)
+  - [func WithGeometriesDownscalingThreshold\(threshold float64\) DrawGeometriesInFrameOption](#WithGeometriesDownscalingThreshold)
+  - [func WithPerGeometriesColors\(colors ...Color\) DrawGeometriesInFrameOption](#WithPerGeometriesColors)
+  - [func WithSingleGeometriesColor\(color Color\) DrawGeometriesInFrameOption](#WithSingleGeometriesColor)
+- [type DrawGeometryOption](#DrawGeometryOption)
+  - [func WithGeometryColor\(color Color\) DrawGeometryOption](#WithGeometryColor)
+  - [func WithGeometryColors\(colors ...Color\) DrawGeometryOption](#WithGeometryColors)
+  - [func WithGeometryDownscaling\(threshold float64\) DrawGeometryOption](#WithGeometryDownscaling)
+- [type DrawLineOption](#DrawLineOption)
+  - [func WithDotColorPalette\(palette \[\]Color, numPositions int\) DrawLineOption](#WithDotColorPalette)
+  - [func WithDotSize\(size float32\) DrawLineOption](#WithDotSize)
+  - [func WithLineColorPalette\(palette \[\]Color, numPositions int\) DrawLineOption](#WithLineColorPalette)
+  - [func WithLineWidth\(width float32\) DrawLineOption](#WithLineWidth)
+  - [func WithPerDotColors\(colors ...Color\) DrawLineOption](#WithPerDotColors)
+  - [func WithPerLineColors\(colors ...Color\) DrawLineOption](#WithPerLineColors)
+  - [func WithSingleDotColor\(color Color\) DrawLineOption](#WithSingleDotColor)
+  - [func WithSingleLineColor\(color Color\) DrawLineOption](#WithSingleLineColor)
+- [type DrawModelAssetOption](#DrawModelAssetOption)
+  - [func WithModelAssetSizeBytes\(sizeBytes uint64\) DrawModelAssetOption](#WithModelAssetSizeBytes)
+- [type DrawModelOption](#DrawModelOption)
+  - [func WithModelAnimationName\(animationName string\) DrawModelOption](#WithModelAnimationName)
+  - [func WithModelAssets\(assets ...\*ModelAsset\) DrawModelOption](#WithModelAssets)
+  - [func WithModelScale\(scale r3.Vector\) DrawModelOption](#WithModelScale)
+- [type DrawNurbsOption](#DrawNurbsOption)
+  - [func WithNurbsColors\(defaultColor Color, perPointColors ...Color\) DrawNurbsOption](#WithNurbsColors)
+  - [func WithNurbsDegree\(degree int32\) DrawNurbsOption](#WithNurbsDegree)
+  - [func WithNurbsLineWidth\(width float32\) DrawNurbsOption](#WithNurbsLineWidth)
+  - [func WithNurbsWeights\(weights \[\]float64\) DrawNurbsOption](#WithNurbsWeights)
+- [type DrawPointCloudOption](#DrawPointCloudOption)
+  - [func WithPerPointCloudColors\(colors ...Color\) DrawPointCloudOption](#WithPerPointCloudColors)
+  - [func WithPointCloudColorPalette\(palette \[\]Color, numPoints int\) DrawPointCloudOption](#WithPointCloudColorPalette)
+  - [func WithPointCloudDownscaling\(threshold float64\) DrawPointCloudOption](#WithPointCloudDownscaling)
+  - [func WithSinglePointCloudColor\(color Color\) DrawPointCloudOption](#WithSinglePointCloudColor)
+- [type DrawPointsOption](#DrawPointsOption)
+  - [func WithPerPointColors\(colors ...Color\) DrawPointsOption](#WithPerPointColors)
+  - [func WithPointColorPalette\(palette \[\]Color, numPoints int\) DrawPointsOption](#WithPointColorPalette)
+  - [func WithPointsSize\(size float32\) DrawPointsOption](#WithPointsSize)
+  - [func WithSinglePointColor\(color Color\) DrawPointsOption](#WithSinglePointColor)
+- [type DrawService](#DrawService)
+  - [func NewDrawService\(\) \*DrawService](#NewDrawService)
+  - [func \(svc \*DrawService\) AddEntity\(\_ context.Context, req \*connect.Request\[drawv1.AddEntityRequest\]\) \(\*connect.Response\[drawv1.AddEntityResponse\], error\)](#DrawService.AddEntity)
+  - [func \(svc \*DrawService\) RemoveAll\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllRequest\]\) \(\*connect.Response\[drawv1.RemoveAllResponse\], error\)](#DrawService.RemoveAll)
+  - [func \(svc \*DrawService\) RemoveAllDrawings\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllDrawingsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllDrawingsResponse\], error\)](#DrawService.RemoveAllDrawings)
+  - [func \(svc \*DrawService\) RemoveAllTransforms\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllTransformsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllTransformsResponse\], error\)](#DrawService.RemoveAllTransforms)
+  - [func \(svc \*DrawService\) RemoveEntity\(\_ context.Context, req \*connect.Request\[drawv1.RemoveEntityRequest\]\) \(\*connect.Response\[drawv1.RemoveEntityResponse\], error\)](#DrawService.RemoveEntity)
+  - [func \(svc \*DrawService\) SetScene\(\_ context.Context, req \*connect.Request\[drawv1.SetSceneRequest\]\) \(\*connect.Response\[drawv1.SetSceneResponse\], error\)](#DrawService.SetScene)
+  - [func \(svc \*DrawService\) StreamEntityChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamEntityChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamEntityChangesResponse\]\) error](#DrawService.StreamEntityChanges)
+  - [func \(svc \*DrawService\) StreamSceneChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamSceneChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamSceneChangesResponse\]\) error](#DrawService.StreamSceneChanges)
+  - [func \(svc \*DrawService\) UpdateEntity\(\_ context.Context, req \*connect.Request\[drawv1.UpdateEntityRequest\]\) \(\*connect.Response\[drawv1.UpdateEntityResponse\], error\)](#DrawService.UpdateEntity)
+- [type DrawableOption](#DrawableOption)
+  - [func WithCenter\(center spatialmath.Pose\) DrawableOption](#WithCenter)
+  - [func WithID\(id string\) DrawableOption](#WithID)
+  - [func WithParent\(parent string\) DrawableOption](#WithParent)
+  - [func WithPose\(pose spatialmath.Pose\) DrawableOption](#WithPose)
+  - [func WithUUID\(id \[\]byte\) DrawableOption](#WithUUID)
+- [type Drawing](#Drawing)
+  - [func NewDrawing\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata\) \*Drawing](#NewDrawing)
+  - [func \(drawing Drawing\) ToProto\(\) \*drawv1.Drawing](#Drawing.ToProto)
+- [type DrawnFrameSystem](#DrawnFrameSystem)
+  - [func NewDrawnFrameSystem\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption\) \*DrawnFrameSystem](#NewDrawnFrameSystem)
+  - [func \(drawnFrameSystem \*DrawnFrameSystem\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](#DrawnFrameSystem.ToTransforms)
+- [type DrawnFrames](#DrawnFrames)
+  - [func NewDrawnFrames\(frames \[\]referenceframe.Frame, options ...DrawFramesOption\) \*DrawnFrames](#NewDrawnFrames)
+  - [func \(drawnFrames \*DrawnFrames\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](#DrawnFrames.ToTransforms)
+- [type DrawnGeometriesInFrame](#DrawnGeometriesInFrame)
+  - [func NewDrawnGeometriesInFrame\(geometriesInFrame \*referenceframe.GeometriesInFrame, options ...DrawGeometriesInFrameOption\) \(\*DrawnGeometriesInFrame, error\)](#NewDrawnGeometriesInFrame)
+  - [func \(drawnGeometriesInFrame \*DrawnGeometriesInFrame\) ToTransforms\(options ...DrawableOption\) \(\[\]\*commonv1.Transform, error\)](#DrawnGeometriesInFrame.ToTransforms)
+- [type DrawnGeometry](#DrawnGeometry)
+  - [func NewDrawnGeometry\(geometry spatialmath.Geometry, options ...DrawGeometryOption\) \(\*DrawnGeometry, error\)](#NewDrawnGeometry)
+  - [func \(drawnGeometry \*DrawnGeometry\) Draw\(name string, options ...DrawableOption\) \(\*commonv1.Transform, error\)](#DrawnGeometry.Draw)
+- [type DrawnGeometryConfig](#DrawnGeometryConfig)
+- [type DrawnPointCloud](#DrawnPointCloud)
+  - [func NewDrawnPointCloud\(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption\) \(\*DrawnPointCloud, error\)](#NewDrawnPointCloud)
+  - [func \(drawnPointCloud \*DrawnPointCloud\) Draw\(name string, options ...DrawableOption\) \(\*commonv1.Transform, error\)](#DrawnPointCloud.Draw)
+- [type DrawnPointCloudConfig](#DrawnPointCloudConfig)
+- [type Line](#Line)
+  - [func NewLine\(positions \[\]r3.Vector, options ...DrawLineOption\) \(\*Line, error\)](#NewLine)
+  - [func \(line Line\) Draw\(name string, options ...DrawableOption\) \*Drawing](#Line.Draw)
+- [type Metadata](#Metadata)
+  - [func NewMetadata\(options ...drawMetadataOption\) Metadata](#NewMetadata)
+  - [func StructToMetadata\(structPb \*structpb.Struct\) \(Metadata, error\)](#StructToMetadata)
+  - [func \(metadata \*Metadata\) SetColors\(colors \[\]Color\)](#Metadata.SetColors)
+  - [func \(metadata Metadata\) ToProto\(\) \*drawv1.Metadata](#Metadata.ToProto)
+- [type Model](#Model)
+  - [func NewModel\(options ...DrawModelOption\) \(\*Model, error\)](#NewModel)
+  - [func \(model Model\) Draw\(name string, options ...DrawableOption\) \*Drawing](#Model.Draw)
+- [type ModelAsset](#ModelAsset)
+  - [func NewBinaryModelAsset\(mimeType string, binaryContent \[\]byte, options ...DrawModelAssetOption\) \(\*ModelAsset, error\)](#NewBinaryModelAsset)
+  - [func NewURLModelAsset\(mimeType string, url string, options ...DrawModelAssetOption\) \(\*ModelAsset, error\)](#NewURLModelAsset)
+- [type Nurbs](#Nurbs)
+  - [func NewNurbs\(controlPoints \[\]spatialmath.Pose, knots \[\]float64, options ...DrawNurbsOption\) \(\*Nurbs, error\)](#NewNurbs)
+  - [func \(nurbs Nurbs\) Draw\(name string, options ...DrawableOption\) \*Drawing](#Nurbs.Draw)
+- [type Points](#Points)
+  - [func NewPoints\(positions \[\]r3.Vector, options ...DrawPointsOption\) \(\*Points, error\)](#NewPoints)
+  - [func \(points Points\) Draw\(name string, options ...DrawableOption\) \*Drawing](#Points.Draw)
+- [type SceneCamera](#SceneCamera)
+  - [func NewSceneCamera\(position r3.Vector, lookAt r3.Vector, options ...sceneCameraOption\) SceneCamera](#NewSceneCamera)
+  - [func \(camera \*SceneCamera\) ToProto\(\) \*drawv1.SceneCamera](#SceneCamera.ToProto)
+- [type SceneMetadata](#SceneMetadata)
+  - [func NewSceneMetadata\(options ...sceneMetadataOption\) SceneMetadata](#NewSceneMetadata)
+  - [func \(metadata \*SceneMetadata\) ToProto\(\) \*drawv1.SceneMetadata](#SceneMetadata.ToProto)
+  - [func \(metadata \*SceneMetadata\) Validate\(\) error](#SceneMetadata.Validate)
+- [type Shape](#Shape)
+  - [func NewShape\(center spatialmath.Pose, label string, option drawShapeOption\) Shape](#NewShape)
+  - [func \(shape Shape\) ToProto\(\) \*drawv1.Shape](#Shape.ToProto)
+- [type Snapshot](#Snapshot)
+  - [func NewSnapshot\(sceneOptions ...sceneMetadataOption\) \*Snapshot](#NewSnapshot)
+  - [func \(snapshot \*Snapshot\) DrawArrows\(name string, parent string, pose spatialmath.Pose, poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) error](#Snapshot.DrawArrows)
+  - [func \(snapshot \*Snapshot\) DrawFrame\(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\)](#Snapshot.DrawFrame)
+  - [func \(snapshot \*Snapshot\) DrawFrameSystemGeometries\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map\[string\]Color\) error](#Snapshot.DrawFrameSystemGeometries)
+  - [func \(snapshot \*Snapshot\) DrawGeometry\(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color\) error](#Snapshot.DrawGeometry)
+  - [func \(snapshot \*Snapshot\) DrawLine\(name string, parent string, pose spatialmath.Pose, points \[\]r3.Vector, options ...DrawLineOption\) error](#Snapshot.DrawLine)
+  - [func \(snapshot \*Snapshot\) DrawModel\(name string, parent string, pose spatialmath.Pose, options ...DrawModelOption\) error](#Snapshot.DrawModel)
+  - [func \(snapshot \*Snapshot\) DrawPoints\(name string, parent string, pose spatialmath.Pose, positions \[\]r3.Vector, options ...DrawPointsOption\) error](#Snapshot.DrawPoints)
+  - [func \(snapshot \*Snapshot\) Drawings\(\) \[\]\*Drawing](#Snapshot.Drawings)
+  - [func \(snapshot \*Snapshot\) MarshalBinary\(\) \(\[\]byte, error\)](#Snapshot.MarshalBinary)
+  - [func \(snapshot \*Snapshot\) MarshalBinaryGzip\(\) \(\[\]byte, error\)](#Snapshot.MarshalBinaryGzip)
+  - [func \(snapshot \*Snapshot\) MarshalJSON\(\) \(\[\]byte, error\)](#Snapshot.MarshalJSON)
+  - [func \(snapshot \*Snapshot\) SceneMetadata\(\) SceneMetadata](#Snapshot.SceneMetadata)
+  - [func \(snapshot \*Snapshot\) ToProto\(\) \*drawv1.Snapshot](#Snapshot.ToProto)
+  - [func \(snapshot \*Snapshot\) Transforms\(\) \[\]\*commonv1.Transform](#Snapshot.Transforms)
+  - [func \(snapshot \*Snapshot\) UUID\(\) \[\]byte](#Snapshot.UUID)
+  - [func \(snapshot \*Snapshot\) Validate\(\) error](#Snapshot.Validate)
 
 ## Variables
 
@@ -350,7 +349,8 @@ var (
 ```
 
 <a name="MetadataToStruct"></a>
-## func [MetadataToStruct](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L39>)
+
+## func [MetadataToStruct](https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L39)
 
 ```go
 func MetadataToStruct(metadata Metadata) (*structpb.Struct, error)
@@ -359,7 +359,8 @@ func MetadataToStruct(metadata Metadata) (*structpb.Struct, error)
 MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable for embedding in transforms. Colors are base64\-encoded for efficient transmission. Returns an error if the metadata cannot be converted.
 
 <a name="NewTransform"></a>
-## func [NewTransform](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L13-L20>)
+
+## func [NewTransform](https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L13-L20)
 
 ```go
 func NewTransform(uuid []byte, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *structpb.Struct) *commonv1.Transform
@@ -368,7 +369,8 @@ func NewTransform(uuid []byte, name string, parent string, pose spatialmath.Pose
 NewTransform creates a Viam Transform representing an object in 3D space. The transform will have a UUID generated from the name and parent unless a UUID option is provided.
 
 <a name="Arrows"></a>
-## type [Arrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L11-L18>)
+
+## type [Arrows](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L11-L18)
 
 Arrows represents a set of directional arrows positioned at specific poses in 3D space. Each arrow visualizes orientation and position, useful for showing coordinate frames or directions.
 
@@ -384,7 +386,8 @@ type Arrows struct {
 ```
 
 <a name="NewArrows"></a>
-### func [NewArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L49>)
+
+### func [NewArrows](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L49)
 
 ```go
 func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, error)
@@ -393,7 +396,8 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 NewArrows creates a new Arrows object from the given poses and optional configuration. Returns an error if the number of colors doesn't match the requirements \(must be 1 or equal to number of poses\).
 
 <a name="Arrows.Draw"></a>
-### func \(Arrows\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L63>)
+
+### func \(Arrows\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L63)
 
 ```go
 func (arrows Arrows) Draw(name string, options ...DrawableOption) *Drawing
@@ -402,9 +406,8 @@ func (arrows Arrows) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Arrows object.
 
 <a name="BufferPackedEntry"></a>
-## type [BufferPackedEntry](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L12-L14>)
 
-
+## type [BufferPackedEntry](https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L12-L14)
 
 ```go
 type BufferPackedEntry interface {
@@ -413,7 +416,8 @@ type BufferPackedEntry interface {
 ```
 
 <a name="BufferPacker"></a>
-## type [BufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L18-L21>)
+
+## type [BufferPacker](https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L18-L21)
 
 BufferPacker provides efficient direct buffer writing for numeric data. The type parameter T must be either float32 or uint8.
 
@@ -424,7 +428,8 @@ type BufferPacker[T BufferPackedEntry] struct {
 ```
 
 <a name="NewBufferPacker"></a>
-### func [NewBufferPacker](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L25>)
+
+### func [NewBufferPacker](https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L25)
 
 ```go
 func NewBufferPacker[T BufferPackedEntry](elementCount, fieldsPerElement int) *BufferPacker[T]
@@ -433,7 +438,8 @@ func NewBufferPacker[T BufferPackedEntry](elementCount, fieldsPerElement int) *B
 NewBufferPacker creates a new buffer packer with pre\-allocated capacity for elementCount items, each with fieldsPerElement fields.
 
 <a name="BufferPacker[T].Read"></a>
-### func \(\*BufferPacker\[T\]\) [Read](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L40>)
+
+### func \(\*BufferPacker\[T\]\) [Read](https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L40)
 
 ```go
 func (packer *BufferPacker[T]) Read() []byte
@@ -442,7 +448,8 @@ func (packer *BufferPacker[T]) Read() []byte
 Read returns the packed buffer as little\-endian bytes. For uint8 buffers, returns the buffer directly. For float32 buffers, converts each value to its little\-endian byte representation.
 
 <a name="BufferPacker[T].Write"></a>
-### func \(\*BufferPacker\[T\]\) [Write](<https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L33>)
+
+### func \(\*BufferPacker\[T\]\) [Write](https://github.com/viam-labs/motion-tools/blob/main/draw/buffer_packer.go#L33)
 
 ```go
 func (packer *BufferPacker[T]) Write(values ...T)
@@ -451,7 +458,8 @@ func (packer *BufferPacker[T]) Write(values ...T)
 Write appends values directly to the buffer at the current offset and advances the offset.
 
 <a name="Color"></a>
-## type [Color](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L16-L25>)
+
+## type [Color](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L16-L25)
 
 Color represents an RGBA color with 8\-bit channels \(0\-255 range\).
 
@@ -469,7 +477,8 @@ type Color struct {
 ```
 
 <a name="ColorFromColorRGBA"></a>
-### func [ColorFromColorRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L208>)
+
+### func [ColorFromColorRGBA](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L208)
 
 ```go
 func ColorFromColorRGBA(rgba color.RGBA) Color
@@ -478,7 +487,8 @@ func ColorFromColorRGBA(rgba color.RGBA) Color
 ColorFromColorRGBA creates a color from a standard library color.RGBA struct.
 
 <a name="ColorFromHSV"></a>
-### func [ColorFromHSV](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L218>)
+
+### func [ColorFromHSV](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L218)
 
 ```go
 func ColorFromHSV(h, s, v float32) Color
@@ -487,7 +497,8 @@ func ColorFromHSV(h, s, v float32) Color
 ColorFromHSV creates a color from HSV values.
 
 <a name="ColorFromHex"></a>
-### func [ColorFromHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L223>)
+
+### func [ColorFromHex](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L223)
 
 ```go
 func ColorFromHex(hex string) Color
@@ -496,7 +507,8 @@ func ColorFromHex(hex string) Color
 ColorFromHex creates a color from a hex string.
 
 <a name="ColorFromName"></a>
-### func [ColorFromName](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L213>)
+
+### func [ColorFromName](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L213)
 
 ```go
 func ColorFromName(name string) Color
@@ -505,7 +517,8 @@ func ColorFromName(name string) Color
 ColorFromName creates a color from a standard web color name.
 
 <a name="ColorFromRGB"></a>
-### func [ColorFromRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L198>)
+
+### func [ColorFromRGB](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L198)
 
 ```go
 func ColorFromRGB(r, g, b uint8) Color
@@ -514,7 +527,8 @@ func ColorFromRGB(r, g, b uint8) Color
 ColorFromRGB creates a color from RGB values.
 
 <a name="ColorFromRGBA"></a>
-### func [ColorFromRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L203>)
+
+### func [ColorFromRGBA](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L203)
 
 ```go
 func ColorFromRGBA(r, g, b, a uint8) Color
@@ -523,7 +537,8 @@ func ColorFromRGBA(r, g, b, a uint8) Color
 ColorFromRGBA creates a color from RGBA values.
 
 <a name="NewColor"></a>
-### func [NewColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L157>)
+
+### func [NewColor](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L157)
 
 ```go
 func NewColor(options ...colorOption) Color
@@ -532,7 +547,8 @@ func NewColor(options ...colorOption) Color
 NewColor creates a new Color with the given options. If no options are provided, returns black with full opacity \(0, 0, 0, 255\).
 
 <a name="Color.SetAlpha"></a>
-### func \(Color\) [SetAlpha](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L187>)
+
+### func \(Color\) [SetAlpha](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L187)
 
 ```go
 func (color Color) SetAlpha(alpha uint8) Color
@@ -541,7 +557,8 @@ func (color Color) SetAlpha(alpha uint8) Color
 SetAlpha returns a new Color with the specified alpha value, preserving the RGB values.
 
 <a name="Color.SetRGB"></a>
-### func \(Color\) [SetRGB](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L172>)
+
+### func \(Color\) [SetRGB](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L172)
 
 ```go
 func (color Color) SetRGB(r, g, b uint8) Color
@@ -550,7 +567,8 @@ func (color Color) SetRGB(r, g, b uint8) Color
 SetRGB returns a new Color with the specified RGB values, preserving the original alpha value.
 
 <a name="Color.SetRGBA"></a>
-### func \(Color\) [SetRGBA](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L180>)
+
+### func \(Color\) [SetRGBA](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L180)
 
 ```go
 func (color Color) SetRGBA(r, g, b, a uint8) Color
@@ -559,7 +577,8 @@ func (color Color) SetRGBA(r, g, b, a uint8) Color
 SetRGBA returns a new Color with all RGBA values set.
 
 <a name="Color.ToHex"></a>
-### func \(Color\) [ToHex](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L193>)
+
+### func \(Color\) [ToHex](https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L193)
 
 ```go
 func (color Color) ToHex() string
@@ -568,7 +587,8 @@ func (color Color) ToHex() string
 ToHex returns the color as a hex string.
 
 <a name="ColorChooser"></a>
-## type [ColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L72-L75>)
+
+## type [ColorChooser](https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L72-L75)
 
 ColorChooser cycles through a list of colors, useful for automatically assigning different colors to multiple objects. Each call to Next\(\) returns the next color in sequence, wrapping around to the start.
 
@@ -591,7 +611,8 @@ var (
 ```
 
 <a name="NewColorChooser"></a>
-### func [NewColorChooser](<https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L94>)
+
+### func [NewColorChooser](https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L94)
 
 ```go
 func NewColorChooser(colors []Color) ColorChooser
@@ -600,7 +621,8 @@ func NewColorChooser(colors []Color) ColorChooser
 NewColorChooser creates a ColorChooser populated with all standard web color names.
 
 <a name="ColorChooser.Get"></a>
-### func \(\*ColorChooser\) [Get](<https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L85>)
+
+### func \(\*ColorChooser\) [Get](https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L85)
 
 ```go
 func (chooser *ColorChooser) Get(count int) []Color
@@ -609,7 +631,8 @@ func (chooser *ColorChooser) Get(count int) []Color
 Get returns a slice of colors of the given length, cycling back to the first color after reaching the end.
 
 <a name="ColorChooser.Next"></a>
-### func \(\*ColorChooser\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L78>)
+
+### func \(\*ColorChooser\) [Next](https://github.com/viam-labs/motion-tools/blob/main/draw/color_chooser.go#L78)
 
 ```go
 func (chooser *ColorChooser) Next() Color
@@ -618,16 +641,16 @@ func (chooser *ColorChooser) Next() Color
 Next returns the next color in the sequence, cycling back to the first color after reaching the end.
 
 <a name="DrawArrowsOption"></a>
-## type [DrawArrowsOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L30>)
 
-
+## type [DrawArrowsOption](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L30)
 
 ```go
 type DrawArrowsOption func(*drawArrowsConfig)
 ```
 
 <a name="WithArrowColorPalette"></a>
-### func [WithArrowColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L43>)
+
+### func [WithArrowColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L43)
 
 ```go
 func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption
@@ -636,7 +659,8 @@ func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption
 WithArrowColorPalette sets the color for each arrow using a color palette.
 
 <a name="WithPerArrowColors"></a>
-### func [WithPerArrowColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L38>)
+
+### func [WithPerArrowColors](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L38)
 
 ```go
 func WithPerArrowColors(colors ...Color) DrawArrowsOption
@@ -645,7 +669,8 @@ func WithPerArrowColors(colors ...Color) DrawArrowsOption
 WithPerArrowColors sets the color for each arrow.
 
 <a name="WithSingleArrowColor"></a>
-### func [WithSingleArrowColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L33>)
+
+### func [WithSingleArrowColor](https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L33)
 
 ```go
 func WithSingleArrowColor(color Color) DrawArrowsOption
@@ -654,7 +679,8 @@ func WithSingleArrowColor(color Color) DrawArrowsOption
 WithSingleArrowColor sets the color for all arrows.
 
 <a name="DrawConfig"></a>
-## type [DrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L17-L23>)
+
+## type [DrawConfig](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L17-L23)
 
 DrawConfig holds the resolved configuration for a Draw call: the name used as the reference frame \(and geometry/shape label\), the parent frame, the pose of the Drawing/Transform in the parent frame, the local center of the Shape, and a stable UUID.
 
@@ -669,7 +695,8 @@ type DrawConfig struct {
 ```
 
 <a name="NewDrawConfig"></a>
-### func [NewDrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L92>)
+
+### func [NewDrawConfig](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L92)
 
 ```go
 func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig
@@ -678,7 +705,8 @@ func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig
 NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent after options are applied unless explicitly set via WithUUID or WithID.
 
 <a name="DrawFrameSystemOption"></a>
-## type [DrawFrameSystemOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L34>)
+
+## type [DrawFrameSystemOption](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L34)
 
 DrawFrameSystemOption is a functional option for configuring a DrawFrameSystem.
 
@@ -687,7 +715,8 @@ type DrawFrameSystemOption func(*drawnFrameSystemConfig)
 ```
 
 <a name="WithFrameSystemColor"></a>
-### func [WithFrameSystemColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L44>)
+
+### func [WithFrameSystemColor](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L44)
 
 ```go
 func WithFrameSystemColor(frameName string, color Color) DrawFrameSystemOption
@@ -696,7 +725,8 @@ func WithFrameSystemColor(frameName string, color Color) DrawFrameSystemOption
 WithFrameSystemColor sets the color for a specific frame.
 
 <a name="WithFrameSystemColors"></a>
-### func [WithFrameSystemColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L37>)
+
+### func [WithFrameSystemColors](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L37)
 
 ```go
 func WithFrameSystemColors(colors map[string]Color) DrawFrameSystemOption
@@ -705,7 +735,8 @@ func WithFrameSystemColors(colors map[string]Color) DrawFrameSystemOption
 WithFrameSystemColors sets the colors for all frames.
 
 <a name="DrawFramesOption"></a>
-## type [DrawFramesOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L26>)
+
+## type [DrawFramesOption](https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L26)
 
 DrawFramesOption is a functional option for configuring a DrawnFrames.
 
@@ -714,7 +745,8 @@ type DrawFramesOption func(*drawnFramesConfig)
 ```
 
 <a name="WithFramesColors"></a>
-### func [WithFramesColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L30>)
+
+### func [WithFramesColors](https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L30)
 
 ```go
 func WithFramesColors(colors map[string]Color) DrawFramesOption
@@ -723,7 +755,8 @@ func WithFramesColors(colors map[string]Color) DrawFramesOption
 WithFramesColors sets per\-frame geometry colors keyed by frame name. Frames not present in the map default to DefaultFrameColor.
 
 <a name="DrawGeometriesInFrameOption"></a>
-## type [DrawGeometriesInFrameOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L40>)
+
+## type [DrawGeometriesInFrameOption](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L40)
 
 DrawGeometriesInFrameOption is a functional option for configuring a DrawGeometriesInFrame
 
@@ -732,7 +765,8 @@ type DrawGeometriesInFrameOption func(*drawnGeometriesInFrameConfig)
 ```
 
 <a name="WithGeometriesColorPalette"></a>
-### func [WithGeometriesColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L53>)
+
+### func [WithGeometriesColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L53)
 
 ```go
 func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometriesInFrameOption
@@ -741,7 +775,8 @@ func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometri
 WithGeometriesColorPalette creates a geometries in frame option that iterates through colors for geometries.
 
 <a name="WithGeometriesDownscalingThreshold"></a>
-### func [WithGeometriesDownscalingThreshold](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L58>)
+
+### func [WithGeometriesDownscalingThreshold](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L58)
 
 ```go
 func WithGeometriesDownscalingThreshold(threshold float64) DrawGeometriesInFrameOption
@@ -750,7 +785,8 @@ func WithGeometriesDownscalingThreshold(threshold float64) DrawGeometriesInFrame
 WithGeometriesDownscalingThreshold creates a geometries in frame option that sets the threshold in millimeters for downscaling.
 
 <a name="WithPerGeometriesColors"></a>
-### func [WithPerGeometriesColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L48>)
+
+### func [WithPerGeometriesColors](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L48)
 
 ```go
 func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption
@@ -759,7 +795,8 @@ func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption
 WithPerGeometriesColors creates a geometries in frame option that sets the colors for each geometry.
 
 <a name="WithSingleGeometriesColor"></a>
-### func [WithSingleGeometriesColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L43>)
+
+### func [WithSingleGeometriesColor](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L43)
 
 ```go
 func WithSingleGeometriesColor(color Color) DrawGeometriesInFrameOption
@@ -768,7 +805,8 @@ func WithSingleGeometriesColor(color Color) DrawGeometriesInFrameOption
 WithSingleGeometriesColor creates a geometries in frame option that sets the color for all geometries.
 
 <a name="DrawGeometryOption"></a>
-## type [DrawGeometryOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L43>)
+
+## type [DrawGeometryOption](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L43)
 
 DrawGeometryOption is a functional option for configuring a Geometry
 
@@ -777,7 +815,8 @@ type DrawGeometryOption func(*DrawnGeometryConfig)
 ```
 
 <a name="WithGeometryColor"></a>
-### func [WithGeometryColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L46>)
+
+### func [WithGeometryColor](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L46)
 
 ```go
 func WithGeometryColor(color Color) DrawGeometryOption
@@ -786,7 +825,8 @@ func WithGeometryColor(color Color) DrawGeometryOption
 WithGeometryColor creates a geometry option that sets the color for the geometry.
 
 <a name="WithGeometryColors"></a>
-### func [WithGeometryColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L51>)
+
+### func [WithGeometryColors](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L51)
 
 ```go
 func WithGeometryColors(colors ...Color) DrawGeometryOption
@@ -795,7 +835,8 @@ func WithGeometryColors(colors ...Color) DrawGeometryOption
 WithGeometryColors creates a geometry option that sets the colors for the geometry.
 
 <a name="WithGeometryDownscaling"></a>
-### func [WithGeometryDownscaling](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L56>)
+
+### func [WithGeometryDownscaling](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L56)
 
 ```go
 func WithGeometryDownscaling(threshold float64) DrawGeometryOption
@@ -804,7 +845,8 @@ func WithGeometryDownscaling(threshold float64) DrawGeometryOption
 WithPointCloudDownscaling creates a geometry option for point clouds that sets the threshold in millimeters below which points are not rendered from one another.
 
 <a name="DrawLineOption"></a>
-## type [DrawLineOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L54>)
+
+## type [DrawLineOption](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L54)
 
 DrawLineOption is a functional option for configuring a Line
 
@@ -813,7 +855,8 @@ type DrawLineOption func(*drawLineConfig)
 ```
 
 <a name="WithDotColorPalette"></a>
-### func [WithDotColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L102>)
+
+### func [WithDotColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L102)
 
 ```go
 func WithDotColorPalette(palette []Color, numPositions int) DrawLineOption
@@ -822,7 +865,8 @@ func WithDotColorPalette(palette []Color, numPositions int) DrawLineOption
 WithDotColorPalette creates a line option that sets colors for vertex dots by cycling through a palette. The palette is repeated to fill numPositions colors.
 
 <a name="WithDotSize"></a>
-### func [WithDotSize](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L64>)
+
+### func [WithDotSize](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L64)
 
 ```go
 func WithDotSize(size float32) DrawLineOption
@@ -831,7 +875,8 @@ func WithDotSize(size float32) DrawLineOption
 WithDotSize creates a line option that sets the size of vertex dots in millimeters.
 
 <a name="WithLineColorPalette"></a>
-### func [WithLineColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L82>)
+
+### func [WithLineColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L82)
 
 ```go
 func WithLineColorPalette(palette []Color, numPositions int) DrawLineOption
@@ -840,7 +885,8 @@ func WithLineColorPalette(palette []Color, numPositions int) DrawLineOption
 WithLineColorPalette creates a line option that sets colors for line segments by cycling through a palette. The palette is repeated to fill numPositions colors.
 
 <a name="WithLineWidth"></a>
-### func [WithLineWidth](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L57>)
+
+### func [WithLineWidth](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L57)
 
 ```go
 func WithLineWidth(width float32) DrawLineOption
@@ -849,7 +895,8 @@ func WithLineWidth(width float32) DrawLineOption
 WithLineWidth creates a line option that sets the line segment width in millimeters.
 
 <a name="WithPerDotColors"></a>
-### func [WithPerDotColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L94>)
+
+### func [WithPerDotColors](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L94)
 
 ```go
 func WithPerDotColors(colors ...Color) DrawLineOption
@@ -858,7 +905,8 @@ func WithPerDotColors(colors ...Color) DrawLineOption
 WithPerDotColors creates a line option that sets one color per vertex dot.
 
 <a name="WithPerLineColors"></a>
-### func [WithPerLineColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L76>)
+
+### func [WithPerLineColors](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L76)
 
 ```go
 func WithPerLineColors(colors ...Color) DrawLineOption
@@ -867,7 +915,8 @@ func WithPerLineColors(colors ...Color) DrawLineOption
 WithPerLineColors creates a line option that sets one color per vertex for line segments.
 
 <a name="WithSingleDotColor"></a>
-### func [WithSingleDotColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L87>)
+
+### func [WithSingleDotColor](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L87)
 
 ```go
 func WithSingleDotColor(color Color) DrawLineOption
@@ -876,7 +925,8 @@ func WithSingleDotColor(color Color) DrawLineOption
 WithSingleDotColor creates a line option that sets a single color for all vertex dots.
 
 <a name="WithSingleLineColor"></a>
-### func [WithSingleLineColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L71>)
+
+### func [WithSingleLineColor](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L71)
 
 ```go
 func WithSingleLineColor(color Color) DrawLineOption
@@ -885,7 +935,8 @@ func WithSingleLineColor(color Color) DrawLineOption
 WithSingleLineColor creates a line option that sets a single color for all line segments.
 
 <a name="DrawModelAssetOption"></a>
-## type [DrawModelAssetOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L31>)
+
+## type [DrawModelAssetOption](https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L31)
 
 DrawModelAssetOption is a function that configures a draw model asset configuration
 
@@ -894,7 +945,8 @@ type DrawModelAssetOption func(*drawModelAssetConfig)
 ```
 
 <a name="WithModelAssetSizeBytes"></a>
-### func [WithModelAssetSizeBytes](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L34>)
+
+### func [WithModelAssetSizeBytes](https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L34)
 
 ```go
 func WithModelAssetSizeBytes(sizeBytes uint64) DrawModelAssetOption
@@ -903,7 +955,8 @@ func WithModelAssetSizeBytes(sizeBytes uint64) DrawModelAssetOption
 WithModelAssetSizeBytes creates a model asset option that sets the file size in bytes.
 
 <a name="DrawModelOption"></a>
-## type [DrawModelOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L49>)
+
+## type [DrawModelOption](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L49)
 
 DrawModelOption is a function that configures a draw model configuration
 
@@ -912,7 +965,8 @@ type DrawModelOption func(*drawModelConfig)
 ```
 
 <a name="WithModelAnimationName"></a>
-### func [WithModelAnimationName](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L66>)
+
+### func [WithModelAnimationName](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L66)
 
 ```go
 func WithModelAnimationName(animationName string) DrawModelOption
@@ -921,7 +975,8 @@ func WithModelAnimationName(animationName string) DrawModelOption
 WithModelAnimationName creates a model option that specifies which animation to play.
 
 <a name="WithModelAssets"></a>
-### func [WithModelAssets](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L52>)
+
+### func [WithModelAssets](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L52)
 
 ```go
 func WithModelAssets(assets ...*ModelAsset) DrawModelOption
@@ -930,7 +985,8 @@ func WithModelAssets(assets ...*ModelAsset) DrawModelOption
 WithModelAssets creates a model option that adds one or more assets to the model.
 
 <a name="WithModelScale"></a>
-### func [WithModelScale](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L59>)
+
+### func [WithModelScale](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L59)
 
 ```go
 func WithModelScale(scale r3.Vector) DrawModelOption
@@ -939,7 +995,8 @@ func WithModelScale(scale r3.Vector) DrawModelOption
 WithModelScale creates a model option that sets the scaling factors for each axis.
 
 <a name="DrawNurbsOption"></a>
-## type [DrawNurbsOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L67>)
+
+## type [DrawNurbsOption](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L67)
 
 DrawNurbsOption is a function that configures a draw NURBS curve configuration
 
@@ -948,7 +1005,8 @@ type DrawNurbsOption func(*drawNurbsConfig)
 ```
 
 <a name="WithNurbsColors"></a>
-### func [WithNurbsColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L88>)
+
+### func [WithNurbsColors](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L88)
 
 ```go
 func WithNurbsColors(defaultColor Color, perPointColors ...Color) DrawNurbsOption
@@ -957,7 +1015,8 @@ func WithNurbsColors(defaultColor Color, perPointColors ...Color) DrawNurbsOptio
 WithNurbsColors creates a NURBS option that sets the color for the curve. If only defaultColor is provided, it applies to the entire curve. Note: Per\-point colors are not currently supported in rendering.
 
 <a name="WithNurbsDegree"></a>
-### func [WithNurbsDegree](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L71>)
+
+### func [WithNurbsDegree](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L71)
 
 ```go
 func WithNurbsDegree(degree int32) DrawNurbsOption
@@ -966,7 +1025,8 @@ func WithNurbsDegree(degree int32) DrawNurbsOption
 WithNurbsDegree creates a NURBS option that sets the polynomial degree of the curve. Higher degrees create smoother curves but require more control points.
 
 <a name="WithNurbsLineWidth"></a>
-### func [WithNurbsLineWidth](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L95>)
+
+### func [WithNurbsLineWidth](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L95)
 
 ```go
 func WithNurbsLineWidth(width float32) DrawNurbsOption
@@ -975,7 +1035,8 @@ func WithNurbsLineWidth(width float32) DrawNurbsOption
 WithNurbsLineWidth creates a NURBS option that sets the line width.
 
 <a name="WithNurbsWeights"></a>
-### func [WithNurbsWeights](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L79>)
+
+### func [WithNurbsWeights](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L79)
 
 ```go
 func WithNurbsWeights(weights []float64) DrawNurbsOption
@@ -984,7 +1045,8 @@ func WithNurbsWeights(weights []float64) DrawNurbsOption
 WithNurbsWeights creates a NURBS option that sets the weight for each control point. Weights control the influence of each point on the curve \(higher weights pull the curve closer\).
 
 <a name="DrawPointCloudOption"></a>
-## type [DrawPointCloudOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L39>)
+
+## type [DrawPointCloudOption](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L39)
 
 DrawPointCloudOption is a functional option for configuring a DrawPointCloud
 
@@ -993,7 +1055,8 @@ type DrawPointCloudOption func(*DrawnPointCloudConfig)
 ```
 
 <a name="WithPerPointCloudColors"></a>
-### func [WithPerPointCloudColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L47>)
+
+### func [WithPerPointCloudColors](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L47)
 
 ```go
 func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption
@@ -1002,7 +1065,8 @@ func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption
 WithPerPointCloudColors creates a point cloud option that sets the colors for each point.
 
 <a name="WithPointCloudColorPalette"></a>
-### func [WithPointCloudColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L52>)
+
+### func [WithPointCloudColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L52)
 
 ```go
 func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOption
@@ -1011,7 +1075,8 @@ func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOp
 WithPointCloudColorPalette creates a point cloud option that iterates through colors for a point cloud.
 
 <a name="WithPointCloudDownscaling"></a>
-### func [WithPointCloudDownscaling](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L57>)
+
+### func [WithPointCloudDownscaling](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L57)
 
 ```go
 func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption
@@ -1020,7 +1085,8 @@ func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption
 WithPointCloudDownscaling creates a point cloud option that sets the threshold in millimeters below which points are not rendered from one another.
 
 <a name="WithSinglePointCloudColor"></a>
-### func [WithSinglePointCloudColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L42>)
+
+### func [WithSinglePointCloudColor](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L42)
 
 ```go
 func WithSinglePointCloudColor(color Color) DrawPointCloudOption
@@ -1029,7 +1095,8 @@ func WithSinglePointCloudColor(color Color) DrawPointCloudOption
 WithSinglePointCloudColor creates a point cloud option that sets the color for the point cloud.
 
 <a name="DrawPointsOption"></a>
-## type [DrawPointsOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L45>)
+
+## type [DrawPointsOption](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L45)
 
 DrawPointsOption is a function that configures a draw points configuration
 
@@ -1038,7 +1105,8 @@ type DrawPointsOption func(*drawPointsConfig)
 ```
 
 <a name="WithPerPointColors"></a>
-### func [WithPerPointColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L60>)
+
+### func [WithPerPointColors](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L60)
 
 ```go
 func WithPerPointColors(colors ...Color) DrawPointsOption
@@ -1047,7 +1115,8 @@ func WithPerPointColors(colors ...Color) DrawPointsOption
 WithPerPointColors creates a points option that sets the colors for each point.
 
 <a name="WithPointColorPalette"></a>
-### func [WithPointColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L65>)
+
+### func [WithPointColorPalette](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L65)
 
 ```go
 func WithPointColorPalette(palette []Color, numPoints int) DrawPointsOption
@@ -1056,7 +1125,8 @@ func WithPointColorPalette(palette []Color, numPoints int) DrawPointsOption
 WithPointColorPalette creates a points option that sets the colors for each point using a color palette.
 
 <a name="WithPointsSize"></a>
-### func [WithPointsSize](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L48>)
+
+### func [WithPointsSize](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L48)
 
 ```go
 func WithPointsSize(size float32) DrawPointsOption
@@ -1065,7 +1135,8 @@ func WithPointsSize(size float32) DrawPointsOption
 WithPointsSize creates a points option that sets the size of each point in millimeters.
 
 <a name="WithSinglePointColor"></a>
-### func [WithSinglePointColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L55>)
+
+### func [WithSinglePointColor](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L55)
 
 ```go
 func WithSinglePointColor(color Color) DrawPointsOption
@@ -1074,7 +1145,8 @@ func WithSinglePointColor(color Color) DrawPointsOption
 WithSinglePointColor creates a points option that sets the color for all points.
 
 <a name="DrawService"></a>
-## type [DrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L37-L45>)
+
+## type [DrawService](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L37-L45)
 
 DrawService stores transforms and drawings keyed by UUID and fans out change events to streaming subscribers.
 
@@ -1085,7 +1157,8 @@ type DrawService struct {
 ```
 
 <a name="NewDrawService"></a>
-### func [NewDrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L48>)
+
+### func [NewDrawService](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L48)
 
 ```go
 func NewDrawService() *DrawService
@@ -1094,7 +1167,8 @@ func NewDrawService() *DrawService
 NewDrawService creates a new DrawService ready to serve requests.
 
 <a name="DrawService.AddEntity"></a>
-### func \(\*DrawService\) [AddEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L107-L110>)
+
+### func \(\*DrawService\) [AddEntity](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L107-L110)
 
 ```go
 func (svc *DrawService) AddEntity(_ context.Context, req *connect.Request[drawv1.AddEntityRequest]) (*connect.Response[drawv1.AddEntityResponse], error)
@@ -1103,7 +1177,8 @@ func (svc *DrawService) AddEntity(_ context.Context, req *connect.Request[drawv1
 AddEntity adds a transform or drawing to the scene and returns its UUID. If the entity carries a non\-empty Uuid field, AddEntity performs an upsert.
 
 <a name="DrawService.RemoveAll"></a>
-### func \(\*DrawService\) [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L528-L531>)
+
+### func \(\*DrawService\) [RemoveAll](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L528-L531)
 
 ```go
 func (svc *DrawService) RemoveAll(_ context.Context, _ *connect.Request[drawv1.RemoveAllRequest]) (*connect.Response[drawv1.RemoveAllResponse], error)
@@ -1112,7 +1187,8 @@ func (svc *DrawService) RemoveAll(_ context.Context, _ *connect.Request[drawv1.R
 RemoveAll removes all entities \(transforms and drawings\) from the scene.
 
 <a name="DrawService.RemoveAllDrawings"></a>
-### func \(\*DrawService\) [RemoveAllDrawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L504-L507>)
+
+### func \(\*DrawService\) [RemoveAllDrawings](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L504-L507)
 
 ```go
 func (svc *DrawService) RemoveAllDrawings(_ context.Context, _ *connect.Request[drawv1.RemoveAllDrawingsRequest]) (*connect.Response[drawv1.RemoveAllDrawingsResponse], error)
@@ -1121,7 +1197,8 @@ func (svc *DrawService) RemoveAllDrawings(_ context.Context, _ *connect.Request[
 RemoveAllDrawings removes all drawing entities from the scene and returns the count removed.
 
 <a name="DrawService.RemoveAllTransforms"></a>
-### func \(\*DrawService\) [RemoveAllTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L480-L483>)
+
+### func \(\*DrawService\) [RemoveAllTransforms](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L480-L483)
 
 ```go
 func (svc *DrawService) RemoveAllTransforms(_ context.Context, _ *connect.Request[drawv1.RemoveAllTransformsRequest]) (*connect.Response[drawv1.RemoveAllTransformsResponse], error)
@@ -1130,7 +1207,8 @@ func (svc *DrawService) RemoveAllTransforms(_ context.Context, _ *connect.Reques
 RemoveAllTransforms removes all transform entities from the scene and returns the count removed.
 
 <a name="DrawService.RemoveEntity"></a>
-### func \(\*DrawService\) [RemoveEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L356-L359>)
+
+### func \(\*DrawService\) [RemoveEntity](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L356-L359)
 
 ```go
 func (svc *DrawService) RemoveEntity(_ context.Context, req *connect.Request[drawv1.RemoveEntityRequest]) (*connect.Response[drawv1.RemoveEntityResponse], error)
@@ -1139,7 +1217,8 @@ func (svc *DrawService) RemoveEntity(_ context.Context, req *connect.Request[dra
 RemoveEntity removes the entity with the given UUID from the scene.
 
 <a name="DrawService.SetScene"></a>
-### func \(\*DrawService\) [SetScene](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L429-L432>)
+
+### func \(\*DrawService\) [SetScene](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L429-L432)
 
 ```go
 func (svc *DrawService) SetScene(_ context.Context, req *connect.Request[drawv1.SetSceneRequest]) (*connect.Response[drawv1.SetSceneResponse], error)
@@ -1148,7 +1227,8 @@ func (svc *DrawService) SetScene(_ context.Context, req *connect.Request[drawv1.
 SetScene stores scene metadata and notifies scene subscribers.
 
 <a name="DrawService.StreamEntityChanges"></a>
-### func \(\*DrawService\) [StreamEntityChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L398-L402>)
+
+### func \(\*DrawService\) [StreamEntityChanges](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L398-L402)
 
 ```go
 func (svc *DrawService) StreamEntityChanges(ctx context.Context, _ *connect.Request[drawv1.StreamEntityChangesRequest], stream *connect.ServerStream[drawv1.StreamEntityChangesResponse]) error
@@ -1157,7 +1237,8 @@ func (svc *DrawService) StreamEntityChanges(ctx context.Context, _ *connect.Requ
 StreamEntityChanges streams entity change events \(add/update/remove\) to the caller until the context is cancelled.
 
 <a name="DrawService.StreamSceneChanges"></a>
-### func \(\*DrawService\) [StreamSceneChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L449-L453>)
+
+### func \(\*DrawService\) [StreamSceneChanges](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L449-L453)
 
 ```go
 func (svc *DrawService) StreamSceneChanges(ctx context.Context, _ *connect.Request[drawv1.StreamSceneChangesRequest], stream *connect.ServerStream[drawv1.StreamSceneChangesResponse]) error
@@ -1166,7 +1247,8 @@ func (svc *DrawService) StreamSceneChanges(ctx context.Context, _ *connect.Reque
 StreamSceneChanges streams scene metadata changes to the caller until the context is cancelled.
 
 <a name="DrawService.UpdateEntity"></a>
-### func \(\*DrawService\) [UpdateEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L170-L173>)
+
+### func \(\*DrawService\) [UpdateEntity](https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L170-L173)
 
 ```go
 func (svc *DrawService) UpdateEntity(_ context.Context, req *connect.Request[drawv1.UpdateEntityRequest]) (*connect.Response[drawv1.UpdateEntityResponse], error)
@@ -1175,7 +1257,8 @@ func (svc *DrawService) UpdateEntity(_ context.Context, req *connect.Request[dra
 UpdateEntity replaces or partially updates an existing entity identified by UUID.
 
 <a name="DrawableOption"></a>
-## type [DrawableOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L52>)
+
+## type [DrawableOption](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L52)
 
 DrawableOption is a function that configures a drawable.
 
@@ -1184,7 +1267,8 @@ type DrawableOption func(*drawableConfig)
 ```
 
 <a name="WithCenter"></a>
-### func [WithCenter](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L69>)
+
+### func [WithCenter](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L69)
 
 ```go
 func WithCenter(center spatialmath.Pose) DrawableOption
@@ -1193,7 +1277,8 @@ func WithCenter(center spatialmath.Pose) DrawableOption
 WithCenter sets the local center of the Shape within the Drawing's own frame.
 
 <a name="WithID"></a>
-### func [WithID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L83>)
+
+### func [WithID](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L83)
 
 ```go
 func WithID(id string) DrawableOption
@@ -1202,7 +1287,8 @@ func WithID(id string) DrawableOption
 WithID overrides the auto\-generated UUID by deriving one deterministically from the given string.
 
 <a name="WithParent"></a>
-### func [WithParent](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L55>)
+
+### func [WithParent](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L55)
 
 ```go
 func WithParent(parent string) DrawableOption
@@ -1211,7 +1297,8 @@ func WithParent(parent string) DrawableOption
 WithParent sets the parent reference frame for the Drawing or Transform.
 
 <a name="WithPose"></a>
-### func [WithPose](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L62>)
+
+### func [WithPose](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L62)
 
 ```go
 func WithPose(pose spatialmath.Pose) DrawableOption
@@ -1220,7 +1307,8 @@ func WithPose(pose spatialmath.Pose) DrawableOption
 WithPose sets the pose of the Drawing or Transform in the parent reference frame.
 
 <a name="WithUUID"></a>
-### func [WithUUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L76>)
+
+### func [WithUUID](https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L76)
 
 ```go
 func WithUUID(id []byte) DrawableOption
@@ -1229,7 +1317,8 @@ func WithUUID(id []byte) DrawableOption
 WithUUID overrides the auto\-generated UUID with an explicit byte slice.
 
 <a name="Drawing"></a>
-## type [Drawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L212-L219>)
+
+## type [Drawing](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L212-L219)
 
 Drawing represents a complete drawable object in 3D space, consisting of a Shape positioned at a Pose within a reference frame \(Parent\), along with associated Metadata like colors.
 
@@ -1245,7 +1334,8 @@ type Drawing struct {
 ```
 
 <a name="NewDrawing"></a>
-### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L222-L229>)
+
+### func [NewDrawing](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L222-L229)
 
 ```go
 func NewDrawing(uuid []byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata) *Drawing
@@ -1254,7 +1344,8 @@ func NewDrawing(uuid []byte, name string, parent string, pose spatialmath.Pose, 
 NewDrawing creates a new Drawing representing a non\-physical object in 3D space.
 
 <a name="Drawing.ToProto"></a>
-### func \(Drawing\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L241>)
+
+### func \(Drawing\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L241)
 
 ```go
 func (drawing Drawing) ToProto() *drawv1.Drawing
@@ -1263,9 +1354,8 @@ func (drawing Drawing) ToProto() *drawv1.Drawing
 ToProto converts the Drawing to a Protocol Buffer drawv1.Drawing message for serialization.
 
 <a name="DrawnFrameSystem"></a>
-## type [DrawnFrameSystem](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L11-L15>)
 
-
+## type [DrawnFrameSystem](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L11-L15)
 
 ```go
 type DrawnFrameSystem struct {
@@ -1276,7 +1366,8 @@ type DrawnFrameSystem struct {
 ```
 
 <a name="NewDrawnFrameSystem"></a>
-### func [NewDrawnFrameSystem](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L51>)
+
+### func [NewDrawnFrameSystem](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L51)
 
 ```go
 func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption) *DrawnFrameSystem
@@ -1285,7 +1376,8 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 NewDrawnFrameSystem creates a new DrawnFrameSystem object from the given frame system and inputs.
 
 <a name="DrawnFrameSystem.ToTransforms"></a>
-### func \(\*DrawnFrameSystem\) [ToTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L63>)
+
+### func \(\*DrawnFrameSystem\) [ToTransforms](https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L63)
 
 ```go
 func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error)
@@ -1294,7 +1386,8 @@ func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption
 ToTransforms produces a flat \[\]\*commonv1.Transform for every geometry in the frame system. Each frame's geometries are prefixed with their frame name \(e.g. "child:box"\). Use WithParent to set the parent reference frame for all transforms \(defaults to referenceframe.World\).
 
 <a name="DrawnFrames"></a>
-## type [DrawnFrames](<https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L16-L19>)
+
+## type [DrawnFrames](https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L16-L19)
 
 DrawnFrames is a collection of frames that can be rendered as transforms in the visualizer. Frames with no geometry are rendered as coordinate axes. Frames with geometry render each geometry as a transform, with the frame name prefixed to the geometry label.
 
@@ -1306,7 +1399,8 @@ type DrawnFrames struct {
 ```
 
 <a name="NewDrawnFrames"></a>
-### func [NewDrawnFrames](<https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L38>)
+
+### func [NewDrawnFrames](https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L38)
 
 ```go
 func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) *DrawnFrames
@@ -1315,7 +1409,8 @@ func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) 
 NewDrawnFrames creates a new DrawnFrames from the given frames. Frames without an explicit color in the Colors map default to DefaultFrameColor.
 
 <a name="DrawnFrames.ToTransforms"></a>
-### func \(\*DrawnFrames\) [ToTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L51>)
+
+### func \(\*DrawnFrames\) [ToTransforms](https://github.com/viam-labs/motion-tools/blob/main/draw/frames.go#L51)
 
 ```go
 func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error)
@@ -1324,7 +1419,8 @@ func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*comm
 ToTransforms produces a flat \[\]\*commonv1.Transform for every frame. Frames with no geometry produce a single bare\-axes transform named after the frame. Frames with geometry produce one transform per geometry, named "frameName:geoLabel"
 
 <a name="DrawnGeometriesInFrame"></a>
-## type [DrawnGeometriesInFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L11-L21>)
+
+## type [DrawnGeometriesInFrame](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L11-L21)
 
 DrawnGeometriesInFrame is a collection of geometries that have been drawn from a referenceframe.GeometriesInFrame.
 
@@ -1343,7 +1439,8 @@ type DrawnGeometriesInFrame struct {
 ```
 
 <a name="NewDrawnGeometriesInFrame"></a>
-### func [NewDrawnGeometriesInFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L66>)
+
+### func [NewDrawnGeometriesInFrame](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L66)
 
 ```go
 func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFrame, options ...DrawGeometriesInFrameOption) (*DrawnGeometriesInFrame, error)
@@ -1352,7 +1449,8 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 NewDrawnGeometriesInFrame creates a new DrawnGeometriesInFrame object from the given geometries and options. Returns an error if the number of colors doesn't match the number of geometries.
 
 <a name="DrawnGeometriesInFrame.ToTransforms"></a>
-### func \(\*DrawnGeometriesInFrame\) [ToTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L105>)
+
+### func \(\*DrawnGeometriesInFrame\) [ToTransforms](https://github.com/viam-labs/motion-tools/blob/main/draw/geometries_in_frame.go#L105)
 
 ```go
 func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error)
@@ -1361,7 +1459,8 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 ToTransforms produces a \[\]\*commonv1.Transform for each geometry in the collection. The Name field is used as a prefix for each geometry's reference frame label \(empty = no prefix\).
 
 <a name="DrawnGeometry"></a>
-## type [DrawnGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L12-L20>)
+
+## type [DrawnGeometry](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L12-L20)
 
 DrawnGeometry is a geometry that has been drawn.
 
@@ -1378,7 +1477,8 @@ type DrawnGeometry struct {
 ```
 
 <a name="NewDrawnGeometry"></a>
-### func [NewDrawnGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L63>)
+
+### func [NewDrawnGeometry](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L63)
 
 ```go
 func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOption) (*DrawnGeometry, error)
@@ -1387,7 +1487,8 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 NewDrawnGeometry creates a new DrawnGeometry object from the given geometry and options.
 
 <a name="DrawnGeometry.Draw"></a>
-### func \(\*DrawnGeometry\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L105>)
+
+### func \(\*DrawnGeometry\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L105)
 
 ```go
 func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error)
@@ -1396,7 +1497,8 @@ func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption)
 Draw creates a Transform from this DrawnGeometry object, positioned at the given pose within the specified reference frame. If the name is empty, the geometry label is used as the name.
 
 <a name="DrawnGeometryConfig"></a>
-## type [DrawnGeometryConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L23-L29>)
+
+## type [DrawnGeometryConfig](https://github.com/viam-labs/motion-tools/blob/main/draw/geometry.go#L23-L29)
 
 DrawnGeometryConfig holds configuration options for drawing a geometry.
 
@@ -1407,7 +1509,8 @@ type DrawnGeometryConfig struct {
 ```
 
 <a name="DrawnPointCloud"></a>
-## type [DrawnPointCloud](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L12-L20>)
+
+## type [DrawnPointCloud](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L12-L20)
 
 DrawnPointCloud is a point cloud that has been drawn.
 
@@ -1424,7 +1527,8 @@ type DrawnPointCloud struct {
 ```
 
 <a name="NewDrawnPointCloud"></a>
-### func [NewDrawnPointCloud](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L64>)
+
+### func [NewDrawnPointCloud](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L64)
 
 ```go
 func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption) (*DrawnPointCloud, error)
@@ -1433,7 +1537,8 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 NewDrawnPointCloud creates a new DrawnPointCloud object from the given point cloud and options.
 
 <a name="DrawnPointCloud.Draw"></a>
-### func \(\*DrawnPointCloud\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L86>)
+
+### func \(\*DrawnPointCloud\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L86)
 
 ```go
 func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error)
@@ -1442,7 +1547,8 @@ func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOpt
 Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
 
 <a name="DrawnPointCloudConfig"></a>
-## type [DrawnPointCloudConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L23-L28>)
+
+## type [DrawnPointCloudConfig](https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L23-L28)
 
 DrawnPointCloudConfig holds configuration options for drawing a point cloud.
 
@@ -1453,7 +1559,8 @@ type DrawnPointCloudConfig struct {
 ```
 
 <a name="Line"></a>
-## type [Line](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L18-L35>)
+
+## type [Line](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L18-L35)
 
 Line represents a polyline \(connected line segments\) in 3D space, with optional visible dots at each vertex. Useful for drawing paths, trajectories, or connected geometric shapes.
 
@@ -1479,7 +1586,8 @@ type Line struct {
 ```
 
 <a name="NewLine"></a>
-### func [NewLine](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L116>)
+
+### func [NewLine](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L116)
 
 ```go
 func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error)
@@ -1488,7 +1596,8 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error)
 NewLine creates a new Line from the given vertex positions and optional configuration. Returns an error if there are fewer than 2 positions, if the dot size is non\-positive, if the line width is non\-positive, or if color slice lengths are invalid \(must be 1 or equal to number of positions\).
 
 <a name="Line.Draw"></a>
-### func \(Line\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L152>)
+
+### func \(Line\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/line.go#L152)
 
 ```go
 func (line Line) Draw(name string, options ...DrawableOption) *Drawing
@@ -1497,7 +1606,8 @@ func (line Line) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Line object.
 
 <a name="Metadata"></a>
-## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L253-L255>)
+
+## type [Metadata](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L253-L255)
 
 Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 
@@ -1508,7 +1618,8 @@ type Metadata struct {
 ```
 
 <a name="NewMetadata"></a>
-### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L282>)
+
+### func [NewMetadata](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L282)
 
 ```go
 func NewMetadata(options ...drawMetadataOption) Metadata
@@ -1517,25 +1628,24 @@ func NewMetadata(options ...drawMetadataOption) Metadata
 NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 
 <a name="StructToMetadata"></a>
-### func [StructToMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L47>)
+
+### func [StructToMetadata](https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L47)
 
 ```go
 func StructToMetadata(structPb *structpb.Struct) (Metadata, error)
 ```
 
-
-
 <a name="Metadata.SetColors"></a>
-### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L257>)
+
+### func \(\*Metadata\) [SetColors](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L257)
 
 ```go
 func (metadata *Metadata) SetColors(colors []Color)
 ```
 
-
-
 <a name="Metadata.ToProto"></a>
-### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L292>)
+
+### func \(Metadata\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L292)
 
 ```go
 func (metadata Metadata) ToProto() *drawv1.Metadata
@@ -1544,7 +1654,8 @@ func (metadata Metadata) ToProto() *drawv1.Metadata
 ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 
 <a name="Model"></a>
-## type [Model](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L19-L28>)
+
+## type [Model](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L19-L28)
 
 Model represents a 3D model in various formats \(GLB, GLTF, PLY, PCD, etc.\). Models can have multiple assets \(textures, meshes\) and support animations and scaling.
 
@@ -1562,7 +1673,8 @@ type Model struct {
 ```
 
 <a name="NewModel"></a>
-### func [NewModel](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L74>)
+
+### func [NewModel](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L74)
 
 ```go
 func NewModel(options ...DrawModelOption) (*Model, error)
@@ -1571,7 +1683,8 @@ func NewModel(options ...DrawModelOption) (*Model, error)
 NewModel creates a new Model with the given options. Returns an error if no assets are provided or if the scale values are non\-positive.
 
 <a name="Model.Draw"></a>
-### func \(Model\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L96>)
+
+### func \(Model\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/model.go#L96)
 
 ```go
 func (model Model) Draw(name string, options ...DrawableOption) *Drawing
@@ -1580,7 +1693,8 @@ func (model Model) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Model object.
 
 <a name="ModelAsset"></a>
-## type [ModelAsset](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L7-L12>)
+
+## type [ModelAsset](https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L7-L12)
 
 ModelAsset represents a 3D model asset that can be loaded from either a URL or binary data. Common formats include GLB, GLTF, PLY, and PCD files.
 
@@ -1594,7 +1708,8 @@ type ModelAsset struct {
 ```
 
 <a name="NewBinaryModelAsset"></a>
-### func [NewBinaryModelAsset](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L61>)
+
+### func [NewBinaryModelAsset](https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L61)
 
 ```go
 func NewBinaryModelAsset(mimeType string, binaryContent []byte, options ...DrawModelAssetOption) (*ModelAsset, error)
@@ -1603,7 +1718,8 @@ func NewBinaryModelAsset(mimeType string, binaryContent []byte, options ...DrawM
 NewBinaryModelAsset creates a ModelAsset from binary data \(e.g., an embedded file or loaded file\). Common MIME types include "model/gltf\-binary" for GLB files. Returns an error if the binary content is empty.
 
 <a name="NewURLModelAsset"></a>
-### func [NewURLModelAsset](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L42>)
+
+### func [NewURLModelAsset](https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L42)
 
 ```go
 func NewURLModelAsset(mimeType string, url string, options ...DrawModelAssetOption) (*ModelAsset, error)
@@ -1612,7 +1728,8 @@ func NewURLModelAsset(mimeType string, url string, options ...DrawModelAssetOpti
 NewURLModelAsset creates a ModelAsset that references a 3D model from a URL. Common MIME types include "model/gltf\-binary" for GLB files. Returns an error if the URL is empty.
 
 <a name="Nurbs"></a>
-## type [Nurbs](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L23-L44>)
+
+## type [Nurbs](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L23-L44)
 
 Nurbs represents a Non\-Uniform Rational B\-Spline \(NURBS\) curve in 3D space. NURBS curves are defined by control points, weights, a knot vector, and a polynomial degree. They are commonly used to represent smooth, curved paths and surfaces.
 
@@ -1642,7 +1759,8 @@ type Nurbs struct {
 ```
 
 <a name="NewNurbs"></a>
-### func [NewNurbs](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L105>)
+
+### func [NewNurbs](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L105)
 
 ```go
 func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...DrawNurbsOption) (*Nurbs, error)
@@ -1651,7 +1769,8 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...Draw
 NewNurbs creates a new NURBS curve with the given control points, knot vector, and options. Returns an error if control points or knots are empty, if the degree is non\-positive, if the weights don't match the number of control points, or if the knot vector length is incorrect \(must be len\(controlPoints\) \+ degree \+ 1\).
 
 <a name="Nurbs.Draw"></a>
-### func \(Nurbs\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L153>)
+
+### func \(Nurbs\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/nurbs.go#L153)
 
 ```go
 func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing
@@ -1660,7 +1779,8 @@ func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Nurbs object.
 
 <a name="Points"></a>
-## type [Points](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L16-L26>)
+
+## type [Points](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L16-L26)
 
 Points represents a point cloud or set of discrete points in 3D space. Useful for visualizing sensor data, waypoints, or sparse 3D data.
 
@@ -1679,7 +1799,8 @@ type Points struct {
 ```
 
 <a name="NewPoints"></a>
-### func [NewPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L72>)
+
+### func [NewPoints](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L72)
 
 ```go
 func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, error)
@@ -1688,7 +1809,8 @@ func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, err
 NewPoints creates a new Points object from the given positions and optional configuration. Returns an error if positions are empty, if the point size is non\-positive, or if the number of colors doesn't match requirements \(must be 1 or equal to number of positions\).
 
 <a name="Points.Draw"></a>
-### func \(Points\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L98>)
+
+### func \(Points\) [Draw](https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L98)
 
 ```go
 func (points Points) Draw(name string, options ...DrawableOption) *Drawing
@@ -1697,7 +1819,8 @@ func (points Points) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Points object.
 
 <a name="SceneCamera"></a>
-## type [SceneCamera](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L33-L44>)
+
+## type [SceneCamera](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L33-L44)
 
 SceneCamera configures the viewpoint for rendering a 3D scene. Supports both perspective and orthographic projection modes. Exactly one of PerspectiveCamera or OrthographicCamera must be set.
 
@@ -1717,7 +1840,8 @@ type SceneCamera struct {
 ```
 
 <a name="NewSceneCamera"></a>
-### func [NewSceneCamera](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L88>)
+
+### func [NewSceneCamera](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L88)
 
 ```go
 func NewSceneCamera(position r3.Vector, lookAt r3.Vector, options ...sceneCameraOption) SceneCamera
@@ -1726,7 +1850,8 @@ func NewSceneCamera(position r3.Vector, lookAt r3.Vector, options ...sceneCamera
 NewSceneCamera creates a new camera configuration with the specified position and look\-at point \(both in millimeters\). By default, creates a perspective camera.
 
 <a name="SceneCamera.ToProto"></a>
-### func \(\*SceneCamera\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L104>)
+
+### func \(\*SceneCamera\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L104)
 
 ```go
 func (camera *SceneCamera) ToProto() *drawv1.SceneCamera
@@ -1735,7 +1860,8 @@ func (camera *SceneCamera) ToProto() *drawv1.SceneCamera
 ToProto converts the SceneCamera to its Protocol Buffer representation for serialization.
 
 <a name="SceneMetadata"></a>
-## type [SceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L127-L139>)
+
+## type [SceneMetadata](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L127-L139)
 
 SceneMetadata contains global configuration for rendering a 3D scene, including camera settings, grid display options, default rendering styles, and visibility flags for different shape types.
 
@@ -1756,7 +1882,8 @@ type SceneMetadata struct {
 ```
 
 <a name="NewSceneMetadata"></a>
-### func [NewSceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L265>)
+
+### func [NewSceneMetadata](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L265)
 
 ```go
 func NewSceneMetadata(options ...sceneMetadataOption) SceneMetadata
@@ -1765,7 +1892,8 @@ func NewSceneMetadata(options ...sceneMetadataOption) SceneMetadata
 NewSceneMetadata creates a new scene metadata configuration with sensible defaults \(grid enabled, perspective camera, etc.\) that can be customized with options.
 
 <a name="SceneMetadata.ToProto"></a>
-### func \(\*SceneMetadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L287>)
+
+### func \(\*SceneMetadata\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L287)
 
 ```go
 func (metadata *SceneMetadata) ToProto() *drawv1.SceneMetadata
@@ -1774,7 +1902,8 @@ func (metadata *SceneMetadata) ToProto() *drawv1.SceneMetadata
 ToProto converts the SceneMetadata to its Protocol Buffer representation for serialization.
 
 <a name="SceneMetadata.Validate"></a>
-### func \(\*SceneMetadata\) [Validate](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L305>)
+
+### func \(\*SceneMetadata\) [Validate](https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L305)
 
 ```go
 func (metadata *SceneMetadata) Validate() error
@@ -1783,7 +1912,8 @@ func (metadata *SceneMetadata) Validate() error
 Validate checks that all scene metadata values are valid. Returns an error if any values are out of acceptable ranges \(e.g., negative sizes\) or invalid enum values.
 
 <a name="Shape"></a>
-## type [Shape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L11-L19>)
+
+## type [Shape](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L11-L19)
 
 Shape represents a drawable geometric shape or object in 3D space. A Shape contains exactly one geometry type \(Arrows, Line, Points, Model, or Nurbs\), positioned at Center with a Label.
 
@@ -1800,7 +1930,8 @@ type Shape struct {
 ```
 
 <a name="NewShape"></a>
-### func [NewShape](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L94>)
+
+### func [NewShape](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L94)
 
 ```go
 func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Shape
@@ -1809,7 +1940,8 @@ func NewShape(center spatialmath.Pose, label string, option drawShapeOption) Sha
 NewShape creates a new Shape with the given center pose, label, and geometry option. The option must be one of WithArrows, WithLine, WithPoints, WithModel, or WithNurbs.
 
 <a name="Shape.ToProto"></a>
-### func \(Shape\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L112>)
+
+### func \(Shape\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L112)
 
 ```go
 func (shape Shape) ToProto() *drawv1.Shape
@@ -1820,7 +1952,8 @@ ToProto converts the shape to a drawv1.Shape message
 Returns the drawv1.Shape message
 
 <a name="Snapshot"></a>
-## type [Snapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L21-L26>)
+
+## type [Snapshot](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L21-L26)
 
 Snapshot represents a snapshot of a world state
 
@@ -1831,7 +1964,8 @@ type Snapshot struct {
 ```
 
 <a name="NewSnapshot"></a>
-### func [NewSnapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L97>)
+
+### func [NewSnapshot](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L97)
 
 ```go
 func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot
@@ -1840,7 +1974,8 @@ func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot
 NewSnapshot creates a new snapshot with a unique UUID
 
 <a name="Snapshot.DrawArrows"></a>
-### func \(\*Snapshot\) [DrawArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L215-L221>)
+
+### func \(\*Snapshot\) [DrawArrows](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L215-L221)
 
 ```go
 func (snapshot *Snapshot) DrawArrows(name string, parent string, pose spatialmath.Pose, poses []spatialmath.Pose, options ...DrawArrowsOption) error
@@ -1849,7 +1984,8 @@ func (snapshot *Snapshot) DrawArrows(name string, parent string, pose spatialmat
 DrawArrows draws arrows to the snapshot Returns an error if the arrows cannot be drawn.
 
 <a name="Snapshot.DrawFrame"></a>
-### func \(\*Snapshot\) [DrawFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L179-L185>)
+
+### func \(\*Snapshot\) [DrawFrame](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L179-L185)
 
 ```go
 func (snapshot *Snapshot) DrawFrame(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *structpb.Struct)
@@ -1858,7 +1994,8 @@ func (snapshot *Snapshot) DrawFrame(name string, parent string, pose spatialmath
 DrawFrame draws a frame transform to the snapshot Returns an error if the frame transform cannot be drawn.
 
 <a name="Snapshot.DrawFrameSystemGeometries"></a>
-### func \(\*Snapshot\) [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L162-L166>)
+
+### func \(\*Snapshot\) [DrawFrameSystemGeometries](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L162-L166)
 
 ```go
 func (snapshot *Snapshot) DrawFrameSystemGeometries(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map[string]Color) error
@@ -1867,7 +2004,8 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(frameSystem *referenceframe.
 DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot. Returns an error if the frame system geometries cannot be drawn.
 
 <a name="Snapshot.DrawGeometry"></a>
-### func \(\*Snapshot\) [DrawGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L193-L198>)
+
+### func \(\*Snapshot\) [DrawGeometry](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L193-L198)
 
 ```go
 func (snapshot *Snapshot) DrawGeometry(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color) error
@@ -1876,7 +2014,8 @@ func (snapshot *Snapshot) DrawGeometry(geometry spatialmath.Geometry, pose spati
 DrawGeometry draws a geometry to the snapshot Returns an error if the geometry cannot be drawn.
 
 <a name="Snapshot.DrawLine"></a>
-### func \(\*Snapshot\) [DrawLine](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L234-L240>)
+
+### func \(\*Snapshot\) [DrawLine](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L234-L240)
 
 ```go
 func (snapshot *Snapshot) DrawLine(name string, parent string, pose spatialmath.Pose, points []r3.Vector, options ...DrawLineOption) error
@@ -1885,7 +2024,8 @@ func (snapshot *Snapshot) DrawLine(name string, parent string, pose spatialmath.
 DrawLine draws a line to the snapshot Returns an error if the line cannot be drawn.
 
 <a name="Snapshot.DrawModel"></a>
-### func \(\*Snapshot\) [DrawModel](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L253-L258>)
+
+### func \(\*Snapshot\) [DrawModel](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L253-L258)
 
 ```go
 func (snapshot *Snapshot) DrawModel(name string, parent string, pose spatialmath.Pose, options ...DrawModelOption) error
@@ -1894,7 +2034,8 @@ func (snapshot *Snapshot) DrawModel(name string, parent string, pose spatialmath
 DrawModelFromURL draws a model from a URL to the snapshot Returns an error if the model cannot be drawn.
 
 <a name="Snapshot.DrawPoints"></a>
-### func \(\*Snapshot\) [DrawPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L271-L277>)
+
+### func \(\*Snapshot\) [DrawPoints](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L271-L277)
 
 ```go
 func (snapshot *Snapshot) DrawPoints(name string, parent string, pose spatialmath.Pose, positions []r3.Vector, options ...DrawPointsOption) error
@@ -1903,7 +2044,8 @@ func (snapshot *Snapshot) DrawPoints(name string, parent string, pose spatialmat
 DrawPoints draws a set of points to the snapshot Returns an error if the points cannot be drawn.
 
 <a name="Snapshot.Drawings"></a>
-### func \(\*Snapshot\) [Drawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L39>)
+
+### func \(\*Snapshot\) [Drawings](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L39)
 
 ```go
 func (snapshot *Snapshot) Drawings() []*Drawing
@@ -1912,7 +2054,8 @@ func (snapshot *Snapshot) Drawings() []*Drawing
 Drawings returns the drawings of the snapshot
 
 <a name="Snapshot.MarshalBinary"></a>
-### func \(\*Snapshot\) [MarshalBinary](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L73>)
+
+### func \(\*Snapshot\) [MarshalBinary](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L73)
 
 ```go
 func (snapshot *Snapshot) MarshalBinary() ([]byte, error)
@@ -1921,7 +2064,8 @@ func (snapshot *Snapshot) MarshalBinary() ([]byte, error)
 MarshalBinary marshals a snapshot to binary protobuf format
 
 <a name="Snapshot.MarshalBinaryGzip"></a>
-### func \(\*Snapshot\) [MarshalBinaryGzip](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L78>)
+
+### func \(\*Snapshot\) [MarshalBinaryGzip](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L78)
 
 ```go
 func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error)
@@ -1930,7 +2074,8 @@ func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error)
 MarshalBinaryGzip marshals a snapshot to gzip\-compressed binary protobuf format
 
 <a name="Snapshot.MarshalJSON"></a>
-### func \(\*Snapshot\) [MarshalJSON](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L64>)
+
+### func \(\*Snapshot\) [MarshalJSON](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L64)
 
 ```go
 func (snapshot *Snapshot) MarshalJSON() ([]byte, error)
@@ -1939,7 +2084,8 @@ func (snapshot *Snapshot) MarshalJSON() ([]byte, error)
 MarshalJSON marshals a snapshot to JSON
 
 <a name="Snapshot.SceneMetadata"></a>
-### func \(\*Snapshot\) [SceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L44>)
+
+### func \(\*Snapshot\) [SceneMetadata](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L44)
 
 ```go
 func (snapshot *Snapshot) SceneMetadata() SceneMetadata
@@ -1948,7 +2094,8 @@ func (snapshot *Snapshot) SceneMetadata() SceneMetadata
 SceneMetadata returns the scene metadata of the snapshot
 
 <a name="Snapshot.ToProto"></a>
-### func \(\*Snapshot\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L49>)
+
+### func \(\*Snapshot\) [ToProto](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L49)
 
 ```go
 func (snapshot *Snapshot) ToProto() *drawv1.Snapshot
@@ -1957,7 +2104,8 @@ func (snapshot *Snapshot) ToProto() *drawv1.Snapshot
 ToProto converts the snapshot to a protobuf message
 
 <a name="Snapshot.Transforms"></a>
-### func \(\*Snapshot\) [Transforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L34>)
+
+### func \(\*Snapshot\) [Transforms](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L34)
 
 ```go
 func (snapshot *Snapshot) Transforms() []*commonv1.Transform
@@ -1966,7 +2114,8 @@ func (snapshot *Snapshot) Transforms() []*commonv1.Transform
 Transforms returns the transforms of the snapshot
 
 <a name="Snapshot.UUID"></a>
-### func \(\*Snapshot\) [UUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L29>)
+
+### func \(\*Snapshot\) [UUID](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L29)
 
 ```go
 func (snapshot *Snapshot) UUID() []byte
@@ -1975,7 +2124,8 @@ func (snapshot *Snapshot) UUID() []byte
 UUID returns the UUID of the snapshot
 
 <a name="Snapshot.Validate"></a>
-### func \(\*Snapshot\) [Validate](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L108>)
+
+### func \(\*Snapshot\) [Validate](https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L108)
 
 ```go
 func (snapshot *Snapshot) Validate() error
@@ -1983,4 +2133,4 @@ func (snapshot *Snapshot) Validate() error
 
 Validate validates a snapshot
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

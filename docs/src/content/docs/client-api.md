@@ -57,41 +57,40 @@ func main() {
 
 ## Index
 
-- [Variables](<#variables>)
-- [func DrawFrameSystem\(options DrawFrameSystemOptions\) \(\[\]\[\]byte, error\)](<#DrawFrameSystem>)
-- [func DrawFrames\(options DrawFramesOptions\) \(\[\]\[\]byte, error\)](<#DrawFrames>)
-- [func DrawGLTF\(options DrawGLTFOptions\) \(\[\]byte, error\)](<#DrawGLTF>)
-- [func DrawGeometriesInFrame\(options DrawGeometriesInFrameOptions\) \(\[\]\[\]byte, error\)](<#DrawGeometriesInFrame>)
-- [func DrawGeometry\(options DrawGeometryOptions\) \(\[\]byte, error\)](<#DrawGeometry>)
-- [func DrawLine\(options DrawLineOptions\) \(\[\]byte, error\)](<#DrawLine>)
-- [func DrawNurbs\(options DrawNurbsOptions\) \(\[\]byte, error\)](<#DrawNurbs>)
-- [func DrawPointCloud\(options DrawPointCloudOptions\) \(\[\]byte, error\)](<#DrawPointCloud>)
-- [func DrawPoints\(options DrawPointsOptions\) \(\[\]byte, error\)](<#DrawPoints>)
-- [func DrawPosesAsArrows\(options DrawPosesAsArrowsOptions\) \(\[\]byte, error\)](<#DrawPosesAsArrows>)
-- [func DrawRobot\(options DrawRobotOptions\) \(\[\]\[\]byte, error\)](<#DrawRobot>)
-- [func DrawWorldState\(options DrawWorldStateOptions\) \(\[\]\[\]byte, error\)](<#DrawWorldState>)
-- [func Record\(filename string\) error](<#Record>)
-- [func RemoveAll\(\) \(int32, error\)](<#RemoveAll>)
-- [func RemoveDrawings\(\) \(int32, error\)](<#RemoveDrawings>)
-- [func RemoveTransforms\(\) \(int32, error\)](<#RemoveTransforms>)
-- [func Replay\(filename string, playbackSpeed float64\) error](<#Replay>)
-- [func ResetCamera\(\) error](<#ResetCamera>)
-- [func SetCamera\(options SetCameraPoseOptions\) error](<#SetCamera>)
-- [func StopRecord\(\)](<#StopRecord>)
-- [type DrawFrameSystemOptions](<#DrawFrameSystemOptions>)
-- [type DrawFramesOptions](<#DrawFramesOptions>)
-- [type DrawGLTFOptions](<#DrawGLTFOptions>)
-- [type DrawGeometriesInFrameOptions](<#DrawGeometriesInFrameOptions>)
-- [type DrawGeometryOptions](<#DrawGeometryOptions>)
-- [type DrawLineOptions](<#DrawLineOptions>)
-- [type DrawNurbsOptions](<#DrawNurbsOptions>)
-- [type DrawPointCloudOptions](<#DrawPointCloudOptions>)
-- [type DrawPointsOptions](<#DrawPointsOptions>)
-- [type DrawPosesAsArrowsOptions](<#DrawPosesAsArrowsOptions>)
-- [type DrawRobotOptions](<#DrawRobotOptions>)
-- [type DrawWorldStateOptions](<#DrawWorldStateOptions>)
-- [type SetCameraPoseOptions](<#SetCameraPoseOptions>)
-
+- [Variables](#variables)
+- [func DrawFrameSystem\(options DrawFrameSystemOptions\) \(\[\]\[\]byte, error\)](#DrawFrameSystem)
+- [func DrawFrames\(options DrawFramesOptions\) \(\[\]\[\]byte, error\)](#DrawFrames)
+- [func DrawGLTF\(options DrawGLTFOptions\) \(\[\]byte, error\)](#DrawGLTF)
+- [func DrawGeometriesInFrame\(options DrawGeometriesInFrameOptions\) \(\[\]\[\]byte, error\)](#DrawGeometriesInFrame)
+- [func DrawGeometry\(options DrawGeometryOptions\) \(\[\]byte, error\)](#DrawGeometry)
+- [func DrawLine\(options DrawLineOptions\) \(\[\]byte, error\)](#DrawLine)
+- [func DrawNurbs\(options DrawNurbsOptions\) \(\[\]byte, error\)](#DrawNurbs)
+- [func DrawPointCloud\(options DrawPointCloudOptions\) \(\[\]byte, error\)](#DrawPointCloud)
+- [func DrawPoints\(options DrawPointsOptions\) \(\[\]byte, error\)](#DrawPoints)
+- [func DrawPosesAsArrows\(options DrawPosesAsArrowsOptions\) \(\[\]byte, error\)](#DrawPosesAsArrows)
+- [func DrawRobot\(options DrawRobotOptions\) \(\[\]\[\]byte, error\)](#DrawRobot)
+- [func DrawWorldState\(options DrawWorldStateOptions\) \(\[\]\[\]byte, error\)](#DrawWorldState)
+- [func Record\(filename string\) error](#Record)
+- [func RemoveAll\(\) \(int32, error\)](#RemoveAll)
+- [func RemoveDrawings\(\) \(int32, error\)](#RemoveDrawings)
+- [func RemoveTransforms\(\) \(int32, error\)](#RemoveTransforms)
+- [func Replay\(filename string, playbackSpeed float64\) error](#Replay)
+- [func ResetCamera\(\) error](#ResetCamera)
+- [func SetCamera\(options SetCameraPoseOptions\) error](#SetCamera)
+- [func StopRecord\(\)](#StopRecord)
+- [type DrawFrameSystemOptions](#DrawFrameSystemOptions)
+- [type DrawFramesOptions](#DrawFramesOptions)
+- [type DrawGLTFOptions](#DrawGLTFOptions)
+- [type DrawGeometriesInFrameOptions](#DrawGeometriesInFrameOptions)
+- [type DrawGeometryOptions](#DrawGeometryOptions)
+- [type DrawLineOptions](#DrawLineOptions)
+- [type DrawNurbsOptions](#DrawNurbsOptions)
+- [type DrawPointCloudOptions](#DrawPointCloudOptions)
+- [type DrawPointsOptions](#DrawPointsOptions)
+- [type DrawPosesAsArrowsOptions](#DrawPosesAsArrowsOptions)
+- [type DrawRobotOptions](#DrawRobotOptions)
+- [type DrawWorldStateOptions](#DrawWorldStateOptions)
+- [type SetCameraPoseOptions](#SetCameraPoseOptions)
 
 ## Variables
 
@@ -102,7 +101,8 @@ var ErrVisualizerNotRunning = errors.New("visualizer is not running; start it wi
 ```
 
 <a name="DrawFrameSystem"></a>
-## func [DrawFrameSystem](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frame_system.go#L32>)
+
+## func [DrawFrameSystem](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frame_system.go#L32)
 
 ```go
 func DrawFrameSystem(options DrawFrameSystemOptions) ([][]byte, error)
@@ -111,7 +111,8 @@ func DrawFrameSystem(options DrawFrameSystemOptions) ([][]byte, error)
 DrawFrameSystem draws a frame system in the visualizer by rendering all geometries to the world frame. Returns the UUIDs of all drawn transforms, or an error if the server is not running or the drawing fails.
 
 <a name="DrawFrames"></a>
-## func [DrawFrames](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frames.go#L31>)
+
+## func [DrawFrames](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frames.go#L31)
 
 ```go
 func DrawFrames(options DrawFramesOptions) ([][]byte, error)
@@ -120,7 +121,8 @@ func DrawFrames(options DrawFramesOptions) ([][]byte, error)
 DrawFrames draws multiple frames in the visualizer. Frames with no geometry are rendered as axes. Frames with geometry produce one transform per geometry, named "frameName:geoLabel", or just "frameName" when the geometry has no distinct label. Returns the UUIDs of all drawn transforms, or an error if the server is not running or the drawing fails.
 
 <a name="DrawGLTF"></a>
-## func [DrawGLTF](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_gltf.go#L36>)
+
+## func [DrawGLTF](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_gltf.go#L36)
 
 ```go
 func DrawGLTF(options DrawGLTFOptions) ([]byte, error)
@@ -129,7 +131,8 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error)
 DrawGLTF draws a GLTF model in the visualizer. Calling DrawGLTF with an ID that already exists will instead update the model. Returns the UUID of the drawn model, or an error if the server is not running or the drawing fails.
 
 <a name="DrawGeometriesInFrame"></a>
-## func [DrawGeometriesInFrame](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometries.go#L37>)
+
+## func [DrawGeometriesInFrame](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometries.go#L37)
 
 ```go
 func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, error)
@@ -138,7 +141,8 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 DrawGeometriesInFrame draws a list of geometries in the visualizer. Calling DrawGeometriesInFrame with geometries that share labels with previously drawn geometries will update those geometries in place. Returns the UUIDs of the drawn geometries, or an error if the server is not running or the drawing fails.
 
 <a name="DrawGeometry"></a>
-## func [DrawGeometry](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometry.go#L33>)
+
+## func [DrawGeometry](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometry.go#L33)
 
 ```go
 func DrawGeometry(options DrawGeometryOptions) ([]byte, error)
@@ -149,7 +153,8 @@ DrawGeometry draws a geometry in the visualizer. Calling DrawGeometry with an ID
 Returns the UUID of the drawn geometry, or an error if the server is not running or the drawing fails.
 
 <a name="DrawLine"></a>
-## func [DrawLine](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_line.go#L48>)
+
+## func [DrawLine](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_line.go#L48)
 
 ```go
 func DrawLine(options DrawLineOptions) ([]byte, error)
@@ -158,7 +163,8 @@ func DrawLine(options DrawLineOptions) ([]byte, error)
 DrawLine draws a line in the visualizer. Calling DrawLine with an ID that already exists will instead update the line. Returns the UUID of the drawn line, or an error if the server is not running or the drawing fails.
 
 <a name="DrawNurbs"></a>
-## func [DrawNurbs](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_nurbs.go#L47>)
+
+## func [DrawNurbs](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_nurbs.go#L47)
 
 ```go
 func DrawNurbs(options DrawNurbsOptions) ([]byte, error)
@@ -167,7 +173,8 @@ func DrawNurbs(options DrawNurbsOptions) ([]byte, error)
 DrawNurbs draws a NURBS curve in the visualizer. Calling DrawNurbs with an ID that already exists will instead update the curve. Returns the UUID of the drawn NURBS curve, or an error if the server is not running or the drawing fails.
 
 <a name="DrawPointCloud"></a>
-## func [DrawPointCloud](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_point_cloud.go#L37>)
+
+## func [DrawPointCloud](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_point_cloud.go#L37)
 
 ```go
 func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error)
@@ -176,7 +183,8 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error)
 DrawPointCloud draws a PointCloud in the visualizer. Calling DrawPointCloud with an ID that already exists will instead update the point cloud. Returns the UUID of the drawn point cloud, or an error if the server is not running or the drawing fails.
 
 <a name="DrawPoints"></a>
-## func [DrawPoints](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_points.go#L39>)
+
+## func [DrawPoints](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_points.go#L39)
 
 ```go
 func DrawPoints(options DrawPointsOptions) ([]byte, error)
@@ -185,7 +193,8 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error)
 DrawPoints draws a set of points in the visualizer. Calling DrawPoints with an ID that already exists will instead update the points. Returns the UUID of the drawn points, or an error if the server is not running or the drawing fails.
 
 <a name="DrawPosesAsArrows"></a>
-## func [DrawPosesAsArrows](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_poses_as_arrows.go#L37>)
+
+## func [DrawPosesAsArrows](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_poses_as_arrows.go#L37)
 
 ```go
 func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error)
@@ -194,7 +203,8 @@ func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error)
 DrawPosesAsArrows draws a list of poses in the visualizer as arrows. Calling DrawPosesAsArrows with an ID that already exists will instead update the arrows. Returns the UUID of the drawn poses, or an error if the server is not running or the drawing fails.
 
 <a name="DrawRobot"></a>
-## func [DrawRobot](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_robot.go#L49>)
+
+## func [DrawRobot](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_robot.go#L49)
 
 ```go
 func DrawRobot(options DrawRobotOptions) ([][]byte, error)
@@ -203,7 +213,8 @@ func DrawRobot(options DrawRobotOptions) ([][]byte, error)
 DrawRobot draws a robot in the visualizer, including its frame system geometries and optionally a world state with obstacles. Returns a list of all UUIDs created, or an error if the server is not running or drawing fails.
 
 <a name="DrawWorldState"></a>
-## func [DrawWorldState](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_world_state.go#L35>)
+
+## func [DrawWorldState](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_world_state.go#L35)
 
 ```go
 func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error)
@@ -212,7 +223,8 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error)
 DrawWorldState draws a world state in the visualizer. Returns the UUIDs of the drawn geometries, or an error if the server is not running or the drawing fails.
 
 <a name="Record"></a>
-## func [Record](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L24>)
+
+## func [Record](https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L24)
 
 ```go
 func Record(filename string) error
@@ -221,7 +233,8 @@ func Record(filename string) error
 Record starts recording all drawing operations to the specified file. The scene is cleared first to ensure the recording is self\-contained. Call StopRecord to finish recording.
 
 <a name="RemoveAll"></a>
-## func [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_all.go#L14>)
+
+## func [RemoveAll](https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_all.go#L14)
 
 ```go
 func RemoveAll() (int32, error)
@@ -230,7 +243,8 @@ func RemoveAll() (int32, error)
 RemoveAll clears all drawn items from the visualizer. Returns the number of items removed, or an error if the server is not running or the removal fails.
 
 <a name="RemoveDrawings"></a>
-## func [RemoveDrawings](<https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_drawings.go#L14>)
+
+## func [RemoveDrawings](https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_drawings.go#L14)
 
 ```go
 func RemoveDrawings() (int32, error)
@@ -239,7 +253,8 @@ func RemoveDrawings() (int32, error)
 RemoveDrawings clears all drawn Drawings from the visualizer. Returns the number of Drawings removed, or an error if the server is not running or the removal fails.
 
 <a name="RemoveTransforms"></a>
-## func [RemoveTransforms](<https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_transforms.go#L14>)
+
+## func [RemoveTransforms](https://github.com/viam-labs/motion-tools/blob/main/client/api/remove_transforms.go#L14)
 
 ```go
 func RemoveTransforms() (int32, error)
@@ -248,7 +263,8 @@ func RemoveTransforms() (int32, error)
 RemoveTransforms clears all drawn transforms from the visualizer. Returns the number of transforms removed, or an error if the server is not running or the removal fails.
 
 <a name="Replay"></a>
-## func [Replay](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L51>)
+
+## func [Replay](https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L51)
 
 ```go
 func Replay(filename string, playbackSpeed float64) error
@@ -257,7 +273,8 @@ func Replay(filename string, playbackSpeed float64) error
 Replay replays a previously recorded session from the specified file. playbackSpeed controls replay speed \(1.0 = normal, 2.0 = 2×, 0.5 = half speed\). The scene is cleared before replay to match the recording's initial state.
 
 <a name="ResetCamera"></a>
-## func [ResetCamera](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L57>)
+
+## func [ResetCamera](https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L57)
 
 ```go
 func ResetCamera() error
@@ -266,7 +283,8 @@ func ResetCamera() error
 ResetCamera resets the visualizer's camera pose to the default. Returns an error if the server is not running or the RPC fails.
 
 <a name="SetCamera"></a>
-## func [SetCamera](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L29>)
+
+## func [SetCamera](https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L29)
 
 ```go
 func SetCamera(options SetCameraPoseOptions) error
@@ -275,7 +293,8 @@ func SetCamera(options SetCameraPoseOptions) error
 SetCamera sets the visualizer's camera pose. The camera position and look\-at point are specified in millimeters. Returns an error if the server is not running or the RPC fails.
 
 <a name="StopRecord"></a>
-## func [StopRecord](<https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L42>)
+
+## func [StopRecord](https://github.com/viam-labs/motion-tools/blob/main/client/api/replay.go#L42)
 
 ```go
 func StopRecord()
@@ -284,7 +303,8 @@ func StopRecord()
 StopRecord stops the current recording session.
 
 <a name="DrawFrameSystemOptions"></a>
-## type [DrawFrameSystemOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frame_system.go#L15-L28>)
+
+## type [DrawFrameSystemOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frame_system.go#L15-L28)
 
 DrawFrameSystemOptions configures a DrawFrameSystem call.
 
@@ -306,7 +326,8 @@ type DrawFrameSystemOptions struct {
 ```
 
 <a name="DrawFramesOptions"></a>
-## type [DrawFramesOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frames.go#L15-L25>)
+
+## type [DrawFramesOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_frames.go#L15-L25)
 
 DrawFramesOptions configures a DrawFrames call.
 
@@ -325,7 +346,8 @@ type DrawFramesOptions struct {
 ```
 
 <a name="DrawGLTFOptions"></a>
-## type [DrawGLTFOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_gltf.go#L16-L31>)
+
+## type [DrawGLTFOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_gltf.go#L16-L31)
 
 DrawGLTFOptions configures a DrawGLTF call.
 
@@ -349,7 +371,8 @@ type DrawGLTFOptions struct {
 ```
 
 <a name="DrawGeometriesInFrameOptions"></a>
-## type [DrawGeometriesInFrameOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometries.go#L15-L31>)
+
+## type [DrawGeometriesInFrameOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometries.go#L15-L31)
 
 DrawGeometriesInFrameOptions configures a DrawGeometriesInFrame call.
 
@@ -374,7 +397,8 @@ type DrawGeometriesInFrameOptions struct {
 ```
 
 <a name="DrawGeometryOptions"></a>
-## type [DrawGeometryOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometry.go#L15-L27>)
+
+## type [DrawGeometryOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_geometry.go#L15-L27)
 
 DrawGeometryOptions configures a DrawGeometry call.
 
@@ -395,7 +419,8 @@ type DrawGeometryOptions struct {
 ```
 
 <a name="DrawLineOptions"></a>
-## type [DrawLineOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_line.go#L15-L43>)
+
+## type [DrawLineOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_line.go#L15-L43)
 
 DrawLineOptions configures a DrawLine call.
 
@@ -432,7 +457,8 @@ type DrawLineOptions struct {
 ```
 
 <a name="DrawNurbsOptions"></a>
-## type [DrawNurbsOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_nurbs.go#L15-L42>)
+
+## type [DrawNurbsOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_nurbs.go#L15-L42)
 
 DrawNurbsOptions configures a DrawNurbs call.
 
@@ -468,7 +494,8 @@ type DrawNurbsOptions struct {
 ```
 
 <a name="DrawPointCloudOptions"></a>
-## type [DrawPointCloudOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_point_cloud.go#L15-L32>)
+
+## type [DrawPointCloudOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_point_cloud.go#L15-L32)
 
 DrawPointCloudOptions configures a DrawPointCloud call.
 
@@ -494,7 +521,8 @@ type DrawPointCloudOptions struct {
 ```
 
 <a name="DrawPointsOptions"></a>
-## type [DrawPointsOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_points.go#L15-L34>)
+
+## type [DrawPointsOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_points.go#L15-L34)
 
 DrawPointsOptions configures a DrawPoints call.
 
@@ -522,7 +550,8 @@ type DrawPointsOptions struct {
 ```
 
 <a name="DrawPosesAsArrowsOptions"></a>
-## type [DrawPosesAsArrowsOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_poses_as_arrows.go#L15-L32>)
+
+## type [DrawPosesAsArrowsOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_poses_as_arrows.go#L15-L32)
 
 DrawPosesAsArrowsOptions configures a DrawPosesAsArrows call.
 
@@ -548,7 +577,8 @@ type DrawPosesAsArrowsOptions struct {
 ```
 
 <a name="DrawRobotOptions"></a>
-## type [DrawRobotOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_robot.go#L29-L44>)
+
+## type [DrawRobotOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_robot.go#L29-L44)
 
 DrawRobotOptions configures a DrawRobot call.
 
@@ -572,7 +602,8 @@ type DrawRobotOptions struct {
 ```
 
 <a name="DrawWorldStateOptions"></a>
-## type [DrawWorldStateOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_world_state.go#L15-L31>)
+
+## type [DrawWorldStateOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/draw_world_state.go#L15-L31)
 
 DrawWorldStateOptions configures a DrawWorldState call.
 
@@ -597,7 +628,8 @@ type DrawWorldStateOptions struct {
 ```
 
 <a name="SetCameraPoseOptions"></a>
-## type [SetCameraPoseOptions](<https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L15-L24>)
+
+## type [SetCameraPoseOptions](https://github.com/viam-labs/motion-tools/blob/main/client/api/set_camera.go#L15-L24)
 
 SetCameraPoseOptions configures a SetCamera call.
 
@@ -614,4 +646,4 @@ type SetCameraPoseOptions struct {
 }
 ```
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

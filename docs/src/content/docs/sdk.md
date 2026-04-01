@@ -287,10 +287,10 @@ Most drawing functions accept `[]draw.Color` with flexible semantics:
 
 ## API Reference
 
-| Document                       | Package                                        | Description                                            |
-| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
-| [draw API](../draw-api/)       | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
-| [client API](../client-api/)   | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
+| Document                     | Package                                        | Description                                            |
+| ---------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| [draw API](../draw-api/)     | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
+| [client API](../client-api/) | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
 
 ## Migration
 
