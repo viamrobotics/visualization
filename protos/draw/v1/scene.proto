@@ -7,6 +7,7 @@ import "common/v1/common.proto";
 option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 message OrthographicCamera {
+  optional float zoom = 1;
   // for orthographic camera props
 }
 

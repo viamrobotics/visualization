@@ -8,7 +8,7 @@ import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { asFloat32Array, inMetres, isRgba, isVertexColors, STRIDE } from '$lib/buffer'
+import { asFloat32Array, inMeters, isRgba, isVertexColors, STRIDE } from '$lib/buffer'
 import { traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { parseMetadata } from '$lib/metadata'
@@ -189,7 +189,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 		}
 
 		case 'line': {
-			const positions = asFloat32Array(geometryType.value.positions, inMetres)
+			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
@@ -207,7 +207,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 		}
 
 		case 'points': {
-			const positions = asFloat32Array(geometryType.value.positions, inMetres)
+			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
@@ -391,7 +391,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 	const geometryType = physicalObject?.geometryType
 	switch (geometryType?.case) {
 		case 'arrows': {
-			const poses = asFloat32Array(geometryType.value.poses, inMetres)
+			const poses = asFloat32Array(geometryType.value.poses, inMeters)
 			entity.set(traits.Positions, poses)
 			entity.set(traits.Instances, { count: poses.length / STRIDE.ARROWS })
 			entity.set(traits.Colors, colors ?? DEFAULT_ARROWS_COLORS)
@@ -399,7 +399,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 		}
 
 		case 'line': {
-			const positions = asFloat32Array(geometryType.value.positions, inMetres)
+			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)
@@ -417,7 +417,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 		}
 
 		case 'points': {
-			const positions = asFloat32Array(geometryType.value.positions, inMetres)
+			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)

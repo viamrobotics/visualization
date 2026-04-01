@@ -18,7 +18,7 @@
 
 	const object = $derived(selectedObject3d.current)
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			if (object === undefined) {
 				return
@@ -39,20 +39,10 @@
 			invalidate()
 		},
 		{
-			autoStart: false,
+			running: () => selectedEntity.current !== undefined,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (selectedEntity.current) {
-			start()
-		} else {
-			stop()
-		}
-
-		invalidate()
-	})
 </script>
 
 {#if selectedEntity.current}

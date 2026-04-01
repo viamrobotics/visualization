@@ -10,6 +10,7 @@ static/Big_Buck_Bunny_4K.webm
 .wrangler
 .svelte-kit
 build
+src/lib/**/__tests__/__screenshots__
 coverage
 dist
 .bin

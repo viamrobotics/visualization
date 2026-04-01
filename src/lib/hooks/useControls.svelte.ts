@@ -16,6 +16,7 @@ interface CameraControlsContext {
 	set(current: CameraControlsRef): void
 	setPose(pose: CameraPose, animate?: boolean): void
 	setInitialPose(): void
+	setZoom(zoom: number): void
 }
 
 export const provideCameraControls = (initialCameraPose: () => CameraPose | undefined) => {
@@ -27,6 +28,10 @@ export const provideCameraControls = (initialCameraPose: () => CameraPose | unde
 
 		controls?.setPosition(x, y, z, animate)
 		controls?.setLookAt(x, y, z, lookAtX, lookAtY, lookAtZ, animate)
+	}
+
+	const setZoom = (zoom: number) => {
+		controls?.zoomTo(zoom)
 	}
 
 	const setInitialPose = () => {
@@ -51,6 +56,7 @@ export const provideCameraControls = (initialCameraPose: () => CameraPose | unde
 		},
 		setPose,
 		setInitialPose,
+		setZoom,
 	})
 }
 

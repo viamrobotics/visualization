@@ -8,17 +8,17 @@ import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { useFrames } from './useFrames.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
 import { usePartID } from './usePartID.svelte'
 import { useRefetchPoses } from './useRefetchPoses'
 import { useResourceByName } from './useResourceByName.svelte'
+import { RefreshRates, useSettings } from './useSettings.svelte'
 
 const originFrameComponentTypes = new Set(['arm', 'gantry', 'gripper', 'base'])
 
 export const usePose = (name: () => string | undefined, parent: () => string | undefined) => {
 	const environment = useEnvironment()
 	const logs = useLogs()
-	const { refreshRates } = useMachineSettings()
+	const settings = useSettings()
 	const partID = usePartID()
 	const robotClient = useRobotClient(() => partID.current)
 	const currentName = $derived(name())
@@ -32,7 +32,7 @@ export const usePose = (name: () => string | undefined, parent: () => string | u
 
 	let pose = $state<Pose>()
 
-	const interval = $derived(refreshRates.get(RefreshRates.poses))
+	const interval = $derived(settings.current.refreshRates[RefreshRates.poses])
 
 	const resolvedParent = $derived(
 		originFrameComponentTypes.has(parentResource?.subtype ?? '') ? `${parent()}_origin` : parent()
