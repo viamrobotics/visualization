@@ -43,7 +43,13 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				return
 			}
 
-			if (isInstanceOf(ref, 'Points') && ref.geometry?.attributes.position) {
+			if (
+				isInstanceOf(ref, 'Points') &&
+				/**
+				 * This check is necessary, there are some strange cases where points are coming in from PCDs without any position data
+				 */
+				ref.geometry?.attributes.position
+			) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
@@ -56,7 +62,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					ref.raycast = Points.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
-			} else if (isInstanceOf(ref, 'BatchedMesh') && ref.geometry) {
+			} else if (isInstanceOf(ref, 'BatchedMesh')) {
 				/* @ts-expect-error Some sort of ambient type is conflicing here, likely from @threlte/extras */
 				ref.geometry.computeBoundsTree = computeBatchedBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBatchedBoundsTree
