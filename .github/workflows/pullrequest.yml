@@ -187,17 +187,34 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm playwright install chromium --with-deps
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.23.11
-          cache: true
-
       - name: Download TypeScript proto artifacts
         uses: actions/download-artifact@v4
         with:
           name: protos-ts
           path: src/lib/buf/
+
+      - name: Test
+        run: npx vitest run --coverage
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-draw:
+    runs-on: ubuntu-latest
+    needs: proto-gen
+    if: ${{ !startsWith(github.event.pull_request.title, 'Version Packages') }}
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23.11
+          cache: true
 
       - name: Download Go proto artifacts
         uses: actions/download-artifact@v4
@@ -205,13 +222,5 @@ jobs:
           name: protos-go
           path: draw/v1/
 
-      - name: Test
-        run: npx vitest run --coverage
-
       - name: Test Draw
-        run: pnpm test:draw
-
-      - name: Upload results to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        run: go test ./draw/... -count=1
