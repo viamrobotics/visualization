@@ -62,11 +62,20 @@ export default defineConfig({
 		projects: [
 			{
 				extends: './vite.config.ts',
-				plugins: [svelteTesting()],
+				plugins: [svelteTesting({ resolveBrowser: false })],
+
+				optimizeDeps: {
+					exclude: ['@testing-library/svelte'],
+				},
 
 				test: {
 					name: 'client',
-					environment: 'jsdom',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: 'playwright',
+						instances: [{ browser: 'chromium' }],
+					},
 					clearMocks: true,
 					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
 					exclude: ['src/lib/server/**'],
@@ -78,7 +87,12 @@ export default defineConfig({
 
 				test: {
 					name: 'server',
-					environment: 'node',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: 'playwright',
+						instances: [{ browser: 'chromium' }],
+					},
 					include: ['src/**/*.{test,spec}.{js,ts}'],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
 				},
