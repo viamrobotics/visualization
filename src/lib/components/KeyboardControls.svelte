@@ -67,7 +67,6 @@
 
 	useTask(
 		(delta) => {
-			console.log(1)
 			const dt = delta * 1000
 
 			// Disallow keyboard navigation if the user is holding down the meta key
