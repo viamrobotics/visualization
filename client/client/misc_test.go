@@ -19,3 +19,5 @@ func TestHover(t *testing.T) {
 		test.That(t, DrawPointCloud("boat", pcd, nil), test.ShouldBeNil)
 	})
 }
+
+// go test ./client/client -run '^TestHover$/^TestHover$' -v -count=1
