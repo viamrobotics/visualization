@@ -1,4 +1,6 @@
-# Draw Client Migration Guide: v1 to v2
+---
+title: 'Migration v1 to v2'
+---
 
 This guide covers migrating from the legacy draw client (`client/client`) to the new draw client API (`client/api`). Every changed function is documented with before/after examples.
 

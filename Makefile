@@ -3,6 +3,9 @@
 
 DRAW_DIR := draw
 DRAW_FILES := $(shell find $(DRAW_DIR) -name "*.go" -not -name "*_test.go")
+CLIENT_API_DIR := client/api
+CLIENT_API_FILES := $(shell find $(CLIENT_API_DIR) -name "*.go" -not -name "*_test.go")
+DOCS_CONTENT_DIR := docs/src/content/docs
 
 # Calculate hash of protobuf files that affect the build
 define calculate_proto_hash
@@ -132,5 +135,18 @@ proto: proto-clean proto-vendor
 draw/DOCS.md: $(DRAW_FILES)
 	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md
 
+client/api/DOCS.md: $(CLIENT_API_FILES)
+	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./client/api -o ./client/api/DOCS.md
+
 .PHONY: docs
-docs: draw/DOCS.md
+docs: draw/DOCS.md client/api/DOCS.md
+	@echo '---' > $(DOCS_CONTENT_DIR)/draw-api.md
+	@echo 'title: Draw API' >> $(DOCS_CONTENT_DIR)/draw-api.md
+	@echo '---' >> $(DOCS_CONTENT_DIR)/draw-api.md
+	@echo '' >> $(DOCS_CONTENT_DIR)/draw-api.md
+	@tail -n +3 draw/DOCS.md >> $(DOCS_CONTENT_DIR)/draw-api.md
+	@echo '---' > $(DOCS_CONTENT_DIR)/client-api.md
+	@echo 'title: Client API' >> $(DOCS_CONTENT_DIR)/client-api.md
+	@echo '---' >> $(DOCS_CONTENT_DIR)/client-api.md
+	@echo '' >> $(DOCS_CONTENT_DIR)/client-api.md
+	@tail -n +3 client/api/DOCS.md >> $(DOCS_CONTENT_DIR)/client-api.md

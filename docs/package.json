@@ -2,11 +2,14 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "vitepress dev",
-		"build": "vitepress build",
-		"preview": "vitepress preview"
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview"
 	},
-	"devDependencies": {
-		"vitepress": "^1.6.3"
+	"dependencies": {
+		"astro": "^6.1.2",
+		"@astrojs/starlight": "^0.38.2",
+		"@astrojs/svelte": "^8.0.4",
+		"svelte": "^5.0.0"
 	}
 }

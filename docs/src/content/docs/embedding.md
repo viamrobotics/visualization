@@ -1,4 +1,6 @@
-# Embedding Guide
+---
+title: Embedding Guide
+---
 
 Motion Tools is published as an npm package that you can embed in your own Svelte application. The package provides the core visualizer component, a snapshot renderer, and plugins for point cloud selection and display.
 
@@ -22,15 +24,15 @@ The top-level wrapper component that provides the 3D scene, ECS world, settings,
 
 ### Props
 
-| Prop                   | Type                   | Default | Description                                           |
-| ---------------------- | ---------------------- | ------- | ----------------------------------------------------- |
-| `partID`               | `string`               | `''`    | Identifier for the robot part to connect to           |
-| `enableKeybindings`    | `boolean`              | `true`  | Enable keyboard shortcuts (WASD, camera toggle, etc.) |
-| `cameraPose`           | `CameraPose`           | --      | Initial camera position and look-at target            |
-| `drawConnectionConfig` | `DrawConnectionConfig` | --      | Backend connection for the live draw server           |
-| `children`             | `Snippet`              | --      | Content rendered inside the 3D scene                  |
-| `dashboard`            | `Snippet`              | --      | Custom toolbar content                                |
-| `details`              | `Snippet<[{ entity: Entity }]>` | --  | Custom content injected into the entity details panel |
+| Prop                   | Type                            | Default | Description                                           |
+| ---------------------- | ------------------------------- | ------- | ----------------------------------------------------- |
+| `partID`               | `string`                        | `''`    | Identifier for the robot part to connect to           |
+| `enableKeybindings`    | `boolean`                       | `true`  | Enable keyboard shortcuts (WASD, camera toggle, etc.) |
+| `cameraPose`           | `CameraPose`                    | --      | Initial camera position and look-at target            |
+| `drawConnectionConfig` | `DrawConnectionConfig`          | --      | Backend connection for the live draw server           |
+| `children`             | `Snippet`                       | --      | Content rendered inside the 3D scene                  |
+| `dashboard`            | `Snippet`                       | --      | Custom toolbar content                                |
+| `details`              | `Snippet<[{ entity: Entity }]>` | --      | Custom content injected into the entity details panel |
 
 #### `CameraPose`
 
@@ -162,12 +164,12 @@ Renders point cloud data as an entity in the scene.
 
 #### Props
 
-| Prop          | Type         | Default           | Description                       |
-| ------------- | ------------ | ----------------- | --------------------------------- |
-| `data`        | `Uint8Array` | --                | Binary PCD data (required)        |
-| `name`        | `string`     | `'Random points'` | Display name in the world tree    |
-| `renderOrder` | `number`     | --                | Rendering order for draw priority |
-| `oncreate`    | `(positions: Float32Array, colors: Uint8Array \| null) => void` | -- | Callback fired after PCD is parsed and the entity is spawned |
+| Prop          | Type                                                            | Default           | Description                                                  |
+| ------------- | --------------------------------------------------------------- | ----------------- | ------------------------------------------------------------ |
+| `data`        | `Uint8Array`                                                    | --                | Binary PCD data (required)                                   |
+| `name`        | `string`                                                        | `'Random points'` | Display name in the world tree                               |
+| `renderOrder` | `number`                                                        | --                | Rendering order for draw priority                            |
+| `oncreate`    | `(positions: Float32Array, colors: Uint8Array \| null) => void` | --                | Callback fired after PCD is parsed and the entity is spawned |
 
 ## Package Exports
 
@@ -179,20 +181,27 @@ The main entry point for the visualizer and plugins.
 
 ```typescript
 import { MotionTools, SelectionTool, PCD } from '@viamrobotics/motion-tools'
-import { relations, traits, provideWorld, useWorld, useQuery, useTrait } from '@viamrobotics/motion-tools'
+import {
+	relations,
+	traits,
+	provideWorld,
+	useWorld,
+	useQuery,
+	useTrait,
+} from '@viamrobotics/motion-tools'
 ```
 
-| Export          | Description                                            |
-| --------------- | ------------------------------------------------------ |
-| `MotionTools`   | Main visualizer component                              |
-| `SelectionTool` | Point cloud selection plugin (lasso + ellipse)         |
-| `PCD`           | Point cloud renderer component                         |
-| `relations`     | ECS relation definitions (e.g. `ChildOf`)              |
-| `traits`        | ECS trait definitions for all entity properties         |
-| `provideWorld`  | Create and provide an ECS world via Svelte context      |
-| `useWorld`      | Access the ECS world from Svelte context                |
-| `useQuery`      | Reactive hook to query entities by traits               |
-| `useTrait`      | Reactive hook to read a trait value from an entity      |
+| Export          | Description                                        |
+| --------------- | -------------------------------------------------- |
+| `MotionTools`   | Main visualizer component                          |
+| `SelectionTool` | Point cloud selection plugin (lasso + ellipse)     |
+| `PCD`           | Point cloud renderer component                     |
+| `relations`     | ECS relation definitions (e.g. `ChildOf`)          |
+| `traits`        | ECS trait definitions for all entity properties    |
+| `provideWorld`  | Create and provide an ECS world via Svelte context |
+| `useWorld`      | Access the ECS world from Svelte context           |
+| `useQuery`      | Reactive hook to query entities by traits          |
+| `useTrait`      | Reactive hook to read a trait value from an entity |
 
 ### `@viamrobotics/motion-tools/lib`
 

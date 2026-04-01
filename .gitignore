@@ -43,9 +43,9 @@ vite.config.ts.timestamp-*
 src/lib/buf
 protos/vendor
 
-# VitePress
-docs/.vitepress/dist
-docs/.vitepress/cache
+# Astro / Starlight
+docs/.astro
+docs/dist
 
 # IDE
 .cursor

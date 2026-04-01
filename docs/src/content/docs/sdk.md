@@ -1,4 +1,6 @@
-# SDK Guide
+---
+title: SDK Guide
+---
 
 The Motion Tools SDK lets you interact with the visualizer programmatically from Go. It is organized into three layers:
 
@@ -211,7 +213,7 @@ gzipData, err := snapshot.MarshalBinaryGzip()    // Gzip-compressed binary (smal
 
 ### Loading Snapshots
 
-Any instance of the visualizer can load snapshot files via drag-and-drop. Snapshot files must be named with the `visualization_snapshot` prefix and use a `.json`, `.pb`, or `.pb.gz` extension. Snapshots can also be rendered programmatically when [embedding](embedding.md) the visualizer using the `<Snapshot>` component.
+Any instance of the visualizer can load snapshot files via drag-and-drop. Snapshot files must be named with the `visualization_snapshot` prefix and use a `.json`, `.pb`, or `.pb.gz` extension. Snapshots can also be rendered programmatically when [embedding](../embedding/) the visualizer using the `<Snapshot>` component.
 
 ## Proto Definitions (`protos/draw/v1/`)
 
@@ -287,9 +289,9 @@ Most drawing functions accept `[]draw.Color` with flexible semantics:
 
 | Document                       | Package                                        | Description                                            |
 | ------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
-| [draw-api.md](draw-api.md)     | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
-| [client-api.md](client-api.md) | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
+| [draw API](../draw-api/)       | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
+| [client API](../client-api/)   | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
 
 ## Migration
 
-If you are migrating from the legacy `client/client` package to `client/api`, see the [migration guide](migration-v1-to-v2.md).
+If you are migrating from the legacy `client/client` package to `client/api`, see the [migration guide](../migration-v1-to-v2/).

@@ -1,4 +1,6 @@
-# Visualizer Guide
+---
+title: Visualizer Guide
+---
 
 This guide covers the tools and features available in the Motion Tools visualizer UI.
 
@@ -33,7 +35,7 @@ You can manage multiple configurations and toggle between them using the **Activ
 
 **Environment variable configs:**
 
-Configs can also be pre-loaded from a `.env.local` file using the `VITE_CONFIGS` variable (see [Quick Start](index.md#connect-to-a-machine)). Environment-injected configs appear in the panel but cannot be deleted.
+Configs can also be pre-loaded from a `.env.local` file using the `VITE_CONFIGS` variable (see [Quick Start](../#connect-to-a-machine)). Environment-injected configs appear in the panel but cannot be deleted.
 
 All user-added configs are persisted to IndexedDB and available across browser sessions.
 

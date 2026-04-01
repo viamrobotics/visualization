@@ -1,6 +1,20 @@
-# Motion Tools
-
-Motion Tools is a 3D visualization interface for spatial data built for [Viam](https://viam.com) robotics. Use it to visualize robot frames, geometries, point clouds, and custom drawings for motion-related monitoring, testing, and debugging.
+---
+title: Motion Tools
+description: 3D visualization SDK for Viam
+template: splash
+hero:
+  tagline: A 3D visualization interface for spatial data built for Viam robotics.
+  actions:
+    - text: Get Started
+      link: /motion-tools/visualizer/
+    - text: SDK Guide
+      link: /motion-tools/sdk/
+      variant: minimal
+    - text: GitHub
+      link: https://github.com/viam-labs/motion-tools
+      variant: minimal
+      icon: github
+---
 
 ## What You Can Do
 
@@ -39,7 +53,7 @@ VITE_CONFIGS='
 '
 ```
 
-The visualizer connects to Viam machines using the [Viam TypeScript SDK](https://ts.viam.dev) under the hood. See the [Visualizer Guide](visualizer.md) for details on the connection panel and all available UI tools.
+The visualizer connects to Viam machines using the [Viam TypeScript SDK](https://ts.viam.dev) under the hood. See the [Visualizer Guide](../visualizer/) for details on the connection panel and all available UI tools.
 
 ### Draw from Go
 
@@ -66,7 +80,7 @@ func main() {
 }
 ```
 
-See the [SDK Guide](sdk.md) for the full drawing API, snapshot creation, and proto definitions.
+See the [SDK Guide](../sdk/) for the full drawing API, snapshot creation, and proto definitions.
 
 ### Embed in Your App
 
@@ -87,7 +101,7 @@ pnpm add @viamrobotics/motion-tools
 </MotionTools>
 ```
 
-See the [Embedding Guide](embedding.md) for component props, plugins, and package exports.
+See the [Embedding Guide](../embedding/) for component props, plugins, and package exports.
 
 ## Running Multiple Instances
 
@@ -100,16 +114,16 @@ make up STATIC_PORT=5174   # second instance on port 5174
 
 ## Guides
 
-| Guide                                       | Description                                                                       |
-| ------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Visualizer Guide](visualizer.md)           | UI tools: world tree, settings, camera controls, measurement, frame editing, logs |
-| [SDK Guide](sdk.md)                         | Go SDK: real-time drawing, snapshots, proto definitions, color API                |
-| [Embedding Guide](embedding.md)             | Svelte components: `<MotionTools>`, `<Snapshot>`, plugins, package exports        |
-| [Migration v1 to v2](migration-v1-to-v2.md) | Migrating from the legacy `client/client` package to `client/api`                 |
+| Guide                                        | Description                                                                       |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Visualizer Guide](../visualizer/)           | UI tools: world tree, settings, camera controls, measurement, frame editing, logs |
+| [SDK Guide](../sdk/)                         | Go SDK: real-time drawing, snapshots, proto definitions, color API                |
+| [Embedding Guide](../embedding/)             | Svelte components: `<MotionTools>`, `<Snapshot>`, plugins, package exports        |
+| [Migration v1 to v2](../migration-v1-to-v2/) | Migrating from the legacy `client/client` package to `client/api`                 |
 
 ## API Reference
 
-| Document                       | Package                                        | Description                                            |
-| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------ |
-| [draw-api.md](draw-api.md)     | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
-| [client-api.md](client-api.md) | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
+| Document                     | Package                                        | Description                                            |
+| ---------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| [draw API](../draw-api/)     | `github.com/viam-labs/motion-tools/draw`       | Scene primitives, snapshots, colors, and serialization |
+| [client API](../client-api/) | `github.com/viam-labs/motion-tools/client/api` | Real-time drawing functions, option types, and removal |
