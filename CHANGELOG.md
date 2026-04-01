@@ -1,5 +1,15 @@
 # motion-tools
 
+## 1.16.0
+
+### Minor Changes
+
+- 12a2df3: feat: add ellipse selection type
+
+### Patch Changes
+
+- 8746e20: fix: force to navigate mode
+
 ## 1.15.8
 
 ### Patch Changes
