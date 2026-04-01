@@ -5,7 +5,7 @@ const key = Symbol('dashboard-context')
 
 export interface Settings {
 	cameraMode: 'orthographic' | 'perspective'
-	interactionMode: 'navigate' | 'measure' | 'lasso'
+	interactionMode: 'navigate' | 'measure' | 'select'
 	refreshRates: {
 		poses: number
 		pointclouds: number
@@ -156,7 +156,7 @@ export const provideSettings = () => {
 
 	$effect(() => {
 		if (isLoaded) {
-			set('motion-tools-settings', $state.snapshot(settings))
+			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
 		}
 	})
 
