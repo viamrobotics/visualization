@@ -17,7 +17,7 @@ import { createPose } from '$lib/transform'
 
 import { useEnvironment } from './useEnvironment.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { RefreshRates, useSettings } from './useSettings.svelte'
 
 const key = Symbol('pointcloud-object-context')
 
@@ -28,7 +28,8 @@ interface Context {
 export const providePointcloudObjects = (partID: () => string) => {
 	const world = useWorld()
 	const environment = useEnvironment()
-	const { refreshRates, disabledVisionServices } = useMachineSettings()
+	const settings = useSettings()
+	const { refreshRates, disabledVisionServices } = $derived(settings.current)
 	const services = useResourceNames(partID, 'vision')
 
 	const clients = $derived(
@@ -62,7 +63,7 @@ export const providePointcloudObjects = (partID: () => string) => {
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
-				disabledVisionServices.get(client.current?.name) !== true
+				disabledVisionServices[client.current?.name] !== true
 			) {
 				results.push(client as { current: VisionClient })
 			}
@@ -83,15 +84,15 @@ export const providePointcloudObjects = (partID: () => string) => {
 			if (
 				name &&
 				query.data?.objectPointCloudsSupported === false &&
-				disabledVisionServices.get(name) === undefined
+				disabledVisionServices[name] === undefined
 			) {
-				disabledVisionServices.set(name, true)
+				disabledVisionServices[name] = true
 			}
 		}
 	})
 
 	const logs = useLogs()
-	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
+	const interval = $derived(refreshRates[RefreshRates.vision])
 
 	const options = $derived({
 		enabled: interval !== RefetchRates.OFF,

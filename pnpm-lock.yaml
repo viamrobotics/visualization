@@ -40,7 +40,7 @@ importers:
         version: 4.17.23
       three-mesh-bvh:
         specifier: ^0.9.8
-        version: 0.9.8(three@0.182.0)
+        version: 0.9.8(three@0.183.2)
       uuid-tool:
         specifier: ^2.0.3
         version: 2.0.3
@@ -101,22 +101,22 @@ importers:
         version: 6.8.0
       '@testing-library/svelte':
         specifier: 5.2.8
-        version: 5.2.8(svelte@5.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 5.2.8(svelte@5.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@threlte/core':
-        specifier: 8.5.0
-        version: 8.5.0(svelte@5.55.0)(three@0.182.0)
+        specifier: 8.5.5
+        version: 8.5.5(svelte@5.55.0)(three@0.183.2)
       '@threlte/extras':
-        specifier: 9.9.0
-        version: 9.9.0(@types/three@0.181.0)(svelte@5.55.0)(three@0.182.0)
+        specifier: 9.14.1
+        version: 9.14.1(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
       '@threlte/rapier':
-        specifier: 3.4.0
-        version: 3.4.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.182.0)
+        specifier: 3.4.1
+        version: 3.4.1(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.183.2)
       '@threlte/xr':
-        specifier: 1.4.0
-        version: 1.4.0(svelte@5.55.0)(three@0.182.0)
+        specifier: 1.5.2
+        version: 1.5.2(svelte@5.55.0)(three@0.183.2)
       '@types/bun':
         specifier: 1.2.21
         version: 1.2.21(@types/react@19.2.2)
@@ -127,8 +127,8 @@ importers:
         specifier: 4.17.12
         version: 4.17.12
       '@types/three':
-        specifier: 0.181.0
-        version: 0.181.0
+        specifier: 0.183.1
+        version: 0.183.1
       '@typescript-eslint/eslint-plugin':
         specifier: 8.56.1
         version: 8.56.1(@typescript-eslint/parser@8.56.1(eslint@10.0.2(jiti@2.6.1))(typescript@5.9.2))(eslint@10.0.2(jiti@2.6.1))(typescript@5.9.2)
@@ -144,9 +144,12 @@ importers:
       '@viamrobotics/svelte-sdk':
         specifier: 1.0.1
         version: 1.0.1(@viamrobotics/sdk@0.58.0)(svelte@5.55.0)
+      '@vitest/browser':
+        specifier: 3.2.4
+        version: 3.2.4(playwright@1.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)
       '@zag-js/collapsible':
         specifier: 1.22.1
         version: 1.22.1
@@ -170,7 +173,7 @@ importers:
         version: 1.22.1
       camera-controls:
         specifier: 3.1.0
-        version: 3.1.0(three@0.182.0)
+        version: 3.1.0(three@0.183.2)
       esbuild:
         specifier: ^0.27.3
         version: 0.27.3
@@ -195,9 +198,6 @@ importers:
       idb-keyval:
         specifier: 6.2.2
         version: 6.2.2
-      jsdom:
-        specifier: 26.1.0
-        version: 26.1.0
       lucide-svelte:
         specifier: 0.542.0
         version: 0.542.0(svelte@5.55.0)
@@ -229,11 +229,11 @@ importers:
         specifier: 4.1.13
         version: 4.1.13
       three:
-        specifier: 0.182.0
-        version: 0.182.0
+        specifier: 0.183.2
+        version: 0.183.2
       threlte-uikit:
         specifier: 1.2.1
-        version: 1.2.1(@threlte/core@8.5.0(svelte@5.55.0)(three@0.182.0))(svelte@5.55.0)(three@0.182.0)
+        version: 1.2.1(@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2)
       tsx:
         specifier: 4.20.5
         version: 4.20.5
@@ -260,7 +260,7 @@ importers:
         version: 1.17.8(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
       vitest:
         specifier: 3.2.4
-        version: 3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.10.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
 packages:
 
@@ -1614,27 +1614,27 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.5.0':
-    resolution: {integrity: sha512-gEG5lOu6Rk00ISm5JdlTuo1AuX5u5N3iQ+LdbTLCzqsQmkr2iPJ/aM3pJkn9NJCC98hkK3sysBLHIHJVu5jOIw==}
+  '@threlte/core@8.5.5':
+    resolution: {integrity: sha512-jxKalZ3S/ViAjd83txoRdL6/pQmit48a0wl1ZS8VqBr1Vf6ZlNJq2tAieAieb42ICC/OcVPbuJd1Mmms5AC9pQ==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/extras@9.9.0':
-    resolution: {integrity: sha512-cTYXEfK+P2zj0eeBawkwZNVWyBMsoDuY341SU1z34KQcgCOwZDOIwlkJV+05f4AJMfgufSiT/582rOrdcuu9dQ==}
+  '@threlte/extras@9.14.1':
+    resolution: {integrity: sha512-e+fsArxvqGve5wppMAoA4S4205+DaA7fu36fgz3KcG672nKPHi2rnhgMX3Ww7iO76wcC0hNgkvApG7Sqf6RdKQ==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/rapier@3.4.0':
-    resolution: {integrity: sha512-UWtdQ7OsD0tujyJYo1eGjyZpQyDKIZ/D5r4PzY4oYKIs0GsW01rJ5gxXB2Lr/w+S2zr0EEhIJj/32qXPXTcnkA==}
+  '@threlte/rapier@3.4.1':
+    resolution: {integrity: sha512-zQHAwR2y4wNaZ1lKpp3DN5YdLNOgcRQ8zYCoYzp8Thv5V0N4GblopDKjjcML79yBMbdpWB1rlgcnfs9IXSrKaw==}
     peerDependencies:
       '@dimforge/rapier3d-compat': '>=0.16'
       svelte: '>=5'
       three: '>=0.152'
 
-  '@threlte/xr@1.4.0':
-    resolution: {integrity: sha512-AExmo39ANdS6STcn7C8ArlsuGQVLPgPkAbJS7pJDUoTCjpsj2QFUBbvlcZRkFpGQogWNi5LqrU7N/l1uBhbTmQ==}
+  '@threlte/xr@1.5.2':
+    resolution: {integrity: sha512-DF3P/fYbdGzpFDM9AFqWWsAlRhHP0/KhZRorkDOMQZocMeWsYFc/bbKKZRqQu2PcITr5P4QhK9XWJ99xAnlC7A==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -1705,8 +1705,8 @@ packages:
   '@types/tedious@4.0.14':
     resolution: {integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==}
 
-  '@types/three@0.181.0':
-    resolution: {integrity: sha512-MLF1ks8yRM2k71D7RprFpDb9DOX0p22DbdPqT/uAkc6AtQXjxWCVDjCy23G9t1o8HcQPk7woD2NIyiaWcWPYmA==}
+  '@types/three@0.183.1':
+    resolution: {integrity: sha512-f2Pu5Hrepfgavttdye3PsH5RWyY/AvdZQwIVhrc4uNtvF7nOWJacQKcoVJn0S4f0yYbmAE6AR+ve7xDcuYtMGw==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -1786,6 +1786,21 @@ packages:
     peerDependencies:
       '@viamrobotics/sdk': '>=0.51'
       svelte: '>=5'
+
+  '@vitest/browser@3.2.4':
+    resolution: {integrity: sha512-tJxiPrWmzH8a+w9nLKlQMzAKX/7VjFs50MWgcAj7p9XQ7AQ9/35fByFYptgPELyLw+0aixTnC4pUWV+APcZ/kw==}
+    peerDependencies:
+      playwright: '*'
+      safaridriver: '*'
+      vitest: 3.2.4
+      webdriverio: ^7.0.0 || ^8.0.0 || ^9.0.0
+    peerDependenciesMeta:
+      playwright:
+        optional: true
+      safaridriver:
+        optional: true
+      webdriverio:
+        optional: true
 
   '@vitest/coverage-v8@3.2.4':
     resolution: {integrity: sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ==}
@@ -3108,8 +3123,8 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
 
-  meshoptimizer@0.22.0:
-    resolution: {integrity: sha512-IebiK79sqIy+E4EgOr+CAw+Ke8hAspXKzBd0JdgEmPHiAwmvEj2S4h1rfvo+o/BnfEYd/jAOg5IeeIjzlzSnDg==}
+  meshoptimizer@1.0.1:
+    resolution: {integrity: sha512-Vix+QlA1YYT3FwmBBZ+49cE5y/b+pRrcXKqGpS5ouh33d3lSp2PoTpCw19E0cKDFWalembrHnIaZetf27a+W2g==}
 
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
@@ -3854,8 +3869,8 @@ packages:
     peerDependencies:
       three: '>=0.162.0 <1.0.0'
 
-  three@0.182.0:
-    resolution: {integrity: sha512-GbHabT+Irv+ihI1/f5kIIsZ+Ef9Sl5A1Y7imvS5RQjWgtTPfPnZ43JmlYI7NtCRDK9zir20lQpfg8/9Yd02OvQ==}
+  three@0.183.2:
+    resolution: {integrity: sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==}
 
   threlte-uikit@1.2.1:
     resolution: {integrity: sha512-08ZaCcEzbJdpX8DJIa0HiwVoFB6F8/AWG8OTDy6F4xXuQuxdwQHSKDr7PWp/hybg9HSI9n049LIXM/vf2tUiLQ==}
@@ -4253,6 +4268,7 @@ snapshots:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
+    optional: true
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -4517,12 +4533,14 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@csstools/color-helpers@5.1.0': {}
+  '@csstools/color-helpers@5.1.0':
+    optional: true
 
   '@csstools/css-calc@2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
     dependencies:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
+    optional: true
 
   '@csstools/css-color-parser@3.1.0(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
     dependencies:
@@ -4530,12 +4548,15 @@ snapshots:
       '@csstools/css-calc': 2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
+    optional: true
 
   '@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4)':
     dependencies:
       '@csstools/css-tokenizer': 3.0.4
+    optional: true
 
-  '@csstools/css-tokenizer@3.0.4': {}
+  '@csstools/css-tokenizer@3.0.4':
+    optional: true
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 
@@ -5107,13 +5128,13 @@ snapshots:
 
   '@pmndrs/msdfonts@0.8.21': {}
 
-  '@pmndrs/uikit@0.8.21(three@0.182.0)':
+  '@pmndrs/uikit@0.8.21(three@0.183.2)':
     dependencies:
       '@pmndrs/msdfonts': 0.8.21
       '@preact/signals-core': 1.12.1
       inline-style-parser: 0.2.6
       node-html-parser: 6.1.13
-      three: 0.182.0
+      three: 0.183.2
       tw-to-css: 0.0.12
       yoga-layout: 3.2.1
     transitivePeerDependencies:
@@ -5588,58 +5609,58 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/svelte@5.2.8(svelte@5.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@testing-library/svelte@5.2.8(svelte@5.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)':
     dependencies:
       '@testing-library/dom': 10.4.1
       svelte: 5.55.0
     optionalDependencies:
       vite: 7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
-      vitest: 3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      vitest: 3.2.4(@types/node@24.10.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
   '@testing-library/user-event@14.6.1(@testing-library/dom@10.4.1)':
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@threejs-kit/instanced-sprite-mesh@2.5.1(@types/three@0.181.0)(three@0.182.0)':
+  '@threejs-kit/instanced-sprite-mesh@2.5.1(@types/three@0.183.1)(three@0.183.2)':
     dependencies:
       diet-sprite: 0.0.1
       earcut: 2.2.4
-      maath: 0.10.8(@types/three@0.181.0)(three@0.182.0)
-      three: 0.182.0
-      three-instanced-uniforms-mesh: 0.52.4(three@0.182.0)
-      troika-three-utils: 0.52.4(three@0.182.0)
+      maath: 0.10.8(@types/three@0.183.1)(three@0.183.2)
+      three: 0.183.2
+      three-instanced-uniforms-mesh: 0.52.4(three@0.183.2)
+      troika-three-utils: 0.52.4(three@0.183.2)
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.5.0(svelte@5.55.0)(three@0.182.0)':
+  '@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       mitt: 3.0.1
       svelte: 5.55.0
-      three: 0.182.0
+      three: 0.183.2
 
-  '@threlte/extras@9.9.0(@types/three@0.181.0)(svelte@5.55.0)(three@0.182.0)':
+  '@threlte/extras@9.14.1(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)':
     dependencies:
-      '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.181.0)(three@0.182.0)
-      camera-controls: 3.1.2(three@0.182.0)
+      '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.183.1)(three@0.183.2)
+      camera-controls: 3.1.2(three@0.183.2)
       svelte: 5.55.0
-      three: 0.182.0
-      three-mesh-bvh: 0.9.8(three@0.182.0)
-      three-perf: 1.0.11(three@0.182.0)
-      three-viewport-gizmo: 2.2.0(three@0.182.0)
-      troika-three-text: 0.52.4(three@0.182.0)
+      three: 0.183.2
+      three-mesh-bvh: 0.9.8(three@0.183.2)
+      three-perf: 1.0.11(three@0.183.2)
+      three-viewport-gizmo: 2.2.0(three@0.183.2)
+      troika-three-text: 0.52.4(three@0.183.2)
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/rapier@3.4.0(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.182.0)':
+  '@threlte/rapier@3.4.1(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       '@dimforge/rapier3d-compat': 0.18.2
       svelte: 5.55.0
-      three: 0.182.0
+      three: 0.183.2
 
-  '@threlte/xr@1.4.0(svelte@5.55.0)(three@0.182.0)':
+  '@threlte/xr@1.5.2(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       svelte: 5.55.0
-      three: 0.182.0
+      three: 0.183.2
 
   '@tweenjs/tween.js@23.1.3': {}
 
@@ -5710,7 +5731,7 @@ snapshots:
     dependencies:
       '@types/node': 24.10.0
 
-  '@types/three@0.181.0':
+  '@types/three@0.183.1':
     dependencies:
       '@dimforge/rapier3d-compat': 0.12.0
       '@tweenjs/tween.js': 23.1.3
@@ -5718,7 +5739,7 @@ snapshots:
       '@types/webxr': 0.5.24
       '@webgpu/types': 0.1.66
       fflate: 0.8.2
-      meshoptimizer: 0.22.0
+      meshoptimizer: 1.0.1
 
   '@types/trusted-types@2.0.7': {}
 
@@ -5842,7 +5863,26 @@ snapshots:
       runed: 0.29.2(svelte@5.55.0)
       svelte: 5.55.0
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@vitest/browser@3.2.4(playwright@1.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)':
+    dependencies:
+      '@testing-library/dom': 10.4.1
+      '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.1)
+      '@vitest/mocker': 3.2.4(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+      '@vitest/utils': 3.2.4
+      magic-string: 0.30.21
+      sirv: 3.0.2
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/node@24.10.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      ws: 8.18.3
+    optionalDependencies:
+      playwright: 1.55.0
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+
+  '@vitest/coverage-v8@3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -5857,7 +5897,9 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      vitest: 3.2.4(@types/node@24.10.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+    optionalDependencies:
+      '@vitest/browser': 3.2.4(playwright@1.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -6272,7 +6314,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  agent-base@7.1.4: {}
+  agent-base@7.1.4:
+    optional: true
 
   ajv@6.14.0:
     dependencies:
@@ -6408,13 +6451,13 @@ snapshots:
 
   camelcase-css@2.0.1: {}
 
-  camera-controls@3.1.0(three@0.182.0):
+  camera-controls@3.1.0(three@0.183.2):
     dependencies:
-      three: 0.182.0
+      three: 0.183.2
 
-  camera-controls@3.1.2(three@0.182.0):
+  camera-controls@3.1.2(three@0.183.2):
     dependencies:
-      three: 0.182.0
+      three: 0.183.2
 
   caniuse-lite@1.0.30001754: {}
 
@@ -6514,6 +6557,7 @@ snapshots:
     dependencies:
       '@asamuzakjp/css-color': 3.2.0
       rrweb-cssom: 0.8.0
+    optional: true
 
   csstype@3.1.3: {}
 
@@ -6523,12 +6567,14 @@ snapshots:
     dependencies:
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
+    optional: true
 
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
 
-  decimal.js@10.6.0: {}
+  decimal.js@10.6.0:
+    optional: true
 
   dedent-js@1.0.1: {}
 
@@ -6614,7 +6660,8 @@ snapshots:
 
   entities@4.5.0: {}
 
-  entities@6.0.1: {}
+  entities@6.0.1:
+    optional: true
 
   es-define-property@1.0.1: {}
 
@@ -7028,6 +7075,7 @@ snapshots:
   html-encoding-sniffer@4.0.0:
     dependencies:
       whatwg-encoding: 3.1.1
+    optional: true
 
   html-escaper@2.0.2: {}
 
@@ -7037,6 +7085,7 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   https-proxy-agent@5.0.1:
     dependencies:
@@ -7051,12 +7100,14 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   human-id@4.1.2: {}
 
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
+    optional: true
 
   iconv-lite@0.7.0:
     dependencies:
@@ -7105,7 +7156,8 @@ snapshots:
 
   is-number@7.0.0: {}
 
-  is-potential-custom-element-name@1.0.1: {}
+  is-potential-custom-element-name@1.0.1:
+    optional: true
 
   is-reference@3.0.3:
     dependencies:
@@ -7187,6 +7239,7 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+    optional: true
 
   jsesc@3.1.0: {}
 
@@ -7298,10 +7351,10 @@ snapshots:
 
   lz-string@1.5.0: {}
 
-  maath@0.10.8(@types/three@0.181.0)(three@0.182.0):
+  maath@0.10.8(@types/three@0.183.1)(three@0.183.2):
     dependencies:
-      '@types/three': 0.181.0
-      three: 0.182.0
+      '@types/three': 0.183.1
+      three: 0.183.2
 
   magic-string@0.30.21:
     dependencies:
@@ -7329,7 +7382,7 @@ snapshots:
 
   merge2@1.4.1: {}
 
-  meshoptimizer@0.22.0: {}
+  meshoptimizer@1.0.1: {}
 
   micromatch@4.0.8:
     dependencies:
@@ -7409,7 +7462,8 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
-  nwsapi@2.2.22: {}
+  nwsapi@2.2.22:
+    optional: true
 
   object-assign@4.1.1: {}
 
@@ -7461,6 +7515,7 @@ snapshots:
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
+    optional: true
 
   path-exists@4.0.0: {}
 
@@ -7729,7 +7784,8 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.53.2
       fsevents: 2.3.3
 
-  rrweb-cssom@0.8.0: {}
+  rrweb-cssom@0.8.0:
+    optional: true
 
   run-parallel@1.2.0:
     dependencies:
@@ -7754,6 +7810,7 @@ snapshots:
   saxes@6.0.0:
     dependencies:
       xmlchars: 2.2.0
+    optional: true
 
   scule@1.3.0: {}
 
@@ -7906,7 +7963,8 @@ snapshots:
       magic-string: 0.30.21
       zimmerframe: 1.1.4
 
-  symbol-tree@3.2.4: {}
+  symbol-tree@3.2.4:
+    optional: true
 
   tagged-tag@1.0.0: {}
 
@@ -7966,34 +8024,34 @@ snapshots:
     dependencies:
       any-promise: 1.3.0
 
-  three-instanced-uniforms-mesh@0.52.4(three@0.182.0):
+  three-instanced-uniforms-mesh@0.52.4(three@0.183.2):
     dependencies:
-      three: 0.182.0
-      troika-three-utils: 0.52.4(three@0.182.0)
+      three: 0.183.2
+      troika-three-utils: 0.52.4(three@0.183.2)
 
-  three-mesh-bvh@0.9.8(three@0.182.0):
+  three-mesh-bvh@0.9.8(three@0.183.2):
     dependencies:
-      three: 0.182.0
+      three: 0.183.2
 
-  three-perf@1.0.11(three@0.182.0):
+  three-perf@1.0.11(three@0.183.2):
     dependencies:
-      three: 0.182.0
-      troika-three-text: 0.52.4(three@0.182.0)
+      three: 0.183.2
+      troika-three-text: 0.52.4(three@0.183.2)
       tweakpane: 3.1.10
 
-  three-viewport-gizmo@2.2.0(three@0.182.0):
+  three-viewport-gizmo@2.2.0(three@0.183.2):
     dependencies:
-      three: 0.182.0
+      three: 0.183.2
 
-  three@0.182.0: {}
+  three@0.183.2: {}
 
-  threlte-uikit@1.2.1(@threlte/core@8.5.0(svelte@5.55.0)(three@0.182.0))(svelte@5.55.0)(three@0.182.0):
+  threlte-uikit@1.2.1(@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2):
     dependencies:
-      '@pmndrs/uikit': 0.8.21(three@0.182.0)
+      '@pmndrs/uikit': 0.8.21(three@0.183.2)
       '@preact/signals-core': 1.12.1
-      '@threlte/core': 8.5.0(svelte@5.55.0)(three@0.182.0)
+      '@threlte/core': 8.5.5(svelte@5.55.0)(three@0.183.2)
       svelte: 5.55.0
-      three: 0.182.0
+      three: 0.183.2
     transitivePeerDependencies:
       - ts-node
 
@@ -8019,11 +8077,13 @@ snapshots:
 
   tinyspy@4.0.4: {}
 
-  tldts-core@6.1.86: {}
+  tldts-core@6.1.86:
+    optional: true
 
   tldts@6.1.86:
     dependencies:
       tldts-core: 6.1.86
+    optional: true
 
   to-regex-range@5.0.1:
     dependencies:
@@ -8034,24 +8094,26 @@ snapshots:
   tough-cookie@5.1.2:
     dependencies:
       tldts: 6.1.86
+    optional: true
 
   tr46@0.0.3: {}
 
   tr46@5.1.1:
     dependencies:
       punycode: 2.3.1
+    optional: true
 
-  troika-three-text@0.52.4(three@0.182.0):
+  troika-three-text@0.52.4(three@0.183.2):
     dependencies:
       bidi-js: 1.0.3
-      three: 0.182.0
-      troika-three-utils: 0.52.4(three@0.182.0)
+      three: 0.183.2
+      troika-three-utils: 0.52.4(three@0.183.2)
       troika-worker-utils: 0.52.0
       webgl-sdf-generator: 1.1.1
 
-  troika-three-utils@0.52.4(three@0.182.0):
+  troika-three-utils@0.52.4(three@0.183.2):
     dependencies:
-      three: 0.182.0
+      three: 0.183.2
 
   troika-worker-utils@0.52.0: {}
 
@@ -8195,7 +8257,7 @@ snapshots:
     optionalDependencies:
       vite: 7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
-  vitest@3.2.4(@types/node@24.10.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1):
+  vitest@3.2.4(@types/node@24.10.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
@@ -8222,6 +8284,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.10.0
+      '@vitest/browser': 3.2.4(playwright@1.55.0)(vite@7.1.11(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))(vitest@3.2.4)
       jsdom: 26.1.0
     transitivePeerDependencies:
       - jiti
@@ -8240,12 +8303,14 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+    optional: true
 
   webgl-sdf-generator@1.1.1: {}
 
   webidl-conversions@3.0.1: {}
 
-  webidl-conversions@7.0.0: {}
+  webidl-conversions@7.0.0:
+    optional: true
 
   webpack-sources@3.3.3: {}
 
@@ -8254,13 +8319,16 @@ snapshots:
   whatwg-encoding@3.1.1:
     dependencies:
       iconv-lite: 0.6.3
+    optional: true
 
-  whatwg-mimetype@4.0.0: {}
+  whatwg-mimetype@4.0.0:
+    optional: true
 
   whatwg-url@14.2.0:
     dependencies:
       tr46: 5.1.1
       webidl-conversions: 7.0.0
+    optional: true
 
   whatwg-url@5.0.0:
     dependencies:
@@ -8292,9 +8360,11 @@ snapshots:
 
   ws@8.18.3: {}
 
-  xml-name-validator@5.0.0: {}
+  xml-name-validator@5.0.0:
+    optional: true
 
-  xmlchars@2.2.0: {}
+  xmlchars@2.2.0:
+    optional: true
 
   xtend@4.0.2: {}
 

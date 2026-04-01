@@ -12,6 +12,9 @@
 </script>
 
 <script lang="ts">
+	import type { Entity } from 'koota'
+	import type { Snippet } from 'svelte'
+
 	import { draggable } from '@neodrag/svelte'
 	import { isInstanceOf, useTask } from '@threlte/core'
 	import { Button, Icon, Input, Select, Tooltip } from '@viamrobotics/prime-core'
@@ -34,7 +37,11 @@
 	} from '$lib/hooks/useSelection.svelte'
 	import { createPose } from '$lib/transform'
 
-	const { ...rest } = $props()
+	interface Props {
+		details?: Snippet<[{ entity: Entity }]>
+	}
+
+	const { details }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
@@ -94,7 +101,7 @@
 		}
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			object3d?.getWorldPosition(vec3)
 			if (!vec3.equals(worldPosition)) {
@@ -114,18 +121,10 @@
 			}
 		},
 		{
-			autoStart: false,
 			autoInvalidate: false,
+			running: () => object3d !== undefined,
 		}
 	)
-
-	$effect.pre(() => {
-		if (object3d) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	$effect(() => {
 		if (entity) {
@@ -266,7 +265,6 @@
 			bounds: 'body',
 			handle: dragElement,
 		}}
-		{...rest}
 	>
 		<div
 			class="flex cursor-move items-center justify-between gap-2 pb-2"
@@ -661,6 +659,8 @@
 				</div>
 			</div>
 		{/if}
+
+		{@render details?.({ entity })}
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 

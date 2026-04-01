@@ -72,7 +72,7 @@
 {#if enableXR}
 	<XR
 		onsessionstart={() => {
-			origin.set([0, 0, -2])
+			origin.set([-1, -1, 0])
 		}}
 		onsessionend={() => {
 			origin.set([0, 0, 0])
