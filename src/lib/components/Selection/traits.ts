@@ -1,6 +1,7 @@
 import { relation, trait } from 'koota'
 
 export const Lasso = trait(() => true)
+export const Ellipse = trait(() => true)
 export const SelectionEnclosedPoints = trait(() => true)
 
 /**

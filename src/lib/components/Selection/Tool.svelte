@@ -13,7 +13,7 @@
 	import { createBinaryPCD } from '$lib/pcd'
 
 	import FloatingPanel from '../overlay/FloatingPanel.svelte'
-	import Lasso from './Lasso.svelte'
+	import Ellipse from './Ellipse.svelte'
 	import * as selectionTraits from './traits'
 
 	interface Props {
@@ -86,8 +86,8 @@
 </Portal>
 
 {#if isSelectionMode && rect.height > 0 && rect.width > 0}
-	<Lasso />
-
+	<!-- <Lasso /> -->
+	<Ellipse />
 	<Portal id="dom">
 		<FloatingPanel
 			isOpen
