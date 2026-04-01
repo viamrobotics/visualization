@@ -4,20 +4,22 @@
 	import { useThrelte } from '@threlte/core'
 	import earcut from 'earcut'
 	import { Not } from 'koota'
-	import { Box3, Plane, Raycaster, Triangle, Vector2, Vector3 } from 'three'
+	import { Box3, Triangle, Vector3 } from 'three'
 
 	import { createBufferGeometry } from '$lib/attribute'
 	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	import Debug from './Debug.svelte'
-	import * as lassoTraits from './traits'
+	import * as selectionTraits from './traits'
+	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
 
 	interface Props {
+		active?: boolean
 		debug?: boolean
 	}
 
-	let { debug = false }: Props = $props()
+	let { active = false, debug = false }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
@@ -29,45 +31,26 @@
 
 	const triangle = new Triangle()
 	const triangleBox = new Box3()
-	const a = new Vector3()
-	const b = new Vector3()
-	const c = new Vector3()
 
 	let frameScheduled = false
 	let drawing = false
 
-	const raycaster = new Raycaster()
-	const mouse = new Vector2()
-	const plane = new Plane(new Vector3(0, 0, 1), 0)
-	const point = new Vector3()
-
-	const raycast = (event: PointerEvent) => {
-		const element = event.target as HTMLElement
-		const rect = element.getBoundingClientRect()
-		mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-		mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-
-		raycaster.setFromCamera(mouse, camera.current)
-		raycaster.ray.intersectPlane(plane, point)
-		return point
-	}
-
 	const onpointerdown = (event: PointerEvent) => {
-		if (!event.shiftKey) return
+		if (!event.shiftKey || !active) return
 
-		const { x, y } = raycast(event)
+		const { x, y } = raycast(event, camera.current)
 
 		drawing = true
 
 		world.spawn(
 			traits.LinePositions(new Float32Array([x, y, 0])),
+			selectionTraits.StartPoint({ x, y }),
 			traits.LineWidth(1.5),
-			traits.ScreenSpace,
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Color({ r: 1, g: 0, b: 0 }),
-			lassoTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
-			lassoTraits.Lasso
+			selectionTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
+			selectionTraits.Ellipse
 		)
 
 		if (controls.current) {
@@ -76,11 +59,11 @@
 	}
 
 	const onpointermove = (event: PointerEvent) => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
-		let lasso = world.query(lassoTraits.Lasso).at(-1)
+		let ellipse = world.query(selectionTraits.Ellipse).at(-1)
 
-		if (!lasso) return
+		if (!ellipse) return
 
 		if (frameScheduled) return
 
@@ -93,98 +76,103 @@
 		requestAnimationFrame(() => {
 			frameScheduled = false
 
-			const { x, y } = raycast(event)
-			const positions = lasso.get(traits.LinePositions)
-			const box = lasso.get(lassoTraits.Box)
+			const { x, y } = raycast(event, camera.current)
+			const positions = ellipse.get(traits.LinePositions)
+			const startPoint = ellipse.get(selectionTraits.StartPoint)
+			const box = ellipse.get(selectionTraits.Box)
 
-			if (!positions || !box) return
+			if (!positions || !box || !startPoint) return
 
-			const nextPositions = new Float32Array(positions.length + 3)
-			nextPositions.set(positions)
-			nextPositions[positions.length] = x
-			nextPositions[positions.length + 1] = y
-			lasso.set(traits.LinePositions, nextPositions)
+			let minX = startPoint.x
+			let minY = startPoint.y
+			let maxX = startPoint.x
+			let maxY = startPoint.y
 
-			if (x < box.minX) box.minX = x
-			else if (x > box.maxX) box.maxX = x
+			if (x < minX) minX = x
+			else if (x > maxX) maxX = x
 
-			if (y < box.minY) box.minY = y
-			else if (y > box.maxY) box.maxY = y
+			if (y < minY) minY = y
+			else if (y > maxY) maxY = y
 
-			lasso.set(lassoTraits.Box, box)
+			const nextPositions = ellipsePoints(minX, maxX, minY, maxY, 100)
+
+			ellipse.set(traits.LinePositions, new Float32Array(nextPositions))
+			ellipse.set(selectionTraits.Box, { minX, minY, maxX, maxY })
 		})
 	}
 
+	const ellipsePoints = (
+		minX: number,
+		maxX: number,
+		minY: number,
+		maxY: number,
+		numPoints: number
+	): Float32Array => {
+		const cx = (minX + maxX) / 2
+		const cy = (minY + maxY) / 2
+		const rx = (maxX - minX) / 2
+		const ry = (maxY - minY) / 2
+
+		const points = new Float32Array(numPoints * 3)
+
+		for (let i = 0; i < numPoints; i++) {
+			const t = (i / numPoints) * 2 * Math.PI
+
+			points[i * 3] = cx + rx * Math.cos(t)
+			points[i * 3 + 1] = cy + ry * Math.sin(t)
+			points[i * 3 + 2] = 0
+		}
+
+		return points
+	}
+
 	const onpointerleave = () => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
 		onpointerup()
 	}
 
 	const onpointerup = () => {
-		if (!drawing) return
+		if (!drawing || !active) return
 
 		drawing = false
 
-		let lasso = world.query(lassoTraits.Lasso).at(-1)
+		let ellipse = world.query(selectionTraits.Ellipse).at(-1)
 
-		if (!lasso) return
+		if (!ellipse) return
 
-		let positions = lasso.get(traits.LinePositions)
+		let positions = ellipse.get(traits.LinePositions)
 
 		if (!positions) return
-
-		const [startX, startY] = positions
 
 		if (controls.current) {
 			controls.current.enabled = true
 		}
 
-		// Close the loop
-		const nextPositions = new Float32Array(positions.length + 3)
-		nextPositions.set(positions)
-		nextPositions[positions.length] = startX
-		nextPositions[positions.length + 1] = startY
-		lasso.set(traits.LinePositions, nextPositions)
-		positions = nextPositions
-
 		const indices = earcut(positions, undefined, 3)
 		if (debug) {
-			lasso.add(lassoTraits.Indices(new Uint16Array(indices)))
+			ellipse.add(selectionTraits.Indices(new Uint16Array(indices)))
 		}
 
-		const getTriangleFromIndex = (i: number, triangle: Triangle) => {
-			const stride = 3
-			const ia = indices[i + 0] * stride
-			const ib = indices[i + 1] * stride
-			const ic = indices[i + 2] * stride
-			a.set(positions[ia + 0], positions[ia + 1], positions[ia + 2])
-			b.set(positions[ib + 0], positions[ib + 1], positions[ib + 2])
-			c.set(positions[ic + 0], positions[ic + 1], positions[ic + 2])
-			triangle.set(a, b, c)
-		}
-
-		const boxes: lassoTraits.AABB[] = []
-		for (let i = 0, l = indices.length; i < l; i += 3) {
-			getTriangleFromIndex(i, triangle)
-			box3.setFromPoints([triangle.a, triangle.b, triangle.c])
-			boxes.push({ minX: box3.min.x, minY: box3.min.y, maxX: box3.max.x, maxY: box3.max.y })
-		}
+		const boxes: selectionTraits.AABB[] = getTriangleBoxesFromIndices(indices, positions)
 		if (debug) {
-			lasso.add(lassoTraits.Boxes(boxes))
+			ellipse.add(selectionTraits.Boxes(boxes))
 		}
 
-		const lassoBox = lasso.get(lassoTraits.Box)
+		const ellipseBox = ellipse.get(selectionTraits.Box)
 
-		if (!lassoBox) return
+		if (!ellipseBox) return
 
-		min.set(lassoBox.minX, lassoBox.minY, Number.NEGATIVE_INFINITY)
-		max.set(lassoBox.maxX, lassoBox.maxY, Number.POSITIVE_INFINITY)
+		min.set(ellipseBox.minX, ellipseBox.minY, Number.NEGATIVE_INFINITY)
+		max.set(ellipseBox.maxX, ellipseBox.maxY, Number.POSITIVE_INFINITY)
 		box3.set(min, max)
 
 		const enclosedPoints: number[] = []
 
-		for (const pointsEntity of world.query(traits.Points, Not(lassoTraits.LassoEnclosedPoints))) {
+		for (const pointsEntity of world.query(
+			traits.Points,
+			Not(selectionTraits.SelectionEnclosedPoints)
+		)) {
 			const geometry = pointsEntity.get(traits.BufferGeometry)
 
 			if (!geometry) return
@@ -209,7 +197,7 @@
 						triangleBox.set(min, max)
 
 						if (triangleBox.containsPoint(point)) {
-							getTriangleFromIndex(i, triangle)
+							getTriangleFromIndex(i, indices, positions, triangle)
 
 							if (triangle.containsPoint(point)) {
 								enclosedPoints.push(point.x, point.y, point.z)
@@ -221,18 +209,18 @@
 			} as ShapecastCallbacks)
 		}
 
-		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
+		const ellipseResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
 
 		world.spawn(
-			traits.Name('Lasso result'),
-			traits.BufferGeometry(lassoResultGeometry),
+			traits.Name('Ellipse result'),
+			traits.BufferGeometry(ellipseResultGeometry),
 			traits.Color({ r: 1, g: 0, b: 0 }),
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Points,
 			traits.Removable,
-			lassoTraits.LassoEnclosedPoints,
-			lassoTraits.PointsCapturedBy(lasso)
+			selectionTraits.SelectionEnclosedPoints,
+			selectionTraits.PointsCapturedBy(ellipse)
 		)
 	}
 
@@ -266,7 +254,7 @@
 		}
 	})
 
-	const lassos = useQuery(lassoTraits.Lasso)
+	const ellipses = useQuery(selectionTraits.Ellipse)
 
 	$effect(() => {
 		if (!controls.current) return
@@ -289,7 +277,7 @@
 	// On unmount, destroy all lasso related entities
 	$effect(() => {
 		return () => {
-			for (const entity of world.query(lassoTraits.LassoEnclosedPoints)) {
+			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {
 				if (world.has(entity)) {
 					entity.destroy()
 				}
@@ -299,7 +287,7 @@
 </script>
 
 {#if debug}
-	{#each lassos.current as lasso (lasso)}
-		<Debug {lasso} />
+	{#each ellipses.current as ellipse (ellipse)}
+		<Debug selection={ellipse} />
 	{/each}
 {/if}
