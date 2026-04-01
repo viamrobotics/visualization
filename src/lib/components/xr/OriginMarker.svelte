@@ -63,9 +63,10 @@
 		})
 	})
 
-	let startPinchTranslation = new Vector3()
-	let pinchTranslation = new Vector3()
-	let downRotation = 0
+	let startLeftPinchTranslation = new Vector3()
+	let leftPinchTranslation = new Vector3()
+	let startRightPinchTranslation = new Vector3()
+	let rightPinchTranslation = new Vector3()
 
 	const leftHand = useHand('left')
 	const rightHand = useHand('right')
@@ -83,7 +84,7 @@
 		renderer.xr.getHand(0).addEventListener('pinchstart', () => {
 			if (leftHand.current?.targetRay.position) {
 				translating = true
-				startPinchTranslation.copy(leftHand.current.targetRay.position)
+				startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
 			}
 		})
 	})
@@ -91,9 +92,10 @@
 	useTask(
 		() => {
 			if (leftHand.current?.targetRay && translating) {
-				console.log('pinching')
-				pinchTranslation.copy(leftHand.current.targetRay.position).sub(startPinchTranslation)
-				origin.set(pinchTranslation.toArray(), 0)
+				leftPinchTranslation
+					.copy(leftHand.current.targetRay.position)
+					.sub(startLeftPinchTranslation)
+				origin.set(leftPinchTranslation.toArray(), origin.rotation)
 			}
 		},
 		{
@@ -101,9 +103,19 @@
 		}
 	)
 
-	useTask(() => {}, {
-		running: () => rotating,
-	})
+	useTask(
+		() => {
+			if (rightHand.current?.targetRay && rotating) {
+				rightPinchTranslation.copy(rightHand.current.targetRay.position)
+				const rotation =
+					origin.rotation + rightPinchTranslation.distanceTo(startRightPinchTranslation)
+				origin.set(leftPinchTranslation.toArray(), rotation)
+			}
+		},
+		{
+			running: () => rotating,
+		}
+	)
 </script>
 
 <Grid
@@ -121,7 +133,7 @@
 		console.log('pinchstart')
 		if (leftHand.current?.targetRay.position) {
 			translating = true
-			startPinchTranslation.copy(leftHand.current.targetRay.position)
+			startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
 		}
 	}}
 	onpinchend={() => (translating = false)}
@@ -130,7 +142,10 @@
 <Hand
 	right
 	onpinchstart={() => {
-		rotating = true
+		if (rightHand.current?.targetRay.position) {
+			rotating = true
+			startRightPinchTranslation.copy(rightHand.current.targetRay.position)
+		}
 	}}
 	onpinchend={() => (rotating = false)}
 />
