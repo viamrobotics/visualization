@@ -18,7 +18,7 @@ func TestNewLine(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, line.LineWidth, test.ShouldEqual, DefaultLineWidth)
 		test.That(t, line.DotSize, test.ShouldEqual, DefaultLineDotSize)
-		test.That(t, line.LineColors, test.ShouldResemble, []Color{DefaultLineColor})
+		test.That(t, line.Colors, test.ShouldResemble, []Color{DefaultLineColor})
 		test.That(t, line.DotColors, test.ShouldResemble, []Color{DefaultLineDotColor})
 	})
 
@@ -38,7 +38,7 @@ func TestNewLine(t *testing.T) {
 		red := NewColor(WithName("red"))
 		line, err := NewLine(twoPositions, WithSingleLineColor(red))
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, line.LineColors, test.ShouldResemble, []Color{red})
+		test.That(t, line.Colors, test.ShouldResemble, []Color{red})
 	})
 
 	t.Run("WithSingleDotColor", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestNewLine(t *testing.T) {
 		blue := NewColor(WithName("blue"))
 		line, err := NewLine(twoPositions, WithSingleLineColor(red), WithSingleDotColor(blue))
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, line.LineColors, test.ShouldResemble, []Color{red})
+		test.That(t, line.Colors, test.ShouldResemble, []Color{red})
 		test.That(t, line.DotColors, test.ShouldResemble, []Color{blue})
 	})
 
@@ -62,7 +62,7 @@ func TestNewLine(t *testing.T) {
 		green := NewColor(WithName("green"))
 		line, err := NewLine(twoPositions, WithPerLineColors(red, green))
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, line.LineColors, test.ShouldResemble, []Color{red, green})
+		test.That(t, line.Colors, test.ShouldResemble, []Color{red, green})
 	})
 
 	t.Run("WithPerDotColors", func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestNewLine(t *testing.T) {
 		blue := NewColor(WithName("blue"))
 		line, err := NewLine(threePositions, WithLineColorPalette([]Color{red, blue}, 3))
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, line.LineColors, test.ShouldResemble, []Color{red, blue, red})
+		test.That(t, line.Colors, test.ShouldResemble, []Color{red, blue, red})
 	})
 
 	t.Run("WithDotColorPalette", func(t *testing.T) {

@@ -59,7 +59,7 @@ func TestDrawLines(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, buf, test.ShouldNotBeNil)
 
-		lineColor := line.LineColors[0]
+		lineColor := line.Colors[0]
 		lineDotColor := line.DotColors[0]
 
 		expected := []float32{
