@@ -66,6 +66,14 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 				position: [x * 0.001, y * 0.001, z * 0.001],
 				lookAt: [lx * 0.001, ly * 0.001, lz * 0.001],
 			})
+
+			if (sceneCamera.cameraType.case === 'orthographicCamera') {
+				const orthographicCamera = sceneCamera.cameraType.value as { zoom?: number }
+				const zoom = orthographicCamera.zoom
+				if (zoom !== undefined) {
+					cameraControls.setZoom(zoom)
+				}
+			}
 		}
 	})
 

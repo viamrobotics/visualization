@@ -25,9 +25,9 @@ type Line struct {
 	// DotSize specifies the size of dots rendered at each vertex in millimeters (default: 10mm).
 	DotSize float32
 
-	// LineColors specifies the colors used for rendering the line segments (default: [blue]).
+	// Colors specifies the colors used for rendering the line segments (default: [blue]).
 	// Can be a single color (applied to all segments) or one color per vertex.
-	LineColors []Color
+	Colors []Color
 
 	// DotColors specifies the colors used for rendering the vertex dots (default: [dark blue]).
 	// Can be a single color (applied to all dots) or one color per dot.
@@ -35,18 +35,18 @@ type Line struct {
 }
 
 type drawLineConfig struct {
-	lineWidth  float32
-	dotSize    float32
-	lineColors []Color
-	dotColors  []Color
+	lineWidth float32
+	dotSize   float32
+	dotColors []Color
+	drawColorsConfig
 }
 
 func newDrawLineConfig(lineWidth float32, dotSize float32, lineColor Color, dotColor Color) *drawLineConfig {
 	return &drawLineConfig{
-		lineWidth:  lineWidth,
-		dotSize:    dotSize,
-		lineColors: []Color{lineColor},
-		dotColors:  []Color{dotColor},
+		lineWidth:        lineWidth,
+		dotSize:          dotSize,
+		dotColors:        []Color{dotColor},
+		drawColorsConfig: newDrawColorsConfig(lineColor),
 	}
 }
 
@@ -69,28 +69,18 @@ func WithDotSize(size float32) DrawLineOption {
 
 // WithSingleLineColor creates a line option that sets a single color for all line segments.
 func WithSingleLineColor(color Color) DrawLineOption {
-	return func(config *drawLineConfig) {
-		config.lineColors = []Color{color}
-	}
+	return withColors[*drawLineConfig]([]Color{color})
 }
 
 // WithPerLineColors creates a line option that sets one color per vertex for line segments.
 func WithPerLineColors(colors ...Color) DrawLineOption {
-	return func(config *drawLineConfig) {
-		config.lineColors = colors
-	}
+	return withColors[*drawLineConfig](colors)
 }
 
 // WithLineColorPalette creates a line option that sets colors for line segments by cycling
 // through a palette. The palette is repeated to fill numPositions colors.
 func WithLineColorPalette(palette []Color, numPositions int) DrawLineOption {
-	return func(config *drawLineConfig) {
-		colors := make([]Color, numPositions)
-		for i := range numPositions {
-			colors[i] = palette[i%len(palette)]
-		}
-		config.lineColors = colors
-	}
+	return withColorPalette[*drawLineConfig](palette, numPositions)
 }
 
 // WithSingleDotColor creates a line option that sets a single color for all vertex dots.
@@ -141,8 +131,8 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 		return nil, fmt.Errorf("line width must be greater than 0, got %f", config.lineWidth)
 	}
 
-	if len(config.lineColors) != 1 && len(config.lineColors) != len(positions) {
-		return nil, fmt.Errorf("line colors must have length 1 (single color) or %d (per-vertex colors), got %d", len(positions), len(config.lineColors))
+	if len(config.colors) != 1 && len(config.colors) != len(positions) {
+		return nil, fmt.Errorf("line colors must have length 1 (single color) or %d (per-vertex colors), got %d", len(positions), len(config.colors))
 	}
 
 	if len(config.dotColors) != 1 && len(config.dotColors) != len(positions) {
@@ -150,11 +140,11 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 	}
 
 	return &Line{
-		Positions:  positions,
-		LineWidth:  config.lineWidth,
-		DotSize:    config.dotSize,
-		LineColors: config.lineColors,
-		DotColors:  config.dotColors,
+		Positions: positions,
+		LineWidth: config.lineWidth,
+		DotSize:   config.dotSize,
+		Colors:    config.colors,
+		DotColors: config.dotColors,
 	}, nil
 }
 
@@ -162,5 +152,5 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 func (line Line) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithLine(line))
-	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(line.LineColors...)))
+	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(line.Colors...)))
 }

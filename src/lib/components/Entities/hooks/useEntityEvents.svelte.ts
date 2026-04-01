@@ -14,11 +14,12 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
 	const cursor = useCursor()
-	const currentEntity = $derived(entity())
 
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 		cursor.onPointerEnter()
+
+		const currentEntity = entity()
 
 		if (currentEntity && !currentEntity.has(traits.Hovered)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
@@ -43,7 +44,9 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
 
-		if (currentEntity && currentEntity.has(traits.Hovered)) {
+		const currentEntity = entity()
+
+		if (currentEntity?.has(traits.Hovered)) {
 			const hoverInfo = updateHoverInfo(currentEntity, event)
 			const hoverPose = createPose(
 				hoverInfo
@@ -84,6 +87,8 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 		cursor.onPointerLeave()
 
+		const currentEntity = entity()
+
 		if (currentEntity?.has(traits.Hovered)) {
 			currentEntity.remove(traits.Hovered)
 		}
@@ -94,6 +99,8 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 
 	const ondblclick = (event: IntersectionEvent<MouseEvent>) => {
 		event.stopPropagation()
+
+		const currentEntity = entity()
 		focusedEntity.set(currentEntity, event.instanceId ?? event.batchId)
 	}
 
@@ -105,6 +112,7 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 		event.stopPropagation()
 
 		if (down.distanceToSquared(event.pointer) < 0.1) {
+			const currentEntity = entity()
 			selectedEntity.set(currentEntity, event.instanceId ?? event.batchId)
 		}
 	}

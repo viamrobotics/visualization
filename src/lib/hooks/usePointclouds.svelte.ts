@@ -15,7 +15,7 @@ import { parsePcdInWorker } from '$lib/loaders/pcd'
 
 import { useEnvironment } from './useEnvironment.svelte'
 import { useLogs } from './useLogs.svelte'
-import { RefreshRates, useMachineSettings } from './useMachineSettings.svelte'
+import { RefreshRates, useSettings } from './useSettings.svelte'
 
 const key = Symbol('pointcloud-context')
 
@@ -27,7 +27,8 @@ export const providePointclouds = (partID: () => string) => {
 	const environment = useEnvironment()
 	const world = useWorld()
 	const logs = useLogs()
-	const { refreshRates, disabledCameras } = useMachineSettings()
+	const settings = useSettings()
+	const { refreshRates, disabledCameras } = $derived(settings.current)
 	const cameras = useResourceNames(partID, 'camera')
 
 	const clients = $derived(
@@ -50,7 +51,7 @@ export const providePointclouds = (partID: () => string) => {
 
 	const fetchedPropQueries = $derived(propQueries.every(([, query]) => query.isPending === false))
 
-	const interval = $derived(refreshRates.get(RefreshRates.pointclouds))
+	const interval = $derived(refreshRates[RefreshRates.pointclouds])
 	const enabledClients = $derived.by(() => {
 		const results = []
 
@@ -59,7 +60,7 @@ export const providePointclouds = (partID: () => string) => {
 				fetchedPropQueries &&
 				client.current?.name &&
 				interval !== RefetchRates.OFF &&
-				disabledCameras.get(client.current?.name) !== true
+				disabledCameras[client.current?.name] !== true
 			) {
 				results.push(client as { current: CameraClient })
 			}
@@ -77,8 +78,8 @@ export const providePointclouds = (partID: () => string) => {
 	 */
 	$effect(() => {
 		for (const [name, query] of propQueries) {
-			if (name && query.data?.supportsPcd === false && disabledCameras.get(name) === undefined) {
-				disabledCameras.set(name, true)
+			if (name && query.data?.supportsPcd === false && disabledCameras[name] === undefined) {
+				disabledCameras[name] = true
 			}
 		}
 	})

@@ -65,7 +65,7 @@
 		return FALLBACK_SPEED
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		(delta) => {
 			const dt = delta * 1000
 
@@ -129,18 +129,10 @@
 			}
 		},
 		{
-			autoStart: false,
+			running: () => anyKeysPressed,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (anyKeysPressed) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	keys.onKeys('escape', () => {
 		if (keys.has('escape')) {

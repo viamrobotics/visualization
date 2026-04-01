@@ -71,7 +71,7 @@ func lineToBytes(line *draw.Line, label string) ([]byte, error) {
 		data = append(data, float32(b))
 	}
 
-	lineColor := line.LineColors[0]
+	lineColor := line.Colors[0]
 	dotColor := line.DotColors[0]
 
 	data = append(data,
