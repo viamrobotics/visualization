@@ -14,7 +14,7 @@
 
 	import FloatingPanel from '../overlay/FloatingPanel.svelte'
 	import Lasso from './Lasso.svelte'
-	import * as lassoTraits from './traits'
+	import * as selectionTraits from './traits'
 
 	interface Props {
 		/** Whether to auto-enable lasso mode when the component mounts */
@@ -29,10 +29,10 @@
 	const { dom } = useThrelte()
 	const world = useWorld()
 	const settings = useSettings()
-	const isLassoMode = $derived(settings.current.interactionMode === 'lasso')
+	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
 
 	const onCommitClick = () => {
-		const entities = world.query(lassoTraits.LassoEnclosedPoints)
+		const entities = world.query(selectionTraits.SelectionEnclosedPoints)
 
 		const geometries: BufferGeometry[] = []
 		for (const entity of entities) {
@@ -58,14 +58,14 @@
 	}
 
 	$effect(() => {
-		if (isLassoMode) {
+		if (isSelectionMode) {
 			settings.current.cameraMode = 'orthographic'
 		}
 	})
 
 	$effect(() => {
 		if (enabled) {
-			settings.current.interactionMode = 'lasso'
+			settings.current.interactionMode = 'select'
 		}
 	})
 
@@ -75,17 +75,17 @@
 <Portal id="dashboard">
 	<fieldset>
 		<DashboardButton
-			active={isLassoMode}
+			active={isSelectionMode}
 			icon="selection-drag"
-			description="{isLassoMode ? 'Disable' : 'Enable'} lasso selection"
+			description="{isSelectionMode ? 'Disable' : 'Enable'} selection"
 			onclick={() => {
-				settings.current.interactionMode = isLassoMode ? 'navigate' : 'lasso'
+				settings.current.interactionMode = isSelectionMode ? 'navigate' : 'select'
 			}}
 		/>
 	</fieldset>
 </Portal>
 
-{#if isLassoMode && rect.height > 0 && rect.width > 0}
+{#if isSelectionMode && rect.height > 0 && rect.width > 0}
 	<Lasso />
 
 	<Portal id="dom">

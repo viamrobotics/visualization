@@ -11,7 +11,7 @@
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	import Debug from './Debug.svelte'
-	import * as lassoTraits from './traits'
+	import * as selectionTraits from './traits'
 
 	interface Props {
 		debug?: boolean
@@ -65,8 +65,8 @@
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Color({ r: 1, g: 0, b: 0 }),
-			lassoTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
-			lassoTraits.Lasso
+			selectionTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
+			selectionTraits.Lasso
 		)
 
 		if (controls.current) {
@@ -77,7 +77,7 @@
 	const onpointermove = (event: PointerEvent) => {
 		if (!drawing) return
 
-		let lasso = world.query(lassoTraits.Lasso).at(-1)
+		let lasso = world.query(selectionTraits.Lasso).at(-1)
 
 		if (!lasso) return
 
@@ -94,7 +94,7 @@
 
 			const { x, y } = raycast(event)
 			const positions = lasso.get(traits.LinePositions)
-			const box = lasso.get(lassoTraits.Box)
+			const box = lasso.get(selectionTraits.Box)
 
 			if (!positions || !box) return
 
@@ -110,7 +110,7 @@
 			if (y < box.minY) box.minY = y
 			else if (y > box.maxY) box.maxY = y
 
-			lasso.set(lassoTraits.Box, box)
+			lasso.set(selectionTraits.Box, box)
 		})
 	}
 
@@ -125,7 +125,7 @@
 
 		drawing = false
 
-		let lasso = world.query(lassoTraits.Lasso).at(-1)
+		let lasso = world.query(selectionTraits.Lasso).at(-1)
 
 		if (!lasso) return
 
@@ -149,7 +149,7 @@
 
 		const indices = earcut(positions, undefined, 3)
 		if (debug) {
-			lasso.add(lassoTraits.Indices(new Uint16Array(indices)))
+			lasso.add(selectionTraits.Indices(new Uint16Array(indices)))
 		}
 
 		const getTriangleFromIndex = (i: number, triangle: Triangle) => {
@@ -163,17 +163,17 @@
 			triangle.set(a, b, c)
 		}
 
-		const boxes: lassoTraits.AABB[] = []
+		const boxes: selectionTraits.AABB[] = []
 		for (let i = 0, l = indices.length; i < l; i += 3) {
 			getTriangleFromIndex(i, triangle)
 			box3.setFromPoints([triangle.a, triangle.b, triangle.c])
 			boxes.push({ minX: box3.min.x, minY: box3.min.y, maxX: box3.max.x, maxY: box3.max.y })
 		}
 		if (debug) {
-			lasso.add(lassoTraits.Boxes(boxes))
+			lasso.add(selectionTraits.Boxes(boxes))
 		}
 
-		const lassoBox = lasso.get(lassoTraits.Box)
+		const lassoBox = lasso.get(selectionTraits.Box)
 
 		if (!lassoBox) return
 
@@ -183,7 +183,10 @@
 
 		const enclosedPoints: number[] = []
 
-		for (const pointsEntity of world.query(traits.Points, Not(lassoTraits.LassoEnclosedPoints))) {
+		for (const pointsEntity of world.query(
+			traits.Points,
+			Not(selectionTraits.SelectionEnclosedPoints)
+		)) {
 			const geometry = pointsEntity.get(traits.BufferGeometry)
 
 			if (!geometry) return
@@ -230,8 +233,8 @@
 			traits.Material({ depthTest: false }),
 			traits.Points,
 			traits.Removable,
-			lassoTraits.LassoEnclosedPoints,
-			lassoTraits.PointsCapturedBy(lasso)
+			selectionTraits.SelectionEnclosedPoints,
+			selectionTraits.PointsCapturedBy(lasso)
 		)
 	}
 
@@ -265,7 +268,7 @@
 		}
 	})
 
-	const lassos = useQuery(lassoTraits.Lasso)
+	const lassos = useQuery(selectionTraits.Lasso)
 
 	$effect(() => {
 		if (!controls.current) return
@@ -288,7 +291,7 @@
 	// On unmount, destroy all lasso related entities
 	$effect(() => {
 		return () => {
-			for (const entity of world.query(lassoTraits.LassoEnclosedPoints)) {
+			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {
 				if (world.has(entity)) {
 					entity.destroy()
 				}
@@ -299,6 +302,6 @@
 
 {#if debug}
 	{#each lassos.current as lasso (lasso)}
-		<Debug {lasso} />
+		<Debug selection={lasso} />
 	{/each}
 {/if}

@@ -1,11 +1,11 @@
 import { relation, trait } from 'koota'
 
 export const Lasso = trait(() => true)
-export const LassoEnclosedPoints = trait(() => true)
+export const SelectionEnclosedPoints = trait(() => true)
 
 /**
  * Captured points are removable, so we want to also destroy
- * the source lasso every time a user deletes one.
+ * the source selection every time a user deletes one.
  */
 export const PointsCapturedBy = relation({ autoDestroy: 'target' })
 
