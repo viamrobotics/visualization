@@ -65,8 +65,9 @@
 		return FALLBACK_SPEED
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		(delta) => {
+			console.log(1)
 			const dt = delta * 1000
 
 			// Disallow keyboard navigation if the user is holding down the meta key
@@ -129,18 +130,10 @@
 			}
 		},
 		{
-			autoStart: false,
+			running: () => anyKeysPressed,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (anyKeysPressed) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	keys.onKeys('escape', () => {
 		if (keys.has('escape')) {
