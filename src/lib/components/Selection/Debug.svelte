@@ -1,7 +1,7 @@
 <!--
 @component
 
-Shows all steps for querying points within a lasso selection
+Shows all steps for querying points within a selection
 -->
 <script lang="ts">
 	import type { Entity } from 'koota'
@@ -11,22 +11,22 @@ Shows all steps for querying points within a lasso selection
 
 	import { traits, useTrait } from '$lib/ecs'
 
-	import * as lassoTraits from './traits'
+	import * as selectionTraits from './traits'
 
 	const box3 = new Box3()
 	const min = new Vector3()
 	const max = new Vector3()
 
 	interface Props {
-		lasso: Entity
+		selection: Entity
 	}
 
-	let { lasso }: Props = $props()
+	let { selection }: Props = $props()
 
-	const indices = useTrait(() => lasso, lassoTraits.Indices)
-	const positions = useTrait(() => lasso, traits.LinePositions)
-	const box = useTrait(() => lasso, lassoTraits.Box)
-	const boxes = useTrait(() => lasso, lassoTraits.Boxes)
+	const indices = useTrait(() => selection, selectionTraits.Indices)
+	const positions = useTrait(() => selection, traits.LinePositions)
+	const box = useTrait(() => selection, selectionTraits.Box)
+	const boxes = useTrait(() => selection, selectionTraits.Boxes)
 
 	const geometry = new BufferGeometry()
 
