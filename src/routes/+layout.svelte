@@ -19,7 +19,7 @@
 
 	const connectionConfig = useActiveConnectionConfig()
 
-	let { children, details } = $props()
+	let { children } = $props()
 
 	let dialConfigs = $derived.by<Record<string, DialConf>>(() => {
 		if (connectionConfig.current) {
@@ -63,8 +63,6 @@
 			drawConnectionConfig={{ backendIP, websocketPort }}
 		>
 			{@render children()}
-
-			{@render details?.()}
 
 			{#snippet dashboard()}
 				<Machines bind:isOpen={isMachinesPageOpen} />
