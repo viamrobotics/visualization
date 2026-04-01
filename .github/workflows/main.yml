@@ -50,6 +50,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          version: pnpm changeset version && bash scripts/sync-go-versions.sh
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
           publish: npm run release
         env:

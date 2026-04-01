@@ -6,7 +6,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/rs/cors v1.11.1
-	github.com/viam-labs/motion-tools/draw v0.0.0
+	github.com/viam-labs/motion-tools/draw v1.16.0
 	go.viam.com/api v0.1.536
 	go.viam.com/rdk v0.101.1-0.20251112202028-569325736177
 	go.viam.com/test v1.2.4
