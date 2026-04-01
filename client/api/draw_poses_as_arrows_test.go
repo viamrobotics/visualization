@@ -54,7 +54,7 @@ func runDrawPosesAsArrowsTest(t *testing.T, numPoints int, colors *[]draw.Color)
 	t.Helper()
 
 	const radius = 1000.0
-	centerX, centerY, centerZ := 1500.0, 1500.0, -300.0
+	centerX, centerY, centerZ := 0.0, 0.0, -300.0
 
 	poses := generateSpherePoses(numPoints, radius, centerX, centerY, centerZ)
 
@@ -97,9 +97,14 @@ func TestDrawPosesAsArrows(t *testing.T) {
 	})
 
 	t.Run("DrawPosesAsArrowsWithPerPointColors", func(t *testing.T) {
-		colors := draw.ChromaticColorChooser.Get(10_000)
+		n := 10_000
+		colors := make([]draw.Color, n)
+		for i := range colors {
+			t := float32(i) / float32(n)
+			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
+		}
 
-		runDrawPosesAsArrowsTest(t, 10_000, &colors)
+		runDrawPosesAsArrowsTest(t, n, &colors)
 	})
 }
 

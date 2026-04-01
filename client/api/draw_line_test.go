@@ -57,20 +57,91 @@ func TestDrawLine(t *testing.T) {
 			Name:      "upwardSpiralLineColor",
 			Positions: points,
 			Colors:    []draw.Color{lineColor},
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
 	})
 
-	t.Run("DrawLineWithPointColor", func(t *testing.T) {
+	t.Run("DrawLineWithDotColor", func(t *testing.T) {
 		points := generateSpiralPoints()
 		lineColor := draw.ColorFromRGB(255, 0, 0)
-		pointColor := draw.ColorFromRGB(0, 255, 0)
+		dotColor := draw.ColorFromRGB(0, 255, 0)
 
 		uuid, err := DrawLine(DrawLineOptions{
-			Name:      "upwardSpiralPointColor",
+			Name:      "upwardSpiralDotColor",
 			Positions: points,
-			Colors:    []draw.Color{lineColor, pointColor},
+			LineWidth: 50.0,
+			DotSize:   50.0,
+			Colors:    []draw.Color{lineColor},
+			DotColors: []draw.Color{dotColor},
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawLineWithLineColorPalette", func(t *testing.T) {
+		points := generateSpiralPoints()
+
+		uuid, err := DrawLine(DrawLineOptions{
+			Name:      "upwardSpiralLineColorPalette",
+			Positions: points,
+			Colors: []draw.Color{
+				draw.ColorFromName("red"),
+				draw.ColorFromName("green"),
+				draw.ColorFromName("blue"),
+			},
+			LineWidth: 50.0,
+			DotSize:   50.0,
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawLineWithPerLineColors", func(t *testing.T) {
+		points := generateSpiralPoints()
+		colors := draw.ChromaticColorChooser.Get(len(points))
+
+		uuid, err := DrawLine(DrawLineOptions{
+			Name:      "upwardSpiralPerLineColors",
+			Positions: points,
+			Colors:    colors,
+			LineWidth: 50.0,
+			DotSize:   50.0,
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawLineWithDotColorPalette", func(t *testing.T) {
+		points := generateSpiralPoints()
+
+		uuid, err := DrawLine(DrawLineOptions{
+			Name:      "upwardSpiralDotColorPalette",
+			Positions: points,
+			DotColors: []draw.Color{
+				draw.ColorFromName("cyan"),
+				draw.ColorFromName("magenta"),
+				draw.ColorFromName("yellow"),
+			},
+			LineWidth: 50.0,
+			DotSize:   50.0,
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawLineWithPerDotColors", func(t *testing.T) {
+		points := generateSpiralPoints()
+		colors := draw.ChromaticColorChooser.Get(len(points))
+
+		uuid, err := DrawLine(DrawLineOptions{
+			Name:      "upwardSpiralPerDotColors",
+			Positions: points,
+			DotColors: colors,
+			LineWidth: 50.0,
+			DotSize:   50.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
@@ -90,15 +161,15 @@ func TestDrawLine(t *testing.T) {
 		test.That(t, uuid, test.ShouldNotBeNil)
 	})
 
-	t.Run("DrawLineWithPointSize", func(t *testing.T) {
+	t.Run("DrawLineWithDotSize", func(t *testing.T) {
 		points := generateSpiralPoints()
 		lineColor := draw.ColorFromName("purple")
 
 		uuid, err := DrawLine(DrawLineOptions{
-			Name:      "upwardSpiralPointSize",
+			Name:      "upwardSpiralDotSize",
 			Positions: points,
 			Colors:    []draw.Color{lineColor},
-			PointSize: 200.0,
+			DotSize:   200.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

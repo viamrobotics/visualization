@@ -65,15 +65,15 @@ func main() {
     snapshot.DrawPoints("my-points", "world", spatialmath.NewZeroPose(), positions,
         draw.WithPointsColors(draw.NewColor(draw.WithName("blue"))))
 
-    // Draw a line connecting points
-    linePoints := []r3.Vector{
+    // Draw a line connecting dots
+    lineDots := []r3.Vector{
         {X: 0, Y: 0, Z: 200},
         {X: 100, Y: 100, Z: 200},
         {X: 200, Y: 0, Z: 200},
     }
-    snapshot.DrawLine("my-line", "world", spatialmath.NewZeroPose(), linePoints,
+    snapshot.DrawLine("my-line", "world", spatialmath.NewZeroPose(), lineDots,
         draw.WithLineWidth(3.0),
-        draw.WithLineColors(draw.NewColor(draw.WithName("green")), nil))
+        draw.WithSingleLineColor(draw.NewColor(draw.WithName("green"))))
 
     // Export to JSON for rendering
     jsonData, _ := snapshot.MarshalJSON()

@@ -159,7 +159,7 @@ describe('drawDrawing', () => {
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'line',
-					value: new Line({ positions: new Uint8Array(24), lineWidth: 3, pointSize: 6 }),
+					value: new Line({ positions: new Uint8Array(24), lineWidth: 3, dotSize: 6 }),
 				},
 			}),
 		})
@@ -170,8 +170,9 @@ describe('drawDrawing', () => {
 		expect(entity.get(traits.Parent)).toBe('base')
 		expect(entity.has(traits.LinePositions)).toBe(true)
 		expect(entity.get(traits.LineWidth)).toBe(3)
-		expect(entity.get(traits.PointSize)).toBe(6)
+		expect(entity.get(traits.DotSize)).toBe(6)
 		expect(entity.has(traits.Colors)).toBe(true)
+		expect(entity.has(traits.DotColors)).toBe(true)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})

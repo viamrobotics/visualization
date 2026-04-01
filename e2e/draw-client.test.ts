@@ -52,6 +52,43 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 	assertNoFailedScreenshots([failedScreenshot])
 }
 
+test('draw service events lifecycle', async ({ browser }) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/AddTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_ADDED'))
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/UpdateTransformAndDrawing github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_UPDATED'))
+
+	execSync(
+		'go test -run ^TestDrawServiceEvents$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
+		timeout: 15000,
+	})
+	failedScreenshots.push(await takeScreenshot(page, 'DRAW_SERVICE_EVENTS_REMOVED'))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
 test('draw frame system', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAME_SYSTEM'
 	const page = await createPage(browser)
@@ -300,18 +337,18 @@ test('draw lines with line color', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw lines with point color', async ({ browser }) => {
-	const testPrefix = 'DRAW_LINE_WITH_POINT_COLOR'
+test('draw lines with dot color', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_COLOR'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawLine$/DrawLineWithPointColor$ github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawLine$/DrawLineWithDotColor$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}
 	)
 
-	await expect(page.getByText('upwardSpiralPointColor')).toBeVisible()
+	await expect(page.getByText('upwardSpiralDotColor')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
@@ -332,18 +369,82 @@ test('draw lines with line width', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
-test('draw lines with point size', async ({ browser }) => {
-	const testPrefix = 'DRAW_LINE_WITH_POINT_SIZE'
+test('draw lines with dot size', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_SIZE'
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawLine$/DrawLineWithPointSize$ github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawLine$/DrawLineWithDotSize$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}
 	)
 
-	await expect(page.getByText('upwardSpiralPointSize')).toBeVisible()
+	await expect(page.getByText('upwardSpiralDotSize')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with line color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_LINE_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithLineColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralLineColorPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with per-line colors', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_PER_LINE_COLORS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPerLineColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPerLineColors')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with dot color palette', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_DOT_COLOR_PALETTE'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithDotColorPalette$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralDotColorPalette')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw lines with per-dot colors', async ({ browser }) => {
+	const testPrefix = 'DRAW_LINE_WITH_PER_DOT_COLORS'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawLine$/DrawLineWithPerDotColors$ github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('upwardSpiralPerDotColors')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
@@ -630,6 +731,17 @@ test('set camera pose', async ({ browser }) => {
 test('remove all', async ({ browser }) => {
 	const testPrefix = 'REMOVE_ALL'
 	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestRemoveAll$/RemoveAllSetup github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('box2delete')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_SETUP`))
 
 	execSync(
 		'go test -run ^TestRemoveAll$/RemoveAll github.com/viam-labs/motion-tools/client/api -count=1',
@@ -638,12 +750,28 @@ test('remove all', async ({ browser }) => {
 		}
 	)
 
-	await assertTestSuccess(page, testPrefix)
+	await expect(page.getByText('box2delete')).not.toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 test('remove drawings', async ({ browser }) => {
 	const testPrefix = 'REMOVE_DRAWINGS'
 	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestRemoveDrawings$/RemoveDrawingsSetup github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('box2delete')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_SETUP`))
 
 	execSync(
 		'go test -run ^TestRemoveDrawings$/RemoveDrawings github.com/viam-labs/motion-tools/client/api -count=1',
@@ -652,12 +780,28 @@ test('remove drawings', async ({ browser }) => {
 		}
 	)
 
-	await assertTestSuccess(page, testPrefix)
+	await expect(page.getByText('box2delete')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 test('remove transforms', async ({ browser }) => {
 	const testPrefix = 'REMOVE_TRANSFORMS'
 	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestRemoveTransforms$/RemoveTransformsSetup github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('box2delete')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, `${testPrefix}_SETUP`))
 
 	execSync(
 		'go test -run ^TestRemoveTransforms$/RemoveTransforms github.com/viam-labs/motion-tools/client/api -count=1',
@@ -666,7 +810,12 @@ test('remove transforms', async ({ browser }) => {
 		}
 	)
 
-	await assertTestSuccess(page, testPrefix)
+	await expect(page.getByText('box2delete')).not.toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 })
 
 test('replay', async ({ browser }) => {

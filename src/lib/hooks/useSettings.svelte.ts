@@ -1,3 +1,5 @@
+import type { ColorRepresentation } from 'three'
+
 import { get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
@@ -20,7 +22,7 @@ export interface Settings {
 
 	// Points
 	pointSize: number
-	pointColor: string
+	pointColor: ColorRepresentation
 
 	// Lines
 	lineWidth: number
@@ -86,7 +88,7 @@ const defaults = (): Settings => ({
 	pointColor: '#333333',
 
 	lineWidth: 0.005,
-	lineDotSize: 0.01,
+	lineDotSize: 0.005,
 
 	interactionMode: 'navigate',
 
