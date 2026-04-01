@@ -49,7 +49,7 @@ Renders a Viam Geometry object
 			return
 		}
 
-		return models.current[componentName]?.[id].clone()
+		return models.current[componentName]?.[id]?.clone()
 	})
 
 	$effect.pre(() => {

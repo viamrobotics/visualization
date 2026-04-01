@@ -36,6 +36,7 @@
 	import Camera from './overlay/widgets/Camera.svelte'
 	import Scene from './Scene.svelte'
 	import SceneProviders from './SceneProviders.svelte'
+	import type { Entity } from 'koota'
 
 	interface LocalConfigProps {
 		current: Struct
@@ -47,10 +48,23 @@
 	interface Props {
 		partID?: string
 		enableKeybindings?: boolean
-		children?: Snippet
-		dashboard?: Snippet
 		localConfigProps?: LocalConfigProps
 		drawConnectionConfig?: DrawConnectionConfig
+
+		/**
+		 * Snippet for THREE objects
+		 */
+		children?: Snippet
+
+		/**
+		 * Snippet to inject items in the top middle dashboard
+		 */
+		dashboard?: Snippet
+
+		/**
+		 * Snippet to inject items into the details panel
+		 */
+		details?: Snippet<[{ entity: Entity }]>
 
 		/**
 		 * Allows setting the initial camera pose
@@ -66,6 +80,7 @@
 		drawConnectionConfig,
 		children: appChildren,
 		dashboard,
+		details,
 	}: Props = $props()
 
 	provideWorld()
@@ -121,7 +136,7 @@
 				<div {@attach domPortal(root)}>
 					<FileDrop />
 					<Dashboard {dashboard} />
-					<Details />
+					<Details {details} />
 
 					{#if environment.current.isStandalone}
 						<LiveUpdatesBanner />
