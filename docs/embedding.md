@@ -30,6 +30,7 @@ The top-level wrapper component that provides the 3D scene, ECS world, settings,
 | `drawConnectionConfig` | `DrawConnectionConfig` | --      | Backend connection for the live draw server           |
 | `children`             | `Snippet`              | --      | Content rendered inside the 3D scene                  |
 | `dashboard`            | `Snippet`              | --      | Custom toolbar content                                |
+| `details`              | `Snippet<[{ entity: Entity }]>` | --  | Custom content injected into the entity details panel |
 
 #### `CameraPose`
 
@@ -49,9 +50,9 @@ interface DrawConnectionConfig {
 }
 ```
 
-### Children and Dashboard Snippets
+### Snippets
 
-Use Svelte 5 snippets to inject content into the scene or toolbar:
+Use Svelte 5 snippets to inject content into the scene, toolbar, or details panel:
 
 ```svelte
 <MotionTools>
@@ -61,6 +62,10 @@ Use Svelte 5 snippets to inject content into the scene or toolbar:
 
 	{#snippet dashboard()}
 		<!-- Custom buttons added to the toolbar -->
+	{/snippet}
+
+	{#snippet details({ entity })}
+		<!-- Custom content appended to the entity details panel -->
 	{/snippet}
 </MotionTools>
 ```
@@ -105,13 +110,13 @@ const snapshot = SnapshotProto.fromBinary(binaryData)
 
 Motion Tools uses a component composition pattern for plugins. Plugins are Svelte components that you render as children of `<MotionTools>` to add functionality. Interaction modes are coordinated through a shared settings context -- when one tool activates, others deactivate.
 
-### `<LassoTool>`
+### `<SelectionTool>`
 
-A point cloud selection plugin that lets users draw a freeform polygon to select points.
+A point cloud selection plugin that lets users select points using a freeform lasso polygon or an ellipse.
 
 ```svelte
 <script>
-	import { MotionTools, LassoTool } from '@viamrobotics/motion-tools'
+	import { MotionTools, SelectionTool } from '@viamrobotics/motion-tools'
 
 	function handleSelection(pcd: Blob) {
 		// pcd is a binary PCD blob of the selected points
@@ -119,7 +124,7 @@ A point cloud selection plugin that lets users draw a freeform polygon to select
 </script>
 
 <MotionTools>
-	<LassoTool onSelection={handleSelection} />
+	<SelectionTool onSelection={handleSelection} />
 </MotionTools>
 ```
 
@@ -127,15 +132,16 @@ A point cloud selection plugin that lets users draw a freeform polygon to select
 
 | Prop          | Type                  | Default | Description                                                   |
 | ------------- | --------------------- | ------- | ------------------------------------------------------------- |
-| `enabled`     | `boolean`             | `false` | Auto-enable lasso mode on mount                               |
+| `enabled`     | `boolean`             | `false` | Auto-enable selection mode on mount                           |
 | `onSelection` | `(pcd: Blob) => void` | --      | Callback with selected points as a binary PCD blob (required) |
 
 #### User Workflow
 
-1. Click the lasso button in the toolbar to activate lasso mode (automatically switches to orthographic camera)
-2. Hold **Shift** and click-drag to draw a freeform selection polygon
-3. On release, points inside the polygon are highlighted as a new "Lasso result" entity
-4. Click **Commit selection** in the floating panel to trigger the `onSelection` callback with the selected points as a PCD blob
+1. Click the selection button in the toolbar to activate selection mode (automatically switches to orthographic camera)
+2. Use the settings popover next to the selection button to choose between **Lasso** (freeform polygon) and **Ellipse** selection types
+3. Hold **Shift** and click-drag to draw the selection region
+4. On release, points inside the region are highlighted
+5. Click **Commit selection** in the floating panel to trigger the `onSelection` callback with the selected points as a PCD blob
 
 ### `<PCD>`
 
@@ -161,6 +167,7 @@ Renders point cloud data as an entity in the scene.
 | `data`        | `Uint8Array` | --                | Binary PCD data (required)        |
 | `name`        | `string`     | `'Random points'` | Display name in the world tree    |
 | `renderOrder` | `number`     | --                | Rendering order for draw priority |
+| `oncreate`    | `(positions: Float32Array, colors: Uint8Array \| null) => void` | -- | Callback fired after PCD is parsed and the entity is spawned |
 
 ## Package Exports
 
@@ -171,14 +178,21 @@ The npm package provides two entry points:
 The main entry point for the visualizer and plugins.
 
 ```typescript
-import { MotionTools, LassoTool, PCD } from '@viamrobotics/motion-tools'
+import { MotionTools, SelectionTool, PCD } from '@viamrobotics/motion-tools'
+import { relations, traits, provideWorld, useWorld, useQuery, useTrait } from '@viamrobotics/motion-tools'
 ```
 
-| Export        | Description                        |
-| ------------- | ---------------------------------- |
-| `MotionTools` | Main visualizer component          |
-| `LassoTool`   | Point cloud lasso selection plugin |
-| `PCD`         | Point cloud renderer component     |
+| Export          | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| `MotionTools`   | Main visualizer component                              |
+| `SelectionTool` | Point cloud selection plugin (lasso + ellipse)         |
+| `PCD`           | Point cloud renderer component                         |
+| `relations`     | ECS relation definitions (e.g. `ChildOf`)              |
+| `traits`        | ECS trait definitions for all entity properties         |
+| `provideWorld`  | Create and provide an ECS world via Svelte context      |
+| `useWorld`      | Access the ECS world from Svelte context                |
+| `useQuery`      | Reactive hook to query entities by traits               |
+| `useTrait`      | Reactive hook to read a trait value from an entity      |
 
 ### `@viamrobotics/motion-tools/lib`
 

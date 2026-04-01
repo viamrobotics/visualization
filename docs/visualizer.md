@@ -117,6 +117,7 @@ Configure polling rates for live data from connected machines:
 | --------------- | ------------------------------------------------------------------ |
 | **Poses**       | Do not fetch, Manual, Live (60fps/30fps), or interval (0.5s - 10s) |
 | **Pointclouds** | Do not fetch, Manual, or interval (0.5s - 10s)                     |
+| **Vision**      | Do not fetch, Manual, or interval (0.5s - 10s)                     |
 
 In **Manual** mode, a refresh button appears to trigger a one-time fetch. When actively polling, a pause button is shown.
 
