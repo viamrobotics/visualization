@@ -29,28 +29,44 @@ export const STRIDE = {
  * Creates a Float32Array view over a Uint8Array without copying data.
  * Falls back to a copy if the buffer is not 4-byte aligned (rare with protobuf).
  *
+ * An optional `transform` applies a per-element function during conversion.
+ *
  * @param bytes - The raw bytes from a protobuf bytes field
+ * @param transform - Optional function applied to every float element
  * @returns A Float32Array view or copy of the data
  *
  * @example
  * ```ts
  * const positions = asFloat32Array(line.positions)
- * geometry.setAttribute('position', new BufferAttribute(positions, 3))
+ * const meterPositions = asFloat32Array(line.positions, inMeters)
  * ```
  */
-export const asFloat32Array = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
+export const asFloat32Array = (
+	bytes: Uint8Array<ArrayBuffer>,
+	transform?: (value: number) => number
+): Float32Array<ArrayBuffer> => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
 
 	if (bytes.byteOffset % 4 === 0 && bytes.byteLength % 4 === 0) {
-		return new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
+		const view = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
+		if (transform) {
+			for (let i = 0; i < view.length; i++) view[i] = transform(view[i]!)
+		}
+		return view
 	}
 
 	const aligned = new Float32Array(bytes.byteLength / 4)
-	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-	for (let i = 0; i < aligned.length; i++) {
-		aligned[i] = view.getFloat32(i * 4, true) // little-endian
+	const dataView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+	if (transform) {
+		for (let i = 0; i < aligned.length; i++) {
+			aligned[i] = transform(dataView.getFloat32(i * 4, true))
+		}
+	} else {
+		for (let i = 0; i < aligned.length; i++) {
+			aligned[i] = dataView.getFloat32(i * 4, true)
+		}
 	}
 	return aligned
 }
@@ -120,17 +136,67 @@ export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset =
  * Use this to distinguish per-vertex color buffers from a single uniform color.
  *
  * @param colors - Uint8Array of packed color bytes
- * @param numVertex - Number of points/vertices the color buffer should cover
  *
  * @example
  * ```ts
- * if (isPerVertexColors(colors, positions.length / STRIDE.POSITIONS)) {
+ * if (isVertexColors(colors)) {
  *   // treat as per-vertex
  * } else {
  *   addColorTraits(entityTraits, colors)
  * }
  * ```
  */
-export const isPerVertexColors = (colors: Uint8Array<ArrayBuffer>, numVertex: number): boolean =>
-	colors.length === numVertex * STRIDE.COLORS_RGB ||
-	colors.length === numVertex * STRIDE.COLORS_RGBA
+export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
+	if (!colors) return false
+	if (isSingleColor(colors)) return false
+	return isRgb(colors) || isRgba(colors)
+}
+
+/**
+ * Per-element transform that converts a millimeter value to meters.
+ * Pass to {@link asFloat32Array} to fuse the conversion into a single pass.
+ *
+ * @example
+ * ```ts
+ * const positions = asFloat32Array(line.positions, inMeters)
+ * ```
+ */
+export const inMeters = (v: number): number => v * 0.001
+
+/**
+ * Returns true when `colors` is encoded as RGB (3 bytes per color).
+ *
+ * @example
+ * ```ts
+ * const stride = isRgb(colors) ? STRIDE.COLORS_RGB : STRIDE.COLORS_RGBA
+ * ```
+ */
+export const isRgb = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length % STRIDE.COLORS_RGB === 0
+
+/**
+ * Returns true when `colors` is encoded as RGBA (4 bytes per color).
+ * Prefers RGBA when length is divisible by both 3 and 4, matching the
+ * convention used throughout the draw API.
+ *
+ * @example
+ * ```ts
+ * const stride = isRgba(colors) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
+ * ```
+ */
+export const isRgba = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length % STRIDE.COLORS_RGBA === 0
+
+/**
+ * Returns true when `colors` contains exactly one color (RGB or RGBA),
+ * as opposed to a per-vertex color array.
+ *
+ * @example
+ * ```ts
+ * if (isSingleColor(colors)) {
+ *   material.color = asColor(colors, colorUtil)
+ * }
+ * ```
+ */
+export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean =>
+	colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA
