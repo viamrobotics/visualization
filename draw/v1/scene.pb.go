@@ -349,7 +349,7 @@ type SceneMetadata struct {
 	// defaults to 10 (millimeters)
 	PointSize *float32 `protobuf:"fixed32,6,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
 	// The color of the points if not defined by a transform's metadata
-	// defaults to [51, 51, 51] (gray), RGB format
+	// defaults to [51, 51, 51] (gray)
 	PointColor []byte `protobuf:"bytes,7,opt,name=point_color,json=pointColor,proto3,oneof" json:"point_color,omitempty"`
 	// The width of the lines if not defined by a transform's metadata
 	// defaults to 5mm

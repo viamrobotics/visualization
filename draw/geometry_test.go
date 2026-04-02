@@ -61,7 +61,7 @@ func TestDrawnGeometry_Draw(t *testing.T) {
 		test.That(t, transform.PhysicalObject.GetBox(), test.ShouldResemble, &commonv1.RectangularPrism{
 			DimsMm: &commonv1.Vector3{X: 100, Y: 100, Z: 100},
 		})
-		// blue = \x00\x00\xff (R=0, G=0, B=255), RGB-only
+		// blue = \x00\x00\xff (R=0, G=0, B=255)
 		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff")
 	})
 
@@ -73,7 +73,7 @@ func TestDrawnGeometry_Draw(t *testing.T) {
 
 		transform, err := drawn.Draw("box")
 		test.That(t, err, test.ShouldBeNil)
-		// red = \xff\x00\x00, green = \x00\xff\x00, both packed as RGB
+		// red = \xff\x00\x00, green = \x00\xff\x00, both packed together
 		test.That(t, fixtures.Byte64EncodedToString(transform.Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00\x00\xff\x00")
 	})
 
