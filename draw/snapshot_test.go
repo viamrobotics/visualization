@@ -978,8 +978,8 @@ func TestGeneratingSnapshots(t *testing.T) {
 			spatialmath.NewZeroPose(),
 			path2,
 			WithLineWidth(20.0),
-			WithPointSize(10.0),
-			WithLineColors(lineColors[0], nil),
+			WithDotSize(10.0),
+			WithSingleLineColor(lineColors[0]),
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1003,8 +1003,8 @@ func TestGeneratingSnapshots(t *testing.T) {
 			spatialmath.NewZeroPose(),
 			path3,
 			WithLineWidth(12.0),
-			WithPointSize(10.0),
-			WithLineColors(lineColors[1], nil),
+			WithDotSize(10.0),
+			WithSingleLineColor(lineColors[1]),
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1022,8 +1022,8 @@ func TestGeneratingSnapshots(t *testing.T) {
 			spatialmath.NewZeroPose(),
 			path4,
 			WithLineWidth(25.0),
-			WithPointSize(10.0),
-			WithLineColors(lineColors[2], nil),
+			WithDotSize(10.0),
+			WithSingleLineColor(lineColors[2]),
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1049,8 +1049,8 @@ func TestGeneratingSnapshots(t *testing.T) {
 			spatialmath.NewZeroPose(),
 			path5,
 			WithLineWidth(18.0),
-			WithPointSize(10.0),
-			WithLineColors(lineColors[3], nil),
+			WithDotSize(10.0),
+			WithSingleLineColor(lineColors[3]),
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1101,7 +1101,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		numPoints := 10000
 		radius := 1200.0
 
-		for i := 0; i < numPoints; i++ {
+		for range numPoints {
 			theta := rng.Float64() * 2 * math.Pi
 			phi := math.Acos(2*rng.Float64() - 1)
 			r := radius * math.Cbrt(rng.Float64())

@@ -1,11 +1,21 @@
+import type { ColorRepresentation } from 'three'
+
 import { get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('dashboard-context')
 
 export interface Settings {
-	// Camera
 	cameraMode: 'orthographic' | 'perspective'
+	interactionMode: 'navigate' | 'measure' | 'select'
+	refreshRates: {
+		poses: number
+		pointclouds: number
+		vision: number
+	}
+
+	disabledCameras: Record<string, boolean>
+	disabledVisionServices: Record<string, boolean>
 
 	// Transform controls
 	transforming: boolean
@@ -20,13 +30,11 @@ export interface Settings {
 
 	// Points
 	pointSize: number
-	pointColor: string
+	pointColor: ColorRepresentation
 
 	// Lines
 	lineWidth: number
 	lineDotSize: number
-
-	interactionMode: 'navigate' | 'measure' | 'lasso'
 
 	// Measurement
 	enableMeasureAxisX: boolean
@@ -70,8 +78,23 @@ interface Context {
 	merge(value: Settings): void
 }
 
+export const RefreshRates = {
+	poses: 'poses',
+	pointclouds: 'pointclouds',
+	vision: 'vision',
+} as const
+
 const defaults = (): Settings => ({
 	cameraMode: 'perspective',
+
+	refreshRates: {
+		poses: 1000,
+		pointclouds: 5000,
+		vision: 1000,
+	},
+
+	disabledCameras: {},
+	disabledVisionServices: {},
 
 	transforming: false,
 	snapping: false,
@@ -86,7 +109,7 @@ const defaults = (): Settings => ({
 	pointColor: '#333333',
 
 	lineWidth: 0.005,
-	lineDotSize: 0.01,
+	lineDotSize: 0.005,
 
 	interactionMode: 'navigate',
 
@@ -135,7 +158,7 @@ export const provideSettings = () => {
 
 	$effect(() => {
 		if (isLoaded) {
-			set('motion-tools-settings', $state.snapshot(settings))
+			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
 		}
 	})
 

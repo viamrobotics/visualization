@@ -6,6 +6,7 @@
 	import { Portal } from '@threlte/extras'
 	import { OrthographicCamera, Points, PointsMaterial } from 'three'
 
+	import { asColor, asOpacity, isRgba, isSingleColor } from '$lib/buffer'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { poseToObject3d } from '$lib/transform'
@@ -25,8 +26,7 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const geometry = useTrait(() => entity, traits.BufferGeometry)
-	const color = useTrait(() => entity, traits.Color)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const colors = useTrait(() => entity, traits.Colors)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 	const invisible = useTrait(() => entity, traits.Invisible)
 
@@ -46,8 +46,8 @@
 	$effect.pre(() => {
 		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
-		} else if (color.current) {
-			material.color.setRGB(color.current.r, color.current.g, color.current.b)
+		} else if (colors.current && isSingleColor(colors.current)) {
+			asColor(colors.current, material.color, 0)
 		} else {
 			material.color.set(settings.current.pointColor)
 		}
@@ -57,9 +57,14 @@
 	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
 	 */
 	$effect.pre(() => {
-		if (opacity.current && opacity.current < 1) {
+		const opacity =
+			colors.current && isSingleColor(colors.current) && isRgba(colors.current)
+				? asOpacity(colors.current)
+				: undefined
+
+		if (opacity !== undefined && opacity < 1) {
 			material.transparent = true
-			material.opacity = opacity.current
+			material.opacity = opacity
 
 			return () => {
 				material.transparent = false
@@ -99,23 +104,20 @@
 
 	const events = useEntityEvents(() => entity)
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			// If using an orthographic camera, points need to be
 			// resized to half zoom to take up the same screen space.
 			material.size = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
 		},
 		{
-			autoStart: false,
+			running: () => orthographic,
 			autoInvalidate: false,
 		}
 	)
 
 	$effect(() => {
-		if (orthographic) {
-			start()
-		} else {
-			stop()
+		if (!orthographic) {
 			material.size = pointSize
 		}
 	})

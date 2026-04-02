@@ -32,8 +32,8 @@ var (
 	// DefaultLineColor is the default color for lines (blue).
 	DefaultLineColor = NewColor(WithName("blue"))
 
-	// DefaultLinePointColor is the default color for points at line vertices (dark blue).
-	DefaultLinePointColor = NewColor(WithName("darkblue"))
+	// DefaultLineDotColor is the default color for dots at line vertices (dark blue).
+	DefaultLineDotColor = NewColor(WithName("darkblue"))
 
 	// DefaultPointColor is the default color for point clouds (gray).
 	DefaultPointColor = NewColor(WithName("gray"))

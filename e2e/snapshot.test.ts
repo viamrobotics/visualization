@@ -27,21 +27,19 @@ test.beforeAll(() => {
 })
 
 for (const snapshot of snapshots) {
-	test.describe(`snapshot ${snapshot.name}`, () => {
-		const filename = `${snapshot.file}.pb.gz`
+	const filename = `${snapshot.file}.pb.gz`
 
-		test('drops file', async ({ browser }) => {
-			const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
+	test(`drops ${filename}`, async ({ browser }) => {
+		const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
 
-			await dropFile(path.resolve(snapshotsDir, filename))
-			await expect(page.getByText(`${filename} loaded.`)).toBeVisible({
-				timeout: 10000,
-			})
-			await page.getByRole('button', { name: 'Dismiss toast' }).click()
-			await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
-
-			await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
-			assertScreenshots()
+		await dropFile(path.resolve(snapshotsDir, filename))
+		await expect(page.getByText(`${filename} loaded.`)).toBeVisible({
+			timeout: 10000,
 		})
+		await page.getByRole('button', { name: 'Dismiss toast' }).click()
+		await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
+
+		await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
+		assertScreenshots()
 	})
 }

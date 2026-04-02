@@ -24,7 +24,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	import { useWorld } from '$lib/ecs'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { applySceneMetadata, destroyEntities, spawnSnapshotEntities } from '$lib/snapshot'
+	import { applySceneMetadata, spawnSnapshotEntities } from '$lib/snapshot'
 
 	interface Props {
 		snapshot: SnapshotProto
@@ -66,10 +66,20 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 				position: [x * 0.001, y * 0.001, z * 0.001],
 				lookAt: [lx * 0.001, ly * 0.001, lz * 0.001],
 			})
+
+			if (sceneCamera.cameraType.case === 'orthographicCamera') {
+				const orthographicCamera = sceneCamera.cameraType.value as { zoom?: number }
+				const zoom = orthographicCamera.zoom
+				if (zoom !== undefined) {
+					cameraControls.setZoom(zoom)
+				}
+			}
 		}
 	})
 
 	onDestroy(() => {
-		destroyEntities(world, entities)
+		for (const entity of entities) {
+			if (world.has(entity)) entity.destroy()
+		}
 	})
 </script>

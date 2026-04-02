@@ -123,7 +123,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 		}
 	case shape.Line != nil:
 		lineWidth := shape.Line.LineWidth
-		pointSize := shape.Line.PointSize
+		dotSize := shape.Line.DotSize
 		return &drawv1.Shape{
 			Label:  shape.Label,
 			Center: poseToProtobuf(shape.Center),
@@ -131,7 +131,8 @@ func (shape Shape) ToProto() *drawv1.Shape {
 				Line: &drawv1.Line{
 					Positions: packPoints(shape.Line.Positions),
 					LineWidth: &lineWidth,
-					PointSize: &pointSize,
+					DotSize:   &dotSize,
+					DotColors: packColors(shape.Line.DotColors),
 				},
 			},
 		}

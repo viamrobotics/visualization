@@ -95,7 +95,9 @@
 			>
 				{@render children?.()}
 
-				<PortalTarget id={name.current} />
+				{#if name.current}
+					<PortalTarget id={name.current} />
+				{/if}
 			</T>
 		{/if}
 	</T>
