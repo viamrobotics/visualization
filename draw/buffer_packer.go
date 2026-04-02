@@ -144,7 +144,7 @@ func unpackColors(colorsBytes []byte, opacitiesBytes []byte) []Color {
 	bytesPerColor := 3
 	colors := make([]Color, len(colorsBytes)/bytesPerColor)
 	for i := range colors {
-		alpha := DefaultAlpha
+		alpha := DefaultOpacity
 		if i < len(opacitiesBytes) {
 			alpha = opacitiesBytes[i]
 		} else if len(opacitiesBytes) == 1 {

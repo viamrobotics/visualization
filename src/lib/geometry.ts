@@ -1,4 +1,4 @@
-import type { Capsule, Geometry, RectangularPrism, Sphere } from '@viamrobotics/sdk'
+import type { Capsule, Geometry, PointCloud, RectangularPrism, Sphere } from '@viamrobotics/sdk'
 
 import type { Frame } from './frame'
 
@@ -69,4 +69,10 @@ export const createSphere = (sphere?: Sphere) => {
 	return {
 		r: sphere?.radiusMm ?? 0,
 	}
+}
+
+export const isPointCloud = (
+	geometry?: Geometry['geometryType']
+): geometry is { case: 'pointcloud'; value: PointCloud } => {
+	return geometry?.case === 'pointcloud'
 }

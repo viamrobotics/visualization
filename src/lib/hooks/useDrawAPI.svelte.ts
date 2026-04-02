@@ -9,7 +9,7 @@ import { UuidTool } from 'uuid-tool'
 import type { Frame } from '$lib/frame'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { STRIDE } from '$lib/buffer'
+import { asRGB, STRIDE } from '$lib/buffer'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
@@ -20,6 +20,7 @@ import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { useLogs } from './useLogs.svelte'
 
 const colorUtil = new Color()
+const rgb = { r: 0, g: 0, b: 0 }
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -326,9 +327,15 @@ export const provideDrawAPI = () => {
 		const nColors = reader.readU32()
 
 		// Read default color
-		let r = reader.read()
-		let g = reader.read()
-		let b = reader.read()
+		const r = reader.read()
+		const g = reader.read()
+		const b = reader.read()
+
+		// Normalize to uint8 immediately so the rest of the function works in a single color space.
+		const defaultColor =
+			r > -1
+				? new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
+				: null
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
@@ -336,52 +343,53 @@ export const provideDrawAPI = () => {
 		const nColorsElements = nColors * 3
 		const rawColors = reader.readU8Array(nColorsElements)
 
-		let colors: Uint8Array | null = null
+		let vertexColors: Uint8Array<ArrayBuffer> | null = null
+		let uniformColor: Uint8Array<ArrayBuffer> | null = null
 
-		if (nColors > 1) {
-			colors = new Uint8Array(nPointsElements)
-			colors.set(rawColors)
+		if (nColors > 1 && nColors >= nPoints) {
+			vertexColors = rawColors
+		} else if (nColors > 1) {
+			vertexColors = new Uint8Array(nPointsElements)
+			vertexColors.set(rawColors)
 
-			// Cover the gap for any points not colored
-			for (let i = nColors; i < nPoints; i++) {
-				const offset = i * 3
-
-				colors[offset] = Math.round(r * 255)
-				colors[offset + 1] = Math.round(g * 255)
-				colors[offset + 2] = Math.round(b * 255)
+			if (defaultColor) {
+				for (let i = nColors; i < nPoints; i++) {
+					const offset = i * STRIDE.COLORS_RGB
+					vertexColors[offset] = defaultColor[0]!
+					vertexColors[offset + 1] = defaultColor[1]!
+					vertexColors[offset + 2] = defaultColor[2]!
+				}
 			}
 		} else if (nColors === 1) {
-			r = rawColors[0] / 255
-			g = rawColors[1] / 255
-			b = rawColors[2] / 255
+			uniformColor = new Uint8Array([rawColors[0]!, rawColors[1]!, rawColors[2]!])
+		} else {
+			uniformColor = defaultColor
 		}
 
 		const entities = world.query(traits.DrawAPI)
 		const entity = entities.find((entity) => entity.get(traits.Name) === label)
-		const metadata = {
-			colors: new Uint8Array([r, g, b]),
-			opacities: new Uint8Array([180]),
-		}
 
 		if (entity) {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, metadata)
+				updateBufferGeometry(geometry, positions, { colors: vertexColors ?? undefined })
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, metadata)
-
-		world.spawn(
+		const geometry = createBufferGeometry(positions, { colors: vertexColors ?? undefined })
+		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
-			traits.Color(colorUtil.set(r, g, b)),
 			traits.BufferGeometry(geometry),
 			traits.Points,
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
+
+		if (uniformColor) spawnTraits.push(traits.Color(asRGB(uniformColor, rgb)))
+
+		world.spawn(...spawnTraits)
 	}
 
 	const drawLine = async (reader: BinaryReader) => {
@@ -416,11 +424,22 @@ export const provideDrawAPI = () => {
 			points[i + 2] = reader.read()
 		}
 
+		const lineColors = new Uint8Array([
+			Math.round(r * 255),
+			Math.round(g * 255),
+			Math.round(b * 255),
+		])
+		const dotColors = new Uint8Array([
+			Math.round(dotR * 255),
+			Math.round(dotG * 255),
+			Math.round(dotB * 255),
+		])
+
 		world.spawn(
 			traits.Name(label),
-			traits.Color({ r, g, b }),
+			traits.Color(asRGB(lineColors, rgb)),
 			traits.LinePositions(points),
-			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
+			traits.DotColors(dotColors),
 			traits.DrawAPI,
 			traits.Removable
 		)

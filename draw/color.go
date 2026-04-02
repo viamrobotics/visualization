@@ -9,8 +9,8 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-// DefaultAlpha is the default alpha value (fully opaque).
-var DefaultAlpha = uint8(255)
+// DefaultOpacity is the default alpha value (fully opaque).
+var DefaultOpacity = uint8(255)
 
 // Color represents an RGBA color with 8-bit channels (0-255 range).
 type Color struct {
@@ -32,8 +32,8 @@ var (
 	// DefaultLineColor is the default color for lines (blue).
 	DefaultLineColor = NewColor(WithName("blue"))
 
-	// DefaultLinePointColor is the default color for points at line vertices (dark blue).
-	DefaultLinePointColor = NewColor(WithName("darkblue"))
+	// DefaultLineDotColor is the default color for dots at line vertices (dark blue).
+	DefaultLineDotColor = NewColor(WithName("darkblue"))
 
 	// DefaultPointColor is the default color for point clouds (gray).
 	DefaultPointColor = NewColor(WithName("gray"))
@@ -55,7 +55,7 @@ func newColorConfig() *colorConfig {
 		r: 0,
 		g: 0,
 		b: 0,
-		a: DefaultAlpha,
+		a: DefaultOpacity,
 	}
 }
 

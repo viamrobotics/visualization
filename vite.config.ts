@@ -26,6 +26,7 @@ export default defineConfig({
 		...(https ? [mkcert()] : []),
 		tailwindcss(),
 		sveltekit(),
+		svelteTesting({ resolveBrowser: false }),
 	],
 
 	define: {
@@ -37,6 +38,7 @@ export default defineConfig({
 		esbuildOptions: {
 			target: 'esnext',
 		},
+		exclude: ['@testing-library/svelte'],
 	},
 	build: {
 		target: 'esnext',
@@ -59,30 +61,14 @@ export default defineConfig({
 	},
 
 	test: {
-		projects: [
-			{
-				extends: './vite.config.ts',
-				plugins: [svelteTesting()],
-
-				test: {
-					name: 'client',
-					environment: 'jsdom',
-					clearMocks: true,
-					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**'],
-					setupFiles: ['./vitest-setup-client.ts'],
-				},
-			},
-			{
-				extends: './vite.config.ts',
-
-				test: {
-					name: 'server',
-					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-				},
-			},
-		],
+		browser: {
+			enabled: true,
+			headless: true,
+			provider: 'playwright',
+			instances: [{ browser: 'chromium' }],
+		},
+		clearMocks: true,
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		setupFiles: ['./vitest-setup-client.ts'],
 	},
 })

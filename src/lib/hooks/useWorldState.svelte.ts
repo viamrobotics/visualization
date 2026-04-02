@@ -1,4 +1,4 @@
-import type { ConfigurableTrait, Entity } from 'koota'
+import type { Entity } from 'koota'
 
 import { useThrelte } from '@threlte/core'
 import {
@@ -13,20 +13,15 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { Color } from 'three'
 
-import { createBufferGeometry } from '$lib/attribute'
-import { asColor, asOpacity, isPerVertexColors, STRIDE } from '$lib/buffer'
+import { drawTransform } from '$lib/draw'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { parseMetadata } from '$lib/metadata'
+import { isPointCloud } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { createPose } from '$lib/transform'
 
 import { usePartID } from './usePartID.svelte'
-
-const colorUtil = new Color()
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
@@ -70,71 +65,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		if (entities.has(transform.uuidString)) {
 			return
 		}
-		const metadata = parseMetadata(transform.metadata?.fields)
-		const pose = createPose(transform.poseInObserverFrame?.pose)
 
-		const entityTraits: ConfigurableTrait[] = []
-
-		const parent = transform.poseInObserverFrame?.referenceFrame
-		if (parent && parent !== 'world') {
-			entityTraits.push(traits.Parent(parent))
-		}
-
-		if (transform.physicalObject) {
-			if (transform.physicalObject.geometryType.case === 'pointcloud') {
-				const metadataColors = metadata.colors
-				parsePcdInWorker(
-					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
-				).then((pointcloud) => {
-					const entity = entities.get(transform.uuidString)
-					if (!entity) {
-						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
-						return
-					}
-
-					const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
-					const vertexColors =
-						metadataColors && isPerVertexColors(metadataColors, numPoints)
-							? metadataColors
-							: pointcloud.colors
-
-					const geometry = createBufferGeometry(pointcloud.positions, {
-						colors: vertexColors ?? undefined,
-						opacities: metadata.opacities,
-					})
-					entity.add(traits.BufferGeometry(geometry))
-					entity.add(traits.Points)
-
-					if (metadataColors && !isPerVertexColors(metadataColors, numPoints)) {
-						asColor(metadataColors, colorUtil)
-						entity.add(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-						const opacity = asOpacity(metadata.opacities)
-						if (opacity < 1) entity.add(traits.Opacity(opacity))
-					}
-
-					invalidate()
-				})
-			} else {
-				if (metadata.colors) {
-					asColor(metadata.colors, colorUtil)
-					entityTraits.push(traits.Color({ r: colorUtil.r, g: colorUtil.g, b: colorUtil.b }))
-					const opacity = asOpacity(metadata.opacities)
-					if (opacity < 1) entityTraits.push(traits.Opacity(opacity))
-				}
-				entityTraits.push(traits.Geometry(transform.physicalObject))
-			}
-		}
-
-		entityTraits.push(
-			traits.Name(transform.referenceFrame),
-			traits.Pose(pose),
-			traits.ShowAxesHelper,
-			traits.WorldStateStoreAPI
-		)
-
-		const entity = world.spawn(...entityTraits)
-
+		const entity = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
 		entities.set(transform.uuidString, entity)
+
+		if (isPointCloud(transform.physicalObject?.geometryType)) invalidate()
 	}
 
 	const destroyEntity = (uuid: string) => {

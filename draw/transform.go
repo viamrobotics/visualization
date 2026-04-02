@@ -42,8 +42,10 @@ func MetadataToStruct(metadata Metadata) (*structpb.Struct, error) {
 	fields["colors"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packColors(metadata.Colors)))
 	fields["color_format"] = structpb.NewNumberValue(float64(drawv1.ColorFormat_COLOR_FORMAT_RGB))
 
-	if metadata.hasNonDefaultOpacity() {
+	if opacity, uniform := metadata.uniformOpacity(); !uniform {
 		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
+	} else if opacity != DefaultOpacity {
+		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString([]byte{opacity}))
 	}
 
 	return &structpb.Struct{Fields: fields}, nil

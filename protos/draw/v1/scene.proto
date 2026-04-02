@@ -7,6 +7,7 @@ import "common/v1/common.proto";
 option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
 message OrthographicCamera {
+  optional float zoom = 1;
   // for orthographic camera props
 }
 
@@ -82,12 +83,12 @@ message SceneMetadata {
   optional bytes point_color = 7;
 
   // The width of the lines if not defined by a transform's metadata
-  // defaults to 5 (millimeters)
+  // defaults to 5mm
   optional float line_width = 8;
 
-  // The size of the points of the lines if not defined by a transform's
-  // metadata defaults to 10 (millimeters)
-  optional float line_point_size = 9;
+  // The size of the dots of the lines if not defined by a transform's
+  // metadata defaults to 10mm
+  optional float line_dot_size = 9;
 
   // The models to render
   // defaults to COLLIDERS_AND_MODEL

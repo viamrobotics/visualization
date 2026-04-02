@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { LassoTool, PCD } from '$lib'
+	import { PCD, SelectionTool } from '$lib'
 	import { createRandomPcdBinary } from '$lib/test/createRandomPcdBinary'
 </script>
 
-<LassoTool
+<SelectionTool
 	enabled
 	onSelection={() => {
 		/* do something */

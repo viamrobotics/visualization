@@ -123,7 +123,7 @@ func (shape Shape) ToProto() *drawv1.Shape {
 		}
 	case shape.Line != nil:
 		lineWidth := shape.Line.LineWidth
-		pointSize := shape.Line.PointSize
+		dotSize := shape.Line.DotSize
 		return &drawv1.Shape{
 			Label:  shape.Label,
 			Center: poseToProtobuf(shape.Center),
@@ -131,7 +131,8 @@ func (shape Shape) ToProto() *drawv1.Shape {
 				Line: &drawv1.Line{
 					Positions: packPoints(shape.Line.Positions),
 					LineWidth: &lineWidth,
-					PointSize: &pointSize,
+					DotSize:   &dotSize,
+					DotColors: packColors(shape.Line.DotColors),
 				},
 			},
 		}
@@ -293,18 +294,25 @@ func (metadata Metadata) ToProto() *drawv1.Metadata {
 		Colors:      packColors(metadata.Colors),
 		ColorFormat: drawv1.ColorFormat_COLOR_FORMAT_RGB,
 	}
-	if metadata.hasNonDefaultOpacity() {
+	if opacity, uniform := metadata.uniformOpacity(); !uniform {
 		proto.Opacities = packOpacities(metadata.Colors)
+	} else if opacity != DefaultOpacity {
+		proto.Opacities = []byte{opacity}
 	}
 	return proto
 }
 
-// hasNonDefaultOpacity returns true if any color in the metadata has a non-default (non-255) alpha.
-func (metadata *Metadata) hasNonDefaultOpacity() bool {
-	for _, c := range metadata.Colors {
-		if c.A != DefaultAlpha {
-			return true
+// uniformOpacity returns the shared opacity and true if all colors have the same alpha,
+// or (0, false) if opacities differ across colors.
+func (metadata *Metadata) uniformOpacity() (uint8, bool) {
+	if len(metadata.Colors) == 0 {
+		return DefaultOpacity, true
+	}
+	first := metadata.Colors[0].A
+	for _, c := range metadata.Colors[1:] {
+		if c.A != first {
+			return 0, false
 		}
 	}
-	return false
+	return first, true
 }

@@ -119,7 +119,12 @@ func TestDrawPoints(t *testing.T) {
 
 	t.Run("DrawPointsWithPerPointColors", func(t *testing.T) {
 		points := generateTorusKnotPoints()
-		colors := draw.ChromaticColorChooser.Get(len(points))
+		n := float32(len(points))
+		colors := make([]draw.Color, len(points))
+		for i := range colors {
+			t := float32(i) / n
+			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
+		}
 
 		runDrawPointsTest(t, "myPointsPerPoint", &colors)
 	})

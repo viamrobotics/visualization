@@ -1,25 +1,12 @@
 import { Color } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import { asColor, asFloat32Array, asOpacity, isPerVertexColors } from '../buffer'
+import { asColor, asFloat32Array, asOpacity, isVertexColors } from '../buffer'
 
 describe('asFloat32Array', () => {
-	it('converts aligned bytes to Float32Array', () => {
-		const original = new Float32Array([1, 2.5, -3])
-		const bytes = new Uint8Array(original.buffer)
-
-		const result = asFloat32Array(bytes)
-
-		expect(result.length).toBe(3)
-		expect(result[0]).toBeCloseTo(1)
-		expect(result[1]).toBeCloseTo(2.5)
-		expect(result[2]).toBeCloseTo(-3)
-	})
-
 	it('handles unaligned bytes by copying', () => {
 		const original = new Float32Array([1, 2])
 		const originalBytes = new Uint8Array(original.buffer)
-
 		const misalignedBuffer = new ArrayBuffer(originalBytes.length + 4)
 		const misalignedView = new Uint8Array(misalignedBuffer, 1, originalBytes.length)
 		misalignedView.set(originalBytes)
@@ -31,14 +18,28 @@ describe('asFloat32Array', () => {
 		expect(result[1]).toBeCloseTo(2)
 	})
 
-	it('creates a view over the same buffer when aligned (zero-copy)', () => {
-		const original = new Float32Array([1, 2, 3])
+	it('applies a transform to each element (aligned path)', () => {
+		const original = new Float32Array([1000, 2000, 3000])
 		const bytes = new Uint8Array(original.buffer)
+		const result = asFloat32Array(bytes, (v) => v * 0.001)
 
-		const result = asFloat32Array(bytes)
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
+		expect(result[2]).toBeCloseTo(3)
+	})
 
-		original[0] = 99
-		expect(result[0]).toBeCloseTo(99)
+	it('applies a transform to each element (unaligned path)', () => {
+		const original = new Float32Array([1000, 2000])
+		const originalBytes = new Uint8Array(original.buffer)
+
+		const misalignedBuffer = new ArrayBuffer(originalBytes.length + 4)
+		const misalignedView = new Uint8Array(misalignedBuffer, 1, originalBytes.length)
+		misalignedView.set(originalBytes)
+
+		const result = asFloat32Array(misalignedView, (v) => v * 0.001)
+
+		expect(result[0]).toBeCloseTo(1)
+		expect(result[1]).toBeCloseTo(2)
 	})
 })
 
@@ -121,18 +122,18 @@ describe('asOpacity', () => {
 	})
 })
 
-describe('isPerVertexColors', () => {
+describe('isVertexColors', () => {
 	it('returns true when colors length matches numPoints * 3 (RGB)', () => {
-		expect(isPerVertexColors(new Uint8Array(3), 1)).toBe(true) // 1 point, RGB
-		expect(isPerVertexColors(new Uint8Array(30000), 10000)).toBe(true) // 10k points, RGB
+		expect(isVertexColors(new Uint8Array(3), 1)).toBe(true) // 1 point, RGB
+		expect(isVertexColors(new Uint8Array(30000), 10000)).toBe(true) // 10k points, RGB
 	})
 
 	it('returns false for a single uniform color with multiple points', () => {
-		expect(isPerVertexColors(new Uint8Array(3), 2)).toBe(false) // 1 RGB color, 2 points
+		expect(isVertexColors(new Uint8Array(3), 2)).toBe(false) // 1 RGB color, 2 points
 	})
 
 	it('returns false when color count does not align to RGB stride', () => {
-		expect(isPerVertexColors(new Uint8Array(5), 1)).toBe(false)
-		expect(isPerVertexColors(new Uint8Array(7), 2)).toBe(false)
+		expect(isVertexColors(new Uint8Array(5), 1)).toBe(false)
+		expect(isVertexColors(new Uint8Array(7), 2)).toBe(false)
 	})
 })
