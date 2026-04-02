@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { createViamClient } from '@viamrobotics/sdk'
 import { ViamClientOptions } from '@viamrobotics/sdk'
 import { ViamClient } from '@viamrobotics/sdk'
-import * as fs from 'fs'
+import fs from 'node:fs'
 
 const testConfig = {
 	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
@@ -36,7 +36,6 @@ export const createPage = async (browser: Browser): Promise<TestPage> => {
 	})
 
 	await page.goto('/')
-	await page.waitForLoadState('networkidle')
 	await expect(page.getByRole('heading', { name: 'World', exact: true })).toBeVisible({
 		timeout: 15000,
 	})
@@ -44,7 +43,6 @@ export const createPage = async (browser: Browser): Promise<TestPage> => {
 	const refresh = async () => {
 		failedScreenshots = []
 		await page.reload()
-		await page.waitForLoadState('networkidle')
 		await expect(page.getByRole('heading', { name: 'World', exact: true })).toBeVisible({
 			timeout: 15000,
 		})
@@ -96,7 +94,7 @@ export const createPage = async (browser: Browser): Promise<TestPage> => {
 				const dataTransfer = new DataTransfer()
 				dataTransfer.items.add(file)
 
-				window.dispatchEvent(
+				globalThis.dispatchEvent(
 					new DragEvent('dragenter', {
 						bubbles: true,
 						cancelable: true,

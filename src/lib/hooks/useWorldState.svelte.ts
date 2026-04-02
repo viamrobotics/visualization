@@ -1,8 +1,11 @@
+import type { Entity } from 'koota'
+
+import { useThrelte } from '@threlte/core'
 import {
-	WorldStateStoreClient,
-	TransformChangeType,
 	type TransformChangeEvent,
+	TransformChangeType,
 	type TransformWithUUID,
+	WorldStateStoreClient,
 } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
@@ -10,16 +13,15 @@ import {
 	createResourceStream,
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
-import { parseMetadata } from '$lib/WorldObject.svelte'
-import { usePartID } from './usePartID.svelte'
+
+import { drawTransform } from '$lib/draw'
 import { traits, useWorld } from '$lib/ecs'
-import type { ConfigurableTrait, Entity } from 'koota'
-import { createPose } from '$lib/transform'
-import { useThrelte } from '@threlte/core'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { isPointCloud } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { createBufferGeometry } from '$lib/attribute'
+import { createPose } from '$lib/transform'
+
+import { usePartID } from './usePartID.svelte'
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
@@ -63,73 +65,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		if (entities.has(transform.uuidString)) {
 			return
 		}
-		const metadata = parseMetadata(transform.metadata?.fields)
-		const pose = createPose(transform.poseInObserverFrame?.pose)
 
-		const entityTraits: ConfigurableTrait[] = []
-
-		const parent = transform.poseInObserverFrame?.referenceFrame
-		if (parent && parent !== 'world') {
-			entityTraits.push(traits.Parent(parent))
-		}
-
-		if (metadata.color) {
-			entityTraits.push(traits.Color(metadata.color))
-		}
-
-		if (metadata.colors) {
-			entityTraits.push(traits.VertexColors(metadata.colors as Float32Array<ArrayBuffer>))
-		}
-
-		if (transform.physicalObject) {
-			if (transform.physicalObject.geometryType.case === 'pointcloud') {
-				parsePcdInWorker(
-					new Uint8Array(transform.physicalObject.geometryType.value.pointCloud)
-				).then((pointcloud) => {
-					// pcds are a special case since they have to be loaded in a worker and the trait will be added to the existing entity
-					const entity = entities.get(transform.uuidString)
-					if (!entity) {
-						console.error('Entity not found to add pointcloud trait to', transform.uuidString)
-						return
-					}
-					const geometry = createBufferGeometry(pointcloud.positions, pointcloud.colors)
-					entity.add(traits.BufferGeometry(geometry))
-					entity.add(traits.Points)
-				})
-			} else {
-				entityTraits.push(traits.Geometry(transform.physicalObject))
-			}
-		}
-
-		if (metadata.shape === 'line' && metadata.points) {
-			const { points } = metadata
-			const positions = new Float32Array(points.length * 3)
-			for (let i = 0, j = 0, l = points.length * 3; i < l; i += 3, j += 1) {
-				positions[i + 0] = points[j].x
-				positions[i + 1] = points[j].y
-				positions[i + 2] = points[j].z
-			}
-			entityTraits.push(traits.LinePositions(positions), traits.PointColor(metadata.lineDotColor))
-		}
-
-		if (metadata.gltf) {
-			entityTraits.push(traits.GLTF({ source: { gltf: metadata.gltf }, animationName: '' }))
-		}
-
-		if (metadata.shape === 'arrow') {
-			entityTraits.push(traits.Arrow)
-		}
-
-		entityTraits.push(
-			traits.Name(transform.referenceFrame),
-			traits.Pose(pose),
-			traits.ShowAxesHelper,
-			traits.WorldStateStoreAPI
-		)
-
-		const entity = world.spawn(...entityTraits)
-
+		const entity = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
 		entities.set(transform.uuidString, entity)
+
+		if (isPointCloud(transform.physicalObject?.geometryType)) invalidate()
 	}
 
 	const destroyEntity = (uuid: string) => {
@@ -253,17 +193,19 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			}
 
 			switch (event.changeType) {
-				case TransformChangeType.REMOVED:
+				case TransformChangeType.REMOVED: {
 					eventsByUUID.set(uuid, event as TransformEvent)
 					break
+				}
 
-				case TransformChangeType.ADDED:
+				case TransformChangeType.ADDED: {
 					if (existing.changeType !== TransformChangeType.REMOVED) {
 						eventsByUUID.set(uuid, event as TransformEvent)
 					}
 					break
+				}
 
-				case TransformChangeType.UPDATED:
+				case TransformChangeType.UPDATED: {
 					// merge with existing updated event
 					if (existing.changeType === TransformChangeType.UPDATED) {
 						existing.updatedFields ??= { paths: [] }
@@ -283,6 +225,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 						eventsByUUID.set(uuid, event as TransformEvent)
 					}
 					break
+				}
 			}
 		}
 

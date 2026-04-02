@@ -1,15 +1,15 @@
 import { injectPlugin, isInstanceOf } from '@threlte/core'
-import { BatchedMesh, Points, Mesh, type Raycaster } from 'three'
+import { BatchedMesh, Mesh, Points, type Raycaster } from 'three'
 import {
-	type BVHOptions,
 	acceleratedRaycast,
-	computeBoundsTree,
-	disposeBoundsTree,
+	BVHHelper,
+	type BVHOptions,
 	computeBatchedBoundsTree,
+	computeBoundsTree,
 	disposeBatchedBoundsTree,
+	disposeBoundsTree,
 	PointsBVH,
 	SAH,
-	BVHHelper,
 } from 'three-mesh-bvh'
 
 interface Options extends BVHOptions {
@@ -43,7 +43,13 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				return
 			}
 
-			if (isInstanceOf(ref, 'Points')) {
+			if (
+				isInstanceOf(ref, 'Points') &&
+				/**
+				 * This check is necessary, there are some strange cases where points are coming in from PCDs without any position data
+				 */
+				ref.geometry?.attributes.position
+			) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
@@ -75,7 +81,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				 * (mp) Line2s sort of suck. Their buffer attribute design internally is much different
 				 * but they give no indication other than this that they are different.
 				 */
-				ref.geometry.attributes.position
+				ref.geometry?.attributes.position
 			) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree

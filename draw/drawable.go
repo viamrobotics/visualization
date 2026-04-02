@@ -23,11 +23,11 @@ type DrawConfig struct {
 }
 
 type drawableDrawing interface {
-	Draw(name string, options ...drawableOption) *Drawing
+	Draw(name string, options ...DrawableOption) *Drawing
 }
 
 type drawableTransform interface {
-	Draw(name string, options ...drawableOption) (*commonv1.Transform, error)
+	Draw(name string, options ...DrawableOption) (*commonv1.Transform, error)
 }
 
 // Compile-time interface conformance checks.
@@ -48,38 +48,39 @@ type drawableConfig struct {
 	center spatialmath.Pose
 }
 
-type drawableOption func(*drawableConfig)
+// DrawableOption is a function that configures a drawable.
+type DrawableOption func(*drawableConfig)
 
 // WithParent sets the parent reference frame for the Drawing or Transform.
-func WithParent(parent string) drawableOption {
+func WithParent(parent string) DrawableOption {
 	return func(config *drawableConfig) {
 		config.parent = parent
 	}
 }
 
 // WithPose sets the pose of the Drawing or Transform in the parent reference frame.
-func WithPose(pose spatialmath.Pose) drawableOption {
+func WithPose(pose spatialmath.Pose) DrawableOption {
 	return func(config *drawableConfig) {
 		config.pose = pose
 	}
 }
 
 // WithCenter sets the local center of the Shape within the Drawing's own frame.
-func WithCenter(center spatialmath.Pose) drawableOption {
+func WithCenter(center spatialmath.Pose) DrawableOption {
 	return func(config *drawableConfig) {
 		config.center = center
 	}
 }
 
 // WithUUID overrides the auto-generated UUID with an explicit byte slice.
-func WithUUID(id []byte) drawableOption {
+func WithUUID(id []byte) DrawableOption {
 	return func(config *drawableConfig) {
 		config.uuid = id
 	}
 }
 
 // WithID overrides the auto-generated UUID by deriving one deterministically from the given string.
-func WithID(id string) drawableOption {
+func WithID(id string) DrawableOption {
 	derived := uuid.NewSHA1(uuidNamespace, []byte(id))
 	return func(config *drawableConfig) {
 		config.uuid = derived[:]
@@ -88,7 +89,7 @@ func WithID(id string) drawableOption {
 
 // NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent
 // after options are applied unless explicitly set via WithUUID or WithID.
-func NewDrawConfig(name string, options ...drawableOption) *DrawConfig {
+func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 	config := &drawableConfig{
 		parent: referenceframe.World,
 		pose:   spatialmath.NewZeroPose(),

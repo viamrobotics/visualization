@@ -1,7 +1,9 @@
-import { Vector3 } from 'three'
-import type { Entity } from 'koota'
-import { traits } from '$lib/ecs'
 import type { IntersectionEvent } from '@threlte/extras'
+import type { Entity } from 'koota'
+
+import { Vector3 } from 'three'
+
+import { traits } from '$lib/ecs'
 
 export interface HoverInfo {
 	index: number

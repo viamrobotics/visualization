@@ -51,11 +51,7 @@ func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption {
 
 // WithGeometriesColorPalette creates a geometries in frame option that iterates through colors for geometries.
 func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometriesInFrameOption {
-	finalColors := make([]Color, numGeometries)
-	for i := range numGeometries {
-		finalColors[i] = palette[i%len(palette)]
-	}
-	return withColors[*drawnGeometriesInFrameConfig](finalColors)
+	return withColorPalette[*drawnGeometriesInFrameConfig](palette, numGeometries)
 }
 
 // WithGeometriesDownscalingThreshold creates a geometries in frame option that sets the threshold in millimeters for downscaling.
@@ -74,7 +70,7 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 		option(config)
 	}
 
-	if !(len(config.colors) == 1 || len(config.colors) == len(geometries)) {
+	if len(config.colors) != 1 && len(config.colors) != len(geometries) {
 		return nil, fmt.Errorf("colors must have length 1 (single color) or %d (per-geometry colors), got %d", len(geometries), len(config.colors))
 	}
 
@@ -106,18 +102,24 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 
 // ToTransforms produces a []*commonv1.Transform for each geometry in the collection.
 // The Name field is used as a prefix for each geometry's reference frame label (empty = no prefix).
-func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
+	pose := config.Pose
 
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
 		if drawnGeometriesInFrame.Name != "" {
-			label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
+			if label == "" || label == drawnGeometriesInFrame.Name {
+				label = drawnGeometriesInFrame.Name
+			} else {
+				label = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.Name, label)
+			}
 		}
+
 		id := fmt.Sprintf("%s:%s", label, parent)
-		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithID(id))
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
 		if err != nil {
 			return nil, err
 		}

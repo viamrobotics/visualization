@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { HTML } from '@threlte/extras'
+
 	import { type HoverInfo } from '$lib/HoverUpdater.svelte'
 
 	interface Props {

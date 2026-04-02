@@ -2,8 +2,9 @@
 	module
 	lang="ts"
 >
+	import { BufferAttribute, MathUtils, Quaternion, Vector3 } from 'three'
+
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { Quaternion, Vector3, MathUtils, BufferAttribute } from 'three'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
@@ -11,33 +12,41 @@
 </script>
 
 <script lang="ts">
+	import type { Entity } from 'koota'
+	import type { Snippet } from 'svelte'
+
 	import { draggable } from '@neodrag/svelte'
+	import { isInstanceOf, useTask } from '@threlte/core'
+	import { Button, Icon, Input, Select, Tooltip } from '@viamrobotics/prime-core'
 	import { Check, Copy } from 'lucide-svelte'
-	import { useTask, isInstanceOf } from '@threlte/core'
-	import { Button, Icon, Select, Input, Tooltip } from '@viamrobotics/prime-core'
+
+	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
+	import { relations, traits, useTrait, useWorld } from '$lib/ecs'
+	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import {
-		useSelectedEntity,
 		useFocusedEntity,
 		useFocusedObject3d,
+		useSelectedEntity,
 		useSelectedObject3d,
 	} from '$lib/hooks/useSelection.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { traits, useTrait, useWorld, relations } from '$lib/ecs'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
-	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 	import { createPose } from '$lib/transform'
 
-	const { ...rest } = $props()
+	interface Props {
+		details?: Snippet<[{ entity: Entity }]>
+	}
+
+	const { details }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
-	const frames = useFrames()
+	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
@@ -92,7 +101,7 @@
 		}
 	}
 
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			object3d?.getWorldPosition(vec3)
 			if (!vec3.equals(worldPosition)) {
@@ -112,18 +121,10 @@
 			}
 		},
 		{
-			autoStart: false,
 			autoInvalidate: false,
+			running: () => object3d !== undefined,
 		}
 	)
-
-	$effect.pre(() => {
-		if (object3d) {
-			start()
-		} else {
-			stop()
-		}
-	})
 
 	$effect(() => {
 		if (entity) {
@@ -259,18 +260,17 @@
 		id="details-panel"
 		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 {showEditFrameOptions
 			? 'w-80'
-			: 'w-60'} border p-2 text-xs"
+			: 'w-60'} border p-2 text-xs dark:text-black"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,
 		}}
-		{...rest}
 	>
-		<div class="flex items-center justify-between gap-2 pb-2">
-			<div class="flex w-[80%] items-center gap-1">
-				<button bind:this={dragElement}>
-					<Icon name="drag" />
-				</button>
+		<div
+			class="flex cursor-move items-center justify-between gap-2 pb-2"
+			bind:this={dragElement}
+		>
+			<div class="flex w-[90%] items-center gap-1">
 				<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
 				<span class="text-subtle-2">{resourceName?.subtype}</span>
 			</div>
@@ -402,7 +402,7 @@
 					{@render ParentFrame({
 						ariaLabel: 'parent frame name',
 						value: parent.current ?? 'world',
-						options: frames.getParentFrameOptions(name.current ?? ''),
+						options: configFrames.getParentFrameOptions(name.current ?? ''),
 						onChange: (value) => {
 							detailConfigUpdater.setFrameParent(entity, value)
 						},
@@ -636,9 +636,9 @@
 			{/if}
 		</div>
 
-		<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
-
 		{#if linkedEntities.current.length > 0}
+			<h3 class="text-subtle-2 pt-3 pb-2">Relationships</h3>
+
 			<div>
 				<div class="mt-0.5 flex flex-col gap-1">
 					<strong class="font-semibold">Linked entities</strong>
@@ -659,6 +659,8 @@
 				</div>
 			</div>
 		{/if}
+
+		{@render details?.({ entity })}
 
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 

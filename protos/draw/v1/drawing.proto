@@ -24,15 +24,20 @@ message Arrows {
 //   or two colors for lines and points: [r, g, b, a, r, g, b, a]
 //   defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
 message Line {
-  // The positions of the line points
+  // The positions of the line dots
   // float32 array of positions: [x, y, z, ...]
   bytes positions = 1;
 
   // optional width of the line in millimeters, defaults to 5
   optional float line_width = 2;
 
-  // optional size of the points in millimeters, defaults to 10
-  optional float point_size = 3;
+  // optional size of the dots in millimeters, defaults to 10
+  optional float dot_size = 3;
+
+  // optional colors for the line dots
+  // []uint8 of a single color: [r, g, b, a]
+  // or one color per dot: [r, g, b, a, ...]
+  optional bytes dot_colors = 4;
 }
 
 // Points represents a set of points in 3D space

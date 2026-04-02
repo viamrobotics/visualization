@@ -15,8 +15,8 @@ import (
 //   - label: an identifier string used for reference in the treeview.
 //   - points: a list of poses, each representing a point in the line
 //   - color: An optional color of the line
-//   - pointColor: An optional color for points for each vertex in the line
-func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointColor *[3]uint8) error {
+//   - dotColor: An optional color for dots at each vertex in the line
+func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, dotColor *[3]uint8) error {
 	labelError := isASCIIPrintable(label)
 	if labelError != nil {
 		return labelError
@@ -27,9 +27,9 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointCol
 		finalColor = draw.NewColor(draw.WithRGB(color[0], color[1], color[2]))
 	}
 
-	var finalPointColor draw.Color
-	if pointColor != nil {
-		finalPointColor = draw.NewColor(draw.WithRGB(pointColor[0], pointColor[1], pointColor[2]))
+	var finalDotColor draw.Color
+	if dotColor != nil {
+		finalDotColor = draw.NewColor(draw.WithRGB(dotColor[0], dotColor[1], dotColor[2]))
 	}
 
 	pointsVec := make([]r3.Vector, len(points))
@@ -37,7 +37,15 @@ func DrawLine(label string, points []spatialmath.Pose, color *[3]uint8, pointCol
 		pointsVec[i] = pose.Point()
 	}
 
-	line, err := draw.NewLine(pointsVec, draw.WithLineColors(finalColor, &finalPointColor))
+	lineOpts := []draw.DrawLineOption{}
+	if color != nil {
+		lineOpts = append(lineOpts, draw.WithSingleLineColor(finalColor))
+	}
+	if dotColor != nil {
+		lineOpts = append(lineOpts, draw.WithSingleDotColor(finalDotColor))
+	}
+
+	line, err := draw.NewLine(pointsVec, lineOpts...)
 	if err != nil {
 		return err
 	}
@@ -63,14 +71,17 @@ func lineToBytes(line *draw.Line, label string) ([]byte, error) {
 		data = append(data, float32(b))
 	}
 
+	lineColor := line.Colors[0]
+	dotColor := line.DotColors[0]
+
 	data = append(data,
 		float32(nPoints),
-		float32(line.LineColor.R)/255.0,
-		float32(line.LineColor.G)/255.0,
-		float32(line.LineColor.B)/255.0,
-		float32(line.PointColor.R)/255.0,
-		float32(line.PointColor.G)/255.0,
-		float32(line.PointColor.B)/255.0,
+		float32(lineColor.R)/255.0,
+		float32(lineColor.G)/255.0,
+		float32(lineColor.B)/255.0,
+		float32(dotColor.R)/255.0,
+		float32(dotColor.G)/255.0,
+		float32(dotColor.B)/255.0,
 	)
 
 	for _, position := range line.Positions {

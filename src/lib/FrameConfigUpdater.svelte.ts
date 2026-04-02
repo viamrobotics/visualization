@@ -1,8 +1,10 @@
-import type { Entity } from 'koota'
 import type { Pose } from '@viamrobotics/sdk'
-import type { Frame } from '$lib/frame'
-import { traits } from '$lib/ecs'
+import type { Entity } from 'koota'
 import type { Vector3Like } from 'three'
+
+import type { Frame } from '$lib/frame'
+
+import { traits } from '$lib/ecs'
 
 type UpdateFrameCallback = {
 	(componentName: string, referenceFrame: string, pose: Pose, geometry?: Frame['geometry']): void
@@ -175,7 +177,7 @@ export class FrameConfigUpdater {
 			return undefined
 		}
 
-		const num = parseFloat(value.toFixed(2))
+		const num = Number.parseFloat(value.toFixed(2))
 
 		if (Number.isNaN(num)) {
 			return undefined

@@ -1,20 +1,23 @@
+import { useThrelte } from '@threlte/core'
+import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext } from 'svelte'
 import { Color, Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
-import { UuidTool } from 'uuid-tool'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { UuidTool } from 'uuid-tool'
+
 import type { Frame } from '$lib/frame'
-import { createPose, createPoseFromFrame } from '$lib/transform'
-import { useCameraControls } from './useControls.svelte'
-import { useWorld, traits } from '$lib/ecs'
-import { useThrelte } from '@threlte/core'
-import { type ConfigurableTrait, type Entity } from 'koota'
-import { parsePlyInput } from '$lib/ply'
-import { useLogs } from './useLogs.svelte'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
-import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { STRIDE } from '$lib/buffer'
+import { traits, useWorld } from '$lib/ecs'
+import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePlyInput } from '$lib/ply'
+import { createPose, createPoseFromFrame } from '$lib/transform'
+
+import { useCameraControls } from './useControls.svelte'
+import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import { useLogs } from './useLogs.svelte'
 
 const colorUtil = new Color()
 
@@ -50,7 +53,7 @@ const tryParse = (json: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lowercaseKeys = <T>(obj: T): any => {
 	if (Array.isArray(obj)) {
-		return obj.map(lowercaseKeys)
+		return obj.map((item) => lowercaseKeys(item))
 	} else if (obj && typeof obj === 'object' && obj.constructor === Object) {
 		return Object.fromEntries(
 			Object.entries(obj).map(([k, v]) => [k.toLowerCase(), lowercaseKeys(v)])
@@ -323,9 +326,15 @@ export const provideDrawAPI = () => {
 		const nColors = reader.readU32()
 
 		// Read default color
-		let r = reader.read()
-		let g = reader.read()
-		let b = reader.read()
+		const r = reader.read()
+		const g = reader.read()
+		const b = reader.read()
+
+		// Normalize to uint8 immediately so the rest of the function works in a single color space.
+		const defaultColor =
+			r > -1
+				? new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
+				: null
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
@@ -333,24 +342,27 @@ export const provideDrawAPI = () => {
 		const nColorsElements = nColors * 3
 		const rawColors = reader.readU8Array(nColorsElements)
 
-		let colors: Uint8Array | null = null
+		let vertexColors: Uint8Array | null = null
+		let uniformColor: Uint8Array<ArrayBuffer> | null = null
 
-		if (nColors > 1) {
-			colors = new Uint8Array(nPointsElements)
-			colors.set(rawColors)
+		if (nColors > 1 && nColors >= nPoints) {
+			vertexColors = rawColors
+		} else if (nColors > 1) {
+			vertexColors = new Uint8Array(nPointsElements)
+			vertexColors.set(rawColors)
 
-			// Cover the gap for any points not colored
-			for (let i = nColors; i < nPoints; i++) {
-				const offset = i * 3
-
-				colors[offset] = Math.round(r * 255)
-				colors[offset + 1] = Math.round(g * 255)
-				colors[offset + 2] = Math.round(b * 255)
+			if (defaultColor) {
+				for (let i = nColors; i < nPoints; i++) {
+					const offset = i * 3
+					vertexColors[offset] = defaultColor[0]!
+					vertexColors[offset + 1] = defaultColor[1]!
+					vertexColors[offset + 2] = defaultColor[2]!
+				}
 			}
 		} else if (nColors === 1) {
-			r = rawColors[0] / 255
-			g = rawColors[1] / 255
-			b = rawColors[2] / 255
+			uniformColor = new Uint8Array([rawColors[0]!, rawColors[1]!, rawColors[2]!])
+		} else {
+			uniformColor = defaultColor
 		}
 
 		const entities = world.query(traits.DrawAPI)
@@ -360,21 +372,23 @@ export const provideDrawAPI = () => {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, colors)
+				updateBufferGeometry(geometry, positions, vertexColors)
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, colors)
-
-		world.spawn(
+		const geometry = createBufferGeometry(positions, vertexColors)
+		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
-			traits.Color(colorUtil.set(r, g, b)),
 			traits.BufferGeometry(geometry),
 			traits.Points,
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
+
+		if (uniformColor) spawnTraits.push(traits.Colors(uniformColor))
+
+		world.spawn(...spawnTraits)
 	}
 
 	const drawLine = async (reader: BinaryReader) => {
@@ -409,11 +423,24 @@ export const provideDrawAPI = () => {
 			points[i + 2] = reader.read()
 		}
 
+		const lineColors = new Uint8Array([
+			Math.round(r * 255),
+			Math.round(g * 255),
+			Math.round(b * 255),
+			255,
+		])
+		const dotColors = new Uint8Array([
+			Math.round(dotR * 255),
+			Math.round(dotG * 255),
+			Math.round(dotB * 255),
+			255,
+		])
+
 		world.spawn(
 			traits.Name(label),
-			traits.Color({ r, g, b }),
+			traits.Colors(lineColors),
 			traits.LinePositions(points),
-			traits.PointColor({ r: dotR, g: dotG, b: dotB }),
+			traits.DotColors(dotColors),
 			traits.DrawAPI,
 			traits.Removable
 		)

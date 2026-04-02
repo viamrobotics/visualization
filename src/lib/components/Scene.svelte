@@ -1,23 +1,26 @@
 <script lang="ts">
-	import { ShaderMaterial, Vector3 } from 'three'
-	import { T } from '@threlte/core'
-	import { Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
-	import Entities from '$lib/components/Entities.svelte'
-	import Selected from '$lib/components/Selected.svelte'
-	import Focus from '$lib/components/Focus.svelte'
-	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
-	import Camera from '$lib/components/Camera.svelte'
-	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import type { Snippet } from 'svelte'
+
+	import { T } from '@threlte/core'
+	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import { useXR } from '@threlte/xr'
-	import { bvh } from '$lib/plugins/bvh.svelte'
-	import { useOrigin } from './xr/useOrigin.svelte'
+	import { ShaderMaterial, Vector3 } from 'three'
+
+	import Camera from '$lib/components/Camera.svelte'
+	import Entities from '$lib/components/Entities/Entities.svelte'
+	import Focus from '$lib/components/Focus.svelte'
+	import Selected from '$lib/components/Selected.svelte'
+	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
+	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { bvh } from '$lib/plugins/bvh.svelte'
+
+	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
+	import BatchedArrows from './BatchedArrows.svelte'
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool/MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
-	import BatchedArrows from './BatchedArrows.svelte'
-	import Arrows from './Arrows/ArrowGroups.svelte'
+	import { useOrigin } from './xr/useOrigin.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -54,9 +57,10 @@
 	<PerfMonitor anchorX="right" />
 {/if}
 
+<Environment url={hdrImage} />
+
 <T.Group
 	position={origin.position}
-	rotation.x={$isPresenting ? -Math.PI / 2 : 0}
 	rotation.z={origin.rotation}
 >
 	<PointerMissBox />
@@ -100,7 +104,6 @@
 
 		<Entities />
 		<BatchedArrows />
-		<Arrows />
 	</T.Group>
 
 	{@render children?.()}

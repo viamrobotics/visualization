@@ -1,22 +1,27 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { useThrelte } from '@threlte/core'
 	import { useXR, XR, XRButton } from '@threlte/xr'
-	import { World } from '@threlte/rapier'
-	import OriginMarker from './OriginMarker.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import Controllers from './Controllers.svelte'
-	import CameraFeed from './CameraFeed.svelte'
-	import JointLimitsWidget from './JointLimitsWidget.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import XRToast from './XRToast.svelte'
-	import { useOrigin } from './useOrigin.svelte'
 	import { SvelteMap } from 'svelte/reactivity'
+	import { Quaternion } from 'three'
+
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+	import CameraFeed from './CameraFeed.svelte'
+	import FrameConfigureControllers from './frame-configure/Controllers.svelte'
+	import JointLimitsWidget from './JointLimitsWidget.svelte'
+	import OriginMarker from './OriginMarker.svelte'
+	import TeleopControllers from './teleop/Controllers.svelte'
+	import { provideAnchors } from './useAnchors.svelte'
+	import { useOrigin } from './useOrigin.svelte'
+	import XRToast from './XRToast.svelte'
 
 	const { ...rest } = $props()
 
 	const { isPresenting } = useXR()
 	const settings = useSettings()
 	const origin = useOrigin()
+	provideAnchors()
 	const enableXR = $derived(settings.current.enableXR)
 
 	const partID = usePartID()
@@ -42,12 +47,32 @@
 	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
 	const rightArmName = $derived(controllerConfig.right.armName)
+
+	const { renderer } = useThrelte()
+
+	// Move into Viam's coordinate system. This basically accomplishes
+	// the same thing as setting z up in the Camera component.
+	$effect(() => {
+		if ($isPresenting) {
+			const q = new Quaternion().setFromAxisAngle({ x: 1, y: 0, z: 0 }, -Math.PI / 2)
+
+			// after the XR session has started and a reference space exists:
+			const baseRefSpace = renderer.xr.getReferenceSpace()
+			if (baseRefSpace) {
+				const rotatedRefSpace = baseRefSpace.getOffsetReferenceSpace(
+					new XRRigidTransform({ x: 0, y: 0, z: 0, w: 1 }, { x: q.x, y: q.y, z: q.z, w: q.w })
+				)
+
+				renderer.xr.setReferenceSpace(rotatedRefSpace)
+			}
+		}
+	})
 </script>
 
 {#if enableXR}
 	<XR
 		onsessionstart={() => {
-			origin.set([0, 0, -2])
+			origin.set([-1, -1, 0])
 		}}
 		onsessionend={() => {
 			origin.set([0, 0, 0])
@@ -91,15 +116,13 @@
 
 		<XRToast />
 
-		<World>
-			<Controllers />
+		{#if settings.current.xrMode === 'arm-teleop'}
+			<TeleopControllers />
+		{:else if settings.current.xrMode === 'frame-configure'}
+			<FrameConfigureControllers />
+		{/if}
 
-			<T.Group position.z={-2}>
-				<T.Group rotation.x={$isPresenting ? -Math.PI / 2 : 0}>
-					<OriginMarker />
-				</T.Group>
-			</T.Group>
-		</World>
+		<OriginMarker />
 	</XR>
 
 	<XRButton

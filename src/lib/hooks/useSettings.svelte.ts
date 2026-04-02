@@ -1,12 +1,21 @@
+import type { ColorRepresentation } from 'three'
+
 import { get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
 const key = Symbol('dashboard-context')
 
 export interface Settings {
-	isLoaded: boolean
-	// Camera
 	cameraMode: 'orthographic' | 'perspective'
+	interactionMode: 'navigate' | 'measure' | 'select'
+	refreshRates: {
+		poses: number
+		pointclouds: number
+		vision: number
+	}
+
+	disabledCameras: Record<string, boolean>
+	disabledVisionServices: Record<string, boolean>
 
 	// Transform controls
 	transforming: boolean
@@ -21,13 +30,11 @@ export interface Settings {
 
 	// Points
 	pointSize: number
-	pointColor: string
+	pointColor: ColorRepresentation
 
 	// Lines
 	lineWidth: number
 	lineDotSize: number
-
-	interactionMode: 'navigate' | 'measure' | 'lasso'
 
 	// Measurement
 	enableMeasureAxisX: boolean
@@ -38,9 +45,6 @@ export interface Settings {
 	enableKeybindings: boolean
 	enableQueryDevtools: boolean
 
-	// AR Mode
-	enableXR: boolean
-
 	// Widgets
 	enableArmPositionsWidget: boolean
 	openCameraWidgets: Record<string, string[]>
@@ -49,7 +53,9 @@ export interface Settings {
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
 	renderSubEntityHoverDetail: boolean
 
-	// XR Controller Configuration
+	// Webxr
+	enableXR: boolean
+	xrMode: 'frame-configure' | 'arm-teleop'
 	xrController: {
 		left: {
 			armName?: string
@@ -68,11 +74,27 @@ export interface Settings {
 
 interface Context {
 	current: Settings
+	isLoaded: boolean
+	merge(value: Settings): void
 }
 
+export const RefreshRates = {
+	poses: 'poses',
+	pointclouds: 'pointclouds',
+	vision: 'vision',
+} as const
+
 const defaults = (): Settings => ({
-	isLoaded: false,
 	cameraMode: 'perspective',
+
+	refreshRates: {
+		poses: 1000,
+		pointclouds: 5000,
+		vision: 1000,
+	},
+
+	disabledCameras: {},
+	disabledVisionServices: {},
 
 	transforming: false,
 	snapping: false,
@@ -87,7 +109,7 @@ const defaults = (): Settings => ({
 	pointColor: '#333333',
 
 	lineWidth: 0.005,
-	lineDotSize: 0.01,
+	lineDotSize: 0.005,
 
 	interactionMode: 'navigate',
 
@@ -99,8 +121,6 @@ const defaults = (): Settings => ({
 	enableKeybindings: true,
 	enableQueryDevtools: false,
 
-	enableXR: false,
-
 	enableArmPositionsWidget: false,
 	openCameraWidgets: {},
 
@@ -108,33 +128,37 @@ const defaults = (): Settings => ({
 	renderArmModels: 'colliders+model',
 	renderSubEntityHoverDetail: false,
 
+	enableXR: false,
+	xrMode: 'frame-configure',
 	xrController: {
 		left: {
-			scaleFactor: 1.0,
+			scaleFactor: 1,
 			rotationEnabled: true,
 		},
 		right: {
-			scaleFactor: 1.0,
+			scaleFactor: 1,
 			rotationEnabled: true,
 		},
 	},
 })
 
 export const provideSettings = () => {
+	let isLoaded = $state(false)
 	let settings = $state<Settings>(defaults())
-	let settingsLoaded = $state(false)
 
-	get('motion-tools-settings').then((response: Settings) => {
-		if (response) {
-			settings = { ...settings, ...response }
-		}
-		settingsLoaded = true
-		settings.isLoaded = true
-	})
+	get('motion-tools-settings')
+		.then((response: Settings) => {
+			if (response) {
+				settings = { ...settings, ...response }
+			}
+		})
+		.finally(() => {
+			isLoaded = true
+		})
 
 	$effect(() => {
-		if (settingsLoaded) {
-			set('motion-tools-settings', $state.snapshot(settings))
+		if (isLoaded) {
+			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
 		}
 	})
 
@@ -142,9 +166,14 @@ export const provideSettings = () => {
 		get current() {
 			return settings
 		},
-
 		set current(value: Settings) {
 			settings = value
+		},
+		get isLoaded() {
+			return isLoaded
+		},
+		merge(value: Settings) {
+			settings = { ...settings, ...value }
 		},
 	}
 

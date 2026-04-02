@@ -6,17 +6,20 @@
 </script>
 
 <script lang="ts">
-	import { TransformControls } from '@threlte/extras'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { PressedKeys } from 'runed'
-	import { quaternionToPose, vector3ToPose } from '$lib/transform'
-	import { Quaternion, Vector3 } from 'three'
-	import Frame from './Frame.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useWorld, traits } from '$lib/ecs'
 	import type { Entity } from 'koota'
+
+	import { TransformControls } from '@threlte/extras'
+	import { PressedKeys } from 'runed'
 	import { SvelteSet } from 'svelte/reactivity'
+	import { Quaternion, Vector3 } from 'three'
+
+	import { traits, useWorld } from '$lib/ecs'
+	import { useTransformControls } from '$lib/hooks/useControls.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { quaternionToPose, vector3ToPose } from '$lib/transform'
+
+	import Frame from './Entities/Frame.svelte'
 
 	const world = useWorld()
 	const settings = useSettings()
@@ -39,7 +42,7 @@
 		const entity = world.spawn(
 			traits.Name(`custom geometry ${++index}`),
 			traits.Pose,
-			traits.Box({ x: 0.1, y: 0.1, z: 0.1 }),
+			traits.Box({ x: 100, y: 100, z: 100 }),
 			traits.Removable
 		)
 
@@ -48,8 +51,9 @@
 
 	keys.onKeys('-', () => {
 		if (selectedCustomGeometry) {
-			selectedCustomGeometry.destroy()
-			entities.delete(selectedCustomGeometry)
+			const entity = selectedCustomGeometry
+			entity.destroy()
+			entities.delete(entity)
 			selectedEntity.set()
 		}
 	})
@@ -87,7 +91,10 @@
 								ref.quaternion.copy(quaternion)
 								entity.set(traits.Pose, pose)
 							} else if (box && mode === 'scale') {
-								entity.set(traits.Box, ref.scale)
+								box.x *= ref.scale.x
+								box.y *= ref.scale.y
+								box.z *= ref.scale.z
+								entity.set(traits.Box, box)
 								ref.scale.setScalar(1)
 							}
 						}}

@@ -1,6 +1,6 @@
 import type { Message, SuccessMessage } from './messages'
 
-const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })
+const worker = new Worker(new URL('worker.js', import.meta.url), { type: 'module' })
 
 let requestId = 0
 const pending = new Map<
@@ -34,6 +34,7 @@ export const parsePcdInWorker = (data: Uint8Array<ArrayBufferLike>): Promise<Suc
 		const id = ++requestId
 		pending.set(id, { resolve, reject })
 
-		worker.postMessage({ id, data }, [data.buffer])
+		const copy = new Uint8Array(data)
+		worker.postMessage({ id, data: copy }, [copy.buffer])
 	})
 }

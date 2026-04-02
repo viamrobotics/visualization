@@ -14,8 +14,8 @@
  */
 
 import { build } from 'esbuild'
-import { readFileSync, writeFileSync, unlinkSync, globSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { globSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 
 const WORKER_PATTERN =
 	/new Worker\(new URL\(['"]([^'"]+)['"]\s*,\s*import\.meta\.url\)\s*(?:,\s*\{[^}]*\})?\)/g
@@ -24,7 +24,7 @@ const distFiles = globSync('dist/**/*.js')
 const deleted = new Set()
 
 for (const file of distFiles) {
-	if (deleted.has(resolve(file))) continue
+	if (deleted.has(path.resolve(file))) continue
 
 	const code = readFileSync(file, 'utf8')
 	const matches = [...code.matchAll(WORKER_PATTERN)]
@@ -35,7 +35,7 @@ for (const file of distFiles) {
 
 	for (const match of matches) {
 		const [fullMatch, workerRelPath] = match
-		const workerAbsPath = resolve(dirname(file), workerRelPath)
+		const workerAbsPath = path.resolve(path.dirname(file), workerRelPath)
 
 		console.log(`Inlining worker ${workerRelPath} referenced in ${file}`)
 
@@ -48,7 +48,10 @@ for (const file of distFiles) {
 		})
 
 		const bundledCode = bundle.outputFiles[0].text
-		const escaped = bundledCode.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')
+		const escaped = bundledCode
+			.replaceAll('\\', '\\\\')
+			.replaceAll('`', '\\`')
+			.replaceAll('$', String.raw`\$`)
 
 		const replacement = [
 			`(function() {`,

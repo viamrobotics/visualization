@@ -134,6 +134,7 @@ func (RenderShapes) EnumDescriptor() ([]byte, []int) {
 
 type OrthographicCamera struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Zoom          *float32               `protobuf:"fixed32,1,opt,name=zoom,proto3,oneof" json:"zoom,omitempty"` // for orthographic camera props
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -166,6 +167,13 @@ func (x *OrthographicCamera) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrthographicCamera.ProtoReflect.Descriptor instead.
 func (*OrthographicCamera) Descriptor() ([]byte, []int) {
 	return file_draw_v1_scene_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *OrthographicCamera) GetZoom() float32 {
+	if x != nil && x.Zoom != nil {
+		return *x.Zoom
+	}
+	return 0
 }
 
 type PerspectiveCamera struct {
@@ -344,11 +352,11 @@ type SceneMetadata struct {
 	// defaults to [51, 51, 51, 255] (gray)
 	PointColor []byte `protobuf:"bytes,7,opt,name=point_color,json=pointColor,proto3,oneof" json:"point_color,omitempty"`
 	// The width of the lines if not defined by a transform's metadata
-	// defaults to 5 (millimeters)
+	// defaults to 5mm
 	LineWidth *float32 `protobuf:"fixed32,8,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
-	// The size of the points of the lines if not defined by a transform's
-	// metadata defaults to 10 (millimeters)
-	LinePointSize *float32 `protobuf:"fixed32,9,opt,name=line_point_size,json=linePointSize,proto3,oneof" json:"line_point_size,omitempty"`
+	// The size of the dots of the lines if not defined by a transform's
+	// metadata defaults to 10mm
+	LineDotSize *float32 `protobuf:"fixed32,9,opt,name=line_dot_size,json=lineDotSize,proto3,oneof" json:"line_dot_size,omitempty"`
 	// The models to render
 	// defaults to COLLIDERS_AND_MODEL
 	RenderArmModels *RenderArmModels `protobuf:"varint,10,opt,name=render_arm_models,json=renderArmModels,proto3,enum=draw.v1.RenderArmModels,oneof" json:"render_arm_models,omitempty"`
@@ -445,9 +453,9 @@ func (x *SceneMetadata) GetLineWidth() float32 {
 	return 0
 }
 
-func (x *SceneMetadata) GetLinePointSize() float32 {
-	if x != nil && x.LinePointSize != nil {
-		return *x.LinePointSize
+func (x *SceneMetadata) GetLineDotSize() float32 {
+	if x != nil && x.LineDotSize != nil {
+		return *x.LineDotSize
 	}
 	return 0
 }
@@ -470,8 +478,10 @@ var File_draw_v1_scene_proto protoreflect.FileDescriptor
 
 const file_draw_v1_scene_proto_rawDesc = "" +
 	"\n" +
-	"\x13draw/v1/scene.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\"\x14\n" +
-	"\x12OrthographicCamera\"\x13\n" +
+	"\x13draw/v1/scene.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\"6\n" +
+	"\x12OrthographicCamera\x12\x17\n" +
+	"\x04zoom\x18\x01 \x01(\x02H\x00R\x04zoom\x88\x01\x01B\a\n" +
+	"\x05_zoom\"\x13\n" +
 	"\x11PerspectiveCamera\"\xce\x02\n" +
 	"\vSceneCamera\x123\n" +
 	"\bposition\x18\x01 \x01(\v2\x17.viam.common.v1.Vector3R\bposition\x120\n" +
@@ -480,7 +490,7 @@ const file_draw_v1_scene_proto_rawDesc = "" +
 	"\x12perspective_camera\x18\x04 \x01(\v2\x1a.draw.v1.PerspectiveCameraH\x00R\x11perspectiveCamera\x12N\n" +
 	"\x13orthographic_camera\x18\x05 \x01(\v2\x1b.draw.v1.OrthographicCameraH\x00R\x12orthographicCameraB\r\n" +
 	"\vcamera_typeB\v\n" +
-	"\t_animated\"\xc9\x05\n" +
+	"\t_animated\"\xc3\x05\n" +
 	"\rSceneMetadata\x12<\n" +
 	"\fscene_camera\x18\x01 \x01(\v2\x14.draw.v1.SceneCameraH\x00R\vsceneCamera\x88\x01\x01\x12\x17\n" +
 	"\x04grid\x18\x02 \x01(\bH\x01R\x04grid\x88\x01\x01\x12)\n" +
@@ -492,8 +502,8 @@ const file_draw_v1_scene_proto_rawDesc = "" +
 	"\vpoint_color\x18\a \x01(\fH\x06R\n" +
 	"pointColor\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"line_width\x18\b \x01(\x02H\aR\tlineWidth\x88\x01\x01\x12+\n" +
-	"\x0fline_point_size\x18\t \x01(\x02H\bR\rlinePointSize\x88\x01\x01\x12I\n" +
+	"line_width\x18\b \x01(\x02H\aR\tlineWidth\x88\x01\x01\x12'\n" +
+	"\rline_dot_size\x18\t \x01(\x02H\bR\vlineDotSize\x88\x01\x01\x12I\n" +
 	"\x11render_arm_models\x18\n" +
 	" \x01(\x0e2\x18.draw.v1.RenderArmModelsH\tR\x0frenderArmModels\x88\x01\x01\x12:\n" +
 	"\rrender_shapes\x18\v \x03(\x0e2\x15.draw.v1.RenderShapesR\frenderShapesB\x0f\n" +
@@ -504,8 +514,8 @@ const file_draw_v1_scene_proto_rawDesc = "" +
 	"\x13_grid_fade_distanceB\r\n" +
 	"\v_point_sizeB\x0e\n" +
 	"\f_point_colorB\r\n" +
-	"\v_line_widthB\x12\n" +
-	"\x10_line_point_sizeB\x14\n" +
+	"\v_line_widthB\x10\n" +
+	"\x0e_line_dot_sizeB\x14\n" +
 	"\x12_render_arm_models*\x9d\x01\n" +
 	"\x0fRenderArmModels\x12!\n" +
 	"\x1dRENDER_ARM_MODELS_UNSPECIFIED\x10\x00\x12\x1f\n" +
@@ -563,6 +573,7 @@ func file_draw_v1_scene_proto_init() {
 	if File_draw_v1_scene_proto != nil {
 		return
 	}
+	file_draw_v1_scene_proto_msgTypes[0].OneofWrappers = []any{}
 	file_draw_v1_scene_proto_msgTypes[2].OneofWrappers = []any{
 		(*SceneCamera_PerspectiveCamera)(nil),
 		(*SceneCamera_OrthographicCamera)(nil),
