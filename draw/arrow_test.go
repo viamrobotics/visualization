@@ -98,8 +98,8 @@ func TestArrows_Draw(t *testing.T) {
 		test.That(t, proto.PhysicalObject.Label, test.ShouldEqual, "test-arrows")
 		// red (255, 0, 0) packed as [r, g, b]
 		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00})
-		// default alpha (255) — opacities omitted
-		test.That(t, proto.Metadata.Opacities, test.ShouldBeNil)
+		// default alpha (255) — single uniform byte
+		test.That(t, proto.Metadata.Opacities, test.ShouldResemble, []byte{0xff})
 	})
 }
 

@@ -1,3 +1,13 @@
+<script
+	lang="ts"
+	module
+>
+	const matrix = new Matrix4()
+	const vec3 = new Vector3()
+	const threeColor = new Color()
+	const rgb = { r: 0, g: 0, b: 0 }
+</script>
+
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
@@ -17,10 +27,6 @@
 	const vertexCount = geometry.getAttribute('position').count
 	const indexCount = geometry.index?.count ?? vertexCount
 	const mesh = new BatchedMesh(5000, vertexCount, indexCount)
-	const matrix = new Matrix4()
-	const vec3 = new Vector3()
-	const threeColor = new Color()
-	const rgb = { r: 0, g: 0, b: 0 }
 
 	const geometryID = mesh.addGeometry(geometry)
 
@@ -29,8 +35,8 @@
 	const meshColor = $derived.by<[number, number, number]>(() => {
 		if (isPerDot) return [1, 1, 1]
 		if (!isSingleColor(colors)) return [0, 0, 0.55]
-		const { r, g, b } = asRGB(colors, rgb)
-		return [r, g, b]
+		asRGB(colors, rgb)
+		return [rgb.r, rgb.g, rgb.b]
 	})
 
 	$effect(() => {
@@ -64,6 +70,6 @@
 	<T.MeshBasicMaterial
 		color={meshColor}
 		transparent={opacity < 1}
-		opacity={opacity}
+		{opacity}
 	/>
 </T>

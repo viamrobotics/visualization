@@ -294,17 +294,17 @@ func (metadata Metadata) ToProto() *drawv1.Metadata {
 		Colors:      packColors(metadata.Colors),
 		ColorFormat: drawv1.ColorFormat_COLOR_FORMAT_RGB,
 	}
-	if opacity, uniform := metadata.uniformOpacity(); !uniform {
-		proto.Opacities = packOpacities(metadata.Colors)
-	} else if opacity != DefaultOpacity {
+	if opacity, uniform := metadata.opacitySummary(); uniform {
 		proto.Opacities = []byte{opacity}
+	} else {
+		proto.Opacities = packOpacities(metadata.Colors)
 	}
 	return proto
 }
 
-// uniformOpacity returns the shared opacity and true if all colors have the same alpha,
+// opacitySummary returns the shared opacity and true if all colors have the same alpha,
 // or (0, false) if opacities differ across colors.
-func (metadata *Metadata) uniformOpacity() (uint8, bool) {
+func (metadata *Metadata) opacitySummary() (uint8, bool) {
 	if len(metadata.Colors) == 0 {
 		return DefaultOpacity, true
 	}

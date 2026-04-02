@@ -20,7 +20,7 @@
 
 	$effect(() => {
 		parsePcdInWorker(data).then(({ positions, colors }) => {
-			const geometry = createBufferGeometry(positions, colors)
+			const geometry = createBufferGeometry(positions, { colors: colors ?? undefined })
 
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(name ?? 'Random points'),

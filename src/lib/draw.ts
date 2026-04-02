@@ -154,7 +154,7 @@ export const updateTransform = (
 		}
 	}
 
-	const opacity = asOpacity(opacities)
+	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
 	if (opacity < 1) entity.add(traits.Opacity(opacity))
 
 	if (options.removable) entity.add(traits.Removable)

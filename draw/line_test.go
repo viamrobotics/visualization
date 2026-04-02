@@ -175,7 +175,7 @@ func TestLine_Draw(t *testing.T) {
 		test.That(t, protoLine.DotColors, test.ShouldResemble, []byte{0x00, 0x00, 0xff})
 		// line colors: red (255, 0, 0) in metadata
 		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00})
-		// default alpha (255) — opacities omitted
-		test.That(t, proto.Metadata.Opacities, test.ShouldBeNil)
+		// default alpha (255) — single uniform byte
+		test.That(t, proto.Metadata.Opacities, test.ShouldResemble, []byte{0xff})
 	})
 }

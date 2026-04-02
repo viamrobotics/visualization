@@ -300,18 +300,17 @@ export const provideDrawAPI = () => {
 
 		const arrowHeadAtPose = reader.read()
 
-		const entities: Entity[] = []
+		const positions = reader.readF32Array(nPoints * STRIDE.ARROWS)
+		const rawColors = reader.readU8Array(nColors * STRIDE.COLORS_RGB)
 
-		const entity = world.spawn(
+		world.spawn(
 			traits.Name(`Arrow group ${++poseIndex}`),
-			traits.Positions(reader.readF32Array(nPoints * STRIDE.ARROWS)),
-			traits.Colors(reader.readU8Array(nColors * STRIDE.COLORS_RGB)),
+			traits.Positions(positions),
+			nColors === 1 ? traits.Color(asRGB(rawColors, rgb)) : traits.Colors(rawColors),
 			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
 			traits.DrawAPI,
 			traits.Removable
 		)
-
-		entities.push(entity)
 	}
 
 	const drawPoints = async (reader: BinaryReader) => {
@@ -438,6 +437,7 @@ export const provideDrawAPI = () => {
 		world.spawn(
 			traits.Name(label),
 			traits.Color(asRGB(lineColors, rgb)),
+			traits.Opacity(1),
 			traits.LinePositions(points),
 			traits.DotColors(dotColors),
 			traits.DrawAPI,
