@@ -1,6 +1,7 @@
 import { isArrayBuffer } from 'lodash-es'
-import { FileDropperError, type FileDropper, type FileDropperParams } from './file-dropper'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
+
+import { type FileDropper, FileDropperError, type FileDropperParams } from './file-dropper'
 
 export const plyDropper: FileDropper = async (params: FileDropperParams) => {
 	const { name, content } = params

@@ -1,17 +1,18 @@
 <script lang="ts">
-	import { useTask, T } from '@threlte/core'
+	import { T, useTask } from '@threlte/core'
 	import { useController, useXR, type XRController } from '@threlte/xr'
-	import { Vector3, Quaternion } from 'three'
-	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { createResourceClient } from '@viamrobotics/svelte-sdk'
+	import { Quaternion, Vector3 } from 'three'
+
 	import {
-		getFrameTransformationQuaternion,
 		calculatePositionTarget,
+		getFrameTransformationQuaternion,
 	} from '$lib/components/xr/math'
-	import { OrientationVector } from '$lib/three/OrientationVector'
 	import { xrToast } from '$lib/components/xr/toasts.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { OrientationVector } from '$lib/three/OrientationVector'
 
 	interface Props {
 		armName: string
@@ -24,7 +25,7 @@
 	let {
 		armName,
 		gripperName,
-		scaleFactor = 1.0,
+		scaleFactor = 1,
 		hand = 'right',
 		rotationEnabled = true,
 	}: Props = $props()
@@ -33,6 +34,7 @@
 
 	// Capture initial prop values — parent uses {#key} to force remount on changes.
 	// Wrapped in an IIFE to avoid Svelte's state_referenced_locally warning.
+	// eslint-disable-next-line unicorn/no-unreadable-iife
 	const { initialHand, initialGripperName } = (() => ({
 		initialHand: hand,
 		initialGripperName: gripperName,
@@ -101,16 +103,14 @@
 		const currentSession = $session
 		if (!currentSession) return
 
-		const inputSource = Array.from(currentSession.inputSources).find(
-			(s) => s.handedness === initialHand
-		)
+		const inputSource = [...currentSession.inputSources].find((s) => s.handedness === initialHand)
 		if (!inputSource?.gamepad?.hapticActuators?.length) return
 
 		const actuator = inputSource.gamepad.hapticActuators[0]
 		if ('pulse' in actuator) {
 			actuator
 				.pulse(intensity, duration)
-				.catch((e) => console.warn('[ArmTeleop] Haptic pulse failed:', e))
+				.catch((error) => console.warn('[ArmTeleop] Haptic pulse failed:', error))
 		}
 	}
 
@@ -143,9 +143,7 @@
 		const currentSession = $session
 		if (!currentSession || !controller.current) return
 
-		const inputSource = Array.from(currentSession.inputSources).find(
-			(s) => s.handedness === initialHand
-		)
+		const inputSource = [...currentSession.inputSources].find((s) => s.handedness === initialHand)
 
 		if (!inputSource || !inputSource.gamepad) return
 
@@ -166,15 +164,16 @@
 			if (armClient.current) {
 				handleStartControl(controller.current)
 			}
-		} else if (!isPressed && wasPressed) {
-			// Falling Edge: Stop Control
-			if (isControlling) {
-				isControlling = false
-				// Haptic feedback: short pulse on teleop end
-				triggerHapticFeedback(0.3, 80)
-				// Log final position
-				handleStopControl()
-			}
+		} else if (
+			!isPressed &&
+			wasPressed && // Falling Edge: Stop Control
+			isControlling
+		) {
+			isControlling = false
+			// Haptic feedback: short pulse on teleop end
+			triggerHapticFeedback(0.3, 80)
+			// Log final position
+			handleStopControl()
 		}
 
 		// 4. Edge Detection - GRIPPER CONTROL (Trigger)
@@ -186,7 +185,7 @@
 					clearTimeout(gripperStopTimeout)
 					gripperStopTimeout = null
 				}
-				gripperClient.current.grab().catch((e) => console.warn('Gripper grab failed:', e))
+				gripperClient.current.grab().catch((error) => console.warn('Gripper grab failed:', error))
 			} else if (!isTriggerPressed && wasTriggerPressed) {
 				// Trigger released: Open gripper, then stop after 1 second
 				// Clear any pending stop timeout
@@ -194,11 +193,13 @@
 					clearTimeout(gripperStopTimeout)
 					gripperStopTimeout = null
 				}
-				gripperClient.current.open().catch((e) => console.warn('Gripper open failed:', e))
+				gripperClient.current.open().catch((error) => console.warn('Gripper open failed:', error))
 
 				// Schedule stop after 1 second
 				gripperStopTimeout = setTimeout(() => {
-					gripperClient?.current?.stop().catch((e) => console.warn('Gripper stop failed:', e))
+					gripperClient?.current
+						?.stop()
+						.catch((error) => console.warn('Gripper stop failed:', error))
 					gripperStopTimeout = null
 				}, 1000)
 			}
@@ -275,16 +276,16 @@
 
 			// Haptic feedback: short pulse on teleop start
 			triggerHapticFeedback(0.5, 100)
-		} catch (e) {
-			console.error('[ArmTeleop] Failed to start teleop:', e)
+		} catch (error) {
+			console.error('[ArmTeleop] Failed to start teleop:', error)
 		}
 	}
 
 	async function handleStopControl() {
 		try {
 			await armClient.current!.getEndPosition()
-		} catch (e) {
-			console.error('[ArmTeleop] Failed to get final position:', e)
+		} catch (error) {
+			console.error('[ArmTeleop] Failed to get final position:', error)
 		}
 	}
 
@@ -361,7 +362,7 @@
 		lastCommandTime = now
 		isSending = true
 
-		if (isNaN(targetPos.x) || isNaN(targetOV.th)) {
+		if (Number.isNaN(targetPos.x) || Number.isNaN(targetOV.th)) {
 			console.warn('Teleop Safety: NaN detected', targetPos, targetOV)
 			isSending = false
 			return
@@ -387,12 +388,12 @@
 			if (client) {
 				client
 					.doCommand(VIAM.Struct.fromJson(command))
-					.catch((e) => {
-						console.warn('Move failed:', e)
+					.catch((error) => {
+						console.warn('Move failed:', error)
 						errorTimeout = Date.now() + ERROR_COOLDOWN
 						triggerHapticFeedback(0.8, 200)
 						lastErrorHapticTime = Date.now()
-						showArmErrorToast(e)
+						showArmErrorToast(error)
 					})
 					.finally(() => {
 						isSending = false
@@ -409,12 +410,12 @@
 					oZ: targetOV.z,
 					theta: (targetOV.th * 180) / Math.PI,
 				})
-				.catch((e) => {
-					console.warn('Move failed:', e)
+				.catch((error) => {
+					console.warn('Move failed:', error)
 					errorTimeout = Date.now() + ERROR_COOLDOWN
 					triggerHapticFeedback(0.8, 200)
 					lastErrorHapticTime = Date.now()
-					showArmErrorToast(e)
+					showArmErrorToast(error)
 				})
 				.finally(() => {
 					isSending = false
@@ -434,8 +435,8 @@
 			// Use moveToPosition to return to the saved pose
 			await armClient.current.moveToPosition(savedPose)
 			xrToast.success('Returned to saved position')
-		} catch (e) {
-			console.error('[ArmTeleop] Failed to return to saved pose:', e)
+		} catch (error) {
+			console.error('[ArmTeleop] Failed to return to saved pose:', error)
 			xrToast.danger('Failed to return to position')
 		} finally {
 			isReturning = false

@@ -1,15 +1,15 @@
 import { injectPlugin, isInstanceOf } from '@threlte/core'
-import { BatchedMesh, Points, type Raycaster } from 'three'
+import { BatchedMesh, Mesh, Points, type Raycaster } from 'three'
 import {
-	type BVHOptions,
 	acceleratedRaycast,
-	computeBoundsTree,
-	disposeBoundsTree,
+	BVHHelper,
+	type BVHOptions,
 	computeBatchedBoundsTree,
+	computeBoundsTree,
 	disposeBatchedBoundsTree,
+	disposeBoundsTree,
 	PointsBVH,
 	SAH,
-	BVHHelper,
 } from 'three-mesh-bvh'
 
 interface Options extends BVHOptions {
@@ -33,15 +33,23 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 	raycaster.params.Points.threshold = 0.005
 
 	injectPlugin('bvh', (args) => {
-		const { ref, props } = $derived(args)
+		const { props } = $derived(args)
 		const opts = $derived<Options>(props.bvh ? { ...bvhOptions, ...props.bvh } : bvhOptions)
 
 		$effect(() => {
+			const { ref } = args
+
 			if (opts.enabled === false) {
 				return
 			}
 
-			if (isInstanceOf(ref, 'Points')) {
+			if (
+				isInstanceOf(ref, 'Points') &&
+				/**
+				 * This check is necessary, there are some strange cases where points are coming in from PCDs without any position data
+				 */
+				ref.geometry?.attributes.position
+			) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
@@ -67,7 +75,14 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 					ref.raycast = BatchedMesh.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
-			} else if (isInstanceOf(ref, 'Mesh')) {
+			} else if (
+				isInstanceOf(ref, 'Mesh') &&
+				/**
+				 * (mp) Line2s sort of suck. Their buffer attribute design internally is much different
+				 * but they give no indication other than this that they are different.
+				 */
+				ref.geometry?.attributes.position
+			) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = acceleratedRaycast
@@ -77,7 +92,7 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 				if (helper) ref.add(helper)
 
 				return () => {
-					ref.raycast = Points.prototype.raycast
+					ref.raycast = Mesh.prototype.raycast
 					if (helper) ref.remove(helper)
 				}
 			}

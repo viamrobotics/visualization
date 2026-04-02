@@ -1,7 +1,10 @@
 import type { Pose } from '@viamrobotics/sdk'
-import { OrientationVector } from './three/OrientationVector'
-import { type Object3D, Euler, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+
+import { Euler, MathUtils, Matrix4, type Object3D, Quaternion, Vector3 } from 'three'
+
 import type { Frame } from './frame'
+
+import { OrientationVector } from './three/OrientationVector'
 
 const quaternion = new Quaternion()
 const euler = new Euler()

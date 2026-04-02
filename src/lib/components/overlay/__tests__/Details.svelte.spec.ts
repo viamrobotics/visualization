@@ -1,20 +1,21 @@
 import { render, screen } from '@testing-library/svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createWorld, type Entity } from 'koota'
 import '@testing-library/jest-dom/vitest'
-import Details from '../Details.svelte'
-import * as useSelection from '$lib/hooks/useSelection.svelte'
-import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
-import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { traits } from '$lib/ecs'
 import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import { Struct } from '@viamrobotics/sdk'
-import * as useFrames from '$lib/hooks/useFrames.svelte'
+import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
+import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
-import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
+import * as useSelection from '$lib/hooks/useSelection.svelte'
+import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
+
+import Details from '../Details.svelte'
 import { createEntityFixture } from './__fixtures__/entity'
-import { createWorld, type Entity } from 'koota'
 import { resource } from './__fixtures__/resource'
-import { traits } from '$lib/ecs'
 
 describe('Details component', () => {
 	const world = createWorld()
@@ -39,17 +40,18 @@ describe('Details component', () => {
 		vi.mocked(useResourceByName.useResourceByName).mockReturnValue({
 			current: {},
 		})
-		vi.mocked(useFrames.useFrames).mockReturnValue({
+		vi.mocked(useConfigFrames.useConfigFrames).mockReturnValue({
 			getParentFrameOptions: vi.fn(),
-			current: [],
+			unsetFrames: [],
+			current: {},
 		})
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
-			localPartConfig: new Struct(),
+			current: { components: [] },
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
-			saveLocalPartConfig: vi.fn(),
-			resetLocalPartConfig: vi.fn(),
+			save: vi.fn(),
+			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
@@ -131,14 +133,14 @@ describe('Details component', () => {
 		entity.add(traits.FramesAPI)
 
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue({
-			localPartConfig: new Struct().fromJson({
+			current: {
 				components: [resource],
-			}),
+			},
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
-			saveLocalPartConfig: vi.fn(),
-			resetLocalPartConfig: vi.fn(),
+			save: vi.fn(),
+			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,

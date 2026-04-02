@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { BackSide, Mesh, Vector3 } from 'three'
 	import { T, useThrelte } from '@threlte/core'
 	import { MeshDiscardMaterial } from '@threlte/extras'
-	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
+	import { BackSide, Mesh, Vector3 } from 'three'
+
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
+	import { useSelectedEntity } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	const { camera } = useThrelte()
@@ -12,7 +13,7 @@
 	const transformControls = useTransformControls()
 	const cameraDown = new Vector3()
 
-	const enabled = $derived(!settings.current.enableMeasure)
+	const enabled = $derived(settings.current.interactionMode === 'navigate')
 
 	const size = 1_000
 </script>

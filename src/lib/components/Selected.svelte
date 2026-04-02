@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { isInstanceOf, T, useTask, useThrelte } from '@threlte/core'
+	import { BatchedMesh, Box3 } from 'three'
+	import { OBB } from 'three/addons/math/OBB.js'
+
+	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
+
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OBBHelper } from '$lib/three/OBBHelper'
-	import { OBB } from 'three/addons/math/OBB.js'
-	import { BatchedMesh, Box3 } from 'three'
-	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
 	const box3 = new Box3()
 	const obb = new OBB()
@@ -14,23 +16,9 @@
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 
-	const object = $derived.by(() => {
-		if (!isInstanceOf(selectedObject3d.current, 'Mesh')) {
-			return selectedObject3d.current
-		}
+	const object = $derived(selectedObject3d.current)
 
-		// Create a clone in the case of meshes, which could be frames with geometries,
-		// so that our bounding box doesn't include children
-		const result = selectedObject3d.current?.clone(false)
-
-		if (result) {
-			selectedObject3d.current?.getWorldPosition(result.position)
-			selectedObject3d.current?.getWorldQuaternion(result.quaternion)
-			return result
-		}
-	})
-
-	const { start, stop } = useTask(
+	useTask(
 		() => {
 			if (object === undefined) {
 				return
@@ -51,20 +39,10 @@
 			invalidate()
 		},
 		{
-			autoStart: false,
+			running: () => selectedEntity.current !== undefined,
 			autoInvalidate: false,
 		}
 	)
-
-	$effect.pre(() => {
-		if (selectedEntity.current) {
-			start()
-		} else {
-			stop()
-		}
-
-		invalidate()
-	})
 </script>
 
 {#if selectedEntity.current}

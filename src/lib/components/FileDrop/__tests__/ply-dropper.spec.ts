@@ -1,8 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { plyDropper } from '../ply-dropper'
-import { FileDropperError, type PlyFileDropSuccess } from '../file-dropper'
-import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import type { BufferGeometry } from 'three'
+
+import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { FileDropperError, type PlyFileDropSuccess } from '../file-dropper'
+import { plyDropper } from '../ply-dropper'
 
 vi.mock('three/examples/jsm/loaders/PLYLoader.js', () => ({
 	PLYLoader: vi.fn(),

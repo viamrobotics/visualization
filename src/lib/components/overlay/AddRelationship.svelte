@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { Entity } from 'koota'
-	import { Button, Select, Input } from '@viamrobotics/prime-core'
-	import { traits, useQuery, relations, useTrait } from '$lib/ecs'
+	import { Button, Input, Select } from '@viamrobotics/prime-core'
+	import { type Entity } from 'koota'
+
+	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { SubEntityLinkType } from '$lib/ecs/relations'
 
 	interface Props {
@@ -17,7 +18,7 @@
 		return allEntities.current
 			.map((e: Entity) => e.get(traits.Name))
 			.filter((n: string | undefined): n is string => n !== undefined && n !== currentEntityName)
-			.sort()
+			.toSorted()
 	})
 
 	let showRelationshipOptions = $state(false)

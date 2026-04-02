@@ -1,14 +1,14 @@
-import { serve, spawn, type Subprocess, file } from 'bun'
-import { resolve, join } from 'node:path'
+import { file, serve, spawn, type Subprocess } from 'bun'
 import { stat } from 'node:fs/promises'
+import path from 'node:path'
 import { UuidTool } from 'uuid-tool'
 
 const connections = new Set<Bun.ServerWebSocket<unknown>>()
 const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production')
-const buildDir = resolve(import.meta.dir, '../build')
+const buildDir = path.resolve(import.meta.dir, '../build')
 
-const STATIC_PORT = parseInt(process.env.STATIC_PORT || '5173', 10)
-const WS_PORT = parseInt(process.env.WS_PORT || '3000', 10)
+const STATIC_PORT = Number.parseInt(process.env.STATIC_PORT || '5173', 10)
+const WS_PORT = Number.parseInt(process.env.WS_PORT || '3000', 10)
 
 let viteProcess: Subprocess | undefined
 let apiServer: ReturnType<typeof serve> | undefined
@@ -84,26 +84,22 @@ const startStaticServer = () => {
 		})
 
 		console.log(`Static file server running at http://localhost:${STATIC_PORT}`)
-	} catch (err) {
-		console.error('Failed to start static file server:', err)
+	} catch (error) {
+		console.error('Failed to start static file server:', error)
 		shutdown(1)
 	}
 }
 
 const serveStatic = async (pathname: string): Promise<Response | null> => {
 	try {
-		let filePath = join(buildDir, pathname)
+		let filePath = path.join(buildDir, pathname)
 
 		const fileStats = await stat(filePath).catch(() => null)
 		if (fileStats?.isFile()) {
 			return new Response(file(filePath))
 		}
 
-		if (fileStats?.isDirectory()) {
-			filePath = join(filePath, 'index.html')
-		} else {
-			filePath = join(buildDir, 'index.html')
-		}
+		filePath = path.join(fileStats?.isDirectory() ? filePath : buildDir, 'index.html')
 
 		const indexStats = await stat(filePath).catch(() => null)
 		if (indexStats?.isFile()) {
@@ -111,8 +107,8 @@ const serveStatic = async (pathname: string): Promise<Response | null> => {
 		}
 
 		return null
-	} catch (err) {
-		console.error('Error serving static file:', err)
+	} catch (error) {
+		console.error('Error serving static file:', error)
 		return null
 	}
 }
@@ -212,13 +208,14 @@ async function handlePost(req: Request, pathname: string): Promise<Response> {
 				break
 			}
 
-			default:
+			default: {
 				return new Response('Not Found', { status: 404 })
+			}
 		}
 
 		return new Promise((resolve) => pendingResponses.set(uuid, resolve))
-	} catch (err) {
-		console.error('Error handling POST:', err)
+	} catch (error) {
+		console.error('Error handling POST:', error)
 		return new Response('Server Error', { status: 500 })
 	}
 }
@@ -327,7 +324,7 @@ try {
 	} else {
 		launchVite()
 	}
-} catch (err) {
-	console.error('Failed to start server:', err)
+} catch (error) {
+	console.error('Failed to start server:', error)
 	shutdown(1)
 }

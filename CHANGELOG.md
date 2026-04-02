@@ -1,5 +1,181 @@
 # motion-tools
 
+## 1.16.0
+
+### Minor Changes
+
+- 12a2df3: feat: add ellipse selection type
+
+### Patch Changes
+
+- 8746e20: fix: force to navigate mode
+
+## 1.15.8
+
+### Patch Changes
+
+- 3d93947: feat: expose zoom orthographic camera property
+- a15a7aa: Improve persistence for refresh rates and enable pointcloud polling by default
+- f2ae642: fix: make 3d models more resiliant
+- e76e34f: feat: expose pcd onComplete callback
+
+## 1.15.7
+
+### Patch Changes
+
+- 89258c9: sec: replace expr-eval with filtrex
+- 89258c9: fix(deps): replace expr-eval with filtrex
+
+## 1.15.6
+
+### Patch Changes
+
+- 59bb7f0: Enable log filtering by level
+- 292abe1: [APP-15769] Viz tab: toggling tree item visibility does not propagate to children, and axes are not hidden
+- e11e47d: Upgrade svelte to 5.55
+- ef24ccf: Dedupe results of useFramelessComponents
+
+## 1.15.5
+
+### Patch Changes
+
+- af76937: Fix edit mode issues and entity disposal
+
+## 1.15.4
+
+### Patch Changes
+
+- 89c0802: Improve keyboard controls when zoomed in
+- f353903: Fix "Cannot read properties of undefined" error
+- 01d106f: Send release version to sentry
+
+## 1.15.3
+
+### Patch Changes
+
+- b151176: Fix issue with multiple meshes being rendered on entity add
+- 05d2934: Update useQuery hook to match Koota source
+- f9e2f84: Bump Threlte
+
+## 1.15.2
+
+### Patch Changes
+
+- 0467cea: Improve floating panel behavior in embedded environments
+
+## 1.15.1
+
+### Patch Changes
+
+- 736a412: Move "add frame" to dashboard
+- 9c47a4d: Fix: selection bounding box for models
+
+## 1.15.0
+
+### Minor Changes
+
+- 99bcc28: add settings tab for weblabs
+
+### Patch Changes
+
+- fae30f6: force light mode
+- ccc7a20: Use `<FloatingPanel>` for Treeview
+- 2f357b2: Add automated import sorting
+
+## 1.14.0
+
+### Minor Changes
+
+- 40bf132: Simplify `Transform` metadata, fix line color handling
+
+### Patch Changes
+
+- eff4330: Add draw points API
+- a61c3e1: Add set camera API
+- eb259e0: Add draw poses as arrows API
+- a83ed6e: Add remove all, remove drawings, and remove transforms APIs
+- 2c4a40c: Add draw robot and draw world state APIs
+- 4a1c85f: Add draw nurbs API
+- 8202bd4: Add draw geometry and draw geometries APIs
+- 1a6df8f: Add replay API
+- 8475f5d: Sort world tree nodes
+- 41b4995: [APP-15201] Fix: entity disposing when connected to a machine
+- 9f1e1bd: Add draw line API
+- 3be3f7c: Update `createBufferGeometry` to handle RGBA and RGB
+- 8bda28b: Add draw GLTF API
+
+## 1.13.1
+
+### Patch Changes
+
+- f656483: Add colors and line width to nurbs
+- 2b8da5f: Add DrawnFrames to draw API
+- d171cf0: Add DrawnFrames type and use that in the draw frames API
+- d888c1d: Standardize colorables in draw API
+- a75ce2c: Add DrawableOption to public draw API
+- d171cf0: Add draw frame system and draw frames APIs
+- 6e34aa0: Add draw client API helpers
+- ec39781: Fix: reduce over-eager state evaluation of frame updates
+- c02782f: export name and render order props form PCD
+- 6e34aa0: Add ChromaticColorChooser and AchromaticColorChooser to the draw API
+- af2a313: Add server for new draw service and to host static assets in production mode
+- 8796d64: Add DrawService
+
+## 1.13.0
+
+### Minor Changes
+
+- 3ef8369: Feat: logs panel
+
+### Patch Changes
+
+- 31e25d8: Fix: Update selected bounding boxes so that they move as objects move
+- aa7aad8: Remove disk persistence for visibility
+- bb97ee2: Fix: use machine connection only for frame data unless editing frames
+
+## 1.12.3
+
+### Patch Changes
+
+- 0fba953: fix machine config reactivity for e2e tests
+- 373155b: Add connection status in dashboard
+- 86d5aa2: Fix: Depth test sorting
+- 6918e3c: [APP-15201] (1/2) Clean up usePartConfig
+- 535c559: Add HDR environment map for more realistic arm rendering
+
+## 1.12.2
+
+### Patch Changes
+
+- 3cddd9e: Create inline versions of workers to work outside of project boundaries
+- 4dbb986: fix: force orthographic cam mode when enter lasso tool
+
+## 1.12.1
+
+### Patch Changes
+
+- f9c41ec: Fix: Lasso object layout
+
+## 1.12.0
+
+### Minor Changes
+
+- 247d5c3: Add `<LassoTool>` plugin
+
+### Patch Changes
+
+- 0fac3d8: Fix: Render lasso lines on top of other objects
+- 71e14fa: Fix transparency flickering
+
+## 1.11.1
+
+### Patch Changes
+
+- 3f609ff: Reposition joint limits widgets above camera feeds, centered, and remove tilt
+- a5135ea: Fix: detached mesh reference when performing bvh cleanup
+- 828c53f: Standardize draw APIs
+- 8f79b03: Use `three-mesh-bvh` directly
+
 ## 1.11.0
 
 ### Minor Changes

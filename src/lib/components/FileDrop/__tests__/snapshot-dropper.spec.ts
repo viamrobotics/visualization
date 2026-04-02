@@ -1,7 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { snapshotDropper } from '../snapshot-dropper'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+
 import { FileDropperError, type SnapshotFileDropSuccess } from '../file-dropper'
+import { snapshotDropper } from '../snapshot-dropper'
 
 describe('snapshotDropper', () => {
 	const emptySnapshot = Snapshot.fromJson({ transforms: [], drawings: [] })

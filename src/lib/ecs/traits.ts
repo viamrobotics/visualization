@@ -1,7 +1,9 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { trait } from 'koota'
-import { BufferGeometry as ThreeBufferGeometry } from 'three'
+
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
+import { type Entity, trait } from 'koota'
+import { BufferGeometry as ThreeBufferGeometry } from 'three'
+
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 
@@ -34,6 +36,7 @@ export const WorldPose = trait({
 })
 
 export const Hovered = trait(() => true)
+export const Invisible = trait(() => true)
 
 /**
  * Represents that an entity is composed of many instances, so that the treeview and
@@ -45,6 +48,9 @@ export const Instance = trait({
 	meshID: -1,
 	instanceID: -1,
 })
+
+export const RenderOrder = trait(() => 0)
+
 export const Opacity = trait(() => 1)
 
 /**
@@ -52,6 +58,15 @@ export const Opacity = trait(() => 1)
  * @default { r: 1, g: 0, b: 0 }
  */
 export const Color = trait({ r: 0, g: 0, b: 0 })
+
+/**
+ * Material properties
+ */
+export const Material = trait({
+	depthTest: false,
+})
+
+export const DepthTest = trait(() => true)
 
 export const Arrow = trait(() => true)
 
@@ -85,15 +100,7 @@ export const Capsule = trait({ l: 200, r: 50 })
  */
 export const Sphere = trait({ r: 200 })
 
-export const PointColor = trait({ r: 0, g: 0, b: 0 })
-
-/** format [x, y, z, ...] */
-export const LinePositions = trait(() => new Float32Array())
-
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
-
-/** format [r, g, b, ...] */
-export const VertexColors = trait(() => new Float32Array())
 
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
@@ -105,6 +112,7 @@ export const Scale = trait({ x: 1, y: 1, z: 1 })
 export const FramesAPI = trait(() => true)
 export const GeometriesAPI = trait(() => true)
 export const DrawAPI = trait(() => true)
+export const DrawServiceAPI = trait(() => true)
 export const WorldStateStoreAPI = trait(() => true)
 export const SnapshotAPI = trait(() => true)
 
@@ -115,16 +123,35 @@ export const DroppedFile = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 
-// === Shape Properties ===
+/**
+ * Marker trait for entities that should be rendered in screen space (CSS pixels)
+ */
+export const ScreenSpace = trait(() => true)
+
 /**
  * Point size, in mm
  */
-export const PointSize = trait(() => 10)
+export const PointSize = trait(() => 5)
 
 /**
- * Line width, in mm
+ * Line positions, format [x, y, z, ...]
+ */
+export const LinePositions = trait(() => new Float32Array())
+
+/**
+ * Line width, in mm when in world units, or CSS pixels when in screen space
  */
 export const LineWidth = trait(() => 5)
+
+/**
+ * Dot colors for line vertices, format [r, g, b, a, ...]
+ */
+export const DotColors = trait(() => new Uint8Array())
+
+/**
+ * Dot size for line vertices, in mm when in world units, or CSS pixels when in screen space
+ */
+export const DotSize = trait(() => 10)
 
 export const ReferenceFrame = trait(() => true)
 
@@ -147,16 +174,39 @@ export const Geometry = (geometry: ViamGeometry) => {
 	return ReferenceFrame
 }
 
-export const updateGeometry = (geometry: ViamGeometry) => {
-	if (geometry.geometryType.case === 'box') {
-		return [Box, createBox(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'capsule') {
-		return [Capsule, createCapsule(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'sphere') {
-		return [Sphere, createSphere(geometry.geometryType.value)]
-	} else if (geometry.geometryType.case === 'mesh') {
-		return [BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh)]
+export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {
+	if (!geometry) {
+		entity.remove(Box, Capsule, Sphere, BufferGeometry)
+		return
 	}
 
-	return []
+	if (geometry.geometryType.case === 'box') {
+		if (entity.has(Box)) {
+			entity.set(Box, createBox(geometry.geometryType.value))
+		} else {
+			entity.remove(Capsule, Sphere, BufferGeometry)
+			entity.add(Box(createBox(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'capsule') {
+		if (entity.has(Capsule)) {
+			entity.set(Capsule, createCapsule(geometry.geometryType.value))
+		} else {
+			entity.remove(Box, Sphere, BufferGeometry)
+			entity.add(Capsule(createCapsule(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'sphere') {
+		if (entity.has(Sphere)) {
+			entity.set(Sphere, createSphere(geometry.geometryType.value))
+		} else {
+			entity.remove(Box, Capsule, BufferGeometry)
+			entity.add(Sphere(createSphere(geometry.geometryType.value)))
+		}
+	} else if (geometry.geometryType.case === 'mesh') {
+		if (entity.has(BufferGeometry)) {
+			entity.set(BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh))
+		} else {
+			entity.remove(Box, Sphere, Capsule)
+			entity.add(BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh)))
+		}
+	}
 }

@@ -16,12 +16,14 @@
 </script>
 
 <script lang="ts">
-	import { Select, IconButton } from '@viamrobotics/prime-core'
-	import { useMachineSettings } from '$lib/hooks/useMachineSettings.svelte'
 	import type { Snippet } from 'svelte'
 
+	import { IconButton, Select } from '@viamrobotics/prime-core'
+
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
 	interface Props {
-		id: string
+		id: 'poses' | 'pointclouds' | 'vision'
 		label: string
 		allowLive?: boolean
 		onManualRefetch: () => void
@@ -30,8 +32,9 @@
 
 	let { id, label, allowLive = false, onManualRefetch, children }: Props = $props()
 
-	const { refreshRates } = useMachineSettings()
-	const rate = $derived(refreshRates.get(id) ?? RefetchRates.MANUAL)
+	const settings = useSettings()
+	const { refreshRates } = $derived(settings.current)
+	const rate = $derived(refreshRates[id] ?? RefetchRates.MANUAL)
 </script>
 
 <label class="flex flex-col gap-1">
@@ -46,7 +49,7 @@
 			onchange={(event: InputEvent) => {
 				if (event.target instanceof HTMLSelectElement) {
 					const { value } = event.target
-					refreshRates.set(id, Number.parseInt(value, 10))
+					refreshRates[id] = Number.parseInt(value, 10)
 				}
 			}}
 			value={String(rate)}
@@ -85,7 +88,7 @@
 				variant="secondary"
 				cx="border-light border"
 				onclick={() => {
-					refreshRates.set(id, RefetchRates.MANUAL)
+					refreshRates[id] = RefetchRates.MANUAL
 				}}
 			/>
 		{/if}

@@ -1,5 +1,7 @@
-import { BatchedMesh, MeshBasicMaterial, Object3D, Vector3, Color, Box3 } from 'three'
 import type { OBB } from 'three/addons/math/OBB.js'
+
+import { BatchedMesh, Box3, Color, MeshBasicMaterial, Object3D, Vector3 } from 'three'
+
 import { createArrowGeometry } from './arrow'
 
 const black = new Color('black')

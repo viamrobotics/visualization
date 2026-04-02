@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { MathUtils } from 'three'
 	import { CameraControls, type CameraControlsRef, Gizmo, Portal } from '@threlte/extras'
-	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
-	import KeyboardControls from './KeyboardControls.svelte'
+	import { MathUtils } from 'three'
+
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
+	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+	import KeyboardControls from './KeyboardControls.svelte'
 
 	const cameraControls = useCameraControls()
 	const settings = useSettings()
@@ -20,7 +22,7 @@
 			icon="camera-outline"
 			description="Reset camera"
 			onclick={() => {
-				cameraControls.current?.reset(true)
+				cameraControls.setInitialPose()
 			}}
 		/>
 	</fieldset>
@@ -30,8 +32,8 @@
 	enabled={!transformControls.active}
 	oncreate={(ref) => {
 		cameraControls.set(ref)
-		;(window as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
-		;(window as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
+		;(globalThis as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
+		;(globalThis as unknown as { cameraControls: CameraControlsRef }).cameraControls = ref
 	}}
 >
 	{#snippet children({ ref }: { ref: CameraControlsRef })}

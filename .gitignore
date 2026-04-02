@@ -8,12 +8,14 @@ static/Big_Buck_Bunny_4K.webm
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
-/coverage
-/dist
+.svelte-kit
+build
+src/lib/**/__tests__/__screenshots__
+coverage
+dist
+.bin
+draw-server
 viamrobotics-motion-tools-*.tgz
-.build-stamp
 
 # OS
 .DS_Store
@@ -33,6 +35,9 @@ vite.config.ts.timestamp-*
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Generated
+*.inline.ts
 
 # Protobuf
 src/lib/buf

@@ -60,7 +60,7 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 // ToTransforms produces a flat []*commonv1.Transform for every geometry in the frame system.
 // Each frame's geometries are prefixed with their frame name (e.g. "child:box").
 // Use WithParent to set the parent reference frame for all transforms (defaults to referenceframe.World).
-func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...drawableOption) ([]*commonv1.Transform, error) {
+func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 
 	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)

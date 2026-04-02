@@ -1,5 +1,6 @@
-import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import type { FileDropperSuccess } from './file-dropper'
+
+import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import { pcdDropper } from './pcd-dropper'
 import { plyDropper } from './ply-dropper'
 import { snapshotDropper } from './snapshot-dropper'
@@ -8,15 +9,18 @@ type DropStates = 'inactive' | 'hovering' | 'loading'
 
 const createFileDropper = (extension: string, prefix: string | undefined) => {
 	switch (prefix) {
-		case Prefixes.Snapshot:
+		case Prefixes.Snapshot: {
 			return snapshotDropper
+		}
 	}
 
 	switch (extension) {
-		case Extensions.PCD:
+		case Extensions.PCD: {
 			return pcdDropper
-		case Extensions.PLY:
+		}
+		case Extensions.PLY: {
 			return plyDropper
+		}
 	}
 
 	return undefined
@@ -95,10 +99,10 @@ export const useFileDrop = (
 					content,
 				})
 
-				if (!result.success) {
-					handleError(result.error.message)
-				} else {
+				if (result.success) {
 					onSuccess(result)
+				} else {
+					handleError(result.error.message)
 				}
 			})
 

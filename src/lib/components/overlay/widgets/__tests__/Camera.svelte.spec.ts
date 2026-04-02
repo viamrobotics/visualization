@@ -1,9 +1,11 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import '@testing-library/jest-dom/vitest'
-import Camera from '../Camera.svelte'
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { StreamClient } from '@viamrobotics/sdk'
+import '@testing-library/jest-dom/vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { useSettings } from '$lib/hooks/useSettings.svelte'
+
+import Camera from '../Camera.svelte'
 
 // Mock Viam SDK components
 vi.mock('@viamrobotics/svelte-sdk', () => ({

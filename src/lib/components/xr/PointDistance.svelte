@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
-	import Draggable from './Draggable.svelte'
+	import { Billboard, Text } from '@threlte/extras'
 	import { Mesh, Vector3 } from 'three'
-	import { Text, Billboard } from '@threlte/extras'
 
 	const mesh1 = new Mesh()
 	const mesh2 = new Mesh()
@@ -28,12 +27,10 @@
 </script>
 
 <T.Group position={[-1, 1, 0]}>
-	<Draggable onPointerEnter={() => null}>
-		<T is={mesh1}>
-			<T.SphereGeometry args={[0.05]} />
-			<T.MeshStandardMaterial />
-		</T>
-	</Draggable>
+	<T is={mesh1}>
+		<T.SphereGeometry args={[0.05]} />
+		<T.MeshStandardMaterial />
+	</T>
 </T.Group>
 
 <T.Group position={textPosition}>
@@ -43,10 +40,8 @@
 </T.Group>
 
 <T.Group position={[-1.5, 1, 0]}>
-	<Draggable>
-		<T is={mesh2}>
-			<T.SphereGeometry args={[0.05]} />
-			<T.MeshStandardMaterial />
-		</T>
-	</Draggable>
+	<T is={mesh2}>
+		<T.SphereGeometry args={[0.05]} />
+		<T.MeshStandardMaterial />
+	</T>
 </T.Group>

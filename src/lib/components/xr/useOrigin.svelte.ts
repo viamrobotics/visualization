@@ -1,5 +1,6 @@
-import { getContext, setContext } from 'svelte'
 import type { Vector3Tuple } from 'three'
+
+import { getContext, setContext } from 'svelte'
 
 const key = Symbol('origin-context')
 

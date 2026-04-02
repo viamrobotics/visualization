@@ -23,6 +23,7 @@ const addCookie = (name: string, value: string, days?: number, path: string = '/
 		expires = '; expires=' + date.toUTCString()
 	}
 
+	// eslint-disable-next-line unicorn/no-document-cookie
 	document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}${expires}; path=${path}`
 }
 
@@ -37,6 +38,7 @@ const getCookieExperiments = () => {
 interface Context {
 	load: (experiments: string[]) => void
 	isActive(experiment: string): boolean
+	toggle(experiment: string): void
 }
 
 export const createWeblabs = (): Context => {
@@ -52,20 +54,33 @@ export const createWeblabs = (): Context => {
 		}
 	}
 
+	const toggle = (experiment: string) => {
+		const cookieExperiments = new Set(getCookieExperiments())
+
+		if (activeExperiments.has(experiment)) {
+			activeExperiments.delete(experiment)
+			cookieExperiments.delete(experiment)
+		} else {
+			activeExperiments.add(experiment)
+			cookieExperiments.add(experiment)
+		}
+
+		addCookie('weblab_experiments', [...cookieExperiments].join(','))
+	}
+
 	return {
 		load,
-		isActive: (experiment: string) => {
-			return activeExperiments.has(experiment)
-		},
+		isActive: (experiment: string) => activeExperiments.has(experiment),
+		toggle,
 	}
 }
 
 export const provideWeblabs = () => {
-	const urlExperiment = new URLSearchParams(window.location.search).get('experiment')
+	const urlExperiment = new URLSearchParams(globalThis.location.search).get('experiment')
 
 	if (urlExperiment) {
 		const experimentSet = new Set([...getCookieExperiments(), urlExperiment])
-		addCookie('weblab_experiments', Array.from(experimentSet).join(','))
+		addCookie('weblab_experiments', [...experimentSet].join(','))
 	}
 
 	setContext<Context>(WEBLABS_CONTEXT_KEY, createWeblabs())
@@ -77,6 +92,7 @@ export const useWeblabs = () => {
 		return {
 			load: () => {},
 			isActive: () => false,
+			toggle: () => {},
 		}
 	}
 	return context

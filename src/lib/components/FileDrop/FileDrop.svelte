@@ -1,13 +1,17 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements'
-	import { useToast, ToastVariant } from '@viamrobotics/prime-core'
-	import { useFileDrop } from './useFileDrop.svelte'
-	import { useWorld } from '$lib/ecs/useWorld'
-	import type { FileDropperSuccess } from './file-dropper'
-	import { traits } from '$lib/ecs'
-	import { spawnSnapshotEntities } from '$lib/snapshot'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+
+	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
+
 	import { createBufferGeometry } from '$lib/attribute'
+	import { traits } from '$lib/ecs'
+	import { useWorld } from '$lib/ecs/useWorld'
+	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { spawnSnapshotEntities } from '$lib/snapshot'
+
+	import type { FileDropperSuccess } from './file-dropper'
+
+	import { useFileDrop } from './useFileDrop.svelte'
 
 	const props: HTMLAttributes<HTMLDivElement> = $props()
 

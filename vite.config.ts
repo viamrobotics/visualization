@@ -1,18 +1,19 @@
 import { sentrySvelteKit } from '@sentry/sveltekit'
-import devtoolsJson from 'vite-plugin-devtools-json'
-import tailwindcss from '@tailwindcss/vite'
-import basicSsl from '@vitejs/plugin-basic-ssl'
-import glsl from 'vite-plugin-glsl'
-import { svelteTesting } from '@testing-library/svelte/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
+import { svelteTesting } from '@testing-library/svelte/vite'
 import dns from 'node:dns'
+import { defineConfig } from 'vite'
+import devtoolsJson from 'vite-plugin-devtools-json'
+import glsl from 'vite-plugin-glsl'
+import mkcert from 'vite-plugin-mkcert'
 
 dns.setDefaultResultOrder('verbatim')
 
-const https = false
+const https = process.argv.includes('--https')
 
 export default defineConfig({
+	assetsInclude: ['**/*.hdr'],
 	plugins: [
 		glsl(),
 		sentrySvelteKit({
@@ -22,9 +23,10 @@ export default defineConfig({
 			},
 		}),
 		devtoolsJson(),
-		...(https ? [basicSsl()] : []),
+		...(https ? [mkcert()] : []),
 		tailwindcss(),
 		sveltekit(),
+		svelteTesting({ resolveBrowser: false }),
 	],
 
 	define: {
@@ -36,6 +38,7 @@ export default defineConfig({
 		esbuildOptions: {
 			target: 'esnext',
 		},
+		exclude: ['@testing-library/svelte'],
 	},
 	build: {
 		target: 'esnext',
@@ -43,10 +46,14 @@ export default defineConfig({
 
 	server: {
 		host: true,
-		port: parseInt(process.env.STATIC_PORT || '5173', 10),
+		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
 		cors: true,
 		https: https ? {} : undefined,
+
+		fs: {
+			allow: ['./package.json'],
+		},
 	},
 
 	ssr: {
@@ -54,30 +61,14 @@ export default defineConfig({
 	},
 
 	test: {
-		projects: [
-			{
-				extends: './vite.config.ts',
-				plugins: [svelteTesting()],
-
-				test: {
-					name: 'client',
-					environment: 'jsdom',
-					clearMocks: true,
-					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**'],
-					setupFiles: ['./vitest-setup-client.ts'],
-				},
-			},
-			{
-				extends: './vite.config.ts',
-
-				test: {
-					name: 'server',
-					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-				},
-			},
-		],
+		browser: {
+			enabled: true,
+			headless: true,
+			provider: 'playwright',
+			instances: [{ browser: 'chromium' }],
+		},
+		clearMocks: true,
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		setupFiles: ['./vitest-setup-client.ts'],
 	},
 })

@@ -1,128 +1,151 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { useTask, useThrelte } from '@threlte/core'
 	import { Grid, useGamepad } from '@threlte/extras'
-	import { Collider, RigidBody } from '@threlte/rapier'
-	import { RigidBody as RigidBodyType } from '@dimforge/rapier3d-compat'
-	import { useController } from '@threlte/xr'
-	import { Euler, Group, Quaternion, Vector3 } from 'three'
+	import { Hand, useHand, useXR } from '@threlte/xr'
+	import { Group, Quaternion, Vector2, Vector3 } from 'three'
+
+	import { useAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'
 
 	const origin = useOrigin()
+	const anchors = useAnchors()
 
-	const height = 0.1
-	const radius = 0.05
-
-	const group = new Group()
-	const innerGroup = new Group()
-
-	const vec3 = new Vector3()
-
-	const quaternion = new Quaternion()
-	const euler = new Euler()
-
-	const offset = new Vector3()
-
-	const position = new Vector3()
-
-	let dragging = $state(false)
-	let rotating = $state(false)
-
-	let currentDistance = 0
-	const rotateDown = new Vector3()
-
-	let rigidBody = $state<RigidBodyType>()
-
-	const left = useController('left')
-	const right = useController('right')
+	const anchorObject = new Group()
 
 	const leftPad = useGamepad({ xr: true, hand: 'left' })
+	const rightPad = useGamepad({ xr: true, hand: 'right' })
 
-	leftPad.trigger.on('down', () => {
-		const grip = $left?.grip
+	let speed = $state(0.05)
 
-		if (!grip) {
+	const vec2 = new Vector2()
+	const target = new Vector2()
+
+	leftPad.squeeze.on('change', () => {
+		speed = leftPad.squeeze.pressed ? 0.005 : 0.05
+	})
+
+	leftPad.thumbstick.on('change', ({ value }) => {
+		if (typeof value === 'number') {
 			return
 		}
 
-		dragging = true
-		innerGroup.getWorldPosition(vec3)
-		offset.copy($left!.grip.position).sub(vec3)
+		const { x: vx, y: vy } = value
+		const [x, y, z] = origin.position
+		const r = origin.rotation
+
+		vec2.set(z, r).lerp(target.set(z + vy * speed, r + vx * speed), 0.5)
+
+		origin.set([x, y, z + vy * speed], r + vx * speed)
 	})
-	leftPad.trigger.on('up', () => (dragging = false))
 
-	const dragTask = useTask(
+	rightPad.thumbstick.on('change', ({ value }) => {
+		if (typeof value === 'number') {
+			return
+		}
+
+		const { x: vx, y: vy } = value
+		const [x, y, z] = origin.position
+		const r = origin.rotation
+
+		vec2.set(x, y).lerp(target.set(x + vx * speed, y + vy * speed), 0.5)
+
+		origin.set([vec2.x, vec2.y, z], r)
+	})
+
+	const vec3 = new Vector3()
+	const quaternion = new Quaternion()
+
+	$effect(() => {
+		vec3.fromArray(origin.position)
+
+		anchors.createAnchor(vec3, quaternion)?.then((anchor) => {
+			anchors.bindAnchorObject(anchor, anchorObject)
+		})
+	})
+
+	let startLeftPinchTranslation = new Vector3()
+	let leftPinchTranslation = new Vector3()
+	let startRightPinchTranslation = new Vector3()
+	let rightPinchTranslation = new Vector3()
+
+	const leftHand = useHand('left')
+	const rightHand = useHand('right')
+
+	let translating = $state(false)
+	let rotating = $state(false)
+
+	const { renderer } = useThrelte()
+	const { isPresenting } = useXR()
+
+	$effect(() => {
+		if (!$isPresenting) {
+			return
+		}
+		renderer.xr.getHand(0).addEventListener('pinchstart', () => {
+			if (leftHand.current?.targetRay.position) {
+				translating = true
+				startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
+			}
+		})
+	})
+
+	useTask(
 		() => {
-			if (!$left || !rigidBody) return
-
-			position.copy($left.grip.position).sub(offset)
-
-			origin.set([position.x, position.y, position.z])
-
-			rigidBody.setNextKinematicTranslation({ x: position.x, y: position.y, z: position.z })
+			if (leftHand.current?.targetRay && translating) {
+				leftPinchTranslation
+					.copy(leftHand.current.targetRay.position)
+					.sub(startLeftPinchTranslation)
+				origin.set(leftPinchTranslation.toArray(), origin.rotation)
+			}
 		},
 		{
-			autoStart: false,
+			running: () => translating,
 		}
 	)
 
-	const rotateTask = useTask(
+	useTask(
 		() => {
-			if (!$right || !rigidBody) return
-
-			const distance = rotateDown.distanceToSquared($right.grip.position)
-
-			const rotation = rigidBody.rotation()
-			quaternion.copy(rotation)
-			euler.setFromQuaternion(quaternion)
-			euler.z = distance + currentDistance
-			origin.set(undefined, euler.z)
-
-			rigidBody.setNextKinematicRotation(quaternion.setFromEuler(euler))
+			if (rightHand.current?.targetRay && rotating) {
+				rightPinchTranslation.copy(rightHand.current.targetRay.position)
+				const rotation =
+					origin.rotation + rightPinchTranslation.distanceTo(startRightPinchTranslation)
+				origin.set(leftPinchTranslation.toArray(), rotation)
+			}
 		},
-		{ autoStart: false }
+		{
+			running: () => rotating,
+		}
 	)
-
-	$effect.pre(() => {
-		if (dragging) {
-			dragTask.start()
-		} else {
-			dragTask.stop()
-		}
-	})
-
-	$effect.pre(() => {
-		if (rotating) {
-			rotateTask.start()
-		} else {
-			rotateTask.stop()
-		}
-	})
 </script>
 
-<T
-	is={group}
-	position={[0, 0.05, 0]}
->
-	<RigidBody
-		bind:rigidBody
-		type="kinematicPosition"
-	>
-		<Collider
-			sensor
-			shape="cone"
-			args={[height / 2, radius]}
-		>
-			<T is={innerGroup}>
-				<Grid
-					plane="xy"
-					position.y={0.05}
-					fadeDistance={5}
-					fadeOrigin={new Vector3()}
-					cellSize={0.1}
-					cellColor="#fff"
-					sectionColor="#fff"
-				/>
-			</T>
-		</Collider>
-	</RigidBody>
-</T>
+<Grid
+	plane="xy"
+	fadeDistance={5}
+	fadeOrigin={new Vector3()}
+	cellSize={0.1}
+	cellColor="#fff"
+	sectionColor="#fff"
+/>
+
+<Hand
+	left
+	onpinchstart={() => {
+		console.log('pinchstart')
+		if (leftHand.current?.targetRay.position) {
+			translating = true
+			startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
+		}
+	}}
+	onpinchend={() => (translating = false)}
+/>
+
+<Hand
+	right
+	onpinchstart={() => {
+		if (rightHand.current?.targetRay.position) {
+			rotating = true
+			startRightPinchTranslation.copy(rightHand.current.targetRay.position)
+		}
+	}}
+	onpinchend={() => (rotating = false)}
+/>

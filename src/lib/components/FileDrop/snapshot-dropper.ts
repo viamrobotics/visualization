@@ -1,12 +1,14 @@
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 import { isArrayBuffer, isString } from 'lodash-es'
+
+import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+
 import {
 	type FileDropper,
+	FileDropperError,
 	type FileDropperFailure,
 	type FileDropperParams,
 	type FileDropperResult,
 	type SnapshotFileDropSuccess,
-	FileDropperError,
 } from './file-dropper'
 import { Extensions } from './file-names'
 
@@ -92,18 +94,22 @@ const decodeGzip = async (params: FileDropperParams): Promise<FileDropperResult>
 
 export const snapshotDropper: FileDropper = async (params: FileDropperParams) => {
 	switch (params.extension) {
-		case 'json':
+		case 'json': {
 			return decodeJson(params)
-		case 'pb':
+		}
+		case 'pb': {
 			return decodeBinary(params)
-		case 'pb.gz':
+		}
+		case 'pb.gz': {
 			return decodeGzip(params)
-		default:
+		}
+		default: {
 			return {
 				success: false,
 				error: new FileDropperError(
 					`Only ${Extensions.JSON}, ${Extensions.PB} and ${Extensions.PB_GZ} snapshot files are supported.`
 				),
 			}
+		}
 	}
 }

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { untrack } from 'svelte'
 	import { T } from '@threlte/core'
-	import { CanvasTexture, PlaneGeometry } from 'three'
-	import { xrToast, type XRToastItem, type ToastVariant } from '$lib/components/xr/toasts.svelte'
 	import { Headset } from '@threlte/xr'
+	import { untrack } from 'svelte'
+	import { CanvasTexture, PlaneGeometry } from 'three'
+
+	import { type ToastVariant, xrToast, type XRToastItem } from '$lib/components/xr/toasts.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
@@ -132,7 +133,8 @@
 		const iconCenterX = accentBarWidth + 30
 		const textStartX = accentBarWidth + 56
 
-		toasts.forEach((toast, index) => {
+		let index = 0
+		for (const toast of toasts) {
 			const y = index * (TOAST_HEIGHT + TOAST_GAP)
 			const style = VARIANT_STYLES[toast.variant]
 
@@ -165,7 +167,9 @@
 			ctx.font = '28px sans-serif'
 			ctx.textBaseline = 'middle'
 			ctx.fillText(toast.message, textStartX, y + TOAST_HEIGHT / 2)
-		})
+
+			index += 1
+		}
 
 		texture.needsUpdate = true
 	}
@@ -189,12 +193,14 @@
 		renderToasts(toasts)
 	})
 
+	const dispose = () => {
+		texture.dispose()
+		untrack(() => geometry?.dispose())
+	}
+
 	// Cleanup
 	$effect(() => {
-		return () => {
-			texture.dispose()
-			untrack(() => geometry?.dispose())
-		}
+		return dispose
 	})
 </script>
 

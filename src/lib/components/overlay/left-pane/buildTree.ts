@@ -1,10 +1,17 @@
-import { traits } from '$lib/ecs'
 import type { Entity, QueryResult, Trait } from 'koota'
+
+import { traits } from '$lib/ecs'
 
 export interface TreeNode {
 	entity: Entity
 	parent?: TreeNode
 	children?: TreeNode[]
+}
+
+function sortNodes(nodes: TreeNode[]) {
+	nodes.sort(
+		(a, b) => a.entity.get(traits.Name)?.localeCompare(b.entity.get(traits.Name) ?? '') ?? 0
+	)
 }
 
 /**
@@ -43,6 +50,19 @@ export const buildTreeNodes = (entities: QueryResult<[Trait]>) => {
 			}
 		}
 	}
+
+	for (const node of rootNodes) {
+		if (!node.children) continue
+		sortNodes(node.children)
+	}
+
+	for (const node of childNodes) {
+		if (!node.children) continue
+		sortNodes(node.children)
+	}
+
+	sortNodes(rootNodes)
+	sortNodes(childNodes)
 
 	return { rootNodes, nodeMap }
 }
