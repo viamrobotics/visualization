@@ -1,5 +1,21 @@
 # motion-tools
 
+## 1.17.0
+
+### Minor Changes
+
+- e45aa3a: Add screen space trait
+- e45aa3a: Update lines to accept line colors and dot colors
+- e45aa3a: Add `useDrawService` hook
+
+### Patch Changes
+
+- e45aa3a: Fix issue with multiple meshes being rendered on entity add
+- e45aa3a: Add draw utility functions to spawn entities from draw APIs
+- cf5cd27: Run vitest in browser mode
+- e45aa3a: Fix GLTFs drawn by client not being destroyed
+- e9fcc6e: Add details snippet
+
 ## 1.16.0
 
 ### Minor Changes
