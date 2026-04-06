@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -77,7 +78,7 @@ func Start(cfg DrawServerConfig) error {
 		return nil
 	}
 
-	svc := draw.NewDrawService()
+	svc := draw.NewDrawService(".tmp")
 	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
 	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
@@ -284,4 +285,18 @@ func staticFileHandler(buildDir string) http.Handler {
 
 		http.ServeFile(w, r, path)
 	})
+}
+
+// DrainChunks sends all remaining chunks and returns the server-assigned UUID.
+func DrainChunks(sender *draw.ChunkSender) ([]byte, error) {
+	for {
+		err := sender.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sender.UUID(), nil
 }

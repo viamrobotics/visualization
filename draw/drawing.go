@@ -27,15 +27,8 @@ type drawShapeConfig struct {
 	nurbs  *Nurbs
 }
 
-// newDrawShapeConfig creates a new draw shape configuration
 func newDrawShapeConfig() *drawShapeConfig {
-	return &drawShapeConfig{
-		arrows: nil,
-		line:   nil,
-		points: nil,
-		model:  nil,
-		nurbs:  nil,
-	}
+	return &drawShapeConfig{}
 }
 
 // drawShapeOption is a function that configures a draw shape configuration

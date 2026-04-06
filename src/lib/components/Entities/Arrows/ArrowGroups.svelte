@@ -4,7 +4,7 @@
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
 
-	import { STRIDE } from '$lib/buffer'
+	import { SIZE } from '$lib/buffer'
 	import { traits, useWorld } from '$lib/ecs'
 	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
@@ -24,7 +24,7 @@
 
 		if (!poses) return
 
-		const total = poses.length / STRIDE.ARROWS
+		const total = poses.length / SIZE.ARROWS
 		const uniformColor = color ? colorUtil.setRGB(color.r, color.g, color.b) : undefined
 
 		const arrows = new InstancedArrows({ count: total, uniformColor })
@@ -41,6 +41,7 @@
 	}
 
 	const onRemove = (entity: Entity) => {
+		map.get(entity)?.dispose()
 		map.delete(entity)
 	}
 

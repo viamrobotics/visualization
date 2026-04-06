@@ -1,5 +1,8 @@
 import { Browser, expect, Page, test } from '@playwright/test'
-import { execSync } from 'node:child_process'
+import { exec, execSync } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
@@ -50,6 +53,33 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 	const failedScreenshot = await takeScreenshot(page, testPrefix)
 	await cleanup(page)
 	assertNoFailedScreenshots([failedScreenshot])
+}
+
+const runChunkedTest = async (
+	browser: Browser,
+	testPrefix: string,
+	goTestPath: string,
+	entityName: string
+) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	const goTest = execAsync(
+		`go test -run ${goTestPath} github.com/viam-labs/motion-tools/client/api -count=1 -timeout=300s`
+	)
+
+	const loadingNode = page.locator('[data-loading]').filter({ hasText: entityName })
+	await expect(loadingNode).toBeVisible({ timeout: 120_000 })
+
+	await goTest
+
+	await expect(page.locator('[data-loading]')).toHaveCount(0, { timeout: 120_000 })
+
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 }
 
 test('draw service events lifecycle', async ({ browser }) => {
@@ -251,6 +281,15 @@ test('draw point cloud updating', async ({ browser }) => {
 	await expect(page.getByText('DrawPointCloud updating')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point cloud in chunks', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS',
+		'^TestDrawPointCloud$/DrawPointCloudInChunks',
+		'chunked_point_cloud'
+	)
 })
 
 test('draw geometries updating', async ({ browser }) => {
@@ -527,6 +566,15 @@ test('draw points with point size', async ({ browser }) => {
 	await expect(page.getByText('myPointsWithSize')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw points in chunks', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINTS_IN_CHUNKS',
+		'^TestDrawPoints$/DrawPointsInChunks',
+		'chunked_points'
+	)
 })
 
 test('draw poses as arrows', async ({ browser }) => {

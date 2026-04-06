@@ -20,6 +20,8 @@
 
 	const name = useTrait(() => node.entity, traits.Name)
 	const invisible = useTrait(() => node.entity, traits.Invisible)
+	const chunkProgress = useTrait(() => node.entity, traits.ChunkProgress)
+	const loading = $derived(chunkProgress.current !== undefined)
 
 	const nodeProps = $derived({ indexPath, node })
 	const nodeState = $derived(api.getNodeState(nodeProps))
@@ -30,11 +32,13 @@
 	{@const { children = [] } = node}
 	<div
 		{...api.getBranchProps(nodeProps)}
+		data-loading={loading || undefined}
 		class={[
 			'w-full',
 			{
 				'text-disabled': invisible.current,
 				'bg-medium': nodeState.selected,
+				'animate-pulse': loading,
 				sticky: true,
 			},
 		]}
@@ -55,6 +59,7 @@
 
 			<button
 				class="text-gray-6"
+				disabled={loading}
 				onclick={(event) => {
 					event.stopPropagation()
 
@@ -102,10 +107,12 @@
 	</div>
 {:else}
 	<div
+		data-loading={loading || undefined}
 		class={{
 			'flex justify-between': true,
 			'text-disabled': invisible.current,
 			'bg-medium': nodeState.selected,
+			'animate-pulse': loading,
 		}}
 		{...api.getItemProps(nodeProps)}
 	>
@@ -115,6 +122,7 @@
 
 		<button
 			class="text-gray-6"
+			disabled={loading}
 			onclick={(event) => {
 				event.stopPropagation()
 				if (node.entity.has(traits.Invisible)) {

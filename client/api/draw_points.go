@@ -31,9 +31,19 @@ type DrawPointsOptions struct {
 
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
+
+	// ChunkSize controls chunked delivery. When > 0, points are sent progressively
+	// via AddEntity (first chunk) + UpdateEntity (subsequent chunks).
+	// When 0, all points are sent in a single AddEntity call.
+	ChunkSize int
+
+	// OnProgress is called after each chunk is sent during chunked delivery.
+	// If nil, no progress reporting is done.
+	OnProgress func(draw.ChunkProgress)
 }
 
 // DrawPoints draws a set of points in the visualizer.
+// When ChunkSize > 0, uses ChunkedPoints internally and drains all chunks immediately.
 // Calling DrawPoints with an ID that already exists will instead update the points.
 // Returns the UUID of the drawn points, or an error if the server is not running or the drawing fails.
 func DrawPoints(options DrawPointsOptions) ([]byte, error) {
@@ -46,17 +56,42 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		return nil, ErrVisualizerNotRunning
 	}
 
+	if options.ChunkSize > 0 {
+		chunks, err := chunkPoints(options)
+		if err != nil {
+			return nil, err
+		}
+		return server.DrainChunks(chunks)
+	}
+
+	points, drawOpts, err := buildPoints(options)
+	if err != nil {
+		return nil, err
+	}
+
+	drawing := points.Draw(options.Name, drawOpts...)
+	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
+	resp, err := client.AddEntity(context.Background(), req)
+	if err != nil {
+		return nil, fmt.Errorf("AddEntity RPC failed: %w", err)
+	}
+
+	return resp.Msg.Uuid, nil
+}
+
+func buildPoints(options DrawPointsOptions) (*draw.Points, []draw.DrawableOption, error) {
 	colorCount := len(options.Colors)
 	posCount := len(options.Positions)
 
-	pointOptions := make([]draw.DrawPointsOption, 0)
-	if colorCount == 0 {
+	var pointOptions []draw.DrawPointsOption
+	switch colorCount {
+	case 0:
 		pointOptions = append(pointOptions, draw.WithSinglePointColor(draw.DefaultPointColor))
-	} else if colorCount == 1 {
+	case 1:
 		pointOptions = append(pointOptions, draw.WithSinglePointColor(options.Colors[0]))
-	} else if colorCount == posCount {
+	case posCount:
 		pointOptions = append(pointOptions, draw.WithPerPointColors(options.Colors...))
-	} else {
+	default:
 		pointOptions = append(pointOptions, draw.WithPointColorPalette(options.Colors, posCount))
 	}
 
@@ -66,7 +101,7 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 
 	points, err := draw.NewPoints(options.Positions, pointOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create points: %w", err)
+		return nil, nil, fmt.Errorf("failed to create points: %w", err)
 	}
 
 	parent := options.Parent
@@ -79,12 +114,25 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}
 
-	drawing := points.Draw(options.Name, drawOpts...)
-	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
-	resp, err := client.AddEntity(context.Background(), req)
+	return points, drawOpts, nil
+}
+
+// chunkPoints creates a caller-paced stream for sending points to the
+// visualizer in chunks. The caller controls pacing by calling Next() on the
+// returned ChunkSender.
+func chunkPoints(options DrawPointsOptions) (*draw.ChunkSender, error) {
+	client := server.GetClient()
+
+	points, drawOpts, err := buildPoints(options)
 	if err != nil {
-		return nil, fmt.Errorf("AddEntity RPC failed: %w", err)
+		return nil, err
 	}
 
-	return resp.Msg.Uuid, nil
+	chunker := draw.NewPointsChunker(points, options.Name, options.ChunkSize, drawOpts...)
+	metadata := &drawv1.Chunks{
+		ChunkSize: uint32(options.ChunkSize),
+		Total:     uint32(len(points.Positions)),
+		Stride:    3 * 4, // float32 xyz = 12 bytes per point
+	}
+	return draw.NewChunkSender(chunker, client, metadata, options.OnProgress), nil
 }

@@ -1,16 +1,18 @@
 package api
 
 import (
+	"math"
 	"testing"
 	"time"
 
+	"github.com/golang/geo/r3"
 	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/test"
 )
 
 // runDrawPointCloudTest loads a point cloud, draws it with the given colors and options, and validates the result.
-func runDrawPointCloudTest(t *testing.T, filename string, label string, colors []draw.Color, downscalingThreshold float64) {
+func runDrawPointCloudTest(t *testing.T, filename string, name string, colors []draw.Color, downscalingThreshold float64) {
 	t.Helper()
 
 	pc, err := pointcloud.NewFromFile(filename, pointcloud.BasicType)
@@ -18,7 +20,7 @@ func runDrawPointCloudTest(t *testing.T, filename string, label string, colors [
 	test.That(t, pc, test.ShouldNotBeNil)
 
 	uuid, err := DrawPointCloud(DrawPointCloudOptions{
-		Label:                label,
+		Name:                 name,
 		PointCloud:           pc,
 		Colors:               colors,
 		DownscalingThreshold: downscalingThreshold,
@@ -34,28 +36,28 @@ func TestDrawPointCloud(t *testing.T) {
 		pc1, err := pointcloud.NewFromFile("../data/octagon.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing1, err := DrawPointCloud(DrawPointCloudOptions{Label: "octagon", PointCloud: pc1})
+		drawing1, err := DrawPointCloud(DrawPointCloudOptions{Name: "octagon", PointCloud: pc1})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing1, test.ShouldNotBeNil)
 
 		pc2, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing2, err := DrawPointCloud(DrawPointCloudOptions{Label: "Zaghetto", PointCloud: pc2})
+		drawing2, err := DrawPointCloud(DrawPointCloudOptions{Name: "Zaghetto", PointCloud: pc2})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing2, test.ShouldNotBeNil)
 
 		pc3, err := pointcloud.NewFromFile("../data/simple.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing3, err := DrawPointCloud(DrawPointCloudOptions{Label: "simple", PointCloud: pc3})
+		drawing3, err := DrawPointCloud(DrawPointCloudOptions{Name: "simple", PointCloud: pc3})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing3, test.ShouldNotBeNil)
 
 		pc4, err := pointcloud.NewFromFile("../data/boat.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing4, err := DrawPointCloud(DrawPointCloudOptions{Label: "boat", PointCloud: pc4})
+		drawing4, err := DrawPointCloud(DrawPointCloudOptions{Name: "boat", PointCloud: pc4})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing4, test.ShouldNotBeNil)
 	})
@@ -100,8 +102,8 @@ func TestDrawPointCloud(t *testing.T) {
 		n := float32(pc.Size())
 		colors := make([]draw.Color, pc.Size())
 		for i := range colors {
-			t := float32(i) / n
-			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
+			frac := float32(i) / n
+			colors[i] = draw.ColorFromHSV(frac, 0.5+0.5*frac, 1.0)
 		}
 
 		runDrawPointCloudTest(
@@ -121,6 +123,33 @@ func TestDrawPointCloud(t *testing.T) {
 			[]draw.Color{},
 			25.0,
 		)
+	})
+
+	t.Run("DrawPointCloudInChunks", func(t *testing.T) {
+		const numPoints = 2_500_000
+		pc := pointcloud.NewBasicPointCloud(numPoints)
+
+		goldenAngle := math.Pi * (3 - math.Sqrt(5))
+		for i := range numPoints {
+			frac := float64(i) / float64(numPoints)
+			phi := math.Acos(1 - 2*frac)
+			theta := goldenAngle * float64(i)
+			r := 2000.0
+			_ = pc.Set(r3.Vector{
+				X: r * math.Sin(phi) * math.Cos(theta),
+				Y: r * math.Sin(phi) * math.Sin(theta),
+				Z: r * math.Cos(phi),
+			}, nil)
+		}
+
+		uuid, err := DrawPointCloud(DrawPointCloudOptions{
+			Name:       "chunked_point_cloud",
+			PointCloud: pc,
+			Colors:     []draw.Color{draw.ColorFromName("cyan")},
+			ChunkSize:  500_000,
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
 	})
 }
 
@@ -144,7 +173,7 @@ func TestDrawPointCloudUpdating(t *testing.T) {
 		for i := range 100 {
 			uuid, err := DrawPointCloud(DrawPointCloudOptions{
 				ID:         "updating",
-				Label:      "DrawPointCloud updating",
+				Name:       "DrawPointCloud updating",
 				PointCloud: pc,
 				Colors:     []draw.Color{palette[i%len(palette)]},
 			})

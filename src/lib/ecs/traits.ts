@@ -75,9 +75,7 @@ export const Positions = trait(() => new Float32Array())
 /** Per-vertex RGB colors packed as [r, g, b, ...], stride of 3, values 0-255. */
 export const Colors = trait(() => new Uint8Array())
 
-/**
- * Per-vertex opacity values packed as uint8 (0-255).
- */
+/**x Per-vertex opacity values packed as uint8 (0-255). */
 export const Opacities = trait(() => new Uint8Array())
 
 export const Instances = trait({
@@ -152,7 +150,7 @@ export const LinePositions = trait(() => new Float32Array())
 export const LineWidth = trait(() => 5)
 
 /**
- * Dot colors for line vertices, format [r, g, b, a, ...]
+ * Dot colors for line vertices, format [r, g, b, ...]
  */
 export const DotColors = trait(() => new Uint8Array())
 
@@ -164,7 +162,13 @@ export const DotSize = trait(() => 10)
 export const ReferenceFrame = trait(() => true)
 
 /**
- * This entity can be safetly removed from the scene by the user
+ * Tracks chunk loading progress for progressively-loaded entities.
+ * `loaded` is the number of elements received so far; `total` is the target.
+ */
+export const ChunkProgress = trait({ loaded: 0, total: 0 })
+
+/**
+ * This entity can be safely removed from the scene by the user
  */
 export const Removable = trait(() => true)
 

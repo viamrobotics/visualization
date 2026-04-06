@@ -10,6 +10,18 @@ enum ColorFormat {
   COLOR_FORMAT_RGB = 1;
 }
 
+// Chunks describes how a large entity is chunked for progressive delivery.
+message Chunks {
+  // The number of elements per chunk.
+  uint32 chunk_size = 1;
+
+  // The total number of elements across all chunks.
+  uint32 total = 2;
+
+  // The number of bytes per element (e.g. 12 for float32 xyz positions).
+  uint32 stride = 3;
+}
+
 message Metadata {
   // Uint8Array of color values (0-255) based on the color format.
   // Can be a single set of values for a uniform color, or an array of values for per-vertex colors.
@@ -21,4 +33,7 @@ message Metadata {
   // Uint8Array of opacity values (0-255) corresponding to colors.
   // Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
   optional bytes opacities = 3;
+
+  // When present, indicates this drawing uses chunked delivery.
+  optional Chunks chunks = 4;
 }

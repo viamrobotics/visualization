@@ -12,7 +12,7 @@ option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 // - colors: []uint8 of a single color or a color per arrow
 //   defaults to [0, 128, 0] (green)
 // - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-// - opacities: []uint8 of a single opacity or a opacity per arrow
+// - opacities: []uint8 of a single opacity or an opacity per arrow
 //   defaults to [255] (fully opaque)
 message Arrows {
   // The poses of the arrows
@@ -25,7 +25,7 @@ message Arrows {
 // - colors: []uint8 of a single color or a color per line point
 //   defaults to [0, 0, 255] (blue)
 // - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-// - opacities: []uint8 of a single opacity or a opacity per line point
+// - opacities: []uint8 of a single opacity or an opacity per line point
 //   defaults to [255] (fully opaque)
 message Line {
   // The positions of the line dots
@@ -49,15 +49,16 @@ message Line {
 // - colors: []uint8 of a single color or a color per point
 //   defaults to [128, 128, 128] (gray)
 // - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-// - opacities: []uint8 of a single opacity or a opacity per point
+// - opacities: []uint8 of a single opacity or an opacity per point
 //   defaults to [255] (fully opaque)
 message Points {
-  // The positions of the points
-  // float32 array of positions: [x, y, z, ...]
+  // The positions of the points: [x, y, z, ...]
   bytes positions = 1;
-
-  // Size of the points in millimeters, defaults to 10
+  // The size of the points in millimeters, defaults to 10
   optional float point_size = 2;
+  // The element offset at which to write this chunk's positions into an existing buffer.
+  // Used for chunked point cloud delivery.
+  optional uint32 start = 3;
 }
 
 // ModelAsset represents the type of model
@@ -87,7 +88,7 @@ message Model {
   // Uniform scale factor, defaults to [1.0, 1.0, 1.0]
   optional viam.common.v1.Vector3 scale = 2;
 
-  // Name ofI the animation to play, defaults to empty string (no animation)
+  // Name of the animation to play, defaults to empty string (no animation)
   optional string animation_name = 3;
 }
 
@@ -96,7 +97,7 @@ message Model {
 // - colors: []uint8 of a single color or a color per NURBS control point
 //   defaults to [0, 255, 255] (cyan)
 // - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-// - opacities: []uint8 of a single opacity or a opacity per NURBS control point
+// - opacities: []uint8 of a single opacity or an opacity per NURBS control point
 //   defaults to [255] (fully opaque)
 message Nurbs {
   // The control points of the NURBS
@@ -137,10 +138,10 @@ message Shape {
 
 // For non-physical visualization shapes
 message Drawing {
-  // The name of the shape
+  // The reference frame name for the drawing
   string reference_frame = 1;
 
-  // The pose of the shape as observed through it's parent frame/the world
+  // The pose of the shape as observed through its parent frame/the world
   viam.common.v1.PoseInFrame pose_in_observer_frame = 2;
 
   // The shape of the drawing

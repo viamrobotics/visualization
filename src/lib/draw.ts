@@ -7,7 +7,12 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import {
+	createBufferGeometry,
+	preAllocateBufferGeometry,
+	updateBufferGeometry,
+	writeBufferGeometryRange,
+} from '$lib/attribute'
 import {
 	asFloat32Array,
 	asOpacity,
@@ -15,7 +20,7 @@ import {
 	inMeters,
 	isSingleColor,
 	isVertexColors,
-	STRIDE,
+	SIZE,
 } from '$lib/buffer'
 import { traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -155,13 +160,19 @@ export const updateTransform = (
 	}
 
 	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
-	if (opacity < 1) entity.add(traits.Opacity(opacity))
+	entity.set(traits.Opacity, opacity)
 
-	if (options.removable) entity.add(traits.Removable)
-	if (!options.removable) entity.remove(traits.Removable)
+	if (options.removable) {
+		entity.add(traits.Removable)
+	} else {
+		entity.remove(traits.Removable)
+	}
 
-	if (options.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	if (!options.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+	if (options.showAxesHelper) {
+		entity.add(traits.ShowAxesHelper)
+	} else {
+		entity.remove(traits.ShowAxesHelper)
+	}
 }
 
 export const updateDrawing = (
@@ -207,7 +218,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses)
 			entity.add(traits.Positions(poses))
-			entity.add(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
+			entity.add(traits.Instances({ count: poses.length / SIZE.ARROWS }))
 			addColorTraits(entity, colors ?? DEFAULT_ARROWS_COLORS)
 			entity.add(traits.Arrows({ headAtPose: true }))
 			break
@@ -233,6 +244,8 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 		case 'points': {
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
+			const total = metadata?.chunks?.total
+			const start = geometryType.value.start
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
@@ -240,13 +253,23 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			const pointColors = colors ?? DEFAULT_POINTS_COLORS
 			addColorTraits(entity, pointColors)
 			entity.add(traits.PointSize(geometryType.value.pointSize ?? DEFAULT_POINT_SIZE))
-			entity.add(
-				traits.BufferGeometry(
-					createBufferGeometry(positions, {
-						colors: isVertexColors(colors) ? colors : undefined,
-					})
-				)
-			)
+
+			const vertexColors = isVertexColors(colors) ? colors : undefined
+
+			if (total !== undefined && total > 0) {
+				const geometry = preAllocateBufferGeometry(total, SIZE.POSITIONS, {
+					colors: vertexColors ? new Uint8Array(0) : undefined,
+					opacities,
+				})
+				writeBufferGeometryRange(geometry, positions, start ?? 0, {
+					colors: vertexColors,
+					opacities,
+				})
+				entity.add(traits.BufferGeometry(geometry))
+			} else {
+				entity.add(traits.BufferGeometry(createBufferGeometry(positions, { colors: vertexColors })))
+			}
+
 			entity.add(traits.Points)
 			break
 		}
@@ -262,11 +285,11 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			const knots = asFloat32Array(knotsBuffer).values().toArray()
 			const weights = weightsBuffer ? asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>) : []
 			const controlPointsArray = asFloat32Array(controlPointsBuffer)
-			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
+			const numControlPoints = controlPointsArray.length / SIZE.NURBS_CONTROL_POINTS
 			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
 
 			for (let j = 0; j < numControlPoints; j += 1) {
-				const idx = j * STRIDE.NURBS_CONTROL_POINTS
+				const idx = j * SIZE.NURBS_CONTROL_POINTS
 				vec3
 					.set(controlPointsArray[idx], controlPointsArray[idx + 1], controlPointsArray[idx + 2])
 					.multiplyScalar(0.001)
@@ -370,7 +393,7 @@ const parsePointCloud = (
 			return
 		}
 
-		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
+		const numPoints = pointcloud.positions.length / SIZE.POSITIONS
 		if (colors && isSingleColor(colors)) entity.add(traits.Color(asRGB(colors, rgb)))
 
 		let vertexColors = pointcloud.colors
@@ -404,10 +427,10 @@ const parseColors = (
 	const colors = from ?? new Uint8Array([255, 0, 0])
 	if (isVertexColors(colors)) return colors
 
-	const expanded = new Uint8Array(count * STRIDE.COLORS_RGB)
+	const expanded = new Uint8Array(count * SIZE.COLORS_RGB)
 	for (let i = 0; i < count; i++) {
-		for (let c = 0; c < STRIDE.COLORS_RGB; c++) {
-			expanded[i * STRIDE.COLORS_RGB + c] = colors[c]!
+		for (let c = 0; c < SIZE.COLORS_RGB; c++) {
+			expanded[i * SIZE.COLORS_RGB + c] = colors[c]!
 		}
 	}
 
@@ -426,7 +449,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses, inMeters)
 			entity.set(traits.Positions, poses)
-			entity.set(traits.Instances, { count: poses.length / STRIDE.ARROWS })
+			entity.set(traits.Instances, { count: poses.length / SIZE.ARROWS })
 			setColorTraits(entity, colors ?? DEFAULT_ARROWS_COLORS)
 			break
 		}
@@ -450,7 +473,8 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 		}
 
 		case 'points': {
-			const positions = asFloat32Array(geometryType.value.positions, inMeters)
+			const geometry = geometryType.value
+			const positions = asFloat32Array(geometry.positions, inMeters)
 
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)
@@ -460,7 +484,13 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 
 			const vertexColors = isVertexColors(colors) ? colors : undefined
 			const buffer = entity.get(traits.BufferGeometry)
-			if (buffer) {
+
+			if (buffer && geometry.start !== undefined) {
+				writeBufferGeometryRange(buffer, positions, geometry.start, {
+					colors: vertexColors,
+					opacities,
+				})
+			} else if (buffer) {
 				updateBufferGeometry(buffer, positions, { colors: vertexColors })
 			} else {
 				entity.add(traits.BufferGeometry(createBufferGeometry(positions, { colors: vertexColors })))
@@ -482,11 +512,11 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 				? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
 				: []
 			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
-			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
+			const numControlPoints = controlPointsArray.length / SIZE.NURBS_CONTROL_POINTS
 			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
 
 			for (let j = 0; j < numControlPoints; j += 1) {
-				const idx = j * STRIDE.NURBS_CONTROL_POINTS
+				const idx = j * SIZE.NURBS_CONTROL_POINTS
 				vec3
 					.set(controlPointsArray[idx], controlPointsArray[idx + 1], controlPointsArray[idx + 2])
 					.multiplyScalar(0.001)

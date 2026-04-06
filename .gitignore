@@ -3,6 +3,9 @@ node_modules
 
 static/Big_Buck_Bunny_4K.webm
 
+# Temp files (disk-backed chunk storage)
+.tmp
+
 # Output
 .output
 .vercel

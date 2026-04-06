@@ -6,7 +6,7 @@
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
-	import { isVertexColors, STRIDE } from '$lib/buffer'
+	import { isVertexColors, SIZE } from '$lib/buffer'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 
@@ -48,12 +48,12 @@
 
 	const lineColors = $derived.by<Float32Array | undefined>(() => {
 		if (!colors.current) return undefined
-		const numColors = colors.current.length / STRIDE.COLORS_RGB
+		const numColors = colors.current.length / SIZE.COLORS_RGB
 		const rgb = new Float32Array(numColors * 3)
 		for (let i = 0; i < numColors; i++) {
-			rgb[i * 3] = colors.current[i * STRIDE.COLORS_RGB]! / 255
-			rgb[i * 3 + 1] = colors.current[i * STRIDE.COLORS_RGB + 1]! / 255
-			rgb[i * 3 + 2] = colors.current[i * STRIDE.COLORS_RGB + 2]! / 255
+			rgb[i * 3] = colors.current[i * SIZE.COLORS_RGB]! / 255
+			rgb[i * 3 + 1] = colors.current[i * SIZE.COLORS_RGB + 1]! / 255
+			rgb[i * 3 + 2] = colors.current[i * SIZE.COLORS_RGB + 2]! / 255
 		}
 		return rgb
 	})

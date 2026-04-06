@@ -27,7 +27,6 @@ type DrawnPointCloudConfig struct {
 	downscalingThreshold float64
 }
 
-// newDrawGeometryConfig creates a new draw geometry configuration
 func newDrawPointCloudConfig() *DrawnPointCloudConfig {
 	return &DrawnPointCloudConfig{
 		drawColorsConfig:     newDrawColorsConfig(),

@@ -1,6 +1,7 @@
 import { Color } from 'three'
 
-export const STRIDE = {
+/** The number of components per element in a buffer. */
+export const SIZE = {
 	/** Arrows: [x, y, z, ox, oy, oz, ...] */
 	ARROWS: 6,
 	/** Line/Points: [x, y, z, ...] */
@@ -11,6 +12,8 @@ export const STRIDE = {
 	NURBS_KNOTS: 1,
 	/** Colors: [r, g, b, ...] */
 	COLORS_RGB: 3,
+	/** Opacities: [opacity, ...] */
+	OPACITIES: 1,
 } as const
 
 /**
@@ -72,7 +75,7 @@ export const asFloat32Array = (
  * @example
  * ```ts
  * asColor(colors.current, material.color)
- * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
+ * asColor(colors.current, pointColorUtil, SIZE.COLORS_RGB) // read second color
  * ```
  */
 export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {
@@ -130,7 +133,7 @@ export const asOpacity = (
  */
 export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
 	if (!colors) return false
-	return colors.length === STRIDE.COLORS_RGB
+	return colors.length === SIZE.COLORS_RGB
 }
 
 /**
@@ -149,7 +152,7 @@ export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
 export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
 	if (!colors || colors.length === 0) return false
 	if (isSingleColor(colors)) return false
-	return colors.length % STRIDE.COLORS_RGB === 0
+	return colors.length % SIZE.COLORS_RGB === 0
 }
 
 /**
