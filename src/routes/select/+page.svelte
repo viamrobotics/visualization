@@ -5,7 +5,7 @@
 
 <SelectionTool
 	enabled
-	onSelection={() => {
+	onCommitSelections={() => {
 		/* do something */
 	}}
 />

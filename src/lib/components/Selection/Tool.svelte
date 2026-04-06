@@ -1,16 +1,14 @@
 <script lang="ts">
-	import type { BufferGeometry } from 'three'
+	import type { Entity, QueryResult, Trait } from 'koota'
 
 	import { useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
 	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
-	import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import { traits, useWorld } from '$lib/ecs'
+	import { useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { createBinaryPCD } from '$lib/pcd'
 
 	import FloatingPanel from '../overlay/FloatingPanel.svelte'
 	import Popover from '../overlay/Popover.svelte'
@@ -24,12 +22,15 @@
 		enabled?: boolean
 
 		/** Fires when the user has committed to a lasso selection */
-		onSelection: (pcd: Blob) => void
+		onCommitSelections?: (entities: QueryResult<[Trait<() => boolean>]>) => void
+
+		/** Fires when the user has made a selection */
+		onSelection?: (entity: Entity) => void
 	}
 
 	type SelectionType = 'lasso' | 'ellipse'
 
-	let { enabled = false, onSelection }: Props = $props()
+	let { enabled = false, onCommitSelections, onSelection }: Props = $props()
 
 	const { dom } = useThrelte()
 	const world = useWorld()
@@ -37,30 +38,17 @@
 	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
 	let selectionType = $state<SelectionType>('lasso')
 
-	const onCommitClick = () => {
-		const entities = world.query(selectionTraits.SelectionEnclosedPoints)
-
-		const geometries: BufferGeometry[] = []
-		for (const entity of entities) {
-			const geometry = entity.get(traits.BufferGeometry)
-
-			if (geometry) {
-				geometries.push(geometry)
-			}
-		}
-
-		const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
-		const positions = mergedGeometry.getAttribute('position').array as Float32Array
-
-		const pcd = createBinaryPCD(positions)
-
-		onSelection(pcd)
-
-		for (const entity of entities) {
+	const onClearClick = () => {
+		for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {
 			if (world.has(entity)) {
 				entity.destroy()
 			}
 		}
+	}
+
+	const onCommitClick = () => {
+		const entities = world.query(selectionTraits.SelectionEnclosedPoints)
+		onCommitSelections?.(entities)
 	}
 
 	$effect(() => {
@@ -120,8 +108,14 @@
 </Portal>
 
 {#if isSelectionMode && rect.height > 0 && rect.width > 0}
-	<Ellipse active={selectionType === 'ellipse'} />
-	<Lasso active={selectionType === 'lasso'} />
+	<Ellipse
+		active={selectionType === 'ellipse'}
+		{onSelection}
+	/>
+	<Lasso
+		active={selectionType === 'lasso'}
+		{onSelection}
+	/>
 
 	<Portal id="dom">
 		<FloatingPanel
@@ -136,6 +130,10 @@
 				<Button
 					onclick={onCommitClick}
 					variant="success">Commit selection</Button
+				>
+				<Button
+					onclick={onClearClick}
+					variant="danger">Clear selection</Button
 				>
 			</div>
 		</FloatingPanel>

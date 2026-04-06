@@ -3,7 +3,7 @@
 
 	import { useThrelte } from '@threlte/core'
 	import earcut from 'earcut'
-	import { Not } from 'koota'
+	import { type Entity, Not } from 'koota'
 	import { Box3, Triangle, Vector3 } from 'three'
 
 	import { createBufferGeometry } from '$lib/attribute'
@@ -17,9 +17,10 @@
 	interface Props {
 		active?: boolean
 		debug?: boolean
+		onSelection?: (entity: Entity) => void
 	}
 
-	let { active = false, debug = false }: Props = $props()
+	let { active = false, debug = false, onSelection }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
@@ -211,7 +212,7 @@
 
 		const ellipseResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
 
-		world.spawn(
+		const result = world.spawn(
 			traits.Name('Ellipse result'),
 			traits.BufferGeometry(ellipseResultGeometry),
 			traits.Color({ r: 1, g: 0, b: 0 }),
@@ -222,6 +223,8 @@
 			selectionTraits.SelectionEnclosedPoints,
 			selectionTraits.PointsCapturedBy(ellipse)
 		)
+
+		onSelection?.(result)
 	}
 
 	const onkeydown = (event: KeyboardEvent) => {
