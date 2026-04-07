@@ -9,11 +9,15 @@ import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 export type Metadata = {
 	// format [r, g, b, ...] or [r, g, b, a, ...]
 	colors?: Uint8Array<ArrayBuffer>
+	showAxesHelper?: boolean
 }
 
-/** Type guard that checks whether a string is a recognised {@link Metadata} field name. */
-export const isMetadataKey = (key: string): key is keyof Metadata => {
-	return key === 'colors'
+/** The snake_case struct field names that correspond to recognised {@link Metadata} fields. */
+type MetadataStructKey = 'colors' | 'show_axes_helper'
+
+/** Type guard that checks whether a string is a recognised {@link Metadata} struct field name. */
+export const isMetadataKey = (key: string): key is MetadataStructKey => {
+	return key === 'colors' || key === 'show_axes_helper'
 }
 
 /**
@@ -41,6 +45,12 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 						colorBytes[i] = binary.charCodeAt(i)
 					}
 					json.colors = colorBytes
+				}
+				break
+			}
+			case 'show_axes_helper': {
+				if (typeof unwrappedValue === 'boolean') {
+					json.showAxesHelper = unwrappedValue
 				}
 				break
 			}

@@ -25,6 +25,10 @@ type DrawFrameSystemOptions struct {
 	// Optional color map for specific frames by name.
 	// Frames without specified colors inherit their parent's color or default to magenta.
 	Colors map[string]draw.Color
+
+	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on each entity.
+	// If nil, defaults to DefaultTransformShowAxesHelper.
+	ShowAxesHelper *bool
 }
 
 // DrawFrameSystem draws a frame system in the visualizer by rendering all geometries to the world frame.
@@ -39,8 +43,12 @@ func DrawFrameSystem(options DrawFrameSystemOptions) ([][]byte, error) {
 		options.Colors = make(map[string]draw.Color)
 	}
 
+	if options.ShowAxesHelper == nil {
+		options.ShowAxesHelper = &DefaultTransformShowAxesHelper
+	}
+
 	drawnFrameSystem := draw.NewDrawnFrameSystem(options.FrameSystem, options.Inputs, draw.WithFrameSystemColors(options.Colors))
-	transforms, err := drawnFrameSystem.ToTransforms()
+	transforms, err := drawnFrameSystem.ToTransforms(draw.WithAxesHelper(*options.ShowAxesHelper))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create frame system geometries: %w", err)
 	}

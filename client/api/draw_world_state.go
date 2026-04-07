@@ -62,7 +62,7 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 		return nil, err
 	}
 
-	transforms, err := drawnGeometries.ToTransforms()
+	transforms, err := drawnGeometries.ToTransforms(draw.WithAxesHelper(DefaultTransformShowAxesHelper))
 	if err != nil {
 		return nil, err
 	}

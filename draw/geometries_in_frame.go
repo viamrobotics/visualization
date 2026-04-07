@@ -106,8 +106,8 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
 	pose := config.Pose
-
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
+
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
 		if drawnGeometriesInFrame.Name != "" {
@@ -119,7 +119,7 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 		}
 
 		id := fmt.Sprintf("%s:%s", label, parent)
-		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id), WithAxesHelper(config.ShowAxesHelper))
 		if err != nil {
 			return nil, err
 		}

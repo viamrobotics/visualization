@@ -62,12 +62,12 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 // Use WithParent to set the parent reference frame for all transforms (defaults to referenceframe.World).
 func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
-
 	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)
 	if err != nil {
 		return nil, err
 	}
 
+	childOpts := []DrawableOption{WithParent(config.Parent), WithAxesHelper(config.ShowAxesHelper)}
 	transforms := make([]*commonv1.Transform, 0)
 	for _, frameName := range slices.Sorted(maps.Keys(frameMap)) {
 		geometries := frameMap[frameName]
@@ -78,7 +78,7 @@ func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption
 		}
 
 		drawing.Name = frameName
-		frameTransforms, err := drawing.ToTransforms(WithParent(config.Parent))
+		frameTransforms, err := drawing.ToTransforms(childOpts...)
 		if err != nil {
 			return nil, err
 		}

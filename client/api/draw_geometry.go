@@ -24,6 +24,10 @@ type DrawGeometryOptions struct {
 
 	// The color to draw the geometry with.
 	Color draw.Color
+
+	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
+	// If nil, defaults to DefaultTransformShowAxesHelper.
+	ShowAxesHelper *bool
 }
 
 // DrawGeometry draws a geometry in the visualizer.
@@ -45,7 +49,11 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		options.Parent = "world"
 	}
 
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
+	if options.ShowAxesHelper == nil {
+		options.ShowAxesHelper = &DefaultTransformShowAxesHelper
+	}
+
+	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

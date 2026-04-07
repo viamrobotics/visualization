@@ -39,6 +39,10 @@ type DrawNurbsOptions struct {
 
 	// LineWidth is the width of the line segments in millimeters. If 0, uses the default.
 	LineWidth float32
+
+	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
+	// If nil, defaults to DefaultDrawingShowAxesHelper.
+	ShowAxesHelper *bool
 }
 
 // DrawNurbs draws a NURBS curve in the visualizer.
@@ -76,7 +80,11 @@ func DrawNurbs(options DrawNurbsOptions) ([]byte, error) {
 		parent = "world"
 	}
 
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
+	if options.ShowAxesHelper == nil {
+		options.ShowAxesHelper = &DefaultDrawingShowAxesHelper
+	}
+
+	drawOpts := []draw.DrawableOption{draw.WithParent(parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

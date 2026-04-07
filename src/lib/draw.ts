@@ -32,12 +32,7 @@ const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255, 180])
 
 export type Transform = TransformWithUUID | TransformProto
 
-type TransformOptions = {
-	showAxesHelper?: boolean
-	removable?: boolean
-}
-
-type DrawingOptions = {
+type Options = {
 	removable?: boolean
 }
 
@@ -45,7 +40,7 @@ export const drawTransform = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Transform,
 	api: Trait,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
@@ -62,12 +57,12 @@ export const drawTransform = (
 	}
 
 	if (options.removable) entityTraits.push(traits.Removable)
-	if (options.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 
 	const parent = poseInObserverFrame?.referenceFrame
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
 
-	const { colors } = parseMetadata(metadata?.fields)
+	const { colors, showAxesHelper } = parseMetadata(metadata?.fields)
+	if (showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
 		? physicalObject.geometryType.value.pointCloud
 		: undefined
@@ -85,9 +80,9 @@ export const drawDrawing = (
 	world: World,
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
-	const { referenceFrame, poseInObserverFrame, physicalObject } = drawing
+	const { referenceFrame, poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') return drawModel(world, drawing, api, options)
 
@@ -101,6 +96,7 @@ export const drawDrawing = (
 	if (parent && parent !== 'world') entity.add(traits.Parent(parent))
 
 	if (options.removable) entity.add(traits.Removable)
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 
 	applyShape(entity, drawing)
 
@@ -110,7 +106,7 @@ export const drawDrawing = (
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
@@ -127,7 +123,7 @@ export const updateTransform = (
 		}
 	}
 
-	const { colors } = parseMetadata(metadata?.fields)
+	const { colors, showAxesHelper } = parseMetadata(metadata?.fields)
 	if (colors) {
 		if (isPointCloud(physicalObject?.geometryType)) {
 			updateColors(entity, colors)
@@ -139,8 +135,8 @@ export const updateTransform = (
 	if (options.removable) entity.add(traits.Removable)
 	if (!options.removable) entity.remove(traits.Removable)
 
-	if (options.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	if (!options.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+	if (showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (!showAxesHelper) entity.remove(traits.ShowAxesHelper)
 }
 
 export const updateDrawing = (
@@ -148,9 +144,9 @@ export const updateDrawing = (
 	entities: Entity[],
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
-	const { poseInObserverFrame, physicalObject } = drawing
+	const { poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') {
 		for (const entity of entities) {
@@ -168,6 +164,9 @@ export const updateDrawing = (
 
 	const parent = poseInObserverFrame?.referenceFrame
 	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
 
 	updateShape(entity, drawing)
 
@@ -279,7 +278,7 @@ const drawModel = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
 	api: Trait,
-	{ removable = true }: DrawingOptions
+	{ removable = true }: Options
 ): Entity[] => {
 	const entities: Entity[] = []
 	const parent = poseInObserverFrame?.referenceFrame

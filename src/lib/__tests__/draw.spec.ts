@@ -45,7 +45,7 @@ describe('drawTransform', () => {
 		expect(entity.get(traits.Pose)).toStrictEqual(createPose({ x: 100, y: 200, z: 300 }))
 		expect(entity.get(traits.Box)).toStrictEqual({ x: 10, y: 20, z: 30 })
 		expect(entity.has(traits.ReferenceFrame)).toBe(false)
-		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.get(traits.Parent)).toBe('arm')
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
@@ -60,13 +60,20 @@ describe('drawTransform', () => {
 		expect(entity.has(traits.ReferenceFrame)).toBe(true)
 	})
 
-	it('does not attach ShowAxesHelper when showAxesHelper is false', () => {
+	it('attaches ShowAxesHelper when metadata show_axes_helper is true', () => {
 		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
+		const transform = new Transform({
+			referenceFrame: 'arm',
+			metadata: {
+				fields: {
+					show_axes_helper: { kind: { case: 'boolValue', value: true } },
+				},
+			},
+		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI, { showAxesHelper: false })
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 
-		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
 
 	it('does not attach Removable when removable is false', () => {
@@ -173,6 +180,7 @@ describe('drawDrawing', () => {
 		expect(entity.get(traits.DotSize)).toBe(6)
 		expect(entity.has(traits.Colors)).toBe(true)
 		expect(entity.has(traits.DotColors)).toBe(true)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})
@@ -189,6 +197,24 @@ describe('drawDrawing', () => {
 		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
+	})
+
+	it('attaches ShowAxesHelper when metadata showAxesHelper is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'line-with-axes',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+			metadata: new Metadata({ showAxesHelper: true }),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
 
 	it('adds Colors trait for arrows', () => {

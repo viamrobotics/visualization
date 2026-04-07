@@ -85,18 +85,12 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 // Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
 func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	config := NewDrawConfig(name, options...)
-	metadata := NewMetadata(WithMetadataColors(drawnPointCloud.Colors...))
-	metadataStruct, err := MetadataToStruct(metadata)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create metadata: %w", err)
-	}
-
 	octree, err := pointcloud.ToBasicOctree(drawnPointCloud.PointCloud, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create basic octree: %w", err)
 	}
 
-	return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, octree, metadataStruct), nil
+	return NewTransform(config, octree, WithMetadataColors(drawnPointCloud.Colors...)), nil
 }
 
 // downscalePointCloud downscales a point cloud to a given threshold in millimeters.

@@ -26,9 +26,12 @@ type Metadata struct {
 	// Uint8Array of colors: [r, g, b, a, ...]
 	// For simple objects, this is a single color of [r, g, b, a]
 	// For complex objects, this is an array of colors of [r, g, b, a, ...]
-	Colors        []byte `protobuf:"bytes,1,opt,name=colors,proto3,oneof" json:"colors,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Colors []byte `protobuf:"bytes,1,opt,name=colors,proto3,oneof" json:"colors,omitempty"`
+	// Whether to show the axes helper (RGB XYZ indicator) on the entity.
+	// Defaults to false.
+	ShowAxesHelper *bool `protobuf:"varint,4,opt,name=show_axes_helper,json=showAxesHelper,proto3,oneof" json:"show_axes_helper,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -68,14 +71,23 @@ func (x *Metadata) GetColors() []byte {
 	return nil
 }
 
+func (x *Metadata) GetShowAxesHelper() bool {
+	if x != nil && x.ShowAxesHelper != nil {
+		return *x.ShowAxesHelper
+	}
+	return false
+}
+
 var File_draw_v1_metadata_proto protoreflect.FileDescriptor
 
 const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
-	"\x16draw/v1/metadata.proto\x12\adraw.v1\"2\n" +
+	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\x82\x01\n" +
 	"\bMetadata\x12\x1b\n" +
-	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01B\t\n" +
-	"\a_colorsB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x12-\n" +
+	"\x10show_axes_helper\x18\x04 \x01(\bH\x01R\x0eshowAxesHelper\x88\x01\x01B\t\n" +
+	"\a_colorsB\x13\n" +
+	"\x11_show_axes_helperJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_metadata_proto_rawDescOnce sync.Once

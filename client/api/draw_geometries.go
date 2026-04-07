@@ -28,6 +28,10 @@ type DrawGeometriesInFrameOptions struct {
 	// distance to one another are culled, reducing the total point count and improving
 	// rendering performance. Set to 0 (default) to disable downscaling.
 	DownscalingThreshold float64
+
+	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on each entity.
+	// If nil, defaults to DefaultTransformShowAxesHelper.
+	ShowAxesHelper *bool
 }
 
 // DrawGeometriesInFrame draws a list of geometries in the visualizer.
@@ -67,7 +71,11 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 		return nil, fmt.Errorf("failed to create drawn geometries: %w", err)
 	}
 
-	transforms, err := drawnGeometries.ToTransforms()
+	if options.ShowAxesHelper == nil {
+		options.ShowAxesHelper = &DefaultTransformShowAxesHelper
+	}
+
+	transforms, err := drawnGeometries.ToTransforms(draw.WithAxesHelper(*options.ShowAxesHelper))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transforms: %w", err)
 	}

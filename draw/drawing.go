@@ -251,20 +251,26 @@ func (drawing Drawing) ToProto() *drawv1.Drawing {
 
 // Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 type Metadata struct {
-	Colors []Color
+	Colors         []Color
+	ShowAxesHelper bool
 }
 
 func (metadata *Metadata) SetColors(colors []Color) {
 	metadata.Colors = colors
 }
 
+func (metadata *Metadata) SetShowAxesHelper(show bool) {
+	metadata.ShowAxesHelper = show
+}
+
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	drawColorsConfig
+	showAxesHelper bool
 }
 
-// drawMetadataOption is a function that configures a draw metadata configuration
-type drawMetadataOption func(*drawMetadataConfig)
+// DrawMetadataOption is a function that configures a draw metadata configuration
+type DrawMetadataOption func(*drawMetadataConfig)
 
 // newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
@@ -274,21 +280,28 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 }
 
 // WithMetadataColors creates a metadata option that sets the color list for the metadata.
-func WithMetadataColors(colors ...Color) drawMetadataOption {
+func WithMetadataColors(colors ...Color) DrawMetadataOption {
 	return withColors[*drawMetadataConfig](colors)
 }
 
+// WithMetadataAxesHelper creates a metadata option that controls axes helper visibility.
+func WithMetadataAxesHelper(show bool) DrawMetadataOption {
+	return func(config *drawMetadataConfig) {
+		config.showAxesHelper = show
+	}
+}
+
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
-func NewMetadata(options ...drawMetadataOption) Metadata {
+func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
 	for _, option := range options {
 		option(config)
 	}
 
-	return Metadata{Colors: config.colors}
+	return Metadata{Colors: config.colors, ShowAxesHelper: config.showAxesHelper}
 }
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
-	return &drawv1.Metadata{Colors: packColors(metadata.Colors)}
+	return &drawv1.Metadata{Colors: packColors(metadata.Colors), ShowAxesHelper: &metadata.ShowAxesHelper}
 }
