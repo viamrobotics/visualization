@@ -224,24 +224,24 @@ func (svc *DrawService) AddEntity(
 				template := proto.Clone(e.Drawing).(*drawv1.Drawing)
 				entity, err := newChunkedEntity(chunks, template, svc.tempDir)
 				if err != nil {
-					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create chunked entity: %w", ceErr))
+					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create chunked entity: %w", err))
 				}
 				entity.mu.Lock()
 				if err := entity.data.write(data); err != nil {
 					entity.mu.Unlock()
 					entity.close()
-					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", writeErr))
+					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", err))
 				}
 				if metadata := e.Drawing.GetMetadata(); metadata != nil {
 					if err := entity.colors.write(metadata.GetColors()); err != nil {
 						entity.mu.Unlock()
 						entity.close()
-						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", writeErr))
+						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", err))
 					}
 					if err := entity.opacities.write(metadata.GetOpacities()); err != nil {
 						entity.mu.Unlock()
 						entity.close()
-						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", writeErr))
+						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", err))
 					}
 				}
 				entity.mu.Unlock()
