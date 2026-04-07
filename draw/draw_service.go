@@ -64,21 +64,21 @@ func newChunkedEntity(meta *drawv1.Chunks, template *drawv1.Drawing, tempDir str
 		return nil, err
 	}
 
-	ce := &chunkedEntity{
+	entity := &chunkedEntity{
 		metadata:  meta,
 		data:      data,
 		colors:    colors,
 		opacities: opacities,
 		template:  template,
 	}
-	ce.cond = sync.NewCond(&ce.mu)
-	return ce, nil
+	entity.cond = sync.NewCond(&entity.mu)
+	return entity, nil
 }
 
-func (ce *chunkedEntity) close() {
-	ce.data.close()
-	ce.colors.close()
-	ce.opacities.close()
+func (entity *chunkedEntity) close() {
+	entity.data.close()
+	entity.colors.close()
+	entity.opacities.close()
 }
 
 // DrawService stores transforms and drawings keyed by UUID and fans out change events to streaming subscribers.
@@ -219,35 +219,35 @@ func (svc *DrawService) AddEntity(
 		svc.entities[id] = storedEntity{kind: entityKindDrawing, drawing: e.Drawing}
 
 		metadata := e.Drawing.GetMetadata()
-		if cm := metadata.GetChunks(); cm != nil {
+		if chunks := metadata.GetChunks(); chunks != nil {
 			if data, ok := extractShapeData(e.Drawing); ok {
 				template := proto.Clone(e.Drawing).(*drawv1.Drawing)
-				ce, ceErr := newChunkedEntity(cm, template, svc.tempDir)
-				if ceErr != nil {
+				entity, err := newChunkedEntity(chunks, template, svc.tempDir)
+				if err != nil {
 					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create chunked entity: %w", ceErr))
 				}
-				ce.mu.Lock()
-				if writeErr := ce.data.write(data); writeErr != nil {
-					ce.mu.Unlock()
-					ce.close()
+				entity.mu.Lock()
+				if err := entity.data.write(data); err != nil {
+					entity.mu.Unlock()
+					entity.close()
 					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", writeErr))
 				}
-				if md := e.Drawing.GetMetadata(); md != nil {
-					if writeErr := ce.colors.write(md.GetColors()); writeErr != nil {
-						ce.mu.Unlock()
-						ce.close()
+				if metadata := e.Drawing.GetMetadata(); metadata != nil {
+					if err := entity.colors.write(metadata.GetColors()); err != nil {
+						entity.mu.Unlock()
+						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", writeErr))
 					}
-					if writeErr := ce.opacities.write(md.GetOpacities()); writeErr != nil {
-						ce.mu.Unlock()
-						ce.close()
+					if err := entity.opacities.write(metadata.GetOpacities()); err != nil {
+						entity.mu.Unlock()
+						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", writeErr))
 					}
 				}
-				ce.mu.Unlock()
-				svc.chunked[id] = ce
+				entity.mu.Unlock()
+				svc.chunked[id] = entity
 				log.Printf("draw: chunked entity %s created (total=%d, chunk_size=%d)",
-					id, ce.metadata.GetTotal(), ce.metadata.GetChunkSize())
+					id, entity.metadata.GetTotal(), entity.metadata.GetChunkSize())
 			}
 		}
 
@@ -370,8 +370,8 @@ func (svc *DrawService) UpdateEntity(
 			return nil, err
 		}
 
-		if ce, ok := svc.chunked[id]; ok {
-			if err := svc.accumulateChunk(ce, e.Drawing); err != nil {
+		if entity, ok := svc.chunked[id]; ok {
+			if err := svc.accumulateChunk(entity, e.Drawing); err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("accumulate chunk: %w", err))
 			}
 			return connect.NewResponse(&drawv1.UpdateEntityResponse{}), nil
@@ -393,34 +393,34 @@ func (svc *DrawService) UpdateEntity(
 	return connect.NewResponse(&drawv1.UpdateEntityResponse{}), nil
 }
 
-func (svc *DrawService) accumulateChunk(ce *chunkedEntity, drawing *drawv1.Drawing) error {
+func (svc *DrawService) accumulateChunk(entity *chunkedEntity, drawing *drawv1.Drawing) error {
 	data, ok := extractShapeData(drawing)
 	if !ok {
 		return fmt.Errorf("no shape data in drawing")
 	}
 
-	ce.mu.Lock()
-	defer ce.mu.Unlock()
+	entity.mu.Lock()
+	defer entity.mu.Unlock()
 
-	if err := ce.data.write(data); err != nil {
+	if err := entity.data.write(data); err != nil {
 		return fmt.Errorf("write positions: %w", err)
 	}
 	if md := drawing.GetMetadata(); md != nil {
-		if err := ce.colors.write(md.GetColors()); err != nil {
+		if err := entity.colors.write(md.GetColors()); err != nil {
 			return fmt.Errorf("write colors: %w", err)
 		}
-		if err := ce.opacities.write(md.GetOpacities()); err != nil {
+		if err := entity.opacities.write(md.GetOpacities()); err != nil {
 			return fmt.Errorf("write opacities: %w", err)
 		}
 	}
 
-	elementsReceived := ce.data.bytesWritten / ce.metadata.Stride
-	if elementsReceived >= ce.metadata.Total {
-		ce.chunkComplete = true
-		log.Printf("draw: chunk accumulation complete (%d/%d elements)", elementsReceived, ce.metadata.Total)
+	elementsReceived := entity.data.bytesWritten / entity.metadata.Stride
+	if elementsReceived >= entity.metadata.Total {
+		entity.chunkComplete = true
+		log.Printf("draw: chunk accumulation complete (%d/%d elements)", elementsReceived, entity.metadata.Total)
 	}
 
-	ce.cond.Broadcast()
+	entity.cond.Broadcast()
 	return nil
 }
 
@@ -562,8 +562,8 @@ func (svc *DrawService) RemoveEntity(
 	}
 
 	delete(svc.entities, id)
-	if ce, ok := svc.chunked[id]; ok {
-		ce.close()
+	if entity, ok := svc.chunked[id]; ok {
+		entity.close()
 		delete(svc.chunked, id)
 	}
 
@@ -601,54 +601,54 @@ func (svc *DrawService) GetEntityChunk(
 	}
 
 	svc.mu.RLock()
-	ce, ok := svc.chunked[id]
+	entity, ok := svc.chunked[id]
 	svc.mu.RUnlock()
 	if !ok {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("chunked entity %s not found", id))
 	}
 
 	start := req.Msg.GetStart()
-	startByte := start * ce.metadata.Stride
+	startByte := start * entity.metadata.Stride
 
-	ce.mu.Lock()
-	for ce.data.bytesWritten <= startByte && !ce.chunkComplete {
+	entity.mu.Lock()
+	for entity.data.bytesWritten <= startByte && !entity.chunkComplete {
 		done := make(chan struct{})
 		go func() {
 			select {
 			case <-ctx.Done():
-				ce.cond.Broadcast()
+				entity.cond.Broadcast()
 			case <-done:
 			}
 		}()
-		ce.cond.Wait()
+		entity.cond.Wait()
 		close(done)
 		if ctx.Err() != nil {
-			ce.mu.Unlock()
+			entity.mu.Unlock()
 			return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 		}
 	}
 
-	posLen := ce.data.bytesWritten
+	posLen := entity.data.bytesWritten
 	if startByte >= posLen {
-		ce.mu.Unlock()
+		entity.mu.Unlock()
 		return connect.NewResponse(&drawv1.GetEntityChunkResponse{Done: true}), nil
 	}
 
-	drawing, chunkElements, err := ce.buildChunkDrawing(start)
-	isDone := (start+chunkElements >= ce.metadata.Total) && ce.chunkComplete
+	drawing, chunkElements, err := entity.buildChunkDrawing(start)
+	done := (start+chunkElements >= entity.metadata.Total) && entity.chunkComplete
 
-	ce.mu.Unlock()
+	entity.mu.Unlock()
 
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("build chunk drawing: %w", err))
 	}
 
-	log.Printf("draw: served chunk=%d start=%d elements=%d done=%t", id, start, chunkElements, isDone)
+	log.Printf("draw: served chunk=%d start=%d elements=%d done=%t", id, start, chunkElements, done)
 
 	return connect.NewResponse(&drawv1.GetEntityChunkResponse{
 		Entity: &drawv1.GetEntityChunkResponse_Drawing{Drawing: drawing},
 		Start:  start,
-		Done:   isDone,
+		Done:   done,
 	}), nil
 }
 
@@ -671,8 +671,10 @@ func (svc *DrawService) StreamEntityChanges(
 				Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
 			})
 		case entityKindDrawing:
-			if ce, ok := svc.chunked[id]; ok {
-				replay = append(replay, svc.buildChunkedReplayMsg(ce))
+			if chunked, ok := svc.chunked[id]; ok {
+				if msg := svc.buildChunkedReplayMsg(chunked); msg != nil {
+					replay = append(replay, msg)
+				}
 			} else {
 				replay = append(replay, &drawv1.StreamEntityChangesResponse{
 					ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED,
@@ -710,32 +712,32 @@ func (svc *DrawService) StreamEntityChanges(
 	}
 }
 
-func (ce *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint32, error) {
-	startByte := start * ce.metadata.Stride
-	endByte := startByte + ce.metadata.ChunkSize*ce.metadata.Stride
-	if endByte > ce.data.bytesWritten {
-		endByte = ce.data.bytesWritten
+func (entity *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint32, error) {
+	startByte := start * entity.metadata.Stride
+	endByte := startByte + entity.metadata.ChunkSize*entity.metadata.Stride
+	if endByte > entity.data.bytesWritten {
+		endByte = entity.data.bytesWritten
 	}
 
-	chunkData, err := ce.data.readSlice(startByte, endByte-startByte)
+	chunkData, err := entity.data.readSlice(startByte, endByte-startByte)
 	if err != nil {
 		return nil, 0, fmt.Errorf("read chunk data: %w", err)
 	}
 
-	chunkElements := (endByte - startByte) / ce.metadata.Stride
+	chunkElements := (endByte - startByte) / entity.metadata.Stride
 
 	var chunkColors, chunkOpacities []byte
 	colorStart := start * 3
 	colorEnd := colorStart + chunkElements*3
-	if ce.colors.bytesWritten >= colorEnd {
-		chunkColors, _ = ce.colors.readSlice(colorStart, colorEnd-colorStart)
+	if entity.colors.bytesWritten >= colorEnd {
+		chunkColors, _ = entity.colors.readSlice(colorStart, colorEnd-colorStart)
 	}
 	opacityEnd := start + chunkElements
-	if ce.opacities.bytesWritten >= opacityEnd {
-		chunkOpacities, _ = ce.opacities.readSlice(start, opacityEnd-start)
+	if entity.opacities.bytesWritten >= opacityEnd {
+		chunkOpacities, _ = entity.opacities.readSlice(start, opacityEnd-start)
 	}
 
-	drawing := proto.Clone(ce.template).(*drawv1.Drawing)
+	drawing := proto.Clone(entity.template).(*drawv1.Drawing)
 	setShapeData(drawing, chunkData)
 
 	if len(chunkColors) > 0 || len(chunkOpacities) > 0 {
@@ -752,11 +754,15 @@ func (ce *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint3
 	return drawing, chunkElements, nil
 }
 
-func (svc *DrawService) buildChunkedReplayMsg(ce *chunkedEntity) *drawv1.StreamEntityChangesResponse {
-	ce.mu.Lock()
-	defer ce.mu.Unlock()
+func (svc *DrawService) buildChunkedReplayMsg(entity *chunkedEntity) *drawv1.StreamEntityChangesResponse {
+	entity.mu.Lock()
+	defer entity.mu.Unlock()
 
-	drawing, _, _ := ce.buildChunkDrawing(0)
+	drawing, _, err := entity.buildChunkDrawing(0)
+	if err != nil {
+		log.Printf("draw: failed to build chunk drawing for replay: %v", err)
+		return nil
+	}
 
 	return &drawv1.StreamEntityChangesResponse{
 		ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED,
@@ -853,8 +859,8 @@ func (svc *DrawService) RemoveAllDrawings(
 			continue
 		}
 		delete(svc.entities, id)
-		if ce, ok := svc.chunked[id]; ok {
-			ce.close()
+		if chunked, ok := svc.chunked[id]; ok {
+			chunked.close()
 			delete(svc.chunked, id)
 		}
 		count++
@@ -878,8 +884,8 @@ func (svc *DrawService) RemoveAll(
 	var transformCount, drawingCount int32
 	for id, entity := range svc.entities {
 		delete(svc.entities, id)
-		if ce, ok := svc.chunked[id]; ok {
-			ce.close()
+		if chunked, ok := svc.chunked[id]; ok {
+			chunked.close()
 			delete(svc.chunked, id)
 		}
 		switch entity.kind {
