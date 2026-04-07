@@ -78,7 +78,7 @@ func Start(cfg DrawServerConfig) error {
 		return nil
 	}
 
-	svc := draw.NewDrawService(".tmp")
+	svc := draw.NewDrawService(resolveTmpDir())
 	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
 	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
@@ -229,6 +229,25 @@ func GetAddress() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return address
+}
+
+// resolveTmpDir returns an absolute path to ".tmp" inside the nearest
+// ancestor directory containing go.mod.
+func resolveTmpDir() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ".tmp"
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return filepath.Join(dir, ".tmp")
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ".tmp"
+		}
+		dir = parent
+	}
 }
 
 func isAddrInUse(err error) bool {

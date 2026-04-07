@@ -12,7 +12,6 @@ import (
 
 const defaultChunkSize = 500_000
 
-// baseChunker holds the fields shared by all concrete DrawableChunker implementations.
 type baseChunker struct {
 	name      string
 	chunkSize int
@@ -26,6 +25,7 @@ func newBaseChunker(name string, chunkSize int, opts []DrawableOption) baseChunk
 	return baseChunker{name: name, chunkSize: chunkSize, opts: opts}
 }
 
+// ChunkSize returns the number of elements per chunk.
 func (b *baseChunker) ChunkSize() uint32 { return uint32(b.chunkSize) }
 
 func (b *baseChunker) numChunks(total uint32) int {
@@ -34,33 +34,10 @@ func (b *baseChunker) numChunks(total uint32) int {
 }
 
 // Chunk holds a single chunk of data as a ready-to-send proto.
-// Shape-agnostic: works for Points, Arrows, Lines, etc.
 type Chunk struct {
 	Proto   *drawv1.Drawing
 	Start   uint32
 	IsFirst bool
-}
-
-// sliceColors returns the appropriate subset of colors for a chunk.
-// If there is exactly one color (uniform), it is returned as-is for every chunk.
-func sliceColors(allColors []Color, offset, end int) []Color {
-	if len(allColors) == 1 {
-		return allColors
-	}
-	return allColors[offset:end]
-}
-
-// newChunkDrawing constructs a drawv1.Drawing with the given shape and metadata.
-func newChunkDrawing(config *DrawConfig, shape *drawv1.Shape, metadata *drawv1.Metadata) *drawv1.Drawing {
-	shape.Label = config.Name
-	shape.Center = poseToProtobuf(config.Center)
-	return &drawv1.Drawing{
-		ReferenceFrame:      config.Name,
-		PoseInObserverFrame: poseInFrameToProtobuf(config.Pose, config.Parent),
-		PhysicalObject:      shape,
-		Uuid:                config.UUID,
-		Metadata:            metadata,
-	}
 }
 
 // DrawableChunker is implemented by any drawable type that can produce its data
@@ -98,9 +75,7 @@ type ChunkSender struct {
 	onProgress func(ChunkProgress)
 }
 
-// NewChunkSender creates a ChunkSender from a DrawableChunker and a
-// Connect-RPC client. This is the preferred way to send any large drawable
-// as progressive chunks.
+// NewChunkSender creates a ChunkSender from a DrawableChunker and a client.
 func NewChunkSender(
 	chunker DrawableChunker,
 	client drawv1connect.DrawServiceClient,
@@ -182,4 +157,23 @@ func (s *ChunkSender) UUID() []byte {
 // Done returns true when all chunks have been sent.
 func (s *ChunkSender) Done() bool {
 	return s.done
+}
+
+func sliceColors(allColors []Color, offset, end int) []Color {
+	if len(allColors) == 1 {
+		return allColors
+	}
+	return allColors[offset:end]
+}
+
+func newChunkDrawing(config *DrawConfig, shape *drawv1.Shape, metadata *drawv1.Metadata) *drawv1.Drawing {
+	shape.Label = config.Name
+	shape.Center = poseToProtobuf(config.Center)
+	return &drawv1.Drawing{
+		ReferenceFrame:      config.Name,
+		PoseInObserverFrame: poseInFrameToProtobuf(config.Pose, config.Parent),
+		PhysicalObject:      shape,
+		Uuid:                config.UUID,
+		Metadata:            metadata,
+	}
 }
