@@ -55,12 +55,7 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 	assertNoFailedScreenshots([failedScreenshot])
 }
 
-const runChunkedTest = async (
-	browser: Browser,
-	testPrefix: string,
-	goTestPath: string,
-	entityName: string
-) => {
+const runChunkedTest = async (browser: Browser, testPrefix: string, goTestPath: string) => {
 	const page = await createPage(browser)
 	const failedScreenshots: string[] = []
 
@@ -68,12 +63,13 @@ const runChunkedTest = async (
 		`go test -run ${goTestPath} github.com/viam-labs/motion-tools/client/api -count=1 -timeout=300s`
 	)
 
-	const loadingNode = page.locator('[data-loading]').filter({ hasText: entityName })
-	await expect(loadingNode).toBeVisible({ timeout: 120_000 })
+	await expect(page.getByRole('progressbar', { name: /Loading/ })).toBeVisible({
+		timeout: 120_000,
+	})
 
 	await goTest
 
-	await expect(page.locator('[data-loading]')).toHaveCount(0, { timeout: 120_000 })
+	await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 120_000 })
 
 	failedScreenshots.push(await takeScreenshot(page, testPrefix))
 
@@ -287,8 +283,7 @@ test('draw point cloud in chunks', async ({ browser }) => {
 	await runChunkedTest(
 		browser,
 		'DRAW_POINT_CLOUD_IN_CHUNKS',
-		'^TestDrawPointCloud$/DrawPointCloudInChunks',
-		'chunked_point_cloud'
+		'^TestDrawPointCloud$/DrawPointCloudInChunks'
 	)
 })
 
@@ -569,12 +564,7 @@ test('draw points with point size', async ({ browser }) => {
 })
 
 test('draw points in chunks', async ({ browser }) => {
-	await runChunkedTest(
-		browser,
-		'DRAW_POINTS_IN_CHUNKS',
-		'^TestDrawPoints$/DrawPointsInChunks',
-		'chunked_points'
-	)
+	await runChunkedTest(browser, 'DRAW_POINTS_IN_CHUNKS', '^TestDrawPoints$/DrawPointsInChunks')
 })
 
 test('draw poses as arrows', async ({ browser }) => {

@@ -76,7 +76,7 @@ export const asFloat32Array = (
  * @example
  * ```ts
  * asColor(colors.current, material.color)
- * asColor(colors.current, pointColorUtil, SIZE.COLORS_RGB) // read second color
+ * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
  * ```
  */
 export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {

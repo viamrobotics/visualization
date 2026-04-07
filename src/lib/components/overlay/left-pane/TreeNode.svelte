@@ -35,6 +35,11 @@
 {#snippet progressIndicator()}
 	{#if loading}
 		<span
+			role="progressbar"
+			aria-label="Loading {Math.round(progress * 100)}%"
+			aria-valuenow={Math.round(progress * 100)}
+			aria-valuemin={0}
+			aria-valuemax={100}
 			class="border-gray-6 size-3 rounded-full border"
 			style:background="conic-gradient(var(--color-gray-6, #9c9ca4) {progress * 100}%, transparent {progress *
 				100}%)"
@@ -47,7 +52,6 @@
 	{@const { children = [] } = node}
 	<div
 		{...api.getBranchProps(nodeProps)}
-		data-loading={loading || undefined}
 		class={[
 			'w-full',
 			{
@@ -123,7 +127,6 @@
 	</div>
 {:else}
 	<div
-		data-loading={loading || undefined}
 		class={{
 			'flex justify-between': true,
 			'text-disabled': invisible.current,
