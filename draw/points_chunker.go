@@ -20,14 +20,14 @@ func NewPointsChunker(points *Points, name string, chunkSize int, opts ...Drawab
 	}
 }
 
-func (c *PointsChunker) TotalElements() uint32 { return uint32(len(c.points.Positions)) }
-func (c *PointsChunker) NumChunks() int        { return c.numChunks(c.TotalElements()) }
+func (chunker *PointsChunker) TotalElements() uint32 { return uint32(len(chunker.points.Positions)) }
+func (chunker *PointsChunker) NumChunks() int        { return chunker.numChunks(chunker.TotalElements()) }
 
-func (c *PointsChunker) Chunks() <-chan Chunk {
+func (chunker *PointsChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {
 		defer close(ch)
-		if err := c.generateChunks(func(chunk Chunk) error {
+		if err := chunker.generateChunks(func(chunk Chunk) error {
 			ch <- chunk
 			return nil
 		}); err != nil {
@@ -37,33 +37,33 @@ func (c *PointsChunker) Chunks() <-chan Chunk {
 	return ch
 }
 
-func (c *PointsChunker) generateChunks(send func(Chunk) error) error {
-	totalPoints := len(c.points.Positions)
+func (chunker *PointsChunker) generateChunks(send func(Chunk) error) error {
+	totalPoints := len(chunker.points.Positions)
 	if totalPoints == 0 {
 		return nil
 	}
 
-	config := NewDrawConfig(c.name, c.opts...)
-	hasColors := len(c.points.Colors) > 0
-	pointSize := c.points.PointSize
+	config := NewDrawConfig(chunker.name, chunker.opts...)
+	hasColors := len(chunker.points.Colors) > 0
+	pointSize := chunker.points.PointSize
 
-	chunkStart := uint32(0)
+	start := uint32(0)
 	isFirst := true
 
-	for offset := 0; offset < totalPoints; offset += c.chunkSize {
-		end := offset + c.chunkSize
+	for offset := 0; offset < totalPoints; offset += chunker.chunkSize {
+		end := offset + chunker.chunkSize
 		if end > totalPoints {
 			end = totalPoints
 		}
-		chunkPositions := c.points.Positions[offset:end]
+		chunkPositions := chunker.points.Positions[offset:end]
 		positionsBytes := packPoints(chunkPositions)
 
 		metadata := Metadata{}
 		if hasColors {
-			metadata.Colors = sliceColors(c.points.Colors, offset, end)
+			metadata.Colors = sliceColors(chunker.points.Colors, offset, end)
 		}
 
-		drawingProto := newChunkDrawing(config, &drawv1.Shape{
+		proto := newChunkDrawing(config, &drawv1.Shape{
 			GeometryType: &drawv1.Shape_Points{
 				Points: &drawv1.Points{
 					Positions: positionsBytes,
@@ -73,15 +73,15 @@ func (c *PointsChunker) generateChunks(send func(Chunk) error) error {
 		}, metadata.ToProto())
 
 		if err := send(Chunk{
-			Proto:   drawingProto,
-			Start:   chunkStart,
+			Proto:   proto,
+			Start:   start,
 			IsFirst: isFirst,
 		}); err != nil {
 			return err
 		}
 
 		isFirst = false
-		chunkStart += uint32(len(chunkPositions))
+		start += uint32(len(chunkPositions))
 	}
 	return nil
 }

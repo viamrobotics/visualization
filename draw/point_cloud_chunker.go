@@ -13,25 +13,28 @@ import (
 // PointCloudChunker implements DrawableChunker for point clouds.
 type PointCloudChunker struct {
 	baseChunker
-	dpc *DrawnPointCloud
+	pointCloud *DrawnPointCloud
 }
 
 // NewPointCloudChunker creates a DrawableChunker for the given point cloud.
-func NewPointCloudChunker(dpc *DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption) *PointCloudChunker {
+func NewPointCloudChunker(pointCloud *DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption) *PointCloudChunker {
 	return &PointCloudChunker{
 		baseChunker: newBaseChunker(name, chunkSize, opts),
-		dpc:         dpc,
+		pointCloud:  pointCloud,
 	}
 }
 
-func (c *PointCloudChunker) TotalElements() uint32 { return uint32(c.dpc.PointCloud.Size()) }
-func (c *PointCloudChunker) NumChunks() int        { return c.numChunks(c.TotalElements()) }
+func (chunker *PointCloudChunker) TotalElements() uint32 {
+	return uint32(chunker.pointCloud.PointCloud.Size())
+}
 
-func (c *PointCloudChunker) Chunks() <-chan Chunk {
+func (chunker *PointCloudChunker) NumChunks() int { return chunker.numChunks(chunker.TotalElements()) }
+
+func (chunker *PointCloudChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {
 		defer close(ch)
-		if err := c.generateChunks(func(chunk Chunk) error {
+		if err := chunker.generateChunks(func(chunk Chunk) error {
 			ch <- chunk
 			return nil
 		}); err != nil {
@@ -41,79 +44,76 @@ func (c *PointCloudChunker) Chunks() <-chan Chunk {
 	return ch
 }
 
-func (c *PointCloudChunker) generateChunks(send func(Chunk) error) error {
-	dpc := c.dpc
-	pc := dpc.PointCloud
-	totalPoints := pc.Size()
+func (chunker *PointCloudChunker) generateChunks(send func(Chunk) error) error {
+	pointCloud := chunker.pointCloud.PointCloud
+	totalPoints := pointCloud.Size()
 	if totalPoints == 0 {
 		return fmt.Errorf("point cloud is empty")
 	}
 
-	config := NewDrawConfig(c.name, c.opts...)
-	hasCustomColors := len(dpc.Colors) > 0
-	hasEmbeddedColor := pc.MetaData().HasColor
-
-	posBuf := NewBufferPacker[float32](c.chunkSize, 3)
+	config := NewDrawConfig(chunker.name, chunker.opts...)
+	colors := chunker.pointCloud.Colors
+	hasCustomColors := len(colors) > 0
+	hasEmbeddedColor := pointCloud.MetaData().HasColor
+	posBuf := NewBufferPacker[float32](chunker.chunkSize, 3)
 	var colorBuf *BufferPacker[uint8]
 	if hasCustomColors || hasEmbeddedColor {
-		colorBuf = NewBufferPacker[uint8](c.chunkSize, 3)
+		colorBuf = NewBufferPacker[uint8](chunker.chunkSize, 3)
 	}
 
 	pointSize := DefaultPointSize
-
 	offset := 0
-	chunkStart := uint32(0)
-	pointsInChunk := 0
+	start := uint32(0)
+	size := 0
 	isFirst := true
-
 	flush := func() error {
-		if pointsInChunk == 0 {
+		if size == 0 {
 			return nil
 		}
 
 		metadata := Metadata{}
 		if colorBuf != nil {
-			colorBytes := colorBuf.Read()[:pointsInChunk*3]
+			colorBytes := colorBuf.Read()[:size*3]
 			metadata.Colors = unpackColors(colorBytes, nil)
 		}
 
-		drawingProto := newChunkDrawing(config, &drawv1.Shape{
+		proto := newChunkDrawing(config, &drawv1.Shape{
 			GeometryType: &drawv1.Shape_Points{
 				Points: &drawv1.Points{
-					Positions: posBuf.Read()[:pointsInChunk*3*4],
+					Positions: posBuf.Read()[:size*3*4],
 					PointSize: &pointSize,
 				},
 			},
 		}, metadata.ToProto())
 
 		err := send(Chunk{
-			Proto:   drawingProto,
-			Start:   chunkStart,
+			Proto:   proto,
+			Start:   start,
 			IsFirst: isFirst,
 		})
 		if err != nil {
-			return fmt.Errorf("failed to send chunk at start=%d: %w", chunkStart, err)
+			return fmt.Errorf("failed to send chunk at start=%d: %w", start, err)
 		}
 
 		isFirst = false
-		chunkStart += uint32(pointsInChunk)
-		pointsInChunk = 0
-		posBuf = NewBufferPacker[float32](c.chunkSize, 3)
+		start += uint32(size)
+		size = 0
+		posBuf = NewBufferPacker[float32](chunker.chunkSize, 3)
 		if colorBuf != nil {
-			colorBuf = NewBufferPacker[uint8](c.chunkSize, 3)
+			colorBuf = NewBufferPacker[uint8](chunker.chunkSize, 3)
 		}
 		return nil
 	}
 
-	pc.Iterate(0, 0, func(p r3.Vector, d pointcloud.Data) bool {
+	pointCloud.Iterate(0, 0, func(p r3.Vector, d pointcloud.Data) bool {
 		posBuf.Write(float32(p.X), float32(p.Y), float32(p.Z))
 
 		if colorBuf != nil {
-			if hasCustomColors && offset < len(dpc.Colors) {
-				c := dpc.Colors[offset]
+			if hasCustomColors && offset < len(colors) {
+				c := colors[offset]
 				colorBuf.Write(c.R, c.G, c.B)
-			} else if hasCustomColors && len(dpc.Colors) == 1 {
-				c := dpc.Colors[0]
+			} else if hasCustomColors && len(colors) == 1 {
+				c := colors[0]
 				colorBuf.Write(c.R, c.G, c.B)
 			} else if hasEmbeddedColor && d.HasColor() {
 				nrgba := color.NRGBAModel.Convert(d.Color()).(color.NRGBA)
@@ -124,9 +124,9 @@ func (c *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 		}
 
 		offset++
-		pointsInChunk++
+		size++
 
-		if pointsInChunk >= c.chunkSize {
+		if size >= chunker.chunkSize {
 			if err := flush(); err != nil {
 				return false
 			}
