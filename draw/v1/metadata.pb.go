@@ -30,8 +30,11 @@ type Metadata struct {
 	// Whether to show the axes helper (RGB XYZ indicator) on the entity.
 	// Defaults to false.
 	ShowAxesHelper *bool `protobuf:"varint,4,opt,name=show_axes_helper,json=showAxesHelper,proto3,oneof" json:"show_axes_helper,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Whether the entity is invisible (not rendered) by default.
+	// Defaults to false.
+	Invisible     *bool `protobuf:"varint,5,opt,name=invisible,proto3,oneof" json:"invisible,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -78,16 +81,26 @@ func (x *Metadata) GetShowAxesHelper() bool {
 	return false
 }
 
+func (x *Metadata) GetInvisible() bool {
+	if x != nil && x.Invisible != nil {
+		return *x.Invisible
+	}
+	return false
+}
+
 var File_draw_v1_metadata_proto protoreflect.FileDescriptor
 
 const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
-	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\x82\x01\n" +
+	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\xb3\x01\n" +
 	"\bMetadata\x12\x1b\n" +
 	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x12-\n" +
-	"\x10show_axes_helper\x18\x04 \x01(\bH\x01R\x0eshowAxesHelper\x88\x01\x01B\t\n" +
+	"\x10show_axes_helper\x18\x04 \x01(\bH\x01R\x0eshowAxesHelper\x88\x01\x01\x12!\n" +
+	"\tinvisible\x18\x05 \x01(\bH\x02R\tinvisible\x88\x01\x01B\t\n" +
 	"\a_colorsB\x13\n" +
-	"\x11_show_axes_helperJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x11_show_axes_helperB\f\n" +
+	"\n" +
+	"_invisibleJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_metadata_proto_rawDescOnce sync.Once

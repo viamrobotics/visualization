@@ -10,14 +10,15 @@ export type Metadata = {
 	// format [r, g, b, ...] or [r, g, b, a, ...]
 	colors?: Uint8Array<ArrayBuffer>
 	showAxesHelper?: boolean
+	invisible?: boolean
 }
 
 /** The snake_case struct field names that correspond to recognised {@link Metadata} fields. */
-type MetadataStructKey = 'colors' | 'show_axes_helper'
+type MetadataStructKey = 'colors' | 'show_axes_helper' | 'invisible'
 
 /** Type guard that checks whether a string is a recognised {@link Metadata} struct field name. */
 export const isMetadataKey = (key: string): key is MetadataStructKey => {
-	return key === 'colors' || key === 'show_axes_helper'
+	return key === 'colors' || key === 'show_axes_helper' || key === 'invisible'
 }
 
 /**
@@ -51,6 +52,12 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 			case 'show_axes_helper': {
 				if (typeof unwrappedValue === 'boolean') {
 					json.showAxesHelper = unwrappedValue
+				}
+				break
+			}
+			case 'invisible': {
+				if (typeof unwrappedValue === 'boolean') {
+					json.invisible = unwrappedValue
 				}
 				break
 			}

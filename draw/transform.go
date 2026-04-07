@@ -17,7 +17,7 @@ func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpt
 		PoseInObserverFrame: poseInFrame,
 	}
 
-	metadataOpts = append([]DrawMetadataOption{WithMetadataAxesHelper(config.ShowAxesHelper)}, metadataOpts...)
+	metadataOpts = append([]DrawMetadataOption{WithMetadataAxesHelper(config.ShowAxesHelper), WithMetadataInvisible(config.Invisible)}, metadataOpts...)
 	metadata := NewMetadata(metadataOpts...)
 	transform.Metadata = MetadataToStruct(metadata)
 	if geometry != nil {
@@ -35,6 +35,7 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 	fields["colors"] = structpb.NewStringValue(encoded)
 
 	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
+	fields["invisible"] = structpb.NewBoolValue(metadata.Invisible)
 
 	return &structpb.Struct{Fields: fields}
 }
@@ -56,6 +57,11 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 	if structPb.Fields["show_axes_helper"] != nil {
 		show := structPb.Fields["show_axes_helper"].GetBoolValue()
 		metadata.SetShowAxesHelper(show)
+	}
+
+	if structPb.Fields["invisible"] != nil {
+		invisible := structPb.Fields["invisible"].GetBoolValue()
+		metadata.SetInvisible(invisible)
 	}
 
 	return metadata, nil

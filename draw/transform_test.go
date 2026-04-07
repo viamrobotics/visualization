@@ -50,5 +50,6 @@ func TestTransform(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, roundtripMetadata.Colors, test.ShouldResemble, metadata.Colors)
 		test.That(t, roundtripMetadata.ShowAxesHelper, test.ShouldEqual, false)
+		test.That(t, roundtripMetadata.Invisible, test.ShouldEqual, false)
 	})
 }

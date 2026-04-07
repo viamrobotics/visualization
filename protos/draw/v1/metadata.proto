@@ -16,4 +16,8 @@ message Metadata {
   // Whether to show the axes helper (RGB XYZ indicator) on the entity.
   // Defaults to false.
   optional bool show_axes_helper = 4;
+
+  // Whether the entity is invisible (not rendered) by default.
+  // Defaults to false.
+  optional bool invisible = 5;
 }

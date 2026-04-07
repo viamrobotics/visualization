@@ -61,8 +61,10 @@ export const drawTransform = (
 	const parent = poseInObserverFrame?.referenceFrame
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
 
-	const { colors, showAxesHelper } = parseMetadata(metadata?.fields)
+	const { colors, showAxesHelper, invisible } = parseMetadata(metadata?.fields)
 	if (showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
+	if (invisible) entityTraits.push(traits.Invisible)
+
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
 		? physicalObject.geometryType.value.pointCloud
 		: undefined
@@ -97,6 +99,7 @@ export const drawDrawing = (
 
 	if (options.removable) entity.add(traits.Removable)
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (metadata?.invisible) entity.add(traits.Invisible)
 
 	applyShape(entity, drawing)
 
@@ -123,7 +126,7 @@ export const updateTransform = (
 		}
 	}
 
-	const { colors, showAxesHelper } = parseMetadata(metadata?.fields)
+	const { colors, showAxesHelper, invisible } = parseMetadata(metadata?.fields)
 	if (colors) {
 		if (isPointCloud(physicalObject?.geometryType)) {
 			updateColors(entity, colors)
@@ -137,6 +140,9 @@ export const updateTransform = (
 
 	if (showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (!showAxesHelper) entity.remove(traits.ShowAxesHelper)
+
+	if (invisible) entity.add(traits.Invisible)
+	if (!invisible) entity.remove(traits.Invisible)
 }
 
 export const updateDrawing = (
@@ -167,6 +173,9 @@ export const updateDrawing = (
 
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+
+	if (metadata?.invisible) entity.add(traits.Invisible)
+	if (!metadata?.invisible) entity.remove(traits.Invisible)
 
 	updateShape(entity, drawing)
 
@@ -276,7 +285,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Drawing,
 	api: Trait,
 	{ removable = true }: Options
 ): Entity[] => {
@@ -294,6 +303,7 @@ const drawModel = (
 
 	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
 	if (removable) baseTraits.push(traits.Removable)
+	if (metadata?.invisible) baseTraits.push(traits.Invisible)
 
 	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
 

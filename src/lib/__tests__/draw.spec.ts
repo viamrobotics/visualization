@@ -76,6 +76,22 @@ describe('drawTransform', () => {
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
 
+	it('attaches Invisible when metadata invisible is true', () => {
+		world = createWorld()
+		const transform = new Transform({
+			referenceFrame: 'arm',
+			metadata: {
+				fields: {
+					invisible: { kind: { case: 'boolValue', value: true } },
+				},
+			},
+		})
+
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+
+		expect(entity.has(traits.Invisible)).toBe(true)
+	})
+
 	it('does not attach Removable when removable is false', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
@@ -215,6 +231,48 @@ describe('drawDrawing', () => {
 		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+	})
+
+	it('attaches Invisible when metadata invisible is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'line-invisible',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+			metadata: new Metadata({ invisible: true }),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.Invisible)).toBe(true)
+	})
+
+	it('attaches Invisible to root entity when model metadata invisible is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'robot-invisible',
+			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'model',
+					value: new Model({
+						assets: [
+							new ModelAsset({ content: { case: 'url', value: 'https://example.com/model.gltf' } }),
+						],
+					}),
+				},
+			}),
+			metadata: new Metadata({ invisible: true }),
+		})
+
+		const entities = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [rootEntity] = entities
+
+		expect(rootEntity.has(traits.Invisible)).toBe(true)
 	})
 
 	it('adds Colors trait for arrows', () => {
