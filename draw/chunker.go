@@ -63,7 +63,6 @@ type ChunkProgress struct {
 }
 
 // ChunkSender provides caller-paced iteration over streamed entity chunks.
-// Each call to Next sends the next chunk via unary RPC.
 type ChunkSender struct {
 	streamed   <-chan Chunk
 	client     drawv1connect.DrawServiceClient

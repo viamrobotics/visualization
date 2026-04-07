@@ -32,19 +32,16 @@ type DrawPointsOptions struct {
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
 
-	// ChunkSize controls chunked delivery. When > 0, points are sent progressively
-	// via AddEntity (first chunk) + UpdateEntity (subsequent chunks).
-	// When 0, all points are sent in a single AddEntity call.
+	// ChunkSize controls chunked delivery.
+	// - When > 0, points are sent in chunks of this size.
+	// - Otherwise, all points are sent in a single call.
 	ChunkSize int
 
 	// OnProgress is called after each chunk is sent during chunked delivery.
-	// If nil, no progress reporting is done.
 	OnProgress func(draw.ChunkProgress)
 }
 
 // DrawPoints draws a set of points in the visualizer.
-// When ChunkSize > 0, uses ChunkedPoints internally and drains all chunks immediately.
-// Calling DrawPoints with an ID that already exists will instead update the points.
 // Returns the UUID of the drawn points, or an error if the server is not running or the drawing fails.
 func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
@@ -117,9 +114,6 @@ func buildPoints(options DrawPointsOptions) (*draw.Points, []draw.DrawableOption
 	return points, drawOpts, nil
 }
 
-// chunkPoints creates a caller-paced stream for sending points to the
-// visualizer in chunks. The caller controls pacing by calling Next() on the
-// returned ChunkSender.
 func chunkPoints(options DrawPointsOptions) (*draw.ChunkSender, error) {
 	client := server.GetClient()
 

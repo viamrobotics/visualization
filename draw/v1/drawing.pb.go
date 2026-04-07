@@ -169,10 +169,7 @@ type Points struct {
 	// The positions of the points: [x, y, z, ...]
 	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 	// The size of the points in millimeters, defaults to 10
-	PointSize *float32 `protobuf:"fixed32,2,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
-	// The element offset at which to write this chunk's positions into an existing buffer.
-	// Used for chunked point cloud delivery.
-	Start         *uint32 `protobuf:"varint,3,opt,name=start,proto3,oneof" json:"start,omitempty"`
+	PointSize     *float32 `protobuf:"fixed32,2,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -217,13 +214,6 @@ func (x *Points) GetPositions() []byte {
 func (x *Points) GetPointSize() float32 {
 	if x != nil && x.PointSize != nil {
 		return *x.PointSize
-	}
-	return 0
-}
-
-func (x *Points) GetStart() uint32 {
-	if x != nil && x.Start != nil {
-		return *x.Start
 	}
 	return 0
 }
@@ -738,14 +728,12 @@ const file_draw_v1_drawing_proto_rawDesc = "" +
 	"dot_colors\x18\x04 \x01(\fH\x02R\tdotColors\x88\x01\x01B\r\n" +
 	"\v_line_widthB\v\n" +
 	"\t_dot_sizeB\r\n" +
-	"\v_dot_colors\"~\n" +
+	"\v_dot_colors\"Y\n" +
 	"\x06Points\x12\x1c\n" +
 	"\tpositions\x18\x01 \x01(\fR\tpositions\x12\"\n" +
 	"\n" +
-	"point_size\x18\x02 \x01(\x02H\x00R\tpointSize\x88\x01\x01\x12\x19\n" +
-	"\x05start\x18\x03 \x01(\rH\x01R\x05start\x88\x01\x01B\r\n" +
-	"\v_point_sizeB\b\n" +
-	"\x06_start\"\x91\x01\n" +
+	"point_size\x18\x02 \x01(\x02H\x00R\tpointSize\x88\x01\x01B\r\n" +
+	"\v_point_size\"\x91\x01\n" +
 	"\n" +
 	"ModelAsset\x12\x1b\n" +
 	"\tmime_type\x18\x01 \x01(\tR\bmimeType\x12\"\n" +

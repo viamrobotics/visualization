@@ -21,9 +21,21 @@ import (
 
 var _ drawv1connect.DrawServiceHandler = (*DrawService)(nil)
 
-// chunkedEntity accumulates chunk data for any shape type using disk-backed
-// buffers. It uses its own mutex/cond so GetEntityChunk callers can block
-// until data is available without holding the service-wide lock.
+type entityKind int
+
+const (
+	entityKindTransform entityKind = iota
+	entityKindDrawing
+)
+
+type storedEntity struct {
+	kind      entityKind
+	transform *commonv1.Transform
+	drawing   *drawv1.Drawing
+}
+
+const entitySubscriberBufferSize = 64
+
 type chunkedEntity struct {
 	mu            sync.Mutex
 	cond          *sync.Cond
@@ -68,21 +80,6 @@ func (ce *chunkedEntity) close() {
 	ce.colors.close()
 	ce.opacities.close()
 }
-
-type entityKind int
-
-const (
-	entityKindTransform entityKind = iota
-	entityKindDrawing
-)
-
-type storedEntity struct {
-	kind      entityKind
-	transform *commonv1.Transform
-	drawing   *drawv1.Drawing
-}
-
-const entitySubscriberBufferSize = 64
 
 // DrawService stores transforms and drawings keyed by UUID and fans out change events to streaming subscribers.
 type DrawService struct {
@@ -637,40 +634,21 @@ func (svc *DrawService) GetEntityChunk(
 		return connect.NewResponse(&drawv1.GetEntityChunkResponse{Done: true}), nil
 	}
 
-	endByte := startByte + ce.metadata.ChunkSize*ce.metadata.Stride
-	if endByte > posLen {
-		endByte = posLen
-	}
-	chunkPositions, err := ce.data.readSlice(startByte, endByte-startByte)
-	if err != nil {
-		ce.mu.Unlock()
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("read chunk positions: %w", err))
-	}
-
-	chunkElements := (endByte - startByte) / ce.metadata.Stride
+	drawing, chunkElements, err := ce.buildChunkDrawing(start)
 	isDone := (start+chunkElements >= ce.metadata.Total) && ce.chunkComplete
 
-	var chunkColors, chunkOpacities []byte
-	colorStart := start * 3
-	colorEnd := colorStart + chunkElements*3
-	if ce.colors.bytesWritten >= colorEnd {
-		chunkColors, _ = ce.colors.readSlice(colorStart, colorEnd-colorStart)
-	}
-	opacityEnd := start + chunkElements
-	if ce.opacities.bytesWritten >= opacityEnd {
-		chunkOpacities, _ = ce.opacities.readSlice(start, opacityEnd-start)
-	}
-
 	ce.mu.Unlock()
+
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("build chunk drawing: %w", err))
+	}
 
 	log.Printf("draw: served chunk=%d start=%d elements=%d done=%t", id, start, chunkElements, isDone)
 
 	return connect.NewResponse(&drawv1.GetEntityChunkResponse{
-		Positions: chunkPositions,
-		Colors:    chunkColors,
-		Opacities: chunkOpacities,
-		Start:     start,
-		Done:      isDone,
+		Entity: &drawv1.GetEntityChunkResponse_Drawing{Drawing: drawing},
+		Start:  start,
+		Done:   isDone,
 	}), nil
 }
 
@@ -732,28 +710,33 @@ func (svc *DrawService) StreamEntityChanges(
 	}
 }
 
-func (svc *DrawService) buildChunkedReplayMsg(ce *chunkedEntity) *drawv1.StreamEntityChangesResponse {
-	ce.mu.Lock()
-	defer ce.mu.Unlock()
-
-	endByte := ce.metadata.ChunkSize * ce.metadata.Stride
+func (ce *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint32, error) {
+	startByte := start * ce.metadata.Stride
+	endByte := startByte + ce.metadata.ChunkSize*ce.metadata.Stride
 	if endByte > ce.data.bytesWritten {
 		endByte = ce.data.bytesWritten
 	}
-	chunkPositions, _ := ce.data.readSlice(0, endByte)
 
-	chunkElements := endByte / ce.metadata.Stride
-	var chunkColors, chunkOpacities []byte
-	colorEnd := chunkElements * 3
-	if ce.colors.bytesWritten >= colorEnd {
-		chunkColors, _ = ce.colors.readSlice(0, colorEnd)
+	chunkData, err := ce.data.readSlice(startByte, endByte-startByte)
+	if err != nil {
+		return nil, 0, fmt.Errorf("read chunk data: %w", err)
 	}
-	if ce.opacities.bytesWritten >= chunkElements {
-		chunkOpacities, _ = ce.opacities.readSlice(0, chunkElements)
+
+	chunkElements := (endByte - startByte) / ce.metadata.Stride
+
+	var chunkColors, chunkOpacities []byte
+	colorStart := start * 3
+	colorEnd := colorStart + chunkElements*3
+	if ce.colors.bytesWritten >= colorEnd {
+		chunkColors, _ = ce.colors.readSlice(colorStart, colorEnd-colorStart)
+	}
+	opacityEnd := start + chunkElements
+	if ce.opacities.bytesWritten >= opacityEnd {
+		chunkOpacities, _ = ce.opacities.readSlice(start, opacityEnd-start)
 	}
 
 	drawing := proto.Clone(ce.template).(*drawv1.Drawing)
-	setShapeData(drawing, chunkPositions)
+	setShapeData(drawing, chunkData)
 
 	if len(chunkColors) > 0 || len(chunkOpacities) > 0 {
 		md := &drawv1.Metadata{}
@@ -765,6 +748,15 @@ func (svc *DrawService) buildChunkedReplayMsg(ce *chunkedEntity) *drawv1.StreamE
 		}
 		drawing.Metadata = md
 	}
+
+	return drawing, chunkElements, nil
+}
+
+func (svc *DrawService) buildChunkedReplayMsg(ce *chunkedEntity) *drawv1.StreamEntityChangesResponse {
+	ce.mu.Lock()
+	defer ce.mu.Unlock()
+
+	drawing, _, _ := ce.buildChunkDrawing(0)
 
 	return &drawv1.StreamEntityChangesResponse{
 		ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED,

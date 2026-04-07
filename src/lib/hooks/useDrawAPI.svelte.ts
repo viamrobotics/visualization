@@ -9,7 +9,7 @@ import { UuidTool } from 'uuid-tool'
 import type { Frame } from '$lib/frame'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { asRGB, SIZE } from '$lib/buffer'
+import { asRGB, STRIDE } from '$lib/buffer'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
@@ -300,8 +300,8 @@ export const provideDrawAPI = () => {
 
 		const arrowHeadAtPose = reader.read()
 
-		const positions = reader.readF32Array(nPoints * SIZE.ARROWS)
-		const rawColors = reader.readU8Array(nColors * SIZE.COLORS_RGB)
+		const positions = reader.readF32Array(nPoints * STRIDE.ARROWS)
+		const rawColors = reader.readU8Array(nColors * STRIDE.COLORS_RGB)
 
 		world.spawn(
 			traits.Name(`Arrow group ${++poseIndex}`),
@@ -353,7 +353,7 @@ export const provideDrawAPI = () => {
 
 			if (defaultColor) {
 				for (let i = nColors; i < nPoints; i++) {
-					const offset = i * SIZE.COLORS_RGB
+					const offset = i * STRIDE.COLORS_RGB
 					vertexColors[offset] = defaultColor[0]!
 					vertexColors[offset + 1] = defaultColor[1]!
 					vertexColors[offset + 2] = defaultColor[2]!

@@ -231,6 +231,21 @@ func GetAddress() string {
 	return address
 }
 
+// DrainChunks exhausts a ChunkSender in a loop until it returns io.EOF.
+// Returns the server-assigned UUID or an error if the server is not running or the drawing fails.
+func DrainChunks(sender *draw.ChunkSender) ([]byte, error) {
+	for {
+		err := sender.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sender.UUID(), nil
+}
+
 // resolveTmpDir returns an absolute path to ".tmp" inside the nearest
 // ancestor directory containing go.mod.
 func resolveTmpDir() string {
@@ -304,18 +319,4 @@ func staticFileHandler(buildDir string) http.Handler {
 
 		http.ServeFile(w, r, path)
 	})
-}
-
-// DrainChunks sends all remaining chunks and returns the server-assigned UUID.
-func DrainChunks(sender *draw.ChunkSender) ([]byte, error) {
-	for {
-		err := sender.Next()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
-	return sender.UUID(), nil
 }

@@ -11,7 +11,7 @@ import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 import { writeBufferGeometryRange } from '$lib/attribute'
 import { DrawService } from '$lib/buf/draw/v1/service_connect'
 import { EntityChangeType, StreamEntityChangesResponse } from '$lib/buf/draw/v1/service_pb'
-import { asFloat32Array, inMeters, SIZE } from '$lib/buffer'
+import { asFloat32Array, inMeters, STRIDE } from '$lib/buffer'
 import {
 	drawDrawing,
 	drawTransform,
@@ -131,10 +131,10 @@ export function provideDrawService() {
 
 		const shape = drawing.physicalObject?.geometryType
 		if (shape?.case === 'points') {
-			const chunkElements = shape.value.positions.length / (SIZE.POSITIONS * FLOAT32_SIZE)
+			const chunkElements = shape.value.positions.length / (STRIDE.POSITIONS * FLOAT32_SIZE)
 			return {
 				total: meta.total,
-				firstEnd: (shape.value.start ?? 0) + chunkElements,
+				firstEnd: chunkElements,
 			}
 		}
 		return undefined
@@ -162,18 +162,21 @@ export function provideDrawService() {
 					{ signal }
 				)
 
-				if (response.positions.length === 0 && response.done) break
+				if (response.done && !response.entity.value) break
+
+				const drawing = response.entity.case === 'drawing' ? response.entity.value : undefined
+				if (!drawing) break
+
+				const shape = drawing.physicalObject?.geometryType
+				if (shape?.case !== 'points') break
 
 				const buffer = entity.get(traits.BufferGeometry)
 				if (!buffer) break
 
-				const positions = asFloat32Array(response.positions as Uint8Array<ArrayBuffer>, inMeters)
-				const colors =
-					response.colors.length > 0 ? (response.colors as Uint8Array<ArrayBuffer>) : undefined
-				const opacities =
-					response.opacities.length > 0
-						? (response.opacities as Uint8Array<ArrayBuffer>)
-						: undefined
+				const positions = asFloat32Array(shape.value.positions as Uint8Array<ArrayBuffer>, inMeters)
+				const metadata = drawing.metadata
+				const colors = metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+				const opacities = metadata?.opacities as Uint8Array<ArrayBuffer> | undefined
 
 				writeBufferGeometryRange(buffer, positions, response.start, {
 					colors,

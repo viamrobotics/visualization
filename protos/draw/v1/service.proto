@@ -123,18 +123,15 @@ message GetEntityChunkRequest {
 }
 
 message GetEntityChunkResponse {
-  // Raw position data for this chunk.
-  bytes positions = 1;
-
-  // Raw color data for this chunk (RGB bytes).
-  bytes colors = 2;
-
-  // Raw opacity data for this chunk.
-  bytes opacities = 3;
+  // The entity that is being chunked.
+  oneof entity {
+    viam.common.v1.Transform transform = 1;
+    Drawing drawing = 2;
+  }
 
   // The element offset this chunk starts at.
-  uint32 start = 4;
+  uint32 start = 3;
 
   // True when this is the last available chunk AND all data has been received from the producer.
-  bool done = 5;
+  bool done = 4;
 }

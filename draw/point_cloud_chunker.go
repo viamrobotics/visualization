@@ -41,9 +41,6 @@ func (c *PointCloudChunker) Chunks() <-chan Chunk {
 	return ch
 }
 
-// generateChunks iterates the point cloud, packing raw float32 positions and uint8 colors
-// into chunks, and calls send for each chunk. Builds the drawv1.Drawing proto directly
-// to avoid double-serialization.
 func (c *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 	dpc := c.dpc
 	pc := dpc.PointCloud
@@ -80,13 +77,11 @@ func (c *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 			metadata.Colors = unpackColors(colorBytes, nil)
 		}
 
-		start := chunkStart
 		drawingProto := newChunkDrawing(config, &drawv1.Shape{
 			GeometryType: &drawv1.Shape_Points{
 				Points: &drawv1.Points{
 					Positions: posBuf.Read()[:pointsInChunk*3*4],
 					PointSize: &pointSize,
-					Start:     &start,
 				},
 			},
 		}, metadata.ToProto())

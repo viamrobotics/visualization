@@ -1,7 +1,8 @@
 import { Color } from 'three'
 
+// TODO: Rename this to SIZE
 /** The number of components per element in a buffer. */
-export const SIZE = {
+export const STRIDE = {
 	/** Arrows: [x, y, z, ox, oy, oz, ...] */
 	ARROWS: 6,
 	/** Line/Points: [x, y, z, ...] */
@@ -133,7 +134,7 @@ export const asOpacity = (
  */
 export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
 	if (!colors) return false
-	return colors.length === SIZE.COLORS_RGB
+	return colors.length === STRIDE.COLORS_RGB
 }
 
 /**
@@ -152,7 +153,7 @@ export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
 export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
 	if (!colors || colors.length === 0) return false
 	if (isSingleColor(colors)) return false
-	return colors.length % SIZE.COLORS_RGB === 0
+	return colors.length % STRIDE.COLORS_RGB === 0
 }
 
 /**

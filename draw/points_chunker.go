@@ -63,13 +63,11 @@ func (c *PointsChunker) generateChunks(send func(Chunk) error) error {
 			metadata.Colors = sliceColors(c.points.Colors, offset, end)
 		}
 
-		start := chunkStart
 		drawingProto := newChunkDrawing(config, &drawv1.Shape{
 			GeometryType: &drawv1.Shape_Points{
 				Points: &drawv1.Points{
 					Positions: positionsBytes,
 					PointSize: &pointSize,
-					Start:     &start,
 				},
 			},
 		}, metadata.ToProto())

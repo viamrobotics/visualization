@@ -34,18 +34,16 @@ type DrawPointCloudOptions struct {
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
 
-	// ChunkSize controls streaming. When > 0, the point cloud is streamed
-	// as Drawing/Points chunks of this size via AddEntity (first) + UpdateEntity (rest).
-	// When 0, the legacy octree/Transform path is used.
+	// ChunkSize controls streaming.
+	// - When > 0, the point cloud is streamed in chunks of this size.
+	// - Otherwise, the point cloud is sent in a single call.
 	ChunkSize int
 
 	// OnProgress is called after each chunk is sent during chunked delivery.
-	// If nil, no progress reporting is done.
 	OnProgress func(draw.ChunkProgress)
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
-// When ChunkSize > 0, uses ChunkedPointcloud internally and drains all chunks immediately.
 // Returns the UUID of the drawn point cloud, or an error if the server is not running or the drawing fails.
 func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
@@ -124,9 +122,6 @@ func drawPointCloud(
 	return resp.Msg.Uuid, nil
 }
 
-// chunkPointCloud creates a caller-paced stream for sending a point cloud to the
-// visualizer in chunks. The caller controls pacing by calling Next() on the
-// returned ChunkSender. Internally uses unary AddEntity and UpdateEntity RPCs.
 func chunkPointCloud(options DrawPointCloudOptions) (*draw.ChunkSender, error) {
 	client := server.GetClient()
 

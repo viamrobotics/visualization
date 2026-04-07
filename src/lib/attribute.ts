@@ -2,18 +2,18 @@ import { BufferAttribute, BufferGeometry } from 'three'
 
 import type { Metadata } from './metadata'
 
-import { SIZE } from './buffer'
+import { STRIDE } from './buffer'
 
 export const createBufferGeometry = (positions: Float32Array, { colors, opacities }: Metadata) => {
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
 	if (colors) {
-		geometry.setAttribute('color', new BufferAttribute(colors, SIZE.COLORS_RGB, true))
+		geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
 	}
 
 	if (opacities) {
-		geometry.setAttribute('opacity', new BufferAttribute(opacities, SIZE.OPACITIES, true))
+		geometry.setAttribute('opacity', new BufferAttribute(opacities, STRIDE.OPACITIES, true))
 	}
 
 	return geometry
@@ -40,7 +40,7 @@ export const updateBufferGeometry = (
 			colorAttr.array.set(colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('color', new BufferAttribute(colors, SIZE.COLORS_RGB, true))
+			geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
 		}
 	}
 
@@ -50,7 +50,7 @@ export const updateBufferGeometry = (
 			opacityAttr.array.set(opacities, 0)
 			opacityAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('opacity', new BufferAttribute(opacities, SIZE.OPACITIES, true))
+			geometry.setAttribute('opacity', new BufferAttribute(opacities, STRIDE.OPACITIES, true))
 		}
 	}
 }
@@ -75,15 +75,15 @@ export const preAllocateBufferGeometry = (
 
 	if (colors) {
 		const colorAttr = new BufferAttribute(
-			new Uint8Array(total * SIZE.COLORS_RGB),
-			SIZE.COLORS_RGB,
+			new Uint8Array(total * STRIDE.COLORS_RGB),
+			STRIDE.COLORS_RGB,
 			true
 		)
 		geometry.setAttribute('color', colorAttr)
 	}
 
 	if (opacities) {
-		const opacityAttr = new BufferAttribute(new Uint8Array(total), SIZE.OPACITIES, true)
+		const opacityAttr = new BufferAttribute(new Uint8Array(total), STRIDE.OPACITIES, true)
 		geometry.setAttribute('opacity', opacityAttr)
 	}
 
@@ -111,8 +111,8 @@ export const writeBufferGeometryRange = (
 	if (colors) {
 		const colorAttr = geometry.getAttribute('color') as BufferAttribute | null
 		if (colorAttr) {
-			;(colorAttr.array as Uint8Array).set(colors, start * SIZE.COLORS_RGB)
-			colorAttr.addUpdateRange(start * SIZE.COLORS_RGB, chunkElements * SIZE.COLORS_RGB)
+			;(colorAttr.array as Uint8Array).set(colors, start * STRIDE.COLORS_RGB)
+			colorAttr.addUpdateRange(start * STRIDE.COLORS_RGB, chunkElements * STRIDE.COLORS_RGB)
 			colorAttr.needsUpdate = true
 		}
 	}

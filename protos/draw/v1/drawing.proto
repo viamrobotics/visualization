@@ -56,9 +56,6 @@ message Points {
   bytes positions = 1;
   // The size of the points in millimeters, defaults to 10
   optional float point_size = 2;
-  // The element offset at which to write this chunk's positions into an existing buffer.
-  // Used for chunked point cloud delivery.
-  optional uint32 start = 3;
 }
 
 // ModelAsset represents the type of model

@@ -12,7 +12,7 @@
 	import { T } from '@threlte/core'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
 
-	import { asColor, asRGB, isSingleColor, isVertexColors, SIZE } from '$lib/buffer'
+	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
 
 	interface Props {
 		colors: Uint8Array<ArrayBuffer>
@@ -48,7 +48,7 @@
 			mesh.setMatrixAt(instance, matrix)
 
 			if (isPerDot) {
-				asColor(colors, threeColor, dotIndex * SIZE.COLORS_RGB)
+				asColor(colors, threeColor, dotIndex * STRIDE.COLORS_RGB)
 				mesh.setColorAt(instance, threeColor)
 			}
 		}

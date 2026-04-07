@@ -1012,16 +1012,17 @@ func (x *GetEntityChunkRequest) GetStart() uint32 {
 
 type GetEntityChunkResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Raw position data for this chunk.
-	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
-	// Raw color data for this chunk (RGB bytes).
-	Colors []byte `protobuf:"bytes,2,opt,name=colors,proto3" json:"colors,omitempty"`
-	// Raw opacity data for this chunk.
-	Opacities []byte `protobuf:"bytes,3,opt,name=opacities,proto3" json:"opacities,omitempty"`
+	// The entity that is being chunked.
+	//
+	// Types that are valid to be assigned to Entity:
+	//
+	//	*GetEntityChunkResponse_Transform
+	//	*GetEntityChunkResponse_Drawing
+	Entity isGetEntityChunkResponse_Entity `protobuf_oneof:"entity"`
 	// The element offset this chunk starts at.
-	Start uint32 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	Start uint32 `protobuf:"varint,3,opt,name=start,proto3" json:"start,omitempty"`
 	// True when this is the last available chunk AND all data has been received from the producer.
-	Done          bool `protobuf:"varint,5,opt,name=done,proto3" json:"done,omitempty"`
+	Done          bool `protobuf:"varint,4,opt,name=done,proto3" json:"done,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1056,23 +1057,27 @@ func (*GetEntityChunkResponse) Descriptor() ([]byte, []int) {
 	return file_draw_v1_service_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *GetEntityChunkResponse) GetPositions() []byte {
+func (x *GetEntityChunkResponse) GetEntity() isGetEntityChunkResponse_Entity {
 	if x != nil {
-		return x.Positions
+		return x.Entity
 	}
 	return nil
 }
 
-func (x *GetEntityChunkResponse) GetColors() []byte {
+func (x *GetEntityChunkResponse) GetTransform() *v1.Transform {
 	if x != nil {
-		return x.Colors
+		if x, ok := x.Entity.(*GetEntityChunkResponse_Transform); ok {
+			return x.Transform
+		}
 	}
 	return nil
 }
 
-func (x *GetEntityChunkResponse) GetOpacities() []byte {
+func (x *GetEntityChunkResponse) GetDrawing() *Drawing {
 	if x != nil {
-		return x.Opacities
+		if x, ok := x.Entity.(*GetEntityChunkResponse_Drawing); ok {
+			return x.Drawing
+		}
 	}
 	return nil
 }
@@ -1090,6 +1095,22 @@ func (x *GetEntityChunkResponse) GetDone() bool {
 	}
 	return false
 }
+
+type isGetEntityChunkResponse_Entity interface {
+	isGetEntityChunkResponse_Entity()
+}
+
+type GetEntityChunkResponse_Transform struct {
+	Transform *v1.Transform `protobuf:"bytes,1,opt,name=transform,proto3,oneof"`
+}
+
+type GetEntityChunkResponse_Drawing struct {
+	Drawing *Drawing `protobuf:"bytes,2,opt,name=drawing,proto3,oneof"`
+}
+
+func (*GetEntityChunkResponse_Transform) isGetEntityChunkResponse_Entity() {}
+
+func (*GetEntityChunkResponse_Drawing) isGetEntityChunkResponse_Entity() {}
 
 var File_draw_v1_service_proto protoreflect.FileDescriptor
 
@@ -1138,13 +1159,13 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\rdrawing_count\x18\x02 \x01(\x05R\fdrawingCount\"A\n" +
 	"\x15GetEntityChunkRequest\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\fR\x04uuid\x12\x14\n" +
-	"\x05start\x18\x02 \x01(\rR\x05start\"\x96\x01\n" +
-	"\x16GetEntityChunkResponse\x12\x1c\n" +
-	"\tpositions\x18\x01 \x01(\fR\tpositions\x12\x16\n" +
-	"\x06colors\x18\x02 \x01(\fR\x06colors\x12\x1c\n" +
-	"\topacities\x18\x03 \x01(\fR\topacities\x12\x14\n" +
-	"\x05start\x18\x04 \x01(\rR\x05start\x12\x12\n" +
-	"\x04done\x18\x05 \x01(\bR\x04done*\x94\x01\n" +
+	"\x05start\x18\x02 \x01(\rR\x05start\"\xb5\x01\n" +
+	"\x16GetEntityChunkResponse\x129\n" +
+	"\ttransform\x18\x01 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
+	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawing\x12\x14\n" +
+	"\x05start\x18\x03 \x01(\rR\x05start\x12\x12\n" +
+	"\x04done\x18\x04 \x01(\bR\x04doneB\b\n" +
+	"\x06entity*\x94\x01\n" +
 	"\x10EntityChangeType\x12\"\n" +
 	"\x1eENTITY_CHANGE_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ENTITY_CHANGE_TYPE_ADDED\x10\x01\x12\x1e\n" +
@@ -1215,31 +1236,33 @@ var file_draw_v1_service_proto_depIdxs = []int32{
 	23, // 8: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
 	24, // 9: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
 	24, // 10: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	1,  // 11: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
-	3,  // 12: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
-	5,  // 13: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
-	9,  // 14: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
-	13, // 15: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
-	15, // 16: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	7,  // 17: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
-	11, // 18: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
-	17, // 19: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
-	19, // 20: draw.v1.DrawService.GetEntityChunk:input_type -> draw.v1.GetEntityChunkRequest
-	2,  // 21: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
-	4,  // 22: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
-	6,  // 23: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
-	10, // 24: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
-	14, // 25: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
-	16, // 26: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	8,  // 27: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
-	12, // 28: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
-	18, // 29: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
-	20, // 30: draw.v1.DrawService.GetEntityChunk:output_type -> draw.v1.GetEntityChunkResponse
-	21, // [21:31] is the sub-list for method output_type
-	11, // [11:21] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	21, // 11: draw.v1.GetEntityChunkResponse.transform:type_name -> viam.common.v1.Transform
+	22, // 12: draw.v1.GetEntityChunkResponse.drawing:type_name -> draw.v1.Drawing
+	1,  // 13: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
+	3,  // 14: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
+	5,  // 15: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
+	9,  // 16: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
+	13, // 17: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
+	15, // 18: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
+	7,  // 19: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
+	11, // 20: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
+	17, // 21: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
+	19, // 22: draw.v1.DrawService.GetEntityChunk:input_type -> draw.v1.GetEntityChunkRequest
+	2,  // 23: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
+	4,  // 24: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
+	6,  // 25: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
+	10, // 26: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
+	14, // 27: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
+	16, // 28: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
+	8,  // 29: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
+	12, // 30: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
+	18, // 31: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
+	20, // 32: draw.v1.DrawService.GetEntityChunk:output_type -> draw.v1.GetEntityChunkResponse
+	23, // [23:33] is the sub-list for method output_type
+	13, // [13:23] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_service_proto_init() }
@@ -1260,6 +1283,10 @@ func file_draw_v1_service_proto_init() {
 	file_draw_v1_service_proto_msgTypes[9].OneofWrappers = []any{
 		(*StreamEntityChangesResponse_Transform)(nil),
 		(*StreamEntityChangesResponse_Drawing)(nil),
+	}
+	file_draw_v1_service_proto_msgTypes[19].OneofWrappers = []any{
+		(*GetEntityChunkResponse_Transform)(nil),
+		(*GetEntityChunkResponse_Drawing)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

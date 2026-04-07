@@ -22,10 +22,25 @@
 	const invisible = useTrait(() => node.entity, traits.Invisible)
 	const chunkProgress = useTrait(() => node.entity, traits.ChunkProgress)
 	const loading = $derived(chunkProgress.current !== undefined)
+	const progress = $derived(
+		chunkProgress.current && chunkProgress.current.total > 0
+			? chunkProgress.current.loaded / chunkProgress.current.total
+			: 0
+	)
 
 	const nodeProps = $derived({ indexPath, node })
 	const nodeState = $derived(api.getNodeState(nodeProps))
 </script>
+
+{#snippet progressIndicator()}
+	{#if loading}
+		<span
+			class="border-gray-6 size-3 rounded-full border"
+			style:background="conic-gradient(var(--color-gray-6, #9c9ca4) {progress * 100}%, transparent {progress *
+				100}%)"
+		></span>
+	{/if}
+{/snippet}
 
 {#if nodeState.isBranch}
 	{@const { expanded } = nodeState}
@@ -38,7 +53,6 @@
 			{
 				'text-disabled': invisible.current,
 				'bg-medium': nodeState.selected,
-				'animate-pulse': loading,
 				sticky: true,
 			},
 		]}
@@ -56,26 +70,28 @@
 			>
 				{name.current}
 			</span>
+			<div class="flex items-center justify-end gap-1">
+				{@render progressIndicator()}
 
-			<button
-				class="text-gray-6"
-				disabled={loading}
-				onclick={(event) => {
-					event.stopPropagation()
+				<button
+					class="text-gray-6"
+					onclick={(event) => {
+						event.stopPropagation()
 
-					if (node.entity.has(traits.Invisible)) {
-						node.entity.remove(traits.Invisible)
-					} else {
-						node.entity.add(traits.Invisible)
-					}
-				}}
-			>
-				{#if invisible.current}
-					<EyeOff size={14} />
-				{:else}
-					<Eye size={14} />
-				{/if}
-			</button>
+						if (node.entity.has(traits.Invisible)) {
+							node.entity.remove(traits.Invisible)
+						} else {
+							node.entity.add(traits.Invisible)
+						}
+					}}
+				>
+					{#if invisible.current}
+						<EyeOff size={14} />
+					{:else}
+						<Eye size={14} />
+					{/if}
+				</button>
+			</div>
 		</div>
 		<div {...api.getBranchContentProps(nodeProps)}>
 			<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
@@ -112,7 +128,6 @@
 			'flex justify-between': true,
 			'text-disabled': invisible.current,
 			'bg-medium': nodeState.selected,
-			'animate-pulse': loading,
 		}}
 		{...api.getItemProps(nodeProps)}
 	>
@@ -120,24 +135,27 @@
 			{node.entity.get(traits.Name)}
 		</span>
 
-		<button
-			class="text-gray-6"
-			disabled={loading}
-			onclick={(event) => {
-				event.stopPropagation()
-				if (node.entity.has(traits.Invisible)) {
-					node.entity.remove(traits.Invisible)
-				} else {
-					node.entity.add(traits.Invisible)
-				}
-			}}
-		>
-			{#if invisible.current}
-				<EyeOff size={14} />
-			{:else}
-				<Eye size={14} />
-			{/if}
-		</button>
+		<div class="flex items-center gap-1">
+			{@render progressIndicator()}
+
+			<button
+				class="text-gray-6"
+				onclick={(event) => {
+					event.stopPropagation()
+					if (node.entity.has(traits.Invisible)) {
+						node.entity.remove(traits.Invisible)
+					} else {
+						node.entity.add(traits.Invisible)
+					}
+				}}
+			>
+				{#if invisible.current}
+					<EyeOff size={14} />
+				{:else}
+					<Eye size={14} />
+				{/if}
+			</button>
+		</div>
 	</div>
 {/if}
 

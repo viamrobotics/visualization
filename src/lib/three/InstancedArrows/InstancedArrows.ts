@@ -15,7 +15,7 @@ import {
 	Vector3,
 } from 'three'
 
-import { SIZE } from '$lib/buffer'
+import { STRIDE } from '$lib/buffer'
 
 import { computeBoundingBox } from './box'
 import fragmentShader from './fragment.glsl'
@@ -106,8 +106,8 @@ export class InstancedArrows extends Group {
 		}
 
 		if (!options.uniformColor) {
-			const colors = new Uint8Array(this.count * SIZE.COLORS_RGB)
-			const instanceColor = new InstancedBufferAttribute(colors, SIZE.COLORS_RGB, true)
+			const colors = new Uint8Array(this.count * STRIDE.COLORS_RGB)
+			const instanceColor = new InstancedBufferAttribute(colors, STRIDE.COLORS_RGB, true)
 			instanceColor.setUsage(DynamicDrawUsage)
 
 			this.attributes.instanceColor = instanceColor

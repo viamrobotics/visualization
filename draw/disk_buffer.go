@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-// diskBuffer provides disk-backed storage for a single binary buffer.
-// Writes are append-only via WriteAt; reads are random-access via ReadAt.
 type diskBuffer struct {
 	file         *os.File
 	bytesWritten uint32
