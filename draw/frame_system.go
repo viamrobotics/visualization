@@ -67,7 +67,6 @@ func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption
 		return nil, err
 	}
 
-	childOpts := []DrawableOption{WithParent(config.Parent), WithAxesHelper(config.ShowAxesHelper)}
 	transforms := make([]*commonv1.Transform, 0)
 	for _, frameName := range slices.Sorted(maps.Keys(frameMap)) {
 		geometries := frameMap[frameName]
@@ -78,7 +77,7 @@ func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption
 		}
 
 		drawing.Name = frameName
-		frameTransforms, err := drawing.ToTransforms(childOpts...)
+		frameTransforms, err := drawing.ToTransforms(WithParent(config.Parent))
 		if err != nil {
 			return nil, err
 		}

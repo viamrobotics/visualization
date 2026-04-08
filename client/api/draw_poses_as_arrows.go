@@ -29,10 +29,6 @@ type DrawPosesAsArrowsOptions struct {
 	// Can be a single color for all arrows, per-arrow colors, or a color palette to cycle through.
 	// If empty, defaults to DefaultArrowColor.
 	Colors []draw.Color
-
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultDrawingShowAxesHelper.
-	ShowAxesHelper *bool
 }
 
 // DrawPosesAsArrows draws a list of poses in the visualizer as arrows.
@@ -69,11 +65,7 @@ func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error) {
 		parent = "world"
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultDrawingShowAxesHelper
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
+	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

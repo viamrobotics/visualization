@@ -29,10 +29,6 @@ type DrawPointCloudOptions struct {
 	// Can be a single color, one color per point, or a color palette.
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
-
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultTransformShowAxesHelper.
-	ShowAxesHelper *bool
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
@@ -66,11 +62,7 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn point cloud: %w", err)
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultTransformShowAxesHelper
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithAxesHelper(*options.ShowAxesHelper)}
+	var drawOpts []draw.DrawableOption
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

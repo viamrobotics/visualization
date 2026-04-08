@@ -31,10 +31,6 @@ type DrawPointsOptions struct {
 
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
-
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultDrawingShowAxesHelper.
-	ShowAxesHelper *bool
 }
 
 // DrawPoints draws a set of points in the visualizer.
@@ -78,10 +74,7 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		parent = "world"
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultDrawingShowAxesHelper
-	}
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
+	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

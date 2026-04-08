@@ -67,8 +67,8 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 
 			default: {
 				for (const { field, key } of METADATA_FLAGS) {
-					if (k === field) {
-						json[key] = unwrappedValue as boolean
+					if (k === field && typeof unwrappedValue === 'boolean') {
+						json[key] = unwrappedValue
 					}
 				}
 				break

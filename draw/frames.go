@@ -51,7 +51,6 @@ func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) 
 func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
-	childOpts := []DrawableOption{WithParent(parent), WithAxesHelper(config.ShowAxesHelper)}
 	transforms := make([]*commonv1.Transform, 0, len(drawnFrames.Frames))
 
 	for _, frame := range drawnFrames.Frames {
@@ -73,13 +72,13 @@ func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*comm
 				return nil, fmt.Errorf("failed to create drawn geometries for frame %s: %w", frame.Name(), err)
 			}
 			drawing.Name = frame.Name()
-			frameTransforms, err := drawing.ToTransforms(append(childOpts, WithPose(pose))...)
+			frameTransforms, err := drawing.ToTransforms(WithParent(parent), WithPose(pose))
 			if err != nil {
 				return nil, fmt.Errorf("failed to create transforms for frame %s: %w", frame.Name(), err)
 			}
 			transforms = append(transforms, frameTransforms...)
 		} else {
-			frameConfig := NewDrawConfig(frame.Name(), append(childOpts, WithPose(pose))...)
+			frameConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
 			transforms = append(transforms, NewTransform(frameConfig, nil))
 		}
 	}

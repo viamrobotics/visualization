@@ -28,10 +28,6 @@ type DrawGLTFOptions struct {
 
 	// Scale specifies the scaling factors for each axis. All dimensions must be non-zero.
 	Scale r3.Vector
-
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultDrawingShowAxesHelper.
-	ShowAxesHelper *bool
 }
 
 // DrawGLTF draws a GLTF model in the visualizer.
@@ -71,11 +67,7 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error) {
 		options.Parent = "world"
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultDrawingShowAxesHelper
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
+	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}

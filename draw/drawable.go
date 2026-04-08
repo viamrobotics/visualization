@@ -119,7 +119,7 @@ func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 		parent:         referenceframe.World,
 		pose:           spatialmath.NewZeroPose(),
 		center:         spatialmath.NewZeroPose(),
-		showAxesHelper: false,
+		showAxesHelper: true,
 	}
 
 	for _, option := range options {
