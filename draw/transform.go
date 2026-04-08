@@ -3,6 +3,7 @@ package draw
 import (
 	"encoding/base64"
 
+	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -31,8 +32,14 @@ func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpt
 // Returns an error if the metadata cannot be converted.
 func MetadataToStruct(metadata Metadata) *structpb.Struct {
 	fields := make(map[string]*structpb.Value)
-	encoded := base64.StdEncoding.EncodeToString(packColors(metadata.Colors))
-	fields["colors"] = structpb.NewStringValue(encoded)
+	fields["colors"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packColors(metadata.Colors)))
+	fields["color_format"] = structpb.NewNumberValue(float64(drawv1.ColorFormat_COLOR_FORMAT_RGB))
+
+	if opacity, uniform := metadata.opacitySummary(); uniform {
+		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString([]byte{opacity}))
+	} else {
+		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
+	}
 
 	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
 
@@ -43,15 +50,24 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 // Returns an error if the metadata cannot be converted.
 func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 	metadata := NewMetadata()
-	if structPb.Fields["colors"] != nil {
-		encoded := structPb.Fields["colors"].GetStringValue()
-		colorsBytes, err := base64.StdEncoding.DecodeString(encoded)
+	if structPb.Fields["colors"] == nil {
+		return metadata, nil
+	}
+
+	colorsBytes, err := base64.StdEncoding.DecodeString(structPb.Fields["colors"].GetStringValue())
+	if err != nil {
+		return NewMetadata(), err
+	}
+
+	var opacitiesBytes []byte
+	if structPb.Fields["opacities"] != nil {
+		opacitiesBytes, err = base64.StdEncoding.DecodeString(structPb.Fields["opacities"].GetStringValue())
 		if err != nil {
 			return NewMetadata(), err
 		}
-		colors := unpackColors(colorsBytes)
-		metadata.SetColors(colors)
 	}
+
+	metadata.SetColors(unpackColors(colorsBytes, opacitiesBytes))
 
 	if structPb.Fields["show_axes_helper"] != nil {
 		show := structPb.Fields["show_axes_helper"].GetBoolValue()

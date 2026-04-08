@@ -1,36 +1,35 @@
 import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 
-/**
- * Metadata for a Viam `Transform`.
- *
- * Per the API this can be a struct of any data, so we type this version for
- * fields we use and how we expect them to be defined.
- */
-export type Metadata = {
-	// format [r, g, b, ...] or [r, g, b, a, ...]
-	colors?: Uint8Array<ArrayBuffer>
-	showAxesHelper?: boolean
-}
+import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadata_pb'
+
+export type Metadata = PlainMessage<MetadataProto>
 
 /** The snake_case struct field names that correspond to recognised {@link Metadata} fields. */
-type MetadataStructKey = 'colors' | 'show_axes_helper'
+type MetadataKey = 'colors' | 'color_format' | 'opacities' | 'show_axes_helper'
 
-/** Type guard that checks whether a string is a recognised {@link Metadata} struct field name. */
-export const isMetadataKey = (key: string): key is MetadataStructKey => {
-	return key === 'colors' || key === 'show_axes_helper'
+/** Type guard that checks whether a string is a recognised metadata wire key. */
+export const isMetadataKey = (key: string): key is MetadataKey => {
+	return (
+		key === 'colors' || key === 'color_format' || key === 'opacities' || key === 'show_axes_helper'
+	)
 }
 
 /**
  * Extracts typed {@link Metadata} from a proto `Struct` fields map.
  *
- * The `colors` field is expected as a base64-encoded string (the only way to
- * represent binary data in a `google.protobuf.Value`), which is decoded into
- * a `Uint8Array`.
+ * The `colors` and `opacities` fields are base64-encoded strings (the only way
+ * to represent binary data in a `google.protobuf.Value`), which are decoded into
+ * `Uint8Array`s.
  *
  * Unknown keys are silently ignored.
  */
 export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
-	const json: Metadata = {}
+	const json: Metadata = {
+		colors: new Uint8Array(),
+		colorFormat: ColorFormat.UNSPECIFIED,
+		opacities: new Uint8Array(),
+		showAxesHelper: false,
+	}
 
 	for (const [k, v] of Object.entries(fields)) {
 		if (!isMetadataKey(k)) continue
@@ -45,6 +44,24 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 						colorBytes[i] = binary.charCodeAt(i)
 					}
 					json.colors = colorBytes
+				}
+				break
+			}
+			case 'color_format': {
+				if (typeof unwrappedValue === 'number') {
+					json.colorFormat = unwrappedValue as ColorFormat
+				}
+				break
+			}
+
+			case 'opacities': {
+				if (typeof unwrappedValue === 'string') {
+					const binary = atob(unwrappedValue)
+					const opacityBytes = new Uint8Array(binary.length)
+					for (let i = 0; i < binary.length; i++) {
+						opacityBytes[i] = binary.charCodeAt(i)
+					}
+					json.opacities = opacityBytes
 				}
 				break
 			}

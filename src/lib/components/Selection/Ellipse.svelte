@@ -209,7 +209,7 @@
 			} as ShapecastCallbacks)
 		}
 
-		const ellipseResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
+		const ellipseResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints), {})
 
 		world.spawn(
 			traits.Name('Ellipse result'),

@@ -186,15 +186,18 @@ export const providePointcloudObjects = (partID: () => string) => {
 								}
 
 								const existing = entities.get(pointcloudLabel)
+								const metadata = {
+									colors: colors ?? undefined,
+								}
 
 								if (existing) {
 									const geometry = existing.get(traits.BufferGeometry)
 
 									if (geometry) {
-										updateBufferGeometry(geometry, positions, colors)
+										updateBufferGeometry(geometry, positions, metadata)
 									}
 								} else {
-									const geometry = createBufferGeometry(positions, colors)
+									const geometry = createBufferGeometry(positions, metadata)
 
 									const entity = world.spawn(
 										traits.Name(pointcloudLabel),
