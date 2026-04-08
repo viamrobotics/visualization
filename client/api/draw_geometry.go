@@ -26,7 +26,7 @@ type DrawGeometryOptions struct {
 	Color draw.Color
 
 	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultTransformShowAxesHelper.
+	// If nil, defaults to true.
 	ShowAxesHelper *bool
 
 	// Invisible controls whether the entity is hidden from the 3D scene by default.
@@ -53,11 +53,10 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		options.Parent = "world"
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultTransformShowAxesHelper
+	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
+	if options.ShowAxesHelper != nil {
+		drawOpts = append(drawOpts, draw.WithAxesHelper(*options.ShowAxesHelper))
 	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
 	if options.Invisible != nil && *options.Invisible {
 		drawOpts = append(drawOpts, draw.WithInvisible(true))
 	}
