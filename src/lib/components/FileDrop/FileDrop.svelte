@@ -40,7 +40,9 @@
 					break
 				}
 				case 'pcd': {
-					const geometry = createBufferGeometry(result.pcd.positions, result.pcd.colors)
+					const geometry = createBufferGeometry(result.pcd.positions, {
+						colors: result.pcd.colors ?? undefined,
+					})
 
 					world.spawn(
 						traits.Name(result.name),

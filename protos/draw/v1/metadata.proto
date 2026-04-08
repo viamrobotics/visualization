@@ -4,9 +4,21 @@ package draw.v1;
 
 option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
 
+// ColorFormat describes the encoding of the colors bytes field.
+enum ColorFormat {
+  COLOR_FORMAT_UNSPECIFIED = 0;
+  COLOR_FORMAT_RGB = 1;
+}
+
 message Metadata {
-  // Uint8Array of colors: [r, g, b, a, ...]
-  // For simple objects, this is a single color of [r, g, b, a]
-  // For complex objects, this is an array of colors of [r, g, b, a, ...]
+  // Uint8Array of color values (0-255) based on the color format.
+  // Can be a single set of values for a uniform color, or an array of values for per-vertex colors.
   optional bytes colors = 1;
+
+  // Describes the encoding of the colors field. Defaults to COLOR_FORMAT_RGB when set by this API.
+  ColorFormat color_format = 2;
+
+  // Uint8Array of opacity values (0-255) corresponding to colors.
+  // Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
+  optional bytes opacities = 3;
 }

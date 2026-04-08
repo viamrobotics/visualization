@@ -24,9 +24,11 @@ const (
 
 // Arrows represents a set of arrows in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or a color per arrow: [r, g, b, a, ...]
-//     defaults to [0, 255, 0, 180] (green)
+//   - colors: []uint8 of a single color or a color per arrow
+//     defaults to [0, 128, 0] (green)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per arrow
+//     defaults to [255] (fully opaque)
 type Arrows struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The poses of the arrows
@@ -75,18 +77,24 @@ func (x *Arrows) GetPoses() []byte {
 
 // Line represents a line in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or two colors for lines and points: [r, g, b, a, r, g, b, a]
-//     defaults to [0, 128, 255, 180] (blue) for lines, [0, 77, 204, 180] (darker blue) for points
+//   - colors: []uint8 of a single color or a color per line point
+//     defaults to [0, 0, 255] (blue)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per line point
+//     defaults to [255] (fully opaque)
 type Line struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The positions of the line points
+	// The positions of the line dots
 	// float32 array of positions: [x, y, z, ...]
 	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 	// optional width of the line in millimeters, defaults to 5
 	LineWidth *float32 `protobuf:"fixed32,2,opt,name=line_width,json=lineWidth,proto3,oneof" json:"line_width,omitempty"`
-	// optional size of the points in millimeters, defaults to 10
-	PointSize     *float32 `protobuf:"fixed32,3,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
+	// optional size of the dots in millimeters, defaults to 10
+	DotSize *float32 `protobuf:"fixed32,3,opt,name=dot_size,json=dotSize,proto3,oneof" json:"dot_size,omitempty"`
+	// optional colors for the line dots
+	// []uint8 of a single color: [r, g, b, a]
+	// or one color per dot: [r, g, b, a, ...]
+	DotColors     []byte `protobuf:"bytes,4,opt,name=dot_colors,json=dotColors,proto3,oneof" json:"dot_colors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -135,18 +143,27 @@ func (x *Line) GetLineWidth() float32 {
 	return 0
 }
 
-func (x *Line) GetPointSize() float32 {
-	if x != nil && x.PointSize != nil {
-		return *x.PointSize
+func (x *Line) GetDotSize() float32 {
+	if x != nil && x.DotSize != nil {
+		return *x.DotSize
 	}
 	return 0
 }
 
+func (x *Line) GetDotColors() []byte {
+	if x != nil {
+		return x.DotColors
+	}
+	return nil
+}
+
 // Points represents a set of points in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     or a color per point: [r, g, b, a, ...]
-//     defaults to [51, 51, 51, 180] (gray)
+//   - colors: []uint8 of a single color or a color per point
+//     defaults to [128, 128, 128] (gray)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per point
+//     defaults to [255] (fully opaque)
 type Points struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The positions of the points
@@ -316,7 +333,7 @@ type Model struct {
 	Assets []*ModelAsset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 	// Uniform scale factor, defaults to [1.0, 1.0, 1.0]
 	Scale *v1.Vector3 `protobuf:"bytes,2,opt,name=scale,proto3,oneof" json:"scale,omitempty"`
-	// Name of the animation to play, defaults to empty string (no animation)
+	// Name ofI the animation to play, defaults to empty string (no animation)
 	AnimationName *string `protobuf:"bytes,3,opt,name=animation_name,json=animationName,proto3,oneof" json:"animation_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -375,8 +392,11 @@ func (x *Model) GetAnimationName() string {
 
 // Nurbs represents a NURBS curve in 3D space
 // Metadata:
-//   - colors: []uint8 of a single color: [r, g, b, a]
-//     defaults to [0, 255, 255, 180] (cyan)
+//   - colors: []uint8 of a single color or a color per NURBS control point
+//     defaults to [0, 255, 255] (cyan)
+//   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
+//   - opacities: []uint8 of a single opacity or a opacity per NURBS control point
+//     defaults to [255] (fully opaque)
 type Nurbs struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The control points of the NURBS
@@ -699,15 +719,17 @@ const file_draw_v1_drawing_proto_rawDesc = "" +
 	"\n" +
 	"\x15draw/v1/drawing.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\x1a\x16draw/v1/metadata.proto\"\x1e\n" +
 	"\x06Arrows\x12\x14\n" +
-	"\x05poses\x18\x01 \x01(\fR\x05poses\"\x8a\x01\n" +
+	"\x05poses\x18\x01 \x01(\fR\x05poses\"\xb7\x01\n" +
 	"\x04Line\x12\x1c\n" +
 	"\tpositions\x18\x01 \x01(\fR\tpositions\x12\"\n" +
 	"\n" +
-	"line_width\x18\x02 \x01(\x02H\x00R\tlineWidth\x88\x01\x01\x12\"\n" +
+	"line_width\x18\x02 \x01(\x02H\x00R\tlineWidth\x88\x01\x01\x12\x1e\n" +
+	"\bdot_size\x18\x03 \x01(\x02H\x01R\adotSize\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"point_size\x18\x03 \x01(\x02H\x01R\tpointSize\x88\x01\x01B\r\n" +
-	"\v_line_widthB\r\n" +
-	"\v_point_size\"Y\n" +
+	"dot_colors\x18\x04 \x01(\fH\x02R\tdotColors\x88\x01\x01B\r\n" +
+	"\v_line_widthB\v\n" +
+	"\t_dot_sizeB\r\n" +
+	"\v_dot_colors\"Y\n" +
 	"\x06Points\x12\x1c\n" +
 	"\tpositions\x18\x01 \x01(\fR\tpositions\x12\"\n" +
 	"\n" +

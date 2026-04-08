@@ -73,7 +73,15 @@ export const DepthTest = trait(() => true)
 export const Arrow = trait(() => true)
 
 export const Positions = trait(() => new Float32Array())
+
+/** Per-vertex RGB colors packed as [r, g, b, ...], stride of 3, values 0-255. */
 export const Colors = trait(() => new Uint8Array())
+
+/**
+ * Per-vertex opacity values packed as uint8 (0-255).
+ */
+export const Opacities = trait(() => new Uint8Array())
+
 export const Instances = trait({
 	count: 0,
 })
@@ -102,11 +110,6 @@ export const Capsule = trait({ l: 200, r: 50 })
  */
 export const Sphere = trait({ r: 200 })
 
-export const PointColor = trait({ r: 0, g: 0, b: 0 })
-
-/** format [x, y, z, ...] */
-export const LinePositions = trait(() => new Float32Array())
-
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 
 export const PointCloudLOD = trait(() => ({
@@ -127,6 +130,7 @@ export const Scale = trait({ x: 1, y: 1, z: 1 })
 export const FramesAPI = trait(() => true)
 export const GeometriesAPI = trait(() => true)
 export const DrawAPI = trait(() => true)
+export const DrawServiceAPI = trait(() => true)
 export const WorldStateStoreAPI = trait(() => true)
 export const SnapshotAPI = trait(() => true)
 
@@ -137,16 +141,35 @@ export const DroppedFile = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 
-// === Shape Properties ===
+/**
+ * Marker trait for entities that should be rendered in screen space (CSS pixels)
+ */
+export const ScreenSpace = trait(() => true)
+
 /**
  * Point size, in mm
  */
-export const PointSize = trait(() => 10)
+export const PointSize = trait(() => 5)
 
 /**
- * Line width, in mm
+ * Line positions, format [x, y, z, ...]
+ */
+export const LinePositions = trait(() => new Float32Array())
+
+/**
+ * Line width, in mm when in world units, or CSS pixels when in screen space
  */
 export const LineWidth = trait(() => 5)
+
+/**
+ * Dot colors for line vertices, format [r, g, b, a, ...]
+ */
+export const DotColors = trait(() => new Uint8Array())
+
+/**
+ * Dot size for line vertices, in mm when in world units, or CSS pixels when in screen space
+ */
+export const DotSize = trait(() => 10)
 
 export const ReferenceFrame = trait(() => true)
 

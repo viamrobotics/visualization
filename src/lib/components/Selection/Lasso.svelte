@@ -45,6 +45,7 @@
 		world.spawn(
 			traits.LinePositions(new Float32Array([x, y, 0])),
 			traits.LineWidth(1.5),
+			traits.ScreenSpace,
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Color({ r: 1, g: 0, b: 0 }),
@@ -190,7 +191,7 @@
 			} as ShapecastCallbacks)
 		}
 
-		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
+		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints), {})
 
 		world.spawn(
 			traits.Name('Lasso result'),

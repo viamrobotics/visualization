@@ -174,18 +174,10 @@ const isColorHex = (color: unknown): color is string => {
 	return false
 }
 
-export const rgbaToHex = (rgba: Uint8Array): string => {
-	if (rgba.length < 3) return '#333333'
-	const r = rgba[0]!.toString(16).padStart(2, '0')
-	const g = rgba[1]!.toString(16).padStart(2, '0')
-	const b = rgba[2]!.toString(16).padStart(2, '0')
+export const rgbToHex = (rgb: Uint8Array): string => {
+	if (rgb.length < 3) return '#333333'
+	const r = rgb[0]!.toString(16).padStart(2, '0')
+	const g = rgb[1]!.toString(16).padStart(2, '0')
+	const b = rgb[2]!.toString(16).padStart(2, '0')
 	return `#${r}${g}${b}`
-}
-
-export const rgbaBytesToFloat32 = (bytes: Uint8Array<ArrayBuffer>): Float32Array<ArrayBuffer> => {
-	const out = new Float32Array(bytes.length)
-	for (let i = 0; i < bytes.length; i++) {
-		out[i] = bytes[i] / 255
-	}
-	return out
 }

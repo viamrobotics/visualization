@@ -153,13 +153,17 @@ export const providePointclouds = (partID: () => string) => {
 
 						const existing = entities.get(queryKey)
 						const finest = levels.find((l) => l.level === 0) ?? levels[0]!
+						const metadata = {
+							colors: finest.colors ?? undefined,
+						}
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
 							const existingLOD = existing.get(traits.PointCloudLOD)
 
 							if (geometry) {
-								updateBufferGeometry(geometry, finest.positions, finest.colors)
+								updateBufferGeometry(geometry, finest.positions, metadata)
+								return
 							}
 
 							if (existingLOD && levels.length > 1) {
@@ -173,7 +177,7 @@ export const providePointclouds = (partID: () => string) => {
 							return
 						}
 
-						const geometry = createBufferGeometry(finest.positions, finest.colors)
+						const geometry = createBufferGeometry(finest.positions, metadata)
 
 						const entityTraits: ConfigurableTrait[] = [
 							traits.Parent(name),

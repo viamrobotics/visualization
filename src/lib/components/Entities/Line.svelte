@@ -1,9 +1,3 @@
-<script module>
-	import { Color } from 'three'
-
-	const colorUtil = new Color()
-</script>
-
 <script lang="ts">
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
@@ -12,7 +6,7 @@
 	import { meshBounds, Portal, PortalTarget } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
-	import { darkenColor } from '$lib/color'
+	import { isVertexColors, STRIDE } from '$lib/buffer'
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 
@@ -32,15 +26,37 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const color = useTrait(() => entity, traits.Color)
-	const pointSize = useTrait(() => entity, traits.PointSize)
+	const colors = useTrait(() => entity, traits.Colors)
+	const dotColors = useTrait(() => entity, traits.DotColors)
+	const dotSize = useTrait(() => entity, traits.DotSize)
 	const linePositions = useTrait(() => entity, traits.LinePositions)
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
-	const opacity = useTrait(() => entity, traits.Opacity)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+	const opacity = useTrait(() => entity, traits.Opacity)
+	const screenSpace = useTrait(() => entity, traits.ScreenSpace)
 	const invisible = useTrait(() => entity, traits.Invisible)
 
 	const events = useEntityEvents(() => entity)
+
+	const hasVertexColors = $derived(isVertexColors(colors.current))
+
+	const lineColor = $derived.by<[number, number, number]>(() => {
+		if (color.current) return [color.current.r, color.current.g, color.current.b]
+		return [0, 0, 1]
+	})
+
+	const lineColors = $derived.by<Float32Array | undefined>(() => {
+		if (!colors.current) return undefined
+		const numColors = colors.current.length / STRIDE.COLORS_RGB
+		const rgb = new Float32Array(numColors * 3)
+		for (let i = 0; i < numColors; i++) {
+			rgb[i * 3] = colors.current[i * STRIDE.COLORS_RGB]! / 255
+			rgb[i * 3 + 1] = colors.current[i * STRIDE.COLORS_RGB + 1]! / 255
+			rgb[i * 3 + 2] = colors.current[i * STRIDE.COLORS_RGB + 2]! / 255
+		}
+		return rgb
+	})
 
 	const currentOpacity = $derived(opacity.current ?? 0.7)
 
@@ -64,26 +80,29 @@
 		visible={invisible.current !== true}
 		{...events}
 	>
-		<LineGeometry positions={linePositions.current} />
+		<LineGeometry
+			positions={linePositions.current}
+			colors={lineColors}
+		/>
 		<T
 			is={LineMaterial}
-			color={[color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0]}
+			color={hasVertexColors ? [1, 1, 1] : lineColor}
+			vertexColors={hasVertexColors}
 			transparent={currentOpacity < 1}
 			depthWrite={currentOpacity === 1}
 			opacity={currentOpacity}
-			width={lineWidth.current ? lineWidth.current * 0.001 : 0.5}
+			worldUnits={!screenSpace.current}
+			linewidth={(lineWidth.current ?? 5) * (screenSpace.current ? 1 : 0.001)}
 			depthTest={materialProps.current?.depthTest ?? true}
 		/>
 	</T>
 
-	{#if linePositions.current && pointSize.current}
+	{#if linePositions.current && dotSize.current}
 		<LineDots
-			color={darkenColor(
-				colorUtil.setRGB(color.current?.r ?? 1, color.current?.g ?? 0, color.current?.b ?? 0),
-				10
-			)}
+			colors={dotColors.current ?? new Uint8Array()}
+			opacity={currentOpacity}
 			positions={linePositions.current}
-			scale={pointSize.current * 0.001}
+			scale={dotSize.current * 0.001}
 		/>
 	{/if}
 
