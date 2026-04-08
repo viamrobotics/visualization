@@ -5,6 +5,7 @@
 	import { useResourceNames } from '@viamrobotics/svelte-sdk'
 	import { PersistedState } from 'runed'
 	import { onMount } from 'svelte'
+	import { Color } from 'three'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import XRControllerSettings from '$lib/components/xr/XRControllerSettings.svelte'
@@ -54,6 +55,8 @@
 
 	const isOpen = new PersistedState('settings-is-open', false)
 	const activeTab = new PersistedState('settings-active-tab', 'Connection')
+
+	const colorHex = $derived(`#${new Color(settings.current.pointColor).getHexString()}`)
 </script>
 
 <Portal id="dashboard">
@@ -122,7 +125,11 @@
 			<div class="w-20">
 				<Input
 					type="color"
-					bind:value={settings.current.pointColor}
+					value={colorHex}
+					on:change={(event) => {
+						const value = (event.target as HTMLInputElement).value
+						settings.current.pointColor = value
+					}}
 					on:keydown={(event) => event.stopImmediatePropagation()}
 				/>
 			</div>

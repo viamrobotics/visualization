@@ -103,10 +103,11 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 // Draw creates a Transform from this DrawnGeometry object, positioned at the given pose within the specified reference frame.
 // If the name is empty, the geometry label is used as the name.
 func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
-	config := NewDrawConfig(name, options...)
-	if config.Name == "" {
-		config.Name = drawnGeometry.Geometry.Label()
+	if name == "" {
+		name = drawnGeometry.Geometry.Label()
 	}
+
+	config := NewDrawConfig(name, options...)
 
 	if len(drawnGeometry.Colors) > 0 {
 		metadata := NewMetadata(WithMetadataColors(drawnGeometry.Colors...))

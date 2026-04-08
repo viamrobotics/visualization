@@ -10,7 +10,7 @@ import (
 )
 
 func TestRemoveAll(t *testing.T) {
-	t.Run("RemoveAll", func(t *testing.T) {
+	t.Run("RemoveAllSetup", func(t *testing.T) {
 		startTestServer(t)
 
 		box, err := spatialmath.NewBox(
@@ -37,6 +37,10 @@ func TestRemoveAll(t *testing.T) {
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, pointsUUID, test.ShouldNotBeNil)
+	})
+
+	t.Run("RemoveAll", func(t *testing.T) {
+		startTestServer(t)
 
 		count, err := RemoveAll()
 		test.That(t, err, test.ShouldBeNil)

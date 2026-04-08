@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte'
 	import { LineGeometry } from 'three/examples/jsm/Addons.js'
 
-	let { positions } = $props()
+	let { positions, colors } = $props()
 
 	let geometry = $state.raw(new LineGeometry())
 
@@ -12,6 +12,7 @@
 			untrack(() => {
 				geometry = new LineGeometry()
 				geometry.setPositions(positions)
+				if (colors) geometry.setColors(colors)
 			})
 		}
 	})

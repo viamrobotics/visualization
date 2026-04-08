@@ -24,7 +24,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	import { useWorld } from '$lib/ecs'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { applySceneMetadata, destroyEntities, spawnSnapshotEntities } from '$lib/snapshot'
+	import { applySceneMetadata, spawnSnapshotEntities } from '$lib/snapshot'
 
 	interface Props {
 		snapshot: SnapshotProto
@@ -78,6 +78,8 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	})
 
 	onDestroy(() => {
-		destroyEntities(world, entities)
+		for (const entity of entities) {
+			if (world.has(entity)) entity.destroy()
+		}
 	})
 </script>

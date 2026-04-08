@@ -314,7 +314,8 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
-		updated := sampleTransform("updated")
+		updated := sampleTransform("original")
+		updated.PoseInObserverFrame.Pose.X = 99
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:   addResp.Msg.GetUuid(),
 			Entity: &drawv1.UpdateEntityRequest_Transform{Transform: updated},
@@ -326,7 +327,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		test.That(t, parseErr, test.ShouldBeNil)
 		stored := svc.entities[id]
 		svc.mu.RUnlock()
-		test.That(t, stored.transform.ReferenceFrame, test.ShouldEqual, "updated")
+		test.That(t, stored.transform.PoseInObserverFrame.Pose.X, test.ShouldEqual, 99)
 	})
 
 	t.Run("FullReplaceDrawing", func(t *testing.T) {
@@ -338,9 +339,11 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
+		updated := sampleDrawing("original")
+		updated.PoseInObserverFrame.Pose.X = 42
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:   addResp.Msg.GetUuid(),
-			Entity: &drawv1.UpdateEntityRequest_Drawing{Drawing: sampleDrawing("updated")},
+			Entity: &drawv1.UpdateEntityRequest_Drawing{Drawing: updated},
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
@@ -348,7 +351,8 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		id, _ := uuid.FromBytes(addResp.Msg.GetUuid())
 		stored := svc.entities[id]
 		svc.mu.RUnlock()
-		test.That(t, stored.drawing.ReferenceFrame, test.ShouldEqual, "updated")
+		test.That(t, stored.drawing.ReferenceFrame, test.ShouldEqual, "original")
+		test.That(t, stored.drawing.PoseInObserverFrame.Pose.X, test.ShouldEqual, 42)
 	})
 
 	t.Run("PartialUpdateWithFieldMask", func(t *testing.T) {
@@ -362,12 +366,16 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 
 		patch := &commonv1.Transform{
-			ReferenceFrame: "patched",
+			ReferenceFrame: "original",
+			PoseInObserverFrame: &commonv1.PoseInFrame{
+				ReferenceFrame: "nav",
+				Pose:           &commonv1.Pose{X: 50, Y: 60, Z: 70},
+			},
 		}
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:          addResp.Msg.GetUuid(),
 			Entity:        &drawv1.UpdateEntityRequest_Transform{Transform: patch},
-			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"reference_frame"}},
+			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"pose_in_observer_frame"}},
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
@@ -375,8 +383,9 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		id, _ := uuid.FromBytes(addResp.Msg.GetUuid())
 		stored := svc.entities[id]
 		svc.mu.RUnlock()
-		test.That(t, stored.transform.ReferenceFrame, test.ShouldEqual, "patched")
+		test.That(t, stored.transform.ReferenceFrame, test.ShouldEqual, "original")
 		test.That(t, stored.transform.PoseInObserverFrame, test.ShouldNotBeNil)
+		test.That(t, stored.transform.PoseInObserverFrame.Pose.X, test.ShouldEqual, 50)
 	})
 
 	t.Run("FieldMaskDoesNotLeakUnmaskedFields", func(t *testing.T) {
@@ -396,19 +405,17 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
-		// Incoming has BOTH a new reference_frame AND a different pose, but the
-		// mask only names reference_frame -- the pose must stay unchanged.
 		incomingWithExtraFields := &commonv1.Transform{
-			ReferenceFrame: "updated-name",
+			ReferenceFrame: "original",
 			PoseInObserverFrame: &commonv1.PoseInFrame{
-				ReferenceFrame: "should-not-be-applied",
+				ReferenceFrame: "nav",
 				Pose:           &commonv1.Pose{X: 999, Y: 999, Z: 999},
 			},
 		}
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:          addResp.Msg.GetUuid(),
 			Entity:        &drawv1.UpdateEntityRequest_Transform{Transform: incomingWithExtraFields},
-			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"reference_frame"}},
+			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"pose_in_observer_frame"}},
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
@@ -417,9 +424,9 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		stored := svc.entities[id]
 		svc.mu.RUnlock()
 
-		test.That(t, stored.transform.ReferenceFrame, test.ShouldEqual, "updated-name")
-		test.That(t, stored.transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "world")
-		test.That(t, stored.transform.PoseInObserverFrame.Pose.X, test.ShouldEqual, 10)
+		test.That(t, stored.transform.ReferenceFrame, test.ShouldEqual, "original")
+		test.That(t, stored.transform.PoseInObserverFrame.ReferenceFrame, test.ShouldEqual, "nav")
+		test.That(t, stored.transform.PoseInObserverFrame.Pose.X, test.ShouldEqual, 999)
 	})
 
 	t.Run("FieldMaskClearsFieldWhenIncomingHasItUnset", func(t *testing.T) {
@@ -464,21 +471,25 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
-		incoming := sampleDrawing("new-name")
-		// Do NOT set physical_object on incoming -- only reference_frame is in the mask.
+		incoming := sampleDrawing("original-name")
+		incoming.PoseInObserverFrame = &commonv1.PoseInFrame{
+			ReferenceFrame: "nav",
+			Pose:           &commonv1.Pose{X: 77},
+		}
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:          id[:],
 			Entity:        &drawv1.UpdateEntityRequest_Drawing{Drawing: incoming},
-			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"reference_frame"}},
+			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"pose_in_observer_frame"}},
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
 		svc.mu.RLock()
 		stored := svc.entities[id]
 		svc.mu.RUnlock()
-		test.That(t, stored.drawing.ReferenceFrame, test.ShouldEqual, "new-name")
+		test.That(t, stored.drawing.ReferenceFrame, test.ShouldEqual, "original-name")
 		test.That(t, stored.drawing.PhysicalObject, test.ShouldNotBeNil)
 		test.That(t, stored.drawing.PhysicalObject.Label, test.ShouldEqual, "keep-me")
+		test.That(t, stored.drawing.PoseInObserverFrame.Pose.X, test.ShouldEqual, 77)
 	})
 
 	t.Run("TypeMismatchTransformOnDrawingReturnsInvalidArgument", func(t *testing.T) {
@@ -619,9 +630,11 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 		waitForEntitySubs(t, svc, 1)
 
+		updatedTransform := sampleTransform("original")
+		updatedTransform.PoseInObserverFrame.Pose.X = 99
 		_, updateErr := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:   addResp.Msg.GetUuid(),
-			Entity: &drawv1.UpdateEntityRequest_Transform{Transform: sampleTransform("updated")},
+			Entity: &drawv1.UpdateEntityRequest_Transform{Transform: updatedTransform},
 		}))
 		test.That(t, updateErr, test.ShouldBeNil)
 
@@ -658,10 +671,15 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 		waitForEntitySubs(t, svc, 1)
 
+		patchedTransform := sampleTransform("original")
+		patchedTransform.PoseInObserverFrame = &commonv1.PoseInFrame{
+			ReferenceFrame: "nav",
+			Pose:           &commonv1.Pose{X: 50},
+		}
 		_, updateErr := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:          addResp.Msg.GetUuid(),
-			Entity:        &drawv1.UpdateEntityRequest_Transform{Transform: sampleTransform("patched")},
-			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"reference_frame"}},
+			Entity:        &drawv1.UpdateEntityRequest_Transform{Transform: patchedTransform},
+			UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"pose_in_observer_frame"}},
 		}))
 		test.That(t, updateErr, test.ShouldBeNil)
 
@@ -672,7 +690,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
 		test.That(t, received.UpdatedFields, test.ShouldNotBeNil)
-		test.That(t, received.UpdatedFields.Paths, test.ShouldResemble, []string{"reference_frame"})
+		test.That(t, received.UpdatedFields.Paths, test.ShouldResemble, []string{"pose_in_observer_frame"})
 	})
 
 	t.Run("StreamClosesOnContextCancellation", func(t *testing.T) {
