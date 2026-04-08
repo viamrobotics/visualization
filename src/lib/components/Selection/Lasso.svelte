@@ -50,7 +50,7 @@
 			traits.ScreenSpace,
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
-			traits.Color({ r: 1, g: 0, b: 0 }),
+			traits.Colors(new Uint8Array([255, 0, 0, 255])),
 			selectionTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
 			selectionTraits.Lasso
 		)
@@ -198,7 +198,7 @@
 		const result = world.spawn(
 			traits.Name('Lasso result'),
 			traits.BufferGeometry(lassoResultGeometry),
-			traits.Color({ r: 1, g: 0, b: 0 }),
+			traits.Colors(new Uint8Array([255, 0, 0, 255])),
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Points,
