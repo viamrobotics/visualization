@@ -90,3 +90,39 @@ func TestDrawServiceEvents(t *testing.T) {
 		test.That(t, count, test.ShouldEqual, 2)
 	})
 }
+
+func TestShowAxesHelper(t *testing.T) {
+	startTestServer(t)
+
+	box, err := spatialmath.NewBox(
+		spatialmath.NewPose(
+			r3.Vector{X: 0, Y: 0, Z: 300},
+			&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
+		),
+		r3.Vector{X: 50, Y: 50, Z: 50},
+		"show-axes-helper-box",
+	)
+	test.That(t, err, test.ShouldBeNil)
+
+	t.Run("DrawWithoutAxesHelper", func(t *testing.T) {
+		show := false
+		_, err := DrawGeometry(DrawGeometryOptions{
+			ID:             "show-axes-helper-box",
+			Geometry:       box,
+			Color:          draw.ColorFromName("purple").SetAlpha(128),
+			ShowAxesHelper: &show,
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+
+	t.Run("DrawWithAxesHelper", func(t *testing.T) {
+		show := true
+		_, err := DrawGeometry(DrawGeometryOptions{
+			ID:             "show-axes-helper-box",
+			Geometry:       box,
+			Color:          draw.ColorFromName("purple"),
+			ShowAxesHelper: &show,
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+}
