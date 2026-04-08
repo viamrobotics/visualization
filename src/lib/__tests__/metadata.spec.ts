@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { metadataFromStruct } from '../metadata'
 
-describe('parseMetadata', () => {
+describe('metadataFromStruct', () => {
 	it('returns empty metadata when fields are empty', () => {
 		expect(metadataFromStruct({})).toStrictEqual({})
 	})
