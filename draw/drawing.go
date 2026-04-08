@@ -263,8 +263,8 @@ type drawMetadataConfig struct {
 	drawColorsConfig
 }
 
-// drawMetadataOption is a function that configures a draw metadata configuration
-type drawMetadataOption func(*drawMetadataConfig)
+// DrawMetadataOption is a function that configures a draw metadata configuration.
+type DrawMetadataOption func(*drawMetadataConfig)
 
 // newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
@@ -274,12 +274,12 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 }
 
 // WithMetadataColors creates a metadata option that sets the color list for the metadata.
-func WithMetadataColors(colors ...Color) drawMetadataOption {
+func WithMetadataColors(colors ...Color) DrawMetadataOption {
 	return withColors[*drawMetadataConfig](colors)
 }
 
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
-func NewMetadata(options ...drawMetadataOption) Metadata {
+func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
 	for _, option := range options {
 		option(config)

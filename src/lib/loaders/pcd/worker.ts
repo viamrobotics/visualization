@@ -21,9 +21,9 @@ globalThis.onmessage = async (event) => {
 			const positions =
 				(pcd.geometry.attributes.position?.array as Float32Array<ArrayBuffer>) ??
 				new Float32Array(0)
-			const colorsFloat: Float32Array | null =
-				(pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? null
-			const colors = colorsFloat ? new Uint8Array(colorsFloat.length) : null
+			const colorsFloat: Float32Array | undefined =
+				(pcd.geometry.attributes.color?.array as Float32Array<ArrayBuffer>) ?? undefined
+			const colors = colorsFloat ? new Uint8Array(colorsFloat.length) : undefined
 
 			if (colors) {
 				for (let i = 0, l = colorsFloat.length; i < l; i++) {

@@ -1,6 +1,6 @@
 import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadata_pb'
 
 /**
  * Metadata for a Viam `Transform`.
@@ -8,21 +8,19 @@ import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
  * Per the API this can be a struct of any data, so we type this version for
  * fields we use and how we expect them to be defined.
  */
-export type Metadata = {
-	// uniform [r, g, b] or per-vertex [r, g, b, ...] values (0-255)
-	colors?: Uint8Array<ArrayBuffer>
-	// describes the encoding of the colors field
-	colorFormat?: ColorFormat
-	// uniform [a] or per-vertex [a, a, ...] values (0-255)
-	opacities?: Uint8Array<ArrayBuffer>
-}
+export type Metadata = PlainMessage<MetadataProto>
 
-/** The known wire-format (snake_case) keys that appear in a metadata Struct. */
-type MetadataWireKey = 'colors' | 'color_format' | 'opacities'
+/** Metadata flags that are serialized as struct fields in transforms. */
+export const METADATA_FLAGS: Array<{ field: string; key: keyof Metadata }> = []
 
 /** Type guard that checks whether a string is a recognised metadata wire key. */
-export const isMetadataKey = (key: string): key is MetadataWireKey => {
-	return key === 'colors' || key === 'color_format' || key === 'opacities'
+export const isMetadataField = (key: string): boolean => {
+	return (
+		key === 'colors' ||
+		key === 'color_format' ||
+		key === 'opacities' ||
+		METADATA_FLAGS.some(({ field }) => field === key)
+	)
 }
 
 /**
@@ -34,11 +32,13 @@ export const isMetadataKey = (key: string): key is MetadataWireKey => {
  *
  * Unknown keys are silently ignored.
  */
-export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
-	const json: Metadata = {}
+export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
+	const json: Metadata = {
+		colorFormat: ColorFormat.UNSPECIFIED,
+	}
 
 	for (const [k, v] of Object.entries(fields)) {
-		if (!isMetadataKey(k)) continue
+		if (!isMetadataField(k)) continue
 		const unwrappedValue = unwrapValue(v)
 
 		switch (k) {
@@ -69,6 +69,16 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 						opacityBytes[i] = binary.charCodeAt(i)
 					}
 					json.opacities = opacityBytes
+				}
+				break
+			}
+
+			default: {
+				for (const { field } of METADATA_FLAGS) {
+					if (k === field && typeof unwrappedValue === 'boolean') {
+						// TODO: Uncomment when we have metadata flags
+						// json[key] = unwrappedValue
+					}
 				}
 				break
 			}

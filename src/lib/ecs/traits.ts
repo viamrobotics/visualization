@@ -70,10 +70,10 @@ export const DepthTest = trait(() => true)
 
 export const Arrow = trait(() => true)
 
-export const Positions = trait(() => new Float32Array())
+export const Positions = trait(() => new Float32Array() as Float32Array)
 
 /** Per-vertex RGB colors packed as [r, g, b, ...], stride of 3, values 0-255. */
-export const Colors = trait(() => new Uint8Array())
+export const Colors = trait(() => new Uint8Array() as Uint8Array)
 
 /**
  * Per-vertex opacity values packed as uint8 (0-255).
@@ -111,7 +111,7 @@ export const Sphere = trait({ r: 200 })
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 
 export const GLTF = trait(() => ({
-	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
+	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array },
 	animationName: '',
 }))
 
@@ -144,7 +144,7 @@ export const PointSize = trait(() => 5)
 /**
  * Line positions, format [x, y, z, ...]
  */
-export const LinePositions = trait(() => new Float32Array())
+export const LinePositions = trait(() => new Float32Array() as Float32Array)
 
 /**
  * Line width, in mm when in world units, or CSS pixels when in screen space
@@ -154,7 +154,7 @@ export const LineWidth = trait(() => 5)
 /**
  * Dot colors for line vertices, format [r, g, b, a, ...]
  */
-export const DotColors = trait(() => new Uint8Array())
+export const DotColors = trait(() => new Uint8Array() as Uint8Array)
 
 /**
  * Dot size for line vertices, in mm when in world units, or CSS pixels when in screen space

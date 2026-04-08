@@ -2,6 +2,7 @@
 	import type { ConfigurableTrait, Entity } from 'koota'
 
 	import { createBufferGeometry } from '$lib/attribute'
+	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { traits, useWorld } from '$lib/ecs'
 	import { parsePcdInWorker } from '$lib/lib'
 
@@ -9,7 +10,7 @@
 		data: Uint8Array
 		name?: string
 		renderOrder?: number
-		oncreate?: (positions: Float32Array, colors: Uint8Array | null) => void
+		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
 	}
 
 	let { data, name, renderOrder, oncreate }: Props = $props()
@@ -20,7 +21,7 @@
 
 	$effect(() => {
 		parsePcdInWorker(data).then(({ positions, colors }) => {
-			const geometry = createBufferGeometry(positions, { colors: colors ?? undefined })
+			const geometry = createBufferGeometry(positions, { colors, colorFormat: ColorFormat.RGB })
 
 			const entityTraits: ConfigurableTrait[] = [
 				traits.Name(name ?? 'Random points'),
@@ -34,7 +35,7 @@
 
 			entity = world.spawn(...entityTraits)
 
-			oncreate?.(positions, colors)
+			oncreate?.(positions, colors ?? undefined)
 		})
 
 		return () => {

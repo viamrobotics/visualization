@@ -94,7 +94,7 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
 		const positions = new Float32Array(6)
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: null })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: undefined })
 
 		const pointCloud = new Uint8Array(0)
 		const metadataColors = new Uint8Array([0, 255, 0])

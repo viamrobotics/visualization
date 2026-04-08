@@ -65,7 +65,7 @@
 				const buffer = source.glb.buffer.slice(
 					source.glb.byteOffset,
 					source.glb.byteOffset + source.glb.byteLength
-				)
+				) as ArrayBuffer
 				$gltf = (await gltfLoader.parseAsync(buffer, '')) as ThrelteGltf
 			} else if ('gltf' in source) {
 				$gltf = source.gltf as ThrelteGltf

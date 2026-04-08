@@ -191,7 +191,7 @@
 			} as ShapecastCallbacks)
 		}
 
-		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints), {})
+		const lassoResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
 
 		world.spawn(
 			traits.Name('Lasso result'),
