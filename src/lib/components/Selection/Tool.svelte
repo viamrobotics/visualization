@@ -1,55 +1,35 @@
 <script lang="ts">
-	import type { Entity, QueryResult, Trait } from 'koota'
+	import type { Snippet } from 'svelte'
 
 	import { useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
-	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import { useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	import FloatingPanel from '../overlay/FloatingPanel.svelte'
 	import Popover from '../overlay/Popover.svelte'
 	import ToggleGroup from '../overlay/ToggleGroup.svelte'
 	import Ellipse from './Ellipse.svelte'
 	import Lasso from './Lasso.svelte'
-	import * as selectionTraits from './traits'
+	import { provideSelection } from './useSelection.svelte'
 
 	interface Props {
 		/** Whether to auto-enable lasso mode when the component mounts */
 		enabled?: boolean
-
-		/** Fires when the user has committed to a lasso selection */
-		onCommitSelections?: (entities: QueryResult<[Trait<() => boolean>]>) => void
-
-		/** Fires when the user has made a selection */
-		onSelection?: (entity: Entity) => void
+		children?: Snippet
 	}
 
 	type SelectionType = 'lasso' | 'ellipse'
 
-	let { enabled = false, onCommitSelections, onSelection }: Props = $props()
+	let { enabled = false, children }: Props = $props()
 
 	const { dom } = useThrelte()
-	const world = useWorld()
 	const settings = useSettings()
 	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
+
+	provideSelection()
 	let selectionType = $state<SelectionType>('lasso')
-
-	const onClearClick = () => {
-		for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {
-			if (world.has(entity)) {
-				entity.destroy()
-			}
-		}
-	}
-
-	const onCommitClick = () => {
-		const entities = world.query(selectionTraits.SelectionEnclosedPoints)
-		onCommitSelections?.(entities)
-	}
 
 	$effect(() => {
 		if (isSelectionMode) {
@@ -108,16 +88,11 @@
 </Portal>
 
 {#if isSelectionMode && rect.height > 0 && rect.width > 0}
-	<Ellipse
-		active={selectionType === 'ellipse'}
-		{onSelection}
-	/>
-	<Lasso
-		active={selectionType === 'lasso'}
-		{onSelection}
-	/>
+	<Ellipse active={selectionType === 'ellipse'} />
+	<Lasso active={selectionType === 'lasso'} />
+	{@render children?.()}
 
-	<Portal id="dom">
+	<!-- <Portal id="dom">
 		<FloatingPanel
 			isOpen
 			exitable={false}
@@ -137,5 +112,5 @@
 				>
 			</div>
 		</FloatingPanel>
-	</Portal>
+	</Portal> -->
 {/if}

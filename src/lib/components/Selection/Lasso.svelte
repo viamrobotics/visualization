@@ -3,7 +3,7 @@
 
 	import { useThrelte } from '@threlte/core'
 	import earcut from 'earcut'
-	import { type Entity, Not } from 'koota'
+	import { Not } from 'koota'
 	import { Box3, Triangle, Vector3 } from 'three'
 
 	import { createBufferGeometry } from '$lib/attribute'
@@ -12,19 +12,20 @@
 
 	import Debug from './Debug.svelte'
 	import * as selectionTraits from './traits'
+	import { useSelection } from './useSelection.svelte'
 	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
 
 	interface Props {
 		active?: boolean
 		debug?: boolean
-		onSelection?: (entity: Entity) => void
 	}
 
-	let { active = false, debug = false, onSelection }: Props = $props()
+	let { active = false, debug = false }: Props = $props()
 
 	const world = useWorld()
 	const controls = useCameraControls()
 	const { scene, dom, camera } = useThrelte()
+	const selection = useSelection()
 
 	const box3 = new Box3()
 	const min = new Vector3()
@@ -205,7 +206,9 @@
 			selectionTraits.PointsCapturedBy(lasso)
 		)
 
-		onSelection?.(result)
+		for (const callback of selection.selectionCallbacks) {
+			callback(result)
+		}
 	}
 
 	const onkeydown = (event: KeyboardEvent) => {
