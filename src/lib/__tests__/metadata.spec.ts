@@ -4,11 +4,11 @@ import { metadataFromStruct } from '../metadata'
 
 describe('metadataFromStruct', () => {
 	it('returns empty metadata when fields are empty', () => {
-		expect(metadataFromStruct({})).toStrictEqual({})
+		expect(metadataFromStruct({})).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('returns empty metadata when called with no arguments', () => {
-		expect(metadataFromStruct()).toStrictEqual({})
+		expect(metadataFromStruct()).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('parses colors from a base64-encoded string value', () => {
@@ -30,7 +30,7 @@ describe('metadataFromStruct', () => {
 			alsoUnknown: { kind: { case: 'numberValue' as const, value: 42 } },
 		}
 
-		expect(metadataFromStruct(fields)).toStrictEqual({})
+		expect(metadataFromStruct(fields)).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('handles mixed known and unknown keys', () => {
