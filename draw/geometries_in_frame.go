@@ -119,7 +119,7 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 		}
 
 		id := fmt.Sprintf("%s:%s", label, parent)
-		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id), WithAxesHelper(config.ShowAxesHelper))
+		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
 		if err != nil {
 			return nil, err
 		}

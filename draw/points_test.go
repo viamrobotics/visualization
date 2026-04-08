@@ -114,7 +114,9 @@ func TestPoints_Draw(t *testing.T) {
 		protoPoints := proto.PhysicalObject.GetPoints()
 		test.That(t, protoPoints, test.ShouldNotBeNil)
 		test.That(t, *protoPoints.PointSize, test.ShouldEqual, float32(7))
-		// red (255, 0, 0, 255) packed as [r, g, b, a]
-		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00, 0xff})
+		// red (255, 0, 0) packed as [r, g, b]
+		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00})
+		// default alpha (255) — single uniform byte
+		test.That(t, proto.Metadata.Opacities, test.ShouldResemble, []byte{0xff})
 	})
 }

@@ -1,24 +1,32 @@
+<script
+	lang="ts"
+	module
+>
+	const matrix = new Matrix4()
+	const vec3 = new Vector3()
+	const threeColor = new Color()
+	const rgb = { r: 0, g: 0, b: 0 }
+</script>
+
 <script lang="ts">
 	import { T } from '@threlte/core'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
 
-	import { isSingleColor, isVertexColors } from '$lib/buffer'
+	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
 
 	interface Props {
-		colors: Uint8Array<ArrayBuffer>
+		colors: Uint8Array
+		opacity: number
 		positions: Float32Array
 		scale: number
 	}
 
-	let { colors, positions, scale }: Props = $props()
+	let { colors, opacity, positions, scale }: Props = $props()
 
 	const geometry = new SphereGeometry(0.5, 16, 16)
 	const vertexCount = geometry.getAttribute('position').count
 	const indexCount = geometry.index?.count ?? vertexCount
 	const mesh = new BatchedMesh(5000, vertexCount, indexCount)
-	const matrix = new Matrix4()
-	const vec3 = new Vector3()
-	const threeColor = new Color()
 
 	const geometryID = mesh.addGeometry(geometry)
 
@@ -27,7 +35,8 @@
 	const meshColor = $derived.by<[number, number, number]>(() => {
 		if (isPerDot) return [1, 1, 1]
 		if (!isSingleColor(colors)) return [0, 0, 0.55]
-		return [colors[0]! / 255, colors[1]! / 255, colors[2]! / 255]
+		asRGB(colors, rgb)
+		return [rgb.r, rgb.g, rgb.b]
 	})
 
 	$effect(() => {
@@ -39,8 +48,7 @@
 			mesh.setMatrixAt(instance, matrix)
 
 			if (isPerDot) {
-				const ci = dotIndex * 4
-				threeColor.setRGB(colors[ci]! / 255, colors[ci + 1]! / 255, colors[ci + 2]! / 255)
+				asColor(colors, threeColor, dotIndex * STRIDE.COLORS_RGB)
 				mesh.setColorAt(instance, threeColor)
 			}
 		}
@@ -59,5 +67,9 @@
 	bvh={{ enabled: false }}
 	raycast={() => null}
 >
-	<T.MeshBasicMaterial color={meshColor} />
+	<T.MeshBasicMaterial
+		color={meshColor}
+		transparent={opacity < 1}
+		{opacity}
+	/>
 </T>

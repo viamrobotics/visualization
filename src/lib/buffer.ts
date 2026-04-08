@@ -1,27 +1,17 @@
-/**
- * Zero-copy buffer utilities for converting protobuf bytes to Three.js typed arrays.
- *
- * Proto messages pack float32 data as `Uint8Array` (bytes fields). These utilities
- * provide efficient conversion to `Float32Array` for Three.js BufferAttributes.
- */
 import { Color } from 'three'
 
-/**
- * Stride constants for proto binary data formats.
- * Each value represents the number of float32 elements per item.
- */
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+
 export const STRIDE = {
-	/** Arrows: [x, y, z, ox, oy, oz] per arrow */
+	/** Arrows: [x, y, z, ox, oy, oz, ...] */
 	ARROWS: 6,
-	/** Line/Points: [x, y, z] per point */
+	/** Line/Points: [x, y, z, ...] */
 	POSITIONS: 3,
-	/** Nurbs control points: [x, y, z, ox, oy, oz, theta] per point */
+	/** Nurbs control points: [x, y, z, ox, oy, oz, theta, ...] */
 	NURBS_CONTROL_POINTS: 7,
-	/** Nurbs knots/weights: single float per element */
+	/** Nurbs knots/weights: [w, ...] */
 	NURBS_KNOTS: 1,
-	/** Colors: [r, g, b, a] per color (uint8) */
-	COLORS_RGBA: 4,
-	/** Colors: [r, g, b] */
+	/** Colors: [r, g, b, ...] */
 	COLORS_RGB: 3,
 } as const
 
@@ -42,9 +32,9 @@ export const STRIDE = {
  * ```
  */
 export const asFloat32Array = (
-	bytes: Uint8Array<ArrayBuffer>,
+	bytes: Uint8Array,
 	transform?: (value: number) => number
-): Float32Array<ArrayBuffer> => {
+): Float32Array => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
@@ -52,7 +42,7 @@ export const asFloat32Array = (
 	if (bytes.byteOffset % 4 === 0 && bytes.byteLength % 4 === 0) {
 		const view = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
 		if (transform) {
-			for (let i = 0; i < view.length; i++) view[i] = transform(view[i]!)
+			for (let i = 0; i < view.length; i++) view[i] = transform(view[i])
 		}
 		return view
 	}
@@ -72,7 +62,7 @@ export const asFloat32Array = (
 }
 
 /**
- * Sets a Three.js Color from 3 bytes of a uint8 color array starting at `offset`.
+ * Sets a Three.js Color from 3 bytes of a uint8 RGB color array starting at `offset`.
  * Mutates and returns `target` — pass a pre-allocated Color to avoid allocations
  * in hot paths.
  *
@@ -84,72 +74,80 @@ export const asFloat32Array = (
  * @example
  * ```ts
  * asColor(colors.current, material.color)
- * asColor(colors.current, pointColorUtil, stride) // read second color
+ * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
  * ```
  */
-export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {
+export const asColor = (bytes: Uint8Array, target: Color, offset = 0): Color => {
 	if (bytes.length < offset + 3) return target.setRGB(0, 0, 0)
-	return target.setRGB(bytes[offset]! / 255, bytes[offset + 1]! / 255, bytes[offset + 2]! / 255)
+	return target.setRGB(bytes[offset] / 255, bytes[offset + 1] / 255, bytes[offset + 2] / 255)
+}
+
+export const asRGB = (
+	bytes: Uint8Array,
+	target: { r: number; g: number; b: number },
+	offset = 0
+): { r: number; g: number; b: number } => {
+	target.r = (bytes[offset] ?? 0) / 255
+	target.g = (bytes[offset + 1] ?? 0) / 255
+	target.b = (bytes[offset + 2] ?? 0) / 255
+	return target
 }
 
 /**
- * Creates a Uint8Array from a Three.js Color.
+ * Reads a byte from a uint8 opacities array at `index` and normalizes it to 0-1.
+ * Returns `fallback` when the array is absent or shorter than `index + 1`.
  *
- * @param color - The Three.js Color to convert
- * @returns A Uint8Array with the RGBA values
- *
- * @example
- * ```ts
- * const color = fromColor(new Color(0, 1, 0))
- * ```
- */
-export const fromColor = (color: Color): Uint8Array<ArrayBuffer> => {
-	return new Uint8Array([
-		Math.round(color.r * 255),
-		Math.round(color.g * 255),
-		Math.round(color.b * 255),
-	])
-}
-
-/**
- * Reads a byte from a uint8 color array at `offset` and normalizes it to 0-1.
- * Returns `fallback` when the array has fewer than `offset + 1` elements.
- *
- * @param bytes - ArrayLike of uint8 color values
- * @param fallback - Value to return when no alpha byte is present (default 1)
- * @param offset - Byte index to read from (default 3, the alpha channel of the first color)
+ * @param opacities - Uint8Array of opacity values (0-255). Length 1 = uniform. Length N = per-vertex.
+ * @param fallback - Value to return when no opacity byte is available (default 1)
+ * @param index - Index into the opacities array (default 0)
  * @returns Normalized opacity in 0-1 range, or the fallback value
  *
  * @example
  * ```ts
- * material.opacity = asOpacity(colors.current)
- * material.opacity = asOpacity(colors.current, 1, stride + 3) // alpha of second color
+ * material.opacity = asOpacity(metadata.opacities)
  * ```
  */
-export const asOpacity = (bytes: Uint8Array<ArrayBuffer>, fallback = 1, offset = 3): number => {
-	if (bytes.length < offset + 1) return fallback
-	return bytes[offset]! / 255
+export const asOpacity = (opacities: Uint8Array | undefined, fallback = 1, index = 0): number => {
+	if (!opacities || opacities.length === 0) return fallback
+	// If only one opacity byte, it is the uniform opacity regardless of index
+	const i = opacities.length === 1 ? 0 : index
+	if (opacities.length <= i) return fallback
+	return opacities[i] / 255
 }
 
 /**
- * Returns true when `colors` contains exactly one color entry per point (RGB or RGBA).
- * Use this to distinguish per-vertex color buffers from a single uniform color.
- *
- * @param colors - Uint8Array of packed color bytes
+ * Returns true when `colors` contains exactly one color (RGB or RGBA),
+ * as opposed to a per-vertex color array.
  *
  * @example
  * ```ts
- * if (isVertexColors(colors)) {
- *   // treat as per-vertex
- * } else {
- *   addColorTraits(entityTraits, colors)
+ * if (isSingleColor(colors)) {
+ *   material.color = asColor(colors, colorUtil)
  * }
  * ```
  */
-export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
+export const isSingleColor = (colors: Uint8Array): boolean => {
 	if (!colors) return false
+	return colors.length === STRIDE.COLORS_RGB
+}
+
+/**
+ * Returns true when `colors` contains per-vertex color data rather than a
+ * single uniform color.
+ *
+ * @param colors - Uint8Array of packed RGB bytes (stride of 3)
+ *
+ * @example
+ * ```ts
+ * if (isVertexColors(colors, positions.length / 3)) {
+ *   // treat as per-vertex
+ * }
+ * ```
+ */
+export const isVertexColors = (colors: Uint8Array | undefined): colors is Uint8Array => {
+	if (!colors || colors.length === 0) return false
 	if (isSingleColor(colors)) return false
-	return isRgb(colors) || isRgba(colors)
+	return colors.length % STRIDE.COLORS_RGB === 0
 }
 
 /**
@@ -163,40 +161,14 @@ export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boo
  */
 export const inMeters = (v: number): number => v * 0.001
 
-/**
- * Returns true when `colors` is encoded as RGB (3 bytes per color).
- *
- * @example
- * ```ts
- * const stride = isRgb(colors) ? STRIDE.COLORS_RGB : STRIDE.COLORS_RGBA
- * ```
- */
-export const isRgb = (colors: Uint8Array<ArrayBuffer>): boolean =>
-	colors.length % STRIDE.COLORS_RGB === 0
-
-/**
- * Returns true when `colors` is encoded as RGBA (4 bytes per color).
- * Prefers RGBA when length is divisible by both 3 and 4, matching the
- * convention used throughout the draw API.
- *
- * @example
- * ```ts
- * const stride = isRgba(colors) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
- * ```
- */
-export const isRgba = (colors: Uint8Array<ArrayBuffer>): boolean =>
-	colors.length % STRIDE.COLORS_RGBA === 0
-
-/**
- * Returns true when `colors` contains exactly one color (RGB or RGBA),
- * as opposed to a per-vertex color array.
- *
- * @example
- * ```ts
- * if (isSingleColor(colors)) {
- *   material.color = asColor(colors, colorUtil)
- * }
- * ```
- */
-export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean =>
-	colors.length === STRIDE.COLORS_RGB || colors.length === STRIDE.COLORS_RGBA
+/** Returns the byte stride for a given color format. */
+export const colorStride = (format?: ColorFormat): number => {
+	switch (format) {
+		case ColorFormat.RGB: {
+			return STRIDE.COLORS_RGB
+		}
+		default: {
+			return 0
+		}
+	}
+}

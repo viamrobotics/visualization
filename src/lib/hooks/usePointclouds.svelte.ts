@@ -9,6 +9,7 @@ import {
 import { getContext, setContext, untrack } from 'svelte'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -147,17 +148,21 @@ export const providePointclouds = (partID: () => string) => {
 						}
 
 						const existing = entities.get(queryKey)
+						const metadata = {
+							colors,
+							colorFormat: ColorFormat.RGB,
+						}
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
 
 							if (geometry) {
-								updateBufferGeometry(geometry, positions, colors)
+								updateBufferGeometry(geometry, positions, metadata)
 								return
 							}
 						}
 
-						const geometry = createBufferGeometry(positions, colors)
+						const geometry = createBufferGeometry(positions, metadata)
 
 						const entity = world.spawn(
 							traits.Parent(name),

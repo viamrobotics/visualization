@@ -1,30 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { isMetadataKey, parseMetadata } from '../metadata'
+import { metadataFromStruct } from '../metadata'
 
-describe('isMetadataKey', () => {
-	it('returns true for "colors"', () => {
-		expect(isMetadataKey('colors')).toBe(true)
-	})
-
-	it('returns true for "show_axes_helper"', () => {
-		expect(isMetadataKey('show_axes_helper')).toBe(true)
-	})
-
-	it('returns false for unknown keys', () => {
-		expect(isMetadataKey('label')).toBe(false)
-		expect(isMetadataKey('opacity')).toBe(false)
-		expect(isMetadataKey('')).toBe(false)
-	})
-})
-
-describe('parseMetadata', () => {
+describe('metadataFromStruct', () => {
 	it('returns empty metadata when fields are empty', () => {
-		expect(parseMetadata({})).toStrictEqual({})
+		expect(metadataFromStruct({})).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('returns empty metadata when called with no arguments', () => {
-		expect(parseMetadata()).toStrictEqual({})
+		expect(metadataFromStruct()).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('parses colors from a base64-encoded string value', () => {
@@ -34,7 +18,7 @@ describe('parseMetadata', () => {
 			colors: { kind: { case: 'stringValue' as const, value: base64 } },
 		}
 
-		const result = parseMetadata(fields)
+		const result = metadataFromStruct(fields)
 
 		expect(result.colors).toBeInstanceOf(Uint8Array)
 		expect(result.colors).toStrictEqual(rgba)
@@ -46,7 +30,7 @@ describe('parseMetadata', () => {
 			alsoUnknown: { kind: { case: 'numberValue' as const, value: 42 } },
 		}
 
-		expect(parseMetadata(fields)).toStrictEqual({})
+		expect(metadataFromStruct(fields)).toStrictEqual({ colorFormat: 0 })
 	})
 
 	it('handles mixed known and unknown keys', () => {
@@ -57,30 +41,20 @@ describe('parseMetadata', () => {
 			label: { kind: { case: 'stringValue' as const, value: 'arm' } },
 		}
 
-		const result = parseMetadata(fields)
+		const result = metadataFromStruct(fields)
 
 		expect(result.colors).toStrictEqual(rgba)
 		expect(result).not.toHaveProperty('label')
 	})
 
-	it('parses show_axes_helper as a boolean', () => {
+	it('parses show_axes_helper', () => {
 		const fields = {
 			show_axes_helper: { kind: { case: 'boolValue' as const, value: true } },
 		}
 
-		const result = parseMetadata(fields)
+		const result = metadataFromStruct(fields)
 
 		expect(result.showAxesHelper).toBe(true)
-	})
-
-	it('parses show_axes_helper false', () => {
-		const fields = {
-			show_axes_helper: { kind: { case: 'boolValue' as const, value: false } },
-		}
-
-		const result = parseMetadata(fields)
-
-		expect(result.showAxesHelper).toBe(false)
 	})
 
 	it('ignores show_axes_helper when value is not a boolean', () => {
@@ -88,7 +62,25 @@ describe('parseMetadata', () => {
 			show_axes_helper: { kind: { case: 'stringValue' as const, value: 'yes' } },
 		}
 
-		expect(parseMetadata(fields)).not.toHaveProperty('showAxesHelper')
+		expect(metadataFromStruct(fields)).not.toHaveProperty('showAxesHelper')
+	})
+
+	it('parses invisible', () => {
+		const fields = {
+			invisible: { kind: { case: 'boolValue' as const, value: true } },
+		}
+
+		const result = metadataFromStruct(fields)
+
+		expect(result.invisible).toBe(true)
+	})
+
+	it('ignores invisible when value is not a boolean', () => {
+		const fields = {
+			invisible: { kind: { case: 'stringValue' as const, value: 'yes' } },
+		}
+
+		expect(metadataFromStruct(fields)).not.toHaveProperty('invisible')
 	})
 
 	it('handles per-vertex color data through base64 round-trip', () => {
@@ -98,7 +90,7 @@ describe('parseMetadata', () => {
 			colors: { kind: { case: 'stringValue' as const, value: base64 } },
 		}
 
-		const result = parseMetadata(fields)
+		const result = metadataFromStruct(fields)
 
 		expect(result.colors).toStrictEqual(perVertex)
 		expect(result.colors!.length).toBe(9)

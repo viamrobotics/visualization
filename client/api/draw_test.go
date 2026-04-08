@@ -141,23 +141,19 @@ func TestShowAxesHelper(t *testing.T) {
 	test.That(t, err, test.ShouldBeNil)
 
 	t.Run("DrawWithoutAxesHelper", func(t *testing.T) {
-		show := false
 		_, err := DrawGeometry(DrawGeometryOptions{
-			ID:             "show-axes-helper-box",
-			Geometry:       box,
-			Color:          draw.ColorFromName("purple").SetAlpha(128),
-			ShowAxesHelper: &show,
+			ID:       "show-axes-helper-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("purple").SetAlpha(128),
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
 
 	t.Run("DrawWithAxesHelper", func(t *testing.T) {
-		show := true
 		_, err := DrawGeometry(DrawGeometryOptions{
-			ID:             "show-axes-helper-box",
-			Geometry:       box,
-			Color:          draw.ColorFromName("purple"),
-			ShowAxesHelper: &show,
+			ID:       "show-axes-helper-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("purple"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})

@@ -40,10 +40,6 @@ type DrawLineOptions struct {
 
 	// DotSize is the size of the vertex dots in millimeters. If 0, uses the default.
 	DotSize float32
-
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
-	// If nil, defaults to DefaultDrawingShowAxesHelper.
-	ShowAxesHelper *bool
 }
 
 // DrawLine draws a line in the visualizer.
@@ -108,10 +104,7 @@ func DrawLine(options DrawLineOptions) ([]byte, error) {
 		parent = "world"
 	}
 
-	if options.ShowAxesHelper == nil {
-		options.ShowAxesHelper = &DefaultDrawingShowAxesHelper
-	}
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent), draw.WithAxesHelper(*options.ShowAxesHelper)}
+	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
 	if options.ID != "" {
 		drawOpts = append(drawOpts, draw.WithID(options.ID))
 	}
