@@ -2,15 +2,17 @@ import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 
 import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadata_pb'
 
+/** Metadata for a `Drawing` or `Transform`. */
 export type Metadata = PlainMessage<MetadataProto>
 
-/** The snake_case struct field names that correspond to recognised {@link Metadata} fields. */
-type MetadataKey = 'colors' | 'color_format' | 'opacities' | 'show_axes_helper'
+const METADATA_FLAGS = [{ field: 'show_axes_helper', key: 'showAxesHelper' }] as const
 
-/** Type guard that checks whether a string is a recognised metadata wire key. */
-export const isMetadataKey = (key: string): key is MetadataKey => {
+const isMetadataField = (key: string): boolean => {
 	return (
-		key === 'colors' || key === 'color_format' || key === 'opacities' || key === 'show_axes_helper'
+		key === 'colors' ||
+		key === 'color_format' ||
+		key === 'opacities' ||
+		METADATA_FLAGS.some(({ field }) => field === key)
 	)
 }
 
@@ -23,16 +25,13 @@ export const isMetadataKey = (key: string): key is MetadataKey => {
  *
  * Unknown keys are silently ignored.
  */
-export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
+export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}): Metadata => {
 	const json: Metadata = {
-		colors: new Uint8Array(),
 		colorFormat: ColorFormat.UNSPECIFIED,
-		opacities: new Uint8Array(),
-		showAxesHelper: false,
 	}
 
 	for (const [k, v] of Object.entries(fields)) {
-		if (!isMetadataKey(k)) continue
+		if (!isMetadataField(k)) continue
 		const unwrappedValue = unwrapValue(v)
 
 		switch (k) {
@@ -65,9 +64,12 @@ export const parseMetadata = (fields: PlainMessage<Struct>['fields'] = {}): Meta
 				}
 				break
 			}
-			case 'show_axes_helper': {
-				if (typeof unwrappedValue === 'boolean') {
-					json.showAxesHelper = unwrappedValue
+
+			default: {
+				for (const { field, key } of METADATA_FLAGS) {
+					if (k === field) {
+						json[key] = unwrappedValue as boolean
+					}
 				}
 				break
 			}

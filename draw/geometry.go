@@ -108,5 +108,10 @@ func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption)
 	}
 
 	config := NewDrawConfig(name, options...)
-	return NewTransform(config, drawnGeometry.Geometry, WithMetadataColors(drawnGeometry.Colors...)), nil
+
+	if len(drawnGeometry.Colors) > 0 {
+		return NewTransform(config, drawnGeometry.Geometry, WithMetadataColors(drawnGeometry.Colors...)), nil
+	}
+
+	return NewTransform(config, drawnGeometry.Geometry), nil
 }

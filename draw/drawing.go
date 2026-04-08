@@ -269,7 +269,7 @@ type drawMetadataConfig struct {
 	showAxesHelper bool
 }
 
-// DrawMetadataOption is a function that configures a draw metadata configuration
+// DrawMetadataOption is a function that configures a draw metadata configuration.
 type DrawMetadataOption func(*drawMetadataConfig)
 
 // newDrawMetadataConfig creates a new draw metadata configuration

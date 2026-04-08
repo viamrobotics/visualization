@@ -4,6 +4,7 @@
 	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
 
 	import { createBufferGeometry } from '$lib/attribute'
+	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { traits } from '$lib/ecs'
 	import { useWorld } from '$lib/ecs/useWorld'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
@@ -41,7 +42,8 @@
 				}
 				case 'pcd': {
 					const geometry = createBufferGeometry(result.pcd.positions, {
-						colors: result.pcd.colors ?? undefined,
+						colors: result.pcd.colors,
+						colorFormat: ColorFormat.RGB,
 					})
 
 					world.spawn(

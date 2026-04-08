@@ -9,6 +9,20 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+type metadataFlag struct {
+	key string
+	get func(Metadata) bool
+	set func(*Metadata, bool)
+}
+
+var metadataFlags = []metadataFlag{
+	{
+		key: "show_axes_helper",
+		get: func(m Metadata) bool { return m.ShowAxesHelper },
+		set: func(m *Metadata, v bool) { m.SetShowAxesHelper(v) },
+	},
+}
+
 // NewTransform creates a Viam Transform representing an object in 3D space.
 func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption) *commonv1.Transform {
 	poseInFrame := poseInFrameToProtobuf(config.Pose, config.Parent)
@@ -18,9 +32,9 @@ func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpt
 		PoseInObserverFrame: poseInFrame,
 	}
 
-	metadataOpts = append([]DrawMetadataOption{WithMetadataAxesHelper(config.ShowAxesHelper)}, metadataOpts...)
-	metadata := NewMetadata(metadataOpts...)
+	metadata := config.BuildMetadata(metadataOpts...)
 	transform.Metadata = MetadataToStruct(metadata)
+
 	if geometry != nil {
 		transform.PhysicalObject = geometryToProtobuf(geometry)
 	}
@@ -28,8 +42,8 @@ func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpt
 	return transform
 }
 
-// MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct.
-// Returns an error if the metadata cannot be converted.
+// MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable
+// for embedding in transforms.
 func MetadataToStruct(metadata Metadata) *structpb.Struct {
 	fields := make(map[string]*structpb.Value)
 	fields["colors"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packColors(metadata.Colors)))
@@ -41,13 +55,14 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
 	}
 
-	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
+	for _, f := range metadataFlags {
+		fields[f.key] = structpb.NewBoolValue(f.get(metadata))
+	}
 
 	return &structpb.Struct{Fields: fields}
 }
 
 // StructToMetadata converts a Protocol Buffer structpb.Struct to a Metadata object.
-// Returns an error if the metadata cannot be converted.
 func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 	metadata := NewMetadata()
 	if structPb.Fields["colors"] == nil {
@@ -69,9 +84,10 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 
 	metadata.SetColors(unpackColors(colorsBytes, opacitiesBytes))
 
-	if structPb.Fields["show_axes_helper"] != nil {
-		show := structPb.Fields["show_axes_helper"].GetBoolValue()
-		metadata.SetShowAxesHelper(show)
+	for _, f := range metadataFlags {
+		if v := structPb.Fields[f.key]; v != nil {
+			f.set(&metadata, v.GetBoolValue())
+		}
 	}
 
 	return metadata, nil

@@ -1,7 +1,7 @@
 export interface SuccessMessage {
 	id: number
 	positions: Float32Array
-	colors: Uint8Array | null
+	colors: Uint8Array | undefined
 }
 
 export type Message =

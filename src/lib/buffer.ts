@@ -1,5 +1,7 @@
 import { Color } from 'three'
 
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+
 export const STRIDE = {
 	/** Arrows: [x, y, z, ox, oy, oz, ...] */
 	ARROWS: 6,
@@ -30,9 +32,9 @@ export const STRIDE = {
  * ```
  */
 export const asFloat32Array = (
-	bytes: Uint8Array<ArrayBuffer>,
+	bytes: Uint8Array,
 	transform?: (value: number) => number
-): Float32Array<ArrayBuffer> => {
+): Float32Array => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
@@ -75,7 +77,7 @@ export const asFloat32Array = (
  * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
  * ```
  */
-export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {
+export const asColor = (bytes: Uint8Array, target: Color, offset = 0): Color => {
 	if (bytes.length < offset + 3) return target.setRGB(0, 0, 0)
 	return target.setRGB(bytes[offset] / 255, bytes[offset + 1] / 255, bytes[offset + 2] / 255)
 }
@@ -158,3 +160,15 @@ export const isVertexColors = (colors: Uint8Array | undefined): colors is Uint8A
  * ```
  */
 export const inMeters = (v: number): number => v * 0.001
+
+/** Returns the byte stride for a given color format. */
+export const colorStride = (format?: ColorFormat): number => {
+	switch (format) {
+		case ColorFormat.RGB: {
+			return STRIDE.COLORS_RGB
+		}
+		default: {
+			return 0
+		}
+	}
+}
