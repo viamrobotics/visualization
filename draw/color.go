@@ -9,8 +9,8 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-// DefaultAlpha is the default alpha value (fully opaque).
-var DefaultAlpha = uint8(255)
+// DefaultOpacity is the default alpha value (fully opaque).
+var DefaultOpacity = uint8(255)
 
 // Color represents an RGBA color with 8-bit channels (0-255 range).
 type Color struct {
@@ -55,7 +55,7 @@ func newColorConfig() *colorConfig {
 		r: 0,
 		g: 0,
 		b: 0,
-		a: DefaultAlpha,
+		a: DefaultOpacity,
 	}
 }
 

@@ -1,20 +1,19 @@
 import { BufferAttribute, BufferGeometry } from 'three'
 
+import type { Metadata } from './metadata'
+
 import { STRIDE } from './buffer'
 
-const colorStride = (colors: Uint8Array, positions: Float32Array): number => {
-	const numVertices = positions.length / STRIDE.POSITIONS
-	const stride = colors.length / numVertices
-	return stride === STRIDE.COLORS_RGBA ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
-}
-
-export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Array | null) => {
+export const createBufferGeometry = (positions: Float32Array, { colors, opacities }: Metadata) => {
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
 	if (colors) {
-		const stride = colorStride(colors, positions)
-		geometry.setAttribute('color', new BufferAttribute(colors, stride, true))
+		geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
+	}
+
+	if (opacities) {
+		geometry.setAttribute('opacity', new BufferAttribute(opacities, 1, true))
 	}
 
 	return geometry
@@ -23,7 +22,7 @@ export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Arra
 export const updateBufferGeometry = (
 	geometry: BufferGeometry,
 	positions: Float32Array,
-	colors?: Uint8Array | null
+	{ colors, opacities }: Metadata
 ) => {
 	const positionAttr = geometry.getAttribute('position')
 
@@ -37,13 +36,21 @@ export const updateBufferGeometry = (
 
 	if (colors) {
 		const colorAttr = geometry.getAttribute('color')
-
 		if (colorAttr && colorAttr.array.length >= colors.length) {
 			colorAttr.array.set(colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			const stride = colorStride(colors, positions)
-			geometry.setAttribute('color', new BufferAttribute(colors, stride, true))
+			geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
+		}
+	}
+
+	if (opacities) {
+		const opacityAttr = geometry.getAttribute('opacity')
+		if (opacityAttr && opacityAttr.array.length >= opacities.length) {
+			opacityAttr.array.set(opacities, 0)
+			opacityAttr.needsUpdate = true
+		} else {
+			geometry.setAttribute('opacity', new BufferAttribute(opacities, 1, true))
 		}
 	}
 }

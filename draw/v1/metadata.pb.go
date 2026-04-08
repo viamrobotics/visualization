@@ -21,12 +21,63 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ColorFormat describes the encoding of the colors bytes field.
+type ColorFormat int32
+
+const (
+	ColorFormat_COLOR_FORMAT_UNSPECIFIED ColorFormat = 0
+	ColorFormat_COLOR_FORMAT_RGB         ColorFormat = 1
+)
+
+// Enum value maps for ColorFormat.
+var (
+	ColorFormat_name = map[int32]string{
+		0: "COLOR_FORMAT_UNSPECIFIED",
+		1: "COLOR_FORMAT_RGB",
+	}
+	ColorFormat_value = map[string]int32{
+		"COLOR_FORMAT_UNSPECIFIED": 0,
+		"COLOR_FORMAT_RGB":         1,
+	}
+)
+
+func (x ColorFormat) Enum() *ColorFormat {
+	p := new(ColorFormat)
+	*p = x
+	return p
+}
+
+func (x ColorFormat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ColorFormat) Descriptor() protoreflect.EnumDescriptor {
+	return file_draw_v1_metadata_proto_enumTypes[0].Descriptor()
+}
+
+func (ColorFormat) Type() protoreflect.EnumType {
+	return &file_draw_v1_metadata_proto_enumTypes[0]
+}
+
+func (x ColorFormat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ColorFormat.Descriptor instead.
+func (ColorFormat) EnumDescriptor() ([]byte, []int) {
+	return file_draw_v1_metadata_proto_rawDescGZIP(), []int{0}
+}
+
 type Metadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Uint8Array of colors: [r, g, b, a, ...]
-	// For simple objects, this is a single color of [r, g, b, a]
-	// For complex objects, this is an array of colors of [r, g, b, a, ...]
-	Colors        []byte `protobuf:"bytes,1,opt,name=colors,proto3,oneof" json:"colors,omitempty"`
+	// Uint8Array of color values (0-255) based on the color format.
+	// Can be a single set of values for a uniform color, or an array of values for per-vertex colors.
+	Colors []byte `protobuf:"bytes,1,opt,name=colors,proto3,oneof" json:"colors,omitempty"`
+	// Describes the encoding of the colors field. Defaults to COLOR_FORMAT_RGB when set by this API.
+	ColorFormat ColorFormat `protobuf:"varint,2,opt,name=color_format,json=colorFormat,proto3,enum=draw.v1.ColorFormat" json:"color_format,omitempty"`
+	// Uint8Array of opacity values (0-255) corresponding to colors.
+	// Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
+	Opacities     []byte `protobuf:"bytes,3,opt,name=opacities,proto3,oneof" json:"opacities,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,14 +119,35 @@ func (x *Metadata) GetColors() []byte {
 	return nil
 }
 
+func (x *Metadata) GetColorFormat() ColorFormat {
+	if x != nil {
+		return x.ColorFormat
+	}
+	return ColorFormat_COLOR_FORMAT_UNSPECIFIED
+}
+
+func (x *Metadata) GetOpacities() []byte {
+	if x != nil {
+		return x.Opacities
+	}
+	return nil
+}
+
 var File_draw_v1_metadata_proto protoreflect.FileDescriptor
 
 const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
-	"\x16draw/v1/metadata.proto\x12\adraw.v1\"2\n" +
+	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\x9c\x01\n" +
 	"\bMetadata\x12\x1b\n" +
-	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01B\t\n" +
-	"\a_colorsB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x127\n" +
+	"\fcolor_format\x18\x02 \x01(\x0e2\x14.draw.v1.ColorFormatR\vcolorFormat\x12!\n" +
+	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01B\t\n" +
+	"\a_colorsB\f\n" +
+	"\n" +
+	"_opacities*A\n" +
+	"\vColorFormat\x12\x1c\n" +
+	"\x18COLOR_FORMAT_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10COLOR_FORMAT_RGB\x10\x01B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_metadata_proto_rawDescOnce sync.Once
@@ -89,16 +161,19 @@ func file_draw_v1_metadata_proto_rawDescGZIP() []byte {
 	return file_draw_v1_metadata_proto_rawDescData
 }
 
+var file_draw_v1_metadata_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_draw_v1_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_draw_v1_metadata_proto_goTypes = []any{
-	(*Metadata)(nil), // 0: draw.v1.Metadata
+	(ColorFormat)(0), // 0: draw.v1.ColorFormat
+	(*Metadata)(nil), // 1: draw.v1.Metadata
 }
 var file_draw_v1_metadata_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: draw.v1.Metadata.color_format:type_name -> draw.v1.ColorFormat
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_metadata_proto_init() }
@@ -112,13 +187,14 @@ func file_draw_v1_metadata_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_draw_v1_metadata_proto_rawDesc), len(file_draw_v1_metadata_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_draw_v1_metadata_proto_goTypes,
 		DependencyIndexes: file_draw_v1_metadata_proto_depIdxs,
+		EnumInfos:         file_draw_v1_metadata_proto_enumTypes,
 		MessageInfos:      file_draw_v1_metadata_proto_msgTypes,
 	}.Build()
 	File_draw_v1_metadata_proto = out.File

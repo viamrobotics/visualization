@@ -290,5 +290,29 @@ func NewMetadata(options ...drawMetadataOption) Metadata {
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
-	return &drawv1.Metadata{Colors: packColors(metadata.Colors)}
+	proto := &drawv1.Metadata{
+		Colors:      packColors(metadata.Colors),
+		ColorFormat: drawv1.ColorFormat_COLOR_FORMAT_RGB,
+	}
+	if opacity, uniform := metadata.opacitySummary(); uniform {
+		proto.Opacities = []byte{opacity}
+	} else {
+		proto.Opacities = packOpacities(metadata.Colors)
+	}
+	return proto
+}
+
+// opacitySummary returns the shared opacity and true if all colors have the same alpha,
+// or (0, false) if opacities differ across colors.
+func (metadata *Metadata) opacitySummary() (uint8, bool) {
+	if len(metadata.Colors) == 0 {
+		return DefaultOpacity, true
+	}
+	first := metadata.Colors[0].A
+	for _, c := range metadata.Colors[1:] {
+		if c.A != first {
+			return 0, false
+		}
+	}
+	return first, true
 }

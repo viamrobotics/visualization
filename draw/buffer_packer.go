@@ -115,27 +115,46 @@ func packPoses(poses []spatialmath.Pose, theta bool) []byte {
 	return packer.Read()
 }
 
-// packColors packs a slice of Color values into a uint8 byte representation.
-// Each color is packed as [r, g, b, a] with values in the range 0-255.
+// packColors packs a slice of Color values into bytes.
+// Each color is packed as [r, g, b] with values in the range 0-255.
 func packColors(colors []Color) []byte {
-	packer := NewBufferPacker[uint8](len(colors), 4)
+	packer := NewBufferPacker[uint8](len(colors), 3)
 
-	for _, rgba := range colors {
-		packer.Write(rgba.R, rgba.G, rgba.B, rgba.A)
+	for _, rgb := range colors {
+		packer.Write(rgb.R, rgb.G, rgb.B)
 	}
 
 	return packer.Read()
 }
 
-func unpackColors(colorsBytes []byte) []Color {
-	bytesPerColor := 4
+// packOpacities packs the alpha channel of a slice of Color values into bytes.
+// Each opacity is a single byte (0-255).
+func packOpacities(colors []Color) []byte {
+	packer := NewBufferPacker[uint8](len(colors), 1)
+
+	for _, c := range colors {
+		packer.Write(c.A)
+	}
+
+	return packer.Read()
+}
+
+// unpackColors unpacks a slice of Color values from a uint8 byte representation.
+func unpackColors(colorsBytes []byte, opacitiesBytes []byte) []Color {
+	bytesPerColor := 3
 	colors := make([]Color, len(colorsBytes)/bytesPerColor)
-	for i := 0; i < len(colors); i++ {
+	for i := range colors {
+		alpha := DefaultOpacity
+		if i < len(opacitiesBytes) {
+			alpha = opacitiesBytes[i]
+		} else if len(opacitiesBytes) == 1 {
+			alpha = opacitiesBytes[0]
+		}
 		colors[i] = Color{
 			R: colorsBytes[i*bytesPerColor],
 			G: colorsBytes[i*bytesPerColor+1],
 			B: colorsBytes[i*bytesPerColor+2],
-			A: colorsBytes[i*bytesPerColor+3],
+			A: alpha,
 		}
 	}
 	return colors
