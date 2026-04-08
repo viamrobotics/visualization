@@ -3,12 +3,7 @@
 	import { createRandomPcdBinary } from '$lib/test/createRandomPcdBinary'
 </script>
 
-<SelectionTool
-	enabled
-	onCommitSelections={() => {
-		/* do something */
-	}}
-/>
+<SelectionTool enabled />
 
 {#await createRandomPcdBinary(10_000, 1) then data}
 	<PCD {data} />

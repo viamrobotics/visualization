@@ -91,26 +91,4 @@
 	<Ellipse active={selectionType === 'ellipse'} />
 	<Lasso active={selectionType === 'lasso'} />
 	{@render children?.()}
-
-	<!-- <Portal id="dom">
-		<FloatingPanel
-			isOpen
-			exitable={false}
-			title="Lasso"
-			defaultSize={{ width: 445, height: 100 }}
-			defaultPosition={{ x: rect.width / 2 - 200, y: rect.height - 10 - 100 }}
-		>
-			<div class="flex items-center gap-4 p-4 text-xs">
-				Shift + click and drag to make a lasso selection.
-				<Button
-					onclick={onCommitClick}
-					variant="success">Commit selection</Button
-				>
-				<Button
-					onclick={onClearClick}
-					variant="danger">Clear selection</Button
-				>
-			</div>
-		</FloatingPanel>
-	</Portal> -->
 {/if}
