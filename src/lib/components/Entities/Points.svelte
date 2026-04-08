@@ -3,8 +3,8 @@
 	import type { Snippet } from 'svelte'
 
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import { Portal } from '@threlte/extras'
-	import { OrthographicCamera, Points, PointsMaterial } from 'three'
+	import { Detailed, Portal } from '@threlte/extras'
+	import { LOD, OrthographicCamera, Points, PointsMaterial } from 'three'
 
 	import { traits, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -25,6 +25,7 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const geometry = useTrait(() => entity, traits.BufferGeometry)
+	const lodData = useTrait(() => entity, traits.PointCloudLOD)
 	const color = useTrait(() => entity, traits.Color)
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
@@ -34,10 +35,20 @@
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
 	)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
+	const hasLOD = $derived(lodData.current !== undefined && lodData.current.levels.length > 0)
 
 	const points = new Points()
 	const material = points.material as PointsMaterial
 	material.toneMapped = false
+
+	let lodRef = $state<LOD>()
+
+	const lodPoints = $derived(
+		lodData.current?.levels.map((level) => ({
+			points: new Points(level.geometry, material),
+			distance: level.distance,
+		})) ?? []
+	)
 
 	$effect.pre(() => {
 		material.size = pointSize
@@ -93,7 +104,7 @@
 
 	$effect.pre(() => {
 		if (pose.current) {
-			poseToObject3d(pose.current, points)
+			poseToObject3d(pose.current, hasLOD && lodRef ? lodRef : points)
 		}
 	})
 
@@ -121,8 +132,24 @@
 	})
 </script>
 
-{#if geometry.current}
-	<Portal id={parent.current}>
+<Portal id={parent.current}>
+	{#if hasLOD}
+		<Detailed
+			bind:ref={lodRef}
+			name={entity}
+			visible={invisible.current !== true}
+			{...events}
+		>
+			{#each lodPoints as { points: childPoints, distance } (childPoints)}
+				<T
+					is={childPoints}
+					{distance}
+					bvh={{ maxDepth: 40, maxLeafSize: 20 }}
+				/>
+			{/each}
+			{@render children?.()}
+		</Detailed>
+	{:else if geometry.current}
 		<T
 			is={points}
 			name={entity}
@@ -134,5 +161,5 @@
 			<T is={material} />
 			{@render children?.()}
 		</T>
-	</Portal>
-{/if}
+	{/if}
+</Portal>

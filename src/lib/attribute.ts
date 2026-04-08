@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry } from 'three'
 
 import { STRIDE } from './buffer'
+import type { LODLevel } from './loaders/pcd/messages'
 
 const colorStride = (colors: Uint8Array, positions: Float32Array): number => {
 	const numVertices = positions.length / STRIDE.POSITIONS
@@ -18,6 +19,37 @@ export const createBufferGeometry = (positions: Float32Array, colors?: Uint8Arra
 	}
 
 	return geometry
+}
+
+export interface LODGeometryLevel {
+	geometry: BufferGeometry
+	distance: number
+}
+
+export const createLODGeometries = (levels: LODLevel[]): LODGeometryLevel[] => {
+	return levels.map((level) => ({
+		geometry: createBufferGeometry(level.positions, level.colors),
+		distance: level.distance,
+	}))
+}
+
+export const updateLODGeometries = (
+	existing: LODGeometryLevel[],
+	levels: LODLevel[]
+): LODGeometryLevel[] => {
+	if (existing.length !== levels.length) {
+		for (const { geometry } of existing) {
+			geometry.dispose()
+		}
+		return createLODGeometries(levels)
+	}
+
+	for (let i = 0; i < levels.length; i++) {
+		updateBufferGeometry(existing[i]!.geometry, levels[i]!.positions, levels[i]!.colors)
+		existing[i]!.distance = levels[i]!.distance
+	}
+
+	return existing
 }
 
 export const updateBufferGeometry = (
