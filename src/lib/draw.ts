@@ -79,7 +79,6 @@ export const drawTransform = (
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	applyMetadataFlags(entityTraits, parsedMetadata)
 
 	const { colors, opacities } = parsedMetadata
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
@@ -150,7 +149,6 @@ export const updateTransform = (
 	}
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	updateMetadataFlags(entity, parsedMetadata)
 
 	const { colors, opacities } = parsedMetadata
 	if (colors) {
