@@ -3,6 +3,7 @@ import { BufferAttribute, BufferGeometry } from 'three'
 import type { Metadata } from './metadata'
 
 import { STRIDE } from './buffer'
+import type { LODLevel } from './loaders/pcd/messages'
 
 export const createBufferGeometry = (positions: Float32Array, { colors, opacities }: Metadata) => {
 	const geometry = new BufferGeometry()
@@ -17,6 +18,39 @@ export const createBufferGeometry = (positions: Float32Array, { colors, opacitie
 	}
 
 	return geometry
+}
+
+export interface LODGeometryLevel {
+	geometry: BufferGeometry
+	distance: number
+}
+
+export const createLODGeometries = (levels: LODLevel[]): LODGeometryLevel[] => {
+	return levels.map((level) => ({
+		geometry: createBufferGeometry(level.positions, { colors: level.colors ?? undefined }),
+		distance: level.distance,
+	}))
+}
+
+export const updateLODGeometries = (
+	existing: LODGeometryLevel[],
+	levels: LODLevel[]
+): LODGeometryLevel[] => {
+	if (existing.length !== levels.length) {
+		for (const { geometry } of existing) {
+			geometry.dispose()
+		}
+		return createLODGeometries(levels)
+	}
+
+	for (let i = 0; i < levels.length; i++) {
+		updateBufferGeometry(existing[i]!.geometry, levels[i]!.positions, {
+			colors: levels[i]!.colors ?? undefined,
+		})
+		existing[i]!.distance = levels[i]!.distance
+	}
+
+	return existing
 }
 
 export const updateBufferGeometry = (

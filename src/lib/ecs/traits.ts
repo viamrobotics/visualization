@@ -4,6 +4,8 @@ import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { type Entity, trait } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 
+import type { LODGeometryLevel } from '$lib/attribute'
+
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 
@@ -109,6 +111,11 @@ export const Capsule = trait({ l: 200, r: 50 })
 export const Sphere = trait({ r: 200 })
 
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
+
+export const PointCloudLOD = trait(() => ({
+	levels: [] as LODGeometryLevel[],
+	diagonal: 0,
+}))
 
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },

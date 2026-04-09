@@ -1,4 +1,4 @@
-import type { Entity } from 'koota'
+import type { ConfigurableTrait, Entity } from 'koota'
 
 import { CameraClient } from '@viamrobotics/sdk'
 import {
@@ -8,10 +8,15 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext, untrack } from 'svelte'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import {
+	createBufferGeometry,
+	createLODGeometries,
+	updateBufferGeometry,
+	updateLODGeometries,
+} from '$lib/attribute'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
+import { parsePcdWithLOD } from '$lib/loaders/pcd'
 
 import { useEnvironment } from './useEnvironment.svelte'
 import { useLogs } from './useLogs.svelte'
@@ -140,35 +145,57 @@ export const providePointclouds = (partID: () => string) => {
 					}
 				}
 
-				parsePcdInWorker(data)
-					.then(({ positions, colors }) => {
+				parsePcdWithLOD(data)
+					.then(({ levels, boundingBoxDiagonal }) => {
 						if (disposed) {
 							return
 						}
 
 						const existing = entities.get(queryKey)
+						const finest = levels.find((l) => l.level === 0) ?? levels[0]!
 						const metadata = {
-							colors: colors ?? undefined,
+							colors: finest.colors ?? undefined,
 						}
 
 						if (existing) {
 							const geometry = existing.get(traits.BufferGeometry)
+							const existingLOD = existing.get(traits.PointCloudLOD)
 
 							if (geometry) {
-								updateBufferGeometry(geometry, positions, metadata)
+								updateBufferGeometry(geometry, finest.positions, metadata)
 								return
 							}
+
+							if (existingLOD && levels.length > 1) {
+								// Update geometry buffers in place without setting the trait
+								// to avoid triggering re-renders and component remounts.
+								// BVH is not recomputed here — it drifts slightly between
+								// frames but avoids expensive main-thread recomputation.
+								updateLODGeometries(existingLOD.levels, levels)
+							}
+
+							return
 						}
 
-						const geometry = createBufferGeometry(positions, metadata)
+						const geometry = createBufferGeometry(finest.positions, metadata)
 
-						const entity = world.spawn(
+						const entityTraits: ConfigurableTrait[] = [
 							traits.Parent(name),
 							traits.Name(`${name} pointcloud`),
 							traits.BufferGeometry(geometry),
-							traits.Points
-						)
+							traits.Points,
+						]
 
+						if (levels.length > 1) {
+							entityTraits.push(
+								traits.PointCloudLOD({
+									levels: createLODGeometries(levels),
+									diagonal: boundingBoxDiagonal,
+								})
+							)
+						}
+
+						const entity = world.spawn(...entityTraits)
 						entities.set(queryKey, entity)
 					})
 					.catch((error) => {
