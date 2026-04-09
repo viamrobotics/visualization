@@ -539,9 +539,3 @@ const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 		entity.remove(traits.Colors)
 	}
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const applyMetadataFlags = (entityTraits: ConfigurableTrait[], metadata: Metadata | null | undefined): void => {}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const updateMetadataFlags = (entity: Entity, metadata: Metadata | null | undefined): void => {}
