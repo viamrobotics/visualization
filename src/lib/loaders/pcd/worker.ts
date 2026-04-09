@@ -9,64 +9,173 @@ const size = new Vector3()
 const LOD_THRESHOLD = 100_000
 
 /**
- * Downsamples a point cloud to keep an exact fraction of the original points.
+ * Spatially-aware point cloud downsampling using a voxel grid, sized to
+ * approximate a target point count.
  *
- * Uses a Bresenham-style accumulator to select evenly-spaced points from the
- * input array. For each input point, the fraction is added to an accumulator.
- * When the accumulator reaches 1, that point is kept and the accumulator wraps.
- * This produces a deterministic, evenly-distributed subset without randomness
- * or spatial indexing.
+ * The algorithm divides the bounding box into a uniform 3D grid of cubic cells.
+ * For each input point, it computes which cell the point falls into. If that
+ * cell hasn't been claimed yet, the point is kept; otherwise it's discarded.
+ * The result is at most one point per cell — a fast approximation of Poisson
+ * disk subsampling (and the same technique used by PCL and Open3D for point
+ * cloud downsampling).
  *
- * Properties:
- * - Exact: fraction=0.85 on 100k points always yields exactly 85k points.
- * - Predictable: the same input always produces the same output, avoiding
- *   flickering when point clouds update on a live feed.
- * - Distribution-agnostic: unlike voxel grid downsampling, the reduction ratio
- *   does not depend on the spatial distribution or density of points. A sparse
- *   cloud and a dense cloud with the same point count produce the same-sized output.
- * - Fast: O(n) with no Map/Set allocation, just a single pass over the arrays.
+ * The cell size is derived from a target fraction of points to keep:
  *
- * @param positions - Source positions array (3 floats per point: x, y, z)
- * @param colors - Source colors array, or null if the cloud has no color data
- * @param fraction - The fraction of points to keep, between 0 and 1
+ *   targetCount = numPoints × fraction
+ *   cellSize    = ∛(volume / targetCount)
+ *
+ * This sizes each cell so that, for a uniform distribution, roughly one point
+ * lands per cell — yielding approximately `targetCount` output points. The
+ * actual output count depends on the spatial distribution:
+ *
+ * - Dense clusters are thinned aggressively (many points share a cell).
+ * - Sparse, isolated points are preserved (each occupies its own cell).
+ *
+ * This is exactly the behavior we want for LOD: redundant points in dense
+ * areas are removed first, while points that define the shape's structure
+ * in sparse areas are kept.
+ *
+ * The output count is approximate, not exact. For LOD purposes this is fine —
+ * what matters is spatial quality, not hitting a precise number.
+ *
+ * Cells are identified by encoding their (cx, cy, cz) grid coordinates into a
+ * single integer key: `cx + cy * gridSizeX + cz * gridSizeX * gridSizeY`.
+ * A Map tracks which cells are occupied (first point wins).
+ *
+ * Performance: O(n) — one pass to bucket points, one pass to extract results.
+ *
+ * @param positions - Source positions (3 floats per point: x, y, z)
+ * @param colors - Source colors, or null if the cloud has no color data
+ * @param cellSize - Side length of each cubic voxel cell
+ * @param minX - Bounding box minimum X
+ * @param minY - Bounding box minimum Y
+ * @param minZ - Bounding box minimum Z
+ * @param rangeX - Bounding box extent in X (maxX - minX)
+ * @param rangeY - Bounding box extent in Y (maxY - minY)
  * @param colorStride - Number of color components per point (3 for RGB, 4 for RGBA)
  */
-const fractionalDownsample = (
+const voxelDownsample = (
 	positions: Float32Array,
 	colors: Uint8Array | null,
-	fraction: number,
+	cellSize: number,
+	minX: number,
+	minY: number,
+	minZ: number,
+	rangeX: number,
+	rangeY: number,
 	colorStride: number
 ): { positions: Float32Array<ArrayBuffer>; colors: Uint8Array<ArrayBuffer> | null } => {
 	const numPoints = positions.length / 3
-	const outCount = Math.round(numPoints * fraction)
-	const outPositions = new Float32Array(outCount * 3)
-	const outColors = colors ? new Uint8Array(outCount * colorStride) : null
+	const gridSizeX = Math.ceil(rangeX / cellSize) + 1
+	const gridSizeY = Math.ceil(rangeY / cellSize) + 1
 
-	let accumulator = 0
-	let j = 0
+	const occupied = new Map<number, number>()
 
-	for (let i = 0; i < numPoints && j < outCount; i++) {
-		accumulator += fraction
-		if (accumulator >= 1) {
-			accumulator -= 1
+	for (let i = 0; i < numPoints; i++) {
+		const cx = Math.floor((positions[i * 3]! - minX) / cellSize)
+		const cy = Math.floor((positions[i * 3 + 1]! - minY) / cellSize)
+		const cz = Math.floor((positions[i * 3 + 2]! - minZ) / cellSize)
+		const key = cx + cy * gridSizeX + cz * gridSizeX * gridSizeY
 
-			outPositions[j * 3] = positions[i * 3]!
-			outPositions[j * 3 + 1] = positions[i * 3 + 1]!
-			outPositions[j * 3 + 2] = positions[i * 3 + 2]!
-
-			if (outColors && colors) {
-				const srcOff = i * colorStride
-				const dstOff = j * colorStride
-				for (let c = 0; c < colorStride; c++) {
-					outColors[dstOff + c] = colors[srcOff + c]!
-				}
-			}
-
-			j++
+		if (!occupied.has(key)) {
+			occupied.set(key, i)
 		}
 	}
 
+	const outPositions = new Float32Array(occupied.size * 3)
+	const outColors = colors ? new Uint8Array(occupied.size * colorStride) : null
+
+	let j = 0
+	for (const idx of occupied.values()) {
+		outPositions[j * 3] = positions[idx * 3]!
+		outPositions[j * 3 + 1] = positions[idx * 3 + 1]!
+		outPositions[j * 3 + 2] = positions[idx * 3 + 2]!
+
+		if (outColors && colors) {
+			const srcOff = idx * colorStride
+			const dstOff = j * colorStride
+			for (let c = 0; c < colorStride; c++) {
+				outColors[dstOff + c] = colors[srcOff + c]!
+			}
+		}
+
+		j++
+	}
+
 	return { positions: outPositions, colors: outColors }
+}
+
+/**
+ * Counts how many voxel cells would be occupied at a given cell size,
+ * without allocating output arrays. Used to calibrate cell size before
+ * running the full downsampling pass.
+ */
+const countOccupied = (
+	positions: Float32Array,
+	numPoints: number,
+	cellSize: number,
+	minX: number,
+	minY: number,
+	minZ: number,
+	rangeX: number,
+	rangeY: number
+): number => {
+	const gridSizeX = Math.ceil(rangeX / cellSize) + 1
+	const gridSizeY = Math.ceil(rangeY / cellSize) + 1
+	const occupied = new Set<number>()
+
+	for (let i = 0; i < numPoints; i++) {
+		const cx = Math.floor((positions[i * 3]! - minX) / cellSize)
+		const cy = Math.floor((positions[i * 3 + 1]! - minY) / cellSize)
+		const cz = Math.floor((positions[i * 3 + 2]! - minZ) / cellSize)
+		occupied.add(cx + cy * gridSizeX + cz * gridSizeX * gridSizeY)
+	}
+
+	return occupied.size
+}
+
+/**
+ * Finds a voxel cell size that produces approximately `targetCount` output
+ * points, then runs the full downsampling at that cell size.
+ *
+ * Starts from an initial estimate (cbrt of volume / target) and iteratively
+ * adjusts: counts occupied cells, then scales the cell size by the overshoot
+ * ratio raised to a fractional power (~1/2.5, a compromise between the
+ * quadratic scaling of surface data and the cubic scaling of volumetric data).
+ * Converges in 2-3 iterations for typical point clouds.
+ */
+const voxelDownsampleToTarget = (
+	positions: Float32Array,
+	colors: Uint8Array | null,
+	targetFraction: number,
+	volume: number,
+	minX: number,
+	minY: number,
+	minZ: number,
+	rangeX: number,
+	rangeY: number,
+	colorStride: number
+): { positions: Float32Array<ArrayBuffer>; colors: Uint8Array<ArrayBuffer> | null } => {
+	const numPoints = positions.length / 3
+	const targetCount = numPoints * targetFraction
+
+	let cellSize = Math.cbrt(volume / targetCount)
+
+	// Iteratively calibrate cell size to hit the target count
+	for (let iter = 0; iter < 3; iter++) {
+		const count = countOccupied(
+			positions, numPoints, cellSize, minX, minY, minZ, rangeX, rangeY
+		)
+
+		const ratio = count / targetCount
+		if (ratio > 0.9 && ratio < 1.1) break
+
+		cellSize *= Math.pow(ratio, 1 / 2.5)
+	}
+
+	return voxelDownsample(
+		positions, colors, cellSize, minX, minY, minZ, rangeX, rangeY, colorStride
+	)
 }
 
 const sendLODLevel = (
@@ -126,19 +235,27 @@ globalThis.onmessage = async (event) => {
 				const diagonal = size.length()
 
 				const colorStride = colors ? colors.length / numPoints : 0
+				const { x: minX, y: minY, z: minZ } = bbox.min
+				const volume = Math.max(size.x * size.y * size.z, 1e-10)
 
 				const lodConfigs = [
-					{ level: 6, fraction: 0.05, distance: diagonal * 8 },
-					{ level: 5, fraction: 0.15, distance: diagonal * 4 },
-					{ level: 4, fraction: 0.3, distance: diagonal * 2 },
-					{ level: 3, fraction: 0.5, distance: diagonal * 1 },
-					{ level: 2, fraction: 0.7, distance: diagonal * 0.5 },
-					{ level: 1, fraction: 0.85, distance: diagonal * 0.25 },
+					{ level: 8, fraction: 0.05, distance: Math.min(diagonal * 8, 30) },
+					{ level: 7, fraction: 0.10, distance: Math.min(diagonal * 6, 20) },
+					{ level: 6, fraction: 0.20, distance: Math.min(diagonal * 4, 15) },
+					{ level: 5, fraction: 0.35, distance: Math.min(diagonal * 2, 8) },
+					{ level: 4, fraction: 0.50, distance: Math.min(diagonal * 1, 4) },
+					{ level: 3, fraction: 0.65, distance: Math.min(diagonal * 0.5, 2) },
+					{ level: 2, fraction: 0.80, distance: Math.min(diagonal * 0.25, 1) },
+					{ level: 2, fraction: 0.92, distance: Math.min(diagonal * 0.1, 0.5) },
+					{ level: 1, fraction: 0.97, distance: Math.min(diagonal * 0.05, 0.25) },
 				]
 
 				// Send coarsest to finest
 				for (const { level, fraction, distance } of lodConfigs) {
-					const result = fractionalDownsample(positions, colors, fraction, colorStride)
+					const result = voxelDownsampleToTarget(
+						positions, colors, fraction, volume,
+						minX, minY, minZ, size.x, size.y, colorStride
+					)
 					sendLODLevel(id, level, distance, result.positions, result.colors, false, diagonal)
 				}
 

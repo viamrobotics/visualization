@@ -117,9 +117,6 @@ export const PointCloudLOD = trait(() => ({
 	diagonal: 0,
 }))
 
-/** format [r, g, b, ...] */
-export const VertexColors = trait(() => new Float32Array())
-
 export const GLTF = trait(() => ({
 	source: { url: '' } as { url: string } | { gltf: ThreeGltf } | { glb: Uint8Array<ArrayBuffer> },
 	animationName: '',

@@ -27,7 +27,7 @@ export interface LODGeometryLevel {
 
 export const createLODGeometries = (levels: LODLevel[]): LODGeometryLevel[] => {
 	return levels.map((level) => ({
-		geometry: createBufferGeometry(level.positions, level.colors),
+		geometry: createBufferGeometry(level.positions, { colors: level.colors ?? undefined }),
 		distance: level.distance,
 	}))
 }
@@ -44,7 +44,9 @@ export const updateLODGeometries = (
 	}
 
 	for (let i = 0; i < levels.length; i++) {
-		updateBufferGeometry(existing[i]!.geometry, levels[i]!.positions, levels[i]!.colors)
+		updateBufferGeometry(existing[i]!.geometry, levels[i]!.positions, {
+			colors: levels[i]!.colors ?? undefined,
+		})
 		existing[i]!.distance = levels[i]!.distance
 	}
 
