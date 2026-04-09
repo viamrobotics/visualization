@@ -25,8 +25,6 @@ import { createPose } from '$lib/transform'
 import { ColorFormat } from './buf/draw/v1/metadata_pb'
 import { isPointCloud } from './geometry'
 
-const METADATA_FLAG_TRAITS: Array<{ key: string; trait: Trait }> = []
-
 const vec3 = new Vector3()
 const rgb = { r: 0, g: 0, b: 0 }
 
@@ -542,22 +540,8 @@ const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	}
 }
 
-const applyMetadataFlags = (
-	entityTraits: ConfigurableTrait[],
-	metadata: Record<string, unknown> | null | undefined
-): void => {
-	if (!metadata) return
-	for (const { key, trait } of METADATA_FLAG_TRAITS) {
-		if (metadata[key]) entityTraits.push(trait)
-	}
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const applyMetadataFlags = (entityTraits: ConfigurableTrait[], metadata: Metadata | null | undefined): void => {}
 
-const updateMetadataFlags = (
-	entity: Entity,
-	metadata: Record<string, unknown> | null | undefined
-): void => {
-	for (const { key, trait } of METADATA_FLAG_TRAITS) {
-		if (metadata?.[key]) entity.add(trait)
-		else entity.remove(trait)
-	}
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const updateMetadataFlags = (entity: Entity, metadata: Metadata | null | undefined): void => {}

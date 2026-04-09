@@ -13,17 +13,17 @@ import (
 
 // DrawLineOptions configures a DrawLine call.
 type DrawLineOptions struct {
-	// A unique identifier for the line. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the line.
+	// The name of the entity.
 	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// The positions defining the polyline vertices.
 	Positions []r3.Vector
-
-	// The name of the parent frame. If empty, the line will be parented to the "world" frame.
-	Parent string
 
 	// Colors is the colors to use for the line segments.
 	// Provide no colors for the default, one color to use for all segments,
@@ -99,17 +99,7 @@ func DrawLine(options DrawLineOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create line: %w", err)
 	}
 
-	parent := options.Parent
-	if parent == "" {
-		parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	drawing := line.Draw(options.Name, drawOpts...)
+	drawing := line.Draw(options.Name, entityOptions(options.ID, options.Parent)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

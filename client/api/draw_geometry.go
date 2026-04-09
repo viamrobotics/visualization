@@ -13,10 +13,13 @@ import (
 
 // DrawGeometryOptions configures a DrawGeometry call.
 type DrawGeometryOptions struct {
-	// A unique identifier for the geometry. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the parent frame. If empty, the geometry will be parented to the "world" frame.
+	// The name of the entity. If empty, falls back to the geometry label.
+	Name string
+
+	// The parent frame name. If empty, defaults to "world".
 	Parent string
 
 	// The geometry to draw.
@@ -41,16 +44,7 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn geometry: %w", err)
 	}
 
-	if options.Parent == "" {
-		options.Parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	transform, err := drawnGeometry.Draw("", drawOpts...)
+	transform, err := drawnGeometry.Draw(options.Name, entityOptions(options.ID, options.Parent)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}

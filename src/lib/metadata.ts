@@ -10,17 +10,9 @@ import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadat
  */
 export type Metadata = PlainMessage<MetadataProto>
 
-/** Metadata flags that are serialized as struct fields in transforms. */
-export const METADATA_FLAGS: Array<{ field: string; key: keyof Metadata }> = []
-
 /** Type guard that checks whether a string is a recognised metadata wire key. */
 export const isMetadataField = (key: string): boolean => {
-	return (
-		key === 'colors' ||
-		key === 'color_format' ||
-		key === 'opacities' ||
-		METADATA_FLAGS.some(({ field }) => field === key)
-	)
+	return key === 'colors' || key === 'color_format' || key === 'opacities'
 }
 
 /**
@@ -69,16 +61,6 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 						opacityBytes[i] = binary.charCodeAt(i)
 					}
 					json.opacities = opacityBytes
-				}
-				break
-			}
-
-			default: {
-				for (const { field } of METADATA_FLAGS) {
-					if (k === field && typeof unwrappedValue === 'boolean') {
-						// TODO: Uncomment when we have metadata flags
-						// json[key] = unwrappedValue
-					}
 				}
 				break
 			}
