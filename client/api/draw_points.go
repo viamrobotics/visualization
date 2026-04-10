@@ -13,17 +13,17 @@ import (
 
 // DrawPointsOptions configures a DrawPoints call.
 type DrawPointsOptions struct {
-	// A unique identifier for the points. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the points.
+	// The name of the entity.
 	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// The positions of the points.
 	Positions []r3.Vector
-
-	// The name of the parent frame. If empty, the points will be parented to the "world" frame.
-	Parent string
 
 	// Colors is the list of colors to use for the points.
 	// Can be a single color for all points, per-point colors, or a color palette to cycle through.
@@ -31,6 +31,14 @@ type DrawPointsOptions struct {
 
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
+
+	// ShowAxesHelper controls whether the axes helper is shown.
+	// If nil, defaults to true.
+	ShowAxesHelper *bool
+
+	// Invisible controls whether the entity is hidden from the 3D scene by default.
+	// If nil, defaults to false.
+	Invisible *bool
 }
 
 // DrawPoints draws a set of points in the visualizer.
@@ -69,17 +77,7 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create points: %w", err)
 	}
 
-	parent := options.Parent
-	if parent == "" {
-		parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	drawing := points.Draw(options.Name, drawOpts...)
+	drawing := points.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

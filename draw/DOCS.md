@@ -105,7 +105,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func WithPose\(pose spatialmath.Pose\) DrawableOption](<#WithPose>)
   - [func WithUUID\(id \[\]byte\) DrawableOption](<#WithUUID>)
 - [type Drawing](<#Drawing>)
-  - [func NewDrawing\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata\) \*Drawing](<#NewDrawing>)
+  - [func NewDrawing\(config \*DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption\) \*Drawing](<#NewDrawing>)
   - [func \(drawing Drawing\) ToProto\(\) \*drawv1.Drawing](<#Drawing.ToProto>)
 - [type DrawnFrameSystem](<#DrawnFrameSystem>)
   - [func NewDrawnFrameSystem\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption\) \*DrawnFrameSystem](<#NewDrawnFrameSystem>)
@@ -1176,7 +1176,7 @@ type Drawing struct {
 ### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L222-L229>)
 
 ```go
-func NewDrawing(uuid []byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata) *Drawing
+func NewDrawing(config *DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption) *Drawing
 ```
 
 NewDrawing creates a new Drawing representing a non\-physical object in 3D space.

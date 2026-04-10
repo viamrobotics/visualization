@@ -14,20 +14,28 @@ import (
 
 // DrawGLTFOptions configures a DrawGLTF call.
 type DrawGLTFOptions struct {
-	// A unique identifier for the GLTF model. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the GLTF model.
+	// The name of the entity.
 	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// FilePath is the path to the .glb or .gltf file.
 	FilePath string
 
-	// The name of the parent frame. If empty, the model will be parented to the "world" frame.
-	Parent string
-
 	// Scale specifies the scaling factors for each axis. All dimensions must be non-zero.
 	Scale r3.Vector
+
+	// ShowAxesHelper controls whether the axes helper is shown.
+	// If nil, defaults to true.
+	ShowAxesHelper *bool
+
+	// Invisible controls whether the entity is hidden from the 3D scene by default.
+	// If nil, defaults to false.
+	Invisible *bool
 }
 
 // DrawGLTF draws a GLTF model in the visualizer.
@@ -63,16 +71,7 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create model: %w", err)
 	}
 
-	if options.Parent == "" {
-		options.Parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	drawing := model.Draw(options.Name, drawOpts...)
+	drawing := model.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

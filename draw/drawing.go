@@ -219,21 +219,15 @@ type Drawing struct {
 }
 
 // NewDrawing creates a new Drawing representing a non-physical object in 3D space.
-func NewDrawing(
-	uuid []byte,
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-	shape Shape,
-	metadata Metadata,
-) *Drawing {
+// Metadata is built from the config's universal fields plus any additional options.
+func NewDrawing(config *DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption) *Drawing {
 	return &Drawing{
-		UUID:     uuid,
-		Name:     name,
-		Parent:   parent,
-		Pose:     pose,
+		UUID:     config.UUID,
+		Name:     config.Name,
+		Parent:   config.Parent,
+		Pose:     config.Pose,
 		Shape:    shape,
-		Metadata: metadata,
+		Metadata: config.BuildMetadata(metadataOpts...),
 	}
 }
 

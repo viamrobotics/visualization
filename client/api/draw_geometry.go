@@ -13,10 +13,13 @@ import (
 
 // DrawGeometryOptions configures a DrawGeometry call.
 type DrawGeometryOptions struct {
-	// A unique identifier for the geometry. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the parent frame. If empty, the geometry will be parented to the "world" frame.
+	// The name of the entity. If empty, falls back to the geometry label.
+	Name string
+
+	// The parent frame name. If empty, defaults to "world".
 	Parent string
 
 	// The geometry to draw.
@@ -25,12 +28,12 @@ type DrawGeometryOptions struct {
 	// The color to draw the geometry with.
 	Color draw.Color
 
-	// ShowAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
+	// ShowAxesHelper controls whether the axes helper is shown.
 	// If nil, defaults to true.
 	ShowAxesHelper *bool
 
 	// Invisible controls whether the entity is hidden from the 3D scene by default.
-	// If nil, defaults to false (visible).
+	// If nil, defaults to false.
 	Invisible *bool
 }
 
@@ -49,22 +52,7 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn geometry: %w", err)
 	}
 
-	if options.Parent == "" {
-		options.Parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(options.Parent)}
-	if options.ShowAxesHelper != nil {
-		drawOpts = append(drawOpts, draw.WithAxesHelper(*options.ShowAxesHelper))
-	}
-	if options.Invisible != nil && *options.Invisible {
-		drawOpts = append(drawOpts, draw.WithInvisible(true))
-	}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	transform, err := drawnGeometry.Draw("", drawOpts...)
+	transform, err := drawnGeometry.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}

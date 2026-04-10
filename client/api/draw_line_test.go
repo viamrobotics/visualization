@@ -42,8 +42,8 @@ func TestDrawLine(t *testing.T) {
 		points := generateSpiralPoints()
 
 		uuid, err := DrawLine(DrawLineOptions{
-			Name:      "upwardSpiral",
-			Positions: points,
+			Name: "upwardSpiral",
+			Positions:     points,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
