@@ -25,10 +25,6 @@ import { createPose } from '$lib/transform'
 import { ColorFormat } from './buf/draw/v1/metadata_pb'
 import { isPointCloud } from './geometry'
 
-const METADATA_FLAG_TRAITS: Array<{ key: string; trait: Trait }> = [
-	{ key: 'showAxesHelper', trait: traits.ShowAxesHelper },
-]
-
 const vec3 = new Vector3()
 const rgb = { r: 0, g: 0, b: 0 }
 
@@ -77,7 +73,7 @@ export const drawTransform = (
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	applyMetadataFlags(entityTraits, parsedMetadata)
+	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 
 	const { colors, opacities } = parsedMetadata
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
@@ -149,7 +145,8 @@ export const updateTransform = (
 	}
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	updateMetadataFlags(entity, parsedMetadata)
+	if (parsedMetadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	else entity.remove(traits.ShowAxesHelper)
 
 	const { colors, opacities } = parsedMetadata
 	if (colors) {
@@ -536,25 +533,5 @@ const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	} else {
 		entity.set(traits.Color, asRGB(colors, rgb))
 		entity.remove(traits.Colors)
-	}
-}
-
-const applyMetadataFlags = (
-	entityTraits: ConfigurableTrait[],
-	metadata: Record<string, unknown> | null | undefined
-): void => {
-	if (!metadata) return
-	for (const { key, trait } of METADATA_FLAG_TRAITS) {
-		if (metadata[key]) entityTraits.push(trait)
-	}
-}
-
-const updateMetadataFlags = (
-	entity: Entity,
-	metadata: Record<string, unknown> | null | undefined
-): void => {
-	for (const { key, trait } of METADATA_FLAG_TRAITS) {
-		if (metadata?.[key]) entity.add(trait)
-		else entity.remove(trait)
 	}
 }

@@ -5,14 +5,10 @@ import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadat
 /** Metadata for a `Drawing` or `Transform`. */
 export type Metadata = PlainMessage<MetadataProto>
 
-const METADATA_FLAGS = [{ field: 'show_axes_helper', key: 'showAxesHelper' }] as const
-
-const isMetadataField = (key: string): boolean => {
+/** Type guard that checks whether a string is a recognised metadata wire key. */
+export const isMetadataField = (key: string): boolean => {
 	return (
-		key === 'colors' ||
-		key === 'color_format' ||
-		key === 'opacities' ||
-		METADATA_FLAGS.some(({ field }) => field === key)
+		key === 'colors' || key === 'color_format' || key === 'opacities' || key === 'show_axes_helper'
 	)
 }
 
@@ -65,11 +61,9 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 				break
 			}
 
-			default: {
-				for (const { field, key } of METADATA_FLAGS) {
-					if (k === field && typeof unwrappedValue === 'boolean') {
-						json[key] = unwrappedValue
-					}
+			case 'show_axes_helper': {
+				if (typeof unwrappedValue === 'boolean') {
+					json.showAxesHelper = unwrappedValue
 				}
 				break
 			}

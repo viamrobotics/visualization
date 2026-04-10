@@ -9,20 +9,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type metadataFlag struct {
-	key string
-	get func(Metadata) bool
-	set func(*Metadata, bool)
-}
-
-var metadataFlags = []metadataFlag{
-	{
-		key: "show_axes_helper",
-		get: func(m Metadata) bool { return m.ShowAxesHelper },
-		set: func(m *Metadata, v bool) { m.SetShowAxesHelper(v) },
-	},
-}
-
 // NewTransform creates a Viam Transform representing an object in 3D space.
 func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption) *commonv1.Transform {
 	poseInFrame := poseInFrameToProtobuf(config.Pose, config.Parent)
@@ -55,9 +41,7 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
 	}
 
-	for _, f := range metadataFlags {
-		fields[f.key] = structpb.NewBoolValue(f.get(metadata))
-	}
+	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
 
 	return &structpb.Struct{Fields: fields}
 }
@@ -84,10 +68,8 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 
 	metadata.SetColors(unpackColors(colorsBytes, opacitiesBytes))
 
-	for _, f := range metadataFlags {
-		if v := structPb.Fields[f.key]; v != nil {
-			f.set(&metadata, v.GetBoolValue())
-		}
+	if v := structPb.Fields["show_axes_helper"]; v != nil {
+		metadata.SetShowAxesHelper(v.GetBoolValue())
 	}
 
 	return metadata, nil
