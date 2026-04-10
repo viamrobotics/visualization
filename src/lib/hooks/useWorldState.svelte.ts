@@ -2,6 +2,7 @@ import type { Entity } from 'koota'
 
 import { useThrelte } from '@threlte/core'
 import {
+	Struct,
 	type TransformChangeEvent,
 	TransformChangeType,
 	type TransformWithUUID,
@@ -14,10 +15,14 @@ import {
 	useResourceNames,
 } from '@viamrobotics/svelte-sdk'
 
+import { writeBufferGeometryRange } from '$lib/attribute'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import { asFloat32Array, inMeters } from '$lib/buffer'
 import { drawTransform } from '$lib/draw'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { isPointCloud } from '$lib/geometry'
+import { metadataFromStruct } from '$lib/metadata'
 import { parsePlyInput } from '$lib/ply'
 import { createPose } from '$lib/transform'
 
@@ -55,11 +60,27 @@ export const provideWorldStates = () => {
 	})
 }
 
+const waitForFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+/**
+ * Decodes a base64-encoded string into a Uint8Array.
+ */
+const decodeBase64 = (encoded: string): Uint8Array => {
+	const binary = atob(encoded)
+	const bytes = new Uint8Array(binary.length)
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i)
+	}
+	return bytes
+}
+
 const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
 
 	const entities = new Map<string, Entity>()
+	const activeChunkPulls = new Set<string>()
+	const chunkAbortController = new AbortController()
 
 	const spawnEntity = (transform: TransformWithUUID) => {
 		if (entities.has(transform.uuidString)) {
@@ -69,7 +90,115 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		const entity = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
 		entities.set(transform.uuidString, entity)
 
+		const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
+		const chunks = parsedMetadata.chunks
+
+		if (chunks && chunks.total > 0) {
+			const chunkElements = chunks.chunkSize
+
+			entity.add(traits.ChunkProgress({ loaded: chunkElements, total: chunks.total }))
+
+			void pullChunks(
+				transform.uuidString,
+				entity,
+				chunks.total,
+				chunkElements,
+				chunkAbortController.signal
+			)
+		}
+
 		if (isPointCloud(transform.physicalObject?.geometryType)) invalidate()
+	}
+
+	/**
+	 * Pulls remaining chunks for a chunked entity via DoCommand.
+	 *
+	 * TODO: Document the DoCommand contract for service implementors.
+	 * The expected request format is:
+	 *   { "command": "get_entity_chunk", "uuid": "<uuid-string>", "start": <element-offset> }
+	 * The expected response format is:
+	 *   { "positions": "<base64 Float32Array>", "colors": "<base64 Uint8Array>" (optional),
+	 *     "opacities": "<base64 Uint8Array>" (optional), "start": <number>, "done": <boolean> }
+	 */
+	const pullChunks = async (
+		uuid: string,
+		entity: Entity,
+		totalElements: number,
+		firstChunkEnd: number,
+		signal: AbortSignal
+	) => {
+		if (activeChunkPulls.has(uuid)) return
+		activeChunkPulls.add(uuid)
+
+		try {
+			let nextStart = firstChunkEnd
+			while (!signal.aborted) {
+				const activeClient = client.current
+				if (!activeClient) break
+
+				const response = await activeClient.doCommand(
+					Struct.fromJson({
+						command: 'get_entity_chunk',
+						uuid,
+						start: nextStart,
+					})
+				)
+
+				if (signal.aborted) break
+
+				const fields = response as Record<string, unknown>
+				const done = fields['done'] === true
+
+				const encodedPositions = fields['positions']
+				if (typeof encodedPositions !== 'string' || encodedPositions.length === 0) {
+					if (done) break
+					continue
+				}
+
+				const buffer = entity.get(traits.BufferGeometry)
+				if (!buffer) break
+
+				const bytes = decodeBase64(encodedPositions)
+				const positions = asFloat32Array(bytes, inMeters)
+				const start = typeof fields['start'] === 'number' ? fields['start'] : nextStart
+
+				const encodedColors = fields['colors']
+				const colors =
+					typeof encodedColors === 'string' && encodedColors.length > 0
+						? decodeBase64(encodedColors)
+						: undefined
+
+				const encodedOpacities = fields['opacities']
+				const opacities =
+					typeof encodedOpacities === 'string' && encodedOpacities.length > 0
+						? decodeBase64(encodedOpacities)
+						: undefined
+
+				writeBufferGeometryRange(buffer, positions, start, {
+					colorFormat: ColorFormat.RGB,
+					colors,
+					opacities,
+				})
+
+				const chunkElements = positions.length / 3
+				nextStart = start + chunkElements
+				entity.set(traits.ChunkProgress, { loaded: nextStart, total: totalElements })
+				invalidate()
+
+				if (done) break
+
+				await waitForFrame()
+			}
+		} catch (error) {
+			if (!signal.aborted) {
+				console.error(`Chunk pull failed for entity ${uuid}:`, error)
+			}
+		} finally {
+			activeChunkPulls.delete(uuid)
+			if (world.has(entity)) {
+				entity.remove(traits.ChunkProgress)
+			}
+		}
 	}
 
 	const destroyEntity = (uuid: string) => {
@@ -234,6 +363,7 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 	})
 
 	return () => {
+		chunkAbortController.abort()
 		for (const [, entity] of entities) {
 			if (world.has(entity)) {
 				entity.destroy()

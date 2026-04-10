@@ -164,7 +164,13 @@ export const DotSize = trait(() => 10)
 export const ReferenceFrame = trait(() => true)
 
 /**
- * This entity can be safetly removed from the scene by the user
+ * Tracks chunk loading progress for progressively-loaded entities.
+ * `loaded` is the number of elements received so far; `total` is the target.
+ */
+export const ChunkProgress = trait({ loaded: 0, total: 0 })
+
+/**
+ * This entity can be safely removed from the scene by the user
  */
 export const Removable = trait(() => true)
 

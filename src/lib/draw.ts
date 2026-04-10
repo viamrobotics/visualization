@@ -7,7 +7,12 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import {
+	createBufferGeometry,
+	preAllocateBufferGeometry,
+	updateBufferGeometry,
+	writeBufferGeometryRange,
+} from '$lib/attribute'
 import {
 	asFloat32Array,
 	asOpacity,
@@ -241,20 +246,33 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 		case 'points': {
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
+			const total = metadata?.chunks?.total
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
 			addColorTraits(entity, colors ?? DEFAULT_POINTS_COLORS)
 			entity.add(traits.PointSize(geometryType.value.pointSize ?? DEFAULT_POINT_SIZE))
-			entity.add(
-				traits.BufferGeometry(
-					createBufferGeometry(positions, {
-						colors: isVertexColors(colors) ? colors : undefined,
-						colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
-					})
-				)
-			)
+
+			const vertexColors = isVertexColors(colors) ? colors : undefined
+			const pointsMetadata = {
+				colors: vertexColors,
+				colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
+				opacities: metadata?.opacities,
+			}
+
+			if (total !== undefined && total > 0) {
+				const allocMetadata = {
+					...pointsMetadata,
+					colors: vertexColors ? new Uint8Array(0) : undefined,
+				}
+				const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, allocMetadata)
+				writeBufferGeometryRange(geometry, positions, 0, pointsMetadata)
+				entity.add(traits.BufferGeometry(geometry))
+			} else {
+				entity.add(traits.BufferGeometry(createBufferGeometry(positions, pointsMetadata)))
+			}
+
 			entity.add(traits.Points)
 			break
 		}
