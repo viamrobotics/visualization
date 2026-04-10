@@ -79,8 +79,8 @@ func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*comm
 			}
 			transforms = append(transforms, frameTransforms...)
 		} else {
-			drawConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
-			transforms = append(transforms, NewTransform(drawConfig, nil))
+			frameConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
+			transforms = append(transforms, NewTransform(frameConfig, nil))
 		}
 	}
 

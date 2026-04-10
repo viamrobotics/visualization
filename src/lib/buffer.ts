@@ -144,7 +144,7 @@ export const isSingleColor = (colors: Uint8Array): boolean => {
  * }
  * ```
  */
-export const isVertexColors = (colors: Uint8Array | undefined): boolean => {
+export const isVertexColors = (colors: Uint8Array | undefined): colors is Uint8Array => {
 	if (!colors || colors.length === 0) return false
 	if (isSingleColor(colors)) return false
 	return colors.length % STRIDE.COLORS_RGB === 0

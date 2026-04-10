@@ -182,7 +182,7 @@ func (snapshot *Snapshot) DrawFrame(
 	metadataOpts ...DrawMetadataOption,
 ) {
 	id := uuid.New()
-	config := NewDrawConfig(name, WithParent(parent), WithPose(pose), WithUUID(id[:]))
+	config := NewDrawConfig(name, WithUUID(id[:]), WithParent(parent), WithPose(pose))
 	transform := NewTransform(config, geometry, metadataOpts...)
 	snapshot.transforms = append(snapshot.transforms, transform)
 }

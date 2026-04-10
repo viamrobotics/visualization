@@ -43,12 +43,8 @@ const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 
-type TransformOptions = {
+type Options = {
 	showAxesHelper?: boolean
-	removable?: boolean
-}
-
-type DrawingOptions = {
 	removable?: boolean
 }
 
@@ -56,7 +52,7 @@ export const drawTransform = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Transform,
 	api: Trait,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true, showAxesHelper: true }
 ): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
@@ -106,7 +102,7 @@ export const drawDrawing = (
 	world: World,
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
 	const { referenceFrame, poseInObserverFrame, physicalObject } = drawing
 
@@ -131,7 +127,7 @@ export const drawDrawing = (
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true, showAxesHelper: true }
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
@@ -174,7 +170,7 @@ export const updateDrawing = (
 	entities: Entity[],
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
 	const { poseInObserverFrame, physicalObject } = drawing
 
@@ -309,7 +305,7 @@ const drawModel = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
 	api: Trait,
-	{ removable = true }: DrawingOptions
+	{ removable = true }: Options
 ): Entity[] => {
 	const entities: Entity[] = []
 	const parent = poseInObserverFrame?.referenceFrame
