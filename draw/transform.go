@@ -41,12 +41,9 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
 	}
 
-<<<<<<< HEAD
 	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
 	fields["invisible"] = structpb.NewBoolValue(metadata.Invisible)
 
-=======
->>>>>>> 985685032cfc53c05f0d924db9e80027186408f3
 	return &structpb.Struct{Fields: fields}
 }
 

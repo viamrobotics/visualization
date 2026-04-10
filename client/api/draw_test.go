@@ -110,7 +110,7 @@ func TestInvisible(t *testing.T) {
 			ID:       "invisible-box",
 			Geometry: box,
 			Color:    draw.ColorFromName("cyan"),
-			Attrs: &Attrs{Invisible: &invisible},
+			Attrs:    &Attrs{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -121,7 +121,7 @@ func TestInvisible(t *testing.T) {
 			ID:       "invisible-box",
 			Geometry: box,
 			Color:    draw.ColorFromName("cyan"),
-			Attrs: &Attrs{Invisible: &invisible},
+			Attrs:    &Attrs{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -141,10 +141,12 @@ func TestShowAxesHelper(t *testing.T) {
 	test.That(t, err, test.ShouldBeNil)
 
 	t.Run("DrawWithoutAxesHelper", func(t *testing.T) {
+		showAxesHelper := false
 		_, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "show-axes-helper-box",
 			Geometry: box,
 			Color:    draw.ColorFromName("purple").SetAlpha(128),
+			Attrs:    &Attrs{ShowAxesHelper: &showAxesHelper},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -153,7 +155,7 @@ func TestShowAxesHelper(t *testing.T) {
 		_, err := DrawGeometry(DrawGeometryOptions{
 			ID:       "show-axes-helper-box",
 			Geometry: box,
-			Color:    draw.ColorFromName("purple"),
+			Color:    draw.ColorFromName("purple").SetAlpha(128),
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})

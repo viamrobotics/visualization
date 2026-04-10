@@ -298,6 +298,25 @@ func WithMetadataInvisible(invisible bool) DrawMetadataOption {
 	}
 }
 
+// MetadataOptionsFromProto converts a *drawv1.Metadata proto into a slice of DrawMetadataOption.
+// Nil input returns nil options. Fields that are unset in the proto are skipped.
+func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption {
+	if md == nil {
+		return nil
+	}
+	var opts []DrawMetadataOption
+	if md.Colors != nil {
+		opts = append(opts, WithMetadataColors(unpackColors(md.Colors, md.Opacities)...))
+	}
+	if md.ShowAxesHelper != nil {
+		opts = append(opts, WithMetadataAxesHelper(*md.ShowAxesHelper))
+	}
+	if md.Invisible != nil {
+		opts = append(opts, WithMetadataInvisible(*md.Invisible))
+	}
+	return opts
+}
+
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()

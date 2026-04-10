@@ -119,20 +119,20 @@ test('show axes helper', async ({ browser }) => {
 	const failedScreenshots: string[] = []
 
 	execSync(
-		'go test -run ^TestShowAxesHelper$/DrawWithoutAxesHelper github.com/viam-labs/motion-tools/client/api -count=1',
-		{ encoding: 'utf8' }
-	)
-
-	await expect(page.getByText('show-axes-helper-box')).toBeVisible({ timeout: 10000 })
-	failedScreenshots.push(await takeScreenshot(page, 'SHOW_AXES_HELPER_WITHOUT'))
-
-	execSync(
 		'go test -run ^TestShowAxesHelper$/DrawWithAxesHelper github.com/viam-labs/motion-tools/client/api -count=1',
 		{ encoding: 'utf8' }
 	)
 
 	await expect(page.getByText('show-axes-helper-box')).toBeVisible({ timeout: 10000 })
 	failedScreenshots.push(await takeScreenshot(page, 'SHOW_AXES_HELPER_WITH'))
+
+	execSync(
+		'go test -run ^TestShowAxesHelper$/DrawWithoutAxesHelper github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('show-axes-helper-box')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'SHOW_AXES_HELPER_WITHOUT'))
 
 	await cleanup(page)
 

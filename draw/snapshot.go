@@ -179,11 +179,11 @@ func (snapshot *Snapshot) DrawFrame(
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
-	metadataOpts ...DrawMetadataOption,
+	metadata *drawv1.Metadata,
 ) {
 	id := uuid.New()
 	config := NewDrawConfig(name, WithUUID(id[:]), WithParent(parent), WithPose(pose))
-	transform := NewTransform(config, geometry, metadataOpts...)
+	transform := NewTransform(config, geometry, MetadataOptionsFromProto(metadata)...)
 	snapshot.transforms = append(snapshot.transforms, transform)
 }
 
