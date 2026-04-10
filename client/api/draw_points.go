@@ -32,8 +32,8 @@ type DrawPointsOptions struct {
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
 
-	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPoints draws a set of points in the visualizer.
@@ -72,7 +72,7 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create points: %w", err)
 	}
 
-	drawing := points.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
+	drawing := points.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {
