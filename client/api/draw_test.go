@@ -91,6 +91,42 @@ func TestDrawServiceEvents(t *testing.T) {
 	})
 }
 
+func TestInvisible(t *testing.T) {
+	startTestServer(t)
+
+	box, err := spatialmath.NewBox(
+		spatialmath.NewPose(
+			r3.Vector{X: 0, Y: 0, Z: 300},
+			&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
+		),
+		r3.Vector{X: 400, Y: 400, Z: 400},
+		"invisible-box",
+	)
+	test.That(t, err, test.ShouldBeNil)
+
+	t.Run("DrawVisible", func(t *testing.T) {
+		invisible := false
+		_, err := DrawGeometry(DrawGeometryOptions{
+			ID:       "invisible-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("cyan"),
+			Attrs: &Attrs{Invisible: &invisible},
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+
+	t.Run("DrawInvisible", func(t *testing.T) {
+		invisible := true
+		_, err := DrawGeometry(DrawGeometryOptions{
+			ID:       "invisible-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("cyan"),
+			Attrs: &Attrs{Invisible: &invisible},
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+}
+
 func TestShowAxesHelper(t *testing.T) {
 	startTestServer(t)
 

@@ -6,6 +6,9 @@ import "github.com/viam-labs/motion-tools/draw"
 type Attrs struct {
 	// ShowAxesHelper controls whether the axes helper is shown. Nil defaults to true.
 	ShowAxesHelper *bool
+
+	// Invisible controls whether the entity is hidden by default. Nil defaults to false.
+	Invisible *bool
 }
 
 func (a *Attrs) toDrawableOptions() []draw.DrawableOption {
@@ -15,6 +18,9 @@ func (a *Attrs) toDrawableOptions() []draw.DrawableOption {
 	var opts []draw.DrawableOption
 	if a.ShowAxesHelper != nil {
 		opts = append(opts, draw.WithAxesHelper(*a.ShowAxesHelper))
+	}
+	if a.Invisible != nil && *a.Invisible {
+		opts = append(opts, draw.WithInvisible(true))
 	}
 	return opts
 }

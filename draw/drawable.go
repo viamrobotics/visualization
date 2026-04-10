@@ -21,6 +21,7 @@ type DrawConfig struct {
 	Pose           spatialmath.Pose
 	Center         spatialmath.Pose
 	ShowAxesHelper bool
+	Invisible      bool
 }
 
 type drawableDrawing interface {
@@ -48,6 +49,7 @@ type drawableConfig struct {
 	pose           spatialmath.Pose
 	center         spatialmath.Pose
 	showAxesHelper bool
+	invisible      bool
 }
 
 // DrawableOption is a function that configures a drawable.
@@ -96,11 +98,19 @@ func WithAxesHelper(show bool) DrawableOption {
 	}
 }
 
+// WithInvisible controls whether the entity is invisible (not rendered) by default.
+func WithInvisible(invisible bool) DrawableOption {
+	return func(config *drawableConfig) {
+		config.invisible = invisible
+	}
+}
+
 // metadataOptions returns options for all universal metadata fields.
 
 func (c *DrawConfig) metadataOptions() []DrawMetadataOption {
 	return []DrawMetadataOption{
 		WithMetadataAxesHelper(c.ShowAxesHelper),
+		WithMetadataInvisible(c.Invisible),
 	}
 }
 
@@ -136,5 +146,6 @@ func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 		Pose:           config.pose,
 		Center:         config.center,
 		ShowAxesHelper: config.showAxesHelper,
+		Invisible:      config.invisible,
 	}
 }

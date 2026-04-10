@@ -43,6 +43,7 @@ func MetadataToStruct(metadata Metadata) *structpb.Struct {
 
 <<<<<<< HEAD
 	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
+	fields["invisible"] = structpb.NewBoolValue(metadata.Invisible)
 
 =======
 >>>>>>> 985685032cfc53c05f0d924db9e80027186408f3
@@ -73,6 +74,9 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 
 	if v := structPb.Fields["show_axes_helper"]; v != nil {
 		metadata.SetShowAxesHelper(v.GetBoolValue())
+	}
+	if v := structPb.Fields["invisible"]; v != nil {
+		metadata.SetInvisible(v.GetBoolValue())
 	}
 
 	return metadata, nil
