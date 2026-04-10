@@ -2,8 +2,8 @@ package api
 
 import "github.com/viam-labs/motion-tools/draw"
 
-// MetadataOptions holds metadata fields common to all Draw* calls.
-type MetadataOptions struct {
+// Attrs holds common attributes for all Draw* calls.
+type Attrs struct {
 	// ShowAxesHelper controls whether the axes helper is shown. Nil defaults to true.
 	ShowAxesHelper *bool
 
@@ -11,21 +11,21 @@ type MetadataOptions struct {
 	Invisible *bool
 }
 
-func (m *MetadataOptions) toDrawableOptions() []draw.DrawableOption {
-	if m == nil {
+func (a *Attrs) toDrawableOptions() []draw.DrawableOption {
+	if a == nil {
 		return nil
 	}
 	var opts []draw.DrawableOption
-	if m.ShowAxesHelper != nil {
-		opts = append(opts, draw.WithAxesHelper(*m.ShowAxesHelper))
+	if a.ShowAxesHelper != nil {
+		opts = append(opts, draw.WithAxesHelper(*a.ShowAxesHelper))
 	}
-	if m.Invisible != nil && *m.Invisible {
+	if a.Invisible != nil && *a.Invisible {
 		opts = append(opts, draw.WithInvisible(true))
 	}
 	return opts
 }
 
-func entityOptions(id, parent string, meta *MetadataOptions) []draw.DrawableOption {
+func entityAttributes(id, parent string, attrs *Attrs) []draw.DrawableOption {
 	var opts []draw.DrawableOption
 	if parent != "" {
 		opts = append(opts, draw.WithParent(parent))
@@ -33,5 +33,5 @@ func entityOptions(id, parent string, meta *MetadataOptions) []draw.DrawableOpti
 	if id != "" {
 		opts = append(opts, draw.WithID(id))
 	}
-	return append(opts, meta.toDrawableOptions()...)
+	return append(opts, attrs.toDrawableOptions()...)
 }

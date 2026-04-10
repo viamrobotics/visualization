@@ -110,7 +110,7 @@ func TestInvisible(t *testing.T) {
 			ID:       "invisible-box",
 			Geometry: box,
 			Color:    draw.ColorFromName("cyan"),
-			Metadata: &MetadataOptions{Invisible: &invisible},
+			Attrs: &Attrs{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -121,7 +121,7 @@ func TestInvisible(t *testing.T) {
 			ID:       "invisible-box",
 			Geometry: box,
 			Color:    draw.ColorFromName("cyan"),
-			Metadata: &MetadataOptions{Invisible: &invisible},
+			Attrs: &Attrs{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
