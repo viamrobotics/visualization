@@ -74,6 +74,7 @@ export const drawTransform = (
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
+	if (parsedMetadata.invisible) entityTraits.push(traits.Invisible)
 
 	const { colors, opacities } = parsedMetadata
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
@@ -118,6 +119,7 @@ export const drawDrawing = (
 
 	if (options.removable) entity.add(traits.Removable)
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (metadata?.invisible) entity.add(traits.Invisible)
 
 	applyShape(entity, drawing)
 
@@ -147,6 +149,8 @@ export const updateTransform = (
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	if (parsedMetadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	else entity.remove(traits.ShowAxesHelper)
+	if (parsedMetadata.invisible) entity.add(traits.Invisible)
+	else entity.remove(traits.Invisible)
 
 	const { colors, opacities } = parsedMetadata
 	if (colors) {
@@ -192,6 +196,9 @@ export const updateDrawing = (
 
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+
+	if (metadata?.invisible) entity.add(traits.Invisible)
+	if (!metadata?.invisible) entity.remove(traits.Invisible)
 
 	updateShape(entity, drawing)
 
@@ -305,7 +312,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Drawing,
 	api: Trait,
 	{ removable = true }: Options
 ): Entity[] => {
@@ -323,6 +330,7 @@ const drawModel = (
 
 	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
 	if (removable) baseTraits.push(traits.Removable)
+	if (metadata?.invisible) baseTraits.push(traits.Invisible)
 
 	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
 

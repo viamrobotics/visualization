@@ -247,6 +247,7 @@ func (drawing Drawing) ToProto() *drawv1.Drawing {
 type Metadata struct {
 	Colors         []Color
 	ShowAxesHelper bool
+	Invisible      bool
 }
 
 func (metadata *Metadata) SetColors(colors []Color) {
@@ -257,10 +258,15 @@ func (metadata *Metadata) SetShowAxesHelper(show bool) {
 	metadata.ShowAxesHelper = show
 }
 
+func (metadata *Metadata) SetInvisible(invisible bool) {
+	metadata.Invisible = invisible
+}
+
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	drawColorsConfig
 	showAxesHelper bool
+	invisible      bool
 }
 
 // DrawMetadataOption is a function that configures a draw metadata configuration.
@@ -285,6 +291,13 @@ func WithMetadataAxesHelper(show bool) DrawMetadataOption {
 	}
 }
 
+// WithMetadataInvisible creates a metadata option that controls whether the entity is invisible by default.
+func WithMetadataInvisible(invisible bool) DrawMetadataOption {
+	return func(config *drawMetadataConfig) {
+		config.invisible = invisible
+	}
+}
+
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
@@ -292,7 +305,7 @@ func NewMetadata(options ...DrawMetadataOption) Metadata {
 		option(config)
 	}
 
-	return Metadata{Colors: config.colors, ShowAxesHelper: config.showAxesHelper}
+	return Metadata{Colors: config.colors, ShowAxesHelper: config.showAxesHelper, Invisible: config.invisible}
 }
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
@@ -301,6 +314,7 @@ func (metadata Metadata) ToProto() *drawv1.Metadata {
 		Colors:         packColors(metadata.Colors),
 		ColorFormat:    drawv1.ColorFormat_COLOR_FORMAT_RGB,
 		ShowAxesHelper: &metadata.ShowAxesHelper,
+		Invisible:      &metadata.Invisible,
 	}
 	if opacity, uniform := metadata.opacitySummary(); uniform {
 		proto.Opacities = []byte{opacity}
