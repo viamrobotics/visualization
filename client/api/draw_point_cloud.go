@@ -33,8 +33,8 @@ type DrawPointCloudOptions struct {
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
 
-	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *Options
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
@@ -68,7 +68,7 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn point cloud: %w", err)
 	}
 
-	transform, err := drawnPointCloud.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
+	transform, err := drawnPointCloud.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}

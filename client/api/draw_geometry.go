@@ -28,8 +28,8 @@ type DrawGeometryOptions struct {
 	// The color to draw the geometry with.
 	Color draw.Color
 
-	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *Options
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawGeometry draws a geometry in the visualizer.
@@ -47,7 +47,7 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn geometry: %w", err)
 	}
 
-	transform, err := drawnGeometry.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
+	transform, err := drawnGeometry.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}

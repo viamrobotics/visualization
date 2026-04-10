@@ -2,18 +2,18 @@ package api
 
 import "github.com/viam-labs/motion-tools/draw"
 
-// Options holds metadata fields common to all Draw* calls.
-type Options struct{}
+// Attrs holds common attributes for all Draw* calls.
+type Attrs struct{}
 
-func (m *Options) toDrawableOptions() []draw.DrawableOption {
-	if m == nil {
+func (a *Attrs) toDrawableOptions() []draw.DrawableOption {
+	if a == nil {
 		return nil
 	}
 	var opts []draw.DrawableOption
 	return opts
 }
 
-func entityOptions(id, parent string, meta *Options) []draw.DrawableOption {
+func entityAttributes(id, parent string, attrs *Attrs) []draw.DrawableOption {
 	var opts []draw.DrawableOption
 	if parent != "" {
 		opts = append(opts, draw.WithParent(parent))
@@ -21,5 +21,5 @@ func entityOptions(id, parent string, meta *Options) []draw.DrawableOption {
 	if id != "" {
 		opts = append(opts, draw.WithID(id))
 	}
-	return append(opts, meta.toDrawableOptions()...)
+	return append(opts, attrs.toDrawableOptions()...)
 }

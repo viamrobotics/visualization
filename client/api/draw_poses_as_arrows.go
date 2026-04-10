@@ -30,8 +30,8 @@ type DrawPosesAsArrowsOptions struct {
 	// If empty, defaults to DefaultArrowColor.
 	Colors []draw.Color
 
-	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *Options
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPosesAsArrows draws a list of poses in the visualizer as arrows.
@@ -63,7 +63,7 @@ func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create arrows: %w", err)
 	}
 
-	drawing := arrows.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
+	drawing := arrows.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {
