@@ -31,7 +31,7 @@ type DrawPosesAsArrowsOptions struct {
 	Colors []draw.Color
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawPosesAsArrows draws a list of poses in the visualizer as arrows.

@@ -42,7 +42,7 @@ type DrawLineOptions struct {
 	DotSize float32
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawLine draws a line in the visualizer.

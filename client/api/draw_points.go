@@ -33,7 +33,7 @@ type DrawPointsOptions struct {
 	PointSize float32
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawPoints draws a set of points in the visualizer.

@@ -30,7 +30,7 @@ type DrawGLTFOptions struct {
 	Scale r3.Vector
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawGLTF draws a GLTF model in the visualizer.

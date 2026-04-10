@@ -41,7 +41,7 @@ type DrawNurbsOptions struct {
 	LineWidth float32
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawNurbs draws a NURBS curve in the visualizer.

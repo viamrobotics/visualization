@@ -29,7 +29,7 @@ type DrawGeometryOptions struct {
 	Color draw.Color
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawGeometry draws a geometry in the visualizer.

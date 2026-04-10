@@ -34,7 +34,7 @@ type DrawPointCloudOptions struct {
 	Colors []draw.Color
 
 	// Metadata holds optional metadata overrides (e.g. visibility).
-	Metadata *MetadataOptions
+	Metadata *Options
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
