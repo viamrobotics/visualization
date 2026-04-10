@@ -47,7 +47,7 @@ describe('metadataFromStruct', () => {
 		expect(result).not.toHaveProperty('label')
 	})
 
-	it('parses show_axes_helper', () => {
+	it('parses show_axes_helper as a boolean', () => {
 		const fields = {
 			show_axes_helper: { kind: { case: 'boolValue' as const, value: true } },
 		}
@@ -55,6 +55,16 @@ describe('metadataFromStruct', () => {
 		const result = metadataFromStruct(fields)
 
 		expect(result.showAxesHelper).toBe(true)
+	})
+
+	it('parses show_axes_helper false', () => {
+		const fields = {
+			show_axes_helper: { kind: { case: 'boolValue' as const, value: false } },
+		}
+
+		const result = metadataFromStruct(fields)
+
+		expect(result.showAxesHelper).toBe(false)
 	})
 
 	it('ignores show_axes_helper when value is not a boolean', () => {
