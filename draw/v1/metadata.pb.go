@@ -77,7 +77,13 @@ type Metadata struct {
 	ColorFormat ColorFormat `protobuf:"varint,2,opt,name=color_format,json=colorFormat,proto3,enum=draw.v1.ColorFormat" json:"color_format,omitempty"`
 	// Uint8Array of opacity values (0-255) corresponding to colors.
 	// Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
-	Opacities     []byte `protobuf:"bytes,3,opt,name=opacities,proto3,oneof" json:"opacities,omitempty"`
+	Opacities []byte `protobuf:"bytes,3,opt,name=opacities,proto3,oneof" json:"opacities,omitempty"`
+	// Whether to show the axes helper (RGB XYZ indicator) on the entity.
+	// Defaults to false.
+	ShowAxesHelper *bool `protobuf:"varint,4,opt,name=show_axes_helper,json=showAxesHelper,proto3,oneof" json:"show_axes_helper,omitempty"`
+	// Whether the entity is invisible (not rendered) by default.
+	// Defaults to false.
+	Invisible     *bool `protobuf:"varint,5,opt,name=invisible,proto3,oneof" json:"invisible,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -133,18 +139,37 @@ func (x *Metadata) GetOpacities() []byte {
 	return nil
 }
 
+func (x *Metadata) GetShowAxesHelper() bool {
+	if x != nil && x.ShowAxesHelper != nil {
+		return *x.ShowAxesHelper
+	}
+	return false
+}
+
+func (x *Metadata) GetInvisible() bool {
+	if x != nil && x.Invisible != nil {
+		return *x.Invisible
+	}
+	return false
+}
+
 var File_draw_v1_metadata_proto protoreflect.FileDescriptor
 
 const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
-	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\x9c\x01\n" +
+	"\x16draw/v1/metadata.proto\x12\adraw.v1\"\x91\x02\n" +
 	"\bMetadata\x12\x1b\n" +
 	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x127\n" +
 	"\fcolor_format\x18\x02 \x01(\x0e2\x14.draw.v1.ColorFormatR\vcolorFormat\x12!\n" +
-	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01B\t\n" +
+	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01\x12-\n" +
+	"\x10show_axes_helper\x18\x04 \x01(\bH\x02R\x0eshowAxesHelper\x88\x01\x01\x12!\n" +
+	"\tinvisible\x18\x05 \x01(\bH\x03R\tinvisible\x88\x01\x01B\t\n" +
 	"\a_colorsB\f\n" +
 	"\n" +
-	"_opacities*A\n" +
+	"_opacitiesB\x13\n" +
+	"\x11_show_axes_helperB\f\n" +
+	"\n" +
+	"_invisible*A\n" +
 	"\vColorFormat\x12\x1c\n" +
 	"\x18COLOR_FORMAT_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10COLOR_FORMAT_RGB\x10\x01B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"

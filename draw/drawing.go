@@ -245,16 +245,28 @@ func (drawing Drawing) ToProto() *drawv1.Drawing {
 
 // Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 type Metadata struct {
-	Colors []Color
+	Colors         []Color
+	ShowAxesHelper bool
+	Invisible      bool
 }
 
 func (metadata *Metadata) SetColors(colors []Color) {
 	metadata.Colors = colors
 }
 
+func (metadata *Metadata) SetShowAxesHelper(show bool) {
+	metadata.ShowAxesHelper = show
+}
+
+func (metadata *Metadata) SetInvisible(invisible bool) {
+	metadata.Invisible = invisible
+}
+
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	drawColorsConfig
+	showAxesHelper bool
+	invisible      bool
 }
 
 // DrawMetadataOption is a function that configures a draw metadata configuration.
@@ -272,6 +284,39 @@ func WithMetadataColors(colors ...Color) DrawMetadataOption {
 	return withColors[*drawMetadataConfig](colors)
 }
 
+// WithMetadataAxesHelper creates a metadata option that controls axes helper visibility.
+func WithMetadataAxesHelper(show bool) DrawMetadataOption {
+	return func(config *drawMetadataConfig) {
+		config.showAxesHelper = show
+	}
+}
+
+// WithMetadataInvisible creates a metadata option that controls whether the entity is invisible by default.
+func WithMetadataInvisible(invisible bool) DrawMetadataOption {
+	return func(config *drawMetadataConfig) {
+		config.invisible = invisible
+	}
+}
+
+// MetadataOptionsFromProto converts a *drawv1.Metadata proto into a slice of DrawMetadataOption.
+// Nil input returns nil options. Fields that are unset in the proto are skipped.
+func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption {
+	if md == nil {
+		return nil
+	}
+	var opts []DrawMetadataOption
+	if md.Colors != nil {
+		opts = append(opts, WithMetadataColors(unpackColors(md.Colors, md.Opacities)...))
+	}
+	if md.ShowAxesHelper != nil {
+		opts = append(opts, WithMetadataAxesHelper(*md.ShowAxesHelper))
+	}
+	if md.Invisible != nil {
+		opts = append(opts, WithMetadataInvisible(*md.Invisible))
+	}
+	return opts
+}
+
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
@@ -279,14 +324,16 @@ func NewMetadata(options ...DrawMetadataOption) Metadata {
 		option(config)
 	}
 
-	return Metadata{Colors: config.colors}
+	return Metadata{Colors: config.colors, ShowAxesHelper: config.showAxesHelper, Invisible: config.invisible}
 }
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
 	proto := &drawv1.Metadata{
-		Colors:      packColors(metadata.Colors),
-		ColorFormat: drawv1.ColorFormat_COLOR_FORMAT_RGB,
+		Colors:         packColors(metadata.Colors),
+		ColorFormat:    drawv1.ColorFormat_COLOR_FORMAT_RGB,
+		ShowAxesHelper: &metadata.ShowAxesHelper,
+		Invisible:      &metadata.Invisible,
 	}
 	if opacity, uniform := metadata.opacitySummary(); uniform {
 		proto.Opacities = []byte{opacity}

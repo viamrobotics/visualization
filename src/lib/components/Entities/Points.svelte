@@ -11,6 +11,7 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { poseToObject3d } from '$lib/transform'
 
+	import AxesHelper from '../AxesHelper.svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
 	interface Props {
@@ -31,6 +32,7 @@
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const invisible = useTrait(() => entity, traits.Invisible)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 
 	const pointSize = $derived(
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
@@ -134,6 +136,13 @@
 		>
 			<T is={geometry.current} />
 			<T is={material} />
+			{#if showAxesHelper.current}
+				<AxesHelper
+					name={entity}
+					width={3}
+					length={0.1}
+				/>
+			{/if}
 			{@render children?.()}
 		</T>
 	</Portal>

@@ -51,7 +51,6 @@ func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) 
 func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
-
 	transforms := make([]*commonv1.Transform, 0, len(drawnFrames.Frames))
 
 	for _, frame := range drawnFrames.Frames {

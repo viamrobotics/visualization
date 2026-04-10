@@ -44,7 +44,6 @@ const DEFAULT_OPACITY = 1
 export type Transform = TransformWithUUID | TransformProto
 
 type Options = {
-	showAxesHelper?: boolean
 	removable?: boolean
 }
 
@@ -52,7 +51,7 @@ export const drawTransform = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Transform,
 	api: Trait,
-	options: Options = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
@@ -69,12 +68,13 @@ export const drawTransform = (
 	}
 
 	if (options.removable) entityTraits.push(traits.Removable)
-	if (options.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 
 	const parent = poseInObserverFrame?.referenceFrame
 	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
+	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
+	if (parsedMetadata.invisible) entityTraits.push(traits.Invisible)
 
 	const { colors, opacities } = parsedMetadata
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
@@ -104,7 +104,7 @@ export const drawDrawing = (
 	api: Trait,
 	options: Options = { removable: true }
 ): Entity[] => {
-	const { referenceFrame, poseInObserverFrame, physicalObject } = drawing
+	const { referenceFrame, poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') return drawModel(world, drawing, api, options)
 
@@ -118,6 +118,8 @@ export const drawDrawing = (
 	if (parent && parent !== 'world') entity.add(traits.Parent(parent))
 
 	if (options.removable) entity.add(traits.Removable)
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (metadata?.invisible) entity.add(traits.Invisible)
 
 	applyShape(entity, drawing)
 
@@ -127,7 +129,7 @@ export const drawDrawing = (
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
-	options: Options = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
@@ -145,6 +147,10 @@ export const updateTransform = (
 	}
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
+	if (parsedMetadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	else entity.remove(traits.ShowAxesHelper)
+	if (parsedMetadata.invisible) entity.add(traits.Invisible)
+	else entity.remove(traits.Invisible)
 
 	const { colors, opacities } = parsedMetadata
 	if (colors) {
@@ -160,9 +166,6 @@ export const updateTransform = (
 
 	if (options.removable) entity.add(traits.Removable)
 	if (!options.removable) entity.remove(traits.Removable)
-
-	if (options.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	if (!options.showAxesHelper) entity.remove(traits.ShowAxesHelper)
 }
 
 export const updateDrawing = (
@@ -172,7 +175,7 @@ export const updateDrawing = (
 	api: Trait,
 	options: Options = { removable: true }
 ): Entity[] => {
-	const { poseInObserverFrame, physicalObject } = drawing
+	const { poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') {
 		for (const entity of entities) {
@@ -190,6 +193,12 @@ export const updateDrawing = (
 
 	const parent = poseInObserverFrame?.referenceFrame
 	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+
+	if (metadata?.invisible) entity.add(traits.Invisible)
+	if (!metadata?.invisible) entity.remove(traits.Invisible)
 
 	updateShape(entity, drawing)
 
@@ -303,7 +312,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Drawing,
 	api: Trait,
 	{ removable = true }: Options
 ): Entity[] => {
@@ -321,6 +330,7 @@ const drawModel = (
 
 	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
 	if (removable) baseTraits.push(traits.Removable)
+	if (metadata?.invisible) baseTraits.push(traits.Invisible)
 
 	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
 

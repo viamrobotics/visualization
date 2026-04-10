@@ -47,6 +47,52 @@ describe('metadataFromStruct', () => {
 		expect(result).not.toHaveProperty('label')
 	})
 
+	it('parses show_axes_helper as a boolean', () => {
+		const fields = {
+			show_axes_helper: { kind: { case: 'boolValue' as const, value: true } },
+		}
+
+		const result = metadataFromStruct(fields)
+
+		expect(result.showAxesHelper).toBe(true)
+	})
+
+	it('parses show_axes_helper false', () => {
+		const fields = {
+			show_axes_helper: { kind: { case: 'boolValue' as const, value: false } },
+		}
+
+		const result = metadataFromStruct(fields)
+
+		expect(result.showAxesHelper).toBe(false)
+	})
+
+	it('ignores show_axes_helper when value is not a boolean', () => {
+		const fields = {
+			show_axes_helper: { kind: { case: 'stringValue' as const, value: 'yes' } },
+		}
+
+		expect(metadataFromStruct(fields)).not.toHaveProperty('showAxesHelper')
+	})
+
+	it('parses invisible', () => {
+		const fields = {
+			invisible: { kind: { case: 'boolValue' as const, value: true } },
+		}
+
+		const result = metadataFromStruct(fields)
+
+		expect(result.invisible).toBe(true)
+	})
+
+	it('ignores invisible when value is not a boolean', () => {
+		const fields = {
+			invisible: { kind: { case: 'stringValue' as const, value: 'yes' } },
+		}
+
+		expect(metadataFromStruct(fields)).not.toHaveProperty('invisible')
+	})
+
 	it('handles per-vertex color data through base64 round-trip', () => {
 		const perVertex = new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255])
 		const base64 = btoa(String.fromCharCode(...perVertex))

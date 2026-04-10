@@ -2,17 +2,18 @@ import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 
 import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadata_pb'
 
-/**
- * Metadata for a Viam `Transform`.
- *
- * Per the API this can be a struct of any data, so we type this version for
- * fields we use and how we expect them to be defined.
- */
+/** Metadata for a `Drawing` or `Transform`. */
 export type Metadata = PlainMessage<MetadataProto>
 
 /** Type guard that checks whether a string is a recognised metadata wire key. */
 export const isMetadataField = (key: string): boolean => {
-	return key === 'colors' || key === 'color_format' || key === 'opacities'
+	return (
+		key === 'colors' ||
+		key === 'color_format' ||
+		key === 'opacities' ||
+		key === 'show_axes_helper' ||
+		key === 'invisible'
+	)
 }
 
 /**
@@ -45,7 +46,6 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 				}
 				break
 			}
-
 			case 'color_format': {
 				if (typeof unwrappedValue === 'number') {
 					json.colorFormat = unwrappedValue as ColorFormat
@@ -61,6 +61,20 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 						opacityBytes[i] = binary.charCodeAt(i)
 					}
 					json.opacities = opacityBytes
+				}
+				break
+			}
+
+			case 'show_axes_helper': {
+				if (typeof unwrappedValue === 'boolean') {
+					json.showAxesHelper = unwrappedValue
+				}
+				break
+			}
+
+			case 'invisible': {
+				if (typeof unwrappedValue === 'boolean') {
+					json.invisible = unwrappedValue
 				}
 				break
 			}
