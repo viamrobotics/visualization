@@ -87,6 +87,16 @@ func WithID(id string) DrawableOption {
 	}
 }
 
+// metadataOptions returns options for all universal metadata fields.
+func (c *DrawConfig) metadataOptions() []DrawMetadataOption {
+	return []DrawMetadataOption{}
+}
+
+// BuildMetadata combines universal metadata options with the given type-specific options.
+func (c *DrawConfig) BuildMetadata(opts ...DrawMetadataOption) Metadata {
+	return NewMetadata(append(c.metadataOptions(), opts...)...)
+}
+
 // NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent
 // after options are applied unless explicitly set via WithUUID or WithID.
 func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {

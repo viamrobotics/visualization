@@ -219,21 +219,15 @@ type Drawing struct {
 }
 
 // NewDrawing creates a new Drawing representing a non-physical object in 3D space.
-func NewDrawing(
-	uuid []byte,
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-	shape Shape,
-	metadata Metadata,
-) *Drawing {
+// Metadata is built from the config's universal fields plus any additional options.
+func NewDrawing(config *DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption) *Drawing {
 	return &Drawing{
-		UUID:     uuid,
-		Name:     name,
-		Parent:   parent,
-		Pose:     pose,
+		UUID:     config.UUID,
+		Name:     config.Name,
+		Parent:   config.Parent,
+		Pose:     config.Pose,
 		Shape:    shape,
-		Metadata: metadata,
+		Metadata: config.BuildMetadata(metadataOpts...),
 	}
 }
 
@@ -263,8 +257,8 @@ type drawMetadataConfig struct {
 	drawColorsConfig
 }
 
-// drawMetadataOption is a function that configures a draw metadata configuration
-type drawMetadataOption func(*drawMetadataConfig)
+// DrawMetadataOption is a function that configures a draw metadata configuration.
+type DrawMetadataOption func(*drawMetadataConfig)
 
 // newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
@@ -274,12 +268,12 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 }
 
 // WithMetadataColors creates a metadata option that sets the color list for the metadata.
-func WithMetadataColors(colors ...Color) drawMetadataOption {
+func WithMetadataColors(colors ...Color) DrawMetadataOption {
 	return withColors[*drawMetadataConfig](colors)
 }
 
 // NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
-func NewMetadata(options ...drawMetadataOption) Metadata {
+func NewMetadata(options ...DrawMetadataOption) Metadata {
 	config := newDrawMetadataConfig()
 	for _, option := range options {
 		option(config)

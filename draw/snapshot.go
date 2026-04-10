@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // Snapshot represents a snapshot of a world state
@@ -174,17 +173,17 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	return nil
 }
 
-// DrawFrame draws a frame transform to the snapshot
-// Returns an error if the frame transform cannot be drawn.
+// DrawFrame draws a frame transform to the snapshot.
 func (snapshot *Snapshot) DrawFrame(
 	name string,
 	parent string,
 	pose spatialmath.Pose,
 	geometry spatialmath.Geometry,
-	metadata *structpb.Struct,
+	metadataOpts ...DrawMetadataOption,
 ) {
 	id := uuid.New()
-	transform := NewTransform(id[:], name, parent, pose, geometry, metadata)
+	config := NewDrawConfig(name, WithUUID(id[:]), WithParent(parent), WithPose(pose))
+	transform := NewTransform(config, geometry, metadataOpts...)
 	snapshot.transforms = append(snapshot.transforms, transform)
 }
 

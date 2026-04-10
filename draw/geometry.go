@@ -110,14 +110,8 @@ func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption)
 	config := NewDrawConfig(name, options...)
 
 	if len(drawnGeometry.Colors) > 0 {
-		metadata := NewMetadata(WithMetadataColors(drawnGeometry.Colors...))
-		metadataStruct, err := MetadataToStruct(metadata)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create metadata: %w", err)
-		}
-
-		return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, drawnGeometry.Geometry, metadataStruct), nil
+		return NewTransform(config, drawnGeometry.Geometry, WithMetadataColors(drawnGeometry.Colors...)), nil
 	}
 
-	return NewTransform(config.UUID, config.Name, config.Parent, config.Pose, drawnGeometry.Geometry, nil), nil
+	return NewTransform(config, drawnGeometry.Geometry), nil
 }

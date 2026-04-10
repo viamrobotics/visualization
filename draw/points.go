@@ -98,5 +98,5 @@ func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, err
 func (points Points) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithPoints(points))
-	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(points.Colors...)))
+	return NewDrawing(config, shape, WithMetadataColors(points.Colors...))
 }

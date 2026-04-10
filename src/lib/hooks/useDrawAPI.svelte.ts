@@ -9,6 +9,7 @@ import { UuidTool } from 'uuid-tool'
 import type { Frame } from '$lib/frame'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { asRGB, STRIDE } from '$lib/buffer'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -334,7 +335,7 @@ export const provideDrawAPI = () => {
 		const defaultColor =
 			r > -1
 				? new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
-				: null
+				: undefined
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
@@ -342,8 +343,8 @@ export const provideDrawAPI = () => {
 		const nColorsElements = nColors * 3
 		const rawColors = reader.readU8Array(nColorsElements)
 
-		let vertexColors: Uint8Array<ArrayBuffer> | null = null
-		let uniformColor: Uint8Array<ArrayBuffer> | null = null
+		let vertexColors: Uint8Array | undefined = undefined
+		let uniformColor: Uint8Array | undefined = undefined
 
 		if (nColors > 1 && nColors >= nPoints) {
 			vertexColors = rawColors
@@ -372,12 +373,18 @@ export const provideDrawAPI = () => {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, { colors: vertexColors ?? undefined })
+				updateBufferGeometry(geometry, positions, {
+					colors: vertexColors,
+					colorFormat: ColorFormat.RGB,
+				})
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, { colors: vertexColors ?? undefined })
+		const geometry = createBufferGeometry(positions, {
+			colors: vertexColors,
+			colorFormat: ColorFormat.RGB,
+		})
 		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
 			traits.BufferGeometry(geometry),

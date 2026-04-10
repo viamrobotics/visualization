@@ -15,7 +15,7 @@
 	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
 
 	interface Props {
-		colors: Uint8Array<ArrayBuffer>
+		colors: Uint8Array
 		opacity: number
 		positions: Float32Array
 		scale: number
