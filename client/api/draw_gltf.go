@@ -29,9 +29,8 @@ type DrawGLTFOptions struct {
 	// Scale specifies the scaling factors for each axis. All dimensions must be non-zero.
 	Scale r3.Vector
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawGLTF draws a GLTF model in the visualizer.
@@ -67,7 +66,7 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create model: %w", err)
 	}
 
-	drawing := model.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper)...)
+	drawing := model.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

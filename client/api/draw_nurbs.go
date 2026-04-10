@@ -40,9 +40,8 @@ type DrawNurbsOptions struct {
 	// LineWidth is the width of the line segments in millimeters. If 0, uses the default.
 	LineWidth float32
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawNurbs draws a NURBS curve in the visualizer.
@@ -75,7 +74,7 @@ func DrawNurbs(options DrawNurbsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create NURBS curve: %w", err)
 	}
 
-	drawing := nurbs.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper)...)
+	drawing := nurbs.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

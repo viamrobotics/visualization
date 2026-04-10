@@ -33,9 +33,8 @@ type DrawPointCloudOptions struct {
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
@@ -69,7 +68,7 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn point cloud: %w", err)
 	}
 
-	transform, err := drawnPointCloud.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper)...)
+	transform, err := drawnPointCloud.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}
