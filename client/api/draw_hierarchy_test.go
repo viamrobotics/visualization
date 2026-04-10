@@ -46,16 +46,16 @@ func TestDrawHierarchy(t *testing.T) {
 
 		// Level 2: children of "zulu"
 		uuid, err = DrawGeometry(DrawGeometryOptions{
-			Parent:   "zulu",
 			Geometry: makeBox("tango", r3.Vector{X: 200, Y: 200}),
+			Parent:   "zulu",
 			Color:    draw.ColorFromName("yellow"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
 
 		uuid, err = DrawGeometry(DrawGeometryOptions{
-			Parent:   "zulu",
 			Geometry: makeBox("delta", r3.Vector{X: 200, Y: -200}),
+			Parent:   "zulu",
 			Color:    draw.ColorFromName("green"),
 		})
 		test.That(t, err, test.ShouldBeNil)
@@ -63,16 +63,16 @@ func TestDrawHierarchy(t *testing.T) {
 
 		// Level 3: children of "tango"
 		uuid, err = DrawGeometry(DrawGeometryOptions{
-			Parent:   "tango",
 			Geometry: makeBox("sierra", r3.Vector{X: 200, Y: 200, Z: 200}),
+			Parent:   "tango",
 			Color:    draw.ColorFromName("blue"),
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)
 
 		uuid, err = DrawGeometry(DrawGeometryOptions{
-			Parent:   "tango",
 			Geometry: makeBox("foxtrot", r3.Vector{X: 200, Y: 200, Z: -200}),
+			Parent:   "tango",
 			Color:    draw.ColorFromName("purple"),
 		})
 		test.That(t, err, test.ShouldBeNil)

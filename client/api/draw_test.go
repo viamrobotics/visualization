@@ -107,10 +107,10 @@ func TestInvisible(t *testing.T) {
 	t.Run("DrawVisible", func(t *testing.T) {
 		invisible := false
 		_, err := DrawGeometry(DrawGeometryOptions{
-			ID:        "invisible-box",
-			Geometry:  box,
-			Color:     draw.ColorFromName("cyan"),
-			Invisible: &invisible,
+			ID:       "invisible-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("cyan"),
+			Metadata: &MetadataOptions{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
@@ -118,10 +118,10 @@ func TestInvisible(t *testing.T) {
 	t.Run("DrawInvisible", func(t *testing.T) {
 		invisible := true
 		_, err := DrawGeometry(DrawGeometryOptions{
-			ID:        "invisible-box",
-			Geometry:  box,
-			Color:     draw.ColorFromName("cyan"),
-			Invisible: &invisible,
+			ID:       "invisible-box",
+			Geometry: box,
+			Color:    draw.ColorFromName("cyan"),
+			Metadata: &MetadataOptions{Invisible: &invisible},
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})

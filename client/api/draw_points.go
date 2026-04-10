@@ -32,13 +32,8 @@ type DrawPointsOptions struct {
 	// PointSize is the size of each point in millimeters. If 0, uses the default.
 	PointSize float32
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
-
-	// Invisible controls whether the entity is hidden from the 3D scene by default.
-	// If nil, defaults to false.
-	Invisible *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawPoints draws a set of points in the visualizer.
@@ -77,7 +72,7 @@ func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create points: %w", err)
 	}
 
-	drawing := points.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
+	drawing := points.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

@@ -30,13 +30,8 @@ type DrawPosesAsArrowsOptions struct {
 	// If empty, defaults to DefaultArrowColor.
 	Colors []draw.Color
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
-
-	// Invisible controls whether the entity is hidden from the 3D scene by default.
-	// If nil, defaults to false.
-	Invisible *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawPosesAsArrows draws a list of poses in the visualizer as arrows.
@@ -68,7 +63,7 @@ func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create arrows: %w", err)
 	}
 
-	drawing := arrows.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
+	drawing := arrows.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

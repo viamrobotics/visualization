@@ -28,13 +28,8 @@ type DrawGeometryOptions struct {
 	// The color to draw the geometry with.
 	Color draw.Color
 
-	// ShowAxesHelper controls whether the axes helper is shown.
-	// If nil, defaults to true.
-	ShowAxesHelper *bool
-
-	// Invisible controls whether the entity is hidden from the 3D scene by default.
-	// If nil, defaults to false.
-	Invisible *bool
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawGeometry draws a geometry in the visualizer.
@@ -52,7 +47,7 @@ func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn geometry: %w", err)
 	}
 
-	transform, err := drawnGeometry.Draw(options.Name, entityOptions(options.ID, options.Parent, options.ShowAxesHelper, options.Invisible)...)
+	transform, err := drawnGeometry.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}
