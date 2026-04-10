@@ -40,6 +40,9 @@ type DrawLineOptions struct {
 
 	// DotSize is the size of the vertex dots in millimeters. If 0, uses the default.
 	DotSize float32
+
+	// Metadata holds optional metadata overrides (e.g. visibility).
+	Metadata *MetadataOptions
 }
 
 // DrawLine draws a line in the visualizer.
@@ -99,7 +102,7 @@ func DrawLine(options DrawLineOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create line: %w", err)
 	}
 
-	drawing := line.Draw(options.Name, entityOptions(options.ID, options.Parent)...)
+	drawing := line.Draw(options.Name, entityOptions(options.ID, options.Parent, options.Metadata)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

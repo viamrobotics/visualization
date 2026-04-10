@@ -87,16 +87,12 @@ func WithID(id string) DrawableOption {
 	}
 }
 
-// metadataOptions returns DrawMetadataOptions for all universal config fields.
-// New metadata fields that apply to every Drawing/Transform should be added here
-// so that BuildMetadata, and therefore all Draw methods, include them automatically.
+// metadataOptions returns options for all universal metadata fields.
 func (c *DrawConfig) metadataOptions() []DrawMetadataOption {
 	return []DrawMetadataOption{}
 }
 
-// BuildMetadata creates a Metadata by combining the universal config-derived options
-// with any additional type-specific options (e.g. colors). This ensures every Drawing
-// and Transform automatically includes all universal metadata fields.
+// BuildMetadata combines universal metadata options with the given type-specific options.
 func (c *DrawConfig) BuildMetadata(opts ...DrawMetadataOption) Metadata {
 	return NewMetadata(append(c.metadataOptions(), opts...)...)
 }
