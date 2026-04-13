@@ -164,6 +164,12 @@ export const DotSize = trait(() => 10)
 export const ReferenceFrame = trait(() => true)
 
 /**
+ * Interaction layers for entities
+ */
+export type InteractionLayerValue = 'selectTool'
+export const SelectToolInteractionLayer = trait(() => true)
+
+/**
  * This entity can be safetly removed from the scene by the user
  */
 export const Removable = trait(() => true)
