@@ -12,7 +12,6 @@
 
 	import Debug from './Debug.svelte'
 	import * as selectionTraits from './traits'
-	import { useSelectionPlugin } from './useSelectionPlugin.svelte'
 	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
 
 	interface Props {
@@ -25,7 +24,6 @@
 	const world = useWorld()
 	const controls = useCameraControls()
 	const { scene, dom, camera } = useThrelte()
-	const selection = useSelectionPlugin()
 
 	const box3 = new Box3()
 	const min = new Vector3()
@@ -213,7 +211,7 @@
 
 		const ellipseResultGeometry = createBufferGeometry(new Float32Array(enclosedPoints))
 
-		const result = world.spawn(
+		world.spawn(
 			traits.Name('Ellipse result'),
 			traits.BufferGeometry(ellipseResultGeometry),
 			traits.Color({ r: 1, g: 0, b: 0 }),
@@ -224,8 +222,6 @@
 			selectionTraits.SelectionEnclosedPoints,
 			selectionTraits.PointsCapturedBy(ellipse)
 		)
-
-		selection.addEntity(result)
 	}
 
 	const onkeydown = (event: KeyboardEvent) => {

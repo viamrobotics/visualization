@@ -1,29 +1,26 @@
-import type { Entity } from 'koota'
+import type { QueryResult, Trait } from 'koota'
 
 import { getContext, setContext } from 'svelte'
 
-import { useWorld } from '$lib/ecs'
+import { useQuery, useWorld } from '$lib/ecs'
 
 import * as selectionTraits from './traits'
 
 const key = Symbol('selection-plugin-context')
 
 interface SelectionPluginContext {
-	current: Entity[]
-	addEntity: (entity: Entity) => void
+	current: QueryResult<[Trait<() => boolean>]>
 	clearSelections: () => void
 }
 
 export const provideSelectionPlugin = () => {
 	const world = useWorld()
-	const entities = $state<Entity[]>([])
+	const entities = useQuery(selectionTraits.SelectionEnclosedPoints)
+
 
 	const ctx = setContext<SelectionPluginContext>(key, {
 		get current() {
-			return entities.filter((entity) => world.has(entity))
-		},
-		addEntity(entity: Entity) {
-			entities.push(entity)
+			return entities.current
 		},
 		clearSelections() {
 			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {
