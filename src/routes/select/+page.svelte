@@ -13,6 +13,6 @@
 {#await createRandomPcdBinary(10_000, 1) then data}
 	<PCD
 		{data}
-		options={{ interactionLayers: ['selectTool'] }}
+		interactionLayers={['selectTool']}
 	/>
 {/await}

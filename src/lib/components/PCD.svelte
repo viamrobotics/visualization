@@ -10,15 +10,13 @@
 
 	interface Props {
 		data: Uint8Array
-		options?: {
-			name?: string
-			renderOrder?: number
-			interactionLayers?: InteractionLayerValue[]
-			oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
-		}
+		name?: string
+		renderOrder?: number
+		interactionLayers?: InteractionLayerValue[]
+		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
 	}
 
-	let { data, options }: Props = $props()
+	let { data, name, renderOrder, interactionLayers, oncreate }: Props = $props()
 
 	const world = useWorld()
 
@@ -29,21 +27,21 @@
 			const geometry = createBufferGeometry(positions, { colors, colorFormat: ColorFormat.RGB })
 
 			const entityTraits: ConfigurableTrait[] = [
-				traits.Name(options?.name ?? 'Random points'),
+				traits.Name(name ?? 'Random points'),
 				traits.Points,
 				traits.BufferGeometry(geometry),
 			]
 
-			if (options?.renderOrder) {
-				entityTraits.push(traits.RenderOrder(options.renderOrder))
+			if (renderOrder) {
+				entityTraits.push(traits.RenderOrder(renderOrder))
 			}
-			if (options?.interactionLayers?.includes('selectTool')) {
+			if (interactionLayers?.includes('selectTool')) {
 				entityTraits.push(traits.SelectToolInteractionLayer)
 			}
 
 			entity = world.spawn(...entityTraits)
 
-			options?.oncreate?.(positions, colors ?? undefined)
+			oncreate?.(positions, colors ?? undefined)
 		})
 
 		return () => {
