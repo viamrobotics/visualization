@@ -50,7 +50,7 @@
 			traits.LineWidth(1.5),
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
-			traits.Colors(new Uint8Array([255, 0, 0, 255])),
+			traits.Color({ r: 1, g: 0, b: 0 }),
 			selectionTraits.Box({ minX: x, minY: y, maxX: x, maxY: y }),
 			selectionTraits.Ellipse
 		)
@@ -216,7 +216,7 @@
 		const result = world.spawn(
 			traits.Name('Ellipse result'),
 			traits.BufferGeometry(ellipseResultGeometry),
-			traits.Colors(new Uint8Array([255, 0, 0, 255])),
+			traits.Color({ r: 1, g: 0, b: 0 }),
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Points,

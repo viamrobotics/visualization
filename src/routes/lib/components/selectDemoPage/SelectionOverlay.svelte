@@ -16,8 +16,7 @@
 	const rect = new ElementRect(() => dom)
 
 	selectionCtx.registerSelectionCallback((entity: Entity) => {
-		// entity.set(traits.Color, { r: 0, g: 1, b: 0 })
-		entity.set(traits.Colors, new Uint8Array([0, 255, 0]))
+		entity.set(traits.Color, { r: 0, g: 1, b: 0 })
 	})
 </script>
 
