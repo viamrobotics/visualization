@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { ConfigurableTrait, Entity } from 'koota'
 
+	import type { InteractionLayerValue } from '$lib/ecs/traits'
+
 	import { createBufferGeometry } from '$lib/attribute'
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { traits, useWorld } from '$lib/ecs'
@@ -8,12 +10,15 @@
 
 	interface Props {
 		data: Uint8Array
-		name?: string
-		renderOrder?: number
-		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
+		options?: {
+			name?: string
+			renderOrder?: number
+			interactionLayers?: InteractionLayerValue[]
+			oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
+		}
 	}
 
-	let { data, name, renderOrder, oncreate }: Props = $props()
+	let { data, options }: Props = $props()
 
 	const world = useWorld()
 
@@ -24,18 +29,21 @@
 			const geometry = createBufferGeometry(positions, { colors, colorFormat: ColorFormat.RGB })
 
 			const entityTraits: ConfigurableTrait[] = [
-				traits.Name(name ?? 'Random points'),
+				traits.Name(options?.name ?? 'Random points'),
 				traits.Points,
 				traits.BufferGeometry(geometry),
 			]
 
-			if (renderOrder) {
-				entityTraits.push(traits.RenderOrder(renderOrder))
+			if (options?.renderOrder) {
+				entityTraits.push(traits.RenderOrder(options.renderOrder))
+			}
+			if (options?.interactionLayers?.includes('selectTool')) {
+				entityTraits.push(traits.SelectToolInteractionLayer)
 			}
 
 			entity = world.spawn(...entityTraits)
 
-			oncreate?.(positions, colors ?? undefined)
+			options?.oncreate?.(positions, colors ?? undefined)
 		})
 
 		return () => {
