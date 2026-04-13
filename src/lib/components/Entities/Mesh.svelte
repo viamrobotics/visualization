@@ -6,7 +6,7 @@
 	import { type Snippet } from 'svelte'
 	import { BufferGeometry, Color, DoubleSide, FrontSide, Mesh } from 'three'
 
-	import { asColor, asOpacity, isRgba } from '$lib/buffer'
+	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
 	import { traits, useTrait } from '$lib/ecs'
 	import { CapsuleGeometry } from '$lib/three/CapsuleGeometry'
@@ -54,11 +54,7 @@
 		return colors.default
 	})
 
-	const currentOpacity = $derived.by(() => {
-		if (!entityColors.current) return opacity.current ?? 0.7
-		if (!isRgba(entityColors.current)) return opacity.current ?? 0.7
-		return asOpacity(entityColors.current)
-	})
+	const currentOpacity = $derived(opacity.current ?? 0.7)
 
 	const mesh = new Mesh()
 

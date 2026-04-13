@@ -51,7 +51,6 @@ func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) 
 func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
-
 	transforms := make([]*commonv1.Transform, 0, len(drawnFrames.Frames))
 
 	for _, frame := range drawnFrames.Frames {
@@ -79,8 +78,8 @@ func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*comm
 			}
 			transforms = append(transforms, frameTransforms...)
 		} else {
-			drawConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
-			transforms = append(transforms, NewTransform(drawConfig.UUID, drawConfig.Name, drawConfig.Parent, drawConfig.Pose, nil, nil))
+			frameConfig := NewDrawConfig(frame.Name(), WithParent(parent), WithPose(pose))
+			transforms = append(transforms, NewTransform(frameConfig, nil))
 		}
 	}
 

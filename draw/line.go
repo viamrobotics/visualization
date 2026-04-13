@@ -152,5 +152,5 @@ func NewLine(positions []r3.Vector, options ...DrawLineOption) (*Line, error) {
 func (line Line) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithLine(line))
-	return NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(line.Colors...)))
+	return NewDrawing(config, shape, WithMetadataColors(line.Colors...))
 }

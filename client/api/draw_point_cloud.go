@@ -13,11 +13,14 @@ import (
 
 // DrawPointCloudOptions configures a DrawPointCloud call.
 type DrawPointCloudOptions struct {
-	// A unique identifier for the point cloud. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The label to use for the point cloud.
-	Label string
+	// The name of the entity.
+	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// The point cloud to draw.
 	PointCloud pointcloud.PointCloud
@@ -29,13 +32,16 @@ type DrawPointCloudOptions struct {
 	// Can be a single color, one color per point, or a color palette.
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
+
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
 // Calling DrawPointCloud with an ID that already exists will instead update the point cloud.
 // Returns the UUID of the drawn point cloud, or an error if the server is not running or the drawing fails.
 func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
-	if err := isASCIIPrintable(options.Label); err != nil {
+	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err
 	}
 
@@ -62,12 +68,7 @@ func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create drawn point cloud: %w", err)
 	}
 
-	var drawOpts []draw.DrawableOption
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	transform, err := drawnPointCloud.Draw(options.Label, drawOpts...)
+	transform, err := drawnPointCloud.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transform: %w", err)
 	}

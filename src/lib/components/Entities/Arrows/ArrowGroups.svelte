@@ -14,21 +14,20 @@
 
 	const map = new SvelteMap<Entity, InstancedArrows>()
 
+	const colorUtil = new Color()
+
 	const onAdd = (entity: Entity) => {
 		const poses = entity.get(traits.Positions)
+		const color = entity.get(traits.Color)
 		const colors = entity.get(traits.Colors)
 		const { headAtPose } = entity.get(traits.Arrows) ?? {}
 
 		if (!poses) return
 
 		const total = poses.length / STRIDE.ARROWS
-		const alpha = colors && colors.length / STRIDE.COLORS_RGBA === total
-		const uniformColor =
-			colors && (colors.length === 3 || colors.length === 4)
-				? new Color(colors[0], colors[1], colors[2])
-				: undefined
+		const uniformColor = color ? colorUtil.setRGB(color.r, color.g, color.b) : undefined
 
-		const arrows = new InstancedArrows({ count: total, alpha, uniformColor })
+		const arrows = new InstancedArrows({ count: total, uniformColor })
 		map.set(entity, arrows)
 		arrows.update({ poses, colors, headAtPose })
 	}

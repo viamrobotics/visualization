@@ -63,6 +63,5 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 func (arrows Arrows) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithArrows(arrows))
-	drawing := NewDrawing(config.UUID, config.Name, config.Parent, config.Pose, shape, NewMetadata(WithMetadataColors(arrows.Colors...)))
-	return drawing
+	return NewDrawing(config, shape, WithMetadataColors(arrows.Colors...))
 }

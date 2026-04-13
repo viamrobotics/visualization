@@ -45,7 +45,7 @@ describe('drawTransform', () => {
 		expect(entity.get(traits.Pose)).toStrictEqual(createPose({ x: 100, y: 200, z: 300 }))
 		expect(entity.get(traits.Box)).toStrictEqual({ x: 10, y: 20, z: 30 })
 		expect(entity.has(traits.ReferenceFrame)).toBe(false)
-		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.get(traits.Parent)).toBe('arm')
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
@@ -60,13 +60,36 @@ describe('drawTransform', () => {
 		expect(entity.has(traits.ReferenceFrame)).toBe(true)
 	})
 
-	it('does not attach ShowAxesHelper when showAxesHelper is false', () => {
+	it('attaches ShowAxesHelper when metadata show_axes_helper is true', () => {
 		world = createWorld()
-		const transform = new Transform({ referenceFrame: 'arm' })
+		const transform = new Transform({
+			referenceFrame: 'arm',
+			metadata: {
+				fields: {
+					show_axes_helper: { kind: { case: 'boolValue', value: true } },
+				},
+			},
+		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI, { showAxesHelper: false })
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 
-		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+	})
+
+	it('attaches Invisible when metadata invisible is true', () => {
+		world = createWorld()
+		const transform = new Transform({
+			referenceFrame: 'arm',
+			metadata: {
+				fields: {
+					invisible: { kind: { case: 'boolValue', value: true } },
+				},
+			},
+		})
+
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+
+		expect(entity.has(traits.Invisible)).toBe(true)
 	})
 
 	it('does not attach Removable when removable is false', () => {
@@ -90,14 +113,14 @@ describe('drawTransform', () => {
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
 
-	it('adds Colors trait for pointcloud with uniform color', async () => {
+	it('adds Color trait for pointcloud with uniform color', async () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
 		const positions = new Float32Array(6)
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: null })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: undefined })
 
 		const pointCloud = new Uint8Array(0)
-		const metadataColors = new Uint8Array([0, 255, 0, 128])
+		const metadataColors = new Uint8Array([0, 255, 0])
 		const base64Colors = btoa(String.fromCharCode(...metadataColors))
 		const transform = new Transform({
 			referenceFrame: 'cloud-uniform',
@@ -114,7 +137,7 @@ describe('drawTransform', () => {
 		const entity = drawTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
-		expect(entity.get(traits.Colors)).toStrictEqual(metadataColors)
+		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
 	})
 
 	it('adds per-vertex colors to BufferGeometry for pointcloud', async () => {
@@ -171,8 +194,9 @@ describe('drawDrawing', () => {
 		expect(entity.has(traits.LinePositions)).toBe(true)
 		expect(entity.get(traits.LineWidth)).toBe(3)
 		expect(entity.get(traits.DotSize)).toBe(6)
-		expect(entity.has(traits.Colors)).toBe(true)
+		expect(entity.has(traits.Color)).toBe(true)
 		expect(entity.has(traits.DotColors)).toBe(true)
+		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
 		expect(entity.has(traits.Removable)).toBe(true)
 		expect(entity.has(traits.SnapshotAPI)).toBe(true)
 	})
@@ -191,7 +215,67 @@ describe('drawDrawing', () => {
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
 
-	it('adds Colors trait for arrows', () => {
+	it('attaches ShowAxesHelper when metadata showAxesHelper is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'line-with-axes',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+			metadata: new Metadata({ showAxesHelper: true }),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+	})
+
+	it('attaches Invisible when metadata invisible is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'line-invisible',
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+			metadata: new Metadata({ invisible: true }),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.Invisible)).toBe(true)
+	})
+
+	it('attaches Invisible to root entity when model metadata invisible is true', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'robot-invisible',
+			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'model',
+					value: new Model({
+						assets: [
+							new ModelAsset({ content: { case: 'url', value: 'https://example.com/model.gltf' } }),
+						],
+					}),
+				},
+			}),
+			metadata: new Metadata({ invisible: true }),
+		})
+
+		const entities = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [rootEntity] = entities
+
+		expect(rootEntity.has(traits.Invisible)).toBe(true)
+	})
+
+	it('adds Color/Colors traits for arrows', () => {
 		world = createWorld()
 
 		const singleColorDrawing = new Drawing({
@@ -199,7 +283,7 @@ describe('drawDrawing', () => {
 			physicalObject: new Shape({
 				geometryType: { case: 'arrows', value: new Arrows({ poses: new Uint8Array(24) }) },
 			}),
-			metadata: new Metadata({ colors: new Uint8Array([255, 0, 0, 128]) }),
+			metadata: new Metadata({ colors: new Uint8Array([255, 0, 0]) }),
 		})
 
 		const multiColorDrawing = new Drawing({
@@ -213,7 +297,7 @@ describe('drawDrawing', () => {
 		const [single] = drawDrawing(world, singleColorDrawing, traits.SnapshotAPI)
 		const [multi] = drawDrawing(world, multiColorDrawing, traits.SnapshotAPI)
 
-		expect(single.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 128]))
+		expect(single.get(traits.Color)).toStrictEqual({ r: 1, g: 0, b: 0 })
 		expect(multi.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
 	})
 
@@ -264,7 +348,7 @@ describe('drawDrawing', () => {
 					value: new Points({ positions: new Uint8Array(24), pointSize: 8 }),
 				},
 			}),
-			metadata: new Metadata({ colors: new Uint8Array([0, 255, 0, 200]) }),
+			metadata: new Metadata({ colors: new Uint8Array([0, 255, 0]) }),
 		})
 
 		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
@@ -273,6 +357,6 @@ describe('drawDrawing', () => {
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
 		expect(entity.has(traits.Points)).toBe(true)
 		expect(entity.get(traits.PointSize)).toBe(8)
-		expect(entity.get(traits.Colors)).toStrictEqual(new Uint8Array([0, 255, 0, 200]))
+		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
 	})
 })

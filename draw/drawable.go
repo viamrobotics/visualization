@@ -15,11 +15,13 @@ var uuidNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 // reference frame (and geometry/shape label), the parent frame, the pose of the Drawing/Transform
 // in the parent frame, the local center of the Shape, and a stable UUID.
 type DrawConfig struct {
-	UUID   []byte
-	Name   string
-	Parent string
-	Pose   spatialmath.Pose
-	Center spatialmath.Pose
+	UUID           []byte
+	Name           string
+	Parent         string
+	Pose           spatialmath.Pose
+	Center         spatialmath.Pose
+	ShowAxesHelper bool
+	Invisible      bool
 }
 
 type drawableDrawing interface {
@@ -42,10 +44,12 @@ var (
 )
 
 type drawableConfig struct {
-	uuid   []byte
-	parent string
-	pose   spatialmath.Pose
-	center spatialmath.Pose
+	uuid           []byte
+	parent         string
+	pose           spatialmath.Pose
+	center         spatialmath.Pose
+	showAxesHelper bool
+	invisible      bool
 }
 
 // DrawableOption is a function that configures a drawable.
@@ -87,13 +91,42 @@ func WithID(id string) DrawableOption {
 	}
 }
 
+// WithAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
+func WithAxesHelper(show bool) DrawableOption {
+	return func(config *drawableConfig) {
+		config.showAxesHelper = show
+	}
+}
+
+// WithInvisible controls whether the entity is invisible (not rendered) by default.
+func WithInvisible(invisible bool) DrawableOption {
+	return func(config *drawableConfig) {
+		config.invisible = invisible
+	}
+}
+
+// metadataOptions returns options for all universal metadata fields.
+
+func (c *DrawConfig) metadataOptions() []DrawMetadataOption {
+	return []DrawMetadataOption{
+		WithMetadataAxesHelper(c.ShowAxesHelper),
+		WithMetadataInvisible(c.Invisible),
+	}
+}
+
+// BuildMetadata combines universal metadata options with the given type-specific options.
+func (c *DrawConfig) BuildMetadata(opts ...DrawMetadataOption) Metadata {
+	return NewMetadata(append(c.metadataOptions(), opts...)...)
+}
+
 // NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent
 // after options are applied unless explicitly set via WithUUID or WithID.
 func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 	config := &drawableConfig{
-		parent: referenceframe.World,
-		pose:   spatialmath.NewZeroPose(),
-		center: spatialmath.NewZeroPose(),
+		parent:         referenceframe.World,
+		pose:           spatialmath.NewZeroPose(),
+		center:         spatialmath.NewZeroPose(),
+		showAxesHelper: true,
 	}
 
 	for _, option := range options {
@@ -107,10 +140,12 @@ func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 	}
 
 	return &DrawConfig{
-		UUID:   config.uuid,
-		Name:   name,
-		Parent: config.parent,
-		Pose:   config.pose,
-		Center: config.center,
+		UUID:           config.uuid,
+		Name:           name,
+		Parent:         config.parent,
+		Pose:           config.pose,
+		Center:         config.center,
+		ShowAxesHelper: config.showAxesHelper,
+		Invisible:      config.invisible,
 	}
 }

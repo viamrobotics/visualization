@@ -6,7 +6,7 @@ import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
 import { traits } from '$lib/ecs'
 
-import { rgbaToHex } from './color'
+import { rgbToHex } from './color'
 import { drawDrawing, drawTransform } from './draw'
 
 /**
@@ -32,7 +32,7 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
 		next.pointSize = metadata.pointSize / 1000
 	}
 	if (metadata.pointColor !== undefined) {
-		next.pointColor = rgbaToHex(metadata.pointColor)
+		next.pointColor = rgbToHex(metadata.pointColor)
 	}
 	if (metadata.lineWidth !== undefined) {
 		next.lineWidth = metadata.lineWidth / 1000
