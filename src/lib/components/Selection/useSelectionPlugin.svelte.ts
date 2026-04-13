@@ -17,7 +17,6 @@ export const provideSelectionPlugin = () => {
 	const world = useWorld()
 	const entities = useQuery(selectionTraits.SelectionEnclosedPoints)
 
-
 	const ctx = setContext<SelectionPluginContext>(key, {
 		get current() {
 			return entities.current
