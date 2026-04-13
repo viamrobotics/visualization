@@ -12,7 +12,7 @@
 	import ToggleGroup from '../overlay/ToggleGroup.svelte'
 	import Ellipse from './Ellipse.svelte'
 	import Lasso from './Lasso.svelte'
-	import { provideSelection } from './useSelection.svelte'
+	import { provideSelectionPlugin } from './useSelectionPlugin.svelte'
 
 	interface Props {
 		/** Whether to auto-enable lasso mode when the component mounts */
@@ -28,7 +28,7 @@
 	const settings = useSettings()
 	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
 
-	provideSelection()
+	provideSelectionPlugin()
 	let selectionType = $state<SelectionType>('lasso')
 
 	$effect(() => {

@@ -12,7 +12,7 @@
 
 	import Debug from './Debug.svelte'
 	import * as selectionTraits from './traits'
-	import { useSelection } from './useSelection.svelte'
+	import { useSelectionPlugin } from './useSelectionPlugin.svelte'
 	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
 
 	interface Props {
@@ -25,7 +25,7 @@
 	const world = useWorld()
 	const controls = useCameraControls()
 	const { scene, dom, camera } = useThrelte()
-	const selection = useSelection()
+	const selection = useSelectionPlugin()
 
 	const box3 = new Box3()
 	const min = new Vector3()
@@ -225,9 +225,7 @@
 			selectionTraits.PointsCapturedBy(ellipse)
 		)
 
-		for (const callback of selection.selectionCallbacks) {
-			callback(result)
-		}
+		selection.addEntity(result)
 	}
 
 	const onkeydown = (event: KeyboardEvent) => {

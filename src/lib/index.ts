@@ -8,7 +8,7 @@ export { default as PCD } from './components/PCD.svelte'
 export * as relations from './ecs/relations'
 export * as traits from './ecs/traits'
 export * as selectionTraits from './components/Selection/traits'
-export { useSelection } from './components/Selection/useSelection.svelte'
+export { useSelectionPlugin as useSelection } from './components/Selection/useSelectionPlugin.svelte.ts'
 export { default as FloatingPanel } from './components/overlay/FloatingPanel.svelte'
 
 export { provideWorld, useWorld } from './ecs/useWorld'

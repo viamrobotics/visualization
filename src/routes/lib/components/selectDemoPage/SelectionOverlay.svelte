@@ -1,22 +1,23 @@
 <script lang="ts">
-	import type { Entity } from 'koota'
-
 	import { useThrelte } from '@threlte/core'
 	import { Portal } from '@threlte/extras'
 	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
 
-	import { useSelection } from '$lib'
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
+	import { useSelectionPlugin } from '$lib/components/Selection/useSelectionPlugin.svelte'
 	import { traits } from '$lib/ecs'
 
 	const { dom } = useThrelte()
-	const selectionCtx = useSelection()
+	const selectionCtx = useSelectionPlugin()
 
 	const rect = new ElementRect(() => dom)
 
-	selectionCtx.registerSelectionCallback((entity: Entity) => {
-		entity.set(traits.Color, { r: 0, g: 1, b: 0 })
+	$effect(() => {
+		const entity = selectionCtx.current.at(-1)
+		if (entity) {
+			entity.set(traits.Color, { r: 0, g: 1, b: 0 })
+		}
 	})
 </script>
 
