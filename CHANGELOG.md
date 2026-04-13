@@ -1,5 +1,19 @@
 # motion-tools
 
+## 1.18.0
+
+### Minor Changes
+
+- a2d2976: add interaction layer trait
+- bf53014: Add metadata to configure showing axes helper
+- cec6888: Add `Opacities` trait, update `Metadata` with `color_format` and `opacities`
+- a31c3bd: feat: refactor selection tool to use context instead of callbacks
+- bf53014: Add invisible metadata to allow spawning hidden entities
+
+### Patch Changes
+
+- 9856850: Rework metadata parsing to match API and simplify new field additions
+
 ## 1.17.0
 
 ### Minor Changes
