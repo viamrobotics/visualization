@@ -9,8 +9,8 @@ import * as selectionTraits from './traits'
 const key = Symbol('selection-plugin-context')
 
 interface SelectionPluginContext {
-	current: Entity[],
-	addEntity: (entity: Entity) => void,
+	current: Entity[]
+	addEntity: (entity: Entity) => void
 	clearSelections: () => void
 }
 
@@ -20,7 +20,7 @@ export const provideSelectionPlugin = () => {
 
 	const ctx = setContext<SelectionPluginContext>(key, {
 		get current() {
-			return entities.filter(entity => world.has(entity))
+			return entities.filter((entity) => world.has(entity))
 		},
 		addEntity(entity: Entity) {
 			entities.push(entity)
@@ -31,7 +31,7 @@ export const provideSelectionPlugin = () => {
 					entity.destroy()
 				}
 			}
-		}
+		},
 	})
 	return ctx
 }
