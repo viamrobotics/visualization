@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.18.1
+
+### Patch Changes
+
+- 1f6e1fe: fix: use screen sapce for ellipse select
+
 ## 1.18.0
 
 ### Minor Changes
