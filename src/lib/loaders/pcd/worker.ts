@@ -239,15 +239,10 @@ globalThis.onmessage = async (event) => {
 				const volume = Math.max(size.x * size.y * size.z, 1e-10)
 
 				const lodConfigs = [
-					{ level: 8, fraction: 0.05, distance: Math.min(diagonal * 8, 30) },
-					{ level: 7, fraction: 0.10, distance: Math.min(diagonal * 6, 20) },
-					{ level: 6, fraction: 0.20, distance: Math.min(diagonal * 4, 15) },
-					{ level: 5, fraction: 0.35, distance: Math.min(diagonal * 2, 8) },
-					{ level: 4, fraction: 0.50, distance: Math.min(diagonal * 1, 4) },
-					{ level: 3, fraction: 0.65, distance: Math.min(diagonal * 0.5, 2) },
-					{ level: 2, fraction: 0.80, distance: Math.min(diagonal * 0.25, 1) },
-					{ level: 2, fraction: 0.92, distance: Math.min(diagonal * 0.1, 0.5) },
-					{ level: 1, fraction: 0.97, distance: Math.min(diagonal * 0.05, 0.25) },
+					{ level: 4, fraction: 0.10, distance: Math.min(diagonal * 4, 15) },
+					{ level: 3, fraction: 0.35, distance: Math.min(diagonal * 1, 4) },
+					{ level: 2, fraction: 0.65, distance: Math.min(diagonal * 0.25, 1) },
+					{ level: 1, fraction: 0.90, distance: Math.min(diagonal * 0.05, 0.25) },
 				]
 
 				// Send coarsest to finest
