@@ -234,7 +234,7 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	process.env.VIAM_E2E_ORG_API_KEY_ID = config.apiKeyId
 	process.env.VIAM_E2E_ORG_API_KEY = config.apiKey
 
-	console.log('\n=== E2E Global Setup Complete ===\n')
+	console.log('\nE2E Global Setup Complete\n')
 
 	return teardown
 }
