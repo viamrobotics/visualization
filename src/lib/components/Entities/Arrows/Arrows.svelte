@@ -37,7 +37,7 @@
 	})
 </script>
 
-<Portal id={parent.current}>
+<Portal id={parent.current ?? 'world'}>
 	<T
 		is={arrows}
 		name={entity}

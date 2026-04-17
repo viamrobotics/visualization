@@ -138,8 +138,7 @@ export const updateTransform = (
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
 
 	if (physicalObject) {
 		traits.updateGeometryTrait(entity, physicalObject)
@@ -151,26 +150,35 @@ export const updateTransform = (
 		}
 	}
 
-	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	if (parsedMetadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	else entity.remove(traits.ShowAxesHelper)
-	if (parsedMetadata.invisible) entity.add(traits.Invisible)
-	else entity.remove(traits.Invisible)
-
-	const { colors, opacities } = parsedMetadata
-	if (colors) {
-		if (isPointCloud(physicalObject?.geometryType)) {
-			updateColors(entity, parsedMetadata)
-		} else {
-			addColorTraits(entity, colors)
-		}
-	}
-
-	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
-	if (opacity < 1) entity.add(traits.Opacity(opacity))
+	updateMetadata(entity, metadataFromStruct(metadata?.fields), {
+		pointCloud: isPointCloud(physicalObject?.geometryType),
+	})
 
 	if (options.removable) entity.add(traits.Removable)
 	if (!options.removable) entity.remove(traits.Removable)
+}
+
+export const updateMetadata = (
+	entity: Entity,
+	metadata: Metadata,
+	{ pointCloud = false }: { pointCloud?: boolean } = {}
+): void => {
+	if (metadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	else entity.remove(traits.ShowAxesHelper)
+
+	if (metadata.invisible) entity.add(traits.Invisible)
+	else entity.remove(traits.Invisible)
+
+	const { colors, opacities } = metadata
+	if (colors) {
+		if (pointCloud) {
+			updateColors(entity, metadata)
+		} else {
+			setColorTraits(entity, colors)
+		}
+	}
+
+	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -196,8 +204,7 @@ export const updateDrawing = (
 
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
 
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
@@ -404,10 +411,19 @@ const parsePointCloud = (
 		let vertexColors = pointcloud.colors
 		if (colors && colors.length > 0) vertexColors = parseColors(colors, numPoints)
 
-		const geometry = createBufferGeometry(pointcloud.positions, {
-			colors: vertexColors ?? undefined,
-			colorFormat,
-		})
+		const total = metadata.chunks?.total
+		const chunkMetadata = { colors: vertexColors ?? undefined, colorFormat }
+
+		let geometry
+		if (total !== undefined && total > numPoints) {
+			geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+				...chunkMetadata,
+				colors: vertexColors ? new Uint8Array(0) : undefined,
+			})
+			writeBufferGeometryRange(geometry, pointcloud.positions, 0, chunkMetadata)
+		} else {
+			geometry = createBufferGeometry(pointcloud.positions, chunkMetadata)
+		}
 
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
@@ -544,7 +560,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 	}
 }
 
-const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
+export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
 		entity.add(traits.Colors(colors))
 	} else {
@@ -552,7 +568,7 @@ const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	}
 }
 
-const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
+export const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
 		entity.set(traits.Colors, colors)
 		entity.remove(traits.Color)

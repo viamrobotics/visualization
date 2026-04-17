@@ -404,6 +404,12 @@
 						value: parent.current ?? 'world',
 						options: configFrames.getParentFrameOptions(name.current ?? ''),
 						onChange: (value) => {
+							if (value === parent.current) return
+							if (value === 'world') {
+								entity.remove(traits.Parent)
+							} else {
+								entity.set(traits.Parent, value)
+							}
 							detailConfigUpdater.setFrameParent(entity, value)
 						},
 					})}

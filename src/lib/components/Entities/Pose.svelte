@@ -4,6 +4,7 @@
 	import type { Snippet } from 'svelte'
 
 	import { traits, useTrait } from '$lib/ecs'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { usePose } from '$lib/hooks/usePose.svelte'
 	import { matrixToPose, poseToMatrix } from '$lib/transform'
 
@@ -13,6 +14,7 @@
 	}
 	let { entity, children }: Props = $props()
 
+	const partConfig = usePartConfig()
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const editedPose = useTrait(() => entity, traits.EditedPose)
@@ -24,7 +26,7 @@
 	)
 
 	const resolvedPose = $derived.by(() => {
-		if (pose.current === undefined) {
+		if (pose.current === undefined || partConfig.hasPendingSave) {
 			return editedPose.current
 		}
 

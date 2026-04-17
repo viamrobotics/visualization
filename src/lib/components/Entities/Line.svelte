@@ -72,52 +72,54 @@
 	})
 </script>
 
-<Portal id={parent.current}>
-	<T
-		is={mesh}
-		name={entity}
-		userData.name={name}
-		raycast={meshBounds}
-		renderOrder={renderOrder.current}
-		visible={invisible.current !== true}
-		{...events}
-	>
-		<LineGeometry
-			positions={linePositions.current}
-			colors={lineColors}
-		/>
+{#key parent.current ?? 'world'}
+	<Portal id={parent.current ?? 'world'}>
 		<T
-			is={LineMaterial}
-			color={hasVertexColors ? [1, 1, 1] : lineColor}
-			vertexColors={hasVertexColors}
-			transparent={currentOpacity < 1}
-			depthWrite={currentOpacity === 1}
-			opacity={currentOpacity}
-			worldUnits={!screenSpace.current}
-			linewidth={(lineWidth.current ?? 5) * (screenSpace.current ? 1 : 0.001)}
-			depthTest={materialProps.current?.depthTest ?? true}
-		/>
-		{#if showAxesHelper.current}
-			<AxesHelper
-				name={entity}
-				width={3}
-				length={0.1}
+			is={mesh}
+			name={entity}
+			userData.name={name}
+			raycast={meshBounds}
+			renderOrder={renderOrder.current}
+			visible={invisible.current !== true}
+			{...events}
+		>
+			<LineGeometry
+				positions={linePositions.current}
+				colors={lineColors}
+			/>
+			<T
+				is={LineMaterial}
+				color={hasVertexColors ? [1, 1, 1] : lineColor}
+				vertexColors={hasVertexColors}
+				transparent={currentOpacity < 1}
+				depthWrite={currentOpacity === 1}
+				opacity={currentOpacity}
+				worldUnits={!screenSpace.current}
+				linewidth={(lineWidth.current ?? 5) * (screenSpace.current ? 1 : 0.001)}
+				depthTest={materialProps.current?.depthTest ?? true}
+			/>
+			{#if showAxesHelper.current}
+				<AxesHelper
+					name={entity}
+					width={3}
+					length={0.1}
+				/>
+			{/if}
+		</T>
+
+		{#if linePositions.current && dotSize.current}
+			<LineDots
+				colors={dotColors.current ?? new Uint8Array()}
+				opacity={currentOpacity}
+				positions={linePositions.current}
+				scale={dotSize.current * 0.001}
 			/>
 		{/if}
-	</T>
 
-	{#if linePositions.current && dotSize.current}
-		<LineDots
-			colors={dotColors.current ?? new Uint8Array()}
-			opacity={currentOpacity}
-			positions={linePositions.current}
-			scale={dotSize.current * 0.001}
-		/>
-	{/if}
+		{#if name.current}
+			<PortalTarget id={name.current} />
+		{/if}
 
-	{#if name.current}
-		<PortalTarget id={name.current} />
-	{/if}
-
-	{@render children?.()}
-</Portal>
+		{@render children?.()}
+	</Portal>
+{/key}

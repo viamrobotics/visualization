@@ -78,22 +78,24 @@ Renders a Viam Frame object
 	})
 </script>
 
-<Portal id={parent.current}>
-	<T
-		is={group}
-		visible={invisible.current !== true}
-	>
-		<Mesh
-			{entity}
-			{color}
-			{...events}
-			center={center.current}
-		/>
+{#key parent.current ?? 'world'}
+	<Portal id={parent.current ?? 'world'}>
+		<T
+			is={group}
+			visible={invisible.current !== true}
+		>
+			<Mesh
+				{entity}
+				{color}
+				{...events}
+				center={center.current}
+			/>
 
-		{#if name.current}
-			<PortalTarget id={name.current} />
-		{/if}
+			{#if name.current}
+				<PortalTarget id={name.current} />
+			{/if}
 
-		{@render children?.({ ref: group })}
-	</T>
-</Portal>
+			{@render children?.({ ref: group })}
+		</T>
+	</Portal>
+{/key}

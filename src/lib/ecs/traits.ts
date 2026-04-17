@@ -188,6 +188,19 @@ export const Geometry = (geometry: ViamGeometry) => {
 	return ReferenceFrame
 }
 
+export const setParentTrait = (entity: Entity, parent: string | undefined) => {
+	if (!parent || parent === 'world') {
+		entity.remove(Parent)
+		return
+	}
+
+	if (entity.has(Parent)) {
+		entity.set(Parent, parent)
+	} else {
+		entity.add(Parent(parent))
+	}
+}
+
 export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {
 	if (!geometry) {
 		entity.remove(Box, Capsule, Sphere, BufferGeometry)
