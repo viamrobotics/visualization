@@ -126,26 +126,24 @@
 </script>
 
 {#if geometry.current}
-	{#key parent.current ?? 'world'}
-		<Portal id={parent.current ?? 'world'}>
-			<T
-				is={points}
-				name={entity}
-				bvh={{ maxDepth: 40, maxLeafSize: 20 }}
-				visible={invisible.current !== true}
-				{...events}
-			>
-				<T is={geometry.current} />
-				<T is={material} />
-				{#if showAxesHelper.current}
-					<AxesHelper
-						name={entity}
-						width={3}
-						length={0.1}
-					/>
-				{/if}
-				{@render children?.()}
-			</T>
-		</Portal>
-	{/key}
+	<Portal id={parent.current ?? 'world'}>
+		<T
+			is={points}
+			name={entity}
+			bvh={{ maxDepth: 40, maxLeafSize: 20 }}
+			visible={invisible.current !== true}
+			{...events}
+		>
+			<T is={geometry.current} />
+			<T is={material} />
+			{#if showAxesHelper.current}
+				<AxesHelper
+					name={entity}
+					width={3}
+					length={0.1}
+				/>
+			{/if}
+			{@render children?.()}
+		</T>
+	</Portal>
 {/if}

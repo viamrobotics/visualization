@@ -84,32 +84,30 @@
 	})
 </script>
 
-{#key parent.current ?? 'world'}
-	<Portal id={parent.current ?? 'world'}>
-		<T is={group}>
-			{#if showAxesHelper.current}
-				<AxesHelper
-					name={entity}
-					width={3}
-					length={0.1}
-				/>
-			{/if}
-			{#if $gltf}
-				<T
-					is={$gltf.scene as Object3D}
-					scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
-					name={entity}
-					visible={invisible.current !== true}
-					{...events}
-					{...rest}
-				>
-					{@render children?.()}
+<Portal id={parent.current ?? 'world'}>
+	<T is={group}>
+		{#if showAxesHelper.current}
+			<AxesHelper
+				name={entity}
+				width={3}
+				length={0.1}
+			/>
+		{/if}
+		{#if $gltf}
+			<T
+				is={$gltf.scene as Object3D}
+				scale={[scale.current?.x ?? 1, scale.current?.y ?? 1, scale.current?.z ?? 1]}
+				name={entity}
+				visible={invisible.current !== true}
+				{...events}
+				{...rest}
+			>
+				{@render children?.()}
 
-					{#if name.current}
-						<PortalTarget id={name.current} />
-					{/if}
-				</T>
-			{/if}
-		</T>
-	</Portal>
-{/key}
+				{#if name.current}
+					<PortalTarget id={name.current} />
+				{/if}
+			</T>
+		{/if}
+	</T>
+</Portal>

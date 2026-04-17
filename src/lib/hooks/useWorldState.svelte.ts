@@ -57,9 +57,6 @@ export const provideWorldStates = () => {
 	})
 }
 
-/**
- * Decodes a base64-encoded string into a Uint8Array.
- */
 const decodeBase64 = (encoded: string): Uint8Array => {
 	const binary = atob(encoded)
 	const bytes = new Uint8Array(binary.length)
@@ -92,10 +89,7 @@ const decodeBase64 = (encoded: string): Uint8Array => {
  *     "done":  <boolean>
  *   }
  */
-const decodeWorldStateChunk = (
-	response: unknown,
-	fallbackStart: number
-): EntityChunk | null => {
+const decodeWorldStateChunk = (response: unknown, fallbackStart: number): EntityChunk | null => {
 	const fields = response as Record<string, unknown>
 	const done = fields['done'] === true
 	const start = typeof fields['start'] === 'number' ? fields['start'] : fallbackStart
