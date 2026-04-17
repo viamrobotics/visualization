@@ -1,7 +1,7 @@
 import { Color } from 'three'
 
-// TODO: Rename this to SIZE
-/** The number of components per element in a buffer. */
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+
 export const STRIDE = {
 	/** Arrows: [x, y, z, ox, oy, oz, ...] */
 	ARROWS: 6,
@@ -13,8 +13,6 @@ export const STRIDE = {
 	NURBS_KNOTS: 1,
 	/** Colors: [r, g, b, ...] */
 	COLORS_RGB: 3,
-	/** Opacities: [opacity, ...] */
-	OPACITIES: 1,
 } as const
 
 /**
@@ -34,9 +32,9 @@ export const STRIDE = {
  * ```
  */
 export const asFloat32Array = (
-	bytes: Uint8Array<ArrayBuffer>,
+	bytes: Uint8Array,
 	transform?: (value: number) => number
-): Float32Array<ArrayBuffer> => {
+): Float32Array => {
 	if (bytes.length === 0) {
 		return new Float32Array(0)
 	}
@@ -79,13 +77,13 @@ export const asFloat32Array = (
  * asColor(colors.current, pointColorUtil, STRIDE.COLORS_RGB) // read second color
  * ```
  */
-export const asColor = (bytes: Uint8Array<ArrayBuffer>, target: Color, offset = 0): Color => {
+export const asColor = (bytes: Uint8Array, target: Color, offset = 0): Color => {
 	if (bytes.length < offset + 3) return target.setRGB(0, 0, 0)
 	return target.setRGB(bytes[offset] / 255, bytes[offset + 1] / 255, bytes[offset + 2] / 255)
 }
 
 export const asRGB = (
-	bytes: Uint8Array<ArrayBuffer>,
+	bytes: Uint8Array,
 	target: { r: number; g: number; b: number },
 	offset = 0
 ): { r: number; g: number; b: number } => {
@@ -109,11 +107,7 @@ export const asRGB = (
  * material.opacity = asOpacity(metadata.opacities)
  * ```
  */
-export const asOpacity = (
-	opacities: Uint8Array<ArrayBuffer> | undefined,
-	fallback = 1,
-	index = 0
-): number => {
+export const asOpacity = (opacities: Uint8Array | undefined, fallback = 1, index = 0): number => {
 	if (!opacities || opacities.length === 0) return fallback
 	// If only one opacity byte, it is the uniform opacity regardless of index
 	const i = opacities.length === 1 ? 0 : index
@@ -132,7 +126,7 @@ export const asOpacity = (
  * }
  * ```
  */
-export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
+export const isSingleColor = (colors: Uint8Array): boolean => {
 	if (!colors) return false
 	return colors.length === STRIDE.COLORS_RGB
 }
@@ -150,7 +144,7 @@ export const isSingleColor = (colors: Uint8Array<ArrayBuffer>): boolean => {
  * }
  * ```
  */
-export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boolean => {
+export const isVertexColors = (colors: Uint8Array | undefined): colors is Uint8Array => {
 	if (!colors || colors.length === 0) return false
 	if (isSingleColor(colors)) return false
 	return colors.length % STRIDE.COLORS_RGB === 0
@@ -166,3 +160,15 @@ export const isVertexColors = (colors: Uint8Array<ArrayBuffer> | undefined): boo
  * ```
  */
 export const inMeters = (v: number): number => v * 0.001
+
+/** Returns the byte stride for a given color format. */
+export const colorStride = (format?: ColorFormat): number => {
+	switch (format) {
+		case ColorFormat.RGB: {
+			return STRIDE.COLORS_RGB
+		}
+		default: {
+			return 0
+		}
+	}
+}

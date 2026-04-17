@@ -27,7 +27,7 @@ const (
 //   - colors: []uint8 of a single color or a color per arrow
 //     defaults to [0, 128, 0] (green)
 //   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-//   - opacities: []uint8 of a single opacity or an opacity per arrow
+//   - opacities: []uint8 of a single opacity or a opacity per arrow
 //     defaults to [255] (fully opaque)
 type Arrows struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -80,7 +80,7 @@ func (x *Arrows) GetPoses() []byte {
 //   - colors: []uint8 of a single color or a color per line point
 //     defaults to [0, 0, 255] (blue)
 //   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-//   - opacities: []uint8 of a single opacity or an opacity per line point
+//   - opacities: []uint8 of a single opacity or a opacity per line point
 //     defaults to [255] (fully opaque)
 type Line struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -162,13 +162,14 @@ func (x *Line) GetDotColors() []byte {
 //   - colors: []uint8 of a single color or a color per point
 //     defaults to [128, 128, 128] (gray)
 //   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-//   - opacities: []uint8 of a single opacity or an opacity per point
+//   - opacities: []uint8 of a single opacity or a opacity per point
 //     defaults to [255] (fully opaque)
 type Points struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The positions of the points: [x, y, z, ...]
+	// The positions of the points
+	// float32 array of positions: [x, y, z, ...]
 	Positions []byte `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
-	// The size of the points in millimeters, defaults to 10
+	// Size of the points in millimeters, defaults to 10
 	PointSize     *float32 `protobuf:"fixed32,2,opt,name=point_size,json=pointSize,proto3,oneof" json:"point_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -332,7 +333,7 @@ type Model struct {
 	Assets []*ModelAsset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 	// Uniform scale factor, defaults to [1.0, 1.0, 1.0]
 	Scale *v1.Vector3 `protobuf:"bytes,2,opt,name=scale,proto3,oneof" json:"scale,omitempty"`
-	// Name of the animation to play, defaults to empty string (no animation)
+	// Name ofI the animation to play, defaults to empty string (no animation)
 	AnimationName *string `protobuf:"bytes,3,opt,name=animation_name,json=animationName,proto3,oneof" json:"animation_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -394,7 +395,7 @@ func (x *Model) GetAnimationName() string {
 //   - colors: []uint8 of a single color or a color per NURBS control point
 //     defaults to [0, 255, 255] (cyan)
 //   - color format: the format of the colors field, defaults to COLOR_FORMAT_RGB
-//   - opacities: []uint8 of a single opacity or an opacity per NURBS control point
+//   - opacities: []uint8 of a single opacity or a opacity per NURBS control point
 //     defaults to [255] (fully opaque)
 type Nurbs struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -633,9 +634,9 @@ func (*Shape_Nurbs) isShape_GeometryType() {}
 // For non-physical visualization shapes
 type Drawing struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The reference frame name for the drawing
+	// The name of the shape
 	ReferenceFrame string `protobuf:"bytes,1,opt,name=reference_frame,json=referenceFrame,proto3" json:"reference_frame,omitempty"`
-	// The pose of the shape as observed through its parent frame/the world
+	// The pose of the shape as observed through it's parent frame/the world
 	PoseInObserverFrame *v1.PoseInFrame `protobuf:"bytes,2,opt,name=pose_in_observer_frame,json=poseInObserverFrame,proto3" json:"pose_in_observer_frame,omitempty"`
 	// The shape of the drawing
 	PhysicalObject *Shape `protobuf:"bytes,3,opt,name=physical_object,json=physicalObject,proto3,oneof" json:"physical_object,omitempty"`

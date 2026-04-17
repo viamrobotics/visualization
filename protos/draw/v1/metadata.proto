@@ -34,6 +34,14 @@ message Metadata {
   // Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
   optional bytes opacities = 3;
 
+  // Whether to show the axes helper (RGB XYZ indicator) on the entity.
+  // Defaults to false.
+  optional bool show_axes_helper = 4;
+
+  // Whether the entity is invisible (not rendered) by default.
+  // Defaults to false.
+  optional bool invisible = 5;
+
   // When present, indicates this drawing uses chunked delivery.
-  optional Chunks chunks = 4;
+  optional Chunks chunks = 6;
 }

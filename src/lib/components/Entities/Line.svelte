@@ -10,6 +10,7 @@
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 
+	import AxesHelper from '../AxesHelper.svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import LineDots from './LineDots.svelte'
 	import LineGeometry from './LineGeometry.svelte'
@@ -36,6 +37,7 @@
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const screenSpace = useTrait(() => entity, traits.ScreenSpace)
 	const invisible = useTrait(() => entity, traits.Invisible)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 
 	const events = useEntityEvents(() => entity)
 
@@ -70,7 +72,7 @@
 	})
 </script>
 
-<Portal id={parent.current}>
+<Portal id={parent.current ?? 'world'}>
 	<T
 		is={mesh}
 		name={entity}
@@ -95,6 +97,13 @@
 			linewidth={(lineWidth.current ?? 5) * (screenSpace.current ? 1 : 0.001)}
 			depthTest={materialProps.current?.depthTest ?? true}
 		/>
+		{#if showAxesHelper.current}
+			<AxesHelper
+				name={entity}
+				width={3}
+				length={0.1}
+			/>
+		{/if}
 	</T>
 
 	{#if linePositions.current && dotSize.current}

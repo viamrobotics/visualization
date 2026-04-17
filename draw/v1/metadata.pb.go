@@ -142,8 +142,14 @@ type Metadata struct {
 	// Uint8Array of opacity values (0-255) corresponding to colors.
 	// Can be a single set of values for a uniform opacity, or an array of values for per-vertex opacity.
 	Opacities []byte `protobuf:"bytes,3,opt,name=opacities,proto3,oneof" json:"opacities,omitempty"`
+	// Whether to show the axes helper (RGB XYZ indicator) on the entity.
+	// Defaults to false.
+	ShowAxesHelper *bool `protobuf:"varint,4,opt,name=show_axes_helper,json=showAxesHelper,proto3,oneof" json:"show_axes_helper,omitempty"`
+	// Whether the entity is invisible (not rendered) by default.
+	// Defaults to false.
+	Invisible *bool `protobuf:"varint,5,opt,name=invisible,proto3,oneof" json:"invisible,omitempty"`
 	// When present, indicates this drawing uses chunked delivery.
-	Chunks        *Chunks `protobuf:"bytes,4,opt,name=chunks,proto3,oneof" json:"chunks,omitempty"`
+	Chunks        *Chunks `protobuf:"bytes,6,opt,name=chunks,proto3,oneof" json:"chunks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -199,6 +205,20 @@ func (x *Metadata) GetOpacities() []byte {
 	return nil
 }
 
+func (x *Metadata) GetShowAxesHelper() bool {
+	if x != nil && x.ShowAxesHelper != nil {
+		return *x.ShowAxesHelper
+	}
+	return false
+}
+
+func (x *Metadata) GetInvisible() bool {
+	if x != nil && x.Invisible != nil {
+		return *x.Invisible
+	}
+	return false
+}
+
 func (x *Metadata) GetChunks() *Chunks {
 	if x != nil {
 		return x.Chunks
@@ -215,15 +235,20 @@ const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
 	"chunk_size\x18\x01 \x01(\rR\tchunkSize\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\rR\x05total\x12\x16\n" +
-	"\x06stride\x18\x03 \x01(\rR\x06stride\"\xd5\x01\n" +
+	"\x06stride\x18\x03 \x01(\rR\x06stride\"\xca\x02\n" +
 	"\bMetadata\x12\x1b\n" +
 	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x127\n" +
 	"\fcolor_format\x18\x02 \x01(\x0e2\x14.draw.v1.ColorFormatR\vcolorFormat\x12!\n" +
-	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01\x12,\n" +
-	"\x06chunks\x18\x04 \x01(\v2\x0f.draw.v1.ChunksH\x02R\x06chunks\x88\x01\x01B\t\n" +
+	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01\x12-\n" +
+	"\x10show_axes_helper\x18\x04 \x01(\bH\x02R\x0eshowAxesHelper\x88\x01\x01\x12!\n" +
+	"\tinvisible\x18\x05 \x01(\bH\x03R\tinvisible\x88\x01\x01\x12,\n" +
+	"\x06chunks\x18\x06 \x01(\v2\x0f.draw.v1.ChunksH\x04R\x06chunks\x88\x01\x01B\t\n" +
 	"\a_colorsB\f\n" +
 	"\n" +
-	"_opacitiesB\t\n" +
+	"_opacitiesB\x13\n" +
+	"\x11_show_axes_helperB\f\n" +
+	"\n" +
+	"_invisibleB\t\n" +
 	"\a_chunks*A\n" +
 	"\vColorFormat\x12\x1c\n" +
 	"\x18COLOR_FORMAT_UNSPECIFIED\x10\x00\x12\x14\n" +

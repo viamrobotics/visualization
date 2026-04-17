@@ -14,10 +14,10 @@ import (
 
 // DrawPointCloudOptions configures a DrawPointCloud or StreamEntity call.
 type DrawPointCloudOptions struct {
-	// A unique identifier for the point cloud. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the point cloud.
+	// The name of the entity.
 	Name string
 
 	// The point cloud to draw.
@@ -41,6 +41,9 @@ type DrawPointCloudOptions struct {
 
 	// OnProgress is called after each chunk is sent during chunked delivery.
 	OnProgress func(draw.ChunkProgress)
+
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPointCloud draws a PointCloud in the visualizer.
@@ -89,17 +92,7 @@ func buildPointCloud(options DrawPointCloudOptions) (*draw.DrawnPointCloud, []dr
 		return nil, nil, fmt.Errorf("failed to create drawn point cloud: %w", err)
 	}
 
-	parent := options.Parent
-	if parent == "" {
-		parent = "world"
-	}
-
-	drawOptions := []draw.DrawableOption{draw.WithParent(parent)}
-	if options.ID != "" {
-		drawOptions = append(drawOptions, draw.WithID(options.ID))
-	}
-
-	return pointCloud, drawOptions, nil
+	return pointCloud, entityAttributes(options.ID, options.Parent, options.Attrs), nil
 }
 
 func drawPointCloud(

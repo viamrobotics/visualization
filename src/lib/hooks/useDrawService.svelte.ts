@@ -145,7 +145,7 @@ export function provideDrawService() {
 	const pullChunks = async (
 		client: Client<typeof DrawService>,
 		uuid: string,
-		uuidBytes: Uint8Array<ArrayBuffer>,
+		uuidBytes: Uint8Array,
 		entity: Entity,
 		totalElements: number,
 		firstChunkEnd: number,
@@ -158,7 +158,7 @@ export function provideDrawService() {
 			let nextStart = firstChunkEnd
 			while (!signal.aborted) {
 				const response = await client.getEntityChunk(
-					{ uuid: uuidBytes, start: nextStart },
+					{ uuid: uuidBytes as Uint8Array<ArrayBuffer>, start: nextStart },
 					{ signal }
 				)
 
@@ -173,15 +173,11 @@ export function provideDrawService() {
 				const buffer = entity.get(traits.BufferGeometry)
 				if (!buffer) break
 
-				const positions = asFloat32Array(shape.value.positions as Uint8Array<ArrayBuffer>, inMeters)
+				const positions = asFloat32Array(shape.value.positions, inMeters)
 				const metadata = drawing.metadata
-				const colors = metadata?.colors as Uint8Array<ArrayBuffer> | undefined
-				const opacities = metadata?.opacities as Uint8Array<ArrayBuffer> | undefined
+				if (!metadata) break
 
-				writeBufferGeometryRange(buffer, positions, response.start, {
-					colors,
-					opacities,
-				})
+				writeBufferGeometryRange(buffer, positions, response.start, metadata)
 
 				const chunkElements = positions.length / 3
 				nextStart = response.start + chunkElements
@@ -214,7 +210,7 @@ export function provideDrawService() {
 					const chunk = getChunkInfo(drawing)
 					if (chunk) {
 						spawned[0]!.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
-						const uuidBytes = (drawing.uuid ?? new Uint8Array()) as Uint8Array<ArrayBuffer>
+						const uuidBytes = drawing.uuid ?? new Uint8Array()
 						void pullChunks(
 							activeClient,
 							uuid,

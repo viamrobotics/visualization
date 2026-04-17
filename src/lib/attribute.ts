@@ -2,18 +2,19 @@ import { BufferAttribute, BufferGeometry } from 'three'
 
 import type { Metadata } from './metadata'
 
-import { STRIDE } from './buffer'
+import { colorStride, STRIDE } from './buffer'
 
-export const createBufferGeometry = (positions: Float32Array, { colors, opacities }: Metadata) => {
+export const createBufferGeometry = (positions: Float32Array, metadata?: Metadata) => {
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
-	if (colors) {
-		geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
+	if (metadata?.colors) {
+		const stride = colorStride(metadata.colorFormat)
+		geometry.setAttribute('color', new BufferAttribute(metadata.colors, stride, true))
 	}
 
-	if (opacities) {
-		geometry.setAttribute('opacity', new BufferAttribute(opacities, STRIDE.OPACITIES, true))
+	if (metadata?.opacities) {
+		geometry.setAttribute('opacity', new BufferAttribute(metadata.opacities, 1, true))
 	}
 
 	return geometry
@@ -22,7 +23,7 @@ export const createBufferGeometry = (positions: Float32Array, { colors, opacitie
 export const updateBufferGeometry = (
 	geometry: BufferGeometry,
 	positions: Float32Array,
-	{ colors, opacities }: Metadata
+	metadata: Metadata
 ) => {
 	const positionAttr = geometry.getAttribute('position')
 
@@ -34,56 +35,46 @@ export const updateBufferGeometry = (
 		geometry.setAttribute('position', new BufferAttribute(positions, 3))
 	}
 
-	if (colors) {
+	if (metadata.colors) {
+		const stride = colorStride(metadata.colorFormat)
 		const colorAttr = geometry.getAttribute('color')
-		if (colorAttr && colorAttr.array.length >= colors.length) {
-			colorAttr.array.set(colors, 0)
+		if (colorAttr && colorAttr.array.length >= metadata.colors.length) {
+			colorAttr.array.set(metadata.colors, 0)
 			colorAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('color', new BufferAttribute(colors, STRIDE.COLORS_RGB, true))
+			geometry.setAttribute('color', new BufferAttribute(metadata.colors, stride, true))
 		}
 	}
 
-	if (opacities) {
+	if (metadata.opacities) {
 		const opacityAttr = geometry.getAttribute('opacity')
-		if (opacityAttr && opacityAttr.array.length >= opacities.length) {
-			opacityAttr.array.set(opacities, 0)
+		if (opacityAttr && opacityAttr.array.length >= metadata.opacities.length) {
+			opacityAttr.array.set(metadata.opacities, 0)
 			opacityAttr.needsUpdate = true
 		} else {
-			geometry.setAttribute('opacity', new BufferAttribute(opacities, STRIDE.OPACITIES, true))
+			geometry.setAttribute('opacity', new BufferAttribute(metadata.opacities, 1, true))
 		}
 	}
 }
 
-/**
- * Pre-allocates a BufferGeometry for `total` elements with drawRange starting at 0.
- *
- * @param total - The total number of elements across all chunks.
- * @param size - The number of components per element (e.g. 3 for xyz).
- * @param metadata - The metadata for the geometry.
- * @returns A BufferGeometry with the given total and metadata.
- */
 export const preAllocateBufferGeometry = (
 	total: number,
 	size: number,
-	{ colors, opacities }: Metadata
+	metadata: Metadata
 ): BufferGeometry => {
 	const geometry = new BufferGeometry()
 
 	const posAttr = new BufferAttribute(new Float32Array(total * size), size)
 	geometry.setAttribute('position', posAttr)
 
-	if (colors) {
-		const colorAttr = new BufferAttribute(
-			new Uint8Array(total * STRIDE.COLORS_RGB),
-			STRIDE.COLORS_RGB,
-			true
-		)
+	if (metadata.colors) {
+		const stride = colorStride(metadata.colorFormat) || STRIDE.COLORS_RGB
+		const colorAttr = new BufferAttribute(new Uint8Array(total * stride), stride, true)
 		geometry.setAttribute('color', colorAttr)
 	}
 
-	if (opacities) {
-		const opacityAttr = new BufferAttribute(new Uint8Array(total), STRIDE.OPACITIES, true)
+	if (metadata.opacities) {
+		const opacityAttr = new BufferAttribute(new Uint8Array(total), 1, true)
 		geometry.setAttribute('opacity', opacityAttr)
 	}
 
@@ -91,15 +82,11 @@ export const preAllocateBufferGeometry = (
 	return geometry
 }
 
-/**
- * Writes a chunk of positions/colors/opacities into a pre-allocated BufferGeometry
- * at the given element offset, then advances drawRange to reveal new points.
- */
 export const writeBufferGeometryRange = (
 	geometry: BufferGeometry,
 	positions: Float32Array,
 	start: number,
-	{ colors, opacities }: Metadata
+	metadata: Metadata
 ): void => {
 	const chunkElements = positions.length / 3
 
@@ -108,19 +95,20 @@ export const writeBufferGeometryRange = (
 	posAttr.addUpdateRange(start * 3, chunkElements * 3)
 	posAttr.needsUpdate = true
 
-	if (colors) {
+	if (metadata.colors) {
 		const colorAttr = geometry.getAttribute('color') as BufferAttribute | null
 		if (colorAttr) {
-			;(colorAttr.array as Uint8Array).set(colors, start * STRIDE.COLORS_RGB)
-			colorAttr.addUpdateRange(start * STRIDE.COLORS_RGB, chunkElements * STRIDE.COLORS_RGB)
+			const stride = colorAttr.itemSize
+			;(colorAttr.array as Uint8Array).set(metadata.colors, start * stride)
+			colorAttr.addUpdateRange(start * stride, chunkElements * stride)
 			colorAttr.needsUpdate = true
 		}
 	}
 
-	if (opacities) {
+	if (metadata.opacities) {
 		const opacityAttr = geometry.getAttribute('opacity') as BufferAttribute | null
 		if (opacityAttr) {
-			;(opacityAttr.array as Uint8Array).set(opacities, start)
+			;(opacityAttr.array as Uint8Array).set(metadata.opacities, start)
 			opacityAttr.addUpdateRange(start, chunkElements)
 			opacityAttr.needsUpdate = true
 		}

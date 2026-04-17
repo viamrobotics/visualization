@@ -13,22 +13,25 @@ import (
 
 // DrawPosesAsArrowsOptions configures a DrawPosesAsArrows call.
 type DrawPosesAsArrowsOptions struct {
-	// A unique identifier for the arrows. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the arrow group.
+	// The name of the entity.
 	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// The poses to draw.
 	Poses []spatialmath.Pose
-
-	// The name of the parent frame. If empty, the arrows will be parented to the "world" frame.
-	Parent string
 
 	// Colors is the list of colors to use for the arrows.
 	// Can be a single color for all arrows, per-arrow colors, or a color palette to cycle through.
 	// If empty, defaults to DefaultArrowColor.
 	Colors []draw.Color
+
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPosesAsArrows draws a list of poses in the visualizer as arrows.
@@ -60,17 +63,7 @@ func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create arrows: %w", err)
 	}
 
-	parent := options.Parent
-	if parent == "" {
-		parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	drawing := arrows.Draw(options.Name, drawOpts...)
+	drawing := arrows.Draw(options.Name, entityAttributes(options.ID, options.Parent, options.Attrs)...)
 	req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing.ToProto()}})
 	resp, err := client.AddEntity(context.Background(), req)
 	if err != nil {

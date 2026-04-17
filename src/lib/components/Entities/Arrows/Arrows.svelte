@@ -6,6 +6,7 @@
 
 	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 
+	import AxesHelper from '$lib/components/AxesHelper.svelte'
 	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents.svelte'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useFocusedEntity, useSelectedEntity } from '$lib/hooks/useSelection.svelte'
@@ -20,6 +21,7 @@
 
 	const parent = useTrait(() => entity, traits.Parent)
 	const invisible = useTrait(() => entity, traits.Invisible)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 
 	const events = useEntityEvents(() => entity)
 	const selectedEntity = useSelectedEntity()
@@ -35,7 +37,7 @@
 	})
 </script>
 
-<Portal id={parent.current}>
+<Portal id={parent.current ?? 'world'}>
 	<T
 		is={arrows}
 		name={entity}
@@ -53,5 +55,12 @@
 			bvh={{ enabled: false }}
 			raycast={() => null}
 		/>
+		{#if showAxesHelper.current}
+			<AxesHelper
+				name={entity}
+				width={3}
+				length={0.1}
+			/>
+		{/if}
 	</T>
 </Portal>

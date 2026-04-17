@@ -22,6 +22,7 @@
 	import { traits, useTrait } from '$lib/ecs'
 	import { poseToObject3d } from '$lib/transform'
 
+	import AxesHelper from '../AxesHelper.svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
 	interface Props extends ThrelteProps<Object3D> {
@@ -39,6 +40,7 @@
 	const gltfTrait = useTrait(() => entity, traits.GLTF)
 	const scale = useTrait(() => entity, traits.Scale)
 	const invisible = useTrait(() => entity, traits.Invisible)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 	const events = useEntityEvents(() => entity)
 
 	const animationName = $derived(gltfTrait.current?.animationName)
@@ -65,7 +67,7 @@
 				const buffer = source.glb.buffer.slice(
 					source.glb.byteOffset,
 					source.glb.byteOffset + source.glb.byteLength
-				)
+				) as ArrayBuffer
 				$gltf = (await gltfLoader.parseAsync(buffer, '')) as ThrelteGltf
 			} else if ('gltf' in source) {
 				$gltf = source.gltf as ThrelteGltf
@@ -82,8 +84,15 @@
 	})
 </script>
 
-<Portal id={parent.current}>
+<Portal id={parent.current ?? 'world'}>
 	<T is={group}>
+		{#if showAxesHelper.current}
+			<AxesHelper
+				name={entity}
+				width={3}
+				length={0.1}
+			/>
+		{/if}
 		{#if $gltf}
 			<T
 				is={$gltf.scene as Object3D}

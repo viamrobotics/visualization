@@ -13,17 +13,17 @@ import (
 
 // DrawPointsOptions configures a DrawPoints call.
 type DrawPointsOptions struct {
-	// A unique identifier for the points. Can be empty.
+	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
 	ID string
 
-	// The name of the points.
+	// The name of the entity.
 	Name string
+
+	// The parent frame name. If empty, defaults to "world".
+	Parent string
 
 	// The positions of the points.
 	Positions []r3.Vector
-
-	// The name of the parent frame. If empty, the points will be parented to the "world" frame.
-	Parent string
 
 	// Colors is the list of colors to use for the points.
 	// Can be a single color for all points, per-point colors, or a color palette to cycle through.
@@ -39,6 +39,9 @@ type DrawPointsOptions struct {
 
 	// OnProgress is called after each chunk is sent during chunked delivery.
 	OnProgress func(draw.ChunkProgress)
+
+	// Attrs holds optional entity attributes (e.g. visibility).
+	Attrs *Attrs
 }
 
 // DrawPoints draws a set of points in the visualizer.
@@ -101,17 +104,7 @@ func buildPoints(options DrawPointsOptions) (*draw.Points, []draw.DrawableOption
 		return nil, nil, fmt.Errorf("failed to create points: %w", err)
 	}
 
-	parent := options.Parent
-	if parent == "" {
-		parent = "world"
-	}
-
-	drawOpts := []draw.DrawableOption{draw.WithParent(parent)}
-	if options.ID != "" {
-		drawOpts = append(drawOpts, draw.WithID(options.ID))
-	}
-
-	return points, drawOpts, nil
+	return points, entityAttributes(options.ID, options.Parent, options.Attrs), nil
 }
 
 func chunkPoints(options DrawPointsOptions) (*draw.ChunkSender, error) {
