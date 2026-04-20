@@ -40,6 +40,11 @@ import (
 // ErrNotRunning is returned by Stop when the server has not been started.
 var ErrNotRunning = errors.New("draw server is not running")
 
+// DefaultPort is the Connect-RPC port the draw server is started on by
+// `make up`. When callers never invoke Start() explicitly, GetClient lazily
+// attaches to a server listening on this port.
+const DefaultPort = 3030
+
 var buildDir = "build"
 
 // DrawServerConfig holds the configuration for the draw server.
@@ -208,11 +213,44 @@ func Stop() error {
 }
 
 // GetClient returns the singleton Connect-RPC DrawService client.
-// Returns nil if the server has not been started.
+//
+// If Start has not been called, GetClient attempts to attach to a draw server
+// listening on localhost:DefaultPort (the port started by `make up`). This
+// lets callers use the client/api package without any server-lifecycle
+// boilerplate when the visualizer is already running locally.
+//
+// Returns nil if Start was not called and no server is listening on the
+// default port; callers should surface that as "visualizer not running".
 func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
+
+	if drawClient == nil {
+		attachDefaultLocked()
+	}
+
 	return drawClient
+}
+
+// attachDefaultLocked probes DefaultPort and attaches a client to an existing
+// server if one is running. Callers must hold mu.
+func attachDefaultLocked() {
+	addr := fmt.Sprintf("localhost:%d", DefaultPort)
+
+	conn, err := net.DialTimeout("tcp", addr, 250*time.Millisecond)
+	if err != nil {
+		return
+	}
+	_ = conn.Close()
+
+	address = addr
+	recorder = NewRecordingInterceptor()
+	drawClient = drawv1connect.NewDrawServiceClient(
+		http.DefaultClient,
+		"http://"+addr,
+		connect.WithInterceptors(recorder),
+	)
+	running = true
 }
 
 // GetRecorder returns the singleton RecordingInterceptor for the running server.

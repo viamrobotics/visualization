@@ -64,13 +64,15 @@ func main() {
 		log.Fatalf("DrawLine: %v", err)
 	}
 
-	// Arrange twelve arrows in a ring, colored with a cycling palette.
-	const count = 12
+	const (
+		count  = 72
+		radius = 900.0
+	)
 	poses := make([]spatialmath.Pose, count)
 	for i := range poses {
 		theta := float64(i) * 2 * math.Pi / float64(count)
 		poses[i] = spatialmath.NewPose(
-			r3.Vector{X: 1800 * math.Cos(theta), Y: 1800 * math.Sin(theta), Z: 300},
+			r3.Vector{X: radius * math.Cos(theta), Y: radius * math.Sin(theta), Z: 300},
 			&spatialmath.OrientationVectorDegrees{OX: math.Cos(theta), OY: math.Sin(theta)},
 		)
 	}
@@ -112,7 +114,7 @@ func main() {
 	}
 
 	// Animate the box by re-drawing it with the same ID.
-	for i := 0; i < 120; i++ {
+	for i := range 120 {
 		geom := mustBox(
 			r3.Vector{Z: 300 + 200*math.Sin(float64(i)/10)},
 			float64(i)*3,
@@ -129,9 +131,9 @@ func main() {
 	}
 
 	// Leave the scene up so it can be inspected. Uncomment to clear it.
-	// if _, err := api.RemoveAll(); err != nil {
-	// 	log.Fatalf("RemoveAll: %v", err)
-	// }
+	if _, err := api.RemoveAll(); err != nil {
+		log.Fatalf("RemoveAll: %v", err)
+	}
 }
 
 func mustBox(center r3.Vector, thetaDeg float64) spatialmath.Geometry {
