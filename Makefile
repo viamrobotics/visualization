@@ -73,12 +73,8 @@ up-check:
 		echo "$(CURRENT_SERVER_HASH)" > .bin/.server-build-stamp; \
 	fi
 
-.PHONY: up
-up: up-check
-	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
-
 .PHONY: up-next
-up-next: up-check
+up: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production > /dev/null 2>&1 &
 	@.bin/draw-server -port 3030 
 
