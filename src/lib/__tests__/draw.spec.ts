@@ -5,8 +5,9 @@ vi.mock('$lib/loaders/pcd', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
+import type { Metadata as MetadataType } from '$lib/metadata'
+
 import { preAllocateBufferGeometry } from '$lib/attribute'
-import { STRIDE } from '$lib/buffer'
 import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
 import {
 	Arrows,
@@ -18,10 +19,10 @@ import {
 	Shape,
 } from '$lib/buf/draw/v1/drawing_pb'
 import { ColorFormat, Metadata } from '$lib/buf/draw/v1/metadata_pb'
+import { STRIDE } from '$lib/buffer'
 import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
 import { setParentTrait } from '$lib/ecs/traits'
-import type { Metadata as MetadataType } from '$lib/metadata'
 import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform, updateMetadata } from '../draw'

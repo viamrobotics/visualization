@@ -49,7 +49,7 @@ const waitForMachineOnline = async (
 				const lastAccessMs = Number(lastAccess.seconds) * 1000
 				const ageMs = Date.now() - lastAccessMs
 				if (ageMs < onlineThresholdMs) {
-					console.log(`   Machine is online (last access ${Math.round(ageMs / 1000)}s ago)`)
+					console.log(`   Machine is online`)
 					return
 				}
 			}
@@ -92,16 +92,16 @@ export const setup = async (): Promise<() => Promise<void>> => {
 		)
 	}
 	const orgId = e2eOrg.id
-	console.log(`   Found org: ${orgId}`)
+	console.log('   Found org.')
 
 	console.log(`Finding or creating location "${E2E_LOCATION_NAME}"...`)
 	const locations = await viamClient.appClient.listLocations(orgId)
 	let location = locations.find((loc) => loc.name === E2E_LOCATION_NAME)
 	if (location) {
-		console.log(`   Found location: ${location.id}`)
+		console.log('   Found location.')
 	} else {
 		location = await viamClient.appClient.createLocation(orgId, E2E_LOCATION_NAME)
-		console.log(`   Created location: ${location?.id}`)
+		console.log('   Created location.')
 	}
 
 	const username = os.userInfo().username || 'unknown'
@@ -109,7 +109,7 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	console.log(`Creating machine "${machineName}"...`)
 	const robotId = await viamClient.appClient.newRobot(location?.id ?? '', machineName)
 	createdRobotId = robotId
-	console.log(`   Created machine: ${robotId}`)
+	console.log('   Created machine.')
 
 	console.log('Getting machine parts...')
 	const parts = await viamClient.appClient.getRobotParts(robotId)
@@ -118,7 +118,7 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	}
 	const part = parts[0]!
 	const partId = part.id
-	console.log(`   Part ID: ${partId}`)
+	console.log('   Got part.')
 
 	console.log('Creating part secret...')
 	const partWithSecret = await viamClient.appClient.createRobotPartSecret(partId)
@@ -142,9 +142,10 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	if (!fqdn) {
 		throw new Error('Machine part has no FQDN')
 	}
-	console.log(`   FQDN: ${fqdn}`)
+	console.log('   Got FQDN.')
 
 	console.log('Creating machine API key...')
+	// NOTE: cliOutput contains the raw machine API key value and must never be logged.
 	const cliOutput = execSync(
 		`viam machines api-key create --machine-id=${robotId} --org-id=${orgId} --name=e2e-${machineName}`,
 		{ encoding: 'utf8' }
@@ -152,11 +153,11 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	const keyIdMatch = cliOutput.match(/Key ID:\s*(.+)/i)
 	const keyValueMatch = cliOutput.match(/Key Value:\s*(.+)/i)
 	if (!keyIdMatch || !keyValueMatch) {
-		throw new Error(`Failed to parse API key from CLI output:\n${cliOutput}`)
+		throw new Error('Failed to parse API key from Viam CLI output.')
 	}
 	const machineApiKeyId = keyIdMatch[1]!.trim()
 	const machineApiKey = keyValueMatch[1]!.trim()
-	console.log(`   Machine API key created: ${machineApiKeyId}`)
+	console.log('   Machine API key created.')
 
 	console.log(`Pushing initial config (bind_address :${VIAM_SERVER_PORT})...`)
 	await viamClient.appClient.updateRobotPart(
@@ -221,7 +222,6 @@ export const setup = async (): Promise<() => Promise<void>> => {
 	// Signaling host: "e2e-devin-123.location.viam.cloud"
 	const locationSuffix = fqdn.slice(fqdn.indexOf('.'))
 	const signalingHost = `${machineName}${locationSuffix}`
-	console.log(`   Signaling host: ${signalingHost}`)
 
 	process.env.VIAM_E2E_HOST = signalingHost
 	process.env.VIAM_E2E_PART_ID = partId
@@ -267,7 +267,7 @@ export const teardown = async (): Promise<void> => {
 	}
 
 	if (viamClient && createdRobotId) {
-		console.log(`Deleting machine ${createdRobotId}...`)
+		console.log('Deleting machine...')
 		try {
 			await viamClient.appClient.deleteRobot(createdRobotId)
 			console.log('   Machine deleted.')

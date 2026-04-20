@@ -58,6 +58,9 @@ describe('Details component', () => {
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],
@@ -150,6 +153,9 @@ describe('Details component', () => {
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 		})
 
 		const context = new Map<symbol, unknown>([
