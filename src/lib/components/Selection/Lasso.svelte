@@ -153,6 +153,7 @@
 
 		for (const pointsEntity of world.query(
 			traits.Points,
+			traits.SelectToolInteractionLayer,
 			Not(selectionTraits.SelectionEnclosedPoints)
 		)) {
 			const geometry = pointsEntity.get(traits.BufferGeometry)
