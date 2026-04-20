@@ -570,10 +570,13 @@ export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 
 export const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
-		entity.set(traits.Colors, colors)
+		if (entity.has(traits.Colors)) entity.set(traits.Colors, colors)
+		else entity.add(traits.Colors(colors))
 		entity.remove(traits.Color)
 	} else {
-		entity.set(traits.Color, asRGB(colors, rgb))
+		const color = asRGB(colors, rgb)
+		if (entity.has(traits.Color)) entity.set(traits.Color, color)
+		else entity.add(traits.Color(color))
 		entity.remove(traits.Colors)
 	}
 }
