@@ -170,11 +170,15 @@ export const ReferenceFrame = trait(() => true)
 export const ChunkProgress = trait({ loaded: 0, total: 0 })
 
 /**
- * This entity can be safely removed from the scene by the user
  * Interaction layers for entities
  */
 export type InteractionLayerValue = 'selectTool'
 export const SelectToolInteractionLayer = trait(() => true)
+
+/**
+ * This entity can be safely removed from the scene by the user
+ */
+export const Removable = trait(() => true)
 
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
