@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { ConfigurableTrait, Entity } from 'koota'
 
+	import type { InteractionLayerValue } from '$lib/ecs/traits'
+
 	import { createBufferGeometry } from '$lib/attribute'
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { traits, useWorld } from '$lib/ecs'
@@ -10,10 +12,11 @@
 		data: Uint8Array
 		name?: string
 		renderOrder?: number
+		interactionLayers?: InteractionLayerValue[]
 		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
 	}
 
-	let { data, name, renderOrder, oncreate }: Props = $props()
+	let { data, name, renderOrder, interactionLayers, oncreate }: Props = $props()
 
 	const world = useWorld()
 
@@ -31,6 +34,9 @@
 
 			if (renderOrder) {
 				entityTraits.push(traits.RenderOrder(renderOrder))
+			}
+			if (interactionLayers?.includes('selectTool')) {
+				entityTraits.push(traits.SelectToolInteractionLayer)
 			}
 
 			entity = world.spawn(...entityTraits)

@@ -46,6 +46,7 @@
 			traits.LinePositions(new Float32Array([x, y, 0])),
 			selectionTraits.StartPoint({ x, y }),
 			traits.LineWidth(1.5),
+			traits.ScreenSpace,
 			traits.RenderOrder(999),
 			traits.Material({ depthTest: false }),
 			traits.Color({ r: 1, g: 0, b: 0 }),
@@ -171,6 +172,7 @@
 
 		for (const pointsEntity of world.query(
 			traits.Points,
+			traits.SelectToolInteractionLayer,
 			Not(selectionTraits.SelectionEnclosedPoints)
 		)) {
 			const geometry = pointsEntity.get(traits.BufferGeometry)
