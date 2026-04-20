@@ -103,26 +103,30 @@ if [ -z "$ORG_ID" ]; then
   fi
 fi
 
-echo "Found org '$E2E_ORG_NAME' with ID: $ORG_ID"
+echo "Found org '$E2E_ORG_NAME'."
 echo ""
 
 echo "--- Creating E2E API key ---"
 
 if [ -f "$ENV_FILE" ]; then
-  echo "Existing API key file found at $ENV_FILE; rotating it."
   rm -f "$ENV_FILE"
 fi
 
+# NOTE: KEY_OUTPUT contains the raw API key value and MUST NOT be echoed.
+# This guards against leaking credentials in local terminals and CI logs.
 KEY_OUTPUT=$(viam organizations api-key create --org-id "$ORG_ID" --name "e2e-tests-$(date +%s)" 2>&1)
-echo "$KEY_OUTPUT"
 
 API_KEY_ID=$(echo "$KEY_OUTPUT" | grep -i "key id" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1) || true
 API_KEY=$(echo "$KEY_OUTPUT" | grep -i "key value\|key:" | sed 's/.*: *//' | tr -d '[:space:]') || true
 
 if [ -z "$API_KEY_ID" ] || [ -z "$API_KEY" ]; then
   echo ""
-  echo "WARNING: Could not parse API key from CLI output."
-  echo "Please manually create the file $ENV_FILE with:"
+  echo "WARNING: Could not parse API key from the Viam CLI output."
+  echo "(The raw output is intentionally not printed because it contains the API key value.)"
+  echo ""
+  echo "Manually create a key with:"
+  echo "  viam organizations api-key create --org-id \"$ORG_ID\" --name \"e2e-tests-manual\""
+  echo "and write the values into $ENV_FILE as:"
   echo "  VIAM_E2E_API_KEY_ID=<your-api-key-id>"
   echo "  VIAM_E2E_API_KEY=<your-api-key-value>"
   echo "  VIAM_E2E_ORG_ID=$ORG_ID"

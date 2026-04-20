@@ -153,10 +153,7 @@ export const withRobot = base.extend<{ robotPage: RobotTestPage }>({
 		}
 
 		if (!connected) {
-			throw new Error(
-				`Machine failed to show "live" status after ${maxRetries} attempts. ` +
-					`Host: ${config.host}, API Key ID: ${config.apiKeyId}`
-			)
+			throw new Error(`Machine failed to show "live" status after ${maxRetries} attempts.`)
 		}
 
 		const client = await connectViamClient()
