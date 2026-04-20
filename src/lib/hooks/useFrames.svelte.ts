@@ -8,14 +8,15 @@ import {
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
 
-import { resourceNameToColor } from '$lib/color'
+import { resourceNameToColor, subtypeToColor } from '$lib/color'
 import { traits, useWorld } from '$lib/ecs'
-import { updateGeometryTrait } from '$lib/ecs/traits'
+import { setParentTrait, updateGeometryTrait } from '$lib/ecs/traits'
 import { createPose } from '$lib/transform'
 
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { useLogs } from './useLogs.svelte'
+import { usePartConfig } from './usePartConfig.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 
 interface FramesContext {
@@ -26,6 +27,7 @@ const key = Symbol('frames-context')
 
 export const provideFrames = (partID: () => string) => {
 	const configFrames = useConfigFrames()
+	const partConfig = usePartConfig()
 	const environment = useEnvironment()
 	const world = useWorld()
 	const resourceByName = useResourceByName()
@@ -33,6 +35,8 @@ export const provideFrames = (partID: () => string) => {
 	const connectionStatus = useConnectionStatus(partID)
 	const machineStatus = useMachineStatus(partID)
 	const logs = useLogs()
+
+	const pendingSaveKey = $derived(`viam-pending-save-revision:${partID()}`)
 
 	let didRecentlyEdit = $state(false)
 
@@ -55,16 +59,23 @@ export const provideFrames = (partID: () => string) => {
 	const frames = $derived.by(() => {
 		const frames: Record<string, Transform> = {}
 
-		for (const { frame } of query.data ?? []) {
-			if (frame === undefined) {
-				continue
-			}
+		if (!partConfig.hasPendingSave) {
+			for (const { frame } of query.data ?? []) {
+				if (frame === undefined) {
+					continue
+				}
 
-			frames[frame.referenceFrame] = frame
+				frames[frame.referenceFrame] = frame
+			}
 		}
 
-		// Let config frames take priority if the user has made edits
-		if (didRecentlyEdit || connectionStatus.current === MachineConnectionEvent.DISCONNECTED) {
+		// Let config frames take priority if the user has made edits,
+		// has a pending save, or is disconnected
+		if (
+			didRecentlyEdit ||
+			partConfig.hasPendingSave ||
+			connectionStatus.current === MachineConnectionEvent.DISCONNECTED
+		) {
 			const mergedFrames = {
 				...frames,
 				...configFrames.current,
@@ -99,6 +110,52 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	$effect(() => {
+		const key = pendingSaveKey
+		const storedRevision = sessionStorage.getItem(key)
+
+		if (!storedRevision) {
+			return
+		}
+
+		if (!revision) {
+			if (!partConfig.hasPendingSave) {
+				partConfig.setPendingSave()
+			}
+			return
+		}
+
+		if (revision === storedRevision) {
+			if (!partConfig.hasPendingSave) {
+				partConfig.setPendingSave()
+			}
+			return
+		}
+
+		sessionStorage.removeItem(key)
+		partConfig.clearPendingSave()
+		didRecentlyEdit = true
+	})
+
+	$effect(() => {
+		if (partConfig.hasPendingSave && revision) {
+			sessionStorage.setItem(pendingSaveKey, revision)
+		}
+	})
+
+	const componentSubtypeByName = $derived.by(() => {
+		const result: Record<string, string> = {}
+		for (const { name, api } of partConfig.current.components ?? []) {
+			if (api) {
+				const subtype = api.split(':').at(-1)
+				if (subtype) {
+					result[name] = subtype
+				}
+			}
+		}
+		return result
+	})
+
+	$effect(() => {
 		if (isEditMode) {
 			didRecentlyEdit = true
 		}
@@ -107,6 +164,7 @@ export const provideFrames = (partID: () => string) => {
 	$effect.pre(() => {
 		const currentResourcesByName = resourceByName.current
 		const currentPartID = partID()
+		const currentComponentSubtypeByName = componentSubtypeByName
 
 		// We only want to update whenever "current" or "resourceByName.current" changes
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -122,22 +180,19 @@ export const provideFrames = (partID: () => string) => {
 
 				const parent = frame.poseInObserverFrame?.referenceFrame
 				const pose = createPose(frame.poseInObserverFrame?.pose)
+
 				const center = frame.physicalObject?.center
 					? createPose(frame.physicalObject.center)
 					: undefined
 				const resourceName = currentResourcesByName[frame.referenceFrame]
-				const color = resourceNameToColor(resourceName)
+				const color =
+					resourceNameToColor(resourceName) ??
+					subtypeToColor(currentComponentSubtypeByName[frame.referenceFrame])
 
 				const existing = entities.get(entityKey)
 
 				if (existing) {
-					if (!parent || parent === 'world') {
-						existing.remove(traits.Parent)
-					} else if (parent && existing.has(traits.Parent)) {
-						existing.set(traits.Parent, parent)
-					} else {
-						existing.add(traits.Parent(parent))
-					}
+					setParentTrait(existing, parent)
 
 					if (color) {
 						existing.set(traits.Color, color)

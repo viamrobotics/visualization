@@ -11,7 +11,7 @@ import { createPoseFromFrame } from '$lib/transform'
 const key = Symbol('part-config-context')
 
 export interface PartConfig {
-	components: { name: string; frame?: Frame }[]
+	components: { name: string; api?: string; frame?: Frame }[]
 	fragment_mods?: {
 		fragment_id: string
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +21,7 @@ export interface PartConfig {
 
 interface LocalPartConfig {
 	isDirty: boolean
+	hasPendingSave: boolean
 	hasEditPermissions: boolean
 	current: Struct
 	componentNameToFragmentId: Record<string, string>
@@ -28,11 +29,14 @@ interface LocalPartConfig {
 	set: (config: PartConfig) => void
 	save?: () => void
 	discardChanges?: () => void
+	clearPendingSave: () => void
+	setPendingSave: () => void
 }
 
 interface PartConfigContext {
 	current: PartConfig
 	isDirty: boolean
+	hasPendingSave: boolean
 	hasEditPermissions: boolean
 	componentNameToFragmentId: Record<string, string>
 
@@ -46,6 +50,8 @@ interface PartConfigContext {
 	createFrame: (componentName: string) => void
 	save: () => void
 	discardChanges: () => void
+	clearPendingSave: () => void
+	setPendingSave: () => void
 }
 
 export const providePartConfig = (
@@ -169,7 +175,6 @@ export const providePartConfig = (
 		const newConfig = getCurrent()
 		const component = newConfig.components?.find(({ name }) => name === componentName)
 
-		console.log('hi', newConfig, componentName)
 		if (!component) {
 			return
 		}
@@ -245,6 +250,9 @@ export const providePartConfig = (
 		get isDirty() {
 			return config.isDirty
 		},
+		get hasPendingSave() {
+			return config.hasPendingSave
+		},
 		get hasEditPermissions() {
 			return config.hasEditPermissions
 		},
@@ -281,6 +289,8 @@ export const providePartConfig = (
 		},
 		save: () => config.save?.(),
 		discardChanges: () => config.discardChanges?.(),
+		clearPendingSave: () => config.clearPendingSave(),
+		setPendingSave: () => config.setPendingSave(),
 	})
 }
 
@@ -299,6 +309,7 @@ interface AppEmbeddedPartConfigProps {
 const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConfig => {
 	return {
 		hasEditPermissions: true,
+		hasPendingSave: false,
 		get isDirty() {
 			return props.isDirty
 		},
@@ -315,6 +326,9 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 			const struct = Struct.fromJson(config as unknown as JsonValue)
 			return props.setLocalPartConfig(struct)
 		},
+
+		clearPendingSave() {},
+		setPendingSave() {},
 	}
 }
 
@@ -324,23 +338,26 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 	})
 	const partName = $derived(partQuery.data?.part?.name)
 
+	// Use part.robotConfig (the stored Struct config) as the authoritative source.
+	// configJson is the compiled running config from the robot daemon and may be empty
+	// even when the stored config exists and the API key has edit permissions.
+	let networkPartConfig = $derived(partQuery.data?.part?.robotConfig)
+	let current = $state.raw<Struct>()
+	let isDirty = $state(false)
+	let hasPendingSave = $state(false)
+
+	const hasEditPermissions = $derived(networkPartConfig !== undefined)
+
 	const configJSON = $derived.by(() => {
-		if (!partQuery.data?.configJson) {
+		if (!networkPartConfig) {
 			return undefined
 		}
-
 		try {
-			return JSON.parse(partQuery.data.configJson) as JsonObject
+			return networkPartConfig.toJson() as JsonObject
 		} catch {
 			return undefined
 		}
 	})
-
-	let networkPartConfig = $derived(configJSON ? Struct.fromJson(configJSON) : undefined)
-	let current = $state.raw<Struct>()
-	let isDirty = $state(false)
-
-	const hasEditPermissions = $derived(networkPartConfig !== undefined)
 
 	const fragmentQueries = $derived(
 		((configJSON?.fragments ?? []) as (string | { id: string })[]).map((fragmentId) => {
@@ -375,8 +392,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 	})
 
 	$effect.pre(() => {
-		if (!networkPartConfig) {
-			// no config returned here indicates this api key has no permission to update config
+		if (!networkPartConfig || isDirty) {
 			return
 		}
 
@@ -391,6 +407,9 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 		},
 		get isDirty() {
 			return isDirty
+		},
+		get hasPendingSave() {
+			return hasPendingSave
 		},
 		get hasEditPermissions() {
 			return hasEditPermissions
@@ -412,11 +431,20 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 			networkPartConfig = current
 			await updateRobotPartMutation.mutateAsync([partID(), partName, current])
 			isDirty = false
+			hasPendingSave = true
 		},
 
 		discardChanges() {
 			current = networkPartConfig
 			isDirty = false
+		},
+
+		clearPendingSave() {
+			hasPendingSave = false
+		},
+
+		setPendingSave() {
+			hasPendingSave = true
 		},
 	}
 }

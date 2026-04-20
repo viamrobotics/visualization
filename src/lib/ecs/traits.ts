@@ -174,6 +174,19 @@ export const SelectToolInteractionLayer = trait(() => true)
  */
 export const Removable = trait(() => true)
 
+export const setParentTrait = (entity: Entity, parent: string | undefined) => {
+	if (!parent || parent === 'world') {
+		entity.remove(Parent)
+		return
+	}
+
+	if (entity.has(Parent)) {
+		entity.set(Parent, parent)
+	} else {
+		entity.add(Parent(parent))
+	}
+}
+
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
 		return Box(createBox(geometry.geometryType.value))
