@@ -176,24 +176,6 @@ export const ChunkProgress = trait({ loaded: 0, total: 0 })
 export type InteractionLayerValue = 'selectTool'
 export const SelectToolInteractionLayer = trait(() => true)
 
-/**
- * This entity can be safetly removed from the scene by the user
- */
-export const Removable = trait(() => true)
-
-export const setParentTrait = (entity: Entity, parent: string | undefined) => {
-	if (!parent || parent === 'world') {
-		entity.remove(Parent)
-		return
-	}
-
-	if (entity.has(Parent)) {
-		entity.set(Parent, parent)
-	} else {
-		entity.add(Parent(parent))
-	}
-}
-
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
 		return Box(createBox(geometry.geometryType.value))
