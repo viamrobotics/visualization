@@ -126,7 +126,7 @@
 </script>
 
 {#if geometry.current}
-	<Portal id={parent.current ?? 'world'}>
+	<Portal id={parent.current}>
 		<T
 			is={points}
 			name={entity}

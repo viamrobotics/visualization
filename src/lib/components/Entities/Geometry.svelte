@@ -62,7 +62,7 @@ Renders a Viam Geometry object
 	const events = useEntityEvents(() => entity)
 </script>
 
-<Portal id={parent.current ?? 'world'}>
+<Portal id={parent.current}>
 	<T.Group visible={invisible.current !== true}>
 		{#if model}
 			<T
