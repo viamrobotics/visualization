@@ -22,10 +22,10 @@ import { ColorFormat, Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { STRIDE } from '$lib/buffer'
 import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
-import { setParentTrait } from '$lib/ecs/traits'
+import { getParentTrait, setParentTrait } from '$lib/ecs/traits'
 import { createPose } from '$lib/transform'
 
-import { drawDrawing, drawTransform, updateMetadata } from '../draw'
+import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
 
 describe('drawTransform', () => {
 	let world: World
@@ -367,6 +367,47 @@ describe('drawDrawing', () => {
 	})
 })
 
+describe('updateTransform', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it("removes the Parent trait when a frame's parent changes back to 'world'", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.get(traits.Parent)).toBe('arm')
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		} as Transform)
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it("adds the Parent trait when a frame's parent changes from 'world' to a named frame", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.has(traits.Parent)).toBe(false)
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'base', pose: createPose() },
+		} as Transform)
+
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
 describe('updateMetadata', () => {
 	let world: World
 	afterEach(() => world?.destroy())
@@ -486,6 +527,29 @@ describe('setParentTrait', () => {
 
 		setParentTrait(entity, 'base')
 		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
+describe('getParentTrait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('returns an empty list for undefined, empty, or world parents', () => {
+		expect(getParentTrait(undefined)).toEqual([])
+		expect(getParentTrait('')).toEqual([])
+		expect(getParentTrait('world')).toEqual([])
+	})
+
+	it('spawns without Parent trait when parent is world-like', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...getParentTrait('world'))
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it('spawns with Parent trait when parent is a named frame', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...getParentTrait('arm'))
+		expect(entity.get(traits.Parent)).toBe('arm')
 	})
 })
 
