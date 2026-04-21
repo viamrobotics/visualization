@@ -20,10 +20,13 @@
 
 	const world = useWorld()
 
-	let entity: Entity
-
 	$effect(() => {
+		let entity: Entity | undefined
+		let cancelled = false
+
 		parsePcdInWorker(data).then(({ positions, colors }) => {
+			if (cancelled) return
+
 			const geometry = createBufferGeometry(positions, { colors, colorFormat: ColorFormat.RGB })
 
 			const entityTraits: ConfigurableTrait[] = [
@@ -45,6 +48,7 @@
 		})
 
 		return () => {
+			cancelled = true
 			if (entity && world.has(entity)) {
 				entity.destroy()
 			}
