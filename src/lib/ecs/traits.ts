@@ -1,7 +1,7 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
-import { type Entity, trait } from 'koota'
+import { type ConfigurableTrait, type Entity, trait } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -193,6 +193,9 @@ export const Geometry = (geometry: ViamGeometry) => {
 
 	return ReferenceFrame
 }
+
+export const getParentTrait = (parent: string | undefined): ConfigurableTrait[] =>
+	!parent || parent === 'world' ? [] : [Parent(parent)]
 
 export const setParentTrait = (entity: Entity, parent: string | undefined) => {
 	if (!parent || parent === 'world') {
