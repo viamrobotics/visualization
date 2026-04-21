@@ -2,6 +2,7 @@ import { expect } from '@playwright/test'
 import { JsonValue, Struct, type ViamClient } from '@viamrobotics/sdk'
 
 import {
+	applyMachineConfig,
 	connectOrgViamClient,
 	connectViamClient,
 	type E2ETestConfig,
@@ -58,20 +59,12 @@ const basicEditFrameConfig = {
 withRobot.beforeAll(async () => {
 	const config = getE2EConfig()
 	const viamClient = await connectViamClient()
-	await viamClient.appClient.updateRobotPart(
-		config.partId,
-		config.machineName,
-		Struct.fromJson(basicEditFrameConfig as unknown as JsonValue)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, basicEditFrameConfig)
 })
 
 withRobot('basic edit frame', async ({ robotPage }) => {
 	const testPrefix = 'BASIC_EDIT_FRAME'
-	await viamClient.appClient.updateRobotPart(
-		config.partId,
-		config.machineName,
-		Struct.fromJson(basicEditFrameConfig)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, basicEditFrameConfig)
 	const failedScreenshots = [] as string[]
 	const { page } = robotPage
 
@@ -227,11 +220,7 @@ const createDeleteFrameConfig = {
 
 withRobot('create and delete frame', async ({ browser }) => {
 	const testPrefix = 'CREATE_DELETE'
-	await viamClient.appClient.updateRobotPart(
-		config.partId,
-		config.machineName,
-		Struct.fromJson(createDeleteFrameConfig as unknown as JsonValue)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, createDeleteFrameConfig)
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	const page = await context.newPage()
@@ -369,10 +358,11 @@ withRobot('fragment edit frame', async ({ browser }) => {
 	}
 	fragmentIdsToDelete.push(resp.id)
 
-	await viamClient.appClient.updateRobotPart(
+	await applyMachineConfig(
+		viamClient,
 		config.partId,
 		config.machineName,
-		Struct.fromJson(fragmentUsingConfig(resp.id) as unknown as JsonValue)
+		fragmentUsingConfig(resp.id)
 	)
 
 	const context = await browser.newContext()
@@ -438,7 +428,7 @@ withRobot('fragment edit frame', async ({ browser }) => {
 })
 
 withRobot.afterAll(async () => {
-	await viamClient.appClient.updateRobotPart(config.partId, config.machineName, Struct.fromJson({}))
+	await applyMachineConfig(viamClient, config.partId, config.machineName, {})
 	for (const fragmentId of fragmentIdsToDelete) {
 		await orgViamClient.appClient.deleteFragment(fragmentId)
 	}

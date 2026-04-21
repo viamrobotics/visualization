@@ -12,6 +12,7 @@ import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { asRGB, STRIDE } from '$lib/buffer'
 import { traits, useWorld } from '$lib/ecs'
+import { getParentTrait, setParentTrait } from '$lib/ecs/traits'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
 import { createPose, createPoseFromFrame } from '$lib/transform'
@@ -165,11 +166,7 @@ export const provideDrawAPI = () => {
 
 			if (existing) {
 				existing.set(traits.Pose, pose)
-
-				if (parent && parent !== 'world') {
-					existing.set(traits.Parent, parent)
-				}
-
+				setParentTrait(existing, parent)
 				continue
 			}
 
@@ -185,11 +182,7 @@ export const provideDrawAPI = () => {
 				return traits.ReferenceFrame
 			}
 
-			const entityTraits: ConfigurableTrait[] = []
-
-			if (parent && parent !== 'world') {
-				entityTraits.push(traits.Parent(parent))
-			}
+			const entityTraits: ConfigurableTrait[] = [...getParentTrait(parent)]
 
 			if (frame.geometry) {
 				entityTraits.push(geometryTrait())
@@ -236,20 +229,15 @@ export const provideDrawAPI = () => {
 			return traits.ReferenceFrame
 		}
 
-		const entityTraits: ConfigurableTrait[] = []
-
-		if (parent && parent !== 'world') {
-			entityTraits.push(traits.Parent(parent))
-		}
-
-		entityTraits.push(
+		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(data.label ?? ++geometryIndex),
+			...getParentTrait(parent),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
 			geometryTrait(),
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
 
 		const entity = world.spawn(...entityTraits)
 
