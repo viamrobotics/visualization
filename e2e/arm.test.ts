@@ -1,8 +1,12 @@
 import { expect } from '@playwright/test'
-import { JsonValue, Struct } from '@viamrobotics/sdk'
 import { execSync } from 'node:child_process'
 
-import { connectViamClient, getE2EConfig, withRobot } from './fixtures/with-robot'
+import {
+	applyMachineConfig,
+	connectViamClient,
+	getE2EConfig,
+	withRobot,
+} from './fixtures/with-robot'
 
 const armConfig = {
 	components: [
@@ -46,11 +50,7 @@ const armConfig = {
 withRobot.beforeAll(async () => {
 	const config = getE2EConfig()
 	const viamClient = await connectViamClient()
-	await viamClient.appClient.updateRobotPart(
-		config.partId,
-		config.machineName,
-		Struct.fromJson(armConfig as unknown as JsonValue)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, armConfig)
 })
 
 withRobot('arm', async ({ robotPage }) => {
@@ -108,5 +108,5 @@ withRobot('arm', async ({ robotPage }) => {
 withRobot.afterAll(async () => {
 	const config = getE2EConfig()
 	const viamClient = await connectViamClient()
-	await viamClient.appClient.updateRobotPart(config.partId, config.machineName, Struct.fromJson({}))
+	await applyMachineConfig(viamClient, config.partId, config.machineName, {})
 })
