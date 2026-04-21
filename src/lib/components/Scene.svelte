@@ -99,8 +99,6 @@
 	{/if}
 
 	<T.Group attach={focusedObject ? false : undefined}>
-		<PortalTarget id="world" />
-		<!-- Should we keep this? -->
 		<PortalTarget />
 
 		<Entities />

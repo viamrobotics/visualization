@@ -84,7 +84,7 @@
 	})
 </script>
 
-<Portal id={parent.current ?? 'world'}>
+<Portal id={parent.current}>
 	<T is={group}>
 		{#if showAxesHelper.current}
 			<AxesHelper
