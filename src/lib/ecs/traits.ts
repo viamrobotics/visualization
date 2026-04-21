@@ -1,7 +1,7 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
-import { type Entity, trait } from 'koota'
+import { type ConfigurableTrait, type Entity, trait } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
@@ -170,22 +170,9 @@ export type InteractionLayerValue = 'selectTool'
 export const SelectToolInteractionLayer = trait(() => true)
 
 /**
- * This entity can be safetly removed from the scene by the user
+ * This entity can be safely removed from the scene by the user
  */
 export const Removable = trait(() => true)
-
-export const setParentTrait = (entity: Entity, parent: string | undefined) => {
-	if (!parent || parent === 'world') {
-		entity.remove(Parent)
-		return
-	}
-
-	if (entity.has(Parent)) {
-		entity.set(Parent, parent)
-	} else {
-		entity.add(Parent(parent))
-	}
-}
 
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
@@ -199,6 +186,22 @@ export const Geometry = (geometry: ViamGeometry) => {
 	}
 
 	return ReferenceFrame
+}
+
+export const getParentTrait = (parent: string | undefined): ConfigurableTrait[] =>
+	!parent || parent === 'world' ? [] : [Parent(parent)]
+
+export const setParentTrait = (entity: Entity, parent: string | undefined) => {
+	if (!parent || parent === 'world') {
+		entity.remove(Parent)
+		return
+	}
+
+	if (entity.has(Parent)) {
+		entity.set(Parent, parent)
+	} else {
+		entity.add(Parent(parent))
+	}
 }
 
 export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {

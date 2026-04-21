@@ -10,7 +10,7 @@ import { getContext, setContext, untrack } from 'svelte'
 
 import { resourceNameToColor, subtypeToColor } from '$lib/color'
 import { traits, useWorld } from '$lib/ecs'
-import { setParentTrait, updateGeometryTrait } from '$lib/ecs/traits'
+import { getParentTrait, setParentTrait, updateGeometryTrait } from '$lib/ecs/traits'
 import { createPose } from '$lib/transform'
 
 import { useConfigFrames } from './useConfigFrames.svelte'
@@ -215,11 +215,8 @@ export const provideFrames = (partID: () => string) => {
 					traits.EditedPose(pose),
 					traits.FramesAPI,
 					traits.ShowAxesHelper,
+					...getParentTrait(parent),
 				]
-
-				if (parent && parent !== 'world') {
-					entityTraits.push(traits.Parent(parent))
-				}
 
 				if (color) {
 					entityTraits.push(traits.Color(color))

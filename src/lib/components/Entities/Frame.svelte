@@ -78,7 +78,7 @@ Renders a Viam Frame object
 	})
 </script>
 
-<Portal id={parent.current}>
+<Portal id={parent.current ?? 'world'}>
 	<T
 		is={group}
 		visible={invisible.current !== true}

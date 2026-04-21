@@ -17,9 +17,10 @@ import {
 } from '$lib/buf/draw/v1/drawing_pb'
 import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { traits } from '$lib/ecs'
+import { getParentTrait, setParentTrait } from '$lib/ecs/traits'
 import { createPose } from '$lib/transform'
 
-import { drawDrawing, drawTransform } from '../draw'
+import { drawDrawing, drawTransform, updateTransform } from '../draw'
 
 describe('drawTransform', () => {
 	let world: World
@@ -358,5 +359,124 @@ describe('drawDrawing', () => {
 		expect(entity.has(traits.Points)).toBe(true)
 		expect(entity.get(traits.PointSize)).toBe(8)
 		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
+	})
+})
+
+describe('updateTransform', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it("removes the Parent trait when a frame's parent changes back to 'world'", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.get(traits.Parent)).toBe('arm')
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		} as Transform)
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it("adds the Parent trait when a frame's parent changes from 'world' to a named frame", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.has(traits.Parent)).toBe(false)
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'base', pose: createPose() },
+		} as Transform)
+
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
+describe('setParentTrait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('leaves the Parent trait absent when parent is undefined', () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		setParentTrait(entity, undefined)
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it("removes the Parent trait when parent is 'world'", () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Parent('arm'))
+
+		setParentTrait(entity, 'world')
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it('adds the Parent trait when transitioning from unset to a named parent', () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		setParentTrait(entity, 'arm')
+
+		expect(entity.get(traits.Parent)).toBe('arm')
+	})
+
+	it('updates the Parent trait when switching named parents', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Parent('arm'))
+
+		setParentTrait(entity, 'base')
+
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+
+	it("removes the Parent trait after a named -> 'world' round-trip (regression)", () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		setParentTrait(entity, 'arm')
+		expect(entity.get(traits.Parent)).toBe('arm')
+
+		setParentTrait(entity, 'world')
+		expect(entity.has(traits.Parent)).toBe(false)
+
+		setParentTrait(entity, 'base')
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
+describe('parentTrait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('returns an empty list for undefined, empty, or world parents', () => {
+		expect(getParentTrait(undefined)).toEqual([])
+		expect(getParentTrait('')).toEqual([])
+		expect(getParentTrait('world')).toEqual([])
+	})
+
+	it('spawns without Parent trait when parent is world-like', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...getParentTrait('world'))
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it('spawns with Parent trait when parent is a named frame', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...getParentTrait('arm'))
+		expect(entity.get(traits.Parent)).toBe('arm')
 	})
 })
