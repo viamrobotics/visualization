@@ -163,8 +163,7 @@ func TestPointCloudChunking(t *testing.T) {
 		_, err := ws.DoCommand(ctx, map[string]any{
 			"command":    "add_chunked",
 			"name":       "chunked-cloud",
-			"num_points": 10000.0,
-			"chunk_size": 1000.0,
+			"chunk_size": 500.0,
 		})
 		test.That(t, err, test.ShouldBeNil)
 	})
