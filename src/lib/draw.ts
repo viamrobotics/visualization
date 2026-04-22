@@ -18,7 +18,6 @@ import {
 	STRIDE,
 } from '$lib/buffer'
 import { traits } from '$lib/ecs'
-import { getParentTrait } from '$lib/ecs/traits'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { type Metadata, metadataFromStruct } from '$lib/metadata'
 import { createPose } from '$lib/transform'
@@ -70,7 +69,7 @@ export const drawTransform = (
 
 	if (options.removable) entityTraits.push(traits.Removable)
 
-	entityTraits.push(...getParentTrait(poseInObserverFrame?.referenceFrame))
+	entityTraits.push(...traits.getParentTrait(poseInObserverFrame?.referenceFrame))
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
@@ -112,7 +111,7 @@ export const drawDrawing = (
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
-		...getParentTrait(poseInObserverFrame?.referenceFrame)
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame)
 	)
 
 	if (options.removable) entity.add(traits.Removable)
@@ -321,7 +320,7 @@ const drawModel = (
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
-		...getParentTrait(poseInObserverFrame?.referenceFrame),
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame),
 	]
 
 	if (removable) baseTraits.push(traits.Removable)
