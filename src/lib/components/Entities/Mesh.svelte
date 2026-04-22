@@ -57,17 +57,15 @@
 	const currentOpacity = $derived(opacity.current ?? 0.7)
 
 	let material = $state.raw<Material>(new Material())
-	let lastTransparent = false
 	$effect(() => {
 		const isTransparent = currentOpacity < 1
-		material.transparent = isTransparent
 		material.depthWrite = !isTransparent
 		material.opacity = currentOpacity
-		if (lastTransparent !== isTransparent) {
+		if (material.transparent !== isTransparent) {
+			material.transparent = isTransparent
 			material.needsUpdate = true
 			invalidate()
 		}
-		lastTransparent = isTransparent
 	})
 
 	const mesh = new Mesh()
