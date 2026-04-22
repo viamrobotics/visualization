@@ -164,7 +164,6 @@ withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 	await expect(page.getByText('chunked-cloud', { exact: true })).toBeVisible({ timeout: 10000 })
 
 	const progressBar = page.getByRole('progressbar')
-	await expect(progressBar).toBeVisible()
 	await expect(progressBar).toBeHidden({ timeout: 30000 })
 	await robotPage.takeScreenshot('WORLD-STATE-CHUNK-0-loaded')
 

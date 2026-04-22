@@ -405,20 +405,18 @@ func (s *TestStore) addChunk(cmd map[string]any) (map[string]any, error) {
 		chunkSize = 50
 	}
 
-	numPointsF, _ := cmd["num_points"].(float64)
-	numPoints := int(numPointsF)
-	if numPoints <= 0 {
-		numPoints = 200
-	}
+	numPoints := 10000
+	cloudColor := draw.Color{R: 0, G: 200, B: 255, A: 255}
 
-	// Generate a simple grid of points.
+	const cols = 20
+	rowsPerCol := numPoints / cols
 	allPositions := make([]float32, 0, numPoints*3)
 	allColors := make([]byte, 0, numPoints*3)
-	for i := 0; i < numPoints; i++ {
-		x := float32(i%20) * 10
-		y := float32(i/20) * 10
+	for i := range numPoints {
+		x := float32(i/rowsPerCol) * 10
+		y := float32(i%rowsPerCol) * 10
 		allPositions = append(allPositions, x, y, 0)
-		allColors = append(allColors, 0, 200, 255) // cyan
+		allColors = append(allColors, cloudColor.R, cloudColor.G, cloudColor.B)
 	}
 
 	// Build a point cloud with only the first chunk for the initial transform.
@@ -438,7 +436,7 @@ func (s *TestStore) addChunk(cmd map[string]any) (map[string]any, error) {
 		}
 	}
 
-	drawnPC, err := draw.NewDrawnPointCloud(firstChunkPC, draw.WithSinglePointCloudColor(draw.ColorFromName("cyan")))
+	drawnPC, err := draw.NewDrawnPointCloud(firstChunkPC, draw.WithSinglePointCloudColor(cloudColor))
 	if err != nil {
 		return nil, err
 	}
