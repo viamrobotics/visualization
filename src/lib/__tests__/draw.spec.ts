@@ -22,7 +22,6 @@ import { ColorFormat, Metadata } from '$lib/buf/draw/v1/metadata_pb'
 import { STRIDE } from '$lib/buffer'
 import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
-import { getParentTrait, setParentTrait } from '$lib/ecs/traits'
 import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
@@ -483,7 +482,7 @@ describe('setParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn()
 
-		setParentTrait(entity, undefined)
+		traits.setParentTrait(entity, undefined)
 
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
@@ -492,7 +491,7 @@ describe('setParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn(traits.Parent('arm'))
 
-		setParentTrait(entity, 'world')
+		traits.setParentTrait(entity, 'world')
 
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
@@ -501,7 +500,7 @@ describe('setParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn()
 
-		setParentTrait(entity, 'arm')
+		traits.setParentTrait(entity, 'arm')
 
 		expect(entity.get(traits.Parent)).toBe('arm')
 	})
@@ -510,7 +509,7 @@ describe('setParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn(traits.Parent('arm'))
 
-		setParentTrait(entity, 'base')
+		traits.setParentTrait(entity, 'base')
 
 		expect(entity.get(traits.Parent)).toBe('base')
 	})
@@ -519,13 +518,13 @@ describe('setParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn()
 
-		setParentTrait(entity, 'arm')
+		traits.setParentTrait(entity, 'arm')
 		expect(entity.get(traits.Parent)).toBe('arm')
 
-		setParentTrait(entity, 'world')
+		traits.setParentTrait(entity, 'world')
 		expect(entity.has(traits.Parent)).toBe(false)
 
-		setParentTrait(entity, 'base')
+		traits.setParentTrait(entity, 'base')
 		expect(entity.get(traits.Parent)).toBe('base')
 	})
 })
@@ -535,20 +534,20 @@ describe('getParentTrait', () => {
 	afterEach(() => world?.destroy())
 
 	it('returns an empty list for undefined, empty, or world parents', () => {
-		expect(getParentTrait(undefined)).toEqual([])
-		expect(getParentTrait('')).toEqual([])
-		expect(getParentTrait('world')).toEqual([])
+		expect(traits.getParentTrait(undefined)).toEqual([])
+		expect(traits.getParentTrait('')).toEqual([])
+		expect(traits.getParentTrait('world')).toEqual([])
 	})
 
 	it('spawns without Parent trait when parent is world-like', () => {
 		world = createWorld()
-		const entity = world.spawn(traits.Name('child'), ...getParentTrait('world'))
+		const entity = world.spawn(traits.Name('child'), ...traits.getParentTrait('world'))
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
 
 	it('spawns with Parent trait when parent is a named frame', () => {
 		world = createWorld()
-		const entity = world.spawn(traits.Name('child'), ...getParentTrait('arm'))
+		const entity = world.spawn(traits.Name('child'), ...traits.getParentTrait('arm'))
 		expect(entity.get(traits.Parent)).toBe('arm')
 	})
 })

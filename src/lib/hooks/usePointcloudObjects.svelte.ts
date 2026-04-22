@@ -12,7 +12,6 @@ import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { getParentTrait, updateGeometryTrait } from '$lib/ecs/traits'
 import { parsePcdInWorker } from '$lib/lib'
 import { createPose } from '$lib/transform'
 
@@ -232,11 +231,11 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 							if (existing) {
 								existing.set(traits.Center, center)
-								updateGeometryTrait(existing, geometry)
+								traits.updateGeometryTrait(existing, geometry)
 							} else {
 								const entityTraits: ConfigurableTrait[] = [
 									traits.Name(geometryLabel),
-									...getParentTrait(geometriesInFrame.referenceFrame),
+									...traits.getParentTrait(geometriesInFrame.referenceFrame),
 									traits.Center(center),
 									traits.GeometriesAPI,
 									traits.Geometry(geometry),
