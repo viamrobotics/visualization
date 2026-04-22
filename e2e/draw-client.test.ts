@@ -337,6 +337,22 @@ test('draw point cloud in chunks', async ({ browser }) => {
 	)
 })
 
+test('draw point cloud in chunks with palette', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PALETTE',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPalette'
+	)
+})
+
+test('draw point cloud in chunks with per point colors', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PER_POINT_COLORS',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPerPointColors'
+	)
+})
+
 test('draw geometries updating', async ({ browser }) => {
 	const testPrefix = 'DRAW_GEOMETRIES_UPDATING'
 	const page = await createPage(browser)
