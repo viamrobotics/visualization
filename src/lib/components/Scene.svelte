@@ -99,7 +99,6 @@
 	{/if}
 
 	<T.Group attach={focusedObject ? false : undefined}>
-		<PortalTarget id="world" />
 		<PortalTarget />
 
 		<Entities />

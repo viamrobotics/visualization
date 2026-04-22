@@ -69,8 +69,7 @@ export const drawTransform = (
 
 	if (options.removable) entityTraits.push(traits.Removable)
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
+	entityTraits.push(...traits.getParentTrait(poseInObserverFrame?.referenceFrame))
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
@@ -111,11 +110,9 @@ export const drawDrawing = (
 	const entity = world.spawn(
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
-		api
+		api,
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame)
 	)
-
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.add(traits.Parent(parent))
 
 	if (options.removable) entity.add(traits.Removable)
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
@@ -133,8 +130,7 @@ export const updateTransform = (
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
 
 	if (physicalObject) {
 		traits.updateGeometryTrait(entity, physicalObject)
@@ -191,8 +187,7 @@ export const updateDrawing = (
 
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
 
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
@@ -317,7 +312,6 @@ const drawModel = (
 	{ removable = true }: Options
 ): Entity[] => {
 	const entities: Entity[] = []
-	const parent = poseInObserverFrame?.referenceFrame
 	const geometryType = physicalObject?.geometryType
 
 	if (geometryType?.case !== 'model') return entities
@@ -326,9 +320,9 @@ const drawModel = (
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame),
 	]
 
-	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
 	if (removable) baseTraits.push(traits.Removable)
 	if (metadata?.invisible) baseTraits.push(traits.Invisible)
 

@@ -165,11 +165,7 @@ export const provideDrawAPI = () => {
 
 			if (existing) {
 				existing.set(traits.Pose, pose)
-
-				if (parent && parent !== 'world') {
-					existing.set(traits.Parent, parent)
-				}
-
+				traits.setParentTrait(existing, parent)
 				continue
 			}
 
@@ -185,11 +181,7 @@ export const provideDrawAPI = () => {
 				return traits.ReferenceFrame
 			}
 
-			const entityTraits: ConfigurableTrait[] = []
-
-			if (parent && parent !== 'world') {
-				entityTraits.push(traits.Parent(parent))
-			}
+			const entityTraits: ConfigurableTrait[] = [...traits.getParentTrait(parent)]
 
 			if (frame.geometry) {
 				entityTraits.push(geometryTrait())
@@ -236,20 +228,15 @@ export const provideDrawAPI = () => {
 			return traits.ReferenceFrame
 		}
 
-		const entityTraits: ConfigurableTrait[] = []
-
-		if (parent && parent !== 'world') {
-			entityTraits.push(traits.Parent(parent))
-		}
-
-		entityTraits.push(
+		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(data.label ?? ++geometryIndex),
+			...traits.getParentTrait(parent),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
 			geometryTrait(),
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
 
 		const entity = world.spawn(...entityTraits)
 
