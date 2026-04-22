@@ -2,7 +2,7 @@ import type { JsonObject } from '@bufbuild/protobuf'
 import type { JsonValue } from '@viamrobotics/sdk'
 
 import { Pose, Struct } from '@viamrobotics/sdk'
-import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
+import { createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 import { createFrame, type Frame } from '$lib/frame'
@@ -399,7 +399,31 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 		current = networkPartConfig
 	})
 
-	const updateRobotPartMutation = createAppMutation('updateRobotPart')
+	const viamClient = useViamClient()
+
+	// HACK(motion-tools): the SDK's `AppClient.updateRobotPart(id, name, robotConfig)`
+	// wrapper does not forward the new optional `robot_config_json` field on
+	// `UpdateRobotPartRequest`. The server now treats the absence of that field as
+	// "clear the stored config_json," which breaks subsequent reads. Until the
+	// upstream SDK wrapper accepts the field (see Slack 2026-03 thread),
+	// bypass the wrapper and call the underlying Connect client directly with both
+	// `robotConfig` and a JSON-marshalled `robotConfigJson`.
+	//
+	// Remove this bypass once @viamrobotics/sdk exposes the parameter and switch
+	// back to `createAppMutation('updateRobotPart')`.
+	const updateRobotPart = async (id: string, name: string, robotConfig: Struct) => {
+		const client = viamClient.current?.appClient
+		if (!client) {
+			throw new Error('Viam app client not ready')
+		}
+		// `appClient.client` is the underlying Connect PromiseClient<AppService>.
+		// Its `updateRobotPart` accepts any field defined on UpdateRobotPartRequest
+		// in the generated proto, which at @viamrobotics/sdk@0.69.0 includes
+		// `robotConfigJson`.
+		const connect = (client as unknown as { client: { updateRobotPart: (req: unknown) => Promise<unknown> } }).client
+		const robotConfigJson = JSON.stringify(robotConfig.toJson())
+		await connect.updateRobotPart({ id, name, robotConfig, robotConfigJson })
+	}
 
 	return {
 		get current() {
@@ -429,7 +453,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 			}
 
 			networkPartConfig = current
-			await updateRobotPartMutation.mutateAsync([partID(), partName, current])
+			await updateRobotPart(partID(), partName, current)
 			isDirty = false
 			hasPendingSave = true
 		},

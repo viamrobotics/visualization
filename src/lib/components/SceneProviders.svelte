@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
+	import { pointerControls } from '@threlte/xr'
+
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
@@ -38,6 +40,9 @@
 	provideCameraControls(() => cameraPose)
 	provideTransformControls()
 	provideLogs()
+
+	pointerControls('left')
+	pointerControls('right')
 
 	provideOrigin()
 	provideDrawAPI()

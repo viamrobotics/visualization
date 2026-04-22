@@ -8,9 +8,11 @@
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import CameraFeed from './CameraFeed.svelte'
+	import DebugPanel from './DebugPanel.svelte'
 	import FrameConfigureControllers from './frame-configure/Controllers.svelte'
 	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import OriginMarker from './OriginMarker.svelte'
+	import PendingEditsPanel from './PendingEditsPanel.svelte'
 	import TeleopControllers from './teleop/Controllers.svelte'
 	import { provideAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'
@@ -71,11 +73,8 @@
 
 {#if enableXR}
 	<XR
-		onsessionstart={() => {
-			origin.set([-1, -1, 0])
-		}}
 		onsessionend={() => {
-			origin.set([0, 0, 0])
+			origin.set([0, 0, 0], 0)
 		}}
 	>
 		<!-- Render camera feeds only when presenting to avoid conflicting with overlay Camera widgets -->
@@ -115,6 +114,8 @@
 		<!-- <XRConfigPanel offset={{ x: 0, y: 2.5, z: -2.5 }} scale={0.7} /> -->
 
 		<XRToast />
+		<DebugPanel />
+		<PendingEditsPanel />
 
 		{#if settings.current.xrMode === 'arm-teleop'}
 			<TeleopControllers />

@@ -10,6 +10,10 @@ interface Context {
 	createAnchor: (position: Vector3, orientation: Quaternion) => Promise<XRAnchor> | undefined
 	bindAnchorObject: (anchor: XRAnchor, object: Object3D) => void
 	unbindAnchorObject: (anchor: XRAnchor) => void
+	persist: (anchor: XRAnchor) => Promise<string | undefined>
+	restore: (uuid: string) => Promise<XRAnchor | undefined>
+	remove: (uuid: string) => Promise<void>
+	getAnchorPose: (anchor: XRAnchor) => XRPose | undefined
 }
 
 export const provideAnchors = () => {
@@ -39,6 +43,27 @@ export const provideAnchors = () => {
 
 	const unbindAnchorObject = (anchor: XRAnchor) => {
 		map.delete(anchor)
+	}
+
+	const persist = async (anchor: XRAnchor) => {
+		return anchor.requestPersistentHandle?.()
+	}
+
+	const restore = async (uuid: string) => {
+		const session = renderer.xr.getSession() as XRSession | null
+		return session?.restorePersistentAnchor?.(uuid)
+	}
+
+	const remove = async (uuid: string) => {
+		const session = renderer.xr.getSession() as XRSession | null
+		await session?.deletePersistentAnchor?.(uuid)
+	}
+
+	const getAnchorPose = (anchor: XRAnchor) => {
+		const space = renderer.xr.getReferenceSpace()
+		const frame = renderer.xr.getFrame()
+		if (!space || !frame) return
+		return frame.getPose(anchor.anchorSpace, space)
 	}
 
 	useTask(
@@ -76,6 +101,10 @@ export const provideAnchors = () => {
 		createAnchor,
 		bindAnchorObject,
 		unbindAnchorObject,
+		persist,
+		restore,
+		remove,
+		getAnchorPose,
 	})
 }
 
