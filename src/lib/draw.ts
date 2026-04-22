@@ -7,7 +7,12 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import {
+	createBufferGeometry,
+	preAllocateBufferGeometry,
+	updateBufferGeometry,
+	writeBufferGeometryRange,
+} from '$lib/attribute'
 import {
 	asFloat32Array,
 	asOpacity,
@@ -142,26 +147,35 @@ export const updateTransform = (
 		}
 	}
 
-	const parsedMetadata = metadataFromStruct(metadata?.fields)
-	if (parsedMetadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	else entity.remove(traits.ShowAxesHelper)
-	if (parsedMetadata.invisible) entity.add(traits.Invisible)
-	else entity.remove(traits.Invisible)
-
-	const { colors, opacities } = parsedMetadata
-	if (colors) {
-		if (isPointCloud(physicalObject?.geometryType)) {
-			updateColors(entity, parsedMetadata)
-		} else {
-			addColorTraits(entity, colors)
-		}
-	}
-
-	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
-	if (opacity < 1) entity.add(traits.Opacity(opacity))
+	updateMetadata(entity, metadataFromStruct(metadata?.fields), {
+		pointCloud: isPointCloud(physicalObject?.geometryType),
+	})
 
 	if (options.removable) entity.add(traits.Removable)
 	if (!options.removable) entity.remove(traits.Removable)
+}
+
+export const updateMetadata = (
+	entity: Entity,
+	metadata: Metadata,
+	{ pointCloud = false }: { pointCloud?: boolean } = {}
+): void => {
+	if (metadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	else entity.remove(traits.ShowAxesHelper)
+
+	if (metadata.invisible) entity.add(traits.Invisible)
+	else entity.remove(traits.Invisible)
+
+	const { colors, opacities } = metadata
+	if (colors) {
+		if (pointCloud) {
+			updateColors(entity, metadata)
+		} else {
+			setColorTraits(entity, colors)
+		}
+	}
+
+	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -236,20 +250,33 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 		case 'points': {
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
+			const total = metadata?.chunks?.total
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
 			addColorTraits(entity, colors ?? DEFAULT_POINTS_COLORS)
 			entity.add(traits.PointSize(geometryType.value.pointSize ?? DEFAULT_POINT_SIZE))
-			entity.add(
-				traits.BufferGeometry(
-					createBufferGeometry(positions, {
-						colors: isVertexColors(colors) ? colors : undefined,
-						colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
-					})
-				)
-			)
+
+			const vertexColors = isVertexColors(colors) ? colors : undefined
+			const pointsMetadata = {
+				colors: vertexColors,
+				colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
+				opacities: metadata?.opacities,
+			}
+
+			if (total !== undefined && total > 0) {
+				const allocMetadata = {
+					...pointsMetadata,
+					colors: vertexColors ? new Uint8Array(0) : undefined,
+				}
+				const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, allocMetadata)
+				writeBufferGeometryRange(geometry, positions, 0, pointsMetadata)
+				entity.add(traits.BufferGeometry(geometry))
+			} else {
+				entity.add(traits.BufferGeometry(createBufferGeometry(positions, pointsMetadata)))
+			}
+
 			entity.add(traits.Points)
 			break
 		}
@@ -380,10 +407,19 @@ const parsePointCloud = (
 		let vertexColors = pointcloud.colors
 		if (colors && colors.length > 0) vertexColors = parseColors(colors, numPoints)
 
-		const geometry = createBufferGeometry(pointcloud.positions, {
-			colors: vertexColors ?? undefined,
-			colorFormat,
-		})
+		const total = metadata.chunks?.total
+		const chunkMetadata = { colors: vertexColors ?? undefined, colorFormat }
+
+		let geometry
+		if (total !== undefined && total > numPoints) {
+			geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+				...chunkMetadata,
+				colors: vertexColors ? new Uint8Array(0) : undefined,
+			})
+			writeBufferGeometryRange(geometry, pointcloud.positions, 0, chunkMetadata)
+		} else {
+			geometry = createBufferGeometry(pointcloud.positions, chunkMetadata)
+		}
 
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
@@ -520,7 +556,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 	}
 }
 
-const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
+export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
 		entity.add(traits.Colors(colors))
 	} else {
@@ -528,12 +564,15 @@ const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	}
 }
 
-const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
+export const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
-		entity.set(traits.Colors, colors)
+		if (entity.has(traits.Colors)) entity.set(traits.Colors, colors)
+		else entity.add(traits.Colors(colors))
 		entity.remove(traits.Color)
 	} else {
-		entity.set(traits.Color, asRGB(colors, rgb))
+		const color = asRGB(colors, rgb)
+		if (entity.has(traits.Color)) entity.set(traits.Color, color)
+		else entity.add(traits.Color(color))
 		entity.remove(traits.Colors)
 	}
 }

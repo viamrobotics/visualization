@@ -164,6 +164,12 @@ export const DotSize = trait(() => 10)
 export const ReferenceFrame = trait(() => true)
 
 /**
+ * Tracks chunk loading progress for progressively-loaded entities.
+ * `loaded` is the number of elements received so far; `total` is the target.
+ */
+export const ChunkProgress = trait({ loaded: 0, total: 0 })
+
+/**
  * Interaction layers for entities
  */
 export type InteractionLayerValue = 'selectTool'
