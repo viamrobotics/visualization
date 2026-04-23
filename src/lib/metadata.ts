@@ -12,7 +12,8 @@ export const isMetadataField = (key: string): boolean => {
 		key === 'color_format' ||
 		key === 'opacities' ||
 		key === 'show_axes_helper' ||
-		key === 'invisible'
+		key === 'invisible' ||
+		key === 'chunks'
 	)
 }
 
@@ -75,6 +76,18 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 			case 'invisible': {
 				if (typeof unwrappedValue === 'boolean') {
 					json.invisible = unwrappedValue
+				}
+				break
+			}
+
+			case 'chunks': {
+				if (typeof unwrappedValue === 'object' && unwrappedValue !== null) {
+					const obj = unwrappedValue as Record<string, unknown>
+					json.chunks = {
+						chunkSize: typeof obj['chunk_size'] === 'number' ? obj['chunk_size'] : 0,
+						total: typeof obj['total'] === 'number' ? obj['total'] : 0,
+						stride: typeof obj['stride'] === 'number' ? obj['stride'] : 0,
+					}
 				}
 				break
 			}

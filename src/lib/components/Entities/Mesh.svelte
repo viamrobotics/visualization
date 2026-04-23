@@ -4,7 +4,7 @@
 
 	import { T, type Props as ThrelteProps, useThrelte } from '@threlte/core'
 	import { type Snippet } from 'svelte'
-	import { BufferGeometry, Color, DoubleSide, FrontSide, Mesh } from 'three'
+	import { BufferGeometry, Color, DoubleSide, FrontSide, Material, Mesh } from 'three'
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
@@ -56,8 +56,19 @@
 
 	const currentOpacity = $derived(opacity.current ?? 0.7)
 
-	const mesh = new Mesh()
+	let material = $state.raw<Material>(new Material())
+	$effect(() => {
+		const isTransparent = currentOpacity < 1
+		material.depthWrite = !isTransparent
+		material.opacity = currentOpacity
+		if (material.transparent !== isTransparent) {
+			material.transparent = isTransparent
+			material.needsUpdate = true
+			invalidate()
+		}
+	})
 
+	const mesh = new Mesh()
 	$effect.pre(() => {
 		if (center) {
 			poseToObject3d(center, mesh)
@@ -66,6 +77,11 @@
 	})
 
 	let geo = $state.raw<BufferGeometry>()
+	$effect.pre(() => {
+		if (!box.current && !sphere.current && !capsule.current && !bufferGeometry.current) {
+			geo = undefined
+		}
+	})
 
 	const oncreate = (bufferGeometry: BufferGeometry) => {
 		geo = bufferGeometry
@@ -108,10 +124,10 @@
 	<T.MeshToonMaterial
 		{color}
 		side={bufferGeometry.current ? DoubleSide : FrontSide}
-		transparent={currentOpacity < 1}
-		depthWrite={currentOpacity === 1}
-		opacity={currentOpacity}
 		depthTest={materialProps.current?.depthTest ?? true}
+		oncreate={(m) => {
+			material = m
+		}}
 	/>
 
 	<!-- 

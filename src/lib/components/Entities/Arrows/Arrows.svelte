@@ -48,7 +48,7 @@
 			is={arrows.headMesh}
 			bvh={{ enabled: false }}
 			raycast={() => null}
-			visible={invisible.current}
+			visible={invisible.current !== true}
 		/>
 		<T
 			is={arrows.shaftMesh}

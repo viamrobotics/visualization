@@ -5,6 +5,9 @@ vi.mock('$lib/loaders/pcd', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
+import type { Metadata as MetadataType } from '$lib/metadata'
+
+import { preAllocateBufferGeometry } from '$lib/attribute'
 import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
 import {
 	Arrows,
@@ -15,11 +18,13 @@ import {
 	Points,
 	Shape,
 } from '$lib/buf/draw/v1/drawing_pb'
-import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
+import { ColorFormat, Metadata } from '$lib/buf/draw/v1/metadata_pb'
+import { STRIDE } from '$lib/buffer'
+import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 
-import { drawDrawing, drawTransform } from '../draw'
+import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
 
 describe('drawTransform', () => {
 	let world: World
@@ -358,5 +363,293 @@ describe('drawDrawing', () => {
 		expect(entity.has(traits.Points)).toBe(true)
 		expect(entity.get(traits.PointSize)).toBe(8)
 		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
+	})
+})
+
+describe('updateTransform', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it("removes the Parent trait when a frame's parent changes back to 'world'", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.get(traits.Parent)).toBe('arm')
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		} as Transform)
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it("adds the Parent trait when a frame's parent changes from 'world' to a named frame", () => {
+		world = createWorld()
+
+		const initial = new Transform({
+			referenceFrame: 'child',
+			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+		})
+		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		expect(entity.has(traits.Parent)).toBe(false)
+
+		updateTransform(entity, {
+			...initial,
+			poseInObserverFrame: { referenceFrame: 'base', pose: createPose() },
+		} as Transform)
+
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
+describe('updateMetadata', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('toggles ShowAxesHelper on and off', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Opacity(1))
+
+		updateMetadata(entity, { colorFormat: ColorFormat.UNSPECIFIED, showAxesHelper: true })
+		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
+
+		updateMetadata(entity, { colorFormat: ColorFormat.UNSPECIFIED, showAxesHelper: false })
+		expect(entity.has(traits.ShowAxesHelper)).toBe(false)
+	})
+
+	it('toggles Invisible on and off', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Opacity(1))
+
+		updateMetadata(entity, { colorFormat: ColorFormat.UNSPECIFIED, invisible: true })
+		expect(entity.has(traits.Invisible)).toBe(true)
+
+		updateMetadata(entity, { colorFormat: ColorFormat.UNSPECIFIED, invisible: false })
+		expect(entity.has(traits.Invisible)).toBe(false)
+	})
+
+	it('replaces a single Color with vertex Colors and vice versa', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Opacity(1))
+
+		updateMetadata(entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			colors: new Uint8Array([255, 0, 0]),
+		})
+		expect(entity.get(traits.Color)).toStrictEqual({ r: 1, g: 0, b: 0 })
+		expect(entity.has(traits.Colors)).toBe(false)
+
+		updateMetadata(entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			colors: new Uint8Array([255, 0, 0, 0, 255, 0]),
+		})
+		expect(entity.has(traits.Color)).toBe(false)
+		expect(entity.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
+
+		updateMetadata(entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			colors: new Uint8Array([0, 255, 0]),
+		})
+		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
+		expect(entity.has(traits.Colors)).toBe(false)
+	})
+
+	it('sets Opacity from metadata.opacities', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Opacity(1))
+
+		updateMetadata(entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			opacities: new Uint8Array([128]),
+		})
+		expect(entity.get(traits.Opacity)).toBeCloseTo(128 / 255)
+
+		updateMetadata(entity, { colorFormat: ColorFormat.UNSPECIFIED })
+		expect(entity.get(traits.Opacity)).toBe(1)
+	})
+})
+
+describe('setParentTrait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('leaves the Parent trait absent when parent is undefined', () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		traits.setParentTrait(entity, undefined)
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it("removes the Parent trait when parent is 'world'", () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Parent('arm'))
+
+		traits.setParentTrait(entity, 'world')
+
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it('adds the Parent trait when transitioning from unset to a named parent', () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		traits.setParentTrait(entity, 'arm')
+
+		expect(entity.get(traits.Parent)).toBe('arm')
+	})
+
+	it('updates the Parent trait when switching named parents', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Parent('arm'))
+
+		traits.setParentTrait(entity, 'base')
+
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+
+	it("removes the Parent trait after a named -> 'world' round-trip (regression)", () => {
+		world = createWorld()
+		const entity = world.spawn()
+
+		traits.setParentTrait(entity, 'arm')
+		expect(entity.get(traits.Parent)).toBe('arm')
+
+		traits.setParentTrait(entity, 'world')
+		expect(entity.has(traits.Parent)).toBe(false)
+
+		traits.setParentTrait(entity, 'base')
+		expect(entity.get(traits.Parent)).toBe('base')
+	})
+})
+
+describe('getParentTrait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('returns an empty list for undefined, empty, or world parents', () => {
+		expect(traits.getParentTrait(undefined)).toEqual([])
+		expect(traits.getParentTrait('')).toEqual([])
+		expect(traits.getParentTrait('world')).toEqual([])
+	})
+
+	it('spawns without Parent trait when parent is world-like', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...traits.getParentTrait('world'))
+		expect(entity.has(traits.Parent)).toBe(false)
+	})
+
+	it('spawns with Parent trait when parent is a named frame', () => {
+		world = createWorld()
+		const entity = world.spawn(traits.Name('child'), ...traits.getParentTrait('arm'))
+		expect(entity.get(traits.Parent)).toBe('arm')
+	})
+})
+
+describe('createChunkLoader', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	const emptyMetadata: MetadataType = { colorFormat: ColorFormat.UNSPECIFIED }
+
+	it('start is a no-op when metadata has no chunks', () => {
+		world = createWorld()
+		const entity = world.spawn()
+		const fetchChunk = vi.fn()
+
+		const loader = createChunkLoader({
+			world,
+			invalidate: () => {},
+			fetchChunk,
+		})
+
+		loader.start('uuid', entity, emptyMetadata)
+
+		expect(entity.has(traits.ChunkProgress)).toBe(false)
+		expect(fetchChunk).not.toHaveBeenCalled()
+	})
+
+	it('writes chunks, advances ChunkProgress, and removes it when done', async () => {
+		world = createWorld()
+		const total = 6
+		const firstChunkEnd = 3
+		const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+		})
+		const entity = world.spawn(traits.BufferGeometry(geometry))
+
+		const chunk: EntityChunk = {
+			start: firstChunkEnd,
+			positions: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+			done: true,
+		}
+		const fetchChunk = vi.fn(async () => chunk)
+
+		const invalidate = vi.fn()
+
+		const loader = createChunkLoader({ world, invalidate, fetchChunk })
+
+		loader.start('uuid', entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			chunks: { chunkSize: firstChunkEnd, total, stride: STRIDE.POSITIONS },
+		})
+
+		expect(entity.get(traits.ChunkProgress)).toStrictEqual({
+			loaded: firstChunkEnd,
+			total,
+		})
+
+		await vi.waitFor(() => {
+			expect(entity.has(traits.ChunkProgress)).toBe(false)
+		})
+
+		expect(fetchChunk).toHaveBeenCalledTimes(1)
+		expect(fetchChunk).toHaveBeenCalledWith('uuid', firstChunkEnd, expect.any(AbortSignal))
+		expect(invalidate).toHaveBeenCalled()
+		expect(geometry.drawRange.count).toBe(total)
+	})
+
+	it('dispose aborts in-flight fetches and stops the loop', async () => {
+		world = createWorld()
+		const total = 12
+		const firstChunkEnd = 4
+		const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+		})
+		const entity = world.spawn(traits.BufferGeometry(geometry))
+
+		let seenSignal: AbortSignal | undefined
+		const fetchChunk = vi.fn(async (_uuid: string, _start: number, signal: AbortSignal) => {
+			seenSignal = signal
+			return await new Promise<EntityChunk | null>((_, reject) => {
+				signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+			})
+		})
+
+		const loader = createChunkLoader({
+			world,
+			invalidate: () => {},
+			fetchChunk,
+		})
+
+		loader.start('uuid', entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			chunks: { chunkSize: firstChunkEnd, total, stride: STRIDE.POSITIONS },
+		})
+
+		expect(entity.has(traits.ChunkProgress)).toBe(true)
+
+		loader.dispose()
+
+		await vi.waitFor(() => {
+			expect(seenSignal?.aborted).toBe(true)
+			expect(entity.has(traits.ChunkProgress)).toBe(false)
+		})
 	})
 })
