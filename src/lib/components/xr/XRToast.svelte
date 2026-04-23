@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { Headset } from '@threlte/xr'
 	import { untrack } from 'svelte'
 	import { CanvasTexture, PlaneGeometry } from 'three'
 
 	import { type ToastVariant, xrToast, type XRToastItem } from '$lib/components/xr/toasts.svelte'
+
+	import HUD from './HUD.svelte'
+	import HUDBillboard from './HUDBillboard.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
@@ -204,18 +206,17 @@
 	})
 </script>
 
-<Headset>
+<HUD>
 	{#if hasToasts && geometry}
-		<T.Mesh
-			position={[0, -0.3, -1.5]}
-			renderOrder={999}
-		>
-			<T is={geometry} />
-			<T.MeshBasicMaterial
-				map={texture}
-				transparent
-				depthTest={false}
-			/>
-		</T.Mesh>
+		<HUDBillboard position={[0, -0.3, -1.5]}>
+			<T.Mesh renderOrder={999}>
+				<T is={geometry} />
+				<T.MeshBasicMaterial
+					map={texture}
+					transparent
+					depthTest={false}
+				/>
+			</T.Mesh>
+		</HUDBillboard>
 	{/if}
-</Headset>
+</HUD>

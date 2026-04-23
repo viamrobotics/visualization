@@ -3,13 +3,13 @@
 	import type { XRTargetRaySpace } from 'three'
 
 	import { T, useTask, useThrelte } from '@threlte/core'
-	import { Controller, Headset, useController } from '@threlte/xr'
+	import { Controller, useController, useHeadset } from '@threlte/xr'
 	import { onDestroy } from 'svelte'
-	import { MathUtils } from 'three'
+	import { MathUtils, Vector3 } from 'three'
 	import { TransformControls } from 'three/addons/controls/TransformControls.js'
 	import { Text } from 'threlte-uikit'
 	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
-	import { Icon, Move3d, Plus, Rotate3d, Scale3d } from 'threlte-uikit/lucide'
+	import { Icon, Locate, Move3d, Plus, Rotate3d, Scale3d } from 'threlte-uikit/lucide'
 
 	import { traits, useTrait } from '$lib/ecs'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
@@ -18,7 +18,9 @@
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OrientationVector } from '$lib/three/OrientationVector'
 
-	import { xrDebug } from '../debug.svelte'
+	import HUD from '../HUD.svelte'
+	import HUDBillboard from '../HUDBillboard.svelte'
+	import { useOrigin } from '../useOrigin.svelte'
 
 	type Mode = 'translate' | 'rotate' | 'scale'
 	type Handedness = 'left' | 'right'
@@ -36,6 +38,24 @@
 	const framesAPI = useTrait(() => selectedEntity.current, traits.FramesAPI)
 	const leftController = useController('left')
 	const rightController = useController('right')
+	const headset = useHeadset()
+	const origin = useOrigin()
+
+	const resetForward = new Vector3()
+	const resetOrigin = () => {
+		resetForward.set(0, 0, -1).applyQuaternion(headset.quaternion)
+		resetForward.z = 0
+		if (resetForward.lengthSq() < 1e-6) {
+			resetForward.set(0, 1, 0)
+		} else {
+			resetForward.normalize()
+		}
+		origin.set(
+			[headset.position.x + resetForward.x, headset.position.y + resetForward.y, 0],
+			0
+		)
+		origin.commit()
+	}
 
 	const updater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 
@@ -60,6 +80,7 @@
 	let mode = $state<Mode>('translate')
 	let activeHandedness = $state.raw<Handedness>()
 	let attached = $state(false)
+	let addingFrame = $state(false)
 
 	// Snapshot of the geometry dims at drag start. Used in scale mode to compute
 	// `newDims = base * absoluteScaleFactor` each frame; cleared on drag end.
@@ -71,9 +92,7 @@
 		return undefined
 	}
 
-	const detectHandedness = (
-		event: IntersectionEvent<PointerEvent>
-	): Handedness | undefined => {
+	const detectHandedness = (event: IntersectionEvent<PointerEvent>): Handedness | undefined => {
 		// nativeEvent is three's selectstart/selectend event whose `target` is the XRTargetRaySpace.
 		const target = (event.nativeEvent as { target?: unknown } | undefined)?.target
 		if (target && target === leftController.current?.targetRay) return 'left'
@@ -142,21 +161,29 @@
 		}
 	})
 
+	// `Raycaster.setFromXRController` reads `ray.matrixWorld`. When hand-tracking
+	// is active in the session, `@threlte/xr` does not attach the controller's
+	// targetRay to the scene graph (see `Controller.svelte`'s
+	// `{#if !isHandTracking.current}`), so scene traversal never refreshes its
+	// matrixWorld. We have to call `updateMatrixWorld()` ourselves or the ray
+	// aims wherever the controller was last attached.
+	const setRaycasterFromRay = (ray: XRTargetRaySpace) => {
+		ray.updateMatrixWorld(true)
+		raycaster.setFromXRController(ray)
+	}
+
 	const onPointerDown = (event: IntersectionEvent<PointerEvent>) => {
 		activeHandedness = detectHandedness(event)
-		xrDebug.add(`pointerdown hand=${activeHandedness ?? 'unknown'}`)
 		const ray = getRay(activeHandedness)
 		if (!ray) return
-		raycaster.setFromXRController(ray)
+		setRaycasterFromRay(ray)
 		controls.pointerHover(null)
 		controls.pointerDown(null)
-		xrDebug.add(`down axis=${controls.axis ?? 'null'} dragging=${controls.dragging}`)
 	}
 
 	const onPointerUp = () => {
-		xrDebug.add('pointerup')
 		const ray = getRay(activeHandedness)
-		if (ray) raycaster.setFromXRController(ray)
+		if (ray) setRaycasterFromRay(ray)
 		controls.pointerUp(null)
 		activeHandedness = undefined
 	}
@@ -169,7 +196,7 @@
 		if (controls.dragging) {
 			const ray = getRay(activeHandedness)
 			if (!ray) return
-			raycaster.setFromXRController(ray)
+			setRaycasterFromRay(ray)
 			controls.pointerMove(null)
 			return
 		}
@@ -177,24 +204,13 @@
 		const rays = [rightController.current?.targetRay, leftController.current?.targetRay]
 		for (const ray of rays) {
 			if (!ray) continue
-			raycaster.setFromXRController(ray)
+			setRaycasterFromRay(ray)
 			controls.pointerHover(null)
 			if (controls.axis !== null) return
 		}
 	})
 
 	const ov = new OrientationVector()
-
-	let changeCount = 0
-	controls.addEventListener('objectChange', () => {
-		changeCount += 1
-		if (changeCount === 1 || changeCount % 30 === 0) {
-			const p = controls.object?.position
-			xrDebug.add(
-				`change #${changeCount} pos=${p?.x.toFixed(2)},${p?.y.toFixed(2)},${p?.z.toFixed(2)}`
-			)
-		}
-	})
 
 	// Snapshot the current geometry dims when a scale-mode drag begins so every
 	// frame can compute `newDims = base * controls.object.scale` from a stable
@@ -281,12 +297,10 @@
 	onpointerup={onPointerUp as never}
 />
 
-{#if attached}
-	<Headset>
-		<T.Group
-			position={[0, -0.35, -0.8]}
-			scale={0.1}
-		>
+{#if partConfig.hasEditPermissions}
+	<HUD>
+		<HUDBillboard position={[0, -0.35, -0.8]}>
+			<T.Group scale={0.1}>
 			<Panel
 				flexDirection="row"
 				padding={8}
@@ -297,35 +311,100 @@
 				<Button
 					icon
 					size="sm"
-					variant={mode === 'translate' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'translate')}
+					variant="tertiary"
+					onclick={resetOrigin}
 				>
 					<ButtonIcon>
-						<Icon is={Move3d} />
+						<Icon is={Locate} />
 					</ButtonIcon>
 				</Button>
 				<Button
 					icon
 					size="sm"
-					variant={mode === 'rotate' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'rotate')}
+					variant={addingFrame ? 'primary' : 'tertiary'}
+					onclick={() => (addingFrame = !addingFrame)}
 				>
 					<ButtonIcon>
-						<Icon is={Rotate3d} />
+						<Icon is={Plus} />
 					</ButtonIcon>
 				</Button>
-				<Button
-					icon
-					size="sm"
-					disabled={!hasGeometry}
-					variant={mode === 'scale' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'scale')}
-				>
-					<ButtonIcon>
-						<Icon is={Scale3d} />
-					</ButtonIcon>
-				</Button>
+				{#if attached}
+					<Button
+						icon
+						size="sm"
+						variant={mode === 'translate' ? 'primary' : 'tertiary'}
+						onclick={() => (mode = 'translate')}
+					>
+						<ButtonIcon>
+							<Icon is={Move3d} />
+						</ButtonIcon>
+					</Button>
+					<Button
+						icon
+						size="sm"
+						variant={mode === 'rotate' ? 'primary' : 'tertiary'}
+						onclick={() => (mode = 'rotate')}
+					>
+						<ButtonIcon>
+							<Icon is={Rotate3d} />
+						</ButtonIcon>
+					</Button>
+					<Button
+						icon
+						size="sm"
+						disabled={!hasGeometry}
+						variant={mode === 'scale' ? 'primary' : 'tertiary'}
+						onclick={() => (mode = 'scale')}
+					>
+						<ButtonIcon>
+							<Icon is={Scale3d} />
+						</ButtonIcon>
+					</Button>
+				{/if}
 			</Panel>
-		</T.Group>
-	</Headset>
+			</T.Group>
+		</HUDBillboard>
+
+		{#if addingFrame}
+			<HUDBillboard position={[0, -0.15, -0.8]}>
+				<T.Group scale={0.1}>
+					<Panel
+						flexDirection="column"
+						padding={12}
+						gap={6}
+						backgroundColor="#111"
+						borderRadius={16}
+						minWidth={320}
+					>
+						{#if framelessComponents.current.length > 0}
+							{#each framelessComponents.current as component (component)}
+								<Button
+									size="sm"
+									variant="tertiary"
+									onclick={() => {
+										partConfig.createFrame(component)
+										addingFrame = false
+									}}
+								>
+									<ButtonLabel>
+										<Text
+											text={component}
+											fontSize={14}
+											color="#ffffff"
+										/>
+									</ButtonLabel>
+								</Button>
+							{/each}
+						{:else}
+							<Text
+								text="No components without frames"
+								fontSize={14}
+								color="#ffffff"
+							/>
+						{/if}
+					</Panel>
+				</T.Group>
+			</HUDBillboard>
+		{/if}
+	</HUD>
 {/if}

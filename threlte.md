@@ -84,6 +84,67 @@ the unprotected path.
   `model.updateMatrixWorld(true)`. Makes bone transforms current for the
   frame's skinning.
 
+## `PointerCursor` reticle floats off-surface during depth changes
+
+`node_modules/@threlte/xr/dist/components/internal/PointerCursor.svelte` places
+the hover reticle with a lerp:
+
+```js
+useTask(() => {
+  if (intersection === undefined) return
+  const { point, face, object } = intersection
+  ref.position.lerp(point, 0.4)
+  // … orient to surface normal
+})
+
+$effect.pre(() => {
+  if (hovering && intersection) {
+    ref.position.copy(intersection.point)
+  }
+})
+```
+
+Two paths write to `ref.position` on different timing:
+
+- `useTask` runs every render frame and lerps 40% toward the current hit point.
+- `$effect.pre` snaps when the `intersection` $derived changes reference —
+  a Svelte microtask, not tied to the render frame.
+
+When the user sweeps the ray across two objects at different depths, the lerp
+visibly drags the reticle through empty space between the old and new hit
+points for one or more frames before the snap catches up. It's most noticeable
+near object edges or when transitioning between a near and a far surface.
+
+### Suggested fix
+
+Snap when the hit `object` changes; only lerp while staying on the same
+object (or drop the lerp entirely). Something like:
+
+```js
+let lastObject
+useTask(() => {
+  if (intersection === undefined) return
+  const { point, face, object } = intersection
+  if (object !== lastObject) {
+    ref.position.copy(point)
+  } else {
+    ref.position.lerp(point, 0.4)
+  }
+  lastObject = object
+  // … orient to surface normal
+})
+```
+
+The existing `$effect.pre` snap can then be removed; the useTask handles both
+cases coherently in one place.
+
+### Workaround
+
+`pnpm patch @threlte/xr` and replace the `ref.position.lerp(point, 0.4)` with
+`ref.position.copy(point)`. The `pointerCursor` snippet slot on `<Controller>`
+only swaps the visual — children are rendered inside the already-positioned
+`ref`, so it can't fix the reticle location.
+
 ## Session setup reminder
 
 `@threlte/xr`'s default optional features

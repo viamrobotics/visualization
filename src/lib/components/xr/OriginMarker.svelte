@@ -7,7 +7,6 @@
 
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 
-	import { xrDebug } from './debug.svelte'
 	import { useAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'
 
@@ -76,6 +75,8 @@
 		localStorage.setItem(storageKey, uuid)
 	}, COMMIT_DEBOUNCE_MS)
 
+	origin.registerCommit(() => commit())
+
 	leftPad.thumbstick.on('change', ({ value }) => {
 		// While the grip is held, the left controller drives fine rotation;
 		// ignore the thumbstick so the two inputs don't fight each other.
@@ -84,10 +85,7 @@
 		const { x: vx, y: vy } = value
 		const [x, y, z] = origin.position
 
-		origin.set(
-			[x, y, z + vy * THUMBSTICK_SPEED],
-			origin.rotation + vx * THUMBSTICK_SPEED
-		)
+		origin.set([x, y, z + vy * THUMBSTICK_SPEED], origin.rotation + vx * THUMBSTICK_SPEED)
 		commit()
 	})
 
@@ -98,9 +96,7 @@
 		const [x, y, z] = origin.position
 
 		headset.getWorldDirection(headForward)
-		xrDebug.add(
-			`gaze=${headForward.x.toFixed(2)},${headForward.y.toFixed(2)},${headForward.z.toFixed(2)}`
-		)
+
 		// Flatten onto the XY (ground) plane so pitch doesn't bleed into horizontal motion.
 		headForward.z = 0
 		if (headForward.lengthSq() < 1e-6) {
@@ -300,15 +296,6 @@
 		}
 	)
 </script>
-
-<Grid
-	plane="xy"
-	fadeDistance={5}
-	fadeOrigin={new Vector3()}
-	cellSize={0.1}
-	cellColor="#fff"
-	sectionColor="#fff"
-/>
 
 <Hand
 	left

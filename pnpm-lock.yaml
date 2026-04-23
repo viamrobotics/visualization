@@ -106,17 +106,17 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@threlte/core':
-        specifier: 8.5.5
-        version: 8.5.5(svelte@5.55.0)(three@0.183.2)
+        specifier: 8.5.9
+        version: 8.5.9(svelte@5.55.0)(three@0.183.2)
       '@threlte/extras':
-        specifier: 9.14.1
-        version: 9.14.1(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
+        specifier: 9.14.8
+        version: 9.14.8(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
       '@threlte/rapier':
         specifier: 3.4.1
         version: 3.4.1(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.183.2)
       '@threlte/xr':
-        specifier: 1.5.2
-        version: 1.5.2(svelte@5.55.0)(three@0.183.2)
+        specifier: 1.5.4
+        version: 1.5.4(svelte@5.55.0)(three@0.183.2)
       '@types/bun':
         specifier: 1.2.21
         version: 1.2.21(@types/react@19.2.2)
@@ -236,7 +236,7 @@ importers:
         version: 0.183.2
       threlte-uikit:
         specifier: 2.0.0
-        version: 2.0.0(@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2)
+        version: 2.0.0(@threlte/core@8.5.9(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2)
       tsx:
         specifier: 4.20.5
         version: 4.20.5
@@ -1640,14 +1640,14 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.5.5':
-    resolution: {integrity: sha512-jxKalZ3S/ViAjd83txoRdL6/pQmit48a0wl1ZS8VqBr1Vf6ZlNJq2tAieAieb42ICC/OcVPbuJd1Mmms5AC9pQ==}
+  '@threlte/core@8.5.9':
+    resolution: {integrity: sha512-EncyIKITwXnOUQpzstq+7AxqjW7sWhrg662BdHi/iSMXaIvjUaF3VPLBzGvVm0MCsokxFG69jfW39AG5GBbHbg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/extras@9.14.1':
-    resolution: {integrity: sha512-e+fsArxvqGve5wppMAoA4S4205+DaA7fu36fgz3KcG672nKPHi2rnhgMX3Ww7iO76wcC0hNgkvApG7Sqf6RdKQ==}
+  '@threlte/extras@9.14.8':
+    resolution: {integrity: sha512-0QVIYoJPo+Nc4S4Il9asHVzpt4iHX88jRgyrWi7Uk5iWK+xSAFLyHkyL0kSvdFoBXSJZLE0LG6qP78n69//scA==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -1659,8 +1659,8 @@ packages:
       svelte: '>=5'
       three: '>=0.152'
 
-  '@threlte/xr@1.5.2':
-    resolution: {integrity: sha512-DF3P/fYbdGzpFDM9AFqWWsAlRhHP0/KhZRorkDOMQZocMeWsYFc/bbKKZRqQu2PcITr5P4QhK9XWJ99xAnlC7A==}
+  '@threlte/xr@1.5.4':
+    resolution: {integrity: sha512-cSH6qapfSHjE/MiQgPpZgEnZ5eTcVg3OoqrABv/RpEIgwzBv+gHGHDHy4RN+cnKA2SjHroPE753M89mMdrgpCg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -3156,9 +3156,6 @@ packages:
   minizlib@3.1.0:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
     engines: {node: '>= 18'}
-
-  mitt@3.0.1:
-    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
   module-details-from-path@1.0.4:
     resolution: {integrity: sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==}
@@ -5597,13 +5594,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/core@8.5.9(svelte@5.55.0)(three@0.183.2)':
     dependencies:
-      mitt: 3.0.1
       svelte: 5.55.0
       three: 0.183.2
 
-  '@threlte/extras@9.14.1(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/extras@9.14.8(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.183.1)(three@0.183.2)
       camera-controls: 3.1.2(three@0.183.2)
@@ -5622,7 +5618,7 @@ snapshots:
       svelte: 5.55.0
       three: 0.183.2
 
-  '@threlte/xr@1.5.2(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/xr@1.5.4(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       svelte: 5.55.0
       three: 0.183.2
@@ -7358,8 +7354,6 @@ snapshots:
     dependencies:
       minipass: 7.1.2
 
-  mitt@3.0.1: {}
-
   module-details-from-path@1.0.4: {}
 
   mri@1.2.0: {}
@@ -7888,14 +7882,14 @@ snapshots:
 
   three@0.183.2: {}
 
-  threlte-uikit@2.0.0(@threlte/core@8.5.5(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2):
+  threlte-uikit@2.0.0(@threlte/core@8.5.9(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2):
     dependencies:
       '@pmndrs/uikit': 1.0.64(three@0.183.2)
       '@pmndrs/uikit-default': 1.0.64(three@0.183.2)
       '@pmndrs/uikit-horizon': 1.0.64(three@0.183.2)
       '@pmndrs/uikit-lucide': 1.0.64(three@0.183.2)
       '@preact/signals-core': 1.14.1
-      '@threlte/core': 8.5.5(svelte@5.55.0)(three@0.183.2)
+      '@threlte/core': 8.5.9(svelte@5.55.0)(three@0.183.2)
       svelte: 5.55.0
       three: 0.183.2
 

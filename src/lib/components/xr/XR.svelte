@@ -128,6 +128,20 @@
 
 	<XRButton
 		mode="immersive-ar"
+		sessionInit={{
+			optionalFeatures: [
+				'local-floor',
+				'bounded-floor',
+				'anchors',
+				// Required for cross-session persistence — enables
+				// `anchor.requestPersistentHandle()` and
+				// `session.restorePersistentAnchor()` on Quest Browser.
+				'persistent-anchors',
+				'plane-detection',
+				'layers',
+				'hit-test',
+			],
+		}}
 		{...rest}
 	/>
 {/if}
