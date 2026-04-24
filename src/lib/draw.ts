@@ -169,10 +169,10 @@ export const updateMetadata = (
 	const { colors, opacities } = metadata
 	if (colors) {
 		if (pointCloud) {
-			updateColors(entity, metadata)
-		} else {
-			setColorTraits(entity, colors)
+			updatePointCloudColors(entity, metadata)
 		}
+		// Always set color traits so any subsequent async work can read them
+		setColorTraits(entity, colors)
 	}
 
 	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
@@ -426,7 +426,7 @@ const parsePointCloud = (
 	})
 }
 
-const updateColors = (entity: Entity, metadata: Metadata): void => {
+const updatePointCloudColors = (entity: Entity, metadata: Metadata): void => {
 	const buffer = entity.get(traits.BufferGeometry)
 	if (!buffer) {
 		if (metadata.colors) addColorTraits(entity, metadata.colors)

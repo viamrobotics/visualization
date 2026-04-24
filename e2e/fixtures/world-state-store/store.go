@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+const updatingPointCloudName = "updating-pointcloud"
+
 type TestStore struct {
 	resource.Named
 	resource.TriviallyReconfigurable
@@ -141,6 +143,10 @@ func (s *TestStore) DoCommand(ctx context.Context, cmd map[string]any) (map[stri
 		return s.getChunk(cmd)
 	case "add_chunked":
 		return s.addChunk(cmd)
+	case "add_pointcloud":
+		return s.addPointCloud(cmd)
+	case "update_pointcloud":
+		return s.updatePointCloud(cmd)
 	case "update":
 		return s.update(cmd)
 	case "remove":
@@ -479,6 +485,122 @@ func (s *TestStore) addChunk(cmd map[string]any) (map[string]any, error) {
 	s.emitChange(pcTransform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_ADDED)
 
 	return map[string]any{"ok": true}, nil
+}
+
+// addPointCloud seeds a flat grid of positions
+func (s *TestStore) addPointCloud(cmd map[string]any) (map[string]any, error) {
+	name, _ := cmd["name"].(string)
+	if name == "" {
+		name = updatingPointCloudName
+	}
+
+	pc, err := makeGrid(10, 10, 20.0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	drawnPC, err := draw.NewDrawnPointCloud(pc, draw.WithSinglePointCloudColor(turquoise))
+	if err != nil {
+		return nil, err
+	}
+
+	transform, err := drawnPC.Draw(name,
+		draw.WithID(name),
+		draw.WithPose(spatialmath.NewPoseFromPoint(r3.Vector{X: 1000, Y: 1000, Z: 0})),
+		draw.WithAxesHelper(false),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	s.mu.Lock()
+	s.transforms[string(transform.Uuid)] = transform
+	s.mu.Unlock()
+
+	s.emitChange(transform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_ADDED)
+	return map[string]any{"ok": true}, nil
+}
+
+// updatePointCloud grows the existing point cloud entity
+func (s *TestStore) updatePointCloud(cmd map[string]any) (map[string]any, error) {
+	name, _ := cmd["name"].(string)
+	if name == "" {
+		name = updatingPointCloudName
+	}
+
+	uuidKey := string(draw.NewDrawConfig(name, draw.WithID(name)).UUID)
+
+	s.mu.Lock()
+	t, ok := s.transforms[uuidKey]
+	if !ok {
+		s.mu.Unlock()
+		return nil, fmt.Errorf("transform with id %q not found", name)
+	}
+
+	merged := pointcloud.NewBasicPointCloud(200)
+	if err := appendGrid(merged, 10, 10, 20.0, 0); err != nil {
+		s.mu.Unlock()
+		return nil, err
+	}
+	if err := appendGrid(merged, 10, 10, 20.0, 100); err != nil {
+		s.mu.Unlock()
+		return nil, err
+	}
+
+	drawnPC, err := draw.NewDrawnPointCloud(merged, draw.WithSinglePointCloudColor(magenta))
+	if err != nil {
+		s.mu.Unlock()
+		return nil, err
+	}
+
+	drafted, err := drawnPC.Draw(name, draw.WithID(name), draw.WithAxesHelper(false))
+	if err != nil {
+		s.mu.Unlock()
+		return nil, err
+	}
+
+	t.PhysicalObject = drafted.PhysicalObject
+	t.Metadata = drafted.Metadata
+	s.mu.Unlock()
+
+	s.emitUpdate(t, []string{"physicalObject", "metadata"})
+	return map[string]any{"ok": true}, nil
+}
+
+var (
+	turquoise = draw.Color{R: 72, G: 209, B: 204, A: 255}
+	magenta   = draw.Color{R: 255, G: 0, B: 255, A: 255}
+)
+
+// makeGrid returns a flat rows x cols grid of points at the given Z offset
+func makeGrid(rows, cols int, spacing, z float64) (pointcloud.PointCloud, error) {
+	pc := pointcloud.NewBasicPointCloud(rows * cols)
+	if err := appendGrid(pc, rows, cols, spacing, z); err != nil {
+		return nil, err
+	}
+	return pc, nil
+}
+
+// appendGrid writes a rows x cols grid of positions
+func appendGrid(pc pointcloud.PointCloud, rows, cols int, spacing, z float64) error {
+	xOffset := float64(cols-1) * spacing / 2
+	yOffset := float64(rows-1) * spacing / 2
+	for r := range rows {
+		for c := range cols {
+			err := pc.Set(
+				r3.Vector{
+					X: float64(c)*spacing - xOffset,
+					Y: float64(r)*spacing - yOffset,
+					Z: z,
+				},
+				pointcloud.NewBasicData(),
+			)
+			if err != nil {
+				return fmt.Errorf("failed to set grid point: %w", err)
+			}
+		}
+	}
+	return nil
 }
 
 func (s *TestStore) emitChange(transform *commonpb.Transform, changeType pb.TransformChangeType) {
