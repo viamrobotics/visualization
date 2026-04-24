@@ -1,4 +1,4 @@
-import { ArmClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
+import { ArmClient, BaseClient, CameraClient, GantryClient, GripperClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
@@ -33,6 +33,7 @@ export const provideGeometries = (partID: () => string) => {
 	const world = useWorld()
 	const logs = useLogs()
 	const arms = useResourceNames(partID, 'arm')
+	const bases = useResourceNames(partID, 'base')
 	const cameras = useResourceNames(partID, 'camera')
 	const grippers = useResourceNames(partID, 'gripper')
 	const gantries = useResourceNames(partID, 'gantry')
@@ -42,6 +43,9 @@ export const provideGeometries = (partID: () => string) => {
 
 	const armClients = $derived(
 		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
+	)
+	const baseClients = $derived(
+		bases.current.map((base) => createResourceClient(BaseClient, partID, () => base.name))
 	)
 	const gripperClients = $derived(
 		grippers.current.map((gripper) =>
@@ -68,6 +72,12 @@ export const provideGeometries = (partID: () => string) => {
 				[client.current?.name, createResourceQuery(client, 'getGeometries', () => options)] as const
 		)
 	)
+	const baseQueries = $derived(
+		baseClients.map(
+			(client) =>
+				[client.current?.name, createResourceQuery(client, 'getGeometries', () => options)] as const
+		)
+	)
 	const gripperQueries = $derived(
 		gripperClients.map(
 			(client) =>
@@ -87,7 +97,13 @@ export const provideGeometries = (partID: () => string) => {
 		)
 	)
 
-	const queries = $derived([...armQueries, ...gripperQueries, ...cameraQueries, ...gantryQueries])
+	const queries = $derived([
+		...armQueries,
+		...baseQueries,
+		...gripperQueries,
+		...cameraQueries,
+		...gantryQueries,
+	])
 
 	$effect(() => {
 		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
