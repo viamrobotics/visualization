@@ -18,13 +18,19 @@ import {
 	Points,
 	Shape,
 } from '$lib/buf/draw/v1/drawing_pb'
-import { ColorFormat, Metadata } from '$lib/buf/draw/v1/metadata_pb'
+import { ColorFormat, Metadata, Relationship } from '$lib/buf/draw/v1/metadata_pb'
 import { STRIDE } from '$lib/buffer'
 import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
+
+const fakeUuidBytes = (n: number) => {
+	const bytes = new Uint8Array(16)
+	bytes[15] = n
+	return bytes
+}
 
 describe('drawTransform', () => {
 	let world: World
@@ -549,6 +555,130 @@ describe('getParentTrait', () => {
 		world = createWorld()
 		const entity = world.spawn(traits.Name('child'), ...traits.getParentTrait('arm'))
 		expect(entity.get(traits.Parent)).toBe('arm')
+	})
+})
+
+describe('Uuid trait', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('attaches Uuid trait to drawTransform when uuid bytes are present', () => {
+		world = createWorld()
+		const transform = new Transform({
+			referenceFrame: 'with-uuid',
+			uuid: fakeUuidBytes(1),
+		})
+
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+
+		expect(entity.has(traits.UUID)).toBe(true)
+		expect(entity.get(traits.UUID)).toBeTruthy()
+	})
+
+	it('does not attach Uuid trait when uuid bytes are empty', () => {
+		world = createWorld()
+		const transform = new Transform({ referenceFrame: 'no-uuid' })
+
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+
+		expect(entity.has(traits.UUID)).toBe(false)
+	})
+
+	it('attaches Uuid trait to drawDrawing when uuid bytes are present', () => {
+		world = createWorld()
+		const drawing = new Drawing({
+			referenceFrame: 'drawing-with-uuid',
+			uuid: fakeUuidBytes(2),
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.UUID)).toBe(true)
+		expect(entity.get(traits.UUID)).toBeTruthy()
+	})
+})
+
+describe('drawDrawing with metadata relationships', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('stores relationships in metadata for drawings', () => {
+		world = createWorld()
+		const targetUuid = fakeUuidBytes(10)
+		const drawing = new Drawing({
+			referenceFrame: 'source-drawing',
+			uuid: fakeUuidBytes(1),
+			physicalObject: new Shape({
+				geometryType: {
+					case: 'line',
+					value: new Line({ positions: new Uint8Array(24) }),
+				},
+			}),
+			metadata: new Metadata({
+				relationships: [new Relationship({ targetUuid, type: 'HoverLink' })],
+			}),
+		})
+
+		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+
+		expect(entity.has(traits.UUID)).toBe(true)
+	})
+})
+
+describe('drawTransform with struct relationships', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('parses relationships from transform struct metadata', () => {
+		world = createWorld()
+		const targetUuid = fakeUuidBytes(20)
+		const base64TargetUuid = btoa(String.fromCharCode(...targetUuid))
+
+		const transform = new Transform({
+			referenceFrame: 'source-transform',
+			uuid: fakeUuidBytes(1),
+			metadata: {
+				fields: {
+					relationships: {
+						kind: {
+							case: 'listValue',
+							value: {
+								values: [
+									{
+										kind: {
+											case: 'structValue',
+											value: {
+												fields: {
+													target_uuid: {
+														kind: { case: 'stringValue', value: base64TargetUuid },
+													},
+													type: {
+														kind: { case: 'stringValue', value: 'HoverLink' },
+													},
+													index_mapping: {
+														kind: { case: 'stringValue', value: 'index * 2' },
+													},
+												},
+											},
+										},
+									},
+								],
+							},
+						},
+					},
+				},
+			},
+		})
+
+		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+
+		expect(entity.has(traits.UUID)).toBe(true)
 	})
 })
 

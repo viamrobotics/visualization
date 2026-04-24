@@ -7,9 +7,15 @@ import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import type { Relationship } from '$lib/buf/draw/v1/metadata_pb'
 
 import { DrawService } from '$lib/buf/draw/v1/service_connect'
-import { EntityChangeType, StreamEntityChangesResponse } from '$lib/buf/draw/v1/service_pb'
+import {
+	CreateRelationshipRequest,
+	DeleteRelationshipRequest,
+	EntityChangeType,
+	StreamEntityChangesResponse,
+} from '$lib/buf/draw/v1/service_pb'
 import {
 	drawDrawing,
 	drawTransform,
@@ -17,7 +23,9 @@ import {
 	updateDrawing,
 	updateTransform,
 } from '$lib/draw'
-import { traits, useWorld } from '$lib/ecs'
+import { relations, traits, useWorld } from '$lib/ecs'
+import { metadataFromStruct } from '$lib/metadata'
+import type { RelationshipData } from '$lib/metadata'
 
 import { useCameraControls } from './useControls.svelte'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
@@ -34,6 +42,14 @@ type ConnectionStatusType = (typeof ConnectionStatus)[keyof typeof ConnectionSta
 
 interface Context {
 	connectionStatus: ConnectionStatusType
+	createRelationship: (
+		sourceUuid: string,
+		targetUuid: string,
+		type: string,
+		indexMapping?: string
+	) => Promise<void>
+	deleteRelationship: (sourceUuid: string, targetUuid: string) => Promise<void>
+	getEntityByUuid: (uuid: string) => Entity | undefined
 }
 
 interface StreamEvent {
@@ -60,8 +76,14 @@ export function provideDrawService() {
 	const transformEntities = new Map<string, Entity>()
 	const drawingEntities = new Map<string, Entity[]>()
 
+	const pendingRelationships = new Map<
+		string,
+		Array<{ sourceEntity: Entity; type: string; indexMapping?: string }>
+	>()
+
 	let pendingEvents: StreamEvent[] = []
 	let flushScheduled = false
+	let activeClient: Client<typeof DrawService> | undefined
 
 	const destroyTransform = (uuidStr: string) => {
 		const entity = transformEntities.get(uuidStr)
@@ -77,6 +99,81 @@ export function provideDrawService() {
 			if (world.has(entity)) entity.destroy()
 		}
 		drawingEntities.delete(uuidStr)
+	}
+
+	const getEntityByUuid = (uuid: string): Entity | undefined => {
+		return transformEntities.get(uuid) ?? drawingEntities.get(uuid)?.[0]
+	}
+
+	const uuidToBytes = (uuid: string): Uint8Array<ArrayBuffer> => {
+		return new Uint8Array(UuidTool.toBytes(uuid))
+	}
+
+	const applyRelationships = (entity: Entity, rels: RelationshipData[] | undefined) => {
+		const desired = rels ?? []
+
+		const currentTargets = entity.targetsFor(relations.SubEntityLink)
+		const desiredByUuid = new Map<string, RelationshipData>()
+		for (const rel of desired) {
+			const tgtUuid = UuidTool.toString([...rel.targetUuid])
+			desiredByUuid.set(tgtUuid, rel)
+		}
+
+		for (const target of currentTargets) {
+			const targetUuid = target.get(traits.UUID)
+			if (!targetUuid || !desiredByUuid.has(targetUuid)) {
+				entity.remove(relations.SubEntityLink(target))
+			}
+		}
+
+		for (const [tgtUuid, rel] of desiredByUuid) {
+			const targetEntity = getEntityByUuid(tgtUuid)
+			if (!targetEntity) {
+				const pending = pendingRelationships.get(tgtUuid) ?? []
+				pending.push({
+					sourceEntity: entity,
+					type: rel.type,
+					indexMapping: rel.indexMapping,
+				})
+				pendingRelationships.set(tgtUuid, pending)
+				continue
+			}
+
+			const existing = entity.get(relations.SubEntityLink(targetEntity))
+			if (
+				existing &&
+				existing.type === rel.type &&
+				existing.indexMapping === (rel.indexMapping ?? 'index')
+			) {
+				continue
+			}
+
+			entity.add(
+				relations.SubEntityLink(targetEntity, {
+					type: rel.type,
+					indexMapping: rel.indexMapping ?? 'index',
+				})
+			)
+		}
+	}
+
+	const flushPendingRelationships = (targetUuid: string) => {
+		const pending = pendingRelationships.get(targetUuid)
+		if (!pending) return
+		pendingRelationships.delete(targetUuid)
+
+		const targetEntity = getEntityByUuid(targetUuid)
+		if (!targetEntity) return
+
+		for (const { sourceEntity, type, indexMapping } of pending) {
+			if (!sourceEntity.isAlive()) continue
+			sourceEntity.add(
+				relations.SubEntityLink(targetEntity, {
+					type,
+					indexMapping: indexMapping ?? 'index',
+				})
+			)
+		}
 	}
 
 	const processEvent = (event: StreamEvent) => {
@@ -100,6 +197,9 @@ export function provideDrawService() {
 			if (!transformEntities.has(uuid)) {
 				const spawned = drawTransform(world, transform, traits.DrawServiceAPI)
 				transformEntities.set(uuid, spawned)
+				const parsed = metadataFromStruct(transform.metadata?.fields)
+				applyRelationships(spawned, parsed.relationships)
+				flushPendingRelationships(uuid)
 			}
 		} else if (changeType === EntityChangeType.REMOVED) {
 			destroyTransform(uuid)
@@ -107,9 +207,14 @@ export function provideDrawService() {
 			const existing = transformEntities.get(uuid)
 			if (existing) {
 				updateTransform(existing, transform)
+				const parsed = metadataFromStruct(transform.metadata?.fields)
+				applyRelationships(existing, parsed.relationships)
 			} else {
 				const spawned = drawTransform(world, transform, traits.DrawServiceAPI)
 				transformEntities.set(uuid, spawned)
+				const parsed = metadataFromStruct(transform.metadata?.fields)
+				applyRelationships(spawned, parsed.relationships)
+				flushPendingRelationships(uuid)
 			}
 		}
 	}
@@ -119,6 +224,10 @@ export function provideDrawService() {
 			if (!drawingEntities.has(uuid)) {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
 				drawingEntities.set(uuid, spawned)
+				if (spawned[0]) {
+					applyRelationships(spawned[0], drawing.metadata?.relationships)
+				}
+				flushPendingRelationships(uuid)
 			}
 		} else if (changeType === EntityChangeType.REMOVED) {
 			destroyDrawing(uuid)
@@ -127,9 +236,16 @@ export function provideDrawService() {
 			if (existing) {
 				const next = updateDrawing(world, existing, drawing, traits.DrawServiceAPI)
 				drawingEntities.set(uuid, next)
+				if (next[0]) {
+					applyRelationships(next[0], drawing.metadata?.relationships)
+				}
 			} else {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
 				drawingEntities.set(uuid, spawned)
+				if (spawned[0]) {
+					applyRelationships(spawned[0], drawing.metadata?.relationships)
+				}
+				flushPendingRelationships(uuid)
 			}
 		}
 	}
@@ -241,9 +357,42 @@ export function provideDrawService() {
 		}
 	}
 
+	const createRelationship = async (
+		sourceUuid: string,
+		targetUuid: string,
+		type: string,
+		indexMapping?: string
+	): Promise<void> => {
+		if (!activeClient) return
+		const rel: Partial<Relationship> = {
+			targetUuid: uuidToBytes(targetUuid),
+			type,
+		}
+		if (indexMapping !== undefined) {
+			rel.indexMapping = indexMapping
+		}
+		await activeClient.createRelationship(
+			new CreateRelationshipRequest({
+				sourceUuid: uuidToBytes(sourceUuid),
+				relationship: rel,
+			})
+		)
+	}
+
+	const deleteRelationship = async (sourceUuid: string, targetUuid: string): Promise<void> => {
+		if (!activeClient) return
+		await activeClient.deleteRelationship(
+			new DeleteRelationshipRequest({
+				sourceUuid: uuidToBytes(sourceUuid),
+				targetUuid: uuidToBytes(targetUuid),
+			})
+		)
+	}
+
 	$effect(() => {
 		if (!url) {
 			connectionStatus = ConnectionStatus.DISCONNECTED
+			activeClient = undefined
 			return
 		}
 
@@ -252,6 +401,7 @@ export function provideDrawService() {
 
 		const transport = createConnectTransport({ baseUrl: url })
 		const client = createClient(DrawService, transport)
+		activeClient = client
 
 		void streamEntityChanges(client, controller.signal)
 		void streamSceneChanges(client, controller.signal)
@@ -259,6 +409,7 @@ export function provideDrawService() {
 		return () => {
 			controller.abort()
 			connectionStatus = ConnectionStatus.DISCONNECTED
+			activeClient = undefined
 
 			for (const entity of transformEntities.values()) {
 				if (world.has(entity)) entity.destroy()
@@ -271,6 +422,7 @@ export function provideDrawService() {
 				}
 			}
 			drawingEntities.clear()
+			pendingRelationships.clear()
 		}
 	})
 
@@ -278,6 +430,9 @@ export function provideDrawService() {
 		get connectionStatus() {
 			return connectionStatus
 		},
+		createRelationship,
+		deleteRelationship,
+		getEntityByUuid,
 	})
 }
 

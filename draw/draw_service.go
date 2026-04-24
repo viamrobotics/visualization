@@ -7,6 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"bytes"
+
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
@@ -14,6 +16,7 @@ import (
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 var _ drawv1connect.DrawServiceHandler = (*DrawService)(nil)
@@ -352,6 +355,178 @@ func applyFieldMask(dst, src proto.Message, paths []string) {
 	}
 }
 
+func entityMetadataRelationships(e storedEntity) []*drawv1.Relationship {
+	switch e.kind {
+	case entityKindDrawing:
+		if e.drawing.Metadata == nil {
+			return nil
+		}
+		return e.drawing.Metadata.Relationships
+	case entityKindTransform:
+		return RelationshipsFromStruct(e.transform.Metadata)
+	}
+	return nil
+}
+
+func setEntityMetadataRelationships(e *storedEntity, rels []*drawv1.Relationship) {
+	switch e.kind {
+	case entityKindDrawing:
+		if e.drawing.Metadata == nil {
+			e.drawing.Metadata = &drawv1.Metadata{}
+		}
+		e.drawing.Metadata.Relationships = rels
+	case entityKindTransform:
+		if e.transform.Metadata == nil {
+			e.transform.Metadata = MetadataToStruct(NewMetadata())
+		}
+		SetRelationshipsOnStruct(e.transform.Metadata, rels)
+	}
+}
+
+func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
+	msg := &drawv1.StreamEntityChangesResponse{
+		ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
+		UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"metadata"}},
+	}
+	switch e.kind {
+	case entityKindTransform:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Transform{Transform: e.transform}
+	case entityKindDrawing:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.drawing}
+	}
+	return msg
+}
+
+// CreateRelationship creates or replaces a relationship from source to the target specified
+// in the relationship. The relationship is stored in the source entity's metadata.
+func (svc *DrawService) CreateRelationship(
+	_ context.Context,
+	req *connect.Request[drawv1.CreateRelationshipRequest],
+) (*connect.Response[drawv1.CreateRelationshipResponse], error) {
+	if len(req.Msg.GetSourceUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid is required"))
+	}
+	if req.Msg.GetRelationship() == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("relationship is required"))
+	}
+	if len(req.Msg.GetRelationship().GetTargetUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("relationship.target_uuid is required"))
+	}
+
+	sourceID, err := uuid.FromBytes(req.Msg.GetSourceUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source_uuid: %w", err))
+	}
+	targetID, err := uuid.FromBytes(req.Msg.GetRelationship().GetTargetUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid target_uuid: %w", err))
+	}
+	if sourceID == targetID {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid and target_uuid must differ"))
+	}
+
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	source, ok := svc.entities[sourceID]
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source entity %s not found", sourceID))
+	}
+	if _, ok := svc.entities[targetID]; !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("target entity %s not found", targetID))
+	}
+
+	rels := entityMetadataRelationships(source)
+	replaced := false
+	for i, r := range rels {
+		if bytes.Equal(r.TargetUuid, req.Msg.Relationship.TargetUuid) {
+			rels[i] = req.Msg.Relationship
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		rels = append(rels, req.Msg.Relationship)
+	}
+	setEntityMetadataRelationships(&source, rels)
+	svc.entities[sourceID] = source
+
+	svc.notifyEntityChange(entityChangeMsg(source))
+
+	return connect.NewResponse(&drawv1.CreateRelationshipResponse{}), nil
+}
+
+// DeleteRelationship removes the relationship from source to target_uuid.
+func (svc *DrawService) DeleteRelationship(
+	_ context.Context,
+	req *connect.Request[drawv1.DeleteRelationshipRequest],
+) (*connect.Response[drawv1.DeleteRelationshipResponse], error) {
+	if len(req.Msg.GetSourceUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid is required"))
+	}
+	if len(req.Msg.GetTargetUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("target_uuid is required"))
+	}
+
+	sourceID, err := uuid.FromBytes(req.Msg.GetSourceUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source_uuid: %w", err))
+	}
+
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	source, ok := svc.entities[sourceID]
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source entity %s not found", sourceID))
+	}
+
+	rels := entityMetadataRelationships(source)
+	found := false
+	filtered := make([]*drawv1.Relationship, 0, len(rels))
+	for _, r := range rels {
+		if bytes.Equal(r.TargetUuid, req.Msg.TargetUuid) {
+			found = true
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	if !found {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("relationship not found"))
+	}
+
+	setEntityMetadataRelationships(&source, filtered)
+	svc.entities[sourceID] = source
+
+	svc.notifyEntityChange(entityChangeMsg(source))
+
+	return connect.NewResponse(&drawv1.DeleteRelationshipResponse{}), nil
+}
+
+// cascadeRemoveRelationships removes any relationship pointing at removedID from all remaining
+// entities, emitting UPDATED events for each affected source.
+func (svc *DrawService) cascadeRemoveRelationships(removedID uuid.UUID) {
+	for id, entity := range svc.entities {
+		rels := entityMetadataRelationships(entity)
+		if len(rels) == 0 {
+			continue
+		}
+		filtered := make([]*drawv1.Relationship, 0, len(rels))
+		for _, r := range rels {
+			if bytes.Equal(r.TargetUuid, removedID[:]) {
+				continue
+			}
+			filtered = append(filtered, r)
+		}
+		if len(filtered) == len(rels) {
+			continue
+		}
+		setEntityMetadataRelationships(&entity, filtered)
+		svc.entities[id] = entity
+		svc.notifyEntityChange(entityChangeMsg(entity))
+	}
+}
+
 // RemoveEntity removes the entity with the given UUID from the scene.
 func (svc *DrawService) RemoveEntity(
 	_ context.Context,
@@ -390,6 +565,7 @@ func (svc *DrawService) RemoveEntity(
 		}
 	}
 	svc.notifyEntityChange(changeMsg)
+	svc.cascadeRemoveRelationships(id)
 
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
@@ -484,6 +660,7 @@ func (svc *DrawService) RemoveAllTransforms(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
+	removedIDs := make([]uuid.UUID, 0)
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindTransform {
@@ -491,10 +668,14 @@ func (svc *DrawService) RemoveAllTransforms(
 		}
 		delete(svc.entities, id)
 		count++
+		removedIDs = append(removedIDs, id)
 		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
 			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
 			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
 		})
+	}
+	for _, id := range removedIDs {
+		svc.cascadeRemoveRelationships(id)
 	}
 
 	return connect.NewResponse(&drawv1.RemoveAllTransformsResponse{Count: count}), nil
@@ -508,6 +689,7 @@ func (svc *DrawService) RemoveAllDrawings(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
+	removedIDs := make([]uuid.UUID, 0)
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindDrawing {
@@ -515,10 +697,14 @@ func (svc *DrawService) RemoveAllDrawings(
 		}
 		delete(svc.entities, id)
 		count++
+		removedIDs = append(removedIDs, id)
 		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
 			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
 			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: entity.drawing},
 		})
+	}
+	for _, id := range removedIDs {
+		svc.cascadeRemoveRelationships(id)
 	}
 
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil

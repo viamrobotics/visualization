@@ -3,6 +3,7 @@ import type { ConfigurableTrait, Entity, Trait, World } from 'koota'
 
 import { Vector3, Vector4 } from 'three'
 import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
+import { UuidTool } from 'uuid-tool'
 
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
@@ -52,9 +53,14 @@ type Options = {
 	removable?: boolean
 }
 
+const uuidBytesToString = (bytes: Uint8Array | undefined): string | undefined => {
+	if (!bytes || bytes.length === 0) return undefined
+	return UuidTool.toString([...bytes])
+}
+
 export const drawTransform = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Transform,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid }: Transform,
 	api: Trait,
 	options: Options = { removable: true }
 ): Entity => {
@@ -63,6 +69,9 @@ export const drawTransform = (
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
 	]
+
+	const uuidStr = uuidBytesToString(uuid)
+	if (uuidStr) entityTraits.push(traits.UUID(uuidStr))
 
 	if (physicalObject) {
 		entityTraits.push(traits.Geometry(physicalObject))
@@ -108,15 +117,20 @@ export const drawDrawing = (
 	api: Trait,
 	options: Options = { removable: true }
 ): Entity[] => {
-	const { referenceFrame, poseInObserverFrame, physicalObject, metadata } = drawing
+	const { referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') return drawModel(world, drawing, api, options)
+
+	const uuidTraits: ConfigurableTrait[] = []
+	const uuidStr = uuidBytesToString(uuid)
+	if (uuidStr) uuidTraits.push(traits.UUID(uuidStr))
 
 	const entity = world.spawn(
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
-		...traits.getParentTrait(poseInObserverFrame?.referenceFrame)
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame),
+		...uuidTraits
 	)
 
 	if (options.removable) entity.add(traits.Removable)
@@ -334,7 +348,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Drawing,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid }: Drawing,
 	api: Trait,
 	{ removable = true }: Options
 ): Entity[] => {
@@ -349,6 +363,9 @@ const drawModel = (
 		api,
 		...traits.getParentTrait(poseInObserverFrame?.referenceFrame),
 	]
+
+	const uuidStr = uuidBytesToString(uuid)
+	if (uuidStr) baseTraits.push(traits.UUID(uuidStr))
 
 	if (removable) baseTraits.push(traits.Removable)
 	if (metadata?.invisible) baseTraits.push(traits.Invisible)

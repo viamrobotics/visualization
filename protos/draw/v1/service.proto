@@ -4,6 +4,7 @@ package draw.v1;
 
 import "common/v1/common.proto";
 import "draw/v1/drawing.proto";
+import "draw/v1/metadata.proto";
 import "draw/v1/scene.proto";
 import "google/protobuf/field_mask.proto";
 
@@ -37,6 +38,12 @@ service DrawService {
 
   // Remove all entities from the scene.
   rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
+
+  // Create or replace a relationship from a source entity to a target entity.
+  rpc CreateRelationship(CreateRelationshipRequest) returns (CreateRelationshipResponse);
+
+  // Delete a relationship from a source entity to a target entity.
+  rpc DeleteRelationship(DeleteRelationshipRequest) returns (DeleteRelationshipResponse);
 }
 
 enum EntityChangeType {
@@ -113,3 +120,15 @@ message RemoveAllResponse {
   int32 transform_count = 1;
   int32 drawing_count = 2;
 }
+
+message CreateRelationshipRequest {
+  bytes source_uuid = 1;
+  Relationship relationship = 2;
+}
+message CreateRelationshipResponse {}
+
+message DeleteRelationshipRequest {
+  bytes source_uuid = 1;
+  bytes target_uuid = 2;
+}
+message DeleteRelationshipResponse {}
