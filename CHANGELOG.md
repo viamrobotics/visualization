@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.19.1
+
+### Patch Changes
+
+- bbe99fe: Fix world state point cloud rendering and updating
+
 ## 1.19.0
 
 ### Minor Changes
