@@ -68,14 +68,13 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[
 	const options = { removable: true, showAxesHelper: false }
 
 	for (const transform of snapshot.transforms) {
-		entities.push(drawTransform(world, transform, traits.SnapshotAPI, options))
+		const spawned = drawTransform(world, transform, traits.SnapshotAPI, options)
+		entities.push(spawned.entity)
 	}
 
 	for (const drawing of snapshot.drawings) {
-		const drawingEntities = drawDrawing(world, drawing, traits.SnapshotAPI, options)
-		for (const e of drawingEntities) {
-			entities.push(e)
-		}
+		const spawned = drawDrawing(world, drawing, traits.SnapshotAPI, options)
+		entities.push(...('entities' in spawned ? spawned.entities : [spawned.entity]))
 	}
 
 	return entities

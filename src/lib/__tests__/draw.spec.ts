@@ -26,6 +26,9 @@ import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
 
+const asEntities = (result: ReturnType<typeof drawDrawing>) =>
+	result.type === 'drawing' ? [result.entity] : result.entities
+
 const fakeUuidBytes = (n: number) => {
 	const bytes = new Uint8Array(16)
 	bytes[15] = n
@@ -49,7 +52,7 @@ describe('drawTransform', () => {
 			}),
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.get(traits.Name)).toBe('box-frame')
 		expect(entity.get(traits.Parent)).toBe('arm')
@@ -66,7 +69,7 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'orbit-frame' })
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.ReferenceFrame)).toBe(true)
 	})
@@ -82,7 +85,7 @@ describe('drawTransform', () => {
 			},
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
@@ -98,7 +101,7 @@ describe('drawTransform', () => {
 			},
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.Invisible)).toBe(true)
 	})
@@ -107,7 +110,7 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'arm' })
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI, { removable: false })
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
@@ -119,7 +122,7 @@ describe('drawTransform', () => {
 			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.Parent)).toBe(false)
 	})
@@ -145,7 +148,7 @@ describe('drawTransform', () => {
 			},
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
 		expect(entity.get(traits.Color)).toStrictEqual({ r: 0, g: 1, b: 0 })
@@ -173,7 +176,7 @@ describe('drawTransform', () => {
 			},
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 		await Promise.resolve()
 
 		expect(entity.has(traits.Colors)).toBe(false)
@@ -198,7 +201,7 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true }))
 
 		expect(entity.get(traits.Name)).toBe('line-1')
 		expect(entity.get(traits.Parent)).toBe('base')
@@ -221,7 +224,7 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false }))
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
@@ -239,7 +242,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ showAxesHelper: true }),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
@@ -257,7 +260,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ invisible: true }),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 
 		expect(entity.has(traits.Invisible)).toBe(true)
 	})
@@ -280,7 +283,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ invisible: true }),
 		})
 
-		const entities = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const entities = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 		const [rootEntity] = entities
 
 		expect(rootEntity.has(traits.Invisible)).toBe(true)
@@ -305,8 +308,8 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([255, 0, 0, 0, 255, 0]) }),
 		})
 
-		const [single] = drawDrawing(world, singleColorDrawing, traits.SnapshotAPI)
-		const [multi] = drawDrawing(world, multiColorDrawing, traits.SnapshotAPI)
+		const [single] = asEntities(drawDrawing(world, singleColorDrawing, traits.SnapshotAPI))
+		const [multi] = asEntities(drawDrawing(world, multiColorDrawing, traits.SnapshotAPI))
 
 		expect(single.get(traits.Color)).toStrictEqual({ r: 1, g: 0, b: 0 })
 		expect(multi.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
@@ -330,7 +333,7 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const entities = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const entities = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 		const [rootEntity, assetEntity] = entities
 
 		expect(entities).toHaveLength(2)
@@ -362,7 +365,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([0, 255, 0]) }),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 
 		expect(entity.get(traits.Center)).toStrictEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
@@ -383,7 +386,7 @@ describe('updateTransform', () => {
 			referenceFrame: 'child',
 			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
 		})
-		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, initial, traits.SnapshotAPI)
 		expect(entity.get(traits.Parent)).toBe('arm')
 
 		updateTransform(entity, {
@@ -401,7 +404,7 @@ describe('updateTransform', () => {
 			referenceFrame: 'child',
 			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
 		})
-		const entity = drawTransform(world, initial, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, initial, traits.SnapshotAPI)
 		expect(entity.has(traits.Parent)).toBe(false)
 
 		updateTransform(entity, {
@@ -569,7 +572,7 @@ describe('Uuid trait', () => {
 			uuid: fakeUuidBytes(1),
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.UUID)).toBe(true)
 		expect(entity.get(traits.UUID)).toBeTruthy()
@@ -579,7 +582,7 @@ describe('Uuid trait', () => {
 		world = createWorld()
 		const transform = new Transform({ referenceFrame: 'no-uuid' })
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.UUID)).toBe(false)
 	})
@@ -597,7 +600,7 @@ describe('Uuid trait', () => {
 			}),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 
 		expect(entity.has(traits.UUID)).toBe(true)
 		expect(entity.get(traits.UUID)).toBeTruthy()
@@ -625,7 +628,7 @@ describe('drawDrawing with metadata relationships', () => {
 			}),
 		})
 
-		const [entity] = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
 
 		expect(entity.has(traits.UUID)).toBe(true)
 	})
@@ -676,7 +679,7 @@ describe('drawTransform with struct relationships', () => {
 			},
 		})
 
-		const entity = drawTransform(world, transform, traits.SnapshotAPI)
+		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
 
 		expect(entity.has(traits.UUID)).toBe(true)
 	})

@@ -7,6 +7,7 @@ import { UuidTool } from 'uuid-tool'
 
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import type { Relationship } from '$lib/metadata'
 
 import {
 	createBufferGeometry,
@@ -49,21 +50,27 @@ const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 
-type Options = {
-	removable?: boolean
-}
-
-const uuidBytesToString = (bytes: Uint8Array | undefined): string | undefined => {
+export const uuidBytesToString = (bytes: Uint8Array | undefined): string | undefined => {
 	if (!bytes || bytes.length === 0) return undefined
 	return UuidTool.toString([...bytes])
+}
+
+export const uuidStringToBytes = (uuid: string): Uint8Array<ArrayBuffer> => {
+	const arr = new Uint8Array(16)
+	arr.set(UuidTool.toBytes(uuid))
+	return arr
+}
+
+interface DrawOptions {
+	removable?: boolean
 }
 
 export const drawTransform = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid }: Transform,
 	api: Trait,
-	options: Options = { removable: true }
-): Entity => {
+	{ removable = true }: DrawOptions = {}
+) => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
@@ -81,7 +88,7 @@ export const drawTransform = (
 		entityTraits.push(traits.ReferenceFrame)
 	}
 
-	if (options.removable) entityTraits.push(traits.Removable)
+	if (removable) entityTraits.push(traits.Removable)
 
 	entityTraits.push(...traits.getParentTrait(poseInObserverFrame?.referenceFrame))
 
@@ -108,18 +115,25 @@ export const drawTransform = (
 
 	if (pointCloud) parsePointCloud(world, entity, pointCloud, parsedMetadata)
 
-	return entity
+	return { entity, relationships: parsedMetadata.relationships }
 }
+
+type DrawingResult =
+	| { type: 'drawing'; entity: Entity; relationships: Relationship[] | undefined }
+	| { type: 'model'; entities: Entity[]; relationships: Relationship[] | undefined }
 
 export const drawDrawing = (
 	world: World,
 	drawing: Drawing,
 	api: Trait,
-	options: Options = { removable: true }
-): Entity[] => {
+	{ removable = true }: DrawOptions = {}
+): DrawingResult => {
 	const { referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid } = drawing
 
-	if (physicalObject?.geometryType?.case === 'model') return drawModel(world, drawing, api, options)
+	if (physicalObject?.geometryType?.case === 'model') {
+		const entities = drawModel(world, drawing, api, { removable })
+		return { type: 'model', entities, relationships: metadata?.relationships }
+	}
 
 	const uuidTraits: ConfigurableTrait[] = []
 	const uuidStr = uuidBytesToString(uuid)
@@ -133,20 +147,20 @@ export const drawDrawing = (
 		...uuidTraits
 	)
 
-	if (options.removable) entity.add(traits.Removable)
+	if (removable) entity.add(traits.Removable)
 	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	if (metadata?.invisible) entity.add(traits.Invisible)
 
 	applyShape(entity, drawing)
 
-	return [entity]
+	return { type: 'drawing', entity, relationships: metadata?.relationships }
 }
 
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
-	options: Options = { removable: true }
-): void => {
+	{ removable = true }: DrawOptions = {}
+) => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
 	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
@@ -161,19 +175,25 @@ export const updateTransform = (
 		}
 	}
 
-	updateMetadata(entity, metadataFromStruct(metadata?.fields), {
+	const parsedMetadata = metadataFromStruct(metadata?.fields)
+	updateMetadata(entity, parsedMetadata, {
 		pointCloud: isPointCloud(physicalObject?.geometryType),
 	})
 
-	if (options.removable) entity.add(traits.Removable)
-	if (!options.removable) entity.remove(traits.Removable)
+	if (removable) entity.add(traits.Removable)
+	if (!removable) entity.remove(traits.Removable)
+	return { entity, relationships: parsedMetadata.relationships }
+}
+
+interface MetadataOptions {
+	pointCloud?: boolean
 }
 
 export const updateMetadata = (
 	entity: Entity,
 	metadata: Metadata,
-	{ pointCloud = false }: { pointCloud?: boolean } = {}
-): void => {
+	{ pointCloud = false }: MetadataOptions = {}
+) => {
 	if (metadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
 	else entity.remove(traits.ShowAxesHelper)
 
@@ -194,24 +214,13 @@ export const updateMetadata = (
 
 export const updateDrawing = (
 	world: World,
-	entities: Entity[],
+	entity: Entity,
 	drawing: Drawing,
-	api: Trait,
-	options: Options = { removable: true }
-): Entity[] => {
-	const { poseInObserverFrame, physicalObject, metadata } = drawing
+	{ removable = true }: DrawOptions = {}
+): DrawingResult => {
+	const { poseInObserverFrame, metadata } = drawing
 
-	if (physicalObject?.geometryType?.case === 'model') {
-		for (const entity of entities) {
-			if (world.has(entity)) entity.destroy()
-		}
-		return drawDrawing(world, drawing, api, options)
-	}
-
-	if (entities.length === 0) return entities
-
-	const entity = entities[0]
-	if (!world.has(entity)) return entities
+	if (!world.has(entity)) return { type: 'drawing', entity, relationships: metadata?.relationships }
 
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
@@ -223,9 +232,26 @@ export const updateDrawing = (
 	if (metadata?.invisible) entity.add(traits.Invisible)
 	if (!metadata?.invisible) entity.remove(traits.Invisible)
 
+	if (removable) entity.add(traits.Removable)
+	if (!removable) entity.remove(traits.Removable)
+
 	updateShape(entity, drawing)
 
-	return entities
+	return { type: 'drawing', entity, relationships: metadata?.relationships }
+}
+
+export const updateModel = (
+	world: World,
+	entities: Entity[],
+	drawing: Drawing,
+	api: Trait,
+	{ removable = true }: DrawOptions = {}
+): DrawingResult => {
+	for (const entity of entities) {
+		if (world.has(entity)) entity.destroy()
+	}
+
+	return drawDrawing(world, drawing, api, { removable })
 }
 
 const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
@@ -350,7 +376,7 @@ const drawModel = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid }: Drawing,
 	api: Trait,
-	{ removable = true }: Options
+	{ removable = true }: DrawOptions
 ): Entity[] => {
 	const entities: Entity[] = []
 	const geometryType = physicalObject?.geometryType
@@ -573,7 +599,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 	}
 }
 
-export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
+const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
 		entity.add(traits.Colors(colors))
 	} else {
@@ -581,7 +607,7 @@ export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	}
 }
 
-export const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
+const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
 	if (isVertexColors(colors)) {
 		if (entity.has(traits.Colors)) entity.set(traits.Colors, colors)
 		else entity.add(traits.Colors(colors))

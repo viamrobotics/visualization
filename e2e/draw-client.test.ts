@@ -925,6 +925,13 @@ test('relationships', async ({ browser }) => {
 	await expect(page.getByText('rel-target (HoverLink)')).toBeVisible({ timeout: 10000 })
 	failedScreenshots.push(await takeScreenshot(page, 'RELATIONSHIPS_CREATED'))
 
+	await page.reload()
+	await expect(page.getByText('World', { exact: true })).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('rel-source', { exact: true })).toBeVisible({ timeout: 15000 })
+	await expect(page.getByText('rel-target', { exact: true })).toBeVisible({ timeout: 15000 })
+	await page.locator('[data-part="item"]').filter({ hasText: 'rel-source' }).click()
+	await expect(page.getByText('rel-target (HoverLink)')).toBeVisible({ timeout: 10000 })
+
 	execSync(
 		'go test -run ^TestRelationships$/DeleteRelationship github.com/viam-labs/motion-tools/client/api -count=1',
 		{ encoding: 'utf8' }

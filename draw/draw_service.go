@@ -383,6 +383,19 @@ func setEntityMetadataRelationships(e *storedEntity, rels []*drawv1.Relationship
 	}
 }
 
+func entityAddedMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
+	msg := &drawv1.StreamEntityChangesResponse{
+		ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED,
+	}
+	switch e.kind {
+	case entityKindTransform:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Transform{Transform: e.transform}
+	case entityKindDrawing:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.drawing}
+	}
+	return msg
+}
+
 func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
 	msg := &drawv1.StreamEntityChangesResponse{
 		ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
@@ -571,6 +584,7 @@ func (svc *DrawService) RemoveEntity(
 }
 
 // StreamEntityChanges streams entity change events (add/update/remove) to the caller until the context is cancelled.
+// On connect, all existing entities are sent as ADDED events before future changes are streamed.
 func (svc *DrawService) StreamEntityChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamEntityChangesRequest],
@@ -578,7 +592,17 @@ func (svc *DrawService) StreamEntityChanges(
 ) error {
 	svc.mu.Lock()
 	subID, ch := svc.addEntitySub()
+	snapshot := make([]*drawv1.StreamEntityChangesResponse, 0, len(svc.entities))
+	for _, entity := range svc.entities {
+		snapshot = append(snapshot, entityAddedMsg(entity))
+	}
 	svc.mu.Unlock()
+
+	for _, msg := range snapshot {
+		if err := stream.Send(msg); err != nil {
+			return err
+		}
+	}
 
 	defer func() {
 		svc.mu.Lock()

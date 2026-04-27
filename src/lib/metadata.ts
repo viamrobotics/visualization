@@ -3,7 +3,7 @@ import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 import {
 	ColorFormat,
 	Metadata as MetadataProto,
-	type Relationship,
+	type Relationship as RelationshipProto,
 } from '$lib/buf/draw/v1/metadata_pb'
 
 /** Metadata for a `Drawing` or `Transform`. Relationships default to empty. */
@@ -12,7 +12,7 @@ export type Metadata = Omit<PlainMessage<MetadataProto>, 'relationships'> & {
 }
 
 /** Plain-object representation of a Relationship, usable outside proto classes. */
-export type RelationshipData = PlainMessage<Relationship>
+export type Relationship = PlainMessage<RelationshipProto>
 
 /** Type guard that checks whether a string is a recognised metadata wire key. */
 export const isMetadataField = (key: string): boolean => {
