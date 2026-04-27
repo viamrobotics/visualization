@@ -18,7 +18,7 @@ func runDrawPointCloudTest(t *testing.T, filename string, label string, colors [
 	test.That(t, pc, test.ShouldNotBeNil)
 
 	uuid, err := DrawPointCloud(DrawPointCloudOptions{
-		Label:                label,
+		Name:                 label,
 		PointCloud:           pc,
 		Colors:               colors,
 		DownscalingThreshold: downscalingThreshold,
@@ -34,28 +34,28 @@ func TestDrawPointCloud(t *testing.T) {
 		pc1, err := pointcloud.NewFromFile("../data/octagon.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing1, err := DrawPointCloud(DrawPointCloudOptions{Label: "octagon", PointCloud: pc1})
+		drawing1, err := DrawPointCloud(DrawPointCloudOptions{Name: "octagon", PointCloud: pc1})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing1, test.ShouldNotBeNil)
 
 		pc2, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing2, err := DrawPointCloud(DrawPointCloudOptions{Label: "Zaghetto", PointCloud: pc2})
+		drawing2, err := DrawPointCloud(DrawPointCloudOptions{Name: "Zaghetto", PointCloud: pc2})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing2, test.ShouldNotBeNil)
 
 		pc3, err := pointcloud.NewFromFile("../data/simple.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing3, err := DrawPointCloud(DrawPointCloudOptions{Label: "simple", PointCloud: pc3})
+		drawing3, err := DrawPointCloud(DrawPointCloudOptions{Name: "simple", PointCloud: pc3})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing3, test.ShouldNotBeNil)
 
 		pc4, err := pointcloud.NewFromFile("../data/boat.pcd", pointcloud.BasicType)
 		test.That(t, err, test.ShouldBeNil)
 
-		drawing4, err := DrawPointCloud(DrawPointCloudOptions{Label: "boat", PointCloud: pc4})
+		drawing4, err := DrawPointCloud(DrawPointCloudOptions{Name: "boat", PointCloud: pc4})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawing4, test.ShouldNotBeNil)
 	})
@@ -144,7 +144,7 @@ func TestDrawPointCloudUpdating(t *testing.T) {
 		for i := range 100 {
 			uuid, err := DrawPointCloud(DrawPointCloudOptions{
 				ID:         "updating",
-				Label:      "DrawPointCloud updating",
+				Name:       "DrawPointCloud updating",
 				PointCloud: pc,
 				Colors:     []draw.Color{palette[i%len(palette)]},
 			})

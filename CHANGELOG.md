@@ -1,5 +1,62 @@
 # motion-tools
 
+## 1.19.1
+
+### Patch Changes
+
+- bbe99fe: Fix world state point cloud rendering and updating
+
+## 1.19.0
+
+### Minor Changes
+
+- 0ed1c07: Add chunking metadata and support in world state hook
+
+### Patch Changes
+
+- efbbaa8: Support bases in GetGeometries calls
+- c2ca03d: Add frame lifecycle for pending saves
+- 7c7d6e9: Fix unbounded logs
+- deaf54d: Consolidate `Parent` trait handling.
+- 7c7d6e9: Fix pcd memory leak
+- 7c7d6e9: Fix inverted visibility on arrow head mesh
+
+## 1.18.1
+
+### Patch Changes
+
+- 1f6e1fe: fix: use screen sapce for ellipse select
+
+## 1.18.0
+
+### Minor Changes
+
+- a2d2976: add interaction layer trait
+- bf53014: Add metadata to configure showing axes helper
+- cec6888: Add `Opacities` trait, update `Metadata` with `color_format` and `opacities`
+- a31c3bd: feat: refactor selection tool to use context instead of callbacks
+- bf53014: Add invisible metadata to allow spawning hidden entities
+
+### Patch Changes
+
+- 9856850: Rework metadata parsing to match API and simplify new field additions
+
+## 1.17.0
+
+### Minor Changes
+
+- e45aa3a: Add screen space trait
+- e45aa3a: Update lines to accept line colors and dot colors
+- e45aa3a: Add `useDrawService` hook
+
+### Patch Changes
+
+- e45aa3a: Fix issue with multiple meshes being rendered on entity add
+- e45aa3a: Add draw utility functions to spawn entities from draw APIs
+- cf5cd27: Run vitest in browser mode
+- e45aa3a: Fix GLTFs drawn by client not being destroyed
+- e9fcc6e: Add details snippet
+
 ## 1.16.0
 
 ### Minor Changes

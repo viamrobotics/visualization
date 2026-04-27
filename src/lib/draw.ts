@@ -7,16 +7,31 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { asFloat32Array, inMeters, isRgba, isVertexColors, STRIDE } from '$lib/buffer'
+import {
+	createBufferGeometry,
+	preAllocateBufferGeometry,
+	updateBufferGeometry,
+	writeBufferGeometryRange,
+} from '$lib/attribute'
+import {
+	asFloat32Array,
+	asOpacity,
+	asRGB,
+	inMeters,
+	isSingleColor,
+	isVertexColors,
+	STRIDE,
+} from '$lib/buffer'
 import { traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { parseMetadata } from '$lib/metadata'
+import { type Metadata, metadataFromStruct } from '$lib/metadata'
 import { createPose } from '$lib/transform'
 
+import { ColorFormat } from './buf/draw/v1/metadata_pb'
 import { isPointCloud } from './geometry'
 
 const vec3 = new Vector3()
+const rgb = { r: 0, g: 0, b: 0 }
 
 const DEFAULT_LINE_WIDTH = 5
 const DEFAULT_POINT_SIZE = 10
@@ -24,20 +39,16 @@ const DEFAULT_NURBS_DEGREE = 3
 const DEFAULT_NURBS_WEIGHT = 1
 const DEFAULT_ANIMATION_NAME = ''
 
-const DEFAULT_ARROWS_COLORS = new Uint8Array([0, 255, 0, 180])
-const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255, 180])
-const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139, 180])
-const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51, 180])
-const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255, 180])
+const DEFAULT_ARROWS_COLORS = new Uint8Array([0, 255, 0])
+const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255])
+const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139])
+const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51])
+const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255])
+const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 
-type TransformOptions = {
-	showAxesHelper?: boolean
-	removable?: boolean
-}
-
-type DrawingOptions = {
+type Options = {
 	removable?: boolean
 }
 
@@ -45,7 +56,7 @@ export const drawTransform = (
 	world: World,
 	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Transform,
 	api: Trait,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): Entity => {
 	const entityTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
@@ -62,21 +73,31 @@ export const drawTransform = (
 	}
 
 	if (options.removable) entityTraits.push(traits.Removable)
-	if (options.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entityTraits.push(traits.Parent(parent))
+	entityTraits.push(...traits.getParentTrait(poseInObserverFrame?.referenceFrame))
 
-	const { colors } = parseMetadata(metadata?.fields)
+	const parsedMetadata = metadataFromStruct(metadata?.fields)
+	if (parsedMetadata.showAxesHelper) entityTraits.push(traits.ShowAxesHelper)
+	if (parsedMetadata.invisible) entityTraits.push(traits.Invisible)
+
+	const { colors, opacities } = parsedMetadata
 	const pointCloud = isPointCloud(physicalObject?.geometryType)
 		? physicalObject.geometryType.value.pointCloud
 		: undefined
 
-	if (colors && !pointCloud) entityTraits.push(traits.Colors(colors))
+	if (colors && !pointCloud) {
+		if (isVertexColors(colors)) {
+			entityTraits.push(traits.Colors(colors))
+		} else {
+			entityTraits.push(traits.Color(asRGB(colors, rgb)))
+		}
+	}
+
+	entityTraits.push(traits.Opacity(asOpacity(opacities, DEFAULT_OPACITY)))
 
 	const entity = world.spawn(...entityTraits)
 
-	if (pointCloud) parsePointCloud(world, entity, pointCloud, colors)
+	if (pointCloud) parsePointCloud(world, entity, pointCloud, parsedMetadata)
 
 	return entity
 }
@@ -85,22 +106,22 @@ export const drawDrawing = (
 	world: World,
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
-	const { referenceFrame, poseInObserverFrame, physicalObject } = drawing
+	const { referenceFrame, poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') return drawModel(world, drawing, api, options)
 
 	const entity = world.spawn(
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
-		api
+		api,
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame)
 	)
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.add(traits.Parent(parent))
-
 	if (options.removable) entity.add(traits.Removable)
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (metadata?.invisible) entity.add(traits.Invisible)
 
 	applyShape(entity, drawing)
 
@@ -110,12 +131,11 @@ export const drawDrawing = (
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
-	options: TransformOptions = { removable: true, showAxesHelper: true }
+	options: Options = { removable: true }
 ): void => {
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
 
 	if (physicalObject) {
 		traits.updateGeometryTrait(entity, physicalObject)
@@ -127,20 +147,35 @@ export const updateTransform = (
 		}
 	}
 
-	const { colors } = parseMetadata(metadata?.fields)
-	if (colors) {
-		if (isPointCloud(physicalObject?.geometryType)) {
-			updateColors(entity, colors)
-		} else {
-			entity.add(traits.Colors(colors))
-		}
-	}
+	updateMetadata(entity, metadataFromStruct(metadata?.fields), {
+		pointCloud: isPointCloud(physicalObject?.geometryType),
+	})
 
 	if (options.removable) entity.add(traits.Removable)
 	if (!options.removable) entity.remove(traits.Removable)
+}
 
-	if (options.showAxesHelper) entity.add(traits.ShowAxesHelper)
-	if (!options.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+export const updateMetadata = (
+	entity: Entity,
+	metadata: Metadata,
+	{ pointCloud = false }: { pointCloud?: boolean } = {}
+): void => {
+	if (metadata.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	else entity.remove(traits.ShowAxesHelper)
+
+	if (metadata.invisible) entity.add(traits.Invisible)
+	else entity.remove(traits.Invisible)
+
+	const { colors, opacities } = metadata
+	if (colors) {
+		if (pointCloud) {
+			updatePointCloudColors(entity, metadata)
+		}
+		// Always set color traits so any subsequent async work can read them
+		setColorTraits(entity, colors)
+	}
+
+	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -148,9 +183,9 @@ export const updateDrawing = (
 	entities: Entity[],
 	drawing: Drawing,
 	api: Trait,
-	options: DrawingOptions = { removable: true }
+	options: Options = { removable: true }
 ): Entity[] => {
-	const { poseInObserverFrame, physicalObject } = drawing
+	const { poseInObserverFrame, physicalObject, metadata } = drawing
 
 	if (physicalObject?.geometryType?.case === 'model') {
 		for (const entity of entities) {
@@ -166,8 +201,13 @@ export const updateDrawing = (
 
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
-	const parent = poseInObserverFrame?.referenceFrame
-	if (parent && parent !== 'world') entity.set(traits.Parent, parent)
+	traits.setParentTrait(entity, poseInObserverFrame?.referenceFrame)
+
+	if (metadata?.showAxesHelper) entity.add(traits.ShowAxesHelper)
+	if (!metadata?.showAxesHelper) entity.remove(traits.ShowAxesHelper)
+
+	if (metadata?.invisible) entity.add(traits.Invisible)
+	if (!metadata?.invisible) entity.remove(traits.Invisible)
 
 	updateShape(entity, drawing)
 
@@ -175,15 +215,19 @@ export const updateDrawing = (
 }
 
 const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
-	const colors = metadata?.colors as Uint8Array<ArrayBuffer> | undefined
+	const colors = metadata?.colors
+	const opacities = metadata?.opacities
 	const geometryType = physicalObject?.geometryType
+	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
+
+	entity.add(traits.Opacity(opacity))
 
 	switch (geometryType?.case) {
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses)
 			entity.add(traits.Positions(poses))
 			entity.add(traits.Instances({ count: poses.length / STRIDE.ARROWS }))
-			entity.add(traits.Colors(colors ?? DEFAULT_ARROWS_COLORS))
+			addColorTraits(entity, colors ?? DEFAULT_ARROWS_COLORS)
 			entity.add(traits.Arrows({ headAtPose: true }))
 			break
 		}
@@ -194,32 +238,45 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
-			entity.add(traits.Colors(colors ?? DEFAULT_LINE_COLORS))
+			addColorTraits(entity, colors ?? DEFAULT_LINE_COLORS)
 
 			const lineWidth = geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH
 			entity.add(traits.LineWidth(lineWidth))
 			entity.add(traits.DotSize(geometryType.value.dotSize ?? lineWidth))
 			entity.add(traits.LinePositions(positions))
-
-			const dotColors = geometryType.value.dotColors as Uint8Array<ArrayBuffer> | undefined
-			entity.add(traits.DotColors(dotColors ?? DEFAULT_LINE_DOT_COLORS))
+			entity.add(traits.DotColors(geometryType.value.dotColors ?? DEFAULT_LINE_DOT_COLORS))
 			break
 		}
 
 		case 'points': {
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
+			const total = metadata?.chunks?.total
 
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
-			const pointColors = colors ?? DEFAULT_POINTS_COLORS
-			entity.add(traits.Colors(pointColors))
+			addColorTraits(entity, colors ?? DEFAULT_POINTS_COLORS)
 			entity.add(traits.PointSize(geometryType.value.pointSize ?? DEFAULT_POINT_SIZE))
-			entity.add(
-				traits.BufferGeometry(
-					createBufferGeometry(positions, isVertexColors(colors) ? colors : undefined)
-				)
-			)
+
+			const vertexColors = isVertexColors(colors) ? colors : undefined
+			const pointsMetadata = {
+				colors: vertexColors,
+				colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
+				opacities: metadata?.opacities,
+			}
+
+			if (total !== undefined && total > 0) {
+				const allocMetadata = {
+					...pointsMetadata,
+					colors: vertexColors ? new Uint8Array(0) : undefined,
+				}
+				const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, allocMetadata)
+				writeBufferGeometryRange(geometry, positions, 0, pointsMetadata)
+				entity.add(traits.BufferGeometry(geometry))
+			} else {
+				entity.add(traits.BufferGeometry(createBufferGeometry(positions, pointsMetadata)))
+			}
+
 			entity.add(traits.Points)
 			break
 		}
@@ -233,7 +290,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			} = geometryType.value
 
 			const knots = asFloat32Array(knotsBuffer).values().toArray()
-			const weights = weightsBuffer ? asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>) : []
+			const weights = weightsBuffer ? asFloat32Array(weightsBuffer) : []
 			const controlPointsArray = asFloat32Array(controlPointsBuffer)
 			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
 			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
@@ -260,7 +317,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
 
-			entity.add(traits.Colors(colors ?? DEFAULT_NURBS_COLORS))
+			addColorTraits(entity, colors ?? DEFAULT_NURBS_COLORS)
 			entity.add(traits.LineWidth(geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH))
 			entity.add(traits.LinePositions(points))
 			break
@@ -269,7 +326,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 		default: {
 			const center = physicalObject?.center
 			if (center) entity.add(traits.Center(center))
-			if (colors) entity.add(traits.Colors(colors))
+			if (colors) addColorTraits(entity, colors)
 			break
 		}
 	}
@@ -277,12 +334,11 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject }: Drawing,
+	{ referenceFrame, poseInObserverFrame, physicalObject, metadata }: Drawing,
 	api: Trait,
-	{ removable = true }: DrawingOptions
+	{ removable = true }: Options
 ): Entity[] => {
 	const entities: Entity[] = []
-	const parent = poseInObserverFrame?.referenceFrame
 	const geometryType = physicalObject?.geometryType
 
 	if (geometryType?.case !== 'model') return entities
@@ -291,10 +347,11 @@ const drawModel = (
 		traits.Name(referenceFrame),
 		traits.Pose(createPose(poseInObserverFrame?.pose)),
 		api,
+		...traits.getParentTrait(poseInObserverFrame?.referenceFrame),
 	]
 
-	if (parent && parent !== 'world') baseTraits.push(traits.Parent(parent))
 	if (removable) baseTraits.push(traits.Removable)
+	if (metadata?.invisible) baseTraits.push(traits.Invisible)
 
 	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
 
@@ -319,7 +376,7 @@ const drawModel = (
 		} else if (asset.content.value) {
 			subEntityTraits.push(
 				traits.GLTF({
-					source: { glb: asset.content.value as Uint8Array<ArrayBuffer> },
+					source: { glb: asset.content.value },
 					animationName: animationName ?? DEFAULT_ANIMATION_NAME,
 				})
 			)
@@ -335,7 +392,7 @@ const parsePointCloud = (
 	world: World,
 	entity: Entity,
 	pointCloud: Uint8Array,
-	colors?: Uint8Array<ArrayBuffer>
+	metadata: Metadata
 ): void => {
 	parsePcdInWorker(new Uint8Array(pointCloud)).then((pointcloud) => {
 		if (!world.has(entity)) {
@@ -343,43 +400,56 @@ const parsePointCloud = (
 			return
 		}
 
+		const { colors, colorFormat } = metadata
 		const numPoints = pointcloud.positions.length / STRIDE.POSITIONS
-		if (!isVertexColors(colors)) entity.add(traits.Colors(colors))
+		if (colors && isSingleColor(colors)) entity.add(traits.Color(asRGB(colors, rgb)))
 
 		let vertexColors = pointcloud.colors
 		if (colors && colors.length > 0) vertexColors = parseColors(colors, numPoints)
 
-		const geometry = createBufferGeometry(pointcloud.positions, vertexColors)
+		const total = metadata.chunks?.total
+		const chunkMetadata = { colors: vertexColors ?? undefined, colorFormat }
+
+		let geometry
+		if (total !== undefined && total > numPoints) {
+			geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+				...chunkMetadata,
+				colors: vertexColors ? new Uint8Array(0) : undefined,
+			})
+			writeBufferGeometryRange(geometry, pointcloud.positions, 0, chunkMetadata)
+		} else {
+			geometry = createBufferGeometry(pointcloud.positions, chunkMetadata)
+		}
+
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
 	})
 }
 
-const updateColors = (entity: Entity, colors: Uint8Array<ArrayBuffer>): void => {
+const updatePointCloudColors = (entity: Entity, metadata: Metadata): void => {
 	const buffer = entity.get(traits.BufferGeometry)
 	if (!buffer) {
-		entity.add(traits.Colors(colors))
+		if (metadata.colors) addColorTraits(entity, metadata.colors)
 		return
 	}
 
 	const position = buffer.getAttribute('position')
 	const count = position?.count ?? 0
 	const array = position?.array as Float32Array
-	updateBufferGeometry(buffer, array, parseColors(colors, count))
+	updateBufferGeometry(buffer, array, {
+		colors: parseColors(metadata.colors, count),
+		colorFormat: metadata.colorFormat,
+	})
 }
 
-const parseColors = (
-	from: Uint8Array<ArrayBuffer> | undefined,
-	count: number
-): Uint8Array<ArrayBuffer> => {
-	const colors = from ?? new Uint8Array([1, 0, 0])
+const parseColors = (from: Uint8Array | undefined, count: number): Uint8Array => {
+	const colors = from ?? new Uint8Array([255, 0, 0])
 	if (isVertexColors(colors)) return colors
 
-	const stride = isRgba(colors) ? STRIDE.COLORS_RGBA : STRIDE.COLORS_RGB
-	const expanded = new Uint8Array(count * stride)
+	const expanded = new Uint8Array(count * STRIDE.COLORS_RGB)
 	for (let i = 0; i < count; i++) {
-		for (let c = 0; c < stride; c++) {
-			expanded[i * stride + c] = colors[c]!
+		for (let c = 0; c < STRIDE.COLORS_RGB; c++) {
+			expanded[i * STRIDE.COLORS_RGB + c] = colors[c]!
 		}
 	}
 
@@ -387,14 +457,16 @@ const parseColors = (
 }
 
 const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
-	const colors = metadata?.colors as Uint8Array<ArrayBuffer> | undefined
 	const geometryType = physicalObject?.geometryType
+
+	entity.set(traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
+
 	switch (geometryType?.case) {
 		case 'arrows': {
 			const poses = asFloat32Array(geometryType.value.poses, inMeters)
 			entity.set(traits.Positions, poses)
 			entity.set(traits.Instances, { count: poses.length / STRIDE.ARROWS })
-			entity.set(traits.Colors, colors ?? DEFAULT_ARROWS_COLORS)
+			setColorTraits(entity, metadata?.colors ?? DEFAULT_ARROWS_COLORS)
 			break
 		}
 
@@ -404,14 +476,14 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)
 
-			entity.set(traits.Colors, colors ?? DEFAULT_LINE_COLORS)
+			setColorTraits(entity, metadata?.colors ?? DEFAULT_LINE_COLORS)
 
 			const lineWidth = geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH
 			entity.set(traits.LineWidth, lineWidth)
 			entity.set(traits.DotSize, geometryType.value.dotSize ?? lineWidth)
 			entity.set(traits.LinePositions, positions)
 
-			const dotColors = geometryType.value.dotColors as Uint8Array<ArrayBuffer> | undefined
+			const dotColors = geometryType.value.dotColors
 			entity.set(traits.DotColors, dotColors ?? DEFAULT_LINE_DOT_COLORS)
 			break
 		}
@@ -422,15 +494,19 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)
 
-			entity.set(traits.Colors, colors ?? DEFAULT_POINTS_COLORS)
+			setColorTraits(entity, metadata?.colors ?? DEFAULT_POINTS_COLORS)
 			entity.set(traits.PointSize, geometryType.value.pointSize ?? DEFAULT_POINT_SIZE)
 
-			const vertexColors = isVertexColors(colors) ? colors : undefined
+			const vertexColors = isVertexColors(metadata?.colors) ? metadata?.colors : undefined
+			const pointsMetadata: Metadata = {
+				colors: vertexColors,
+				colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
+			}
 			const buffer = entity.get(traits.BufferGeometry)
 			if (buffer) {
-				updateBufferGeometry(buffer, positions, vertexColors)
+				updateBufferGeometry(buffer, positions, pointsMetadata)
 			} else {
-				entity.add(traits.BufferGeometry(createBufferGeometry(positions, vertexColors)))
+				entity.add(traits.BufferGeometry(createBufferGeometry(positions, pointsMetadata)))
 				entity.add(traits.Points)
 			}
 			break
@@ -445,9 +521,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			} = geometryType.value
 
 			const knots = [...asFloat32Array(knotsBuffer)]
-			const weights = weightsBuffer
-				? [...asFloat32Array(weightsBuffer as Uint8Array<ArrayBuffer>)]
-				: []
+			const weights = weightsBuffer ? [...asFloat32Array(weightsBuffer)] : []
 			const controlPointsArray = [...asFloat32Array(controlPointsBuffer)]
 			const numControlPoints = controlPointsArray.length / STRIDE.NURBS_CONTROL_POINTS
 			const controlPoints: Vector4[] = Array.from({ length: numControlPoints })
@@ -474,10 +548,31 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const center = physicalObject?.center
 			if (center) entity.set(traits.Center, center)
 
-			entity.set(traits.Colors, colors ?? DEFAULT_NURBS_COLORS)
+			setColorTraits(entity, metadata?.colors ?? DEFAULT_NURBS_COLORS)
 			entity.set(traits.LineWidth, geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH)
 			entity.set(traits.LinePositions, points)
 			break
 		}
+	}
+}
+
+export const addColorTraits = (entity: Entity, colors: Uint8Array): void => {
+	if (isVertexColors(colors)) {
+		entity.add(traits.Colors(colors))
+	} else {
+		entity.add(traits.Color(asRGB(colors, rgb)))
+	}
+}
+
+export const setColorTraits = (entity: Entity, colors: Uint8Array): void => {
+	if (isVertexColors(colors)) {
+		if (entity.has(traits.Colors)) entity.set(traits.Colors, colors)
+		else entity.add(traits.Colors(colors))
+		entity.remove(traits.Color)
+	} else {
+		const color = asRGB(colors, rgb)
+		if (entity.has(traits.Color)) entity.set(traits.Color, color)
+		else entity.add(traits.Color(color))
+		entity.remove(traits.Colors)
 	}
 }

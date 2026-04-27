@@ -11,8 +11,8 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 ## Index
 
 - [Variables](<#variables>)
-- [func MetadataToStruct\(metadata Metadata\) \(\*structpb.Struct, error\)](<#MetadataToStruct>)
-- [func NewTransform\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\) \*commonv1.Transform](<#NewTransform>)
+- [func MetadataToStruct\(metadata Metadata\) \*structpb.Struct](<#MetadataToStruct>)
+- [func NewTransform\(config \*DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption\) \*commonv1.Transform](<#NewTransform>)
 - [type Arrows](<#Arrows>)
   - [func NewArrows\(poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) \(\*Arrows, error\)](<#NewArrows>)
   - [func \(arrows Arrows\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Arrows.Draw>)
@@ -43,6 +43,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func WithSingleArrowColor\(color Color\) DrawArrowsOption](<#WithSingleArrowColor>)
 - [type DrawConfig](<#DrawConfig>)
   - [func NewDrawConfig\(name string, options ...DrawableOption\) \*DrawConfig](<#NewDrawConfig>)
+  - [func \(c \*DrawConfig\) BuildMetadata\(opts ...DrawMetadataOption\) Metadata](<#DrawConfig.BuildMetadata>)
 - [type DrawFrameSystemOption](<#DrawFrameSystemOption>)
   - [func WithFrameSystemColor\(frameName string, color Color\) DrawFrameSystemOption](<#WithFrameSystemColor>)
   - [func WithFrameSystemColors\(colors map\[string\]Color\) DrawFrameSystemOption](<#WithFrameSystemColors>)
@@ -66,6 +67,11 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func WithPerLineColors\(colors ...Color\) DrawLineOption](<#WithPerLineColors>)
   - [func WithSingleDotColor\(color Color\) DrawLineOption](<#WithSingleDotColor>)
   - [func WithSingleLineColor\(color Color\) DrawLineOption](<#WithSingleLineColor>)
+- [type DrawMetadataOption](<#DrawMetadataOption>)
+  - [func MetadataOptionsFromProto\(md \*drawv1.Metadata\) \[\]DrawMetadataOption](<#MetadataOptionsFromProto>)
+  - [func WithMetadataAxesHelper\(show bool\) DrawMetadataOption](<#WithMetadataAxesHelper>)
+  - [func WithMetadataColors\(colors ...Color\) DrawMetadataOption](<#WithMetadataColors>)
+  - [func WithMetadataInvisible\(invisible bool\) DrawMetadataOption](<#WithMetadataInvisible>)
 - [type DrawModelAssetOption](<#DrawModelAssetOption>)
   - [func WithModelAssetSizeBytes\(sizeBytes uint64\) DrawModelAssetOption](<#WithModelAssetSizeBytes>)
 - [type DrawModelOption](<#DrawModelOption>)
@@ -99,13 +105,15 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func \(svc \*DrawService\) StreamSceneChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamSceneChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamSceneChangesResponse\]\) error](<#DrawService.StreamSceneChanges>)
   - [func \(svc \*DrawService\) UpdateEntity\(\_ context.Context, req \*connect.Request\[drawv1.UpdateEntityRequest\]\) \(\*connect.Response\[drawv1.UpdateEntityResponse\], error\)](<#DrawService.UpdateEntity>)
 - [type DrawableOption](<#DrawableOption>)
+  - [func WithAxesHelper\(show bool\) DrawableOption](<#WithAxesHelper>)
   - [func WithCenter\(center spatialmath.Pose\) DrawableOption](<#WithCenter>)
   - [func WithID\(id string\) DrawableOption](<#WithID>)
+  - [func WithInvisible\(invisible bool\) DrawableOption](<#WithInvisible>)
   - [func WithParent\(parent string\) DrawableOption](<#WithParent>)
   - [func WithPose\(pose spatialmath.Pose\) DrawableOption](<#WithPose>)
   - [func WithUUID\(id \[\]byte\) DrawableOption](<#WithUUID>)
 - [type Drawing](<#Drawing>)
-  - [func NewDrawing\(uuid \[\]byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata\) \*Drawing](<#NewDrawing>)
+  - [func NewDrawing\(config \*DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption\) \*Drawing](<#NewDrawing>)
   - [func \(drawing Drawing\) ToProto\(\) \*drawv1.Drawing](<#Drawing.ToProto>)
 - [type DrawnFrameSystem](<#DrawnFrameSystem>)
   - [func NewDrawnFrameSystem\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, options ...DrawFrameSystemOption\) \*DrawnFrameSystem](<#NewDrawnFrameSystem>)
@@ -128,9 +136,11 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func NewLine\(positions \[\]r3.Vector, options ...DrawLineOption\) \(\*Line, error\)](<#NewLine>)
   - [func \(line Line\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Line.Draw>)
 - [type Metadata](<#Metadata>)
-  - [func NewMetadata\(options ...drawMetadataOption\) Metadata](<#NewMetadata>)
+  - [func NewMetadata\(options ...DrawMetadataOption\) Metadata](<#NewMetadata>)
   - [func StructToMetadata\(structPb \*structpb.Struct\) \(Metadata, error\)](<#StructToMetadata>)
   - [func \(metadata \*Metadata\) SetColors\(colors \[\]Color\)](<#Metadata.SetColors>)
+  - [func \(metadata \*Metadata\) SetInvisible\(invisible bool\)](<#Metadata.SetInvisible>)
+  - [func \(metadata \*Metadata\) SetShowAxesHelper\(show bool\)](<#Metadata.SetShowAxesHelper>)
   - [func \(metadata Metadata\) ToProto\(\) \*drawv1.Metadata](<#Metadata.ToProto>)
 - [type Model](<#Model>)
   - [func NewModel\(options ...DrawModelOption\) \(\*Model, error\)](<#NewModel>)
@@ -157,7 +167,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [type Snapshot](<#Snapshot>)
   - [func NewSnapshot\(sceneOptions ...sceneMetadataOption\) \*Snapshot](<#NewSnapshot>)
   - [func \(snapshot \*Snapshot\) DrawArrows\(name string, parent string, pose spatialmath.Pose, poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) error](<#Snapshot.DrawArrows>)
-  - [func \(snapshot \*Snapshot\) DrawFrame\(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*structpb.Struct\)](<#Snapshot.DrawFrame>)
+  - [func \(snapshot \*Snapshot\) DrawFrame\(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata \*drawv1.Metadata\)](<#Snapshot.DrawFrame>)
   - [func \(snapshot \*Snapshot\) DrawFrameSystemGeometries\(frameSystem \*referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map\[string\]Color\) error](<#Snapshot.DrawFrameSystemGeometries>)
   - [func \(snapshot \*Snapshot\) DrawGeometry\(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color\) error](<#Snapshot.DrawGeometry>)
   - [func \(snapshot \*Snapshot\) DrawLine\(name string, parent string, pose spatialmath.Pose, points \[\]r3.Vector, options ...DrawLineOption\) error](<#Snapshot.DrawLine>)
@@ -256,16 +266,16 @@ var (
 )
 ```
 
-<a name="DefaultAlpha"></a>DefaultAlpha is the default alpha value \(fully opaque\).
-
-```go
-var DefaultAlpha = uint8(255)
-```
-
 <a name="DefaultFrameColor"></a>
 
 ```go
 var DefaultFrameColor = NewColor(WithName("red"))
+```
+
+<a name="DefaultOpacity"></a>DefaultOpacity is the default alpha value \(fully opaque\).
+
+```go
+var DefaultOpacity = uint8(255)
 ```
 
 <a name="DefaultPointSize"></a>
@@ -278,22 +288,22 @@ var (
 ```
 
 <a name="MetadataToStruct"></a>
-## func [MetadataToStruct](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L39>)
+## func [MetadataToStruct](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L33>)
 
 ```go
-func MetadataToStruct(metadata Metadata) (*structpb.Struct, error)
+func MetadataToStruct(metadata Metadata) *structpb.Struct
 ```
 
-MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable for embedding in transforms. Colors are base64\-encoded for efficient transmission. Returns an error if the metadata cannot be converted.
+MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable for embedding in transforms.
 
 <a name="NewTransform"></a>
-## func [NewTransform](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L13-L20>)
+## func [NewTransform](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L13>)
 
 ```go
-func NewTransform(uuid []byte, name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *structpb.Struct) *commonv1.Transform
+func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption) *commonv1.Transform
 ```
 
-NewTransform creates a Viam Transform representing an object in 3D space. The transform will have a UUID generated from the name and parent unless a UUID option is provided.
+NewTransform creates a Viam Transform representing an object in 3D space.
 
 <a name="Arrows"></a>
 ## type [Arrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L11-L18>)
@@ -582,28 +592,39 @@ func WithSingleArrowColor(color Color) DrawArrowsOption
 WithSingleArrowColor sets the color for all arrows.
 
 <a name="DrawConfig"></a>
-## type [DrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L17-L23>)
+## type [DrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L17-L25>)
 
 DrawConfig holds the resolved configuration for a Draw call: the name used as the reference frame \(and geometry/shape label\), the parent frame, the pose of the Drawing/Transform in the parent frame, the local center of the Shape, and a stable UUID.
 
 ```go
 type DrawConfig struct {
-    UUID   []byte
-    Name   string
-    Parent string
-    Pose   spatialmath.Pose
-    Center spatialmath.Pose
+    UUID           []byte
+    Name           string
+    Parent         string
+    Pose           spatialmath.Pose
+    Center         spatialmath.Pose
+    ShowAxesHelper bool
+    Invisible      bool
 }
 ```
 
 <a name="NewDrawConfig"></a>
-### func [NewDrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L92>)
+### func [NewDrawConfig](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L124>)
 
 ```go
 func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig
 ```
 
 NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent after options are applied unless explicitly set via WithUUID or WithID.
+
+<a name="DrawConfig.BuildMetadata"></a>
+### func \(\*DrawConfig\) [BuildMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L118>)
+
+```go
+func (c *DrawConfig) BuildMetadata(opts ...DrawMetadataOption) Metadata
+```
+
+BuildMetadata combines universal metadata options with the given type\-specific options.
 
 <a name="DrawFrameSystemOption"></a>
 ## type [DrawFrameSystemOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/frame_system.go#L34>)
@@ -811,6 +832,51 @@ func WithSingleLineColor(color Color) DrawLineOption
 ```
 
 WithSingleLineColor creates a line option that sets a single color for all line segments.
+
+<a name="DrawMetadataOption"></a>
+## type [DrawMetadataOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L273>)
+
+DrawMetadataOption is a function that configures a draw metadata configuration.
+
+```go
+type DrawMetadataOption func(*drawMetadataConfig)
+```
+
+<a name="MetadataOptionsFromProto"></a>
+### func [MetadataOptionsFromProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L303>)
+
+```go
+func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption
+```
+
+MetadataOptionsFromProto converts a \*drawv1.Metadata proto into a slice of DrawMetadataOption. Nil input returns nil options. Fields that are unset in the proto are skipped.
+
+<a name="WithMetadataAxesHelper"></a>
+### func [WithMetadataAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L288>)
+
+```go
+func WithMetadataAxesHelper(show bool) DrawMetadataOption
+```
+
+WithMetadataAxesHelper creates a metadata option that controls axes helper visibility.
+
+<a name="WithMetadataColors"></a>
+### func [WithMetadataColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L283>)
+
+```go
+func WithMetadataColors(colors ...Color) DrawMetadataOption
+```
+
+WithMetadataColors creates a metadata option that sets the color list for the metadata.
+
+<a name="WithMetadataInvisible"></a>
+### func [WithMetadataInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L295>)
+
+```go
+func WithMetadataInvisible(invisible bool) DrawMetadataOption
+```
+
+WithMetadataInvisible creates a metadata option that controls whether the entity is invisible by default.
 
 <a name="DrawModelAssetOption"></a>
 ## type [DrawModelAssetOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L31>)
@@ -1103,7 +1169,7 @@ func (svc *DrawService) UpdateEntity(_ context.Context, req *connect.Request[dra
 UpdateEntity replaces or partially updates an existing entity identified by UUID.
 
 <a name="DrawableOption"></a>
-## type [DrawableOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L52>)
+## type [DrawableOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L56>)
 
 DrawableOption is a function that configures a drawable.
 
@@ -1111,8 +1177,17 @@ DrawableOption is a function that configures a drawable.
 type DrawableOption func(*drawableConfig)
 ```
 
+<a name="WithAxesHelper"></a>
+### func [WithAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L95>)
+
+```go
+func WithAxesHelper(show bool) DrawableOption
+```
+
+WithAxesHelper controls whether the axes helper \(RGB XYZ indicator\) is shown on the entity.
+
 <a name="WithCenter"></a>
-### func [WithCenter](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L69>)
+### func [WithCenter](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L73>)
 
 ```go
 func WithCenter(center spatialmath.Pose) DrawableOption
@@ -1121,7 +1196,7 @@ func WithCenter(center spatialmath.Pose) DrawableOption
 WithCenter sets the local center of the Shape within the Drawing's own frame.
 
 <a name="WithID"></a>
-### func [WithID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L83>)
+### func [WithID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L87>)
 
 ```go
 func WithID(id string) DrawableOption
@@ -1129,8 +1204,17 @@ func WithID(id string) DrawableOption
 
 WithID overrides the auto\-generated UUID by deriving one deterministically from the given string.
 
+<a name="WithInvisible"></a>
+### func [WithInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L102>)
+
+```go
+func WithInvisible(invisible bool) DrawableOption
+```
+
+WithInvisible controls whether the entity is invisible \(not rendered\) by default.
+
 <a name="WithParent"></a>
-### func [WithParent](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L55>)
+### func [WithParent](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L59>)
 
 ```go
 func WithParent(parent string) DrawableOption
@@ -1139,7 +1223,7 @@ func WithParent(parent string) DrawableOption
 WithParent sets the parent reference frame for the Drawing or Transform.
 
 <a name="WithPose"></a>
-### func [WithPose](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L62>)
+### func [WithPose](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L66>)
 
 ```go
 func WithPose(pose spatialmath.Pose) DrawableOption
@@ -1148,7 +1232,7 @@ func WithPose(pose spatialmath.Pose) DrawableOption
 WithPose sets the pose of the Drawing or Transform in the parent reference frame.
 
 <a name="WithUUID"></a>
-### func [WithUUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L76>)
+### func [WithUUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L80>)
 
 ```go
 func WithUUID(id []byte) DrawableOption
@@ -1173,16 +1257,16 @@ type Drawing struct {
 ```
 
 <a name="NewDrawing"></a>
-### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L222-L229>)
+### func [NewDrawing](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L223>)
 
 ```go
-func NewDrawing(uuid []byte, name string, parent string, pose spatialmath.Pose, shape Shape, metadata Metadata) *Drawing
+func NewDrawing(config *DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption) *Drawing
 ```
 
-NewDrawing creates a new Drawing representing a non\-physical object in 3D space.
+NewDrawing creates a new Drawing representing a non\-physical object in 3D space. Metadata is built from the config's universal fields plus any additional options.
 
 <a name="Drawing.ToProto"></a>
-### func \(Drawing\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L241>)
+### func \(Drawing\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L235>)
 
 ```go
 func (drawing Drawing) ToProto() *drawv1.Drawing
@@ -1425,36 +1509,38 @@ func (line Line) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Line object.
 
 <a name="Metadata"></a>
-## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L253-L255>)
+## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L247-L251>)
 
 Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 
 ```go
 type Metadata struct {
-    Colors []Color
+    Colors         []Color
+    ShowAxesHelper bool
+    Invisible      bool
 }
 ```
 
 <a name="NewMetadata"></a>
-### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L282>)
+### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L321>)
 
 ```go
-func NewMetadata(options ...drawMetadataOption) Metadata
+func NewMetadata(options ...DrawMetadataOption) Metadata
 ```
 
 NewMetadata creates a new Metadata with the given options. If no options are provided, returns empty metadata.
 
 <a name="StructToMetadata"></a>
-### func [StructToMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L47>)
+### func [StructToMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L51>)
 
 ```go
 func StructToMetadata(structPb *structpb.Struct) (Metadata, error)
 ```
 
-
+StructToMetadata converts a Protocol Buffer structpb.Struct to a Metadata object.
 
 <a name="Metadata.SetColors"></a>
-### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L257>)
+### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L253>)
 
 ```go
 func (metadata *Metadata) SetColors(colors []Color)
@@ -1462,8 +1548,26 @@ func (metadata *Metadata) SetColors(colors []Color)
 
 
 
+<a name="Metadata.SetInvisible"></a>
+### func \(\*Metadata\) [SetInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L261>)
+
+```go
+func (metadata *Metadata) SetInvisible(invisible bool)
+```
+
+
+
+<a name="Metadata.SetShowAxesHelper"></a>
+### func \(\*Metadata\) [SetShowAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L257>)
+
+```go
+func (metadata *Metadata) SetShowAxesHelper(show bool)
+```
+
+
+
 <a name="Metadata.ToProto"></a>
-### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L292>)
+### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L331>)
 
 ```go
 func (metadata Metadata) ToProto() *drawv1.Metadata
@@ -1748,7 +1852,7 @@ ToProto converts the shape to a drawv1.Shape message
 Returns the drawv1.Shape message
 
 <a name="Snapshot"></a>
-## type [Snapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L21-L26>)
+## type [Snapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L20-L25>)
 
 Snapshot represents a snapshot of a world state
 
@@ -1759,7 +1863,7 @@ type Snapshot struct {
 ```
 
 <a name="NewSnapshot"></a>
-### func [NewSnapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L97>)
+### func [NewSnapshot](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L96>)
 
 ```go
 func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot
@@ -1768,7 +1872,7 @@ func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot
 NewSnapshot creates a new snapshot with a unique UUID
 
 <a name="Snapshot.DrawArrows"></a>
-### func \(\*Snapshot\) [DrawArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L215-L221>)
+### func \(\*Snapshot\) [DrawArrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L214-L220>)
 
 ```go
 func (snapshot *Snapshot) DrawArrows(name string, parent string, pose spatialmath.Pose, poses []spatialmath.Pose, options ...DrawArrowsOption) error
@@ -1777,16 +1881,16 @@ func (snapshot *Snapshot) DrawArrows(name string, parent string, pose spatialmat
 DrawArrows draws arrows to the snapshot Returns an error if the arrows cannot be drawn.
 
 <a name="Snapshot.DrawFrame"></a>
-### func \(\*Snapshot\) [DrawFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L179-L185>)
+### func \(\*Snapshot\) [DrawFrame](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L177-L183>)
 
 ```go
-func (snapshot *Snapshot) DrawFrame(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *structpb.Struct)
+func (snapshot *Snapshot) DrawFrame(name string, parent string, pose spatialmath.Pose, geometry spatialmath.Geometry, metadata *drawv1.Metadata)
 ```
 
-DrawFrame draws a frame transform to the snapshot Returns an error if the frame transform cannot be drawn.
+DrawFrame draws a frame transform to the snapshot.
 
 <a name="Snapshot.DrawFrameSystemGeometries"></a>
-### func \(\*Snapshot\) [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L162-L166>)
+### func \(\*Snapshot\) [DrawFrameSystemGeometries](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L161-L165>)
 
 ```go
 func (snapshot *Snapshot) DrawFrameSystemGeometries(frameSystem *referenceframe.FrameSystem, inputs referenceframe.FrameSystemInputs, colors map[string]Color) error
@@ -1795,7 +1899,7 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(frameSystem *referenceframe.
 DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot. Returns an error if the frame system geometries cannot be drawn.
 
 <a name="Snapshot.DrawGeometry"></a>
-### func \(\*Snapshot\) [DrawGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L193-L198>)
+### func \(\*Snapshot\) [DrawGeometry](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L192-L197>)
 
 ```go
 func (snapshot *Snapshot) DrawGeometry(geometry spatialmath.Geometry, pose spatialmath.Pose, parent string, color Color) error
@@ -1804,7 +1908,7 @@ func (snapshot *Snapshot) DrawGeometry(geometry spatialmath.Geometry, pose spati
 DrawGeometry draws a geometry to the snapshot Returns an error if the geometry cannot be drawn.
 
 <a name="Snapshot.DrawLine"></a>
-### func \(\*Snapshot\) [DrawLine](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L234-L240>)
+### func \(\*Snapshot\) [DrawLine](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L233-L239>)
 
 ```go
 func (snapshot *Snapshot) DrawLine(name string, parent string, pose spatialmath.Pose, points []r3.Vector, options ...DrawLineOption) error
@@ -1813,7 +1917,7 @@ func (snapshot *Snapshot) DrawLine(name string, parent string, pose spatialmath.
 DrawLine draws a line to the snapshot Returns an error if the line cannot be drawn.
 
 <a name="Snapshot.DrawModel"></a>
-### func \(\*Snapshot\) [DrawModel](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L253-L258>)
+### func \(\*Snapshot\) [DrawModel](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L252-L257>)
 
 ```go
 func (snapshot *Snapshot) DrawModel(name string, parent string, pose spatialmath.Pose, options ...DrawModelOption) error
@@ -1822,7 +1926,7 @@ func (snapshot *Snapshot) DrawModel(name string, parent string, pose spatialmath
 DrawModelFromURL draws a model from a URL to the snapshot Returns an error if the model cannot be drawn.
 
 <a name="Snapshot.DrawPoints"></a>
-### func \(\*Snapshot\) [DrawPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L271-L277>)
+### func \(\*Snapshot\) [DrawPoints](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L270-L276>)
 
 ```go
 func (snapshot *Snapshot) DrawPoints(name string, parent string, pose spatialmath.Pose, positions []r3.Vector, options ...DrawPointsOption) error
@@ -1831,7 +1935,7 @@ func (snapshot *Snapshot) DrawPoints(name string, parent string, pose spatialmat
 DrawPoints draws a set of points to the snapshot Returns an error if the points cannot be drawn.
 
 <a name="Snapshot.Drawings"></a>
-### func \(\*Snapshot\) [Drawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L39>)
+### func \(\*Snapshot\) [Drawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L38>)
 
 ```go
 func (snapshot *Snapshot) Drawings() []*Drawing
@@ -1840,7 +1944,7 @@ func (snapshot *Snapshot) Drawings() []*Drawing
 Drawings returns the drawings of the snapshot
 
 <a name="Snapshot.MarshalBinary"></a>
-### func \(\*Snapshot\) [MarshalBinary](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L73>)
+### func \(\*Snapshot\) [MarshalBinary](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L72>)
 
 ```go
 func (snapshot *Snapshot) MarshalBinary() ([]byte, error)
@@ -1849,7 +1953,7 @@ func (snapshot *Snapshot) MarshalBinary() ([]byte, error)
 MarshalBinary marshals a snapshot to binary protobuf format
 
 <a name="Snapshot.MarshalBinaryGzip"></a>
-### func \(\*Snapshot\) [MarshalBinaryGzip](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L78>)
+### func \(\*Snapshot\) [MarshalBinaryGzip](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L77>)
 
 ```go
 func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error)
@@ -1858,7 +1962,7 @@ func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error)
 MarshalBinaryGzip marshals a snapshot to gzip\-compressed binary protobuf format
 
 <a name="Snapshot.MarshalJSON"></a>
-### func \(\*Snapshot\) [MarshalJSON](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L64>)
+### func \(\*Snapshot\) [MarshalJSON](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L63>)
 
 ```go
 func (snapshot *Snapshot) MarshalJSON() ([]byte, error)
@@ -1867,7 +1971,7 @@ func (snapshot *Snapshot) MarshalJSON() ([]byte, error)
 MarshalJSON marshals a snapshot to JSON
 
 <a name="Snapshot.SceneMetadata"></a>
-### func \(\*Snapshot\) [SceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L44>)
+### func \(\*Snapshot\) [SceneMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L43>)
 
 ```go
 func (snapshot *Snapshot) SceneMetadata() SceneMetadata
@@ -1876,7 +1980,7 @@ func (snapshot *Snapshot) SceneMetadata() SceneMetadata
 SceneMetadata returns the scene metadata of the snapshot
 
 <a name="Snapshot.ToProto"></a>
-### func \(\*Snapshot\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L49>)
+### func \(\*Snapshot\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L48>)
 
 ```go
 func (snapshot *Snapshot) ToProto() *drawv1.Snapshot
@@ -1885,7 +1989,7 @@ func (snapshot *Snapshot) ToProto() *drawv1.Snapshot
 ToProto converts the snapshot to a protobuf message
 
 <a name="Snapshot.Transforms"></a>
-### func \(\*Snapshot\) [Transforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L34>)
+### func \(\*Snapshot\) [Transforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L33>)
 
 ```go
 func (snapshot *Snapshot) Transforms() []*commonv1.Transform
@@ -1894,7 +1998,7 @@ func (snapshot *Snapshot) Transforms() []*commonv1.Transform
 Transforms returns the transforms of the snapshot
 
 <a name="Snapshot.UUID"></a>
-### func \(\*Snapshot\) [UUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L29>)
+### func \(\*Snapshot\) [UUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L28>)
 
 ```go
 func (snapshot *Snapshot) UUID() []byte
@@ -1903,7 +2007,7 @@ func (snapshot *Snapshot) UUID() []byte
 UUID returns the UUID of the snapshot
 
 <a name="Snapshot.Validate"></a>
-### func \(\*Snapshot\) [Validate](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L108>)
+### func \(\*Snapshot\) [Validate](<https://github.com/viam-labs/motion-tools/blob/main/draw/snapshot.go#L107>)
 
 ```go
 func (snapshot *Snapshot) Validate() error

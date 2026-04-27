@@ -9,9 +9,9 @@ import {
 import { getContext, setContext, untrack } from 'svelte'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
 import { traits, useWorld } from '$lib/ecs'
-import { updateGeometryTrait } from '$lib/ecs/traits'
 import { parsePcdInWorker } from '$lib/lib'
 import { createPose } from '$lib/transform'
 
@@ -186,15 +186,19 @@ export const providePointcloudObjects = (partID: () => string) => {
 								}
 
 								const existing = entities.get(pointcloudLabel)
+								const metadata = {
+									colors,
+									colorFormat: ColorFormat.RGB,
+								}
 
 								if (existing) {
 									const geometry = existing.get(traits.BufferGeometry)
 
 									if (geometry) {
-										updateBufferGeometry(geometry, positions, colors)
+										updateBufferGeometry(geometry, positions, metadata)
 									}
 								} else {
-									const geometry = createBufferGeometry(positions, colors)
+									const geometry = createBufferGeometry(positions, metadata)
 
 									const entity = world.spawn(
 										traits.Name(pointcloudLabel),
@@ -227,20 +231,17 @@ export const providePointcloudObjects = (partID: () => string) => {
 
 							if (existing) {
 								existing.set(traits.Center, center)
-								updateGeometryTrait(existing, geometry)
+								traits.updateGeometryTrait(existing, geometry)
 							} else {
 								const entityTraits: ConfigurableTrait[] = [
 									traits.Name(geometryLabel),
+									...traits.getParentTrait(geometriesInFrame.referenceFrame),
 									traits.Center(center),
 									traits.GeometriesAPI,
 									traits.Geometry(geometry),
 									traits.Opacity(0.2),
 									traits.Color({ r: 0, g: 1, b: 0 }),
 								]
-
-								if (geometriesInFrame.referenceFrame) {
-									entityTraits.push(traits.Parent(geometriesInFrame.referenceFrame))
-								}
 
 								const entity = world.spawn(...entityTraits)
 

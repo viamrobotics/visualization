@@ -40,5 +40,9 @@ vite.config.ts.timestamp-*
 src/lib/buf
 protos/vendor
 
+# E2E
+e2e/.bin
+e2e/.env.e2e
+
 # IDE
 .cursor

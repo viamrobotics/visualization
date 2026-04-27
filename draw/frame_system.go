@@ -62,7 +62,6 @@ func NewDrawnFrameSystem(frameSystem *referenceframe.FrameSystem, inputs referen
 // Use WithParent to set the parent reference frame for all transforms (defaults to referenceframe.World).
 func (drawnFrameSystem *DrawnFrameSystem) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
-
 	frameMap, err := referenceframe.FrameSystemGeometries(drawnFrameSystem.FrameSystem, drawnFrameSystem.Inputs)
 	if err != nil {
 		return nil, err

@@ -106,8 +106,8 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
 	pose := config.Pose
-
 	transforms := make([]*commonv1.Transform, len(drawnGeometriesInFrame.DrawnGeometries))
+
 	for i, drawnGeometry := range drawnGeometriesInFrame.DrawnGeometries {
 		label := drawnGeometry.Geometry.Label()
 		if drawnGeometriesInFrame.Name != "" {

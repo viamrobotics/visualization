@@ -3,28 +3,23 @@ package draw
 import (
 	"encoding/base64"
 
+	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // NewTransform creates a Viam Transform representing an object in 3D space.
-// The transform will have a UUID generated from the name and parent unless a UUID option is provided.
-func NewTransform(
-	uuid []byte,
-	name string,
-	parent string,
-	pose spatialmath.Pose,
-	geometry spatialmath.Geometry,
-	metadata *structpb.Struct,
-) *commonv1.Transform {
-	poseInFrame := poseInFrameToProtobuf(pose, parent)
+func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption) *commonv1.Transform {
+	poseInFrame := poseInFrameToProtobuf(config.Pose, config.Parent)
 	transform := &commonv1.Transform{
-		Uuid:                uuid,
-		ReferenceFrame:      name,
+		Uuid:                config.UUID,
+		ReferenceFrame:      config.Name,
 		PoseInObserverFrame: poseInFrame,
-		Metadata:            metadata,
 	}
+
+	metadata := config.BuildMetadata(metadataOpts...)
+	transform.Metadata = MetadataToStruct(metadata)
 
 	if geometry != nil {
 		transform.PhysicalObject = geometryToProtobuf(geometry)
@@ -34,26 +29,51 @@ func NewTransform(
 }
 
 // MetadataToStruct converts drawing Metadata to a Protocol Buffer structpb.Struct suitable
-// for embedding in transforms. Colors are base64-encoded for efficient transmission.
-// Returns an error if the metadata cannot be converted.
-func MetadataToStruct(metadata Metadata) (*structpb.Struct, error) {
+// for embedding in transforms.
+func MetadataToStruct(metadata Metadata) *structpb.Struct {
 	fields := make(map[string]*structpb.Value)
-	encoded := base64.StdEncoding.EncodeToString(packColors(metadata.Colors))
-	fields["colors"] = structpb.NewStringValue(encoded)
+	fields["colors"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packColors(metadata.Colors)))
+	fields["color_format"] = structpb.NewNumberValue(float64(drawv1.ColorFormat_COLOR_FORMAT_RGB))
 
-	return &structpb.Struct{Fields: fields}, nil
+	if opacity, uniform := metadata.opacitySummary(); uniform {
+		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString([]byte{opacity}))
+	} else {
+		fields["opacities"] = structpb.NewStringValue(base64.StdEncoding.EncodeToString(packOpacities(metadata.Colors)))
+	}
+
+	fields["show_axes_helper"] = structpb.NewBoolValue(metadata.ShowAxesHelper)
+	fields["invisible"] = structpb.NewBoolValue(metadata.Invisible)
+
+	return &structpb.Struct{Fields: fields}
 }
 
+// StructToMetadata converts a Protocol Buffer structpb.Struct to a Metadata object.
 func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 	metadata := NewMetadata()
-	if structPb.Fields["colors"] != nil {
-		encoded := structPb.Fields["colors"].GetStringValue()
-		colorsBytes, err := base64.StdEncoding.DecodeString(encoded)
+	if structPb.Fields["colors"] == nil {
+		return metadata, nil
+	}
+
+	colorsBytes, err := base64.StdEncoding.DecodeString(structPb.Fields["colors"].GetStringValue())
+	if err != nil {
+		return NewMetadata(), err
+	}
+
+	var opacitiesBytes []byte
+	if structPb.Fields["opacities"] != nil {
+		opacitiesBytes, err = base64.StdEncoding.DecodeString(structPb.Fields["opacities"].GetStringValue())
 		if err != nil {
 			return NewMetadata(), err
 		}
-		colors := unpackColors(colorsBytes)
-		metadata.SetColors(colors)
+	}
+
+	metadata.SetColors(unpackColors(colorsBytes, opacitiesBytes))
+
+	if v := structPb.Fields["show_axes_helper"]; v != nil {
+		metadata.SetShowAxesHelper(v.GetBoolValue())
+	}
+	if v := structPb.Fields["invisible"]; v != nil {
+		metadata.SetInvisible(v.GetBoolValue())
 	}
 
 	return metadata, nil

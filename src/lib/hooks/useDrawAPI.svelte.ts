@@ -9,7 +9,8 @@ import { UuidTool } from 'uuid-tool'
 import type { Frame } from '$lib/frame'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { STRIDE } from '$lib/buffer'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import { asRGB, STRIDE } from '$lib/buffer'
 import { traits, useWorld } from '$lib/ecs'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
 import { parsePlyInput } from '$lib/ply'
@@ -20,6 +21,7 @@ import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { useLogs } from './useLogs.svelte'
 
 const colorUtil = new Color()
+const rgb = { r: 0, g: 0, b: 0 }
 
 type ConnectionStatus = 'connecting' | 'open' | 'closed'
 
@@ -163,11 +165,7 @@ export const provideDrawAPI = () => {
 
 			if (existing) {
 				existing.set(traits.Pose, pose)
-
-				if (parent && parent !== 'world') {
-					existing.set(traits.Parent, parent)
-				}
-
+				traits.setParentTrait(existing, parent)
 				continue
 			}
 
@@ -183,11 +181,7 @@ export const provideDrawAPI = () => {
 				return traits.ReferenceFrame
 			}
 
-			const entityTraits: ConfigurableTrait[] = []
-
-			if (parent && parent !== 'world') {
-				entityTraits.push(traits.Parent(parent))
-			}
+			const entityTraits: ConfigurableTrait[] = [...traits.getParentTrait(parent)]
 
 			if (frame.geometry) {
 				entityTraits.push(geometryTrait())
@@ -234,20 +228,15 @@ export const provideDrawAPI = () => {
 			return traits.ReferenceFrame
 		}
 
-		const entityTraits: ConfigurableTrait[] = []
-
-		if (parent && parent !== 'world') {
-			entityTraits.push(traits.Parent(parent))
-		}
-
-		entityTraits.push(
+		const entityTraits: ConfigurableTrait[] = [
 			traits.Name(data.label ?? ++geometryIndex),
+			...traits.getParentTrait(parent),
 			traits.Pose(pose),
 			traits.Color(colorUtil.set(color)),
 			geometryTrait(),
 			traits.DrawAPI,
-			traits.Removable
-		)
+			traits.Removable,
+		]
 
 		const entity = world.spawn(...entityTraits)
 
@@ -299,18 +288,17 @@ export const provideDrawAPI = () => {
 
 		const arrowHeadAtPose = reader.read()
 
-		const entities: Entity[] = []
+		const positions = reader.readF32Array(nPoints * STRIDE.ARROWS)
+		const rawColors = reader.readU8Array(nColors * STRIDE.COLORS_RGB)
 
-		const entity = world.spawn(
+		world.spawn(
 			traits.Name(`Arrow group ${++poseIndex}`),
-			traits.Positions(reader.readF32Array(nPoints * STRIDE.ARROWS)),
-			traits.Colors(reader.readU8Array(nColors * STRIDE.COLORS_RGB)),
+			traits.Positions(positions),
+			nColors === 1 ? traits.Color(asRGB(rawColors, rgb)) : traits.Colors(rawColors),
 			traits.Arrows({ headAtPose: arrowHeadAtPose === 1 }),
 			traits.DrawAPI,
 			traits.Removable
 		)
-
-		entities.push(entity)
 	}
 
 	const drawPoints = async (reader: BinaryReader) => {
@@ -334,7 +322,7 @@ export const provideDrawAPI = () => {
 		const defaultColor =
 			r > -1
 				? new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
-				: null
+				: undefined
 
 		const nPointsElements = nPoints * 3
 		const positions = reader.readF32Array(nPointsElements)
@@ -342,8 +330,8 @@ export const provideDrawAPI = () => {
 		const nColorsElements = nColors * 3
 		const rawColors = reader.readU8Array(nColorsElements)
 
-		let vertexColors: Uint8Array | null = null
-		let uniformColor: Uint8Array<ArrayBuffer> | null = null
+		let vertexColors: Uint8Array | undefined = undefined
+		let uniformColor: Uint8Array | undefined = undefined
 
 		if (nColors > 1 && nColors >= nPoints) {
 			vertexColors = rawColors
@@ -353,7 +341,7 @@ export const provideDrawAPI = () => {
 
 			if (defaultColor) {
 				for (let i = nColors; i < nPoints; i++) {
-					const offset = i * 3
+					const offset = i * STRIDE.COLORS_RGB
 					vertexColors[offset] = defaultColor[0]!
 					vertexColors[offset + 1] = defaultColor[1]!
 					vertexColors[offset + 2] = defaultColor[2]!
@@ -372,12 +360,18 @@ export const provideDrawAPI = () => {
 			const geometry = entity.get(traits.BufferGeometry)
 
 			if (geometry) {
-				updateBufferGeometry(geometry, positions, vertexColors)
+				updateBufferGeometry(geometry, positions, {
+					colors: vertexColors,
+					colorFormat: ColorFormat.RGB,
+				})
 				return
 			}
 		}
 
-		const geometry = createBufferGeometry(positions, vertexColors)
+		const geometry = createBufferGeometry(positions, {
+			colors: vertexColors,
+			colorFormat: ColorFormat.RGB,
+		})
 		const spawnTraits: ConfigurableTrait[] = [
 			traits.Name(label),
 			traits.BufferGeometry(geometry),
@@ -386,7 +380,7 @@ export const provideDrawAPI = () => {
 			traits.Removable,
 		]
 
-		if (uniformColor) spawnTraits.push(traits.Colors(uniformColor))
+		if (uniformColor) spawnTraits.push(traits.Color(asRGB(uniformColor, rgb)))
 
 		world.spawn(...spawnTraits)
 	}
@@ -427,18 +421,17 @@ export const provideDrawAPI = () => {
 			Math.round(r * 255),
 			Math.round(g * 255),
 			Math.round(b * 255),
-			255,
 		])
 		const dotColors = new Uint8Array([
 			Math.round(dotR * 255),
 			Math.round(dotG * 255),
 			Math.round(dotB * 255),
-			255,
 		])
 
 		world.spawn(
 			traits.Name(label),
-			traits.Colors(lineColors),
+			traits.Color(asRGB(lineColors, rgb)),
+			traits.Opacity(1),
 			traits.LinePositions(points),
 			traits.DotColors(dotColors),
 			traits.DrawAPI,

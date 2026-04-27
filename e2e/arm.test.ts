@@ -1,46 +1,12 @@
-import { expect, test } from '@playwright/test'
-import {
-	createViamClient,
-	JsonValue,
-	Struct,
-	ViamClient,
-	ViamClientOptions,
-} from '@viamrobotics/sdk'
+import { expect } from '@playwright/test'
 import { execSync } from 'node:child_process'
 
-import { setupMachineConfig } from './fixtures'
-
-const testConfig = {
-	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
-	name: 'motion-tools-e2e-main',
-	partId: '9741704d-ea0e-484c-8cf8-0a849096af1e',
-	apiKeyId: '5450f99a-c7f9-4677-aa1d-8f2e77707a39',
-	apiKeyValue: 'ag5vx3ginkwvubcp1w18gfue099i9zoz',
-	signalingAddress: 'https://app.viam.com:443',
-	organizationId: 'd9fd430a-25ec-47ba-b548-5d1b1b2fc6d1',
-}
-
-async function connectViamClient(): Promise<ViamClient> {
-	const API_KEY_ID = testConfig.apiKeyId
-	const API_KEY = testConfig.apiKeyValue
-	const opts: ViamClientOptions = {
-		serviceHost: testConfig.signalingAddress,
-		credentials: {
-			type: 'api-key',
-			authEntity: API_KEY_ID,
-			payload: API_KEY,
-		},
-	}
-
-	const client = await createViamClient(opts)
-	return client
-}
-
-let viamClient: ViamClient
-
-test.beforeAll(async () => {
-	viamClient = await connectViamClient()
-})
+import {
+	applyMachineConfig,
+	connectViamClient,
+	getE2EConfig,
+	withRobot,
+} from './fixtures/with-robot'
 
 const armConfig = {
 	components: [
@@ -53,19 +19,10 @@ const armConfig = {
 			},
 			frame: {
 				parent: 'world',
-				translation: {
-					x: 0,
-					y: 0,
-					z: 0,
-				},
+				translation: { x: 0, y: 0, z: 0 },
 				orientation: {
 					type: 'ov_degrees',
-					value: {
-						x: 0,
-						y: 0,
-						z: 1,
-						th: 0,
-					},
+					value: { x: 0, y: 0, z: 1, th: 0 },
 				},
 			},
 		},
@@ -76,19 +33,10 @@ const armConfig = {
 			attributes: {},
 			frame: {
 				parent: 'arm-1',
-				translation: {
-					x: 0,
-					y: 0,
-					z: 100,
-				},
+				translation: { x: 0, y: 0, z: 100 },
 				orientation: {
 					type: 'ov_degrees',
-					value: {
-						x: 0,
-						y: 0,
-						z: 1,
-						th: 0,
-					},
+					value: { x: 0, y: 0, z: 1, th: 0 },
 				},
 				geometry: {
 					type: 'sphere',
@@ -99,34 +47,23 @@ const armConfig = {
 	],
 }
 
-test('arm', async ({ browser }) => {
+withRobot.beforeAll(async () => {
+	const config = getE2EConfig()
+	const viamClient = await connectViamClient()
+	await applyMachineConfig(viamClient, config.partId, config.machineName, armConfig)
+})
+
+withRobot('arm', async ({ robotPage }) => {
+	const { page } = robotPage
 	const testPrefix = 'ARM'
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson(armConfig as unknown as JsonValue)
-	)
+	const failedScreenshots: string[] = []
 
-	const failedScreenshots = [] as string[]
-	const context = await browser.newContext()
-	const page = await context.newPage()
-	page.on('console', (message) => {
-		console.log(`[${message.type()}] ${message.text()}`)
-	})
-	await page.goto('/')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
-
-	// SETUP CONFIG
-	setupMachineConfig(page, testConfig)
-
-	const frameTreeCarrot = await page.waitForSelector('[data-part="branch-indicator"]', {
-		timeout: 5000,
-	})
+	const frameTreeCarrot = await page.waitForSelector('[data-part="branch-indicator"]')
 	await frameTreeCarrot.click()
 
 	await expect(page.getByText('arm-1:base_link', { exact: true })).toBeVisible()
-
 	await expect(page.getByRole('button', { name: 'arm-1' })).toBeVisible()
+
 	await page.getByRole('button', { name: 'arm-1' }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
@@ -142,11 +79,16 @@ test('arm', async ({ browser }) => {
 	}
 
 	// MOVE ARM
-	execSync('go run e2e/go-scripts/main.go moveArmJointPositions', {
+	execSync('go run e2e/fixtures/go-scripts/main.go moveArmJointPositions', {
 		encoding: 'utf8',
+		env: {
+			...process.env,
+			VIAM_E2E_HOST: process.env.VIAM_E2E_HOST,
+			VIAM_E2E_API_KEY_ID: process.env.VIAM_E2E_API_KEY_ID,
+			VIAM_E2E_API_KEY: process.env.VIAM_E2E_API_KEY,
+		},
 	})
 
-	await page.waitForTimeout(1000) // wait for arm pose refetch
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-1-moved.png`, {
 			fullPage: true,
@@ -156,12 +98,15 @@ test('arm', async ({ browser }) => {
 		console.warn(error)
 		failedScreenshots.push(`${testPrefix}-1-moved.png`)
 	}
+
+	if (failedScreenshots.length > 0) {
+		console.log(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
+	}
 })
 
-test.afterAll('cleanup', async () => {
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson({})
-	)
+withRobot.afterAll(async () => {
+	const config = getE2EConfig()
+	const viamClient = await connectViamClient()
+	await applyMachineConfig(viamClient, config.partId, config.machineName, {})
 })

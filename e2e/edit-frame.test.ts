@@ -1,45 +1,26 @@
-import { expect, test } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { JsonValue, Struct, type ViamClient } from '@viamrobotics/sdk'
+
 import {
-	createViamClient,
-	JsonValue,
-	Struct,
-	ViamClient,
-	ViamClientOptions,
-} from '@viamrobotics/sdk'
+	applyMachineConfig,
+	connectOrgViamClient,
+	connectViamClient,
+	type E2ETestConfig,
+	getE2EConfig,
+	injectMachineConfig,
+	withRobot,
+} from './fixtures/with-robot'
 
-import { setupMachineConfig } from './fixtures'
-
-const testConfig = {
-	host: 'motion-tools-e2e-main.l6j4r7m65g.viam.cloud',
-	name: 'motion-tools-e2e-main',
-	partId: '9741704d-ea0e-484c-8cf8-0a849096af1e',
-	apiKeyId: '76fcaf4b-4e04-4c6b-9665-c9c663ee4fad',
-	apiKeyValue: 'iz95ie2bz5h617xhs2ko9eov1b5bryas',
-	signalingAddress: 'https://app.viam.com:443',
-	organizationId: 'd9fd430a-25ec-47ba-b548-5d1b1b2fc6d1',
-}
 const fragmentIdsToDelete: string[] = []
 
-async function connect(): Promise<ViamClient> {
-	const API_KEY_ID = testConfig.apiKeyId
-	const API_KEY = testConfig.apiKeyValue
-	const opts: ViamClientOptions = {
-		serviceHost: testConfig.signalingAddress,
-		credentials: {
-			type: 'api-key',
-			authEntity: API_KEY_ID,
-			payload: API_KEY,
-		},
-	}
-
-	const client = await createViamClient(opts)
-	return client
-}
-
 let viamClient: ViamClient
+let orgViamClient: ViamClient
+let config: E2ETestConfig
 
-test.beforeAll(async () => {
-	viamClient = await connect()
+withRobot.beforeAll(async () => {
+	config = getE2EConfig()
+	viamClient = await connectViamClient()
+	orgViamClient = await connectOrgViamClient()
 })
 
 const basicEditFrameConfig = {
@@ -75,29 +56,24 @@ const basicEditFrameConfig = {
 	],
 }
 
-test('basic edit frame', async ({ browser }) => {
+withRobot.beforeAll(async () => {
+	const config = getE2EConfig()
+	const viamClient = await connectViamClient()
+	await applyMachineConfig(viamClient, config.partId, config.machineName, basicEditFrameConfig)
+})
+
+withRobot('basic edit frame', async ({ robotPage }) => {
 	const testPrefix = 'BASIC_EDIT_FRAME'
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson(basicEditFrameConfig)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, basicEditFrameConfig)
 	const failedScreenshots = [] as string[]
-	const context = await browser.newContext()
-	let page = await context.newPage()
+	const { page } = robotPage
 
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
-	await page.goto('/')
-	await page.waitForLoadState('domcontentloaded')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
-
-	// SETUP CONFIG
-	setupMachineConfig(page, testConfig)
 
 	// OPEN A WORLD OBJECT AND EDIT THE FRAME
-	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
+	await expect(page.getByText('base-1', { exact: true })).toBeVisible({ timeout: 15_000 })
 	await page.getByText('base-1', { exact: true }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
@@ -144,17 +120,18 @@ test('basic edit frame', async ({ browser }) => {
 	}
 
 	// RELOAD THE PAGE
-	page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
-	await page.goto('/')
-	await page.waitForLoadState('domcontentloaded')
+	await page.reload({ waitUntil: 'domcontentloaded' })
 
+	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
+		timeout: 15_000,
+	})
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
 	await page.getByText('base-1', { exact: true }).click()
 	await expect(page.getByTestId('details-header')).toBeVisible()
-	// give page time to laod up frame details
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, {
 			fullPage: true,
@@ -241,13 +218,9 @@ const createDeleteFrameConfig = {
 	],
 }
 
-test('create and delete frame', async ({ browser }) => {
+withRobot('create and delete frame', async ({ browser }) => {
 	const testPrefix = 'CREATE_DELETE'
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson(createDeleteFrameConfig as unknown as JsonValue)
-	)
+	await applyMachineConfig(viamClient, config.partId, config.machineName, createDeleteFrameConfig)
 	const failedScreenshots = [] as string[]
 	const context = await browser.newContext()
 	const page = await context.newPage()
@@ -256,11 +229,14 @@ test('create and delete frame', async ({ browser }) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await injectMachineConfig(page, config)
+	await page.reload()
 	await page.waitForLoadState('domcontentloaded')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
-	// SETUP CONFIG
-	setupMachineConfig(page, testConfig)
+	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
+		timeout: 15_000,
+	})
 
 	// ADD A FRAME & SAVE
 	await expect(page.getByLabel('Add frames', { exact: true })).toBeVisible()
@@ -309,6 +285,7 @@ test('create and delete frame', async ({ browser }) => {
 		throw new Error(`Failed screenshots: ${failedScreenshots.join(', ')}`)
 	}
 })
+
 const fragmentConfig = {
 	components: [
 		{
@@ -368,11 +345,11 @@ const fragmentUsingConfig = (fragmentId: string) => {
 	}
 }
 
-test('fragment edit frame', async ({ browser }) => {
+withRobot('fragment edit frame', async ({ browser }) => {
 	const testPrefix = 'FRAGMENT_EDIT_FRAME'
 	const failedScreenshots = [] as string[]
-	const resp = await viamClient.appClient.createFragment(
-		testConfig.organizationId,
+	const resp = await orgViamClient.appClient.createFragment(
+		config.orgId,
 		'TEMP_FRAGMENT',
 		Struct.fromJson(fragmentConfig as unknown as JsonValue)
 	)
@@ -381,24 +358,29 @@ test('fragment edit frame', async ({ browser }) => {
 	}
 	fragmentIdsToDelete.push(resp.id)
 
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson(fragmentUsingConfig(resp.id) as unknown as JsonValue)
+	await applyMachineConfig(
+		viamClient,
+		config.partId,
+		config.machineName,
+		fragmentUsingConfig(resp.id)
 	)
 
-	// WAIT FOR THE TREE TO LOAD
 	const context = await browser.newContext()
 	const page = await context.newPage()
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
 	})
 	await page.goto('/')
+	await injectMachineConfig(page, config)
+	await page.reload()
 	await page.waitForLoadState('domcontentloaded')
-	await expect(page.getByText('World', { exact: true })).toBeVisible()
 
-	// SETUP CONFIG
-	setupMachineConfig(page, testConfig)
+	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
+		timeout: 15_000,
+	})
+
+	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible({ timeout: 15_000 })
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })
@@ -407,7 +389,6 @@ test('fragment edit frame', async ({ browser }) => {
 		failedScreenshots.push(`${testPrefix}-0-setup.png`)
 	}
 
-	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible()
 	await page.getByText('frag-base-1', { exact: true }).click()
 
 	await expect(page.getByTestId('details-header')).toBeVisible()
@@ -446,13 +427,9 @@ test('fragment edit frame', async ({ browser }) => {
 	}
 })
 
-test.afterAll('cleanup', async () => {
-	await viamClient.appClient.updateRobotPart(
-		testConfig.partId,
-		testConfig.name,
-		Struct.fromJson({})
-	)
+withRobot.afterAll(async () => {
+	await applyMachineConfig(viamClient, config.partId, config.machineName, {})
 	for (const fragmentId of fragmentIdsToDelete) {
-		await viamClient.appClient.deleteFragment(fragmentId)
+		await orgViamClient.appClient.deleteFragment(fragmentId)
 	}
 })

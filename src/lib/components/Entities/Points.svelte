@@ -6,11 +6,12 @@
 	import { Portal } from '@threlte/extras'
 	import { OrthographicCamera, Points, PointsMaterial } from 'three'
 
-	import { asColor, asOpacity, isRgba, isSingleColor } from '$lib/buffer'
+	import { asColor, isSingleColor } from '$lib/buffer'
 	import { traits, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { poseToObject3d } from '$lib/transform'
 
+	import AxesHelper from '../AxesHelper.svelte'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
 	interface Props {
@@ -26,9 +27,12 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const pose = useTrait(() => entity, traits.Pose)
 	const geometry = useTrait(() => entity, traits.BufferGeometry)
+	const entityColor = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.Colors)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
+	const opacity = useTrait(() => entity, traits.Opacity)
 	const invisible = useTrait(() => entity, traits.Invisible)
+	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
 
 	const pointSize = $derived(
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
@@ -46,6 +50,9 @@
 	$effect.pre(() => {
 		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
+		} else if (entityColor.current) {
+			const { r, g, b } = entityColor.current
+			material.color.setRGB(r, g, b)
 		} else if (colors.current && isSingleColor(colors.current)) {
 			asColor(colors.current, material.color, 0)
 		} else {
@@ -57,14 +64,9 @@
 	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
 	 */
 	$effect.pre(() => {
-		const opacity =
-			colors.current && isSingleColor(colors.current) && isRgba(colors.current)
-				? asOpacity(colors.current)
-				: undefined
-
-		if (opacity !== undefined && opacity < 1) {
+		if (opacity.current !== undefined && opacity.current < 1) {
 			material.transparent = true
-			material.opacity = opacity
+			material.opacity = opacity.current
 
 			return () => {
 				material.transparent = false
@@ -134,6 +136,13 @@
 		>
 			<T is={geometry.current} />
 			<T is={material} />
+			{#if showAxesHelper.current}
+				<AxesHelper
+					name={entity}
+					width={3}
+					length={0.1}
+				/>
+			{/if}
 			{@render children?.()}
 		</T>
 	</Portal>

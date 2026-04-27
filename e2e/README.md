@@ -2,76 +2,81 @@
 
 This guide explains how to run and manage the Playwright end-to-end tests for the motion-tools application.
 
+The tests now provision their own ephemeral Viam machine for each run.
+
 ## Prerequisites
 
-Before running the tests, ensure you have:
+Before running the tests, make sure you have:
 
-- A robot that you own and can control
-- The robot is online and accessible
-- Admin access to the robot's configuration
+- **Go** (to build the `world-state-store` test module).
+- **The Viam CLI** installed and authenticated:
+
+  ```bash
+  # macOS
+  brew install viam
+  # or see https://docs.viam.com/dev/tools/cli/ for other platforms
+
+  viam login
+  ```
+
+- **Access to a `Viam Viz E2E` organization.** If your account doesn't already belong to one, create it at [app.viam.com](https://app.viam.com/) with the exact name `Viam Viz E2E`; the setup script will detect it on the next run.
 
 ## Running E2E Tests
 
-### Step 1: Configure Test Settings
+```bash
+# basic run
+pnpm test:e2e
 
-Update the `testConfig` object at the top of the test file (`edit-frame.test.ts`) with your robot's details (it is currently configured to use a `viam-viz` robot called [`motion-tools-e2e`](https://app.viam.com/machine/cac6bcf3-4313-401d-afde-8aad0b4893a4) so you could also just run that config if you have access):
+# with ui
+pnpm test:e2e-ui
+```
 
-- Host address
-- Part ID
-- Part Name
-- API Key ID and Value (with admin permission since this e2e creates and deletes a temp fragment)
-- Signaling Address
-- organizationId
-
-### Step 2: Prepare Your Robot
-
-1. **Start your robot** and ensure it's online
-
-### Step 3: Execute Tests
-
-Run the test suite using:
+### Running specific tests
 
 ```bash
-pnpm test:e2e
+# run a single test file
+npx playwright test e2e/world-state-store.test.ts
+
+# run a single test by title
+npx playwright test e2e/edit-frame.test.ts --grep "basic edit frame"
 ```
 
 ## Understanding Test Results
 
 ### Screenshot Comparison
 
-Playwright automatically captures screenshots during test execution and saves them in the `test-results/` folder. The testing framework compares these screenshots against baseline images stored in `e2e/edit-frame.test.ts-snapshots/`.
+Playwright captures screenshots during test execution and compares them against baselines stored in `e2e/<test-name>.test.ts-snapshots/`. Failures produce:
 
-### Test Failures
+- `actual.png` — the current screenshot
+- `expected.png` — the baseline
+- `diff.png` — a visual diff
 
-When a screenshot comparison fails, Playwright generates three files:
+These land in the `test-results/` folder.
 
-- `actual.png` - The current screenshot from the test
-- `expected.png` - The baseline screenshot for comparison
-- `diff.png` - A visual diff highlighting the differences
-
-NOTE: running lots of these tests in sequence is somewhat flaky, if you have errors try targeting the single failing test by using the command #2 under `Running specific tests`
+NOTE: running many tests back-to-back can be flaky because each test shares the same ephemeral machine. If a test fails, try re-running just that one with `--grep` before investigating further.
 
 ## Updating Screenshots
 
-When you make intentional UI changes that should result in different screenshots:
+When you make intentional UI changes that should change screenshots:
 
-1. **Run tests with update flag:**
-
+1. Run with the update flag:
    ```bash
    pnpm test:e2e -u
    ```
+2. Review the updated files in `e2e/**/*-snapshots/`.
+3. Commit the new snapshots alongside your code changes.
 
-2. **Review the changes** in the updated snapshot files
+> Only update screenshots when you've intentionally modified the UI. Random test failures should be investigated rather than blindly updating snapshots.
 
-3. **Commit the new snapshots** along with your code changes
+## Troubleshooting
 
-> **Note:** Only update screenshots when you've intentionally modified the UI. Random test failures should be investigated rather than blindly updating snapshots.
-
-### Running specific tests
-
-1. to run just a particular test file you can use this command `npx playwright test e2e/go-client.test.ts`
-2. to run just a specific test you can use `npx playwright test e2e/go-client.test.ts --grep "draw nurbs"`
-
-## Todo
-
-1. add more e2e tests to cover additional user journeys
+- **`viam-server binary not found at .../e2e/.bin/viam-server`**
+  Run `cd e2e && ./setup.sh` to install it.
+- **`E2E config not found at .../e2e/.env.e2e`**
+  Same fix — run `cd e2e && ./setup.sh`. The script will create the API key and write the file.
+- **`Organization "Viam Viz E2E" not found`**
+  Your Viam CLI user doesn't have access to an org named exactly `Viam Viz E2E`. Create one at [app.viam.com](https://app.viam.com/) or ask to be added, then re-run setup.
+- **Not authenticated with the Viam CLI**
+  Run `viam login` and re-run `./e2e/setup.sh`.
+- **Stuck/stale machines in the cloud**
+  Global teardown deletes the machine it created, but if a run is killed (SIGKILL, crash) it may leak. Clean up orphaned `e2e-<username>-*` machines under the `e2e-tests` location in the `Viam Viz E2E` org.

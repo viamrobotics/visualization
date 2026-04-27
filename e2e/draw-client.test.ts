@@ -89,6 +89,56 @@ test('draw service events lifecycle', async ({ browser }) => {
 	assertNoFailedScreenshots(failedScreenshots)
 })
 
+test('invisible entity', async ({ browser }) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestInvisible$/DrawVisible github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('invisible-box')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'INVISIBLE_ENTITY_VISIBLE'))
+
+	execSync(
+		'go test -run ^TestInvisible$/DrawInvisible github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('invisible-box')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'INVISIBLE_ENTITY_INVISIBLE'))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
+test('show axes helper', async ({ browser }) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestShowAxesHelper$/DrawWithAxesHelper github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('show-axes-helper-box')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'SHOW_AXES_HELPER_WITH'))
+
+	execSync(
+		'go test -run ^TestShowAxesHelper$/DrawWithoutAxesHelper github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('show-axes-helper-box')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'SHOW_AXES_HELPER_WITHOUT'))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
 test('draw frame system', async ({ browser }) => {
 	const testPrefix = 'DRAW_FRAME_SYSTEM'
 	const page = await createPage(browser)
