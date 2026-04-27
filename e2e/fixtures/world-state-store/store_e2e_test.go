@@ -155,6 +155,35 @@ func TestTransformRemoval(t *testing.T) {
 	})
 }
 
+func TestPointCloudUpdate(t *testing.T) {
+	ws := getWSClient(t)
+	ctx := context.Background()
+
+	t.Run("AddPointCloud", func(t *testing.T) {
+		_, err := ws.DoCommand(ctx, map[string]any{
+			"command": "add_pointcloud",
+			"name":    "updating-pointcloud",
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+
+	t.Run("UpdatePointCloud", func(t *testing.T) {
+		_, err := ws.DoCommand(ctx, map[string]any{
+			"command": "update_pointcloud",
+			"name":    "updating-pointcloud",
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+
+	t.Run("Cleanup", func(t *testing.T) {
+		_, err := ws.DoCommand(ctx, map[string]any{
+			"command": "remove",
+			"name":    "updating-pointcloud",
+		})
+		test.That(t, err, test.ShouldBeNil)
+	})
+}
+
 func TestPointCloudChunking(t *testing.T) {
 	ws := getWSClient(t)
 	ctx := context.Background()
