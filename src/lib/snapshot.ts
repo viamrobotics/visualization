@@ -11,17 +11,11 @@ import type { Relationship } from './metadata'
 import { rgbToHex } from './color'
 import { drawDrawing, drawTransform } from './draw'
 
-export type SnapshotEntity =
-	| {
-			type: 'transform' | 'drawing'
-			entity: Entity
-			relationships: Relationship[] | undefined
-	  }
-	| {
-			type: 'model'
-			entities: Entity[]
-			relationships: Relationship[] | undefined
-	  }
+export type SnapshotEntity = {
+	type: 'transform' | 'drawing'
+	entity: Entity
+	relationships: Relationship[] | undefined
+}
 
 /**
  * Merges scene-level metadata (grid, camera, point/line settings) into the
@@ -92,19 +86,11 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Snapsho
 
 	for (const drawing of snapshot.drawings) {
 		const spawned = drawDrawing(world, drawing, traits.SnapshotAPI, options)
-		if (spawned.type === 'drawing') {
-			entities.push({
-				type: 'drawing',
-				entity: spawned.entity,
-				relationships: spawned.relationships,
-			})
-		} else {
-			entities.push({
-				type: 'model',
-				entities: spawned.entities,
-				relationships: spawned.relationships,
-			})
-		}
+		entities.push({
+			type: 'drawing',
+			entity: spawned.entity,
+			relationships: spawned.relationships,
+		})
 	}
 
 	return entities

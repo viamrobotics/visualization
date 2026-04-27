@@ -6,7 +6,7 @@ import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js'
 import { UuidTool } from 'uuid-tool'
 
 import type { Transform as TransformProto } from '$lib/buf/common/v1/common_pb'
-import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import type { Drawing, Model, Shape } from '$lib/buf/draw/v1/drawing_pb'
 import type { Relationship } from '$lib/metadata'
 
 import {
@@ -24,7 +24,7 @@ import {
 	isVertexColors,
 	STRIDE,
 } from '$lib/buffer'
-import { traits } from '$lib/ecs'
+import { relations, traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { type Metadata, metadataFromStruct } from '$lib/metadata'
 import { createPose } from '$lib/transform'
@@ -63,6 +63,16 @@ export const uuidStringToBytes = (uuid: string): Uint8Array<ArrayBuffer> => {
 
 interface DrawOptions {
 	removable?: boolean
+}
+
+type ModelDrawing = Drawing & {
+	physicalObject: Shape & {
+		geometryType: { case: 'model'; value: Model }
+	}
+}
+
+const isModel = (drawing: Drawing): drawing is ModelDrawing => {
+	return drawing.physicalObject?.geometryType?.case === 'model'
 }
 
 export const drawTransform = (
@@ -118,9 +128,10 @@ export const drawTransform = (
 	return { entity, relationships: parsedMetadata.relationships }
 }
 
-type DrawingResult =
-	| { type: 'drawing'; entity: Entity; relationships: Relationship[] | undefined }
-	| { type: 'model'; entities: Entity[]; relationships: Relationship[] | undefined }
+export interface DrawingResult {
+	entity: Entity
+	relationships: Relationship[] | undefined
+}
 
 export const drawDrawing = (
 	world: World,
@@ -128,11 +139,10 @@ export const drawDrawing = (
 	api: Trait,
 	{ removable = true }: DrawOptions = {}
 ): DrawingResult => {
-	const { referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid } = drawing
+	const { referenceFrame, poseInObserverFrame, metadata, uuid } = drawing
 
-	if (physicalObject?.geometryType?.case === 'model') {
-		const entities = drawModel(world, drawing, api, { removable })
-		return { type: 'model', entities, relationships: metadata?.relationships }
+	if (isModel(drawing)) {
+		return drawModel(world, drawing, api, { removable })
 	}
 
 	const uuidTraits: ConfigurableTrait[] = []
@@ -153,7 +163,7 @@ export const drawDrawing = (
 
 	applyShape(entity, drawing)
 
-	return { type: 'drawing', entity, relationships: metadata?.relationships }
+	return { entity, relationships: metadata?.relationships }
 }
 
 export const updateTransform = (
@@ -220,7 +230,7 @@ export const updateDrawing = (
 ): DrawingResult => {
 	const { poseInObserverFrame, metadata } = drawing
 
-	if (!world.has(entity)) return { type: 'drawing', entity, relationships: metadata?.relationships }
+	if (!world.has(entity)) return { entity, relationships: metadata?.relationships }
 
 	entity.set(traits.Pose, createPose(poseInObserverFrame?.pose))
 
@@ -237,19 +247,17 @@ export const updateDrawing = (
 
 	updateShape(entity, drawing)
 
-	return { type: 'drawing', entity, relationships: metadata?.relationships }
+	return { entity, relationships: metadata?.relationships }
 }
 
 export const updateModel = (
 	world: World,
-	entities: Entity[],
+	entity: Entity,
 	drawing: Drawing,
 	api: Trait,
 	{ removable = true }: DrawOptions = {}
 ): DrawingResult => {
-	for (const entity of entities) {
-		if (world.has(entity)) entity.destroy()
-	}
+	if (world.has(entity)) entity.destroy()
 
 	return drawDrawing(world, drawing, api, { removable })
 }
@@ -374,14 +382,12 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 
 const drawModel = (
 	world: World,
-	{ referenceFrame, poseInObserverFrame, physicalObject, metadata, uuid }: Drawing,
+	model: ModelDrawing,
 	api: Trait,
 	{ removable = true }: DrawOptions
-): Entity[] => {
-	const entities: Entity[] = []
-	const geometryType = physicalObject?.geometryType
-
-	if (geometryType?.case !== 'model') return entities
+): DrawingResult => {
+	const { referenceFrame, physicalObject, poseInObserverFrame, metadata, uuid } = model
+	const { animationName, assets, scale } = physicalObject.geometryType.value
 
 	const baseTraits: ConfigurableTrait[] = [
 		traits.Name(referenceFrame),
@@ -395,19 +401,21 @@ const drawModel = (
 
 	if (removable) baseTraits.push(traits.Removable)
 	if (metadata?.invisible) baseTraits.push(traits.Invisible)
+	if (metadata?.showAxesHelper) baseTraits.push(traits.ShowAxesHelper)
 
-	entities.push(world.spawn(...baseTraits, traits.ReferenceFrame))
-
-	const { scale, animationName } = geometryType.value
+	const root = world.spawn(...baseTraits, traits.ReferenceFrame)
 	let i = 1
-	for (const asset of geometryType.value.assets) {
+	for (const asset of assets) {
 		const subEntityTraits: ConfigurableTrait[] = [
 			traits.Name(`${referenceFrame} model ${i++}`),
 			traits.Parent(referenceFrame),
+			relations.ChildOf(root),
 			api,
 		]
 
 		if (scale) subEntityTraits.push(traits.Scale(scale))
+		if (metadata?.invisible) subEntityTraits.push(traits.Invisible)
+		if (metadata?.showAxesHelper) subEntityTraits.push(traits.ShowAxesHelper)
 
 		if (asset.content.case === 'url') {
 			subEntityTraits.push(
@@ -425,10 +433,10 @@ const drawModel = (
 			)
 		}
 
-		entities.push(world.spawn(...subEntityTraits))
+		world.spawn(...subEntityTraits)
 	}
 
-	return entities
+	return { entity: root, relationships: metadata?.relationships }
 }
 
 const parsePointCloud = (

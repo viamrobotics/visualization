@@ -1,6 +1,8 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { relations } from '$lib/ecs'
+
 vi.mock('$lib/loaders/pcd', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
@@ -25,9 +27,6 @@ import { traits } from '$lib/ecs'
 import { createPose } from '$lib/transform'
 
 import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
-
-const asEntities = (result: ReturnType<typeof drawDrawing>) =>
-	result.type === 'drawing' ? [result.entity] : result.entities
 
 const fakeUuidBytes = (n: number) => {
 	const bytes = new Uint8Array(16)
@@ -201,7 +200,7 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true }))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
 
 		expect(entity.get(traits.Name)).toBe('line-1')
 		expect(entity.get(traits.Parent)).toBe('base')
@@ -224,7 +223,7 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false }))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
@@ -242,7 +241,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ showAxesHelper: true }),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.has(traits.ShowAxesHelper)).toBe(true)
 	})
@@ -260,7 +259,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ invisible: true }),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.has(traits.Invisible)).toBe(true)
 	})
@@ -283,10 +282,11 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ invisible: true }),
 		})
 
-		const entities = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
-		const [rootEntity] = entities
+		const { entity: rootEntity } = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [assetEntity] = world.query(relations.ChildOf(rootEntity))
 
 		expect(rootEntity.has(traits.Invisible)).toBe(true)
+		expect(assetEntity.has(traits.Invisible)).toBe(true)
 	})
 
 	it('adds Color/Colors traits for arrows', () => {
@@ -308,8 +308,8 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([255, 0, 0, 0, 255, 0]) }),
 		})
 
-		const [single] = asEntities(drawDrawing(world, singleColorDrawing, traits.SnapshotAPI))
-		const [multi] = asEntities(drawDrawing(world, multiColorDrawing, traits.SnapshotAPI))
+		const { entity: single } = drawDrawing(world, singleColorDrawing, traits.SnapshotAPI)
+		const { entity: multi } = drawDrawing(world, multiColorDrawing, traits.SnapshotAPI)
 
 		expect(single.get(traits.Color)).toStrictEqual({ r: 1, g: 0, b: 0 })
 		expect(multi.get(traits.Colors)).toStrictEqual(new Uint8Array([255, 0, 0, 0, 255, 0]))
@@ -333,10 +333,9 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const entities = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
-		const [rootEntity, assetEntity] = entities
+		const { entity: rootEntity } = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const [assetEntity] = world.query(relations.ChildOf(rootEntity))
 
-		expect(entities).toHaveLength(2)
 		expect(rootEntity.has(traits.ReferenceFrame)).toBe(true)
 		expect(rootEntity.get(traits.Name)).toBe('robot-model')
 		expect(rootEntity.get(traits.Parent)).toBe('arm')
@@ -365,7 +364,7 @@ describe('drawDrawing', () => {
 			metadata: new Metadata({ colors: new Uint8Array([0, 255, 0]) }),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.get(traits.Center)).toStrictEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
@@ -600,7 +599,7 @@ describe('Uuid trait', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.has(traits.UUID)).toBe(true)
 		expect(entity.get(traits.UUID)).toBeTruthy()
@@ -628,7 +627,7 @@ describe('drawDrawing with metadata relationships', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI))
+		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
 		expect(entity.has(traits.UUID)).toBe(true)
 	})

@@ -45,13 +45,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 		untrack(() => {
 			entities = spawnSnapshotEntities(world, snapshot)
 			for (const spawned of entities) {
-				if (spawned.type === 'transform' || spawned.type === 'drawing') {
-					relationships.apply(spawned.entity, spawned.relationships)
-				} else if (spawned.type === 'model') {
-					const root = spawned.entities[0]
-					if (!root) continue
-					relationships.apply(root, spawned.relationships)
-				}
+				relationships.apply(spawned.entity, spawned.relationships)
 			}
 		})
 	})
@@ -88,13 +82,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 
 	onDestroy(() => {
 		for (const spawned of entities) {
-			if (spawned.type === 'transform' || spawned.type === 'drawing') {
-				if (world.has(spawned.entity)) spawned.entity.destroy()
-			} else if (spawned.type === 'model') {
-				for (const entity of spawned.entities) {
-					if (world.has(entity)) entity.destroy()
-				}
-			}
+			if (world.has(spawned.entity)) spawned.entity.destroy()
 		}
 	})
 </script>
