@@ -12,7 +12,6 @@ import { rgbToHex } from './color'
 import { drawDrawing, drawTransform } from './draw'
 
 export type SnapshotEntity = {
-	type: 'transform' | 'drawing'
 	entity: Entity
 	relationships: Relationship[] | undefined
 }
@@ -78,7 +77,6 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Snapsho
 	for (const transform of snapshot.transforms) {
 		const spawned = drawTransform(world, transform, traits.SnapshotAPI, options)
 		entities.push({
-			type: 'transform',
 			entity: spawned.entity,
 			relationships: spawned.relationships,
 		})
@@ -87,7 +85,6 @@ export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Snapsho
 	for (const drawing of snapshot.drawings) {
 		const spawned = drawDrawing(world, drawing, traits.SnapshotAPI, options)
 		entities.push({
-			type: 'drawing',
 			entity: spawned.entity,
 			relationships: spawned.relationships,
 		})
