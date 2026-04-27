@@ -1,5 +1,26 @@
 # motion-tools
 
+## 1.19.1
+
+### Patch Changes
+
+- bbe99fe: Fix world state point cloud rendering and updating
+
+## 1.19.0
+
+### Minor Changes
+
+- 0ed1c07: Add chunking metadata and support in world state hook
+
+### Patch Changes
+
+- efbbaa8: Support bases in GetGeometries calls
+- c2ca03d: Add frame lifecycle for pending saves
+- 7c7d6e9: Fix unbounded logs
+- deaf54d: Consolidate `Parent` trait handling.
+- 7c7d6e9: Fix pcd memory leak
+- 7c7d6e9: Fix inverted visibility on arrow head mesh
+
 ## 1.18.1
 
 ### Patch Changes
