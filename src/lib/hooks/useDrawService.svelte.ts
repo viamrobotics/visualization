@@ -140,8 +140,6 @@ export function provideDrawService() {
 		return undefined
 	}
 
-	const waitForFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-
 	const pullChunks = async (
 		client: Client<typeof DrawService>,
 		uuid: string,
@@ -185,8 +183,6 @@ export function provideDrawService() {
 				invalidate()
 
 				if (response.done) break
-
-				await waitForFrame()
 			}
 		} catch (error) {
 			if (!signal.aborted) {

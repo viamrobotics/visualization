@@ -333,7 +333,7 @@ test('draw point cloud in chunks', async ({ browser }) => {
 	await runChunkedTest(
 		browser,
 		'DRAW_POINT_CLOUD_IN_CHUNKS',
-		'^TestDrawPointCloud$/DrawPointCloudInChunks'
+		'^TestDrawPointCloud$/^DrawPointCloudInChunks$'
 	)
 })
 
