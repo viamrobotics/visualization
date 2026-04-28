@@ -1,0 +1,160 @@
+name: Bump app catalog
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version of @viamrobotics/motion-tools to bump to (e.g. 1.2.3)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of @viamrobotics/motion-tools to bump to (e.g. 1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bump-app-catalog:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Generate app repo token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CI_GITHUB_APP_PRIVATE_KEY }}
+          owner: viamrobotics
+          repositories: app
+
+      - name: Checkout viamrobotics/app
+        uses: actions/checkout@v6
+        with:
+          repository: viamrobotics/app
+          token: ${{ steps.app-token.outputs.token }}
+          path: app
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: app/package.json
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: app/package.json
+          cache: 'pnpm'
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Bump @viamrobotics/motion-tools in pnpm-workspace.yaml
+        working-directory: app
+        run: |
+          sed -i "s|\(['\"]\?@viamrobotics/motion-tools['\"]\?:\s*\).*|\1${VERSION}|" pnpm-workspace.yaml
+          grep "@viamrobotics/motion-tools" pnpm-workspace.yaml
+
+      - name: pnpm install
+        working-directory: app
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Determine workspaces that depend on motion-tools
+        id: affected
+        working-directory: app
+        run: |
+          FILTERS=""
+          while IFS= read -r pkgjson; do
+            if jq -e '(.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {}) | has("@viamrobotics/motion-tools")' "$pkgjson" > /dev/null; then
+              NAME=$(jq -r .name "$pkgjson")
+              FILTERS="$FILTERS --filter $NAME"
+            fi
+          done < <(find . -name package.json -not -path '*/node_modules/*')
+          echo "Affected packages:$FILTERS"
+          echo "filters=$FILTERS" >> "$GITHUB_OUTPUT"
+
+      - name: Determine workspaces that depend on playwright
+        id: playwright
+        working-directory: app
+        run: |
+          FILTERS=""
+          while IFS= read -r pkgjson; do
+            if jq -e '(.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {}) | has("@playwright/test")' "$pkgjson" > /dev/null; then
+              NAME=$(jq -r .name "$pkgjson")
+              FILTERS="$FILTERS --filter $NAME"
+            fi
+          done < <(find . -name package.json -not -path '*/node_modules/*')
+          echo "Playwright packages:$FILTERS"
+          echo "filters=$FILTERS" >> "$GITHUB_OUTPUT"
+
+      - name: Type check affected workspaces
+        if: steps.affected.outputs.filters != ''
+        working-directory: app
+        run: pnpm${{ steps.affected.outputs.filters }} --if-present check
+
+      - name: Install Playwright browsers
+        if: steps.playwright.outputs.filters != ''
+        working-directory: app
+        run: |
+          pnpm${{ steps.playwright.outputs.filters }} exec playwright install
+
+      - name: Run tests in affected workspaces
+        if: steps.affected.outputs.filters != ''
+        working-directory: app
+        run: pnpm${{ steps.affected.outputs.filters }} --if-present test
+
+      - name: Open bump PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          path: app
+          token: ${{ steps.app-token.outputs.token }}
+          branch: bump/motion-tools-${{ env.VERSION }}
+          delete-branch: true
+          base: main
+          commit-message: 'chore: bump motion-tools to ${{ env.VERSION }}'
+          title: 'chore: bump motion-tools to ${{ env.VERSION }}'
+          labels: |
+            Deploy
+            run-e2e-tests
+          body: |
+            Automated bump of `@viamrobotics/motion-tools` to `${{ env.VERSION }}` following a release in [viamrobotics/motion-tools](https://github.com/viamrobotics/motion-tools/releases/tag/v${{ env.VERSION }}).
+
+            Triggered by: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Generate issue token
+        id: issue-token
+        if: failure() && github.event_name != 'workflow_dispatch'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CI_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: File issue on failure (release runs only)
+        if: failure() && github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ steps.issue-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DISPATCH_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/bump-app-catalog.yml
+        run: |
+          gh issue create \
+            --repo "$REPO" \
+            --title "Failed to bump app catalog to ${VERSION}" \
+            --body "$(cat <<EOF
+          @viamrobotics/team-viz — the automated bump of \`@viamrobotics/motion-tools\` to \`${VERSION}\` in [viamrobotics/app](https://github.com/viamrobotics/app) failed.
+
+          - **Failed run:** ${RUN_URL}
+          - **Version:** \`${VERSION}\`
+
+          Once the underlying issue is resolved, re-trigger the bump by manually running [\`Bump app catalog\`](${DISPATCH_URL}) with version \`${VERSION}\`.
+
+          ---
+
+          @claude — please investigate the failed run above (use \`gh run view <run-id> --log-failed\` to fetch the failing logs). If the cause is a regression in this repo (\`motion-tools\`) introduced in version \`${VERSION}\`, open a PR with the fix and a changeset. If the cause appears to be in the consumer (\`viamrobotics/app\`), post a comment here with your diagnosis tagging @viamrobotics/team-viz instead of opening a PR.
+          EOF
+          )"
