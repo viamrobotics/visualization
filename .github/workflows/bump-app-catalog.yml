@@ -126,10 +126,18 @@ jobs:
 
             Triggered by: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+      - name: Generate issue token
+        id: issue-token
+        if: failure() && github.event_name != 'workflow_dispatch'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CI_GITHUB_APP_PRIVATE_KEY }}
+
       - name: File issue on failure (release runs only)
         if: failure() && github.event_name != 'workflow_dispatch'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.issue-token.outputs.token }}
           REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           DISPATCH_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/bump-app-catalog.yml
