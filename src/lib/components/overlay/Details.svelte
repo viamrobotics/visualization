@@ -29,18 +29,18 @@
 	import { Check, Copy } from 'lucide-svelte'
 	import {
 		List,
-		Point,
-		RotationEuler,
-		Slider,
-		TabGroup,
-		TabPage,
 		type ListChangeEvent,
+		Point,
 		type PointChangeEvent,
 		type PointValue3dObject,
 		type PointValue4dObject,
+		RotationEuler,
 		type RotationEulerChangeEvent,
 		type RotationEulerValueObject,
+		Slider,
 		type SliderChangeEvent,
+		TabGroup,
+		TabPage,
 	} from 'svelte-tweakpane-ui'
 
 	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
@@ -107,11 +107,9 @@
 	})
 
 	const geometryTypes = ['none', 'box', 'sphere', 'capsule'] as const
-	let geometryTabIndex = $state(0)
-
-	$effect(() => {
-		geometryTabIndex = geometryTypes.indexOf(geometryType)
-	})
+	// Writable derived: re-derives from the trait, but TabGroup's bind:selectedIndex
+	// can write a transient override that lasts until the trait re-derives.
+	let geometryTabIndex = $derived(geometryTypes.indexOf(geometryType))
 
 	$effect(() => {
 		// setGeometryType guards against no-ops, so this is safe to fire on every
