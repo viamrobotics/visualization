@@ -9,6 +9,7 @@ import { UuidTool } from 'uuid-tool'
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
 import type { Relationship } from '$lib/buf/draw/v1/metadata_pb'
 
+import { writeBufferGeometryRange } from '$lib/attribute'
 import { DrawService } from '$lib/buf/draw/v1/service_connect'
 import {
 	CreateRelationshipRequest,
@@ -16,6 +17,7 @@ import {
 	EntityChangeType,
 	StreamEntityChangesResponse,
 } from '$lib/buf/draw/v1/service_pb'
+import { asFloat32Array, inMeters, STRIDE } from '$lib/buffer'
 import {
 	drawDrawing,
 	drawTransform,
@@ -32,6 +34,7 @@ import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
 import { useRelationships } from './useRelationships.svelte'
 
 const DRAW_SERVICE_KEY = Symbol('draw-service-context')
+const FLOAT32_SIZE = 4
 
 const ConnectionStatus = {
 	CONNECTED: 'connected',
@@ -80,6 +83,8 @@ export function provideDrawService() {
 	let pendingEvents: StreamEvent[] = []
 	let flushScheduled = false
 	let activeClient: Client<typeof DrawService> | undefined
+	let activeSignal: AbortSignal | undefined
+	const activeChunkPulls = new Set<string>()
 
 	const destroyTransform = (uuidStr: string) => {
 		const entity = transformEntities.get(uuidStr)
@@ -137,6 +142,82 @@ export function provideDrawService() {
 		}
 	}
 
+	const isChunkedDrawing = (drawing: Drawing): boolean => {
+		return drawing.metadata?.chunks !== undefined && drawing.metadata.chunks.total > 0
+	}
+
+	const getChunkInfo = (drawing: Drawing): { total: number; firstEnd: number } | undefined => {
+		const meta = drawing.metadata?.chunks
+		if (!meta || meta.total === 0) return undefined
+
+		const shape = drawing.physicalObject?.geometryType
+		if (shape?.case === 'points') {
+			const chunkElements = shape.value.positions.length / (STRIDE.POSITIONS * FLOAT32_SIZE)
+			return {
+				total: meta.total,
+				firstEnd: chunkElements,
+			}
+		}
+		return undefined
+	}
+
+	const pullChunks = async (
+		client: Client<typeof DrawService>,
+		uuid: string,
+		uuidBytes: Uint8Array,
+		entity: Entity,
+		totalElements: number,
+		firstChunkEnd: number,
+		signal: AbortSignal
+	) => {
+		if (activeChunkPulls.has(uuid)) return
+		activeChunkPulls.add(uuid)
+
+		try {
+			let nextStart = firstChunkEnd
+			while (!signal.aborted) {
+				const response = await client.getEntityChunk(
+					{ uuid: uuidBytes as Uint8Array<ArrayBuffer>, start: nextStart },
+					{ signal }
+				)
+
+				// done with no payload is the server's "past end" sentinel (startByte >= posLen), not the final real chunk
+				if (response.done && !response.entity.value) break
+
+				const drawing = response.entity.case === 'drawing' ? response.entity.value : undefined
+				if (!drawing) break
+
+				const shape = drawing.physicalObject?.geometryType
+				if (shape?.case !== 'points') break
+
+				const buffer = entity.get(traits.BufferGeometry)
+				if (!buffer) break
+
+				const positions = asFloat32Array(shape.value.positions, inMeters)
+				const metadata = drawing.metadata
+				if (!metadata) break
+
+				writeBufferGeometryRange(buffer, positions, response.start, metadata)
+
+				const chunkElements = positions.length / 3
+				nextStart = response.start + chunkElements
+				entity.set(traits.ChunkProgress, { loaded: nextStart, total: totalElements })
+				invalidate()
+
+				if (response.done) break
+			}
+		} catch (error) {
+			if (!signal.aborted) {
+				console.error(`Chunk pull failed for entity ${uuid}:`, error)
+			}
+		} finally {
+			activeChunkPulls.delete(uuid)
+			if (world.has(entity)) {
+				entity.remove(traits.ChunkProgress)
+			}
+		}
+	}
+
 	const processDrawingEvent = (drawing: Drawing, changeType: EntityChangeType, uuid: string) => {
 		if (changeType === EntityChangeType.ADDED) {
 			if (!drawingEntities.has(uuid)) {
@@ -146,6 +227,23 @@ export function provideDrawService() {
 				if (rootEntity) relationships.apply(rootEntity, spawned.relationships)
 				drawingEntities.set(uuid, entities)
 				relationships.flush(uuid)
+
+				if (isChunkedDrawing(drawing) && activeClient && activeSignal && rootEntity) {
+					const chunk = getChunkInfo(drawing)
+					if (chunk) {
+						rootEntity.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
+						const uuidBytes = drawing.uuid ?? new Uint8Array()
+						void pullChunks(
+							activeClient,
+							uuid,
+							uuidBytes,
+							rootEntity,
+							chunk.total,
+							chunk.firstEnd,
+							activeSignal
+						)
+					}
+				}
 			}
 		} else if (changeType === EntityChangeType.REMOVED) {
 			destroyDrawing(uuid)
@@ -323,12 +421,15 @@ export function provideDrawService() {
 		const transport = createConnectTransport({ baseUrl: url })
 		const client = createClient(DrawService, transport)
 		activeClient = client
+		activeSignal = controller.signal
 
 		void streamEntityChanges(client, controller.signal)
 		void streamSceneChanges(client, controller.signal)
 
 		return () => {
 			controller.abort()
+			activeClient = undefined
+			activeSignal = undefined
 			connectionStatus = ConnectionStatus.DISCONNECTED
 			activeClient = undefined
 

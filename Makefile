@@ -122,7 +122,7 @@ proto-format-check:
 	@pnpm exec buf format --diff --exit-code
 
 .PHONY: proto
-proto: proto-clean proto-vendor 
+proto: proto-vendor 
 	@pnpm exec buf dep update
 	@$(MAKE) proto-lint
 	@$(MAKE) proto-format
