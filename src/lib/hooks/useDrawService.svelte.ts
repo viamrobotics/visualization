@@ -160,6 +160,7 @@ export function provideDrawService() {
 					{ signal }
 				)
 
+				// done with no payload is the server's "past end" sentinel (startByte >= posLen), not the final real chunk
 				if (response.done && !response.entity.value) break
 
 				const drawing = response.entity.case === 'drawing' ? response.entity.value : undefined

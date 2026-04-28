@@ -7,7 +7,7 @@ import (
 
 type diskBuffer struct {
 	file         *os.File
-	bytesWritten uint32
+	bytesWritten int64
 }
 
 func newDiskBuffer(dir, pattern string) (*diskBuffer, error) {
@@ -22,15 +22,15 @@ func (db *diskBuffer) write(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-	_, err := db.file.WriteAt(data, int64(db.bytesWritten))
+	_, err := db.file.WriteAt(data, db.bytesWritten)
 	if err != nil {
 		return err
 	}
-	db.bytesWritten += uint32(len(data))
+	db.bytesWritten += int64(len(data))
 	return nil
 }
 
-func (db *diskBuffer) readSlice(startByte, length uint32) ([]byte, error) {
+func (db *diskBuffer) readSlice(startByte, length int64) ([]byte, error) {
 	if length == 0 || startByte >= db.bytesWritten {
 		return nil, nil
 	}
@@ -39,7 +39,7 @@ func (db *diskBuffer) readSlice(startByte, length uint32) ([]byte, error) {
 		end = db.bytesWritten
 	}
 	buf := make([]byte, end-startByte)
-	_, err := db.file.ReadAt(buf, int64(startByte))
+	_, err := db.file.ReadAt(buf, startByte)
 	if err != nil {
 		return nil, err
 	}

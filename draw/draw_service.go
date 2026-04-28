@@ -37,14 +37,15 @@ type storedEntity struct {
 const entitySubscriberBufferSize = 64
 
 type chunkedEntity struct {
-	mu            sync.Mutex
-	cond          *sync.Cond
-	metadata      *drawv1.Chunks
-	data          *diskBuffer
-	colors        *diskBuffer
-	opacities     *diskBuffer
-	template      *drawv1.Drawing
-	chunkComplete bool
+	mu               sync.Mutex
+	cond             *sync.Cond
+	metadata         *drawv1.Chunks
+	data             *diskBuffer
+	colors           *diskBuffer
+	opacities        *diskBuffer
+	template         *drawv1.Drawing
+	chunkComplete    bool
+	opacitiesUniform bool // true when each chunk contributes exactly 1 opacity byte (uniform alpha)
 }
 
 func newChunkedEntity(meta *drawv1.Chunks, template *drawv1.Drawing, tempDir string) (*chunkedEntity, error) {
@@ -76,6 +77,10 @@ func newChunkedEntity(meta *drawv1.Chunks, template *drawv1.Drawing, tempDir str
 }
 
 func (entity *chunkedEntity) close() {
+	entity.mu.Lock()
+	entity.chunkComplete = true
+	entity.cond.Broadcast()
+	entity.mu.Unlock()
 	entity.data.close()
 	entity.colors.close()
 	entity.opacities.close()
@@ -232,13 +237,15 @@ func (svc *DrawService) AddEntity(
 					entity.close()
 					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", err))
 				}
-				if metadata := e.Drawing.GetMetadata(); metadata != nil {
+				if metadata != nil {
 					if err := entity.colors.write(metadata.GetColors()); err != nil {
 						entity.mu.Unlock()
 						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", err))
 					}
-					if err := entity.opacities.write(metadata.GetOpacities()); err != nil {
+					opacities := metadata.GetOpacities()
+					entity.opacitiesUniform = len(opacities) == 1
+					if err := entity.opacities.write(opacities); err != nil {
 						entity.mu.Unlock()
 						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", err))
@@ -414,8 +421,8 @@ func (svc *DrawService) accumulateChunk(entity *chunkedEntity, drawing *drawv1.D
 		}
 	}
 
-	elementsReceived := entity.data.bytesWritten / entity.metadata.Stride
-	if elementsReceived >= entity.metadata.Total {
+	elementsReceived := entity.data.bytesWritten / int64(entity.metadata.Stride)
+	if elementsReceived >= int64(entity.metadata.Total) {
 		entity.chunkComplete = true
 		log.Printf("draw: chunk accumulation complete (%d/%d elements)", elementsReceived, entity.metadata.Total)
 	}
@@ -608,25 +615,28 @@ func (svc *DrawService) GetEntityChunk(
 	}
 
 	start := req.Msg.GetStart()
-	startByte := start * entity.metadata.Stride
+	startByte := int64(start) * int64(entity.metadata.Stride)
 
 	entity.mu.Lock()
+
+	ctxDone := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			entity.cond.Broadcast()
+		case <-ctxDone:
+		}
+	}()
+
 	for entity.data.bytesWritten <= startByte && !entity.chunkComplete {
-		done := make(chan struct{})
-		go func() {
-			select {
-			case <-ctx.Done():
-				entity.cond.Broadcast()
-			case <-done:
-			}
-		}()
 		entity.cond.Wait()
-		close(done)
 		if ctx.Err() != nil {
+			close(ctxDone)
 			entity.mu.Unlock()
 			return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 		}
 	}
+	close(ctxDone)
 
 	posLen := entity.data.bytesWritten
 	if startByte >= posLen {
@@ -713,28 +723,39 @@ func (svc *DrawService) StreamEntityChanges(
 }
 
 func (entity *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint32, error) {
-	startByte := start * entity.metadata.Stride
-	endByte := startByte + entity.metadata.ChunkSize*entity.metadata.Stride
+	stride := int64(entity.metadata.Stride)
+	startByte := int64(start) * stride
+	endByte := startByte + int64(entity.metadata.ChunkSize)*stride
 	if endByte > entity.data.bytesWritten {
 		endByte = entity.data.bytesWritten
 	}
 
+	// mu must be held here: bytesWritten is updated by accumulateChunk under the same lock,
+	// so reading it and the file data forms a consistent snapshot.
 	chunkData, err := entity.data.readSlice(startByte, endByte-startByte)
 	if err != nil {
 		return nil, 0, fmt.Errorf("read chunk data: %w", err)
 	}
 
-	chunkElements := (endByte - startByte) / entity.metadata.Stride
+	chunkElements := uint32((endByte - startByte) / stride)
 
 	var chunkColors, chunkOpacities []byte
-	colorStart := start * 3
-	colorEnd := colorStart + chunkElements*3
+	colorStart := int64(start) * 3
+	colorEnd := colorStart + int64(chunkElements)*3
 	if entity.colors.bytesWritten >= colorEnd {
 		chunkColors, _ = entity.colors.readSlice(colorStart, colorEnd-colorStart)
 	}
-	opacityEnd := start + chunkElements
-	if entity.opacities.bytesWritten >= opacityEnd {
-		chunkOpacities, _ = entity.opacities.readSlice(start, opacityEnd-start)
+	if entity.opacitiesUniform {
+		// One byte per chunk (opacitySummary produced a single shared alpha).
+		chunkIndex := int64(start / entity.metadata.ChunkSize)
+		if entity.opacities.bytesWritten > chunkIndex {
+			chunkOpacities, _ = entity.opacities.readSlice(chunkIndex, 1)
+		}
+	} else {
+		opacityEnd := int64(start + chunkElements)
+		if entity.opacities.bytesWritten >= opacityEnd {
+			chunkOpacities, _ = entity.opacities.readSlice(int64(start), opacityEnd-int64(start))
+		}
 	}
 
 	drawing := proto.Clone(entity.template).(*drawv1.Drawing)

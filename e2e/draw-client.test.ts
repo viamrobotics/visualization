@@ -353,6 +353,14 @@ test('draw point cloud in chunks with per point colors', async ({ browser }) => 
 	)
 })
 
+test('draw point cloud in chunks with uniform opacity', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_UNIFORM_OPACITY',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithUniformOpacity'
+	)
+})
+
 test('draw geometries updating', async ({ browser }) => {
 	const testPrefix = 'DRAW_GEOMETRIES_UPDATING'
 	const page = await createPage(browser)
@@ -764,6 +772,22 @@ test('draw point clouds with single color', async ({ browser }) => {
 	)
 
 	await expect(page.getByText('octagon_single_color')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point cloud with opacity', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUD_WITH_OPACITY'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawSingleColorPointCloudWithOpacity github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('octagon_with_opacity')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })

@@ -115,6 +115,16 @@ func TestDrawPointCloud(t *testing.T) {
 		)
 	})
 
+	t.Run("DrawSingleColorPointCloudWithOpacity", func(t *testing.T) {
+		runDrawPointCloudTest(
+			t,
+			"../data/octagon.pcd",
+			"octagon_with_opacity",
+			[]draw.Color{draw.ColorFromRGBA(0, 0, 0, 64)},
+			0,
+		)
+	})
+
 	t.Run("DrawPointCloudWithDownscaling", func(t *testing.T) {
 		runDrawPointCloudTest(
 			t,
@@ -183,6 +193,33 @@ func TestDrawPointCloud(t *testing.T) {
 			Name:       "chunked_point_cloud_palette",
 			PointCloud: pc,
 			Colors:     palette,
+			ChunkSize:  500_000,
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawPointCloudInChunksWithUniformOpacity", func(t *testing.T) {
+		const numPoints = 2_500_000
+		pc := pointcloud.NewBasicPointCloud(numPoints)
+
+		goldenAngle := math.Pi * (3 - math.Sqrt(5))
+		for i := range numPoints {
+			frac := float64(i) / float64(numPoints)
+			phi := math.Acos(1 - 2*frac)
+			theta := goldenAngle * float64(i)
+			r := 2000.0
+			_ = pc.Set(r3.Vector{
+				X: r * math.Sin(phi) * math.Cos(theta),
+				Y: r * math.Sin(phi) * math.Sin(theta),
+				Z: r * math.Cos(phi),
+			}, nil)
+		}
+
+		uuid, err := DrawPointCloud(DrawPointCloudOptions{
+			Name:       "chunked_point_cloud_uniform_opacity",
+			PointCloud: pc,
+			Colors:     []draw.Color{draw.ColorFromName("cyan").SetAlpha(64)},
 			ChunkSize:  500_000,
 		})
 		test.That(t, err, test.ShouldBeNil)

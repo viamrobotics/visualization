@@ -57,8 +57,10 @@ func (chunker *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 	hasEmbeddedColor := pointCloud.MetaData().HasColor
 	posBuf := NewBufferPacker[float32](chunker.chunkSize, 3)
 	var colorBuf *BufferPacker[uint8]
+	var alphaBuf *BufferPacker[uint8]
 	if hasCustomColors || hasEmbeddedColor {
 		colorBuf = NewBufferPacker[uint8](chunker.chunkSize, 3)
+		alphaBuf = NewBufferPacker[uint8](chunker.chunkSize, 1)
 	}
 
 	pointSize := DefaultPointSize
@@ -74,7 +76,8 @@ func (chunker *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 		metadata := Metadata{}
 		if colorBuf != nil {
 			colorBytes := colorBuf.Read()[:size*3]
-			metadata.Colors = unpackColors(colorBytes, nil)
+			alphaBytes := alphaBuf.Read()[:size]
+			metadata.Colors = unpackColors(colorBytes, alphaBytes)
 		}
 
 		proto := newChunkDrawing(config, &drawv1.Shape{
@@ -101,6 +104,7 @@ func (chunker *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 		posBuf = NewBufferPacker[float32](chunker.chunkSize, 3)
 		if colorBuf != nil {
 			colorBuf = NewBufferPacker[uint8](chunker.chunkSize, 3)
+			alphaBuf = NewBufferPacker[uint8](chunker.chunkSize, 1)
 		}
 		return nil
 	}
@@ -112,14 +116,19 @@ func (chunker *PointCloudChunker) generateChunks(send func(Chunk) error) error {
 			if hasCustomColors && offset < len(colors) {
 				c := colors[offset]
 				colorBuf.Write(c.R, c.G, c.B)
+				alphaBuf.Write(c.A)
 			} else if hasCustomColors && len(colors) == 1 {
+				// Single-element Colors means uniform: repeat the one color for all points past index 0.
 				c := colors[0]
 				colorBuf.Write(c.R, c.G, c.B)
+				alphaBuf.Write(c.A)
 			} else if hasEmbeddedColor && d.HasColor() {
 				nrgba := color.NRGBAModel.Convert(d.Color()).(color.NRGBA)
 				colorBuf.Write(nrgba.R, nrgba.G, nrgba.B)
+				alphaBuf.Write(nrgba.A)
 			} else {
 				colorBuf.Write(128, 128, 128)
+				alphaBuf.Write(DefaultOpacity)
 			}
 		}
 
