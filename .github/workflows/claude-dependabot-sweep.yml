@@ -1,0 +1,52 @@
+name: Claude Dependabot Sweep
+
+on:
+  schedule:
+    - cron: '0 9 * * 2' # Every Tuesday at 9:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  call-dependabot-sweep:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    if: github.repository_owner == 'viamrobotics'
+    # viamrobotics/claude-ci-workflows@v1.17.3
+    uses: viamrobotics/claude-ci-workflows/.github/workflows/claude-dependabot-sweep.yml@3ad96b0ccbb5ee0d7e2cde98653fae0c453e68bb
+    with:
+      install_command: |
+        NODE24_BIN=$(ls -d /opt/hostedtoolcache/node/24.*/x64/bin | tail -1)
+        echo "$NODE24_BIN" >> "$GITHUB_PATH"
+        export PATH="$NODE24_BIN:$PATH"
+        corepack enable
+        pnpm install
+      allowed_tools: 'Edit,Read,Write,Glob,Grep,Bash(pnpm install*),Bash(pnpm add*),Bash(pnpm update*),Bash(pnpm outdated*),Bash(pnpm ls*),Bash(pnpm why*),Bash(pnpm *),Bash(npx *),Bash(node *),Bash(go get *),Bash(go mod tidy),Bash(go mod tidy *),Bash(ls *),Bash(find *),Bash(git config *),Bash(git add *),Bash(git commit *),Bash(git push *),Bash(git status*),Bash(git diff*),Bash(git log*),Bash(git checkout *),Bash(git branch *),Bash(git rev-parse *),Bash(git fetch *),Bash(gh pr create*),Bash(gh pr view*),Bash(gh issue comment*),Bash(gh issue view*)'
+      extra_system_prompt: |
+        ### Updating JavaScript/TypeScript dependencies (pnpm)
+        - This is a single-package Svelte 5 + SvelteKit library with Go backend code, using pnpm (not a workspace).
+        - To update a package: `pnpm update <package>@<version>`.
+        - To check installed version: `pnpm ls <package>`
+        - After updating, `pnpm install` regenerates `pnpm-lock.yaml`.
+
+        ### Updating Go dependencies
+        - To update a Go module: `go get <module>@<version>` then `go mod tidy`.
+
+        ### Build & verify
+        - Only run verification commands relevant to the files you changed:
+          - Svelte / TS / JS files (.svelte, .ts, .js): `pnpm lint`, `pnpm check`, and `pnpm test`
+          - Go files (.go): `go test ./draw/... -count=1`, `go test ./client/... -count=1`
+          - Build regressions: `pnpm build`
+        - Do NOT run unrelated commands, they waste turns and time.
+        - Do NOT modify `dist/**` (generated), `.changeset/**` (versioning), or `.github/**` (workflows).
+
+        Package manager: pnpm. Node: 24.
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_GITHUB_APP_ID: ${{ secrets.CI_GITHUB_APP_ID }}
+      CI_GITHUB_APP_PRIVATE_KEY: ${{ secrets.CI_GITHUB_APP_PRIVATE_KEY }}
+      SLACK_AI_WORKFLOW_ALERT_WEBHOOK_URL: ${{ secrets.SLACK_AI_WORKFLOW_ALERT_WEBHOOK_URL }}
