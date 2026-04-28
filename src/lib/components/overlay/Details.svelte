@@ -753,4 +753,13 @@
 	</div>
 {/if}
 
+<style>
+	:global(.tp-tabv_i) {
+		display: none;
+	}
+
+	:global(.tp-lblv),
+	:global(.tp-tbpv_c) {
+		padding-left: 0 !important;
+	}
 </style>
