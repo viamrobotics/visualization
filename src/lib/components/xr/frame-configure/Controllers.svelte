@@ -13,14 +13,14 @@
 
 	import { traits, useTrait } from '$lib/ecs'
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
+	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { OrientationVector } from '$lib/three/OrientationVector'
 
-	import HUD from '../HUD.svelte'
-	import HUDBillboard from '../HUDBillboard.svelte'
 	import { useOrigin } from '../useOrigin.svelte'
+	import WristDisplay from '../WristDisplay.svelte'
 
 	type Mode = 'translate' | 'rotate' | 'scale'
 	type Handedness = 'left' | 'right'
@@ -34,6 +34,7 @@
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
 	const partConfig = usePartConfig()
+	const transformControls = useTransformControls()
 	const framelessComponents = useFramelessComponents()
 	const framesAPI = useTrait(() => selectedEntity.current, traits.FramesAPI)
 	const leftController = useController('left')
@@ -42,6 +43,7 @@
 	const origin = useOrigin()
 
 	const resetForward = new Vector3()
+	const resetHead = new Vector3()
 	const resetOrigin = () => {
 		resetForward.set(0, 0, -1).applyQuaternion(headset.quaternion)
 		resetForward.z = 0
@@ -50,10 +52,11 @@
 		} else {
 			resetForward.normalize()
 		}
-		origin.set(
-			[headset.position.x + resetForward.x, headset.position.y + resetForward.y, 0],
-			0
-		)
+		// headset.position/quaternion live in the composed XR reference space;
+		// convert into zUp before writing to origin.
+		origin.toZUpPos(resetHead, headset.position)
+		origin.toZUpDir(resetForward)
+		origin.set([resetHead.x + resetForward.x, resetHead.y + resetForward.y, 0], 0)
 		origin.commit()
 	}
 
@@ -216,6 +219,7 @@
 	// frame can compute `newDims = base * controls.object.scale` from a stable
 	// baseline, and clear the snapshot on drag end.
 	controls.addEventListener('mouseDown', () => {
+		transformControls.setActive(true)
 		if (mode !== 'scale') return
 		if (box.current) {
 			geometryBase = { type: 'box', x: box.current.x, y: box.current.y, z: box.current.z }
@@ -229,6 +233,7 @@
 	})
 
 	controls.addEventListener('mouseUp', () => {
+		transformControls.setActive(false)
 		geometryBase = undefined
 	})
 
@@ -283,6 +288,7 @@
 	})
 
 	onDestroy(() => {
+		transformControls.setActive(false)
 		controls.detach()
 		controls.dispose()
 	})
@@ -298,113 +304,107 @@
 />
 
 {#if partConfig.hasEditPermissions}
-	<HUD>
-		<HUDBillboard position={[0, -0.35, -0.8]}>
-			<T.Group scale={0.1}>
+	<WristDisplay position={[0, 0.005, 0.04]}>
+		<Panel
+			flexDirection="row"
+			padding={8}
+			gap={8}
+			backgroundColor="#111"
+			borderRadius={16}
+		>
+			<Button
+				icon
+				size="sm"
+				variant="tertiary"
+				onclick={resetOrigin}
+			>
+				<ButtonIcon>
+					<Icon is={Locate} />
+				</ButtonIcon>
+			</Button>
+			<Button
+				icon
+				size="sm"
+				variant={addingFrame ? 'primary' : 'tertiary'}
+				onclick={() => (addingFrame = !addingFrame)}
+			>
+				<ButtonIcon>
+					<Icon is={Plus} />
+				</ButtonIcon>
+			</Button>
+			{#if attached}
+				<Button
+					icon
+					size="sm"
+					variant={mode === 'translate' ? 'primary' : 'tertiary'}
+					onclick={() => (mode = 'translate')}
+				>
+					<ButtonIcon>
+						<Icon is={Move3d} />
+					</ButtonIcon>
+				</Button>
+				<Button
+					icon
+					size="sm"
+					variant={mode === 'rotate' ? 'primary' : 'tertiary'}
+					onclick={() => (mode = 'rotate')}
+				>
+					<ButtonIcon>
+						<Icon is={Rotate3d} />
+					</ButtonIcon>
+				</Button>
+				<Button
+					icon
+					size="sm"
+					disabled={!hasGeometry}
+					variant={mode === 'scale' ? 'primary' : 'tertiary'}
+					onclick={() => (mode = 'scale')}
+				>
+					<ButtonIcon>
+						<Icon is={Scale3d} />
+					</ButtonIcon>
+				</Button>
+			{/if}
+		</Panel>
+	</WristDisplay>
+
+	{#if addingFrame}
+		<WristDisplay position={[0, 0.005, 0.14]}>
 			<Panel
-				flexDirection="row"
-				padding={8}
-				gap={8}
+				flexDirection="column"
+				padding={12}
+				gap={6}
 				backgroundColor="#111"
 				borderRadius={16}
+				minWidth={320}
 			>
-				<Button
-					icon
-					size="sm"
-					variant="tertiary"
-					onclick={resetOrigin}
-				>
-					<ButtonIcon>
-						<Icon is={Locate} />
-					</ButtonIcon>
-				</Button>
-				<Button
-					icon
-					size="sm"
-					variant={addingFrame ? 'primary' : 'tertiary'}
-					onclick={() => (addingFrame = !addingFrame)}
-				>
-					<ButtonIcon>
-						<Icon is={Plus} />
-					</ButtonIcon>
-				</Button>
-				{#if attached}
-					<Button
-						icon
-						size="sm"
-						variant={mode === 'translate' ? 'primary' : 'tertiary'}
-						onclick={() => (mode = 'translate')}
-					>
-						<ButtonIcon>
-							<Icon is={Move3d} />
-						</ButtonIcon>
-					</Button>
-					<Button
-						icon
-						size="sm"
-						variant={mode === 'rotate' ? 'primary' : 'tertiary'}
-						onclick={() => (mode = 'rotate')}
-					>
-						<ButtonIcon>
-							<Icon is={Rotate3d} />
-						</ButtonIcon>
-					</Button>
-					<Button
-						icon
-						size="sm"
-						disabled={!hasGeometry}
-						variant={mode === 'scale' ? 'primary' : 'tertiary'}
-						onclick={() => (mode = 'scale')}
-					>
-						<ButtonIcon>
-							<Icon is={Scale3d} />
-						</ButtonIcon>
-					</Button>
+				{#if framelessComponents.current.length > 0}
+					{#each framelessComponents.current as component (component)}
+						<Button
+							size="sm"
+							variant="tertiary"
+							onclick={() => {
+								partConfig.createFrame(component)
+								addingFrame = false
+							}}
+						>
+							<ButtonLabel>
+								<Text
+									text={component}
+									fontSize={14}
+									color="#ffffff"
+								/>
+							</ButtonLabel>
+						</Button>
+					{/each}
+				{:else}
+					<Text
+						text="No components without frames"
+						fontSize={14}
+						color="#ffffff"
+					/>
 				{/if}
 			</Panel>
-			</T.Group>
-		</HUDBillboard>
-
-		{#if addingFrame}
-			<HUDBillboard position={[0, -0.15, -0.8]}>
-				<T.Group scale={0.1}>
-					<Panel
-						flexDirection="column"
-						padding={12}
-						gap={6}
-						backgroundColor="#111"
-						borderRadius={16}
-						minWidth={320}
-					>
-						{#if framelessComponents.current.length > 0}
-							{#each framelessComponents.current as component (component)}
-								<Button
-									size="sm"
-									variant="tertiary"
-									onclick={() => {
-										partConfig.createFrame(component)
-										addingFrame = false
-									}}
-								>
-									<ButtonLabel>
-										<Text
-											text={component}
-											fontSize={14}
-											color="#ffffff"
-										/>
-									</ButtonLabel>
-								</Button>
-							{/each}
-						{:else}
-							<Text
-								text="No components without frames"
-								fontSize={14}
-								color="#ffffff"
-							/>
-						{/if}
-					</Panel>
-				</T.Group>
-			</HUDBillboard>
-		{/if}
-	</HUD>
+		</WristDisplay>
+	{/if}
 {/if}

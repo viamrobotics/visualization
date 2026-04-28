@@ -19,7 +19,6 @@
 
 	const DEFAULT_ORIGIN: [number, number, number] = [-1, -1, 0]
 	const COMMIT_DEBOUNCE_MS = 500
-	const Z_AXIS = new Vector3(0, 0, 1)
 
 	const leftPad = useGamepad({ xr: true, hand: 'left' })
 	const rightPad = useGamepad({ xr: true, hand: 'right' })
@@ -49,10 +48,10 @@
 	const commitQuat = new Quaternion()
 
 	const commit = useDebounce(async () => {
-		const [x, y, z] = origin.position
-		commitVec.set(x, y, z)
-		commitQuat.setFromAxisAngle(Z_AXIS, origin.rotation)
-
+		// origin.position/rotation define the composed XR reference space's
+		// offset from zUp, so an anchor at identity in the current (composed)
+		// space IS the anchor at origin's pose in zUp. commitVec/commitQuat
+		// are left at their default-constructed zero/identity values.
 		const anchor = await anchors.createAnchor(commitVec, commitQuat)
 		if (!anchor) return
 
@@ -105,6 +104,10 @@
 		} else {
 			headForward.normalize()
 		}
+		// headForward is in the composed XR reference space; rotate into zUp
+		// so the stick direction maps to the user's physical gaze regardless
+		// of the current origin rotation.
+		origin.toZUpDir(headForward)
 		headRight.set(headForward.y, -headForward.x, 0)
 
 		const deltaX = headRight.x * vx * THUMBSTICK_SPEED + headForward.x * vy * THUMBSTICK_SPEED
@@ -122,12 +125,15 @@
 
 	const fineTranslateStart = new Vector3()
 	const fineTranslateOriginStart = new Vector3()
+	const fineTranslateCurrent = new Vector3()
 	let fineTranslating = $state(false)
 
 	rightPad.squeeze.on('change', () => {
 		const ray = rightController.current?.targetRay
 		if (rightPad.squeeze.pressed && ray) {
-			fineTranslateStart.copy(ray.position)
+			// Save start position in zUp so the delta stays stable as the
+			// composed reference space recomposes each tick on origin changes.
+			origin.toZUpPos(fineTranslateStart, ray.position)
 			const [ox, oy, oz] = origin.position
 			fineTranslateOriginStart.set(ox, oy, oz)
 			fineTranslating = true
@@ -140,11 +146,12 @@
 		() => {
 			const ray = rightController.current?.targetRay
 			if (!ray) return
+			origin.toZUpPos(fineTranslateCurrent, ray.position)
 			origin.set(
 				[
-					fineTranslateOriginStart.x + ray.position.x - fineTranslateStart.x,
-					fineTranslateOriginStart.y + ray.position.y - fineTranslateStart.y,
-					fineTranslateOriginStart.z + ray.position.z - fineTranslateStart.z,
+					fineTranslateOriginStart.x + fineTranslateCurrent.x - fineTranslateStart.x,
+					fineTranslateOriginStart.y + fineTranslateCurrent.y - fineTranslateStart.y,
+					fineTranslateOriginStart.z + fineTranslateCurrent.z - fineTranslateStart.z,
 				],
 				origin.rotation
 			)
@@ -160,7 +167,9 @@
 	leftPad.squeeze.on('change', () => {
 		const ray = leftController.current?.targetRay
 		if (leftPad.squeeze.pressed && ray) {
-			fineRotateStartYaw = quatYaw(ray.quaternion)
+			// Controller yaw in composed = yaw_zUp − origin.rotation; convert
+			// to zUp so the delta stays stable while origin.rotation updates.
+			fineRotateStartYaw = quatYaw(ray.quaternion) + origin.rotation
 			fineRotateOriginStart = origin.rotation
 			fineRotating = true
 		} else {
@@ -172,10 +181,8 @@
 		() => {
 			const ray = leftController.current?.targetRay
 			if (!ray) return
-			origin.set(
-				origin.position,
-				fineRotateOriginStart + quatYaw(ray.quaternion) - fineRotateStartYaw
-			)
+			const yawZup = quatYaw(ray.quaternion) + origin.rotation
+			origin.set(origin.position, fineRotateOriginStart + yawZup - fineRotateStartYaw)
 			commit()
 		},
 		{ running: () => fineRotating }
@@ -184,6 +191,7 @@
 	let startLeftPinchTranslation = new Vector3()
 	let leftPinchTranslation = new Vector3()
 	let startRightPinchTranslation = new Vector3()
+	let rightPinchCurrent = new Vector3()
 	let startRightPinchRotation = 0
 
 	const leftHand = useHand('left')
@@ -261,20 +269,28 @@
 			return
 		}
 		renderer.xr.getHand(0).addEventListener('pinchstart', () => {
-			if (leftHand.current?.targetRay.position) {
+			const p = leftHand.current?.targetRay.position
+			if (p) {
 				translating = true
-				startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
+				// Pinch start position in zUp; delta is cumulative from here.
+				origin.toZUpPos(startLeftPinchTranslation, p)
 			}
 		})
 	})
 
 	useTask(
 		() => {
-			if (leftHand.current?.targetRay && translating) {
-				leftPinchTranslation
-					.copy(leftHand.current.targetRay.position)
-					.sub(startLeftPinchTranslation)
-				origin.set(leftPinchTranslation.toArray(), origin.rotation)
+			const p = leftHand.current?.targetRay.position
+			if (p && translating) {
+				origin.toZUpPos(leftPinchTranslation, p)
+				origin.set(
+					[
+						leftPinchTranslation.x - startLeftPinchTranslation.x,
+						leftPinchTranslation.y - startLeftPinchTranslation.y,
+						leftPinchTranslation.z - startLeftPinchTranslation.z,
+					],
+					origin.rotation
+				)
 				commit()
 			}
 		},
@@ -285,8 +301,10 @@
 
 	useTask(
 		() => {
-			if (rightHand.current?.targetRay && rotating) {
-				const deltaX = rightHand.current.targetRay.position.x - startRightPinchTranslation.x
+			const p = rightHand.current?.targetRay.position
+			if (p && rotating) {
+				origin.toZUpPos(rightPinchCurrent, p)
+				const deltaX = rightPinchCurrent.x - startRightPinchTranslation.x
 				origin.set(origin.position, startRightPinchRotation + deltaX)
 				commit()
 			}
@@ -300,9 +318,10 @@
 <Hand
 	left
 	onpinchstart={() => {
-		if (leftHand.current?.targetRay.position) {
+		const p = leftHand.current?.targetRay.position
+		if (p) {
 			translating = true
-			startLeftPinchTranslation.copy(leftHand.current.targetRay.position)
+			origin.toZUpPos(startLeftPinchTranslation, p)
 		}
 	}}
 	onpinchend={() => (translating = false)}
@@ -311,9 +330,10 @@
 <Hand
 	right
 	onpinchstart={() => {
-		if (rightHand.current?.targetRay.position) {
+		const p = rightHand.current?.targetRay.position
+		if (p) {
 			rotating = true
-			startRightPinchTranslation.copy(rightHand.current.targetRay.position)
+			origin.toZUpPos(startRightPinchTranslation, p)
 			startRightPinchRotation = origin.rotation
 		}
 	}}

@@ -109,14 +109,14 @@ importers:
         specifier: 8.5.9
         version: 8.5.9(svelte@5.55.0)(three@0.183.2)
       '@threlte/extras':
-        specifier: 9.14.8
-        version: 9.14.8(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
+        specifier: 9.14.9
+        version: 9.14.9(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
       '@threlte/rapier':
         specifier: 3.4.1
         version: 3.4.1(@dimforge/rapier3d-compat@0.18.2)(svelte@5.55.0)(three@0.183.2)
       '@threlte/xr':
-        specifier: 1.5.4
-        version: 1.5.4(svelte@5.55.0)(three@0.183.2)
+        specifier: 1.5.5
+        version: 1.5.5(svelte@5.55.0)(three@0.183.2)
       '@types/bun':
         specifier: 1.2.21
         version: 1.2.21(@types/react@19.2.2)
@@ -1646,8 +1646,8 @@ packages:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/extras@9.14.8':
-    resolution: {integrity: sha512-0QVIYoJPo+Nc4S4Il9asHVzpt4iHX88jRgyrWi7Uk5iWK+xSAFLyHkyL0kSvdFoBXSJZLE0LG6qP78n69//scA==}
+  '@threlte/extras@9.14.9':
+    resolution: {integrity: sha512-ASDdBeyb8fja7dHpUzD1zLReTvluaVUfkO7nMigFZ88WiMFfn1viSeySjSZcofGwMKBO0C7WZrNoQTnxijok9g==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -1659,8 +1659,8 @@ packages:
       svelte: '>=5'
       three: '>=0.152'
 
-  '@threlte/xr@1.5.4':
-    resolution: {integrity: sha512-cSH6qapfSHjE/MiQgPpZgEnZ5eTcVg3OoqrABv/RpEIgwzBv+gHGHDHy4RN+cnKA2SjHroPE753M89mMdrgpCg==}
+  '@threlte/xr@1.5.5':
+    resolution: {integrity: sha512-w40Io879SPK8V6jMVfbQUeuOBHjeGLdwsOl6KzTFUnNby0XP51T6kupuXTPSJRHARYMPc1maXJ8NYh2BJC+woA==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -5599,7 +5599,7 @@ snapshots:
       svelte: 5.55.0
       three: 0.183.2
 
-  '@threlte/extras@9.14.8(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/extras@9.14.9(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.183.1)(three@0.183.2)
       camera-controls: 3.1.2(three@0.183.2)
@@ -5618,7 +5618,7 @@ snapshots:
       svelte: 5.55.0
       three: 0.183.2
 
-  '@threlte/xr@1.5.4(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/xr@1.5.5(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       svelte: 5.55.0
       three: 0.183.2

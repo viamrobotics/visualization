@@ -5,8 +5,7 @@
 
 	import { type ToastVariant, xrToast, type XRToastItem } from '$lib/components/xr/toasts.svelte'
 
-	import HUD from './HUD.svelte'
-	import HUDBillboard from './HUDBillboard.svelte'
+	import WristDisplay from './WristDisplay.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
@@ -206,17 +205,15 @@
 	})
 </script>
 
-<HUD>
-	{#if hasToasts && geometry}
-		<HUDBillboard position={[0, -0.3, -1.5]}>
-			<T.Mesh renderOrder={999}>
-				<T is={geometry} />
-				<T.MeshBasicMaterial
-					map={texture}
-					transparent
-					depthTest={false}
-				/>
-			</T.Mesh>
-		</HUDBillboard>
-	{/if}
-</HUD>
+{#if hasToasts && geometry}
+	<WristDisplay position={[0, 0.005, 0.02]}>
+		<T.Mesh renderOrder={999}>
+			<T is={geometry} />
+			<T.MeshBasicMaterial
+				map={texture}
+				transparent
+				depthTest={false}
+			/>
+		</T.Mesh>
+	</WristDisplay>
+{/if}

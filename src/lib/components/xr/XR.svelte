@@ -52,22 +52,46 @@
 
 	const { renderer } = useThrelte()
 
-	// Move into Viam's coordinate system. This basically accomplishes
-	// the same thing as setting z up in the Camera component.
+	// Compose the XR reference space from:
+	//   1) a -π/2 rotation around X to switch from WebXR's Y-up to Viam's Z-up
+	//   2) the scene origin (position + yaw) so the origin's pose lives at the
+	//      composed space's identity. With this, controllers, camera, and scene
+	//      content all share one frame — no separate origin group needed.
+	let baseRefSpace: XRReferenceSpace | undefined
+
 	$effect(() => {
-		if ($isPresenting) {
-			const q = new Quaternion().setFromAxisAngle({ x: 1, y: 0, z: 0 }, -Math.PI / 2)
-
-			// after the XR session has started and a reference space exists:
-			const baseRefSpace = renderer.xr.getReferenceSpace()
-			if (baseRefSpace) {
-				const rotatedRefSpace = baseRefSpace.getOffsetReferenceSpace(
-					new XRRigidTransform({ x: 0, y: 0, z: 0, w: 1 }, { x: q.x, y: q.y, z: q.z, w: q.w })
-				)
-
-				renderer.xr.setReferenceSpace(rotatedRefSpace)
-			}
+		if (!$isPresenting) {
+			baseRefSpace = undefined
+			return
 		}
+
+		if (!baseRefSpace) {
+			const current = renderer.xr.getReferenceSpace()
+			if (!current) return
+			baseRefSpace = current
+		}
+
+		const [ox, oy, oz] = origin.position
+		const oRot = origin.rotation
+
+		const zUpQ = new Quaternion().setFromAxisAngle({ x: 1, y: 0, z: 0 }, -Math.PI / 2)
+		const originQ = new Quaternion().setFromAxisAngle({ x: 0, y: 0, z: 1 }, oRot)
+
+		const composed = baseRefSpace
+			.getOffsetReferenceSpace(
+				new XRRigidTransform(
+					{ x: 0, y: 0, z: 0, w: 1 },
+					{ x: zUpQ.x, y: zUpQ.y, z: zUpQ.z, w: zUpQ.w }
+				)
+			)
+			.getOffsetReferenceSpace(
+				new XRRigidTransform(
+					{ x: ox, y: oy, z: oz },
+					{ x: originQ.x, y: originQ.y, z: originQ.z, w: originQ.w }
+				)
+			)
+
+		renderer.xr.setReferenceSpace(composed)
 	})
 </script>
 
