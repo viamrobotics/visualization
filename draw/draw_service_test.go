@@ -601,6 +601,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
@@ -641,6 +643,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -686,6 +690,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
