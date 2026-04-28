@@ -601,6 +601,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		drainSnapshot(t, sr.stream, 1)
+
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
@@ -640,6 +642,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 1)
 
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
@@ -685,6 +689,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 1)
 
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
@@ -963,6 +969,14 @@ func TestDrawService_ConcurrentAccess(t *testing.T) {
 	test.That(t, remaining, test.ShouldEqual, 0)
 }
 
+func drainSnapshot(t *testing.T, stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse], n int) {
+	t.Helper()
+	for range n {
+		test.That(t, stream.Receive(), test.ShouldBeTrue)
+		test.That(t, stream.Msg().ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED)
+	}
+}
+
 func addTransformAndDrawing(t *testing.T, client drawv1connect.DrawServiceClient) ([]byte, []byte) {
 	t.Helper()
 	tResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -1137,6 +1151,9 @@ func TestDrawService_CreateRelationship(t *testing.T) {
 
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 2)
+
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -1218,6 +1235,8 @@ func TestDrawService_CascadeRelationships(t *testing.T) {
 
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 2)
 
 		// First event: REMOVED for target
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)

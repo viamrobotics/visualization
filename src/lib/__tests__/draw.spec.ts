@@ -201,7 +201,9 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true }))
+		const [entity] = asEntities(
+			drawDrawing(world, drawing, traits.SnapshotAPI, { removable: true })
+		)
 
 		expect(entity.get(traits.Name)).toBe('line-1')
 		expect(entity.get(traits.Parent)).toBe('base')
@@ -224,7 +226,9 @@ describe('drawDrawing', () => {
 			}),
 		})
 
-		const [entity] = asEntities(drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false }))
+		const [entity] = asEntities(
+			drawDrawing(world, drawing, traits.SnapshotAPI, { removable: false })
+		)
 
 		expect(entity.has(traits.Removable)).toBe(false)
 	})
