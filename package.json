@@ -137,6 +137,7 @@
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
 		"svelte": ">=5",
+		"svelte-tweakpane-ui": ">=1.5",
 		"svelte-virtuallists": ">=1"
 	},
 	"pnpm": {
