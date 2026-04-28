@@ -51,6 +51,6 @@ func (db *diskBuffer) close() {
 		return
 	}
 	name := db.file.Name()
-	db.file.Close()
-	os.Remove(name)
+	_ = db.file.Close()
+	_ = os.Remove(name)
 }
