@@ -34,8 +34,8 @@ type DrawPointCloudOptions struct {
 	// If not provided, the point cloud's color data will be used.
 	Colors []draw.Color
 
-	// ChunkSize controls streaming.
-	// - When > 0, the point cloud is streamed in chunks of this size.
+	// ChunkSize is the number of points per chunk when streaming.
+	// - When > 0, the point cloud is sent in chunks of this many points.
 	// - Otherwise, the point cloud is sent in a single call.
 	ChunkSize int
 
