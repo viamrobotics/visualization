@@ -42,14 +42,14 @@ Organize code by feature with **one focused unit per file**. File names should d
 
 Detailed guidance lives in `.claude/rules/`. Path-scoped rules load when Claude reads matching files; rules without `paths` load every session.
 
-| Rule                  | Loads when                                           |
-| --------------------- | ---------------------------------------------------- |
-| `svelte.md`           | editing `.svelte`, `.svelte.ts`, `.svelte.js`        |
-| `three.md`            | editing files under `src/lib/three/`                 |
-| `go.md`               | editing `.go`                                        |
-| `protobuf.md`         | editing `.proto`                                     |
-| `testing-go.md`       | editing Go test files (`*_test.go`)                  |
-| `testing-frontend.md` | editing frontend test files (`src/**/*.spec.ts`)     |
-| `e2e-testing.md`      | editing files under `e2e/`                           |
-| `pr-description.md`   | editing files under `.changeset/`                    |
-| `changesets.md`       | editing files under `.changeset/` or `CHANGELOG.md`  |
+| Rule                  | Loads when                                          |
+| --------------------- | --------------------------------------------------- |
+| `svelte.md`           | editing `.svelte`, `.svelte.ts`, `.svelte.js`       |
+| `three.md`            | editing files under `src/lib/three/`                |
+| `go.md`               | editing `.go`                                       |
+| `protobuf.md`         | editing `.proto`                                    |
+| `testing-go.md`       | editing Go test files (`*_test.go`)                 |
+| `testing-frontend.md` | editing frontend test files (`src/**/*.spec.ts`)    |
+| `e2e-testing.md`      | editing files under `e2e/`                          |
+| `pr-description.md`   | editing files under `.changeset/`                   |
+| `changesets.md`       | editing files under `.changeset/` or `CHANGELOG.md` |

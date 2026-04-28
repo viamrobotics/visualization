@@ -30,11 +30,11 @@ const _object3d = new Object3D()
 const _col = new Color()
 
 export class BatchedArrow {
-  updateArrow(id: number, origin: Vector3, direction: Vector3) {
-    _object3d.position.copy(origin)
-    _axis.set(direction.z, 0, -direction.x).normalize()
-    // ...
-  }
+	updateArrow(id: number, origin: Vector3, direction: Vector3) {
+		_object3d.position.copy(origin)
+		_axis.set(direction.z, 0, -direction.x).normalize()
+		// ...
+	}
 }
 ```
 
@@ -44,18 +44,18 @@ Use `BatchedMesh` (multiple geometries, many instances) or `InstancedMesh` (one 
 
 ```typescript
 class BatchedArrow {
-  _pool: number[] = []
+	_pool: number[] = []
 
-  addArrow() {
-    const id = this._pool.pop() ?? this.mesh.addInstance(this._geometryId)
-    // ...
-    return id
-  }
+	addArrow() {
+		const id = this._pool.pop() ?? this.mesh.addInstance(this._geometryId)
+		// ...
+		return id
+	}
 
-  removeArrow(id: number) {
-    this.mesh.setVisibleAt(id, false)
-    this._pool.push(id)
-  }
+	removeArrow(id: number) {
+		this.mesh.setVisibleAt(id, false)
+		this._pool.push(id)
+	}
 }
 ```
 
