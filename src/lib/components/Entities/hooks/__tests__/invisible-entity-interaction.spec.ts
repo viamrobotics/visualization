@@ -3,16 +3,6 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { traits } from '$lib/ecs'
 
-/**
- * Tests for the invisible-entity interaction invariants enforced by
- * useEntityEvents: invisible entities must not be hoverable, selectable,
- * or focusable.
- *
- * The reactive guard (`$effect` + handler early-returns) lives in
- * useEntityEvents.svelte.ts and cannot be unit-tested without a full
- * Svelte/Threlte component context. These tests verify the underlying
- * ECS trait operations that the guard relies on.
- */
 describe('invisible entity interaction', () => {
 	let world: World
 	afterEach(() => world?.destroy())
