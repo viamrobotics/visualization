@@ -57,6 +57,9 @@ const (
 	DrawServiceRemoveAllDrawingsProcedure = "/draw.v1.DrawService/RemoveAllDrawings"
 	// DrawServiceRemoveAllProcedure is the fully-qualified name of the DrawService's RemoveAll RPC.
 	DrawServiceRemoveAllProcedure = "/draw.v1.DrawService/RemoveAll"
+	// DrawServiceGetEntityChunkProcedure is the fully-qualified name of the DrawService's
+	// GetEntityChunk RPC.
+	DrawServiceGetEntityChunkProcedure = "/draw.v1.DrawService/GetEntityChunk"
 )
 
 // DrawServiceClient is a client for the draw.v1.DrawService service.
@@ -79,6 +82,8 @@ type DrawServiceClient interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
+	// Get a chunk of a chunked entity's data by element offset.
+	GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error)
 }
 
 // NewDrawServiceClient constructs a client for the draw.v1.DrawService service. By default, it uses
@@ -146,6 +151,12 @@ func NewDrawServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(drawServiceMethods.ByName("RemoveAll")),
 			connect.WithClientOptions(opts...),
 		),
+		getEntityChunk: connect.NewClient[v1.GetEntityChunkRequest, v1.GetEntityChunkResponse](
+			httpClient,
+			baseURL+DrawServiceGetEntityChunkProcedure,
+			connect.WithSchema(drawServiceMethods.ByName("GetEntityChunk")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -160,6 +171,7 @@ type drawServiceClient struct {
 	removeAllTransforms *connect.Client[v1.RemoveAllTransformsRequest, v1.RemoveAllTransformsResponse]
 	removeAllDrawings   *connect.Client[v1.RemoveAllDrawingsRequest, v1.RemoveAllDrawingsResponse]
 	removeAll           *connect.Client[v1.RemoveAllRequest, v1.RemoveAllResponse]
+	getEntityChunk      *connect.Client[v1.GetEntityChunkRequest, v1.GetEntityChunkResponse]
 }
 
 // AddEntity calls draw.v1.DrawService.AddEntity.
@@ -207,6 +219,11 @@ func (c *drawServiceClient) RemoveAll(ctx context.Context, req *connect.Request[
 	return c.removeAll.CallUnary(ctx, req)
 }
 
+// GetEntityChunk calls draw.v1.DrawService.GetEntityChunk.
+func (c *drawServiceClient) GetEntityChunk(ctx context.Context, req *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error) {
+	return c.getEntityChunk.CallUnary(ctx, req)
+}
+
 // DrawServiceHandler is an implementation of the draw.v1.DrawService service.
 type DrawServiceHandler interface {
 	// Add an entity to the scene.
@@ -227,6 +244,8 @@ type DrawServiceHandler interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
+	// Get a chunk of a chunked entity's data by element offset.
+	GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error)
 }
 
 // NewDrawServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -290,6 +309,12 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(drawServiceMethods.ByName("RemoveAll")),
 		connect.WithHandlerOptions(opts...),
 	)
+	drawServiceGetEntityChunkHandler := connect.NewUnaryHandler(
+		DrawServiceGetEntityChunkProcedure,
+		svc.GetEntityChunk,
+		connect.WithSchema(drawServiceMethods.ByName("GetEntityChunk")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/draw.v1.DrawService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case DrawServiceAddEntityProcedure:
@@ -310,6 +335,8 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 			drawServiceRemoveAllDrawingsHandler.ServeHTTP(w, r)
 		case DrawServiceRemoveAllProcedure:
 			drawServiceRemoveAllHandler.ServeHTTP(w, r)
+		case DrawServiceGetEntityChunkProcedure:
+			drawServiceGetEntityChunkHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -353,4 +380,8 @@ func (UnimplementedDrawServiceHandler) RemoveAllDrawings(context.Context, *conne
 
 func (UnimplementedDrawServiceHandler) RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.RemoveAll is not implemented"))
+}
+
+func (UnimplementedDrawServiceHandler) GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.GetEntityChunk is not implemented"))
 }

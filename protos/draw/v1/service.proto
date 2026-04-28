@@ -37,6 +37,9 @@ service DrawService {
 
   // Remove all entities from the scene.
   rpc RemoveAll(RemoveAllRequest) returns (RemoveAllResponse);
+
+  // Get a chunk of a chunked entity's data by element offset.
+  rpc GetEntityChunk(GetEntityChunkRequest) returns (GetEntityChunkResponse);
 }
 
 enum EntityChangeType {
@@ -112,4 +115,23 @@ message RemoveAllRequest {}
 message RemoveAllResponse {
   int32 transform_count = 1;
   int32 drawing_count = 2;
+}
+
+message GetEntityChunkRequest {
+  bytes uuid = 1;
+  uint32 start = 2;
+}
+
+message GetEntityChunkResponse {
+  // The entity that is being chunked.
+  oneof entity {
+    viam.common.v1.Transform transform = 1;
+    Drawing drawing = 2;
+  }
+
+  // The element offset this chunk starts at.
+  uint32 start = 3;
+
+  // True when this is the last available chunk AND all data has been received from the producer.
+  bool done = 4;
 }

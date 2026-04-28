@@ -7,14 +7,12 @@ import (
 
 // poseToProtobuf converts a spatialmath.Pose to its Protocol Buffer representation (commonv1.Pose).
 func poseToProtobuf(pose spatialmath.Pose) *commonv1.Pose {
-	poseProto := spatialmath.PoseToProtobuf(pose)
-	return poseProto
+	return spatialmath.PoseToProtobuf(pose)
 }
 
 // poseInFrameToProtobuf converts a spatialmath.Pose and reference frame name to a Protocol Buffer
 // commonv1.PoseInFrame, which represents a pose within a specific coordinate frame.
 func poseInFrameToProtobuf(pose spatialmath.Pose, parent string) *commonv1.PoseInFrame {
-
 	return &commonv1.PoseInFrame{
 		ReferenceFrame: parent,
 		Pose:           poseToProtobuf(pose),

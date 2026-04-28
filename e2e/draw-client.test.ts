@@ -1,5 +1,8 @@
 import { Browser, expect, Page, test } from '@playwright/test'
-import { execSync } from 'node:child_process'
+import { exec, execSync } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
 
 const createPage = async (browser: Browser): Promise<Page> => {
 	const context = await browser.newContext()
@@ -50,6 +53,29 @@ const assertTestSuccess = async (page: Page, testPrefix: string) => {
 	const failedScreenshot = await takeScreenshot(page, testPrefix)
 	await cleanup(page)
 	assertNoFailedScreenshots([failedScreenshot])
+}
+
+const runChunkedTest = async (browser: Browser, testPrefix: string, goTestPath: string) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	const goTest = execAsync(
+		`go test -run ${goTestPath} github.com/viam-labs/motion-tools/client/api -count=1 -timeout=300s`
+	)
+
+	await expect(page.getByRole('progressbar', { name: /Loading/ })).toBeVisible({
+		timeout: 120_000,
+	})
+
+	await goTest
+
+	await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 120_000 })
+
+	failedScreenshots.push(await takeScreenshot(page, testPrefix))
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
 }
 
 test('draw service events lifecycle', async ({ browser }) => {
@@ -301,6 +327,38 @@ test('draw point cloud updating', async ({ browser }) => {
 	await expect(page.getByText('DrawPointCloud updating')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point cloud in chunks', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS',
+		'^TestDrawPointCloud$/^DrawPointCloudInChunks$'
+	)
+})
+
+test('draw point cloud in chunks with palette', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PALETTE',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPalette'
+	)
+})
+
+test('draw point cloud in chunks with per point colors', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PER_POINT_COLORS',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPerPointColors'
+	)
+})
+
+test('draw point cloud in chunks with uniform opacity', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_UNIFORM_OPACITY',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithUniformOpacity'
+	)
 })
 
 test('draw geometries updating', async ({ browser }) => {
@@ -579,6 +637,10 @@ test('draw points with point size', async ({ browser }) => {
 	await assertTestSuccess(page, testPrefix)
 })
 
+test('draw points in chunks', async ({ browser }) => {
+	await runChunkedTest(browser, 'DRAW_POINTS_IN_CHUNKS', '^TestDrawPoints$/DrawPointsInChunks')
+})
+
 test('draw poses as arrows', async ({ browser }) => {
 	const testPrefix = 'DRAW_POSES_AS_ARROWS'
 	const page = await createPage(browser)
@@ -710,6 +772,22 @@ test('draw point clouds with single color', async ({ browser }) => {
 	)
 
 	await expect(page.getByText('octagon_single_color')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point cloud with opacity', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUD_WITH_OPACITY'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawSingleColorPointCloudWithOpacity github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('octagon_with_opacity')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })

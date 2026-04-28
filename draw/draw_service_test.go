@@ -107,7 +107,7 @@ func sampleDrawing(name string) *drawv1.Drawing {
 
 func TestDrawService_AddEntity(t *testing.T) {
 	t.Run("AddTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -118,7 +118,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("AddDrawing", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -129,7 +129,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("AddMultipleEntitiesReturnsUniqueUUIDs", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp1, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -146,7 +146,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("NoEntityReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{}))
@@ -155,7 +155,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertTransformWithExistingUUID", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -187,7 +187,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertDrawingWithExistingUUID", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -218,7 +218,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertEmitsAddedThenUpdated", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -268,7 +268,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 
 func TestDrawService_RemoveEntity(t *testing.T) {
 	t.Run("RemoveExistingTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -283,7 +283,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 	})
 
 	t.Run("RemoveNonExistentEntityReturnsNotFound", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -295,7 +295,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 	})
 
 	t.Run("MissingUUIDReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.RemoveEntity(context.Background(), connect.NewRequest(&drawv1.RemoveEntityRequest{}))
@@ -306,7 +306,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 
 func TestDrawService_UpdateEntity(t *testing.T) {
 	t.Run("FullReplaceTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -331,7 +331,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FullReplaceDrawing", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -356,7 +356,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("PartialUpdateWithFieldMask", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		original := sampleTransform("original")
@@ -389,7 +389,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskDoesNotLeakUnmaskedFields", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		originalPose := &commonv1.PoseInFrame{
@@ -430,7 +430,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskClearsFieldWhenIncomingHasItUnset", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -458,7 +458,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskOnDrawingOnlyUpdatesNamedFields", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -493,7 +493,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("TypeMismatchTransformOnDrawingReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -510,7 +510,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("NonExistentUUIDReturnsNotFound", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -523,7 +523,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("MissingUUIDReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
@@ -536,7 +536,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 
 func TestDrawService_StreamEntityChanges(t *testing.T) {
 	t.Run("ReceivesAddedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -570,7 +570,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("ReceivesRemovedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -601,13 +601,15 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
 	})
 
 	t.Run("ReceivesUpdatedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -641,6 +643,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -648,7 +652,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("UpdatedFieldMaskPropagatedToStream", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -686,6 +690,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		// drain the initial state replay (existing entity sent as ADDED on connect)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -694,7 +700,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("StreamClosesOnContextCancellation", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -725,7 +731,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("MultipleSubscribersAllReceiveEvents", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -765,7 +771,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 func TestDrawService_SetScene(t *testing.T) {
 	t.Run("StoresSceneMetadata", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		meta := &drawv1.SceneMetadata{Grid: boolPtr(true)}
@@ -782,7 +788,7 @@ func TestDrawService_SetScene(t *testing.T) {
 	})
 
 	t.Run("MissingMetadataReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.SetScene(context.Background(), connect.NewRequest(&drawv1.SetSceneRequest{}))
@@ -793,7 +799,7 @@ func TestDrawService_SetScene(t *testing.T) {
 
 func TestDrawService_StreamSceneChanges(t *testing.T) {
 	t.Run("ReceivesSceneChangeEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -828,7 +834,7 @@ func TestDrawService_StreamSceneChanges(t *testing.T) {
 
 func TestDrawService_RemoveAllTransforms(t *testing.T) {
 	t.Run("RemovesOnlyTransforms", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		for i := 0; i < 3; i++ {
@@ -853,7 +859,7 @@ func TestDrawService_RemoveAllTransforms(t *testing.T) {
 	})
 
 	t.Run("EmptyStoreReturnsZeroCount", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.RemoveAllTransforms(context.Background(), connect.NewRequest(&drawv1.RemoveAllTransformsRequest{}))
@@ -864,7 +870,7 @@ func TestDrawService_RemoveAllTransforms(t *testing.T) {
 
 func TestDrawService_RemoveAllDrawings(t *testing.T) {
 	t.Run("RemovesOnlyDrawings", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -891,7 +897,7 @@ func TestDrawService_RemoveAllDrawings(t *testing.T) {
 
 func TestDrawService_RemoveAll(t *testing.T) {
 	t.Run("RemovesAllEntitiesAndReturnsCounts", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		for i := 0; i < 2; i++ {
@@ -919,7 +925,7 @@ func TestDrawService_RemoveAll(t *testing.T) {
 	})
 
 	t.Run("EmptyStoreReturnsZeroCounts", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.RemoveAll(context.Background(), connect.NewRequest(&drawv1.RemoveAllRequest{}))
@@ -930,7 +936,7 @@ func TestDrawService_RemoveAll(t *testing.T) {
 }
 
 func TestDrawService_ConcurrentAccess(t *testing.T) {
-	svc := NewDrawService()
+	svc := NewDrawService(t.TempDir())
 	client := newTestServer(t, svc)
 
 	const goroutines = 20
