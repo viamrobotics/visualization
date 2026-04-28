@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { JsonValue, Struct, type ViamClient } from '@viamrobotics/sdk'
 
 import {
@@ -10,6 +10,19 @@ import {
 	injectMachineConfig,
 	withRobot,
 } from './fixtures/with-robot'
+
+// Each frame-edit section in Details.svelte is a tweakpane Point/Slider widget
+// wrapped in a div with a single `aria-label`. Inputs inside are positional
+// (axis 0..N). Tweakpane only commits values on Enter/blur, so press Enter
+// after each fill.
+const fillFrameInputs = async (page: Page, groupLabel: string, values: string[]) => {
+	const inputs = page.getByLabel(groupLabel).locator('input')
+	for (const [index, value] of values.entries()) {
+		const input = inputs.nth(index)
+		await input.fill(value)
+		await input.press('Enter')
+	}
+}
 
 const fragmentIdsToDelete: string[] = []
 
@@ -81,19 +94,11 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	await expect(page.getByText('Box', { exact: true })).toBeVisible()
 	await page.getByText('Box', { exact: true }).click()
 
-	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position x coordinate').fill('100')
-	await expect(page.getByLabel('mutable local position y coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position y coordinate').fill('200')
-	await expect(page.getByLabel('mutable local position z coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position z coordinate').fill('300')
+	await expect(page.getByLabel('mutable local position')).toBeVisible()
+	await fillFrameInputs(page, 'mutable local position', ['100', '200', '300'])
 
-	await expect(page.getByLabel('mutable box dimensions x value')).toBeVisible()
-	await page.getByLabel('mutable box dimensions x value').fill('400')
-	await expect(page.getByLabel('mutable box dimensions y value')).toBeVisible()
-	await page.getByLabel('mutable box dimensions y value').fill('500')
-	await expect(page.getByLabel('mutable box dimensions z value')).toBeVisible()
-	await page.getByLabel('mutable box dimensions z value').fill('600')
+	await expect(page.getByLabel('mutable box dimensions')).toBeVisible()
+	await fillFrameInputs(page, 'mutable box dimensions', ['400', '500', '600'])
 
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
 	try {
@@ -143,9 +148,8 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	}
 
 	// REPARENT THE OBJECT
-	await expect(page.getByLabel('dropdown parent frame name')).toBeVisible()
-	await page.getByLabel('dropdown parent frame name').click()
-	await page.getByLabel('dropdown parent frame name').selectOption('parent')
+	await expect(page.getByLabel('mutable parent frame')).toBeVisible()
+	await page.getByLabel('mutable parent frame').locator('select').selectOption('parent')
 
 	try {
 		await expect(page).toHaveScreenshot(`${testPrefix}-3-parented.png`, { fullPage: true })
@@ -169,12 +173,8 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	await expect(page.getByText('None', { exact: true }).first()).toBeVisible()
 	await page.getByText('None', { exact: true }).first().click()
 
-	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position x coordinate').fill('0')
-	await expect(page.getByLabel('mutable local position y coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position y coordinate').fill('0')
-	await expect(page.getByLabel('mutable local position z coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position z coordinate').fill('0')
+	await expect(page.getByLabel('mutable local position')).toBeVisible()
+	await fillFrameInputs(page, 'mutable local position', ['0', '0', '0'])
 
 	// SAVE THE CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
@@ -396,15 +396,11 @@ withRobot('fragment edit frame', async ({ browser }) => {
 	await expect(page.getByText('Sphere', { exact: true })).toBeVisible()
 	await page.getByText('Sphere', { exact: true }).click()
 
-	await expect(page.getByLabel('mutable local position x coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position x coordinate').fill('100')
-	await expect(page.getByLabel('mutable local position y coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position y coordinate').fill('200')
-	await expect(page.getByLabel('mutable local position z coordinate')).toBeVisible()
-	await page.getByLabel('mutable local position z coordinate').fill('300')
+	await expect(page.getByLabel('mutable local position')).toBeVisible()
+	await fillFrameInputs(page, 'mutable local position', ['100', '200', '300'])
 
-	await expect(page.getByLabel('mutable sphere dimensions radius value')).toBeVisible()
-	await page.getByLabel('mutable sphere dimensions radius value').fill('400')
+	await expect(page.getByLabel('mutable sphere dimensions')).toBeVisible()
+	await fillFrameInputs(page, 'mutable sphere dimensions', ['400'])
 
 	// SAVE THE CHANGES
 	await expect(page.getByText('Live updates paused', { exact: true })).toBeVisible()
