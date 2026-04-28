@@ -19,7 +19,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 
 	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
 
-	import { useWorld } from '$lib/ecs'
+	import { traits, useWorld } from '$lib/ecs'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -47,10 +47,14 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 			for (const spawned of entities) {
 				if (spawned.type === 'transform' || spawned.type === 'drawing') {
 					relationships.apply(spawned.entity, spawned.relationships)
+					const uuid = spawned.entity.get(traits.UUID)
+					if (uuid) relationships.flush(uuid)
 				} else if (spawned.type === 'model') {
 					const root = spawned.entities[0]
 					if (!root) continue
 					relationships.apply(root, spawned.relationships)
+					const uuid = root.get(traits.UUID)
+					if (uuid) relationships.flush(uuid)
 				}
 			}
 		})

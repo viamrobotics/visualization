@@ -1286,6 +1286,54 @@ func TestDrawService_CascadeRelationships(t *testing.T) {
 		test.That(t, rels, test.ShouldHaveLength, 1)
 		test.That(t, rels[0].TargetUuid, test.ShouldResemble, tgtResp.Msg.GetUuid())
 	})
+
+	t.Run("RemoveAllTransformsCascadesRelationships", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		// source=transform, target=drawing — rel lives on the transform
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   tgtUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: srcUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		_, err = client.RemoveAllTransforms(context.Background(), connect.NewRequest(&drawv1.RemoveAllTransformsRequest{}))
+		test.That(t, err, test.ShouldBeNil)
+
+		// drawing that referenced the removed transform must have its relationship cleared
+		dID, _ := uuid.FromBytes(tgtUUID)
+		svc.mu.RLock()
+		stored := svc.entities[dID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
+
+	t.Run("RemoveAllDrawingsCascadesRelationships", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		// source=transform, target=drawing
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   srcUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: tgtUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		_, err = client.RemoveAllDrawings(context.Background(), connect.NewRequest(&drawv1.RemoveAllDrawingsRequest{}))
+		test.That(t, err, test.ShouldBeNil)
+
+		// transform that referenced the removed drawing must have its relationship cleared
+		tID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[tID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
 }
 
 func boolPtr(b bool) *bool {

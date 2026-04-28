@@ -1,6 +1,7 @@
 package draw
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,8 +10,6 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
-
-	"bytes"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
@@ -646,7 +645,7 @@ func (svc *DrawService) CreateRelationship(
 	rels := entityMetadataRelationships(source)
 	replaced := false
 	for i, r := range rels {
-		if bytes.Equal(r.TargetUuid, req.Msg.Relationship.TargetUuid) {
+		if bytes.Equal(r.TargetUuid, req.Msg.GetRelationship().GetTargetUuid()) {
 			rels[i] = req.Msg.Relationship
 			replaced = true
 			break

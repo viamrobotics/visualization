@@ -58,14 +58,13 @@
 		if (isServiceManaged) {
 			const sourceUuid = entity.get(traits.UUID)
 			const targetUuid = selectedEntity.get(traits.UUID)
-			if (sourceUuid && targetUuid) {
-				void drawService.createRelationship(
-					sourceUuid,
-					targetUuid,
-					linkType ?? '',
-					relationshipFormula
-				)
-			}
+			if (!sourceUuid || !targetUuid) return
+			void drawService.createRelationship(
+				sourceUuid,
+				targetUuid,
+				linkType ?? '',
+				relationshipFormula
+			)
 		} else {
 			entity.add(
 				relations.SubEntityLink(selectedEntity, {
