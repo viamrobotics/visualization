@@ -18,15 +18,15 @@ jobs:
 
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'pnpm'
@@ -47,7 +47,6 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          # This expects you to have a script called release which does a build for your packages and calls changeset publish
           publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -83,7 +82,7 @@ jobs:
           make docs
 
       - name: Create Pull Request for documentation updates
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'docs: update documentation'
@@ -95,11 +94,13 @@ jobs:
           branch: update-docs
           delete-branch: true
 
-  create-version-bump-pr:
+  bump-app-catalog:
     needs: deploy-and-publish
     if: needs.deploy-and-publish.outputs.published == 'true'
-    uses: ./.github/workflows/create-version-bump-pr.yml
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/bump-app-catalog.yml
     with:
       version: ${{ needs.deploy-and-publish.outputs.version }}
-    secrets:
-      APP_REPO_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+    secrets: inherit
