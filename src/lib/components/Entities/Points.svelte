@@ -33,6 +33,8 @@
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const invisible = useTrait(() => entity, traits.Invisible)
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+	const materialProps = useTrait(() => entity, traits.Material)
 
 	const pointSize = $derived(
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
@@ -91,6 +93,11 @@
 	})
 
 	$effect.pre(() => {
+		material.depthTest = materialProps.current?.depthTest ?? true
+		material.depthWrite = materialProps.current?.depthWrite ?? true
+	})
+
+	$effect.pre(() => {
 		if (pose.current) {
 			poseToObject3d(pose.current, points)
 		}
@@ -124,6 +131,7 @@
 			name={entity}
 			bvh={{ maxDepth: 40, maxLeafSize: 20 }}
 			visible={invisible.current !== true}
+			renderOrder={renderOrder.current}
 			{...events}
 		>
 			<T is={geometry.current} />

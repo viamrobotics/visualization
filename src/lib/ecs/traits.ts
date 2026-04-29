@@ -68,6 +68,7 @@ export const Color = trait({ r: 0, g: 0, b: 0 })
  */
 export const Material = trait({
 	depthTest: false,
+	depthWrite: true,
 })
 
 export const DepthTest = trait(() => true)
