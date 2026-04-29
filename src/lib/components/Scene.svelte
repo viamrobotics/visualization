@@ -10,6 +10,7 @@
 	import Entities from '$lib/components/Entities/Entities.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import Selected from '$lib/components/Selected.svelte'
+	import SelectedTransformControls from '$lib/components/SelectedTransformControls.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
 	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -77,6 +78,7 @@
 
 		<StaticGeometries />
 		<Selected />
+		<SelectedTransformControls />
 
 		{#if !$isPresenting && settings.current.grid}
 			<Grid

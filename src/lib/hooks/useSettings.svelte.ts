@@ -18,9 +18,8 @@ export interface Settings {
 	disabledVisionServices: Record<string, boolean>
 
 	// Transform controls
-	transforming: boolean
 	snapping: boolean
-	transformMode: 'translate' | 'rotate' | 'scale'
+	transformMode: 'none' | 'translate' | 'rotate' | 'scale'
 
 	// Grid
 	grid: boolean
@@ -96,9 +95,8 @@ const defaults = (): Settings => ({
 	disabledCameras: {},
 	disabledVisionServices: {},
 
-	transforming: false,
 	snapping: false,
-	transformMode: 'translate',
+	transformMode: 'none',
 
 	grid: true,
 	gridCellSize: 0.5,

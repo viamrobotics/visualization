@@ -203,7 +203,11 @@ export const provideFrames = (partID: () => string) => {
 
 					traits.updateGeometryTrait(existing, frame.physicalObject)
 
-					existing.set(traits.EditedPose, pose)
+					// SelectedTransformControls owns this entity's pose while the user
+					// is dragging the gizmo; don't clobber it from the config sync.
+					if (!existing.has(traits.Transforming)) {
+						existing.set(traits.EditedPose, pose)
+					}
 
 					continue
 				}
@@ -213,6 +217,7 @@ export const provideFrames = (partID: () => string) => {
 					traits.Pose(pose),
 					traits.EditedPose(pose),
 					traits.FramesAPI,
+					traits.Transformable,
 					traits.ShowAxesHelper,
 					...traits.getParentTrait(parent),
 				]

@@ -19,6 +19,7 @@
 	const parent = useTrait(() => entity, traits.Parent)
 	const editedPose = useTrait(() => entity, traits.EditedPose)
 	const entityPose = useTrait(() => entity, traits.Pose)
+	const transforming = useTrait(() => entity, traits.Transforming)
 
 	const pose = usePose(
 		() => name.current,
@@ -26,7 +27,10 @@
 	)
 
 	const resolvedPose = $derived.by(() => {
-		if (pose.current === undefined || partConfig.hasPendingSave) {
+		// While the user is actively dragging the gizmo on this entity, the
+		// edited pose is the source of truth — skip the network/edited blend so
+		// the formula doesn't fight the in-flight drag.
+		if (pose.current === undefined || partConfig.hasPendingSave || transforming.current) {
 			return editedPose.current
 		}
 

@@ -132,6 +132,21 @@ export const SnapshotAPI = trait(() => true)
  */
 export const DroppedFile = trait(() => true)
 
+/**
+ * Marker trait for entities the dashboard's TransformControls may attach to —
+ * editable frames and ad-hoc custom geometries. Other entity kinds (lines,
+ * points, batched arrows, etc.) are deliberately excluded.
+ */
+export const Transformable = trait(() => true)
+
+/**
+ * Marker trait set by SelectedTransformControls while the user is actively
+ * dragging the gizmo on this entity. Reactive sources that would otherwise
+ * overwrite the entity's pose mid-drag (e.g. useFrames re-syncing EditedPose
+ * from the part config) should leave the entity alone while this is set.
+ */
+export const Transforming = trait(() => true)
+
 export const ShowAxesHelper = trait(() => true)
 
 /**
