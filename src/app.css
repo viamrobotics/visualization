@@ -16,6 +16,38 @@ body {
 	font-family: system-ui;
 }
 
+/*
+ * @tailwindcss/forms paints its own SVG chevron via background-image on every
+ * <select>, which stacks on top of the chevrons that tweakpane and prime-core
+ * draw with their own elements (a real <div>/<span> + inline SVG, not a
+ * background image). Strip that background so each library's own chevron
+ * stands alone. !important is needed because the forms plugin's base layer
+ * rule has the same specificity but loads after our @plugin import.
+ */
+select {
+	appearance: none !important;
+	background-image: none !important;
+}
+
+/*
+ * Match svelte-tweakpane-ui <List>'s background to the <Point> number-field
+ * background by swapping its button-bg variable for input-bg. Targeted at the
+ * list select alone so the rotation widget and other button-themed blades
+ * keep their original look.
+ */
+.tp-lstv_s {
+	background-color: var(--in-bg);
+}
+.tp-lstv_s:hover {
+	background-color: var(--in-bg-h);
+}
+.tp-lstv_s:focus {
+	background-color: var(--in-bg-f);
+}
+.tp-lstv_s:active {
+	background-color: var(--in-bg-a);
+}
+
 .motion-tools-table {
 	@apply w-full table-auto;
 }

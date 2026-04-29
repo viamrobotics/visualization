@@ -107,7 +107,7 @@ func sampleDrawing(name string) *drawv1.Drawing {
 
 func TestDrawService_AddEntity(t *testing.T) {
 	t.Run("AddTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -118,7 +118,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("AddDrawing", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -129,7 +129,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("AddMultipleEntitiesReturnsUniqueUUIDs", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp1, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -146,7 +146,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("NoEntityReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{}))
@@ -155,7 +155,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertTransformWithExistingUUID", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -187,7 +187,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertDrawingWithExistingUUID", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -218,7 +218,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 	})
 
 	t.Run("UpsertEmitsAddedThenUpdated", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -268,7 +268,7 @@ func TestDrawService_AddEntity(t *testing.T) {
 
 func TestDrawService_RemoveEntity(t *testing.T) {
 	t.Run("RemoveExistingTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -283,7 +283,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 	})
 
 	t.Run("RemoveNonExistentEntityReturnsNotFound", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -295,7 +295,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 	})
 
 	t.Run("MissingUUIDReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.RemoveEntity(context.Background(), connect.NewRequest(&drawv1.RemoveEntityRequest{}))
@@ -306,7 +306,7 @@ func TestDrawService_RemoveEntity(t *testing.T) {
 
 func TestDrawService_UpdateEntity(t *testing.T) {
 	t.Run("FullReplaceTransform", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -331,7 +331,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FullReplaceDrawing", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -356,7 +356,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("PartialUpdateWithFieldMask", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		original := sampleTransform("original")
@@ -389,7 +389,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskDoesNotLeakUnmaskedFields", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		originalPose := &commonv1.PoseInFrame{
@@ -430,7 +430,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskClearsFieldWhenIncomingHasItUnset", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -458,7 +458,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("FieldMaskOnDrawingOnlyUpdatesNamedFields", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -493,7 +493,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("TypeMismatchTransformOnDrawingReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -510,7 +510,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("NonExistentUUIDReturnsNotFound", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		id := uuid.New()
@@ -523,7 +523,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 	})
 
 	t.Run("MissingUUIDReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
@@ -536,7 +536,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 
 func TestDrawService_StreamEntityChanges(t *testing.T) {
 	t.Run("ReceivesAddedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -570,7 +570,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("ReceivesRemovedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -601,13 +601,15 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		drainSnapshot(t, sr.stream, 1)
+
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
 	})
 
 	t.Run("ReceivesUpdatedEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -641,6 +643,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		drainSnapshot(t, sr.stream, 1)
+
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -648,7 +652,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("UpdatedFieldMaskPropagatedToStream", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		addResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -686,6 +690,8 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 		sr := <-sCh
 		test.That(t, sr.err, test.ShouldBeNil)
 
+		drainSnapshot(t, sr.stream, 1)
+
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		received := sr.stream.Msg()
 		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
@@ -694,7 +700,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("StreamClosesOnContextCancellation", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -725,7 +731,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 	})
 
 	t.Run("MultipleSubscribersAllReceiveEvents", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -765,7 +771,7 @@ func TestDrawService_StreamEntityChanges(t *testing.T) {
 
 func TestDrawService_SetScene(t *testing.T) {
 	t.Run("StoresSceneMetadata", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		meta := &drawv1.SceneMetadata{Grid: boolPtr(true)}
@@ -782,7 +788,7 @@ func TestDrawService_SetScene(t *testing.T) {
 	})
 
 	t.Run("MissingMetadataReturnsInvalidArgument", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.SetScene(context.Background(), connect.NewRequest(&drawv1.SetSceneRequest{}))
@@ -793,7 +799,7 @@ func TestDrawService_SetScene(t *testing.T) {
 
 func TestDrawService_StreamSceneChanges(t *testing.T) {
 	t.Run("ReceivesSceneChangeEvent", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -828,7 +834,7 @@ func TestDrawService_StreamSceneChanges(t *testing.T) {
 
 func TestDrawService_RemoveAllTransforms(t *testing.T) {
 	t.Run("RemovesOnlyTransforms", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		for i := 0; i < 3; i++ {
@@ -853,7 +859,7 @@ func TestDrawService_RemoveAllTransforms(t *testing.T) {
 	})
 
 	t.Run("EmptyStoreReturnsZeroCount", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.RemoveAllTransforms(context.Background(), connect.NewRequest(&drawv1.RemoveAllTransformsRequest{}))
@@ -864,7 +870,7 @@ func TestDrawService_RemoveAllTransforms(t *testing.T) {
 
 func TestDrawService_RemoveAllDrawings(t *testing.T) {
 	t.Run("RemovesOnlyDrawings", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		_, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -891,7 +897,7 @@ func TestDrawService_RemoveAllDrawings(t *testing.T) {
 
 func TestDrawService_RemoveAll(t *testing.T) {
 	t.Run("RemovesAllEntitiesAndReturnsCounts", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		for i := 0; i < 2; i++ {
@@ -919,7 +925,7 @@ func TestDrawService_RemoveAll(t *testing.T) {
 	})
 
 	t.Run("EmptyStoreReturnsZeroCounts", func(t *testing.T) {
-		svc := NewDrawService()
+		svc := NewDrawService(t.TempDir())
 		client := newTestServer(t, svc)
 
 		resp, err := client.RemoveAll(context.Background(), connect.NewRequest(&drawv1.RemoveAllRequest{}))
@@ -930,7 +936,7 @@ func TestDrawService_RemoveAll(t *testing.T) {
 }
 
 func TestDrawService_ConcurrentAccess(t *testing.T) {
-	svc := NewDrawService()
+	svc := NewDrawService(t.TempDir())
 	client := newTestServer(t, svc)
 
 	const goroutines = 20
@@ -961,6 +967,373 @@ func TestDrawService_ConcurrentAccess(t *testing.T) {
 	remaining := len(svc.entities)
 	svc.mu.RUnlock()
 	test.That(t, remaining, test.ShouldEqual, 0)
+}
+
+func drainSnapshot(t *testing.T, stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse], n int) {
+	t.Helper()
+	for range n {
+		test.That(t, stream.Receive(), test.ShouldBeTrue)
+		test.That(t, stream.Msg().ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED)
+	}
+}
+
+func addTransformAndDrawing(t *testing.T, client drawv1connect.DrawServiceClient) ([]byte, []byte) {
+	t.Helper()
+	tResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+		Entity: &drawv1.AddEntityRequest_Transform{Transform: sampleTransform("source")},
+	}))
+	test.That(t, err, test.ShouldBeNil)
+	dResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+		Entity: &drawv1.AddEntityRequest_Drawing{Drawing: sampleDrawing("target")},
+	}))
+	test.That(t, err, test.ShouldBeNil)
+	return tResp.Msg.GetUuid(), dResp.Msg.GetUuid()
+}
+
+func TestDrawService_CreateRelationship(t *testing.T) {
+	t.Run("TransformToDrawing", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: srcUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid: tgtUUID,
+				Type:       "HoverLink",
+			},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		srcID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[srcID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 1)
+		test.That(t, rels[0].Type, test.ShouldEqual, "HoverLink")
+		test.That(t, rels[0].TargetUuid, test.ShouldResemble, tgtUUID)
+	})
+
+	t.Run("DrawingToTransform", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		tUUID, dUUID := addTransformAndDrawing(t, client)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: dUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid: tUUID,
+				Type:       "HoverLink",
+			},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		dID, _ := uuid.FromBytes(dUUID)
+		svc.mu.RLock()
+		stored := svc.entities[dID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 1)
+		test.That(t, rels[0].TargetUuid, test.ShouldResemble, tUUID)
+	})
+
+	t.Run("DuplicateTargetReplaces", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		idx := "index * 2"
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: srcUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid:   tgtUUID,
+				Type:         "HoverLink",
+				IndexMapping: &idx,
+			},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		idx2 := "index * 3"
+		_, err = client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: srcUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid:   tgtUUID,
+				Type:         "HoverLink",
+				IndexMapping: &idx2,
+			},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		srcID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[srcID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 1)
+		test.That(t, *rels[0].IndexMapping, test.ShouldEqual, "index * 3")
+	})
+
+	t.Run("MissingSourceReturnsNotFound", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		_, tgtUUID := addTransformAndDrawing(t, client)
+		missingID := uuid.New()
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: missingID[:],
+			Relationship: &drawv1.Relationship{
+				TargetUuid: tgtUUID,
+				Type:       "HoverLink",
+			},
+		}))
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, connect.CodeOf(err), test.ShouldEqual, connect.CodeNotFound)
+	})
+
+	t.Run("MissingTargetReturnsNotFound", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, _ := addTransformAndDrawing(t, client)
+		missingID := uuid.New()
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: srcUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid: missingID[:],
+				Type:       "HoverLink",
+			},
+		}))
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, connect.CodeOf(err), test.ShouldEqual, connect.CodeNotFound)
+	})
+
+	t.Run("SelfReferenceRejected", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, _ := addTransformAndDrawing(t, client)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid: srcUUID,
+			Relationship: &drawv1.Relationship{
+				TargetUuid: srcUUID,
+				Type:       "HoverLink",
+			},
+		}))
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, connect.CodeOf(err), test.ShouldEqual, connect.CodeInvalidArgument)
+	})
+
+	t.Run("EmitsUpdatedEventWithMetadataField", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
+		go func() {
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
+		}()
+		waitForEntitySubs(t, svc, 1)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   srcUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: tgtUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 2)
+
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		received := sr.stream.Msg()
+		test.That(t, received.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
+		test.That(t, received.UpdatedFields, test.ShouldNotBeNil)
+		test.That(t, received.UpdatedFields.Paths, test.ShouldResemble, []string{"metadata"})
+	})
+}
+
+func TestDrawService_DeleteRelationship(t *testing.T) {
+	t.Run("DeleteExisting", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   srcUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: tgtUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		_, err = client.DeleteRelationship(context.Background(), connect.NewRequest(&drawv1.DeleteRelationshipRequest{
+			SourceUuid: srcUUID,
+			TargetUuid: tgtUUID,
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		srcID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[srcID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
+
+	t.Run("DeleteMissingRelationshipReturnsNotFound", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		_, err := client.DeleteRelationship(context.Background(), connect.NewRequest(&drawv1.DeleteRelationshipRequest{
+			SourceUuid: srcUUID,
+			TargetUuid: tgtUUID,
+		}))
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, connect.CodeOf(err), test.ShouldEqual, connect.CodeNotFound)
+	})
+}
+
+func TestDrawService_CascadeRelationships(t *testing.T) {
+	t.Run("RemoveTargetCascadesAndEmitsUpdated", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   srcUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: tgtUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		type streamResult struct {
+			stream *connect.ServerStreamForClient[drawv1.StreamEntityChangesResponse]
+			err    error
+		}
+		sCh := make(chan streamResult, 1)
+		go func() {
+			s, err := client.StreamEntityChanges(ctx, connect.NewRequest(&drawv1.StreamEntityChangesRequest{}))
+			sCh <- streamResult{s, err}
+		}()
+		waitForEntitySubs(t, svc, 1)
+
+		_, err = client.RemoveEntity(context.Background(), connect.NewRequest(&drawv1.RemoveEntityRequest{
+			Uuid: tgtUUID,
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		sr := <-sCh
+		test.That(t, sr.err, test.ShouldBeNil)
+
+		drainSnapshot(t, sr.stream, 2)
+
+		// First event: REMOVED for target
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		removed := sr.stream.Msg()
+		test.That(t, removed.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
+
+		// Second event: UPDATED for source (cascade)
+		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
+		updated := sr.stream.Msg()
+		test.That(t, updated.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED)
+		test.That(t, updated.UpdatedFields.Paths, test.ShouldResemble, []string{"metadata"})
+
+		srcID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[srcID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
+
+	t.Run("AddEntityWithRelationshipsInMetadata", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+
+		tgtResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+			Entity: &drawv1.AddEntityRequest_Drawing{Drawing: sampleDrawing("target")},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		drawing := sampleDrawing("source-with-rels")
+		drawing.Metadata = &drawv1.Metadata{
+			Relationships: []*drawv1.Relationship{
+				{TargetUuid: tgtResp.Msg.GetUuid(), Type: "HoverLink"},
+			},
+		}
+
+		srcResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
+			Entity: &drawv1.AddEntityRequest_Drawing{Drawing: drawing},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		srcID, _ := uuid.FromBytes(srcResp.Msg.GetUuid())
+		svc.mu.RLock()
+		stored := svc.entities[srcID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 1)
+		test.That(t, rels[0].TargetUuid, test.ShouldResemble, tgtResp.Msg.GetUuid())
+	})
+
+	t.Run("RemoveAllTransformsCascadesRelationships", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		// source=transform, target=drawing — rel lives on the transform
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   tgtUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: srcUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		_, err = client.RemoveAllTransforms(context.Background(), connect.NewRequest(&drawv1.RemoveAllTransformsRequest{}))
+		test.That(t, err, test.ShouldBeNil)
+
+		// drawing that referenced the removed transform must have its relationship cleared
+		dID, _ := uuid.FromBytes(tgtUUID)
+		svc.mu.RLock()
+		stored := svc.entities[dID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
+
+	t.Run("RemoveAllDrawingsCascadesRelationships", func(t *testing.T) {
+		svc := NewDrawService(t.TempDir())
+		client := newTestServer(t, svc)
+		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
+
+		// source=transform, target=drawing
+		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
+			SourceUuid:   srcUUID,
+			Relationship: &drawv1.Relationship{TargetUuid: tgtUUID, Type: "HoverLink"},
+		}))
+		test.That(t, err, test.ShouldBeNil)
+
+		_, err = client.RemoveAllDrawings(context.Background(), connect.NewRequest(&drawv1.RemoveAllDrawingsRequest{}))
+		test.That(t, err, test.ShouldBeNil)
+
+		// transform that referenced the removed drawing must have its relationship cleared
+		tID, _ := uuid.FromBytes(srcUUID)
+		svc.mu.RLock()
+		stored := svc.entities[tID]
+		svc.mu.RUnlock()
+		rels := entityMetadataRelationships(stored)
+		test.That(t, rels, test.ShouldHaveLength, 0)
+	})
 }
 
 func boolPtr(b bool) *bool {

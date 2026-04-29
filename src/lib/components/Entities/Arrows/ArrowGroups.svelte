@@ -41,6 +41,7 @@
 	}
 
 	const onRemove = (entity: Entity) => {
+		map.get(entity)?.dispose()
 		map.delete(entity)
 	}
 

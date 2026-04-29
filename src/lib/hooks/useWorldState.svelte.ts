@@ -24,6 +24,7 @@ import { metadataFromStruct } from '$lib/metadata'
 import { createPose } from '$lib/transform'
 
 import { usePartID } from './usePartID.svelte'
+import { useRelationships } from './useRelationships.svelte'
 
 type TransformEvent = TransformChangeEvent & {
 	transform: TransformWithUUID
@@ -123,6 +124,7 @@ const decodeWorldStateChunk = (response: unknown, fallbackStart: number): Entity
 const createWorldState = (client: { current: WorldStateStoreClient | undefined }) => {
 	const { invalidate } = useThrelte()
 	const world = useWorld()
+	const relationships = useRelationships()
 
 	const entities = new Map<string, Entity>()
 
@@ -152,11 +154,13 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 			return
 		}
 
-		const entity = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
-		entities.set(transform.uuidString, entity)
+		const spawned = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
+		entities.set(transform.uuidString, spawned.entity)
+		relationships.apply(spawned.entity, spawned.relationships)
 
 		const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
-		chunkLoader.start(transform.uuidString, entity, parsedMetadata)
+		chunkLoader.start(transform.uuidString, spawned.entity, parsedMetadata)
+		relationships.flush(transform.uuidString)
 
 		if (isPointCloud(transform.physicalObject?.geometryType)) invalidate()
 	}
@@ -192,9 +196,11 @@ const createWorldState = (client: { current: WorldStateStoreClient | undefined }
 		}
 
 		if (metadataDirty) {
-			updateMetadata(entity, metadataFromStruct(transform.metadata?.fields), {
+			const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
+			updateMetadata(entity, parsedMetadata, {
 				pointCloud: isPointCloud(transform.physicalObject?.geometryType),
 			})
+			relationships.apply(entity, parsedMetadata.relationships)
 		}
 	}
 

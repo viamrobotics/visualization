@@ -122,8 +122,8 @@ func TestDrawPoints(t *testing.T) {
 		n := float32(len(points))
 		colors := make([]draw.Color, len(points))
 		for i := range colors {
-			t := float32(i) / n
-			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
+			frac := float32(i) / n
+			colors[i] = draw.ColorFromHSV(frac, 0.5+0.5*frac, 1.0)
 		}
 
 		runDrawPointsTest(t, "myPointsPerPoint", &colors)
@@ -137,6 +137,33 @@ func TestDrawPoints(t *testing.T) {
 			Positions: points,
 			PointSize: 50,
 			Colors:    []draw.Color{draw.ColorFromName("green")},
+		})
+		test.That(t, err, test.ShouldBeNil)
+		test.That(t, uuid, test.ShouldNotBeNil)
+	})
+
+	t.Run("DrawPointsInChunks", func(t *testing.T) {
+		const numPoints = 2_500_000
+		points := make([]r3.Vector, numPoints)
+
+		goldenAngle := math.Pi * (3 - math.Sqrt(5))
+		for i := range numPoints {
+			frac := float64(i) / float64(numPoints)
+			phi := math.Acos(1 - 2*frac)
+			theta := goldenAngle * float64(i)
+			r := 2000.0
+			points[i] = r3.Vector{
+				X: r * math.Sin(phi) * math.Cos(theta),
+				Y: r * math.Sin(phi) * math.Sin(theta),
+				Z: r * math.Cos(phi),
+			}
+		}
+
+		uuid, err := DrawPoints(DrawPointsOptions{
+			Name:      "chunked_points",
+			Positions: points,
+			Colors:    []draw.Color{draw.ColorFromName("lime")},
+			ChunkSize: 500_000,
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

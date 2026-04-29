@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -77,7 +78,7 @@ func Start(cfg DrawServerConfig) error {
 		return nil
 	}
 
-	svc := draw.NewDrawService()
+	svc := draw.NewDrawService(resolveTmpDir())
 	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
 	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
@@ -228,6 +229,40 @@ func GetAddress() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return address
+}
+
+// DrainChunks exhausts a ChunkSender in a loop until it returns io.EOF.
+// Returns the server-assigned UUID or an error if the server is not running or the drawing fails.
+func DrainChunks(sender *draw.ChunkSender) ([]byte, error) {
+	for {
+		err := sender.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sender.UUID(), nil
+}
+
+// resolveTmpDir returns an absolute path to ".tmp" inside the nearest
+// ancestor directory containing go.mod.
+func resolveTmpDir() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ".tmp"
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return filepath.Join(dir, ".tmp")
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ".tmp"
+		}
+		dir = parent
+	}
 }
 
 func isAddrInUse(err error) bool {

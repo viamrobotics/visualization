@@ -12,6 +12,7 @@ import { parsePlyInput } from '$lib/ply'
 
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
+export const UUID = trait(() => '')
 
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })

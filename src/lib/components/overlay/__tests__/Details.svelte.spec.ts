@@ -50,14 +50,14 @@ describe('Details component', () => {
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
-			hasPendingSave: false,
-			clearPendingSave: vi.fn(),
-			setPendingSave: vi.fn(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],
@@ -142,14 +142,14 @@ describe('Details component', () => {
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
-			hasPendingSave: false,
-			clearPendingSave: vi.fn(),
-			setPendingSave: vi.fn(),
 		})
 
 		const context = new Map<symbol, unknown>([
@@ -160,12 +160,14 @@ describe('Details component', () => {
 
 		render(Details, { context })
 
-		expect(screen.getByLabelText('mutable local position x coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local position y coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local position z coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local orientation x coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local orientation y coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local orientation z coordinate')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local orientation theta degrees')).toBeInTheDocument()
+		const positionGroup = screen.getByLabelText('mutable local position')
+		expect(positionGroup).toBeInTheDocument()
+		expect(positionGroup.querySelectorAll('input')).toHaveLength(3)
+
+		const orientationGroup = screen.getByLabelText('mutable local orientation')
+		expect(orientationGroup).toBeInTheDocument()
+		// 4 OV inputs (x, y, z, theta) plus 3 Euler inputs (x, y, z) — both
+		// TabPages are mounted simultaneously by tweakpane's TabGroup.
+		expect(orientationGroup.querySelectorAll('input')).toHaveLength(7)
 	})
 })

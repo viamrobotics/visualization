@@ -27,19 +27,37 @@ test.beforeAll(() => {
 })
 
 for (const snapshot of snapshots) {
-	const filename = `${snapshot.file}.pb.gz`
-
-	test(`drops ${filename}`, async ({ browser }) => {
+	test(`drops ${snapshot.file}`, async ({ browser }) => {
 		const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
 
-		await dropFile(path.resolve(snapshotsDir, filename))
-		await expect(page.getByText(`${filename} loaded.`)).toBeVisible({
+		await dropFile(path.resolve(snapshotsDir, `${snapshot.file}.pb.gz`))
+		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).toBeVisible({
 			timeout: 10000,
 		})
 		await page.getByRole('button', { name: 'Dismiss toast' }).click()
-		await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
+		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).not.toBeVisible()
 
 		await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
 		assertScreenshots()
 	})
 }
+
+test('drops visualization_snapshot_metadata', async ({ browser }) => {
+	const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
+	const filename = 'visualization_snapshot_metadata.pb.gz'
+
+	await dropFile(path.resolve(snapshotsDir, filename))
+	await expect(page.getByText(`${filename} loaded.`)).toBeVisible({ timeout: 10000 })
+	await page.getByRole('button', { name: 'Dismiss toast' }).click()
+	await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
+
+	// Select the arrows drawing that carries a HoverLink relationship to the capsule
+	await page.getByText('relationship-arrows', { exact: true }).first().click()
+
+	// The details panel should show the Relationships section with the linked entity
+	await expect(page.getByText('Relationships')).toBeVisible()
+	await expect(page.getByText('relationship-capsule (HoverLink)')).toBeVisible()
+
+	await takeScreenshot('SNAPSHOT_METADATA_RELATIONSHIP_DETAILS')
+	assertScreenshots()
+})
