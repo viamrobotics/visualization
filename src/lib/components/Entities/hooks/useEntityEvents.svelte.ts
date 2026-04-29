@@ -14,8 +14,11 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	const selectedEntity = useSelectedEntity()
 	const focusedEntity = useFocusedEntity()
 	const cursor = useCursor()
+	const invisible = useTrait(entity, traits.Invisible)
 
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
+		if (invisible.current) return
+
 		event.stopPropagation()
 		cursor.onPointerEnter()
 
@@ -42,6 +45,8 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	}
 
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
+		if (invisible.current) return
+
 		event.stopPropagation()
 
 		const currentEntity = entity()
@@ -98,6 +103,8 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	}
 
 	const ondblclick = (event: IntersectionEvent<MouseEvent>) => {
+		if (invisible.current) return
+
 		event.stopPropagation()
 
 		const currentEntity = entity()
@@ -105,10 +112,14 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 	}
 
 	const onpointerdown = (event: IntersectionEvent<MouseEvent>) => {
+		if (invisible.current) return
+
 		down.copy(event.pointer)
 	}
 
 	const onclick = (event: IntersectionEvent<MouseEvent>) => {
+		if (invisible.current) return
+
 		event.stopPropagation()
 
 		if (down.distanceToSquared(event.pointer) < 0.1) {
@@ -117,10 +128,17 @@ export const useEntityEvents = (entity: () => Entity | undefined) => {
 		}
 	}
 
-	const invisible = useTrait(entity, traits.Invisible)
 	$effect(() => {
 		if (invisible.current) {
 			cursor.onPointerLeave()
+
+			const currentEntity = entity()
+			if (currentEntity?.has(traits.Hovered)) {
+				currentEntity.remove(traits.Hovered)
+			}
+			if (currentEntity?.has(traits.InstancedPose)) {
+				currentEntity.remove(traits.InstancedPose)
+			}
 		}
 	})
 
