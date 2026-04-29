@@ -576,19 +576,6 @@ func setEntityMetadataRelationships(e *storedEntity, rels []*drawv1.Relationship
 	}
 }
 
-func entityAddedMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
-	msg := &drawv1.StreamEntityChangesResponse{
-		ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED,
-	}
-	switch e.kind {
-	case entityKindTransform:
-		msg.Entity = &drawv1.StreamEntityChangesResponse_Transform{Transform: e.transform}
-	case entityKindDrawing:
-		msg.Entity = &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.drawing}
-	}
-	return msg
-}
-
 func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
 	msg := &drawv1.StreamEntityChangesResponse{
 		ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
