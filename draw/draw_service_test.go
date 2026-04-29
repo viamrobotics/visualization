@@ -977,6 +977,7 @@ func drainSnapshot(t *testing.T, stream *connect.ServerStreamForClient[drawv1.St
 	}
 }
 
+
 func addTransformAndDrawing(t *testing.T, client drawv1connect.DrawServiceClient) ([]byte, []byte) {
 	t.Helper()
 	tResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{

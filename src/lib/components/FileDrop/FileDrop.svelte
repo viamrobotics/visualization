@@ -28,18 +28,9 @@
 				case 'snapshot': {
 					const spawned = spawnSnapshotEntities(world, result.snapshot)
 					for (const entity of spawned) {
-						if (entity.type === 'transform' || entity.type === 'drawing') {
-							relationships.apply(entity.entity, entity.relationships)
-							const uuid = entity.entity.get(traits.UUID)
-							if (uuid) relationships.flush(uuid)
-						} else if (entity.type === 'model') {
-							const root = entity.entities[0]
-							if (root) {
-								relationships.apply(root, entity.relationships)
-								const uuid = root.get(traits.UUID)
-								if (uuid) relationships.flush(uuid)
-							}
-						}
+						relationships.apply(entity.entity, entity.relationships)
+						const uuid = entity.entity.get(traits.UUID)
+						if (uuid) relationships.flush(uuid)
 					}
 
 					const { sceneCamera } = result.snapshot.sceneMetadata ?? {}

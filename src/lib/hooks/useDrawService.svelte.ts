@@ -78,7 +78,7 @@ export function provideDrawService() {
 	)
 
 	const transformEntities = new Map<string, Entity>()
-	const drawingEntities = new Map<string, Entity[]>()
+	const drawingEntities = new Map<string, Entity>()
 
 	let pendingEvents: StreamEvent[] = []
 	let flushScheduled = false
@@ -94,11 +94,9 @@ export function provideDrawService() {
 	}
 
 	const destroyDrawing = (uuidStr: string) => {
-		const entities = drawingEntities.get(uuidStr)
-		if (!entities) return
-		for (const entity of entities) {
-			if (world.has(entity)) entity.destroy()
-		}
+		const entity = drawingEntities.get(uuidStr)
+		if (!entity) return
+		if (world.has(entity)) entity.destroy()
 		drawingEntities.delete(uuidStr)
 	}
 
@@ -222,22 +220,20 @@ export function provideDrawService() {
 		if (changeType === EntityChangeType.ADDED) {
 			if (!drawingEntities.has(uuid)) {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
-				const entities = spawned.type === 'drawing' ? [spawned.entity] : spawned.entities
-				const rootEntity = entities[0]
-				if (rootEntity) relationships.apply(rootEntity, spawned.relationships)
-				drawingEntities.set(uuid, entities)
+				relationships.apply(spawned.entity, spawned.relationships)
+				drawingEntities.set(uuid, spawned.entity)
 				relationships.flush(uuid)
 
-				if (isChunkedDrawing(drawing) && activeClient && activeSignal && rootEntity) {
+				if (isChunkedDrawing(drawing) && activeClient && activeSignal) {
 					const chunk = getChunkInfo(drawing)
 					if (chunk) {
-						rootEntity.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
+						spawned.entity.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
 						const uuidBytes = drawing.uuid ?? new Uint8Array()
 						void pullChunks(
 							activeClient,
 							uuid,
 							uuidBytes,
-							rootEntity,
+							spawned.entity,
 							chunk.total,
 							chunk.firstEnd,
 							activeSignal
@@ -253,17 +249,13 @@ export function provideDrawService() {
 				const isModel = drawing.physicalObject?.geometryType?.case === 'model'
 				const result = isModel
 					? updateModel(world, existing, drawing, traits.DrawServiceAPI)
-					: updateDrawing(world, existing[0]!, drawing)
-				const entities = result.type === 'drawing' ? [result.entity] : result.entities
-				const rootEntity = entities[0]
-				if (rootEntity) relationships.apply(rootEntity, result.relationships)
-				drawingEntities.set(uuid, entities)
+					: updateDrawing(world, existing, drawing)
+				relationships.apply(result.entity, result.relationships)
+				drawingEntities.set(uuid, result.entity)
 			} else {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
-				const entities = spawned.type === 'drawing' ? [spawned.entity] : spawned.entities
-				const rootEntity = entities[0]
-				if (rootEntity) relationships.apply(rootEntity, spawned.relationships)
-				drawingEntities.set(uuid, entities)
+				relationships.apply(spawned.entity, spawned.relationships)
+				drawingEntities.set(uuid, spawned.entity)
 				relationships.flush(uuid)
 			}
 		}
@@ -438,10 +430,8 @@ export function provideDrawService() {
 			}
 			transformEntities.clear()
 
-			for (const entities of drawingEntities.values()) {
-				for (const entity of entities) {
-					if (world.has(entity)) entity.destroy()
-				}
+			for (const entity of drawingEntities.values()) {
+				if (world.has(entity)) entity.destroy()
 			}
 			drawingEntities.clear()
 			relationships.clear()
