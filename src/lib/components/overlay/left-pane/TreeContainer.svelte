@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { IsExcluded } from 'koota'
+	import { type Entity, IsExcluded } from 'koota'
 
 	import { traits, useQuery, useWorld } from '$lib/ecs'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
@@ -47,9 +47,8 @@
 		{nodeMap}
 		onSelectionChange={(event) => {
 			const value = event.selectedValue[0]
-			const entity = allEntities.current.find((e) => `${e}` === value)
-			if (entity?.has(traits.Invisible)) return
-			selectedEntity.set(entity)
+
+			selectedEntity.set(value ? (Number(value) as Entity) : undefined)
 		}}
 	/>
 </FloatingPanel>
