@@ -1,14 +1,18 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
-import { type Entity, trait } from 'koota'
+import { type ConfigurableTrait, type Entity, trait } from 'koota'
 import { BufferGeometry as ThreeBufferGeometry } from 'three'
 
+import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
+import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { parsePlyInput } from '$lib/ply'
 
 export const Name = trait(() => '')
 export const Parent = trait(() => 'world')
+export const UUID = trait(() => '')
 
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
@@ -170,14 +174,13 @@ export const ReferenceFrame = trait(() => true)
 export const ChunkProgress = trait({ loaded: 0, total: 0 })
 
 /**
- * This entity can be safely removed from the scene by the user
  * Interaction layers for entities
  */
 export type InteractionLayerValue = 'selectTool'
 export const SelectToolInteractionLayer = trait(() => true)
 
 /**
- * This entity can be safetly removed from the scene by the user
+ * This entity can be safely removed from the scene by the user
  */
 export const Removable = trait(() => true)
 
@@ -194,6 +197,9 @@ export const Geometry = (geometry: ViamGeometry) => {
 
 	return ReferenceFrame
 }
+
+export const getParentTrait = (parent: string | undefined): ConfigurableTrait[] =>
+	!parent || parent === 'world' ? [] : [Parent(parent)]
 
 export const setParentTrait = (entity: Entity, parent: string | undefined) => {
 	if (!parent || parent === 'world') {
@@ -242,5 +248,68 @@ export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => 
 			entity.remove(Box, Sphere, Capsule)
 			entity.add(BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh)))
 		}
+	} else if (geometry.geometryType.case === 'pointcloud') {
+		updatePointCloud(entity, geometry.geometryType.value.pointCloud)
 	}
+}
+
+const updatePointCloud = (entity: Entity, pointCloud: Uint8Array): void => {
+	parsePcdInWorker(new Uint8Array(pointCloud))
+		.then((parsed) => {
+			if (!entity.isAlive()) return
+
+			const buffer = entity.get(BufferGeometry)
+			let colors = parsed.colors
+			if (buffer) {
+				// Reapply single color trait if the point count changed
+				if (parsed.colors === undefined) {
+					const color = entity.get(Color)
+					if (color) {
+						const newCount = parsed.positions.length / 3
+						colors = new Uint8Array(newCount * 3)
+						const r = Math.round(color.r * 255)
+						const g = Math.round(color.g * 255)
+						const b = Math.round(color.b * 255)
+						for (let i = 0; i < newCount; i++) {
+							colors[i * 3] = r
+							colors[i * 3 + 1] = g
+							colors[i * 3 + 2] = b
+						}
+					}
+				}
+
+				// When the point count changes, attributes must be reallocated.
+				const oldCount = buffer.getAttribute('position').count
+				const newCount = parsed.positions.length / 3
+				if (oldCount === newCount) {
+					updateBufferGeometry(buffer, parsed.positions, {
+						colors,
+						colorFormat: ColorFormat.RGB,
+					})
+				} else {
+					const fresh = createBufferGeometry(parsed.positions, {
+						colors,
+						colorFormat: ColorFormat.RGB,
+					})
+					buffer.dispose()
+					entity.set(BufferGeometry, fresh)
+				}
+
+				return
+			}
+
+			entity.remove(Box, Capsule, Sphere)
+			entity.add(
+				BufferGeometry(
+					createBufferGeometry(parsed.positions, {
+						colors: parsed.colors,
+						colorFormat: ColorFormat.RGB,
+					})
+				)
+			)
+			if (!entity.has(Points)) entity.add(Points)
+		})
+		.catch((error) => {
+			console.error('Failed to update pointcloud buffer geometry:', error)
+		})
 }

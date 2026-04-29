@@ -11,10 +11,12 @@ func TestDrawGLTF(t *testing.T) {
 	startTestServer(t)
 
 	t.Run("DrawGLTF", func(t *testing.T) {
+		showAxesHelper := false
 		uuid, err := DrawGLTF(DrawGLTFOptions{
 			Name:     "flamingo",
 			FilePath: "../data/flamingo.glb",
 			Scale:    r3.Vector{X: 1, Y: 1, Z: 1},
+			Attrs:    &Attrs{ShowAxesHelper: &showAxesHelper},
 		})
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, uuid, test.ShouldNotBeNil)

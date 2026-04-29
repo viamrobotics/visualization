@@ -333,7 +333,31 @@ test('draw point cloud in chunks', async ({ browser }) => {
 	await runChunkedTest(
 		browser,
 		'DRAW_POINT_CLOUD_IN_CHUNKS',
-		'^TestDrawPointCloud$/DrawPointCloudInChunks'
+		'^TestDrawPointCloud$/^DrawPointCloudInChunks$'
+	)
+})
+
+test('draw point cloud in chunks with palette', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PALETTE',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPalette'
+	)
+})
+
+test('draw point cloud in chunks with per point colors', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_PER_POINT_COLORS',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithPerPointColors'
+	)
+})
+
+test('draw point cloud in chunks with uniform opacity', async ({ browser }) => {
+	await runChunkedTest(
+		browser,
+		'DRAW_POINT_CLOUD_IN_CHUNKS_WITH_UNIFORM_OPACITY',
+		'^TestDrawPointCloud$/DrawPointCloudInChunksWithUniformOpacity'
 	)
 })
 
@@ -690,7 +714,7 @@ test('draw gltf', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawGLTF$/DrawGLTF github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawGLTF$/^DrawGLTF$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}
@@ -748,6 +772,22 @@ test('draw point clouds with single color', async ({ browser }) => {
 	)
 
 	await expect(page.getByText('octagon_single_color')).toBeVisible()
+
+	await assertTestSuccess(page, testPrefix)
+})
+
+test('draw point cloud with opacity', async ({ browser }) => {
+	const testPrefix = 'DRAW_POINT_CLOUD_WITH_OPACITY'
+	const page = await createPage(browser)
+
+	execSync(
+		'go test -run ^TestDrawPointCloud$/DrawSingleColorPointCloudWithOpacity github.com/viam-labs/motion-tools/client/api -count=1',
+		{
+			encoding: 'utf8',
+		}
+	)
+
+	await expect(page.getByText('octagon_with_opacity')).toBeVisible()
 
 	await assertTestSuccess(page, testPrefix)
 })
@@ -936,6 +976,47 @@ test('replay', async ({ browser }) => {
 
 	const playbackScreenshot = await takeScreenshot(page, `${testPrefix}_PLAYBACK`)
 	failedScreenshots.push(playbackScreenshot)
+
+	await cleanup(page)
+
+	assertNoFailedScreenshots(failedScreenshots)
+})
+
+test('relationships', async ({ browser }) => {
+	const page = await createPage(browser)
+	const failedScreenshots: string[] = []
+
+	execSync(
+		'go test -run ^TestRelationships$/Setup github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('rel-source', { exact: true })).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('rel-target', { exact: true })).toBeVisible({ timeout: 10000 })
+
+	execSync(
+		'go test -run ^TestRelationships$/CreateRelationship github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await page.locator('[data-part="item"]').filter({ hasText: 'rel-source' }).click()
+	await expect(page.getByText('rel-target (HoverLink)')).toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'RELATIONSHIPS_CREATED'))
+
+	await page.reload()
+	await expect(page.getByText('World', { exact: true })).toBeVisible({ timeout: 10000 })
+	await expect(page.getByText('rel-source', { exact: true })).toBeVisible({ timeout: 15000 })
+	await expect(page.getByText('rel-target', { exact: true })).toBeVisible({ timeout: 15000 })
+	await page.locator('[data-part="item"]').filter({ hasText: 'rel-source' }).click()
+	await expect(page.getByText('rel-target (HoverLink)')).toBeVisible({ timeout: 10000 })
+
+	execSync(
+		'go test -run ^TestRelationships$/DeleteRelationship github.com/viam-labs/motion-tools/client/api -count=1',
+		{ encoding: 'utf8' }
+	)
+
+	await expect(page.getByText('rel-target (HoverLink)')).not.toBeVisible({ timeout: 10000 })
+	failedScreenshots.push(await takeScreenshot(page, 'RELATIONSHIPS_DELETED'))
 
 	await cleanup(page)
 

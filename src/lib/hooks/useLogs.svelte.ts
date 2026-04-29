@@ -70,10 +70,10 @@ export const provideLogs = () => {
 				if (logs.length > 200) {
 					const log = logs.pop()
 
-					if (log && level === 'error') {
+					if (log?.level === 'error') {
 						errors.splice(errors.indexOf(log), 1)
-					} else if (log && level === 'warn') {
-						warnings.splice(errors.indexOf(log), 1)
+					} else if (log?.level === 'warn') {
+						warnings.splice(warnings.indexOf(log), 1)
 					}
 				}
 			})

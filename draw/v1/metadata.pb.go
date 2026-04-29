@@ -132,6 +132,70 @@ func (x *Chunks) GetStride() uint32 {
 	return 0
 }
 
+// A directed link from a source entity to a target entity.
+type Relationship struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID of the target entity this relationship points to.
+	TargetUuid []byte `protobuf:"bytes,1,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	// Free-form link type (e.g. "HoverLink"). Clients decide how to interpret.
+	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	// Optional filtrex expression (variable: `index`). Defaults to "index".
+	IndexMapping  *string `protobuf:"bytes,3,opt,name=index_mapping,json=indexMapping,proto3,oneof" json:"index_mapping,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Relationship) Reset() {
+	*x = Relationship{}
+	mi := &file_draw_v1_metadata_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Relationship) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Relationship) ProtoMessage() {}
+
+func (x *Relationship) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_metadata_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Relationship.ProtoReflect.Descriptor instead.
+func (*Relationship) Descriptor() ([]byte, []int) {
+	return file_draw_v1_metadata_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Relationship) GetTargetUuid() []byte {
+	if x != nil {
+		return x.TargetUuid
+	}
+	return nil
+}
+
+func (x *Relationship) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Relationship) GetIndexMapping() string {
+	if x != nil && x.IndexMapping != nil {
+		return *x.IndexMapping
+	}
+	return ""
+}
+
 type Metadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Uint8Array of color values (0-255) based on the color format.
@@ -149,14 +213,16 @@ type Metadata struct {
 	// Defaults to false.
 	Invisible *bool `protobuf:"varint,5,opt,name=invisible,proto3,oneof" json:"invisible,omitempty"`
 	// When present, indicates this drawing uses chunked delivery.
-	Chunks        *Chunks `protobuf:"bytes,6,opt,name=chunks,proto3,oneof" json:"chunks,omitempty"`
+	Chunks *Chunks `protobuf:"bytes,6,opt,name=chunks,proto3,oneof" json:"chunks,omitempty"`
+	// Directed relationships from this entity to other entities.
+	Relationships []*Relationship `protobuf:"bytes,7,rep,name=relationships,proto3" json:"relationships,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
 	*x = Metadata{}
-	mi := &file_draw_v1_metadata_proto_msgTypes[1]
+	mi := &file_draw_v1_metadata_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +234,7 @@ func (x *Metadata) String() string {
 func (*Metadata) ProtoMessage() {}
 
 func (x *Metadata) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_metadata_proto_msgTypes[1]
+	mi := &file_draw_v1_metadata_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +247,7 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metadata.ProtoReflect.Descriptor instead.
 func (*Metadata) Descriptor() ([]byte, []int) {
-	return file_draw_v1_metadata_proto_rawDescGZIP(), []int{1}
+	return file_draw_v1_metadata_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Metadata) GetColors() []byte {
@@ -226,6 +292,13 @@ func (x *Metadata) GetChunks() *Chunks {
 	return nil
 }
 
+func (x *Metadata) GetRelationships() []*Relationship {
+	if x != nil {
+		return x.Relationships
+	}
+	return nil
+}
+
 var File_draw_v1_metadata_proto protoreflect.FileDescriptor
 
 const file_draw_v1_metadata_proto_rawDesc = "" +
@@ -235,14 +308,21 @@ const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\n" +
 	"chunk_size\x18\x01 \x01(\rR\tchunkSize\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\rR\x05total\x12\x16\n" +
-	"\x06stride\x18\x03 \x01(\rR\x06stride\"\xca\x02\n" +
+	"\x06stride\x18\x03 \x01(\rR\x06stride\"\x7f\n" +
+	"\fRelationship\x12\x1f\n" +
+	"\vtarget_uuid\x18\x01 \x01(\fR\n" +
+	"targetUuid\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12(\n" +
+	"\rindex_mapping\x18\x03 \x01(\tH\x00R\findexMapping\x88\x01\x01B\x10\n" +
+	"\x0e_index_mapping\"\x87\x03\n" +
 	"\bMetadata\x12\x1b\n" +
 	"\x06colors\x18\x01 \x01(\fH\x00R\x06colors\x88\x01\x01\x127\n" +
 	"\fcolor_format\x18\x02 \x01(\x0e2\x14.draw.v1.ColorFormatR\vcolorFormat\x12!\n" +
 	"\topacities\x18\x03 \x01(\fH\x01R\topacities\x88\x01\x01\x12-\n" +
 	"\x10show_axes_helper\x18\x04 \x01(\bH\x02R\x0eshowAxesHelper\x88\x01\x01\x12!\n" +
 	"\tinvisible\x18\x05 \x01(\bH\x03R\tinvisible\x88\x01\x01\x12,\n" +
-	"\x06chunks\x18\x06 \x01(\v2\x0f.draw.v1.ChunksH\x04R\x06chunks\x88\x01\x01B\t\n" +
+	"\x06chunks\x18\x06 \x01(\v2\x0f.draw.v1.ChunksH\x04R\x06chunks\x88\x01\x01\x12;\n" +
+	"\rrelationships\x18\a \x03(\v2\x15.draw.v1.RelationshipR\rrelationshipsB\t\n" +
 	"\a_colorsB\f\n" +
 	"\n" +
 	"_opacitiesB\x13\n" +
@@ -267,20 +347,22 @@ func file_draw_v1_metadata_proto_rawDescGZIP() []byte {
 }
 
 var file_draw_v1_metadata_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_draw_v1_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_draw_v1_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_draw_v1_metadata_proto_goTypes = []any{
-	(ColorFormat)(0), // 0: draw.v1.ColorFormat
-	(*Chunks)(nil),   // 1: draw.v1.Chunks
-	(*Metadata)(nil), // 2: draw.v1.Metadata
+	(ColorFormat)(0),     // 0: draw.v1.ColorFormat
+	(*Chunks)(nil),       // 1: draw.v1.Chunks
+	(*Relationship)(nil), // 2: draw.v1.Relationship
+	(*Metadata)(nil),     // 3: draw.v1.Metadata
 }
 var file_draw_v1_metadata_proto_depIdxs = []int32{
 	0, // 0: draw.v1.Metadata.color_format:type_name -> draw.v1.ColorFormat
 	1, // 1: draw.v1.Metadata.chunks:type_name -> draw.v1.Chunks
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 2: draw.v1.Metadata.relationships:type_name -> draw.v1.Relationship
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_metadata_proto_init() }
@@ -289,13 +371,14 @@ func file_draw_v1_metadata_proto_init() {
 		return
 	}
 	file_draw_v1_metadata_proto_msgTypes[1].OneofWrappers = []any{}
+	file_draw_v1_metadata_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_draw_v1_metadata_proto_rawDesc), len(file_draw_v1_metadata_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

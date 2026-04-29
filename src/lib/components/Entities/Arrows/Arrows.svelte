@@ -37,18 +37,18 @@
 	})
 </script>
 
-<Portal id={parent.current ?? 'world'}>
+<Portal id={parent.current}>
 	<T
 		is={arrows}
 		name={entity}
 		{...events}
 		raycast={raycastFunction}
+		visible={invisible.current !== true}
 	>
 		<T
 			is={arrows.headMesh}
 			bvh={{ enabled: false }}
 			raycast={() => null}
-			visible={invisible.current}
 		/>
 		<T
 			is={arrows.shaftMesh}

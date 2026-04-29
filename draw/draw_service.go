@@ -1,6 +1,7 @@
 package draw
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 var _ drawv1connect.DrawServiceHandler = (*DrawService)(nil)
@@ -37,14 +39,15 @@ type storedEntity struct {
 const entitySubscriberBufferSize = 64
 
 type chunkedEntity struct {
-	mu            sync.Mutex
-	cond          *sync.Cond
-	metadata      *drawv1.Chunks
-	data          *diskBuffer
-	colors        *diskBuffer
-	opacities     *diskBuffer
-	template      *drawv1.Drawing
-	chunkComplete bool
+	mu               sync.Mutex
+	cond             *sync.Cond
+	metadata         *drawv1.Chunks
+	data             *diskBuffer
+	colors           *diskBuffer
+	opacities        *diskBuffer
+	template         *drawv1.Drawing
+	chunkComplete    bool
+	opacitiesUniform bool // true when each chunk contributes exactly 1 opacity byte (uniform alpha)
 }
 
 func newChunkedEntity(meta *drawv1.Chunks, template *drawv1.Drawing, tempDir string) (*chunkedEntity, error) {
@@ -76,6 +79,10 @@ func newChunkedEntity(meta *drawv1.Chunks, template *drawv1.Drawing, tempDir str
 }
 
 func (entity *chunkedEntity) close() {
+	entity.mu.Lock()
+	entity.chunkComplete = true
+	entity.cond.Broadcast()
+	entity.mu.Unlock()
 	entity.data.close()
 	entity.colors.close()
 	entity.opacities.close()
@@ -232,13 +239,15 @@ func (svc *DrawService) AddEntity(
 					entity.close()
 					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", err))
 				}
-				if metadata := e.Drawing.GetMetadata(); metadata != nil {
+				if metadata != nil {
 					if err := entity.colors.write(metadata.GetColors()); err != nil {
 						entity.mu.Unlock()
 						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", err))
 					}
-					if err := entity.opacities.write(metadata.GetOpacities()); err != nil {
+					opacities := metadata.GetOpacities()
+					entity.opacitiesUniform = len(opacities) == 1
+					if err := entity.opacities.write(opacities); err != nil {
 						entity.mu.Unlock()
 						entity.close()
 						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", err))
@@ -414,8 +423,8 @@ func (svc *DrawService) accumulateChunk(entity *chunkedEntity, drawing *drawv1.D
 		}
 	}
 
-	elementsReceived := entity.data.bytesWritten / entity.metadata.Stride
-	if elementsReceived >= entity.metadata.Total {
+	elementsReceived := entity.data.bytesWritten / int64(entity.metadata.Stride)
+	if elementsReceived >= int64(entity.metadata.Total) {
 		entity.chunkComplete = true
 		log.Printf("draw: chunk accumulation complete (%d/%d elements)", elementsReceived, entity.metadata.Total)
 	}
@@ -539,6 +548,178 @@ func applyFieldMask(dst, src proto.Message, paths []string) {
 	}
 }
 
+func entityMetadataRelationships(e storedEntity) []*drawv1.Relationship {
+	switch e.kind {
+	case entityKindDrawing:
+		if e.drawing.Metadata == nil {
+			return nil
+		}
+		return e.drawing.Metadata.Relationships
+	case entityKindTransform:
+		return RelationshipsFromStruct(e.transform.Metadata)
+	}
+	return nil
+}
+
+func setEntityMetadataRelationships(e *storedEntity, rels []*drawv1.Relationship) {
+	switch e.kind {
+	case entityKindDrawing:
+		if e.drawing.Metadata == nil {
+			e.drawing.Metadata = &drawv1.Metadata{}
+		}
+		e.drawing.Metadata.Relationships = rels
+	case entityKindTransform:
+		if e.transform.Metadata == nil {
+			e.transform.Metadata = MetadataToStruct(NewMetadata())
+		}
+		SetRelationshipsOnStruct(e.transform.Metadata, rels)
+	}
+}
+
+func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
+	msg := &drawv1.StreamEntityChangesResponse{
+		ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
+		UpdatedFields: &fieldmaskpb.FieldMask{Paths: []string{"metadata"}},
+	}
+	switch e.kind {
+	case entityKindTransform:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Transform{Transform: e.transform}
+	case entityKindDrawing:
+		msg.Entity = &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.drawing}
+	}
+	return msg
+}
+
+// CreateRelationship creates or replaces a relationship from source to the target specified
+// in the relationship. The relationship is stored in the source entity's metadata.
+func (svc *DrawService) CreateRelationship(
+	_ context.Context,
+	req *connect.Request[drawv1.CreateRelationshipRequest],
+) (*connect.Response[drawv1.CreateRelationshipResponse], error) {
+	if len(req.Msg.GetSourceUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid is required"))
+	}
+	if req.Msg.GetRelationship() == nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("relationship is required"))
+	}
+	if len(req.Msg.GetRelationship().GetTargetUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("relationship.target_uuid is required"))
+	}
+
+	sourceID, err := uuid.FromBytes(req.Msg.GetSourceUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source_uuid: %w", err))
+	}
+	targetID, err := uuid.FromBytes(req.Msg.GetRelationship().GetTargetUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid target_uuid: %w", err))
+	}
+	if sourceID == targetID {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid and target_uuid must differ"))
+	}
+
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	source, ok := svc.entities[sourceID]
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source entity %s not found", sourceID))
+	}
+	if _, ok := svc.entities[targetID]; !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("target entity %s not found", targetID))
+	}
+
+	rels := entityMetadataRelationships(source)
+	replaced := false
+	for i, r := range rels {
+		if bytes.Equal(r.TargetUuid, req.Msg.GetRelationship().GetTargetUuid()) {
+			rels[i] = req.Msg.Relationship
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		rels = append(rels, req.Msg.Relationship)
+	}
+	setEntityMetadataRelationships(&source, rels)
+	svc.entities[sourceID] = source
+
+	svc.notifyEntityChange(entityChangeMsg(source))
+
+	return connect.NewResponse(&drawv1.CreateRelationshipResponse{}), nil
+}
+
+// DeleteRelationship removes the relationship from source to target_uuid.
+func (svc *DrawService) DeleteRelationship(
+	_ context.Context,
+	req *connect.Request[drawv1.DeleteRelationshipRequest],
+) (*connect.Response[drawv1.DeleteRelationshipResponse], error) {
+	if len(req.Msg.GetSourceUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("source_uuid is required"))
+	}
+	if len(req.Msg.GetTargetUuid()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("target_uuid is required"))
+	}
+
+	sourceID, err := uuid.FromBytes(req.Msg.GetSourceUuid())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source_uuid: %w", err))
+	}
+
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	source, ok := svc.entities[sourceID]
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("source entity %s not found", sourceID))
+	}
+
+	rels := entityMetadataRelationships(source)
+	found := false
+	filtered := make([]*drawv1.Relationship, 0, len(rels))
+	for _, r := range rels {
+		if bytes.Equal(r.TargetUuid, req.Msg.TargetUuid) {
+			found = true
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	if !found {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("relationship not found"))
+	}
+
+	setEntityMetadataRelationships(&source, filtered)
+	svc.entities[sourceID] = source
+
+	svc.notifyEntityChange(entityChangeMsg(source))
+
+	return connect.NewResponse(&drawv1.DeleteRelationshipResponse{}), nil
+}
+
+// cascadeRemoveRelationships removes any relationship pointing at removedID from all remaining
+// entities, emitting UPDATED events for each affected source.
+func (svc *DrawService) cascadeRemoveRelationships(removedID uuid.UUID) {
+	for id, entity := range svc.entities {
+		rels := entityMetadataRelationships(entity)
+		if len(rels) == 0 {
+			continue
+		}
+		filtered := make([]*drawv1.Relationship, 0, len(rels))
+		for _, r := range rels {
+			if bytes.Equal(r.TargetUuid, removedID[:]) {
+				continue
+			}
+			filtered = append(filtered, r)
+		}
+		if len(filtered) == len(rels) {
+			continue
+		}
+		setEntityMetadataRelationships(&entity, filtered)
+		svc.entities[id] = entity
+		svc.notifyEntityChange(entityChangeMsg(entity))
+	}
+}
+
 // RemoveEntity removes the entity with the given UUID from the scene.
 func (svc *DrawService) RemoveEntity(
 	_ context.Context,
@@ -581,6 +762,7 @@ func (svc *DrawService) RemoveEntity(
 		}
 	}
 	svc.notifyEntityChange(changeMsg)
+	svc.cascadeRemoveRelationships(id)
 
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
@@ -608,25 +790,28 @@ func (svc *DrawService) GetEntityChunk(
 	}
 
 	start := req.Msg.GetStart()
-	startByte := start * entity.metadata.Stride
+	startByte := int64(start) * int64(entity.metadata.Stride)
 
 	entity.mu.Lock()
+
+	ctxDone := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			entity.cond.Broadcast()
+		case <-ctxDone:
+		}
+	}()
+
 	for entity.data.bytesWritten <= startByte && !entity.chunkComplete {
-		done := make(chan struct{})
-		go func() {
-			select {
-			case <-ctx.Done():
-				entity.cond.Broadcast()
-			case <-done:
-			}
-		}()
 		entity.cond.Wait()
-		close(done)
 		if ctx.Err() != nil {
+			close(ctxDone)
 			entity.mu.Unlock()
 			return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 		}
 	}
+	close(ctxDone)
 
 	posLen := entity.data.bytesWritten
 	if startByte >= posLen {
@@ -713,28 +898,39 @@ func (svc *DrawService) StreamEntityChanges(
 }
 
 func (entity *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, uint32, error) {
-	startByte := start * entity.metadata.Stride
-	endByte := startByte + entity.metadata.ChunkSize*entity.metadata.Stride
+	stride := int64(entity.metadata.Stride)
+	startByte := int64(start) * stride
+	endByte := startByte + int64(entity.metadata.ChunkSize)*stride
 	if endByte > entity.data.bytesWritten {
 		endByte = entity.data.bytesWritten
 	}
 
+	// mu must be held here: bytesWritten is updated by accumulateChunk under the same lock,
+	// so reading it and the file data forms a consistent snapshot.
 	chunkData, err := entity.data.readSlice(startByte, endByte-startByte)
 	if err != nil {
 		return nil, 0, fmt.Errorf("read chunk data: %w", err)
 	}
 
-	chunkElements := (endByte - startByte) / entity.metadata.Stride
+	chunkElements := uint32((endByte - startByte) / stride)
 
 	var chunkColors, chunkOpacities []byte
-	colorStart := start * 3
-	colorEnd := colorStart + chunkElements*3
+	colorStart := int64(start) * 3
+	colorEnd := colorStart + int64(chunkElements)*3
 	if entity.colors.bytesWritten >= colorEnd {
 		chunkColors, _ = entity.colors.readSlice(colorStart, colorEnd-colorStart)
 	}
-	opacityEnd := start + chunkElements
-	if entity.opacities.bytesWritten >= opacityEnd {
-		chunkOpacities, _ = entity.opacities.readSlice(start, opacityEnd-start)
+	if entity.opacitiesUniform {
+		// One byte per chunk (opacitySummary produced a single shared alpha).
+		chunkIndex := int64(start / entity.metadata.ChunkSize)
+		if entity.opacities.bytesWritten > chunkIndex {
+			chunkOpacities, _ = entity.opacities.readSlice(chunkIndex, 1)
+		}
+	} else {
+		opacityEnd := int64(start + chunkElements)
+		if entity.opacities.bytesWritten >= opacityEnd {
+			chunkOpacities, _ = entity.opacities.readSlice(int64(start), opacityEnd-int64(start))
+		}
 	}
 
 	drawing := proto.Clone(entity.template).(*drawv1.Drawing)
@@ -829,6 +1025,7 @@ func (svc *DrawService) RemoveAllTransforms(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
+	removedIDs := make([]uuid.UUID, 0)
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindTransform {
@@ -836,10 +1033,14 @@ func (svc *DrawService) RemoveAllTransforms(
 		}
 		delete(svc.entities, id)
 		count++
+		removedIDs = append(removedIDs, id)
 		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
 			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
 			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
 		})
+	}
+	for _, id := range removedIDs {
+		svc.cascadeRemoveRelationships(id)
 	}
 
 	return connect.NewResponse(&drawv1.RemoveAllTransformsResponse{Count: count}), nil
@@ -853,6 +1054,7 @@ func (svc *DrawService) RemoveAllDrawings(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
+	removedIDs := make([]uuid.UUID, 0)
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindDrawing {
@@ -864,10 +1066,14 @@ func (svc *DrawService) RemoveAllDrawings(
 			delete(svc.chunked, id)
 		}
 		count++
+		removedIDs = append(removedIDs, id)
 		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
 			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
 			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: entity.drawing},
 		})
+	}
+	for _, id := range removedIDs {
+		svc.cascadeRemoveRelationships(id)
 	}
 
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil

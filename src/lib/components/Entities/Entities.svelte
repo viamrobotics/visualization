@@ -31,6 +31,7 @@
 	 */
 	const worldStateEntities = useQuery(
 		traits.WorldStateStoreAPI,
+		Not(traits.Points, traits.LinePositions, traits.GLTF),
 		Or(traits.Box, traits.Capsule, traits.Sphere, traits.BufferGeometry, traits.ReferenceFrame)
 	)
 

@@ -1,5 +1,11 @@
 import { test as base, expect, type Page } from '@playwright/test'
-import { createViamClient, type ViamClient, type ViamClientOptions } from '@viamrobotics/sdk'
+import {
+	createViamClient,
+	type JsonValue,
+	Struct,
+	type ViamClient,
+	type ViamClientOptions,
+} from '@viamrobotics/sdk'
 
 const getE2EConfig = () => {
 	const host = process.env.VIAM_E2E_HOST
@@ -89,6 +95,28 @@ export const connectViamClient = async (): Promise<ViamClient> => {
 		},
 	}
 	return createViamClient(opts)
+}
+
+interface ApplyMachineConfigOptions {
+	settleMs?: number
+}
+
+export const applyMachineConfig = async (
+	client: ViamClient,
+	partId: string,
+	machineName: string,
+	config: Record<string, unknown>,
+	options: ApplyMachineConfigOptions = {}
+): Promise<void> => {
+	const { settleMs = 5000 } = options
+
+	await client.appClient.updateRobotPart(
+		partId,
+		machineName,
+		Struct.fromJson(config as unknown as JsonValue)
+	)
+
+	await new Promise((resolve) => setTimeout(resolve, settleMs))
 }
 
 export const connectOrgViamClient = async (): Promise<ViamClient> => {

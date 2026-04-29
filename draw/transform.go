@@ -78,3 +78,68 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error) {
 
 	return metadata, nil
 }
+
+// RelationshipsFromStruct extracts the "relationships" list from a structpb.Struct
+// that is used as a Transform's metadata.
+func RelationshipsFromStruct(s *structpb.Struct) []*drawv1.Relationship {
+	if s == nil {
+		return nil
+	}
+	v := s.Fields["relationships"]
+	if v == nil {
+		return nil
+	}
+	lv := v.GetListValue()
+	if lv == nil {
+		return nil
+	}
+
+	rels := make([]*drawv1.Relationship, 0, len(lv.Values))
+	for _, item := range lv.Values {
+		sv := item.GetStructValue()
+		if sv == nil {
+			continue
+		}
+		rel := &drawv1.Relationship{}
+		if tgt := sv.Fields["target_uuid"]; tgt != nil {
+			decoded, err := base64.StdEncoding.DecodeString(tgt.GetStringValue())
+			if err == nil {
+				rel.TargetUuid = decoded
+			}
+		}
+		if t := sv.Fields["type"]; t != nil {
+			rel.Type = t.GetStringValue()
+		}
+		if im := sv.Fields["index_mapping"]; im != nil {
+			s := im.GetStringValue()
+			rel.IndexMapping = &s
+		}
+		rels = append(rels, rel)
+	}
+	return rels
+}
+
+// SetRelationshipsOnStruct writes the "relationships" field into a structpb.Struct
+// used as a Transform's metadata.
+func SetRelationshipsOnStruct(s *structpb.Struct, rels []*drawv1.Relationship) {
+	if s == nil {
+		return
+	}
+	if len(rels) == 0 {
+		delete(s.Fields, "relationships")
+		return
+	}
+
+	items := make([]*structpb.Value, 0, len(rels))
+	for _, rel := range rels {
+		fields := map[string]*structpb.Value{
+			"target_uuid": structpb.NewStringValue(base64.StdEncoding.EncodeToString(rel.TargetUuid)),
+			"type":        structpb.NewStringValue(rel.Type),
+		}
+		if rel.IndexMapping != nil {
+			fields["index_mapping"] = structpb.NewStringValue(*rel.IndexMapping)
+		}
+		items = append(items, structpb.NewStructValue(&structpb.Struct{Fields: fields}))
+	}
+	s.Fields["relationships"] = structpb.NewListValue(&structpb.ListValue{Values: items})
+}

@@ -20,6 +20,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
+	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
@@ -41,6 +42,7 @@
 
 	provideOrigin()
 	provideDrawAPI()
+	provideRelationships()
 	provideDrawService()
 
 	provideResourceByName(() => partID.current)

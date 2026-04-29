@@ -6,8 +6,15 @@ import type { Settings } from '$lib/hooks/useSettings.svelte'
 import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
 import { traits } from '$lib/ecs'
 
+import type { Relationship } from './metadata'
+
 import { rgbToHex } from './color'
 import { drawDrawing, drawTransform } from './draw'
+
+export type SnapshotEntity = {
+	entity: Entity
+	relationships: Relationship[] | undefined
+}
 
 /**
  * Merges scene-level metadata (grid, camera, point/line settings) into the
@@ -63,19 +70,24 @@ export const applySceneMetadata = (settings: Settings, metadata: SceneMetadata):
  *
  * @returns The spawned entities
  */
-export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): Entity[] => {
-	const entities: Entity[] = []
+export const spawnSnapshotEntities = (world: World, snapshot: Snapshot): SnapshotEntity[] => {
+	const entities: SnapshotEntity[] = []
 	const options = { removable: true, showAxesHelper: false }
 
 	for (const transform of snapshot.transforms) {
-		entities.push(drawTransform(world, transform, traits.SnapshotAPI, options))
+		const spawned = drawTransform(world, transform, traits.SnapshotAPI, options)
+		entities.push({
+			entity: spawned.entity,
+			relationships: spawned.relationships,
+		})
 	}
 
 	for (const drawing of snapshot.drawings) {
-		const drawingEntities = drawDrawing(world, drawing, traits.SnapshotAPI, options)
-		for (const e of drawingEntities) {
-			entities.push(e)
-		}
+		const spawned = drawDrawing(world, drawing, traits.SnapshotAPI, options)
+		entities.push({
+			entity: spawned.entity,
+			relationships: spawned.relationships,
+		})
 	}
 
 	return entities

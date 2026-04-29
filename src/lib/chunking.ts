@@ -34,8 +34,6 @@ export interface ChunkLoaderOptions {
 	colorFormat?: ColorFormat
 }
 
-const waitForFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-
 export const createChunkLoader = ({
 	world,
 	invalidate,
@@ -72,8 +70,6 @@ export const createChunkLoader = ({
 				invalidate()
 
 				if (chunk.done) break
-
-				await waitForFrame()
 			}
 		} catch (error) {
 			if (!signal.aborted) {

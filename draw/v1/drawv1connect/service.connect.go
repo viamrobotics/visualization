@@ -57,6 +57,12 @@ const (
 	DrawServiceRemoveAllDrawingsProcedure = "/draw.v1.DrawService/RemoveAllDrawings"
 	// DrawServiceRemoveAllProcedure is the fully-qualified name of the DrawService's RemoveAll RPC.
 	DrawServiceRemoveAllProcedure = "/draw.v1.DrawService/RemoveAll"
+	// DrawServiceCreateRelationshipProcedure is the fully-qualified name of the DrawService's
+	// CreateRelationship RPC.
+	DrawServiceCreateRelationshipProcedure = "/draw.v1.DrawService/CreateRelationship"
+	// DrawServiceDeleteRelationshipProcedure is the fully-qualified name of the DrawService's
+	// DeleteRelationship RPC.
+	DrawServiceDeleteRelationshipProcedure = "/draw.v1.DrawService/DeleteRelationship"
 	// DrawServiceGetEntityChunkProcedure is the fully-qualified name of the DrawService's
 	// GetEntityChunk RPC.
 	DrawServiceGetEntityChunkProcedure = "/draw.v1.DrawService/GetEntityChunk"
@@ -82,6 +88,10 @@ type DrawServiceClient interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
+	// Create or replace a relationship from a source entity to a target entity.
+	CreateRelationship(context.Context, *connect.Request[v1.CreateRelationshipRequest]) (*connect.Response[v1.CreateRelationshipResponse], error)
+	// Delete a relationship from a source entity to a target entity.
+	DeleteRelationship(context.Context, *connect.Request[v1.DeleteRelationshipRequest]) (*connect.Response[v1.DeleteRelationshipResponse], error)
 	// Get a chunk of a chunked entity's data by element offset.
 	GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error)
 }
@@ -151,6 +161,18 @@ func NewDrawServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(drawServiceMethods.ByName("RemoveAll")),
 			connect.WithClientOptions(opts...),
 		),
+		createRelationship: connect.NewClient[v1.CreateRelationshipRequest, v1.CreateRelationshipResponse](
+			httpClient,
+			baseURL+DrawServiceCreateRelationshipProcedure,
+			connect.WithSchema(drawServiceMethods.ByName("CreateRelationship")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteRelationship: connect.NewClient[v1.DeleteRelationshipRequest, v1.DeleteRelationshipResponse](
+			httpClient,
+			baseURL+DrawServiceDeleteRelationshipProcedure,
+			connect.WithSchema(drawServiceMethods.ByName("DeleteRelationship")),
+			connect.WithClientOptions(opts...),
+		),
 		getEntityChunk: connect.NewClient[v1.GetEntityChunkRequest, v1.GetEntityChunkResponse](
 			httpClient,
 			baseURL+DrawServiceGetEntityChunkProcedure,
@@ -171,6 +193,8 @@ type drawServiceClient struct {
 	removeAllTransforms *connect.Client[v1.RemoveAllTransformsRequest, v1.RemoveAllTransformsResponse]
 	removeAllDrawings   *connect.Client[v1.RemoveAllDrawingsRequest, v1.RemoveAllDrawingsResponse]
 	removeAll           *connect.Client[v1.RemoveAllRequest, v1.RemoveAllResponse]
+	createRelationship  *connect.Client[v1.CreateRelationshipRequest, v1.CreateRelationshipResponse]
+	deleteRelationship  *connect.Client[v1.DeleteRelationshipRequest, v1.DeleteRelationshipResponse]
 	getEntityChunk      *connect.Client[v1.GetEntityChunkRequest, v1.GetEntityChunkResponse]
 }
 
@@ -219,6 +243,16 @@ func (c *drawServiceClient) RemoveAll(ctx context.Context, req *connect.Request[
 	return c.removeAll.CallUnary(ctx, req)
 }
 
+// CreateRelationship calls draw.v1.DrawService.CreateRelationship.
+func (c *drawServiceClient) CreateRelationship(ctx context.Context, req *connect.Request[v1.CreateRelationshipRequest]) (*connect.Response[v1.CreateRelationshipResponse], error) {
+	return c.createRelationship.CallUnary(ctx, req)
+}
+
+// DeleteRelationship calls draw.v1.DrawService.DeleteRelationship.
+func (c *drawServiceClient) DeleteRelationship(ctx context.Context, req *connect.Request[v1.DeleteRelationshipRequest]) (*connect.Response[v1.DeleteRelationshipResponse], error) {
+	return c.deleteRelationship.CallUnary(ctx, req)
+}
+
 // GetEntityChunk calls draw.v1.DrawService.GetEntityChunk.
 func (c *drawServiceClient) GetEntityChunk(ctx context.Context, req *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error) {
 	return c.getEntityChunk.CallUnary(ctx, req)
@@ -244,6 +278,10 @@ type DrawServiceHandler interface {
 	RemoveAllDrawings(context.Context, *connect.Request[v1.RemoveAllDrawingsRequest]) (*connect.Response[v1.RemoveAllDrawingsResponse], error)
 	// Remove all entities from the scene.
 	RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error)
+	// Create or replace a relationship from a source entity to a target entity.
+	CreateRelationship(context.Context, *connect.Request[v1.CreateRelationshipRequest]) (*connect.Response[v1.CreateRelationshipResponse], error)
+	// Delete a relationship from a source entity to a target entity.
+	DeleteRelationship(context.Context, *connect.Request[v1.DeleteRelationshipRequest]) (*connect.Response[v1.DeleteRelationshipResponse], error)
 	// Get a chunk of a chunked entity's data by element offset.
 	GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error)
 }
@@ -309,6 +347,18 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(drawServiceMethods.ByName("RemoveAll")),
 		connect.WithHandlerOptions(opts...),
 	)
+	drawServiceCreateRelationshipHandler := connect.NewUnaryHandler(
+		DrawServiceCreateRelationshipProcedure,
+		svc.CreateRelationship,
+		connect.WithSchema(drawServiceMethods.ByName("CreateRelationship")),
+		connect.WithHandlerOptions(opts...),
+	)
+	drawServiceDeleteRelationshipHandler := connect.NewUnaryHandler(
+		DrawServiceDeleteRelationshipProcedure,
+		svc.DeleteRelationship,
+		connect.WithSchema(drawServiceMethods.ByName("DeleteRelationship")),
+		connect.WithHandlerOptions(opts...),
+	)
 	drawServiceGetEntityChunkHandler := connect.NewUnaryHandler(
 		DrawServiceGetEntityChunkProcedure,
 		svc.GetEntityChunk,
@@ -335,6 +385,10 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 			drawServiceRemoveAllDrawingsHandler.ServeHTTP(w, r)
 		case DrawServiceRemoveAllProcedure:
 			drawServiceRemoveAllHandler.ServeHTTP(w, r)
+		case DrawServiceCreateRelationshipProcedure:
+			drawServiceCreateRelationshipHandler.ServeHTTP(w, r)
+		case DrawServiceDeleteRelationshipProcedure:
+			drawServiceDeleteRelationshipHandler.ServeHTTP(w, r)
 		case DrawServiceGetEntityChunkProcedure:
 			drawServiceGetEntityChunkHandler.ServeHTTP(w, r)
 		default:
@@ -380,6 +434,14 @@ func (UnimplementedDrawServiceHandler) RemoveAllDrawings(context.Context, *conne
 
 func (UnimplementedDrawServiceHandler) RemoveAll(context.Context, *connect.Request[v1.RemoveAllRequest]) (*connect.Response[v1.RemoveAllResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.RemoveAll is not implemented"))
+}
+
+func (UnimplementedDrawServiceHandler) CreateRelationship(context.Context, *connect.Request[v1.CreateRelationshipRequest]) (*connect.Response[v1.CreateRelationshipResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.CreateRelationship is not implemented"))
+}
+
+func (UnimplementedDrawServiceHandler) DeleteRelationship(context.Context, *connect.Request[v1.DeleteRelationshipRequest]) (*connect.Response[v1.DeleteRelationshipResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.DeleteRelationship is not implemented"))
 }
 
 func (UnimplementedDrawServiceHandler) GetEntityChunk(context.Context, *connect.Request[v1.GetEntityChunkRequest]) (*connect.Response[v1.GetEntityChunkResponse], error) {

@@ -154,6 +154,32 @@ withRobot('world state store transform removal', async ({ robotPage }) => {
 	robotPage.assertScreenshots()
 })
 
+withRobot('world state store point cloud update', async ({ robotPage }) => {
+	const { page } = robotPage
+
+	await expect(page.getByText('test-box', { exact: true })).toBeVisible({ timeout: 30000 })
+
+	runGoTest('^TestPointCloudUpdate$/AddPointCloud')
+	await expect(page.getByText('updating-pointcloud', { exact: true })).toBeVisible({
+		timeout: 10000,
+	})
+
+	await robotPage.takeScreenshot('WORLD-STATE-POINTCLOUD-UPDATE-0-initial')
+
+	runGoTest('^TestPointCloudUpdate$/UpdatePointCloud')
+	// wait for changes
+	await page.waitForTimeout(2000)
+	await robotPage.takeScreenshot('WORLD-STATE-POINTCLOUD-UPDATE-1-updated')
+
+	// Cleanup removes the entity AND resets the camera.
+	runGoTest('^TestPointCloudUpdate$/Cleanup')
+	await expect(page.getByText('updating-pointcloud', { exact: true })).toBeHidden({
+		timeout: 10000,
+	})
+
+	robotPage.assertScreenshots()
+})
+
 withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 	const { page } = robotPage
 
@@ -164,7 +190,6 @@ withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 	await expect(page.getByText('chunked-cloud', { exact: true })).toBeVisible({ timeout: 10000 })
 
 	const progressBar = page.getByRole('progressbar')
-	await expect(progressBar).toBeVisible()
 	await expect(progressBar).toBeHidden({ timeout: 30000 })
 	await robotPage.takeScreenshot('WORLD-STATE-CHUNK-0-loaded')
 
