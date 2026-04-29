@@ -2,7 +2,7 @@ import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js
 
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { type ConfigurableTrait, type Entity, trait } from 'koota'
-import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
+import { BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
@@ -142,15 +142,14 @@ export const DroppedFile = trait(() => true)
 export const Transformable = trait(() => true)
 
 /**
- * Captured at the monitor → edit mode transition. Holds
- *   worldAtEntry × baselineParentRelative⁻¹
- * so that during edit mode, a frame's rendered world pose is
- *   EditEntrySnapshot × poseToMatrix(EditedPose)
- * giving the right answer for both top-level frames (snapshot ≈ identity)
- * and child frames (snapshot embeds the parent's frozen world transform).
- * Identity when no live world pose was available at entry.
+ * Marker added at the monitor → edit mode transition for each frame entity.
+ * On entry, the live (kinematics-resolved) pose is copied into EditedPose so
+ * that edit-mode rendering — which reads EditedPose directly — matches the
+ * robot's last-known pose rather than snapping back to the static config.
+ * Removed once we're back in monitor mode AND the post-save catch-up has
+ * settled.
  */
-export const EditEntrySnapshot = trait(() => new Matrix4())
+export const EditEntrySnapshot = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 

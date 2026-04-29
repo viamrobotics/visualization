@@ -3,11 +3,8 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { Matrix4 } from 'three'
-
 	import { traits, useTrait } from '$lib/ecs'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useFrameEditSession } from '$lib/hooks/useFrameEditSession.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { usePose } from '$lib/hooks/usePose.svelte'
 	import { matrixToPose, poseToMatrix } from '$lib/transform'
@@ -20,7 +17,6 @@
 
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
-	const editSession = useFrameEditSession()
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const editedPose = useTrait(() => entity, traits.EditedPose)
@@ -32,12 +28,13 @@
 		() => parent.current
 	)
 
-	// On entering edit mode, freeze worldAtEntry × baseline⁻¹ as a Matrix4
-	// trait. During the edit the renderer multiplies it by the live editedPose
-	// to get the world transform — so child frames stay attached to their
-	// (frozen) parent's last-known world pose even as the user drags. Cleared
-	// once we're back in monitor mode AND the post-save catch-up has settled,
-	// so live `getPose` data takes over again.
+	// On the monitor → edit transition, copy the live (kinematics-resolved)
+	// pose into EditedPose. Edit-mode rendering reads EditedPose directly, so
+	// this preserves the robot's last-known position instead of snapping back
+	// to the static config. The snapshot marker tracks "we entered edit mode
+	// for this entity and have copied"; cleared once we're back in monitor
+	// mode AND the post-save catch-up has settled, at which point useFrames
+	// re-syncs EditedPose from the (now-current) network values.
 	$effect.pre(() => {
 		const mode = environment.current.viewerMode
 		const pendingSave = partConfig.hasPendingSave
@@ -45,17 +42,11 @@
 		if (mode === 'edit') {
 			if (entity.has(traits.EditEntrySnapshot)) return
 
-			const baseline = entityPose.current
-			if (!baseline) return
-
 			const live = pose.current
-			const matrix = new Matrix4()
 			if (live) {
-				matrix.copy(poseToMatrix(live)).multiply(poseToMatrix(baseline).invert())
+				entity.set(traits.EditedPose, live)
 			}
-			// else: identity — no live pose was ever fetched, blend collapses
-			// to bare editedPose, matching the prior fallback behavior.
-			entity.add(traits.EditEntrySnapshot(matrix))
+			entity.add(traits.EditEntrySnapshot)
 			return
 		}
 
@@ -65,17 +56,10 @@
 	})
 
 	const resolvedPose = $derived.by(() => {
-		// Active session owns this entity → render editedPose directly. Avoids
-		// the matrix roundtrip drift that fights the gizmo's per-frame
-		// position/quaternion writes during a drag.
-		if (editSession.current?.owns(entity)) return editedPose.current
-
-		const snap = snapshot.current
-		if (snap) {
-			if (!editedPose.current) return undefined
-			const result = new Matrix4().copy(snap).multiply(poseToMatrix(editedPose.current))
-			return matrixToPose(result)
-		}
+		// Edit mode (or post-save catch-up): EditedPose was seeded from the live
+		// pose at edit entry and is updated in place by gizmo drags, so it's
+		// already the right value to render. Skip the live blend.
+		if (snapshot.current) return editedPose.current
 
 		if (pose.current === undefined) return editedPose.current
 		if (!entityPose.current || !editedPose.current) return undefined

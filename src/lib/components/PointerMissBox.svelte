@@ -24,6 +24,10 @@
 		cameraDown.copy(camera.current.position)
 	}}
 	onclick={() => {
+		if (transformControls.active) {
+			return
+		}
+
 		if (cameraDown.distanceToSquared(camera.current.position) > 0.2) {
 			return
 		}

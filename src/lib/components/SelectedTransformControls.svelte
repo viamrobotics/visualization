@@ -23,6 +23,12 @@
 	const mode = $derived(settings.current.transformMode)
 	const entity = $derived(selectedEntity.current)
 	const transformable = useTrait(() => entity, traits.Transformable)
+	const box = useTrait(() => entity, traits.Box)
+	const sphere = useTrait(() => entity, traits.Sphere)
+	const capsule = useTrait(() => entity, traits.Capsule)
+	const hasScalableGeometry = $derived(
+		box.current !== undefined || sphere.current !== undefined || capsule.current !== undefined
+	)
 
 	// Mesh sets name={entity} on its inner mesh, so useSelectedObject3d resolves
 	// to that mesh — not the parent Frame Group we actually want to drive. Walk
@@ -30,7 +36,12 @@
 	// the geometry inside it.
 	const ref = $derived(selectedObject3d.current?.parent ?? selectedObject3d.current)
 
-	const activeMode = $derived(mode === 'none' || !transformable.current ? undefined : mode)
+	const activeMode = $derived.by(() => {
+		if (mode === 'none' || !transformable.current) return undefined
+		// Scale only does anything for primitive geometries the gizmo can size.
+		if (mode === 'scale' && !hasScalableGeometry) return undefined
+		return mode
+	})
 
 	const quaternion = new Quaternion()
 	const vector3 = new Vector3()
@@ -126,7 +137,6 @@
 	}
 
 	const onMouseUp = () => {
-		console.log('here')
 		session?.commit()
 		session = undefined
 		transformControls.setActive(false)
