@@ -1,5 +1,12 @@
 # motion-tools
 
+## 1.20.0
+
+### Minor Changes
+
+- 79e18f2: Add API to chunk large point clouds
+- f5e0fef: Use tweakpane for frame-editing inputs
+
 ## 1.19.1
 
 ### Patch Changes
