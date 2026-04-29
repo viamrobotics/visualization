@@ -2,13 +2,21 @@
 	module
 	lang="ts"
 >
-	import { BufferAttribute, MathUtils, Quaternion, Vector3 } from 'three'
+	import { ThemeUtils } from 'svelte-tweakpane-ui'
+	import { BufferAttribute, Euler, MathUtils, Quaternion, Vector3 } from 'three'
 
 	import { OrientationVector } from '$lib/three/OrientationVector'
 
 	const vec3 = new Vector3()
 	const quaternion = new Quaternion()
 	const ov = new OrientationVector()
+	const euler = new Euler()
+
+	ThemeUtils.setGlobalDefaultTheme({
+		...ThemeUtils.presets.light,
+		baseBackgroundColor: '#fbfbfc',
+		baseShadowColor: 'transparent',
+	})
 </script>
 
 <script lang="ts">
@@ -17,8 +25,23 @@
 
 	import { draggable } from '@neodrag/svelte'
 	import { isInstanceOf, useTask } from '@threlte/core'
-	import { Button, Icon, Input, Select, Tooltip } from '@viamrobotics/prime-core'
+	import { Button, Icon, Tooltip } from '@viamrobotics/prime-core'
 	import { Check, Copy } from 'lucide-svelte'
+	import {
+		List,
+		type ListChangeEvent,
+		Point,
+		type PointChangeEvent,
+		type PointValue3dObject,
+		type PointValue4dObject,
+		RotationEuler,
+		type RotationEulerChangeEvent,
+		type RotationEulerValueObject,
+		Slider,
+		type SliderChangeEvent,
+		TabGroup,
+		TabPage,
+	} from 'svelte-tweakpane-ui'
 
 	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 	import { relations, traits, useTrait, useWorld } from '$lib/ecs'
@@ -85,11 +108,110 @@
 		return 'none'
 	})
 
+	const geometryTypes = ['none', 'box', 'sphere', 'capsule'] as const
+	// Writable derived: re-derives from the trait, but TabGroup's bind:selectedIndex
+	// can write a transient override that lasts until the trait re-derives.
+	let geometryTabIndex = $derived(geometryTypes.indexOf(geometryType))
+
+	$effect(() => {
+		// setGeometryType guards against no-ops, so this is safe to fire on every
+		// tab-index change (whether user-initiated or trait-derived).
+		setGeometryType(geometryTypes[geometryTabIndex])
+	})
+
 	let copied = $state(false)
 
 	let dragElement = $state.raw<HTMLElement>()
 
+	const eulerValue = $derived.by<RotationEulerValueObject>(() => {
+		if (!localPose.current) return { x: 0, y: 0, z: 0 }
+		ov.set(
+			localPose.current.oX,
+			localPose.current.oY,
+			localPose.current.oZ,
+			MathUtils.degToRad(localPose.current.theta)
+		)
+		ov.toEuler(euler)
+		return {
+			x: MathUtils.radToDeg(euler.x),
+			y: MathUtils.radToDeg(euler.y),
+			z: MathUtils.radToDeg(euler.z),
+		}
+	})
+
+	const formatTwoDecimals = (value: number) => value.toFixed(2)
+
 	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
+
+	const handlePositionChange = (event: PointChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const next = event.detail.value as PointValue3dObject
+		detailConfigUpdater.updateLocalPosition(entity, next)
+	}
+
+	const handleOrientationOVChange = (event: PointChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const next = event.detail.value as PointValue4dObject
+		detailConfigUpdater.updateLocalOrientation(entity, {
+			oX: next.x,
+			oY: next.y,
+			oZ: next.z,
+			theta: next.w,
+		})
+	}
+
+	const handleOrientationEulerChange = (event: RotationEulerChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const next = event.detail.value as RotationEulerValueObject
+		euler.set(
+			MathUtils.degToRad(next.x),
+			MathUtils.degToRad(next.y),
+			MathUtils.degToRad(next.z),
+			'ZYX'
+		)
+		quaternion.setFromEuler(euler)
+		ov.setFromQuaternion(quaternion)
+		detailConfigUpdater.updateLocalOrientation(entity, {
+			oX: ov.x,
+			oY: ov.y,
+			oZ: ov.z,
+			theta: MathUtils.radToDeg(ov.th),
+		})
+	}
+
+	const handleBoxChange = (event: PointChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const next = event.detail.value as PointValue3dObject
+		detailConfigUpdater.updateGeometry(entity, {
+			type: 'box',
+			x: next.x,
+			y: next.y,
+			z: next.z,
+		})
+	}
+
+	const handleSphereRChange = (event: SliderChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		detailConfigUpdater.updateGeometry(entity, { type: 'sphere', r: event.detail.value })
+	}
+
+	const handleCapsuleRChange = (event: SliderChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		detailConfigUpdater.updateGeometry(entity, { type: 'capsule', r: event.detail.value })
+	}
+
+	const handleCapsuleLChange = (event: SliderChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		detailConfigUpdater.updateGeometry(entity, { type: 'capsule', l: event.detail.value })
+	}
+
+	const handleParentChange = (event: ListChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const value = event.detail.value as string
+		if (value === parent.current) return
+		traits.setParentTrait(entity, value)
+		detailConfigUpdater.setFrameParent(entity, value)
+	}
 
 	const setGeometryType = (type: 'none' | 'box' | 'sphere' | 'capsule') => {
 		if (type === geometryType) {
@@ -173,19 +295,6 @@
 			2
 		)
 	}
-
-	const isIntermediateInput = (input: string) => {
-		if (input === '0') return false
-
-		return (
-			input.startsWith('0') ||
-			input.startsWith('.') ||
-			input.startsWith('-0') ||
-			input.startsWith('-.') ||
-			(input.includes('.') && input.endsWith('0')) ||
-			input.endsWith('.')
-		)
-	}
 </script>
 
 {#snippet ImmutableField({
@@ -209,55 +318,7 @@
 	</div>
 {/snippet}
 
-{#snippet MutableField({
-	label,
-	value,
-	ariaLabel,
-	onInput,
-}: {
-	label: string
-	value?: number
-	ariaLabel: string
-	onInput: (value: string) => void
-})}
-	<div class="flex items-center gap-1">
-		<span class="text-subtle-2">{label}</span>
-		<Input
-			aria-label={`mutable ${ariaLabel}`}
-			{value}
-			on:input={(event) => onInput((event.target as HTMLInputElement).value)}
-		/>
-	</div>
-{/snippet}
-
-{#snippet DropDownField({
-	value,
-	ariaLabel,
-	options,
-	onChange,
-}: {
-	value: string
-	ariaLabel: string
-	options: string[]
-	onChange: (value: string) => void
-})}
-	<Select
-		aria-label={`dropdown ${ariaLabel}`}
-		{value}
-		onchange={(event: InputEvent) => {
-			onChange((event.target as HTMLSelectElement).value)
-		}}
-	>
-		{#each options as option (option)}
-			<option value={option}>{option}</option>
-		{/each}
-	</Select>
-{/snippet}
-
 {#if entity}
-	{@const ParentFrame = showEditFrameOptions ? DropDownField : ImmutableField}
-	{@const ScalarAttribute = showEditFrameOptions ? MutableField : ImmutableField}
-
 	<div
 		id="details-panel"
 		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 {showEditFrameOptions
@@ -400,18 +461,22 @@
 
 			<div>
 				<strong class="font-semibold">parent frame</strong>
-				<div class="mt-0.5 flex gap-3">
-					{@render ParentFrame({
-						ariaLabel: 'parent frame name',
-						value: parent.current ?? 'world',
-						options: configFrames.getParentFrameOptions(name.current ?? ''),
-						onChange: (value) => {
-							if (value === parent.current) return
-							traits.setParentTrait(entity, value)
-							detailConfigUpdater.setFrameParent(entity, value)
-						},
-					})}
-				</div>
+				{#if showEditFrameOptions}
+					<div aria-label="mutable parent frame">
+						<List
+							options={configFrames.getParentFrameOptions(name.current ?? '') ?? []}
+							value={parent.current ?? 'world'}
+							on:change={handleParentChange}
+						/>
+					</div>
+				{:else}
+					<div class="mt-0.5 flex gap-3">
+						{@render ImmutableField({
+							ariaLabel: 'parent frame name',
+							value: parent.current ?? 'world',
+						})}
+					</div>
+				{/if}
 			</div>
 
 			{#if localPose.current}
@@ -419,159 +484,162 @@
 					<strong class="font-semibold">local position</strong>
 					<span class="text-subtle-2">(mm)</span>
 
-					<div class="mt-0.5 flex gap-3">
-						{@render ScalarAttribute({
-							label: 'x',
-							ariaLabel: 'local position x coordinate',
-							value: localPose.current.x,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { x: Number.parseFloat(value) })
-							},
-						})}
-						{@render ScalarAttribute({
-							label: 'y',
-							ariaLabel: 'local position y coordinate',
-							value: localPose.current.y,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { y: Number.parseFloat(value) })
-							},
-						})}
-						{@render ScalarAttribute({
-							label: 'z',
-							ariaLabel: 'local position z coordinate',
-							value: localPose.current.z,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalPosition(entity, { z: Number.parseFloat(value) })
-							},
-						})}
-					</div>
+					{#if showEditFrameOptions}
+						<div aria-label="mutable local position">
+							<Point
+								value={{
+									x: localPose.current.x,
+									y: localPose.current.y,
+									z: localPose.current.z,
+								}}
+								format={formatTwoDecimals}
+								on:change={handlePositionChange}
+							/>
+						</div>
+					{:else}
+						<div class="mt-0.5 flex gap-3">
+							{@render ImmutableField({
+								label: 'x',
+								ariaLabel: 'local position x coordinate',
+								value: localPose.current.x,
+							})}
+							{@render ImmutableField({
+								label: 'y',
+								ariaLabel: 'local position y coordinate',
+								value: localPose.current.y,
+							})}
+							{@render ImmutableField({
+								label: 'z',
+								ariaLabel: 'local position z coordinate',
+								value: localPose.current.z,
+							})}
+						</div>
+					{/if}
 				</div>
 
 				<div>
 					<strong class="font-semibold">local orientation</strong>
-					<span class="text-subtle-2">(deg)</span>
-					<div class="flex {showEditFrameOptions ? 'gap-2' : 'gap-3'} mt-0.5">
-						{@render ScalarAttribute({
-							label: 'x',
-							ariaLabel: 'local orientation x coordinate',
-							value: localPose.current?.oX,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oX: Number.parseFloat(value) })
-							},
-						})}
-						{@render ScalarAttribute({
-							label: 'y',
-							ariaLabel: 'local orientation y coordinate',
-							value: localPose.current?.oY,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oY: Number.parseFloat(value) })
-							},
-						})}
-						{@render ScalarAttribute({
-							label: 'z',
-							ariaLabel: 'local orientation z coordinate',
-							value: localPose.current?.oZ,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, { oZ: Number.parseFloat(value) })
-							},
-						})}
-						{@render ScalarAttribute({
-							label: 'th',
-							ariaLabel: 'local orientation theta degrees',
-							value: localPose.current?.theta,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateLocalOrientation(entity, {
-									theta: Number.parseFloat(value),
-								})
-							},
-						})}
-					</div>
+
+					{#if showEditFrameOptions}
+						<div aria-label="mutable local orientation">
+							<TabGroup>
+								<TabPage title="OV (deg)">
+									<Point
+										value={{
+											x: localPose.current.oX,
+											y: localPose.current.oY,
+											z: localPose.current.oZ,
+											w: localPose.current.theta,
+										}}
+										format={formatTwoDecimals}
+										on:change={handleOrientationOVChange}
+									/>
+								</TabPage>
+								<TabPage title="Euler">
+									<RotationEuler
+										value={eulerValue}
+										unit="deg"
+										on:change={handleOrientationEulerChange}
+									/>
+								</TabPage>
+							</TabGroup>
+						</div>
+					{:else}
+						<div class="mt-0.5 flex gap-3">
+							{@render ImmutableField({
+								label: 'x',
+								ariaLabel: 'local orientation x coordinate',
+								value: localPose.current.oX,
+							})}
+							{@render ImmutableField({
+								label: 'y',
+								ariaLabel: 'local orientation y coordinate',
+								value: localPose.current.oY,
+							})}
+							{@render ImmutableField({
+								label: 'z',
+								ariaLabel: 'local orientation z coordinate',
+								value: localPose.current.oZ,
+							})}
+							{@render ImmutableField({
+								label: 'th',
+								ariaLabel: 'local orientation theta degrees',
+								value: localPose.current.theta,
+							})}
+						</div>
+					{/if}
 				</div>
 			{/if}
 
 			{#if showEditFrameOptions}
 				<div>
 					<strong class="font-semibold">geometry</strong>
-					<div class="mt-0.5 grid grid-cols-4 gap-1">
-						<Button
-							variant={geometryType === 'none' ? 'dark' : 'primary'}
-							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('none')}
-						>
-							None
-						</Button>
-						<Button
-							variant={geometryType === 'box' ? 'dark' : 'primary'}
-							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('box')}
-						>
-							Box
-						</Button>
-						<Button
-							variant={geometryType === 'sphere' ? 'dark' : 'primary'}
-							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('sphere')}
-						>
-							Sphere
-						</Button>
-						<Button
-							variant={geometryType === 'capsule' ? 'dark' : 'primary'}
-							class="h-6 px-2 py-1 text-xs"
-							onclick={() => setGeometryType('capsule')}
-						>
-							Capsule
-						</Button>
+					<span class="text-subtle-2">(mm)</span>
+					<div aria-label="mutable geometry">
+						<TabGroup bind:selectedIndex={geometryTabIndex}>
+							<TabPage title="None" />
+							<TabPage title="Box" />
+							<TabPage title="Sphere" />
+							<TabPage title="Capsule" />
+						</TabGroup>
 					</div>
+					{#if geometryTabIndex === 1 && box.current}
+						<div aria-label="mutable box dimensions">
+							<Point
+								value={{
+									x: box.current.x,
+									y: box.current.y,
+									z: box.current.z,
+								}}
+								format={formatTwoDecimals}
+								on:change={handleBoxChange}
+							/>
+						</div>
+					{:else if geometryTabIndex === 2 && sphere.current}
+						<div aria-label="mutable sphere dimensions">
+							<Slider
+								label="r"
+								value={sphere.current.r}
+								format={formatTwoDecimals}
+								on:change={handleSphereRChange}
+							/>
+						</div>
+					{:else if geometryTabIndex === 3 && capsule.current}
+						<div aria-label="mutable capsule dimensions">
+							<Slider
+								label="r"
+								value={capsule.current.r}
+								format={formatTwoDecimals}
+								on:change={handleCapsuleRChange}
+							/>
+							<Slider
+								label="l"
+								value={capsule.current.l}
+								format={formatTwoDecimals}
+								on:change={handleCapsuleLChange}
+							/>
+						</div>
+					{/if}
 				</div>
-			{/if}
-
-			{#if box.current}
+			{:else if box.current}
 				<div>
-					<strong class="font-semibold"> dimensions </strong>
+					<strong class="font-semibold">dimensions</strong>
 					<span class="text-subtle-2">(box) (mm)</span>
 					<div class="mt-0.5 flex items-center gap-2">
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'x',
 							ariaLabel: 'box dimensions x value input',
 							value: box.current.x,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'box',
-									x: Number.parseFloat(value),
-								})
-							},
 						})}
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'y',
 							ariaLabel: 'box dimensions y value input',
 							value: box.current.y,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'box',
-									y: Number.parseFloat(value),
-								})
-							},
 						})}
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'z',
 							ariaLabel: 'box dimensions z value input',
 							value: box.current.z,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'box',
-									z: Number.parseFloat(value),
-								})
-							},
 						})}
 					</div>
 				</div>
@@ -580,29 +648,15 @@
 					<strong class="font-semibold">dimensions</strong>
 					<span class="text-subtle-2">(capsule) (mm)</span>
 					<div class="mt-0.5 flex items-center gap-2">
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'r',
 							ariaLabel: 'capsule dimensions radius value input',
 							value: capsule.current.r,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'capsule',
-									r: Number.parseFloat(value),
-								})
-							},
 						})}
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'l',
 							ariaLabel: 'capsule dimensions length value input',
 							value: capsule.current.l,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'capsule',
-									l: Number.parseFloat(value),
-								})
-							},
 						})}
 					</div>
 				</div>
@@ -610,17 +664,10 @@
 				<div>
 					<strong class="font-semibold">dimensions (sphere)</strong>
 					<div class="flex items-center gap-2">
-						{@render ScalarAttribute({
+						{@render ImmutableField({
 							label: 'r',
 							ariaLabel: 'sphere dimensions radius value',
 							value: sphere.current.r,
-							onInput: (value) => {
-								if (isIntermediateInput(value)) return
-								detailConfigUpdater.updateGeometry(entity, {
-									type: 'sphere',
-									r: Number.parseFloat(value),
-								})
-							},
 						})}
 					</div>
 				</div>
@@ -708,3 +755,14 @@
 		{/if}
 	</div>
 {/if}
+
+<style>
+	:global(.tp-tabv_i) {
+		display: none;
+	}
+
+	:global(.tp-lblv),
+	:global(.tp-tbpv_c) {
+		padding-left: 0 !important;
+	}
+</style>

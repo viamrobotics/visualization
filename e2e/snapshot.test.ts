@@ -9,14 +9,18 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const snapshotsDir = path.resolve(__dirname, '../draw/__snapshots__')
 
-const snapshots = [
+const snapshots: Array<{ name: string; file: string; waitFor?: string[] }> = [
 	{ name: 'box', file: 'visualization_snapshot_box' },
 	{ name: 'sphere', file: 'visualization_snapshot_sphere' },
 	{ name: 'capsule', file: 'visualization_snapshot_capsule' },
 	{ name: 'arrows', file: 'visualization_snapshot_arrows' },
 	{ name: 'line', file: 'visualization_snapshot_line' },
 	{ name: 'points', file: 'visualization_snapshot_points' },
-	{ name: 'model', file: 'visualization_snapshot_model' },
+	{
+		name: 'model',
+		file: 'visualization_snapshot_model',
+		waitFor: ['duck', 'avocado', 'lantern', 'box', 'milktruck', 'fox'],
+	},
 ]
 
 test.beforeAll(() => {
@@ -34,8 +38,18 @@ for (const snapshot of snapshots) {
 		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).toBeVisible({
 			timeout: 10000,
 		})
-		await page.getByRole('button', { name: 'Dismiss toast' }).click()
+
+		const dismissButton = page.getByRole('button', { name: 'Dismiss toast' })
+		await expect(dismissButton).toBeVisible({ timeout: 10000 })
+		await dismissButton.click()
+
 		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).not.toBeVisible()
+
+		for (const label of snapshot.waitFor ?? []) {
+			await expect(page.getByText(label, { exact: true }).first()).toBeVisible({
+				timeout: 30000,
+			})
+		}
 
 		await takeScreenshot(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
 		assertScreenshots()

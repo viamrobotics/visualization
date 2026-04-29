@@ -37,6 +37,7 @@ export const provideRelationships = () => {
 			}
 
 			for (const target of currentTargets) {
+				if (!target.isAlive()) continue
 				const targetUuid = target.get(traits.UUID)
 				if (!targetUuid || !desiredByUuid.has(targetUuid)) {
 					entity.remove(relations.SubEntityLink(target))
