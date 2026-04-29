@@ -18,7 +18,8 @@
 		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
 	}
 
-	let { data, name, renderOrder, depthTest, depthWrite, interactionLayers, oncreate }: Props = $props()
+	let { data, name, renderOrder, depthTest, depthWrite, interactionLayers, oncreate }: Props =
+		$props()
 
 	const world = useWorld()
 
@@ -41,7 +42,9 @@
 				entityTraits.push(traits.RenderOrder(renderOrder))
 			}
 			if (depthTest !== undefined || depthWrite !== undefined) {
-				entityTraits.push(traits.Material({ depthTest: depthTest ?? true, depthWrite: depthWrite ?? true }))
+				entityTraits.push(
+					traits.Material({ depthTest: depthTest ?? true, depthWrite: depthWrite ?? true })
+				)
 			}
 			if (interactionLayers?.includes('selectTool')) {
 				entityTraits.push(traits.SelectToolInteractionLayer)
