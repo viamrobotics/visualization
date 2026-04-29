@@ -7,22 +7,31 @@ import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 
 import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import type { Relationship } from '$lib/buf/draw/v1/metadata_pb'
 
 import { writeBufferGeometryRange } from '$lib/attribute'
 import { DrawService } from '$lib/buf/draw/v1/service_connect'
-import { EntityChangeType, StreamEntityChangesResponse } from '$lib/buf/draw/v1/service_pb'
+import {
+	CreateRelationshipRequest,
+	DeleteRelationshipRequest,
+	EntityChangeType,
+	StreamEntityChangesResponse,
+} from '$lib/buf/draw/v1/service_pb'
 import { asFloat32Array, inMeters, STRIDE } from '$lib/buffer'
 import {
 	drawDrawing,
 	drawTransform,
 	type Transform,
 	updateDrawing,
+	updateModel,
 	updateTransform,
+	uuidStringToBytes,
 } from '$lib/draw'
 import { traits, useWorld } from '$lib/ecs'
 
 import { useCameraControls } from './useControls.svelte'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import { useRelationships } from './useRelationships.svelte'
 
 const DRAW_SERVICE_KEY = Symbol('draw-service-context')
 const FLOAT32_SIZE = 4
@@ -37,6 +46,13 @@ type ConnectionStatusType = (typeof ConnectionStatus)[keyof typeof ConnectionSta
 
 interface Context {
 	connectionStatus: ConnectionStatusType
+	createRelationship: (
+		sourceUuid: string,
+		targetUuid: string,
+		type: string,
+		indexMapping?: string
+	) => Promise<void>
+	deleteRelationship: (sourceUuid: string, targetUuid: string) => Promise<void>
 }
 
 interface StreamEvent {
@@ -51,6 +67,7 @@ export function provideDrawService() {
 	const world = useWorld()
 	const cameraControls = useCameraControls()
 	const drawConnectionConfig = useDrawConnectionConfig()
+	const relationships = useRelationships()
 
 	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)
 
@@ -65,6 +82,9 @@ export function provideDrawService() {
 
 	let pendingEvents: StreamEvent[] = []
 	let flushScheduled = false
+	let activeClient: Client<typeof DrawService> | undefined
+	let activeSignal: AbortSignal | undefined
+	const activeChunkPulls = new Set<string>()
 
 	const destroyTransform = (uuidStr: string) => {
 		const entity = transformEntities.get(uuidStr)
@@ -102,24 +122,25 @@ export function provideDrawService() {
 		if (changeType === EntityChangeType.ADDED) {
 			if (!transformEntities.has(uuid)) {
 				const spawned = drawTransform(world, transform, traits.DrawServiceAPI)
-				transformEntities.set(uuid, spawned)
+				relationships.apply(spawned.entity, spawned.relationships)
+				transformEntities.set(uuid, spawned.entity)
+				relationships.flush(uuid)
 			}
 		} else if (changeType === EntityChangeType.REMOVED) {
 			destroyTransform(uuid)
 		} else if (changeType === EntityChangeType.UPDATED) {
 			const existing = transformEntities.get(uuid)
 			if (existing) {
-				updateTransform(existing, transform)
+				const updated = updateTransform(existing, transform)
+				relationships.apply(updated.entity, updated.relationships)
 			} else {
 				const spawned = drawTransform(world, transform, traits.DrawServiceAPI)
-				transformEntities.set(uuid, spawned)
+				relationships.apply(spawned.entity, spawned.relationships)
+				transformEntities.set(uuid, spawned.entity)
+				relationships.flush(uuid)
 			}
 		}
 	}
-
-	let activeClient: Client<typeof DrawService> | undefined
-	let activeSignal: AbortSignal | undefined
-	const activeChunkPulls = new Set<string>()
 
 	const isChunkedDrawing = (drawing: Drawing): boolean => {
 		return drawing.metadata?.chunks !== undefined && drawing.metadata.chunks.total > 0
@@ -201,18 +222,22 @@ export function provideDrawService() {
 		if (changeType === EntityChangeType.ADDED) {
 			if (!drawingEntities.has(uuid)) {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
-				drawingEntities.set(uuid, spawned)
+				const entities = spawned.type === 'drawing' ? [spawned.entity] : spawned.entities
+				const rootEntity = entities[0]
+				if (rootEntity) relationships.apply(rootEntity, spawned.relationships)
+				drawingEntities.set(uuid, entities)
+				relationships.flush(uuid)
 
-				if (isChunkedDrawing(drawing) && activeClient && activeSignal) {
+				if (isChunkedDrawing(drawing) && activeClient && activeSignal && rootEntity) {
 					const chunk = getChunkInfo(drawing)
 					if (chunk) {
-						spawned[0]!.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
+						rootEntity.add(traits.ChunkProgress({ loaded: chunk.firstEnd, total: chunk.total }))
 						const uuidBytes = drawing.uuid ?? new Uint8Array()
 						void pullChunks(
 							activeClient,
 							uuid,
 							uuidBytes,
-							spawned[0]!,
+							rootEntity,
 							chunk.total,
 							chunk.firstEnd,
 							activeSignal
@@ -225,11 +250,21 @@ export function provideDrawService() {
 		} else if (changeType === EntityChangeType.UPDATED) {
 			const existing = drawingEntities.get(uuid)
 			if (existing) {
-				const next = updateDrawing(world, existing, drawing, traits.DrawServiceAPI)
-				drawingEntities.set(uuid, next)
+				const isModel = drawing.physicalObject?.geometryType?.case === 'model'
+				const result = isModel
+					? updateModel(world, existing, drawing, traits.DrawServiceAPI)
+					: updateDrawing(world, existing[0]!, drawing)
+				const entities = result.type === 'drawing' ? [result.entity] : result.entities
+				const rootEntity = entities[0]
+				if (rootEntity) relationships.apply(rootEntity, result.relationships)
+				drawingEntities.set(uuid, entities)
 			} else {
 				const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
-				drawingEntities.set(uuid, spawned)
+				const entities = spawned.type === 'drawing' ? [spawned.entity] : spawned.entities
+				const rootEntity = entities[0]
+				if (rootEntity) relationships.apply(rootEntity, spawned.relationships)
+				drawingEntities.set(uuid, entities)
+				relationships.flush(uuid)
 			}
 		}
 	}
@@ -341,9 +376,42 @@ export function provideDrawService() {
 		}
 	}
 
+	const createRelationship = async (
+		sourceUuid: string,
+		targetUuid: string,
+		type: string,
+		indexMapping?: string
+	): Promise<void> => {
+		if (!activeClient) return
+		const rel: Partial<Relationship> = {
+			targetUuid: uuidStringToBytes(targetUuid),
+			type,
+		}
+		if (indexMapping !== undefined) {
+			rel.indexMapping = indexMapping
+		}
+		await activeClient.createRelationship(
+			new CreateRelationshipRequest({
+				sourceUuid: uuidStringToBytes(sourceUuid),
+				relationship: rel,
+			})
+		)
+	}
+
+	const deleteRelationship = async (sourceUuid: string, targetUuid: string): Promise<void> => {
+		if (!activeClient) return
+		await activeClient.deleteRelationship(
+			new DeleteRelationshipRequest({
+				sourceUuid: uuidStringToBytes(sourceUuid),
+				targetUuid: uuidStringToBytes(targetUuid),
+			})
+		)
+	}
+
 	$effect(() => {
 		if (!url) {
 			connectionStatus = ConnectionStatus.DISCONNECTED
+			activeClient = undefined
 			return
 		}
 
@@ -363,6 +431,7 @@ export function provideDrawService() {
 			activeClient = undefined
 			activeSignal = undefined
 			connectionStatus = ConnectionStatus.DISCONNECTED
+			activeClient = undefined
 
 			for (const entity of transformEntities.values()) {
 				if (world.has(entity)) entity.destroy()
@@ -375,6 +444,7 @@ export function provideDrawService() {
 				}
 			}
 			drawingEntities.clear()
+			relationships.clear()
 		}
 	})
 
@@ -382,6 +452,8 @@ export function provideDrawService() {
 		get connectionStatus() {
 			return connectionStatus
 		},
+		createRelationship,
+		deleteRelationship,
 	})
 }
 

@@ -48,6 +48,7 @@
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useDrawService } from '$lib/hooks/useDrawService.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
@@ -67,6 +68,7 @@
 	const { details }: Props = $props()
 
 	const world = useWorld()
+	const drawService = useDrawService()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
 	const configFrames = useConfigFrames()
@@ -705,7 +707,13 @@
 								name="trash-can-outline"
 								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
 								onclick={() => {
-									entity.remove(relations.SubEntityLink(linkedEntity))
+									const sourceUuid = entity.get(traits.UUID)
+									const targetUuid = linkedEntity.get(traits.UUID)
+									if (sourceUuid && targetUuid) {
+										void drawService.deleteRelationship(sourceUuid, targetUuid)
+									} else {
+										entity.remove(relations.SubEntityLink(linkedEntity))
+									}
 								}}
 							/>
 						</div>
