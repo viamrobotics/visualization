@@ -50,14 +50,14 @@ describe('Details component', () => {
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
-			hasPendingSave: false,
-			clearPendingSave: vi.fn(),
-			setPendingSave: vi.fn(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],
@@ -142,14 +142,14 @@ describe('Details component', () => {
 			componentNameToFragmentId: {},
 			updateFrame: vi.fn(),
 			isDirty: false,
+			hasPendingSave: false,
+			clearPendingSave: vi.fn(),
+			setPendingSave: vi.fn(),
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
 			hasEditPermissions: true,
-			hasPendingSave: false,
-			clearPendingSave: vi.fn(),
-			setPendingSave: vi.fn(),
 		})
 
 		const context = new Map<symbol, unknown>([

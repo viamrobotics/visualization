@@ -42,6 +42,7 @@
 	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useDrawService } from '$lib/hooks/useDrawService.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
@@ -61,6 +62,7 @@
 	const { details }: Props = $props()
 
 	const world = useWorld()
+	const drawService = useDrawService()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
 	const configFrames = useConfigFrames()
@@ -623,6 +625,43 @@
 							</TabPage>
 						</TabGroup>
 					</div>
+					{#if geometryTabIndex === 1 && box.current}
+						<div aria-label="mutable box dimensions">
+							<Point
+								value={{
+									x: box.current.x,
+									y: box.current.y,
+									z: box.current.z,
+								}}
+								format={formatTwoDecimals}
+								on:change={handleBoxChange}
+							/>
+						</div>
+					{:else if geometryTabIndex === 2 && sphere.current}
+						<div aria-label="mutable sphere dimensions">
+							<Slider
+								label="r"
+								value={sphere.current.r}
+								format={formatTwoDecimals}
+								on:change={handleSphereRChange}
+							/>
+						</div>
+					{:else if geometryTabIndex === 3 && capsule.current}
+						<div aria-label="mutable capsule dimensions">
+							<Slider
+								label="r"
+								value={capsule.current.r}
+								format={formatTwoDecimals}
+								on:change={handleCapsuleRChange}
+							/>
+							<Slider
+								label="l"
+								value={capsule.current.l}
+								format={formatTwoDecimals}
+								on:change={handleCapsuleLChange}
+							/>
+						</div>
+					{/if}
 				</div>
 			{:else if box.current}
 				<div>
@@ -705,7 +744,13 @@
 								name="trash-can-outline"
 								class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
 								onclick={() => {
-									entity.remove(relations.SubEntityLink(linkedEntity))
+									const sourceUuid = entity.get(traits.UUID)
+									const targetUuid = linkedEntity.get(traits.UUID)
+									if (sourceUuid && targetUuid) {
+										void drawService.deleteRelationship(sourceUuid, targetUuid)
+									} else {
+										entity.remove(relations.SubEntityLink(linkedEntity))
+									}
 								}}
 							/>
 						</div>
