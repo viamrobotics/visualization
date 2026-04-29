@@ -12,11 +12,13 @@
 		data: Uint8Array
 		name?: string
 		renderOrder?: number
+		depthTest?: boolean
+		depthWrite?: boolean
 		interactionLayers?: InteractionLayerValue[]
 		oncreate?: (positions: Float32Array, colors: Uint8Array | undefined) => void
 	}
 
-	let { data, name, renderOrder, interactionLayers, oncreate }: Props = $props()
+	let { data, name, renderOrder, depthTest, depthWrite, interactionLayers, oncreate }: Props = $props()
 
 	const world = useWorld()
 
@@ -37,6 +39,9 @@
 
 			if (renderOrder) {
 				entityTraits.push(traits.RenderOrder(renderOrder))
+			}
+			if (depthTest !== undefined || depthWrite !== undefined) {
+				entityTraits.push(traits.Material({ depthTest: depthTest ?? true, depthWrite: depthWrite ?? true }))
 			}
 			if (interactionLayers?.includes('selectTool')) {
 				entityTraits.push(traits.SelectToolInteractionLayer)
