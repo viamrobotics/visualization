@@ -130,3 +130,12 @@ export const matrixToPose = (matrix: Matrix4) => {
 
 	return pose
 }
+
+export const isFinitePose = (pose: Pose): boolean =>
+	Number.isFinite(pose.x) &&
+	Number.isFinite(pose.y) &&
+	Number.isFinite(pose.z) &&
+	Number.isFinite(pose.oX) &&
+	Number.isFinite(pose.oY) &&
+	Number.isFinite(pose.oZ) &&
+	Number.isFinite(pose.theta)

@@ -23,11 +23,7 @@
 	onpointerdown={() => {
 		cameraDown.copy(camera.current.position)
 	}}
-	onpointerup={() => {
-		if (transformControls.active) {
-			return
-		}
-
+	onclick={() => {
 		if (cameraDown.distanceToSquared(camera.current.position) > 0.2) {
 			return
 		}

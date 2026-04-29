@@ -11,12 +11,6 @@
 	const quaternion = new Quaternion()
 	const ov = new OrientationVector()
 	const euler = new Euler()
-
-	ThemeUtils.setGlobalDefaultTheme({
-		...ThemeUtils.presets.light,
-		baseBackgroundColor: '#fbfbfc',
-		baseShadowColor: 'transparent',
-	})
 </script>
 
 <script lang="ts">
@@ -293,6 +287,12 @@
 			2
 		)
 	}
+
+	ThemeUtils.setGlobalDefaultTheme({
+		...ThemeUtils.presets.light,
+		baseBackgroundColor: '#fbfbfc',
+		baseShadowColor: 'transparent',
+	})
 </script>
 
 {#snippet ImmutableField({
@@ -320,8 +320,8 @@
 	<div
 		id="details-panel"
 		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 {showEditFrameOptions
-			? 'w-80'
-			: 'w-60'} border p-2 text-xs dark:text-black"
+			? 'w-70'
+			: 'w-70'} border p-2 text-xs dark:text-black"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,

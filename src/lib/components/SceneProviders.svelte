@@ -12,6 +12,7 @@
 	} from '$lib/hooks/useControls.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideDrawService } from '$lib/hooks/useDrawService.svelte'
+	import { provideFrameEditSession } from '$lib/hooks/useFrameEditSession.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideFrames } from '$lib/hooks/useFrames.svelte'
 	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
@@ -45,6 +46,7 @@
 
 	provideResourceByName(() => partID.current)
 	provideConfigFrames()
+	provideFrameEditSession(() => partID.current)
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)

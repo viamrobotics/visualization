@@ -2,7 +2,7 @@ import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js
 
 import { Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { type ConfigurableTrait, type Entity, trait } from 'koota'
-import { BufferGeometry as ThreeBufferGeometry } from 'three'
+import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
@@ -140,12 +140,15 @@ export const DroppedFile = trait(() => true)
 export const Transformable = trait(() => true)
 
 /**
- * Marker trait set by SelectedTransformControls while the user is actively
- * dragging the gizmo on this entity. Reactive sources that would otherwise
- * overwrite the entity's pose mid-drag (e.g. useFrames re-syncing EditedPose
- * from the part config) should leave the entity alone while this is set.
+ * Captured at the monitor → edit mode transition. Holds
+ *   worldAtEntry × baselineParentRelative⁻¹
+ * so that during edit mode, a frame's rendered world pose is
+ *   EditEntrySnapshot × poseToMatrix(EditedPose)
+ * giving the right answer for both top-level frames (snapshot ≈ identity)
+ * and child frames (snapshot embeds the parent's frozen world transform).
+ * Identity when no live world pose was available at entry.
  */
-export const Transforming = trait(() => true)
+export const EditEntrySnapshot = trait(() => new Matrix4())
 
 export const ShowAxesHelper = trait(() => true)
 

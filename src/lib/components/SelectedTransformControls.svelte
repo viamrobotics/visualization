@@ -2,11 +2,12 @@
 	import { TransformControls } from '@threlte/extras'
 	import { MathUtils, Quaternion, Vector3 } from 'three'
 
+	import type { FrameEditSession } from '$lib/editing/FrameEditSession'
+
 	import { traits, useTrait } from '$lib/ecs'
-	import { FrameConfigUpdater } from '$lib/FrameConfigUpdater.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useFrameEditSession } from '$lib/hooks/useFrameEditSession.svelte'
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { OrientationVector } from '$lib/three/OrientationVector'
@@ -17,7 +18,7 @@
 	const transformControls = useTransformControls()
 	const selectedEntity = useSelectedEntity()
 	const selectedObject3d = useSelectedObject3d()
-	const partConfig = usePartConfig()
+	const sessions = useFrameEditSession()
 
 	const mode = $derived(settings.current.transformMode)
 	const entity = $derived(selectedEntity.current)
@@ -35,21 +36,18 @@
 	const vector3 = new Vector3()
 	const ov = new OrientationVector()
 
-	const frameConfig = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
-
-	// Captured at mouseDown so mouseUp removes the trait from the same entity
-	// even if selection somehow changes mid-drag.
-	let transformingEntity: typeof entity
+	let session: FrameEditSession | undefined
 
 	const onMouseDown = () => {
-		transformingEntity = entity
-		if (transformingEntity) transformingEntity.add(traits.Transforming)
+		if (entity?.has(traits.FramesAPI)) {
+			session = sessions.begin([entity])
+		}
 		environment.current.viewerMode = 'edit'
 		transformControls.setActive(true)
-		onChange()
 	}
 
-	const onChange = () => {
+	const onChange = (event) => {
+		console.log(event, ref, entity, activeMode)
 		if (!ref || !entity || !activeMode) {
 			return
 		}
@@ -59,7 +57,7 @@
 		if (activeMode === 'translate') {
 			if (isFrameEntity) {
 				// ref.position is local (meters); EditedPose stores mm.
-				frameConfig.updateLocalPosition(entity, {
+				session?.stagePose(entity, {
 					x: ref.position.x * 1000,
 					y: ref.position.y * 1000,
 					z: ref.position.z * 1000,
@@ -75,7 +73,7 @@
 		} else if (activeMode === 'rotate') {
 			if (isFrameEntity) {
 				ov.setFromQuaternion(ref.quaternion)
-				frameConfig.updateLocalOrientation(entity, {
+				session?.stagePose(entity, {
 					oX: ov.x,
 					oY: ov.y,
 					oZ: ov.z,
@@ -103,21 +101,21 @@
 					z: box.z * ref.scale.z,
 				}
 				if (isFrameEntity) {
-					frameConfig.updateGeometry(entity, { type: 'box', ...next })
+					session?.stageGeometry(entity, { type: 'box', ...next })
 				} else {
 					entity.set(traits.Box, next)
 				}
 			} else if (sphere) {
 				const next = { r: sphere.r * ref.scale.x }
 				if (isFrameEntity) {
-					frameConfig.updateGeometry(entity, { type: 'sphere', ...next })
+					session?.stageGeometry(entity, { type: 'sphere', ...next })
 				} else {
 					entity.set(traits.Sphere, next)
 				}
 			} else if (capsule) {
 				const next = { r: capsule.r * ref.scale.x, l: capsule.l * ref.scale.y }
 				if (isFrameEntity) {
-					frameConfig.updateGeometry(entity, { type: 'capsule', ...next })
+					session?.stageGeometry(entity, { type: 'capsule', ...next })
 				} else {
 					entity.set(traits.Capsule, next)
 				}
@@ -128,21 +126,24 @@
 	}
 
 	const onMouseUp = () => {
-		transformingEntity?.remove(traits.Transforming)
-		transformingEntity = undefined
+		console.log('here')
+		session?.commit()
+		session = undefined
 		transformControls.setActive(false)
 	}
 </script>
 
 {#if ref && entity && activeMode}
-	<TransformControls
-		object={ref}
-		mode={activeMode}
-		translationSnap={settings.current.snapping ? 0.1 : undefined}
-		rotationSnap={settings.current.snapping ? Math.PI / 24 : undefined}
-		scaleSnap={settings.current.snapping ? 0.1 : undefined}
-		onmouseDown={onMouseDown}
-		onobjectChange={onChange}
-		onmouseUp={onMouseUp}
-	/>
+	{#key entity}
+		<TransformControls
+			object={ref}
+			mode={activeMode}
+			translationSnap={settings.current.snapping ? 0.1 : undefined}
+			rotationSnap={settings.current.snapping ? Math.PI / 24 : undefined}
+			scaleSnap={settings.current.snapping ? 0.1 : undefined}
+			onmouseDown={onMouseDown}
+			onobjectChange={onChange}
+			onmouseUp={onMouseUp}
+		/>
+	{/key}
 {/if}
