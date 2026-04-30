@@ -187,13 +187,21 @@ export const providePointclouds = (partID: () => string) => {
 			})
 		}
 
-		// clean up queries that disappeared entirely
+		// clean up queries that disappeared entirely.
+		// Guard: if ALL queries are gone (activeQueryKeys empty), the machine is likely
+		// temporarily disconnected — preserve entities so they reappear on reconnect.
+		// Only destroy when the partID changed (old-partID entities) or other queries
+		// are still active (connected machine, camera legitimately removed).
+		const anyQueriesActive = activeQueryKeys.size > 0
 		for (const [queryKey, entity] of entities) {
 			if (!activeQueryKeys.has(queryKey)) {
-				if (world.has(entity)) {
-					entity.destroy()
+				const queryPartID = queryKey.split(':')[0]!
+				if (queryPartID !== currentPartID || anyQueriesActive) {
+					if (world.has(entity)) {
+						entity.destroy()
+					}
+					entities.delete(queryKey)
 				}
-				entities.delete(queryKey)
 			}
 		}
 	})
