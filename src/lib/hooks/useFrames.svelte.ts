@@ -14,6 +14,7 @@ import { createPose } from '$lib/transform'
 
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
+import { useFrameEditSession } from './useFrameEditSession.svelte'
 import { useLogs } from './useLogs.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
@@ -27,6 +28,7 @@ const key = Symbol('frames-context')
 export const provideFrames = (partID: () => string) => {
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
+	const editSession = useFrameEditSession()
 	const environment = useEnvironment()
 	const world = useWorld()
 	const resourceByName = useResourceByName()
@@ -38,6 +40,17 @@ export const provideFrames = (partID: () => string) => {
 	const pendingSaveKey = $derived(`viam-pending-save-revision:${partID()}`)
 
 	let didRecentlyEdit = $state(false)
+
+	let lastPartID: string | undefined
+	$effect.pre(() => {
+		const id = partID()
+		if (lastPartID !== undefined && lastPartID !== id) {
+			// Stale across parts: keeps the configFrames-priority merge branch
+			// active when switching to a new part that hasn't been edited.
+			didRecentlyEdit = false
+		}
+		lastPartID = id
+	})
 
 	const isEditMode = $derived(environment.current.viewerMode === 'edit')
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
@@ -102,7 +115,7 @@ export const provideFrames = (partID: () => string) => {
 
 	const entities = new Map<string, Entity | undefined>()
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (revision) {
 			untrack(() => query.refetch())
 		}
@@ -191,6 +204,14 @@ export const provideFrames = (partID: () => string) => {
 				const existing = entities.get(entityKey)
 
 				if (existing) {
+					// Active edit session owns the entity's traits for the duration of
+					// the user's gesture. Skip the entire re-sync — re-setting Parent
+					// would re-evaluate the <Portal> id and re-mount the group,
+					// detaching the gizmo's drag target mid-stroke.
+					if (editSession.current?.owns(existing)) {
+						continue
+					}
+
 					traits.setParentTrait(existing, parent)
 
 					if (color) {
@@ -203,7 +224,23 @@ export const provideFrames = (partID: () => string) => {
 
 					traits.updateGeometryTrait(existing, frame.physicalObject)
 
-					existing.set(traits.EditedPose, pose)
+					if (!isEditMode && !partConfig.hasPendingSave) {
+						existing.set(traits.Pose, pose)
+					}
+
+					if (!existing.has(traits.LivePose)) {
+						existing.add(traits.LivePose(pose))
+					}
+
+					// Skip the EditedPose overwrite while in edit mode. The merged
+					// `frames` source can differ from query.data once didRecentlyEdit
+					// flips (fragment overrides, round-trip drift), and writing those
+					// values would shift entities whose parents the user is portaling
+					// into — the gizmo's drag target moves underneath it. Once we're
+					// back in monitor mode, the next sync resumes the overwrite.
+					if (!isEditMode) {
+						existing.set(traits.EditedPose, pose)
+					}
 
 					continue
 				}
@@ -212,7 +249,9 @@ export const provideFrames = (partID: () => string) => {
 					traits.Name(name),
 					traits.Pose(pose),
 					traits.EditedPose(pose),
+					traits.LivePose(pose),
 					traits.FramesAPI,
+					traits.Transformable,
 					traits.ShowAxesHelper,
 					...traits.getParentTrait(parent),
 				]
