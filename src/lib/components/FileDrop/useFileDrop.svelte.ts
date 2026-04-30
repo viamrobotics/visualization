@@ -1,12 +1,15 @@
 import type { FileDropperSuccess } from './file-dropper'
 
-import { hasDraggedFiles } from './file-drag'
 import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import { pcdDropper } from './pcd-dropper'
 import { plyDropper } from './ply-dropper'
 import { snapshotDropper } from './snapshot-dropper'
 
 type DropStates = 'inactive' | 'hovering' | 'loading'
+
+const hasDraggedFiles = (dataTransfer: DataTransfer | null): boolean => {
+	return dataTransfer?.types?.includes('Files') ?? false
+}
 
 const createFileDropper = (extension: string, prefix: string | undefined) => {
 	switch (prefix) {
