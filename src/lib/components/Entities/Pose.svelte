@@ -4,6 +4,7 @@
 	import type { Snippet } from 'svelte'
 
 	import { traits, useTrait } from '$lib/ecs'
+	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { usePose } from '$lib/hooks/usePose.svelte'
 	import { composeRenderedPose } from '$lib/transform'
 
@@ -13,6 +14,7 @@
 	}
 	let { entity, children }: Props = $props()
 
+	const partConfig = usePartConfig()
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useTrait(() => entity, traits.Parent)
 	const editedPose = useTrait(() => entity, traits.EditedPose)
@@ -40,7 +42,7 @@
 	// drive edits (gizmo onChange, Details panel) compute `edited` such that
 	// the blend renders to the user's intent.
 	const resolvedPose = $derived.by(() => {
-		if (pose.current === undefined) return editedPose.current
+		if (pose.current === undefined || partConfig.hasPendingSave) return editedPose.current
 		if (!entityPose.current || !editedPose.current) return undefined
 
 		return composeRenderedPose(pose.current, entityPose.current, editedPose.current)

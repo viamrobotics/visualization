@@ -44,7 +44,7 @@ This project renders a 3D scene using [Threlte](https://threlte.xyz/llms-full.tx
 **`$effect.pre`** — runs before the DOM updates (and before child effects in the same flush).  
 **`$effect`** —runs after the DOM updates.
 
-The right question to ask for when to use `$effect` vs $effect.pre` is "does anything downstream in the same flush need to read this before render/DOM-commit?" If yes, .pre; if it's a pure side-effect with nothing observing the result inside the same flush, plain $effect is correct.
+The right question to ask for when to use `$effect` vs `$effect.pre` is "does anything downstream in the same flush need to read this before render/DOM-commit?" If yes,`.pre`; if it's a pure side-effect with nothing observing the result inside the same flush, plain $effect is correct.
 
 **`dispose={false}`** — pass when you manage the Three.js object's lifecycle yourself (pooled or shared instances).
 

@@ -61,4 +61,15 @@ describe('composed frame poses', () => {
 			expect(value).toBeCloseTo(targetElements[index])
 		}
 	})
+
+	it('does not model pending-save rendering when baseline is stale', () => {
+		const staleBaseline = createPose({ x: 10, y: 0, z: 0 })
+		const live = createPose({ x: 100, y: 50, z: 0 })
+		const savedEditedPose = createPose({ x: 20, y: 0, z: 0 })
+
+		const rendered = composeRenderedPose(live, staleBaseline, savedEditedPose)
+
+		expect(rendered.x).not.toBeCloseTo(savedEditedPose.x)
+		expect(rendered.x).toBeCloseTo(110)
+	})
 })
