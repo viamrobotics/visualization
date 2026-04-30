@@ -1,5 +1,16 @@
 # motion-tools
 
+## 1.21.0
+
+### Minor Changes
+
+- bc66576: wire up RenderOrder and Material traits, add depthWrite support
+
+### Patch Changes
+
+- ca45c6f: Use koota relations for model sub-entities
+- 0c2aa78: Prevent selection, focus, and hover interactions on invisible entities
+
 ## 1.20.0
 
 ### Minor Changes
