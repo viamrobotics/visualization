@@ -9,6 +9,12 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
+		paths: {
+			// SvelteKit requires no trailing slash here.
+			// Set by the pr-preview workflow to /motion-tools/pr-preview/pr-N
+			// so the static build resolves assets under that subpath.
+			base: process.env.BASE_PATH ?? '',
+		},
 	},
 }
 

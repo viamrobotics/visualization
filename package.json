@@ -33,7 +33,10 @@
 		"vet:client": "go vet ./client/...",
 		"vet": "pnpm vet:draw && pnpm vet:client",
 		"model-pipeline:run": "node scripts/model-pipeline.js",
-		"release": "changeset publish"
+		"release": "changeset publish",
+		"docs:dev": "pnpm --dir docs dev",
+		"docs:build": "pnpm --dir docs build",
+		"docs:preview": "pnpm --dir docs preview"
 	},
 	"devDependencies": {
 		"@ag-grid-community/client-side-row-model": "32.3.9",
@@ -165,7 +168,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/viam-labs/motion-tools.git"
+		"url": "git+https://github.com/viamrobotics/visualization.git"
 	},
 	"files": [
 		"dist",

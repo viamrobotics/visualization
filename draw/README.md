@@ -4,7 +4,7 @@ The `draw` package provides a Go API for creating 3D visualizations with Viam's 
 
 ## Documentation
 
-For complete API reference, see **[DOCS.md](DOCS.md)** (auto-generated from source).
+For complete API reference, see the [`draw` package docs](https://viamrobotics.github.io/visualization/api/draw/) (auto-generated from source — `make docs`).
 
 ## Quick Start
 

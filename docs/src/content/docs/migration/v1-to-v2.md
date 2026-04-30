@@ -1,6 +1,9 @@
-# Migrating from `client/client` (v1) to `client/api` (v2)
+---
+title: Migrating from client/client (v1) to client/api (v2)
+description: Move existing motion-tools visualizations from the legacy client/client package to the new client/api package without changing what they render.
+---
 
-The [client/api](../client/api) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](../client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
+The [client/api](/api/client-api/) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](https://github.com/viamrobotics/visualization/tree/main/client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
 
 ## Prerequisites
 
@@ -118,7 +121,7 @@ Functions that draw multiple entities (for example `DrawFrameSystem`, `DrawGeome
 
 ### 4. Optional entity fields (`ID`, `Name`, `Parent`, `Attrs`)
 
-Every options struct accepts these optional fields (see [client/api/attrs.go](../client/api/attrs.go)):
+Every options struct accepts these optional fields (see [client/api/attrs.go](https://github.com/viamrobotics/visualization/blob/main/client/api/attrs.go)):
 
 - `ID` — stable identifier for in-place updates via subsequent calls.
 - `Name` — human-readable label shown in the treeview.
@@ -487,7 +490,7 @@ err := api.Replay("session.replay", 1.0) // 1.0 = normal, 2.0 = 2x, 0.5 = half
 
 ## End-to-end example
 
-A fully-runnable v2 script lives at [docs/examples/basic.go](../docs/examples/basic.go). With the visualizer up, run it with:
+A fully-runnable v2 script lives at [docs/examples/basic.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic.go). With the visualizer up, run it with:
 
 ```bash
 go run ./docs/examples/basic.go
@@ -497,7 +500,7 @@ It clears the scene, sets the camera, draws a box, a square on the ground, a rin
 
 ## `draw` package: Color API
 
-All color inputs in the v2 client API use the `draw.Color` type from [draw/color.go](../draw/color.go). If you use the `draw` package directly (for example, for snapshots), the same type and its constructors apply.
+All color inputs in the v2 client API use the `draw.Color` type from [draw/color.go](https://github.com/viamrobotics/visualization/blob/main/draw/color.go). If you use the `draw` package directly (for example, for snapshots), the same type and its constructors apply.
 
 ### Creating colors
 
@@ -548,7 +551,7 @@ combined    := c.SetRGBA(255, 0, 0, 128)
 
 ### Default colors
 
-The `draw` package exports default colors for each primitive type (see [draw/color.go](../draw/color.go)):
+The `draw` package exports default colors for each primitive type (see [draw/color.go](https://github.com/viamrobotics/visualization/blob/main/draw/color.go)):
 
 ```go
 draw.DefaultArrowColor   // green
@@ -562,7 +565,7 @@ When you omit `Color` / `Colors` on a `Draw*` call, these defaults apply.
 
 ### Color choosers (replacement for `DefaultColorMap`)
 
-v1 exposed `client.DefaultColorMap`, a `[]string` of 9 hex values cycled through by a private helper. v2 replaces this with a reusable `draw.ColorChooser` type (see [draw/color_chooser.go](../draw/color_chooser.go)).
+v1 exposed `client.DefaultColorMap`, a `[]string` of 9 hex values cycled through by a private helper. v2 replaces this with a reusable `draw.ColorChooser` type (see [draw/color_chooser.go](https://github.com/viamrobotics/visualization/blob/main/draw/color_chooser.go)).
 
 To get the same 9-color Matplotlib "Set1" palette v1 used, build it from hex strings:
 
