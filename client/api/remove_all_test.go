@@ -10,9 +10,9 @@ import (
 )
 
 func TestRemoveAll(t *testing.T) {
-	t.Run("RemoveAllSetup", func(t *testing.T) {
-		startTestServer(t)
+	startTestServer(t)
 
+	t.Run("RemoveAllSetup", func(t *testing.T) {
 		box, err := spatialmath.NewBox(
 			spatialmath.NewPose(
 				r3.Vector{X: 2000, Y: 2000, Z: 100},
@@ -40,8 +40,6 @@ func TestRemoveAll(t *testing.T) {
 	})
 
 	t.Run("RemoveAll", func(t *testing.T) {
-		startTestServer(t)
-
 		count, err := RemoveAll()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, count, test.ShouldEqual, 2)
@@ -49,8 +47,6 @@ func TestRemoveAll(t *testing.T) {
 
 	t.Run("RemoveAllHelper", func(t *testing.T) {
 		t.Helper()
-		startTestServer(t)
-
 		_, err := RemoveAll()
 		test.That(t, err, test.ShouldBeNil)
 	})
