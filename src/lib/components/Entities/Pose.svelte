@@ -23,7 +23,7 @@
 		() => parent.current
 	)
 
-	$effect(() => {
+	$effect.pre(() => {
 		if (pose.current === undefined) return
 
 		if (entity.has(traits.LivePose)) {
