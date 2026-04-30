@@ -40,6 +40,12 @@ import (
 // ErrNotRunning is returned by Stop when the server has not been started.
 var ErrNotRunning = errors.New("draw server is not running")
 
+// ErrAttached is returned by Stop when the singleton is only attached to an
+// external server (e.g. one started by `make up`). The local client state is
+// still cleared, but no server is shut down because the process does not own
+// it. Callers who explicitly Start()ed a server will see a nil return.
+var ErrAttached = errors.New("draw server is attached to an external server; nothing was stopped")
+
 // DefaultPort is the Connect-RPC port the draw server is started on by
 // `make up`. When callers never invoke Start() explicitly, GetClient lazily
 // attaches to a server listening on this port.
@@ -63,6 +69,7 @@ type DrawServerConfig struct {
 var (
 	mu         sync.Mutex
 	running    bool
+	attached   bool // true when running but we attached to an external server (don't own it)
 	rpcSrv     *http.Server
 	staticSrv  *http.Server
 	drawClient drawv1connect.DrawServiceClient
@@ -90,7 +97,7 @@ func Start(cfg DrawServerConfig) error {
 	rpcListener, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
 		if isAddrInUse(err) {
-			// A server is already listening on this port (e.g. started by `make up-next`).
+			// A server is already listening on this port (e.g. started by `make up`).
 			// Attach a client to it rather than failing — the test suite uses this path.
 			recorder = NewRecordingInterceptor()
 			drawClient = drawv1connect.NewDrawServiceClient(
@@ -99,6 +106,7 @@ func Start(cfg DrawServerConfig) error {
 				connect.WithInterceptors(recorder),
 			)
 			running = true
+			attached = true
 			log.Printf("draw server: attached client to existing server at http://%s", address)
 			return nil
 		}
@@ -166,12 +174,29 @@ func Start(cfg DrawServerConfig) error {
 
 // Stop gracefully shuts down the server and resets the singleton. It is safe
 // to call Stop and then Start again.
+//
+// When the singleton is only attached to an external server (because Start
+// found the port already in use, or GetClient lazily attached on
+// DefaultPort), Stop clears the local client state but returns ErrAttached
+// without shutting anything down — the process does not own that server.
 func Stop() error {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if !running {
 		return ErrNotRunning
+	}
+
+	if attached {
+		drawClient = nil
+		address = ""
+		running = false
+		attached = false
+		if recorder != nil {
+			recorder.StopRecording()
+			recorder = nil
+		}
+		return ErrAttached
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -251,6 +276,7 @@ func attachDefaultLocked() {
 		connect.WithInterceptors(recorder),
 	)
 	running = true
+	attached = true
 }
 
 // GetRecorder returns the singleton RecordingInterceptor for the running server.
