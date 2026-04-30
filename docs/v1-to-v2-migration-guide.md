@@ -441,14 +441,22 @@ No v1 equivalent. Relationships are directed links between two entities (identif
 
 ```go
 // see client/api/create_relationship.go
-err := api.CreateRelationship(sourceUUID, targetUUID, "HoverLink", "index")
+err := api.CreateRelationship(api.CreateRelationshipOptions{
+    SourceUUID:   sourceUUID,
+    TargetUUID:   targetUUID,
+    Type:         "HoverLink",
+    IndexMapping: "index",
+})
 
 // see client/api/delete_relationship.go
-err := api.DeleteRelationship(sourceUUID, targetUUID)
+err := api.DeleteRelationship(api.DeleteRelationshipOptions{
+    SourceUUID: sourceUUID,
+    TargetUUID: targetUUID,
+})
 ```
 
-- `relType` is a free-form string identifying the relationship kind.
-- `indexMapping` is an optional filtrex expression; pass `""` to use the server default of `"index"`.
+- `Type` is a free-form string identifying the relationship kind.
+- `IndexMapping` is an optional filtrex expression; leave empty to use the server default of `"index"`.
 
 ## Removing objects
 
