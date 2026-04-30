@@ -45,10 +45,15 @@ var achromaticNames = map[string]bool{
 }
 
 var (
-	// ChromaticColorChooser cycles through all SVG named colors that have perceptible hue
+	// ChromaticColorChooser is a package-level ColorChooser that cycles through all SVG
+	// named colors with a perceptible hue. Like all ColorChoosers, it is not safe for
+	// concurrent use; create your own instance with NewColorChooser if you need isolated
+	// state or a different palette.
 	ChromaticColorChooser ColorChooser
 
-	// AchromaticColorChooser cycles through all SVG named colors that are achromatic or near-achromatic
+	// AchromaticColorChooser is a package-level ColorChooser that cycles through SVG
+	// named colors that are achromatic or near-achromatic (whites, grays, and similar
+	// low-chroma hues). Like all ColorChoosers, it is not safe for concurrent use.
 	AchromaticColorChooser ColorChooser
 )
 
@@ -67,21 +72,28 @@ func init() {
 	AchromaticColorChooser = NewColorChooser(achromatic)
 }
 
-// ColorChooser cycles through a list of colors, useful for automatically assigning different colors
-// to multiple objects. Each call to Next() returns the next color in sequence, wrapping around to the start.
+// ColorChooser cycles through a list of colors, useful for automatically assigning
+// distinct colors to multiple objects. Each call to Next advances an internal counter
+// and wraps around to the start of the palette once the end is reached.
+//
+// ColorChooser is not safe for concurrent use; callers that share an instance across
+// goroutines must provide their own synchronization.
 type ColorChooser struct {
 	count  int
 	colors []Color
 }
 
-// Next returns the next color in the sequence, cycling back to the first color after reaching the end.
+// Next returns the next color in the palette and advances the internal counter,
+// wrapping back to the first color after the end of the palette.
 func (chooser *ColorChooser) Next() Color {
 	color := chooser.colors[chooser.count%len(chooser.colors)]
 	chooser.count++
 	return color
 }
 
-// Get returns a slice of colors of the given length, cycling back to the first color after reaching the end.
+// Get returns a slice of the next count colors from the palette, advancing the
+// internal counter by count. A subsequent call to Next or Get continues from where
+// this call left off rather than restarting at the beginning of the palette.
 func (chooser *ColorChooser) Get(count int) []Color {
 	finalColors := make([]Color, count)
 	for i := range count {
@@ -90,10 +102,12 @@ func (chooser *ColorChooser) Get(count int) []Color {
 	return finalColors
 }
 
-// NewColorChooser creates a ColorChooser populated with all standard web color names.
+// NewColorChooser returns a ColorChooser that cycles through the given palette in
+// order. If colors is empty, the chooser falls back to a palette built from all SVG
+// named colors.
 func NewColorChooser(colors []Color) ColorChooser {
 	if len(colors) == 0 {
-		colors = make([]Color, len(colornames.Map))
+		colors = make([]Color, 0, len(colornames.Map))
 		for _, rgba := range colornames.Map {
 			colors = append(colors, NewColor(WithColorRGBA(rgba)))
 		}

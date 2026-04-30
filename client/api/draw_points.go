@@ -13,39 +13,51 @@ import (
 
 // DrawPointsOptions configures a DrawPoints call.
 type DrawPointsOptions struct {
-	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
+	// ID is a stable identifier for the entity. When set, calling DrawPoints
+	// again with the same ID updates the existing entity in place; when empty,
+	// each call creates a new entity with a freshly generated UUID.
 	ID string
-
-	// The name of the entity.
+	// Name labels the entity in the visualizer. Must be ASCII printable and at
+	// most 100 characters.
 	Name string
-
-	// The parent frame name. If empty, defaults to "world".
+	// Parent is the reference frame the points are attached to. Defaults to
+	// "world" when empty.
 	Parent string
-
-	// The positions of the points.
+	// Positions are the locations of each point. Must contain at least one
+	// position.
 	Positions []r3.Vector
-
-	// Colors is the list of colors to use for the points.
-	// Can be a single color for all points, per-point colors, or a color palette to cycle through.
+	// Colors controls how the points are colored. With no colors, every point
+	// uses draw.DefaultPointColor (gray). Pass one color to share it across all
+	// points; pass exactly len(Positions) colors for per-point colors; pass any
+	// other count to cycle through the slice as a palette.
 	Colors []draw.Color
-
-	// PointSize is the size of each point in millimeters. If 0, uses the default.
+	// PointSize is the rendered diameter of each point in millimeters. 0 (the
+	// default) uses draw.DefaultPointSize (10mm).
 	PointSize float32
-
-	// ChunkSize controls chunked delivery.
-	// - When > 0, points are sent in chunks of this size.
-	// - Otherwise, all points are sent in a single call.
+	// ChunkSize, when > 0, splits the positions into chunks of this size and
+	// delivers them progressively over multiple RPCs (one AddEntity call
+	// followed by UpdateEntity calls). When 0, the entire payload is sent in a
+	// single AddEntity call.
 	ChunkSize int
-
-	// OnProgress is called after each chunk is sent during chunked delivery.
+	// OnProgress is invoked after each chunk is sent during chunked delivery.
+	// Ignored when ChunkSize is 0. Pass nil to skip progress reporting.
 	OnProgress func(draw.ChunkProgress)
-
-	// Attrs holds optional entity attributes (e.g. visibility).
+	// Attrs carries optional shared display attributes (axes helper, default
+	// visibility). Nil leaves all attributes at their defaults.
 	Attrs *Attrs
 }
 
-// DrawPoints draws a set of points in the visualizer.
-// Returns the UUID of the drawn points, or an error if the server is not running or the drawing fails.
+// DrawPoints sends a set of points to the visualizer as a drawing. Passing an
+// ID that already exists updates the previously drawn entity in place;
+// otherwise a new entity is created. When ChunkSize > 0, the positions are
+// streamed over multiple RPCs and OnProgress (if provided) is invoked after
+// each chunk. Returns the UUID assigned by the server.
+//
+// Returns an error when Name is not ASCII printable or exceeds 100 characters,
+// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
+// validation error if the points cannot be constructed (see draw.NewPoints —
+// empty positions, mismatched color count, etc.), or a wrapped RPC error if a
+// network call fails.
 func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

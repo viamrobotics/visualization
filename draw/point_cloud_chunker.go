@@ -10,13 +10,20 @@ import (
 	"go.viam.com/rdk/pointcloud"
 )
 
-// PointCloudChunker implements DrawableChunker for point clouds.
+// PointCloudChunker is a DrawableChunker that splits a DrawnPointCloud into
+// chunks of points for progressive upload to the draw service. It is the
+// streaming counterpart to DrawnPointCloud.Draw, useful when a cloud is too large
+// to send in a single RPC.
 type PointCloudChunker struct {
 	baseChunker
 	pointCloud *DrawnPointCloud
 }
 
-// NewPointCloudChunker creates a DrawableChunker for the given point cloud.
+// NewPointCloudChunker returns a PointCloudChunker that streams pointCloud as a
+// series of chunks. name labels the resulting entity in the visualizer.
+// chunkSize sets the maximum number of points per chunk; pass 0 (or any
+// non-positive value) to use the package default. opts apply to the resulting
+// entity as a whole — see DrawableOption for the supported set.
 func NewPointCloudChunker(pointCloud *DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption) *PointCloudChunker {
 	return &PointCloudChunker{
 		baseChunker: newBaseChunker(name, chunkSize, opts),
@@ -24,12 +31,19 @@ func NewPointCloudChunker(pointCloud *DrawnPointCloud, name string, chunkSize in
 	}
 }
 
+// TotalElements returns the total number of points in the underlying cloud.
 func (chunker *PointCloudChunker) TotalElements() uint32 {
 	return uint32(chunker.pointCloud.PointCloud.Size())
 }
 
-func (chunker *PointCloudChunker) NumChunks() int { return chunker.numChunks(chunker.TotalElements()) }
+// NumChunks returns the number of chunks that will be produced.
+func (chunker *PointCloudChunker) NumChunks() int {
+	return chunker.numChunks(chunker.TotalElements())
+}
 
+// Chunks returns a channel that yields each chunk in order. The channel is
+// closed when all chunks have been produced; chunk-generation errors are logged
+// and cause the channel to close early.
 func (chunker *PointCloudChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {
