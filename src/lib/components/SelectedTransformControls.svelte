@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TransformControls } from '@threlte/extras'
-	import { MathUtils, Quaternion, Vector3 } from 'three'
+	import { Quaternion, Vector3 } from 'three'
 
 	import type { FrameEditSession } from '$lib/editing/FrameEditSession'
 
@@ -10,7 +10,6 @@
 	import { useFrameEditSession } from '$lib/hooks/useFrameEditSession.svelte'
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { OrientationVector } from '$lib/three/OrientationVector'
 	import {
 		composeEditedPoseForRenderedPose,
 		createPose,
@@ -54,7 +53,7 @@
 
 	const quaternion = new Quaternion()
 	const vector3 = new Vector3()
-	const ov = new OrientationVector()
+	const refPose = createPose()
 
 	let session: FrameEditSession | undefined
 	let scaleStart:
@@ -180,6 +179,9 @@
 	const stageFrameTransform = () => {
 		if (!ref || !entity) return
 
+		vector3ToPose(ref.position, refPose)
+		quaternionToPose(ref.quaternion, refPose)
+
 		const live = livePose.current
 		const network = networkPose.current
 
@@ -188,31 +190,22 @@
 			// editedPose, so naive writeback is correct.
 			if (activeMode === 'translate') {
 				session?.stagePose(entity, {
-					x: ref.position.x * 1000,
-					y: ref.position.y * 1000,
-					z: ref.position.z * 1000,
+					x: refPose.x,
+					y: refPose.y,
+					z: refPose.z,
 				})
 			} else if (activeMode === 'rotate') {
-				ov.setFromQuaternion(ref.quaternion)
 				session?.stagePose(entity, {
-					oX: ov.x,
-					oY: ov.y,
-					oZ: ov.z,
-					theta: MathUtils.radToDeg(ov.th),
+					oX: refPose.oX,
+					oY: refPose.oY,
+					oZ: refPose.oZ,
+					theta: refPose.theta,
 				})
 			}
 			return
 		}
 
-		const refPose = createPose({
-			x: ref.position.x * 1000,
-			y: ref.position.y * 1000,
-			z: ref.position.z * 1000,
-		})
-		quaternionToPose(ref.quaternion, refPose)
-		const editedPose = composeEditedPoseForRenderedPose(network, live, refPose)
-
-		session?.stagePose(entity, editedPose)
+		session?.stagePose(entity, composeEditedPoseForRenderedPose(network, live, refPose))
 	}
 </script>
 
