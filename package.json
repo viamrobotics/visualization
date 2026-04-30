@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "1.19.1",
+	"version": "1.21.0",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -57,13 +57,14 @@
 		"@testing-library/jest-dom": "6.8.0",
 		"@testing-library/svelte": "5.2.8",
 		"@testing-library/user-event": "^14.6.1",
-		"@threlte/core": "8.5.5",
-		"@threlte/extras": "9.14.1",
+		"@threlte/core": "8.5.11",
+		"@threlte/extras": "9.15.0",
 		"@threlte/rapier": "3.4.1",
 		"@threlte/xr": "1.5.2",
 		"@types/bun": "1.2.21",
 		"@types/earcut": "^3.0.0",
 		"@types/lodash-es": "4.17.12",
+		"@types/node": "^25.6.0",
 		"@types/three": "0.183.1",
 		"@typescript-eslint/eslint-plugin": "8.56.1",
 		"@typescript-eslint/parser": "8.56.1",
@@ -97,6 +98,7 @@
 		"runed": "0.31.1",
 		"svelte": "5.55.0",
 		"svelte-check": "4.4.5",
+		"svelte-tweakpane-ui": "^1.5.16",
 		"svelte-virtuallists": "1.4.2",
 		"tailwindcss": "4.1.13",
 		"three": "0.183.2",
@@ -136,6 +138,7 @@
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
 		"svelte": ">=5",
+		"svelte-tweakpane-ui": ">=1.5",
 		"svelte-virtuallists": ">=1"
 	},
 	"pnpm": {
@@ -163,7 +166,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/viam-labs/motion-tools.git"
+		"url": "git+https://github.com/viamrobotics/visualization.git"
 	},
 	"files": [
 		"dist",

@@ -248,6 +248,7 @@ type Metadata struct {
 	Colors         []Color
 	ShowAxesHelper bool
 	Invisible      bool
+	Relationships  []*drawv1.Relationship
 }
 
 func (metadata *Metadata) SetColors(colors []Color) {
@@ -262,11 +263,16 @@ func (metadata *Metadata) SetInvisible(invisible bool) {
 	metadata.Invisible = invisible
 }
 
+func (metadata *Metadata) SetRelationships(relationships []*drawv1.Relationship) {
+	metadata.Relationships = relationships
+}
+
 // drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	drawColorsConfig
 	showAxesHelper bool
 	invisible      bool
+	relationships  []*drawv1.Relationship
 }
 
 // DrawMetadataOption is a function that configures a draw metadata configuration.
@@ -298,6 +304,12 @@ func WithMetadataInvisible(invisible bool) DrawMetadataOption {
 	}
 }
 
+func WithMetadataRelationships(relationships []*drawv1.Relationship) DrawMetadataOption {
+	return func(config *drawMetadataConfig) {
+		config.relationships = relationships
+	}
+}
+
 // MetadataOptionsFromProto converts a *drawv1.Metadata proto into a slice of DrawMetadataOption.
 // Nil input returns nil options. Fields that are unset in the proto are skipped.
 func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption {
@@ -314,6 +326,9 @@ func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption {
 	if md.Invisible != nil {
 		opts = append(opts, WithMetadataInvisible(*md.Invisible))
 	}
+	if md.Relationships != nil {
+		opts = append(opts, WithMetadataRelationships(md.Relationships))
+	}
 	return opts
 }
 
@@ -324,7 +339,12 @@ func NewMetadata(options ...DrawMetadataOption) Metadata {
 		option(config)
 	}
 
-	return Metadata{Colors: config.colors, ShowAxesHelper: config.showAxesHelper, Invisible: config.invisible}
+	return Metadata{
+		Colors:         config.colors,
+		ShowAxesHelper: config.showAxesHelper,
+		Invisible:      config.invisible,
+		Relationships:  config.relationships,
+	}
 }
 
 // ToProto converts the Metadata to a Protocol Buffer drawv1.Metadata message for serialization.
@@ -334,6 +354,7 @@ func (metadata Metadata) ToProto() *drawv1.Metadata {
 		ColorFormat:    drawv1.ColorFormat_COLOR_FORMAT_RGB,
 		ShowAxesHelper: &metadata.ShowAxesHelper,
 		Invisible:      &metadata.Invisible,
+		Relationships:  metadata.Relationships,
 	}
 	if opacity, uniform := metadata.opacitySummary(); uniform {
 		proto.Opacities = []byte{opacity}

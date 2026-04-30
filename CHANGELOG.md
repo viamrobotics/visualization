@@ -1,5 +1,23 @@
 # motion-tools
 
+## 1.21.0
+
+### Minor Changes
+
+- 40cbf95: wire up RenderOrder and Material traits, add depthWrite support
+
+### Patch Changes
+
+- 40cbf95: Use koota relations for model sub-entities
+- 40cbf95: Prevent selection, focus, and hover interactions on invisible entities
+
+## 1.20.0
+
+### Minor Changes
+
+- 79e18f2: Add API to chunk large point clouds
+- f5e0fef: Use tweakpane for frame-editing inputs
+
 ## 1.19.1
 
 ### Patch Changes

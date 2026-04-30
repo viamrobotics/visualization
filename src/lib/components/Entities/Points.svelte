@@ -33,6 +33,8 @@
 	const opacity = useTrait(() => entity, traits.Opacity)
 	const invisible = useTrait(() => entity, traits.Invisible)
 	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+	const materialProps = useTrait(() => entity, traits.Material)
 
 	const pointSize = $derived(
 		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
@@ -61,41 +63,38 @@
 	})
 
 	/**
-	 * Points transparancy is very costly for the GPU, so we turn it on conservatively
+	 * Points transparency is very costly for the GPU, so we turn it on conservatively.
+	 * Uniform opacity (entity trait) and per-vertex RGBA alpha are both considered here
+	 * to avoid the two sources conflicting with each other.
 	 */
 	$effect.pre(() => {
-		if (opacity.current !== undefined && opacity.current < 1) {
-			material.transparent = true
-			material.opacity = opacity.current
-
-			return () => {
-				material.transparent = false
-				material.opacity = 1
-			}
-		}
-	})
-
-	$effect.pre(() => {
-		const colors = geometry.current?.getAttribute('color')
+		const vertexColors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
 
-		material.vertexColors = colors !== undefined
+		material.vertexColors = vertexColors !== undefined
 
-		if (colors && positions) {
-			const hasAlphaChannel = positions.array.length / colors.array.length === 0.75
+		const hasUniformOpacity = opacity.current !== undefined && opacity.current < 1
+		material.opacity = hasUniformOpacity ? opacity.current! : 1
 
-			let transparent = false
+		let hasVertexAlpha = false
+		if (vertexColors && positions) {
+			const hasAlphaChannel = positions.array.length / vertexColors.array.length === 0.75
 			if (hasAlphaChannel) {
-				for (let i = 3, l = colors.array.length; i < l; i += 4) {
-					if (colors.array[i] < 1) {
-						transparent = true
+				for (let i = 3, l = vertexColors.array.length; i < l; i += 4) {
+					if (vertexColors.array[i] < 1) {
+						hasVertexAlpha = true
 						break
 					}
 				}
 			}
-
-			material.transparent = transparent
 		}
+
+		material.transparent = hasUniformOpacity || hasVertexAlpha
+	})
+
+	$effect.pre(() => {
+		material.depthTest = materialProps.current?.depthTest ?? true
+		material.depthWrite = materialProps.current?.depthWrite ?? true
 	})
 
 	$effect.pre(() => {
@@ -132,6 +131,7 @@
 			name={entity}
 			bvh={{ maxDepth: 40, maxLeafSize: 20 }}
 			visible={invisible.current !== true}
+			renderOrder={renderOrder.current}
 			{...events}
 		>
 			<T is={geometry.current} />

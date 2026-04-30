@@ -23,7 +23,7 @@
 	onpointerdown={() => {
 		cameraDown.copy(camera.current.position)
 	}}
-	onpointerup={() => {
+	onclick={() => {
 		if (transformControls.active) {
 			return
 		}
