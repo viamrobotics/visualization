@@ -62,6 +62,9 @@ jobs:
 
       - name: Generate TypeScript protobufs
         if: github.event.action != 'closed'
+        # Only TS protos are needed — the SvelteKit visualizer build doesn't
+        # touch the Go packages. docs.yml additionally runs proto-gen-go
+        # because gomarkdoc compiles the Go sources for the API reference.
         run: make proto-gen-ts
 
       - name: Build SvelteKit app

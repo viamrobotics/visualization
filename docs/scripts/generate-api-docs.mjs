@@ -68,6 +68,8 @@ for (const pkg of packages) {
 	console.log(`wrote ${outPath}`)
 }
 
-if (!fs.existsSync(path.resolve(OUT_DIR, 'draw.md'))) {
-	throw new Error('expected draw.md to exist after generation')
+for (const pkg of packages) {
+	if (!fs.existsSync(path.resolve(OUT_DIR, pkg.outFile))) {
+		throw new Error(`expected ${pkg.outFile} to exist after generation`)
+	}
 }

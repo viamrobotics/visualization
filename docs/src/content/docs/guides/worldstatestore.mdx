@@ -101,6 +101,9 @@ func newObstacleStore(
         return nil, fmt.Errorf("getting obstacle-sensor: %w", err)
     }
 
+    // The poll loop must outlive the constructor's ctx (which is cancelled
+    // once construction returns), so derive from context.Background() and
+    // tie the lifetime to Close() via the cancel func instead.
     streamCtx, cancel := context.WithCancel(context.Background())
     s := &obstacleStore{
         Named:      conf.ResourceName().AsNamed(),
@@ -148,6 +151,8 @@ func (s *obstacleStore) GetTransform(ctx context.Context, uuid []byte, extra map
     s.mu.RLock()
     defer s.mu.RUnlock()
 
+    // O(n) scan — fine for tens of obstacles. If you expect hundreds or
+    // thousands, maintain a parallel uuid->transform map instead.
     for _, t := range s.transforms {
         if string(t.Uuid) == string(uuid) {
             return t, nil
@@ -274,6 +279,8 @@ func (s *obstacleStore) reconcile(obstacles []obstacle) {
     }
 
     // REMOVED — anything in the previous tick that's missing now.
+    // The Go spec explicitly allows deleting from a map during a range loop;
+    // the deleted entry just won't be visited again. No copy needed.
     for key, t := range s.transforms {
         if _, present := next[key]; present {
             continue
