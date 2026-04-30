@@ -131,9 +131,9 @@ func main() {
 	}
 
 	// Leave the scene up so it can be inspected. Uncomment to clear it.
-	if _, err := api.RemoveAll(); err != nil {
-		log.Fatalf("RemoveAll: %v", err)
-	}
+	// if _, err := api.RemoveAll(); err != nil {
+	// 	log.Fatalf("RemoveAll: %v", err)
+	// }
 }
 
 func mustBox(center r3.Vector, thetaDeg float64) spatialmath.Geometry {
