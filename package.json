@@ -57,7 +57,7 @@
 		"@testing-library/jest-dom": "6.8.0",
 		"@testing-library/svelte": "5.2.8",
 		"@testing-library/user-event": "^14.6.1",
-		"@threlte/core": "8.5.10",
+		"@threlte/core": "8.5.11",
 		"@threlte/extras": "9.15.0",
 		"@threlte/rapier": "3.4.1",
 		"@threlte/xr": "1.5.2",

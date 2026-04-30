@@ -106,8 +106,8 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@threlte/core':
-        specifier: 8.5.10
-        version: 8.5.10(svelte@5.55.0)(three@0.183.2)
+        specifier: 8.5.11
+        version: 8.5.11(svelte@5.55.0)(three@0.183.2)
       '@threlte/extras':
         specifier: 9.15.0
         version: 9.15.0(@types/three@0.183.1)(svelte@5.55.0)(three@0.183.2)
@@ -242,7 +242,7 @@ importers:
         version: 0.183.2
       threlte-uikit:
         specifier: 1.2.1
-        version: 1.2.1(@threlte/core@8.5.10(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2)
+        version: 1.2.1(@threlte/core@8.5.11(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2)
       tsx:
         specifier: 4.20.5
         version: 4.20.5
@@ -1692,8 +1692,8 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.5.10':
-    resolution: {integrity: sha512-5NKBQGdbeHOXQbboj/s9AfQKLZsfSyQYjCRr1q2BWPbzJy7k6ac3w990ugZRU6mn9ftpzTYzhyZVT44ibwHamg==}
+  '@threlte/core@8.5.11':
+    resolution: {integrity: sha512-2IyYlrXAWG0c6UnBLnE6lBzaVfiPPF5nsGte3HIc6domRna4w9gG4WIYDnJ1FH8wcSnaq7afztbrpF01Y9m5vg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.160'
@@ -5860,7 +5860,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.5.10(svelte@5.55.0)(three@0.183.2)':
+  '@threlte/core@8.5.11(svelte@5.55.0)(three@0.183.2)':
     dependencies:
       svelte: 5.55.0
       three: 0.183.2
@@ -8347,11 +8347,11 @@ snapshots:
 
   three@0.183.2: {}
 
-  threlte-uikit@1.2.1(@threlte/core@8.5.10(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2):
+  threlte-uikit@1.2.1(@threlte/core@8.5.11(svelte@5.55.0)(three@0.183.2))(svelte@5.55.0)(three@0.183.2):
     dependencies:
       '@pmndrs/uikit': 0.8.21(three@0.183.2)
       '@preact/signals-core': 1.12.1
-      '@threlte/core': 8.5.10(svelte@5.55.0)(three@0.183.2)
+      '@threlte/core': 8.5.11(svelte@5.55.0)(three@0.183.2)
       svelte: 5.55.0
       three: 0.183.2
     transitivePeerDependencies:
