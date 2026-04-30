@@ -98,6 +98,23 @@ describe('retryStream', () => {
 		vi.useRealTimers()
 	})
 
+	it('does not call onRetry and restarts immediately on clean stream end', async () => {
+		const controller = new AbortController()
+		let callCount = 0
+
+		const run = vi.fn().mockImplementation(async () => {
+			callCount++
+			if (callCount === 1) return // clean end — server closed the stream
+			controller.abort()
+		})
+
+		const onRetry = vi.fn()
+		await retryStream(run, controller.signal, onRetry)
+
+		expect(run).toHaveBeenCalledTimes(2)
+		expect(onRetry).not.toHaveBeenCalled()
+	})
+
 	it('resets delay after a successful run', async () => {
 		vi.useFakeTimers()
 
