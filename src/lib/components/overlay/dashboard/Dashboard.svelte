@@ -38,40 +38,50 @@
 	</fieldset>
 
 	<!-- transform -->
-	{#if settings.current.transforming}
-		<fieldset class="flex">
-			<Button
-				icon="cursor-move"
-				active={settings.current.transformMode === 'translate'}
-				description="Translate"
-				hotkey="1"
-				onclick={() => {
-					settings.current.transformMode = 'translate'
-				}}
-			/>
-			<Button
-				icon="sync"
-				active={settings.current.transformMode === 'rotate'}
-				description="Rotate"
-				hotkey="2"
-				class="-ml-px"
-				onclick={() => {
-					settings.current.transformMode = 'rotate'
-				}}
-			/>
-			<Button
-				icon="resize"
-				active={settings.current.transformMode === 'scale'}
-				description="Scale"
-				hotkey="3"
-				class="-ml-px"
-				onclick={() => {
-					settings.current.transformMode = 'scale'
-				}}
-			/>
-		</fieldset>
+	<fieldset class="flex">
+		<Button
+			icon="mouse-pointer"
+			active={settings.current.transformMode === 'none'}
+			description="No transform controls"
+			hotkey="0"
+			onclick={() => {
+				settings.current.transformMode = 'none'
+			}}
+		/>
+		<Button
+			icon="cursor-move"
+			active={settings.current.transformMode === 'translate'}
+			description="Translate"
+			hotkey="1"
+			class="-ml-px"
+			onclick={() => {
+				settings.current.transformMode = 'translate'
+			}}
+		/>
+		<Button
+			icon="sync"
+			active={settings.current.transformMode === 'rotate'}
+			description="Rotate"
+			hotkey="2"
+			class="-ml-px"
+			onclick={() => {
+				settings.current.transformMode = 'rotate'
+			}}
+		/>
+		<Button
+			icon="resize"
+			active={settings.current.transformMode === 'scale'}
+			description="Scale"
+			hotkey="3"
+			class="-ml-px"
+			onclick={() => {
+				settings.current.transformMode = 'scale'
+			}}
+		/>
+	</fieldset>
 
-		<!-- snapping -->
+	<!-- snapping -->
+	{#if settings.current.transformMode !== 'none'}
 		<fieldset class="flex">
 			<Button
 				icon={settings.current.snapping ? 'magnet' : 'magnet-off'}
