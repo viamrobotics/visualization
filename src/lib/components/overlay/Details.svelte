@@ -133,8 +133,6 @@
 		}
 	})
 
-	const formatTwoDecimals = (value: number) => value.toFixed(2)
-
 	const detailConfigUpdater = new FrameConfigUpdater(partConfig.updateFrame, partConfig.deleteFrame)
 
 	const handlePositionChange = (event: PointChangeEvent) => {
@@ -321,9 +319,7 @@
 {#if entity}
 	<div
 		id="details-panel"
-		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 {showEditFrameOptions
-			? 'w-70'
-			: 'w-70'} border p-2 text-xs dark:text-black"
+		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 w-70 border p-2 text-xs dark:text-black"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,
@@ -492,7 +488,6 @@
 									y: localPose.current.y,
 									z: localPose.current.z,
 								}}
-								format={formatTwoDecimals}
 								on:change={handlePositionChange}
 							/>
 						</div>
@@ -531,7 +526,6 @@
 											z: localPose.current.oZ,
 											w: localPose.current.theta,
 										}}
-										format={formatTwoDecimals}
 										on:change={handleOrientationOVChange}
 									/>
 								</TabPage>
@@ -587,7 +581,6 @@
 												y: box.current.y,
 												z: box.current.z,
 											}}
-											format={formatTwoDecimals}
 											on:change={handleBoxChange}
 										/>
 									</div>
@@ -599,7 +592,6 @@
 										<Slider
 											label="r"
 											value={sphere.current.r}
-											format={formatTwoDecimals}
 											on:change={handleSphereRChange}
 										/>
 									</div>
@@ -611,13 +603,11 @@
 										<Slider
 											label="r"
 											value={capsule.current.r}
-											format={formatTwoDecimals}
 											on:change={handleCapsuleRChange}
 										/>
 										<Slider
 											label="l"
 											value={capsule.current.l}
-											format={formatTwoDecimals}
 											on:change={handleCapsuleLChange}
 										/>
 									</div>

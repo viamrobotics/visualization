@@ -8,9 +8,9 @@
 
 	import KeyboardControls from './KeyboardControls.svelte'
 
-	const transformControls = useTransformControls()
 	const cameraControls = useCameraControls()
 	const settings = useSettings()
+	const transformControls = useTransformControls()
 
 	const enableKeybindings = $derived(settings.current.enableKeybindings)
 </script>
