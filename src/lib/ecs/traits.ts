@@ -16,6 +16,7 @@ export const UUID = trait(() => '')
 
 export const Pose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const EditedPose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+export const LivePose = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
 
 export const InstancedPose = trait({
@@ -140,16 +141,6 @@ export const DroppedFile = trait(() => true)
  * points, batched arrows, etc.) are deliberately excluded.
  */
 export const Transformable = trait(() => true)
-
-/**
- * Marker added at the monitor → edit mode transition for each frame entity.
- * On entry, the live (kinematics-resolved) pose is copied into EditedPose so
- * that edit-mode rendering — which reads EditedPose directly — matches the
- * robot's last-known pose rather than snapping back to the static config.
- * Removed once we're back in monitor mode AND the post-save catch-up has
- * settled.
- */
-export const EditEntrySnapshot = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 

@@ -11,7 +11,12 @@
 	import { useSelectedEntity, useSelectedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { OrientationVector } from '$lib/three/OrientationVector'
-	import { quaternionToPose, vector3ToPose } from '$lib/transform'
+	import {
+		composeEditedPoseForRenderedPose,
+		createPose,
+		quaternionToPose,
+		vector3ToPose,
+	} from '$lib/transform'
 
 	const settings = useSettings()
 	const environment = useEnvironment()
@@ -23,6 +28,8 @@
 	const mode = $derived(settings.current.transformMode)
 	const entity = $derived(selectedEntity.current)
 	const transformable = useTrait(() => entity, traits.Transformable)
+	const networkPose = useTrait(() => entity, traits.Pose)
+	const livePose = useTrait(() => entity, traits.LivePose)
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
@@ -57,44 +64,25 @@
 		transformControls.setActive(true)
 	}
 
-	const onChange = (event) => {
-		console.log(event, ref, entity, activeMode)
+	const onChange = () => {
 		if (!ref || !entity || !activeMode) {
 			return
 		}
 
 		const isFrameEntity = entity.has(traits.FramesAPI)
 
-		if (activeMode === 'translate') {
+		if (activeMode === 'translate' || activeMode === 'rotate') {
 			if (isFrameEntity) {
-				// ref.position is local (meters); EditedPose stores mm.
-				session?.stagePose(entity, {
-					x: ref.position.x * 1000,
-					y: ref.position.y * 1000,
-					z: ref.position.z * 1000,
-				})
-			} else {
-				const pose = entity.get(traits.Pose)
-
-				if (pose) {
-					vector3ToPose(ref.getWorldPosition(vector3), pose)
-					entity.set(traits.Pose, pose)
-				}
-			}
-		} else if (activeMode === 'rotate') {
-			if (isFrameEntity) {
-				ov.setFromQuaternion(ref.quaternion)
-				session?.stagePose(entity, {
-					oX: ov.x,
-					oY: ov.y,
-					oZ: ov.z,
-					theta: MathUtils.radToDeg(ov.th),
-				})
+				stageFrameTransform()
 			} else {
 				const pose = entity.get(traits.Pose)
 				if (pose) {
-					quaternionToPose(ref.getWorldQuaternion(quaternion), pose)
-					ref.quaternion.copy(quaternion)
+					if (activeMode === 'translate') {
+						vector3ToPose(ref.getWorldPosition(vector3), pose)
+					} else {
+						quaternionToPose(ref.getWorldQuaternion(quaternion), pose)
+						ref.quaternion.copy(quaternion)
+					}
 					entity.set(traits.Pose, pose)
 				}
 			}
@@ -140,6 +128,55 @@
 		session?.commit()
 		session = undefined
 		transformControls.setActive(false)
+	}
+
+	// Pose.svelte renders frame entities through the live blend
+	//   render = M(live) × M(network)⁻¹ × M(edited)
+	// so for the user's drag to render where they pulled the gizmo to, EditedPose
+	// must satisfy
+	//   M(edited) = M(network) × M(live)⁻¹ × M(ref)
+	// where M(ref) is the gizmo-driven group's parent-relative matrix in mm.
+	// When live ≈ network (no kinematic offset), this collapses to M(edited) =
+	// M(ref) — the same as the naive writeback. When they diverge (e.g. an arm
+	// whose joints have moved away from its config pose), this composition is
+	// what keeps the rendering anchored to the user's pointer instead of
+	// shearing through the live × baseline⁻¹ offset.
+	const stageFrameTransform = () => {
+		if (!ref || !entity) return
+
+		const live = livePose.current
+		const network = networkPose.current
+
+		if (!live || !network) {
+			// No live pose available — Pose.svelte's blend short-circuits to
+			// editedPose, so naive writeback is correct.
+			if (activeMode === 'translate') {
+				session?.stagePose(entity, {
+					x: ref.position.x * 1000,
+					y: ref.position.y * 1000,
+					z: ref.position.z * 1000,
+				})
+			} else if (activeMode === 'rotate') {
+				ov.setFromQuaternion(ref.quaternion)
+				session?.stagePose(entity, {
+					oX: ov.x,
+					oY: ov.y,
+					oZ: ov.z,
+					theta: MathUtils.radToDeg(ov.th),
+				})
+			}
+			return
+		}
+
+		const refPose = createPose({
+			x: ref.position.x * 1000,
+			y: ref.position.y * 1000,
+			z: ref.position.z * 1000,
+		})
+		quaternionToPose(ref.quaternion, refPose)
+		const editedPose = composeEditedPoseForRenderedPose(network, live, refPose)
+
+		session?.stagePose(entity, editedPose)
 	}
 </script>
 

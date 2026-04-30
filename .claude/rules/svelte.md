@@ -37,11 +37,14 @@ Use `.svelte.ts` files with `getContext`/`setContext` for reactive shared state:
 
 ## 3D Rendering with Threlte
 
-This project renders a 3D scene using [Threlte](https://threlte.xyz/) (Svelte bindings for Three.js). All 3D components live inside a Threlte `<Canvas>` context. Custom Three.js extensions live in `src/lib/three/` and are mounted with `<T is={obj} />`.
+This project renders a 3D scene using [Threlte](https://threlte.xyz/llms-full.txt) (Svelte bindings for Three.js). All 3D components live inside a Threlte `<Canvas>` context. Custom Three.js extensions live in `src/lib/three/` and are mounted with `<T is={obj} />`.
 
 **Rendering is on-demand, not continuous.** Call `invalidate()` (from `useThrelte()`) after mutating scene objects to trigger a re-render. Use `useTask` for continuous per-frame updates — never `$effect`, which does not participate in Threlte's task scheduler.
 
-**`$effect.pre`** — use instead of `$effect` when mutating buffer geometry attributes, so mutations happen before the render rather than after.
+**`$effect.pre`** — runs before the DOM updates (and before child effects in the same flush).  
+**`$effect`** —runs after the DOM updates.
+
+The right question to ask for when to use `$effect` vs $effect.pre` is "does anything downstream in the same flush need to read this before render/DOM-commit?" If yes, .pre; if it's a pure side-effect with nothing observing the result inside the same flush, plain $effect is correct.
 
 **`dispose={false}`** — pass when you manage the Three.js object's lifecycle yourself (pooled or shared instances).
 

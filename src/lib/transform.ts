@@ -131,6 +131,24 @@ export const matrixToPose = (matrix: Matrix4) => {
 	return pose
 }
 
+export const composeRenderedPose = (livePose: Pose, baselinePose: Pose, editedPose: Pose): Pose =>
+	matrixToPose(
+		poseToMatrix(livePose)
+			.multiply(poseToMatrix(baselinePose).invert())
+			.multiply(poseToMatrix(editedPose))
+	)
+
+export const composeEditedPoseForRenderedPose = (
+	baselinePose: Pose,
+	livePose: Pose,
+	renderedPose: Pose
+): Pose =>
+	matrixToPose(
+		poseToMatrix(baselinePose)
+			.multiply(poseToMatrix(livePose).invert())
+			.multiply(poseToMatrix(renderedPose))
+	)
+
 export const isFinitePose = (pose: Pose): boolean =>
 	Number.isFinite(pose.x) &&
 	Number.isFinite(pose.y) &&

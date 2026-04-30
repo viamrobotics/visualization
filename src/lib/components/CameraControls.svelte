@@ -3,11 +3,12 @@
 	import { MathUtils } from 'three'
 
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import KeyboardControls from './KeyboardControls.svelte'
 
+	const transformControls = useTransformControls()
 	const cameraControls = useCameraControls()
 	const settings = useSettings()
 
@@ -28,6 +29,7 @@
 </Portal>
 
 <CameraControls
+	enabled={!transformControls.active}
 	oncreate={(ref) => {
 		cameraControls.set(ref)
 		;(globalThis as unknown as { MathUtils: typeof MathUtils }).MathUtils = MathUtils
