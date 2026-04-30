@@ -1,5 +1,15 @@
 # motion-tools
 
+## 1.22.0
+
+### Minor Changes
+
+- 8ead73e: Add transform controls.
+
+### Patch Changes
+
+- b54ac3b: Fix file drop being triggered by dragging numbers
+
 ## 1.21.0
 
 ### Minor Changes
