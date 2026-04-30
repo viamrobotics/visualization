@@ -10,9 +10,9 @@ import (
 )
 
 // CreateRelationship creates or replaces a directed relationship from sourceUUID to targetUUID.
-// The type_ parameter is a free-form string (e.g. "HoverLink") and indexMapping is an optional
+// The relType parameter is a free-form string (e.g. "HoverLink") and indexMapping is an optional
 // filtrex expression (defaults to "index" on the server when empty).
-func CreateRelationship(sourceUUID, targetUUID []byte, type_ string, indexMapping string) error {
+func CreateRelationship(sourceUUID, targetUUID []byte, relType string, indexMapping string) error {
 	client := server.GetClient()
 	if client == nil {
 		return ErrVisualizerNotRunning
@@ -20,7 +20,7 @@ func CreateRelationship(sourceUUID, targetUUID []byte, type_ string, indexMappin
 
 	rel := &drawv1.Relationship{
 		TargetUuid: targetUUID,
-		Type:       type_,
+		Type:       relType,
 	}
 	if indexMapping != "" {
 		rel.IndexMapping = &indexMapping

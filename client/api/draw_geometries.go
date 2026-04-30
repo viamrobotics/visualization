@@ -19,7 +19,7 @@ type DrawGeometriesInFrameOptions struct {
 	// The geometries to draw.
 	Geometries *referenceframe.GeometriesInFrame
 
-	// The colors to draw the geometries with. Must contain at least one color.
+	// The colors to draw the geometries with. If empty, defaults to red.
 	// Provide one color to use the same color for all geometries, one per geometry for
 	// per-geometry colors, or any other count to cycle through as a palette.
 	Colors []draw.Color
@@ -45,17 +45,18 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 		return nil, fmt.Errorf("no geometries to draw")
 	}
 
-	if len(options.Colors) == 0 {
-		return nil, fmt.Errorf("at least one color must be provided")
+	colors := options.Colors
+	if len(colors) == 0 {
+		colors = []draw.Color{draw.ColorFromName("red")}
 	}
 
 	var colorOption draw.DrawGeometriesInFrameOption
-	if len(options.Colors) == 1 {
-		colorOption = draw.WithSingleGeometriesColor(options.Colors[0])
-	} else if len(options.Colors) == len(geometries) {
-		colorOption = draw.WithPerGeometriesColors(options.Colors...)
+	if len(colors) == 1 {
+		colorOption = draw.WithSingleGeometriesColor(colors[0])
+	} else if len(colors) == len(geometries) {
+		colorOption = draw.WithPerGeometriesColors(colors...)
 	} else {
-		colorOption = draw.WithGeometriesColorPalette(options.Colors, len(geometries))
+		colorOption = draw.WithGeometriesColorPalette(colors, len(geometries))
 	}
 
 	drawnGeometries, err := draw.NewDrawnGeometriesInFrame(

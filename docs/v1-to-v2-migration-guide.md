@@ -28,6 +28,8 @@ Both v1 and v2 assume you run the visualizer locally with `make up`. No extra se
 | `RemoveSpatialObjects`             | —                                  | Removed                               |
 | —                                  | `RemoveTransforms`                 | New                                   |
 | —                                  | `RemoveDrawings`                   | New                                   |
+| —                                  | `CreateRelationship`               | New                                   |
+| —                                  | `DeleteRelationship`               | New                                   |
 | `Record` / `StopRecord` / `Replay` | `Record` / `StopRecord` / `Replay` | Same signatures, new recording format |
 | `SetURL`                           | —                                  | Removed                               |
 | `DefaultColorMap`                  | —                                  | Removed (see color section)           |
@@ -172,7 +174,7 @@ uuids, err := api.DrawGeometriesInFrame(api.DrawGeometriesInFrameOptions{
 })
 ```
 
-- The length of `Colors` determines behavior: `1` color for all geometries, `len(geometries)` for per-geometry, any other length for a cycling palette.
+- The length of `Colors` determines behavior: `0` (omitted) defaults to red, `1` color for all geometries, `len(geometries)` for per-geometry, any other length for a cycling palette.
 - **Rendering parity:** v1 silently downscaled any `pointcloud.PointCloud` geometry to `minDistance=25 mm` and forced a red override color. v2 does not do this automatically. To preserve v1 rendering of mixed geometry/point-cloud bundles, set `DownscalingThreshold: 25` on the options, and/or call `api.DrawPointCloud` separately with `Colors: []draw.Color{draw.ColorFromRGB(200, 0, 0)}`.
 
 ### DrawFrameSystem
@@ -257,6 +259,7 @@ uuid, err := api.DrawLine(api.DrawLineOptions{
 
 - `points []spatialmath.Pose` becomes `Positions []r3.Vector`.
 - `color` / `dotColor` scalars become `Colors` / `DotColors` slices whose length (`0` / `1` / `len(Positions)` / other) selects default / single / per-vertex / palette behavior.
+- When `DotColors` is omitted but `Colors` is set, dots inherit the `Colors` values. To use the default dot color while customizing the line, leave both unset or set `DotColors` explicitly.
 - New optional `LineWidth` and `DotSize` in millimeters.
 
 ### DrawPoses → DrawPosesAsArrows (renamed)
@@ -431,6 +434,21 @@ No v1 equivalent. Resets the camera to the default pose.
 ```go
 err := api.ResetCamera()
 ```
+
+### CreateRelationship / DeleteRelationship (new)
+
+No v1 equivalent. Relationships are directed links between two entities (identified by their UUIDs from a `Draw*` call) that the visualizer can use to keep their state in sync — for example, a `"HoverLink"` that ties a label to the geometry it annotates.
+
+```go
+// see client/api/create_relationship.go
+err := api.CreateRelationship(sourceUUID, targetUUID, "HoverLink", "index")
+
+// see client/api/delete_relationship.go
+err := api.DeleteRelationship(sourceUUID, targetUUID)
+```
+
+- `relType` is a free-form string identifying the relationship kind.
+- `indexMapping` is an optional filtrex expression; pass `""` to use the server default of `"index"`.
 
 ## Removing objects
 
