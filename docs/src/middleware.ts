@@ -1,8 +1,7 @@
-import { readFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
-
 import { defineMiddleware } from 'astro:middleware'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // In dev, Starlight's `[...slug]` catch-all matches `/playground/` and 404s
 // before Vite's static-file middleware gets a chance to resolve the
@@ -11,8 +10,8 @@ import { defineMiddleware } from 'astro:middleware'
 //
 // Production is unaffected — GitHub Pages serves the static file directly,
 // without Astro routing involved.
-const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)))
-const playgroundIndex = join(projectRoot, 'public', 'playground', 'index.html')
+const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+const playgroundIndex = path.join(projectRoot, 'public', 'playground', 'index.html')
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	const { pathname } = context.url
