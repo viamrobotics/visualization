@@ -714,7 +714,7 @@ test('draw gltf', async ({ browser }) => {
 	const page = await createPage(browser)
 
 	execSync(
-		'go test -run ^TestDrawGLTF$/DrawGLTF github.com/viam-labs/motion-tools/client/api -count=1',
+		'go test -run ^TestDrawGLTF$/^DrawGLTF$ github.com/viam-labs/motion-tools/client/api -count=1',
 		{
 			encoding: 'utf8',
 		}

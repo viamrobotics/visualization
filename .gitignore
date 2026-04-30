@@ -18,6 +18,7 @@ coverage
 dist
 .bin
 draw-server
+/examples
 viamrobotics-motion-tools-*.tgz
 
 # OS

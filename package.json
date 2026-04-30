@@ -5,9 +5,8 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
-		"dev": "pnpm dev:bun",
+		"dev": "concurrently \"pnpm dev:bun\" \"go run cmd/draw-server/main.go -port 3030\"",
 		"dev:bun": "tsx server/check-bun && bun run server/server.ts",
-		"dev:next": "concurrently \"pnpm dev:bun\" \"go run cmd/draw-server/main.go -port 3030\"",
 		"dev:https": "vite dev -- --https",
 		"build": "vite build && npm run prepack",
 		"build:workers": "node scripts/build-workers.js",
