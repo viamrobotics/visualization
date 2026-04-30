@@ -2,7 +2,7 @@
 	import type { CameraControlsRef } from '@threlte/extras'
 
 	import { isInstanceOf, useTask } from '@threlte/core'
-	import { PressedKeys } from 'runed'
+	import { useInputMap, useKeyboard } from '@threlte/extras'
 	import { MathUtils, Vector3 } from 'three'
 
 	import { traits } from '$lib/ecs'
@@ -22,19 +22,36 @@
 
 	const settings = useSettings()
 
-	const keys = new PressedKeys()
-	const meta = $derived(keys.has('meta'))
-	const w = $derived(keys.has('w'))
-	const s = $derived(keys.has('s'))
-	const a = $derived(keys.has('a'))
-	const d = $derived(keys.has('d'))
-	const r = $derived(keys.has('r'))
-	const f = $derived(keys.has('f'))
-	const up = $derived(keys.has('arrowup'))
-	const left = $derived(keys.has('arrowleft'))
-	const down = $derived(keys.has('arrowdown'))
-	const right = $derived(keys.has('arrowright'))
-	const anyKeysPressed = $derived(w || s || a || d || r || f || up || left || down || right)
+	const keyboard = useKeyboard()
+	const input = useInputMap(
+		({ key }) => ({
+			truckLeft: [key('a')],
+			truckRight: [key('d')],
+			forward: [key('w')],
+			backward: [key('s')],
+			dollyIn: [key('r')],
+			dollyOut: [key('f')],
+			rotateLeft: [key('arrowleft')],
+			rotateRight: [key('arrowright')],
+			tiltUp: [key('arrowup')],
+			tiltDown: [key('arrowdown')],
+		}),
+		{ keyboard }
+	)
+
+	const truckAxis = $derived(input.axis('truckLeft', 'truckRight'))
+	const forwardAxis = $derived(input.axis('backward', 'forward'))
+	const dollyAxis = $derived(input.axis('dollyOut', 'dollyIn'))
+	const yawAxis = $derived(input.axis('rotateLeft', 'rotateRight'))
+	const pitchAxis = $derived(input.axis('tiltUp', 'tiltDown'))
+
+	const anyKeysPressed = $derived(
+		truckAxis !== 0 ||
+			forwardAxis !== 0 ||
+			dollyAxis !== 0 ||
+			yawAxis !== 0 ||
+			pitchAxis !== 0
+	)
 
 	const target = new Vector3()
 
@@ -70,7 +87,7 @@
 			const dt = delta * 1000
 
 			// Disallow keyboard navigation if the user is holding down the meta key
-			if (meta) {
+			if (keyboard.key('meta').pressed) {
 				return
 			}
 
@@ -80,107 +97,81 @@
 			const dollySpeed = 0.005 * dt
 			const zoomSpeed = 0.5 * dt
 
-			if (a) {
-				cameraControls.truck(-moveSpeed * dt, 0, true)
+			if (truckAxis !== 0) {
+				cameraControls.truck(truckAxis * moveSpeed * dt, 0, true)
 			}
 
-			if (d) {
-				cameraControls.truck(moveSpeed * dt, 0, true)
+			if (forwardAxis !== 0) {
+				cameraControls.forward(forwardAxis * moveSpeed * dt, true)
 			}
 
-			if (w) {
-				cameraControls.forward(moveSpeed * dt, true)
-			}
-
-			if (s) {
-				cameraControls.forward(-moveSpeed * dt, true)
-			}
-
-			if (r) {
+			if (dollyAxis !== 0) {
 				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
-					cameraControls.dolly(dollySpeed, true)
+					cameraControls.dolly(dollyAxis * dollySpeed, true)
 				} else {
-					cameraControls.zoom(zoomSpeed, true)
+					cameraControls.zoom(dollyAxis * zoomSpeed, true)
 				}
 			}
 
-			if (f) {
-				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
-					cameraControls.dolly(-dollySpeed, true)
-				} else {
-					cameraControls.zoom(-zoomSpeed, true)
-				}
+			if (yawAxis !== 0) {
+				cameraControls.rotate(yawAxis * rotateSpeed, 0, true)
 			}
 
-			if (left) {
-				cameraControls.rotate(-rotateSpeed, 0, true)
-			}
-
-			if (right) {
-				cameraControls.rotate(rotateSpeed, 0, true)
-			}
-
-			if (up) {
-				cameraControls.rotate(0, -tiltSpeed, true)
-			}
-
-			if (down) {
-				cameraControls.rotate(0, tiltSpeed, true)
+			if (pitchAxis !== 0) {
+				cameraControls.rotate(0, pitchAxis * tiltSpeed, true)
 			}
 		},
 		{
+			after: input.task,
 			running: () => anyKeysPressed,
 			autoInvalidate: false,
 		}
 	)
 
-	keys.onKeys('escape', () => {
-		if (keys.has('escape')) {
-			focusedEntity.set()
-		}
-	})
+	keyboard.on('keydown', (event) => {
+		if (event.repeat) return
 
-	keys.onKeys('c', () => {
-		settings.current.cameraMode =
-			settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
-	})
-
-	keys.onKeys('1', () => {
-		settings.current.transformMode = 'translate'
-	})
-
-	keys.onKeys('2', () => {
-		settings.current.transformMode = 'rotate'
-	})
-
-	keys.onKeys('3', () => {
-		settings.current.transformMode = 'scale'
-	})
-
-	keys.onKeys('x', () => {
-		settings.current.enableXR = !settings.current.enableXR
-	})
-
-	/**
-	 * Handler for any keybindings that need to access the event object
-	 */
-	const onkeydown = (event: KeyboardEvent) => {
 		const key = event.key.toLowerCase()
 
-		if (key === 'h') {
-			if (!entity) return
-
-			event.stopImmediatePropagation()
-
-			if (entity.has(traits.Invisible)) {
-				entity.remove(traits.Invisible)
-			} else {
-				entity.add(traits.Invisible)
+		switch (key) {
+			case 'escape': {
+				focusedEntity.set()
+				return
 			}
+			case 'c': {
+				settings.current.cameraMode =
+					settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
+				return
+			}
+			case '1': {
+				settings.current.transformMode = 'translate'
+				return
+			}
+			case '2': {
+				settings.current.transformMode = 'rotate'
+				return
+			}
+			case '3': {
+				settings.current.transformMode = 'scale'
+				return
+			}
+			case 'x': {
+				settings.current.enableXR = !settings.current.enableXR
+				return
+			}
+			case 'h': {
+				if (!entity) return
 
-			return
+				event.stopImmediatePropagation()
+
+				if (entity.has(traits.Invisible)) {
+					entity.remove(traits.Invisible)
+				} else {
+					entity.add(traits.Invisible)
+				}
+
+				return
+			}
 		}
-	}
+	})
 </script>
-
-<svelte:window {onkeydown} />
