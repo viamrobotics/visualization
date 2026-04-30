@@ -49,17 +49,52 @@
 		if (mode === 'scale' && !hasScalableGeometry) return undefined
 		return mode
 	})
+	const isSphereScale = $derived(activeMode === 'scale' && sphere.current !== undefined)
+	const isCapsuleScale = $derived(activeMode === 'scale' && capsule.current !== undefined)
 
 	const quaternion = new Quaternion()
 	const vector3 = new Vector3()
 	const ov = new OrientationVector()
 
 	let session: FrameEditSession | undefined
+	let scaleStart:
+		| { type: 'box'; x: number; y: number; z: number }
+		| { type: 'sphere'; r: number }
+		| { type: 'capsule'; r: number; l: number }
+		| undefined
+
+	const captureScaleStart = () => {
+		if (!entity || activeMode !== 'scale') {
+			scaleStart = undefined
+			return
+		}
+
+		const box = entity.get(traits.Box)
+		if (box) {
+			scaleStart = { type: 'box', ...box }
+			return
+		}
+
+		const sphere = entity.get(traits.Sphere)
+		if (sphere) {
+			scaleStart = { type: 'sphere', ...sphere }
+			return
+		}
+
+		const capsule = entity.get(traits.Capsule)
+		if (capsule) {
+			scaleStart = { type: 'capsule', ...capsule }
+			return
+		}
+
+		scaleStart = undefined
+	}
 
 	const onMouseDown = () => {
 		if (entity?.has(traits.FramesAPI)) {
 			session = sessions.begin([entity])
 		}
+		captureScaleStart()
 		environment.current.viewerMode = 'edit'
 		transformControls.setActive(true)
 	}
@@ -89,30 +124,30 @@
 		} else {
 			// scale → bake the gizmo's scale factor into the geometry trait,
 			// then reset the object's scale so subsequent drags start from 1.
-			const box = entity.get(traits.Box)
-			const sphere = entity.get(traits.Sphere)
-			const capsule = entity.get(traits.Capsule)
+			if (!scaleStart) {
+				captureScaleStart()
+			}
 
-			if (box) {
+			if (scaleStart?.type === 'box') {
 				const next = {
-					x: box.x * ref.scale.x,
-					y: box.y * ref.scale.y,
-					z: box.z * ref.scale.z,
+					x: scaleStart.x * ref.scale.x,
+					y: scaleStart.y * ref.scale.y,
+					z: scaleStart.z * ref.scale.z,
 				}
 				if (isFrameEntity) {
 					session?.stageGeometry(entity, { type: 'box', ...next })
 				} else {
 					entity.set(traits.Box, next)
 				}
-			} else if (sphere) {
-				const next = { r: sphere.r * ref.scale.x }
+			} else if (scaleStart?.type === 'sphere') {
+				const next = { r: scaleStart.r * ref.scale.x }
 				if (isFrameEntity) {
 					session?.stageGeometry(entity, { type: 'sphere', ...next })
 				} else {
 					entity.set(traits.Sphere, next)
 				}
-			} else if (capsule) {
-				const next = { r: capsule.r * ref.scale.x, l: capsule.l * ref.scale.y }
+			} else if (scaleStart?.type === 'capsule') {
+				const next = { r: scaleStart.r * ref.scale.x, l: scaleStart.l * ref.scale.y }
 				if (isFrameEntity) {
 					session?.stageGeometry(entity, { type: 'capsule', ...next })
 				} else {
@@ -127,6 +162,7 @@
 	const onMouseUp = () => {
 		session?.commit()
 		session = undefined
+		scaleStart = undefined
 		transformControls.setActive(false)
 	}
 
@@ -188,6 +224,8 @@
 			translationSnap={settings.current.snapping ? 0.1 : undefined}
 			rotationSnap={settings.current.snapping ? Math.PI / 24 : undefined}
 			scaleSnap={settings.current.snapping ? 0.1 : undefined}
+			showY={!isSphereScale}
+			showZ={!isSphereScale && !isCapsuleScale}
 			onmouseDown={onMouseDown}
 			onobjectChange={onChange}
 			onmouseUp={onMouseUp}

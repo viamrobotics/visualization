@@ -625,43 +625,6 @@
 							</TabPage>
 						</TabGroup>
 					</div>
-					{#if geometryTabIndex === 1 && box.current}
-						<div aria-label="mutable box dimensions">
-							<Point
-								value={{
-									x: box.current.x,
-									y: box.current.y,
-									z: box.current.z,
-								}}
-								format={formatTwoDecimals}
-								on:change={handleBoxChange}
-							/>
-						</div>
-					{:else if geometryTabIndex === 2 && sphere.current}
-						<div aria-label="mutable sphere dimensions">
-							<Slider
-								label="r"
-								value={sphere.current.r}
-								format={formatTwoDecimals}
-								on:change={handleSphereRChange}
-							/>
-						</div>
-					{:else if geometryTabIndex === 3 && capsule.current}
-						<div aria-label="mutable capsule dimensions">
-							<Slider
-								label="r"
-								value={capsule.current.r}
-								format={formatTwoDecimals}
-								on:change={handleCapsuleRChange}
-							/>
-							<Slider
-								label="l"
-								value={capsule.current.l}
-								format={formatTwoDecimals}
-								on:change={handleCapsuleLChange}
-							/>
-						</div>
-					{/if}
 				</div>
 			{:else if box.current}
 				<div>
