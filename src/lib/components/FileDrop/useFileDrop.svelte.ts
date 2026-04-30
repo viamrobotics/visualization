@@ -7,6 +7,10 @@ import { snapshotDropper } from './snapshot-dropper'
 
 type DropStates = 'inactive' | 'hovering' | 'loading'
 
+const hasDraggedFiles = (dataTransfer: DataTransfer | null): boolean => {
+	return dataTransfer?.types?.includes('Files') ?? false
+}
+
 const createFileDropper = (extension: string, prefix: string | undefined) => {
 	switch (prefix) {
 		case Prefixes.Snapshot: {
@@ -34,12 +38,16 @@ export const useFileDrop = (
 
 	// prevent default to allow drop
 	const ondragenter = (event: DragEvent) => {
+		if (!hasDraggedFiles(event.dataTransfer)) return
+
 		event.preventDefault()
 		dropState = 'hovering'
 	}
 
 	// prevent default to allow drop
 	const ondragover = (event: DragEvent) => {
+		if (!hasDraggedFiles(event.dataTransfer)) return
+
 		event.preventDefault()
 	}
 
@@ -56,11 +64,21 @@ export const useFileDrop = (
 	}
 
 	const ondrop = (event: DragEvent) => {
-		event.preventDefault()
-		if (event.dataTransfer === null) return
+		const { dataTransfer } = event
+		if (dataTransfer === null || !hasDraggedFiles(dataTransfer)) {
+			dropState = 'inactive'
+			return
+		}
 
-		const { files } = event.dataTransfer
+		event.preventDefault()
+		const { files } = dataTransfer
+		if (files.length === 0) {
+			dropState = 'inactive'
+			return
+		}
+
 		let completed = 0
+
 		for (const file of files) {
 			const fileName = parseFileName(file.name)
 			if (!fileName.success) {
