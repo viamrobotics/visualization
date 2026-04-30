@@ -28,6 +28,7 @@
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { domPortal } from '$lib/portal'
 
+	import ContextLossHandler from './ContextLossHandler.svelte'
 	import FileDrop from './FileDrop/FileDrop.svelte'
 	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import AddFrames from './overlay/AddFrames.svelte'
@@ -120,6 +121,7 @@
 	bind:this={root}
 >
 	<Canvas renderMode="on-demand">
+		<ContextLossHandler />
 		<SceneProviders {cameraPose}>
 			{#snippet children({ focus })}
 				<Scene>

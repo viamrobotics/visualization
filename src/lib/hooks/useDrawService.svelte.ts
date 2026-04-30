@@ -28,6 +28,7 @@ import {
 	uuidStringToBytes,
 } from '$lib/draw'
 import { traits, useWorld } from '$lib/ecs'
+import { retryStream } from '$lib/retry-stream'
 
 import { useCameraControls } from './useControls.svelte'
 import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
@@ -320,33 +321,34 @@ export function provideDrawService() {
 	}
 
 	const streamEntityChanges = async (client: Client<typeof DrawService>, signal: AbortSignal) => {
-		try {
-			for await (const response of client.streamEntityChanges({}, { signal })) {
-				connectionStatus = ConnectionStatus.CONNECTED
+		await retryStream(
+			async (sig) => {
+				for await (const response of client.streamEntityChanges({}, { signal: sig })) {
+					connectionStatus = ConnectionStatus.CONNECTED
 
-				const { entity } = response
-				if (!entity.case) continue
+					const { entity } = response
+					if (!entity.case) continue
 
-				const uuid = UuidTool.toString([...(entity.value.uuid ?? [])])
-				pendingEvents.push({
-					uuid,
-					changeType: response.changeType,
-					entity,
-					updatedFields: response.updatedFields,
-				})
-				scheduleFlush()
-			}
-		} catch (error) {
-			if (!signal.aborted) {
-				console.error('Draw service entity stream error:', error)
+					const uuid = UuidTool.toString([...(entity.value.uuid ?? [])])
+					pendingEvents.push({
+						uuid,
+						changeType: response.changeType,
+						entity,
+						updatedFields: response.updatedFields,
+					})
+					scheduleFlush()
+				}
+			},
+			signal,
+			() => {
 				connectionStatus = ConnectionStatus.DISCONNECTED
 			}
-		}
+		)
 	}
 
 	const streamSceneChanges = async (client: Client<typeof DrawService>, signal: AbortSignal) => {
-		try {
-			for await (const response of client.streamSceneChanges({}, { signal })) {
+		await retryStream(async (sig) => {
+			for await (const response of client.streamSceneChanges({}, { signal: sig })) {
 				const { sceneMetadata } = response
 				if (!sceneMetadata) continue
 
@@ -361,11 +363,7 @@ export function provideDrawService() {
 					)
 				}
 			}
-		} catch (error) {
-			if (!signal.aborted) {
-				console.error('Draw service scene stream error:', error)
-			}
-		}
+		}, signal)
 	}
 
 	const createRelationship = async (
