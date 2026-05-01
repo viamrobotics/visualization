@@ -1,1 +1,0 @@
-{"version":3,"file":"BM23HEWC.js","sources":["../../../../../../node_modules/.pnpm/svelte@5.55.0/node_modules/svelte/src/internal/flags/legacy.js"],"sourcesContent":["import { enable_legacy_mode_flag } from './index.js';\n\nenable_legacy_mode_flag();\n"],"names":["enable_legacy_mode_flag"],"mappings":"ykBAEAA,EAAuB","x_google_ignoreList":[0]}
