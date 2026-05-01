@@ -431,7 +431,9 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 		// Its `updateRobotPart` accepts any field defined on UpdateRobotPartRequest
 		// in the generated proto, which at @viamrobotics/sdk@0.69.0 includes
 		// `robotConfigJson`.
-		const connect = (client as unknown as { client: { updateRobotPart: (req: unknown) => Promise<unknown> } }).client
+		const connect = (
+			client as unknown as { client: { updateRobotPart: (req: unknown) => Promise<unknown> } }
+		).client
 		const robotConfigJson = JSON.stringify(robotConfig.toJson())
 		await connect.updateRobotPart({ id, name, robotConfig, robotConfigJson })
 	}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { useTask, useThrelte } from '@threlte/core'
-	import { Grid, useGamepad } from '@threlte/extras'
+	import { useGamepad } from '@threlte/extras'
 	import { Hand, useController, useHand, useHeadset, useXR } from '@threlte/xr'
 	import { useDebounce } from 'runed'
 	import { Euler, Quaternion, Vector3 } from 'three'
