@@ -1,5 +1,17 @@
 # motion-tools
 
+## 1.23.0
+
+### Minor Changes
+
+- 29903ad: Enable draw service API by default, add migration doc
+
+### Patch Changes
+
+- 29903ad: Fix frames not rendering for offline parts when the embedder skips dialing. The merge fallback now triggers whenever the connection is not actively `CONNECTED`, instead of only when explicitly `DISCONNECTED`, so config-derived frames render even when `connectionStatus` is `undefined` or `CONNECTING`.
+- 29903ad: useInputMap for navigation controls
+- 29903ad: Add opacity slider to `Details` panel
+
 ## 1.22.0
 
 ### Minor Changes
