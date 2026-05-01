@@ -4,12 +4,12 @@
 
 ## Documentation
 
-📚 **[viamrobotics.github.io/visualization](https://viamrobotics.github.io/visualization/)** is the canonical guide. It covers:
+📚 **[viamrobotics.github.io/visualization](https://viamrobotics.github.io/visualization/)** is our guide to a few popular use cases. It covers:
 
 - [Running locally](https://viamrobotics.github.io/visualization/guides/local-usage/) — set up the app and drive it from Go via `client/api`.
 - [Embedding `<Visualizer />`](https://viamrobotics.github.io/visualization/guides/embedding/) — drop the visualizer into your own Svelte app.
 - [Implementing WorldStateStoreService](https://viamrobotics.github.io/visualization/guides/worldstatestore/) — produce `Transform`s for a Viam WorldStateStoreService module with `draw`.
-- A live [playground](https://viamrobotics.github.io/visualization/playground/snapshot/) rendering a snapshot.
+- A live [playground](https://viamrobotics.github.io/visualization/playground/snapshot) rendering a snapshot.
 
 ## Quick start
 
