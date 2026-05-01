@@ -21,5 +21,11 @@
 		"@fontsource-variable/roboto-mono": "^5.2.8",
 		"@viamrobotics/tailwind-config": "^1.0.0",
 		"typescript": "5.9.2"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"sharp"
+		]
 	}
 }
