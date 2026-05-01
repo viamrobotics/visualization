@@ -59,7 +59,7 @@
 	>
 		<MotionTools
 			{partID}
-			enableKeybindings={!isMachinesPageOpen}
+			inputBindingsEnabled={!isMachinesPageOpen}
 			drawConnectionConfig={{ backendIP, websocketPort }}
 		>
 			{@render children()}
