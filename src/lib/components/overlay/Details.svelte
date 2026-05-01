@@ -338,7 +338,7 @@
 {#if entity}
 	<div
 		id="details-panel"
-		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 w-70 border p-2 text-xs dark:text-black"
+		class="border-medium bg-extralight absolute top-0 right-0 z-4 m-2 w-70 border p-2 text-xs dark:text-white"
 		use:draggable={{
 			bounds: 'body',
 			handle: dragElement,
