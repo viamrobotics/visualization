@@ -24,6 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
+          version: 10.18.0
           run_install: false
 
       - name: Setup Node
@@ -41,7 +42,8 @@ jobs:
       - name: Setup buf
         uses: bufbuild/buf-setup-action@v1
         with:
-          version: 'latest'
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install protoc-gen-go and protoc-gen-connect-go
         run: |
@@ -81,6 +83,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
+          version: 10.18.0
           run_install: false
 
       - name: Setup Node
@@ -98,7 +101,8 @@ jobs:
       - name: Setup buf
         uses: bufbuild/buf-setup-action@v1
         with:
-          version: 'latest'
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install protoc-gen-go, protoc-gen-connect-go, and gomarkdoc
         run: |
