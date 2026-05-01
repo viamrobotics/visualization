@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/motion-tools",
-	"version": "1.22.0",
+	"version": "1.23.0",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -33,7 +33,10 @@
 		"vet:client": "go vet ./client/...",
 		"vet": "pnpm vet:draw && pnpm vet:client",
 		"model-pipeline:run": "node scripts/model-pipeline.js",
-		"release": "changeset publish"
+		"release": "changeset publish",
+		"docs:dev": "pnpm --dir docs dev",
+		"docs:build": "pnpm --dir docs build",
+		"docs:preview": "pnpm --dir docs preview"
 	},
 	"devDependencies": {
 		"@ag-grid-community/client-side-row-model": "32.3.9",
@@ -147,7 +150,7 @@
 			"esbuild"
 		]
 	},
-	"packageManager": "pnpm@10.14.0",
+	"packageManager": "pnpm@10.18.0",
 	"engines": {
 		"node": ">=22.12.0"
 	},

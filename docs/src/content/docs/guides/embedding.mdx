@@ -1,0 +1,225 @@
+---
+title: Embedding <Visualizer />
+description: Mount the motion-tools visualizer inside your own Svelte app and render snapshots inline.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components'
+
+This is the workflow for: **engineers building a Svelte app who want to drop the visualizer into a page**. Common reasons: embedding a snapshot viewer next to a robot's data, rendering test fixtures in a custom dashboard, or shipping the visualizer as one panel in a larger debugging surface.
+
+## Getting started
+
+### Prerequisites
+
+A Svelte 5 / SvelteKit (or Astro+Svelte, Vite+Svelte, etc.) project. The package is `svelte`-typed and built for runes; you cannot consume it from Svelte 4.
+
+### Install
+
+```bash
+pnpm add @viamrobotics/motion-tools
+```
+
+The package declares a long list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project — install whatever it asks for.
+
+<Aside
+	type="tip"
+	title="Auto-install peers"
+>
+	If you don't want to chase peer warnings one at a time, set `auto-install-peers=true` in your
+	`.npmrc`, or pass `--strict-peer-dependencies=false` on install.
+</Aside>
+
+### Disable SSR for the page
+
+Threlte renders WebGL, which needs the browser. Disable SSR on any page that mounts `<Visualizer />`. In SvelteKit:
+
+```ts
+// src/routes/visualizer/+page.ts
+export const ssr = false
+```
+
+In Astro, add `client:only="svelte"` to the component tag instead.
+
+## Mounting `<Visualizer />`
+
+`<Visualizer />` is the entire visualizer rendered as a single Svelte component. It expects an explicitly-sized parent because it stretches to fill its container:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/motion-tools'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer />
+</div>
+```
+
+That's enough to get an empty scene with the camera, grid, and overlay UI. From there, you can:
+
+- **Pass `partID`** to bind it to a specific Viam machine part.
+- **Pass `cameraPose`** to set an initial camera position and look-at target.
+- **Pass `drawConnectionConfig={{ backendIP, websocketPort }}`** to make it stream from a running draw server (only needed if you want `client/api` calls to render in this embedded instance — most apps leave this unset).
+- **Provide a `children` snippet** to render your own Threlte primitives or the `<Snapshot />` component inside the scene.
+
+```svelte
+<script lang="ts">
+	import { MotionTools } from '@viamrobotics/motion-tools'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer
+		partID="my-part-id"
+		cameraPose={{ position: [2, 2, 2], lookAt: [0, 0, 0] }}
+	>
+		{#snippet children()}
+			<!-- Anything Threlte-compatible. Runs inside <Canvas>. -->
+		{/snippet}
+	</Visualizer>
+</div>
+```
+
+## Rendering snapshots
+
+A **snapshot** is a serialized scene — every transform, drawing, and camera setting captured into one protobuf payload. Snapshots render purely client-side; no draw server, no live machine, no network calls.
+
+Use the `<Snapshot />` component as a child of `<Visualizer />`:
+
+<Tabs syncKey="snapshot-source">
+  <TabItem label="From a static file">
+    Put the snapshot in your app's `public/` (or `static/`) directory and fetch it at runtime. This is the pattern the [playground](../playground/) uses.
+
+    ```svelte
+    <script lang="ts">
+      import { onMount } from 'svelte'
+      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+
+      let snapshot = $state<SnapshotProto | undefined>()
+
+      onMount(async () => {
+        const response = await fetch('/scene.snapshot.pb')
+        const buffer = await response.arrayBuffer()
+        snapshot = SnapshotProto.fromBinary(new Uint8Array(buffer))
+      })
+    </script>
+
+    <div class="h-screen w-screen">
+      <Visualizer>
+        {#if snapshot}
+          <Snapshot {snapshot} />
+        {/if}
+      </Visualizer>
+    </div>
+    ```
+
+  </TabItem>
+  <TabItem label="From a URL">
+    Fetch and decode at runtime:
+
+    ```svelte
+    <script lang="ts">
+      import { onMount } from 'svelte'
+      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+
+      let snapshot = $state<SnapshotProto | undefined>()
+
+      onMount(async () => {
+        const response = await fetch('/api/snapshots/latest.pb')
+        const buffer = await response.arrayBuffer()
+        snapshot = SnapshotProto.fromBinary(new Uint8Array(buffer))
+      })
+    </script>
+
+    <div class="h-screen w-screen">
+      <Visualizer>
+        {#if snapshot}
+          <Snapshot {snapshot} />
+        {/if}
+      </Visualizer>
+    </div>
+    ```
+
+  </TabItem>
+  <TabItem label="From JSON">
+    JSON snapshots are bigger but easier to debug:
+
+    ```svelte
+    <script lang="ts">
+      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+      import sceneJson from './scene.snapshot.json?raw'
+
+      const snapshot = SnapshotProto.fromJsonString(sceneJson)
+    </script>
+
+    <div class="h-screen w-screen">
+      <MotionVisualizerTools>
+        <Snapshot {snapshot} />
+      </Visualizer>
+    </div>
+    ```
+
+  </TabItem>
+</Tabs>
+
+You can re-bind a different snapshot at any time — `<Snapshot />` watches the prop and respawns the scene entities when the value changes.
+
+To see a working snapshot end-to-end, download <a href={`${import.meta.env.BASE_URL}visualization_snapshot.json`}><code>visualization_snapshot.json</code></a> and drag it onto the [playground](../playground/) visualizer. The drop zone accepts `.json`, `.pb`, and `.pb.gz` snapshot files — but they must be named with a `visualization_snapshot` prefix (see [src/lib/components/FileDrop/file-names.ts](https://github.com/viamrobotics/visualization/blob/main/src/lib/components/FileDrop/file-names.ts)) for the loader to recognize them.
+
+## Producing snapshots
+
+Snapshots are produced from Go using the [`draw` package](../api/draw/). The most common pattern: build up a `*draw.Snapshot`, then call `MarshalBinary()` (or `MarshalJSON()` for human-readable output) and ship the bytes wherever your frontend can fetch them.
+
+A minimal producer:
+
+```go
+package main
+
+import (
+    "os"
+
+    "github.com/golang/geo/r3"
+    "github.com/viam-labs/motion-tools/draw"
+    "go.viam.com/rdk/spatialmath"
+)
+
+func main() {
+    snapshot := draw.NewSnapshot(
+        draw.WithGrid(true),
+        draw.WithSceneCamera(draw.NewSceneCamera(
+            r3.Vector{X: 2000, Y: 2000, Z: 2000},
+            r3.Vector{X: 0, Y: 0, Z: 0},
+        )),
+    )
+
+    box, _ := spatialmath.NewBox(
+        spatialmath.NewZeroPose(),
+        r3.Vector{X: 100, Y: 100, Z: 100},
+        "box",
+    )
+    snapshot.DrawGeometry(box, spatialmath.NewZeroPose(), "world", draw.NewColor(draw.WithName("red")))
+
+    bytes, _ := snapshot.MarshalBinary()
+    _ = os.WriteFile("scene.snapshot.pb", bytes, 0644)
+}
+```
+
+See the [`draw` API reference](../api/draw/) for the full set of `Snapshot.Draw*` methods.
+
+## Using only the standalone components
+
+A few components are exported via the `/lib` subpath and work without a `<Visualizer />` parent — useful if you just need a piece of the visualizer (e.g. an axes helper) inside your own Threlte canvas:
+
+```svelte
+<script lang="ts">
+	import { Canvas } from '@threlte/core'
+	import { AxesHelper } from '@viamrobotics/motion-tools/lib'
+</script>
+
+<Canvas>
+	<AxesHelper />
+</Canvas>
+```
+
+`<Snapshot />` is also exported from `/lib`, but unlike `<AxesHelper />` it requires the context that `<Visualizer />` provides — use it as a child of `<Visualizer />`, not standalone.

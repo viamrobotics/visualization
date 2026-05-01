@@ -1,0 +1,149 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+  # Allow manual redeploys (e.g. after tweaking workflow itself).
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install protoc-gen-go and protoc-gen-connect-go
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install root deps
+        run: pnpm install
+
+      - name: Generate protobufs
+        run: |
+          make proto-vendor
+          make proto-gen-ts
+
+      - name: Build root app
+        env:
+          BASE_PATH: /visualization/playground
+        run: pnpm build
+
+      - name: Upload app build
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: |
+            build/
+            !build/models
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    needs: build-app
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install protoc-gen-go, protoc-gen-connect-go, and gomarkdoc
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install root deps
+        run: pnpm install
+
+      - name: Generate Go protobufs
+        run: |
+          make proto-vendor
+          make proto-gen-go
+
+      - name: Install docs deps
+        working-directory: docs
+        run: pnpm install
+
+      - name: Download app build
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: docs/public/playground/
+
+      - name: Build docs site
+        working-directory: docs
+        env:
+          DOCS_BASE: /visualization/
+          DOCS_SITE: https://viamrobotics.github.io
+        run: pnpm build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/dist
+          publish_branch: gh-pages
+          # Preserves pr-preview/* directories deployed by pr-preview.yml.
+          keep_files: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: 'docs: deploy ${{ github.sha }}'

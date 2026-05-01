@@ -2,6 +2,7 @@
 	import type { CameraControlsRef } from '@threlte/extras'
 
 	import { isInstanceOf, useTask } from '@threlte/core'
+	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
 	import { PressedKeys } from 'runed'
 	import { MathUtils, Vector3 } from 'three'
 
@@ -22,19 +23,33 @@
 
 	const settings = useSettings()
 
-	const keys = new PressedKeys()
-	const meta = $derived(keys.has('meta'))
-	const w = $derived(keys.has('w'))
-	const s = $derived(keys.has('s'))
-	const a = $derived(keys.has('a'))
-	const d = $derived(keys.has('d'))
-	const r = $derived(keys.has('r'))
-	const f = $derived(keys.has('f'))
-	const up = $derived(keys.has('arrowup'))
-	const left = $derived(keys.has('arrowleft'))
-	const down = $derived(keys.has('arrowdown'))
-	const right = $derived(keys.has('arrowright'))
-	const anyKeysPressed = $derived(w || s || a || d || r || f || up || left || down || right)
+	const keyboard = useKeyboard()
+	const gamepad = useGamepad()
+	const input = useInputMap(
+		({ key, gamepadAxis, gamepadButton }) => ({
+			truckLeft: [key('a'), gamepadAxis('leftStick', 'x', -1)],
+			truckRight: [key('d'), gamepadAxis('leftStick', 'x', 1)],
+			forward: [key('w'), gamepadAxis('leftStick', 'y', -1)],
+			backward: [key('s'), gamepadAxis('leftStick', 'y', 1)],
+			dollyIn: [key('r'), gamepadButton('rightBumper')],
+			dollyOut: [key('f'), gamepadButton('leftBumper')],
+			rotateLeft: [key('arrowleft'), gamepadAxis('rightStick', 'x', -1)],
+			rotateRight: [key('arrowright'), gamepadAxis('rightStick', 'x', 1)],
+			tiltUp: [key('arrowup'), gamepadAxis('rightStick', 'y', 1)],
+			tiltDown: [key('arrowdown'), gamepadAxis('rightStick', 'y', -1)],
+		}),
+		{ keyboard, gamepad }
+	)
+
+	const truckAxis = $derived(input.axis('truckLeft', 'truckRight'))
+	const forwardAxis = $derived(input.axis('backward', 'forward'))
+	const dollyAxis = $derived(input.axis('dollyOut', 'dollyIn'))
+	const yawAxis = $derived(input.axis('rotateLeft', 'rotateRight'))
+	const pitchAxis = $derived(input.axis('tiltUp', 'tiltDown'))
+
+	const anyKeysPressed = $derived(
+		truckAxis !== 0 || forwardAxis !== 0 || dollyAxis !== 0 || yawAxis !== 0 || pitchAxis !== 0
+	)
 
 	const target = new Vector3()
 
@@ -70,7 +85,7 @@
 			const dt = delta * 1000
 
 			// Disallow keyboard navigation if the user is holding down the meta key
-			if (meta) {
+			if (keyboard.key('meta').pressed) {
 				return
 			}
 
@@ -80,64 +95,41 @@
 			const dollySpeed = 0.005 * dt
 			const zoomSpeed = 0.5 * dt
 
-			if (a) {
-				cameraControls.truck(-moveSpeed * dt, 0, true)
+			if (truckAxis !== 0) {
+				cameraControls.truck(truckAxis * moveSpeed * dt, 0, true)
 			}
 
-			if (d) {
-				cameraControls.truck(moveSpeed * dt, 0, true)
+			if (forwardAxis !== 0) {
+				cameraControls.forward(forwardAxis * moveSpeed * dt, true)
 			}
 
-			if (w) {
-				cameraControls.forward(moveSpeed * dt, true)
-			}
-
-			if (s) {
-				cameraControls.forward(-moveSpeed * dt, true)
-			}
-
-			if (r) {
+			if (dollyAxis !== 0) {
 				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
-					cameraControls.dolly(dollySpeed, true)
+					cameraControls.dolly(dollyAxis * dollySpeed, true)
 				} else {
-					cameraControls.zoom(zoomSpeed, true)
+					cameraControls.zoom(dollyAxis * zoomSpeed, true)
 				}
 			}
 
-			if (f) {
-				if (isInstanceOf(cameraControls.camera, 'PerspectiveCamera')) {
-					cameraControls.dolly(-dollySpeed, true)
-				} else {
-					cameraControls.zoom(-zoomSpeed, true)
-				}
+			if (yawAxis !== 0) {
+				cameraControls.rotate(yawAxis * rotateSpeed, 0, true)
 			}
 
-			if (left) {
-				cameraControls.rotate(-rotateSpeed, 0, true)
-			}
-
-			if (right) {
-				cameraControls.rotate(rotateSpeed, 0, true)
-			}
-
-			if (up) {
-				cameraControls.rotate(0, -tiltSpeed, true)
-			}
-
-			if (down) {
-				cameraControls.rotate(0, tiltSpeed, true)
+			if (pitchAxis !== 0) {
+				cameraControls.rotate(0, pitchAxis * tiltSpeed, true)
 			}
 		},
 		{
+			after: input.task,
 			running: () => anyKeysPressed,
 			autoInvalidate: false,
 		}
 	)
 
+	const keys = new PressedKeys()
+
 	keys.onKeys('escape', () => {
-		if (keys.has('escape')) {
-			focusedEntity.set()
-		}
+		focusedEntity.set()
 	})
 
 	keys.onKeys('c', () => {
@@ -157,30 +149,11 @@
 		settings.current.transformMode = 'scale'
 	})
 
-	keys.onKeys('x', () => {
-		settings.current.enableXR = !settings.current.enableXR
-	})
-
-	/**
-	 * Handler for any keybindings that need to access the event object
-	 */
-	const onkeydown = (event: KeyboardEvent) => {
-		const key = event.key.toLowerCase()
-
-		if (key === 'h') {
-			if (!entity) return
-
-			event.stopImmediatePropagation()
-
-			if (entity.has(traits.Invisible)) {
-				entity.remove(traits.Invisible)
-			} else {
-				entity.add(traits.Invisible)
-			}
-
-			return
+	keys.onKeys('h', () => {
+		if (entity?.has(traits.Invisible)) {
+			entity.remove(traits.Invisible)
+		} else {
+			entity?.add(traits.Invisible)
 		}
-	}
+	})
 </script>
-
-<svelte:window {onkeydown} />

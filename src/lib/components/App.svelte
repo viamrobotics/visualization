@@ -47,7 +47,7 @@
 
 	interface Props {
 		partID?: string
-		enableKeybindings?: boolean
+		inputBindingsEnabled?: boolean
 		localConfigProps?: LocalConfigProps
 		drawConnectionConfig?: DrawConnectionConfig
 
@@ -74,7 +74,7 @@
 
 	let {
 		partID = '',
-		enableKeybindings = true,
+		inputBindingsEnabled = true,
 		localConfigProps,
 		cameraPose,
 		drawConnectionConfig,
@@ -91,7 +91,7 @@
 	const { isPresenting } = useXR()
 
 	$effect(() => {
-		settings.current.enableKeybindings = enableKeybindings
+		environment.current.inputBindingsEnabled = inputBindingsEnabled
 	})
 
 	createPartIDContext(() => partID)

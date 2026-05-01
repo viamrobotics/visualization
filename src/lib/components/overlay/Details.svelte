@@ -18,7 +18,7 @@
 	import type { Snippet } from 'svelte'
 
 	import { draggable } from '@neodrag/svelte'
-	import { isInstanceOf, useTask } from '@threlte/core'
+	import { isInstanceOf, useTask, useThrelte } from '@threlte/core'
 	import { Button, Icon, Tooltip } from '@viamrobotics/prime-core'
 	import { Check, Copy } from 'lucide-svelte'
 	import {
@@ -62,6 +62,7 @@
 	const { details }: Props = $props()
 
 	const world = useWorld()
+	const { invalidate } = useThrelte()
 	const drawService = useDrawService()
 	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
@@ -86,6 +87,7 @@
 	const removable = useTrait(() => entity, traits.Removable)
 	const points = useTrait(() => entity, traits.Points)
 	const arrows = useTrait(() => entity, traits.Arrows)
+	const opacity = useTrait(() => entity, traits.Opacity)
 
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const isFrameNode = $derived(!!framesAPI.current)
@@ -195,6 +197,23 @@
 	const handleCapsuleLChange = (event: SliderChangeEvent) => {
 		if (event.detail.origin !== 'internal' || !entity) return
 		detailConfigUpdater.updateGeometry(entity, { type: 'capsule', l: event.detail.value })
+	}
+
+	const opacityValue = $derived(opacity.current ?? 1)
+
+	const handleOpacityChange = (event: SliderChangeEvent) => {
+		if (event.detail.origin !== 'internal' || !entity) return
+		const next = event.detail.value
+		// No trait === fully opaque, so drop the trait when the user returns to 1
+		// instead of leaving an Opacity(1) entry on the entity.
+		if (next >= 1) {
+			entity.remove(traits.Opacity)
+		} else if (entity.has(traits.Opacity)) {
+			entity.set(traits.Opacity, next)
+		} else {
+			entity.add(traits.Opacity(next))
+		}
+		invalidate()
 	}
 
 	const handleParentChange = (event: ListChangeEvent) => {
@@ -667,6 +686,20 @@
 					</div>
 				</div>
 			{/if}
+
+			<div>
+				<strong class="font-semibold">opacity</strong>
+				<div aria-label="mutable opacity">
+					<Slider
+						value={opacityValue}
+						min={0}
+						max={1}
+						step={0.01}
+						format={(v) => v.toFixed(2)}
+						on:change={handleOpacityChange}
+					/>
+				</div>
+			</div>
 
 			{#if isInstanceOf(object3d, 'Points')}
 				<div>

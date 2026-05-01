@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@import '@viamrobotics/tailwind-config';
+@import 'starlight-theme-nova/tailwind.css';
+
+:root {
+	--sl-font: var(--font-public-sans);
+	--sl-font-mono: var(--font-roboto-mono);
+}
