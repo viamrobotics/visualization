@@ -1,4 +1,4 @@
-# motion-tools
+# Viam Visualization
 
 3D visualization and debugging interface for Viam robotics. Renders spatial data (frames, geometries, point clouds, drawings) using Svelte 5, Threlte/Three.js, and Koota ECS on the frontend, backed by a Connect-RPC Go service.
 
