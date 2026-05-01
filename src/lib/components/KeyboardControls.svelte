@@ -2,7 +2,8 @@
 	import type { CameraControlsRef } from '@threlte/extras'
 
 	import { isInstanceOf, useTask } from '@threlte/core'
-	import { useInputMap, useKeyboard } from '@threlte/extras'
+	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
+	import { PressedKeys } from 'runed'
 	import { MathUtils, Vector3 } from 'three'
 
 	import { traits } from '$lib/ecs'
@@ -23,20 +24,21 @@
 	const settings = useSettings()
 
 	const keyboard = useKeyboard()
+	const gamepad = useGamepad()
 	const input = useInputMap(
-		({ key }) => ({
-			truckLeft: [key('a')],
-			truckRight: [key('d')],
-			forward: [key('w')],
-			backward: [key('s')],
-			dollyIn: [key('r')],
-			dollyOut: [key('f')],
-			rotateLeft: [key('arrowleft')],
-			rotateRight: [key('arrowright')],
-			tiltUp: [key('arrowup')],
-			tiltDown: [key('arrowdown')],
+		({ key, gamepadAxis, gamepadButton }) => ({
+			truckLeft: [key('a'), gamepadAxis('leftStick', 'x', -1)],
+			truckRight: [key('d'), gamepadAxis('leftStick', 'x', 1)],
+			forward: [key('w'), gamepadAxis('leftStick', 'y', -1)],
+			backward: [key('s'), gamepadAxis('leftStick', 'y', 1)],
+			dollyIn: [key('r'), gamepadButton('rightBumper')],
+			dollyOut: [key('f'), gamepadButton('leftBumper')],
+			rotateLeft: [key('arrowleft'), gamepadAxis('rightStick', 'x', -1)],
+			rotateRight: [key('arrowright'), gamepadAxis('rightStick', 'x', 1)],
+			tiltUp: [key('arrowup'), gamepadAxis('rightStick', 'y', 1)],
+			tiltDown: [key('arrowdown'), gamepadAxis('rightStick', 'y', -1)],
 		}),
-		{ keyboard }
+		{ keyboard, gamepad }
 	)
 
 	const truckAxis = $derived(input.axis('truckLeft', 'truckRight'))
@@ -46,11 +48,7 @@
 	const pitchAxis = $derived(input.axis('tiltUp', 'tiltDown'))
 
 	const anyKeysPressed = $derived(
-		truckAxis !== 0 ||
-			forwardAxis !== 0 ||
-			dollyAxis !== 0 ||
-			yawAxis !== 0 ||
-			pitchAxis !== 0
+		truckAxis !== 0 || forwardAxis !== 0 || dollyAxis !== 0 || yawAxis !== 0 || pitchAxis !== 0
 	)
 
 	const target = new Vector3()
@@ -128,50 +126,34 @@
 		}
 	)
 
-	keyboard.on('keydown', (event) => {
-		if (event.repeat) return
+	const keys = new PressedKeys()
 
-		const key = event.key.toLowerCase()
+	keys.onKeys('escape', () => {
+		focusedEntity.set()
+	})
 
-		switch (key) {
-			case 'escape': {
-				focusedEntity.set()
-				return
-			}
-			case 'c': {
-				settings.current.cameraMode =
-					settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
-				return
-			}
-			case '1': {
-				settings.current.transformMode = 'translate'
-				return
-			}
-			case '2': {
-				settings.current.transformMode = 'rotate'
-				return
-			}
-			case '3': {
-				settings.current.transformMode = 'scale'
-				return
-			}
-			case 'x': {
-				settings.current.enableXR = !settings.current.enableXR
-				return
-			}
-			case 'h': {
-				if (!entity) return
+	keys.onKeys('c', () => {
+		settings.current.cameraMode =
+			settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
+	})
 
-				event.stopImmediatePropagation()
+	keys.onKeys('1', () => {
+		settings.current.transformMode = 'translate'
+	})
 
-				if (entity.has(traits.Invisible)) {
-					entity.remove(traits.Invisible)
-				} else {
-					entity.add(traits.Invisible)
-				}
+	keys.onKeys('2', () => {
+		settings.current.transformMode = 'rotate'
+	})
 
-				return
-			}
+	keys.onKeys('3', () => {
+		settings.current.transformMode = 'scale'
+	})
+
+	keys.onKeys('h', () => {
+		if (entity?.has(traits.Invisible)) {
+			entity.remove(traits.Invisible)
+		} else {
+			entity?.add(traits.Invisible)
 		}
 	})
 </script>
