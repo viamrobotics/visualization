@@ -48,6 +48,12 @@ jobs:
           go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      - name: Install protoc-gen-go and protoc-gen-connect-go
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
       - name: Install root deps
         run: pnpm install
 
