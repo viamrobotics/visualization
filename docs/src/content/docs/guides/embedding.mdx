@@ -91,7 +91,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
 
 <Tabs syncKey="snapshot-source">
   <TabItem label="From a static file">
-    Put the snapshot in your app's `public/` (or `static/`) directory and fetch it at runtime. This is the pattern the [playground](../playground/) uses.
+    Put the snapshot in your app's `public/` (or `static/`) directory and fetch it at runtime. This is the pattern the [playground](../playground/snapshot) uses.
 
     ```svelte
     <script lang="ts">
@@ -170,7 +170,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
 
 You can re-bind a different snapshot at any time — `<Snapshot />` watches the prop and respawns the scene entities when the value changes.
 
-To see a working snapshot end-to-end, download <a href={`${import.meta.env.BASE_URL}visualization_snapshot.json`}><code>visualization_snapshot.json</code></a> and drag it onto the [playground](../playground/) visualizer. The drop zone accepts `.json`, `.pb`, and `.pb.gz` snapshot files — but they must be named with a `visualization_snapshot` prefix (see [src/lib/components/FileDrop/file-names.ts](https://github.com/viamrobotics/visualization/blob/main/src/lib/components/FileDrop/file-names.ts)) for the loader to recognize them.
+The [playground](../playground/snapshot) renders this snapshot by default. To experiment with it, download <a href={`${import.meta.env.BASE_URL}playground/visualization_snapshot.json`}><code>visualization_snapshot.json</code></a>, edit a few values, and drag the modified file onto the playground — the scene re-renders with your changes. The drop zone accepts `.json`, `.pb`, and `.pb.gz` snapshot files, but they must be named with a `visualization_snapshot` prefix (see [src/lib/components/FileDrop/file-names.ts](https://github.com/viamrobotics/visualization/blob/main/src/lib/components/FileDrop/file-names.ts)) for the loader to recognize them.
 
 ## Producing snapshots
 

@@ -1,6 +1,6 @@
 // Package main generates the snapshot fixture used by the docs playground.
 //
-// Run from the repo root to (re)produce docs/public/visualization_snapshot.json:
+// Run from the repo root to (re)produce static/visualization_snapshot.json:
 //
 //	go run ./docs/examples/snapshot
 //
@@ -23,7 +23,7 @@ import (
 	"go.viam.com/rdk/spatialmath"
 )
 
-const outputPath = "docs/public/visualization_snapshot.json"
+const outputPath = "static/visualization_snapshot.json"
 
 func main() {
 	camera := draw.NewSceneCamera(

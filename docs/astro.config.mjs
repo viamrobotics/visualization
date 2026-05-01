@@ -56,7 +56,7 @@ export default defineConfig({
 						},
 					],
 				},
-				{ label: 'Playground', link: '/playground/' },
+				{ label: 'Playground', link: '/playground/snapshot' },
 			],
 		}),
 	],
