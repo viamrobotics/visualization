@@ -1,5 +1,11 @@
 # motion-tools
 
+## 1.23.1
+
+### Patch Changes
+
+- 7e52e42: Capture save keyboard event before hitting input bindings
+
 ## 1.23.0
 
 ### Minor Changes
