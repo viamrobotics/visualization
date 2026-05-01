@@ -42,7 +42,11 @@ export default defineConfig({
 				{
 					label: 'API reference',
 					items: [
-						{ label: 'client/api', link: '/api/client-api/' },
+						{
+							label: 'client/api',
+							link: '/api/client-api/',
+							badge: { text: 'beta', variant: 'tip' },
+						},
 						{ label: 'draw', link: '/api/draw/' },
 					],
 				},
@@ -52,7 +56,7 @@ export default defineConfig({
 						{
 							label: 'v1 → v2',
 							link: '/migration/v1-to-v2/',
-							badge: { text: 'new', variant: 'success' },
+							badge: { text: 'preview', variant: 'success' },
 						},
 					],
 				},
