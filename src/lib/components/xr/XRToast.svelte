@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
-	import { Headset } from '@threlte/xr'
 	import { untrack } from 'svelte'
 	import { CanvasTexture, PlaneGeometry } from 'three'
 
 	import { type ToastVariant, xrToast, type XRToastItem } from '$lib/components/xr/toasts.svelte'
+
+	import WristDisplay from './WristDisplay.svelte'
 
 	const CANVAS_WIDTH = 700
 	const TOAST_HEIGHT = 80
@@ -204,12 +205,9 @@
 	})
 </script>
 
-<Headset>
-	{#if hasToasts && geometry}
-		<T.Mesh
-			position={[0, -0.3, -1.5]}
-			renderOrder={999}
-		>
+{#if hasToasts && geometry}
+	<WristDisplay position={[0, 0.005, 0.02]}>
+		<T.Mesh renderOrder={999}>
 			<T is={geometry} />
 			<T.MeshBasicMaterial
 				map={texture}
@@ -217,5 +215,5 @@
 				depthTest={false}
 			/>
 		</T.Mesh>
-	{/if}
-</Headset>
+	</WristDisplay>
+{/if}

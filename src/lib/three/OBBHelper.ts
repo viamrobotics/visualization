@@ -71,6 +71,7 @@ export class OBBHelper extends LineSegments2 {
 		super(geometry, material)
 
 		this.matrixAutoUpdate = false
+		this.matrixWorldAutoUpdate = false
 		this.frustumCulled = false
 		this.renderOrder = 999
 	}

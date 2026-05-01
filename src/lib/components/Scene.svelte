@@ -4,7 +4,7 @@
 	import { T } from '@threlte/core'
 	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import { useXR } from '@threlte/xr'
-	import { ShaderMaterial, Vector3 } from 'three'
+	import { ShaderMaterial } from 'three'
 
 	import Camera from '$lib/components/Camera.svelte'
 	import Entities from '$lib/components/Entities/Entities.svelte'
@@ -21,7 +21,6 @@
 	import CameraControls from './CameraControls.svelte'
 	import MeasureTool from './MeasureTool/MeasureTool.svelte'
 	import PointerMissBox from './PointerMissBox.svelte'
-	import { useOrigin } from './xr/useOrigin.svelte'
 
 	interface Props {
 		children?: Snippet
@@ -31,7 +30,6 @@
 
 	const settings = useSettings()
 	const focusedObject3d = useFocusedObject3d()
-	const origin = useOrigin()
 
 	const { raycaster, enabled } = interactivity({
 		filter: (intersections) => {
@@ -60,55 +58,50 @@
 
 <Environment url={hdrImage} />
 
-<T.Group
-	position={origin.position}
-	rotation.z={origin.rotation}
->
-	<PointerMissBox />
-	<MeasureTool />
+<PointerMissBox />
+<MeasureTool />
 
-	{#if focusedObject}
-		<Focus object3d={focusedObject} />
-	{:else}
-		{#if !$isPresenting}
-			<Camera position={[3, 3, 3]}>
-				<CameraControls />
-			</Camera>
-		{/if}
-
-		<StaticGeometries />
-		<Selected />
-		<SelectedTransformControls />
-
-		{#if !$isPresenting && settings.current.grid}
-			<Grid
-				oncreate={(ref) => {
-					const material = ref.material as ShaderMaterial
-					material.depthWrite = false
-				}}
-				raycast={() => null}
-				bvh={{ enabled: false }}
-				plane="xy"
-				sectionColor="#333"
-				infiniteGrid
-				renderOrder={999}
-				cellSize={settings.current.gridCellSize}
-				sectionSize={settings.current.gridSectionSize}
-				fadeOrigin={new Vector3()}
-				fadeDistance={settings.current.gridFadeDistance}
-			/>
-		{/if}
+{#if focusedObject}
+	<Focus object3d={focusedObject} />
+{:else}
+	{#if !$isPresenting}
+		<Camera position={[3, 3, 3]}>
+			<CameraControls />
+		</Camera>
 	{/if}
 
-	<T.Group attach={focusedObject ? false : undefined}>
-		<PortalTarget />
+	<StaticGeometries />
+	<Selected />
+	<SelectedTransformControls />
 
-		<Entities />
-		<BatchedArrows />
-	</T.Group>
+	{#if !$isPresenting && settings.current.grid}
+		<Grid
+			oncreate={(ref) => {
+				const material = ref.material as ShaderMaterial
+				material.depthWrite = false
+			}}
+			raycast={() => null}
+			bvh={{ enabled: false }}
+			plane="xy"
+			sectionColor="#333"
+			infiniteGrid
+			renderOrder={999}
+			cellSize={settings.current.gridCellSize}
+			sectionSize={settings.current.gridSectionSize}
+			fadeOrigin={[0, 0, 0]}
+			fadeDistance={settings.current.gridFadeDistance}
+		/>
+	{/if}
+{/if}
 
-	{@render children?.()}
+<T.Group attach={focusedObject ? false : undefined}>
+	<PortalTarget />
 
-	<T.DirectionalLight position={[3, 3, 3]} />
-	<T.AmbientLight />
+	<Entities />
+	<BatchedArrows />
 </T.Group>
+
+{@render children?.()}
+
+<T.DirectionalLight position={[3, 3, 3]} />
+<T.AmbientLight />
