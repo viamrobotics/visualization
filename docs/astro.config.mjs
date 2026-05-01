@@ -2,7 +2,6 @@ import starlight from '@astrojs/starlight'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
 import starlightThemeNova from 'starlight-theme-nova'
-import { ba } from './public/playground/_app/immutable/chunks/D-UPpWgG'
 
 const base = process.env.DOCS_BASE ?? '/visualization/'
 const site = process.env.DOCS_SITE ?? 'https://viamrobotics.github.io'
