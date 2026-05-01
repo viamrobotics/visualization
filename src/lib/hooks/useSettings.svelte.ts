@@ -41,7 +41,6 @@ export interface Settings {
 	enableMeasureAxisZ: boolean
 
 	enableLabels: boolean
-	enableKeybindings: boolean
 	enableQueryDevtools: boolean
 
 	// Widgets
@@ -116,7 +115,6 @@ const defaults = (): Settings => ({
 	enableMeasureAxisZ: true,
 
 	enableLabels: false,
-	enableKeybindings: true,
 	enableQueryDevtools: false,
 
 	enableArmPositionsWidget: false,

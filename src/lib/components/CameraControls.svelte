@@ -4,15 +4,15 @@
 
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
-	import NavigationControls from './NavigationControls.svelte'
+	import InputBindings from './InputBindings.svelte'
 
 	const cameraControls = useCameraControls()
-	const settings = useSettings()
+	const environment = useEnvironment()
 	const transformControls = useTransformControls()
 
-	const enableKeybindings = $derived(settings.current.enableKeybindings)
+	const inputBindingsEnabled = $derived(environment.current.inputBindingsEnabled)
 </script>
 
 <Portal id="dashboard">
@@ -37,8 +37,8 @@
 	}}
 >
 	{#snippet children({ ref }: { ref: CameraControlsRef })}
-		{#if enableKeybindings}
-			<NavigationControls cameraControls={ref} />
+		{#if inputBindingsEnabled}
+			<InputBindings cameraControls={ref} />
 		{/if}
 		<Gizmo placement="bottom-right" />
 	{/snippet}
