@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+@import '@viamrobotics/tailwind-config';
+
+:root {
+	--sl-font: var(--font-public-sans);
+	--sl-font-mono: var(--font-roboto-mono);
+}

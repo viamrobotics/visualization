@@ -1,12 +1,12 @@
 # gomarkdoc configuration for motion-tools
 # See https://github.com/princjef/gomarkdoc for more options
 
-# Output format: {{.Dir}} refers to the directory being documented
-output: '{{.Dir}}/DOCS.md'
+# Output is set per-target by the Makefile (writes into docs/src/content/docs/api/).
+# Standalone `gomarkdoc ./<pkg>` invocations write to stdout.
 
 # Repository configuration for source code links
 repository:
-  url: https://github.com/viam-labs/motion-tools
+  url: https://github.com/viamrobotics/visualization
   defaultBranch: main
   # Path prefix will be automatically determined per package
 
