@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "BASE_PATH=/playground pnpm build:app && pnpm gen:api && astro dev",
+		"dev": "BASE_PATH=/visualization/playground pnpm build:app && pnpm gen:api && astro dev",
 		"build": "pnpm gen:api && astro build",
 		"build:app": "pnpm --dir .. exec vite build && rm -rf public/playground && rsync -a --exclude='models' ../build/ public/playground/",
 		"gen:api": "node ./scripts/generate-api-docs.mjs"
