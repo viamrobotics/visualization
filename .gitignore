@@ -48,9 +48,6 @@ vite.config.ts.timestamp-*
 # Sentry Config File
 .env.sentry-build-plugin
 
-# Generated
-*.inline.ts
-
 # Protobuf
 src/lib/buf
 protos/vendor
