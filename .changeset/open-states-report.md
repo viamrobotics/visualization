@@ -2,4 +2,4 @@
 '@viamrobotics/motion-tools': patch
 ---
 
-useInputMap for navigation-controls
+useInputMap for navigation controls
