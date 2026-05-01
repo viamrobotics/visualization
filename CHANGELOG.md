@@ -1,5 +1,15 @@
 # motion-tools
 
+## 1.24.0
+
+### Minor Changes
+
+- 76d38d0: Wire up the `ID` field on `DrawGeometriesInFrame`, `DrawFrames`, `DrawFrameSystem`, and `DrawWorldState`.
+
+### Patch Changes
+
+- 76d38d0: Fix `NewColorChooser` pre-allocating zero-valued entries before appending named colors, which produced a doubled-length slice with transparent-black entries at the front.
+
 ## 1.23.2
 
 ### Patch Changes
