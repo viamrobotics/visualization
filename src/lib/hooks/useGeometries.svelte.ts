@@ -195,19 +195,27 @@ export const provideGeometries = (partID: () => string) => {
 			})
 		}
 
-		// Clean up owners whose queries disappeared entirely
+		// Clean up owners whose queries disappeared entirely.
+		// Guard: if ALL queries are gone (activeQueryKeys empty), the machine is likely
+		// temporarily disconnected — preserve entities so they reappear on reconnect.
+		// Only destroy when the partID changed (old-partID entities) or other queries
+		// are still active (connected machine, resource legitimately removed).
+		const anyQueriesActive = activeQueryKeys.size > 0
 		for (const [queryKey, keys] of queryEntityKeys) {
 			if (!activeQueryKeys.has(queryKey)) {
-				for (const key of keys) {
-					const entity = entities.get(key)
-					if (entity && world.has(entity)) {
-						entity.destroy()
+				const queryPartID = queryKey.split(':')[0]!
+				if (queryPartID !== currentPartID || anyQueriesActive) {
+					for (const key of keys) {
+						const entity = entities.get(key)
+						if (entity && world.has(entity)) {
+							entity.destroy()
+						}
+
+						entities.delete(key)
 					}
 
-					entities.delete(key)
+					queryEntityKeys.delete(queryKey)
 				}
-
-				queryEntityKeys.delete(queryKey)
 			}
 		}
 	})
