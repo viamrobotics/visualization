@@ -1,0 +1,199 @@
+---
+title: Running locally
+description: Run the motion-tools visualizer on your machine, then drive it from Go using the client/api package.
+---
+
+import { Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components'
+
+This is the workflow for: **engineers who want to spin up the visualizer locally and drive it from a Go program**. You run the visualizer on your machine, point your code at it, and watch geometries / frames / drawings render in your browser.
+
+## Getting started
+
+### Prerequisites
+
+You need Go, Node.js 22+, pnpm, and `bun`. The setup script below installs the missing pieces; install manually if you'd rather pin specific versions.
+
+<Aside
+	type="note"
+	title="`bun` is going away in v2"
+>
+	The `bun` runtime is only used by the development server today and will be removed as a
+	prerequisite in motion-tools v2. New setups can skip installing it once v2 ships.
+</Aside>
+
+### Install
+
+<Tabs syncKey="setup">
+  <TabItem label="Setup script (recommended)">
+    From the repo root:
+
+    ```bash
+    make setup
+    ```
+
+    This installs `fnm`, Node.js 22, `pnpm`, `bun`, Go, `buf`, the Go protobuf tooling, project dependencies, and generates protobufs.
+
+    The script prints a shell-config snippet at the end. Add it to `~/.zshrc` or `~/.bashrc` and **restart your terminal** so the new tools are on your `PATH`.
+
+  </TabItem>
+  <TabItem label="Manual">
+    <Steps>
+
+    1. [Install fnm](https://github.com/Schniz/fnm#installation) and Node.js 22:
+       ```bash
+       curl -fsSL https://fnm.vercel.app/install | bash
+       fnm install 22 && fnm use 22
+       ```
+    2. Install [pnpm](https://pnpm.io/installation), [bun](https://bun.sh/docs/installation), [Go](https://go.dev/doc/install), and [buf](https://buf.build/docs/installation).
+    3. Install Go protobuf tooling:
+       ```bash
+       go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+       ```
+    4. Install dependencies and generate protobufs:
+       ```bash
+       pnpm install
+       make proto
+       ```
+
+    </Steps>
+
+  </TabItem>
+</Tabs>
+
+### Run the visualizer
+
+```bash
+make up
+```
+
+Open [http://localhost:5173](http://localhost:5173). The first invocation also builds the static assets and the draw server; subsequent runs reuse the cached build.
+
+<Aside type="tip">
+	`make up` is incremental — it only rebuilds when source files change. If you're iterating heavily
+	on the frontend, run `pnpm dev` instead for HMR.
+</Aside>
+
+### Draw something from Go
+
+Add the client to your project:
+
+```bash
+go get github.com/viam-labs/motion-tools/client/api
+```
+
+<Aside
+	type="caution"
+	title="Don't use `client/client` (v1)"
+>
+	The legacy
+	[`client/client`](https://github.com/viamrobotics/visualization/tree/main/client/client) package
+	is deprecated and will be removed in a future release. Use `client/api` for all new code, and see
+	the [v1 → v2 migration guide](/migration/v1-to-v2/) if you're updating an existing program.
+</Aside>
+
+Then draw to the running visualizer:
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/golang/geo/r3"
+    "github.com/viam-labs/motion-tools/client/api"
+    "github.com/viam-labs/motion-tools/draw"
+    "go.viam.com/rdk/spatialmath"
+)
+
+func main() {
+    box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 200, Y: 200, Z: 200}, "box")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if _, err := api.DrawGeometry(api.DrawGeometryOptions{
+        ID:       "box",
+        Geometry: box,
+        Color:    draw.ColorFromName("coral"),
+    }); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+Run it while `make up` is running. A coral box appears at the origin. Calling `DrawGeometry` again with the same `ID` updates the box in place; pass a different `ID` (or omit it) to add a new entity.
+
+A longer end-to-end script that draws a box, a line, a ring of pose arrows, and reference frames is at [docs/examples/basic.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic.go):
+
+```bash
+go run ./docs/examples/basic.go
+```
+
+For the full set of `Draw*` functions, see the [client/api reference](/api/client-api/).
+
+## Connecting to a Viam machine
+
+The visualizer can connect to live Viam machines to render their frame system, arms, and cameras. Drop your machine credentials into `.env.local` at the repo root using this format:
+
+```dotenv
+VITE_CONFIGS='
+{
+  "fleet-rover-01": {
+    "host": "fleet-rover-01-main.ve4ba7w5qr.viam.cloud",
+    "partId": "myPartID",
+    "apiKeyId": "myApiKeyId",
+    "apiKeyValue": "MyApiKeyValue",
+    "signalingAddress": "https://app.viam.com:443"
+  }
+}
+'
+```
+
+After `make up`, open the machine config panel (bottom right) and pick your machine.
+
+## Running multiple instances
+
+Useful when comparing two `client/api` callers side by side. Pass `STATIC_PORT` to the second `make up`:
+
+```bash
+# Terminal 1
+make up
+
+# Terminal 2
+make up STATIC_PORT=5174
+```
+
+Both apps render the same draw stream, so you'll see your `client/api` calls reflected in both browsers at `localhost:5173` and `localhost:5174`.
+
+<Aside
+	type="caution"
+	title="`WS_PORT` is hard-coded for now"
+>
+	The WebSocket port the `client/api` package targets is hard-coded to `:3000`. Setting `WS_PORT` on
+	`make up` only affects the frontend's listener, not the Go client. If you need configurable WS
+	ports, [open an issue](https://github.com/viamrobotics/visualization/issues).
+</Aside>
+
+## Troubleshooting
+
+### `make setup` finished but `make up` says "command not found"
+
+You need to apply the shell-config snippet that `make setup` printed at the end and restart your terminal. The new binaries live under `~/.local/share/fnm` and similar paths that aren't on `PATH` until your shell config sources them.
+
+### Port `5173` or `3000` is already in use
+
+Stop whatever is bound to those ports, or run on different ones:
+
+```bash
+make up STATIC_PORT=5180
+```
+
+The WebSocket port (`:3000`) cannot be remapped yet; kill the conflicting process or wait for the issue above to be resolved.
+
+### `make proto` fails with "buf: command not found"
+
+`buf` isn't on your `PATH`. Re-run `make setup`, or install manually following [buf's instructions](https://buf.build/docs/installation), then retry.
+
+### `client/api` calls succeed but nothing appears
+
+Confirm `make up` is still running and that you can hit [http://localhost:5173](http://localhost:5173) in a browser. If the page loads but nothing renders, check the browser console for connection errors — the Go client connects via WebSocket to the draw server on `:3000`.
