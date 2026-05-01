@@ -6,7 +6,7 @@
 	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	import KeyboardControls from './KeyboardControls.svelte'
+	import NavigationControls from './NavigationControls.svelte'
 
 	const cameraControls = useCameraControls()
 	const settings = useSettings()
@@ -38,7 +38,7 @@
 >
 	{#snippet children({ ref }: { ref: CameraControlsRef })}
 		{#if enableKeybindings}
-			<KeyboardControls cameraControls={ref} />
+			<NavigationControls cameraControls={ref} />
 		{/if}
 		<Gizmo placement="bottom-right" />
 	{/snippet}
