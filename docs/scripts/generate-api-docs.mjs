@@ -43,7 +43,7 @@ const env = {
 fs.mkdirSync(OUT_DIR, { recursive: true })
 
 for (const pkg of packages) {
-	const raw = child_process.execFileSync('gomarkdoc', [pkg.path, '-o', '/dev/stdout'], {
+	const raw = child_process.execFileSync('gomarkdoc', [pkg.path], {
 		cwd: REPO_ROOT,
 		env,
 		encoding: 'utf8',

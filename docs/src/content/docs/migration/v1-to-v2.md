@@ -3,7 +3,7 @@ title: Migrating from client/client (v1) to client/api (v2)
 description: Move existing motion-tools visualizations from the legacy client/client package to the new client/api package without changing what they render.
 ---
 
-The [client/api](/api/client-api/) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](https://github.com/viamrobotics/visualization/tree/main/client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
+The [client/api](../api/client-api/) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](https://github.com/viamrobotics/visualization/tree/main/client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
 
 ## Prerequisites
 
@@ -498,10 +498,10 @@ err := api.Replay("session.replay", 1.0) // 1.0 = normal, 2.0 = 2x, 0.5 = half
 
 ## End-to-end example
 
-A fully-runnable v2 script lives at [docs/examples/basic.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic.go). With the visualizer up, run it with:
+A fully-runnable v2 script lives at [docs/examples/basic/main.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic/main.go). With the visualizer up, run it with:
 
 ```bash
-go run ./docs/examples/basic.go
+go run ./docs/examples/basic/main.go
 ```
 
 It clears the scene, sets the camera, draws a box, a square on the ground, a ring of arrows, and two reference frames, then animates the box in place by re-drawing it with the same `ID`.

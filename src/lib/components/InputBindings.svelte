@@ -85,7 +85,7 @@
 			const dt = delta * 1000
 
 			// Disallow keyboard navigation if the user is holding down the meta key
-			if (keyboard.key('meta').pressed) {
+			if (keyboard.key('meta').pressed || keyboard.key('control').pressed) {
 				return
 			}
 

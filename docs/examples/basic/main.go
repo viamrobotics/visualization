@@ -6,7 +6,7 @@
 //
 // Run with:
 //
-//	go run ./docs/examples/basic.go
+//	go run ./docs/examples/basic/main.go
 package main
 
 import (
