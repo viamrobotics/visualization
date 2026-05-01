@@ -64,6 +64,7 @@ func WithGeometryColors(colors ...Color) DrawGeometryOption {
 // is a point cloud; it is ignored for other geometry types.
 //
 // Note: the underlying algorithm is O(n^2) in the input point count, so large
+// Note: the underlying algorithm is O(n^2) in the input point count, so small
 // thresholds (which retain more points) on dense clouds can be slow.
 func WithGeometryDownscaling(threshold float64) DrawGeometryOption {
 	return func(config *DrawnGeometryConfig) {
