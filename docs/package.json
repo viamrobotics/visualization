@@ -1,0 +1,31 @@
+{
+	"name": "@viamrobotics/motion-tools-docs",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "BASE_PATH=/playground pnpm build:app && pnpm gen:api && astro dev",
+		"build": "BASE_PATH=/visualization/playground pnpm build:app && pnpm gen:api && astro build",
+		"build:app": "pnpm --dir .. exec vite build && rm -rf public/playground && rsync -a --exclude='models' ../build/ public/playground/",
+		"gen:api": "node ./scripts/generate-api-docs.mjs"
+	},
+	"dependencies": {
+		"@astrojs/starlight": "0.38.4",
+		"@tailwindcss/vite": "4.2.4",
+		"astro": "6.2.0",
+		"sharp": "0.34.2",
+		"tailwindcss": "4.2.4"
+	},
+	"devDependencies": {
+		"@fontsource-variable/public-sans": "^5.2.7",
+		"@fontsource-variable/roboto-mono": "^5.2.8",
+		"@viamrobotics/tailwind-config": "^1.0.0",
+		"typescript": "5.9.2"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"sharp"
+		]
+	}
+}
