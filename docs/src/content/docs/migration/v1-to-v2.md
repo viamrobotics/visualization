@@ -3,7 +3,7 @@ title: Migrating from client/client (v1) to client/api (v2)
 description: Move existing motion-tools visualizations from the legacy client/client package to the new client/api package without changing what they render.
 ---
 
-The [client/api](/api/client-api/) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](https://github.com/viamrobotics/visualization/tree/main/client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
+The [client/api](../api/client-api/) package is the new public API for drawing to the motion-tools visualizer. It replaces the legacy [client/client](https://github.com/viamrobotics/visualization/tree/main/client/client) package, which will be removed in a future release. This guide walks through the code changes you need to move from v1 to v2 without changing what your visualizations render.
 
 ## Prerequisites
 

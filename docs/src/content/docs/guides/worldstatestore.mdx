@@ -7,7 +7,7 @@ import { Aside, Steps } from '@astrojs/starlight/components'
 
 This is the workflow for: **engineers writing a Viam `WorldStateStoreService` module**. The service streams obstacles, frames, and other spatial entities to clients (motion planners, debug viewers, etc.) as `*commonpb.Transform` protos. The `draw` package handles the tedious parts — converting a `spatialmath.Geometry` into a `commonpb.Geometry`, deriving stable UUIDs, and packing color/visibility metadata.
 
-If you only need to render snapshots in a browser, see [Embedding `<MotionTools />`](/guides/embedding/) instead — that path doesn't require implementing a service.
+If you only need to render snapshots in a browser, see [Embedding `<Visualizer />`](../guides/embedding/) instead — that path doesn't require implementing a service.
 
 ## What you're building
 
@@ -336,7 +336,7 @@ func buildTransform(key string, o obstacle) (*commonpb.Transform, error) {
 }
 ```
 
-For other primitive shapes (sphere, capsule, mesh), substitute the corresponding `spatialmath.New*` constructor — `draw.NewDrawnGeometry` takes any `spatialmath.Geometry`. For point clouds, see [`draw.NewDrawnPointCloud`](/api/draw/#NewDrawnPointCloud).
+For other primitive shapes (sphere, capsule, mesh), substitute the corresponding `spatialmath.New*` constructor — `draw.NewDrawnGeometry` takes any `spatialmath.Geometry`. For point clouds, see [`draw.NewDrawnPointCloud`](../api/draw/#NewDrawnPointCloud).
 
 ### Emitting changes
 
@@ -434,4 +434,4 @@ The pattern generalizes:
 
 </Steps>
 
-For the `draw` API surface — colors, metadata, point clouds — see the [`draw` reference](/api/draw/). Note the world state store service _only_ works with `Transform` objects from the Viam API. It is not able to render `Drawings`.
+For the `draw` API surface — colors, metadata, point clouds — see the [`draw` reference](../api/draw/). Note the world state store service _only_ works with `Transform` objects from the Viam API. It is not able to render `Drawings`.

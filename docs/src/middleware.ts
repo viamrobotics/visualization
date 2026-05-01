@@ -12,11 +12,11 @@ import { fileURLToPath } from 'node:url'
 // without Astro routing involved.
 const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const playgroundIndex = path.join(projectRoot, 'public', 'playground', 'index.html')
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const playgroundPaths = new Set([`${base}/playground`, `${base}/playground/`])
 
 export const onRequest = defineMiddleware(async (context, next) => {
-	const { pathname } = context.url
-
-	if (pathname === '/playground' || pathname === '/playground/') {
+	if (playgroundPaths.has(context.url.pathname)) {
 		const html = await readFile(playgroundIndex, 'utf8')
 		return new Response(html, {
 			status: 200,

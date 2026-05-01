@@ -1,8 +1,10 @@
 import starlight from '@astrojs/starlight'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+import starlightThemeNova from 'starlight-theme-nova'
+import { ba } from './public/playground/_app/immutable/chunks/D-UPpWgG'
 
-const base = process.env.DOCS_BASE ?? '/'
+const base = process.env.DOCS_BASE ?? '/visualization/'
 const site = process.env.DOCS_SITE ?? 'https://viamrobotics.github.io'
 
 export default defineConfig({
@@ -10,6 +12,7 @@ export default defineConfig({
 	base,
 	integrations: [
 		starlight({
+			plugins: [starlightThemeNova()],
 			title: 'Viam Visualization',
 			description: '3D visualization and debugging interface for Viam robotics.',
 			social: [
@@ -30,7 +33,7 @@ export default defineConfig({
 					label: 'Guides',
 					items: [
 						{ label: 'Running locally', link: '/guides/local-usage/' },
-						{ label: 'Embedding <MotionTools />', link: '/guides/embedding/' },
+						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
 						{
 							label: 'Implementing WorldStateStoreService',
 							link: '/guides/worldstatestore/',
@@ -46,7 +49,13 @@ export default defineConfig({
 				},
 				{
 					label: 'Migration guides',
-					items: [{ label: 'v1 → v2', link: '/migration/v1-to-v2/' }],
+					items: [
+						{
+							label: 'v1 → v2',
+							link: '/migration/v1-to-v2/',
+							badge: { text: 'new', variant: 'success' },
+						},
+					],
 				},
 				{ label: 'Playground', link: '/playground/' },
 			],
