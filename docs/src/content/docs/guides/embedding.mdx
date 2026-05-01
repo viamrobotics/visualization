@@ -5,7 +5,7 @@ description: Mount the motion-tools visualizer inside your own Svelte app and re
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components'
 
-This is the workflow for: **engineers building a Svelte app who want to drop the visualizer into a page**. Common reasons: embedding a snapshot viewer next to a robot's data, rendering test fixtures in a custom dashboard, or shipping the visualizer as one panel in a larger debugging surface.
+Common use cases: embedding a snapshot viewer next to a robot's data, rendering test fixtures in a custom dashboard, or shipping the visualizer in a larger debugging surface.
 
 ## Getting started
 
@@ -38,7 +38,12 @@ Threlte renders WebGL, which needs the browser. Disable SSR on any page that mou
 export const ssr = false
 ```
 
-In Astro, add `client:only="svelte"` to the component tag instead.
+<Aside
+	type="tip"
+	title="Auto-install peers"
+>
+	In Astro, add `client:only="svelte"` to the component tag instead.
+</Aside>
 
 ## Mounting `<Visualizer />`
 
@@ -63,7 +68,7 @@ That's enough to get an empty scene with the camera, grid, and overlay UI. From 
 
 ```svelte
 <script lang="ts">
-	import { MotionTools } from '@viamrobotics/motion-tools'
+	import { Visualizer } from '@viamrobotics/motion-tools'
 </script>
 
 <div class="h-screen w-screen">
@@ -91,7 +96,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
     ```svelte
     <script lang="ts">
       import { onMount } from 'svelte'
-      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { Visualizer } from '@viamrobotics/motion-tools'
       import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
 
       let snapshot = $state<SnapshotProto | undefined>()
@@ -119,7 +124,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
     ```svelte
     <script lang="ts">
       import { onMount } from 'svelte'
-      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { Visualizer } from '@viamrobotics/motion-tools'
       import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
 
       let snapshot = $state<SnapshotProto | undefined>()
@@ -146,7 +151,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
 
     ```svelte
     <script lang="ts">
-      import { MotionTools } from '@viamrobotics/motion-tools'
+      import { MotVisualizerionTools } from '@viamrobotics/motion-tools'
       import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
       import sceneJson from './scene.snapshot.json?raw'
 

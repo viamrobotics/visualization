@@ -5,7 +5,7 @@ description: Run the motion-tools visualizer on your machine, then drive it from
 
 import { Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components'
 
-This is the workflow for: **engineers who want to spin up the visualizer locally and drive it from a Go program**. You run the visualizer on your machine, point your code at it, and watch geometries / frames / drawings render in your browser.
+You run the visualizer on your machine, point your code at it, and watch geometries / frames / drawings render in your browser.
 
 ## Getting started
 
@@ -123,10 +123,10 @@ func main() {
 
 Run it while `make up` is running. A coral box appears at the origin. Calling `DrawGeometry` again with the same `ID` updates the box in place; pass a different `ID` (or omit it) to add a new entity.
 
-A longer end-to-end script that draws a box, a line, a ring of pose arrows, and reference frames is at [docs/examples/basic.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic.go):
+A longer end-to-end script that draws a box, a line, a ring of pose arrows, and reference frames is at [docs/examples/basic/main.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic/main.go):
 
 ```bash
-go run ./docs/examples/basic.go
+go run ./docs/examples/basic/main.go
 ```
 
 For the full set of `Draw*` functions, see the [client/api reference](../api/client-api/).

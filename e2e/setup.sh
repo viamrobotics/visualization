@@ -58,6 +58,20 @@ fi
 
 echo ""
 
+echo "--- Building docs obstacle-store example ---"
+OBS_MODULE_DIR=$SCRIPT_DIR/../docs/examples/worldstatestore
+OBS_MODULE_BIN=$BIN_DIR/obstacle-store
+
+if [ -d "$OBS_MODULE_DIR" ]; then
+  (cd "$OBS_MODULE_DIR" && go build -o "$OBS_MODULE_BIN" .)
+  echo "Built obstacle-store to $OBS_MODULE_BIN"
+else
+  echo "obstacle-store example directory not found at $OBS_MODULE_DIR."
+  exit 1
+fi
+
+echo ""
+
 echo "--- Checking Viam CLI authentication ---"
 
 if ! command -v viam &> /dev/null; then

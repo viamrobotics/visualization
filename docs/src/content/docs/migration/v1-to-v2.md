@@ -498,10 +498,10 @@ err := api.Replay("session.replay", 1.0) // 1.0 = normal, 2.0 = 2x, 0.5 = half
 
 ## End-to-end example
 
-A fully-runnable v2 script lives at [docs/examples/basic.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic.go). With the visualizer up, run it with:
+A fully-runnable v2 script lives at [docs/examples/basic/main.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic/main.go). With the visualizer up, run it with:
 
 ```bash
-go run ./docs/examples/basic.go
+go run ./docs/examples/basic/main.go
 ```
 
 It clears the scene, sets the camera, draws a box, a square on the ground, a ring of arrows, and two reference frames, then animates the box in place by re-drawing it with the same `ID`.

@@ -3,9 +3,9 @@ title: Implementing WorldStateStoreService
 description: Use the draw Go package to produce Transforms for a Viam WorldStateStoreService that streams obstacles from a sensor.
 ---
 
-import { Aside, Steps } from '@astrojs/starlight/components'
+import { Steps } from '@astrojs/starlight/components'
 
-This is the workflow for: **engineers writing a Viam `WorldStateStoreService` module**. The service streams obstacles, frames, and other spatial entities to clients (motion planners, debug viewers, etc.) as `*commonpb.Transform` protos. The `draw` package handles the tedious parts — converting a `spatialmath.Geometry` into a `commonpb.Geometry`, deriving stable UUIDs, and packing color/visibility metadata.
+The `WorldStateStoreService` streams geometries and frames to clients as `*commonpb.Transform` protos. The `draw` package handles the tedious parts — converting a `spatialmath.Geometry` into a `commonpb.Geometry`, deriving stable UUIDs, and packing color/visibility metadata.
 
 If you only need to render snapshots in a browser, see [Embedding `<Visualizer />`](../guides/embedding/) instead — that path doesn't require implementing a service.
 
@@ -17,16 +17,11 @@ A `WorldStateStoreService` exposes three RPCs:
 - **`GetTransform(uuid)`** — full data for one transform.
 - **`StreamTransformChanges`** — live `ADDED` / `UPDATED` / `REMOVED` events.
 
-The interesting piece is the stream: clients subscribe once and rely on you to emit deltas. That means your service has to maintain internal state, diff it against new data, and broadcast the diff.
+The `<Visualizer />` subscribes and relies on the `WorldStateStoreService` to emit deltas. That means your service has to maintain internal state, diff it against new data, and broadcast the diff.
 
-This guide walks through that loop with one concrete example: an **obstacle store** that polls a Viam sensor named `obstacle-sensor`, reconciles the readings against its internal state, and streams the deltas. The sensor's `Readings()` returns a list of obstacles, each with a position and dimensions. The store treats position as the identity — same position, different dimensions ⇒ `UPDATED`; previously-seen position missing from a tick ⇒ `REMOVED`.
+This guide walks through that loop with one concrete example: an **obstacle store** that polls a Viam sensor named `obstacle-sensor`, reconciles the readings against its internal state, and streams the deltas. The sensor's `Readings()` returns a list of obstacles, each with a stable `id`, a position, dimensions, and an `ending_soon` boolean. The store keys off the `id`: same `id`, different position or dimensions ⇒ `UPDATED`; previously-seen `id` missing from a tick ⇒ `REMOVED`. Newly-added obstacles render blue at 50% opacity, the final frame before removal renders red at 50% opacity, and steady-state obstacles render orange — all driven by the diff plus the `ending_soon` signal.
 
-<Aside type="note">
-	A real implementation would probably use a stable ID provided by the sensor as the identity, not
-	position. We're indexing by position here to keep the example self-contained — the sensor isn't
-	required to emit IDs, and quantized position works as a deterministic key for synthetic test
-	scenarios. Swap in whatever identity makes sense for your data.
-</Aside>
+The complete runnable module lives at [`docs/examples/worldstatestore/`](https://github.com/viam-labs/motion-tools/tree/main/docs/examples/worldstatestore). Use [`store.go`](https://github.com/viam-labs/motion-tools/blob/main/docs/examples/worldstatestore/store.go) as the reference implementation while reading the rest of this guide.
 
 ## Module layout
 
@@ -55,7 +50,6 @@ package main
 import (
     "context"
     "fmt"
-    "math"
     "sync"
     "time"
 
@@ -81,7 +75,8 @@ type obstacleStore struct {
     sensor sensor.Sensor
 
     mu         sync.RWMutex
-    transforms map[string]*commonpb.Transform // keyed by position key
+    transforms map[string]*commonpb.Transform // keyed by obstacle id
+    last       map[string]obstacle            // last-seen reading per id, for diffing
 
     streamCtx context.Context
     cancel    context.CancelFunc
@@ -96,7 +91,7 @@ func newObstacleStore(
     conf resource.Config,
     logger logging.Logger,
 ) (worldstatestore.Service, error) {
-    obstacleSensor, err := sensor.FromDependencies(deps, "obstacle-sensor")
+    obstacleSensor, err := sensor.FromProvider(deps, "obstacle-sensor")
     if err != nil {
         return nil, fmt.Errorf("getting obstacle-sensor: %w", err)
     }
@@ -110,6 +105,7 @@ func newObstacleStore(
         logger:     logger,
         sensor:     obstacleSensor,
         transforms: make(map[string]*commonpb.Transform),
+        last:       make(map[string]obstacle),
         streamCtx:  streamCtx,
         cancel:     cancel,
         subs:       make(map[chan worldstatestore.TransformChange]struct{}),
@@ -186,15 +182,22 @@ func (s *obstacleStore) StreamTransformChanges(
 }
 ```
 
-These are mechanical. The interesting work happens in `pollLoop` and `reconcile`.
-
 ### Polling and reconciliation
 
 ```go
 type obstacle struct {
+    ID         string
     X, Y, Z    float64
     SX, SY, SZ float64
+    EndingSoon bool   // sensor's lookahead: this obstacle will be gone next poll
+    Lifecycle  string // derived in reconcile: "appearing" | "alive" | "disappearing"
 }
+
+const (
+    lifecycleAppearing    = "appearing"
+    lifecycleAlive        = "alive"
+    lifecycleDisappearing = "disappearing"
+)
 
 func (s *obstacleStore) pollLoop() {
     ticker := time.NewTicker(pollInterval)
@@ -232,107 +235,133 @@ func (s *obstacleStore) readObstacles() ([]obstacle, error) {
         if m == nil {
             continue
         }
+        id, _ := m["id"].(string)
+        if id == "" {
+            continue
+        }
         out = append(out, obstacle{
-            X: floatField(m, "x"), Y: floatField(m, "y"), Z: floatField(m, "z"),
+            ID: id,
+            X:  floatField(m, "x"), Y: floatField(m, "y"), Z: floatField(m, "z"),
             SX: floatField(m, "sx"), SY: floatField(m, "sy"), SZ: floatField(m, "sz"),
+            EndingSoon: boolField(m, "ending_soon"),
         })
     }
     return out, nil
 }
-
-func floatField(m map[string]any, key string) float64 {
-    if v, ok := m[key].(float64); ok {
-        return v
-    }
-    return 0
-}
 ```
 
-`reconcile` is where the diff happens. We build the next set of position keys, then walk both maps to figure out adds, updates, and removals:
+`reconcile` is where the diff happens. We index the next tick by `id`, then walk both maps to figure out adds, updates, and removals. Because we keep the previous reading around in `last`, we can also build a precise field mask for each `UPDATED` event — clients can apply the partial transform without re-fetching the whole thing.
+
+The same loop derives each obstacle's `Lifecycle`. The split is symmetric: the **store** knows additions (a new `id` ⇒ "appearing"), the **sensor** knows removals (it tagged the obstacle with `EndingSoon` based on its lookahead ⇒ "disappearing"), and everything else is "alive". A change in lifecycle adds `metadata` to the field mask, since color and opacity live in `Transform.metadata`:
 
 ```go
 func (s *obstacleStore) reconcile(obstacles []obstacle) {
     next := make(map[string]obstacle, len(obstacles))
     for _, o := range obstacles {
-        next[posKey(o)] = o
+        next[o.ID] = o
     }
 
     s.mu.Lock()
     defer s.mu.Unlock()
 
     // ADDED + UPDATED
-    for key, o := range next {
-        existing, seen := s.transforms[key]
-        transform, err := buildTransform(key, o)
-        if err != nil {
-            s.logger.Warnw("failed to build transform", "err", err, "key", key)
-            continue
-        }
-        s.transforms[key] = transform
-
+    for id, o := range next {
+        prev, seen := s.last[id]
+        // Lifecycle: appearing on the first frame we ever see this id; the
+        // sensor's lookahead tags the final frame as ending-soon; everything
+        // else is alive.
         switch {
         case !seen:
-            s.emit(transform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_ADDED, nil)
-        case dimensionsChanged(existing, o):
-            s.emit(transform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_UPDATED, []string{"physicalObject"})
+            o.Lifecycle = lifecycleAppearing
+        case o.EndingSoon:
+            o.Lifecycle = lifecycleDisappearing
+        default:
+            o.Lifecycle = lifecycleAlive
         }
+
+        if seen && prev == o {
+            continue // unchanged — skip the rebuild and the broadcast
+        }
+        transform, err := buildTransform(o)
+        if err != nil {
+            s.logger.Warnw("failed to build transform", "err", err, "id", id)
+            continue
+        }
+        s.transforms[id] = transform
+        s.last[id] = o
+
+        if !seen {
+            s.emit(transform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_ADDED, nil)
+            continue
+        }
+        // Surgical field mask: only list what actually changed. Path strings
+        // are proto field names (snake_case), per the worldstatestore spec.
+        var fields []string
+        if prev.X != o.X || prev.Y != o.Y || prev.Z != o.Z {
+            fields = append(fields, "pose_in_observer_frame")
+        }
+        if prev.SX != o.SX || prev.SY != o.SY || prev.SZ != o.SZ {
+            fields = append(fields, "physical_object")
+        }
+        if prev.Lifecycle != o.Lifecycle {
+            fields = append(fields, "metadata")
+        }
+        s.emit(transform, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_UPDATED, fields)
     }
 
     // REMOVED — anything in the previous tick that's missing now.
     // The Go spec explicitly allows deleting from a map during a range loop;
     // the deleted entry just won't be visited again. No copy needed.
-    for key, t := range s.transforms {
-        if _, present := next[key]; present {
+    for id, t := range s.transforms {
+        if _, present := next[id]; present {
             continue
         }
-        delete(s.transforms, key)
+        delete(s.transforms, id)
+        delete(s.last, id)
         s.emit(&commonpb.Transform{Uuid: t.Uuid}, pb.TransformChangeType_TRANSFORM_CHANGE_TYPE_REMOVED, nil)
     }
-}
-
-// posKey quantizes the position to 1mm so floating-point jitter doesn't
-// flip identity. Use whatever resolution matches your sensor.
-func posKey(o obstacle) string {
-    return fmt.Sprintf("%d:%d:%d",
-        int(math.Round(o.X)),
-        int(math.Round(o.Y)),
-        int(math.Round(o.Z)),
-    )
-}
-
-func dimensionsChanged(t *commonpb.Transform, o obstacle) bool {
-    box := t.GetPhysicalObject().GetBox()
-    if box == nil || box.DimsMm == nil {
-        return true
-    }
-    return box.DimsMm.X != o.SX || box.DimsMm.Y != o.SY || box.DimsMm.Z != o.SZ
 }
 ```
 
 ### Building a `Transform` with `draw`
 
-This is where `draw` earns its keep. `WithID(key)` makes the UUID deterministic from the position key, so the same obstacle on every poll produces the same UUID — a requirement for `UPDATED` events to match on the client.
+- `WithID(o.ID)` makes the UUID deterministic from the obstacle's id, so the same obstacle on every poll produces the same UUID — a requirement for `UPDATED` events to match on the client.
+- `colorFor(o.Lifecycle)` switches color and opacity per lifecycle, so the visual encoding lines up with the change events: blue/50% on first appearance, red/50% on the final frame, orange while alive.
 
 ```go
-func buildTransform(key string, o obstacle) (*commonpb.Transform, error) {
+func buildTransform(o obstacle) (*commonpb.Transform, error) {
     box, err := spatialmath.NewBox(
         spatialmath.NewZeroPose(),
         r3.Vector{X: o.SX, Y: o.SY, Z: o.SZ},
-        key,
+        o.ID,
     )
     if err != nil {
         return nil, err
     }
 
-    drawn, err := draw.NewDrawnGeometry(box, draw.WithGeometryColor(draw.ColorFromName("orange")))
+    drawn, err := draw.NewDrawnGeometry(box, draw.WithGeometryColor(colorFor(o.Lifecycle)))
     if err != nil {
         return nil, err
     }
 
-    return drawn.Draw(key,
-        draw.WithID(key),
+    return drawn.Draw(o.ID,
+        draw.WithID(o.ID),
         draw.WithPose(spatialmath.NewPoseFromPoint(r3.Vector{X: o.X, Y: o.Y, Z: o.Z})),
     )
+}
+
+// colorFor maps lifecycle → color. Opacity rides on the alpha channel:
+// 127/255 ≈ 50%. Picked via colour name + SetAlpha rather than raw RGBA so
+// the intent stays readable.
+func colorFor(lifecycle string) draw.Color {
+    switch lifecycle {
+    case lifecycleAppearing:
+        return draw.ColorFromName("blue").SetAlpha(127)
+    case lifecycleDisappearing:
+        return draw.ColorFromName("red").SetAlpha(127)
+    default:
+        return draw.ColorFromName("orange")
+    }
 }
 ```
 
@@ -373,63 +402,15 @@ func (s *obstacleStore) emit(
 }
 ```
 
-## Module bootstrap
-
-```go
-// main.go
-package main
-
-import (
-    "context"
-
-    "go.viam.com/rdk/logging"
-    "go.viam.com/rdk/module"
-    "go.viam.com/rdk/resource"
-    "go.viam.com/rdk/services/worldstatestore"
-)
-
-var Model = resource.NewModel("yourns", "obstacles", "store")
-
-func init() {
-    resource.RegisterService(
-        worldstatestore.API,
-        Model,
-        resource.Registration[worldstatestore.Service, resource.NoNativeConfig]{
-            Constructor: newObstacleStore,
-        },
-    )
-}
-
-func main() {
-    ctx := context.Background()
-    logger := logging.NewDebugLogger("obstacle-store")
-
-    mod, err := module.NewModuleFromArgs(ctx)
-    if err != nil {
-        logger.Fatal(err)
-    }
-    if err := mod.AddModelFromRegistry(ctx, worldstatestore.API, Model); err != nil {
-        logger.Fatal(err)
-    }
-    if err := mod.Start(ctx); err != nil {
-        logger.Fatal(err)
-    }
-    defer mod.Close(ctx)
-    <-ctx.Done()
-}
-```
-
-Configure the module in your machine config with `obstacle-sensor` as a dependency, point a viewer at the part, and you should see boxes appear, resize, and disappear as the sensor reports change.
-
 ## What to take from this
 
 The pattern generalizes:
 
 <Steps>
 
-1. Maintain an internal map keyed by the identity you care about (UUID from the source, hashed position, etc.).
-2. On each tick (or push event), build the next set, diff against current, and emit `ADDED` / `UPDATED` / `REMOVED`.
-3. Use `draw.NewDrawn*` + `Draw(name, draw.WithID(key))` to produce `*commonpb.Transform`s with deterministic UUIDs so updates land on the same entity client-side.
+1. Maintain an internal map keyed by the identity your source provides (sensor-emitted id, source UUID, etc.).
+2. On each event, build the next set, diff against current, and emit `ADDED` / `UPDATED` / `REMOVED`.
+3. Use `draw` API tools like `draw.NewDrawn*` + `Draw(name, draw.WithID(id))` to produce `*commonpb.Transform`s with deterministic UUIDs so updates land on the same entity client-side.
 4. Fan out broadcasts so multiple subscribers don't block each other.
 
 </Steps>
