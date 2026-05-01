@@ -13,6 +13,8 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [Variables](<#variables>)
 - [func MetadataToStruct\(metadata Metadata\) \*structpb.Struct](<#MetadataToStruct>)
 - [func NewTransform\(config \*DrawConfig, geometry spatialmath.Geometry, metadataOpts ...DrawMetadataOption\) \*commonv1.Transform](<#NewTransform>)
+- [func RelationshipsFromStruct\(s \*structpb.Struct\) \[\]\*drawv1.Relationship](<#RelationshipsFromStruct>)
+- [func SetRelationshipsOnStruct\(s \*structpb.Struct, rels \[\]\*drawv1.Relationship\)](<#SetRelationshipsOnStruct>)
 - [type Arrows](<#Arrows>)
   - [func NewArrows\(poses \[\]spatialmath.Pose, options ...DrawArrowsOption\) \(\*Arrows, error\)](<#NewArrows>)
   - [func \(arrows Arrows\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Arrows.Draw>)
@@ -21,6 +23,13 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func NewBufferPacker\[T BufferPackedEntry\]\(elementCount, fieldsPerElement int\) \*BufferPacker\[T\]](<#NewBufferPacker>)
   - [func \(packer \*BufferPacker\[T\]\) Read\(\) \[\]byte](<#BufferPacker[T].Read>)
   - [func \(packer \*BufferPacker\[T\]\) Write\(values ...T\)](<#BufferPacker[T].Write>)
+- [type Chunk](<#Chunk>)
+- [type ChunkProgress](<#ChunkProgress>)
+- [type ChunkSender](<#ChunkSender>)
+  - [func NewChunkSender\(chunker DrawableChunker, client drawv1connect.DrawServiceClient, metadata \*drawv1.Chunks, onProgress func\(ChunkProgress\)\) \*ChunkSender](<#NewChunkSender>)
+  - [func \(s \*ChunkSender\) Done\(\) bool](<#ChunkSender.Done>)
+  - [func \(s \*ChunkSender\) Next\(\) error](<#ChunkSender.Next>)
+  - [func \(s \*ChunkSender\) UUID\(\) \[\]byte](<#ChunkSender.UUID>)
 - [type Color](<#Color>)
   - [func ColorFromColorRGBA\(rgba color.RGBA\) Color](<#ColorFromColorRGBA>)
   - [func ColorFromHSV\(h, s, v float32\) Color](<#ColorFromHSV>)
@@ -72,6 +81,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func WithMetadataAxesHelper\(show bool\) DrawMetadataOption](<#WithMetadataAxesHelper>)
   - [func WithMetadataColors\(colors ...Color\) DrawMetadataOption](<#WithMetadataColors>)
   - [func WithMetadataInvisible\(invisible bool\) DrawMetadataOption](<#WithMetadataInvisible>)
+  - [func WithMetadataRelationships\(relationships \[\]\*drawv1.Relationship\) DrawMetadataOption](<#WithMetadataRelationships>)
 - [type DrawModelAssetOption](<#DrawModelAssetOption>)
   - [func WithModelAssetSizeBytes\(sizeBytes uint64\) DrawModelAssetOption](<#WithModelAssetSizeBytes>)
 - [type DrawModelOption](<#DrawModelOption>)
@@ -94,8 +104,11 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func WithPointsSize\(size float32\) DrawPointsOption](<#WithPointsSize>)
   - [func WithSinglePointColor\(color Color\) DrawPointsOption](<#WithSinglePointColor>)
 - [type DrawService](<#DrawService>)
-  - [func NewDrawService\(\) \*DrawService](<#NewDrawService>)
+  - [func NewDrawService\(tempDir string\) \*DrawService](<#NewDrawService>)
   - [func \(svc \*DrawService\) AddEntity\(\_ context.Context, req \*connect.Request\[drawv1.AddEntityRequest\]\) \(\*connect.Response\[drawv1.AddEntityResponse\], error\)](<#DrawService.AddEntity>)
+  - [func \(svc \*DrawService\) CreateRelationship\(\_ context.Context, req \*connect.Request\[drawv1.CreateRelationshipRequest\]\) \(\*connect.Response\[drawv1.CreateRelationshipResponse\], error\)](<#DrawService.CreateRelationship>)
+  - [func \(svc \*DrawService\) DeleteRelationship\(\_ context.Context, req \*connect.Request\[drawv1.DeleteRelationshipRequest\]\) \(\*connect.Response\[drawv1.DeleteRelationshipResponse\], error\)](<#DrawService.DeleteRelationship>)
+  - [func \(svc \*DrawService\) GetEntityChunk\(ctx context.Context, req \*connect.Request\[drawv1.GetEntityChunkRequest\]\) \(\*connect.Response\[drawv1.GetEntityChunkResponse\], error\)](<#DrawService.GetEntityChunk>)
   - [func \(svc \*DrawService\) RemoveAll\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllRequest\]\) \(\*connect.Response\[drawv1.RemoveAllResponse\], error\)](<#DrawService.RemoveAll>)
   - [func \(svc \*DrawService\) RemoveAllDrawings\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllDrawingsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllDrawingsResponse\], error\)](<#DrawService.RemoveAllDrawings>)
   - [func \(svc \*DrawService\) RemoveAllTransforms\(\_ context.Context, \_ \*connect.Request\[drawv1.RemoveAllTransformsRequest\]\) \(\*connect.Response\[drawv1.RemoveAllTransformsResponse\], error\)](<#DrawService.RemoveAllTransforms>)
@@ -104,6 +117,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func \(svc \*DrawService\) StreamEntityChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamEntityChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamEntityChangesResponse\]\) error](<#DrawService.StreamEntityChanges>)
   - [func \(svc \*DrawService\) StreamSceneChanges\(ctx context.Context, \_ \*connect.Request\[drawv1.StreamSceneChangesRequest\], stream \*connect.ServerStream\[drawv1.StreamSceneChangesResponse\]\) error](<#DrawService.StreamSceneChanges>)
   - [func \(svc \*DrawService\) UpdateEntity\(\_ context.Context, req \*connect.Request\[drawv1.UpdateEntityRequest\]\) \(\*connect.Response\[drawv1.UpdateEntityResponse\], error\)](<#DrawService.UpdateEntity>)
+- [type DrawableChunker](<#DrawableChunker>)
 - [type DrawableOption](<#DrawableOption>)
   - [func WithAxesHelper\(show bool\) DrawableOption](<#WithAxesHelper>)
   - [func WithCenter\(center spatialmath.Pose\) DrawableOption](<#WithCenter>)
@@ -140,6 +154,7 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
   - [func StructToMetadata\(structPb \*structpb.Struct\) \(Metadata, error\)](<#StructToMetadata>)
   - [func \(metadata \*Metadata\) SetColors\(colors \[\]Color\)](<#Metadata.SetColors>)
   - [func \(metadata \*Metadata\) SetInvisible\(invisible bool\)](<#Metadata.SetInvisible>)
+  - [func \(metadata \*Metadata\) SetRelationships\(relationships \[\]\*drawv1.Relationship\)](<#Metadata.SetRelationships>)
   - [func \(metadata \*Metadata\) SetShowAxesHelper\(show bool\)](<#Metadata.SetShowAxesHelper>)
   - [func \(metadata Metadata\) ToProto\(\) \*drawv1.Metadata](<#Metadata.ToProto>)
 - [type Model](<#Model>)
@@ -151,9 +166,19 @@ Package draw provides a Go API for creating and managing 3D visualizations with 
 - [type Nurbs](<#Nurbs>)
   - [func NewNurbs\(controlPoints \[\]spatialmath.Pose, knots \[\]float64, options ...DrawNurbsOption\) \(\*Nurbs, error\)](<#NewNurbs>)
   - [func \(nurbs Nurbs\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Nurbs.Draw>)
+- [type PointCloudChunker](<#PointCloudChunker>)
+  - [func NewPointCloudChunker\(pointCloud \*DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption\) \*PointCloudChunker](<#NewPointCloudChunker>)
+  - [func \(chunker \*PointCloudChunker\) Chunks\(\) \<\-chan Chunk](<#PointCloudChunker.Chunks>)
+  - [func \(chunker \*PointCloudChunker\) NumChunks\(\) int](<#PointCloudChunker.NumChunks>)
+  - [func \(chunker \*PointCloudChunker\) TotalElements\(\) uint32](<#PointCloudChunker.TotalElements>)
 - [type Points](<#Points>)
   - [func NewPoints\(positions \[\]r3.Vector, options ...DrawPointsOption\) \(\*Points, error\)](<#NewPoints>)
   - [func \(points Points\) Draw\(name string, options ...DrawableOption\) \*Drawing](<#Points.Draw>)
+- [type PointsChunker](<#PointsChunker>)
+  - [func NewPointsChunker\(points \*Points, name string, chunkSize int, opts ...DrawableOption\) \*PointsChunker](<#NewPointsChunker>)
+  - [func \(chunker \*PointsChunker\) Chunks\(\) \<\-chan Chunk](<#PointsChunker.Chunks>)
+  - [func \(chunker \*PointsChunker\) NumChunks\(\) int](<#PointsChunker.NumChunks>)
+  - [func \(chunker \*PointsChunker\) TotalElements\(\) uint32](<#PointsChunker.TotalElements>)
 - [type SceneCamera](<#SceneCamera>)
   - [func NewSceneCamera\(position r3.Vector, lookAt r3.Vector, options ...sceneCameraOption\) SceneCamera](<#NewSceneCamera>)
   - [func \(camera \*SceneCamera\) ToProto\(\) \*drawv1.SceneCamera](<#SceneCamera.ToProto>)
@@ -305,6 +330,24 @@ func NewTransform(config *DrawConfig, geometry spatialmath.Geometry, metadataOpt
 
 NewTransform creates a Viam Transform representing an object in 3D space.
 
+<a name="RelationshipsFromStruct"></a>
+## func [RelationshipsFromStruct](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L84>)
+
+```go
+func RelationshipsFromStruct(s *structpb.Struct) []*drawv1.Relationship
+```
+
+RelationshipsFromStruct extracts the "relationships" list from a structpb.Struct that is used as a Transform's metadata.
+
+<a name="SetRelationshipsOnStruct"></a>
+## func [SetRelationshipsOnStruct](<https://github.com/viam-labs/motion-tools/blob/main/draw/transform.go#L124>)
+
+```go
+func SetRelationshipsOnStruct(s *structpb.Struct, rels []*drawv1.Relationship)
+```
+
+SetRelationshipsOnStruct writes the "relationships" field into a structpb.Struct used as a Transform's metadata.
+
 <a name="Arrows"></a>
 ## type [Arrows](<https://github.com/viam-labs/motion-tools/blob/main/draw/arrow.go#L11-L18>)
 
@@ -387,6 +430,80 @@ func (packer *BufferPacker[T]) Write(values ...T)
 ```
 
 Write appends values directly to the buffer at the current offset and advances the offset.
+
+<a name="Chunk"></a>
+## type [Chunk](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L37-L41>)
+
+Chunk holds a single chunk of data as a ready\-to\-send proto.
+
+```go
+type Chunk struct {
+    Proto   *drawv1.Drawing
+    Start   uint32
+    IsFirst bool
+}
+```
+
+<a name="ChunkProgress"></a>
+## type [ChunkProgress](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L58-L63>)
+
+ChunkProgress reports the progress of a chunked entity upload.
+
+```go
+type ChunkProgress struct {
+    Index int
+    Sent  uint32
+    Total uint32
+    Done  bool
+}
+```
+
+<a name="ChunkSender"></a>
+## type [ChunkSender](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L66-L75>)
+
+ChunkSender provides caller\-paced iteration over streamed entity chunks.
+
+```go
+type ChunkSender struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewChunkSender"></a>
+### func [NewChunkSender](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L78-L83>)
+
+```go
+func NewChunkSender(chunker DrawableChunker, client drawv1connect.DrawServiceClient, metadata *drawv1.Chunks, onProgress func(ChunkProgress)) *ChunkSender
+```
+
+NewChunkSender creates a ChunkSender from a DrawableChunker and a client.
+
+<a name="ChunkSender.Done"></a>
+### func \(\*ChunkSender\) [Done](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L157>)
+
+```go
+func (s *ChunkSender) Done() bool
+```
+
+Done returns true when all chunks have been sent.
+
+<a name="ChunkSender.Next"></a>
+### func \(\*ChunkSender\) [Next](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L94>)
+
+```go
+func (s *ChunkSender) Next() error
+```
+
+Next sends the next chunk to the draw service. Returns io.EOF when all chunks have been sent.
+
+<a name="ChunkSender.UUID"></a>
+### func \(\*ChunkSender\) [UUID](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L152>)
+
+```go
+func (s *ChunkSender) UUID() []byte
+```
+
+UUID returns the entity UUID assigned by the server after the first chunk. Returns nil if Next has not been called yet.
 
 <a name="Color"></a>
 ## type [Color](<https://github.com/viam-labs/motion-tools/blob/main/draw/color.go#L16-L25>)
@@ -834,7 +951,7 @@ func WithSingleLineColor(color Color) DrawLineOption
 WithSingleLineColor creates a line option that sets a single color for all line segments.
 
 <a name="DrawMetadataOption"></a>
-## type [DrawMetadataOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L273>)
+## type [DrawMetadataOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L279>)
 
 DrawMetadataOption is a function that configures a draw metadata configuration.
 
@@ -843,7 +960,7 @@ type DrawMetadataOption func(*drawMetadataConfig)
 ```
 
 <a name="MetadataOptionsFromProto"></a>
-### func [MetadataOptionsFromProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L303>)
+### func [MetadataOptionsFromProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L315>)
 
 ```go
 func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption
@@ -852,7 +969,7 @@ func MetadataOptionsFromProto(md *drawv1.Metadata) []DrawMetadataOption
 MetadataOptionsFromProto converts a \*drawv1.Metadata proto into a slice of DrawMetadataOption. Nil input returns nil options. Fields that are unset in the proto are skipped.
 
 <a name="WithMetadataAxesHelper"></a>
-### func [WithMetadataAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L288>)
+### func [WithMetadataAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L294>)
 
 ```go
 func WithMetadataAxesHelper(show bool) DrawMetadataOption
@@ -861,7 +978,7 @@ func WithMetadataAxesHelper(show bool) DrawMetadataOption
 WithMetadataAxesHelper creates a metadata option that controls axes helper visibility.
 
 <a name="WithMetadataColors"></a>
-### func [WithMetadataColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L283>)
+### func [WithMetadataColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L289>)
 
 ```go
 func WithMetadataColors(colors ...Color) DrawMetadataOption
@@ -870,13 +987,22 @@ func WithMetadataColors(colors ...Color) DrawMetadataOption
 WithMetadataColors creates a metadata option that sets the color list for the metadata.
 
 <a name="WithMetadataInvisible"></a>
-### func [WithMetadataInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L295>)
+### func [WithMetadataInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L301>)
 
 ```go
 func WithMetadataInvisible(invisible bool) DrawMetadataOption
 ```
 
 WithMetadataInvisible creates a metadata option that controls whether the entity is invisible by default.
+
+<a name="WithMetadataRelationships"></a>
+### func [WithMetadataRelationships](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L307>)
+
+```go
+func WithMetadataRelationships(relationships []*drawv1.Relationship) DrawMetadataOption
+```
+
+
 
 <a name="DrawModelAssetOption"></a>
 ## type [DrawModelAssetOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/model_asset.go#L31>)
@@ -978,7 +1104,7 @@ func WithNurbsWeights(weights []float64) DrawNurbsOption
 WithNurbsWeights creates a NURBS option that sets the weight for each control point. Weights control the influence of each point on the curve \(higher weights pull the curve closer\).
 
 <a name="DrawPointCloudOption"></a>
-## type [DrawPointCloudOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L39>)
+## type [DrawPointCloudOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L38>)
 
 DrawPointCloudOption is a functional option for configuring a DrawPointCloud
 
@@ -987,7 +1113,7 @@ type DrawPointCloudOption func(*DrawnPointCloudConfig)
 ```
 
 <a name="WithPerPointCloudColors"></a>
-### func [WithPerPointCloudColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L47>)
+### func [WithPerPointCloudColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L46>)
 
 ```go
 func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption
@@ -996,7 +1122,7 @@ func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption
 WithPerPointCloudColors creates a point cloud option that sets the colors for each point.
 
 <a name="WithPointCloudColorPalette"></a>
-### func [WithPointCloudColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L52>)
+### func [WithPointCloudColorPalette](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L51>)
 
 ```go
 func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOption
@@ -1005,7 +1131,7 @@ func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOp
 WithPointCloudColorPalette creates a point cloud option that iterates through colors for a point cloud.
 
 <a name="WithPointCloudDownscaling"></a>
-### func [WithPointCloudDownscaling](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L57>)
+### func [WithPointCloudDownscaling](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L56>)
 
 ```go
 func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption
@@ -1014,7 +1140,7 @@ func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption
 WithPointCloudDownscaling creates a point cloud option that sets the threshold in millimeters below which points are not rendered from one another.
 
 <a name="WithSinglePointCloudColor"></a>
-### func [WithSinglePointCloudColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L42>)
+### func [WithSinglePointCloudColor](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L41>)
 
 ```go
 func WithSinglePointCloudColor(color Color) DrawPointCloudOption
@@ -1068,7 +1194,7 @@ func WithSinglePointColor(color Color) DrawPointsOption
 WithSinglePointColor creates a points option that sets the color for all points.
 
 <a name="DrawService"></a>
-## type [DrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L37-L45>)
+## type [DrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L92-L102>)
 
 DrawService stores transforms and drawings keyed by UUID and fans out change events to streaming subscribers.
 
@@ -1079,16 +1205,16 @@ type DrawService struct {
 ```
 
 <a name="NewDrawService"></a>
-### func [NewDrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L48>)
+### func [NewDrawService](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L105>)
 
 ```go
-func NewDrawService() *DrawService
+func NewDrawService(tempDir string) *DrawService
 ```
 
 NewDrawService creates a new DrawService ready to serve requests.
 
 <a name="DrawService.AddEntity"></a>
-### func \(\*DrawService\) [AddEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L107-L110>)
+### func \(\*DrawService\) [AddEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L192-L195>)
 
 ```go
 func (svc *DrawService) AddEntity(_ context.Context, req *connect.Request[drawv1.AddEntityRequest]) (*connect.Response[drawv1.AddEntityResponse], error)
@@ -1096,8 +1222,35 @@ func (svc *DrawService) AddEntity(_ context.Context, req *connect.Request[drawv1
 
 AddEntity adds a transform or drawing to the scene and returns its UUID. If the entity carries a non\-empty Uuid field, AddEntity performs an upsert.
 
+<a name="DrawService.CreateRelationship"></a>
+### func \(\*DrawService\) [CreateRelationship](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L595-L598>)
+
+```go
+func (svc *DrawService) CreateRelationship(_ context.Context, req *connect.Request[drawv1.CreateRelationshipRequest]) (*connect.Response[drawv1.CreateRelationshipResponse], error)
+```
+
+CreateRelationship creates or replaces a relationship from source to the target specified in the relationship. The relationship is stored in the source entity's metadata.
+
+<a name="DrawService.DeleteRelationship"></a>
+### func \(\*DrawService\) [DeleteRelationship](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L653-L656>)
+
+```go
+func (svc *DrawService) DeleteRelationship(_ context.Context, req *connect.Request[drawv1.DeleteRelationshipRequest]) (*connect.Response[drawv1.DeleteRelationshipResponse], error)
+```
+
+DeleteRelationship removes the relationship from source to target\_uuid.
+
+<a name="DrawService.GetEntityChunk"></a>
+### func \(\*DrawService\) [GetEntityChunk](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L772-L775>)
+
+```go
+func (svc *DrawService) GetEntityChunk(ctx context.Context, req *connect.Request[drawv1.GetEntityChunkRequest]) (*connect.Response[drawv1.GetEntityChunkResponse], error)
+```
+
+GetEntityChunk returns a chunk of accumulated data for a chunked entity. Blocks until the requested data is available or the context is cancelled.
+
 <a name="DrawService.RemoveAll"></a>
-### func \(\*DrawService\) [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L528-L531>)
+### func \(\*DrawService\) [RemoveAll](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L1083-L1086>)
 
 ```go
 func (svc *DrawService) RemoveAll(_ context.Context, _ *connect.Request[drawv1.RemoveAllRequest]) (*connect.Response[drawv1.RemoveAllResponse], error)
@@ -1106,7 +1259,7 @@ func (svc *DrawService) RemoveAll(_ context.Context, _ *connect.Request[drawv1.R
 RemoveAll removes all entities \(transforms and drawings\) from the scene.
 
 <a name="DrawService.RemoveAllDrawings"></a>
-### func \(\*DrawService\) [RemoveAllDrawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L504-L507>)
+### func \(\*DrawService\) [RemoveAllDrawings](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L1050-L1053>)
 
 ```go
 func (svc *DrawService) RemoveAllDrawings(_ context.Context, _ *connect.Request[drawv1.RemoveAllDrawingsRequest]) (*connect.Response[drawv1.RemoveAllDrawingsResponse], error)
@@ -1115,7 +1268,7 @@ func (svc *DrawService) RemoveAllDrawings(_ context.Context, _ *connect.Request[
 RemoveAllDrawings removes all drawing entities from the scene and returns the count removed.
 
 <a name="DrawService.RemoveAllTransforms"></a>
-### func \(\*DrawService\) [RemoveAllTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L480-L483>)
+### func \(\*DrawService\) [RemoveAllTransforms](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L1021-L1024>)
 
 ```go
 func (svc *DrawService) RemoveAllTransforms(_ context.Context, _ *connect.Request[drawv1.RemoveAllTransformsRequest]) (*connect.Response[drawv1.RemoveAllTransformsResponse], error)
@@ -1124,7 +1277,7 @@ func (svc *DrawService) RemoveAllTransforms(_ context.Context, _ *connect.Reques
 RemoveAllTransforms removes all transform entities from the scene and returns the count removed.
 
 <a name="DrawService.RemoveEntity"></a>
-### func \(\*DrawService\) [RemoveEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L356-L359>)
+### func \(\*DrawService\) [RemoveEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L724-L727>)
 
 ```go
 func (svc *DrawService) RemoveEntity(_ context.Context, req *connect.Request[drawv1.RemoveEntityRequest]) (*connect.Response[drawv1.RemoveEntityResponse], error)
@@ -1133,7 +1286,7 @@ func (svc *DrawService) RemoveEntity(_ context.Context, req *connect.Request[dra
 RemoveEntity removes the entity with the given UUID from the scene.
 
 <a name="DrawService.SetScene"></a>
-### func \(\*DrawService\) [SetScene](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L429-L432>)
+### func \(\*DrawService\) [SetScene](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L970-L973>)
 
 ```go
 func (svc *DrawService) SetScene(_ context.Context, req *connect.Request[drawv1.SetSceneRequest]) (*connect.Response[drawv1.SetSceneResponse], error)
@@ -1142,16 +1295,16 @@ func (svc *DrawService) SetScene(_ context.Context, req *connect.Request[drawv1.
 SetScene stores scene metadata and notifies scene subscribers.
 
 <a name="DrawService.StreamEntityChanges"></a>
-### func \(\*DrawService\) [StreamEntityChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L398-L402>)
+### func \(\*DrawService\) [StreamEntityChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L842-L846>)
 
 ```go
 func (svc *DrawService) StreamEntityChanges(ctx context.Context, _ *connect.Request[drawv1.StreamEntityChangesRequest], stream *connect.ServerStream[drawv1.StreamEntityChangesResponse]) error
 ```
 
-StreamEntityChanges streams entity change events \(add/update/remove\) to the caller until the context is cancelled.
+StreamEntityChanges streams entity change events \(add/update/remove\) to the caller until the context is cancelled. On connect, replays the current world state so new subscribers see all existing entities.
 
 <a name="DrawService.StreamSceneChanges"></a>
-### func \(\*DrawService\) [StreamSceneChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L449-L453>)
+### func \(\*DrawService\) [StreamSceneChanges](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L990-L994>)
 
 ```go
 func (svc *DrawService) StreamSceneChanges(ctx context.Context, _ *connect.Request[drawv1.StreamSceneChangesRequest], stream *connect.ServerStream[drawv1.StreamSceneChangesResponse]) error
@@ -1160,13 +1313,32 @@ func (svc *DrawService) StreamSceneChanges(ctx context.Context, _ *connect.Reque
 StreamSceneChanges streams scene metadata changes to the caller until the context is cancelled.
 
 <a name="DrawService.UpdateEntity"></a>
-### func \(\*DrawService\) [UpdateEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L170-L173>)
+### func \(\*DrawService\) [UpdateEntity](<https://github.com/viam-labs/motion-tools/blob/main/draw/draw_service.go#L327-L330>)
 
 ```go
 func (svc *DrawService) UpdateEntity(_ context.Context, req *connect.Request[drawv1.UpdateEntityRequest]) (*connect.Response[drawv1.UpdateEntityResponse], error)
 ```
 
 UpdateEntity replaces or partially updates an existing entity identified by UUID.
+
+<a name="DrawableChunker"></a>
+## type [DrawableChunker](<https://github.com/viam-labs/motion-tools/blob/main/draw/chunker.go#L45-L55>)
+
+DrawableChunker is implemented by any drawable type that can produce its data as a series of chunks for progressive delivery.
+
+```go
+type DrawableChunker interface {
+    // ChunkSize returns the number of elements per chunk.
+    ChunkSize() uint32
+    // TotalElements returns the total number of elements across all chunks.
+    TotalElements() uint32
+    // NumChunks returns the number of chunks that will be produced.
+    NumChunks() int
+    // Chunks returns a channel that yields each chunk. The channel is closed
+    // when all chunks have been sent.
+    Chunks() <-chan Chunk
+}
+```
 
 <a name="DrawableOption"></a>
 ## type [DrawableOption](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawable.go#L56>)
@@ -1436,7 +1608,7 @@ type DrawnPointCloud struct {
 ```
 
 <a name="NewDrawnPointCloud"></a>
-### func [NewDrawnPointCloud](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L64>)
+### func [NewDrawnPointCloud](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L63>)
 
 ```go
 func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption) (*DrawnPointCloud, error)
@@ -1445,7 +1617,7 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 NewDrawnPointCloud creates a new DrawnPointCloud object from the given point cloud and options.
 
 <a name="DrawnPointCloud.Draw"></a>
-### func \(\*DrawnPointCloud\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L86>)
+### func \(\*DrawnPointCloud\) [Draw](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud.go#L85>)
 
 ```go
 func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error)
@@ -1509,7 +1681,7 @@ func (line Line) Draw(name string, options ...DrawableOption) *Drawing
 Draw creates a Drawing from this Line object.
 
 <a name="Metadata"></a>
-## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L247-L251>)
+## type [Metadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L247-L252>)
 
 Metadata stores additional rendering information for a Drawing, such as colors for the shape's components.
 
@@ -1518,11 +1690,12 @@ type Metadata struct {
     Colors         []Color
     ShowAxesHelper bool
     Invisible      bool
+    Relationships  []*drawv1.Relationship
 }
 ```
 
 <a name="NewMetadata"></a>
-### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L321>)
+### func [NewMetadata](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L336>)
 
 ```go
 func NewMetadata(options ...DrawMetadataOption) Metadata
@@ -1540,7 +1713,7 @@ func StructToMetadata(structPb *structpb.Struct) (Metadata, error)
 StructToMetadata converts a Protocol Buffer structpb.Struct to a Metadata object.
 
 <a name="Metadata.SetColors"></a>
-### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L253>)
+### func \(\*Metadata\) [SetColors](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L254>)
 
 ```go
 func (metadata *Metadata) SetColors(colors []Color)
@@ -1549,7 +1722,7 @@ func (metadata *Metadata) SetColors(colors []Color)
 
 
 <a name="Metadata.SetInvisible"></a>
-### func \(\*Metadata\) [SetInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L261>)
+### func \(\*Metadata\) [SetInvisible](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L262>)
 
 ```go
 func (metadata *Metadata) SetInvisible(invisible bool)
@@ -1557,8 +1730,17 @@ func (metadata *Metadata) SetInvisible(invisible bool)
 
 
 
+<a name="Metadata.SetRelationships"></a>
+### func \(\*Metadata\) [SetRelationships](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L266>)
+
+```go
+func (metadata *Metadata) SetRelationships(relationships []*drawv1.Relationship)
+```
+
+
+
 <a name="Metadata.SetShowAxesHelper"></a>
-### func \(\*Metadata\) [SetShowAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L257>)
+### func \(\*Metadata\) [SetShowAxesHelper](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L258>)
 
 ```go
 func (metadata *Metadata) SetShowAxesHelper(show bool)
@@ -1567,7 +1749,7 @@ func (metadata *Metadata) SetShowAxesHelper(show bool)
 
 
 <a name="Metadata.ToProto"></a>
-### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L331>)
+### func \(Metadata\) [ToProto](<https://github.com/viam-labs/motion-tools/blob/main/draw/drawing.go#L351>)
 
 ```go
 func (metadata Metadata) ToProto() *drawv1.Metadata
@@ -1691,6 +1873,53 @@ func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing
 
 Draw creates a Drawing from this Nurbs object.
 
+<a name="PointCloudChunker"></a>
+## type [PointCloudChunker](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud_chunker.go#L14-L17>)
+
+PointCloudChunker implements DrawableChunker for point clouds.
+
+```go
+type PointCloudChunker struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewPointCloudChunker"></a>
+### func [NewPointCloudChunker](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud_chunker.go#L20>)
+
+```go
+func NewPointCloudChunker(pointCloud *DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption) *PointCloudChunker
+```
+
+NewPointCloudChunker creates a DrawableChunker for the given point cloud.
+
+<a name="PointCloudChunker.Chunks"></a>
+### func \(\*PointCloudChunker\) [Chunks](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud_chunker.go#L33>)
+
+```go
+func (chunker *PointCloudChunker) Chunks() <-chan Chunk
+```
+
+
+
+<a name="PointCloudChunker.NumChunks"></a>
+### func \(\*PointCloudChunker\) [NumChunks](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud_chunker.go#L31>)
+
+```go
+func (chunker *PointCloudChunker) NumChunks() int
+```
+
+
+
+<a name="PointCloudChunker.TotalElements"></a>
+### func \(\*PointCloudChunker\) [TotalElements](<https://github.com/viam-labs/motion-tools/blob/main/draw/point_cloud_chunker.go#L27>)
+
+```go
+func (chunker *PointCloudChunker) TotalElements() uint32
+```
+
+
+
 <a name="Points"></a>
 ## type [Points](<https://github.com/viam-labs/motion-tools/blob/main/draw/points.go#L16-L26>)
 
@@ -1727,6 +1956,53 @@ func (points Points) Draw(name string, options ...DrawableOption) *Drawing
 ```
 
 Draw creates a Drawing from this Points object.
+
+<a name="PointsChunker"></a>
+## type [PointsChunker](<https://github.com/viam-labs/motion-tools/blob/main/draw/points_chunker.go#L10-L13>)
+
+PointsChunker implements DrawableChunker for Points.
+
+```go
+type PointsChunker struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewPointsChunker"></a>
+### func [NewPointsChunker](<https://github.com/viam-labs/motion-tools/blob/main/draw/points_chunker.go#L16>)
+
+```go
+func NewPointsChunker(points *Points, name string, chunkSize int, opts ...DrawableOption) *PointsChunker
+```
+
+NewPointsChunker creates a DrawableChunker for the given points.
+
+<a name="PointsChunker.Chunks"></a>
+### func \(\*PointsChunker\) [Chunks](<https://github.com/viam-labs/motion-tools/blob/main/draw/points_chunker.go#L26>)
+
+```go
+func (chunker *PointsChunker) Chunks() <-chan Chunk
+```
+
+
+
+<a name="PointsChunker.NumChunks"></a>
+### func \(\*PointsChunker\) [NumChunks](<https://github.com/viam-labs/motion-tools/blob/main/draw/points_chunker.go#L24>)
+
+```go
+func (chunker *PointsChunker) NumChunks() int
+```
+
+
+
+<a name="PointsChunker.TotalElements"></a>
+### func \(\*PointsChunker\) [TotalElements](<https://github.com/viam-labs/motion-tools/blob/main/draw/points_chunker.go#L23>)
+
+```go
+func (chunker *PointsChunker) TotalElements() uint32
+```
+
+
 
 <a name="SceneCamera"></a>
 ## type [SceneCamera](<https://github.com/viam-labs/motion-tools/blob/main/draw/scene.go#L33-L44>)
