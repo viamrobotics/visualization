@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -39,6 +40,17 @@ import (
 // ErrNotRunning is returned by Stop when the server has not been started.
 var ErrNotRunning = errors.New("draw server is not running")
 
+// ErrAttached is returned by Stop when the singleton is only attached to an
+// external server (e.g. one started by `make up`). The local client state is
+// still cleared, but no server is shut down because the process does not own
+// it. Callers who explicitly Start()ed a server will see a nil return.
+var ErrAttached = errors.New("draw server is attached to an external server; nothing was stopped")
+
+// DefaultPort is the Connect-RPC port the draw server is started on by
+// `make up`. When callers never invoke Start() explicitly, GetClient lazily
+// attaches to a server listening on this port.
+const DefaultPort = 3030
+
 var buildDir = "build"
 
 // DrawServerConfig holds the configuration for the draw server.
@@ -57,6 +69,7 @@ type DrawServerConfig struct {
 var (
 	mu         sync.Mutex
 	running    bool
+	attached   bool // true when running but we attached to an external server (don't own it)
 	rpcSrv     *http.Server
 	staticSrv  *http.Server
 	drawClient drawv1connect.DrawServiceClient
@@ -77,14 +90,14 @@ func Start(cfg DrawServerConfig) error {
 		return nil
 	}
 
-	svc := draw.NewDrawService()
+	svc := draw.NewDrawService(resolveTmpDir())
 	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
 	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
 	rpcListener, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
 		if isAddrInUse(err) {
-			// A server is already listening on this port (e.g. started by `make up-next`).
+			// A server is already listening on this port (e.g. started by `make up`).
 			// Attach a client to it rather than failing — the test suite uses this path.
 			recorder = NewRecordingInterceptor()
 			drawClient = drawv1connect.NewDrawServiceClient(
@@ -93,6 +106,7 @@ func Start(cfg DrawServerConfig) error {
 				connect.WithInterceptors(recorder),
 			)
 			running = true
+			attached = true
 			log.Printf("draw server: attached client to existing server at http://%s", address)
 			return nil
 		}
@@ -160,12 +174,29 @@ func Start(cfg DrawServerConfig) error {
 
 // Stop gracefully shuts down the server and resets the singleton. It is safe
 // to call Stop and then Start again.
+//
+// When the singleton is only attached to an external server (because Start
+// found the port already in use, or GetClient lazily attached on
+// DefaultPort), Stop clears the local client state but returns ErrAttached
+// without shutting anything down — the process does not own that server.
 func Stop() error {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if !running {
 		return ErrNotRunning
+	}
+
+	if attached {
+		drawClient = nil
+		address = ""
+		running = false
+		attached = false
+		if recorder != nil {
+			recorder.StopRecording()
+			recorder = nil
+		}
+		return ErrAttached
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -207,11 +238,45 @@ func Stop() error {
 }
 
 // GetClient returns the singleton Connect-RPC DrawService client.
-// Returns nil if the server has not been started.
+//
+// If Start has not been called, GetClient attempts to attach to a draw server
+// listening on localhost:DefaultPort (the port started by `make up`). This
+// lets callers use the client/api package without any server-lifecycle
+// boilerplate when the visualizer is already running locally.
+//
+// Returns nil if Start was not called and no server is listening on the
+// default port; callers should surface that as "visualizer not running".
 func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
+
+	if drawClient == nil {
+		attachDefaultLocked()
+	}
+
 	return drawClient
+}
+
+// attachDefaultLocked probes DefaultPort and attaches a client to an existing
+// server if one is running. Callers must hold mu.
+func attachDefaultLocked() {
+	addr := fmt.Sprintf("localhost:%d", DefaultPort)
+
+	conn, err := net.DialTimeout("tcp", addr, 250*time.Millisecond)
+	if err != nil {
+		return
+	}
+	_ = conn.Close()
+
+	address = addr
+	recorder = NewRecordingInterceptor()
+	drawClient = drawv1connect.NewDrawServiceClient(
+		http.DefaultClient,
+		"http://"+addr,
+		connect.WithInterceptors(recorder),
+	)
+	running = true
+	attached = true
 }
 
 // GetRecorder returns the singleton RecordingInterceptor for the running server.
@@ -228,6 +293,40 @@ func GetAddress() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return address
+}
+
+// DrainChunks exhausts a ChunkSender in a loop until it returns io.EOF.
+// Returns the server-assigned UUID or an error if the server is not running or the drawing fails.
+func DrainChunks(sender *draw.ChunkSender) ([]byte, error) {
+	for {
+		err := sender.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sender.UUID(), nil
+}
+
+// resolveTmpDir returns an absolute path to ".tmp" inside the nearest
+// ancestor directory containing go.mod.
+func resolveTmpDir() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ".tmp"
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return filepath.Join(dir, ".tmp")
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ".tmp"
+		}
+		dir = parent
+	}
 }
 
 func isAddrInUse(err error) bool {

@@ -75,12 +75,8 @@ up-check:
 
 .PHONY: up
 up: up-check
-	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
-
-.PHONY: up-next
-up-next: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production > /dev/null 2>&1 &
-	@.bin/draw-server -port 3030 
+	@.bin/draw-server -port 3030
 
 .PHONY: build-clean
 build-clean:
@@ -122,7 +118,7 @@ proto-format-check:
 	@pnpm exec buf format --diff --exit-code
 
 .PHONY: proto
-proto: proto-clean proto-vendor 
+proto: proto-vendor 
 	@pnpm exec buf dep update
 	@$(MAKE) proto-lint
 	@$(MAKE) proto-format

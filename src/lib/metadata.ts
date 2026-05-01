@@ -1,9 +1,18 @@
 import type { PlainMessage, Struct } from '@viamrobotics/sdk'
 
-import { ColorFormat, Metadata as MetadataProto } from '$lib/buf/draw/v1/metadata_pb'
+import {
+	ColorFormat,
+	Metadata as MetadataProto,
+	type Relationship as RelationshipProto,
+} from '$lib/buf/draw/v1/metadata_pb'
 
-/** Metadata for a `Drawing` or `Transform`. */
-export type Metadata = PlainMessage<MetadataProto>
+/** Metadata for a `Drawing` or `Transform`. Relationships default to empty. */
+export type Metadata = Omit<PlainMessage<MetadataProto>, 'relationships'> & {
+	relationships?: PlainMessage<MetadataProto>['relationships']
+}
+
+/** Plain-object representation of a Relationship, usable outside proto classes. */
+export type Relationship = PlainMessage<RelationshipProto>
 
 /** Type guard that checks whether a string is a recognised metadata wire key. */
 export const isMetadataField = (key: string): boolean => {
@@ -13,7 +22,8 @@ export const isMetadataField = (key: string): boolean => {
 		key === 'opacities' ||
 		key === 'show_axes_helper' ||
 		key === 'invisible' ||
-		key === 'chunks'
+		key === 'chunks' ||
+		key === 'relationships'
 	)
 }
 
@@ -88,6 +98,33 @@ export const metadataFromStruct = (fields: PlainMessage<Struct>['fields'] = {}):
 						total: typeof obj['total'] === 'number' ? obj['total'] : 0,
 						stride: typeof obj['stride'] === 'number' ? obj['stride'] : 0,
 					}
+				}
+				break
+			}
+
+			case 'relationships': {
+				if (Array.isArray(unwrappedValue)) {
+					json.relationships = unwrappedValue
+						.filter(
+							(item): item is Record<string, unknown> => typeof item === 'object' && item !== null
+						)
+						.map((item) => {
+							const targetUuidStr = item['target_uuid']
+							let targetUuid = new Uint8Array()
+							if (typeof targetUuidStr === 'string' && targetUuidStr.length > 0) {
+								const binary = atob(targetUuidStr)
+								targetUuid = new Uint8Array(binary.length)
+								for (let i = 0; i < binary.length; i++) {
+									targetUuid[i] = binary.charCodeAt(i)
+								}
+							}
+							return {
+								targetUuid,
+								type: typeof item['type'] === 'string' ? item['type'] : '',
+								indexMapping:
+									typeof item['index_mapping'] === 'string' ? item['index_mapping'] : undefined,
+							}
+						})
 				}
 				break
 			}

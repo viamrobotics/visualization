@@ -958,11 +958,341 @@ func (x *RemoveAllResponse) GetDrawingCount() int32 {
 	return 0
 }
 
+type CreateRelationshipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourceUuid    []byte                 `protobuf:"bytes,1,opt,name=source_uuid,json=sourceUuid,proto3" json:"source_uuid,omitempty"`
+	Relationship  *Relationship          `protobuf:"bytes,2,opt,name=relationship,proto3" json:"relationship,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateRelationshipRequest) Reset() {
+	*x = CreateRelationshipRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRelationshipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRelationshipRequest) ProtoMessage() {}
+
+func (x *CreateRelationshipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRelationshipRequest.ProtoReflect.Descriptor instead.
+func (*CreateRelationshipRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *CreateRelationshipRequest) GetSourceUuid() []byte {
+	if x != nil {
+		return x.SourceUuid
+	}
+	return nil
+}
+
+func (x *CreateRelationshipRequest) GetRelationship() *Relationship {
+	if x != nil {
+		return x.Relationship
+	}
+	return nil
+}
+
+type CreateRelationshipResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateRelationshipResponse) Reset() {
+	*x = CreateRelationshipResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRelationshipResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRelationshipResponse) ProtoMessage() {}
+
+func (x *CreateRelationshipResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRelationshipResponse.ProtoReflect.Descriptor instead.
+func (*CreateRelationshipResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{19}
+}
+
+type DeleteRelationshipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourceUuid    []byte                 `protobuf:"bytes,1,opt,name=source_uuid,json=sourceUuid,proto3" json:"source_uuid,omitempty"`
+	TargetUuid    []byte                 `protobuf:"bytes,2,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRelationshipRequest) Reset() {
+	*x = DeleteRelationshipRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRelationshipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRelationshipRequest) ProtoMessage() {}
+
+func (x *DeleteRelationshipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRelationshipRequest.ProtoReflect.Descriptor instead.
+func (*DeleteRelationshipRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *DeleteRelationshipRequest) GetSourceUuid() []byte {
+	if x != nil {
+		return x.SourceUuid
+	}
+	return nil
+}
+
+func (x *DeleteRelationshipRequest) GetTargetUuid() []byte {
+	if x != nil {
+		return x.TargetUuid
+	}
+	return nil
+}
+
+type DeleteRelationshipResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRelationshipResponse) Reset() {
+	*x = DeleteRelationshipResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRelationshipResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRelationshipResponse) ProtoMessage() {}
+
+func (x *DeleteRelationshipResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRelationshipResponse.ProtoReflect.Descriptor instead.
+func (*DeleteRelationshipResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{21}
+}
+
+type GetEntityChunkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uuid          []byte                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	Start         uint32                 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEntityChunkRequest) Reset() {
+	*x = GetEntityChunkRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEntityChunkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEntityChunkRequest) ProtoMessage() {}
+
+func (x *GetEntityChunkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEntityChunkRequest.ProtoReflect.Descriptor instead.
+func (*GetEntityChunkRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetEntityChunkRequest) GetUuid() []byte {
+	if x != nil {
+		return x.Uuid
+	}
+	return nil
+}
+
+func (x *GetEntityChunkRequest) GetStart() uint32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+type GetEntityChunkResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The entity that is being chunked.
+	//
+	// Types that are valid to be assigned to Entity:
+	//
+	//	*GetEntityChunkResponse_Transform
+	//	*GetEntityChunkResponse_Drawing
+	Entity isGetEntityChunkResponse_Entity `protobuf_oneof:"entity"`
+	// The element offset this chunk starts at.
+	Start uint32 `protobuf:"varint,3,opt,name=start,proto3" json:"start,omitempty"`
+	// True when this is the last available chunk AND all data has been received from the producer.
+	Done          bool `protobuf:"varint,4,opt,name=done,proto3" json:"done,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetEntityChunkResponse) Reset() {
+	*x = GetEntityChunkResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEntityChunkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEntityChunkResponse) ProtoMessage() {}
+
+func (x *GetEntityChunkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEntityChunkResponse.ProtoReflect.Descriptor instead.
+func (*GetEntityChunkResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetEntityChunkResponse) GetEntity() isGetEntityChunkResponse_Entity {
+	if x != nil {
+		return x.Entity
+	}
+	return nil
+}
+
+func (x *GetEntityChunkResponse) GetTransform() *v1.Transform {
+	if x != nil {
+		if x, ok := x.Entity.(*GetEntityChunkResponse_Transform); ok {
+			return x.Transform
+		}
+	}
+	return nil
+}
+
+func (x *GetEntityChunkResponse) GetDrawing() *Drawing {
+	if x != nil {
+		if x, ok := x.Entity.(*GetEntityChunkResponse_Drawing); ok {
+			return x.Drawing
+		}
+	}
+	return nil
+}
+
+func (x *GetEntityChunkResponse) GetStart() uint32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *GetEntityChunkResponse) GetDone() bool {
+	if x != nil {
+		return x.Done
+	}
+	return false
+}
+
+type isGetEntityChunkResponse_Entity interface {
+	isGetEntityChunkResponse_Entity()
+}
+
+type GetEntityChunkResponse_Transform struct {
+	Transform *v1.Transform `protobuf:"bytes,1,opt,name=transform,proto3,oneof"`
+}
+
+type GetEntityChunkResponse_Drawing struct {
+	Drawing *Drawing `protobuf:"bytes,2,opt,name=drawing,proto3,oneof"`
+}
+
+func (*GetEntityChunkResponse_Transform) isGetEntityChunkResponse_Entity() {}
+
+func (*GetEntityChunkResponse_Drawing) isGetEntityChunkResponse_Entity() {}
+
 var File_draw_v1_service_proto protoreflect.FileDescriptor
 
 const file_draw_v1_service_proto_rawDesc = "" +
 	"\n" +
-	"\x15draw/v1/service.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\x1a\x15draw/v1/drawing.proto\x1a\x13draw/v1/scene.proto\x1a google/protobuf/field_mask.proto\"\x85\x01\n" +
+	"\x15draw/v1/service.proto\x12\adraw.v1\x1a\x16common/v1/common.proto\x1a\x15draw/v1/drawing.proto\x1a\x16draw/v1/metadata.proto\x1a\x13draw/v1/scene.proto\x1a google/protobuf/field_mask.proto\"\x85\x01\n" +
 	"\x10AddEntityRequest\x129\n" +
 	"\ttransform\x18\x01 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
 	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawingB\b\n" +
@@ -1002,12 +1332,32 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x10RemoveAllRequest\"a\n" +
 	"\x11RemoveAllResponse\x12'\n" +
 	"\x0ftransform_count\x18\x01 \x01(\x05R\x0etransformCount\x12#\n" +
-	"\rdrawing_count\x18\x02 \x01(\x05R\fdrawingCount*\x94\x01\n" +
+	"\rdrawing_count\x18\x02 \x01(\x05R\fdrawingCount\"w\n" +
+	"\x19CreateRelationshipRequest\x12\x1f\n" +
+	"\vsource_uuid\x18\x01 \x01(\fR\n" +
+	"sourceUuid\x129\n" +
+	"\frelationship\x18\x02 \x01(\v2\x15.draw.v1.RelationshipR\frelationship\"\x1c\n" +
+	"\x1aCreateRelationshipResponse\"]\n" +
+	"\x19DeleteRelationshipRequest\x12\x1f\n" +
+	"\vsource_uuid\x18\x01 \x01(\fR\n" +
+	"sourceUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x02 \x01(\fR\n" +
+	"targetUuid\"\x1c\n" +
+	"\x1aDeleteRelationshipResponse\"A\n" +
+	"\x15GetEntityChunkRequest\x12\x12\n" +
+	"\x04uuid\x18\x01 \x01(\fR\x04uuid\x12\x14\n" +
+	"\x05start\x18\x02 \x01(\rR\x05start\"\xb5\x01\n" +
+	"\x16GetEntityChunkResponse\x129\n" +
+	"\ttransform\x18\x01 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
+	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawing\x12\x14\n" +
+	"\x05start\x18\x03 \x01(\rR\x05start\x12\x12\n" +
+	"\x04done\x18\x04 \x01(\bR\x04doneB\b\n" +
+	"\x06entity*\x94\x01\n" +
 	"\x10EntityChangeType\x12\"\n" +
 	"\x1eENTITY_CHANGE_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ENTITY_CHANGE_TYPE_ADDED\x10\x01\x12\x1e\n" +
 	"\x1aENTITY_CHANGE_TYPE_REMOVED\x10\x02\x12\x1e\n" +
-	"\x1aENTITY_CHANGE_TYPE_UPDATED\x10\x032\xf3\x05\n" +
+	"\x1aENTITY_CHANGE_TYPE_UPDATED\x10\x032\x84\b\n" +
 	"\vDrawService\x12B\n" +
 	"\tAddEntity\x12\x19.draw.v1.AddEntityRequest\x1a\x1a.draw.v1.AddEntityResponse\x12K\n" +
 	"\fUpdateEntity\x12\x1c.draw.v1.UpdateEntityRequest\x1a\x1d.draw.v1.UpdateEntityResponse\x12K\n" +
@@ -1017,7 +1367,10 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x12StreamSceneChanges\x12\".draw.v1.StreamSceneChangesRequest\x1a#.draw.v1.StreamSceneChangesResponse0\x01\x12`\n" +
 	"\x13RemoveAllTransforms\x12#.draw.v1.RemoveAllTransformsRequest\x1a$.draw.v1.RemoveAllTransformsResponse\x12Z\n" +
 	"\x11RemoveAllDrawings\x12!.draw.v1.RemoveAllDrawingsRequest\x1a\".draw.v1.RemoveAllDrawingsResponse\x12B\n" +
-	"\tRemoveAll\x12\x19.draw.v1.RemoveAllRequest\x1a\x1a.draw.v1.RemoveAllResponseB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\tRemoveAll\x12\x19.draw.v1.RemoveAllRequest\x1a\x1a.draw.v1.RemoveAllResponse\x12]\n" +
+	"\x12CreateRelationship\x12\".draw.v1.CreateRelationshipRequest\x1a#.draw.v1.CreateRelationshipResponse\x12]\n" +
+	"\x12DeleteRelationship\x12\".draw.v1.DeleteRelationshipRequest\x1a#.draw.v1.DeleteRelationshipResponse\x12Q\n" +
+	"\x0eGetEntityChunk\x12\x1e.draw.v1.GetEntityChunkRequest\x1a\x1f.draw.v1.GetEntityChunkResponseB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_service_proto_rawDescOnce sync.Once
@@ -1032,7 +1385,7 @@ func file_draw_v1_service_proto_rawDescGZIP() []byte {
 }
 
 var file_draw_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_draw_v1_service_proto_goTypes = []any{
 	(EntityChangeType)(0),               // 0: draw.v1.EntityChangeType
 	(*AddEntityRequest)(nil),            // 1: draw.v1.AddEntityRequest
@@ -1053,46 +1406,62 @@ var file_draw_v1_service_proto_goTypes = []any{
 	(*StreamSceneChangesResponse)(nil),  // 16: draw.v1.StreamSceneChangesResponse
 	(*RemoveAllRequest)(nil),            // 17: draw.v1.RemoveAllRequest
 	(*RemoveAllResponse)(nil),           // 18: draw.v1.RemoveAllResponse
-	(*v1.Transform)(nil),                // 19: viam.common.v1.Transform
-	(*Drawing)(nil),                     // 20: draw.v1.Drawing
-	(*fieldmaskpb.FieldMask)(nil),       // 21: google.protobuf.FieldMask
-	(*SceneMetadata)(nil),               // 22: draw.v1.SceneMetadata
+	(*CreateRelationshipRequest)(nil),   // 19: draw.v1.CreateRelationshipRequest
+	(*CreateRelationshipResponse)(nil),  // 20: draw.v1.CreateRelationshipResponse
+	(*DeleteRelationshipRequest)(nil),   // 21: draw.v1.DeleteRelationshipRequest
+	(*DeleteRelationshipResponse)(nil),  // 22: draw.v1.DeleteRelationshipResponse
+	(*GetEntityChunkRequest)(nil),       // 23: draw.v1.GetEntityChunkRequest
+	(*GetEntityChunkResponse)(nil),      // 24: draw.v1.GetEntityChunkResponse
+	(*v1.Transform)(nil),                // 25: viam.common.v1.Transform
+	(*Drawing)(nil),                     // 26: draw.v1.Drawing
+	(*fieldmaskpb.FieldMask)(nil),       // 27: google.protobuf.FieldMask
+	(*SceneMetadata)(nil),               // 28: draw.v1.SceneMetadata
+	(*Relationship)(nil),                // 29: draw.v1.Relationship
 }
 var file_draw_v1_service_proto_depIdxs = []int32{
-	19, // 0: draw.v1.AddEntityRequest.transform:type_name -> viam.common.v1.Transform
-	20, // 1: draw.v1.AddEntityRequest.drawing:type_name -> draw.v1.Drawing
-	19, // 2: draw.v1.UpdateEntityRequest.transform:type_name -> viam.common.v1.Transform
-	20, // 3: draw.v1.UpdateEntityRequest.drawing:type_name -> draw.v1.Drawing
-	21, // 4: draw.v1.UpdateEntityRequest.updated_fields:type_name -> google.protobuf.FieldMask
+	25, // 0: draw.v1.AddEntityRequest.transform:type_name -> viam.common.v1.Transform
+	26, // 1: draw.v1.AddEntityRequest.drawing:type_name -> draw.v1.Drawing
+	25, // 2: draw.v1.UpdateEntityRequest.transform:type_name -> viam.common.v1.Transform
+	26, // 3: draw.v1.UpdateEntityRequest.drawing:type_name -> draw.v1.Drawing
+	27, // 4: draw.v1.UpdateEntityRequest.updated_fields:type_name -> google.protobuf.FieldMask
 	0,  // 5: draw.v1.StreamEntityChangesResponse.change_type:type_name -> draw.v1.EntityChangeType
-	19, // 6: draw.v1.StreamEntityChangesResponse.transform:type_name -> viam.common.v1.Transform
-	20, // 7: draw.v1.StreamEntityChangesResponse.drawing:type_name -> draw.v1.Drawing
-	21, // 8: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
-	22, // 9: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
-	22, // 10: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	1,  // 11: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
-	3,  // 12: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
-	5,  // 13: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
-	9,  // 14: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
-	13, // 15: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
-	15, // 16: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	7,  // 17: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
-	11, // 18: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
-	17, // 19: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
-	2,  // 20: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
-	4,  // 21: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
-	6,  // 22: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
-	10, // 23: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
-	14, // 24: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
-	16, // 25: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	8,  // 26: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
-	12, // 27: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
-	18, // 28: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
-	20, // [20:29] is the sub-list for method output_type
-	11, // [11:20] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	25, // 6: draw.v1.StreamEntityChangesResponse.transform:type_name -> viam.common.v1.Transform
+	26, // 7: draw.v1.StreamEntityChangesResponse.drawing:type_name -> draw.v1.Drawing
+	27, // 8: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
+	28, // 9: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	28, // 10: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
+	29, // 11: draw.v1.CreateRelationshipRequest.relationship:type_name -> draw.v1.Relationship
+	25, // 12: draw.v1.GetEntityChunkResponse.transform:type_name -> viam.common.v1.Transform
+	26, // 13: draw.v1.GetEntityChunkResponse.drawing:type_name -> draw.v1.Drawing
+	1,  // 14: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
+	3,  // 15: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
+	5,  // 16: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
+	9,  // 17: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
+	13, // 18: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
+	15, // 19: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
+	7,  // 20: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
+	11, // 21: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
+	17, // 22: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
+	19, // 23: draw.v1.DrawService.CreateRelationship:input_type -> draw.v1.CreateRelationshipRequest
+	21, // 24: draw.v1.DrawService.DeleteRelationship:input_type -> draw.v1.DeleteRelationshipRequest
+	23, // 25: draw.v1.DrawService.GetEntityChunk:input_type -> draw.v1.GetEntityChunkRequest
+	2,  // 26: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
+	4,  // 27: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
+	6,  // 28: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
+	10, // 29: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
+	14, // 30: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
+	16, // 31: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
+	8,  // 32: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
+	12, // 33: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
+	18, // 34: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
+	20, // 35: draw.v1.DrawService.CreateRelationship:output_type -> draw.v1.CreateRelationshipResponse
+	22, // 36: draw.v1.DrawService.DeleteRelationship:output_type -> draw.v1.DeleteRelationshipResponse
+	24, // 37: draw.v1.DrawService.GetEntityChunk:output_type -> draw.v1.GetEntityChunkResponse
+	26, // [26:38] is the sub-list for method output_type
+	14, // [14:26] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_service_proto_init() }
@@ -1101,6 +1470,7 @@ func file_draw_v1_service_proto_init() {
 		return
 	}
 	file_draw_v1_drawing_proto_init()
+	file_draw_v1_metadata_proto_init()
 	file_draw_v1_scene_proto_init()
 	file_draw_v1_service_proto_msgTypes[0].OneofWrappers = []any{
 		(*AddEntityRequest_Transform)(nil),
@@ -1114,13 +1484,17 @@ func file_draw_v1_service_proto_init() {
 		(*StreamEntityChangesResponse_Transform)(nil),
 		(*StreamEntityChangesResponse_Drawing)(nil),
 	}
+	file_draw_v1_service_proto_msgTypes[23].OneofWrappers = []any{
+		(*GetEntityChunkResponse_Transform)(nil),
+		(*GetEntityChunkResponse_Drawing)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_draw_v1_service_proto_rawDesc), len(file_draw_v1_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

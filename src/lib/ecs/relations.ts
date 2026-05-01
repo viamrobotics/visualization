@@ -1,6 +1,6 @@
 import { relation } from 'koota'
 
-export const ChildOf = relation({ exclusive: true })
+export const ChildOf = relation({ exclusive: true, autoDestroy: 'orphan' })
 
 export const SubEntityLinkType = {
 	HoverLink: 'HoverLink',

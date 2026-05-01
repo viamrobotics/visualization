@@ -14,6 +14,7 @@
 	} from '$lib/hooks/useControls.svelte'
 	import { provideDrawAPI } from '$lib/hooks/useDrawAPI.svelte'
 	import { provideDrawService } from '$lib/hooks/useDrawService.svelte'
+	import { provideFrameEditSession } from '$lib/hooks/useFrameEditSession.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { provideFrames } from '$lib/hooks/useFrames.svelte'
 	import { provideGeometries } from '$lib/hooks/useGeometries.svelte'
@@ -22,6 +23,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
+	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideSelection } from '$lib/hooks/useSelection.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
@@ -46,10 +48,12 @@
 
 	provideOrigin()
 	provideDrawAPI()
+	provideRelationships()
 	provideDrawService()
 
 	provideResourceByName(() => partID.current)
 	provideConfigFrames()
+	provideFrameEditSession(() => partID.current)
 	provideFrames(() => partID.current)
 	provideGeometries(() => partID.current)
 	provide3DModels(() => partID.current)

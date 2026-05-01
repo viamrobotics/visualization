@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/golang/geo/r3"
+	"github.com/google/uuid"
+	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
@@ -1283,5 +1285,166 @@ func TestGeneratingSnapshots(t *testing.T) {
 		}
 
 		writeSnapshot(t, snapshot, "visualization_snapshot_model.json")
+	})
+
+	// generates a snapshot showcasing per-entity metadata: axes helper visibility and invisible flag
+	t.Run("snapshot metadata", func(t *testing.T) {
+		snapshot := NewSnapshot(
+			WithSceneCamera(
+				NewSceneCamera(
+					r3.Vector{X: 2000, Y: -2000, Z: 1500},
+					r3.Vector{X: 0, Y: 0, Z: 250},
+				),
+			),
+			WithGrid(false),
+		)
+
+		sphereRadius := 250.0
+
+		// Sphere with ShowAxesHelper=true: the RGB XYZ axes indicator is shown
+		axesOnMeta := NewMetadata(
+			WithMetadataColors(NewColor(WithName("dodgerblue"))),
+			WithMetadataAxesHelper(true),
+		).ToProto()
+		sphereAxesOn, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), sphereRadius, "axes-helper-on")
+		if err != nil {
+			t.Fatal(err)
+		}
+		snapshot.DrawFrame("axes-helper-on", "world",
+			spatialmath.NewPoseFromPoint(r3.Vector{X: -600, Y: 0, Z: 250}),
+			sphereAxesOn, axesOnMeta,
+		)
+
+		// Sphere with ShowAxesHelper=false: no axes indicator rendered
+		axesOffMeta := NewMetadata(
+			WithMetadataColors(NewColor(WithName("crimson"))),
+			WithMetadataAxesHelper(false),
+		).ToProto()
+		sphereAxesOff, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), sphereRadius, "axes-helper-off")
+		if err != nil {
+			t.Fatal(err)
+		}
+		snapshot.DrawFrame("axes-helper-off", "world",
+			spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: 250}),
+			sphereAxesOff, axesOffMeta,
+		)
+
+		// Sphere with Invisible=true: not rendered at all
+		invisibleMeta := NewMetadata(
+			WithMetadataColors(NewColor(WithName("limegreen"))),
+			WithMetadataInvisible(true),
+		).ToProto()
+		sphereInvisible, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), sphereRadius, "invisible-sphere")
+		if err != nil {
+			t.Fatal(err)
+		}
+		snapshot.DrawFrame("invisible-sphere", "world",
+			spatialmath.NewPoseFromPoint(r3.Vector{X: 600, Y: 0, Z: 250}),
+			sphereInvisible, invisibleMeta,
+		)
+
+		// Line drawing with WithAxesHelper(false): no axes indicator on the drawing
+		linePts := []r3.Vector{
+			{X: -600, Y: 0, Z: 600},
+			{X: 0, Y: 0, Z: 600},
+			{X: 600, Y: 0, Z: 600},
+		}
+		line, err := NewLine(linePts,
+			WithSingleLineColor(NewColor(WithName("orange"))),
+			WithLineWidth(15.0),
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lineDrawing := line.Draw("line-no-axes",
+			WithParent("world"),
+			WithPose(spatialmath.NewZeroPose()),
+			WithAxesHelper(false),
+		)
+		snapshot.drawings = append(snapshot.drawings, lineDrawing)
+
+		// Arrows drawing with WithInvisible(true): not rendered
+		arrowPoses := []spatialmath.Pose{
+			spatialmath.NewPose(r3.Vector{X: 600, Y: 0, Z: 650}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
+			spatialmath.NewPose(r3.Vector{X: 650, Y: 50, Z: 650}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
+			spatialmath.NewPose(r3.Vector{X: 550, Y: -50, Z: 650}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
+		}
+		arrows, err := NewArrows(arrowPoses, WithSingleArrowColor(NewColor(WithName("purple"))))
+		if err != nil {
+			t.Fatal(err)
+		}
+		invisibleArrows := arrows.Draw("invisible-arrows",
+			WithParent("world"),
+			WithPose(spatialmath.NewZeroPose()),
+			WithInvisible(true),
+			WithAxesHelper(false),
+		)
+		snapshot.drawings = append(snapshot.drawings, invisibleArrows)
+
+		// Relationship demo: a capsule with arrows pointing outward from its surface,
+		// the arrows carry a HoverLink relationship back to the capsule.
+		capsuleCenter := r3.Vector{X: 0, Y: 1200, Z: 300}
+		capsuleRadius := 120.0
+		capsuleHeight := 400.0
+
+		capsuleID := uuid.NewSHA1(uuidNamespace, []byte("relationship-capsule"))
+		capsuleGeo, err := spatialmath.NewCapsule(spatialmath.NewZeroPose(), capsuleRadius, capsuleHeight, "relationship-capsule")
+		if err != nil {
+			t.Fatal(err)
+		}
+		capsuleConfig := NewDrawConfig("relationship-capsule",
+			WithUUID(capsuleID[:]),
+			WithParent("world"),
+			WithPose(spatialmath.NewPoseFromPoint(capsuleCenter)),
+			WithAxesHelper(false),
+		)
+		capsuleTransform := NewTransform(capsuleConfig, capsuleGeo,
+			WithMetadataColors(NewColor(WithName("teal"))),
+		)
+		snapshot.transforms = append(snapshot.transforms, capsuleTransform)
+
+		// Arrows radiating outward from the capsule surface
+		offset := capsuleRadius + 200
+		radiatingPoses := []spatialmath.Pose{
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X + offset, Y: capsuleCenter.Y, Z: capsuleCenter.Z},
+				&spatialmath.OrientationVectorDegrees{OX: 1},
+			),
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X - offset, Y: capsuleCenter.Y, Z: capsuleCenter.Z},
+				&spatialmath.OrientationVectorDegrees{OX: -1},
+			),
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X, Y: capsuleCenter.Y + offset, Z: capsuleCenter.Z},
+				&spatialmath.OrientationVectorDegrees{OY: 1},
+			),
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X, Y: capsuleCenter.Y - offset, Z: capsuleCenter.Z},
+				&spatialmath.OrientationVectorDegrees{OY: -1},
+			),
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X, Y: capsuleCenter.Y, Z: capsuleCenter.Z + capsuleHeight/2 + offset},
+				&spatialmath.OrientationVectorDegrees{OZ: 1},
+			),
+			spatialmath.NewPose(
+				r3.Vector{X: capsuleCenter.X, Y: capsuleCenter.Y, Z: capsuleCenter.Z - capsuleHeight/2 - offset},
+				&spatialmath.OrientationVectorDegrees{OZ: -1},
+			),
+		}
+		radiatingArrows, err := NewArrows(radiatingPoses, WithSingleArrowColor(NewColor(WithName("coral"))))
+		if err != nil {
+			t.Fatal(err)
+		}
+		radiatingDrawing := radiatingArrows.Draw("relationship-arrows",
+			WithParent("world"),
+			WithPose(spatialmath.NewZeroPose()),
+			WithAxesHelper(false),
+		)
+		radiatingDrawing.Metadata.Relationships = []*drawv1.Relationship{
+			{TargetUuid: capsuleID[:], Type: "HoverLink"},
+		}
+		snapshot.drawings = append(snapshot.drawings, radiatingDrawing)
+
+		writeSnapshot(t, snapshot, "visualization_snapshot_metadata.json")
 	})
 }

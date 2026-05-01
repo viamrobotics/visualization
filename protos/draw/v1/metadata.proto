@@ -22,6 +22,18 @@ message Chunks {
   uint32 stride = 3;
 }
 
+// A directed link from a source entity to a target entity.
+message Relationship {
+  // UUID of the target entity this relationship points to.
+  bytes target_uuid = 1;
+
+  // Free-form link type (e.g. "HoverLink"). Clients decide how to interpret.
+  string type = 2;
+
+  // Optional filtrex expression (variable: `index`). Defaults to "index".
+  optional string index_mapping = 3;
+}
+
 message Metadata {
   // Uint8Array of color values (0-255) based on the color format.
   // Can be a single set of values for a uniform color, or an array of values for per-vertex colors.
@@ -44,4 +56,7 @@ message Metadata {
 
   // When present, indicates this drawing uses chunked delivery.
   optional Chunks chunks = 6;
+
+  // Directed relationships from this entity to other entities.
+  repeated Relationship relationships = 7;
 }

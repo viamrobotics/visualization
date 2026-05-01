@@ -4,12 +4,13 @@
 	import { T } from '@threlte/core'
 	import { Environment, Grid, interactivity, PerfMonitor, PortalTarget } from '@threlte/extras'
 	import { useXR } from '@threlte/xr'
-	import { ShaderMaterial, Vector3 } from 'three'
+	import { ShaderMaterial } from 'three'
 
 	import Camera from '$lib/components/Camera.svelte'
 	import Entities from '$lib/components/Entities/Entities.svelte'
 	import Focus from '$lib/components/Focus.svelte'
 	import Selected from '$lib/components/Selected.svelte'
+	import SelectedTransformControls from '$lib/components/SelectedTransformControls.svelte'
 	import StaticGeometries from '$lib/components/StaticGeometries.svelte'
 	import { useFocusedObject3d } from '$lib/hooks/useSelection.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -71,6 +72,7 @@
 
 	<StaticGeometries />
 	<Selected />
+	<SelectedTransformControls />
 
 	{#if !$isPresenting && settings.current.grid}
 		<Grid
@@ -86,7 +88,7 @@
 			renderOrder={999}
 			cellSize={settings.current.gridCellSize}
 			sectionSize={settings.current.gridSectionSize}
-			fadeOrigin={new Vector3()}
+			fadeOrigin={[0, 0, 0]}
 			fadeDistance={settings.current.gridFadeDistance}
 		/>
 	{/if}

@@ -10,9 +10,9 @@ import (
 )
 
 func TestRemoveTransforms(t *testing.T) {
-	t.Run("RemoveTransformsSetup", func(t *testing.T) {
-		startTestServer(t)
+	startTestServer(t)
 
+	t.Run("RemoveTransformsSetup", func(t *testing.T) {
 		box, err := spatialmath.NewBox(
 			spatialmath.NewPose(
 				r3.Vector{X: 0, Y: 0, Z: 100},
@@ -41,8 +41,6 @@ func TestRemoveTransforms(t *testing.T) {
 	})
 
 	t.Run("RemoveTransforms", func(t *testing.T) {
-		startTestServer(t)
-
 		count, err := RemoveTransforms()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, count, test.ShouldEqual, 1)

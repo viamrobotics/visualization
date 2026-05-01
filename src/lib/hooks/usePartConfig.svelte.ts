@@ -391,7 +391,18 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 		return results
 	})
 
+	let lastPartID: string | undefined
 	$effect.pre(() => {
+		const id = partID()
+		if (lastPartID !== undefined && lastPartID !== id) {
+			// Part changed: drop any in-memory edits/pending-save state from the
+			// previous part. `current` is left for the existing sync below to
+			// repopulate once the new part's networkPartConfig arrives.
+			isDirty = false
+			hasPendingSave = false
+		}
+		lastPartID = id
+
 		if (!networkPartConfig || isDirty) {
 			return
 		}
