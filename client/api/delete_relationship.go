@@ -9,16 +9,31 @@ import (
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 )
 
-// DeleteRelationship removes the directed relationship from sourceUUID to targetUUID.
-func DeleteRelationship(sourceUUID, targetUUID []byte) error {
+// DeleteRelationshipOptions configures a DeleteRelationship call.
+type DeleteRelationshipOptions struct {
+	// SourceUUID identifies the entity the relationship originates from.
+	SourceUUID []byte
+
+	// TargetUUID identifies the entity the relationship points to.
+	TargetUUID []byte
+}
+
+// DeleteRelationship removes the directed relationship from options.SourceUUID
+// to options.TargetUUID.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped
+// RPC error otherwise — most commonly NotFound when the source entity or the
+// matching relationship does not exist, or InvalidArgument when a UUID is
+// missing or malformed.
+func DeleteRelationship(options DeleteRelationshipOptions) error {
 	client := server.GetClient()
 	if client == nil {
 		return ErrVisualizerNotRunning
 	}
 
 	req := connect.NewRequest(&drawv1.DeleteRelationshipRequest{
-		SourceUuid: sourceUUID,
-		TargetUuid: targetUUID,
+		SourceUuid: options.SourceUUID,
+		TargetUuid: options.TargetUUID,
 	})
 	if _, err := client.DeleteRelationship(context.Background(), req); err != nil {
 		return fmt.Errorf("DeleteRelationship failed: %w", err)

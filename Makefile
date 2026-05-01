@@ -1,9 +1,6 @@
 # Default target - show help when no target is specified
 .DEFAULT_GOAL := help
 
-DRAW_DIR := draw
-DRAW_FILES := $(shell find $(DRAW_DIR) -name "*.go" -not -name "*_test.go")
-
 # Calculate hash of protobuf files that affect the build
 define calculate_proto_hash
 	(find protos -type f -exec cat {} \; 2>/dev/null) \
@@ -48,7 +45,6 @@ help:
 	@echo '  up             - Build (if needed) and start the draw server'
 	@echo '  build          - Build the application for production'
 	@echo '  proto          - Generate protobuf code'
-	@echo '  docs           - Generate documentation'
 	@echo '  help           - Show this help message'
 
 .PHONY: setup
@@ -75,12 +71,8 @@ up-check:
 
 .PHONY: up
 up: up-check
-	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production
-
-.PHONY: up-next
-up-next: up-check
 	@WS_PORT=3000 STATIC_PORT=5173 bun run server/server.ts --production > /dev/null 2>&1 &
-	@.bin/draw-server -port 3030 
+	@.bin/draw-server -port 3030
 
 .PHONY: build-clean
 build-clean:
@@ -128,9 +120,3 @@ proto: proto-vendor
 	@$(MAKE) proto-format
 	@$(MAKE) proto-gen-go
 	@$(MAKE) proto-gen-ts
-
-draw/DOCS.md: $(DRAW_FILES)
-	@PATH="$(shell go env GOPATH)/bin:$$PATH" gomarkdoc ./draw -o ./draw/DOCS.md
-
-.PHONY: docs
-docs: draw/DOCS.md

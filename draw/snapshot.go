@@ -16,7 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Snapshot represents a snapshot of a world state
+// Snapshot is a self-contained, serializable scene captured at a single point in
+// time: a set of transforms (physical entities in the frame system), a set of
+// drawings (non-physical visualizations), the scene's render metadata, and a
+// stable UUID. Snapshots are produced by NewSnapshot, populated via the Draw*
+// helpers, and serialized for delivery to the visualizer via MarshalJSON,
+// MarshalBinary, or MarshalBinaryGzip.
 type Snapshot struct {
 	uuid          []byte
 	transforms    []*commonv1.Transform
@@ -24,27 +29,33 @@ type Snapshot struct {
 	sceneMetadata SceneMetadata
 }
 
-// UUID returns the UUID of the snapshot
+// UUID returns the snapshot's stable identifier as a 16-byte slice.
 func (snapshot *Snapshot) UUID() []byte {
 	return snapshot.uuid
 }
 
-// Transforms returns the transforms of the snapshot
+// Transforms returns the transforms (physical entities in the frame system) the
+// snapshot has accumulated. The returned slice is the snapshot's own backing
+// storage; callers should not mutate it.
 func (snapshot *Snapshot) Transforms() []*commonv1.Transform {
 	return snapshot.transforms
 }
 
-// Drawings returns the drawings of the snapshot
+// Drawings returns the drawings (non-physical visualizations) the snapshot has
+// accumulated. The returned slice is the snapshot's own backing storage; callers
+// should not mutate it.
 func (snapshot *Snapshot) Drawings() []*Drawing {
 	return snapshot.drawings
 }
 
-// SceneMetadata returns the scene metadata of the snapshot
+// SceneMetadata returns the snapshot's scene-wide render configuration (camera,
+// grid, default styles, and visibility flags).
 func (snapshot *Snapshot) SceneMetadata() SceneMetadata {
 	return snapshot.sceneMetadata
 }
 
-// ToProto converts the snapshot to a protobuf message
+// ToProto converts the snapshot to a drawv1.Snapshot proto, serializing every
+// drawing via Drawing.ToProto and the scene metadata via SceneMetadata.ToProto.
 func (snapshot *Snapshot) ToProto() *drawv1.Snapshot {
 	drawingProtos := make([]*drawv1.Drawing, len(snapshot.drawings))
 	for i, drawing := range snapshot.drawings {
@@ -59,7 +70,10 @@ func (snapshot *Snapshot) ToProto() *drawv1.Snapshot {
 	}
 }
 
-// MarshalJSON marshals a snapshot to JSON
+// MarshalJSON marshals the snapshot to JSON via protojson, emitting unpopulated
+// fields so the output round-trips faithfully. JSON is the most human-readable
+// format and is convenient for debugging; for delivery to the visualizer, prefer
+// MarshalBinary or MarshalBinaryGzip.
 func (snapshot *Snapshot) MarshalJSON() ([]byte, error) {
 	marshaler := protojson.MarshalOptions{
 		EmitUnpopulated: true,
@@ -68,12 +82,16 @@ func (snapshot *Snapshot) MarshalJSON() ([]byte, error) {
 	return marshaler.Marshal(snapshot.ToProto())
 }
 
-// MarshalBinary marshals a snapshot to binary protobuf format
+// MarshalBinary marshals the snapshot to a compact binary protobuf payload. This
+// is the recommended format when payload size matters but the consumer cannot
+// decompress gzip; otherwise prefer MarshalBinaryGzip.
 func (snapshot *Snapshot) MarshalBinary() ([]byte, error) {
 	return proto.Marshal(snapshot.ToProto())
 }
 
-// MarshalBinaryGzip marshals a snapshot to gzip-compressed binary protobuf format
+// MarshalBinaryGzip marshals the snapshot to a gzip-compressed binary protobuf
+// payload. This is the smallest of the three serialization formats and the best
+// choice for transport over the network or storage on disk.
 func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error) {
 	binaryData, err := snapshot.MarshalBinary()
 	if err != nil {
@@ -92,7 +110,10 @@ func (snapshot *Snapshot) MarshalBinaryGzip() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// NewSnapshot creates a new snapshot with a unique UUID
+// NewSnapshot returns an empty Snapshot with a freshly generated UUID and the
+// given scene-metadata options applied. Without any options, the snapshot uses
+// the package-default scene metadata (perspective camera, grid enabled, every
+// shape category visible).
 func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot {
 	uuidBytes := uuid.New()
 	return &Snapshot{
@@ -103,7 +124,12 @@ func NewSnapshot(sceneOptions ...sceneMetadataOption) *Snapshot {
 	}
 }
 
-// Validate validates a snapshot
+// Validate checks that the snapshot is well-formed: the receiver itself must be
+// non-nil, the UUID must be exactly 16 bytes, the transforms and drawings slices
+// must be non-nil (empty is fine), every transform must carry a reference frame
+// and an observer-frame pose, every drawing must carry a name and pose, and the
+// scene metadata must pass SceneMetadata.Validate. Returns the first failing
+// condition wrapped with context.
 func (snapshot *Snapshot) Validate() error {
 	if snapshot == nil {
 		return fmt.Errorf("snapshot is nil")
@@ -156,8 +182,10 @@ func (snapshot *Snapshot) Validate() error {
 	return nil
 }
 
-// DrawFrameSystemGeometries draws the geometries of a frame system in the world frame to the snapshot.
-// Returns an error if the frame system geometries cannot be drawn.
+// DrawFrameSystemGeometries appends a transform per geometry in frameSystem to
+// the snapshot, evaluated at the given inputs. colors maps frame names to render
+// colors; frames not present in the map inherit from their parent (falling back
+// to magenta at the root). Returns an error if frame system resolution fails.
 func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	frameSystem *referenceframe.FrameSystem,
 	inputs referenceframe.FrameSystemInputs,
@@ -173,7 +201,10 @@ func (snapshot *Snapshot) DrawFrameSystemGeometries(
 	return nil
 }
 
-// DrawFrame draws a frame transform to the snapshot.
+// DrawFrame appends a single transform to the snapshot for a named frame attached
+// to parent at pose, optionally carrying an attached geometry. metadata, if
+// non-nil, is converted via MetadataOptionsFromProto and applied to the
+// transform. The transform is given a fresh random UUID.
 func (snapshot *Snapshot) DrawFrame(
 	name string,
 	parent string,
@@ -187,8 +218,10 @@ func (snapshot *Snapshot) DrawFrame(
 	snapshot.transforms = append(snapshot.transforms, transform)
 }
 
-// DrawGeometry draws a geometry to the snapshot
-// Returns an error if the geometry cannot be drawn.
+// DrawGeometry appends a transform for the given geometry to the snapshot,
+// positioned at pose within the parent reference frame and rendered with color.
+// The transform's name is taken from the geometry's existing label. Returns an
+// error if NewDrawnGeometry or the inner Draw call fails.
 func (snapshot *Snapshot) DrawGeometry(
 	geometry spatialmath.Geometry,
 	pose spatialmath.Pose,
@@ -209,8 +242,10 @@ func (snapshot *Snapshot) DrawGeometry(
 	return nil
 }
 
-// DrawArrows draws arrows to the snapshot
-// Returns an error if the arrows cannot be drawn.
+// DrawArrows constructs an Arrows from poses and the supplied DrawArrowsOptions
+// and appends the resulting drawing to the snapshot, positioned at pose within
+// the parent reference frame. Returns the same validation errors NewArrows would
+// return (e.g. mismatched color count).
 func (snapshot *Snapshot) DrawArrows(
 	name string,
 	parent string,
@@ -228,8 +263,10 @@ func (snapshot *Snapshot) DrawArrows(
 	return nil
 }
 
-// DrawLine draws a line to the snapshot
-// Returns an error if the line cannot be drawn.
+// DrawLine constructs a Line from points and the supplied DrawLineOptions and
+// appends the resulting drawing to the snapshot, positioned at pose within the
+// parent reference frame. Returns the same validation errors NewLine would
+// return (e.g. fewer than 2 points, mismatched color count).
 func (snapshot *Snapshot) DrawLine(
 	name string,
 	parent string,
@@ -247,8 +284,10 @@ func (snapshot *Snapshot) DrawLine(
 	return nil
 }
 
-// DrawModelFromURL draws a model from a URL to the snapshot
-// Returns an error if the model cannot be drawn.
+// DrawModel constructs a Model from the supplied DrawModelOptions and appends
+// the resulting drawing to the snapshot, positioned at pose within the parent
+// reference frame. Returns the same validation errors NewModel would return
+// (e.g. no assets supplied, zero scale on any axis).
 func (snapshot *Snapshot) DrawModel(
 	name string,
 	parent string,
@@ -265,8 +304,10 @@ func (snapshot *Snapshot) DrawModel(
 	return nil
 }
 
-// DrawPoints draws a set of points to the snapshot
-// Returns an error if the points cannot be drawn.
+// DrawPoints constructs a Points from positions and the supplied DrawPointsOptions
+// and appends the resulting drawing to the snapshot, positioned at pose within
+// the parent reference frame. Returns the same validation errors NewPoints would
+// return (e.g. empty positions, mismatched color count).
 func (snapshot *Snapshot) DrawPoints(
 	name string,
 	parent string,

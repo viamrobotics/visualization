@@ -13,19 +13,21 @@ import (
 
 // SetCameraPoseOptions configures a SetCamera call.
 type SetCameraPoseOptions struct {
-	// The camera position in millimeters (world coordinates).
+	// Position is the camera location in millimeters, expressed in world
+	// coordinates.
 	Position r3.Vector
-
-	// The point the camera should look at in millimeters (world coordinates).
+	// LookAt is the point in millimeters, expressed in world coordinates, that
+	// the camera is aimed at.
 	LookAt r3.Vector
-
-	// Whether to animate the camera movement to this pose.
+	// Animate, when true, smoothly animates the camera from its current pose
+	// rather than snapping to the new one.
 	Animate bool
 }
 
-// SetCamera sets the visualizer's camera pose.
-// The camera position and look-at point are specified in millimeters.
-// Returns an error if the server is not running or the RPC fails.
+// SetCamera repositions the visualizer's camera to the given pose. The camera
+// type (perspective or orthographic) is left untouched. Returns
+// ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped RPC error
+// if the SetScene call fails.
 func SetCamera(options SetCameraPoseOptions) error {
 	client := server.GetClient()
 	if client == nil {
@@ -52,8 +54,10 @@ func SetCamera(options SetCameraPoseOptions) error {
 	return nil
 }
 
-// ResetCamera resets the visualizer's camera pose to the default.
-// Returns an error if the server is not running or the RPC fails.
+// ResetCamera moves the visualizer's camera back to the package-default pose
+// (draw.DefaultSceneCamera: an isometric view from [3000, 3000, 3000]mm looking
+// at the origin), without animation. Returns ErrVisualizerNotRunning if no
+// visualizer is reachable, or a wrapped RPC error if the SetScene call fails.
 func ResetCamera() error {
 	client := server.GetClient()
 	if client == nil {

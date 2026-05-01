@@ -41,34 +41,40 @@ func newDrawPointsConfig() *drawPointsConfig {
 	}
 }
 
-// DrawPointsOption is a function that configures a draw points configuration
+// DrawPointsOption configures sizing and color settings for a Points constructed
+// via NewPoints. When multiple options touch the same field, the last option in the
+// argument list wins.
 type DrawPointsOption func(*drawPointsConfig)
 
-// WithPointsSize creates a points option that sets the size of each point in millimeters.
+// WithPointsSize sets the rendered diameter of every point in millimeters.
 func WithPointsSize(size float32) DrawPointsOption {
 	return func(config *drawPointsConfig) {
 		config.pointSize = size
 	}
 }
 
-// WithSinglePointColor creates a points option that sets the color for all points.
+// WithSinglePointColor uses a single color for every point.
 func WithSinglePointColor(color Color) DrawPointsOption {
 	return withColors[*drawPointsConfig]([]Color{color})
 }
 
-// WithPerPointColors creates a points option that sets the colors for each point.
+// WithPerPointColors assigns one color per point. The number of colors must equal
+// the number of positions passed to NewPoints.
 func WithPerPointColors(colors ...Color) DrawPointsOption {
 	return withColors[*drawPointsConfig](colors)
 }
 
-// WithPointColorPalette creates a points option that sets the colors for each point using a color palette.
+// WithPointColorPalette generates numPoints per-point colors by cycling through the
+// given palette. Pass numPoints equal to the number of positions passed to NewPoints.
 func WithPointColorPalette(palette []Color, numPoints int) DrawPointsOption {
 	return withColorPalette[*drawPointsConfig](palette, numPoints)
 }
 
-// NewPoints creates a new Points object from the given positions and optional configuration.
-// Returns an error if positions are empty, if the point size is non-positive, or if the number
-// of colors doesn't match requirements (must be 1 or equal to number of positions).
+// NewPoints returns a Points at the given positions. Without any color option, every
+// point is rendered with DefaultPointColor at DefaultPointSize. Returns an error if
+// positions is empty, if the configured point size is non-positive, or if the
+// configured color count is neither 1 (shared color) nor len(positions) (per-point
+// colors).
 func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("positions cannot be empty")
@@ -94,7 +100,9 @@ func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, err
 	}, nil
 }
 
-// Draw creates a Drawing from this Points object.
+// Draw wraps the Points in a Drawing identified by name. The DrawableOptions
+// control placement (parent frame, pose, center), identity (UUID), and visibility —
+// see DrawableOption for the full set.
 func (points Points) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithPoints(points))

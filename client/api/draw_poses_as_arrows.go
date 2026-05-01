@@ -13,30 +13,39 @@ import (
 
 // DrawPosesAsArrowsOptions configures a DrawPosesAsArrows call.
 type DrawPosesAsArrowsOptions struct {
-	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
+	// ID is a stable identifier for the entity. When set, calling
+	// DrawPosesAsArrows again with the same ID updates the existing entity in
+	// place; when empty, each call creates a new entity with a freshly
+	// generated UUID.
 	ID string
-
-	// The name of the entity.
+	// Name labels the entity in the visualizer. Must be ASCII printable and at
+	// most 100 characters.
 	Name string
-
-	// The parent frame name. If empty, defaults to "world".
+	// Parent is the reference frame the arrows are attached to. Defaults to
+	// "world" when empty.
 	Parent string
-
-	// The poses to draw.
+	// Poses are the positions and orientations rendered as individual arrows.
+	// Required.
 	Poses []spatialmath.Pose
-
-	// Colors is the list of colors to use for the arrows.
-	// Can be a single color for all arrows, per-arrow colors, or a color palette to cycle through.
-	// If empty, defaults to DefaultArrowColor.
+	// Colors controls how the arrows are colored. With no colors, every arrow
+	// uses draw.DefaultArrowColor (green). Pass one color to share it across
+	// all arrows; pass exactly len(Poses) colors for per-arrow colors; pass
+	// any other count to cycle through the slice as a palette.
 	Colors []draw.Color
-
-	// Attrs holds optional entity attributes (e.g. visibility).
+	// Attrs carries optional shared display attributes (axes helper, default
+	// visibility). Nil leaves all attributes at their defaults.
 	Attrs *Attrs
 }
 
-// DrawPosesAsArrows draws a list of poses in the visualizer as arrows.
-// Calling DrawPosesAsArrows with an ID that already exists will instead update the arrows.
-// Returns the UUID of the drawn poses, or an error if the server is not running or the drawing fails.
+// DrawPosesAsArrows sends a set of poses to the visualizer as a drawing of
+// arrows, one arrow per pose. Passing an ID that already exists updates the
+// previously drawn entity in place; otherwise a new entity is created. Returns
+// the UUID assigned by the server.
+//
+// Returns an error when Name is not ASCII printable or exceeds 100 characters,
+// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
+// validation error if the arrows cannot be constructed (see draw.NewArrows —
+// mismatched color count), or a wrapped RPC error if the AddEntity call fails.
 func DrawPosesAsArrows(options DrawPosesAsArrowsOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

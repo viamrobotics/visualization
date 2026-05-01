@@ -7,16 +7,25 @@ import (
 	"go.viam.com/rdk/referenceframe"
 )
 
-// DrawnGeometriesInFrame is a collection of geometries that have been drawn from a referenceframe.GeometriesInFrame.
+// DrawnGeometriesInFrame wraps a referenceframe.GeometriesInFrame as a set of
+// DrawnGeometry values that share a common parent frame, ready to be emitted as
+// transforms.
 type DrawnGeometriesInFrame struct {
-	// Name is an optional prefix applied to each geometry's reference frame label when calling ToTransforms.
-	// Empty means no prefix (reference frames are just the raw geometry labels).
+	// ID is an optional identity prefix included in each emitted transform's
+	// UUID derivation. When non-empty, each transform's identity is derived
+	// from "ID:label:parent" rather than the default "label:parent", which
+	// namespaces transforms across batches that share geometry labels and a
+	// parent frame (e.g., two robots whose link geometries collide on label).
+	// ID does not affect visible labels.
+	ID string
+	// Name is an optional prefix applied to each emitted transform's label. When
+	// non-empty, each transform is labelled "Name:geometryLabel"; when empty, the
+	// raw geometry label is used.
 	Name string
-
-	// Parent is the parent reference frame of the geometries.
+	// Parent is the parent reference frame the geometries are expressed in.
 	Parent string
-
-	// DrawnGeometries holds the individual drawn geometries.
+	// DrawnGeometries holds the individual geometries plus their per-geometry
+	// render colors.
 	DrawnGeometries []*DrawnGeometry
 }
 
@@ -36,33 +45,46 @@ func newDrawnGeometriesInFrameConfig() *drawnGeometriesInFrameConfig {
 	}
 }
 
-// DrawGeometriesInFrameOption is a functional option for configuring a DrawGeometriesInFrame
+// DrawGeometriesInFrameOption configures color and downscaling settings for a
+// DrawnGeometriesInFrame produced by NewDrawnGeometriesInFrame. When multiple
+// options touch the same field, the last option in the argument list wins.
 type DrawGeometriesInFrameOption func(*drawnGeometriesInFrameConfig)
 
-// WithSingleGeometriesColor creates a geometries in frame option that sets the color for all geometries.
+// WithSingleGeometriesColor renders every geometry in the collection with the
+// given shared color.
 func WithSingleGeometriesColor(color Color) DrawGeometriesInFrameOption {
 	return withColors[*drawnGeometriesInFrameConfig]([]Color{color})
 }
 
-// WithPerGeometriesColors creates a geometries in frame option that sets the colors for each geometry.
+// WithPerGeometriesColors assigns one color per geometry. The number of colors
+// must equal the number of geometries in the GeometriesInFrame passed to
+// NewDrawnGeometriesInFrame.
 func WithPerGeometriesColors(colors ...Color) DrawGeometriesInFrameOption {
 	return withColors[*drawnGeometriesInFrameConfig](colors)
 }
 
-// WithGeometriesColorPalette creates a geometries in frame option that iterates through colors for geometries.
+// WithGeometriesColorPalette generates numGeometries per-geometry colors by
+// cycling through the given palette. Pass numGeometries equal to the number of
+// geometries in the GeometriesInFrame.
 func WithGeometriesColorPalette(palette []Color, numGeometries int) DrawGeometriesInFrameOption {
 	return withColorPalette[*drawnGeometriesInFrameConfig](palette, numGeometries)
 }
 
-// WithGeometriesDownscalingThreshold creates a geometries in frame option that sets the threshold in millimeters for downscaling.
+// WithGeometriesDownscalingThreshold reduces the number of rendered points in any
+// point-cloud geometries in the collection by keeping only points whose mutual
+// distance exceeds threshold (millimeters). A threshold of 0 (the default)
+// disables downscaling. Has no effect on non-point-cloud geometries.
 func WithGeometriesDownscalingThreshold(threshold float64) DrawGeometriesInFrameOption {
 	return func(config *drawnGeometriesInFrameConfig) {
 		config.downscalingThreshold = threshold
 	}
 }
 
-// NewDrawnGeometriesInFrame creates a new DrawnGeometriesInFrame object from the given geometries and options.
-// Returns an error if the number of colors doesn't match the number of geometries.
+// NewDrawnGeometriesInFrame returns a DrawnGeometriesInFrame wrapping every
+// geometry in geometriesInFrame as a colored DrawnGeometry. Returns an error if
+// the configured color count is neither 1 (shared color) nor equal to the number
+// of geometries, or if any per-geometry construction fails (e.g., point-cloud
+// downscaling errors).
 func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFrame, options ...DrawGeometriesInFrameOption) (*DrawnGeometriesInFrame, error) {
 	geometries := geometriesInFrame.Geometries()
 	config := newDrawnGeometriesInFrameConfig()
@@ -100,8 +122,14 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
 }
 
-// ToTransforms produces a []*commonv1.Transform for each geometry in the collection.
-// The Name field is used as a prefix for each geometry's reference frame label (empty = no prefix).
+// ToTransforms returns one transform per geometry in the collection. Each
+// transform's label is the geometry label, optionally prefixed with the
+// receiver's Name field — see DrawnGeometriesInFrame.Name for the prefixing
+// rules. Each transform's identity is derived from "label:parent", or
+// "ID:label:parent" when DrawnGeometriesInFrame.ID is non-empty. The supplied
+// DrawableOptions configure the parent frame and pose used as the basis for
+// every emitted transform; per-call UUID overrides on the options have no
+// effect. Returns an error if any geometry's transform construction fails.
 func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent
@@ -119,6 +147,9 @@ func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...Dr
 		}
 
 		id := fmt.Sprintf("%s:%s", label, parent)
+		if drawnGeometriesInFrame.ID != "" {
+			id = fmt.Sprintf("%s:%s", drawnGeometriesInFrame.ID, id)
+		}
 		transform, err := drawnGeometry.Draw(label, WithParent(parent), WithPose(pose), WithID(id))
 		if err != nil {
 			return nil, err

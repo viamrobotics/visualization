@@ -9,25 +9,47 @@ import (
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 )
 
-// CreateRelationship creates or replaces a directed relationship from sourceUUID to targetUUID.
-// The type_ parameter is a free-form string (e.g. "HoverLink") and indexMapping is an optional
-// filtrex expression (defaults to "index" on the server when empty).
-func CreateRelationship(sourceUUID, targetUUID []byte, type_ string, indexMapping string) error {
+// CreateRelationshipOptions configures a CreateRelationship call.
+type CreateRelationshipOptions struct {
+	// SourceUUID identifies the entity the relationship originates from.
+	SourceUUID []byte
+
+	// TargetUUID identifies the entity the relationship points to.
+	TargetUUID []byte
+
+	// Type is a free-form string identifying the relationship kind (e.g. "HoverLink").
+	Type string
+
+	// IndexMapping is an optional filtrex expression. Empty defaults to the
+	// server's "index" mapping.
+	IndexMapping string
+}
+
+// CreateRelationship creates or replaces a directed relationship from
+// options.SourceUUID to options.TargetUUID. If a relationship from the same
+// source to the same target already exists, it is replaced in place;
+// otherwise a new relationship is appended to the source entity's metadata.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped
+// RPC error otherwise — most commonly InvalidArgument when source and target
+// UUIDs are equal or malformed, or NotFound when either entity does not
+// exist.
+func CreateRelationship(options CreateRelationshipOptions) error {
 	client := server.GetClient()
 	if client == nil {
 		return ErrVisualizerNotRunning
 	}
 
 	rel := &drawv1.Relationship{
-		TargetUuid: targetUUID,
-		Type:       type_,
+		TargetUuid: options.TargetUUID,
+		Type:       options.Type,
 	}
-	if indexMapping != "" {
-		rel.IndexMapping = &indexMapping
+	if options.IndexMapping != "" {
+		rel.IndexMapping = &options.IndexMapping
 	}
 
 	req := connect.NewRequest(&drawv1.CreateRelationshipRequest{
-		SourceUuid:   sourceUUID,
+		SourceUuid:   options.SourceUUID,
 		Relationship: rel,
 	})
 	if _, err := client.CreateRelationship(context.Background(), req); err != nil {

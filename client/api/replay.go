@@ -18,9 +18,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Record starts recording all drawing operations to the specified file.
-// The scene is cleared first to ensure the recording is self-contained.
-// Call StopRecord to finish recording.
+// Record starts recording every subsequent draw-service RPC made by this
+// process to filename, in a custom line-based hex format consumed by Replay.
+// The scene is cleared via RemoveAll before recording begins so the resulting
+// file represents a complete session that can be replayed against an empty
+// scene. Call StopRecord to flush and close the recording.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped
+// error if RemoveAll or recorder startup fails.
 func Record(filename string) error {
 	if _, err := RemoveAll(); err != nil {
 		return fmt.Errorf("failed to clear scene before recording: %w", err)
@@ -38,16 +43,27 @@ func Record(filename string) error {
 	return nil
 }
 
-// StopRecord stops the current recording session.
+// StopRecord stops the current recording session, flushing and closing the
+// output file. Calling StopRecord when no recording is active is a no-op.
 func StopRecord() {
 	if recorder := server.GetRecorder(); recorder != nil {
 		recorder.StopRecording()
 	}
 }
 
-// Replay replays a previously recorded session from the specified file.
-// playbackSpeed controls replay speed (1.0 = normal, 2.0 = 2×, 0.5 = half speed).
-// The scene is cleared before replay to match the recording's initial state.
+// Replay replays a previously recorded session from filename. Any active
+// recording is stopped first, then RemoveAll clears the current scene to
+// match the recording's empty starting state. Each recorded RPC is decoded
+// from its hex payload and dispatched against the live draw service.
+//
+// playbackSpeed scales the inter-RPC sleep durations: 1.0 plays back at
+// real-time, 2.0 plays back at 2× speed, 0.5 plays back at half speed.
+// playbackSpeed must be > 0; values <= 0 cause divisions that produce
+// undefined sleep durations.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, a wrapped
+// filesystem error if filename cannot be opened, or a wrapped RPC error if
+// any replayed call fails.
 func Replay(filename string, playbackSpeed float64) error {
 	if recorder := server.GetRecorder(); recorder != nil && recorder.IsRecording() {
 		StopRecord()

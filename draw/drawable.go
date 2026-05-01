@@ -11,17 +11,27 @@ import (
 
 var uuidNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
-// DrawConfig holds the resolved configuration for a Draw call: the name used as the
-// reference frame (and geometry/shape label), the parent frame, the pose of the Drawing/Transform
-// in the parent frame, the local center of the Shape, and a stable UUID.
+// DrawConfig holds the resolved configuration produced by NewDrawConfig and consumed
+// by drawing primitives such as NewDrawing and NewTransform. Most callers obtain a
+// DrawConfig via NewDrawConfig rather than constructing one directly.
 type DrawConfig struct {
-	UUID           []byte
-	Name           string
-	Parent         string
-	Pose           spatialmath.Pose
-	Center         spatialmath.Pose
+	// UUID is a stable, byte-encoded identifier for the resulting Drawing or Transform.
+	UUID []byte
+	// Name is the reference-frame name used to identify the Drawing or Transform; it
+	// is also used as the geometry/shape label in serialized output.
+	Name string
+	// Parent is the name of the reference frame this entity is attached to.
+	Parent string
+	// Pose is the pose of the Drawing or Transform expressed in the parent frame.
+	Pose spatialmath.Pose
+	// Center is the local center of the Shape within the Drawing's own frame.
+	Center spatialmath.Pose
+	// ShowAxesHelper requests that the visualizer render an RGB XYZ axes helper at
+	// the entity's origin.
 	ShowAxesHelper bool
-	Invisible      bool
+	// Invisible hides the entity from rendering by default; the user can still toggle
+	// it on in the visualizer.
+	Invisible bool
 }
 
 type drawableDrawing interface {
@@ -52,10 +62,15 @@ type drawableConfig struct {
 	invisible      bool
 }
 
-// DrawableOption is a function that configures a drawable.
+// DrawableOption configures shared identity, placement, and rendering settings for a
+// drawable entity. It is accepted by NewDrawConfig and by the Draw method on every
+// drawable primitive (Arrows, Line, Points, Nurbs, Model, DrawnGeometry, and
+// DrawnPointCloud). When the same field is set by multiple options, the last option
+// in the argument list wins.
 type DrawableOption func(*drawableConfig)
 
-// WithParent sets the parent reference frame for the Drawing or Transform.
+// WithParent sets the parent reference frame for the Drawing or Transform. Defaults
+// to referenceframe.World.
 func WithParent(parent string) DrawableOption {
 	return func(config *drawableConfig) {
 		config.parent = parent
@@ -63,6 +78,7 @@ func WithParent(parent string) DrawableOption {
 }
 
 // WithPose sets the pose of the Drawing or Transform in the parent reference frame.
+// Defaults to the identity pose (origin, no rotation).
 func WithPose(pose spatialmath.Pose) DrawableOption {
 	return func(config *drawableConfig) {
 		config.pose = pose
@@ -70,20 +86,25 @@ func WithPose(pose spatialmath.Pose) DrawableOption {
 }
 
 // WithCenter sets the local center of the Shape within the Drawing's own frame.
+// Defaults to the identity pose.
 func WithCenter(center spatialmath.Pose) DrawableOption {
 	return func(config *drawableConfig) {
 		config.center = center
 	}
 }
 
-// WithUUID overrides the auto-generated UUID with an explicit byte slice.
+// WithUUID overrides the auto-generated UUID with an explicit byte slice. If both
+// WithUUID and WithID are provided, the last one to appear in the option list wins.
 func WithUUID(id []byte) DrawableOption {
 	return func(config *drawableConfig) {
 		config.uuid = id
 	}
 }
 
-// WithID overrides the auto-generated UUID by deriving one deterministically from the given string.
+// WithID overrides the auto-generated UUID with one derived deterministically from
+// the given string (UUID v5 over a fixed namespace). The same input always produces
+// the same UUID. If both WithUUID and WithID are provided, the last one to appear
+// in the option list wins.
 func WithID(id string) DrawableOption {
 	derived := uuid.NewSHA1(uuidNamespace, []byte(id))
 	return func(config *drawableConfig) {
@@ -91,14 +112,16 @@ func WithID(id string) DrawableOption {
 	}
 }
 
-// WithAxesHelper controls whether the axes helper (RGB XYZ indicator) is shown on the entity.
+// WithAxesHelper controls whether the visualizer renders an RGB XYZ axes helper at
+// the entity's origin. Defaults to true.
 func WithAxesHelper(show bool) DrawableOption {
 	return func(config *drawableConfig) {
 		config.showAxesHelper = show
 	}
 }
 
-// WithInvisible controls whether the entity is invisible (not rendered) by default.
+// WithInvisible hides the entity from rendering by default when set to true; the
+// user can still toggle visibility on in the visualizer. Defaults to false.
 func WithInvisible(invisible bool) DrawableOption {
 	return func(config *drawableConfig) {
 		config.invisible = invisible
@@ -114,13 +137,26 @@ func (c *DrawConfig) metadataOptions() []DrawMetadataOption {
 	}
 }
 
-// BuildMetadata combines universal metadata options with the given type-specific options.
+// BuildMetadata returns Metadata seeded with the universal fields carried by the
+// DrawConfig (axes helper visibility, invisibility) and overlaid with the given
+// type-specific options. Type-specific options that touch the same fields take
+// precedence over the universal defaults.
 func (c *DrawConfig) BuildMetadata(opts ...DrawMetadataOption) Metadata {
 	return NewMetadata(append(c.metadataOptions(), opts...)...)
 }
 
-// NewDrawConfig resolves all options into a DrawConfig. UUID is derived from name:parent
-// after options are applied unless explicitly set via WithUUID or WithID.
+// NewDrawConfig resolves the given options into a DrawConfig.
+//
+// Defaults applied when options omit a field:
+//   - Parent: referenceframe.World
+//   - Pose: identity pose
+//   - Center: identity pose
+//   - ShowAxesHelper: true
+//   - Invisible: false
+//
+// If neither WithUUID nor WithID is supplied, UUID is derived deterministically
+// from the "name:parent" pair using UUID v5 so that the same name and parent always
+// produce the same UUID.
 func NewDrawConfig(name string, options ...DrawableOption) *DrawConfig {
 	config := &drawableConfig{
 		parent:         referenceframe.World,

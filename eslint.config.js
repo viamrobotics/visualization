@@ -30,11 +30,8 @@ export default defineConfig(
 			},
 		},
 	},
+
 	includeIgnoreFile(gitignorePath),
-	{
-		ignores: ['draw/DOCS.md', 'draw/__snapshots__'],
-		name: 'ignores',
-	},
 
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

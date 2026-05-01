@@ -1,5 +1,41 @@
 # motion-tools
 
+## 1.23.2
+
+### Patch Changes
+
+- 645d74b: Fix unreadable text in the Details panel under dark mode by swapping
+  `dark:text-black` for `dark:text-white` on the panel container so child
+  text contrasts against dark surroundings rather than disappearing.
+
+## 1.23.1
+
+### Patch Changes
+
+- 7e52e42: Capture save keyboard event before hitting input bindings
+
+## 1.23.0
+
+### Minor Changes
+
+- 29903ad: Enable draw service API by default, add migration doc
+
+### Patch Changes
+
+- 29903ad: Fix frames not rendering for offline parts when the embedder skips dialing. The merge fallback now triggers whenever the connection is not actively `CONNECTED`, instead of only when explicitly `DISCONNECTED`, so config-derived frames render even when `connectionStatus` is `undefined` or `CONNECTING`.
+- 29903ad: useInputMap for navigation controls
+- 29903ad: Add opacity slider to `Details` panel
+
+## 1.22.0
+
+### Minor Changes
+
+- 8ead73e: Add transform controls.
+
+### Patch Changes
+
+- b54ac3b: Fix file drop being triggered by dragging numbers
+
 ## 1.21.0
 
 ### Minor Changes

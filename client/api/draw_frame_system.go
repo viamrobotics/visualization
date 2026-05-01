@@ -13,22 +13,34 @@ import (
 
 // DrawFrameSystemOptions configures a DrawFrameSystem call.
 type DrawFrameSystemOptions struct {
-	// A unique identifier for the frame system. Can be empty.
+	// ID is an optional identifier prefix for this batch. When non-empty,
+	// each emitted transform's identity is derived from
+	// "ID:geometryLabel:parent" rather than the default "geometryLabel:parent",
+	// which prevents collisions between frame systems that share geometry
+	// labels (e.g., two robots in the same scene). Calling DrawFrameSystem
+	// again with the same ID and matching geometries updates the previous
+	// batch in place.
 	ID string
-
-	// The frame system to draw.
+	// FrameSystem is the reference frame system to render. Required.
 	FrameSystem *referenceframe.FrameSystem
-
-	// The frame system inputs (joint angles, etc.).
+	// Inputs are the frame system inputs (joint positions, etc.) used to
+	// resolve each frame's pose.
 	Inputs referenceframe.FrameSystemInputs
-
-	// Optional color map for specific frames by name.
-	// Frames without specified colors inherit their parent's color or default to magenta.
+	// Colors maps frame names to render colors. Frames not present in the
+	// map inherit their color from their parent frame, falling back to
+	// magenta at the root.
 	Colors map[string]draw.Color
 }
 
-// DrawFrameSystem draws a frame system in the visualizer by rendering all geometries to the world frame.
-// Returns the UUIDs of all drawn transforms, or an error if the server is not running or the drawing fails.
+// DrawFrameSystem renders every geometry in a reference frame system as a
+// transform, evaluated at the given inputs. Identities are namespaced by ID
+// when set, so calling DrawFrameSystem again with the same ID and matching
+// geometries updates the previous batch in place. Returns one UUID per
+// emitted transform.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, the
+// underlying error if frame system geometry resolution fails, or a wrapped
+// RPC error if any AddEntity call fails.
 func DrawFrameSystem(options DrawFrameSystemOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
@@ -40,6 +52,7 @@ func DrawFrameSystem(options DrawFrameSystemOptions) ([][]byte, error) {
 	}
 
 	drawnFrameSystem := draw.NewDrawnFrameSystem(options.FrameSystem, options.Inputs, draw.WithFrameSystemColors(options.Colors))
+	drawnFrameSystem.ID = options.ID
 	transforms, err := drawnFrameSystem.ToTransforms()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create frame system geometries: %w", err)

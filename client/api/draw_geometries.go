@@ -13,27 +13,40 @@ import (
 
 // DrawGeometriesInFrameOptions configures a DrawGeometriesInFrame call.
 type DrawGeometriesInFrameOptions struct {
-	// A unique identifier for the geometries group. Can be empty.
+	// ID is an optional identifier prefix for this batch. When non-empty, each
+	// drawn geometry's identity is derived from "ID:label:parent" rather than
+	// the default "label:parent", which prevents collisions between batches
+	// that share geometry labels and a parent frame (e.g., two robots whose
+	// link geometries collide on label). Calling DrawGeometriesInFrame again
+	// with the same ID and matching geometries updates the previous batch in
+	// place; passing a fresh ID creates a new, independent set of entities.
 	ID string
-
-	// The geometries to draw.
+	// Geometries is the set of geometries to render. Required and must contain
+	// at least one geometry.
 	Geometries *referenceframe.GeometriesInFrame
-
-	// The colors to draw the geometries with. Must contain at least one color.
-	// Provide one color to use the same color for all geometries, one per geometry for
-	// per-geometry colors, or any other count to cycle through as a palette.
+	// Colors controls how the geometries are colored. When empty, every
+	// geometry is rendered red. Pass one color to share it across all
+	// geometries; pass exactly len(Geometries) colors for per-geometry colors;
+	// pass any other count to cycle through the slice as a palette.
 	Colors []draw.Color
-
-	// The downscaling threshold for point clouds in millimeters. Points closer than this
-	// distance to one another are culled, reducing the total point count and improving
-	// rendering performance. Set to 0 (default) to disable downscaling.
+	// DownscalingThreshold reduces the rendered point count for any point-cloud
+	// geometries by keeping only points whose mutual distance exceeds this
+	// threshold (millimeters). 0 (the default) disables downscaling. Has no
+	// effect on non-point-cloud geometries.
 	DownscalingThreshold float64
 }
 
-// DrawGeometriesInFrame draws a list of geometries in the visualizer.
-// Calling DrawGeometriesInFrame with geometries that share labels with previously drawn
-// geometries will update those geometries in place.
-// Returns the UUIDs of the drawn geometries, or an error if the server is not running or the drawing fails.
+// DrawGeometriesInFrame sends a batch of geometries to the visualizer as
+// transforms, one transform per geometry. Each transform's identity is derived
+// from "ID:geometryLabel:parentFrame" (or "geometryLabel:parentFrame" when ID
+// is empty), so calling DrawGeometriesInFrame again with the same ID and a
+// geometry whose label and parent match a previously drawn one updates that
+// entity in place. Returns one UUID per drawn geometry, in input order.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, an error if
+// Geometries is empty or the underlying construction fails (see
+// draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if any AddEntity call
+// fails.
 func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
@@ -45,17 +58,18 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 		return nil, fmt.Errorf("no geometries to draw")
 	}
 
-	if len(options.Colors) == 0 {
-		return nil, fmt.Errorf("at least one color must be provided")
+	colors := options.Colors
+	if len(colors) == 0 {
+		colors = []draw.Color{draw.ColorFromName("red")}
 	}
 
 	var colorOption draw.DrawGeometriesInFrameOption
-	if len(options.Colors) == 1 {
-		colorOption = draw.WithSingleGeometriesColor(options.Colors[0])
-	} else if len(options.Colors) == len(geometries) {
-		colorOption = draw.WithPerGeometriesColors(options.Colors...)
+	if len(colors) == 1 {
+		colorOption = draw.WithSingleGeometriesColor(colors[0])
+	} else if len(colors) == len(geometries) {
+		colorOption = draw.WithPerGeometriesColors(colors...)
 	} else {
-		colorOption = draw.WithGeometriesColorPalette(options.Colors, len(geometries))
+		colorOption = draw.WithGeometriesColorPalette(colors, len(geometries))
 	}
 
 	drawnGeometries, err := draw.NewDrawnGeometriesInFrame(
@@ -66,6 +80,7 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to create drawn geometries: %w", err)
 	}
+	drawnGeometries.ID = options.ID
 
 	transforms, err := drawnGeometries.ToTransforms()
 	if err != nil {

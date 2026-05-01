@@ -13,40 +13,50 @@ import (
 
 // DrawNurbsOptions configures a DrawNurbs call.
 type DrawNurbsOptions struct {
-	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
+	// ID is a stable identifier for the entity. When set, calling DrawNurbs
+	// again with the same ID updates the existing entity in place; when empty,
+	// each call creates a new entity with a freshly generated UUID.
 	ID string
-
-	// The name of the entity.
+	// Name labels the entity in the visualizer. Must be ASCII printable and at
+	// most 100 characters.
 	Name string
-
-	// The parent frame name. If empty, defaults to "world".
+	// Parent is the reference frame the curve is attached to. Defaults to
+	// "world" when empty.
 	Parent string
-
-	// Control points that define the curve shape.
+	// ControlPoints defines the poses that influence the curve's shape.
+	// Required.
 	ControlPoints []spatialmath.Pose
-
-	// Knots vector that determines parameter values along the curve.
+	// Knots is the knot vector that determines parameter values along the
+	// curve. Length must equal len(ControlPoints) + Degree + 1.
 	Knots []float64
-
-	// Color of the curve.
+	// Color is the render color for the curve.
 	Color draw.Color
-
-	// Degree specifies the polynomial degree of the curve. If 0, uses the default (3).
+	// Degree is the polynomial degree of the curve. Higher degrees produce
+	// smoother curves but require more control points and a longer knot
+	// vector. 0 (the default) uses draw.DefaultNurbsDegree (3, cubic).
 	Degree int32
-
-	// Weights controls the influence of each control point. If empty, defaults to 1.0 for each point.
+	// Weights sets the per-control-point influence on the curve; higher
+	// weights pull the curve closer to that control point. When non-empty,
+	// length must equal len(ControlPoints). Empty (the default) is treated as
+	// 1.0 for every control point (uniform weighting).
 	Weights []float64
-
-	// LineWidth is the width of the line segments in millimeters. If 0, uses the default.
+	// LineWidth is the rendered thickness of the curve in millimeters. 0 (the
+	// default) uses draw.DefaultLineWidth (5mm).
 	LineWidth float32
-
-	// Attrs holds optional entity attributes (e.g. visibility).
+	// Attrs carries optional shared display attributes (axes helper, default
+	// visibility). Nil leaves all attributes at their defaults.
 	Attrs *Attrs
 }
 
-// DrawNurbs draws a NURBS curve in the visualizer.
-// Calling DrawNurbs with an ID that already exists will instead update the curve.
-// Returns the UUID of the drawn NURBS curve, or an error if the server is not running or the drawing fails.
+// DrawNurbs sends a NURBS curve to the visualizer as a drawing. Passing an ID
+// that already exists updates the previously drawn entity in place; otherwise
+// a new entity is created. Returns the UUID assigned by the server.
+//
+// Returns an error when Name is not ASCII printable or exceeds 100 characters,
+// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
+// validation error if the curve cannot be constructed (see draw.NewNurbs —
+// empty control points or knots, mismatched lengths, non-positive degree,
+// etc.), or a wrapped RPC error if the AddEntity call fails.
 func DrawNurbs(options DrawNurbsOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

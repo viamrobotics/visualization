@@ -45,8 +45,9 @@ export const provideFrames = (partID: () => string) => {
 	$effect.pre(() => {
 		const id = partID()
 		if (lastPartID !== undefined && lastPartID !== id) {
-			// Stale across parts: keeps the configFrames-priority merge branch
-			// active when switching to a new part that hasn't been edited.
+			// Don't let an edited flag from the previous part bleed into the
+			// new one — the merge condition would otherwise stay forced on for
+			// a freshly-switched part the user hasn't touched.
 			didRecentlyEdit = false
 		}
 		lastPartID = id
@@ -81,12 +82,16 @@ export const provideFrames = (partID: () => string) => {
 			}
 		}
 
-		// Let config frames take priority if the user has made edits,
-		// has a pending save, or is disconnected
+		// Let config frames take priority if the user has made edits, has a
+		// pending save, or we don't have a live robot connection. The latter
+		// covers DISCONNECTED, CONNECTING, and the undefined case where the
+		// embedder never provided a dial config (e.g. the Viam app's
+		// dialConfigsForParts filters to live parts only, so offline parts
+		// never transition through DISCONNECTED).
 		if (
 			didRecentlyEdit ||
 			partConfig.hasPendingSave ||
-			connectionStatus.current === MachineConnectionEvent.DISCONNECTED
+			connectionStatus.current !== MachineConnectionEvent.CONNECTED
 		) {
 			const mergedFrames = {
 				...frames,

@@ -64,12 +64,20 @@ func TestRelationships(t *testing.T) {
 	})
 
 	t.Run("CreateRelationship", func(t *testing.T) {
-		err := CreateRelationship(entityUUIDFromID(sourceID), entityUUIDFromID(targetID), "HoverLink", "index")
+		err := CreateRelationship(CreateRelationshipOptions{
+			SourceUUID:   entityUUIDFromID(sourceID),
+			TargetUUID:   entityUUIDFromID(targetID),
+			Type:         "HoverLink",
+			IndexMapping: "index",
+		})
 		test.That(t, err, test.ShouldBeNil)
 	})
 
 	t.Run("DeleteRelationship", func(t *testing.T) {
-		err := DeleteRelationship(entityUUIDFromID(sourceID), entityUUIDFromID(targetID))
+		err := DeleteRelationship(DeleteRelationshipOptions{
+			SourceUUID: entityUUIDFromID(sourceID),
+			TargetUUID: entityUUIDFromID(targetID),
+		})
 		test.That(t, err, test.ShouldBeNil)
 	})
 }

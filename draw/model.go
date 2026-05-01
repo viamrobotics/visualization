@@ -45,32 +45,39 @@ func newDrawModelConfig() *drawModelConfig {
 	}
 }
 
-// DrawModelOption is a function that configures a draw model configuration
+// DrawModelOption configures asset, scale, and animation settings for a Model
+// constructed via NewModel. When multiple options touch the same field, the last
+// option in the argument list wins.
 type DrawModelOption func(*drawModelConfig)
 
-// WithModelAssets creates a model option that adds one or more assets to the model.
+// WithModelAssets sets the list of assets to attach to the model. Repeated calls
+// replace (not append to) the previous list. NewModel requires at least one asset.
 func WithModelAssets(assets ...*ModelAsset) DrawModelOption {
 	return func(config *drawModelConfig) {
 		config.assets = assets
 	}
 }
 
-// WithModelScale creates a model option that sets the scaling factors for each axis.
+// WithModelScale sets the model's per-axis scaling factor. Defaults to
+// DefaultModelScale (1.0 on each axis). NewModel rejects scales with any zero axis.
 func WithModelScale(scale r3.Vector) DrawModelOption {
 	return func(config *drawModelConfig) {
 		config.scale = scale
 	}
 }
 
-// WithModelAnimationName creates a model option that specifies which animation to play.
+// WithModelAnimationName selects an animation embedded in the model assets to play
+// on render. The empty string (the default) disables animation playback.
 func WithModelAnimationName(animationName string) DrawModelOption {
 	return func(config *drawModelConfig) {
 		config.animationName = animationName
 	}
 }
 
-// NewModel creates a new Model with the given options. Returns an error if no assets are provided
-// or if the scale values are non-positive.
+// NewModel returns a Model assembled from the given options. Defaults: empty asset
+// list (which causes NewModel to fail), Scale = DefaultModelScale, AnimationName = "".
+// Returns an error if no assets were supplied via WithModelAssets, or if any scale
+// axis is zero.
 func NewModel(options ...DrawModelOption) (*Model, error) {
 	config := newDrawModelConfig()
 	for _, option := range options {
@@ -92,7 +99,9 @@ func NewModel(options ...DrawModelOption) (*Model, error) {
 	}, nil
 }
 
-// Draw creates a Drawing from this Model object.
+// Draw wraps the Model in a Drawing identified by name. The DrawableOptions control
+// placement (parent frame, pose, center), identity (UUID), and visibility — see
+// DrawableOption for the full set.
 func (model Model) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithModel(model))
