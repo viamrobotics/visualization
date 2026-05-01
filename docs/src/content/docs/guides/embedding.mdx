@@ -40,17 +40,17 @@ export const ssr = false
 
 In Astro, add `client:only="svelte"` to the component tag instead.
 
-## Mounting `<MotionTools />`
+## Mounting `<Visualizer />`
 
-`<MotionTools />` is the entire visualizer rendered as a single Svelte component. It expects an explicitly-sized parent because it stretches to fill its container:
+`<Visualizer />` is the entire visualizer rendered as a single Svelte component. It expects an explicitly-sized parent because it stretches to fill its container:
 
 ```svelte
 <script lang="ts">
-	import { MotionTools } from '@viamrobotics/motion-tools'
+	import { Visualizer } from '@viamrobotics/motion-tools'
 </script>
 
 <div class="h-screen w-screen">
-	<MotionTools />
+	<Visualizer />
 </div>
 ```
 
