@@ -9,10 +9,14 @@ draw/v1
 src/lib/buf
 
 # Docs
-draw/DOCS.md
+docs/.astro
+docs/public/playground
+docs/dist
+docs/src/content/docs/api
 
 # Snapshots
 draw/__snapshots__
+e2e/*.ts-snapshots 
 
 # IDE
 .cursor
