@@ -13,7 +13,7 @@
 </script>
 
 <svelte:window
-	onkeydown={(event) => {
+	onkeydowncapture={(event) => {
 		if (event.metaKey && event.key.toLowerCase() === 's') {
 			event.preventDefault()
 			event.stopImmediatePropagation()
