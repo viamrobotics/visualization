@@ -26,7 +26,8 @@ type DrawGLTFOptions struct {
 	// FilePath is the path to the .glb or .gltf file.
 	FilePath string
 
-	// Scale specifies the scaling factors for each axis. All dimensions must be non-zero.
+	// Scale specifies the scaling factors for each axis. Defaults to (1, 1, 1)
+	// (no scaling) when omitted. If set, all three components must be non-zero.
 	Scale r3.Vector
 
 	// Attrs holds optional entity attributes (e.g. visibility).
@@ -56,12 +57,12 @@ func DrawGLTF(options DrawGLTFOptions) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create model asset: %w", err)
 	}
 
-	scale := options.Scale
-	if scale.X == 0 || scale.Y == 0 || scale.Z == 0 {
-		return nil, fmt.Errorf("scale dimensions must be non-zero, got %v; use (1,1,1) to apply no scaling", scale)
+	modelOpts := []draw.DrawModelOption{draw.WithModelAssets(asset)}
+	if options.Scale != (r3.Vector{}) {
+		modelOpts = append(modelOpts, draw.WithModelScale(options.Scale))
 	}
 
-	model, err := draw.NewModel(draw.WithModelAssets(asset), draw.WithModelScale(scale))
+	model, err := draw.NewModel(modelOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create model: %w", err)
 	}
