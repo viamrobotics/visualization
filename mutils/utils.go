@@ -1,3 +1,5 @@
+// Package mutils contains utilities for motion tools.
+// This will be moved into `draw` in v2
 package mutils
 
 import (
