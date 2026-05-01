@@ -54,7 +54,8 @@ jobs:
         if: github.event.action != 'closed'
         uses: bufbuild/buf-setup-action@v1
         with:
-          version: 'latest'
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install root deps
         if: github.event.action != 'closed'
