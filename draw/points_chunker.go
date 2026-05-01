@@ -6,13 +6,20 @@ import (
 	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
 )
 
-// PointsChunker implements DrawableChunker for Points.
+// PointsChunker is a DrawableChunker that splits a Points value into chunks of
+// positions for progressive upload to the draw service. It is the streaming
+// counterpart to Points.Draw, useful when a Points value is too large to send
+// in a single RPC.
 type PointsChunker struct {
 	baseChunker
 	points *Points
 }
 
-// NewPointsChunker creates a DrawableChunker for the given points.
+// NewPointsChunker returns a PointsChunker that streams points as a series of
+// chunks. name labels the resulting entity in the visualizer. chunkSize sets the
+// maximum number of positions per chunk; pass 0 (or any non-positive value) to
+// use the package default. opts apply to the resulting entity as a whole — see
+// DrawableOption for the supported set.
 func NewPointsChunker(points *Points, name string, chunkSize int, opts ...DrawableOption) *PointsChunker {
 	return &PointsChunker{
 		baseChunker: newBaseChunker(name, chunkSize, opts),
@@ -20,9 +27,19 @@ func NewPointsChunker(points *Points, name string, chunkSize int, opts ...Drawab
 	}
 }
 
-func (chunker *PointsChunker) TotalElements() uint32 { return uint32(len(chunker.points.Positions)) }
-func (chunker *PointsChunker) NumChunks() int        { return chunker.numChunks(chunker.TotalElements()) }
+// TotalElements returns the total number of positions in the underlying Points.
+func (chunker *PointsChunker) TotalElements() uint32 {
+	return uint32(len(chunker.points.Positions))
+}
 
+// NumChunks returns the number of chunks that will be produced.
+func (chunker *PointsChunker) NumChunks() int {
+	return chunker.numChunks(chunker.TotalElements())
+}
+
+// Chunks returns a channel that yields each chunk in order. The channel is
+// closed when all chunks have been produced; chunk-generation errors are logged
+// and cause the channel to close early.
 func (chunker *PointsChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {

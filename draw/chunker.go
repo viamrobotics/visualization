@@ -35,8 +35,16 @@ func (b *baseChunker) numChunks(total uint32) int {
 
 // Chunk holds a single chunk of data as a ready-to-send proto.
 type Chunk struct {
-	Proto   *drawv1.Drawing
-	Start   uint32
+	// Proto is the drawv1.Drawing payload for this chunk; the first chunk carries
+	// the full entity shape, while later chunks carry only the additional data
+	// to append.
+	Proto *drawv1.Drawing
+	// Start is the index of the first element in this chunk relative to the full
+	// entity (0 for the first chunk, ChunkSize for the second, and so on).
+	Start uint32
+	// IsFirst is true only for the first chunk in the stream and signals to
+	// senders that the entity should be created (AddEntity) rather than appended
+	// to (UpdateEntity).
 	IsFirst bool
 }
 
@@ -54,15 +62,25 @@ type DrawableChunker interface {
 	Chunks() <-chan Chunk
 }
 
-// ChunkProgress reports the progress of a chunked entity upload.
+// ChunkProgress reports the progress of a chunked entity upload after each chunk
+// has been sent.
 type ChunkProgress struct {
+	// Index is the zero-based position of the chunk that was just sent.
 	Index int
-	Sent  uint32
+	// Sent is the cumulative number of entity elements (points, vertices, etc.)
+	// sent across all chunks so far.
+	Sent uint32
+	// Total is the total number of elements expected across the entire entity,
+	// taken from the Chunks metadata supplied to NewChunkSender.
 	Total uint32
-	Done  bool
+	// Done is true once Sent has reached Total.
+	Done bool
 }
 
-// ChunkSender provides caller-paced iteration over streamed entity chunks.
+// ChunkSender drives the upload of a chunked entity to a draw service. Iteration
+// is caller-paced: each call to Next sends exactly one chunk and returns control
+// to the caller, allowing the caller to throttle, retry, or interleave other work
+// between chunks.
 type ChunkSender struct {
 	streamed   <-chan Chunk
 	client     drawv1connect.DrawServiceClient
@@ -74,7 +92,10 @@ type ChunkSender struct {
 	onProgress func(ChunkProgress)
 }
 
-// NewChunkSender creates a ChunkSender from a DrawableChunker and a client.
+// NewChunkSender returns a ChunkSender that ferries the given chunker's output to
+// the supplied draw service client. metadata supplies the chunk-size, total
+// element count, and stride attached to the first chunk. onProgress is invoked
+// after each successful chunk send; pass nil to skip progress reporting.
 func NewChunkSender(
 	chunker DrawableChunker,
 	client drawv1connect.DrawServiceClient,
@@ -89,8 +110,12 @@ func NewChunkSender(
 	}
 }
 
-// Next sends the next chunk to the draw service.
-// Returns io.EOF when all chunks have been sent.
+// Next sends the next chunk to the draw service. The first call issues an
+// AddEntity RPC to create the entity (and records the server-assigned UUID for
+// retrieval via UUID); subsequent calls issue UpdateEntity RPCs against that UUID.
+// After each successful send, the configured progress callback (if any) is invoked.
+// Returns io.EOF when every chunk has been sent, or a wrapped RPC error if a send
+// fails.
 func (s *ChunkSender) Next() error {
 	if s.done {
 		return io.EOF
@@ -147,13 +172,15 @@ func (s *ChunkSender) Next() error {
 	return nil
 }
 
-// UUID returns the entity UUID assigned by the server after the first chunk.
-// Returns nil if Next has not been called yet.
+// UUID returns the entity UUID assigned by the server after the first chunk has
+// been sent. Returns nil if Next has not been called yet, or if the first send
+// failed.
 func (s *ChunkSender) UUID() []byte {
 	return s.uuid
 }
 
-// Done returns true when all chunks have been sent.
+// Done reports whether the sender has exhausted its chunk channel; once true,
+// subsequent calls to Next return io.EOF without making any RPCs.
 func (s *ChunkSender) Done() bool {
 	return s.done
 }

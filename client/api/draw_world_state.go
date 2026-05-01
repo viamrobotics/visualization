@@ -13,25 +13,38 @@ import (
 
 // DrawWorldStateOptions configures a DrawWorldState call.
 type DrawWorldStateOptions struct {
-	// A unique identifier for the world state. Can be empty.
+	// ID is an optional identifier prefix for this batch. When non-empty,
+	// each emitted transform's identity is derived from
+	// "ID:geometryLabel:parent" rather than the default "geometryLabel:parent",
+	// which prevents collisions between world-state batches that share
+	// geometry labels. Calling DrawWorldState again with the same ID and
+	// matching obstacles updates the previous batch in place.
 	ID string
-
-	// The world state to draw.
+	// WorldState contains the obstacles to render. Required.
 	WorldState *referenceframe.WorldState
-
-	// The frame system for the world state.
+	// FrameSystem is the reference frame system used to resolve obstacles
+	// expressed in non-world frames into the world frame.
 	FrameSystem *referenceframe.FrameSystem
-
-	// The inputs for the frame system.
+	// Inputs are the frame system inputs used to evaluate frame poses during
+	// obstacle resolution.
 	Inputs referenceframe.FrameSystemInputs
-
-	// Colors for the geometries in the world state.
-	// If not provided, the geometries will be colored using the default color chooser.
+	// Colors controls how the obstacles are colored. With no colors,
+	// obstacles are colored by cycling draw.ChromaticColorChooser. Pass one
+	// color to share it across all obstacles; pass exactly the obstacle
+	// count for per-obstacle colors; pass any other count to cycle through
+	// the slice as a palette.
 	Colors []draw.Color
 }
 
-// DrawWorldState draws a world state in the visualizer.
-// Returns the UUIDs of the drawn geometries, or an error if the server is not running or the drawing fails.
+// DrawWorldState resolves the obstacles in a world state to the world frame
+// and renders each as a transform. Identities are namespaced by ID when set,
+// so calling DrawWorldState again with the same ID and matching obstacles
+// updates the previous batch in place. Returns one UUID per obstacle.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, the
+// underlying error if obstacle resolution fails or geometry construction
+// fails (see draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if any
+// AddEntity call fails.
 func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
@@ -61,6 +74,7 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	drawnGeometries.ID = options.ID
 
 	transforms, err := drawnGeometries.ToTransforms()
 	if err != nil {

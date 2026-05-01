@@ -12,42 +12,57 @@ import (
 	"go.viam.com/rdk/pointcloud"
 )
 
-// DrawPointCloudOptions configures a DrawPointCloud or StreamEntity call.
+// DrawPointCloudOptions configures a DrawPointCloud call.
 type DrawPointCloudOptions struct {
-	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
+	// ID is a stable identifier for the entity. When set, calling
+	// DrawPointCloud again with the same ID updates the existing entity in
+	// place; when empty, each call creates a new entity with a freshly
+	// generated UUID.
 	ID string
-
-	// The name of the entity.
+	// Name labels the entity in the visualizer. Must be ASCII printable and at
+	// most 100 characters.
 	Name string
-
-	// The point cloud to draw.
+	// PointCloud is the underlying cloud to render. Required.
 	PointCloud pointcloud.PointCloud
-
-	// The name of the parent frame. If empty, the point cloud will be parented to the "world" frame.
+	// Parent is the reference frame the cloud is attached to. Defaults to
+	// "world" when empty.
 	Parent string
-
-	// The downscaling threshold for point clouds in millimeters.
+	// DownscalingThreshold reduces the rendered point count by keeping only
+	// points whose mutual distance exceeds this threshold (millimeters). 0
+	// (the default) disables downscaling. Note: downscaling is O(n^2) in the
+	// input point count.
 	DownscalingThreshold float64
-
-	// The colors to draw the point cloud with.
-	// Can be a single color, one color per point, or a color palette.
-	// If not provided, the point cloud's color data will be used.
+	// Colors controls how the cloud is colored. With no colors, the cloud's
+	// own per-point color data (if any) is used by the visualizer. Pass one
+	// color to override with a single shared color; pass exactly
+	// PointCloud.Size() colors for per-point colors; pass any other count to
+	// cycle through the slice as a palette.
 	Colors []draw.Color
-
-	// ChunkSize is the number of points per chunk when streaming.
-	// - When > 0, the point cloud is sent in chunks of this many points.
-	// - Otherwise, the point cloud is sent in a single call.
+	// ChunkSize, when > 0, splits the cloud into chunks of this many points
+	// and delivers them progressively over multiple RPCs (one AddEntity call
+	// followed by UpdateEntity calls). When 0, the entire cloud is sent in a
+	// single AddEntity call. Use chunked delivery for large clouds to avoid
+	// oversize payloads and surface progress in the UI.
 	ChunkSize int
-
-	// OnProgress is called after each chunk is sent during chunked delivery.
+	// OnProgress is invoked after each chunk is sent during chunked delivery.
+	// Ignored when ChunkSize is 0. Pass nil to skip progress reporting.
 	OnProgress func(draw.ChunkProgress)
-
-	// Attrs holds optional entity attributes (e.g. visibility).
+	// Attrs carries optional shared display attributes (axes helper, default
+	// visibility). Nil leaves all attributes at their defaults.
 	Attrs *Attrs
 }
 
-// DrawPointCloud draws a PointCloud in the visualizer.
-// Returns the UUID of the drawn point cloud, or an error if the server is not running or the drawing fails.
+// DrawPointCloud sends a point cloud to the visualizer as a transform. Passing
+// an ID that already exists updates the previously drawn entity in place;
+// otherwise a new entity is created. When ChunkSize > 0, the cloud is streamed
+// over multiple RPCs and OnProgress (if provided) is invoked after each chunk.
+// Returns the UUID assigned by the server.
+//
+// Returns an error when Name is not ASCII printable or exceeds 100 characters,
+// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
+// validation error if the cloud cannot be constructed (see
+// draw.NewDrawnPointCloud — negative downscaling threshold, etc.), or a
+// wrapped RPC error if a network call fails.
 func DrawPointCloud(options DrawPointCloudOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

@@ -88,7 +88,15 @@ func (entity *chunkedEntity) close() {
 	entity.opacities.close()
 }
 
-// DrawService stores transforms and drawings keyed by UUID and fans out change events to streaming subscribers.
+// DrawService is the in-memory backing store and Connect-RPC handler for the draw
+// service. It keeps every transform and drawing keyed by UUID, persists scene
+// metadata, and fans out add/update/remove events to streaming subscribers.
+//
+// Chunked drawings (point clouds and similar large entities) are accumulated to
+// disk under a configurable temp directory and served on demand via
+// GetEntityChunk; the rest of the state lives entirely in memory.
+//
+// All public methods are safe for concurrent use.
 type DrawService struct {
 	mu            sync.RWMutex
 	entities      map[uuid.UUID]storedEntity
@@ -101,7 +109,11 @@ type DrawService struct {
 	nextSubID  atomic.Uint64
 }
 
-// NewDrawService creates a new DrawService ready to serve requests.
+// NewDrawService returns a DrawService whose chunked-entity payloads are buffered
+// in tempDir. If tempDir is empty, os.TempDir is used. The directory is created
+// if it does not exist and any stale chunk files left over from a previous run
+// are removed at startup. NewDrawService never fails: directory or cleanup
+// errors are logged and the service is returned anyway.
 func NewDrawService(tempDir string) *DrawService {
 	if tempDir == "" {
 		tempDir = os.TempDir()
@@ -187,8 +199,16 @@ func (svc *DrawService) removeSceneSub(id uint64) {
 	}
 }
 
-// AddEntity adds a transform or drawing to the scene and returns its UUID.
-// If the entity carries a non-empty Uuid field, AddEntity performs an upsert.
+// AddEntity stores a transform or drawing and returns the assigned UUID. If the
+// incoming entity carries a valid Uuid, that ID is used (replacing any existing
+// entity with the same ID — i.e. upsert); otherwise a fresh UUID is generated.
+//
+// Drawings whose metadata.chunks field is set are registered as chunked entities:
+// the first call captures the template and the initial chunk, and subsequent
+// chunks must be delivered via UpdateEntity.
+//
+// Returns InvalidArgument if the entity, transform, or drawing field is missing,
+// and Internal if a chunked entity cannot be initialized on disk.
 func (svc *DrawService) AddEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.AddEntityRequest],
@@ -323,7 +343,18 @@ func addedOrUpdated(exists bool) drawv1.EntityChangeType {
 	return drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED
 }
 
-// UpdateEntity replaces or partially updates an existing entity identified by UUID.
+// UpdateEntity replaces or partially updates an existing entity identified by
+// UUID. When updated_fields is non-empty, only the listed proto field paths are
+// merged into the stored entity; otherwise the incoming entity replaces the
+// stored one wholesale. The kind of the incoming entity must match the kind of
+// the stored entity (transform vs. drawing).
+//
+// For chunked drawings, UpdateEntity is also the channel for delivering
+// subsequent chunks: each call appends positions, colors, and opacities to the
+// on-disk buffer for the entity.
+//
+// Returns InvalidArgument for missing or malformed inputs, NotFound when no
+// entity has the given UUID, and Internal if a chunk cannot be persisted.
 func (svc *DrawService) UpdateEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.UpdateEntityRequest],
@@ -590,8 +621,15 @@ func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
 	return msg
 }
 
-// CreateRelationship creates or replaces a relationship from source to the target specified
-// in the relationship. The relationship is stored in the source entity's metadata.
+// CreateRelationship creates or replaces a relationship from the source entity
+// to the target named in the relationship. Relationships are stored in the
+// source entity's metadata; an existing relationship with the same target_uuid
+// is replaced in place rather than duplicated. The change is published to entity
+// subscribers as an UPDATED event on the source.
+//
+// Returns InvalidArgument for missing source_uuid, relationship, or
+// target_uuid, when source and target UUIDs are equal, or when a UUID byte
+// slice cannot be parsed; NotFound when either entity does not exist.
 func (svc *DrawService) CreateRelationship(
 	_ context.Context,
 	req *connect.Request[drawv1.CreateRelationshipRequest],
@@ -649,7 +687,11 @@ func (svc *DrawService) CreateRelationship(
 	return connect.NewResponse(&drawv1.CreateRelationshipResponse{}), nil
 }
 
-// DeleteRelationship removes the relationship from source to target_uuid.
+// DeleteRelationship removes the relationship from the source entity to
+// target_uuid and publishes an UPDATED event on the source.
+//
+// Returns InvalidArgument for missing source_uuid or target_uuid, NotFound when
+// the source entity does not exist or no matching relationship is found.
 func (svc *DrawService) DeleteRelationship(
 	_ context.Context,
 	req *connect.Request[drawv1.DeleteRelationshipRequest],
@@ -720,7 +762,13 @@ func (svc *DrawService) cascadeRemoveRelationships(removedID uuid.UUID) {
 	}
 }
 
-// RemoveEntity removes the entity with the given UUID from the scene.
+// RemoveEntity removes the entity with the given UUID and publishes a REMOVED
+// event. If the entity is a chunked drawing, its on-disk buffers are released.
+// Any relationship pointing at the removed entity is dropped from other
+// entities' metadata, and each affected source emits its own UPDATED event.
+//
+// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no
+// entity has the given UUID.
 func (svc *DrawService) RemoveEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.RemoveEntityRequest],
@@ -767,8 +815,17 @@ func (svc *DrawService) RemoveEntity(
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
 
-// GetEntityChunk returns a chunk of accumulated data for a chunked entity.
-// Blocks until the requested data is available or the context is cancelled.
+// GetEntityChunk returns a single chunk of accumulated data from a chunked
+// entity, starting at the requested element index. The call blocks until enough
+// data has been accumulated to satisfy the request or the entity is marked
+// complete; passing a context with a deadline is the recommended way to bound
+// the wait. The Done flag in the response is set when the returned chunk
+// finishes the entity.
+//
+// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no
+// chunked entity has the given UUID, Canceled if the context is cancelled
+// before the chunk becomes available, and Internal if the chunk cannot be
+// rebuilt from the on-disk buffer.
 func (svc *DrawService) GetEntityChunk(
 	ctx context.Context,
 	req *connect.Request[drawv1.GetEntityChunkRequest],
@@ -837,8 +894,12 @@ func (svc *DrawService) GetEntityChunk(
 	}), nil
 }
 
-// StreamEntityChanges streams entity change events (add/update/remove) to the caller until the context is cancelled.
-// On connect, replays the current world state so new subscribers see all existing entities.
+// StreamEntityChanges streams ADDED, UPDATED, and REMOVED events for every
+// transform and drawing in the scene. On connect, the current world state is
+// replayed as a series of ADDED events so new subscribers see existing entities
+// before live updates begin. The stream ends when the request context is
+// cancelled. Subscriber channels have a bounded buffer; events that would block
+// a slow consumer are dropped and a warning is logged.
 func (svc *DrawService) StreamEntityChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamEntityChangesRequest],
@@ -966,7 +1027,10 @@ func (svc *DrawService) buildChunkedReplayMsg(entity *chunkedEntity) *drawv1.Str
 	}
 }
 
-// SetScene stores scene metadata and notifies scene subscribers.
+// SetScene replaces the current scene metadata and publishes the new metadata
+// to every scene subscriber.
+//
+// Returns InvalidArgument if scene_metadata is nil.
 func (svc *DrawService) SetScene(
 	_ context.Context,
 	req *connect.Request[drawv1.SetSceneRequest],
@@ -986,7 +1050,9 @@ func (svc *DrawService) SetScene(
 	return connect.NewResponse(&drawv1.SetSceneResponse{}), nil
 }
 
-// StreamSceneChanges streams scene metadata changes to the caller until the context is cancelled.
+// StreamSceneChanges streams every subsequent SetScene call as a scene-changes
+// event. Unlike StreamEntityChanges, the current scene metadata is not replayed
+// on connect. The stream ends when the request context is cancelled.
 func (svc *DrawService) StreamSceneChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamSceneChangesRequest],
@@ -1017,7 +1083,9 @@ func (svc *DrawService) StreamSceneChanges(
 	}
 }
 
-// RemoveAllTransforms removes all transform entities from the scene and returns the count removed.
+// RemoveAllTransforms removes every transform entity, publishes a REMOVED event
+// for each, and cascades any relationships pointing at the removed transforms.
+// Drawings are left untouched. Returns the number of transforms removed.
 func (svc *DrawService) RemoveAllTransforms(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllTransformsRequest],
@@ -1046,7 +1114,10 @@ func (svc *DrawService) RemoveAllTransforms(
 	return connect.NewResponse(&drawv1.RemoveAllTransformsResponse{Count: count}), nil
 }
 
-// RemoveAllDrawings removes all drawing entities from the scene and returns the count removed.
+// RemoveAllDrawings removes every drawing entity, releases any associated
+// chunked-entity buffers, publishes a REMOVED event for each, and cascades any
+// relationships pointing at the removed drawings. Transforms are left
+// untouched. Returns the number of drawings removed.
 func (svc *DrawService) RemoveAllDrawings(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllDrawingsRequest],
@@ -1079,7 +1150,11 @@ func (svc *DrawService) RemoveAllDrawings(
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil
 }
 
-// RemoveAll removes all entities (transforms and drawings) from the scene.
+// RemoveAll removes every transform and drawing entity, releases any associated
+// chunked-entity buffers, and publishes a REMOVED event for each. Returns the
+// number of transforms and drawings removed. Note: unlike RemoveAllTransforms
+// and RemoveAllDrawings, this method does not run the relationship cascade
+// because every entity is being removed.
 func (svc *DrawService) RemoveAll(
 	_ context.Context,
 	_ *connect.Request[drawv1.RemoveAllRequest],

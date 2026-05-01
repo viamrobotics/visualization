@@ -27,25 +27,31 @@ func newDrawArrowsConfig() *drawArrowsConfig {
 	}
 }
 
+// DrawArrowsOption configures color settings for an Arrows constructed via NewArrows.
+// When multiple color options are supplied, the last one wins.
 type DrawArrowsOption func(*drawArrowsConfig)
 
-// WithSingleArrowColor sets the color for all arrows.
+// WithSingleArrowColor uses a single color for every arrow.
 func WithSingleArrowColor(color Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig]([]Color{color})
 }
 
-// WithPerArrowColors sets the color for each arrow.
+// WithPerArrowColors assigns one color per arrow. The number of colors must equal
+// the number of poses passed to NewArrows.
 func WithPerArrowColors(colors ...Color) DrawArrowsOption {
 	return withColors[*drawArrowsConfig](colors)
 }
 
-// WithArrowColorPalette sets the color for each arrow using a color palette.
+// WithArrowColorPalette generates numPoses per-arrow colors by cycling through the
+// given palette. Pass numPoses equal to the number of poses passed to NewArrows.
 func WithArrowColorPalette(palette []Color, numPoses int) DrawArrowsOption {
 	return withColorPalette[*drawArrowsConfig](palette, numPoses)
 }
 
-// NewArrows creates a new Arrows object from the given poses and optional configuration.
-// Returns an error if the number of colors doesn't match the requirements (must be 1 or equal to number of poses).
+// NewArrows returns an Arrows positioned at the given poses. Without any color
+// option, every arrow is rendered with DefaultArrowColor. Returns an error if the
+// configured color count is neither 1 (single shared color) nor len(poses) (one
+// color per arrow).
 func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, error) {
 	config := newDrawArrowsConfig()
 	for _, option := range options {
@@ -59,7 +65,9 @@ func NewArrows(poses []spatialmath.Pose, options ...DrawArrowsOption) (*Arrows, 
 	return &Arrows{Poses: poses, Colors: config.colors}, nil
 }
 
-// Draw creates a Drawing from this Arrows object.
+// Draw wraps the Arrows in a Drawing identified by name. The DrawableOptions control
+// placement (parent frame, pose, center), identity (UUID), and visibility — see
+// DrawableOption for the full set.
 func (arrows Arrows) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithArrows(arrows))

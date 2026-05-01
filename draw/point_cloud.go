@@ -8,22 +8,27 @@ import (
 	"go.viam.com/rdk/pointcloud"
 )
 
-// DrawnPointCloud is a point cloud that has been drawn.
+// DrawnPointCloud pairs a point cloud with the colors used to render it. It is the
+// input to NewTransform via DrawnPointCloud.Draw, which makes the cloud participate
+// in the frame system as a physical entity.
 type DrawnPointCloud struct {
-	// The point cloud to draw.
+	// PointCloud is the underlying point cloud to render.
 	PointCloud pointcloud.PointCloud
-
-	// The colors to draw the point cloud with.
-	// Can be a single color, one color per point, or a color palette.
-	// If not provided, the point cloud's color data will be used.
+	// Colors are the colors used to render the cloud. Supply either a single color
+	// (applied to every point) or one color per point. If empty, the cloud's
+	// per-point color data is used by the visualizer.
 	Colors []Color
 }
 
-// DrawnPointCloudConfig holds configuration options for drawing a point cloud.
+// DrawnPointCloudConfig is the resolved option state used internally by
+// NewDrawnPointCloud. Most callers do not construct it directly; build a
+// DrawnPointCloud by passing DrawPointCloudOption values to NewDrawnPointCloud
+// instead.
 type DrawnPointCloudConfig struct {
 	drawColorsConfig
 
-	// The threshold in millimeters for downscaling, defaults to 0.
+	// downscalingThreshold is the minimum spacing (in millimeters) between retained
+	// points; 0 disables downscaling.
 	downscalingThreshold float64
 }
 
@@ -34,32 +39,45 @@ func newDrawPointCloudConfig() *DrawnPointCloudConfig {
 	}
 }
 
-// DrawPointCloudOption is a functional option for configuring a DrawPointCloud
+// DrawPointCloudOption configures a DrawnPointCloud produced by NewDrawnPointCloud.
+// When multiple options touch the same field, the last option in the argument list
+// wins.
 type DrawPointCloudOption func(*DrawnPointCloudConfig)
 
-// WithSinglePointCloudColor creates a point cloud option that sets the color for the point cloud.
+// WithSinglePointCloudColor renders every point in the cloud with the given color.
 func WithSinglePointCloudColor(color Color) DrawPointCloudOption {
 	return withColors[*DrawnPointCloudConfig]([]Color{color})
 }
 
-// WithPerPointCloudColors creates a point cloud option that sets the colors for each point.
+// WithPerPointCloudColors assigns one color per point. The number of colors must
+// equal the number of points in the cloud passed to NewDrawnPointCloud.
 func WithPerPointCloudColors(colors ...Color) DrawPointCloudOption {
 	return withColors[*DrawnPointCloudConfig](colors)
 }
 
-// WithPointCloudColorPalette creates a point cloud option that iterates through colors for a point cloud.
+// WithPointCloudColorPalette generates numPoints per-point colors by cycling
+// through the given palette. Pass numPoints equal to the number of points in the
+// cloud.
 func WithPointCloudColorPalette(palette []Color, numPoints int) DrawPointCloudOption {
 	return withColorPalette[*DrawnPointCloudConfig](palette, numPoints)
 }
 
-// WithPointCloudDownscaling creates a point cloud option that sets the threshold in millimeters below which points are not rendered from one another.
+// WithPointCloudDownscaling reduces the number of rendered points by keeping only
+// points whose mutual distance exceeds threshold (millimeters). A threshold of 0
+// (the default) disables downscaling.
+//
+// Note: the underlying algorithm is O(n^2) in the input point count, so applying
+// downscaling to large clouds can be slow.
 func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption {
 	return func(config *DrawnPointCloudConfig) {
 		config.downscalingThreshold = threshold
 	}
 }
 
-// NewDrawnPointCloud creates a new DrawnPointCloud object from the given point cloud and options.
+// NewDrawnPointCloud returns a DrawnPointCloud wrapping the given cloud. A positive
+// WithPointCloudDownscaling threshold downsamples the cloud before storage; a
+// threshold of 0 stores the input unchanged. Returns an error if the threshold is
+// negative or if downscaling fails.
 func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption) (*DrawnPointCloud, error) {
 	config := newDrawPointCloudConfig()
 	for _, option := range options {
@@ -81,7 +99,10 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 	return &DrawnPointCloud{PointCloud: downscaled, Colors: config.colors}, nil
 }
 
-// Draw creates a Transform from this DrawnPointCloud object, positioned at the given pose within the specified reference frame.
+// Draw wraps the DrawnPointCloud in a Transform identified by name. The point cloud
+// is converted to a basic octree before serialization. The DrawableOptions control
+// placement (parent frame, pose, center), identity (UUID), and visibility — see
+// DrawableOption for the full set. Returns an error if octree conversion fails.
 func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	config := NewDrawConfig(name, options...)
 

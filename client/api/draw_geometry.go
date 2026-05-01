@@ -13,29 +13,32 @@ import (
 
 // DrawGeometryOptions configures a DrawGeometry call.
 type DrawGeometryOptions struct {
-	// A unique identifier for the entity. If set, drawing with the same ID updates the existing entity.
+	// ID is a stable identifier for the entity. When set, calling DrawGeometry
+	// again with the same ID updates the existing entity in place; when empty,
+	// each call creates a new entity with a freshly generated UUID.
 	ID string
-
-	// The name of the entity. If empty, falls back to the geometry label.
+	// Name labels the entity in the visualizer. When empty, the geometry's own
+	// label is used.
 	Name string
-
-	// The parent frame name. If empty, defaults to "world".
+	// Parent is the reference frame the geometry is attached to. Defaults to
+	// "world" when empty.
 	Parent string
-
-	// The geometry to draw.
+	// Geometry is the spatial geometry to render. Required.
 	Geometry spatialmath.Geometry
-
-	// The color to draw the geometry with.
+	// Color is the render color for the geometry.
 	Color draw.Color
-
-	// Attrs holds optional entity attributes (e.g. visibility).
+	// Attrs carries optional shared display attributes (axes helper, default
+	// visibility). Nil leaves all attributes at their defaults.
 	Attrs *Attrs
 }
 
-// DrawGeometry draws a geometry in the visualizer.
-// Calling DrawGeometry with an ID that already exists in the visualizer will update that geometry.
+// DrawGeometry sends a single geometry to the visualizer as a transform. Passing
+// an ID that already exists updates the previously drawn entity in place;
+// otherwise a new entity is created. Returns the UUID assigned by the server.
 //
-// Returns the UUID of the drawn geometry, or an error if the server is not running or the drawing fails.
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, the underlying
+// validation error if the geometry cannot be wrapped (see draw.NewDrawnGeometry),
+// or a wrapped RPC error if the AddEntity call fails.
 func DrawGeometry(options DrawGeometryOptions) ([]byte, error) {
 	client := server.GetClient()
 	if client == nil {

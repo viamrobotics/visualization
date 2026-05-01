@@ -20,6 +20,11 @@ type DeleteRelationshipOptions struct {
 
 // DeleteRelationship removes the directed relationship from options.SourceUUID
 // to options.TargetUUID.
+//
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped
+// RPC error otherwise — most commonly NotFound when the source entity or the
+// matching relationship does not exist, or InvalidArgument when a UUID is
+// missing or malformed.
 func DeleteRelationship(options DeleteRelationshipOptions) error {
 	client := server.GetClient()
 	if client == nil {
