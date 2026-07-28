@@ -5,6 +5,7 @@
 
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
+	import { provideIKInspection } from './inspect-ik/useIKInspection.svelte'
 	import MotionPlanReplayerUI from './MotionPlanReplayerUI.svelte'
 	import { type ResolvePlanSnapshots } from './plan-dropper'
 	import { type PlanEntry, provideMotionPlanReplayer } from './useMotionPlanReplayer.svelte'
@@ -20,6 +21,7 @@
 	const { plans, children, resolvePlanSnapshots }: Props = $props()
 
 	provideMotionPlanReplayer(untrack(() => plans))
+	provideIKInspection()
 
 	const environment = useEnvironment()
 </script>

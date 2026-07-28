@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
@@ -9,6 +9,8 @@
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 
+	import IKInspectionPanel from './inspect-ik/IKInspectionPanel.svelte'
+	import { useIKInspection } from './inspect-ik/useIKInspection.svelte'
 	import { planDropper, type ResolvePlanSnapshots } from './plan-dropper'
 	import { useMotionPlanReplayer } from './useMotionPlanReplayer.svelte'
 
@@ -22,6 +24,7 @@
 	const truncate = (s: string, max = 40): string => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
 
 	const ctx = useMotionPlanReplayer()
+	const ik = useIKInspection()
 	const toast = useToast()
 
 	let isOpen = $state(false)
@@ -103,14 +106,16 @@
 			{@const isActive = ctx.activePlanIndex === i}
 			<div
 				class={[
-					'flex cursor-pointer items-center gap-1 rounded px-2 py-1',
+					'group flex cursor-pointer items-center gap-1 rounded px-2 py-1',
 					isActive ? 'bg-light font-medium' : 'hover:bg-ghost-light',
 				]}
 				role="button"
 				tabindex="0"
 				onclick={() => (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
 				onkeydown={(e) =>
-					e.key === 'Enter' && (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
+					e.target === e.currentTarget &&
+					e.key === 'Enter' &&
+					(isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
 			>
 				<span class="text-subtle-1 mr-1 shrink-0">
 					{#if isActive}
@@ -120,6 +125,24 @@
 					{/if}
 				</span>
 				<span class="grow truncate">{plan.name}</span>
+
+				<!-- MOCK: inspectIK ignores this plan and returns a bundled demo pair. -->
+				<button
+					type="button"
+					class="text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
+					aria-label={`Inspect IK for ${plan.name}`}
+					aria-disabled={ik.status === 'loading'}
+					onclick={(e) => {
+						e.stopPropagation()
+						if (ik.status !== 'loading') void ik.inspect(plan.name, plan.content)
+					}}
+				>
+					<Icon
+						name="bug-outline"
+						size="sm"
+						aria-hidden="true"
+					/>
+				</button>
 
 				<button
 					type="button"
@@ -166,3 +189,5 @@
 		</div>
 	</div>
 </FloatingPanel>
+
+<IKInspectionPanel />
