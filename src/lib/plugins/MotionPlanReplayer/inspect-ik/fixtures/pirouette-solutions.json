@@ -1,0 +1,2597 @@
+[
+	{
+		"seed": "start · full limits",
+		"solutions": [
+			{
+				"cost": 10.651956098914805,
+				"configuration": {
+					"arm": [
+						-0.3736384529843958, -2.9840002348518087,
+						1.5090402833317484, 3.045755520297502,
+						-4.712386919585232, -5.086024714885804
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.38919560062994,
+				"configuration": {
+					"arm": [
+						2.228227204912571, 4.691979215156888,
+						1.5090413752136582, 4.794553277702239,
+						-1.5707965099395806, 0.6574288984058989
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.75728 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.17282778739626584 -1.889626178436074e-07 0.9641943258899853 -0.20114635921445922}",
+				"last_good_inputs": {
+					"arm": [
+						4.006169821124471, -1.2440772327221639,
+						1.5868864284503565, -1.4011903511302024,
+						-1.5707960034257684, 2.435373016751703
+					]
+				}
+			},
+			{
+				"cost": 8.592302864290106,
+				"configuration": {
+					"arm": [
+						-0.373637494816117, 4.228153412958453,
+						-0.878635919903603, -4.920313848993856,
+						-1.5707964195213875, 4.338751548069538
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.78945 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-1.3690423385548887e-07 0.2654673753033997 0.9641198435098715 7.821760187187972e-08}",
+				"last_good_inputs": {
+					"arm": [
+						3.710468054975736, -1.019371952778479,
+						1.3844596685331538, -1.9358839722848817,
+						-1.5707960183627698, 2.663270129742407
+					]
+				}
+			},
+			{
+				"cost": 14.669677173433206,
+				"configuration": {
+					"arm": [
+						-4.054958453139637, 4.691977815357016,
+						1.5090444388372222, 4.794549700883186,
+						-1.5707936158276619, -5.6257530277769
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 31.11110 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2230485663197744 -9.424901960891813e-08 0.9633708819561094 -0.1488821039003417}",
+				"last_good_inputs": {
+					"arm": [
+						3.742720843066431, -1.238569816272642,
+						1.5868143314399346, -1.3954420875532334,
+						-1.5707958833077154, 2.1719241927945414
+					]
+				}
+			},
+			{
+				"cost": 6.777793118506012,
+				"configuration": {
+					"arm": [
+						2.2282267088842103, 4.691979819269963,
+						1.5090424228047976, -1.4886346207005694,
+						-1.570793796844969, 0.65743017302692
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "obstacle constraint: violation between gripper_origin and pallet geometries",
+				"last_good_inputs": {
+					"arm": [
+						3.980238939433383, -1.1575012804817841,
+						1.5857511349226443, -1.6549366405557793,
+						-1.5707958622258156, 2.409442210125047
+					]
+				}
+			},
+			{
+				"cost": 12.107385722491026,
+				"configuration": {
+					"arm": [
+						-4.054957321748623, 6.037540282229422,
+						-0.8786356659726481, -3.5881083160555236,
+						-4.712388684572695, 3.7990240842423884
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 7.534474453875696,
+				"configuration": {
+					"arm": [
+						-0.37363771066678825, -2.984000675112053,
+						1.5090406621057215, 3.0457556413468017,
+						-4.712388614422924, 1.1971580412276441
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.412462910783247,
+				"configuration": {
+					"arm": [
+						5.909547843776799, -2.055032081776799,
+						-0.8786357025529459, -4.920314337346383,
+						-1.5707963009284178, -1.9444334524295366
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.65099 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.12291496043222869 -0.18519082190542938 0.9644398815252064 0.14301044335145965}",
+				"last_good_inputs": {
+					"arm": [
+						4.187709651080765, -1.5288030390088172,
+						1.4470749740938926, -1.8533108419510513,
+						-1.5707960003885648, 2.2526703276253723
+					]
+				}
+			},
+			{
+				"cost": 10.442162663989686,
+				"configuration": {
+					"arm": [
+						-0.3736371031305519, 3.3872377895301415,
+						0.8786362788469669, 0.446515770287204,
+						4.712389441303686, -1.944433069585175
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 7.607846697253402,
+				"configuration": {
+					"arm": [
+						-0.3736352022505601, 3.2991846233531223,
+						1.5090419954846277, -3.2374317344146792,
+						-4.712395272315822, 1.1971595696444832
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			}
+		]
+	},
+	{
+		"seed": "start · sensitivity 3%",
+		"solutions": [
+			{
+				"cost": 10.442162610648165,
+				"configuration": {
+					"arm": [
+						-0.3736378171137583, 3.3872377518876533,
+						0.878635509362026, 0.446515396061152, 4.712388263315598,
+						-1.9444340018825828
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.365879170160442,
+				"configuration": {
+					"arm": [
+						-4.054957352545147, -1.086561088464691,
+						0.87863625547171, -4.504464460428971, 1.570795952945761,
+						3.7990242198643673
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54874 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.0028900763715690833 0.23651311569371225 0.9646753677864913 0.1159940875623282}",
+				"last_good_inputs": {
+					"arm": [
+						3.6673810025335234, -1.4755472833315526,
+						1.5539588110622364, -1.809196309970107,
+						-1.4108075037306786, 2.5765498242490126
+					]
+				}
+			},
+			{
+				"cost": 5.5328233283170425,
+				"configuration": {
+					"arm": [
+						-0.3736365294423404, -2.8959479297545827,
+						0.8786369054910028, 0.4465153081414669,
+						-1.5707947821799204, 4.338753116742279
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.061264937670561,
+				"configuration": {
+					"arm": [
+						5.909546893511973, -1.5503877744760366,
+						-1.5090410621821366, -1.6529600838328302,
+						-4.7123862374166565, -5.086027506766407
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.78838 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.11695729163831059 -0.23830470997304815 0.9641222908463919 0.00025579366338202274}",
+				"last_good_inputs": {
+					"arm": [
+						4.175406066924854, -1.4991850189139961,
+						1.431391767494654, -1.6639771660950844,
+						-1.7317700280445623, 2.1216868347507796
+					]
+				}
+			},
+			{
+				"cost": 8.804052317043903,
+				"configuration": {
+					"arm": [
+						-0.37363741564458, 3.29918475398896, 1.5090413532058191,
+						3.045755615021412, 1.5707961485204263,
+						1.1971589355524137
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.365879694147397,
+				"configuration": {
+					"arm": [
+						-4.054957724925695, -1.0865621112977328,
+						0.8786379063841915, -4.5044664140733435,
+						1.5707951807689207, 3.799024292941036
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54874 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.0028901164369905656 0.23651312552084283 0.9646753641591301 0.11599409669372182}",
+				"last_good_inputs": {
+					"arm": [
+						3.667380983569699, -1.4755473354202724,
+						1.553958895136483, -1.8091964094612554,
+						-1.4108075430544993, 2.5765498279705095
+					]
+				}
+			},
+			{
+				"cost": 6.9220724118696015,
+				"configuration": {
+					"arm": [
+						2.228225585152741, -1.0865603991613078,
+						0.8786358037262757, -4.504460556481893,
+						-4.7123919121223885, -2.4841603394693244
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41881 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.22209764170824312 -0.13210996063164 0.9649734338399735 -0.04523127051756916}",
+				"last_good_inputs": {
+					"arm": [
+						3.8937116306156887, -1.4548397828801491,
+						1.5180084022524545, -1.952676784705453,
+						-1.8895086124967044, 2.0042029438852453
+					]
+				}
+			},
+			{
+				"cost": 12.503435600527146,
+				"configuration": {
+					"arm": [
+						-4.054958695618554, 5.196625931728509,
+						0.878634858622766, -4.50445980729934, 1.570791715437851,
+						-2.4841628686947823
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.13782 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.18232853235641389 0.16267081310869266 0.9656138493024388 0.0887941827297259}",
+				"last_good_inputs": {
+					"arm": [
+						3.3409080392198027, -0.8870220388298283,
+						1.5254084620176385, -1.9231421820972832,
+						-1.2847563613034223, 2.0561513627137287
+					]
+				}
+			},
+			{
+				"cost": 9.411262089804117,
+				"configuration": {
+					"arm": [
+						-0.37363727514732525, 4.228154687503318,
+						-0.8786377447820016, 1.3628735607678155,
+						-1.5707954921149754, -1.944433776353323
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.00000 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.21805714448347535 -1.4026550173203563e-07 0.9659258004564713 -0.13942176929094738}",
+				"last_good_inputs": {
+					"arm": [
+						3.720238660239432, -1.0319257377962388,
+						1.389873624740437, -1.4189241568356177,
+						-1.5707959421529787, 2.149441939140327
+					]
+				}
+			},
+			{
+				"cost": 12.217155214105867,
+				"configuration": {
+					"arm": [
+						-4.054957000468022, 4.691979108106254,
+						1.5090424105316922, -1.4886343878334247,
+						4.712388456052036, 0.6574312110593298
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.13781 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.20220753395308266 0.16267080330447295 0.9656138576707752 0.015498414081915999}",
+				"last_good_inputs": {
+					"arm": [
+						3.7176076092174024, -1.2194697660457252,
+						1.5865637740241592, -1.6566984067513701,
+						-1.2896040857511668, 2.4280027878506565
+					]
+				}
+			}
+		]
+	},
+	{
+		"seed": "start · sensitivity 25%",
+		"solutions": [
+			{
+				"cost": 7.595345420660517,
+				"configuration": {
+					"arm": [
+						-0.37363682058935765, 3.299185316937823,
+						1.5090407266156414, -3.2374308916322834,
+						1.5707966017573072, 1.1971577491399108
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 12.308515636952421,
+				"configuration": {
+					"arm": [
+						-4.054959280733298, 4.691981729363136,
+						1.5090371526698543, 4.794561580234015,
+						-1.5707934976553557, 0.6574258222925053
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.99532 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1760522419933894 0.11737172194978762 0.9636413773795046 -0.16317102309470874}",
+				"last_good_inputs": {
+					"arm": [
+						3.7803907607056644, -1.2672196598680496,
+						1.5871897615461483, -1.4253449895503996,
+						-1.5707958898849732, 2.44230445883852
+					]
+				}
+			},
+			{
+				"cost": 14.59298101741498,
+				"configuration": {
+					"arm": [
+						-4.054958104965163, 4.691978328243295,
+						1.5090447714162092, -1.4886395016170153,
+						4.712389923954626, -5.625753084232944
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54942 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2465597390500627 0.03532610160129595 0.9646737554088296 0.08581903781006316}",
+				"last_good_inputs": {
+					"arm": [
+						3.6045977197509513, -1.133519828147787,
+						1.5854367844073876, -1.6542551263909924,
+						-1.2023375491434338, 2.0338010825172037
+					]
+				}
+			},
+			{
+				"cost": 10.442163171355721,
+				"configuration": {
+					"arm": [
+						-0.3736362408852365, 3.38723852927098,
+						0.8786371144882761, 0.44651639748892413,
+						4.712391445391104, -1.944431292106537
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.55669831245379,
+				"configuration": {
+					"arm": [
+						-4.0549568462341625, -1.0865608884939733,
+						0.8786354461594081, 1.778720203843172,
+						1.5707991954901692, 3.7990223109100243
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04822 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1092502089000105 0.23507397718467393 0.9658168360983117 0.00156723161339659}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924943222188613, -1.4768122695207169,
+						1.5561549432576252, -1.4998467587622801,
+						-1.4205036200127812, 2.5725742064357733
+					]
+				}
+			},
+			{
+				"cost": 14.592980907396463,
+				"configuration": {
+					"arm": [
+						-4.054957344860978, 4.691978431032734,
+						1.5090440180978506, -1.4886362789421717,
+						4.712388686192901, -5.625754485752635
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54942 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.24655978896438013 0.03532604626313074 0.9646737502940139 0.08581897467889783}",
+				"last_good_inputs": {
+					"arm": [
+						3.604597764324962, -1.1335198221200113,
+						1.585436740231311, -1.654254937406974,
+						-1.2023376217282262, 2.0338010003293205
+					]
+				}
+			},
+			{
+				"cost": 9.782627835198635,
+				"configuration": {
+					"arm": [
+						-0.3736373811252857, -2.0550309345705693,
+						-0.8786373628366784, 1.3628736703218904,
+						4.712389139914974, -1.94443396339343
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.24000 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.13985814809110605 -1.6518868714747136e-07 0.965381595881782 0.2201773665598771}",
+				"last_good_inputs": {
+					"arm": [
+						3.716408581461718, -1.5422258334442036,
+						1.3877513256140042, -1.4163216067894138,
+						-1.0555748019054847, 2.14561185392124
+					]
+				}
+			},
+			{
+				"cost": 9.031235481620874,
+				"configuration": {
+					"arm": [
+						-0.3736384334988178, -1.5503894514765677,
+						-1.509038468970165, 4.630220989520482,
+						1.5707982732505812, 1.1971573261348214
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.55013 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2040181034733739 0.16498649227499337 0.9646721588399251 0.023742299405062714}",
+				"last_good_inputs": {
+					"arm": [
+						3.672672762286055, -1.5013750186016577,
+						1.3056352147429242, -1.0866071251471394,
+						-1.28234620996438, 2.3903256325614444
+					]
+				}
+			},
+			{
+				"cost": 5.026053463966332,
+				"configuration": {
+					"arm": [
+						5.909547588678186, -1.5503880493287112,
+						-1.5090405582383668, -1.652961112116691,
+						-4.712387529264098, 1.1971562232264599
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41883 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.2229354992270385 -0.13211023152128135 0.964973395242968 0.04090227848229194}",
+				"last_good_inputs": {
+					"arm": [
+						4.267179080248705, -1.5018947618826393,
+						1.2757803655314037, -1.6633942323785482,
+						-1.889508167858907, 2.377669841550035
+					]
+				}
+			},
+			{
+				"cost": 7.027019827588537,
+				"configuration": {
+					"arm": [
+						2.22822687639683, -1.5912050198833916,
+						1.5090406485161256, 4.794554595578257,
+						-1.5707940288257152, 0.6574289666414195
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.05826 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1833602871181342 -1.8106706265957132e-07 0.9657941083715812 -0.1833596066277019}",
+				"last_good_inputs": {
+					"arm": [
+						3.930589237773281, -1.5041497771378856,
+						1.5835771665177467, -1.1378084294717987,
+						-1.5707958226144654, 2.3597924019010317
+					]
+				}
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 0",
+		"solutions": [
+			{
+				"cost": 11.720547779862805,
+				"configuration": {
+					"arm": [
+						-0.37363688574089604, 4.732797414736696,
+						-1.5090414485310972, -1.6529614658844136,
+						1.5707946694852062, -5.086024984746715
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04165 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2002033833297705 -0.1308049529542472 0.9658316157491073 0.09988973723771245}",
+				"last_good_inputs": {
+					"arm": [
+						3.6325295131073525, -0.8683498871673909,
+						1.2777105701949845, -1.663401499749285,
+						-1.254040560845673, 1.7449772802469656
+					]
+				}
+			},
+			{
+				"cost": 9.870185882607693,
+				"configuration": {
+					"arm": [
+						-0.37363760219471315, -2.0550319678977944,
+						-0.878635792050774, -4.92031399645751, 4.71238870043685,
+						-1.9444338852390362
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.45601 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.029238805062782657 -0.035111965518315344 0.964888214055706 0.25865609703297326}",
+				"last_good_inputs": {
+					"arm": [
+						3.823337874851116, -1.5288192240666894,
+						1.4470034085745063, -1.8534051915178165,
+						-1.2063712703186267, 2.2525411608676507
+					]
+				}
+			},
+			{
+				"cost": 8.903561181889621,
+				"configuration": {
+					"arm": [
+						-0.3736377960798283, -2.0550300982575314,
+						-0.8786373667219466, 1.3628759200942964,
+						4.712388398471403, 4.338745394665077
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.45599 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.14216818628662292 0.18406194931646835 0.9648882777348431 0.12206562624949942}",
+				"last_good_inputs": {
+					"arm": [
+						3.8233378636057793, -1.5288191156275541,
+						1.4470033172435783, -1.4889801763578117,
+						-1.2063712878326225, 2.616965559102089
+					]
+				}
+			},
+			{
+				"cost": 6.060877496877919,
+				"configuration": {
+					"arm": [
+						-0.3736375971536865, -2.9840006675335493,
+						1.509041267751084, -3.2374298506845616,
+						1.570797159417415, 1.1971588789144747
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.411264681915078,
+				"configuration": {
+					"arm": [
+						-0.37363911299788355, 4.2281552033938645,
+						-0.8786377250813987, 1.3628752126112356,
+						-1.5708024125046767, -1.9444355079735194
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.00001 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.21805708935487042 -2.10620450231282e-07 0.9659257768668863 -0.13942201894299042}",
+				"last_good_inputs": {
+					"arm": [
+						3.720238511115593, -1.031925695936699,
+						1.3898736263389508, -1.418924022804463,
+						-1.5707965036758271, 2.149441798636057
+					]
+				}
+			},
+			{
+				"cost": 9.624413475020816,
+				"configuration": {
+					"arm": [
+						-0.37363523037423835, 3.38723672982546,
+						0.8786408554654872, 0.44651615052379373,
+						4.712391920984488, 4.338752298311065
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 11.59405448219547,
+				"configuration": {
+					"arm": [
+						-0.3736374789561311, 3.299184964044252,
+						1.5090410635607447, 3.045755103754528,
+						-4.71238898529748, -5.0860263013449725
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 4.653283557592129,
+				"configuration": {
+					"arm": [
+						2.2282275761079515, -0.15759319887614068,
+						-1.5090364235443385, 0.09584060094768622,
+						-1.5707948732936134, 0.6574343132701096
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 2.6721300670442427,
+				"configuration": {
+					"arm": [
+						2.2282275699693086, -1.5912053318382506,
+						1.5090412877843629, -1.4886318163056027,
+						-1.5707957126331542, 0.6574324421618585
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": true
+			},
+			{
+				"cost": 12.369755125953832,
+				"configuration": {
+					"arm": [
+						2.228227987758861, -1.591205196260639,
+						1.5090409438630503, 4.794553253525228,
+						4.712388658970535, -5.6257540125622985
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.71049 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.22759733392518666 -0.13311210914410027 0.964302480882932 0.024522343941371195}",
+				"last_good_inputs": {
+					"arm": [
+						3.987358033752709, -1.501246751784124,
+						1.5860627535266103, -1.3356352226854022,
+						-1.2508189862942318, 2.096584266116173
+					]
+				}
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 1",
+		"solutions": [
+			{
+				"cost": 4.940600506854566,
+				"configuration": {
+					"arm": [
+						2.228227880739555, -1.0865608369826576,
+						0.8786360631352572, -4.504464245317324,
+						-4.7123890352042705, 3.7990242138583254
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.68219 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.2045342844349829 0.16572847988351172 0.9643678998809297 0.026350543171158713}",
+				"last_good_inputs": {
+					"arm": [
+						3.911620293423477, -1.4587998164399707,
+						1.5248834002406415, -1.9252385881138203,
+						-1.8591547645648137, 2.6291823374432086
+					]
+				}
+			},
+			{
+				"cost": 7.169885117439539,
+				"configuration": {
+					"arm": [
+						2.2282281204449648, -1.0865608192244054,
+						0.8786360468965729, 1.7787210440356322,
+						1.5707969654893892, -2.4841615408996534
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41882 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2220979556646862 -0.13211006371973336 0.9649733478261935 0.04523126284599463}",
+				"last_good_inputs": {
+					"arm": [
+						3.8937118878192476, -1.454839825495246,
+						1.518008426921905, -1.3152525643630952,
+						-1.2520836538984081, 2.0042028220010093
+					]
+				}
+			},
+			{
+				"cost": 6.909571458910106,
+				"configuration": {
+					"arm": [
+						2.2282274531726487, -1.086560214715948,
+						0.8786361355557025, -4.50446334780328,
+						1.5707951543687042, -2.484161174831772
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.68221 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.03444656687398772 -0.16572884702872143 0.964367810807896 0.20332758979221824}",
+				"last_good_inputs": {
+					"arm": [
+						3.9116202541782057, -1.4587997593237028,
+						1.524883406887929, -1.9252385057333041,
+						-1.2824373751837193, 2.052464837998224
+					]
+				}
+			},
+			{
+				"cost": 2.6721303127781106,
+				"configuration": {
+					"arm": [
+						2.2282280481799845, -1.5912051588382323,
+						1.509041009691801, -1.4886318720963434,
+						-1.5707964606233729, 0.6574316117219466
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": true
+			},
+			{
+				"cost": 9.453028507106467,
+				"configuration": {
+					"arm": [
+						2.228228267348298, -1.591205108543095,
+						1.5090410287645017, 4.794553222884604,
+						4.712388157986595, 0.657432093529513
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.55397 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2608619375987625 0.035336515629725916 0.9646633079793911 -0.01127308359002739}",
+				"last_good_inputs": {
+					"arm": [
+						3.973778215916953, -1.5019411926345665,
+						1.5854681785540137, -1.2883124339601186,
+						-1.2047852552988298, 2.4029815084116186
+					]
+				}
+			},
+			{
+				"cost": 7.169884247572685,
+				"configuration": {
+					"arm": [
+						2.2282282241241713, -1.0865616164644931,
+						0.8786368329659168, 1.7787195046230013,
+						1.570797105389879, -2.4841614831426826
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41882 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.22209789557350534 -0.1321100795137162 0.9649733571895069 0.045231312020681265}",
+				"last_good_inputs": {
+					"arm": [
+						3.893711898337428, -1.454839906374675,
+						1.5180085066680702, -1.315252720535391,
+						-1.2520836397056048, 2.004202827860412
+					]
+				}
+			},
+			{
+				"cost": 5.304676701647277,
+				"configuration": {
+					"arm": [
+						2.228231024212523, -1.086557770806609,
+						0.8786307443431408, 1.7787263815994745,
+						-4.712382472827537, 3.799024681008788
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41879 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.028346537265101366 0.1321096338110106 0.9649734885024822 -0.22487704410799522}",
+				"last_good_inputs": {
+					"arm": [
+						3.8937121824043626, -1.4548395162354695,
+						1.5180078889817017, -1.315252022871111,
+						-1.889507654887082, 2.6416275111801264
+					]
+				}
+			},
+			{
+				"cost": 6.909571847106741,
+				"configuration": {
+					"arm": [
+						2.2282281188283224, -1.0865606700899575,
+						0.8786352623313833, -4.504464233827058,
+						1.570797047161925, -2.4841601671404274
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.68223 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{0.03444658327351555 -0.1657288552364049 0.9643677814151029 0.20332771973177627}",
+				"last_good_inputs": {
+					"arm": [
+						3.9116203152770352, -1.458799801121317,
+						1.5248833267369044, -1.9252385870591582,
+						-1.282437201449076, 2.0524649304916323
+					]
+				}
+			},
+			{
+				"cost": 5.2921781913441,
+				"configuration": {
+					"arm": [
+						2.2282281953733314, -1.0865608365517987,
+						0.8786356094381066, 1.7787216452446057,
+						1.5707978684224622, 3.7990248321109323
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.68223 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.2045346175140891 0.165728549731585 0.9643678218146037 -0.02635037553408718}",
+				"last_good_inputs": {
+					"arm": [
+						3.911620322302906, -1.4587998164004232,
+						1.5248833585969417, -1.348521042603305,
+						-1.282437126067674, 2.629182394191033
+					]
+				}
+			},
+			{
+				"cost": 7.027022720283706,
+				"configuration": {
+					"arm": [
+						2.2282276693996454, -1.5912042576780214,
+						1.5090390214808445, 4.794558318842148,
+						-1.5707964638779344, 0.6574303648918124
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.05827 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.18336028241532354 -1.8302454607659293e-07 0.9657940774274197 -0.18335977431993633}",
+				"last_good_inputs": {
+					"arm": [
+						3.9305893024453553, -1.5041497149774476,
+						1.5835770338274906, -1.1378081258269765,
+						-1.5707960212012482, 2.3597925159331026
+					]
+				}
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 2",
+		"solutions": [
+			{
+				"cost": 10.452718498945213,
+				"configuration": {
+					"arm": [
+						-4.054955401851624, 4.691978534674866,
+						1.509044968129802, -1.4886389915669158,
+						-1.5708008563473446, 0.6574322875545272
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54941 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.15080926807317963 0.1846028568275688 0.9646738222114692 -0.11217293191428152}",
+				"last_good_inputs": {
+					"arm": [
+						3.6045978782668686, -1.133519816042232,
+						1.5854367959430613, -1.654255096480647,
+						-1.5707962677413887, 2.402259483949185
+					]
+				}
+			},
+			{
+				"cost": 12.656725364542774,
+				"configuration": {
+					"arm": [
+						-4.0549578192335405, 5.196624547642287,
+						0.878635959769509, 1.7787218016226285,
+						-4.712389975782374, -2.4841612429079234
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54875 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1571235454206217 0.05947015210416703 0.9646753347919005 -0.20292114460374994}",
+				"last_good_inputs": {
+					"arm": [
+						3.667380978766985, -1.155570237048327,
+						1.553958796003328, -1.4892192318100717,
+						-1.7307845649159077, 2.2565727867930163
+					]
+				}
+			},
+			{
+				"cost": 12.644224320174414,
+				"configuration": {
+					"arm": [
+						-4.054957393545306, 5.1966243960129805,
+						0.8786359873430881, 1.778720895029097,
+						1.5707962239001343, -2.4841612882062454
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04823 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.23123424628317177 0.09299394485672534 0.9658167942287625 -0.07127951705443919}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924942960357665, -1.1762277883174521,
+						1.556154969147585, -1.4998467256962869,
+						-1.420503762172181, 2.2719898058607666
+					]
+				}
+			},
+			{
+				"cost": 11.533108172563667,
+				"configuration": {
+					"arm": [
+						-4.054957089355044, 5.196624099772897,
+						0.8786362716971128, -4.504464922529592,
+						1.5707970549227184, 3.799024436348588
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04822 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.10925018461737748 0.23507403161043885 0.9658168256871184 0.001567176806102512}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924943105880783, -1.1762278024894313,
+						1.556154982750941, -1.8004312324004834,
+						-1.420503722416471, 2.572574308115705
+					]
+				}
+			},
+			{
+				"cost": 11.699140646152673,
+				"configuration": {
+					"arm": [
+						-4.054958008737735, 5.196623246256051,
+						0.878637803015962, 1.7787199724802372,
+						-4.712390537754422, 3.7990235541115527
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.41444 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.08582027013354858 0.172609329903885 0.9649834575967576 -0.1778983615128115}",
+				"last_good_inputs": {
+					"arm": [
+						3.7678341590721334, -1.2382004633171453,
+						1.5627435544168338, -1.53172910443975,
+						-1.6919994755612668, 2.5606476926048805
+					]
+				}
+			},
+			{
+				"cost": 11.533107075981833,
+				"configuration": {
+					"arm": [
+						-4.0549605108821725, 5.196621511910969,
+						0.8786414563468735, -4.504467515210506,
+						1.5707908985086467, 3.7990186205891434
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04821 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.10925007968784266 0.2350739658009587 0.9658168537105906 0.001567092653798962}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924941469039103, -1.176227926291468,
+						1.5561552307820254, -1.800431356433058,
+						-1.42050401693628, 2.5725740298926447
+					]
+				}
+			},
+			{
+				"cost": 12.644224342485888,
+				"configuration": {
+					"arm": [
+						-4.054957492279878, 5.196624415046245,
+						0.8786360875369239, 1.7787209670334194,
+						1.5707960765040105, -2.4841612137037243
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04823 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.23123424802942874 0.09299394844580665 0.9658167930594639 -0.07127952255070176}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924942913123533, -1.17622778740691,
+						1.5561549739408087, -1.4998467222516356,
+						-1.4205037692235387, 2.2719898094249307
+					]
+				}
+			},
+			{
+				"cost": 11.533108025795338,
+				"configuration": {
+					"arm": [
+						-4.05495777019379, 5.1966236398357095,
+						0.8786372380179417, -4.504465400588566, 1.570795694951,
+						3.799023988394337
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.04822 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.10925016195314234 0.2350740352781181 0.965816827393055 0.0015671552852444565}",
+				"last_good_inputs": {
+					"arm": [
+						3.6924942780170893, -1.1762278244925992,
+						1.5561550289792525, -1.8004312552705886,
+						-1.4205037874768465, 2.5725742866857946
+					]
+				}
+			},
+			{
+				"cost": 14.669681422205146,
+				"configuration": {
+					"arm": [
+						-4.054957471757169, 4.691981296113241,
+						1.509039266110577, 4.794555861744819,
+						-1.5707962320119964, -5.6257540166944535
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 31.11111 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.22304861347625046 -1.504157593814175e-07 0.9633708560640112 -0.1488822007924179}",
+				"last_good_inputs": {
+					"arm": [
+						3.742720883957367, -1.2385696712411325,
+						1.5868141159096578, -1.3954418308506653,
+						-1.570795992315396, 2.1719241515896437
+					]
+				}
+			},
+			{
+				"cost": 12.308507099392822,
+				"configuration": {
+					"arm": [
+						-4.054957165840207, 4.691979367071568,
+						1.509041885704453, 4.794551853484722,
+						-1.5707971431767083, 0.6574310059625245
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.99530 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1760520715857419 0.1173717663563741 0.963641406283751 -0.1631710043121274}",
+				"last_good_inputs": {
+					"arm": [
+						3.7803908390350385, -1.26721974736033,
+						1.587189936843726, -1.4253453498003734,
+						-1.5707960249042825, 2.4423046508262987
+					]
+				}
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 3",
+		"solutions": [
+			{
+				"cost": 12.656725381306616,
+				"configuration": {
+					"arm": [
+						-4.0549581472835134, 5.196623740266164,
+						0.878637274282298, 1.778721069976685,
+						-4.712389362874262, -2.4841628851239563
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": true,
+				"checkpath_valid": false,
+				"first_error": "gripper orientation constraint violated dist: 30.54875 \u003e 30.00000 from: \u0026{-1.626604524119997e-07 -2.0686098148815533e-07 0.9999999999999631 6.966321910796991e-08} to: \u0026{6.123233995736757e-17 0 1 0} currPose: \u0026{-0.1571235601170187 0.05947012344658773 0.9646753391915126 -0.20292112070738536}",
+				"last_good_inputs": {
+					"arm": [
+						3.6673809620607365, -1.1555702781647035,
+						1.553958862946109, -1.489219269069819,
+						-1.7307845337029946, 2.2565727031616443
+					]
+				}
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 4",
+		"solutions": [
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 5",
+		"solutions": [
+			{
+				"cost": 5.545324669870563,
+				"configuration": {
+					"arm": [
+						5.909547571957678, -2.895947960321564,
+						0.8786363449002493, 0.44651540785931715,
+						-1.570796595376777, -1.9444357046340939
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.355438207468268,
+				"configuration": {
+					"arm": [
+						5.909547034137733, -2.9839986738080637,
+						1.5090361759067779, 3.0457548303099764,
+						-4.712386015294655, 1.197158542590824
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 5.545322675345279,
+				"configuration": {
+					"arm": [
+						5.909547212391416, -2.8959479790261073,
+						0.8786354361460105, 0.4465152870709163,
+						-1.5707977628772833, -1.9444333189243592
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.355440692502052,
+				"configuration": {
+					"arm": [
+						5.909547637346169, -2.9840005012409248,
+						1.509041163858935, 3.0457557338574732,
+						-4.712388475009866, 1.197158702443589
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.84977032497073,
+				"configuration": {
+					"arm": [
+						5.909548275458104, -2.984000785010834,
+						1.5090427117162177, 3.0457553609460173,
+						1.570795361430671, -5.086025817021532
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.641456892727833,
+				"configuration": {
+					"arm": [
+						5.909547030258615, -2.8959485339089848,
+						0.8786412497268992, -5.836669314982257,
+						-1.5707992656058585, -1.944435345109489
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.355440905935287,
+				"configuration": {
+					"arm": [
+						5.909548010393154, -2.9840009056960546,
+						1.509041107409044, 3.045755627979551, -4.71238928634594,
+						1.197160280388952
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.849771519365763,
+				"configuration": {
+					"arm": [
+						5.909548146910135, -2.9840010347509804,
+						1.5090426508813939, 3.0457561249250027,
+						1.5707957800785763, -5.086026676204755
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.862271370527074,
+				"configuration": {
+					"arm": [
+						5.90954771628707, -2.9840005398559786,
+						1.5090412844395285, 3.0457555993657754,
+						-4.712388784934209, -5.086026586235518
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 8.795123175341008,
+				"configuration": {
+					"arm": [
+						5.909548806092467, -2.9840008613109203,
+						1.5090427872599113, -3.237430336345951,
+						-4.712391293856063, -5.086029418691408
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 6",
+		"solutions": [
+			{
+				"cost": 5.5453226041462464,
+				"configuration": {
+					"arm": [
+						5.909547571382554, -2.895947709514948,
+						0.8786353632800225, 0.4465147755944308,
+						-1.5707975334688073, -1.9444334028261199
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 8.795118651617662,
+				"configuration": {
+					"arm": [
+						5.909547733039979, -2.984000511933758,
+						1.5090413442322628, -3.2374302071043797,
+						-4.712388157954265, -5.0860259257507785
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 7.3655422592851165,
+				"configuration": {
+					"arm": [
+						5.909547504811115, -2.895947755099408,
+						0.8786357700680186, 0.4465153629979247,
+						4.712388462465842, 4.338751183399966
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.342942083961242,
+				"configuration": {
+					"arm": [
+						5.909546960605698, -2.9840007293609156,
+						1.5090421262972638, 3.0457565874990444,
+						1.5707986480456289, 1.1971596018146577
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 7",
+		"solutions": [
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			},
+			{
+				"cost": -1,
+				"configuration": null,
+				"configuration_valid": false
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 8",
+		"solutions": [
+			{
+				"cost": 6.863842615566254,
+				"configuration": {
+					"arm": [
+						-0.37363741956504837, -2.895948012303375,
+						0.8786360706788132, 0.44651510244398235,
+						-1.5707964770788696, -1.9444345798424452
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 8.399939843578572,
+				"configuration": {
+					"arm": [
+						-0.37363576767696555, -2.8959492327269696,
+						0.8786353696794545, 0.44651263291936855,
+						4.712391193583996, 4.3387548269351255
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.663045502705751,
+				"configuration": {
+					"arm": [
+						-0.3736373427012013, -2.9840001986080007,
+						1.509039926898302, -3.2374302171738516,
+						1.5707958778026947, -5.086025950109175
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 7.534474431453026,
+				"configuration": {
+					"arm": [
+						-0.373636697556837, -2.98400113632787,
+						1.509041179639572, 3.0457539251522894,
+						-4.712392751350702, 1.1971590512568255
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.164453044651578,
+				"configuration": {
+					"arm": [
+						-0.37363764945334255, -2.895947722732025,
+						0.878635564998343, -5.836670017524166,
+						4.712388733873699, 4.338751214533779
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.675546726772701,
+				"configuration": {
+					"arm": [
+						-0.3736370868526188, -2.9840010195072595,
+						1.5090426180457208, -3.2374293249473336,
+						-4.712389946588151, -5.086026792175183
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 8.399939501082956,
+				"configuration": {
+					"arm": [
+						-0.3736371484331296, -2.8959487347882567,
+						0.8786368792596455, 0.44651295560922616,
+						4.712389995669618, 4.338754562083356
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.0608767969493815,
+				"configuration": {
+					"arm": [
+						-0.3736374277507892, -2.9840005537179954,
+						1.509041209868871, -3.2374298439737763,
+						1.570796133370334, 1.1971588945042113
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.327330361862147,
+				"configuration": {
+					"arm": [
+						-0.37363765267174454, -2.895947855995494,
+						0.8786362293654312, 0.4465150752101046,
+						4.71238887224054, -1.9444344919974075
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.675546521834736,
+				"configuration": {
+					"arm": [
+						-0.37363739933474105, -2.9840015988295483,
+						1.5090432083984824, -3.2374285310070756,
+						-4.712389141109657, -5.086026738215047
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			}
+		]
+	},
+	{
+		"seed": "Seed cache 9",
+		"solutions": [
+			{
+				"cost": 7.521977575255319,
+				"configuration": {
+					"arm": [
+						-0.3736402795087443, -2.9840006943070794,
+						1.5090400665710204, 3.045755772686928,
+						1.5708020301509193, 1.1971626666913304
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 10.639460273755022,
+				"configuration": {
+					"arm": [
+						-0.3736395000490705, -2.98399969893395,
+						1.5090386422920332, 3.045756889571019,
+						1.570800849752134, -5.086026673991787
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.327330277978287,
+				"configuration": {
+					"arm": [
+						-0.37363796010698475, -2.8959480408654596,
+						0.8786356405846724, 0.44651563221042906,
+						4.712388253205772, -1.9444344731725225
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.07337741196238,
+				"configuration": {
+					"arm": [
+						-0.3736379354116039, -2.984000672048243,
+						1.509041166631658, -3.2374297405132175,
+						-4.712388160657027, 1.1971579458458856
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.863842417933423,
+				"configuration": {
+					"arm": [
+						-0.3736375277729669, -2.895947451989923,
+						0.8786353341581805, 0.44651544036255475,
+						-1.5707961234269643, -1.944434081887619
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.060877575677823,
+				"configuration": {
+					"arm": [
+						-0.3736374369137544, -2.9840013933831404,
+						1.5090435627589642, -3.2374290878284007,
+						1.5707960381253063, 1.1971550503426307
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 9.663044174085472,
+				"configuration": {
+					"arm": [
+						-0.37363641862781877, -2.9839992349995863,
+						1.509038606672657, -3.2374311842043375,
+						1.570794106445414, -5.086025549125828
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.0608789943784425,
+				"configuration": {
+					"arm": [
+						-0.37363837092061586, -2.9840002546918174,
+						1.5090416728090092, -3.2374295898366587,
+						1.5707991401627615, 1.1971586305172148
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 5.532823687169383,
+				"configuration": {
+					"arm": [
+						-0.37363772294233344, -2.89594749564896,
+						0.8786365676753057, 0.44651697322850137,
+						-1.5707970636757966, 4.338749556969685
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			},
+			{
+				"cost": 6.073378633959247,
+				"configuration": {
+					"arm": [
+						-0.37363823448125033, -2.984001181400317,
+						1.5090425829859018, -3.2374293228072735,
+						-4.712389020294109, 1.1971554420103376
+					],
+					"arm_origin": [],
+					"floor": [],
+					"floor_origin": [],
+					"gripper": [],
+					"gripper_origin": [],
+					"pallet": [],
+					"pallet_origin": [],
+					"pick-station": [],
+					"pick-station_origin": []
+				},
+				"configuration_valid": false,
+				"error": "obstacle constraint: violation between arm:upper_arm_link and pick-station geometries"
+			}
+		]
+	}
+]
