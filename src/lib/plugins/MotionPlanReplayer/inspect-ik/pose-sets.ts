@@ -1,6 +1,6 @@
 import type { IKCandidate } from './ik-candidates'
 
-export type PoseKind = 'start' | 'lastGood' | 'end'
+export type PoseKind = 'start' | 'lastGood' | 'end' | 'path'
 
 export interface PoseStyle {
 	/** Scene colour, 0-1 floats. Three.js materials can't read Tailwind tokens. */
@@ -43,6 +43,16 @@ const END_FAILED: PoseStyle = {
 	swatchClass: 'bg-danger-dark',
 }
 
+/**
+ * Neutral rather than another traffic-light colour: this is the arm at wherever the scrubber
+ * currently sits, read against the coloured reference poses rather than classified alongside them.
+ */
+export const PATH_STYLE: PoseStyle = {
+	rgb: { r: 0.16, g: 0.17, b: 0.19 },
+	opacity: 0.9,
+	swatchClass: 'bg-dark',
+}
+
 /** Deliberately desaturated: obstacles are the fixed world, not one of the candidate poses. */
 export const OBSTACLE_STYLE: PoseStyle = {
 	rgb: { r: 0.45, g: 0.45, b: 0.48 },
@@ -50,13 +60,24 @@ export const OBSTACLE_STYLE: PoseStyle = {
 	swatchClass: 'bg-medium',
 }
 
-export const POSE_KINDS: PoseKind[] = ['start', 'lastGood', 'end']
-
-const PREFIX: Record<PoseKind, string> = {
+export const PREFIX: Record<PoseKind, string> = {
 	start: 'ik-start',
 	lastGood: 'ik-last-good',
 	end: 'ik-end',
+	path: 'ik-path',
 }
+
+/**
+ * A red candidate's end pose is itself in collision, so interpolating towards it only animates the
+ * arm into a goal already known to be unreachable — the failure is the goal, not the route.
+ */
+export const supportsInterpolation = (
+	candidate: IKCandidate,
+	startConfiguration: Record<string, number[]>
+): boolean =>
+	candidate.status !== 'invalid' &&
+	candidate.solution.configuration !== null &&
+	Object.keys(startConfiguration).length > 0
 
 /**
  * Which poses a candidate is worth drawing. A green candidate only needs start and end; a yellow

@@ -32,30 +32,56 @@ const setOrAddOpacity = (entity: Entity, value: number) => {
 	else entity.add(traits.Opacity(value))
 }
 
+/**
+ * Spawns a set's root on its own. It has to exist before the first reconcile so `resolveOrphans` can
+ * parent the set's top-level frames onto it within the same flush.
+ */
+export const createDrawnSet = (world: World, rootName: string): DrawnSet => ({
+	root: world.spawn(traits.Name(rootName)),
+	entityMap: new Map(),
+})
+
+/**
+ * Draws one snapshot into an existing set, reusing the entities whose `Transform.uuid` it has seen
+ * before. Stepping a set along a trajectory therefore moves the arm in place rather than respawning
+ * it, since every snapshot of one path is built from the same frame descriptors.
+ */
+export const applySnapshot = (
+	world: World,
+	drawn: DrawnSet,
+	snapshot: Snapshot,
+	style: PoseStyle
+): void => {
+	// Reconcile garbage-collects only entities present in the map it is handed, so a set can never
+	// sweep anything outside itself.
+	const result = reconcileSnapshotEntities(world, snapshot, drawn.entityMap)
+
+	for (const spawned of result.spawned) {
+		spawned.entity.add(inspectRelations.PartOfInspection(drawn.root))
+
+		// Frames without geometry carry `ReferenceFrame` and render as axes, which the plan colour
+		// would not apply to anyway.
+		if (!spawned.entity.has(traits.ReferenceFrame)) setOrAddColor(spawned.entity, style.rgb)
+	}
+
+	// Colour survives reconcile, but its metadata pass resets Opacity to the default — so opacity has
+	// to be re-applied to entities that merely survived the step, not only to newly spawned ones.
+	for (const entry of [...result.spawned, ...result.updated]) {
+		setOrAddOpacity(entry.entity, style.opacity)
+	}
+
+	drawn.entityMap = result.current
+}
+
 const drawSnapshot = (
 	world: World,
 	rootName: string,
 	snapshot: Snapshot,
 	style: PoseStyle
 ): DrawnSet => {
-	// Spawned before the reconcile so `resolveOrphans` can parent the set's top-level frames onto
-	// it within the same flush.
-	const root = world.spawn(traits.Name(rootName))
-
-	// A fresh empty map. Reconcile garbage-collects only entities present in the map it is handed,
-	// so passing an empty one guarantees nothing already in the scene gets swept.
-	const result = reconcileSnapshotEntities(world, snapshot, new Map())
-
-	for (const spawned of result.spawned) {
-		spawned.entity.add(inspectRelations.PartOfInspection(root))
-
-		// Frames without geometry carry `ReferenceFrame` and render as axes, which the plan colour
-		// would not apply to anyway.
-		if (!spawned.entity.has(traits.ReferenceFrame)) setOrAddColor(spawned.entity, style.rgb)
-		setOrAddOpacity(spawned.entity, style.opacity)
-	}
-
-	return { root, entityMap: result.current }
+	const drawn = createDrawnSet(world, rootName)
+	applySnapshot(world, drawn, snapshot, style)
+	return drawn
 }
 
 export const drawPoseSet = (world: World, poseSet: PoseSet, snapshot: Snapshot): DrawnSet =>

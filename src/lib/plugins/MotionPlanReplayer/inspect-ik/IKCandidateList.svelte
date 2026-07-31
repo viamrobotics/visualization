@@ -128,6 +128,12 @@
 			poseSets={ctx.poseSets}
 			poseVisibility={ctx.poseVisibility}
 			setPoseVisible={ctx.setPoseVisible}
+			pathSteps={ctx.pathSteps}
+			pathStep={ctx.pathStep}
+			pathLength={ctx.pathLength}
+			lastGoodStepIndex={ctx.lastGoodStepIndex}
+			setPathSteps={ctx.setPathSteps}
+			setPathStep={ctx.setPathStep}
 		/>
 	{/if}
 </div>

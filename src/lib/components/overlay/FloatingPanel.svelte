@@ -7,10 +7,19 @@
 	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
+	import { untrack } from 'svelte'
 
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
+		/**
+		 * Resizes an already-open panel, for content that changes shape at runtime. `defaultSize` is
+		 * zag's uncontrolled initial value and is ignored after mount, and `api.setSize` shares the
+		 * resize-drag's action so it no-ops outside a gesture — driving the machine's controlled
+		 * `size` is what actually moves the panel. Pass a stable object reference: the size is
+		 * re-applied whenever it changes, discarding a manual resize.
+		 */
+		size?: { width: number; height: number }
 		minSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
@@ -30,6 +39,7 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		size,
 		defaultPosition,
 		exitable = true,
 		resizable = false,
@@ -45,9 +55,21 @@
 	const { dom } = useThrelte()
 
 	const id = $props.id()
+
+	// Stays undefined unless the caller opted in, which leaves the machine uncontrolled and every
+	// other panel behaving exactly as before.
+	let currentSize = $state(untrack(() => size))
+
+	// Not derived state: `size` is a push from the caller and a resize drag is a push from the
+	// machine, so whichever moved last wins — an assignment, not a computation.
+	$effect(() => {
+		if (size) currentSize = size
+	})
+
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
+		size: currentSize,
 		defaultPosition: defaultPosition ?? {
 			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
 			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
@@ -58,6 +80,11 @@
 		persistRect,
 		open: isOpen,
 		...props,
+		onSizeChange: (details: floatingPanel.SizeChangeDetails) => {
+			// Controlled panels have to adopt the drag's own result, or a resize snaps straight back.
+			if (currentSize) currentSize = details.size
+			props.onSizeChange?.(details)
+		},
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
