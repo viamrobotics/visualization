@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Badge, Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
@@ -9,7 +9,7 @@
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 
-	import IKInspectionPanel from './inspect-ik/IKInspectionPanel.svelte'
+	import IKInspectionView from './inspect-ik/IKInspectionView.svelte'
 	import { useIKInspection } from './inspect-ik/useIKInspection.svelte'
 	import { planDropper, type ResolvePlanSnapshots } from './plan-dropper'
 	import { useMotionPlanReplayer } from './useMotionPlanReplayer.svelte'
@@ -22,6 +22,11 @@
 	const { children, resolvePlanSnapshots }: Props = $props()
 
 	const truncate = (s: string, max = 40): string => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
+
+	// Module-stable objects: FloatingPanel re-applies `size` whenever the reference changes, so a
+	// fresh literal per render would undo the user's manual resizes.
+	const REPLAYER_SIZE = { width: 320, height: 260 }
+	const INSPECT_SIZE = { width: 380, height: 520 }
 
 	const ctx = useMotionPlanReplayer()
 	const ik = useIKInspection()
@@ -88,10 +93,19 @@
 	</fieldset>
 </DashboardPortal>
 
+<!--
+	One panel for both modes. Inspect-IK takes the replayer's place rather than opening beside it, so
+	the inspected plan's select / delete / scrub controls are out of reach while inspecting — and
+	because a second FloatingPanel instance owns its own zag machine, swapping the body is the only
+	way to keep the window where the user put it.
+-->
 <FloatingPanel
 	bind:isOpen
-	title="Motion Plan Replayer"
-	defaultSize={{ width: 320, height: 260 }}
+	title={ik.isActive ? `IK Inspection · ${ik.planName ?? ''}` : 'Motion Plan Replayer'}
+	defaultSize={REPLAYER_SIZE}
+	size={ik.isActive ? INSPECT_SIZE : REPLAYER_SIZE}
+	minSize={{ width: 300, height: 240 }}
+	resizable
 >
 	<div class="flex h-full flex-col gap-1 p-2 text-xs">
 		{#if ctx.plans.length === 0}
@@ -178,16 +192,102 @@
 				class="hidden"
 				onchange={onFileChange}
 			/>
-			<button
-				type="button"
-				class="border-light text-subtle-1 hover:bg-light w-full rounded border px-2 py-1 aria-disabled:opacity-50"
-				aria-disabled={uploadsInFlight > 0}
-				onclick={() => uploadsInFlight === 0 && fileInput?.click()}
-			>
-				{uploadsInFlight > 0 ? 'Uploading…' : 'Upload plan JSON'}
-			</button>
-		</div>
-	</div>
-</FloatingPanel>
+	{#if ik.isActive}
+		<IKInspectionView />
+	{:else}
+		<div class="flex h-full flex-col gap-1 p-2 text-xs">
+			{#if ctx.plans.length === 0}
+				<div class="text-subtle-1 flex grow items-center justify-center text-center">
+					Use the button below to upload a plan JSON file
+				</div>
+			{/if}
 
-<IKInspectionPanel />
+			{#each ctx.plans as plan, i (plan.name)}
+				{@const isActive = ctx.activePlanIndex === i}
+				<div
+					class={[
+						'group flex cursor-pointer items-center gap-1 rounded px-2 py-1',
+						isActive ? 'bg-light font-medium' : 'hover:bg-ghost-light',
+					]}
+					role="button"
+					tabindex="0"
+					onclick={() => (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
+					onkeydown={(e) =>
+						e.target === e.currentTarget &&
+						e.key === 'Enter' &&
+						(isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
+				>
+					<span class="text-subtle-1 mr-1 shrink-0">
+						{#if isActive}
+							<Eye size={14} />
+						{:else}
+							<EyeOff size={14} />
+						{/if}
+					</span>
+					<span class="grow truncate">{plan.name}</span>
+
+					<!-- MOCK: inspectIK ignores this plan and returns a bundled demo pair. -->
+					<button
+						type="button"
+						class="text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
+						aria-label={`Inspect IK for ${plan.name}`}
+						aria-disabled={ik.status === 'loading'}
+						onclick={(e) => {
+							e.stopPropagation()
+							if (ik.status === 'loading') return
+							// Inspect mode takes the panel over, leaving no control for a replayed plan's
+							// geometry — so it goes rather than lingering unreachable in the scene.
+							ctx.clearActivePlan()
+							void ik.inspect(plan.name, plan.content)
+						}}
+					>
+						<Icon
+							name="bug-outline"
+							size="sm"
+							aria-hidden="true"
+						/>
+					</button>
+
+					<button
+						type="button"
+						class="text-subtle-1 ml-1 rounded px-1 hover:text-red-500"
+						onclick={(e) => {
+							e.stopPropagation()
+							ctx.removePlan(i)
+						}}
+						aria-label="Remove plan"
+						title="Remove plan">×</button
+					>
+				</div>
+
+				{#if plan.status === 'error'}
+					<div class="pl-5 text-[10px] text-red-600">{plan.error}</div>
+				{/if}
+				{#if plan.status === 'no-trajectory'}
+					<div class="pl-5 text-[10px] text-yellow-600">No trajectory — nothing to replay</div>
+				{/if}
+			{/each}
+
+			<div class="mt-auto flex flex-col gap-2 pt-1">
+				<MotionPlanReplayerScrubber />
+
+				{@render children?.()}
+				<input
+					bind:this={fileInput}
+					type="file"
+					accept=".json"
+					class="hidden"
+					onchange={onFileChange}
+				/>
+				<button
+					type="button"
+					class="border-light text-subtle-1 hover:bg-light w-full rounded border px-2 py-1 aria-disabled:opacity-50"
+					aria-disabled={uploadsInFlight > 0}
+					onclick={() => uploadsInFlight === 0 && fileInput?.click()}
+				>
+					{uploadsInFlight > 0 ? 'Uploading…' : 'Upload plan JSON'}
+				</button>
+			</div>
+		</div>
+	{/if}
+</FloatingPanel>

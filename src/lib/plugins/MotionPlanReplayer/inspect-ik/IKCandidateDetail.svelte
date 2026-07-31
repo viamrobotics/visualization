@@ -1,18 +1,42 @@
 <script lang="ts">
+	import { NumericInput } from '@viamrobotics/prime-core'
+
 	import type { IKCandidate } from './ik-candidates'
 	import type { PoseKind, PoseSet } from './pose-sets'
 
+	import Scrubber from '../Scrubber.svelte'
 	import IKStatusDot from './IKStatusDot.svelte'
+	import { MAX_PATH_STEPS, MIN_PATH_STEPS } from './interpolate-configuration'
 	import { hasSolution, IK_STATUS_LABEL, isScored } from './parse-ik-solutions'
+	import { PATH_STYLE } from './pose-sets'
 
 	interface Props {
 		candidate: IKCandidate
 		poseSets: PoseSet[]
 		poseVisibility: Record<PoseKind, boolean>
 		setPoseVisible: (kind: PoseKind, visible: boolean) => void
+		pathSteps: number
+		pathStep: number
+		pathLength: number
+		lastGoodStepIndex: number | null
+		setPathSteps: (steps: number) => void
+		setPathStep: (index: number) => void
 	}
 
-	const { candidate, poseSets, poseVisibility, setPoseVisible }: Props = $props()
+	const {
+		candidate,
+		poseSets,
+		poseVisibility,
+		setPoseVisible,
+		pathSteps,
+		pathStep,
+		pathLength,
+		lastGoodStepIndex,
+		setPathSteps,
+		setPathStep,
+	}: Props = $props()
+
+	const stepsInputID = $props.id()
 
 	let expanded = $state(false)
 
@@ -67,7 +91,62 @@
 				{poseSet.label}
 			</button>
 		{/each}
+
+		{#if pathLength > 0}
+			{@const shown = poseVisibility.path}
+			<button
+				type="button"
+				aria-pressed={shown}
+				class={[
+					'flex items-center gap-1 rounded border px-1.5 py-0.5',
+					'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
+					shown ? 'border-medium bg-light' : 'border-light text-subtle-2',
+				]}
+				onclick={() => setPoseVisible('path', !shown)}
+			>
+				<span
+					class={['size-2 shrink-0 rounded-full', PATH_STYLE.swatchClass, !shown && 'opacity-40']}
+					aria-hidden="true"
+				></span>
+				Path
+			</button>
+		{/if}
 	</div>
+
+	{#if pathLength > 0}
+		<div class="flex flex-col gap-1">
+			<div class="flex items-center gap-2">
+				<label
+					class="text-subtle-1"
+					for={stepsInputID}>Interpolate</label
+				>
+				<NumericInput
+					type="integer"
+					id={stepsInputID}
+					value={pathSteps}
+					min={MIN_PATH_STEPS}
+					max={MAX_PATH_STEPS}
+					step={1}
+					cx="w-16"
+					on:change={(event) => setPathSteps(Number((event.target as HTMLInputElement).value))}
+				/>
+				<span class="text-subtle-1">steps from start to end</span>
+			</div>
+
+			<Scrubber
+				currentStep={pathStep}
+				totalSteps={pathLength}
+				onseek={setPathStep}
+				markIndex={lastGoodStepIndex}
+				markLabel="last good"
+			/>
+		</div>
+	{:else if candidate.status === 'invalid' && solved}
+		<p class="text-subtle-2">
+			No path to walk — this candidate's end pose is itself in collision, so the goal is the problem
+			rather than the route to it.
+		</p>
+	{/if}
 
 	{#if !hasStartPose}
 		<p class="text-subtle-2">
