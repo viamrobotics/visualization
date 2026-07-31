@@ -19,10 +19,11 @@ export interface PoseSet {
 	style: PoseStyle
 }
 
+/** Onion-skin of PATH_STYLE: same hue, faded, so a pose and where it came from read as one arm. */
 const START: PoseStyle = {
-	rgb: { r: 0.29, g: 0.47, b: 0.7 },
-	opacity: 0.3,
-	swatchClass: 'bg-info-dark',
+	rgb: { r: 0, g: 0.47, b: 1 },
+	opacity: 0.25,
+	swatchClass: 'bg-info-medium',
 }
 
 const LAST_GOOD: PoseStyle = {
@@ -44,13 +45,14 @@ const END_FAILED: PoseStyle = {
 }
 
 /**
- * Neutral rather than another traffic-light colour: this is the arm at wherever the scrubber
- * currently sits, read against the coloured reference poses rather than classified alongside them.
+ * The replayer's own arm colour and opacity (useMotionPlanReplayer.svelte.ts), because this is the
+ * same thing: an arm being scrubbed along a trajectory. Staying out of the traffic-light palette
+ * also keeps it from reading as a verdict on the candidate.
  */
 export const PATH_STYLE: PoseStyle = {
-	rgb: { r: 0.16, g: 0.17, b: 0.19 },
-	opacity: 0.9,
-	swatchClass: 'bg-dark',
+	rgb: { r: 0, g: 0.47, b: 1 },
+	opacity: 0.6,
+	swatchClass: 'bg-info-bright',
 }
 
 /** Deliberately desaturated: obstacles are the fixed world, not one of the candidate poses. */

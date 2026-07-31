@@ -233,10 +233,24 @@ export const provideIKInspection = (): IKInspectionContext => {
 		drawnObstacles = drawObstacles(world, obstacleTransforms)
 	}
 
+	/**
+	 * A candidate with a scrubbable path has the endpoint ghosts hidden: they are three more arms
+	 * stacked around the one the user is actually moving, and the path already passes through every
+	 * one of them. A red candidate has no path, so its ghosts are the whole picture.
+	 */
+	const defaultVisibility = (candidate: IKCandidate | undefined): Record<PoseKind, boolean> => {
+		const ghosts = !(candidate && supportsInterpolation(candidate, startConfiguration))
+		return { start: ghosts, lastGood: ghosts, end: ghosts, path: true }
+	}
+
 	const drawSelection = () => {
 		clearPoseSets()
 
 		const candidate = candidates.find((entry) => entry.id === selectedId)
+		// Reset per selection rather than carrying toggles over: the right default differs between a
+		// candidate that has a path and one that does not.
+		poseVisibility = defaultVisibility(candidate)
+
 		if (!candidate || !parsedRequest) {
 			invalidate()
 			return
