@@ -14,6 +14,11 @@ export interface HotkeyBinding {
 	 * whenever the registrant is mounted.
 	 */
 	when?: () => boolean
+	/**
+	 * Suppresses the browser's default action for the key, such as `Space` scrolling
+	 * the page or `Backspace` navigating back. Omitted = the default action still fires.
+	 */
+	preventDefault?: boolean
 	run: () => void
 }
 

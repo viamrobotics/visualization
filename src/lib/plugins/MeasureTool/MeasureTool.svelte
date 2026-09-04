@@ -5,14 +5,13 @@
 	import { Element } from 'svelte-tweakpane-ui'
 	import { type Intersection, Vector3 } from 'three'
 
+	import MeasurePoint from '$lib/components/MeasurePoint.svelte'
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-
-	import MeasurePoint from './MeasurePoint.svelte'
 
 	const settings = useSettings()
 

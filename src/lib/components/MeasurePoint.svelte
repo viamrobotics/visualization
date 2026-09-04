@@ -1,3 +1,10 @@
+<!--
+@component
+
+The cursor marking a point the user is about to place, following the pointer's intersection
+with a surface and showing its live coordinates. Shared by MeasureTool and the Gizmos plugin's
+placement tools.
+-->
 <script lang="ts">
 	import type { Group, Vector3Tuple } from 'three'
 

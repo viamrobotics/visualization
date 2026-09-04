@@ -16,6 +16,7 @@
 		DrawService,
 		FileDrop,
 		FramePov,
+		Gizmos,
 		Isolate,
 		Logs,
 		MeasureTool,
@@ -89,6 +90,7 @@
 
 				{#if pluginsEnabled}
 					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
+					<Gizmos />
 					<Isolate />
 					<MeasureTool />
 
