@@ -67,7 +67,7 @@
 				active={isArmed}
 				description="Gizmo tools"
 			>
-				<GizmoMenu />
+				<GizmoMenu {gizmos} />
 			</DropdownPane>
 		</div>
 	</fieldset>

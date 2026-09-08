@@ -22,9 +22,20 @@
 </script>
 
 <script lang="ts">
-	import { useGizmos } from './useGizmos.svelte'
+	import { type useGizmos } from './useGizmos.svelte'
 
-	const gizmos = useGizmos()
+	interface Props {
+		/**
+		 * Passed in rather than read from context. This menu is rendered through
+		 * `DashboardPortal`, which uses threlte's `Portal` to re-parent the component
+		 * tree into the dashboard, so `getContext` here does not see what `Gizmos.svelte`
+		 * provided and `useGizmos()` returns undefined at runtime. Anything teleported
+		 * into a portal has to take what it needs as props.
+		 */
+		gizmos: ReturnType<typeof useGizmos>
+	}
+
+	const { gizmos }: Props = $props()
 
 	const arm = (mode: GizmoMode) => {
 		gizmos.mode = mode

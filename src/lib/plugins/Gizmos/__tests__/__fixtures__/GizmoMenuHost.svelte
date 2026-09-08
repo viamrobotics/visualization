@@ -1,10 +1,10 @@
 <!--
 @component
 
-Mounts `GizmoMenu` under a real `Gizmos` plugin context and hands that context back
-through `onReady`, so a spec can assert against the same object the menu writes to.
-Needed because `useGizmos`'s context key is private to `useGizmos.svelte.ts`, so a
-spec cannot inject it through `render`'s `context` map.
+Builds a real `Gizmos` plugin context, hands it to `GizmoMenu` as a prop the way
+`Gizmos.svelte` does, and returns it through `onReady` so a spec can assert against the
+same object the menu writes to. The object's getters and setters survive Svelte's props
+proxy, which a plain stand-in object would not.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte'
@@ -20,7 +20,11 @@ spec cannot inject it through `render`'s `context` map.
 
 	// Read untracked: the context is established once at setup and a harness never swaps
 	// its callback mid-test.
-	untrack(() => onReady(provideGizmos(() => undefined)))
+	const gizmos = untrack(() => {
+		const ready = provideGizmos(() => undefined)
+		onReady(ready)
+		return ready
+	})
 </script>
 
-<GizmoMenu />
+<GizmoMenu {gizmos} />
