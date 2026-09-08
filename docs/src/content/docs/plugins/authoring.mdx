@@ -214,6 +214,8 @@ To add UI to the per-entity **details card** instead, contribute a section with 
 
 Sections render at the bottom of the card in registration order. An embedding app can also pass a `details` snippet straight to `<Visualizer />` — it is registered as a section automatically. For an entity whose card is fully custom, add the `traits.CustomDetails` tag to it: the card then suppresses its default pose, color, opacity, axes, and dimensions rows and shows only contributed content.
 
+For a plugin contributing several sections gated by different traits, [`GizmoDetails`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/Gizmos/GizmoDetails.svelte) is the reference: it registers three sections, one for pose, one for a reference plane's dimensions, and one for a box/sphere/capsule gizmo's editable dimensions, each with its own `when`.
+
 ## Reading and writing scene state
 
 Shared scene state lives in a [Koota](https://github.com/pmndrs/koota) ECS world, not Svelte stores. `<Visualizer />` provides the world; your plugin consumes it. The whole ECS surface a plugin needs is exported from the package root:
@@ -326,6 +328,8 @@ Tool plugins that need the pointer claim it through the shared `useSettings` hoo
 
 For picking points and objects in the scene, use Threlte's pointer events — the visualizer already enables [`interactivity()`](https://threlte.xyz/docs/reference/extras/interactivity), so `<T.Mesh onclick={…} onpointermove={…}>` and `<HTML>` handlers work out of the box.
 
+The [`Gizmos`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/Gizmos/Gizmos.svelte) plugin claims `'gizmo'`, following the same pattern.
+
 <Aside
 	type="note"
 	title="In the repo: useMouseRaycaster"
@@ -333,8 +337,10 @@ For picking points and objects in the scene, use Threlte's pointer events — th
 	Plugins contributed to Viam Visualization have access to the internal `useMouseRaycaster` hook
 	(`$lib/hooks/useMouseRaycaster.svelte`), which wraps a shared, BVH-accelerated raycaster with
 	`onclick` / `onmove` callbacks gated by an `enabled` flag. The built-in
-	[`MeasureTool`](../measure-tool/) plugin uses it. It is not part of the public package, so plugins
-	living in an external app use Threlte's pointer events instead.
+	[`MeasureTool`](../measure-tool/) plugin uses it, and so does
+	[`Gizmos`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/Gizmos/usePlace.svelte.ts)
+	for placing a new gizmo. It is not part of the public package, so plugins living in an external
+	app use Threlte's pointer events instead.
 </Aside>
 
 ## Contributing keyboard shortcuts
@@ -367,6 +373,8 @@ useHotkey({
 ```
 
 Dispatch policy belongs to the dispatcher, not to your binding: keys typed into inputs are skipped, presses with a modifier held are skipped, and nothing dispatches while the host sets `inputBindingsEnabled` to `false`. Two bindings may share a key only when their `when` conditions cannot hold at once — the built-in build and move dashboards both bind `1` this way — and overlapping dispatches are logged in dev builds.
+
+Set `preventDefault: true` on a binding whose key has a browser default worth suppressing — `Space` scrolling the page, or `Backspace` navigating back. The dispatcher applies it before running any binding, and only for bindings whose `when` currently holds, so a binding gated to an inactive mode never blocks the browser action.
 
 ## Contributing a workspace mode
 

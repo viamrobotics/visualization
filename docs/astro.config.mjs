@@ -59,6 +59,7 @@ export default defineConfig({
 						{ label: '<Focus />', link: '/plugins/focus/' },
 						{ label: '<FramePov />', link: '/plugins/frame-pov/' },
 						{ label: '<Fullscreen />', link: '/plugins/fullscreen/' },
+						{ label: '<Gizmos />', link: '/plugins/gizmos/' },
 						{ label: '<Logs />', link: '/plugins/logs/' },
 						{ label: '<MeasureTool />', link: '/plugins/measure-tool/' },
 						{ label: '<Monitor />', link: '/plugins/monitor/' },
