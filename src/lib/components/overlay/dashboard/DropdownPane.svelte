@@ -11,10 +11,17 @@
 		title: string
 		active?: boolean
 		description?: string
+		/**
+		 * Render children directly instead of inside a tweakpane `Pane`. The `Pane` exists
+		 * for panes made of tweakpane controls; it re-parents its children, which breaks
+		 * the Svelte context chain, so anything inside one has to take what it needs as
+		 * props. Pass this for a pane of ordinary markup.
+		 */
+		plain?: boolean
 		children: Snippet
 	}
 
-	let { title, active = false, description, children }: Props = $props()
+	let { title, active = false, description, plain = false, children }: Props = $props()
 </script>
 
 <Popover>
@@ -35,9 +42,13 @@
 		</h3>
 
 		<div class="px-1">
-			<Pane position="inline">
+			{#if plain}
 				{@render children()}
-			</Pane>
+			{:else}
+				<Pane position="inline">
+					{@render children()}
+				</Pane>
+			{/if}
 		</div>
 	</div>
 </Popover>

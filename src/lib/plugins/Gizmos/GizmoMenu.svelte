@@ -22,19 +22,9 @@
 </script>
 
 <script lang="ts">
-	import { type useGizmos } from './useGizmos.svelte'
+	import { useGizmos } from './useGizmos.svelte'
 
-	interface Props {
-		/**
-		 * Passed in rather than read from context. This menu renders inside a
-		 * `svelte-tweakpane-ui` `Pane`, which re-parents its children and breaks the
-		 * context chain, so `useGizmos()` here returns undefined at runtime. The caller
-		 * resolves it outside the pane and hands it down.
-		 */
-		gizmos: ReturnType<typeof useGizmos>
-	}
-
-	const { gizmos }: Props = $props()
+	const gizmos = useGizmos()
 
 	const arm = (mode: GizmoMode) => {
 		gizmos.mode = mode

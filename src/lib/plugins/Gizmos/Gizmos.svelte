@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { Element } from 'svelte-tweakpane-ui'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
@@ -63,13 +62,12 @@
 				}}
 			/>
 			<DropdownPane
+				plain
 				title="Gizmo tools"
 				active={isArmed}
 				description="Gizmo tools"
 			>
-				<Element>
-					<GizmoMenu {gizmos} />
-				</Element>
+				<GizmoMenu />
 			</DropdownPane>
 		</div>
 	</fieldset>
