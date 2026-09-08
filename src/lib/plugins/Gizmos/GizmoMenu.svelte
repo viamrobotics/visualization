@@ -7,17 +7,15 @@
 	interface ToolEntry {
 		mode: GizmoMode
 		label: string
-		/** Phase 3 ships polyline and angle; the rest list here disabled. */
-		enabled: boolean
 	}
 
 	const tools = [
-		{ mode: GizmoModes.CoordinateSystem, label: 'Coordinate system', enabled: true },
-		{ mode: GizmoModes.ReferencePlane, label: 'Reference plane', enabled: true },
-		{ mode: GizmoModes.ReferenceGeometry, label: 'Reference geometry', enabled: true },
-		{ mode: GizmoModes.Polyline, label: 'Polyline', enabled: false },
-		{ mode: GizmoModes.Angle, label: 'Angle', enabled: false },
-		{ mode: GizmoModes.Arrow, label: 'Arrow', enabled: true },
+		{ mode: GizmoModes.CoordinateSystem, label: 'Coordinate system' },
+		{ mode: GizmoModes.ReferencePlane, label: 'Reference plane' },
+		{ mode: GizmoModes.ReferenceGeometry, label: 'Reference geometry' },
+		{ mode: GizmoModes.Polyline, label: 'Polyline' },
+		{ mode: GizmoModes.Angle, label: 'Angle' },
+		{ mode: GizmoModes.Arrow, label: 'Arrow' },
 	] as const satisfies ToolEntry[]
 </script>
 
@@ -25,11 +23,15 @@
 	import { Switch } from '@viamrobotics/prime-core'
 	import { Slider } from 'svelte-tweakpane-ui'
 
+	import type { Settings } from '$lib/hooks/useSettings.svelte'
+
 	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
 
 	import type {
 		ArrowAxis,
 		GeometryPlacement,
+		LineMeasure,
+		LineSpace,
 		PlaneAxis,
 		PlanePlacement,
 		ReferenceShape,
@@ -46,9 +48,15 @@
 		 * into a portal has to take what it needs as props.
 		 */
 		gizmos: ReturnType<typeof useGizmos>
+		/**
+		 * Same reasoning as `gizmos`: a context read cannot cross the dashboard portal.
+		 * Only `snapping` is read here, the flag shared with the transform handles and
+		 * the move gizmo.
+		 */
+		settings: Settings
 	}
 
-	const { gizmos }: Props = $props()
+	const { gizmos, settings }: Props = $props()
 
 	const arm = (mode: GizmoMode) => {
 		gizmos.mode = mode
@@ -75,19 +83,10 @@
 		<li>
 			<button
 				type="button"
-				disabled={!tool.enabled}
-				class={[
-					'flex w-full items-center justify-between rounded px-2 py-1.5 text-left',
-					tool.enabled
-						? 'hover:bg-ghost-light focus-visible:bg-ghost-light cursor-pointer'
-						: 'text-disabled cursor-not-allowed',
-				]}
-				onclick={() => tool.enabled && arm(tool.mode)}
+				class="hover:bg-ghost-light focus-visible:bg-ghost-light flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-left"
+				onclick={() => arm(tool.mode)}
 			>
 				{tool.label}
-				{#if !tool.enabled}
-					<span class="text-subtle-2">Soon</span>
-				{/if}
 			</button>
 		</li>
 	{/each}
@@ -225,5 +224,73 @@
 					gizmos.arrowAxis = value
 				})}
 		/>
+	</div>
+{:else if gizmos.mode === GizmoModes.Polyline}
+	<div
+		class="border-light font-public-sans text-subtle-1 flex flex-col gap-1.5 border-t px-2 pt-1.5 text-xs"
+	>
+		<div
+			class="flex items-center gap-2"
+			role="group"
+			aria-labelledby="gizmo-line-space-label"
+		>
+			<span id="gizmo-line-space-label">Space</span>
+			<ToggleGroup
+				options={[
+					{ label: 'world', selected: gizmos.lineSpace === 'world' },
+					{ label: 'screen', selected: gizmos.lineSpace === 'screen' },
+				]}
+				onSelect={(details) =>
+					selectSingle<LineSpace>(details, (value) => {
+						gizmos.lineSpace = value
+					})}
+			/>
+		</div>
+
+		<div
+			class="flex items-center gap-2"
+			role="group"
+			aria-labelledby="gizmo-line-measure-label"
+		>
+			<span id="gizmo-line-measure-label">Measurement</span>
+			<ToggleGroup
+				options={[
+					{ label: 'none', selected: gizmos.lineMeasure === 'none' },
+					{ label: 'segment', selected: gizmos.lineMeasure === 'segment' },
+					{ label: 'total', selected: gizmos.lineMeasure === 'total' },
+				]}
+				onSelect={(details) =>
+					selectSingle<LineMeasure>(details, (value) => {
+						gizmos.lineMeasure = value
+					})}
+			/>
+		</div>
+
+		<div
+			class="flex items-center gap-2"
+			role="group"
+			aria-labelledby="gizmo-line-snapping-label"
+		>
+			<span id="gizmo-line-snapping-label">Snapping</span>
+			<Switch
+				aria-labelledby="gizmo-line-snapping-label"
+				bind:on={settings.snapping}
+			/>
+		</div>
+
+		{#if settings.snapping}
+			<Slider
+				label="Snap distance"
+				min={0}
+				step={1}
+				format={(value) => `${value}mm`}
+				value={gizmos.vertexSnapDistance}
+				on:change={(event) => {
+					if (event.detail.origin === 'internal') {
+						gizmos.vertexSnapDistance = event.detail.value
+					}
+				}}
+			/>
+		{/if}
 	</div>
 {/if}
