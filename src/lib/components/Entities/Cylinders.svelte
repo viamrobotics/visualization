@@ -168,10 +168,11 @@ cylinders and open tubes get a variant each.
 		const { faces, edges } = variantFor(ids.capped)
 		const color = resolveColor(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
+		const facesVisible = visible && !entity.has(traits.Wireframe)
 
 		faces.setColorAt(ids.face, color)
 		faces.setOpacityAt(ids.face, entity.get(traits.Opacity) ?? 0.7)
-		faces.setVisibilityAt(ids.face, visible)
+		faces.setVisibilityAt(ids.face, facesVisible)
 
 		edges.setColorAt(ids.edge, darkenColor(color, 10))
 		edges.setVisibilityAt(ids.edge, visible)
@@ -322,6 +323,8 @@ cylinders and open tubes get a variant each.
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),
 			world.onRemove(traits.ColliderHidden, enqueueAppearance),
+			world.onAdd(traits.Wireframe, enqueueAppearance),
+			world.onRemove(traits.Wireframe, enqueueAppearance),
 		]
 
 		return () => {

@@ -10,7 +10,6 @@
 	import BuildActionsBar from './BuildActionsBar.svelte'
 	import BuildDetails from './BuildDetails.svelte'
 	import FramelessComponentDetails from './FramelessComponentDetails.svelte'
-	import StaticGeometries from './StaticGeometries.svelte'
 	import TransformDashboard from './TransformDashboard.svelte'
 	import { useFramelessComponentEntities } from './useFramelessComponentEntities.svelte'
 
@@ -37,7 +36,6 @@
 <!-- Each of these gates itself on build mode being active. -->
 <TransformDashboard />
 <BuildActionsBar />
-<StaticGeometries />
 
 {#if environment.current.mode === 'build'}
 	{#each selected.current as entity, index (entity)}

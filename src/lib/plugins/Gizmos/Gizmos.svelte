@@ -4,12 +4,17 @@
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
+	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import GizmoDetails from './GizmoDetails.svelte'
+	import GizmoEntities from './GizmoEntities.svelte'
 	import GizmoMenu from './GizmoMenu.svelte'
 	import { GizmoModes } from './gizmos'
+	import ArrowTool from './tools/ArrowTool.svelte'
 	import CoordinateSystemTool from './tools/CoordinateSystemTool.svelte'
+	import GeometryTool from './tools/GeometryTool.svelte'
+	import PlaneTool from './tools/PlaneTool.svelte'
 	import { provideGizmos } from './useGizmos.svelte'
 
 	const settings = useSettings()
@@ -20,6 +25,16 @@
 	})
 
 	const isArmed = $derived(gizmos.mode !== GizmoModes.Idle)
+
+	// Inherited from the retired `StaticGeometries`, which bound `=` to spawning a
+	// bare box in build mode. The geometry tool supersedes it and works in every mode.
+	useHotkey({
+		key: '=',
+		description: 'Place a reference geometry',
+		run: () => {
+			gizmos.mode = GizmoModes.ReferenceGeometry
+		},
+	})
 	const isGizmoMode = $derived(settings.current.interactionMode === 'gizmo')
 
 	// Arming a tool, from either the main button or the menu, only sets `mode`, since
@@ -88,6 +103,14 @@
 
 {#if gizmos.mode === GizmoModes.CoordinateSystem}
 	<CoordinateSystemTool />
+{:else if gizmos.mode === GizmoModes.ReferenceGeometry}
+	<GeometryTool />
+{:else if gizmos.mode === GizmoModes.ReferencePlane}
+	<PlaneTool />
+{:else if gizmos.mode === GizmoModes.Arrow}
+	<ArrowTool />
 {/if}
+
+<GizmoEntities />
 
 <GizmoDetails />

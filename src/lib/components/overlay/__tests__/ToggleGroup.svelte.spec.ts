@@ -7,7 +7,7 @@ import ToggleGroup from '../ToggleGroup.svelte'
 import '@testing-library/jest-dom/vitest'
 
 describe('<ToggleGroup>', () => {
-	it('renders all options using label/value fallback', () => {
+	it('shows each option its label, not its stored value', () => {
 		render(ToggleGroup, {
 			props: {
 				options: [{ label: 'One' }, { label: 'Two', value: '2' }, { label: 'Three', value: 'III' }],
@@ -16,8 +16,24 @@ describe('<ToggleGroup>', () => {
 		})
 
 		expect(screen.getByRole('radio', { name: 'One' })).toBeInTheDocument()
-		expect(screen.getByRole('radio', { name: '2' })).toBeInTheDocument()
-		expect(screen.getByRole('radio', { name: 'III' })).toBeInTheDocument()
+		expect(screen.getByRole('radio', { name: 'Two' })).toBeInTheDocument()
+		expect(screen.getByRole('radio', { name: 'Three' })).toBeInTheDocument()
+	})
+
+	it('reports the stored value of the option, not its label', async () => {
+		const onSelect = vi.fn<(details: string[]) => void>()
+		const user = userEvent.setup()
+
+		render(ToggleGroup, {
+			props: {
+				options: [{ label: 'One' }, { label: 'Two', value: '2' }],
+				onSelect,
+			},
+		})
+
+		await user.click(screen.getByRole('radio', { name: 'Two' }))
+
+		expect(onSelect).toHaveBeenLastCalledWith(['2'])
 	})
 
 	it('Initially selects options', () => {
