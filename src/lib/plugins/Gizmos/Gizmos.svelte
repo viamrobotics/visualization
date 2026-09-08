@@ -5,12 +5,14 @@
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
+	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import GizmoDetails from './GizmoDetails.svelte'
 	import GizmoEntities from './GizmoEntities.svelte'
 	import GizmoMenu from './GizmoMenu.svelte'
 	import { GizmoModes } from './gizmos'
+	import GizmoStorage from './GizmoStorage.svelte'
 	import AngleTool from './tools/AngleTool.svelte'
 	import ArrowTool from './tools/ArrowTool.svelte'
 	import CoordinateSystemTool from './tools/CoordinateSystemTool.svelte'
@@ -18,8 +20,11 @@
 	import LineTool from './tools/LineTool.svelte'
 	import PlaneTool from './tools/PlaneTool.svelte'
 	import { provideGizmos } from './useGizmos.svelte'
+	import { provideGizmoStorage } from './useGizmoStorage.svelte'
 
 	const settings = useSettings()
+	const partID = usePartID()
+	const storage = provideGizmoStorage(() => partID.current)
 
 	const gizmos = provideGizmos(() => {
 		settings.current.interactionMode = 'navigate'
@@ -88,12 +93,14 @@
 				class={isArmed ? 'rounded-r-none' : ''}
 			>
 				<!--
-					`settings` is resolved here and handed down for the same reason `gizmos` is:
-					this menu is teleported by `DashboardPortal`, which re-parents the component
-					tree, so `useSettings()` in there returns undefined at runtime.
+					`settings` and `storage` are resolved here and handed down for the same
+					reason `gizmos` is: this menu is teleported by `DashboardPortal`, which
+					re-parents the component tree, so a context read in there returns
+					undefined at runtime.
 				-->
 				<GizmoMenu
 					{gizmos}
+					{storage}
 					settings={settings.current}
 				/>
 			</DropdownPane>
@@ -124,6 +131,8 @@
 {:else if gizmos.mode === GizmoModes.Arrow}
 	<ArrowTool />
 {/if}
+
+<GizmoStorage />
 
 <GizmoEntities />
 
