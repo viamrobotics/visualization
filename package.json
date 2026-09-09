@@ -612,7 +612,7 @@
 		"vite-plugin-devtools-json": "1.0.0",
 		"vite-plugin-glsl": "^1.5.5",
 		"vite-plugin-mkcert": "1.17.9",
-		"vitest": "4.1.9",
+		"vitest": "4.1.11",
 		"wireit": "0.14.13"
 	},
 	"peerDependencies": {
