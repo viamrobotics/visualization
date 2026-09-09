@@ -29,11 +29,12 @@
 		"lint:scenes": "wireit",
 		"knip": "npx knip --include files,exports,types",
 		"test": "wireit",
-		"test:unit": "vitest",
+		"test:unit": "pnpm test:rdk-golden && vitest",
 		"test:unit-run": "wireit",
 		"test:coverage": "wireit",
 		"test:client": "wireit",
 		"test:draw": "wireit",
+		"test:rdk-golden": "wireit",
 		"e2e": "pnpm go-build && playwright test --project=drawing --project=matrix",
 		"e2e:ui": "pnpm go-build && playwright test --project=drawing --project=matrix --ui",
 		"e2e:matrix": "pnpm go-build && playwright test --project=matrix",
@@ -192,6 +193,7 @@
 			],
 			"output": [],
 			"dependencies": [
+				"test:rdk-golden",
 				"proto:gen-ts",
 				"svelte-sync",
 				"build:workers",
@@ -357,6 +359,7 @@
 			],
 			"output": [],
 			"dependencies": [
+				"test:rdk-golden",
 				"proto:gen-ts"
 			],
 			"packageLocks": [
@@ -375,6 +378,7 @@
 				"coverage/**"
 			],
 			"dependencies": [
+				"test:rdk-golden",
 				"proto:gen-ts"
 			],
 			"packageLocks": [
@@ -398,6 +402,17 @@
 				"go.sum"
 			],
 			"output": []
+		},
+		"test:rdk-golden": {
+			"command": "cd src/lib/math/rdk-math && go test ./... -count=1",
+			"files": [
+				"src/lib/math/rdk-math/**",
+				"!src/lib/math/rdk-math/testdata/**"
+			],
+			"output": [
+				"src/lib/math/rdk-math/testdata/**"
+			],
+			"clean": true
 		},
 		"proto": {
 			"command": "pnpm proto:dep-update && pnpm proto:format && pnpm proto:lint && pnpm proto:gen-go && pnpm proto:gen-ts",
@@ -715,7 +730,8 @@
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
-		"!dist/**/*.spec.*"
+		"!dist/**/*.spec.*",
+		"!dist/**/rdk-math/**"
 	],
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",

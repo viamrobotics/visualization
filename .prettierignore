@@ -49,3 +49,8 @@ src/lib/motion/__tests__/__fixtures__/plan-linear-constrained.json
 .claude/state/
 .claude/templates/
 # houserules:prettierignore end
+
+# RDK test fixtures, kept byte-identical to their copies in viamrobotics/rdk, and the golden
+# files the Go generators in rdk-math/ write.
+src/lib/math/rdk-math/data/
+src/lib/math/rdk-math/testdata/
