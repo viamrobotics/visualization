@@ -140,12 +140,12 @@ The `Gizmo` marker trait itself is not part of this namespace. It lives in the c
 
 <Aside
 	type="caution"
-	title="useGizmos() returns undefined inside a Pane"
+	title="Context does not cross a dashboard portal"
 >
-	A component rendered inside a `svelte-tweakpane-ui` DropdownPane cannot call `getContext`. The
-	underlying tweakpane `Pane` re-parents its children, which breaks the Svelte context chain, so
-	useGizmos in a component mounted there returns undefined at runtime and the whole menu silently
-	renders nothing. This shipped as a real bug. If you're extending this plugin's tool picker,
-	resolve useGizmos outside the pane and pass what a child component needs down as props, the same
-	way the built-in tool options do.
+	Anything the plugin renders through DashboardPortal is teleported by threlte's Portal, which
+	re-parents the component tree into the dashboard. A child component there cannot read context the
+	plugin provided: useGizmos returns undefined at runtime and the tool picker silently renders
+	nothing. This shipped as a real bug, and it is invisible to unit tests, which mount the child
+	directly. Resolve what you need outside the portal and pass it down as props, the same way the
+	built-in tool picker takes gizmos, settings, and storage.
 </Aside>

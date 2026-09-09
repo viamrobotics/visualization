@@ -157,6 +157,18 @@ To place DOM chrome in the visualizer's overlay, render it into one of the expor
 ```
 
 <Aside
+	type="caution"
+	title="Context does not cross a Portal"
+>
+	A Portal teleports its contents by re-parenting the component tree into the target region. A child
+	component rendered there cannot read context your plugin provided: getContext returns undefined at
+	runtime, and a component that reads it during render throws and silently renders nothing. Unit
+	tests do not catch this, because they mount the child directly rather than through the portal.
+	Resolve what you need in the component that calls your provide function, and pass it into the
+	portal as props.
+</Aside>
+
+<Aside
 	type="tip"
 	title="Bring your own button"
 >
