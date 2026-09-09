@@ -23,7 +23,7 @@ export type PlaneAxis = 'yz' | 'xz' | 'xy'
 /** `free` puts the plane at the clicked point; `offset` shifts it along its normal. */
 export type PlanePlacement = 'free' | 'offset'
 
-export type GeometryShape = 'box' | 'sphere' | 'capsule'
+type GeometryShape = 'box' | 'sphere' | 'capsule'
 
 /** `at-origin` ignores the click point and places at the world origin. */
 export type GeometryPlacement = 'at-origin' | 'free'

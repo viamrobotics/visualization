@@ -162,7 +162,7 @@
 				position={htmlPosition.lerpVectors(p1, p2, 0.5).toArray()}
 				zIndexRange={[3, 0]}
 			>
-				<div class="border border-black bg-white px-1 py-0.5 text-xs">
+				<div class="font-roboto-mono border border-black bg-white px-1 py-0.5 text-xs">
 					{p1.distanceTo(p2).toFixed(3)}<span class="text-subtle-2">m</span>
 				</div>
 			</HTML>

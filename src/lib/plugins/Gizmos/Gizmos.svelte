@@ -24,9 +24,17 @@
 
 	// Arming a tool, from either the main button or the menu, only sets `mode`, since
 	// neither has a reason to know about `interactionMode`. Claim the pointer here instead.
+	// The cleanup hands it back on unmount, but only if this effect still owns it: another
+	// plugin may have taken `interactionMode` away already, and unmounting should not
+	// clobber whatever that plugin left in place.
 	$effect(() => {
 		if (isArmed) {
 			settings.current.interactionMode = 'gizmo'
+			return () => {
+				if (settings.current.interactionMode === 'gizmo') {
+					settings.current.interactionMode = 'navigate'
+				}
+			}
 		}
 	})
 
@@ -47,28 +55,33 @@
 
 <DashboardPortal>
 	<fieldset>
+		<!--
+			With six tools, choosing one is the primary action, so the picker owns the
+			shapes button rather than hiding behind a chevron beside it. Exiting is a
+			separate control that only exists while a tool is armed, which keeps each
+			button to one job and off the overloaded trigger a review already rejected.
+		-->
 		<div class="flex">
-			<DashboardButton
-				active={isArmed}
-				class="rounded-r-none"
-				icon="shapes"
-				description={isArmed ? `Gizmo: ${gizmos.mode}` : 'Add gizmo'}
-				onclick={() => {
-					if (isArmed) {
-						gizmos.exit()
-					} else {
-						gizmos.mode = GizmoModes.CoordinateSystem
-					}
-				}}
-			/>
 			<DropdownPane
 				plain
 				title="Gizmo tools"
 				active={isArmed}
 				description="Gizmo tools"
+				icon="shapes"
+				class={isArmed ? 'rounded-r-none' : ''}
 			>
 				<GizmoMenu {gizmos} />
 			</DropdownPane>
+
+			{#if isArmed}
+				<DashboardButton
+					active
+					class="-ml-px rounded-l-none"
+					icon="close"
+					description="Exit {gizmos.mode}"
+					onclick={() => gizmos.exit()}
+				/>
+			{/if}
 		</div>
 	</fieldset>
 </DashboardPortal>

@@ -30,7 +30,7 @@ placement tools.
 	/>
 
 	<HTML
-		class="pointer-events-none mb-2 w-16 -translate-x-1/2 -translate-y-[calc(100%+10px)] border border-black bg-white px-1 py-0.5 text-xs text-wrap"
+		class="font-roboto-mono pointer-events-none mb-2 w-16 -translate-x-1/2 -translate-y-[calc(100%+10px)] border border-black bg-white px-1 py-0.5 text-xs text-wrap"
 		zIndexRange={[3, 0]}
 	>
 		<div class="flex justify-between">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
+	import { type IconName } from '@viamrobotics/prime-core'
 	import { Pane } from 'svelte-tweakpane-ui'
 
 	import Popover from '$lib/components/overlay/Popover.svelte'
@@ -18,10 +19,29 @@
 		 * props. Pass this for a pane of ordinary markup.
 		 */
 		plain?: boolean
+		/**
+		 * The trigger's icon. Defaults to a chevron, which suits a pane sitting beside
+		 * the control it configures. Pass an icon of your own where the pane is the
+		 * primary affordance rather than an adjunct to a neighbouring button.
+		 */
+		icon?: IconName | 'ruler' | 'mouse-pointer' | 'shapes' | 'hammer' | 'move-3d'
+		/**
+		 * Trigger classes. The default squares off the left edge so the pane butts
+		 * against the button it configures. Override it where the pane stands alone.
+		 */
+		class?: string
 		children: Snippet
 	}
 
-	let { title, active = false, description, plain = false, children }: Props = $props()
+	let {
+		title,
+		active = false,
+		description,
+		plain = false,
+		icon = 'chevron-down',
+		class: className = 'rounded-l-none border-l-0',
+		children,
+	}: Props = $props()
 </script>
 
 <Popover>
@@ -29,9 +49,11 @@
 		<Button
 			{...triggerProps}
 			{active}
-			class="rounded-l-none border-l-0"
-			icon="chevron-down"
-			iconCx="motion-safe:transition-transform {isOpen ? 'rotate-180' : ''}"
+			class={className}
+			{icon}
+			iconCx={icon === 'chevron-down'
+				? `motion-safe:transition-transform ${isOpen ? 'rotate-180' : ''}`
+				: undefined}
 			description={description ?? title}
 		/>
 	{/snippet}
