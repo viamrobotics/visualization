@@ -6,7 +6,7 @@ import type { PlaneAxis } from './gizmos'
  * rather than migrated: gizmos are annotations a user can replace in seconds, so
  * the cost of losing them is far below the cost of maintaining migrations.
  */
-export const GIZMO_STORE_VERSION = 1
+export const GIZMO_STORE_VERSION = 2
 
 /** Fields every placed gizmo carries, whatever its kind. */
 interface GizmoRecordBase {
@@ -61,14 +61,14 @@ interface LineRecordBase extends GizmoRecordBase {
 	/** Flat xyz triples in scene units (metres), as `LinePositions` stores them. */
 	positions: number[]
 	lineWidth: number
-	dotSize: number
-	dotColors?: number[]
 }
 
 interface PolylineRecord extends LineRecordBase {
 	kind: 'polyline'
+	dotSize: number
+	dotColors?: number[]
 	screenSpace?: boolean
-	measure?: 'segment' | 'total'
+	lineMeasure?: 'segment' | 'total'
 }
 
 interface AngleRecord extends LineRecordBase {

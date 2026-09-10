@@ -30,10 +30,10 @@ const isValidBase = (raw: Record<string, unknown>): boolean =>
 	(raw.color === undefined || (isNumberArray(raw.color) && raw.color.length === RGB_BYTE_COUNT))
 
 const isValidLineFields = (raw: Record<string, unknown>): boolean =>
-	isNumberArray(raw.positions) &&
-	typeof raw.lineWidth === 'number' &&
-	typeof raw.dotSize === 'number' &&
-	(raw.dotColors === undefined || isNumberArray(raw.dotColors))
+	isNumberArray(raw.positions) && typeof raw.lineWidth === 'number'
+
+const isValidDotFields = (raw: Record<string, unknown>): boolean =>
+	typeof raw.dotSize === 'number' && (raw.dotColors === undefined || isNumberArray(raw.dotColors))
 
 /** Narrows an unknown value parsed from storage into a `GizmoRecord`, or `undefined`. */
 const parseGizmoRecord = (raw: unknown): GizmoRecord | undefined => {
@@ -100,7 +100,7 @@ const parseGizmoRecord = (raw: unknown): GizmoRecord | undefined => {
 			return undefined
 		}
 		case 'polyline': {
-			if (!isValidLineFields(raw)) return undefined
+			if (!isValidLineFields(raw) || !isValidDotFields(raw)) return undefined
 			return {
 				...base,
 				kind: 'polyline',
@@ -109,7 +109,9 @@ const parseGizmoRecord = (raw: unknown): GizmoRecord | undefined => {
 				dotSize: raw.dotSize as number,
 				...(raw.dotColors ? { dotColors: raw.dotColors as number[] } : {}),
 				...(typeof raw.screenSpace === 'boolean' ? { screenSpace: raw.screenSpace } : {}),
-				...(raw.measure === 'segment' || raw.measure === 'total' ? { measure: raw.measure } : {}),
+				...(raw.lineMeasure === 'segment' || raw.lineMeasure === 'total'
+					? { lineMeasure: raw.lineMeasure }
+					: {}),
 			}
 		}
 		case 'angle': {
@@ -119,8 +121,6 @@ const parseGizmoRecord = (raw: unknown): GizmoRecord | undefined => {
 				kind: 'angle',
 				positions: raw.positions as number[],
 				lineWidth: raw.lineWidth as number,
-				dotSize: raw.dotSize as number,
-				...(raw.dotColors ? { dotColors: raw.dotColors as number[] } : {}),
 			}
 		}
 		default: {
@@ -182,15 +182,13 @@ const kindTraits = (record: GizmoRecord): ConfigurableTrait[] => {
 				traits.DotSize(record.dotSize),
 				...(record.dotColors ? [traits.DotColors(new Uint8Array(record.dotColors))] : []),
 				...(record.screenSpace ? [traits.ScreenSpace] : []),
-				...(record.measure ? [PolylineMeasure({ mode: record.measure })] : []),
+				...(record.lineMeasure ? [PolylineMeasure({ mode: record.lineMeasure })] : []),
 			]
 		}
 		case 'angle': {
 			return [
 				traits.LinePositions(new Float32Array(record.positions)),
 				traits.LineWidth(record.lineWidth),
-				traits.DotSize(record.dotSize),
-				...(record.dotColors ? [traits.DotColors(new Uint8Array(record.dotColors))] : []),
 				AngleMeasure,
 			]
 		}

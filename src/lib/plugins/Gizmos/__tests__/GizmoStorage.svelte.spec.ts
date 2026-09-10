@@ -21,7 +21,7 @@ const persistenceKey = (partID: string) => `${partID}:gizmos-persist`
 const renderHarness = (world: World, partID: string) => {
 	let storage!: ReturnType<typeof provideGizmoStorage>
 
-	render(GizmoStorageHarness, {
+	const { rerender } = render(GizmoStorageHarness, {
 		props: {
 			world,
 			partID,
@@ -31,7 +31,7 @@ const renderHarness = (world: World, partID: string) => {
 		},
 	})
 
-	return storage
+	return { storage, switchPart: (nextPartID: string) => rerender({ partID: nextPartID }) }
 }
 
 describe('GizmoStorage', () => {
@@ -57,7 +57,7 @@ describe('GizmoStorage', () => {
 
 	it('writes the placed gizmo to storage once persistence is enabled', async () => {
 		const world = createWorld()
-		const storage = renderHarness(world, partID)
+		const { storage } = renderHarness(world, partID)
 		storage.enabled = true
 		await tick()
 
@@ -102,7 +102,7 @@ describe('GizmoStorage', () => {
 
 	it('clears the stored payload for the current part when persistence is turned off', async () => {
 		const world = createWorld()
-		const storage = renderHarness(world, partID)
+		const { storage } = renderHarness(world, partID)
 		storage.enabled = true
 		await tick()
 
@@ -130,5 +130,104 @@ describe('GizmoStorage', () => {
 		await tick()
 
 		expect([...world.query(traits.Gizmo)]).toHaveLength(0)
+	})
+
+	describe('switching machine parts', () => {
+		const partB = 'part-2'
+
+		const storeFor = (translation: [number, number, number]): GizmoStore => ({
+			version: GIZMO_STORE_VERSION,
+			gizmos: [
+				{
+					kind: 'coordinate-system',
+					name: 'coordinate-system 1',
+					matrix: new Matrix4().makeTranslation(...translation).elements,
+				},
+			],
+		})
+
+		it("replaces the previous part's gizmos with the new part's restored ones", async () => {
+			const storeB = storeFor([7, 8, 9])
+			localStorage.setItem(persistenceKey(partB), 'true')
+			localStorage.setItem(gizmoStoreKey(partB), JSON.stringify(storeB))
+
+			const world = createWorld()
+			const { storage, switchPart } = renderHarness(world, partID)
+			storage.enabled = true
+			await tick()
+
+			spawnGizmo(world, {
+				kind: 'coordinate-system',
+				matrix: new Matrix4(),
+				traits: [traits.ReferenceFrame],
+			})
+			await waitForDebounce()
+
+			await switchPart(partB)
+			await tick()
+
+			const gizmos = [...world.query(traits.Gizmo)]
+			expect(gizmos).toHaveLength(1)
+			expect([...gizmos[0]!.get(traits.Matrix)!.elements]).toEqual(
+				new Matrix4().makeTranslation(7, 8, 9).elements
+			)
+		})
+
+		it("leaves the previous part's stored payload untouched and the new part's payload intact after the switch", async () => {
+			const storeB = storeFor([7, 8, 9])
+			localStorage.setItem(persistenceKey(partB), 'true')
+			localStorage.setItem(gizmoStoreKey(partB), JSON.stringify(storeB))
+
+			const world = createWorld()
+			const { storage, switchPart } = renderHarness(world, partID)
+			storage.enabled = true
+			await tick()
+
+			spawnGizmo(world, {
+				kind: 'coordinate-system',
+				matrix: new Matrix4(),
+				traits: [traits.ReferenceFrame],
+			})
+			await waitForDebounce()
+			const storedForA = localStorage.getItem(gizmoStoreKey(partID))
+
+			await switchPart(partB)
+			await tick()
+			await waitForDebounce()
+
+			expect(localStorage.getItem(gizmoStoreKey(partID))).toBe(storedForA)
+
+			const storedForB = JSON.parse(
+				localStorage.getItem(gizmoStoreKey(partB)) ?? 'null'
+			) as GizmoStore
+			expect(storedForB.gizmos).toEqual(storeB.gizmos)
+		})
+
+		it("reads the enabled flag from the new part's own persistence key, not the previous part's", async () => {
+			localStorage.setItem(persistenceKey(partB), 'true')
+
+			const world = createWorld()
+			const { storage, switchPart } = renderHarness(world, partID)
+			expect(storage.enabled).toBe(false)
+
+			await switchPart(partB)
+			await tick()
+
+			expect(storage.enabled).toBe(true)
+		})
+
+		it('removes nothing from the world on first mount', async () => {
+			const world = createWorld()
+			spawnGizmo(world, {
+				kind: 'coordinate-system',
+				matrix: new Matrix4(),
+				traits: [traits.ReferenceFrame],
+			})
+
+			renderHarness(world, partID)
+			await tick()
+
+			expect([...world.query(traits.Gizmo)]).toHaveLength(1)
+		})
 	})
 })

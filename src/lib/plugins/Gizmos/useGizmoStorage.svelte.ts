@@ -16,7 +16,9 @@ const key = Symbol('gizmo-storage-context')
  * that part's own store rather than carrying the previous one across.
  */
 export const provideGizmoStorage = (partID: () => string) => {
-	const enabled = new PersistedState(`${partID()}:gizmos-persist`, false)
+	// A fresh PersistedState per part, not one read once at setup: `enabled` is scoped
+	// to the part, so a part switch has to move the flag to that part's own key too.
+	const enabledStore = $derived(new PersistedState(`${partID()}:gizmos-persist`, false))
 
 	return setContext(key, {
 		get partID() {
@@ -24,10 +26,10 @@ export const provideGizmoStorage = (partID: () => string) => {
 		},
 
 		get enabled() {
-			return enabled.current
+			return enabledStore.current
 		},
 		set enabled(value) {
-			enabled.current = value
+			enabledStore.current = value
 		},
 	})
 }

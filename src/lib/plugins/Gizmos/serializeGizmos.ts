@@ -41,11 +41,17 @@ const commonFields = (entity: import('koota').Entity) => {
 
 const serializeLineFields = (entity: import('koota').Entity) => {
 	const positions = entity.get(traits.LinePositions)
-	const dotColors = entity.get(traits.DotColors)
 
 	return {
 		positions: positions ? [...positions] : [],
 		lineWidth: entity.get(traits.LineWidth) ?? 0,
+	}
+}
+
+const serializeDotFields = (entity: import('koota').Entity) => {
+	const dotColors = entity.get(traits.DotColors)
+
+	return {
 		dotSize: entity.get(traits.DotSize) ?? 0,
 		...(dotColors && dotColors.length > 0 ? { dotColors: [...dotColors] } : {}),
 	}
@@ -109,13 +115,14 @@ const serializeGizmo = (entity: import('koota').Entity): GizmoRecord | undefined
 	}
 
 	if (entity.has(traits.LinePositions)) {
-		const measure = entity.has(PolylineMeasure) ? entity.get(PolylineMeasure)!.mode : undefined
+		const lineMeasure = entity.has(PolylineMeasure) ? entity.get(PolylineMeasure)!.mode : undefined
 		return {
 			...base,
 			kind: 'polyline',
 			...serializeLineFields(entity),
+			...serializeDotFields(entity),
 			...(entity.has(traits.ScreenSpace) ? { screenSpace: true } : {}),
-			...(measure ? { measure } : {}),
+			...(lineMeasure ? { lineMeasure } : {}),
 		}
 	}
 

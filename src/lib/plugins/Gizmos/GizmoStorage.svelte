@@ -56,8 +56,20 @@ current part is cleared, so a reload never resurrects gizmos the user dismissed.
 	// Restores once per part. Keying the effect on `partID` alone, and reading `enabled`
 	// through `untrack`, means a later toggle flip does not replay this, only a genuine
 	// part switch does — each part restores its own store instead of the previous one.
+	//
+	// A genuine part switch (a previous part id existed and differs from this one) first
+	// removes every placed gizmo from the world, whether or not the new part has
+	// persistence enabled, so the old part's gizmos never leak into the new part's scene.
+	let previousPartID: string | undefined
 	$effect(() => {
 		const partID = storage.partID
+		const isPartSwitch = previousPartID !== undefined && previousPartID !== partID
+		previousPartID = partID
+
+		if (isPartSwitch) {
+			for (const entity of world.query(traits.Gizmo)) entity.destroy()
+		}
+
 		if (!untrack(() => storage.enabled)) return
 		deserializeGizmos(world, readGizmoStore(partID))
 	})

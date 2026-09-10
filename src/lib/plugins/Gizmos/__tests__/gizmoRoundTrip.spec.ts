@@ -168,6 +168,22 @@ describe('gizmo round trip', () => {
 			...placed.angle.get(traits.LinePositions)!,
 		])
 		expect(restoredAngle.has(AngleMeasure)).toBe(true)
+		expect(restoredAngle.has(traits.DotSize)).toBe(false)
+		expect(restoredAngle.has(traits.DotColors)).toBe(false)
+	})
+
+	it('discards a payload written at the previous store version', () => {
+		world = createWorld()
+		spawnGizmo(world, { kind: 'arrow', traits: [traits.Arrow] })
+		const store = serializeGizmos(world)
+
+		restoredWorld = createWorld()
+		deserializeGizmos(restoredWorld, {
+			...store,
+			version: GIZMO_STORE_VERSION - 1,
+		} satisfies GizmoStore)
+
+		expect([...restoredWorld.query(traits.Gizmo)]).toHaveLength(0)
 	})
 
 	it('restores nothing when the store version does not match', () => {
