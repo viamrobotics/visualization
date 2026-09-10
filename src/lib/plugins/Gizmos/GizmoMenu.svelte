@@ -39,6 +39,7 @@
 	} from './gizmos'
 
 	import { type useGizmos } from './useGizmos.svelte'
+	import { type provideGizmoStorage } from './useGizmoStorage.svelte'
 
 	interface Props {
 		/**
@@ -55,9 +56,14 @@
 		 * the move gizmo.
 		 */
 		settings: Settings
+		/**
+		 * Same reasoning as `gizmos` and `settings`: a context read that cannot cross the
+		 * `Pane` boundary.
+		 */
+		storage: ReturnType<typeof provideGizmoStorage>
 	}
 
-	const { gizmos, settings }: Props = $props()
+	const { gizmos, settings, storage }: Props = $props()
 
 	const arm = (mode: GizmoMode) => {
 		gizmos.mode = mode
@@ -100,6 +106,27 @@
 		}
 	}
 </script>
+
+<div
+	class="border-light font-public-sans text-subtle-1 flex flex-col gap-1 border-b px-2 pb-1.5 text-xs"
+>
+	<div
+		class="flex items-center justify-between gap-2"
+		role="group"
+		aria-labelledby="gizmo-remember-label"
+	>
+		<span id="gizmo-remember-label">Remember gizmos</span>
+		<Switch
+			aria-labelledby="gizmo-remember-label"
+			aria-describedby="gizmo-remember-hint"
+			bind:on={storage.enabled}
+		/>
+	</div>
+	<span
+		id="gizmo-remember-hint"
+		class="text-subtle-2">Saved gizmos are scoped to this machine part.</span
+	>
+</div>
 
 <ul class="font-public-sans text-default flex w-56 flex-col gap-0.5 text-xs">
 	{#each tools as tool (tool.mode)}
