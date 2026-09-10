@@ -45,7 +45,6 @@ rendered while `useGizmos().mode` is `'polyline'`.
 	import MeasurePoint from '$lib/components/MeasurePoint.svelte'
 	import { DEFAULT_LINE_WIDTH } from '$lib/draw'
 	import { selectOnly, traits, useWorld } from '$lib/ecs'
-	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import ConfirmFloatingPanel from '../ConfirmFloatingPanel.svelte'
@@ -54,6 +53,7 @@ rendered while `useGizmos().mode` is `'polyline'`.
 	import { PolylineMeasure } from '../traits'
 	import { useGizmos } from '../useGizmos.svelte'
 	import { usePending } from '../usePending.svelte'
+	import { usePlace } from '../usePlace.svelte'
 
 	const MM_TO_M = 0.001
 
@@ -61,7 +61,6 @@ rendered while `useGizmos().mode` is `'polyline'`.
 	const gizmos = useGizmos()
 	const settings = useSettings()
 
-	let cursor = $state.raw<Vector3 | undefined>()
 	let points = $state.raw<Vector3[]>([])
 
 	const pending = usePending(() => ({
@@ -70,8 +69,6 @@ rendered while `useGizmos().mode` is `'polyline'`.
 		onCommitAndContinue,
 		onUndo,
 	}))
-
-	const { onclick, onmove } = useMouseRaycaster(() => ({ enabled: true }))
 
 	const hasSegment = $derived(points.length >= 2)
 	const panelPosition = $derived.by<[number, number, number]>(() => {
@@ -115,37 +112,7 @@ rendered while `useGizmos().mode` is `'polyline'`.
 		pending.current.set(traits.LinePositions, flatPositions(points, preview))
 	}
 
-	onmove((event) => {
-		const hit = cursorPoint(event.intersections, pending.current)
-		if (!hit) {
-			cursor = undefined
-			return
-		}
-
-		const { position } = getCursorPosition(hit)
-		cursor = position
-		if (pending.current) updatePending(position)
-	})
-
-	onclick((event) => {
-		const hit = cursorPoint(event.intersections, pending.current)
-		if (!hit) return
-
-		const { position, index } = getCursorPosition(hit)
-
-		if (pending.current) {
-			if (index === 0 && points.length >= MIN_LOOP_VERTICES) {
-				points = [...points, position]
-				const committed = finalizePending()
-				if (committed) selectOnly(world, committed)
-				return
-			}
-
-			points = [...points, position]
-			updatePending()
-			return
-		}
-
+	const spawnPolyline = (position: Vector3) => {
 		const entity = spawnPending(world, {
 			kind: 'polyline',
 			position: new Vector3(),
@@ -164,6 +131,41 @@ rendered while `useGizmos().mode` is `'polyline'`.
 		points = [position]
 		selectOnly(world, entity)
 		updatePending(position)
+	}
+
+	const appendVertex = (position: Vector3) => {
+		points = [...points, position]
+		updatePending()
+	}
+
+	const closeLoop = (position: Vector3) => {
+		points = [...points, position]
+		const committed = finalizePending()
+		if (committed) selectOnly(world, committed)
+	}
+
+	const place = usePlace(() => ({
+		findHit: (intersections) => {
+			const hit = cursorPoint(intersections, pending.current)
+			return hit ? getCursorPosition(hit) : undefined
+		},
+		onPlace: ({ position, index }) => {
+			if (!pending.current) {
+				spawnPolyline(position)
+				return
+			}
+
+			if (index === 0 && points.length >= MIN_LOOP_VERTICES) {
+				closeLoop(position)
+				return
+			}
+
+			appendVertex(position)
+		},
+	}))
+
+	$effect(() => {
+		if (pending.current) updatePending(place.current?.position)
 	})
 
 	const finalizePending = () => {
@@ -209,7 +211,7 @@ rendered while `useGizmos().mode` is `'polyline'`.
 		if (!pending.current || !hasSegment) return
 
 		points = points.slice(0, -1)
-		updatePending(cursor)
+		updatePending(place.current?.position)
 	}
 </script>
 
@@ -226,6 +228,6 @@ rendered while `useGizmos().mode` is `'polyline'`.
 	/>
 {/if}
 
-{#if !pending.current && cursor}
-	<MeasurePoint position={cursor.toArray()} />
+{#if !pending.current && place.current}
+	<MeasurePoint position={place.current.position.toArray()} />
 {/if}

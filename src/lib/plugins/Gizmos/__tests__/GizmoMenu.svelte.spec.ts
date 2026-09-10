@@ -116,4 +116,31 @@ describe('GizmoMenu', () => {
 
 		expect(settings.snapping).toBe(true)
 	})
+
+	it('restores focus to the armed tool button when its mode returns to idle with focus lost to the page', async () => {
+		const { gizmos } = renderMenu()
+		const polylineButton = screen.getByRole('button', { name: 'Polyline' })
+
+		await fireEvent.click(polylineButton)
+		polylineButton.blur()
+		expect(document.activeElement).toBe(document.body)
+
+		gizmos.mode = GizmoModes.Idle
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		expect(polylineButton).toHaveFocus()
+	})
+
+	it('leaves focus alone when a tool returns to idle while focus sits elsewhere', async () => {
+		const { gizmos } = renderMenu()
+		const outsideButton = screen.getByRole('button', { name: 'Outside the menu' })
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Polyline' }))
+		outsideButton.focus()
+
+		gizmos.mode = GizmoModes.Idle
+		await new Promise((resolve) => setTimeout(resolve, 0))
+
+		expect(outsideButton).toHaveFocus()
+	})
 })

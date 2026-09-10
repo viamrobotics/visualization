@@ -121,7 +121,7 @@ click from the tool that is still placing the polyline.
 		<div
 			role="group"
 			aria-label={polylineLabelName(measure.current?.mode ?? 'segment', i, text)}
-			class="pointer-events-none border border-black bg-white px-1 py-0.5 text-xs"
+			class="font-roboto-mono pointer-events-none border border-black bg-white px-1 py-0.5 text-xs"
 		>
 			{text}<span class="text-subtle-2">mm</span>
 		</div>

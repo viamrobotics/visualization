@@ -21,6 +21,7 @@
 
 <script lang="ts">
 	import { Switch } from '@viamrobotics/prime-core'
+	import { untrack } from 'svelte'
 	import { Slider } from 'svelte-tweakpane-ui'
 
 	import type { Settings } from '$lib/hooks/useSettings.svelte'
@@ -62,6 +63,28 @@
 		gizmos.mode = mode
 	}
 
+	const toolButtons: Partial<Record<GizmoMode, HTMLButtonElement>> = $state({})
+	let previousMode: GizmoMode = untrack(() => gizmos.mode)
+
+	/**
+	 * Restores focus to the menu button of the tool that was just armed, when a tool exits
+	 * back to idle with focus already lost to the page body. A tool that lets its own
+	 * pointer-driven exit keep focus (e.g. on a placed point) is left alone.
+	 */
+	$effect(() => {
+		const mode = gizmos.mode
+		const exitedTool = previousMode
+
+		if (mode === GizmoModes.Idle && exitedTool !== GizmoModes.Idle) {
+			const activeElement = document.activeElement
+			if (activeElement === document.body || activeElement === null) {
+				toolButtons[exitedTool]?.focus()
+			}
+		}
+
+		previousMode = mode
+	})
+
 	/**
 	 * A single-select `ToggleGroup` is deselectable, so clicking the active
 	 * option reports an empty selection. Ignore that instead of clearing the
@@ -83,6 +106,7 @@
 		<li>
 			<button
 				type="button"
+				bind:this={toolButtons[tool.mode]}
 				class="hover:bg-ghost-light focus-visible:bg-ghost-light flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-left"
 				onclick={() => arm(tool.mode)}
 			>

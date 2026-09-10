@@ -31,6 +31,7 @@ proxy, which a plain object would not.
 	})
 </script>
 
+<button type="button">Outside the menu</button>
 <GizmoMenu
 	{gizmos}
 	{settings}
