@@ -1,13 +1,29 @@
-import { Vector3 } from 'three'
+import { Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
+
+import { OrientationVector } from '$lib/math/OrientationVector'
 
 import { arrowMatrix, planeMatrix } from '../matrix'
 
 const worldPosition = (matrix: ReturnType<typeof arrowMatrix>): Vector3 =>
 	new Vector3(0, 0, 0).applyMatrix4(matrix)
 
-const worldYAxis = (matrix: ReturnType<typeof arrowMatrix>): Vector3 =>
-	new Vector3(0, 1, 0).transformDirection(matrix)
+/**
+ * The direction `BatchedArrows` renders for an arrow entity: it decomposes the world matrix
+ * and reads the orientation vector, which is the rotated +Z axis.
+ */
+const renderedDirection = (matrix: ReturnType<typeof arrowMatrix>): Vector3 => {
+	const quaternion = new Quaternion()
+	matrix.decompose(new Vector3(), quaternion, new Vector3())
+	const orientation = new OrientationVector().setFromQuaternion(quaternion)
+	return new Vector3(orientation.x, orientation.y, orientation.z)
+}
+
+const expectDirection = (actual: Vector3, expected: Vector3) => {
+	expect(actual.x).toBeCloseTo(expected.x)
+	expect(actual.y).toBeCloseTo(expected.y)
+	expect(actual.z).toBeCloseTo(expected.z)
+}
 
 const worldZAxis = (matrix: ReturnType<typeof planeMatrix>): Vector3 =>
 	new Vector3(0, 0, 1).transformDirection(matrix)
@@ -18,36 +34,35 @@ describe('arrowMatrix', () => {
 		expect(worldPosition(matrix).equals(new Vector3(1, 2, 3))).toBe(true)
 	})
 
-	it('orients the local +Y axis opposite the x world axis', () => {
+	it('renders along world +X for axis "x"', () => {
 		const matrix = arrowMatrix('x', new Vector3(), undefined)
-		const localY = worldYAxis(matrix)
-		expect(localY.x).toBeCloseTo(-1)
-		expect(localY.y).toBeCloseTo(0)
-		expect(localY.z).toBeCloseTo(0)
+		expectDirection(renderedDirection(matrix), new Vector3(1, 0, 0))
 	})
 
-	it('orients the local +Y axis opposite the z world axis', () => {
-		const matrix = arrowMatrix('z', new Vector3(), undefined)
-		const localY = worldYAxis(matrix)
-		expect(localY.z).toBeCloseTo(-1)
-	})
-
-	it('orients the local +Y axis opposite world +Y', () => {
+	it('renders along world +Y for axis "y"', () => {
 		const matrix = arrowMatrix('y', new Vector3(), undefined)
-		const localY = worldYAxis(matrix)
-		expect(localY.y).toBeCloseTo(-1)
+		expectDirection(renderedDirection(matrix), new Vector3(0, 1, 0))
 	})
 
-	it('uses the supplied surface normal when axis is "surface"', () => {
-		const matrix = arrowMatrix('surface', new Vector3(), new Vector3(0, 0, 1))
-		const localY = worldYAxis(matrix)
-		expect(localY.z).toBeCloseTo(-1)
+	it('renders along world +Z for axis "z"', () => {
+		const matrix = arrowMatrix('z', new Vector3(), undefined)
+		expectDirection(renderedDirection(matrix), new Vector3(0, 0, 1))
+	})
+
+	it('renders along the supplied surface normal when axis is "surface"', () => {
+		const normal = new Vector3(1, 1, 0).normalize()
+		const matrix = arrowMatrix('surface', new Vector3(), normal)
+		expectDirection(renderedDirection(matrix), normal)
+	})
+
+	it('renders along a surface normal that points straight down', () => {
+		const matrix = arrowMatrix('surface', new Vector3(), new Vector3(0, 0, -1))
+		expectDirection(renderedDirection(matrix), new Vector3(0, 0, -1))
 	})
 
 	it('falls back to world +Z when axis is "surface" and no normal is supplied', () => {
 		const matrix = arrowMatrix('surface', new Vector3(), undefined)
-		const localY = worldYAxis(matrix)
-		expect(localY.z).toBeCloseTo(-1)
+		expectDirection(renderedDirection(matrix), new Vector3(0, 0, 1))
 	})
 
 	it('returns a fresh matrix on every call', () => {

@@ -10,8 +10,11 @@ const yAxis = new Vector3(0, 1, 0)
 const zAxis = new Vector3(0, 0, 1)
 
 /**
- * Transform placing an arrow gizmo at `position`, oriented so its local +Y tail points away
- * from `axis`'s world direction, or from `surfaceNormal` when `axis` is `'surface'`.
+ * Transform placing an arrow gizmo at `position`, oriented so its local +Z axis points along
+ * `axis`'s world direction, or along `surfaceNormal` when `axis` is `'surface'`.
+ *
+ * `BatchedArrows` reads an arrow's direction as the rotated +Z axis, through
+ * `OrientationVector.setFromQuaternion`, so +Z is the axis that has to carry the direction.
  */
 export const arrowMatrix = (
 	axis: ArrowAxis,
@@ -24,8 +27,8 @@ export const arrowMatrix = (
 	else if (axis === 'z') direction = zAxis
 	else direction = yAxis
 
-	scratchDirection.copy(direction).negate()
-	scratchQuaternion.setFromUnitVectors(yAxis, scratchDirection)
+	scratchDirection.copy(direction).normalize()
+	scratchQuaternion.setFromUnitVectors(zAxis, scratchDirection)
 
 	return new Matrix4().compose(position, scratchQuaternion, unitScale)
 }
