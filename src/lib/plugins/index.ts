@@ -15,6 +15,10 @@ export { default as FramePov } from './FramePov/FramePov.svelte'
 
 export { default as Fullscreen } from './Fullscreen/Fullscreen.svelte'
 
+export { default as Gizmos } from './Gizmos/Gizmos.svelte'
+export * as gizmoTraits from './Gizmos/traits'
+export { useGizmos } from './Gizmos/useGizmos.svelte'
+
 export { default as Isolate } from './Isolate/Isolate.svelte'
 
 export { default as LLMSceneBuilder } from './LLMSceneBuilder/LLMSceneBuilder.svelte'

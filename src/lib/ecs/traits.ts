@@ -222,6 +222,15 @@ export const PointCloudObjectAPI = trait(() => true)
 export const DroppedFile = trait(() => true)
 
 /**
+ * A scene aid the user placed by hand — a coordinate system, reference plane,
+ * reference solid, arrow, or measurement — rather than anything sourced from the
+ * robot. Lives in core, not in the `Gizmos` plugin, because the world tree's
+ * folder taxonomy is a static array here and a folder keyed on a plugin-owned
+ * trait would invert the dependency.
+ */
+export const Gizmo = trait()
+
+/**
  * A component that the part config declares with no frame. It carries a `Name`
  * so the world tree can list it, and nothing else — there is no scene object
  * behind it. Queries that assume one (labels, orphan resolution, relationship
