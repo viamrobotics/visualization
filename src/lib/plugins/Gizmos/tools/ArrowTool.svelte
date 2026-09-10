@@ -1,8 +1,9 @@
 <!--
 @component
 
-Places a direction-arrow gizmo at a single click: a `traits.Arrow` entity oriented to
-`gizmos.arrowAxis`, either a world axis or the clicked surface's normal. Named `arrow N`.
+Places a direction-arrow gizmo at a single click: a `traits.Arrow` entity whose tip sits on
+the clicked point, pointing along `gizmos.arrowAxis`. For `surface` the arrow points into the
+surface, so the normal is negated before it becomes the arrow's direction. Named `arrow N`.
 Assumes it is only rendered while `useGizmos().mode` is `'arrow'`.
 -->
 <script lang="ts">
@@ -34,7 +35,7 @@ Assumes it is only rendered while `useGizmos().mode` is `'arrow'`.
 			pending = spawnPending(world, {
 				kind: 'arrow',
 				position,
-				matrix: arrowMatrix(gizmos.arrowAxis, position, normal),
+				matrix: arrowMatrix(gizmos.arrowAxis, position, normal?.clone().negate()),
 				traits: [traits.Arrow, traits.Color(asRGB(ARROW_COLOR, { r: 0, g: 0, b: 0 }))],
 			})
 			confirmPending(pending)

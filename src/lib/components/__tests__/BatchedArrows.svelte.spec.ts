@@ -126,11 +126,12 @@ describe('BatchedArrows', () => {
 		entity.add(traits.WorldMatrix(new Matrix4().makeTranslation(1, 2, 3)))
 		await flush()
 
+		// `BatchedArrow.updateArrow(instanceId, origin, direction)`: origin second, direction third.
 		expect(batch.updateArrow).toHaveBeenCalledTimes(1)
-		const [instanceID, direction, origin] = batch.updateArrow.mock.calls[0] ?? []
+		const [instanceID, origin, direction] = batch.updateArrow.mock.calls[0] ?? []
 		expect(instanceID).toBe(0)
-		expect(direction.length()).toBeCloseTo(1)
 		expect([origin.x, origin.y, origin.z]).toEqual([1, 2, 3])
+		expect(direction.length()).toBeCloseTo(1)
 	})
 
 	it('recolours instance 0 when its color trait changes', async () => {

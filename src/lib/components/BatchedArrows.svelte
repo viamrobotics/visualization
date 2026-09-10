@@ -55,7 +55,7 @@
 		const instanceID = entity.get(traits.Instance)?.instanceID
 
 		if (instanceID !== undefined && instanceID !== -1 && decompose(entity)) {
-			batched.updateArrow(instanceID, direction, origin)
+			batched.updateArrow(instanceID, origin, direction)
 		}
 	}
 
