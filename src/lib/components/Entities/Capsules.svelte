@@ -167,6 +167,7 @@ pick the body or head id table and map the `instanceId` back to the entity.
 		const edgeColor = darkenColor(color, 10)
 		const opacity = entity.get(traits.Opacity) ?? 0.7
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
+		const wireframe = entity.has(traits.Wireframe)
 
 		/**
 		 * The cylinder collapses once `l ≤ 2r`; hide it so the two caps read as a
@@ -175,19 +176,21 @@ pick the body or head id table and map the `instanceId` back to the entity.
 		 */
 		const capsule = entity.get(traits.Capsule)
 		const bodyVisible = visible && capsule !== undefined && capsule.l - 2 * capsule.r > 0
+		const bodyFacesVisible = bodyVisible && !wireframe
+		const headFacesVisible = visible && !wireframe
 
 		instancedCapsuleBodies.setColorAt(ids.bodyFace, color)
 		instancedCapsuleBodies.setOpacityAt(ids.bodyFace, opacity)
-		instancedCapsuleBodies.setVisibilityAt(ids.bodyFace, bodyVisible)
+		instancedCapsuleBodies.setVisibilityAt(ids.bodyFace, bodyFacesVisible)
 		instancedCapsuleBodyEdges.setColorAt(ids.bodyEdge, edgeColor)
 		instancedCapsuleBodyEdges.setVisibilityAt(ids.bodyEdge, bodyVisible)
 
 		instancedCapsuleHeads.setColorAt(ids.headTopFace, color)
 		instancedCapsuleHeads.setOpacityAt(ids.headTopFace, opacity)
-		instancedCapsuleHeads.setVisibilityAt(ids.headTopFace, visible)
+		instancedCapsuleHeads.setVisibilityAt(ids.headTopFace, headFacesVisible)
 		instancedCapsuleHeads.setColorAt(ids.headBottomFace, color)
 		instancedCapsuleHeads.setOpacityAt(ids.headBottomFace, opacity)
-		instancedCapsuleHeads.setVisibilityAt(ids.headBottomFace, visible)
+		instancedCapsuleHeads.setVisibilityAt(ids.headBottomFace, headFacesVisible)
 
 		instancedCapsuleHeadEdges.setColorAt(ids.headTopEdge, edgeColor)
 		instancedCapsuleHeadEdges.setVisibilityAt(ids.headTopEdge, visible)
@@ -379,6 +382,8 @@ pick the body or head id table and map the `instanceId` back to the entity.
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),
 			world.onRemove(traits.ColliderHidden, enqueueAppearance),
+			world.onAdd(traits.Wireframe, enqueueAppearance),
+			world.onRemove(traits.Wireframe, enqueueAppearance),
 		]
 
 		return () => {

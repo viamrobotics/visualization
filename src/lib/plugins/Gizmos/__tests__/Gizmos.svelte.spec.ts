@@ -9,17 +9,46 @@ import {
 	createDetailsSections,
 	DETAILS_SECTIONS_CONTEXT_KEY,
 } from '$lib/hooks/useDetailsSections.svelte'
+import { createHotkeys, HOTKEYS_CONTEXT_KEY } from '$lib/hooks/useHotkeys.svelte'
 import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 import Gizmos from '../Gizmos.svelte'
 
-// The scene-side tool needs a Threlte context and the ECS world. This spec only exercises
-// the plugin shell, so stand in for it with a component that renders nothing.
+// The scene-side children need a Threlte context and the ECS world, and the global
+// `@threlte/core` mock does not export `T`, so importing them for real fails to resolve.
+// This spec only exercises the plugin shell, so stand each one in with a component that
+// renders nothing. Their own specs cover what they draw.
+// Repeated rather than factored into a loop or a shared const: `vi.mock` is hoisted to the
+// top of the module, so neither a loop variable nor a shared reference exists when it runs.
 vi.mock('../tools/CoordinateSystemTool.svelte', async () => {
-	const MockScene = await import(
+	const mock = await import(
 		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
 	)
-	return { default: MockScene.default }
+	return { default: mock.default }
+})
+vi.mock('../tools/GeometryTool.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
+vi.mock('../tools/PlaneTool.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
+vi.mock('../tools/ArrowTool.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
+vi.mock('../GizmoEntities.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
 })
 
 // Backed by a real reactive primitive (not a plain object) so the effect that watches
@@ -48,10 +77,16 @@ vi.mock('$lib/hooks/useSettings.svelte', () => {
 
 const renderGizmos = () => {
 	const sections = createDetailsSections()
+	const hotkeys = createHotkeys()
 
-	return render(Gizmos, {
-		context: new Map([[DETAILS_SECTIONS_CONTEXT_KEY, sections]]),
+	const { unmount } = render(Gizmos, {
+		context: new Map<symbol, unknown>([
+			[DETAILS_SECTIONS_CONTEXT_KEY, sections],
+			[HOTKEYS_CONTEXT_KEY, hotkeys],
+		]),
 	})
+
+	return { hotkeys, unmount }
 }
 
 const armCoordinateSystemTool = async () => {
@@ -103,6 +138,17 @@ describe('Gizmos', () => {
 		await vi.waitFor(() => {
 			expect(screen.queryByRole('radio', { name: /^Exit/ })).not.toBeInTheDocument()
 		})
+	})
+
+	it('arms the reference-geometry tool from the = binding inherited from StaticGeometries', async () => {
+		const { hotkeys } = renderGizmos()
+
+		const binding = [...(hotkeys.bindings.get('=') ?? [])][0]
+		binding?.run()
+
+		expect(
+			await screen.findByRole('radio', { name: 'Exit reference-geometry' })
+		).toBeInTheDocument()
 	})
 
 	it('hands the pointer back to navigation when unmounted while a tool is armed', async () => {

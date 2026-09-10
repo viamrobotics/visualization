@@ -137,6 +137,14 @@ export const Material = trait({
 	depthWrite: true,
 })
 
+/**
+ * Draw this geometry as edges only. The instanced renderers already keep a
+ * separate edges pass alongside their faces, so this hides the faces and leaves
+ * the edges drawn. Opacity is not the mechanism: a zero-alpha face still
+ * rasterizes, still hit-tests, and fights the details panel's opacity control.
+ */
+export const Wireframe = trait()
+
 export const DepthTest = trait(() => true)
 
 export const Arrow = trait(() => true)
