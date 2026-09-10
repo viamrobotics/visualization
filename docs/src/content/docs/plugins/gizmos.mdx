@@ -5,7 +5,7 @@ description: Six on-canvas tools for annotating a scene with reference planes, g
 
 import { Aside } from '@astrojs/starlight/components'
 
-`<Gizmos />` adds a shapes button to the visualizer dashboard. Clicking it opens a tool picker with six tools: coordinate system, reference plane, reference geometry, arrow, polyline, and angle. Each tool places one or more entities in the scene by clicking, and every placed gizmo shows up in the [world tree](../world-tree/) under a **Gizmos** folder.
+`<Gizmos />` adds a shapes button to the visualizer dashboard. Clicking it opens a tool picker with six tools: coordinate system, reference plane, reference geometry, polyline, angle, and arrow. Each tool places one or more entities in the scene by clicking, and every placed gizmo shows up in the [world tree](../world-tree/) under a **Gizmos** folder.
 
 ## Usage
 
@@ -36,38 +36,38 @@ Places a labelled axes triad at the clicked point. No options.
 
 Places a plane on one of the world's `yz`, `xz`, or `xy` planes.
 
-- **Axis** — which world plane the reference plane lies in.
-- **Placement** — `free` puts the plane at the clicked point, `offset` shifts it along its normal by the offset below.
-- **Offset** — distance along the plane's normal, in millimeters, used only when placement is `offset`.
+- **Axis**: which world plane the reference plane lies in.
+- **Placement**: `free` puts the plane at the clicked point, `offset` shifts it along its normal by the offset below.
+- **Offset**: distance along the plane's normal, in millimeters, used only when placement is `offset`.
 
 ### Reference geometry
 
 Places a box, sphere, or capsule.
 
-- **Shape** — `box`, `sphere`, or `capsule`.
-- **Placement** — `free` places at the clicked point, `at origin` ignores the click and places at the world origin.
-- **Wireframe** — render the shape as a wireframe instead of solid.
-
-### Arrow
-
-Places a direction arrow along a world axis, or along the clicked surface's normal.
-
-- **Axis** — `x`, `y`, `z`, or `surface` for the clicked face's normal.
+- **Shape**: `box`, `sphere`, or `capsule`.
+- **Placement**: `free` places at the clicked point, `at origin` ignores the click and places at the world origin.
+- **Wireframe**: render the shape as a wireframe instead of solid.
 
 ### Polyline
 
 Places a chained multi-click line. Click to add each vertex.
 
-- **Space** — `world` scales the line's width with distance, `screen` keeps it a constant pixel width.
-- **Measurement** — `none` shows no distances, `segment` labels each segment, `total` labels the running total.
-- **Snapping** — snap a new vertex onto an existing one within the snap distance.
-- **Snap distance** — how close, in millimeters, a new vertex must land to an existing one to snap, shown only while snapping is on.
+- **Space**: `world` scales the line's width with distance, `screen` keeps it a constant pixel width.
+- **Measurement**: `none` shows no distances, `segment` labels each segment, `total` labels the running total.
+- **Snapping**: snap a new vertex onto an existing one within the snap distance.
+- **Snap distance**: how close, in millimeters, a new vertex must land to an existing one to snap, shown only while snapping is on.
 
 Clicking back on the first vertex closes the loop once three or more vertices are placed.
 
 ### Angle
 
 Three clicks: a vertex, then the two ray endpoints. Labels the interior angle at the vertex in degrees. No options.
+
+### Arrow
+
+Places a direction arrow along a world axis, or along the clicked surface's normal.
+
+- **Axis**: `x`, `y`, `z`, or `surface` for the clicked face's normal.
 
 ## Keys
 
