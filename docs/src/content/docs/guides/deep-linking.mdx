@@ -1,0 +1,50 @@
+---
+title: Deep linking
+description: Open the visualizer straight into a mode and a selection from a URL.
+---
+
+A deep link sets the workspace mode and the selection from the page's URL at load time. No click is required to reach the state the link names. This works the same whether the visualizer runs standalone or embedded in a host app.
+
+## Parameters
+
+| Parameter    | Value                                                                                     | Repeatable                       |
+| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------- |
+| `viz.mode`   | One of `monitor`, `build`, `move`. The first value wins, and an unknown value is ignored. | No                               |
+| `viz.select` | An entity `Name`.                                                                         | Yes, one `viz.select` per entity |
+
+An example that sets the mode:
+
+```
+?viz.mode=build
+```
+
+An example that selects two entities:
+
+```
+?viz.select=arm&viz.select=gripper
+```
+
+An example that combines both:
+
+```
+?viz.mode=build&viz.select=arm&viz.select=gripper
+```
+
+## Why the prefix
+
+Every parameter the visualizer reads carries the `viz.` prefix, so a host page's own query parameters never collide with the visualizer's.
+
+## How selection resolves
+
+An entity named in `viz.select` is selected the first time it appears, so the link works even before the robot's frames or a drawn scene have arrived. Each name applies once: if the user later deselects that entity, the deselection sticks. An entity marked non-selectable never matches.
+
+## What the visualizer never does
+
+The visualizer never writes or rewrites the URL. Producing a link is the host's responsibility. It reads only `viz.`-prefixed keys, so a host's own query parameters are never touched or misread.
+
+## Not covered yet
+
+- Producing a deep link from the current view.
+- Framing the camera on the selection.
+- Selecting by anything other than `Name`.
+- Choosing a machine by URL.

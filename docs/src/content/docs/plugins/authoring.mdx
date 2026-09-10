@@ -392,6 +392,22 @@ The user's choice is remembered: leaving the mode unreachable falls back to `mon
 
 Note that the mode set is closed — contributing declares an _existing_ `EnvironmentMode` reachable, it does not define new modes. Read the active mode from `useEnvironment().current.mode` and the currently reachable set from `useEnvironment().availableModes`. This is exactly how the built-in [`MoveFrame`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/MoveFrame/MoveFrame.svelte) plugin works.
 
+## Contributing a deep-link parameter
+
+Deep-link parameters are a contribution point, like hotkeys and workspace modes: a plugin declares the parameter it wants and core owns reading the URL and dispatching it. Call `useDeepLinkParam` with the un-prefixed key and a callback:
+
+```svelte
+<script lang="ts">
+	import { useDeepLinkParam } from '@viamrobotics/visualization'
+
+	useDeepLinkParam('waypoints', (values) => {
+		// apply the URL's viz.waypoints values
+	})
+</script>
+```
+
+The key is written without the `viz.` prefix, so `'waypoints'` above reads `viz.waypoints` from the URL. `apply` runs once, in setup, with every value for that key in URL order. Only the first consumer to mount for a given key ever sees it, so a remount does nothing. See [Deep linking](../../guides/deep-linking/) for the URL format and how the built-in `viz.mode` and `viz.select` parameters behave.
+
 ## Optional dependencies
 
 The plugin model is the right home for heavy or situational dependencies: keep the import inside the plugin, and consumers only pay for it when they mount it. [`<SelectionTool />`](../selection/) needs `earcut`; [`<DrawService />`](../draw-service/) needs the Connect RPC client. Neither is pulled in unless you use that plugin.
