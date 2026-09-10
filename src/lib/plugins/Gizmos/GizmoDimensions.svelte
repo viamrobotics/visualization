@@ -53,7 +53,7 @@ geometry trait directly, matching `PlaneDetails`.
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(box) (mm)</span>
 		<div
-			class="mt-0.5 flex items-center gap-2"
+			class="font-roboto-mono mt-0.5 flex items-center gap-2"
 			role="group"
 			aria-label="mutable box dimensions"
 		>
@@ -82,7 +82,7 @@ geometry trait directly, matching `PlaneDetails`.
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(capsule) (mm)</span>
 		<div
-			class="mt-0.5 flex items-center gap-2"
+			class="font-roboto-mono mt-0.5 flex items-center gap-2"
 			role="group"
 			aria-label="mutable capsule dimensions"
 		>
@@ -105,7 +105,7 @@ geometry trait directly, matching `PlaneDetails`.
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(sphere) (mm)</span>
 		<div
-			class="mt-0.5 flex items-center gap-2"
+			class="font-roboto-mono mt-0.5 flex items-center gap-2"
 			role="group"
 			aria-label="mutable sphere dimensions"
 		>

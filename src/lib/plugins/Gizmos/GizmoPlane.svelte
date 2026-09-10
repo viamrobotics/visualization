@@ -41,11 +41,10 @@ user is actually trying to click.
 	const group = new Group()
 	group.matrixAutoUpdate = false
 
-	const colorUtil = new Color()
 	const color = $derived.by(() => {
 		const rgb = entityColor.current
-		if (rgb) return colorUtil.setRGB(rgb.r, rgb.g, rgb.b)
-		return asColor(REFERENCE_GEOMETRY_COLOR, colorUtil)
+		if (rgb) return new Color().setRGB(rgb.r, rgb.g, rgb.b)
+		return asColor(REFERENCE_GEOMETRY_COLOR, new Color())
 	})
 
 	const width = $derived((plane.current?.width ?? 0) * MM_TO_M)

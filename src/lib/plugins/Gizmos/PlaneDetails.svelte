@@ -44,7 +44,7 @@ Editable width/height rows for a ReferencePlane gizmo, in mm.
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(plane) (mm)</span>
 		<div
-			class="mt-0.5 flex items-center gap-2"
+			class="font-roboto-mono mt-0.5 flex items-center gap-2"
 			role="group"
 			aria-label="mutable plane dimensions"
 		>

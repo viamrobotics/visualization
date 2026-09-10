@@ -161,4 +161,84 @@ describe('instanced geometry wireframe visibility', () => {
 		unmount()
 		await flush()
 	})
+
+	it('hides Capsules body and head faces but keeps edges shown for a wireframe entity', async () => {
+		const { default: Capsules } = await import('../Capsules.svelte')
+		world.spawn(traits.Capsule({ r: 100, l: 400 }), traits.WorldMatrix(), traits.Wireframe())
+
+		const { unmount } = render(MockCanvas, {
+			props: { child: Capsules },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await flush()
+
+		const [bodyFaces, bodyEdges, headFaces, headEdges] = constructedMeshes
+		expect(bodyFaces.getVisibilityAt(0)).toBe(false)
+		expect(bodyEdges.getVisibilityAt(0)).toBe(true)
+		expect(headFaces.getVisibilityAt(0)).toBe(false)
+		expect(headEdges.getVisibilityAt(0)).toBe(true)
+
+		unmount()
+		await flush()
+	})
+
+	it('shows both Capsules body/head faces and edges for a non-wireframe entity', async () => {
+		const { default: Capsules } = await import('../Capsules.svelte')
+		world.spawn(traits.Capsule({ r: 100, l: 400 }), traits.WorldMatrix())
+
+		const { unmount } = render(MockCanvas, {
+			props: { child: Capsules },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await flush()
+
+		const [bodyFaces, bodyEdges, headFaces, headEdges] = constructedMeshes
+		expect(bodyFaces.getVisibilityAt(0)).toBe(true)
+		expect(bodyEdges.getVisibilityAt(0)).toBe(true)
+		expect(headFaces.getVisibilityAt(0)).toBe(true)
+		expect(headEdges.getVisibilityAt(0)).toBe(true)
+
+		unmount()
+		await flush()
+	})
+
+	it('hides Cylinders faces but keeps edges shown for a wireframe entity', async () => {
+		const { default: Cylinders } = await import('../Cylinders.svelte')
+		world.spawn(
+			traits.Cylinder({ r: 200, l: 400, capped: true }),
+			traits.WorldMatrix(),
+			traits.Wireframe()
+		)
+
+		const { unmount } = render(MockCanvas, {
+			props: { child: Cylinders },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await flush()
+
+		const [faces, edges] = constructedMeshes
+		expect(faces.getVisibilityAt(0)).toBe(false)
+		expect(edges.getVisibilityAt(0)).toBe(true)
+
+		unmount()
+		await flush()
+	})
+
+	it('shows both Cylinders faces and edges for a non-wireframe entity', async () => {
+		const { default: Cylinders } = await import('../Cylinders.svelte')
+		world.spawn(traits.Cylinder({ r: 200, l: 400, capped: true }), traits.WorldMatrix())
+
+		const { unmount } = render(MockCanvas, {
+			props: { child: Cylinders },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await flush()
+
+		const [faces, edges] = constructedMeshes
+		expect(faces.getVisibilityAt(0)).toBe(true)
+		expect(edges.getVisibilityAt(0)).toBe(true)
+
+		unmount()
+		await flush()
+	})
 })
