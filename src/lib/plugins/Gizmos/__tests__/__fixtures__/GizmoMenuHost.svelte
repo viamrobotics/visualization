@@ -1,30 +1,38 @@
 <!--
 @component
 
-Builds a real `Gizmos` plugin context, hands it to `GizmoMenu` as a prop the way
-`Gizmos.svelte` does, and returns it through `onReady` so a spec can assert against the
-same object the menu writes to. The object's getters and setters survive Svelte's props
-proxy, which a plain stand-in object would not.
+Builds a real `Gizmos` plugin context and a settings stand-in, hands both to `GizmoMenu`
+as props the way `Gizmos.svelte` does, and returns them through `onReady` so a spec can
+assert against the same objects the menu writes to. `$state` survives Svelte's props
+proxy, which a plain object would not.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte'
+
+	import type { Settings } from '$lib/hooks/useSettings.svelte'
 
 	import GizmoMenu from '../../GizmoMenu.svelte'
 	import { provideGizmos } from '../../useGizmos.svelte'
 
 	interface Props {
-		onReady: (gizmos: ReturnType<typeof provideGizmos>) => void
+		onReady: (ready: { gizmos: ReturnType<typeof provideGizmos>; settings: Settings }) => void
 	}
 
 	const { onReady }: Props = $props()
+
+	const settings = $state({ snapping: false } as Settings)
 
 	// Read untracked: the context is established once at setup and a harness never swaps
 	// its callback mid-test.
 	const gizmos = untrack(() => {
 		const ready = provideGizmos(() => undefined)
-		onReady(ready)
+		onReady({ gizmos: ready, settings })
 		return ready
 	})
 </script>
 
-<GizmoMenu {gizmos} />
+<button type="button">Outside the menu</button>
+<GizmoMenu
+	{gizmos}
+	{settings}
+/>
