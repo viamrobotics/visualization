@@ -24,7 +24,7 @@ interface Environment {
 	isImmersive: boolean
 }
 
-interface Context {
+export interface EnvironmentContext {
 	current: Environment
 	/**
 	 * Declares `mode` reachable for as long as the caller is mounted, and returns
@@ -47,9 +47,10 @@ export const ENVIRONMENT_MODE_STORAGE_KEY = 'motion-tools:environment-mode'
 
 const modes = new Set(['monitor', 'build', 'move'])
 
-const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)
+/** Whether `value` names one of the closed set of modes. */
+export const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)
 
-export const createEnvironment = (): Context => {
+export const createEnvironment = (): EnvironmentContext => {
 	const stored = new PersistedState<EnvironmentMode | 'none'>(
 		ENVIRONMENT_MODE_STORAGE_KEY,
 		'monitor'
@@ -76,7 +77,7 @@ export const createEnvironment = (): Context => {
 		isImmersive: false,
 	})
 
-	const context: Context = {
+	const context: EnvironmentContext = {
 		get current() {
 			return environment
 		},
@@ -106,12 +107,12 @@ export const createEnvironment = (): Context => {
 
 export const provideEnvironment = () => {
 	const context = createEnvironment()
-	setContext<Context>(ENVIRONMENT_CONTEXT_KEY, context)
+	setContext<EnvironmentContext>(ENVIRONMENT_CONTEXT_KEY, context)
 	return context
 }
 
 export const useEnvironment = () => {
-	return getContext<Context>(ENVIRONMENT_CONTEXT_KEY)
+	return getContext<EnvironmentContext>(ENVIRONMENT_CONTEXT_KEY)
 }
 
 /**
