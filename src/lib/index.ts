@@ -2,6 +2,7 @@ export { default as Visualizer } from './components/App.svelte'
 
 export { useSettings } from './hooks/useSettings.svelte'
 export { type HotkeyBinding, useHotkey } from './hooks/useHotkeys.svelte'
+export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
 export { type DetailsSection, useDetailsSection } from './hooks/useDetailsSections.svelte'
 export {
 	type EnvironmentMode,
