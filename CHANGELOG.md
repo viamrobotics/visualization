@@ -1,5 +1,11 @@
 # visualization
 
+## 2.5.0
+
+### Minor Changes
+
+- 9c2b451: Open the visualizer from viz.mode and viz.select query parameters, with a useDeepLinkParam hook for plugins to claim their own
+
 ## 2.4.0
 
 ### Minor Changes
