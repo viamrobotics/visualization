@@ -10,7 +10,7 @@ A deep link sets the workspace mode and the selection from the page's URL at loa
 | Parameter    | Value                                                                                     |
 | ------------ | ----------------------------------------------------------------------------------------- |
 | `viz.mode`   | One of `monitor`, `build`, `move`. The first value wins, and an unknown value is ignored. |
-| `viz.select` | One or more entity `Name`s, separated by commas.                                          |
+| `viz.select` | One or more entity `Name`s, separated by commas and nothing else.                         |
 
 An example that sets the mode:
 
@@ -32,13 +32,15 @@ An example that combines both:
 
 A repeated `viz.select` key is also accepted and flattens into the same list.
 
+Do not put a space after a comma. A name is matched exactly, and a leading or trailing space is not trimmed, so `?viz.select=arm, gripper` resolves `arm` and nothing else. Nothing in the system validates a name, so whitespace at the edge of one is legal and has to stay addressable.
+
 ## Why the prefix
 
 Every parameter the visualizer reads carries the `viz.` prefix, so a host page's own query parameters never collide with the visualizer's.
 
 ## How selection resolves
 
-An entity named in `viz.select` is selected the first time it appears, so the link works even before the robot's frames or a drawn scene have arrived. Each name applies once: if the user later deselects that entity, the deselection sticks. An entity marked non-selectable never matches.
+An entity named in `viz.select` is selected the first time it appears, so the link works even before the robot's frames or a drawn scene have arrived. Each name applies once: if the user later deselects that entity, the deselection sticks. An entity marked non-selectable never matches, and neither do the world tree's folder rows, so a component sharing a folder's name still resolves to the component.
 
 ## What the visualizer never does
 

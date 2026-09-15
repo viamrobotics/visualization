@@ -1,5 +1,4 @@
-import type { Entity, World } from 'koota'
-
+import { type Entity, IsExcluded, type World } from 'koota'
 import { onDestroy } from 'svelte'
 
 import { traits, useWorld } from '$lib/ecs'
@@ -10,7 +9,8 @@ import { useDeepLinkParam } from './useDeepLink.svelte'
  * Selects the entity carrying each of `names`, now if it exists and otherwise
  * the first time one appears. Each name is applied once and then forgotten, so
  * a later deselection by the user sticks. Selection is additive: nothing that is
- * already selected is cleared. Entities marked `NonSelectable` never match.
+ * already selected is cleared. Entities marked `NonSelectable`, and entities excluded
+ * from queries, never match.
  *
  * Returns the function that stops waiting for the names still unresolved. It is
  * a no-op once every name has resolved.
@@ -30,7 +30,17 @@ export const selectEntitiesByName = (world: World, names: readonly string[]): ((
 
 	const resolve = (entity: Entity) => {
 		const name = entity.get(traits.Name)
-		if (name === undefined || !pending.has(name) || entity.has(traits.NonSelectable)) return
+		// `IsExcluded` entities are hidden from `world.query` but still reach `onAdd`, so the
+		// world tree's folder rows arrive here. Claiming one would add `Selected` to an entity
+		// the selection query can never return, and would burn the name a real component wants.
+		if (
+			name === undefined ||
+			!pending.has(name) ||
+			entity.has(traits.NonSelectable) ||
+			entity.has(IsExcluded)
+		) {
+			return
+		}
 
 		if (!entity.has(traits.Selected)) entity.add(traits.Selected)
 		pending.delete(name)

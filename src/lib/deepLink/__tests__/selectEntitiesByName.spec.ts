@@ -1,4 +1,4 @@
-import { createWorld, type World } from 'koota'
+import { createWorld, IsExcluded, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { traits } from '$lib/ecs'
@@ -89,5 +89,28 @@ describe('selectEntitiesByName', () => {
 		const laterEntity = world.spawn(traits.Name('arm-1'))
 
 		expect(laterEntity.has(traits.Selected)).toBe(false)
+	})
+
+	it('ignores a query-excluded entity and leaves the name for a real one', () => {
+		const world = createWorld()
+		selectEntitiesByName(world, ['Frames'])
+
+		// A world-tree folder row: hidden from `world.query`, but `onAdd` still fires for it.
+		const folder = world.spawn(IsExcluded, traits.Name('Frames'))
+		expect(folder.has(traits.Selected)).toBe(false)
+
+		const component = world.spawn(traits.Name('Frames'))
+		expect(component.has(traits.Selected)).toBe(true)
+	})
+
+	it('never sees a query-excluded entity in the initial scan', () => {
+		const world = createWorld()
+		const folder = world.spawn(IsExcluded, traits.Name('World'))
+		const component = world.spawn(traits.Name('World'))
+
+		selectEntitiesByName(world, ['World'])
+
+		expect(folder.has(traits.Selected)).toBe(false)
+		expect(component.has(traits.Selected)).toBe(true)
 	})
 })
