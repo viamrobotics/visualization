@@ -7,12 +7,7 @@ const vecA = new Vector3()
 const vecB = new Vector3()
 
 const quatAppxEqual = (q1: Quaternion, q2: Quaternion) => {
-	return (
-		Math.abs(q1.x) - Math.abs(q2.x) < EPSILON &&
-		Math.abs(q1.y) - Math.abs(q2.y) < EPSILON &&
-		Math.abs(q1.z) - Math.abs(q2.z) < EPSILON &&
-		Math.abs(q1.w) - Math.abs(q2.w) < EPSILON
-	)
+	return q1.angleTo(q2) < EPSILON
 }
 
 const numAppxEqual = (a: number, b: number) => {

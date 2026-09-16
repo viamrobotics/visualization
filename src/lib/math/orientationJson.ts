@@ -20,7 +20,7 @@ const tmpOv = new OrientationVector()
  * frame editor writes `{ w, x, y, z }`, and Go's unmarshal accepts both.
  */
 type QuatJson = Partial<Record<'W' | 'X' | 'Y' | 'Z' | 'w' | 'x' | 'y' | 'z', number>>
-type EulerJson = { roll: number; pitch: number; yaw: number }
+type EulerJson = Partial<Record<'roll' | 'pitch' | 'yaw', number>>
 type OvJson = { x: number; y: number; z: number; th: number }
 
 /**
@@ -48,8 +48,12 @@ export const quatFromJson = (orientation: RawOrientation | undefined, out: Quate
 			}
 			case 'euler_angles': {
 				const v = value as EulerJson
-				// RDK uses Tait–Bryan Z-Y′-X″; Three.js defaults to 'XYZ'.
-				out.setFromEuler(tmpE.set(v.roll, v.pitch, v.yaw, 'ZYX'))
+				// Note: if it's at all possible for the input here to be a json with omitted values
+				// this will break, because it will set the elements to NaNs.
+				// Probably better to guard against this, but if we know for sure that
+				// RawOrientation is always defined, it's not needed
+
+				out.setFromEuler(tmpE.set(v.roll ?? 0, v.pitch ?? 0, v.yaw ?? 0, 'ZYX'))
 				return true
 			}
 			case 'ov_radians': {

@@ -1,5 +1,33 @@
 # visualization
 
+## 2.5.1
+
+### Patch Changes
+
+- fd6d243: Adding a frame in build mode no longer reports the scene's poses as stale.
+- 97bacc6: Hold indexed point clouds at full detail under the point budget. Draw range addresses the index when a geometry has one, and three-mesh-bvh reorders that index spatially for picking, so decimating it drew a contiguous chunk of the cloud instead of the uniform sample `shuffled` describes — whole regions of a scan vanished while the camera moved and returned when it settled. Only clouds that opt into selection picking are indexed, so this was invisible until a scene both exceeded the budget and enabled the selection tool.
+
+## 2.5.0
+
+### Minor Changes
+
+- 9c2b451: Open the visualizer from viz.mode and viz.select query parameters, with a useDeepLinkParam hook for plugins to claim their own
+
+## 2.4.0
+
+### Minor Changes
+
+- b1bbc99: Add a button to the logs panel header that clears all logs.
+
+### Patch Changes
+
+- 2bc71e8: Fix spurious pose and frame errors when switching machines quickly.
+- 8837ea8: Load world state store transforms directly instead of through per-transform queries.
+- 5586bc1: Redraw frames after a machine reconnects instead of leaving the scene empty until reload.
+- 5586bc1: Retry arm kinematics and model fetches so a dropped request does not leave an arm undrawn.
+- 0ce3365: Offer interpolated preview playback, filling in frames between planned waypoints
+- b1bbc99: Switching parts clears the logs panel instead of keeping the previous machine's lines.
+
 ## 2.3.1
 
 ### Patch Changes

@@ -12,6 +12,7 @@ import { deriveKinematicsFrames, ownerOfInternalFrame } from '$lib/kinematicsFra
 import { Pose } from '$lib/math'
 import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
+import { machineFrameNames } from './machineFrameNames'
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
@@ -149,6 +150,10 @@ export const provideFrames = (partID: () => string) => {
 
 	const current = $derived([...Object.values(frames), ...Object.values(kinematicsDerivedFrames)])
 
+	const askableFrameNames = $derived(
+		machineFrameNames(query.data, Object.keys(kinematicsDerivedFrames))
+	)
+
 	const entities = new Map<string, Entity | undefined>()
 
 	const componentSubtypeByName = $derived.by(() => {
@@ -170,6 +175,7 @@ export const provideFrames = (partID: () => string) => {
 		const currentComponentSubtypeByName = componentSubtypeByName
 		const currentFrames = current
 		const currentDerivedFrames = kinematicsDerivedFrames
+		const currentAskableFrameNames = askableFrameNames
 
 		// We only want to update whenever "current" or "resourceByName.current" changes
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -196,6 +202,8 @@ export const provideFrames = (partID: () => string) => {
 				const color =
 					resourceNameToColor(resourceName) ?? subtypeToColor(currentComponentSubtypeByName[owner])
 
+				const isConfigOnly = !currentAskableFrameNames.has(name)
+
 				const existing = entities.get(entityKey)
 
 				if (existing) {
@@ -205,6 +213,16 @@ export const provideFrames = (partID: () => string) => {
 					// useFrames never reads or writes it, so this re-sync can't fight an
 					// in-progress edit.
 					hierarchy.setParent(existing, parent)
+
+					// Saving the config hands the frame to the machine, which is what
+					// makes its pose askable, so the marker has to come off again.
+					if (isConfigOnly !== existing.has(traits.ConfigOnlyFrame)) {
+						if (isConfigOnly) {
+							existing.add(traits.ConfigOnlyFrame)
+						} else {
+							existing.remove(traits.ConfigOnlyFrame)
+						}
+					}
 
 					if (color) {
 						const cur = existing.get(traits.Color)
@@ -247,6 +265,10 @@ export const provideFrames = (partID: () => string) => {
 					traits.ShowAxesHelper,
 					...hierarchy.parentTraits(parent),
 				]
+
+				if (isConfigOnly) {
+					entityTraits.push(traits.ConfigOnlyFrame)
+				}
 
 				if (name in currentDerivedFrames) {
 					entityTraits.push(traits.KinematicLink)

@@ -10,6 +10,9 @@ export interface PoseFreshness {
 
 	pollingStartedAt: number
 
+	/** When a frame last joined the polled set; 0 while none has. */
+	framesJoinedAt: number
+
 	/** Poll period in ms. Zero or negative means polling is manual or off. */
 	interval: number
 }
@@ -23,8 +26,12 @@ export const isPoseStale = ({
 	now,
 	lastPoseAt,
 	pollingStartedAt,
+	framesJoinedAt,
 	interval,
 }: PoseFreshness): boolean =>
 	// Floored by `pollingStartedAt` so a part that just connected, or was
-	// revisited carrying a cached pose from its last session, isn't blamed.
-	interval > 0 && now - Math.max(lastPoseAt, pollingStartedAt) > interval + STALE_AFTER_MS
+	// revisited carrying a cached pose from its last session, isn't blamed, and
+	// by `framesJoinedAt` so a frame that entered the scene long after polling
+	// started gets the same window to answer as one that was there all along.
+	interval > 0 &&
+	now - Math.max(lastPoseAt, pollingStartedAt, framesJoinedAt) > interval + STALE_AFTER_MS
