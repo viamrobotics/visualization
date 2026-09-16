@@ -52,6 +52,13 @@ interface PartConfigContext {
 	/** Why the config is unavailable — see `LocalPartConfig.error`. */
 	error?: string
 
+	/**
+	 * The config as last committed: saved here, discarded back to the stored
+	 * copy, or pushed down by the embedder. A discard restores the previous
+	 * value, so a consumer watching this for changes sees saves and not edits.
+	 */
+	readonly savedSnapshot: string
+
 	updateFrame: (
 		componentName: string,
 		referenceFrame: string,
@@ -401,6 +408,9 @@ export const providePartConfig = (
 		},
 		get error() {
 			return config.error
+		},
+		get savedSnapshot() {
+			return cleanSnapshot
 		},
 
 		updateFrame: (

@@ -17,6 +17,7 @@
 	import { providePoses } from '$lib/hooks/usePoses.svelte'
 	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { provideSceneStaleness } from '$lib/hooks/useSceneStaleness.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 
 	import ArmModels from './Machine/ArmModels.svelte'
@@ -51,6 +52,9 @@
 	provideArmKinematics(() => partID.current)
 	provideWorldStates(() => partID.current)
 	provideFramelessComponents()
+
+	// After `provideFrames`, whose fetch time it pairs with a config revision.
+	provideSceneStaleness(() => partID.current)
 
 	provideLinkedEntities()
 </script>

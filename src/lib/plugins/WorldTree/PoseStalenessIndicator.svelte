@@ -7,12 +7,17 @@
 	import { unhealthyResources } from '$lib/hooks/poseStaleness/unhealthyResources'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { usePoses } from '$lib/hooks/usePoses.svelte'
+	import { useSceneStaleness } from '$lib/hooks/useSceneStaleness.svelte'
 
 	const partID = usePartID()
 	const poses = usePoses()
+	const staleness = useSceneStaleness()
 	const machineStatus = useMachineStatus(() => partID.current)
 
-	const visible = $derived(poses.isStale)
+	// A reconfigure stops the poses too, since `getPose` resolves through every
+	// input-enabled component. Two badges for one event would fill a 240px header
+	// with the symptom next to its cause, so the cause is the one that shows.
+	const visible = $derived(poses.isStale && staleness.reason === undefined)
 
 	const unhealthy = $derived(unhealthyResources(machineStatus.current?.resources))
 	const summary = $derived(poseStalenessSummary(unhealthy))

@@ -8,6 +8,7 @@
 
 	import FilterBar from './FilterBar.svelte'
 	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
+	import SceneStalenessIndicator from './SceneStalenessIndicator.svelte'
 	import Tree from './Tree.svelte'
 	import { useTree } from './useTree.svelte'
 
@@ -34,8 +35,16 @@
 	resizable
 	bodyClass="flex flex-col bg-white"
 >
+	<!--
+		The panel header is where the scene admits it is not showing what the user
+		expects. Each indicator renders nothing until it has something to say, and
+		the tighter gap keeps two of them from crowding out the title.
+	-->
 	{#snippet headerSuffix()}
-		<PoseStalenessIndicator />
+		<div class="flex items-center gap-1.5">
+			<SceneStalenessIndicator />
+			<PoseStalenessIndicator />
+		</div>
 	{/snippet}
 
 	<FilterBar bind:value={filter} />

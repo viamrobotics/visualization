@@ -26,6 +26,12 @@ export interface FramesContext {
 	parts: robotApi.FrameSystemConfig[]
 	/** Components whose frame is a model's mount — the set `usePoses` redirects. */
 	readonly kinematicsComponents: ReadonlySet<string>
+	/**
+	 * When the machine last answered `frameSystemConfig`, in epoch ms, or zero
+	 * before the first reply. Pairs the drawn scene with the config revision it
+	 * came from, which is how staleness against a reconfigure is measured.
+	 */
+	readonly fetchedAt: number
 }
 
 const key = Symbol('frames-context')
@@ -298,6 +304,9 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get kinematicsComponents() {
 			return kinematicsComponents
+		},
+		get fetchedAt() {
+			return query.dataUpdatedAt
 		},
 	})
 }
