@@ -196,6 +196,14 @@ export const GLTF = trait(() => ({
 export const FramesAPI = trait(() => true)
 
 /**
+ * A frame the part config declares that the machine's frame system does not
+ * have, because the edit adding it is still unsaved. `getPose` cannot resolve a
+ * frame the machine never built, so pose polling excludes these with
+ * `Not(ConfigOnlyFrame)` and the scene draws them from their config pose.
+ */
+export const ConfigOnlyFrame = trait(() => true)
+
+/**
  * A link inside a component's kinematic model. IK re-solves its pose, so it is
  * neither rigid with its parent nor drivable by the motion service.
  */

@@ -1,7 +1,6 @@
-import type { Entity } from 'koota'
-
 import { commonApi, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { createRobotQuery, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
+import { type Entity, Not } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
 
 import { RefetchRates } from '$lib/components/overlay/refetchRates'
@@ -39,6 +38,10 @@ export interface Context {
  * `getPose` poll per frame, writing the result so `Frame.svelte` can compose
  * the rendered transform via `composeLocalMatrix(live, baseline, edited)`.
  *
+ * A frame carrying `ConfigOnlyFrame` is left out: the machine's frame system
+ * has no such frame, so polling it only produces an error every tick and a
+ * freshness gap that reads as the whole scene having gone stale.
+ *
  * Replaces the former per-entity `<Pose>` wrapper component with a single
  * reactor mounted alongside the other `provide*` hooks. Each frame's query is
  * built in its own `$effect.root` and tracked in a stable map, so adding or
@@ -51,7 +54,7 @@ export const providePoses = (partID: () => string) => {
 	const connectionStatus = useConnectionStatus(partID)
 	const frames = useFrames()
 
-	const frameEntities = useQuery(traits.FramesAPI)
+	const frameEntities = useQuery(traits.FramesAPI, Not(traits.ConfigOnlyFrame))
 
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
 
@@ -121,6 +124,13 @@ export const providePoses = (partID: () => string) => {
 	let entries = $state.raw<PoseEntry[]>([])
 
 	/**
+	 * When a frame last joined the polled set. A frame that arrives long after
+	 * polling started has no pose yet through no fault of the machine, so the
+	 * freshness window restarts here instead of running from `pollingStartedAt`.
+	 */
+	let framesJoinedAt = $state(0)
+
+	/**
 	 * Reconcile the query map against the live frame set: a newly-added frame
 	 * gets a fresh `$effect.root`, a departed one is disposed, and a tick that
 	 * doesn't change membership is a no-op. `entries` is only reassigned when
@@ -129,6 +139,7 @@ export const providePoses = (partID: () => string) => {
 	$effect(() => {
 		const present = new Set(frameEntities.current)
 		let changed = false
+		let joined = false
 
 		for (const entity of frameEntities.current) {
 			if (entryByEntity.has(entity)) continue
@@ -139,6 +150,7 @@ export const providePoses = (partID: () => string) => {
 			})
 			entryByEntity.set(entity, { ...built, dispose })
 			changed = true
+			joined = true
 		}
 
 		for (const [entity, entry] of entryByEntity) {
@@ -146,6 +158,10 @@ export const providePoses = (partID: () => string) => {
 			entry.dispose()
 			entryByEntity.delete(entity)
 			changed = true
+		}
+
+		if (joined) {
+			framesJoinedAt = Date.now()
 		}
 
 		if (changed) {
@@ -253,7 +269,7 @@ export const providePoses = (partID: () => string) => {
 	const isStale = $derived(
 		options.enabled &&
 			entries.length > 0 &&
-			isPoseStale({ now, lastPoseAt, pollingStartedAt, interval })
+			isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
 	)
 
 	setContext<Context>(key, {
