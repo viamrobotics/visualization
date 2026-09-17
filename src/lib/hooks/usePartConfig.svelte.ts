@@ -53,11 +53,14 @@ interface PartConfigContext {
 	error?: string
 
 	/**
-	 * The config as last committed: saved here, discarded back to the stored
-	 * copy, or pushed down by the embedder. A discard restores the previous
-	 * value, so a consumer watching this for changes sees saves and not edits.
+	 * How many times edits have been saved this session.
+	 *
+	 * Moves only on an edit settling as a save. A discard does not move it, and
+	 * neither does a config arriving from the network, which rules out the
+	 * cloud's own normalization of a component and a colleague's edit landing on
+	 * a refetch. A consumer watching this sees the user's saves and nothing else.
 	 */
-	readonly savedSnapshot: string
+	readonly saveCount: number
 
 	updateFrame: (
 		componentName: string,
@@ -124,6 +127,7 @@ export const providePartConfig = (
 	 */
 	let wasDirty = false
 	let cleanSettlement: 'save' | 'discard' = 'save'
+	let saveCount = $state(0)
 	$effect(() => {
 		const settled = wasDirty && !config.isDirty
 		wasDirty = config.isDirty
@@ -134,6 +138,13 @@ export const providePartConfig = (
 			applyFrameHistorySnapshotToWorld(world, current, fragmentInfo.current, {
 				mode: cleanSettlement,
 			})
+
+			// The same dirty → clean edge that folds the edit in is the only place
+			// that can tell a save from a discard, so the counter is published from
+			// here rather than derived from the config, which also changes when the
+			// network hands one back.
+			if (cleanSettlement === 'save') saveCount += 1
+
 			cleanSettlement = 'save'
 		})
 	})
@@ -409,8 +420,8 @@ export const providePartConfig = (
 		get error() {
 			return config.error
 		},
-		get savedSnapshot() {
-			return cleanSnapshot
+		get saveCount() {
+			return saveCount
 		},
 
 		updateFrame: (

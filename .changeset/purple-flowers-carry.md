@@ -2,4 +2,4 @@
 '@viamrobotics/visualization': minor
 ---
 
-Show an Updating badge while the scene catches up with a machine reconfigure.
+Add a world panel badge reporting the machine applying a saved configuration.

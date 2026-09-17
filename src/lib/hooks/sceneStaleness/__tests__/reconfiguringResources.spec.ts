@@ -55,7 +55,7 @@ describe('reconfiguringResources', () => {
 		])
 	})
 
-	it('still names a resource whose ResourceName is absent', () => {
+	it('ignores a status with no resource name', () => {
 		const resources = [
 			{
 				state: robotApi.ResourceStatus_State.CONFIGURING,
@@ -64,8 +64,52 @@ describe('reconfiguringResources', () => {
 			} as ResourceStatus,
 		]
 
+		expect(reconfiguringResources(resources)).toEqual([])
+	})
+
+	it('ignores an rdk-internal service, which the scene never draws', () => {
+		const resources = [
+			{
+				name: { namespace: 'rdk-internal', type: 'service', subtype: 'web', name: 'builtin' },
+				state: robotApi.ResourceStatus_State.CONFIGURING,
+				error: '',
+				revision: '',
+			} as ResourceStatus,
+		]
+
+		expect(reconfiguringResources(resources)).toEqual([])
+	})
+
+	it('ignores the entry for a remote machine itself', () => {
+		const resources = [
+			{
+				name: { namespace: 'rdk', type: 'remote', subtype: '', name: 'my-remote' },
+				state: robotApi.ResourceStatus_State.CONFIGURING,
+				error: '',
+				revision: '',
+			} as ResourceStatus,
+		]
+
+		expect(reconfiguringResources(resources)).toEqual([])
+	})
+
+	it('keeps a resource on a remote, which is named with the remote prefix', () => {
+		const resources = [
+			{
+				name: {
+					namespace: 'rdk',
+					type: 'component',
+					subtype: 'camera',
+					name: 'my-remote:camera-1',
+				},
+				state: robotApi.ResourceStatus_State.CONFIGURING,
+				error: '',
+				revision: '',
+			} as ResourceStatus,
+		]
+
 		expect(reconfiguringResources(resources)).toEqual([
-			{ name: 'unknown resource', state: 'configuring' },
+			{ name: 'my-remote:camera-1', state: 'configuring' },
 		])
 	})
 })

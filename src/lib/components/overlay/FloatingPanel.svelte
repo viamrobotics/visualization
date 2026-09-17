@@ -90,7 +90,7 @@
 						</h3>
 					</div>
 
-					<div class="flex shrink-0 items-center gap-3">
+					<div class="flex min-w-0 shrink-0 items-center gap-3">
 						{@render headerSuffix?.()}
 
 						{#if exitable}

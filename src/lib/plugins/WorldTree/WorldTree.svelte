@@ -41,9 +41,19 @@
 		the tighter gap keeps two of them from crowding out the title.
 	-->
 	{#snippet headerSuffix()}
-		<div class="flex items-center gap-1.5">
+		<div class="flex items-center justify-center gap-1.5">
 			<SceneStalenessIndicator />
-			<PoseStalenessIndicator />
+
+			<!--
+				A reconfigure stops the poses too, since `getPose` resolves through
+				every input-enabled component. Two badges for one event would fill the
+				header with the symptom beside its cause, so the cause is the one that
+				shows. Arbitrated here rather than inside the pose indicator, which
+				then needs nothing but `usePoses`.
+			-->
+			{#if sceneStaleness.reason === undefined}
+				<PoseStalenessIndicator />
+			{/if}
 		</div>
 	{/snippet}
 

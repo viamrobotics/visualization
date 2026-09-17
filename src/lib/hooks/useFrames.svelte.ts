@@ -31,8 +31,18 @@ export interface FramesContext {
 	 * When the machine last answered `frameSystemConfig`, in epoch ms, or zero
 	 * before the first reply. Pairs the drawn scene with the config revision it
 	 * came from, which is how staleness against a reconfigure is measured.
+	 *
+	 * Does not advance on a failed attempt, so pair it with `hasFailedFetch`
+	 * before reading a stalled value as the scene waiting on a refetch.
 	 */
 	readonly fetchedAt: number
+
+	/**
+	 * Whether the last `frameSystemConfig` attempt failed. `createRobotQuery`
+	 * sets `retry: false` and this query does not refetch on focus, so a failure
+	 * is where the fetch stops until the next revision change or a reconnect.
+	 */
+	readonly hasFailedFetch: boolean
 }
 
 const key = Symbol('frames-context')
@@ -329,6 +339,9 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get fetchedAt() {
 			return query.dataUpdatedAt
+		},
+		get hasFailedFetch() {
+			return query.isError
 		},
 	})
 }
