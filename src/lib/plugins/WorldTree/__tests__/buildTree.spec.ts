@@ -136,6 +136,16 @@ describe('buildTree', () => {
 		expect(nodes.map((node) => node.entity.get(traits.Name))).toEqual(['Frames'])
 	})
 
+	it('groups a Gizmo entity under Gizmos rather than Other', () => {
+		world = createWorld()
+		world.spawn(traits.Name('translate handle'), traits.Gizmo)
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+
+		expect(namesIn(folderNamed(nodes, 'Gizmos'))).toEqual(['translate handle'])
+		expect(namesIn(folderNamed(nodes, 'Other'))).toEqual([])
+	})
+
 	it('drops an entity with no tagged ancestor into Other', () => {
 		world = createWorld()
 		world.spawn(traits.Name('custom geometry 1'))

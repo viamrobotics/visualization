@@ -33,6 +33,12 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 			)
 		}
 
+		// Suppress the default before dispatch, so a binding whose `run` throws still
+		// prevented the browser action it opted out of.
+		if (applicable.some((binding) => binding.preventDefault)) {
+			event.preventDefault()
+		}
+
 		for (const binding of applicable) {
 			binding.run()
 		}
