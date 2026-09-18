@@ -18,7 +18,11 @@ const install = {
 	bytesDownloaded: 0,
 	totalBytes: 0,
 } as const
-const resource = { name: 'camera-1', state: 'configuring' } as const
+const resource = {
+	key: 'rdk:component:camera:camera-1',
+	name: 'camera-1',
+	state: 'configuring',
+} as const
 
 describe('sceneStalenessReason', () => {
 	it('reports nothing for a settled machine', () => {

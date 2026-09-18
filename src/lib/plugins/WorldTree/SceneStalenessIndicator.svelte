@@ -38,7 +38,7 @@
 							</li>
 						{/each}
 
-						{#each staleness.reconfiguring as resource (resource.name)}
+						{#each staleness.reconfiguring as resource (resource.key)}
 							<li>
 								<span class="font-roboto-mono">{resource.name}</span>
 								<span class="text-gray-4 block">{resource.state}</span>

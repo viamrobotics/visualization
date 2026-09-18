@@ -82,6 +82,7 @@ export const createPreviewMoveHarness = (
 		},
 		kinematicsComponents: new Set<string>(),
 		fetchedAt: 0,
+		hasFailedFetch: false,
 	}
 
 	let preview!: PreviewMove

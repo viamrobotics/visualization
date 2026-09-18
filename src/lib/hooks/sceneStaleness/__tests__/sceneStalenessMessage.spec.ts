@@ -26,7 +26,7 @@ const install = (name: string): PendingInstall => ({
 const resource = (
 	name: string,
 	state: ReconfiguringResource['state'] = 'configuring'
-): ReconfiguringResource => ({ name, state })
+): ReconfiguringResource => ({ key: `rdk:component:camera:${name}`, name, state })
 
 const EVERY_REASON: SceneStalenessReason[] = [
 	'installing',

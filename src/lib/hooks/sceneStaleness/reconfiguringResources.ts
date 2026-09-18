@@ -1,3 +1,5 @@
+import type { commonApi } from '@viamrobotics/sdk'
+
 import { robotApi } from '@viamrobotics/sdk'
 
 /**
@@ -52,7 +54,7 @@ const stateLabel = (
  * `builtin` on every one of them. `motion` and `sensors` tell the user which
  * service is configuring where two rows reading `builtin` would not.
  */
-const displayName = ({ subtype, name }: robotApi.ResourceName): string =>
+const displayName = ({ subtype, name }: commonApi.ResourceName): string =>
 	name === DEFAULT_SERVICE_NAME ? subtype : name
 
 /**

@@ -48,7 +48,7 @@ describe('BuildDetails', () => {
 				components: [resource],
 			},
 			isReady: true,
-			savedSnapshot: '',
+			saveCount: 0,
 			updateFrame: vi.fn(),
 			isDirty: false,
 			save: vi.fn(),

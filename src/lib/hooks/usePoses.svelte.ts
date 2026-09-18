@@ -118,17 +118,10 @@ export const providePoses = (partID: () => string) => {
 		return { entity, name, query }
 	}
 
-	type PoseEntry = ReturnType<typeof buildEntry> & { dispose: () => void }
+	type PoseEntry = ReturnType<typeof buildEntry> & { dispose: () => void; joinedAt: number }
 
 	const entryByEntity = new Map<Entity, PoseEntry>()
 	let entries = $state.raw<PoseEntry[]>([])
-
-	/**
-	 * When a frame last joined the polled set. A frame that arrives long after
-	 * polling started has no pose yet through no fault of the machine, so the
-	 * freshness window restarts here instead of running from `pollingStartedAt`.
-	 */
-	let framesJoinedAt = $state(0)
 
 	/**
 	 * Reconcile the query map against the live frame set: a newly-added frame
@@ -139,7 +132,6 @@ export const providePoses = (partID: () => string) => {
 	$effect(() => {
 		const present = new Set(frameEntities.current)
 		let changed = false
-		let joined = false
 
 		for (const entity of frameEntities.current) {
 			if (entryByEntity.has(entity)) continue
@@ -148,9 +140,8 @@ export const providePoses = (partID: () => string) => {
 			const dispose = $effect.root(() => {
 				built = buildEntry(entity)
 			})
-			entryByEntity.set(entity, { ...built, dispose })
+			entryByEntity.set(entity, { ...built, dispose, joinedAt: Date.now() })
 			changed = true
-			joined = true
 		}
 
 		for (const [entity, entry] of entryByEntity) {
@@ -158,10 +149,6 @@ export const providePoses = (partID: () => string) => {
 			entry.dispose()
 			entryByEntity.delete(entity)
 			changed = true
-		}
-
-		if (joined) {
-			framesJoinedAt = Date.now()
 		}
 
 		if (changed) {
@@ -256,20 +243,13 @@ export const providePoses = (partID: () => string) => {
 		return () => clearInterval(id)
 	})
 
-	const lastPoseAt = $derived.by(() => {
-		let latest = 0
-		for (const { query } of entries) {
-			latest = Math.max(latest, query.dataUpdatedAt)
-		}
-		return latest
-	})
+	const polledFrames = $derived(
+		entries.map(({ query, joinedAt }) => ({ lastPoseAt: query.dataUpdatedAt, joinedAt }))
+	)
 
-	// A paused scene is deliberately showing a snapshot, not a broken one, and a
-	// scene with no pose queries yet has no pose old enough to warn about.
+	// A paused scene is deliberately showing a snapshot, not a broken one.
 	const isStale = $derived(
-		options.enabled &&
-			entries.length > 0 &&
-			isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
+		options.enabled && isPoseStale({ now, pollingStartedAt, interval, frames: polledFrames })
 	)
 
 	setContext<Context>(key, {

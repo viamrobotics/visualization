@@ -4,6 +4,7 @@ import { isSceneBehindConfig, type SceneRevisions } from '../isSceneBehindConfig
 
 const revisions = (overrides: Partial<SceneRevisions> = {}): SceneRevisions => ({
 	isBuildMode: false,
+	hasFailedFetch: false,
 	renderedRevision: 'rev-1',
 	machineRevision: 'rev-1',
 	...overrides,
@@ -22,6 +23,12 @@ describe('isSceneBehindConfig', () => {
 		const behind = revisions({ isBuildMode: true, machineRevision: 'rev-2' })
 
 		expect(isSceneBehindConfig(behind)).toBe(false)
+	})
+
+	it('is false after a failed fetch, when no refetch is coming to catch the scene up', () => {
+		const failed = revisions({ hasFailedFetch: true, machineRevision: 'rev-2' })
+
+		expect(isSceneBehindConfig(failed)).toBe(false)
 	})
 
 	it('is false before the first frames reply', () => {

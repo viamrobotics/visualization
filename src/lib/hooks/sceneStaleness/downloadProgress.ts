@@ -1,3 +1,9 @@
+/**
+ * Decimal, the convention for a transfer size, so this agrees with the figure
+ * the registry quotes for a module. `RenderStats` divides by 1024² for the same
+ * unit because a heap is measured in binary megabytes. The two panels are not
+ * comparable and neither is wrong.
+ */
 const BYTES_PER_MEGABYTE = 1_000_000
 
 /**

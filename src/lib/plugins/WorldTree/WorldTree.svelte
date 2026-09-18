@@ -3,6 +3,7 @@
 
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import { traits, useWorld } from '$lib/ecs'
+	import { useSceneStaleness } from '$lib/hooks/useSceneStaleness.svelte'
 
 	import type { TreeNode } from './buildTree'
 
@@ -13,6 +14,7 @@
 	import { useTree } from './useTree.svelte'
 
 	const world = useWorld()
+	const sceneStaleness = useSceneStaleness()
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
