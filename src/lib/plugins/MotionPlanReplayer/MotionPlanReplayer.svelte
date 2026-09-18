@@ -5,6 +5,7 @@
 
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
+	import { type ResolveIKSolutions } from './inspect-ik/inspect-ik-client'
 	import { provideIKInspection } from './inspect-ik/useIKInspection.svelte'
 	import MotionPlanReplayerUI from './MotionPlanReplayerUI.svelte'
 	import { type ResolvePlanSnapshots } from './plan-dropper'
@@ -16,12 +17,14 @@
 		children?: Snippet
 		/** Host hook to resolve uploaded plans server-side. Unset keeps client parsing. */
 		resolvePlanSnapshots?: ResolvePlanSnapshots
+		/** Host hook to run server-side IK; unset falls back to the bundled mock. */
+		resolveIKSolutions?: ResolveIKSolutions
 	}
 
-	const { plans, children, resolvePlanSnapshots }: Props = $props()
+	const { plans, children, resolvePlanSnapshots, resolveIKSolutions }: Props = $props()
 
 	provideMotionPlanReplayer(untrack(() => plans))
-	provideIKInspection()
+	provideIKInspection(untrack(() => resolveIKSolutions))
 
 	const environment = useEnvironment()
 </script>

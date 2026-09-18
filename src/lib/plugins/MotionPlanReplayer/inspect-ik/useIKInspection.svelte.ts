@@ -29,7 +29,7 @@ import {
 	sortByCost,
 	toCandidates,
 } from './ik-candidates'
-import { inspectIK } from './inspect-ik-client'
+import { inspectIK, type ResolveIKSolutions } from './inspect-ik-client'
 import {
 	buildInterpolatedPath,
 	DEFAULT_PATH_STEPS,
@@ -121,7 +121,9 @@ export interface IKInspectionContext {
 // replayer's own hook rather than through Svelte context.
 let context: IKInspectionContext | undefined
 
-export const provideIKInspection = (): IKInspectionContext => {
+export const provideIKInspection = (
+	resolveIKSolutions?: ResolveIKSolutions
+): IKInspectionContext => {
 	const world = useWorld()
 	const { invalidate } = useThrelte()
 
@@ -299,7 +301,7 @@ export const provideIKInspection = (): IKInspectionContext => {
 		isActive = true
 
 		try {
-			const result = await inspectIK(planContent)
+			const result = await (resolveIKSolutions ?? inspectIK)(planContent)
 
 			parsedRequest = parsePlan(result.requestContent)
 			const extras = readRequestExtras(result.requestContent)
