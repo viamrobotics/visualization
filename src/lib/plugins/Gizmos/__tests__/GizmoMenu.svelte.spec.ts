@@ -33,19 +33,46 @@ describe('GizmoMenu', () => {
 	it('does not arm a disabled entry', async () => {
 		const gizmos = renderMenu()
 
-		await fireEvent.click(screen.getByRole('button', { name: /Reference plane/ }))
+		await fireEvent.click(screen.getByRole('button', { name: /Polyline/ }))
 
 		expect(gizmos.mode).toBe(GizmoModes.Idle)
 	})
 
-	it('marks the unshipped tools as disabled and the shipped tool as enabled', () => {
+	it('marks the unshipped tools as disabled and the shipped tools as enabled', () => {
 		renderMenu()
 
-		expect(screen.getByRole('button', { name: /Reference plane/ })).toBeDisabled()
-		expect(screen.getByRole('button', { name: /Reference geometry/ })).toBeDisabled()
 		expect(screen.getByRole('button', { name: /Polyline/ })).toBeDisabled()
 		expect(screen.getByRole('button', { name: /Angle/ })).toBeDisabled()
-		expect(screen.getByRole('button', { name: /Arrow/ })).toBeDisabled()
 		expect(screen.getByRole('button', { name: 'Coordinate system' })).not.toBeDisabled()
+		expect(screen.getByRole('button', { name: /Reference plane/ })).not.toBeDisabled()
+		expect(screen.getByRole('button', { name: /Reference geometry/ })).not.toBeDisabled()
+		expect(screen.getByRole('button', { name: /Arrow/ })).not.toBeDisabled()
+	})
+
+	it('reveals the geometry tool options, and not the plane tool options, once armed', async () => {
+		renderMenu()
+
+		await fireEvent.click(screen.getByRole('button', { name: /Reference geometry/ }))
+
+		expect(screen.getByRole('radio', { name: 'box' })).toBeInTheDocument()
+		expect(screen.queryByRole('radio', { name: 'yz' })).not.toBeInTheDocument()
+	})
+
+	it('writes the selected shape to the context when the shape toggle changes', async () => {
+		const gizmos = renderMenu()
+
+		await fireEvent.click(screen.getByRole('button', { name: /Reference geometry/ }))
+		await fireEvent.click(screen.getByRole('radio', { name: 'sphere' }))
+
+		expect(gizmos.referenceShape).toBe('sphere')
+	})
+
+	it('writes the wireframe toggle to the context', async () => {
+		const gizmos = renderMenu()
+
+		await fireEvent.click(screen.getByRole('button', { name: /Reference geometry/ }))
+		await fireEvent.click(screen.getByRole('switch', { name: 'Wireframe' }))
+
+		expect(gizmos.isWireframe).toBe(true)
 	})
 })

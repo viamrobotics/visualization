@@ -43,7 +43,9 @@
 			/>
 		{/if}
 
-		<DimensionsDetails {entity} />
+		{#if !customDetails.current}
+			<DimensionsDetails {entity} />
+		{/if}
 
 		<CountDetails {entity} />
 

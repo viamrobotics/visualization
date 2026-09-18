@@ -1,7 +1,9 @@
 import type { Group } from 'three'
 
-import { render } from '@testing-library/svelte'
+import { render, screen } from '@testing-library/svelte'
+import { createRawSnippet } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
 
 import MockCanvas from '$lib/__tests__/fixtures/MockCanvas.svelte'
 
@@ -20,6 +22,11 @@ vi.mock('@threlte/core', async () => {
 			update: () => {},
 		})),
 	}
+})
+
+vi.mock('@threlte/extras', async () => {
+	const actual = await vi.importActual('@threlte/extras')
+	return { ...actual }
 })
 
 vi.mock('three', async () => {
@@ -58,5 +65,24 @@ describe('MeasurePoint', () => {
 		})
 
 		expect(capturedRef?.position.toArray()).toEqual([1, 2, 3])
+	})
+
+	it('renders a provided label snippet in place of the default x/y/z readout', () => {
+		const labelSnippet = createRawSnippet(() => ({
+			render: () => '<p data-testid="measure-point-label">a surface</p>',
+		}))
+
+		render(MockCanvas, {
+			child: MeasurePoint,
+			position: [1, 2, 3],
+			label: labelSnippet,
+		})
+
+		const wrapper = screen.getByTestId('measure-point-label').parentElement
+
+		expect(screen.getByTestId('measure-point-label')).toBeInTheDocument()
+		expect(screen.queryByText('x')).not.toBeInTheDocument()
+		expect(wrapper?.className).toContain('whitespace-nowrap')
+		expect(wrapper?.className).not.toContain('w-16')
 	})
 })

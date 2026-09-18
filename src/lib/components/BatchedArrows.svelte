@@ -54,8 +54,8 @@
 
 		const instanceID = entity.get(traits.Instance)?.instanceID
 
-		if (instanceID && instanceID !== -1 && decompose(entity)) {
-			batched.updateArrow(instanceID, direction, origin)
+		if (instanceID !== undefined && instanceID !== -1 && decompose(entity)) {
+			batched.updateArrow(instanceID, origin, direction)
 		}
 	}
 
@@ -65,7 +65,7 @@
 		const instanceID = entity.get(traits.Instance)?.instanceID
 		const colorRGB = entity.get(traits.Color)
 
-		if (instanceID && instanceID !== -1 && colorRGB) {
+		if (instanceID !== undefined && instanceID !== -1 && colorRGB) {
 			color.set(colorRGB.r, colorRGB.g, colorRGB.b)
 			batched.mesh.setColorAt(instanceID, color)
 		}
