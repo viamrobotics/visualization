@@ -36,6 +36,11 @@ export type {
 export type { TrajectoryPlayer } from '../motion/trajectoryPlayer.svelte'
 export { transformBytesToSnapshots } from './MotionPlanReplayer/plan-to-snapshots'
 export type { ResolvePlanSnapshots } from './MotionPlanReplayer/plan-dropper'
+export type {
+	InspectIKResult,
+	ResolveIKSolutions,
+} from './MotionPlanReplayer/inspect-ik/inspect-ik-client'
+export type { IKSeedGroup } from './MotionPlanReplayer/inspect-ik/parse-ik-solutions'
 
 export { default as Monitor } from './Monitor/Monitor.svelte'
 

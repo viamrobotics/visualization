@@ -7,19 +7,23 @@ export interface InspectIKResult {
 }
 
 /**
- * MOCK — stands in for the RDK inspect-ik endpoint, which has not merged yet.
+ * Host hook mirroring `ResolvePlanSnapshots`: the plugin has no auth context, org id or RPC client,
+ * so the app injects the call. Unlike the FK hook this one must reject rather than return
+ * `undefined` on failure — there is no client-side IK to fall back to.
+ */
+export type ResolveIKSolutions = (planContent: string) => Promise<InspectIKResult>
+
+/**
+ * MOCK — the standalone/dev fallback used when the host supplies no `resolveIKSolutions`.
  *
  * It ignores the plan it is handed and always returns the bundled pirouette pair. That pairing is
  * the point: the request and the solutions describe the same scene, which is what makes the
  * candidate poses drawable at all. An arbitrary uploaded plan would not match the solutions.
- *
- * When the real route lands, this file is the only thing replaced — everything downstream consumes
- * `InspectIKResult` and does not care where it came from.
  */
 // The parameter is the whole point of the real signature, so it stays even though the mock has
-// nothing to do with it — the real implementation drops the disable, not the argument.
+// nothing to do with it.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const inspectIK = async (planContent: string): Promise<InspectIKResult> => {
+export const inspectIK: ResolveIKSolutions = async (planContent: string) => {
 	// Dynamic so the two fixtures (~116 KB) land in their own chunk instead of the entry bundle.
 	const [request, solutions] = await Promise.all([
 		import('./fixtures/pirouette-request.json?raw'),
