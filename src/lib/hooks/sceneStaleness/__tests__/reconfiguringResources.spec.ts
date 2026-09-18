@@ -1,3 +1,5 @@
+import type { ResourceStatus } from '@viamrobotics/svelte-sdk'
+
 import { robotApi } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
@@ -10,21 +12,13 @@ interface NameParts {
 	name: string
 }
 
-const status = (
-	nameParts: NameParts,
-	state: robotApi.ResourceStatus_State
-): robotApi.ResourceStatus =>
+const status = (nameParts: NameParts, state: robotApi.ResourceStatus_State): ResourceStatus =>
 	({
-		name: {
-			namespace: 'rdk',
-			type: 'component',
-			subtype: 'camera',
-			...nameParts,
-		},
+		name: { namespace: 'rdk', type: 'component', subtype: 'camera', ...nameParts },
 		state,
 		error: '',
 		revision: '',
-	}) as robotApi.ResourceStatus
+	}) as ResourceStatus
 
 const camera = (name: string, state: robotApi.ResourceStatus_State) => status({ name }, state)
 
@@ -79,40 +73,10 @@ describe('reconfiguringResources', () => {
 				state: robotApi.ResourceStatus_State.CONFIGURING,
 				error: '',
 				revision: '',
-			} as robotApi.ResourceStatus,
+			} as ResourceStatus,
 		]
 
 		expect(reconfiguringResources(resources)).toEqual([])
-	})
-
-	it('ignores an rdk-internal service, which the scene never draws', () => {
-		const resources = [
-			status(
-				{ namespace: 'rdk-internal', type: 'service', subtype: 'web', name: 'builtin' },
-				robotApi.ResourceStatus_State.CONFIGURING
-			),
-		]
-
-		expect(reconfiguringResources(resources)).toEqual([])
-	})
-
-	it('ignores the entry for a remote machine itself', () => {
-		const resources = [
-			status(
-				{ type: 'remote', subtype: '', name: 'my-remote' },
-				robotApi.ResourceStatus_State.CONFIGURING
-			),
-		]
-
-		expect(reconfiguringResources(resources)).toEqual([])
-	})
-
-	it('keeps a resource on a remote, which is named with the remote prefix', () => {
-		const resources = [camera('my-remote:camera-1', robotApi.ResourceStatus_State.CONFIGURING)]
-
-		expect(reconfiguringResources(resources).map(({ name }) => name)).toEqual([
-			'my-remote:camera-1',
-		])
 	})
 
 	it('gives two default services distinct keys, since rdk names both of them builtin', () => {
@@ -146,5 +110,11 @@ describe('reconfiguringResources', () => {
 		const resources = [builtinService('motion', robotApi.ResourceStatus_State.CONFIGURING)]
 
 		expect(reconfiguringResources(resources).map(({ name }) => name)).toEqual(['motion'])
+	})
+
+	it('shows a component named builtin by its own name, not by its subtype', () => {
+		const resources = [camera('builtin', robotApi.ResourceStatus_State.CONFIGURING)]
+
+		expect(reconfiguringResources(resources).map(({ name }) => name)).toEqual(['builtin'])
 	})
 })

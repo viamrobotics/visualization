@@ -1,5 +1,12 @@
 import { robotApi } from '@viamrobotics/sdk'
 
+/**
+ * `viam.app.packages.v1.PackageType.PACKAGE_TYPE_MODULE`. The generated enum is
+ * not re-exported by `@viamrobotics/sdk`, so the value is named here rather than
+ * deep-imported from its build output. Proto enum values are wire-stable.
+ */
+const PACKAGE_TYPE_MODULE = 3
+
 /** Something the machine has to finish installing before its resources can configure. */
 export interface PendingInstall {
 	name: string
@@ -51,12 +58,21 @@ const packageStateLabel = (
 }
 
 /**
- * Modules and packages the machine is still installing, one entry per name.
+ * Modules the machine is still installing, one entry per name.
+ *
+ * Packages are restricted to `MODULE`. An `ml_model` or `slam_map` download
+ * delays whatever consumes it, not the models a resource is built from, and
+ * counting one would have the badge report installing modules that are not
+ * modules.
  *
  * A module's package is reported under both messages while it downloads, and
  * counting that as two waits would overstate what is happening. The package
  * entry wins the collision: fetching the tarball is the long half of the wait
- * and the only half that reports progress.
+ * and the only half that reports progress. The collapse is best-effort, since
+ * `PackageStatus.name` is the name the robot config gave the package while
+ * `ModuleStatus.moduleName` is the module's own. Where the two differ the module
+ * and its package are reported separately, which overstates the count but names
+ * both truthfully.
  *
  * `closing` counts as pending because a reconfigure restarts a module through
  * it, so the models it registers are unavailable until it comes back.
@@ -79,7 +95,9 @@ export const pendingInstalls = (
 		})
 	}
 
-	for (const { name, state, bytesDownloaded, totalBytes } of packages) {
+	for (const { name, type: packageType, state, bytesDownloaded, totalBytes } of packages) {
+		if (packageType !== PACKAGE_TYPE_MODULE) continue
+
 		const label = packageStateLabel(state)
 		if (label === undefined) continue
 

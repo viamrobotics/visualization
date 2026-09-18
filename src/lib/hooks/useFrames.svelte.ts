@@ -43,6 +43,13 @@ export interface FramesContext {
 	 * is where the fetch stops until the next revision change or a reconnect.
 	 */
 	readonly hasFailedFetch: boolean
+
+	/**
+	 * Whether a `frameSystemConfig` fetch is in flight. False means the frames on
+	 * screen are the newest the machine has served, which is what distinguishes a
+	 * scene waiting on a refetch from one that is already current.
+	 */
+	readonly isFetching: boolean
 }
 
 const key = Symbol('frames-context')
@@ -342,6 +349,9 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get hasFailedFetch() {
 			return query.isError
+		},
+		get isFetching() {
+			return query.isFetching
 		},
 	})
 }

@@ -55,10 +55,11 @@ interface PartConfigContext {
 	/**
 	 * How many times edits have been saved this session.
 	 *
-	 * Moves only on an edit settling as a save. A discard does not move it, and
-	 * neither does a config arriving from the network, which rules out the
-	 * cloud's own normalization of a component and a colleague's edit landing on
-	 * a refetch. A consumer watching this sees the user's saves and nothing else.
+	 * Moves when an edit settles having changed the committed config. That rules
+	 * out a discard, an undo back to the pristine state, a part switch dropping
+	 * unsaved edits, and a config arriving from the network, none of which the
+	 * user would call a save. A save producing a byte-identical config does not
+	 * move it either, which is correct: there is nothing to wait for.
 	 */
 	readonly saveCount: number
 
@@ -127,7 +128,11 @@ export const providePartConfig = (
 	 */
 	let wasDirty = false
 	let cleanSettlement: 'save' | 'discard' = 'save'
+
 	let saveCount = $state(0)
+	let committedSnapshot: string | undefined
+	let committedPartID: string | undefined
+
 	$effect(() => {
 		const settled = wasDirty && !config.isDirty
 		wasDirty = config.isDirty
@@ -139,11 +144,22 @@ export const providePartConfig = (
 				mode: cleanSettlement,
 			})
 
-			// The same dirty → clean edge that folds the edit in is the only place
-			// that can tell a save from a discard, so the counter is published from
-			// here rather than derived from the config, which also changes when the
-			// network hands one back.
-			if (cleanSettlement === 'save') saveCount += 1
+			// A save leaves the committed config holding a value it did not hold
+			// before. A discard, and an undo back to the pristine state, restore the
+			// value it already had, so neither moves the counter. `cleanSettlement`
+			// cannot stand in for this: it defaults to `save` and an embedder
+			// discarding its own edits never routes through `discardChanges`.
+			// The first settlement of a session has no recorded part to compare
+			// against, and treating that as a part change would cost the user their
+			// first save. Only a part that is known and different suppresses one.
+			const id = partID()
+			const isSamePart = committedPartID === undefined || committedPartID === id
+			const isSaved = isSamePart && currentSnapshot !== committedSnapshot
+
+			committedPartID = id
+			committedSnapshot = currentSnapshot
+
+			if (isSaved) saveCount += 1
 
 			cleanSettlement = 'save'
 		})

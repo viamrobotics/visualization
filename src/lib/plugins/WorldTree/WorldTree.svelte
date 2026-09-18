@@ -53,7 +53,7 @@
 				shows. Arbitrated here rather than inside the pose indicator, which
 				then needs nothing but `usePoses`.
 			-->
-			{#if sceneStaleness.reason === undefined}
+			{#if !sceneStaleness.explainsStalePoses}
 				<PoseStalenessIndicator />
 			{/if}
 		</div>

@@ -68,10 +68,7 @@ export const providePointBudget = (budget: () => number) => {
 			// A cloud parsed under a smaller budget can't be decimated as far as the current one
 			// asks, so it holds at its own depth rather than reaching into scan order.
 			// Draw range addresses the index when one exists, and only the position buffer was
-			// shuffled, so a prefix of someone else's index is a contiguous chunk rather than a
-			// sample. Nothing here builds one — `pointsBvhOptions` is `indirect`, which is what
-			// keeps the BVH off it — but an embedder can hand in a cloud it indexed for its own
-			// ordering, which is where this was found.
+			// shuffled, so a prefix of an index an embedder supplied is a contiguous chunk.
 			const target =
 				ratio === 1 || shuffled <= 0 || geometry.index !== null
 					? count

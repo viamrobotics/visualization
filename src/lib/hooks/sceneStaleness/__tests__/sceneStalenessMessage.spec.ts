@@ -28,6 +28,8 @@ const resource = (
 	state: ReconfiguringResource['state'] = 'configuring'
 ): ReconfiguringResource => ({ key: `rdk:component:camera:${name}`, name, state })
 
+const UNHANDLED_REASON = 'reason-added-without-wording' as SceneStalenessReason
+
 const EVERY_REASON: SceneStalenessReason[] = [
 	'installing',
 	'reconfiguring',
@@ -108,6 +110,12 @@ describe('sceneStalenessMessage', () => {
 	it('explains frames fetched under an older revision', () => {
 		expect(sceneStalenessMessage('scene-behind', freshness()).summary).toBe(
 			"Redrawing from the machine's new configuration"
+		)
+	})
+
+	it('throws on a reason it has no wording for, rather than yielding a blank badge', () => {
+		expect(() => sceneStalenessMessage(UNHANDLED_REASON, freshness())).toThrow(
+			/No wording for scene staleness reason/
 		)
 	})
 })

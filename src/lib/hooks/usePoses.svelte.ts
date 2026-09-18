@@ -243,13 +243,9 @@ export const providePoses = (partID: () => string) => {
 		return () => clearInterval(id)
 	})
 
-	const polledFrames = $derived(
-		entries.map(({ query, joinedAt }) => ({ lastPoseAt: query.dataUpdatedAt, joinedAt }))
-	)
-
 	// A paused scene is deliberately showing a snapshot, not a broken one.
 	const isStale = $derived(
-		options.enabled && isPoseStale({ now, pollingStartedAt, interval, frames: polledFrames })
+		options.enabled && isPoseStale({ now, pollingStartedAt, interval, frames: entries })
 	)
 
 	setContext<Context>(key, {

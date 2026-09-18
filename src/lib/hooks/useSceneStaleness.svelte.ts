@@ -1,7 +1,12 @@
 import { MachineConnectionEvent, robotApi } from '@viamrobotics/sdk'
-import { useConnectionStatus, useMachineStatus } from '@viamrobotics/svelte-sdk'
+import {
+	useConnectionStatus,
+	useMachineStatus,
+	useResourceStatuses,
+} from '@viamrobotics/svelte-sdk'
 import { getContext, setContext, untrack } from 'svelte'
 
+import { unhealthyResources } from './poseStaleness/unhealthyResources'
 import { isSceneBehindConfig } from './sceneStaleness/isSceneBehindConfig'
 import { type PendingInstall, pendingInstalls } from './sceneStaleness/pendingInstalls'
 import {
@@ -38,6 +43,12 @@ export interface SceneStalenessContext {
 	/** One line naming what is happening. Empty while `reason` is undefined. */
 	readonly summary: string
 
+	/**
+	 * Whether this badge already accounts for the scene's poses having stopped,
+	 * so a second badge saying so would name the symptom beside its cause.
+	 */
+	readonly explainsStalePoses: boolean
+
 	readonly installing: readonly PendingInstall[]
 	readonly reconfiguring: readonly ReconfiguringResource[]
 }
@@ -63,9 +74,10 @@ export const provideSceneStaleness = (partID: () => string) => {
 	const machineStatus = useMachineStatus(partID)
 	const connectionStatus = useConnectionStatus(partID)
 
-	// `query.data` rather than `machineStatus.current`, whose type carries neither
-	// `modules` nor `packages`. Everything below comes off one response instead of
-	// two views of it that could be read as disagreeing.
+	const resourceStatuses = useResourceStatuses(partID)
+
+	// `modules`, `packages`, `config` and `state` only, since `useResourceStatuses`
+	// is not typed to carry them. Resources come from there instead.
 	const status = $derived(machineStatus.query.data)
 
 	const isBuildMode = $derived(environment.current.mode === 'build')
@@ -73,41 +85,44 @@ export const provideSceneStaleness = (partID: () => string) => {
 	const machineRevision = $derived(status?.config?.revision ?? '')
 
 	let renderedRevision = $state('')
-	let lastFetchedAt = 0
 
 	let pendingSave = $state.raw<{ revision: string } | undefined>()
-	let lastSaveCount: number | undefined
+	let lastSaveCount = 0
 
 	// A part switch invalidates both trackers: the previous machine's revision
 	// would otherwise read as this one being behind, and its pending save would
-	// be attributed to a machine that never received it.
+	// be attributed to a machine that never received it. `saveCount` is a session
+	// total rather than a per-part one, so it is re-baselined instead of cleared.
+	// Clearing it would make the next save look like the first one seen and go
+	// untracked, which on the embedded path nothing would ever correct.
 	$effect(() => {
 		partID()
 
 		untrack(() => {
 			renderedRevision = ''
-			lastFetchedAt = 0
 			pendingSave = undefined
-			lastSaveCount = undefined
+			lastSaveCount = partConfig.saveCount
 		})
 	})
 
-	// Pair the drawn frames with the revision they came from. The watcher
-	// invalidates `frameSystemConfig` *because* it saw a new revision, so by the
-	// time a refetch resolves the status already carries that revision.
+	// Pair the drawn frames with the revision they came from, whenever the frames
+	// query is settled. A settled query means what is on screen is the newest the
+	// machine has served, so the revision it now reports is the one those frames
+	// came from.
 	//
-	// The very first reply can beat the first machine status, though, and pairing
-	// it with an empty revision would leave the scene permanently unjudgeable:
-	// nothing refetches the frames again until the next reconfigure. So the
-	// revision is a dependency rather than an untracked read, and an empty one
-	// leaves `lastFetchedAt` alone for this run to retry once the status lands.
+	// Re-paired rather than consumed once per fetch. A refetch can resolve before
+	// the status catches up to a revision the machine has already moved to, and a
+	// pairing locked in at that moment would hold the scene behind for the rest of
+	// the session, since nothing refetches the frames again until the next
+	// reconfigure. A fetch in flight keeps the pairing that describes the frames
+	// still on screen, and a failed one keeps it too, since those frames are the
+	// ones still drawn.
 	$effect(() => {
-		const fetchedAt = frames.fetchedAt
 		const revision = machineRevision
 
-		if (fetchedAt === 0 || revision === '' || fetchedAt === lastFetchedAt) return
+		if (frames.fetchedAt === 0 || revision === '') return
+		if (frames.isFetching || frames.hasFailedFetch) return
 
-		lastFetchedAt = fetchedAt
 		renderedRevision = revision
 	})
 
@@ -122,10 +137,7 @@ export const provideSceneStaleness = (partID: () => string) => {
 		if (!partConfig.isReady) return
 
 		untrack(() => {
-			if (lastSaveCount === undefined || count === lastSaveCount) {
-				lastSaveCount = count
-				return
-			}
+			if (count === lastSaveCount) return
 
 			lastSaveCount = count
 
@@ -164,7 +176,7 @@ export const provideSceneStaleness = (partID: () => string) => {
 	)
 
 	const installing = $derived(pendingInstalls(status?.modules, status?.packages))
-	const reconfiguring = $derived(reconfiguringResources(status?.resources))
+	const reconfiguring = $derived(reconfiguringResources(resourceStatuses.current))
 
 	const freshness = $derived<SceneFreshness>({
 		isConnected,
@@ -180,6 +192,15 @@ export const provideSceneStaleness = (partID: () => string) => {
 		reason === undefined ? undefined : sceneStalenessMessage(reason, freshness)
 	)
 
+	// An unhealthy resource is deliberately absent from `reconfiguring`, so this
+	// badge says nothing about it while the pose badge names it and its error.
+	// That is the one case where both belong on screen, and it is what bounds the
+	// suppression: a resource parked in `CONFIGURING` indefinitely would otherwise
+	// hide a genuine pose stall for the rest of the session.
+	const explainsStalePoses = $derived(
+		reason !== undefined && unhealthyResources(resourceStatuses.current).length === 0
+	)
+
 	setContext<SceneStalenessContext>(key, {
 		get reason() {
 			return reason
@@ -189,6 +210,9 @@ export const provideSceneStaleness = (partID: () => string) => {
 		},
 		get summary() {
 			return message?.summary ?? ''
+		},
+		get explainsStalePoses() {
+			return explainsStalePoses
 		},
 		get installing() {
 			return installing

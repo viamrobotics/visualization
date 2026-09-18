@@ -74,7 +74,7 @@ export const sceneStalenessMessage = (
 		}
 		default: {
 			const unhandled: never = reason
-			return unhandled
+			throw new Error(`No wording for scene staleness reason ${String(unhandled)}`)
 		}
 	}
 }

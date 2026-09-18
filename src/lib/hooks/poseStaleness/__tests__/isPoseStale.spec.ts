@@ -6,8 +6,8 @@ const START = 1_000_000
 const INTERVAL = 1000
 const GAP = INTERVAL + STALE_AFTER_MS
 
-/** A frame present before polling began, which is what `usePoses` gives one at mount. */
-const frame = (lastPoseAt: number, joinedAt = START) => ({ lastPoseAt, joinedAt })
+/** Joined when polling started, which is what `usePoses` gives a frame at mount. */
+const frame = (dataUpdatedAt: number, joinedAt = START) => ({ query: { dataUpdatedAt }, joinedAt })
 
 const freshness = (overrides: Partial<PoseFreshness> = {}): PoseFreshness => ({
 	now: START,

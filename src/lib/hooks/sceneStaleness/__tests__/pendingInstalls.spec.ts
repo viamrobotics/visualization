@@ -11,14 +11,22 @@ const module = (moduleName: string, state: robotApi.ModuleStatus_State): robotAp
 		consecutiveFailures: 0,
 	}) as robotApi.ModuleStatus
 
+/** `PACKAGE_TYPE_MODULE`, the only type the badge counts. */
+const MODULE = 3
+
+/** `PACKAGE_TYPE_ML_MODEL`, standing for any type that is not a module. */
+const ML_MODEL = 2
+
 const packageStatus = (
 	name: string,
 	state: robotApi.PackageStatus_State,
 	bytesDownloaded = 0n,
-	totalBytes = 0n
+	totalBytes = 0n,
+	type = MODULE
 ): robotApi.PackageStatus =>
 	({
 		name,
+		type,
 		state,
 		error: '',
 		version: '1.0.0',
@@ -109,13 +117,35 @@ describe('pendingInstalls', () => {
 		])
 	})
 
-	it('keeps a module and a package with different names apart', () => {
-		const modules = [module('viam:realsense', robotApi.ModuleStatus_State.STARTING)]
-		const packages = [packageStatus('my-ml-model', robotApi.PackageStatus_State.LOADING)]
+	it('reports a module and its package separately when the two names differ', () => {
+		const modules = [module('viam:realsense', robotApi.ModuleStatus_State.PENDING)]
+		const packages = [packageStatus('realsense-tarball', robotApi.PackageStatus_State.DOWNLOADING)]
+
+		expect(pendingInstalls(modules, packages).map(({ name }) => name)).toEqual([
+			'viam:realsense',
+			'realsense-tarball',
+		])
+	})
+
+	it.each([
+		['ml model', ML_MODEL],
+		['unspecified', 0],
+	])('ignores a %s package, which installs no models a resource is built from', (_label, type) => {
+		const packages = [
+			packageStatus('my-model', robotApi.PackageStatus_State.DOWNLOADING, 0n, 0n, type),
+		]
+
+		expect(pendingInstalls([], packages)).toEqual([])
+	})
+
+	it('never lets a non-module package displace a module of the same name', () => {
+		const modules = [module('shared-name', robotApi.ModuleStatus_State.STARTING)]
+		const packages = [
+			packageStatus('shared-name', robotApi.PackageStatus_State.LOADING, 0n, 0n, ML_MODEL),
+		]
 
 		expect(pendingInstalls(modules, packages)).toEqual([
-			{ name: 'viam:realsense', state: 'starting', bytesDownloaded: 0, totalBytes: 0 },
-			{ name: 'my-ml-model', state: 'loading', bytesDownloaded: 0, totalBytes: 0 },
+			{ name: 'shared-name', state: 'starting', bytesDownloaded: 0, totalBytes: 0 },
 		])
 	})
 })

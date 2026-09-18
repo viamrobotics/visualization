@@ -1,20 +1,14 @@
-import type { commonApi } from '@viamrobotics/sdk'
+import type { ResourceStatus } from '@viamrobotics/svelte-sdk'
 
 import { robotApi } from '@viamrobotics/sdk'
-
-/**
- * viam-server's own plumbing, and the entry standing for a whole remote machine
- * rather than a resource on it. rdk excludes both wherever it reports configured
- * resources, and neither draws anything in the scene.
- */
-const INTERNAL_NAMESPACE = 'rdk-internal'
-const REMOTE_TYPE = 'remote'
 
 /**
  * What rdk names every default service, one per subtype, so a machine reports
  * several resources sharing this short name. `resource.DefaultServiceName`.
  */
 const DEFAULT_SERVICE_NAME = 'builtin'
+
+const SERVICE_TYPE = 'service'
 
 /** A resource the machine has started applying a config to but not finished. */
 export interface ReconfiguringResource {
@@ -52,10 +46,19 @@ const stateLabel = (
 /**
  * The subtype carries the meaning for a default service, whose own name is
  * `builtin` on every one of them. `motion` and `sensors` tell the user which
- * service is configuring where two rows reading `builtin` would not.
+ * service is configuring where two rows reading `builtin` would not. Gated on
+ * the type, since nothing stops a user naming a component `builtin` and its
+ * subtype would match nothing in their config.
  */
-const displayName = ({ subtype, name }: commonApi.ResourceName): string =>
-	name === DEFAULT_SERVICE_NAME ? subtype : name
+const displayName = ({
+	type,
+	subtype,
+	name,
+}: {
+	type: string
+	subtype: string
+	name: string
+}): string => (type === SERVICE_TYPE && name === DEFAULT_SERVICE_NAME ? subtype : name)
 
 /**
  * Resources the machine has not finished settling.
@@ -64,18 +67,17 @@ const displayName = ({ subtype, name }: commonApi.ResourceName): string =>
  * camera is invisible to the scene until it leaves this set. Unhealthy is not
  * counted: that resource settled and failed, which `unhealthyResources` reports.
  *
- * Takes the whole machine status rather than the SDK's configured-resource view,
- * because a resource that goes unconfigured leaves `resourceNames` entirely and
- * a list that drops what it is waiting on cannot report the wait. The two
- * categories rdk never counts are filtered here instead. What survives is
- * everything that holds up the machine, which is wider than what the scene
- * draws: a service reconfiguring is part of the same wait.
+ * What survives is everything that holds up the machine, which is wider than
+ * what the scene draws, since a service reconfiguring is part of the same wait.
+ *
+ * @param resources From `useResourceStatuses`, which has already dropped what
+ *   rdk does not count as a configured resource.
  */
 export const reconfiguringResources = (
-	resources: robotApi.ResourceStatus[] = []
+	resources: readonly ResourceStatus[] = []
 ): ReconfiguringResource[] =>
 	resources.flatMap(({ name, state }) => {
-		if (name === undefined || name.namespace === INTERNAL_NAMESPACE || name.type === REMOTE_TYPE) {
+		if (name === undefined) {
 			return []
 		}
 
