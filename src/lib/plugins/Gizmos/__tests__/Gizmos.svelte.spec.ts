@@ -56,12 +56,26 @@ vi.mock('../tools/AngleTool.svelte', async () => {
 	)
 	return { default: mock.default }
 })
+// Renderless, but it reads the ECS world this spec does not stand up. Its own spec
+// covers what it does; here it only needs to not blow up the plugin shell.
+vi.mock('../GizmoStorage.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
 vi.mock('../GizmoEntities.svelte', async () => {
 	const mock = await import(
 		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
 	)
 	return { default: mock.default }
 })
+
+// `usePartID`'s context key is private to its module, so it cannot be injected through
+// `render`'s context map. The value only scopes the persistence store's key here.
+vi.mock('$lib/hooks/usePartID.svelte', () => ({
+	usePartID: () => ({ current: 'test-part' }),
+}))
 
 // Backed by a real reactive primitive (not a plain object) so the effect that watches
 // `interactionMode` for an external takeover actually reruns, the same way it does against
