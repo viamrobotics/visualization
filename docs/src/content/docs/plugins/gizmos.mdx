@@ -1,0 +1,151 @@
+---
+title: <Gizmos />
+description: Six on-canvas tools for annotating a scene with reference planes, geometry, arrows, and measurements.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+`<Gizmos />` adds a shapes button to the visualizer dashboard. Clicking it opens a tool picker with six tools: coordinate system, reference plane, reference geometry, polyline, angle, and arrow. Each tool places one or more entities in the scene by clicking, and every placed gizmo shows up in the [world tree](../world-tree/) under a **Gizmos** folder.
+
+## Usage
+
+Mount `<Gizmos />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Gizmos } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<Gizmos />
+	</Visualizer>
+</div>
+```
+
+## Tools
+
+Open the tool picker from the shapes button. Each tool exposes its own options below the list.
+
+### Coordinate system
+
+Places a labelled axes triad at the clicked point. No options.
+
+### Reference plane
+
+Places a plane on one of the world's `yz`, `xz`, or `xy` planes.
+
+- **Axis**: which world plane the reference plane lies in.
+- **Placement**: `free` puts the plane at the clicked point, `offset` shifts it along its normal by the offset below.
+- **Offset**: distance along the plane's normal, in millimeters, used only when placement is `offset`.
+
+### Reference geometry
+
+Places a box, sphere, or capsule.
+
+- **Shape**: `box`, `sphere`, or `capsule`.
+- **Placement**: `free` places at the clicked point, `at origin` ignores the click and places at the world origin.
+- **Wireframe**: render the shape as a wireframe instead of solid.
+
+### Polyline
+
+Places a chained multi-click line. Click to add each vertex.
+
+- **Space**: `world` scales the line's width with distance, `screen` keeps it a constant pixel width.
+- **Measurement**: `none` shows no distances, `segment` labels each segment, `total` labels the running total.
+- **Snapping**: snap a new vertex onto an existing one within the snap distance.
+- **Snap distance**: how close, in millimeters, a new vertex must land to an existing one to snap, shown only while snapping is on.
+
+Clicking back on the first vertex closes the loop once three or more vertices are placed.
+
+### Angle
+
+Three clicks: a vertex, then the two ray endpoints. Labels the interior angle at the vertex in degrees. No options.
+
+### Arrow
+
+Places an arrow whose tip sits on the clicked point, pointing along a world axis, or into the clicked surface along its normal.
+
+- **Axis**: `x`, `y`, `z`, or `surface` to point into the clicked face along its normal.
+
+## Keys
+
+| Key         | Action                                             |
+| ----------- | -------------------------------------------------- |
+| Escape      | Cancel the active tool                             |
+| Right-click | Also cancels the active tool                       |
+| Enter       | Confirm and exit the tool                          |
+| Space       | Commit the current gizmo and start placing another |
+| Backspace   | Undo the last placed point (polyline and angle)    |
+| =           | Arm the reference-geometry tool from anywhere      |
+
+## Persistence
+
+The tool picker has a **Remember gizmos** toggle at the top, off by default. Turning it on saves the current gizmos, and they load back the next time the plugin mounts. Saved gizmos are scoped **per machine part**: gizmos you save while viewing one machine do not appear when you switch to another.
+
+## Units
+
+Distances and dimensions in this plugin are in **millimeters**, matching the details panel. [`<MeasureTool />`](../measure-tool/) prints its distance in meters, so the two differ today — check which tool you're reading before comparing numbers.
+
+## MeasureTool vs. the polyline gizmo
+
+`<MeasureTool />` is a throwaway two-point ruler: click, read the distance, click again to clear. The polyline gizmo is a persistent, labelled annotation that stays in the scene and the world tree until you remove it. Reach for `MeasureTool` for a quick check, and a gizmo for something you want to keep looking at.
+
+## useGizmos
+
+Read and drive the plugin's state from your own code with `useGizmos()`, called anywhere inside `<Visualizer />` below `<Gizmos />`:
+
+```svelte
+<script lang="ts">
+	import { useGizmos } from '@viamrobotics/visualization/plugins'
+
+	const gizmos = useGizmos()
+</script>
+
+<p>Active tool: {gizmos.mode}</p>
+<button onclick={() => gizmos.exit()}>Exit</button>
+```
+
+It returns:
+
+| Property             | Read/write | Description                                                         |
+| -------------------- | ---------- | ------------------------------------------------------------------- |
+| `mode`               | read/write | The armed tool, or `idle` when no tool is armed.                    |
+| `planeAxis`          | read/write | The reference plane's world plane: `yz`, `xz`, or `xy`.             |
+| `planePlacement`     | read/write | `free` or `offset`.                                                 |
+| `planeOffset`        | read/write | Offset along the plane's normal, in millimeters.                    |
+| `planeAxisVector`    | read-only  | A fresh normal vector for the current `planeAxis`.                  |
+| `referenceShape`     | read/write | `box`, `sphere`, `capsule`, or `plane`.                             |
+| `geometryPlacement`  | read/write | `free` or `at-origin`.                                              |
+| `geometryTrait`      | read-only  | The geometry trait for the selected solid, `undefined` for a plane. |
+| `isWireframe`        | read/write | Whether the placed reference geometry renders as a wireframe.       |
+| `lineSpace`          | read/write | `world` or `screen`.                                                |
+| `lineMeasure`        | read/write | `none`, `segment`, or `total`.                                      |
+| `vertexSnapDistance` | read/write | Snap distance for polyline vertices, in millimeters.                |
+| `arrowAxis`          | read/write | `x`, `y`, `z`, or `surface`.                                        |
+| `exit()`             | —          | Disarms the active tool and hands the pointer back to the camera.   |
+
+## gizmoTraits
+
+For lower-level access to gizmo state, the plugin exports its Koota traits under the `gizmoTraits` namespace:
+
+```ts
+import { gizmoTraits } from '@viamrobotics/visualization/plugins'
+```
+
+It exports `PendingGizmo` (present on a gizmo while it's still being placed), `ReferencePlane`, `PolylineMeasure`, and `AngleMeasure`.
+
+The `Gizmo` marker trait itself is not part of this namespace. It lives in the core `traits` namespace instead, because the world tree's folder taxonomy needs to query it alongside every other entity kind, not only gizmos.
+
+<Aside
+	type="caution"
+	title="Context does not cross a dashboard portal"
+>
+	Anything the plugin renders through DashboardPortal is teleported by threlte's Portal, which
+	re-parents the component tree into the dashboard. A child component there cannot read context the
+	plugin provided: useGizmos returns undefined at runtime and the tool picker silently renders
+	nothing. This shipped as a real bug, and it is invisible to unit tests, which mount the child
+	directly. Resolve what you need outside the portal and pass it down as props, the same way the
+	built-in tool picker takes gizmos, settings, and storage.
+</Aside>
