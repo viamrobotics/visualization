@@ -94,9 +94,12 @@ export const resolveFragmentComponents = (
 		for (const { name, frame } of componentsOf(resolved.config)) {
 			// The merge concatenates a nested fragment's components ahead of the
 			// parent's, so a later entry is the outer one and wins the name.
-			results[name] = frame
-				? { id: fragmentImport.id, variables, frame }
-				: { id: fragmentImport.id, variables }
+			results[name] = {
+				id: fragmentImport.id,
+				variables,
+				variablePaths: resolved.variablePathsByComponent[name] ?? {},
+				...(frame ? { frame } : {}),
+			}
 		}
 	}
 

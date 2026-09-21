@@ -32,7 +32,7 @@ export const provideFramelessComponents = () => {
 			}
 
 			// The frame exists, we just can't place it. Offering to create one would
-			// write a second frame over the one the nested fragment already gives it.
+			// write a second frame over the one the fragment already gives it.
 			if (configFrames.unresolvedFrames.has(fragmentComponentName)) {
 				continue
 			}

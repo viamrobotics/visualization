@@ -27,7 +27,7 @@ describe('resolveFragmentComponents', () => {
 			configs({ arm: { components: [{ name: 'left-arm' }] } })
 		)
 
-		expect(components['left-arm']).toEqual({ id: 'arm', variables: {} })
+		expect(components['left-arm']).toEqual({ id: 'arm', variables: {}, variablePaths: {} })
 	})
 
 	it('attributes a nested fragment component to the fragment the part imports', () => {
@@ -59,6 +59,27 @@ describe('resolveFragmentComponents', () => {
 		)
 
 		expect(components).toEqual({})
+	})
+
+	it('reports which of a component config paths a variable supplied', () => {
+		const components = resolveFragmentComponents(
+			[{ id: 'arm', variables: { y: 1003 } }],
+			configs({
+				arm: {
+					components: [
+						{
+							name: 'left-arm',
+							frame: {
+								parent: 'world',
+								translation: { x: 0, y: { $variable: { name: 'y' } }, z: 0 },
+							},
+						},
+					],
+				},
+			})
+		)
+
+		expect(components['left-arm'].variablePaths).toEqual({ 'frame.translation.y': 'y' })
 	})
 
 	it('skips a disabled import', () => {

@@ -38,6 +38,21 @@ export interface FragmentInfo {
 	frame?: Frame
 	/** Fragment variables the part sets, for the UI that warns an edit may not stick. */
 	variables: Record<string, string>
+	/**
+	 * Which of this component's config paths a fragment variable supplies, mapped
+	 * to the variable's name. Paths are relative to the component, so a frame
+	 * field reads `frame.translation.y` and `attributes.host` is not one.
+	 *
+	 * Shaped to match the `paths` map of the app's `ResourceVariablePaths`, so an
+	 * embedded host can pass the server's answer through unchanged.
+	 *
+	 * Undefined means the source cannot say, which is not the same as `{}`. An
+	 * empty map asserts that nothing here is variable backed and frame editing is
+	 * safe. Undefined falls back to locking a frame whenever the fragment binds
+	 * any variable at all, since the alternative is letting an edit bake a
+	 * variable's current value into the part config.
+	 */
+	variablePaths?: Record<string, string>
 }
 
 const key = Symbol('fragment-info-context')

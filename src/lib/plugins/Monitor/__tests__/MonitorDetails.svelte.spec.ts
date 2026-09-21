@@ -42,6 +42,7 @@ describe('MonitorDetails', () => {
 			unresolvedFrames: new Set(),
 			current: {},
 			fragmentFrames: {},
+			effectiveFrames: new Map(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],

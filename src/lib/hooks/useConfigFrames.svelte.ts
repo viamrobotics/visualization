@@ -4,7 +4,7 @@ import { getContext, setContext } from 'svelte'
 import type { Frame } from '$lib/frame'
 
 import { createTransformFromFrame } from '$lib/frame'
-import { resolveComponentFrames } from '$lib/resolveComponentFrames'
+import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
 
 import { useFragmentInfo } from './useFragmentInfo.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
@@ -20,17 +20,21 @@ interface ConfigFramesContext {
 	current: Record<string, Transform>
 	/**
 	 * Frames the fragments supply, rebuilt from each fragment's own frame and the
-	 * part's `fragment_mods` patches beneath it. The app does not expand fragment
-	 * variables or fragments nested inside a fragment, so a rebuilt pose can
-	 * differ from the one the machine resolved. Use these for a component the
-	 * machine reports no frame for.
+	 * part's `fragment_mods` patches beneath it. Resolution happens here rather
+	 * than on the server, so a rebuilt pose can differ from the one the machine
+	 * resolved. Use these for a component the machine reports no frame for.
 	 */
 	fragmentFrames: Record<string, Transform>
+	/**
+	 * The frame each component resolves to once the part's `fragment_mods` apply,
+	 * which is what a variable lock compares against the fragment's own frame.
+	 */
+	effectiveFrames: Map<string, Frame>
 	unsetFrames: string[]
 	/**
 	 * Components the part's `fragment_mods` patch a frame field on, without the
-	 * app ever seeing the frame being patched. A fragment nested inside a
-	 * fragment is the usual cause. The component is framed, so it is not
+	 * app ever seeing the frame being patched, which is what a fragment that
+	 * failed to resolve leaves behind. The component is framed, so it is not
 	 * frameless, but its pose has to come from the machine.
 	 */
 	unresolvedFrames: ReadonlySet<string>
@@ -54,6 +58,7 @@ export const provideConfigFrames = () => {
 
 	const frames = $derived(toTransforms(resolved.frames))
 	const fragmentFrames = $derived(toTransforms(resolved.fragmentFrames))
+	const effectiveFrames = $derived(mergedComponentFrames(resolved))
 	const unsetFrames = $derived([...resolved.unsetFrameNames])
 
 	setContext<ConfigFramesContext>(key, {
@@ -62,6 +67,9 @@ export const provideConfigFrames = () => {
 		},
 		get fragmentFrames() {
 			return fragmentFrames
+		},
+		get effectiveFrames() {
+			return effectiveFrames
 		},
 		get unsetFrames() {
 			return unsetFrames
