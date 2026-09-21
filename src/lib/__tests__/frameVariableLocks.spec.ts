@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Frame } from '$lib/frame'
 import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
-import { isFrameVariableLocked, lockedFrameFields } from '$lib/frameVariableLocks'
+import { frameVariableLock, isFrameVariableLocked } from '$lib/frameVariableLocks'
 
 const frame = (y: number): Frame => ({
 	parent: 'world',
@@ -18,45 +18,45 @@ const info = (overrides: Partial<FragmentInfo> = {}): FragmentInfo => ({
 	...overrides,
 })
 
-describe('lockedFrameFields', () => {
+describe('frameVariableLock', () => {
 	it('locks a frame field a variable supplies', () => {
 		expect(
-			lockedFrameFields(info({ variablePaths: { 'frame.translation.y': 'arm-y' } }), frame(1003))
-		).toEqual(['translation.y'])
+			frameVariableLock(info({ variablePaths: { 'frame.translation.y': 'arm-y' } }), frame(1003))
+		).toEqual({ kind: 'fields', paths: ['translation.y'] })
 	})
 
 	it('unlocks a field once the part overrides the variable value', () => {
 		expect(
-			lockedFrameFields(info({ variablePaths: { 'frame.translation.y': 'arm-y' } }), frame(12))
-		).toEqual([])
+			frameVariableLock(info({ variablePaths: { 'frame.translation.y': 'arm-y' } }), frame(12))
+		).toEqual({ kind: 'none' })
 	})
 
 	it('ignores a variable that supplies an attribute rather than a frame field', () => {
 		expect(
-			lockedFrameFields(
+			frameVariableLock(
 				info({ variables: { ip: '192.168.1.212' }, variablePaths: { 'attributes.host': 'ip' } }),
 				frame(1003)
 			)
-		).toEqual([])
+		).toEqual({ kind: 'none' })
 	})
 
-	it('locks the whole frame when the source cannot say which paths are variable backed', () => {
-		expect(lockedFrameFields(info({ variables: { ip: '192.168.1.212' } }), frame(1003))).toEqual([
-			'frame.',
-		])
+	it('reports unknown, not none, when the source cannot say which paths are variable backed', () => {
+		expect(frameVariableLock(info({ variables: { ip: '192.168.1.212' } }), frame(1003))).toEqual({
+			kind: 'unknown',
+		})
 	})
 
 	it('locks nothing when an empty map asserts no path is variable backed', () => {
 		expect(
-			lockedFrameFields(
+			frameVariableLock(
 				info({ variables: { ip: '192.168.1.212' }, variablePaths: {} }),
 				frame(1003)
 			)
-		).toEqual([])
+		).toEqual({ kind: 'none' })
 	})
 
 	it('locks nothing for a component no fragment provides', () => {
-		expect(lockedFrameFields(undefined, frame(1003))).toEqual([])
+		expect(frameVariableLock(undefined, frame(1003))).toEqual({ kind: 'none' })
 	})
 })
 

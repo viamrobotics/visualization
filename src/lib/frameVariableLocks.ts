@@ -2,6 +2,18 @@ import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
 const FRAME_PATH_PREFIX = 'frame.'
 
+/**
+ * Which of a component's frame fields a fragment variable still supplies.
+ *
+ * `unknown` is not `none`. It means the fragment binds variables and the source
+ * could not say where they land, so the safe reading is that any field may be
+ * one of them. See `FragmentInfo.variablePaths`.
+ */
+export type FrameVariableLock =
+	| { kind: 'none' }
+	| { kind: 'unknown' }
+	| { kind: 'fields'; paths: string[] }
+
 const valueAtPath = (value: unknown, path: string[]): unknown => {
 	let cursor = value
 
@@ -17,30 +29,26 @@ const valueAtPath = (value: unknown, path: string[]): unknown => {
 }
 
 /**
- * The frame fields a fragment variable still supplies for this component, as
- * paths relative to the frame such as `translation.y`.
+ * A field drops out of the lock once the part overrides it, matching the app's
+ * frame form: a field is locked while its value is still the variable's, and an
+ * override in the part config unlocks it.
  *
- * A path drops out once the part overrides it, matching the app's frame form:
- * a field is locked while its value is still the variable's, and an override in
- * the part config unlocks it. `effectiveFrame` is the frame after the part's
- * `fragment_mods` apply, `info.frame` the fragment's own.
- *
- * An entry with no `variablePaths` cannot answer, so every frame field is
- * reported locked when the fragment binds any variable. See `FragmentInfo`.
+ * `effectiveFrame` is the frame after the part's `fragment_mods` apply, and
+ * `info.frame` the fragment's own.
  */
-export const lockedFrameFields = (
+export const frameVariableLock = (
 	info: FragmentInfo | undefined,
 	effectiveFrame: unknown
-): string[] => {
+): FrameVariableLock => {
 	if (info === undefined) {
-		return []
+		return { kind: 'none' }
 	}
 
 	if (info.variablePaths === undefined) {
-		return Object.keys(info.variables).length > 0 ? [FRAME_PATH_PREFIX] : []
+		return Object.keys(info.variables).length > 0 ? { kind: 'unknown' } : { kind: 'none' }
 	}
 
-	const locked: string[] = []
+	const paths: string[] = []
 
 	for (const path of Object.keys(info.variablePaths)) {
 		if (!path.startsWith(FRAME_PATH_PREFIX)) {
@@ -49,15 +57,15 @@ export const lockedFrameFields = (
 
 		const framePath = path.slice(FRAME_PATH_PREFIX.length).split('.')
 		if (valueAtPath(effectiveFrame, framePath) === valueAtPath(info.frame, framePath)) {
-			locked.push(framePath.join('.'))
+			paths.push(framePath.join('.'))
 		}
 	}
 
-	return locked
+	return paths.length > 0 ? { kind: 'fields', paths } : { kind: 'none' }
 }
 
 /** Whether any fragment variable still governs this component's frame. */
 export const isFrameVariableLocked = (
 	info: FragmentInfo | undefined,
 	effectiveFrame: unknown
-): boolean => lockedFrameFields(info, effectiveFrame).length > 0
+): boolean => frameVariableLock(info, effectiveFrame).kind !== 'none'

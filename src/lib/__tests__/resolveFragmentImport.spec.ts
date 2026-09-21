@@ -107,6 +107,73 @@ describe('resolveFragmentImport variables', () => {
 	})
 })
 
+describe('resolveFragmentImport variable paths', () => {
+	it('reports the path a variable supplied, relative to its component', () => {
+		const { variablePathsByComponent } = resolveFragmentImport(
+			{ id: 'arm', variables: { y: 1003 } },
+			configs({
+				arm: {
+					components: [
+						component('left-arm', {
+							parent: 'world',
+							translation: { y: { $variable: { name: 'y' } } },
+						}),
+					],
+				},
+			})
+		)
+
+		expect(variablePathsByComponent).toEqual({ 'left-arm': { 'frame.translation.y': 'y' } })
+	})
+
+	it('reports a nested fragment path when the machine supplies the variable', () => {
+		const { variablePathsByComponent } = resolveFragmentImport(
+			{ id: 'root', variables: { y: 1003 } },
+			configs({
+				root: { fragments: [{ id: 'child' }] },
+				child: {
+					components: [
+						component('left-arm', {
+							parent: 'world',
+							translation: { y: { $variable: { name: 'y' } } },
+						}),
+					],
+				},
+			})
+		)
+
+		expect(variablePathsByComponent).toEqual({ 'left-arm': { 'frame.translation.y': 'y' } })
+	})
+
+	it('omits a nested fragment path whose variable the parent fragment bound, since the machine cannot set it', () => {
+		const { variablePathsByComponent } = resolveFragmentImport(
+			{ id: 'root' },
+			configs({
+				root: { fragments: [{ id: 'child', variables: { y: 1003 } }] },
+				child: {
+					components: [
+						component('left-arm', {
+							parent: 'world',
+							translation: { y: { $variable: { name: 'y' } } },
+						}),
+					],
+				},
+			})
+		)
+
+		expect(variablePathsByComponent).toEqual({})
+	})
+
+	it('reports no path when nothing in the fragment uses a variable', () => {
+		const { variablePathsByComponent } = resolveFragmentImport(
+			{ id: 'arm' },
+			configs({ arm: { components: [component('left-arm', { parent: 'world' })] } })
+		)
+
+		expect(variablePathsByComponent).toEqual({})
+	})
+})
+
 describe('resolveFragmentImport prefixes', () => {
 	it('rewrites a named resource to prefix-name', () => {
 		const { config } = resolveFragmentImport(
