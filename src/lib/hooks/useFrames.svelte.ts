@@ -120,6 +120,12 @@ export const provideFrames = (partID: () => string) => {
 		if (isBuildMode || !isConnected) {
 			const mergedFrames = { ...frames }
 
+			// Never overwrite a frame the machine already reported: the fragment's
+			// stored frame can still hold unexpanded `${variables}`.
+			for (const [name, frame] of Object.entries(configFrames.fragmentFrames)) {
+				mergedFrames[name] ??= frame
+			}
+
 			for (const [name, frame] of Object.entries(configFrames.current)) {
 				mergedFrames[name] = frame
 			}

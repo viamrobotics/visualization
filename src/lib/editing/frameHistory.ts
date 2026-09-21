@@ -4,22 +4,16 @@ import { Matrix4 } from 'three'
 
 import type { Frame } from '$lib/frame'
 import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
+import type { ComponentFramesConfig } from '$lib/resolveComponentFrames'
 
 import { hierarchy, traits } from '$lib/ecs'
 import { Pose } from '$lib/math'
 import { composeLocalMatrix } from '$lib/math/transform'
+import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
 
 import { applyGeometryTrait, type EditableFrameGeometry } from './FrameEditor'
 
 type JsonObject = Record<string, unknown>
-
-export interface FrameHistoryPartConfig {
-	components?: { name: string; frame?: Frame }[]
-	fragment_mods?: {
-		fragment_id: string
-		mods: JsonObject[]
-	}[]
-}
 
 interface ConfigLike {
 	toJson?: () => unknown
@@ -45,7 +39,7 @@ const toJsonValue = (value: unknown): unknown => {
 }
 
 export const serializePartConfig = (
-	config: ConfigLike | FrameHistoryPartConfig | undefined
+	config: ConfigLike | ComponentFramesConfig | undefined
 ): string => {
 	if (!config) {
 		return JSON.stringify(emptyPartConfig)
@@ -58,71 +52,12 @@ export const serializePartConfig = (
 	return JSON.stringify(toJsonValue(config))
 }
 
-export const parsePartConfigSnapshot = (snapshot: string): FrameHistoryPartConfig => {
+export const parsePartConfigSnapshot = (snapshot: string): ComponentFramesConfig => {
 	try {
-		return JSON.parse(snapshot) as FrameHistoryPartConfig
+		return JSON.parse(snapshot) as ComponentFramesConfig
 	} catch {
 		return emptyPartConfig
 	}
-}
-
-const frameModPath = (componentName: string) => `components.${componentName}.frame`
-
-const getRecord = (value: unknown): JsonObject | undefined =>
-	value && typeof value === 'object' ? (value as JsonObject) : undefined
-
-export const collectFrameHistoryFrames = (
-	config: FrameHistoryPartConfig,
-	fragmentInfo: Record<string, FragmentInfo>
-): { frames: Map<string, Frame>; unsetFrameNames: Set<string> } => {
-	const frames = new Map<string, Frame>()
-	const unsetFrameNames = new Set<string>()
-
-	for (const component of config.components ?? []) {
-		if (component.frame) {
-			frames.set(component.name, component.frame)
-		} else {
-			unsetFrameNames.add(component.name)
-		}
-	}
-
-	for (const [componentName, info] of Object.entries(fragmentInfo)) {
-		const fragmentMod = config.fragment_mods?.find((mod) => mod.fragment_id === info.id)
-		if (!fragmentMod) {
-			if (info.frame) {
-				frames.set(componentName, info.frame)
-				unsetFrameNames.delete(componentName)
-			}
-			continue
-		}
-
-		const path = frameModPath(componentName)
-		const setFrameIndex = fragmentMod.mods.findLastIndex(
-			(mod) => getRecord(getRecord(mod)?.['$set'])?.[path] !== undefined
-		)
-		const unsetFrameIndex = fragmentMod.mods.findLastIndex(
-			(mod) => getRecord(getRecord(mod)?.['$unset'])?.[path] !== undefined
-		)
-
-		if (setFrameIndex < unsetFrameIndex) {
-			unsetFrameNames.add(componentName)
-			continue
-		}
-
-		if (unsetFrameIndex < setFrameIndex) {
-			const set = getRecord(fragmentMod.mods[setFrameIndex]?.['$set'])
-			const frame = set?.[path] as Frame | undefined
-			if (frame) {
-				frames.set(componentName, frame)
-				unsetFrameNames.delete(componentName)
-			}
-		} else if (info.frame) {
-			frames.set(componentName, info.frame)
-			unsetFrameNames.delete(componentName)
-		}
-	}
-
-	return { frames, unsetFrameNames }
 }
 
 const writeMatrixTrait = (
@@ -144,11 +79,13 @@ const writeMatrixTrait = (
 
 export const applyFrameHistorySnapshotToWorld = (
 	world: World,
-	config: FrameHistoryPartConfig,
+	config: ComponentFramesConfig,
 	fragmentInfo: Record<string, FragmentInfo>,
 	options: { mode: 'edit' | 'save' | 'discard' }
 ): void => {
-	const { frames, unsetFrameNames } = collectFrameHistoryFrames(config, fragmentInfo)
+	const resolved = resolveComponentFrames(config, fragmentInfo)
+	const frames = mergedComponentFrames(resolved)
+	const { unsetFrameNames } = resolved
 
 	for (const entity of world.query(traits.FramesAPI)) {
 		const name = entity.get(traits.Name)
