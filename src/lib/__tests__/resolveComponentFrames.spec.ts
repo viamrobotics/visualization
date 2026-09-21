@@ -193,6 +193,29 @@ describe('resolveComponentFrames', () => {
 		expect([...unresolvedFrameNames]).toEqual([])
 	})
 
+	it('applies every mods entry sharing a fragment id, not just the first', () => {
+		const { frames } = resolveComponentFrames(
+			{
+				components: [],
+				fragment_mods: [
+					{
+						fragment_id: FRAGMENT_ID,
+						prefix: 'left',
+						mods: [{ $set: { 'components.other-arm.frame.translation.x': 7 } }],
+					},
+					{
+						fragment_id: FRAGMENT_ID,
+						prefix: 'right',
+						mods: [{ $set: { 'components.frag-arm.frame.translation.x': 99 } }],
+					},
+				],
+			},
+			fragmentInfo({ frame: frameAt(30) })
+		)
+
+		expect(frames.get('frag-arm')?.translation.x).toBe(99)
+	})
+
 	it('ignores mods belonging to another fragment', () => {
 		const { fragmentFrames } = resolveComponentFrames(
 			{

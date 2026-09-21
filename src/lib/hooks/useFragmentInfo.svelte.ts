@@ -9,6 +9,7 @@ import type { Frame } from '$lib/frame'
 import type { FragmentConfig, FragmentImport } from '$lib/resolveFragmentImport'
 
 import { resolveFragmentComponents, withModdedFragmentComponents } from '$lib/fragmentComponents'
+import { importsOf } from '$lib/resolveFragmentImport'
 
 /**
  * What one fragment-provided component is worth knowing about.
@@ -125,43 +126,8 @@ const structToJson = (config: Struct | undefined): JsonObject | undefined => {
 	}
 }
 
-/**
- * The part's `fragments` array. An entry is either a bare id string or an object
- * carrying the variables, prefix, and disabled flag bound to that import.
- */
-const importedFragments = (partConfigJSON: JsonObject | undefined): FragmentImport[] => {
-	const fragments = partConfigJSON?.['fragments']
-	if (!Array.isArray(fragments)) {
-		return []
-	}
-
-	return fragments.flatMap((entry) => {
-		if (typeof entry === 'string') {
-			return [{ id: entry }]
-		}
-
-		if (entry === null || typeof entry !== 'object') {
-			return []
-		}
-
-		const { id, variables, prefix, disabled } = entry as Record<string, unknown>
-		if (typeof id !== 'string') {
-			return []
-		}
-
-		return [
-			{
-				id,
-				variables:
-					variables && typeof variables === 'object'
-						? (variables as Record<string, unknown>)
-						: undefined,
-				prefix: typeof prefix === 'string' ? prefix : undefined,
-				disabled: disabled === true,
-			},
-		]
-	})
-}
+const importedFragments = (partConfigJSON: JsonObject | undefined): FragmentImport[] =>
+	importsOf(partConfigJSON ?? {})
 
 const fragmentVariablesById = (
 	partConfigJSON: JsonObject | undefined

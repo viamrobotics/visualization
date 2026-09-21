@@ -240,6 +240,19 @@ describe('resolveFragmentImport nesting', () => {
 		expect(resolveFragmentImport({ id: 'missing' }, configs({})).config).toEqual({})
 	})
 
+	it('leaves an unresolved placeholder unaliased from the stored config', () => {
+		const placeholder = { $variable: { name: 'ip' } }
+		const stored: FragmentConfig = {
+			components: [{ name: 'arm-1', attributes: { host: placeholder } }],
+		}
+
+		const { config } = resolveFragmentImport({ id: 'arm' }, configs({ arm: stored }))
+
+		expect(
+			(config['components'] as { attributes: { host: unknown } }[])[0].attributes.host
+		).not.toBe(placeholder)
+	})
+
 	it('leaves the stored config untouched', () => {
 		const stored: FragmentConfig = { components: [component('arm-1')] }
 

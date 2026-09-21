@@ -19,12 +19,12 @@ export const provideFramelessComponents = () => {
 
 	const current = $derived.by(() => {
 		const { components } = partConfig.current
-		const partComponentsWIthNoFrame =
+		const partComponentsWithNoFrame =
 			components
 				?.filter((component) => component.frame === undefined)
 				.map((component) => component.name) ?? []
 
-		const fragmentComponentsWithNoFrame = new Set(partComponentsWIthNoFrame)
+		const fragmentComponentsWithNoFrame = new Set(partComponentsWithNoFrame)
 
 		for (const fragmentComponentName of Object.keys(fragmentInfo.current)) {
 			if (frames.current.some((frame) => frame.referenceFrame === fragmentComponentName)) {

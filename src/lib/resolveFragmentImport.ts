@@ -88,7 +88,7 @@ const substitute = (
 	if (isJsonObject(variableRef)) {
 		const name = variableRef['name']
 		if (typeof name !== 'string') {
-			return { value: config, missingVariables: [], variablePaths: [] }
+			return { value: { ...config }, missingVariables: [], variablePaths: [] }
 		}
 
 		const found: VariablePath[] = [{ path: path.join('.'), variableName: name }]
@@ -101,7 +101,7 @@ const substitute = (
 			return { value: variableRef['default_value'], missingVariables: [], variablePaths: found }
 		}
 
-		return { value: config, missingVariables: [name], variablePaths: [] }
+		return { value: { ...config }, missingVariables: [name], variablePaths: [] }
 	}
 
 	const thisRef = config['$this']
@@ -213,7 +213,8 @@ const mergeFragmentConfigs = (a: FragmentConfig, b: FragmentConfig): FragmentCon
 	return out
 }
 
-const importsOf = (config: FragmentConfig): FragmentImport[] => {
+/** The `fragments` array of a part or fragment config, entries normalized. */
+export const importsOf = (config: FragmentConfig): FragmentImport[] => {
 	const fragments = config['fragments']
 	if (!Array.isArray(fragments)) {
 		return []
@@ -270,8 +271,10 @@ export const resolveFragmentImport = (
 
 	const substituted = substitute(stored, variables, fragmentImport.prefix)
 	const missingVariables = [...substituted.missingVariables]
+	// `substitute` already returns a tree of its own making, so `applyPrefix` has
+	// nothing of the caller's to mutate.
 	const config = applyPrefix(
-		isJsonObject(substituted.value) ? structuredClone(substituted.value) : {},
+		isJsonObject(substituted.value) ? substituted.value : {},
 		fragmentImport.prefix
 	)
 

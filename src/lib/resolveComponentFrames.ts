@@ -188,7 +188,13 @@ export const resolveComponentFrames = (
 	}
 
 	for (const [componentName, info] of Object.entries(fragmentInfo)) {
-		const mods = config.fragment_mods?.find((mod) => mod.fragment_id === info.id)?.mods ?? []
+		// Every entry sharing a fragment id, not the first. A part that imports one
+		// fragment twice writes an entry per import, and the server aggregates them
+		// before applying, so reading one entry drops the other import's mods.
+		const mods =
+			config.fragment_mods
+				?.filter((mod) => mod.fragment_id === info.id)
+				.flatMap(({ mods }) => mods) ?? []
 		const { frame, isAuthored, isUnset, isUnresolved } = resolveFragmentFrame(
 			componentName,
 			info.frame,
