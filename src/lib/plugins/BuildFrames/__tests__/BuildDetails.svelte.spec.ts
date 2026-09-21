@@ -38,7 +38,10 @@ describe('BuildDetails', () => {
 		})
 		vi.mocked(useConfigFrames.useConfigFrames).mockReturnValue({
 			unsetFrames: [],
+			unresolvedFrames: new Set(),
 			current: {},
+			fragmentFrames: {},
+			effectiveFrames: new Map(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],

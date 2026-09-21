@@ -16,6 +16,8 @@
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
 	import { traits, useTag, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
+	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
@@ -30,6 +32,7 @@
 	const environment = useEnvironment()
 	const sections = useDetailsSections()
 	const fragmentInfo = useFragmentInfo()
+	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
 
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
@@ -42,7 +45,11 @@
 	const customDetails = useTag(() => entity, traits.CustomDetails)
 
 	const isFragmentComponentWithVariables = $derived(
-		name.current && Object.keys(fragmentInfo.current?.[name.current]?.variables ?? {}).length > 0
+		name.current !== undefined &&
+			isFrameVariableLocked(
+				fragmentInfo.current?.[name.current],
+				configFrames.effectiveFrames.get(name.current)
+			)
 	)
 	const showEditFrameOptions = $derived(
 		!!framesAPI.current &&
