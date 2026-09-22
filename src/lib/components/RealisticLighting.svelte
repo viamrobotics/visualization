@@ -16,12 +16,12 @@ light itself forces covers the switch.
 	const { invalidate, scene } = useThrelte()
 
 	/**
-	 * The key sits off the default camera axis — `Scene.svelte` mounts the camera at
+	 * The light sits off the default camera axis — `Scene.svelte` mounts the camera at
 	 * `[3, 3, 3]` — so realistic mode shows form shading and a cast shadow the moment
 	 * it is switched on. A light on the viewing axis lights every visible surface
 	 * head-on and hides the shadow it casts behind the caster.
 	 */
-	const KEY_POSITION: Vector3Tuple = [5, -4, 8]
+	const DIRECTIONAL_POSITION: Vector3Tuple = [5, -4, 8]
 
 	/**
 	 * Half-width of the shadow frustum, centred on the origin and sized to hold a
@@ -50,7 +50,7 @@ light itself forces covers the switch.
 	const NORMAL_BIAS_TEXELS = 2
 	const SHADOW_TEXEL_SIZE = (2 * SHADOW_EXTENT) / SHADOW_MAP_SIZE
 
-	const KEY_INTENSITY = 1.5
+	const DIRECTIONAL_INTENSITY = 1.5
 
 	/**
 	 * Carries the fill an `AmbientLight` used to. Ambient adds the same term to every
@@ -89,8 +89,8 @@ light itself forces covers the switch.
 </script>
 
 <T.DirectionalLight
-	position={KEY_POSITION}
-	intensity={KEY_INTENSITY}
+	position={DIRECTIONAL_POSITION}
+	intensity={DIRECTIONAL_INTENSITY}
 	castShadow
 	oncreate={configureShadow}
 />
