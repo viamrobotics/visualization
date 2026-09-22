@@ -57,6 +57,7 @@ describe('BuildDetails', () => {
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
+			createComponent: vi.fn(),
 			hasEditPermissions: true,
 			canUndoFrameEdit: false,
 			canRedoFrameEdit: false,

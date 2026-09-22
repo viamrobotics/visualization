@@ -1,5 +1,19 @@
 # visualization
 
+## 2.6.0
+
+### Minor Changes
+
+- 3118e9c: Add obstacles to the scene from a new plus menu in the World panel header.
+
+### Patch Changes
+
+- 6f6f115: Bump `@viamrobotics/test-widgets` to 0.15.0
+- daf1bbf: Apply every `fragment_mods` entry sharing a fragment id, so a part that imports one fragment twice no longer loses the second import's overrides.
+- daf1bbf: Allow editing a fragment component's frame unless a fragment variable actually supplies one of its fields, rather than whenever the fragment declares any variable.
+- daf1bbf: Resolve fragment-provided frames the way the server does, so build mode draws them instead of filing their components under "Frameless components".
+- daf1bbf: Write a frame edit on a fragment component as only the fields that changed, so a field the fragment binds to a variable keeps its binding.
+
 ## 2.5.1
 
 ### Patch Changes
