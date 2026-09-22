@@ -197,8 +197,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0(tailwindcss@4.3.1)
       '@viamrobotics/test-widgets':
-        specifier: 0.11.3
-        version: 0.11.3(06165555554621cfbf8d8a3cc710f193)
+        specifier: 0.15.0
+        version: 0.15.0(06165555554621cfbf8d8a3cc710f193)
       '@viamrobotics/tweakpane-config':
         specifier: 0.1.1
         version: 0.1.1(svelte-tweakpane-ui@1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))
@@ -271,9 +271,6 @@ importers:
       lucide-svelte:
         specifier: 1.0.1
         version: 1.0.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))
-      maplibre-gl:
-        specifier: ^5.24.0
-        version: 5.24.0
       prettier:
         specifier: 3.6.2
         version: 3.6.2
@@ -1610,42 +1607,36 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@rolldown/binding-linux-arm64-musl@1.1.3':
     resolution: {integrity: sha512-BO9+oPL8K9poZJBfYPsXNtYjPE5uM3qeehT3aFcW4LITOl+iSqhp0abzjR2nWBUNjIZeKXjAEWBZ64WjNoHd6w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
   '@rolldown/binding-linux-ppc64-gnu@1.1.3':
     resolution: {integrity: sha512-f3VpLB1vQ0Eo6ecr/6cekLnvYMFF4YBFoVGkfkvPLq1bAkbAwHYQPZKoAmG6OJyTcxxoC+AvezGx/S1obNC0Mw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ppc64]
     os: [linux]
-    libc: [glibc]
 
   '@rolldown/binding-linux-s390x-gnu@1.1.3':
     resolution: {integrity: sha512-AmurZ26Pqx/RI9N1gzEOCklkKXl927yjfXWUUS0O7Puh8ARM/Ob8qfrD3qnWksScdw6cSrW5PSHE9DyLu7+PtA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [s390x]
     os: [linux]
-    libc: [glibc]
 
   '@rolldown/binding-linux-x64-gnu@1.1.3':
     resolution: {integrity: sha512-JJpqs8bRGITDOdbkNKnlojzBabbOHrqjSvDr0IVsZObE1lBcPjxItUEY9eWIDbxaJ3cGrXPWGfGkIxFijg/URg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@rolldown/binding-linux-x64-musl@1.1.3':
     resolution: {integrity: sha512-rSJcdjPxzA/by/6/rYs+v+bXU7UjvnbUWz8MJb6kh6+knqB1dCrtHg0uu7C/4haqJvqdkYHQ5IGn+tCH9GLW/g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
   '@rolldown/binding-openharmony-arm64@1.1.3':
     resolution: {integrity: sha512-hQ3/PYkDJICgevvyNcVrihVeqq7k1Pp3VZ9lY+dauAYUJKO+auqApvANhvR1An9BhmqYKvW2Mu1F9u4DXSMLxQ==}
@@ -1901,28 +1892,24 @@ packages:
     engines: {node: '>= 20'}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@tailwindcss/oxide-linux-arm64-musl@4.3.1':
     resolution: {integrity: sha512-Bwv9KwOvE0VKa86xPFif9b9c3Y1NxOV1P0gLti/IYaWEsQYZXDlxfGEtA8mdDZ7SG3wyNXAWYT5SIn3giL57oA==}
     engines: {node: '>= 20'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
   '@tailwindcss/oxide-linux-x64-gnu@4.3.1':
     resolution: {integrity: sha512-Ymi8O8T15HYQdOUWUtTI6ldN0neHP85FC+Qz32xTcZ7iJXtem/x8ITev0o1e9e5rkqj4lONZfTRLvkmin1+tKg==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@tailwindcss/oxide-linux-x64-musl@4.3.1':
     resolution: {integrity: sha512-M+P/91qJ6uILLw4k2G93GMDRAXj61SMvFQYt39AqvUqYgExXpLL5aepfns7sj4HiAQeolirQF9E0lzRvdf4zPQ==}
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
   '@tailwindcss/oxide-wasm32-wasi@4.3.1':
     resolution: {integrity: sha512-zsM8uOeqvVGHsAXsJxsT28ttosFahLJKCLOTUBqRAtKnVgGSRitds9T432QiT8b77Yga7JIBkulIRRlJPtYhRA==}
@@ -2210,25 +2197,22 @@ packages:
     peerDependencies:
       tailwindcss: '>=4 <5'
 
-  '@viamrobotics/test-widgets@0.11.3':
-    resolution: {integrity: sha512-ftdQUAMRLA2T49jsajmxZ88c1Mbgxw5IbUWA9LtEpXhvVY48NqYwM5Af/wOx5hp7WBYc7pPp9DeaJxFYUpPzBw==}
+  '@viamrobotics/test-widgets@0.15.0':
+    resolution: {integrity: sha512-Wai4/ws1taJd+5Ovxr8amy01kVvYCfrGM7BjfSOyePqscKGOqO0JEEp/IreELfoKRfaCofS8AeA9EuSjOUA8CA==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       '@sentry/svelte': '>=8'
       '@threlte/core': '>=8'
       '@threlte/extras': '>=9'
       '@viamrobotics/prime-core': '>=0.1'
-      '@viamrobotics/sdk': '>=0.68'
+      '@viamrobotics/sdk': '>=0.75.1'
       '@viamrobotics/svelte-sdk': '>=1.1'
       lodash-es: '>=4'
-      maplibre-gl: '>=5'
+      maplibre-gl: '>=6'
       runed: '>=0.28'
       svelte: '>=5'
       three: '>=0.178'
       threlte-uikit: '>=2'
-    peerDependenciesMeta:
-      maplibre-gl:
-        optional: true
 
   '@viamrobotics/tweakpane-config@0.1.1':
     resolution: {integrity: sha512-oIRkTIjE+c5MLlwETi5l0WbpNrZa/qXcntjO2Aa5eBJSUsAIvdPrBR0mj6xJSgY5B0qGKymEmfZuSng1uF0v2A==}
@@ -3410,28 +3394,24 @@ packages:
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   lightningcss-linux-arm64-musl@1.32.0:
     resolution: {integrity: sha512-UpQkoenr4UJEzgVIYpI80lDFvRmPVg6oqboNHfoH4CQIfNA+HOrZ7Mo7KZP02dC6LjghPQJeBsvXhJod/wnIBg==}
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
   lightningcss-linux-x64-gnu@1.32.0:
     resolution: {integrity: sha512-V7Qr52IhZmdKPVr+Vtw8o+WLsQJYCTd8loIfpDaMRWGUZfBOYEJeyJIkqGIDMZPwPx24pUMfwSxxI8phr/MbOA==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   lightningcss-linux-x64-musl@1.32.0:
     resolution: {integrity: sha512-bYcLp+Vb0awsiXg/80uCRezCYHNg1/l3mt0gzHnWV9XP1W5sKa5/TCdGWaR/zBM2PeF/HbsQv/j2URNOiVuxWg==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
   lightningcss-win32-arm64-msvc@1.32.0:
     resolution: {integrity: sha512-8SbC8BR40pS6baCM8sbtYDSwEVQd4JlFTOlaD3gWGHfThTcABnNDBda6eTZeqbofalIJhFx0qKzgHJmcPTnGdw==}
@@ -6665,7 +6645,7 @@ snapshots:
       '@fontsource-variable/space-grotesk': 5.3.0
       tailwindcss: 4.3.1
 
-  '@viamrobotics/test-widgets@0.11.3(06165555554621cfbf8d8a3cc710f193)':
+  '@viamrobotics/test-widgets@0.15.0(06165555554621cfbf8d8a3cc710f193)':
     dependencies:
       '@sentry/svelte': 10.10.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))
       '@threlte/core': 8.5.14(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.185.1)
@@ -6674,13 +6654,12 @@ snapshots:
       '@viamrobotics/sdk': 0.75.0
       '@viamrobotics/svelte-sdk': 1.5.3(@sveltejs/kit@2.69.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.10(@typescript-eslint/types@8.56.1))(vite@8.1.0(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(typescript@5.9.2)(vite@8.1.0(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(@viamrobotics/sdk@0.75.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(zod@4.4.3)
       lodash-es: 4.18.1
+      maplibre-gl: 5.24.0
       runed: 0.37.1(@sveltejs/kit@2.69.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.10(@typescript-eslint/types@8.56.1))(vite@8.1.0(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(typescript@5.9.2)(vite@8.1.0(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(zod@4.4.3)
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
       svelte-tweakpane-ui: 1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1))
       three: 0.185.1
       threlte-uikit: 2.0.1(@threlte/core@8.5.14(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.185.1))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.185.1)
-    optionalDependencies:
-      maplibre-gl: 5.24.0
 
   '@viamrobotics/tweakpane-config@0.1.1(svelte-tweakpane-ui@1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))':
     dependencies:
