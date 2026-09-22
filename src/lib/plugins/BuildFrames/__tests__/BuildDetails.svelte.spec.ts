@@ -38,7 +38,10 @@ describe('BuildDetails', () => {
 		})
 		vi.mocked(useConfigFrames.useConfigFrames).mockReturnValue({
 			unsetFrames: [],
+			unresolvedFrames: new Set(),
 			current: {},
+			fragmentFrames: {},
+			effectiveFrames: new Map(),
 		})
 		vi.mocked(useLinkedEntities.useLinkedEntities).mockReturnValue({
 			current: [],
@@ -54,6 +57,7 @@ describe('BuildDetails', () => {
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			createFrame: vi.fn(),
+			createComponent: vi.fn(),
 			hasEditPermissions: true,
 			canUndoFrameEdit: false,
 			canRedoFrameEdit: false,

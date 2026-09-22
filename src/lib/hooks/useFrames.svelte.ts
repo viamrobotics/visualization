@@ -120,6 +120,13 @@ export const provideFrames = (partID: () => string) => {
 		if (isBuildMode || !isConnected) {
 			const mergedFrames = { ...frames }
 
+			// Never overwrite a frame the machine already reported. This fragment
+			// frame was resolved here rather than by the server, so where the two
+			// disagree the machine is the one that ran the config.
+			for (const [name, frame] of Object.entries(configFrames.fragmentFrames)) {
+				mergedFrames[name] ??= frame
+			}
+
 			for (const [name, frame] of Object.entries(configFrames.current)) {
 				mergedFrames[name] = frame
 			}

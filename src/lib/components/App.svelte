@@ -109,7 +109,8 @@
 
 	provideFragmentInfo(
 		() => partID,
-		() => componentNameToFragmentInfo
+		() => componentNameToFragmentInfo,
+		() => localConfigProps?.current
 	)
 
 	providePartConfig(
