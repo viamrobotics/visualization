@@ -14,6 +14,9 @@
 	import Controls from '$lib/components/overlay/controls/Controls.svelte'
 	import Dashboard from '$lib/components/overlay/dashboard/Dashboard.svelte'
 	import Workspace from '$lib/components/overlay/workspace/Workspace.svelte'
+	import { provideDeepLink } from '$lib/deepLink/useDeepLink.svelte'
+	import { useDeepLinkMode } from '$lib/deepLink/useDeepLinkMode.svelte'
+	import { useDeepLinkSelection } from '$lib/deepLink/useDeepLinkSelection.svelte'
 	import { provideWorld } from '$lib/ecs'
 	import { type CameraPose, provideCameraControls } from '$lib/hooks/useControls.svelte'
 	import { provideDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
@@ -91,6 +94,11 @@
 	const environment = provideEnvironment()
 	const fullscreen = provideFullscreen()
 
+	// After the world and the environment, since the consumers write to them.
+	provideDeepLink()
+	useDeepLinkMode()
+	useDeepLinkSelection()
+
 	provideCameraControls(() => cameraPose)
 	createPartIDContext(() => partID)
 
@@ -101,7 +109,8 @@
 
 	provideFragmentInfo(
 		() => partID,
-		() => componentNameToFragmentInfo
+		() => componentNameToFragmentInfo,
+		() => localConfigProps?.current
 	)
 
 	providePartConfig(

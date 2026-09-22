@@ -67,8 +67,10 @@ export const providePointBudget = (budget: () => number) => {
 
 			// A cloud parsed under a smaller budget can't be decimated as far as the current one
 			// asks, so it holds at its own depth rather than reaching into scan order.
+			// Draw range follows the index when one exists, and three-mesh-bvh orders that index
+			// spatially, so a prefix would be a contiguous region rather than a sample.
 			const target =
-				ratio === 1 || shuffled <= 0
+				ratio === 1 || shuffled <= 0 || geometry.index !== null
 					? count
 					: Math.min(count, shuffled, Math.max(MIN_CLOUD_POINTS, Math.round(count * ratio)))
 

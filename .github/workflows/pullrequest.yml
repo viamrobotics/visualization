@@ -152,6 +152,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # src/lib/math/rdk-math is its own module, and its Go tests write the golden JSON the
+      # TypeScript suites import. Pinned to what that module declares rather than to whatever
+      # Go the runner image happens to ship.
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: src/lib/math/rdk-math/go.mod
+          cache-dependency-path: |
+            go.sum
+            src/lib/math/rdk-math/go.sum
+
+      # Ahead of the TypeScript gate on purpose: the goldens are generated, not committed, so
+      # an RDK disagreement has to surface here as a Go failure rather than downstream as an
+      # unresolved import.
+      - name: Generate RDK goldens
+        run: pnpm test:rdk-golden
+
       # TS protos (src/lib/buf) are restored from the wireit cache primed by the
       # proto-gen job (this job `needs: proto-gen`), so no buf/artifact needed.
       - name: Check
@@ -204,6 +221,22 @@ jobs:
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm playwright install chromium --with-deps
+
+      # src/lib/math/rdk-math is its own module, and its Go tests write the golden JSON the
+      # TypeScript suites import.
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: src/lib/math/rdk-math/go.mod
+          cache-dependency-path: |
+            go.sum
+            src/lib/math/rdk-math/go.sum
+
+      # Ahead of the TypeScript gate on purpose: the goldens are generated, not committed, so
+      # an RDK disagreement has to surface here as a Go failure rather than downstream as an
+      # unresolved import.
+      - name: Generate RDK goldens
+        run: pnpm test:rdk-golden
 
       # TS protos (src/lib/buf) are restored from the wireit cache primed by the
       # proto-gen job (this job `needs: proto-gen`), so no buf/artifact needed.

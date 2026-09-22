@@ -8,7 +8,7 @@ The suite is split into Playwright projects so that a run only pays for what it 
 
 | Project          | Specs                                                      | Needs a Viam machine |
 | ---------------- | ---------------------------------------------------------- | -------------------- |
-| `drawing`        | `draw-client`, `file-drop`, `snapshot`                     | no                   |
+| `drawing`        | `deep-link`, `draw-client`, `file-drop`, `snapshot`        | no                   |
 | `matrix`         | everything under `e2e/matrix/`                             | no                   |
 | `robot`          | `arm`, `edit-frame`, `obstacle-store`, `world-state-store` | yes                  |
 | `robot-setup`    | `robot.setup.ts`                                           | provisions it        |

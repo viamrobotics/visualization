@@ -8,6 +8,8 @@
 
 	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
+	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
@@ -21,6 +23,7 @@
 	const settings = useSettings()
 	const environment = useEnvironment()
 	const fragmentInfo = useFragmentInfo()
+	const configFrames = useConfigFrames()
 	const transformControls = useTransformControls()
 	const partConfig = usePartConfig()
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
@@ -43,7 +46,11 @@
 		box.current !== undefined || sphere.current !== undefined || capsule.current !== undefined
 	)
 	const isFragmentComponentWithVariables = $derived(
-		name.current && Object.keys(fragmentInfo.current?.[name.current]?.variables ?? {}).length > 0
+		name.current !== undefined &&
+			isFrameVariableLocked(
+				fragmentInfo.current?.[name.current],
+				configFrames.effectiveFrames.get(name.current)
+			)
 	)
 
 	// Non-mesh frames (reference frames, and instanced box/sphere/capsule frames)

@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 const DRAWING_SPECS = [
+	/deep-link\.test\.ts$/,
 	/draw-client\.test\.ts$/,
 	/file-drop\.test\.ts$/,
 	/snapshot\.test\.ts$/,
