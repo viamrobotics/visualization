@@ -19,8 +19,16 @@ import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveCompo
 
 const key = Symbol('part-config-context')
 
+/** The fields of a `components` entry this app reads or writes, not the whole entry. */
+export interface PartComponent {
+	name: string
+	api?: string
+	model?: string
+	frame?: Frame
+}
+
 export interface PartConfig {
-	components: { name: string; api?: string; frame?: Frame }[]
+	components: PartComponent[]
 	fragment_mods?: {
 		fragment_id: string
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +53,7 @@ interface LocalPartConfig {
 	discardChanges?: () => void
 }
 
-interface PartConfigContext {
+export interface PartConfigContext {
 	current: PartConfig
 	/** Whether the initial config snapshot for the selected part has settled. */
 	readonly isReady: boolean
@@ -62,6 +70,8 @@ interface PartConfigContext {
 	) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
+	/** Appends `component` to the part's own components. A name already in the config is left alone. */
+	createComponent: (component: PartComponent) => void
 	save: () => void
 	discardChanges: () => void
 	canUndoFrameEdit: boolean
@@ -232,6 +242,18 @@ export const providePartConfig = (
 		}
 
 		fragmentMod.mods.push(frame)
+		config.set(newConfig)
+	}
+
+	const createPartComponent = (component: PartComponent) => {
+		const newConfig = getCurrent()
+		const components = newConfig.components ?? []
+
+		if (components.some(({ name }) => name === component.name)) {
+			return
+		}
+
+		newConfig.components = [...components, component]
 		config.set(newConfig)
 	}
 
@@ -431,6 +453,10 @@ export const providePartConfig = (
 			} else {
 				createFragmentFrame(fragmentId, componentName)
 			}
+		},
+		createComponent: (component: PartComponent) => {
+			markHistoryActive()
+			createPartComponent(component)
 		},
 		save: () => {
 			deactivateHistory()
