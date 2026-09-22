@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button, Input, InputStates } from '@viamrobotics/prime-core'
-	import { onDestroy, untrack } from 'svelte'
+	import { untrack } from 'svelte'
 
 	import Dialog from '$lib/components/overlay/Dialog.svelte'
 	import { selectOnly, traits, useWorld } from '$lib/ecs'
@@ -50,14 +50,14 @@
 	 */
 	let pendingName: string | undefined
 
-	onDestroy(
-		world.onAdd(traits.Name, (entity) => {
+	$effect(() => {
+		return world.onAdd(traits.Name, (entity) => {
 			if (pendingName === undefined || entity.get(traits.Name) !== pendingName) return
 
 			pendingName = undefined
 			selectOnly(world, entity)
 		})
-	)
+	})
 
 	const create = () => {
 		if (error !== undefined) return
