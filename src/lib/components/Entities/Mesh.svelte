@@ -7,7 +7,7 @@
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
-	import { traits, useTag, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTag, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { Pose } from '$lib/math'
 	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
@@ -31,7 +31,7 @@
 	const name = useTrait(() => entity, traits.Name)
 	const entityColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const opacity = useOpacity(() => entity)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
@@ -50,7 +50,8 @@
 
 	const hasVertexColors = $derived(bufferGeometry.current?.getAttribute('color') !== undefined)
 
-	const currentOpacity = $derived(opacity.current ?? 0.7)
+	const currentOpacity = $derived(opacity.current)
+	const isTransparent = $derived(currentOpacity < 1)
 
 	const events = useEntityEvents(() => entity)
 
@@ -79,7 +80,6 @@
 	const material = $derived(createSurfaceMaterial(settings.current.renderMode, {}))
 
 	$effect(() => {
-		const isTransparent = currentOpacity < 1
 		material.depthWrite = !isTransparent
 		material.opacity = currentOpacity
 		if (material.transparent !== isTransparent) {
@@ -131,7 +131,12 @@
 								bvh={{ enabled: false }}
 							>
 								<T.EdgesGeometry args={[geo, 0]} />
-								<T.LineBasicMaterial color={darkenColor(color, 10)} />
+								<T.LineBasicMaterial
+									color={darkenColor(color, 10)}
+									transparent
+									opacity={currentOpacity}
+									depthWrite={!isTransparent}
+								/>
 							</T.LineSegments>
 						{/if}
 					{/snippet}

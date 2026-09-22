@@ -19,10 +19,11 @@
 	import { type ThrelteGltf, useGltfAnimations } from '@threlte/extras'
 	import { Group, type Object3D } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import { setModelOpacity } from './setModelOpacity'
 	import { setModelWireframe } from './setModelWireframe'
 
 	interface Props extends ThrelteProps<Object3D> {
@@ -40,6 +41,7 @@
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
 	const gltfTrait = useTrait(() => entity, traits.GLTF)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
+	const opacity = useOpacity(() => entity)
 	const events = useEntityEvents(() => entity)
 
 	const animationName = $derived(gltfTrait.current?.animationName)
@@ -96,6 +98,13 @@
 	$effect.pre(() => {
 		if (!$gltf) return
 		setModelWireframe($gltf.scene, settings.current.renderMode === 'wireframe')
+		invalidate()
+	})
+
+	// Each entity loads its own asset, so these materials are already its own.
+	$effect(() => {
+		if (!$gltf) return
+		setModelOpacity($gltf.scene, opacity.current)
 		invalidate()
 	})
 </script>
