@@ -52,6 +52,7 @@ export const provideGizmos = (exit: () => void) => {
 
 	let lineSpace = $state<LineSpace>('world')
 	let lineMeasure = $state<LineMeasure>('none')
+	let vertexSnapDistance = $state(50)
 
 	let arrowAxis = $state<ArrowAxis>('z')
 
@@ -128,6 +129,19 @@ export const provideGizmos = (exit: () => void) => {
 		},
 		set lineMeasure(value) {
 			lineMeasure = value
+		},
+
+		/**
+		 * How close, in mm, a new vertex must land to an existing one to snap onto it.
+		 * Gizmo-owned rather than reusing `settings.snapTranslate`, which is a transform
+		 * grid step and means something else. Whether snapping applies at all is the
+		 * shared `settings.snapping` flag.
+		 */
+		get vertexSnapDistance() {
+			return vertexSnapDistance
+		},
+		set vertexSnapDistance(value) {
+			vertexSnapDistance = value
 		},
 
 		get arrowAxis() {

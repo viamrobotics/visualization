@@ -11,9 +11,11 @@
 	import GizmoEntities from './GizmoEntities.svelte'
 	import GizmoMenu from './GizmoMenu.svelte'
 	import { GizmoModes } from './gizmos'
+	import AngleTool from './tools/AngleTool.svelte'
 	import ArrowTool from './tools/ArrowTool.svelte'
 	import CoordinateSystemTool from './tools/CoordinateSystemTool.svelte'
 	import GeometryTool from './tools/GeometryTool.svelte'
+	import LineTool from './tools/LineTool.svelte'
 	import PlaneTool from './tools/PlaneTool.svelte'
 	import { provideGizmos } from './useGizmos.svelte'
 
@@ -85,7 +87,15 @@
 				icon="shapes"
 				class={isArmed ? 'rounded-r-none' : ''}
 			>
-				<GizmoMenu {gizmos} />
+				<!--
+					`settings` is resolved here and handed down for the same reason `gizmos` is:
+					this menu is teleported by `DashboardPortal`, which re-parents the component
+					tree, so `useSettings()` in there returns undefined at runtime.
+				-->
+				<GizmoMenu
+					{gizmos}
+					settings={settings.current}
+				/>
 			</DropdownPane>
 
 			{#if isArmed}
@@ -107,6 +117,10 @@
 	<GeometryTool />
 {:else if gizmos.mode === GizmoModes.ReferencePlane}
 	<PlaneTool />
+{:else if gizmos.mode === GizmoModes.Polyline}
+	<LineTool />
+{:else if gizmos.mode === GizmoModes.Angle}
+	<AngleTool />
 {:else if gizmos.mode === GizmoModes.Arrow}
 	<ArrowTool />
 {/if}

@@ -44,6 +44,18 @@ vi.mock('../tools/ArrowTool.svelte', async () => {
 	)
 	return { default: mock.default }
 })
+vi.mock('../tools/LineTool.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
+vi.mock('../tools/AngleTool.svelte', async () => {
+	const mock = await import(
+		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
+	)
+	return { default: mock.default }
+})
 vi.mock('../GizmoEntities.svelte', async () => {
 	const mock = await import(
 		'$lib/plugins/MoveFrame/__tests__/__fixtures__/MockSceneComponent.svelte'
