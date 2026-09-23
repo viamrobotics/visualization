@@ -3,6 +3,8 @@ title: <MeasureTool />
 description: Measure straight-line distance between two points inside a Viam visualizer.
 ---
 
+import { Aside } from '@astrojs/starlight/components'
+
 `<MeasureTool />` adds a ruler button to the visualizer dashboard. When active, clicking two points in the scene draws a line between them and displays the distance in meters. A settings popover lets you constrain measurement to any combination of the X, Y, and Z axes — useful for measuring along a single axis without snapping perfectly to it.
 
 ## Usage
@@ -34,3 +36,14 @@ Measurement state also clears whenever the focused entity changes or the tool is
 ## Axis constraints
 
 Open the filter popover next to the ruler button to lock the second point to a subset of axes. Disabling an axis pins that coordinate to the first point's value, so you can measure pure horizontal distance, pure vertical distance, or any combination.
+
+<Aside
+	type="tip"
+	title="A persistent measurement"
+>
+	`MeasureTool` is a throwaway two-point ruler: the line and its label disappear the moment you
+	start a new measurement. For a labelled, multi-vertex annotation that stays in the scene, use the
+	polyline gizmo on the [gizmos](/plugins/gizmos/) page instead. One difference to expect side by
+	side: `MeasureTool` prints its distance in meters, while the gizmo's labels print millimeters to
+	match the details panel.
+</Aside>
