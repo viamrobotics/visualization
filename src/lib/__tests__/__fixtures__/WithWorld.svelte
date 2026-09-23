@@ -1,22 +1,22 @@
-<script
-	lang="ts"
-	generics="TProps extends Record<string, unknown>"
->
+<script lang="ts">
 	import type { World } from 'koota'
-	import type { Component } from 'svelte'
 
 	import { provideWorld } from 'koota/svelte'
+	import { type Component, untrack } from 'svelte'
 
 	interface Props {
 		world: World
-		component: Component<TProps>
-		props: TProps
+		component: Component<never>
+		props: object
 	}
 
-	const { world, component: Child, props }: Props = $props()
+	const { world, component, props }: Props = $props()
+
+	// renderWithWorld pairs component and props with matching types, so widening here is safe.
+	const Child = $derived(component as Component<object>)
 
 	// koota/svelte keeps its context key private, so specs provide the world through this wrapper.
-	provideWorld(world)
+	provideWorld(untrack(() => world))
 </script>
 
 <Child {...props} />

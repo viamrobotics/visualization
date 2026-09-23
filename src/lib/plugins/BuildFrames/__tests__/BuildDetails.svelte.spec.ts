@@ -1,12 +1,12 @@
-import { fireEvent, render, screen } from '@testing-library/svelte'
+import { fireEvent, screen } from '@testing-library/svelte'
 import { createWorld, type Entity } from 'koota'
 import { on } from 'svelte/events'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
+import { renderWithWorld } from '$lib/__tests__/__fixtures__/renderWithWorld'
 import { resource } from '$lib/__tests__/__fixtures__/resource'
-import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { traits } from '$lib/ecs'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
@@ -74,8 +74,9 @@ describe('BuildDetails', () => {
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = true
 
-		return render(WithWorld, {
-			props: { world, component: BuildDetails, props: { entity } },
+		return renderWithWorld(BuildDetails, {
+			world,
+			props: { entity },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, environmentContext],

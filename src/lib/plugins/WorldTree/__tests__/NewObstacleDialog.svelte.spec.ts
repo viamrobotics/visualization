@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/svelte'
+import { screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
+import { renderWithWorld } from '$lib/__tests__/__fixtures__/renderWithWorld'
 import { traits } from '$lib/ecs'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
@@ -36,8 +36,9 @@ describe('NewObstacleDialog', () => {
 		const environment = createEnvironment()
 		environment.registerMode('build')
 
-		render(WithWorld, {
-			props: { world, component: NewObstacleDialog, props: { open: true } },
+		renderWithWorld(NewObstacleDialog, {
+			world,
+			props: { open: true },
 			context: new Map<symbol, unknown>([[ENVIRONMENT_CONTEXT_KEY, environment]]),
 		})
 

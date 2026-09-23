@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/svelte'
+import { screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
+import { renderWithWorld } from '$lib/__tests__/__fixtures__/renderWithWorld'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 
@@ -17,8 +17,9 @@ describe('AddObjectMenu', () => {
 			createPartConfigFixture({ hasEditPermissions })
 		)
 
-		render(WithWorld, {
-			props: { world: createWorld(), component: AddObjectMenu, props: {} },
+		renderWithWorld(AddObjectMenu, {
+			world: createWorld(),
+			props: {},
 			context: new Map<symbol, unknown>([[ENVIRONMENT_CONTEXT_KEY, createEnvironment()]]),
 		})
 	}

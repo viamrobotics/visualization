@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte'
+import { screen } from '@testing-library/svelte'
 import { createWorld, type Entity } from 'koota'
 import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DetailsSection } from '$lib/hooks/useDetailsSections.svelte'
 
 import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
-import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
+import { renderWithWorld } from '$lib/__tests__/__fixtures__/renderWithWorld'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
 import {
 	createDetailsSections,
@@ -53,8 +53,9 @@ describe('MonitorDetails', () => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 
-		render(WithWorld, {
-			props: { world, component: MonitorDetails, props: { entity } },
+		renderWithWorld(MonitorDetails, {
+			world,
+			props: { entity },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
