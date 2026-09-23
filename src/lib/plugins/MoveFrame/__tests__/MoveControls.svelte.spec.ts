@@ -1,11 +1,12 @@
 import type { ResourceName } from '@viamrobotics/sdk'
-import type { Entity } from 'koota'
 
+import { fireEvent, screen, waitFor } from '@testing-library/svelte'
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
+import { createWorld, type Entity } from 'koota'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { renderWithWorld } from '$lib/__tests__/__fixtures__/renderWithWorld'
 import { usePartID } from '$lib/hooks/usePartID.svelte'
 import { Pose } from '$lib/math'
 
@@ -70,6 +71,7 @@ const service = (name: string) =>
 const entity = 1 as unknown as Entity
 
 describe('MoveControls', () => {
+	const world = createWorld()
 	const partID = 'part1'
 
 	beforeEach(() => {
@@ -89,7 +91,7 @@ describe('MoveControls', () => {
 			current: [service('planner'), service('builtin')],
 		} as never)
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		expect(screen.getByText('motion service')).toBeInTheDocument()
 		expect(screen.getByRole('combobox')).toHaveValue('builtin')
@@ -100,7 +102,7 @@ describe('MoveControls', () => {
 			current: [service('planner'), service('secondary')],
 		} as never)
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		expect(screen.getByText('motion service')).toBeInTheDocument()
 		expect(screen.getByRole('combobox')).toHaveValue('planner')
@@ -109,7 +111,7 @@ describe('MoveControls', () => {
 	it('offers the preview action alongside the move it previews', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		expect(screen.getByRole('button', { name: /preview move/i })).toBeInTheDocument()
 		expect(screen.getByRole('button', { name: 'Move' })).toBeInTheDocument()
@@ -118,7 +120,7 @@ describe('MoveControls', () => {
 	it('mounts the plan action disabled rather than hiding it until a plan exists', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		expect(screen.getByRole('button', { name: 'Execute plan' })).toHaveAttribute(
 			'aria-disabled',
@@ -131,7 +133,7 @@ describe('MoveControls', () => {
 		vi.mocked(createResourceClient).mockReturnValue({ current: undefined } as never)
 		moved.matrix = new Pose(100, -250, 40).toMatrix4()
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		const position = await screen.findByLabelText('move target position')
 		const x = position.querySelector('input')
@@ -147,7 +149,7 @@ describe('MoveControls', () => {
 	it('waits for the frame pose before offering the pose inputs', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		expect(screen.queryByLabelText('move target position')).not.toBeInTheDocument()
 		expect(screen.getByText(/resolving the frame's pose/i)).toBeInTheDocument()
@@ -157,7 +159,7 @@ describe('MoveControls', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 		moved.matrix = new Pose(100, -250, 40).toMatrix4()
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		const position = await screen.findByLabelText('move target position')
 		expect(screen.getByLabelText('move target orientation')).toBeInTheDocument()
@@ -172,7 +174,7 @@ describe('MoveControls', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 		moved.matrix = new Pose(100, -250, 40).toMatrix4()
 
-		render(MoveControls, { props: { entity, frameName: 'arm' } })
+		renderWithWorld(MoveControls, { world, props: { entity, frameName: 'arm' } })
 
 		// Nothing is staged until a field moves, so both actions start disabled.
 		expect(screen.getByRole('button', { name: /reset/i })).toHaveAttribute('aria-disabled', 'true')
