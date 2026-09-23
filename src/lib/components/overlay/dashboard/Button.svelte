@@ -40,7 +40,7 @@
 		<label
 			class={[
 				className,
-				'relative block rounded-md border active:z-4 active:border-[#666] active:bg-[#666] active:text-white',
+				'relative block rounded-none border active:z-4 active:border-[#666] active:bg-[#666] active:text-white',
 				active ? 'z-4 border-[#666] bg-[#666] text-white' : 'border-gray-5 text-gray-8 bg-white',
 			]}
 			aria-describedby={tooltipID}

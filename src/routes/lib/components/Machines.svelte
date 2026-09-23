@@ -93,7 +93,7 @@
 							aria-label="Machine connection configs"
 							class={[
 								'flex items-center gap-2 border px-2.5 py-1.5 text-xs',
-								awaitingRetry ? 'rounded-l border-r-0' : 'rounded',
+								awaitingRetry ? 'rounded-none border-r-0' : 'rounded-none',
 								{
 									'border-gray-5 bg-white': !awaitingRetry && !connected && !disconnected,
 									'border-success-medium bg-success-light text-success-dark hover:bg-[#D6F2D9] focus:bg-[#D6F2D9]':
@@ -113,7 +113,7 @@
 						{#if awaitingRetry}
 							<button
 								aria-label="Reconnect now"
-								class="border-danger-medium bg-danger-light text-danger-dark flex items-center rounded-r border px-2 py-1.5 text-xs hover:bg-[#F8E1DF] focus:bg-[#F8E1DF]"
+								class="border-danger-medium bg-danger-light text-danger-dark flex items-center rounded-none border px-2 py-1.5 text-xs hover:bg-[#F8E1DF] focus:bg-[#F8E1DF]"
 								onclick={machineConnection.retryNow}
 							>
 								<Icon name="refresh" />

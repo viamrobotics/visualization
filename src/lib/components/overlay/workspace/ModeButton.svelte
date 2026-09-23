@@ -85,7 +85,7 @@
 	<label
 		class={[
 			className,
-			'relative block rounded-md border bg-white',
+			'relative block rounded-none border bg-white',
 			isSelected ? ['z-4', style.border] : 'border-gray-5 hover:bg-light active:bg-medium',
 		]}
 		aria-describedby={tooltipID}
