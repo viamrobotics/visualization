@@ -44,25 +44,27 @@
 
 <div {...api.getRootProps()}>
 	<!-- A strip holding one tab is chrome with nothing to switch between. -->
-	<div
-		{...api.getListProps()}
-		class={['border-medium -mx-2 gap-4 border-b px-2', items.length > 1 ? 'flex' : 'hidden']}
-	>
-		{#each items as item (item.id)}
-			<button
-				{...api.getTriggerProps({ value: item.id })}
-				class={[
-					'focus-visible:outline-gray-6 -mb-px cursor-pointer border-b-[1.5px] pt-2 pb-1.5',
-					'hover:text-default focus-visible:outline focus-visible:-outline-offset-1',
-					api.value === item.id
-						? 'border-gray-9 font-semibold'
-						: 'text-subtle-2 border-transparent',
-				]}
-			>
-				{item.label}
-			</button>
-		{/each}
-	</div>
+	{#if items.length > 1}
+		<div
+			{...api.getListProps()}
+			class="border-medium -mx-2 flex gap-4 border-b px-2"
+		>
+			{#each items as item (item.id)}
+				<button
+					{...api.getTriggerProps({ value: item.id })}
+					class={[
+						'focus-visible:outline-gray-6 -mb-px cursor-pointer border-b-[1.5px] pt-2 pb-1.5',
+						'hover:text-default focus-visible:outline focus-visible:-outline-offset-1',
+						api.value === item.id
+							? 'border-gray-9 font-semibold'
+							: 'text-subtle-2 border-transparent',
+					]}
+				>
+					{item.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 
 	{#each items as item (item.id)}
 		<div {...api.getContentProps({ value: item.id })}>
