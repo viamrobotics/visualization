@@ -44,7 +44,13 @@
 			]}
 			{...api.getItemProps({ value })}
 		>
-			{value}
+			<!--
+				`label` is the display text and `value` the stored one. This rendered `value`,
+				so a caller passing both got the raw value on screen: the settings pane showed
+				`colliders` where it meant `Colliders`. Callers passing only `label` are
+				unaffected, since `value` falls back to it.
+			-->
+			{option.label}
 		</button>
 	{/each}
 </div>

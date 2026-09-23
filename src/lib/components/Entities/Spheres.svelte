@@ -133,10 +133,11 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
 		const color = resolveColor(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
+		const facesVisible = visible && !entity.has(traits.Wireframe)
 
 		instancedSpheres.setColorAt(ids.face, color)
 		instancedSpheres.setOpacityAt(ids.face, entity.get(traits.Opacity) ?? 0.7)
-		instancedSpheres.setVisibilityAt(ids.face, visible)
+		instancedSpheres.setVisibilityAt(ids.face, facesVisible)
 
 		instancedSphereEdges.setColorAt(ids.edge, darkenColor(color, 10))
 		instancedSphereEdges.setVisibilityAt(ids.edge, visible)
@@ -276,6 +277,8 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),
 			world.onRemove(traits.ColliderHidden, enqueueAppearance),
+			world.onAdd(traits.Wireframe, enqueueAppearance),
+			world.onRemove(traits.Wireframe, enqueueAppearance),
 		]
 
 		return () => {

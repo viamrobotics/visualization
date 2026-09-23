@@ -105,7 +105,7 @@
 
 		{#if showEditFrameOptions}
 			<EditGeometryDetails {entity} />
-		{:else}
+		{:else if !customDetails.current}
 			<DimensionsDetails {entity} />
 		{/if}
 
