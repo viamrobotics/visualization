@@ -28,7 +28,7 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
-	import { traits, useWorld } from '$lib/ecs'
+	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
@@ -50,7 +50,7 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 	const unitSphereEdges = new EdgesGeometry(unitSphere, 0)
 
 	/**
-	 * Sphere meshes render transparent by default (`Opacity` trait absent → 0.7);
+	 * Sphere meshes render transparent by default (see `resolveOpacity`);
 	 * per-instance alpha is written via `setOpacityAt`. The base color stays
 	 * white so per-instance colors aren't tinted. Whole-object culling is
 	 * disabled because the library culls per instance against a bounding sphere
@@ -81,9 +81,18 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 
 	useSurfaceMaterials([{ mesh: instancedSpheres, parameters: faceParameters }])
 
-	const instancedSphereEdges = new InstancedMesh2(unitSphereEdges, new LineBasicMaterial(), {
-		renderer,
-	})
+	/**
+	 * The outline fades with the faces it wraps, so the edges mesh carries the
+	 * same per-instance alpha. The library writes that alpha into the colors
+	 * texture regardless, but the renderer only blends it on a transparent
+	 * material — unconditional here, matching `faceParameters`, so edges and
+	 * faces stay in one pass instead of being ordered against each other.
+	 */
+	const instancedSphereEdges = new InstancedMesh2(
+		unitSphereEdges,
+		new LineBasicMaterial({ transparent: true }),
+		{ renderer }
+	)
 	instancedSphereEdges.frustumCulled = false
 
 	/**
@@ -132,13 +141,15 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 
 	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
 		const color = resolveColor(entity)
+		const opacity = resolveOpacity(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
 
 		instancedSpheres.setColorAt(ids.face, color)
-		instancedSpheres.setOpacityAt(ids.face, entity.get(traits.Opacity) ?? 0.7)
+		instancedSpheres.setOpacityAt(ids.face, opacity)
 		instancedSpheres.setVisibilityAt(ids.face, visible)
 
 		instancedSphereEdges.setColorAt(ids.edge, darkenColor(color, 10))
+		instancedSphereEdges.setOpacityAt(ids.edge, opacity)
 		instancedSphereEdges.setVisibilityAt(ids.edge, visible)
 
 		/**
@@ -272,6 +283,9 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 			world.onAdd(traits.Opacity, enqueueAppearance),
 			world.onChange(traits.Opacity, enqueueAppearance),
 			world.onRemove(traits.Opacity, enqueueAppearance),
+			world.onAdd(traits.OpacityOverride, enqueueAppearance),
+			world.onChange(traits.OpacityOverride, enqueueAppearance),
+			world.onRemove(traits.OpacityOverride, enqueueAppearance),
 			world.onAdd(traits.InheritedInvisible, enqueueAppearance),
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),

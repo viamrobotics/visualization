@@ -13,8 +13,9 @@ const isWireframeMaterial = (material: Material): material is WireframeMaterial 
  * Draws every mesh under `object` as a wireframe, or restores it.
  *
  * A loaded model keeps the materials it shipped with, so `createSurfaceMaterial`
- * never reaches it and wireframe mode has to flip the flag in place. Clones share
- * their source's materials, so calling this on any clone covers all of them.
+ * never reaches it and wireframe mode has to flip the flag in place. Each mounted
+ * copy owns its materials (see `cloneWithOwnMaterials`), so this covers that copy
+ * alone and every copy on screen needs its own call.
  */
 export const setModelWireframe = (object: Object3D, wireframe: boolean) => {
 	object.traverse((child) => {

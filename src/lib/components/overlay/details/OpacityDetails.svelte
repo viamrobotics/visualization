@@ -4,7 +4,7 @@
 	import { useThrelte } from '@threlte/core'
 	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { setOrAddTrait, traits, useOpacity } from '$lib/ecs'
 
 	interface Props {
 		entity: Entity
@@ -14,17 +14,16 @@
 
 	const { invalidate } = useThrelte()
 
-	const opacity = useTrait(() => entity, traits.Opacity)
-	const opacityValue = $derived(opacity.current ?? 0.7)
+	const opacity = useOpacity(() => entity)
 
+	/**
+	 * Writes `OpacityOverride`, never `Opacity`: reconcilers own the latter and
+	 * rewrite it from the source on every tick, which is what used to drop the
+	 * edit a moment after it was made.
+	 */
 	const handleOpacityChange = (event: SliderChangeEvent) => {
 		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value
-		if (entity.has(traits.Opacity)) {
-			entity.set(traits.Opacity, next)
-		} else {
-			entity.add(traits.Opacity(next))
-		}
+		setOrAddTrait(entity, traits.OpacityOverride, event.detail.value)
 		invalidate()
 	}
 </script>
@@ -33,7 +32,7 @@
 	<strong class="font-semibold">opacity</strong>
 	<div aria-label="mutable opacity">
 		<Slider
-			value={opacityValue}
+			value={opacity.current}
 			min={0}
 			max={1}
 			step={0.01}

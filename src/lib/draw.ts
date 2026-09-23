@@ -234,7 +234,7 @@ export const updateMetadata = (
 		}
 	}
 
-	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -289,7 +289,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 	const geometryType = physicalObject?.geometryType
 	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
 
-	entity.add(traits.Opacity(opacity))
+	setOrAddTrait(entity, traits.Opacity, opacity)
 
 	switch (geometryType?.case) {
 		case 'arrows': {
@@ -430,6 +430,7 @@ const drawModel = (
 		const subEntityTraits: ConfigurableTrait[] = [
 			traits.Name(`${referenceFrame} model ${i++}`),
 			relations.ChildOf(root),
+			traits.Opacity(asOpacity(metadata?.opacities, DEFAULT_OPACITY)),
 			api,
 		]
 
@@ -537,7 +538,7 @@ const parseColors = (from: Uint8Array | undefined, count: number): Uint8Array =>
 const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
 	const geometryType = physicalObject?.geometryType
 
-	entity.set(traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
 
 	switch (geometryType?.case) {
 		case 'arrows': {

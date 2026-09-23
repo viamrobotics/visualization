@@ -37,7 +37,7 @@ pick the body or head id table and map the `instanceId` back to the entity.
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
-	import { traits, useWorld } from '$lib/ecs'
+	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
@@ -64,8 +64,8 @@ pick the body or head id table and map the `instanceId` back to the entity.
 	const unitHemisphereEdges = new EdgesGeometry(unitHemisphere, 0)
 
 	/**
-	 * Build a faces mesh. Capsule meshes render transparent by default (`Opacity`
-	 * trait absent → 0.7); per-instance alpha is written via `setOpacityAt`.
+	 * Build a faces mesh. Capsule meshes render transparent by default (see
+	 * `resolveOpacity`); per-instance alpha is written via `setOpacityAt`.
 	 * Whole-object culling is disabled and the bounding sphere pinned open for
 	 * the same reason as `Boxes.svelte`: the library culls and raycasts per
 	 * instance, and its once-computed object sphere would otherwise gate an
@@ -95,11 +95,18 @@ pick the body or head id table and map the `instanceId` back to the entity.
 	 * applies because `LineBasicMaterial` compiles from the same chunk-based
 	 * `basic` program its patched chunks target.
 	 *
+	 * The outline fades with the faces it wraps, so it carries the same
+	 * per-instance alpha. That alpha only blends on a transparent material —
+	 * unconditional here, matching `faceParameters`, so edges and faces stay in
+	 * one pass instead of being ordered against each other.
+	 *
 	 * @three.ez/instanced-mesh ^0.3.15 — patches the 'basic' shader chunks shared
 	 * by MeshBasicMaterial and LineBasicMaterial. Re-validate if upgrading.
 	 */
 	const createEdges = (geometry: BufferGeometry) => {
-		const mesh = new InstancedMesh2(geometry, new LineBasicMaterial(), { renderer })
+		const mesh = new InstancedMesh2(geometry, new LineBasicMaterial({ transparent: true }), {
+			renderer,
+		})
 		mesh.frustumCulled = false
 		Object.assign(mesh, { isMesh: false, isLine: true, isLineSegments: true })
 		return mesh
@@ -165,7 +172,7 @@ pick the body or head id table and map the `instanceId` back to the entity.
 	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
 		const color = resolveColor(entity)
 		const edgeColor = darkenColor(color, 10)
-		const opacity = entity.get(traits.Opacity) ?? 0.7
+		const opacity = resolveOpacity(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
 
 		/**
@@ -180,6 +187,7 @@ pick the body or head id table and map the `instanceId` back to the entity.
 		instancedCapsuleBodies.setOpacityAt(ids.bodyFace, opacity)
 		instancedCapsuleBodies.setVisibilityAt(ids.bodyFace, bodyVisible)
 		instancedCapsuleBodyEdges.setColorAt(ids.bodyEdge, edgeColor)
+		instancedCapsuleBodyEdges.setOpacityAt(ids.bodyEdge, opacity)
 		instancedCapsuleBodyEdges.setVisibilityAt(ids.bodyEdge, bodyVisible)
 
 		instancedCapsuleHeads.setColorAt(ids.headTopFace, color)
@@ -190,8 +198,10 @@ pick the body or head id table and map the `instanceId` back to the entity.
 		instancedCapsuleHeads.setVisibilityAt(ids.headBottomFace, visible)
 
 		instancedCapsuleHeadEdges.setColorAt(ids.headTopEdge, edgeColor)
+		instancedCapsuleHeadEdges.setOpacityAt(ids.headTopEdge, opacity)
 		instancedCapsuleHeadEdges.setVisibilityAt(ids.headTopEdge, visible)
 		instancedCapsuleHeadEdges.setColorAt(ids.headBottomEdge, edgeColor)
+		instancedCapsuleHeadEdges.setOpacityAt(ids.headBottomEdge, opacity)
 		instancedCapsuleHeadEdges.setVisibilityAt(ids.headBottomEdge, visible)
 
 		/**
@@ -375,6 +385,9 @@ pick the body or head id table and map the `instanceId` back to the entity.
 			world.onAdd(traits.Opacity, enqueueAppearance),
 			world.onChange(traits.Opacity, enqueueAppearance),
 			world.onRemove(traits.Opacity, enqueueAppearance),
+			world.onAdd(traits.OpacityOverride, enqueueAppearance),
+			world.onChange(traits.OpacityOverride, enqueueAppearance),
+			world.onRemove(traits.OpacityOverride, enqueueAppearance),
 			world.onAdd(traits.InheritedInvisible, enqueueAppearance),
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),

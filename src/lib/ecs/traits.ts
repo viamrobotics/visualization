@@ -124,7 +124,19 @@ export const Instances = trait({
 
 export const RenderOrder = trait(() => 0)
 
+/**
+ * Alpha the entity's source asked for — server metadata, or whatever the
+ * spawner chose. Reconcilers rewrite it on every tick, so nothing a user does
+ * belongs here. See `OpacityOverride`.
+ */
 export const Opacity = trait(() => 1)
+
+/**
+ * Alpha the user picked in the details panel. Absent until they touch the
+ * slider, and no reconciler may write it, which is what makes the edit survive
+ * the next sync. `resolveOpacity` ranks it above `Opacity`.
+ */
+export const OpacityOverride = trait(() => 1)
 
 /**
  * The color of an object

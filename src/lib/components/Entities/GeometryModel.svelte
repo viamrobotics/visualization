@@ -14,7 +14,9 @@ Renders a Viam Geometry object
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { Pose } from '$lib/math'
 
+	import { cloneWithOwnMaterials } from './cloneWithOwnMaterials'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import { setModelOpacity } from './setModelOpacity'
 	import { setModelWireframe } from './setModelWireframe'
 
 	interface Props {
@@ -32,13 +34,22 @@ Renders a Viam Geometry object
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
 	const center = useTrait(() => entity, traits.Center)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
+	/**
+	 * The override alone, not `useOpacity`. This entity is a collider frame that
+	 * a CAD model stands in for, so its `Opacity` describes the collider and
+	 * applying it here would fade the model the collider's translucency exists to
+	 * reveal. A user's edit is about whatever they can see, so that one lands.
+	 */
+	const override = useTrait(() => entity, traits.OpacityOverride)
+	const opacity = $derived(override.current ?? 1)
 
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
 			return
 		}
 
-		return matchModel(name.current, models.current)?.clone() ?? undefined
+		const match = matchModel(name.current, models.current)
+		return match ? cloneWithOwnMaterials(match) : undefined
 	})
 
 	const group = new Group()
@@ -63,6 +74,12 @@ Renders a Viam Geometry object
 	$effect(() => {
 		if (!model) return
 		setModelWireframe(model, settings.current.renderMode === 'wireframe')
+		invalidate()
+	})
+
+	$effect(() => {
+		if (!model) return
+		setModelOpacity(model, opacity)
 		invalidate()
 	})
 
