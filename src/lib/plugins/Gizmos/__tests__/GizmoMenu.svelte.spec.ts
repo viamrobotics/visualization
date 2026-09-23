@@ -5,17 +5,25 @@ import { describe, expect, it } from 'vitest'
 import type { Settings } from '$lib/hooks/useSettings.svelte'
 
 import type { provideGizmos } from '../useGizmos.svelte'
+import type { provideGizmoStorage } from '../useGizmoStorage.svelte'
 
 import { GizmoModes } from '../gizmos'
 import GizmoMenuHost from './__fixtures__/GizmoMenuHost.svelte'
 
 describe('GizmoMenu', () => {
-	const renderMenu = () => {
-		let ready!: { gizmos: ReturnType<typeof provideGizmos>; settings: Settings }
+	interface Ready {
+		gizmos: ReturnType<typeof provideGizmos>
+		settings: Settings
+		storage: ReturnType<typeof provideGizmoStorage>
+	}
+
+	const renderMenu = (persistenceEnabled = false) => {
+		let ready!: Ready
 
 		render(GizmoMenuHost, {
 			props: {
-				onReady: (value: { gizmos: ReturnType<typeof provideGizmos>; settings: Settings }) => {
+				persistenceEnabled,
+				onReady: (value: Ready) => {
 					ready = value
 				},
 			},
@@ -142,5 +150,25 @@ describe('GizmoMenu', () => {
 		await new Promise((resolve) => setTimeout(resolve, 0))
 
 		expect(outsideButton).toHaveFocus()
+	})
+
+	it('reflects that persistence is off by default', () => {
+		renderMenu()
+
+		expect(screen.getByRole('switch', { name: 'Remember gizmos' })).not.toBeChecked()
+	})
+
+	it('reflects that persistence is on when the storage prop says so', () => {
+		renderMenu(true)
+
+		expect(screen.getByRole('switch', { name: 'Remember gizmos' })).toBeChecked()
+	})
+
+	it('writes the persistence toggle to the storage prop', async () => {
+		const { storage } = renderMenu()
+
+		await fireEvent.click(screen.getByRole('switch', { name: 'Remember gizmos' }))
+
+		expect(storage.enabled).toBe(true)
 	})
 })
