@@ -3,8 +3,8 @@ import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it } from 'vitest'
 
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 
 import AxesHelperDetails from '../AxesHelperDetails.svelte'
 
@@ -13,18 +13,16 @@ describe('AxesHelperDetails', () => {
 
 	it('renders the show axes helper toggle', () => {
 		const entity = world.spawn()
-		render(AxesHelperDetails, {
-			props: { entity },
-			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		render(WithWorld, {
+			props: { world, component: AxesHelperDetails, props: { entity } },
 		})
 		expect(screen.getByText('show axes helper')).toBeInTheDocument()
 	})
 
 	it('renders for entities that already have ShowAxesHelper', () => {
 		const entity = world.spawn(traits.ShowAxesHelper)
-		render(AxesHelperDetails, {
-			props: { entity },
-			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		render(WithWorld, {
+			props: { world, component: AxesHelperDetails, props: { entity } },
 		})
 		expect(screen.getByText('show axes helper')).toBeInTheDocument()
 	})

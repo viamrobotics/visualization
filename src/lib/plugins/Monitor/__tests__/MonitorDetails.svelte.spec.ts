@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DetailsSection } from '$lib/hooks/useDetailsSections.svelte'
 
 import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
 import {
 	createDetailsSections,
@@ -53,12 +53,11 @@ describe('MonitorDetails', () => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 
-		render(MonitorDetails, {
-			props: { entity },
+		render(WithWorld, {
+			props: { world, component: MonitorDetails, props: { entity } },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
-				[WORLD_CONTEXT_KEY, world],
 				[DETAILS_SECTIONS_CONTEXT_KEY, sections],
 			]),
 		})

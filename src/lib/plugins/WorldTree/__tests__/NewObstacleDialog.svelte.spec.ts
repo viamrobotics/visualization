@@ -5,8 +5,8 @@ import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 
@@ -36,12 +36,9 @@ describe('NewObstacleDialog', () => {
 		const environment = createEnvironment()
 		environment.registerMode('build')
 
-		render(NewObstacleDialog, {
-			props: { open: true },
-			context: new Map<symbol, unknown>([
-				[WORLD_CONTEXT_KEY, world],
-				[ENVIRONMENT_CONTEXT_KEY, environment],
-			]),
+		render(WithWorld, {
+			props: { world, component: NewObstacleDialog, props: { open: true } },
+			context: new Map<symbol, unknown>([[ENVIRONMENT_CONTEXT_KEY, environment]]),
 		})
 
 		return environment

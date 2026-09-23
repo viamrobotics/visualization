@@ -28,8 +28,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0
       koota:
-        specifier: 0.6.6
-        version: 0.6.6(@types/react@19.2.2)
+        specifier: 0.6.6-canary.63c1187
+        version: 0.6.6-canary.63c1187(@types/react@19.2.2)(svelte@5.56.10(@typescript-eslint/types@8.56.1))
       lodash-es:
         specifier: 4.18.1
         version: 4.18.1
@@ -3341,15 +3341,18 @@ packages:
   known-css-properties@0.37.0:
     resolution: {integrity: sha512-JCDrsP4Z1Sb9JwG0aJ8Eo2r7k4Ou5MwmThS/6lcIe1ICyb7UBJKGRIUUdqc2ASdE/42lgz6zFUnzAIhtXnBVrQ==}
 
-  koota@0.6.6:
-    resolution: {integrity: sha512-Fn8lSooH3u9TIP+eAMugFrOju40Ec70+sB7x1eZBB3H0Lki2hyIbFAodk3NDB/RIRzoMs54O4422BVN6SbtWfw==}
+  koota@0.6.6-canary.63c1187:
+    resolution: {integrity: sha512-WF12D28TTefLlzIvwGBtAhUAe+SqR/V0BbFFslr9zTg/JL4LTLdwc1qTNQWIsSvkc2ZmV+ozYcoqyp9VI3AnuA==}
     peerDependencies:
       '@types/react': '>=18.0.0'
       react: '>=18.0.0'
+      svelte: '>=5.0.0'
     peerDependenciesMeta:
       '@types/react':
         optional: true
       react:
+        optional: true
+      svelte:
         optional: true
 
   levn@0.4.1:
@@ -7955,9 +7958,10 @@ snapshots:
 
   known-css-properties@0.37.0: {}
 
-  koota@0.6.6(@types/react@19.2.2):
+  koota@0.6.6-canary.63c1187(@types/react@19.2.2)(svelte@5.56.10(@typescript-eslint/types@8.56.1)):
     optionalDependencies:
       '@types/react': 19.2.2
+      svelte: 5.56.10(@typescript-eslint/types@8.56.1)
 
   levn@0.4.1:
     dependencies:

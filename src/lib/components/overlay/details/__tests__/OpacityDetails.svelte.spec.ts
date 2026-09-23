@@ -3,8 +3,8 @@ import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it } from 'vitest'
 
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 
 import OpacityDetails from '../OpacityDetails.svelte'
 
@@ -13,9 +13,8 @@ describe('OpacityDetails', () => {
 
 	it('renders the opacity slider', () => {
 		const entity = world.spawn()
-		render(OpacityDetails, {
-			props: { entity },
-			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		render(WithWorld, {
+			props: { world, component: OpacityDetails, props: { entity } },
 		})
 		expect(screen.getByText('opacity')).toBeInTheDocument()
 		expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
@@ -23,9 +22,8 @@ describe('OpacityDetails', () => {
 
 	it('renders for entities with an Opacity trait', () => {
 		const entity = world.spawn(traits.Opacity(0.4))
-		render(OpacityDetails, {
-			props: { entity },
-			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		render(WithWorld, {
+			props: { world, component: OpacityDetails, props: { entity } },
 		})
 		expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
 	})

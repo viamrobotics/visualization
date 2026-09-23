@@ -1,6 +1,7 @@
+import { useQuery } from 'koota/svelte'
+
 import { resolveOrphans } from './hierarchy'
 import { Name, Orphan } from './traits'
-import { useQuery } from './useQuery.svelte'
 import { useWorld } from './useWorld'
 
 /**

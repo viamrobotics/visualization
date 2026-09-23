@@ -1,9 +1,9 @@
 import type { Entity } from 'koota'
 
+import { useTarget, useTrait } from 'koota/svelte'
+
 import { ChildOf } from './relations'
 import { Name, Orphan } from './traits'
-import { useTarget } from './useTarget.svelte'
-import { useTrait } from './useTrait.svelte'
 
 /**
  * Reactive view of an entity's parent name — the string consumed by Threlte

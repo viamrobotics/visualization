@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 
@@ -17,11 +17,9 @@ describe('AddObjectMenu', () => {
 			createPartConfigFixture({ hasEditPermissions })
 		)
 
-		render(AddObjectMenu, {
-			context: new Map<symbol, unknown>([
-				[WORLD_CONTEXT_KEY, createWorld()],
-				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
-			]),
+		render(WithWorld, {
+			props: { world: createWorld(), component: AddObjectMenu, props: {} },
+			context: new Map<symbol, unknown>([[ENVIRONMENT_CONTEXT_KEY, createEnvironment()]]),
 		})
 	}
 

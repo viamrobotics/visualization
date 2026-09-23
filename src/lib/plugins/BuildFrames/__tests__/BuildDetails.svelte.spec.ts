@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
 import { resource } from '$lib/__tests__/__fixtures__/resource'
+import WithWorld from '$lib/__tests__/__fixtures__/WithWorld.svelte'
 import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as useFragmentInfo from '$lib/hooks/useFragmentInfo.svelte'
@@ -74,12 +74,11 @@ describe('BuildDetails', () => {
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = true
 
-		return render(BuildDetails, {
-			props: { entity },
+		return render(WithWorld, {
+			props: { world, component: BuildDetails, props: { entity } },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, environmentContext],
-				[WORLD_CONTEXT_KEY, world],
 			]),
 		})
 	}

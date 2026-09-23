@@ -1,10 +1,10 @@
-import { createWorld, type World } from 'koota'
-import { getContext, setContext } from 'svelte'
+import { createWorld } from 'koota'
+import { provideWorld as provideKootaWorld } from 'koota/svelte'
 
 import * as relations from './relations'
 import * as traits from './traits'
 
-export const WORLD_CONTEXT_KEY = Symbol('koota-context')
+export { useWorld } from 'koota/svelte'
 
 export function provideWorld() {
 	const world = createWorld()
@@ -16,9 +16,5 @@ export function provideWorld() {
 		relations,
 	}
 
-	setContext<World>(WORLD_CONTEXT_KEY, world)
-}
-
-export function useWorld() {
-	return getContext<World>(WORLD_CONTEXT_KEY)
+	return provideKootaWorld(world)
 }

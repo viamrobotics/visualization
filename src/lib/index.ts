@@ -23,5 +23,4 @@ export * as traits from './ecs/traits'
 export { default as FloatingPanel } from './components/overlay/FloatingPanel.svelte'
 
 export { provideWorld, useWorld } from './ecs/useWorld'
-export { useQuery } from './ecs/useQuery.svelte'
-export { useTrait } from './ecs/useTrait.svelte'
+export { useQuery, useTrait } from 'koota/svelte'

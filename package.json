@@ -737,7 +737,7 @@
 		"@neodrag/svelte": "^2.3.3",
 		"d3-force": "^3.0.0",
 		"filtrex": "^3.1.0",
-		"koota": "0.6.6",
+		"koota": "0.6.6-canary.63c1187",
 		"lodash-es": "4.18.1",
 		"three-mesh-bvh": "^0.9.14",
 		"uuid-tool": "^2.0.3",
