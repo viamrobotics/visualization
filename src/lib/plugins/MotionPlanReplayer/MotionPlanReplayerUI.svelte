@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Badge, Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
@@ -107,91 +107,6 @@
 	minSize={{ width: 300, height: 240 }}
 	resizable
 >
-	<div class="flex h-full flex-col gap-1 p-2 text-xs">
-		{#if ctx.plans.length === 0}
-			<div class="text-subtle-1 flex grow items-center justify-center text-center">
-				Use the button below to upload a plan JSON file
-			</div>
-		{/if}
-
-		<!-- Keyed by id: only the upload path rejects a duplicate name, and a repeated key throws
-		`each_key_duplicate` in production builds as well as dev. -->
-		{#each ctx.plans as plan, i (plan.id)}
-			{@const isActive = ctx.activePlanIndex === i}
-			<div
-				class={[
-					'group flex cursor-pointer items-center gap-1 rounded px-2 py-1',
-					isActive ? 'bg-light font-medium' : 'hover:bg-ghost-light',
-				]}
-				role="button"
-				tabindex="0"
-				onclick={() => (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
-				onkeydown={(e) =>
-					e.target === e.currentTarget &&
-					e.key === 'Enter' &&
-					(isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
-			>
-				<span class="text-subtle-1 mr-1 shrink-0">
-					{#if isActive}
-						<Eye size={14} />
-					{:else}
-						<EyeOff size={14} />
-					{/if}
-				</span>
-				<span class="grow truncate">{plan.name}</span>
-
-				<!-- MOCK: inspectIK ignores this plan and returns a bundled demo pair. -->
-				<button
-					type="button"
-					class="text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
-					aria-label={`Inspect IK for ${plan.name}`}
-					aria-disabled={ik.status === 'loading'}
-					onclick={(e) => {
-						e.stopPropagation()
-						if (ik.status !== 'loading') void ik.inspect(plan.name, plan.content)
-					}}
-				>
-					<Icon
-						name="bug-outline"
-						size="sm"
-						aria-hidden="true"
-					/>
-				</button>
-
-				<button
-					type="button"
-					class="text-subtle-1 ml-1 rounded px-1 hover:text-red-500"
-					onclick={(e) => {
-						e.stopPropagation()
-						ctx.removePlan(i)
-					}}
-					aria-label="Remove plan"
-					title="Remove plan">×</button
-				>
-			</div>
-
-			{#if plan.status === 'error'}
-				<div class="pl-5 text-[10px] text-red-600">{plan.error}</div>
-			{/if}
-			{#if plan.status === 'no-trajectory'}
-				<div class="pl-5 text-[10px] text-yellow-600">No trajectory — nothing to replay</div>
-			{/if}
-		{/each}
-
-		<div class="mt-auto flex flex-col gap-2 pt-1">
-			<TrajectoryScrubber
-				player={ctx.player}
-				label="motion plan"
-			/>
-
-			{@render children?.()}
-			<input
-				bind:this={fileInput}
-				type="file"
-				accept=".json"
-				class="hidden"
-				onchange={onFileChange}
-			/>
 	{#if ik.isActive}
 		<IKInspectionView />
 	{:else}
@@ -225,8 +140,6 @@
 						{/if}
 					</span>
 					<span class="grow truncate">{plan.name}</span>
-
-					<!-- MOCK: inspectIK ignores this plan and returns a bundled demo pair. -->
 					<button
 						type="button"
 						class="text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
@@ -269,8 +182,10 @@
 			{/each}
 
 			<div class="mt-auto flex flex-col gap-2 pt-1">
-				<MotionPlanReplayerScrubber />
-
+    			<TrajectoryScrubber
+    				player={ctx.player}
+    				label="motion plan"
+    			/>
 				{@render children?.()}
 				<input
 					bind:this={fileInput}

@@ -47,10 +47,6 @@
 			<p class="text-danger-dark break-words">{ctx.error}</p>
 		</div>
 	{:else if ctx.status === 'ready'}
-		<p class="text-subtle-2 border-light shrink-0 border-b px-2 py-1">
-			Demo fixture — candidates come from <span class="font-roboto-mono">pirouette-request</span>,
-			not from {ctx.planName ?? 'the selected plan'}.
-		</p>
 		<div class="min-h-0 flex-1">
 			<IKCandidateList />
 		</div>

@@ -28,13 +28,17 @@ const ObstaclesInWorldFrameSchema = z.object({
 	geometries: z.array(z.unknown()).default([]),
 })
 
+// `nullish`, not `optional`: these are nil-able Go values, and the captures marshal nil as an
+// explicit `null` rather than omitting the key. `optional` alone rejects null.
 const PlanChunkSchema = z.object({
 	frame_system: FrameSystemSchema.optional(),
-	goals: z.array(z.unknown()).optional(),
-	trajectory: z.array(z.record(z.string(), z.array(z.number()))).optional(),
+	goals: z.array(z.unknown()).nullish(),
+	trajectory: z.array(z.record(z.string(), z.array(z.number()))).nullish(),
 	// Opaque by contrast: protobuf-es decodes this one, so zod here would re-copy a proto shape.
 	world_state: z.unknown().optional(),
-	obstacles_in_world_frame: ObstaclesInWorldFrameSchema.optional(),
+	obstacles_in_world_frame: ObstaclesInWorldFrameSchema.nullish().transform(
+		(obstacles) => obstacles ?? undefined
+	),
 })
 
 export type ObstaclesInWorldFrame = z.infer<typeof ObstaclesInWorldFrameSchema>

@@ -14,7 +14,8 @@ export interface InspectIKResult {
 export type ResolveIKSolutions = (planContent: string) => Promise<InspectIKResult>
 
 /**
- * MOCK — the standalone/dev fallback used when the host supplies no `resolveIKSolutions`.
+ * MOCK — for the standalone dev harness only. Real hosts pass their own `resolveIKSolutions`; this
+ * is never reached by accident, since the prop is required.
  *
  * It ignores the plan it is handed and always returns the bundled pirouette pair. That pairing is
  * the point: the request and the solutions describe the same scene, which is what makes the

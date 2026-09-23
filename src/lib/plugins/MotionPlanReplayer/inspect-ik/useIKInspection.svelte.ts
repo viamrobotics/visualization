@@ -29,7 +29,7 @@ import {
 	sortByCost,
 	toCandidates,
 } from './ik-candidates'
-import { inspectIK, type ResolveIKSolutions } from './inspect-ik-client'
+import { type ResolveIKSolutions } from './inspect-ik-client'
 import {
 	buildInterpolatedPath,
 	DEFAULT_PATH_STEPS,
@@ -122,7 +122,7 @@ export interface IKInspectionContext {
 let context: IKInspectionContext | undefined
 
 export const provideIKInspection = (
-	resolveIKSolutions?: ResolveIKSolutions
+	resolveIKSolutions: ResolveIKSolutions
 ): IKInspectionContext => {
 	const world = useWorld()
 	const { invalidate } = useThrelte()
@@ -301,7 +301,7 @@ export const provideIKInspection = (
 		isActive = true
 
 		try {
-			const result = await (resolveIKSolutions ?? inspectIK)(planContent)
+			const result = await resolveIKSolutions(planContent)
 
 			parsedRequest = parsePlan(result.requestContent)
 			const extras = readRequestExtras(result.requestContent)
