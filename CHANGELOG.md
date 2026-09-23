@@ -1,5 +1,13 @@
 # visualization
 
+## 2.6.1
+
+### Patch Changes
+
+- 923367b: Toon and wireframe render modes draw colors without tone mapping.
+- 3509c21: Opacity edits apply to every object type and survive a scene sync.
+- 923367b: Realistic shading is now the render mode for every user, lit by an off-axis key light.
+
 ## 2.6.0
 
 ### Minor Changes
