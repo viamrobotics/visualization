@@ -17,8 +17,11 @@
 		children?: Snippet
 		/** Host hook to resolve uploaded plans server-side. Unset keeps client parsing. */
 		resolvePlanSnapshots?: ResolvePlanSnapshots
-		/** Host hook to run server-side IK; unset falls back to the bundled mock. */
-		resolveIKSolutions?: ResolveIKSolutions
+		/**
+		 * Host hook to run server-side IK. Required: there is no client-side IK, and a fallback here
+		 * would mean a host that forgot to wire it silently showed fixture data as real results.
+		 */
+		resolveIKSolutions: ResolveIKSolutions
 	}
 
 	const { plans, children, resolvePlanSnapshots, resolveIKSolutions }: Props = $props()

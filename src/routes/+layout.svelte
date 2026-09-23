@@ -26,6 +26,9 @@
 		WorldTree,
 		XR,
 	} from '$lib/plugins'
+	// Deep import on purpose: the mock stays out of the package's public exports so real hosts
+	// cannot reach for it instead of wiring their own solver.
+	import { inspectIK } from '$lib/plugins/MotionPlanReplayer/inspect-ik/inspect-ik-client'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
@@ -95,7 +98,7 @@
 					<Monitor />
 					<BuildFrames />
 					<MoveFrame />
-					<MotionPlanReplayer />
+					<MotionPlanReplayer resolveIKSolutions={inspectIK} />
 
 					<XR />
 
