@@ -51,4 +51,17 @@ describe('createHotkeys registry', () => {
 
 		expect(hotkeys.bindings.get('x')?.has(stale)).toBe(true)
 	})
+
+	it('keeps preventDefault on a registered binding until it is released', () => {
+		const hotkeys = createHotkeys()
+		const suppressing: HotkeyBinding = { ...binding('x'), preventDefault: true }
+
+		const release = hotkeys.register(suppressing)
+
+		expect([...(hotkeys.bindings.get('x') ?? [])][0]?.preventDefault).toBe(true)
+
+		release()
+
+		expect(hotkeys.bindings.has('x')).toBe(false)
+	})
 })

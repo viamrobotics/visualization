@@ -1,3 +1,10 @@
+<!--
+@component
+
+The cursor marking a point the user is about to place, following the pointer's intersection
+with a surface and showing its live coordinates. Shared by MeasureTool and the Gizmos plugin's
+placement tools.
+-->
 <script lang="ts">
 	import type { Group, Vector3Tuple } from 'three'
 
@@ -23,7 +30,7 @@
 	/>
 
 	<HTML
-		class="pointer-events-none mb-2 w-16 -translate-x-1/2 -translate-y-[calc(100%+10px)] border border-black bg-white px-1 py-0.5 text-xs text-wrap"
+		class="font-roboto-mono pointer-events-none mb-2 w-16 -translate-x-1/2 -translate-y-[calc(100%+10px)] border border-black bg-white px-1 py-0.5 text-xs text-wrap"
 		zIndexRange={[3, 0]}
 	>
 		<div class="flex justify-between">
