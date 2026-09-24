@@ -300,8 +300,12 @@ export const provideIKInspection = (
 		status = 'loading'
 		isActive = true
 
+		// Exiting (e.g. leaving replay mode) or inspecting another plan mid-request makes this result stale.
+		const isStale = () => !isActive || planName !== name
+
 		try {
 			const result = await resolveIKSolutions(planContent)
+			if (isStale()) return
 
 			parsedRequest = parsePlan(result.requestContent)
 			const extras = readRequestExtras(result.requestContent)
@@ -313,6 +317,7 @@ export const provideIKInspection = (
 			status = 'ready'
 			invalidate()
 		} catch (error_) {
+			if (isStale()) return
 			console.warn('[InspectIK] inspection failed:', error_)
 			error = error_ instanceof Error ? error_.message : 'IK inspection failed.'
 			status = 'error'

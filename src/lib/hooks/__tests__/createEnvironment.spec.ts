@@ -44,6 +44,16 @@ describe('createEnvironment mode availability', () => {
 		expect(environment.current.mode).toBe('build')
 	})
 
+	it('restores a persisted replay mode once its plugin registers it', () => {
+		localStorage.setItem(ENVIRONMENT_MODE_STORAGE_KEY, JSON.stringify('replay'))
+
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('replay')
+
+		expect(environment.current.mode).toBe('replay')
+	})
+
 	it('ignores a mode assignment nothing contributes', () => {
 		const environment = createEnvironment()
 		environment.registerMode('monitor')
