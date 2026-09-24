@@ -1,1 +1,0 @@
-{"version":3,"file":"CY4v4qCo.js","names":[],"sources":["../../../../../../node_modules/.pnpm/svelte@5.55.7/node_modules/svelte/src/internal/flags/legacy.js"],"sourcesContent":["import { enable_legacy_mode_flag } from './index.js';\n\nenable_legacy_mode_flag();\n"],"x_google_ignoreList":[0],"mappings":"0kBAEA,EAAwB"}
