@@ -47,15 +47,6 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 			if (computed) return
 			if (opts.enabled === false) return
 
-			/**
-			 * `InstancedMesh2` brings its own per-instance BVH raycast (and a
-			 * real `bvh` field, so it can't even take a `bvh` opt-out prop —
-			 * Threlte would assign the prop onto the object and clobber it).
-			 * Patching it with three-mesh-bvh's `acceleratedRaycast` would
-			 * test only the unit geometry, so skip it entirely.
-			 */
-			if ((ref as { isInstancedMesh2?: boolean }).isInstancedMesh2) return
-
 			// Some PCDs parse without a position attribute, and the BVH build reads it.
 			if (isInstanceOf(ref, 'Points') && ref.geometry?.attributes.position) {
 				ref.geometry.computeBoundsTree = computeBoundsTree

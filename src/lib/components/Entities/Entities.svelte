@@ -16,6 +16,7 @@
 	import Line from './Line.svelte'
 	import Mesh from './Mesh.svelte'
 	import Points from './Points.svelte'
+	import ShapeBatches from './ShapeBatches.svelte'
 	import Spheres from './Spheres.svelte'
 
 	const frameEntities = useQuery(traits.FramesAPI)
@@ -47,10 +48,6 @@
 	<GeometryModel {entity} />
 {/each}
 
-{#each meshEntities.current as entity (entity)}
-	<Mesh {entity} />
-{/each}
-
 {#each points.current as entity (entity)}
 	<Points {entity} />
 {/each}
@@ -66,10 +63,16 @@
 <Arrows />
 <AxesHelpers />
 
-<Capsules />
-<Cylinders />
-<Spheres />
-<Boxes />
+<ShapeBatches>
+	<Capsules />
+	<Cylinders />
+	<Spheres />
+	<Boxes />
+
+	{#each meshEntities.current as entity (entity)}
+		<Mesh {entity} />
+	{/each}
+</ShapeBatches>
 
 {#if enableLabels}
 	<Labels />

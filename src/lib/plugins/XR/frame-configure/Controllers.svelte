@@ -5,7 +5,7 @@
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Controller, useController, useHeadset } from '@threlte/xr'
 	import { onDestroy } from 'svelte'
-	import { MathUtils, Vector3 } from 'three'
+	import { Group, MathUtils, Vector3 } from 'three'
 	import { TransformControls } from 'three/addons/controls/TransformControls.js'
 	import { Text } from 'threlte-uikit'
 	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
@@ -41,7 +41,7 @@
 	const selected = useQuery(traits.Selected)
 
 	const selectedEntity = $derived(selected.current[0])
-	const selectedObject3d = $derived(scene.getObjectByName(`${selectedEntity}`))
+	const worldMatrix = useTrait(() => selectedEntity, traits.WorldMatrix)
 	const framesAPI = useTrait(() => selectedEntity, traits.FramesAPI)
 	const editable = useTrait(() => selectedEntity, traits.Editable)
 
@@ -162,8 +162,20 @@
 		}
 	})
 
-	// selectedObject3d resolves to the named Mesh from Mesh.svelte. The Group that
-	// carries the frame's pose is its parent (set up in Frame.svelte).
+	// No frame kind carries a named scene object to attach a gizmo to. See
+	// `SelectedTransformControls.svelte` for why this anchor stands in for one.
+	const anchor = new Group()
+	anchor.matrixAutoUpdate = false
+
+	$effect(() => {
+		const world = worldMatrix.current
+		if (!world) return
+
+		anchor.matrix.copy(world)
+		anchor.matrix.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		anchor.updateMatrixWorld()
+	})
+
 	$effect(() => {
 		if (!framesAPI.current || !editable.current || !partConfig.hasEditPermissions) {
 			controls.detach()
@@ -171,7 +183,7 @@
 			return
 		}
 
-		const target = selectedObject3d?.parent
+		const target = worldMatrix.current ? anchor : undefined
 
 		if (target && target !== scene) {
 			controls.attach(target)
@@ -316,6 +328,8 @@
 
 <Controller left />
 <Controller right />
+
+<T is={anchor} />
 
 <T
 	is={helper}

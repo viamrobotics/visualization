@@ -1,157 +1,42 @@
 <!--
 @component
 
-Renders every entity with `Cylinder` + `WorldMatrix` traits as instanced draw
-calls (toon-shaded faces + edge lines).
+Allocates a batched instance in `ShapeBatches` for every entity with `Cylinder`
++ `WorldMatrix` traits. `capped` picks the geometry: a closed cylinder, or the
+same open-ended tube a capsule body uses.
 
-`capped` is a different geometry rather than a different scale, so solid
-cylinders and open tubes get a variant each.
+Trait events are coalesced into a microtask flush mirroring the `WorldMatrix`
+system, so a burst of changes (one reconcile tick) becomes a single batch of
+instance writes and one `invalidate()`.
 -->
 <script lang="ts">
 	import type { Entity } from 'koota'
-	import type { BufferGeometry } from 'three'
 
-	import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh'
-	import { T, useThrelte } from '@threlte/core'
-	import {
-		Color,
-		CylinderGeometry,
-		DoubleSide,
-		EdgesGeometry,
-		FrontSide,
-		LineBasicMaterial,
-		Matrix4,
-		type Side,
-		Sphere,
-		Vector3,
-	} from 'three'
+	import { useThrelte } from '@threlte/core'
+	import { Color, Matrix4 } from 'three'
+
+	import type { Shape, ShapeInstanceIds } from '$lib/three/shapeBatches'
 
 	import { asColor } from '$lib/buffer'
-	import { colors, darkenColor } from '$lib/color'
+	import { colors } from '$lib/color'
 	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
 	import { composeCylinderMatrix } from './composeCylinderMatrix'
-	import { useInstancedEntityEvents } from './hooks/useEntityEvents.svelte'
-	import { useSurfaceMaterials } from './hooks/useSurfaceMaterials.svelte'
+	import { useShapeBatches } from './useShapeBatches'
 
-	const { invalidate, renderer } = useThrelte()
+	const { invalidate } = useThrelte()
 	const world = useWorld()
-	const settings = useSettings()
+	const shapes = useShapeBatches()
 
-	/** Matches the radial resolution `Capsules.svelte` gives its cylindrical body. */
-	const RADIAL_SEGMENTS = 16
+	const shapeFor = (capped: boolean): Shape => (capped ? 'cappedCylinder' : 'tube')
 
-	/**
-	 * Shared unit geometries — every instance references these and sets its
-	 * radius/length through the per-instance matrix scale, so resizing never
-	 * rebuilds GPU buffers. Rotated onto Z because that is rdk's cylinder axis,
-	 * the same correction `Capsules.svelte` applies.
-	 */
-	const unitCylinder = (capped: boolean) => {
-		const geometry = new CylinderGeometry(1, 1, 1, RADIAL_SEGMENTS, 1, !capped)
-		geometry.rotateX(Math.PI / 2)
-		return geometry
+	/** `shape` is kept so a `capped` flip can be spotted without re-reading the batch. */
+	interface CylinderInstance {
+		ids: ShapeInstanceIds
+		shape: Shape
 	}
 
-	/**
-	 * Build a faces mesh. Cylinder meshes render transparent by default (see
-	 * `resolveOpacity`); per-instance alpha is written via `setOpacityAt`.
-	 * Whole-object culling is disabled and the bounding sphere pinned open for the
-	 * same reason as `Boxes.svelte`: the library culls and raycasts per instance,
-	 * and its once-computed object sphere would otherwise gate an
-	 * always-animating scene shut.
-	 *
-	 * An open tube has no cap to hide its far wall, so back-face culling would
-	 * leave it looking like a half pipe. `side` is `DoubleSide` for that variant.
-	 */
-	const faceParameters = (side: Side) => ({ side, transparent: true })
-
-	const createFaces = (geometry: BufferGeometry, side: Side) => {
-		const mesh = new InstancedMesh2(
-			geometry,
-			createSurfaceMaterial(settings.current.renderMode, faceParameters(side)),
-			{ renderer }
-		)
-		mesh.sortObjects = true
-		mesh.customSort = createRadixSort(mesh)
-		mesh.frustumCulled = false
-		mesh.boundingSphere = new Sphere(new Vector3(), Infinity)
-		mesh.castShadow = true
-		mesh.receiveShadow = true
-		return mesh
-	}
-
-	/**
-	 * Build an edges mesh. `InstancedMesh2` extends `Mesh`, so on its own it would
-	 * draw the edge geometry as triangles; re-tagging the object makes the
-	 * renderer emit `gl.LINES`. The library's instancing shader patch still
-	 * applies because `LineBasicMaterial` compiles from the same chunk-based
-	 * `basic` program its patched chunks target.
-	 *
-	 * The outline fades with the faces it wraps, so it carries the same
-	 * per-instance alpha. That alpha only blends on a transparent material —
-	 * unconditional here, matching `faceParameters`, so edges and faces stay in
-	 * one pass instead of being ordered against each other.
-	 *
-	 * @three.ez/instanced-mesh ^0.3.15 — patches the 'basic' shader chunks shared
-	 * by MeshBasicMaterial and LineBasicMaterial. Re-validate if upgrading.
-	 */
-	const createEdges = (geometry: BufferGeometry) => {
-		const mesh = new InstancedMesh2(geometry, new LineBasicMaterial({ transparent: true }), {
-			renderer,
-		})
-		mesh.frustumCulled = false
-		Object.assign(mesh, { isMesh: false, isLine: true, isLineSegments: true })
-		return mesh
-	}
-
-	/**
-	 * Faces and edges are separate meshes with independent free lists, so each
-	 * entity tracks its faces id and edges id separately. `entityByFaceId` is
-	 * keyed by faces id — only the faces mesh raycasts (edges set
-	 * `raycast={() => null}`), so a hit's `instanceId` is always a faces id.
-	 */
-	interface Variant {
-		faces: ReturnType<typeof createFaces>
-		edges: ReturnType<typeof createEdges>
-		entityByFaceId: Map<number, Entity>
-	}
-
-	const createVariant = (capped: boolean): Variant => {
-		const geometry = unitCylinder(capped)
-		return {
-			faces: createFaces(geometry, capped ? FrontSide : DoubleSide),
-			edges: createEdges(new EdgesGeometry(geometry, 0)),
-			entityByFaceId: new Map(),
-		}
-	}
-
-	const cappedVariant = createVariant(true)
-	const openVariant = createVariant(false)
-
-	const variantFor = (capped: boolean): Variant => (capped ? cappedVariant : openVariant)
-
-	useSurfaceMaterials([
-		{ mesh: cappedVariant.faces, parameters: faceParameters(FrontSide) },
-		{ mesh: openVariant.faces, parameters: faceParameters(DoubleSide) },
-	])
-
-	/** `capped` is stored alongside the ids because it names which variant holds them. */
-	interface InstanceIds {
-		face: number
-		edge: number
-		capped: boolean
-	}
-
-	const instanceIdByEntity = new Map<Entity, InstanceIds>()
-
-	const events = useInstancedEntityEvents((event) => {
-		if (event.instanceId === undefined) return undefined
-		const variant = event.object === openVariant.faces ? openVariant : cappedVariant
-		return variant.entityByFaceId.get(event.instanceId)
-	})
+	const instanceByEntity = new Map<Entity, CylinderInstance>()
 
 	const matrix = new Matrix4()
 	const colorUtil = new Color()
@@ -171,19 +56,10 @@ cylinders and open tubes get a variant each.
 		return colorUtil.set(colors.default)
 	}
 
-	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
-		const { faces, edges } = variantFor(ids.capped)
-		const color = resolveColor(entity)
-		const opacity = resolveOpacity(entity)
+	const writeAppearance = (entity: Entity, instance: CylinderInstance) => {
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
 
-		faces.setColorAt(ids.face, color)
-		faces.setOpacityAt(ids.face, opacity)
-		faces.setVisibilityAt(ids.face, visible)
-
-		edges.setColorAt(ids.edge, darkenColor(color, 10))
-		edges.setOpacityAt(ids.edge, opacity)
-		edges.setVisibilityAt(ids.edge, visible)
+		shapes.setAppearance(instance.ids, resolveColor(entity), resolveOpacity(entity), visible)
 
 		/**
 		 * Mirrors `useEntityEvents`' invisibility watcher: an instance that
@@ -196,33 +72,16 @@ cylinders and open tubes get a variant each.
 	}
 
 	/** Caller composes the instance transform into `matrix` first. */
-	const addInstance = (entity: Entity, capped: boolean) => {
-		const variant = variantFor(capped)
-
-		let face = -1
-		variant.faces.addInstances(1, (_obj, index) => {
-			face = index
-		})
-		variant.faces.setMatrixAt(face, matrix)
-
-		let edge = -1
-		variant.edges.addInstances(1, (_obj, index) => {
-			edge = index
-		})
-		variant.edges.setMatrixAt(edge, matrix)
-
-		const ids = { face, edge, capped }
-		instanceIdByEntity.set(entity, ids)
-		variant.entityByFaceId.set(face, entity)
-		writeAppearance(entity, ids)
+	const addInstance = (entity: Entity, shape: Shape) => {
+		const instance = { ids: shapes.add(entity, shape), shape }
+		shapes.setMatrix(instance.ids, matrix)
+		instanceByEntity.set(entity, instance)
+		writeAppearance(entity, instance)
 	}
 
-	const removeInstance = (entity: Entity, ids: InstanceIds) => {
-		const variant = variantFor(ids.capped)
-		instanceIdByEntity.delete(entity)
-		variant.entityByFaceId.delete(ids.face)
-		variant.faces.removeInstances(ids.face)
-		variant.edges.removeInstances(ids.edge)
+	const removeInstance = (entity: Entity, instance: CylinderInstance) => {
+		instanceByEntity.delete(entity)
+		shapes.release(instance.ids)
 	}
 
 	/**
@@ -240,31 +99,32 @@ cylinders and open tubes get a variant each.
 		}
 
 		for (const entity of dirtyTransform) {
-			const ids = instanceIdByEntity.get(entity)
+			const instance = instanceByEntity.get(entity)
 			const cylinder = entity.isAlive() ? entity.get(traits.Cylinder) : undefined
 
 			if (cylinder && composeCylinderMatrix(entity, matrix)) {
-				if (ids === undefined) {
-					addInstance(entity, cylinder.capped)
-				} else if (ids.capped === cylinder.capped) {
-					const variant = variantFor(ids.capped)
-					variant.faces.setMatrixAt(ids.face, matrix)
-					variant.edges.setMatrixAt(ids.edge, matrix)
+				const shape = shapeFor(cylinder.capped)
+
+				if (instance === undefined) {
+					addInstance(entity, shape)
 				} else {
-					// The two variants are separate meshes, so a `capped` flip is a
-					// move between them rather than a write to the instance in place.
-					removeInstance(entity, ids)
-					addInstance(entity, cylinder.capped)
+					// Both variants live in the same batch, so a `capped` flip repoints
+					// the slots rather than freeing and reallocating them.
+					if (instance.shape !== shape) {
+						shapes.setShape(instance.ids, shape)
+						instance.shape = shape
+					}
+					shapes.setMatrix(instance.ids, matrix)
 				}
-			} else if (ids !== undefined) {
-				removeInstance(entity, ids)
+			} else if (instance !== undefined) {
+				removeInstance(entity, instance)
 			}
 		}
 
 		for (const entity of dirtyAppearance) {
-			const ids = instanceIdByEntity.get(entity)
-			if (ids !== undefined && entity.isAlive()) {
-				writeAppearance(entity, ids)
+			const instance = instanceByEntity.get(entity)
+			if (instance !== undefined && entity.isAlive()) {
+				writeAppearance(entity, instance)
 			}
 		}
 
@@ -285,11 +145,11 @@ cylinders and open tubes get a variant each.
 	/**
 	 * `WorldMatrix` changes fire for every entity on every kinematics tick —
 	 * filter to cylinder entities before touching the dirty sets.
-	 * `instanceIdByEntity` catches entities whose `Cylinder` trait was just
+	 * `instanceByEntity` catches entities whose `Cylinder` trait was just
 	 * removed.
 	 */
 	const enqueue = (dirty: Set<Entity>) => (entity: Entity) => {
-		if (!entity.has(traits.Cylinder) && !instanceIdByEntity.has(entity)) return
+		if (!entity.has(traits.Cylinder) && !instanceByEntity.has(entity)) return
 		dirty.add(entity)
 		schedule()
 	}
@@ -343,23 +203,3 @@ cylinders and open tubes get a variant each.
 		}
 	})
 </script>
-
-<T
-	is={cappedVariant.faces}
-	{...events}
-/>
-
-<T
-	is={cappedVariant.edges}
-	raycast={() => null}
-/>
-
-<T
-	is={openVariant.faces}
-	{...events}
-/>
-
-<T
-	is={openVariant.edges}
-	raycast={() => null}
-/>

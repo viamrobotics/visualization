@@ -75,7 +75,7 @@
 	name={entity}
 	userData.name={name}
 	raycast={meshBounds}
-	renderOrder={renderOrder.current}
+	renderOrder={renderOrder.current ?? 0}
 	visible={invisible.current !== true}
 	{...events}
 >

@@ -80,31 +80,28 @@
 	 * Uniform opacity (entity trait) and per-vertex RGBA alpha are both considered here
 	 * to avoid the two sources conflicting with each other.
 	 */
-	$effect(() => {
+	const isTransparent = $derived.by(() => {
+		if (opacity.current < 1) return true
+
 		const vertexColors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
+		if (!vertexColors || !positions) return false
 
-		material.vertexColors = vertexColors !== undefined
+		if (positions.array.length / vertexColors.array.length !== 0.75) return false
 
-		const hasUniformOpacity = opacity.current < 1
-		material.opacity = opacity.current
-
-		let hasVertexAlpha = false
-		if (vertexColors && positions) {
-			const hasAlphaChannel = positions.array.length / vertexColors.array.length === 0.75
-			if (hasAlphaChannel) {
-				for (let i = 3, l = vertexColors.array.length; i < l; i += 4) {
-					if (vertexColors.array[i] < 1) {
-						hasVertexAlpha = true
-						break
-					}
-				}
-			}
+		for (let index = 3, length = vertexColors.array.length; index < length; index += 4) {
+			if (vertexColors.array[index] < 1) return true
 		}
 
-		const transparent = hasUniformOpacity || hasVertexAlpha
-		if (material.transparent !== transparent) {
-			material.transparent = transparent
+		return false
+	})
+
+	$effect(() => {
+		material.vertexColors = geometry.current?.getAttribute('color') !== undefined
+		material.opacity = opacity.current
+
+		if (material.transparent !== isTransparent) {
+			material.transparent = isTransparent
 			material.needsUpdate = true
 		}
 
@@ -113,7 +110,15 @@
 
 	$effect(() => {
 		material.depthTest = materialProps.current?.depthTest ?? true
-		material.depthWrite = materialProps.current?.depthWrite ?? true
+
+		/**
+		 * A transparent cloud that writes depth erases whatever the sort placed
+		 * behind it, and three keys that sort off the object's origin, which says
+		 * nothing about where a cloud's points actually are. An explicit `Material`
+		 * trait still wins, so a caller that wants the writes can ask for them.
+		 */
+		material.depthWrite = materialProps.current?.depthWrite ?? !isTransparent
+
 		invalidate()
 	})
 
@@ -145,7 +150,7 @@
 		is={points}
 		name={entity}
 		visible={invisible.current !== true}
-		renderOrder={renderOrder.current}
+		renderOrder={renderOrder.current ?? 0}
 		{...events}
 	>
 		<T is={geometry.current} />
