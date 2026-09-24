@@ -7,10 +7,11 @@ export const ENVIRONMENT_CONTEXT_KEY = Symbol('environment')
 /**
  * What the app is being used for right now. Every mode is contributed by a
  * plugin — `monitor` by `Monitor`, `build` by `BuildFrames`, `move` by
- * `MoveFrame` — and each owns its own details panel and scene affordances.
+ * `MoveFrame`, `replay` by `MotionPlanReplayer` — and each owns its own
+ * details panel and scene affordances.
  * With no mode plugins mounted the mode is `none`: a bare renderer.
  */
-export type EnvironmentMode = 'monitor' | 'build' | 'move'
+export type EnvironmentMode = 'monitor' | 'build' | 'move' | 'replay'
 
 interface Environment {
 	/** The active mode. `none` when nothing reachable is contributed. */
@@ -45,7 +46,7 @@ export interface EnvironmentContext {
  */
 export const ENVIRONMENT_MODE_STORAGE_KEY = 'motion-tools:environment-mode'
 
-const modes = new Set(['monitor', 'build', 'move'])
+const modes = new Set(['monitor', 'build', 'move', 'replay'])
 
 /** Whether `value` names one of the closed set of modes. */
 export const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)

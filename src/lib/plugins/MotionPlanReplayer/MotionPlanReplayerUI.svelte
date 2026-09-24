@@ -3,6 +3,7 @@
 
 	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
+	import { onDestroy } from 'svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
@@ -32,7 +33,15 @@
 	const ik = useIKInspection()
 	const toast = useToast()
 
-	let isOpen = $state(false)
+	// Mounted only in replay mode, so entering the mode opens the panel.
+	let isOpen = $state(true)
+
+	// Unmounting means leaving replay mode. Geometry left behind would have no controls to remove it.
+	onDestroy(() => {
+		ctx.clearActivePlan()
+		ik.exit()
+	})
+
 	let fileInput: HTMLInputElement | undefined = $state()
 	// resolvePlanSnapshots may round-trip to a server, so uploads are no longer instant.
 	let uploadsInFlight = $state(0)
@@ -117,7 +126,7 @@
 				</div>
 			{/if}
 
-			{#each ctx.plans as plan, i (plan.name)}
+			{#each ctx.plans as plan, i (plan.id)}
 				{@const isActive = ctx.activePlanIndex === i}
 				<div
 					class={[
@@ -182,10 +191,10 @@
 			{/each}
 
 			<div class="mt-auto flex flex-col gap-2 pt-1">
-    			<TrajectoryScrubber
-    				player={ctx.player}
-    				label="motion plan"
-    			/>
+				<TrajectoryScrubber
+					player={ctx.player}
+					label="motion plan"
+				/>
 				{@render children?.()}
 				<input
 					bind:this={fileInput}

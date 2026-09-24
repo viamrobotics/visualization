@@ -3,7 +3,12 @@
 
 	import { untrack } from 'svelte'
 
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import ModeTogglePortal from '$lib/components/overlay/Portals/ModeTogglePortal.svelte'
+	import ModeButton from '$lib/components/overlay/workspace/ModeButton.svelte'
+	import { traits, useQuery } from '$lib/ecs'
+	import { useEnvironment, useEnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
+	import { useFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
+	import MonitorDetails from '$lib/plugins/Monitor/MonitorDetails.svelte'
 
 	import { type ResolveIKSolutions } from './inspect-ik/inspect-ik-client'
 	import { provideIKInspection } from './inspect-ik/useIKInspection.svelte'
@@ -26,16 +31,35 @@
 
 	const { plans, children, resolvePlanSnapshots, resolveIKSolutions }: Props = $props()
 
+	// Provided here rather than in the UI so loaded plans survive switching out of replay mode.
 	provideMotionPlanReplayer(untrack(() => plans))
 	provideIKInspection(untrack(() => resolveIKSolutions))
 
 	const environment = useEnvironment()
+	const selected = useQuery(traits.Selected)
+	const fullscreen = useFullscreen()
+
+	useEnvironmentMode('replay')
 </script>
 
-<!-- Hidden while an editing mode owns the scene, including in bare hosts with no mode plugins. -->
-{#if environment.current.mode !== 'build' && environment.current.mode !== 'move'}
+<ModeTogglePortal>
+	<ModeButton
+		class="-ml-px rounded-l-none"
+		mode="replay"
+		description="Replay and inspect motion plans"
+	/>
+</ModeTogglePortal>
+
+{#if environment.current.mode === 'replay'}
 	<MotionPlanReplayerUI
 		{children}
 		{resolvePlanSnapshots}
 	/>
+
+	{#each selected.current as entity, index (entity)}
+		<MonitorDetails
+			{entity}
+			style="transform: translate(0, {fullscreen.baseOffset + index * 40}px)"
+		/>
+	{/each}
 {/if}

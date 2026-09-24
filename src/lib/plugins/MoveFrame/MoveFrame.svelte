@@ -55,7 +55,7 @@
 
 <ModeTogglePortal>
 	<ModeButton
-		class="-ml-px rounded-l-none"
+		class="-ml-px rounded-none"
 		mode="move"
 		description="Execute movement with a motion service"
 	/>

@@ -22,6 +22,16 @@ test.describe('deep-link mode', () => {
 		).toBeChecked()
 	})
 
+	test('viz.mode=replay selects Replay at load with no click', async ({ page, drawServer }) => {
+		await page.goto(`?drawPort=${drawServer.port}&viz.mode=replay`)
+		await expect(page.getByRole('heading', { name: 'World', exact: true })).toBeVisible({
+			timeout: 15_000,
+		})
+
+		await expect(page.getByRole('radio', { name: 'Replay and inspect motion plans' })).toBeChecked()
+		await expect(page.getByRole('button', { name: 'Upload plan JSON' })).toBeVisible()
+	})
+
 	test('an unrecognized viz.mode leaves the Monitor default selected', async ({
 		page,
 		drawServer,
