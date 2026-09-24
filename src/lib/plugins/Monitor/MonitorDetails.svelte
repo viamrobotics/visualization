@@ -3,12 +3,13 @@
 
 	import { type Entity } from 'koota'
 
-	import AxesHelperDetails from '$lib/components/overlay/details/AxesHelperDetails.svelte'
-	import ColorDetails from '$lib/components/overlay/details/ColorDetails.svelte'
+	import type { DetailsTab } from '$lib/components/overlay/details/DetailsTabs.svelte'
+
+	import AppearanceDetails from '$lib/components/overlay/details/AppearanceDetails.svelte'
 	import CountDetails from '$lib/components/overlay/details/CountDetails.svelte'
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
+	import DetailsTabs from '$lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '$lib/components/overlay/details/DimensionsDetails.svelte'
-	import OpacityDetails from '$lib/components/overlay/details/OpacityDetails.svelte'
 	import PoseDetails from '$lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
 	import { traits, useTag } from '$lib/ecs'
@@ -22,20 +23,19 @@
 
 	const sections = useDetailsSections()
 	const customDetails = useTag(() => entity, traits.CustomDetails)
+
+	const tabs = $derived<DetailsTab[]>(
+		customDetails.current
+			? [{ id: 'details', label: 'Details', content: detailsTab }]
+			: [
+					{ id: 'details', label: 'Details', content: detailsTab },
+					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
+				]
+	)
 </script>
 
-<DetailsPanel
-	{entity}
-	{...rest}
->
-	<h3
-		class="text-subtle-2 pt-3 pb-2"
-		data-testid="details-header"
-	>
-		Details
-	</h3>
-
-	<div class="flex flex-col gap-2.5">
+{#snippet detailsTab()}
+	<div class="flex flex-col gap-2.5 pt-3">
 		{#if !customDetails.current}
 			<PoseDetails
 				{entity}
@@ -46,12 +46,6 @@
 		<DimensionsDetails {entity} />
 
 		<CountDetails {entity} />
-
-		{#if !customDetails.current}
-			<ColorDetails {entity} />
-			<OpacityDetails {entity} />
-			<AxesHelperDetails {entity} />
-		{/if}
 	</div>
 
 	<RelationshipDetails {entity} />
@@ -61,4 +55,15 @@
 			{@render section.snippet({ entity })}
 		{/if}
 	{/each}
+{/snippet}
+
+{#snippet appearanceTab()}
+	<AppearanceDetails {entity} />
+{/snippet}
+
+<DetailsPanel
+	{entity}
+	{...rest}
+>
+	<DetailsTabs items={tabs} />
 </DetailsPanel>
