@@ -2,10 +2,11 @@ import { BufferGeometry } from 'three'
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
 import { asExactArrayBuffer } from '$lib/buffer'
+import { narrowFloat64Attributes } from '$lib/three/narrowFloat64Attributes'
 
 const plyLoader = new PLYLoader()
 
-export const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry => {
+const parsePlyByFormat = (mesh: string | Uint8Array): BufferGeometry => {
 	if (typeof mesh === 'string') {
 		return plyLoader.parse(atob(mesh))
 	}
@@ -26,3 +27,6 @@ export const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry => {
 	// the response the mesh was decoded from.
 	return plyLoader.parse(asExactArrayBuffer(mesh))
 }
+
+export const parsePlyInput = (mesh: string | Uint8Array): BufferGeometry =>
+	narrowFloat64Attributes(parsePlyByFormat(mesh))

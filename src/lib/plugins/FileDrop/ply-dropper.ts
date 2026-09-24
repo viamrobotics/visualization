@@ -7,6 +7,7 @@ import {
 	type FileDropperParams,
 	parseFailure,
 } from '$lib/fileDropper'
+import { narrowFloat64Attributes } from '$lib/three/narrowFloat64Attributes'
 
 export const plyDropper: FileDropper = async (params: FileDropperParams) => {
 	const { name, content } = params
@@ -18,7 +19,9 @@ export const plyDropper: FileDropper = async (params: FileDropperParams) => {
 	}
 
 	try {
-		const geometry = new PLYLoader().parse(new TextDecoder().decode(content))
+		const geometry = narrowFloat64Attributes(
+			new PLYLoader().parse(new TextDecoder().decode(content))
+		)
 		return {
 			success: true,
 			name,

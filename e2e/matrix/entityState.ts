@@ -186,7 +186,7 @@ export const readSceneNames = (page: Page): Promise<string[]> =>
 
 		const { world, traits } = koota
 		const names: string[] = []
-		for (const entity of world.query(traits.Name, traits.DrawServiceAPI)) {
+		for (const entity of world.query(traits.Name, traits.DrawAPI)) {
 			names.push(entity.get(traits.Name) as string)
 		}
 		return names.toSorted()
