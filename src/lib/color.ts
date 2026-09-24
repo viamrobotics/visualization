@@ -157,14 +157,6 @@ export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 
 	)
 }
 
-export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
-	if (typeof opacity !== 'number') {
-		return defaultOpacity
-	}
-
-	return opacity > 1 ? opacity / 100 : opacity
-}
-
 const isColor = (color: unknown): color is Color => {
 	if (!color) return false
 	return color instanceof Color

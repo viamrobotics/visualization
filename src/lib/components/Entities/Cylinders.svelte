@@ -28,7 +28,7 @@ cylinders and open tubes get a variant each.
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
-	import { traits, useWorld } from '$lib/ecs'
+	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
@@ -56,8 +56,8 @@ cylinders and open tubes get a variant each.
 	}
 
 	/**
-	 * Build a faces mesh. Cylinder meshes render transparent by default (`Opacity`
-	 * trait absent → 0.7); per-instance alpha is written via `setOpacityAt`.
+	 * Build a faces mesh. Cylinder meshes render transparent by default (see
+	 * `resolveOpacity`); per-instance alpha is written via `setOpacityAt`.
 	 * Whole-object culling is disabled and the bounding sphere pinned open for the
 	 * same reason as `Boxes.svelte`: the library culls and raycasts per instance,
 	 * and its once-computed object sphere would otherwise gate an
@@ -90,11 +90,18 @@ cylinders and open tubes get a variant each.
 	 * applies because `LineBasicMaterial` compiles from the same chunk-based
 	 * `basic` program its patched chunks target.
 	 *
+	 * The outline fades with the faces it wraps, so it carries the same
+	 * per-instance alpha. That alpha only blends on a transparent material —
+	 * unconditional here, matching `faceParameters`, so edges and faces stay in
+	 * one pass instead of being ordered against each other.
+	 *
 	 * @three.ez/instanced-mesh ^0.3.15 — patches the 'basic' shader chunks shared
 	 * by MeshBasicMaterial and LineBasicMaterial. Re-validate if upgrading.
 	 */
 	const createEdges = (geometry: BufferGeometry) => {
-		const mesh = new InstancedMesh2(geometry, new LineBasicMaterial(), { renderer })
+		const mesh = new InstancedMesh2(geometry, new LineBasicMaterial({ transparent: true }), {
+			renderer,
+		})
 		mesh.frustumCulled = false
 		Object.assign(mesh, { isMesh: false, isLine: true, isLineSegments: true })
 		return mesh
@@ -167,13 +174,15 @@ cylinders and open tubes get a variant each.
 	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
 		const { faces, edges } = variantFor(ids.capped)
 		const color = resolveColor(entity)
+		const opacity = resolveOpacity(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
 
 		faces.setColorAt(ids.face, color)
-		faces.setOpacityAt(ids.face, entity.get(traits.Opacity) ?? 0.7)
+		faces.setOpacityAt(ids.face, opacity)
 		faces.setVisibilityAt(ids.face, visible)
 
 		edges.setColorAt(ids.edge, darkenColor(color, 10))
+		edges.setOpacityAt(ids.edge, opacity)
 		edges.setVisibilityAt(ids.edge, visible)
 
 		/**
@@ -318,6 +327,9 @@ cylinders and open tubes get a variant each.
 			world.onAdd(traits.Opacity, enqueueAppearance),
 			world.onChange(traits.Opacity, enqueueAppearance),
 			world.onRemove(traits.Opacity, enqueueAppearance),
+			world.onAdd(traits.OpacityOverride, enqueueAppearance),
+			world.onChange(traits.OpacityOverride, enqueueAppearance),
+			world.onRemove(traits.OpacityOverride, enqueueAppearance),
 			world.onAdd(traits.InheritedInvisible, enqueueAppearance),
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),

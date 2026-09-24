@@ -8,6 +8,7 @@ export { provideHierarchy } from './provideHierarchy.svelte'
 export { provideWorldMatrix } from './provideWorldMatrix.svelte'
 export { setOrAddTrait } from './setOrAddTrait'
 export { selectOnly } from './selectOnly'
+export { DEFAULT_GEOMETRY_OPACITY, resolveOpacity, useOpacity } from './opacity.svelte'
 
 export * as traits from './traits'
 export * as relations from './relations'

@@ -8,6 +8,7 @@
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
+	import { AgXToneMapping, NoToneMapping } from 'three'
 
 	import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
@@ -109,7 +110,8 @@
 
 	provideFragmentInfo(
 		() => partID,
-		() => componentNameToFragmentInfo
+		() => componentNameToFragmentInfo,
+		() => localConfigProps?.current
 	)
 
 	providePartConfig(
@@ -121,6 +123,17 @@
 		environment.current.inputBindingsEnabled = inputBindingsEnabled
 		environment.current.isStandalone = !localConfigProps
 	})
+
+	/**
+	 * Only realistic mode wants a filmic curve. In the other two a color is data — a
+	 * collider's color says what it is — and AgX, which Threlte applies by default,
+	 * desaturates and lifts whatever it is handed. Rendering those modes with the
+	 * curve off puts their colors on screen as written, and matches the grid, whose
+	 * raw `ShaderMaterial` is never tone mapped in any mode.
+	 */
+	const toneMapping = $derived(
+		settings.current.renderMode === 'realistic' ? AgXToneMapping : NoToneMapping
+	)
 
 	const detailsSections = provideDetailsSections()
 
@@ -140,7 +153,10 @@
 	]}
 	bind:this={root}
 >
-	<Canvas renderMode="on-demand">
+	<Canvas
+		renderMode="on-demand"
+		{toneMapping}
+	>
 		<SceneProviders>
 			<Scene>
 				{@render appChildren?.()}

@@ -6,7 +6,7 @@
 	import { OrthographicCamera, Points, PointsMaterial } from 'three'
 
 	import { asColor, isSingleColor } from '$lib/buffer'
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { clampPointSize } from '$lib/three/clampPointSize'
 
@@ -27,7 +27,7 @@
 	const entityColor = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.Colors)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const opacity = useOpacity(() => entity)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 	const materialProps = useTrait(() => entity, traits.Material)
@@ -86,8 +86,8 @@
 
 		material.vertexColors = vertexColors !== undefined
 
-		const hasUniformOpacity = opacity.current !== undefined && opacity.current < 1
-		material.opacity = hasUniformOpacity ? opacity.current! : 1
+		const hasUniformOpacity = opacity.current < 1
+		material.opacity = opacity.current
 
 		let hasVertexAlpha = false
 		if (vertexColors && positions) {
@@ -102,7 +102,12 @@
 			}
 		}
 
-		material.transparent = hasUniformOpacity || hasVertexAlpha
+		const transparent = hasUniformOpacity || hasVertexAlpha
+		if (material.transparent !== transparent) {
+			material.transparent = transparent
+			material.needsUpdate = true
+		}
+
 		invalidate()
 	})
 

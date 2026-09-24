@@ -6,6 +6,7 @@
 
 	import type { TreeNode } from './buildTree'
 
+	import AddObjectMenu from './AddObjectMenu.svelte'
 	import FilterBar from './FilterBar.svelte'
 	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
 	import Tree from './Tree.svelte'
@@ -36,6 +37,7 @@
 >
 	{#snippet headerSuffix()}
 		<PoseStalenessIndicator />
+		<AddObjectMenu />
 	{/snippet}
 
 	<FilterBar bind:value={filter} />

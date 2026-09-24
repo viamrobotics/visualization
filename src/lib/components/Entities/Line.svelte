@@ -7,7 +7,7 @@
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
 	import { isVertexColors, STRIDE } from '$lib/buffer'
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTrait } from '$lib/ecs'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import LineDots from './LineDots.svelte'
@@ -31,7 +31,7 @@
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const opacity = useOpacity(() => entity)
 	const screenSpace = useTrait(() => entity, traits.ScreenSpace)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 
@@ -56,7 +56,7 @@
 		return rgb
 	})
 
-	const currentOpacity = $derived(opacity.current ?? 0.7)
+	const currentOpacity = $derived(opacity.current)
 
 	const mesh = new Line2()
 	mesh.matrixAutoUpdate = false

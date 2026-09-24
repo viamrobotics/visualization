@@ -11,6 +11,7 @@
 	import { provideFrames } from '$lib/hooks/useFrames.svelte'
 	import { provideInheritedInvisible } from '$lib/hooks/useInheritedInvisible.svelte'
 	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { provideOpacityOverrides } from '$lib/hooks/useOpacityOverrides.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
@@ -37,6 +38,7 @@
 	provideHierarchy()
 	provideWorldMatrix()
 	provideInheritedInvisible()
+	provideOpacityOverrides()
 
 	provideRelationships()
 

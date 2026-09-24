@@ -72,8 +72,15 @@
 			{...api.getContentProps()}
 			class="border-medium flex flex-col border dark:text-black"
 		>
+			<!--
+				zag maximizes the panel on a double click of its header, with no prop to
+				turn it off. Dropped: a double click here is usually a fast second click
+				on a header control, and the panel that swallows the viewport offers
+				nothing to undo it with.
+			-->
 			<div
 				{...api.getDragTriggerProps()}
+				ondblclick={null}
 				class="sticky shrink-0"
 			>
 				<div
