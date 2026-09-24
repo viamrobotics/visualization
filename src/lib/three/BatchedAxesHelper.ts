@@ -17,6 +17,10 @@ type BatchedAxesHelpersOptions = {
 	linewidth?: number
 	worldUnits?: boolean
 	frustumCulled?: boolean
+	/** Set `false` to draw the axes over occluding geometry. */
+	depthTest?: boolean
+	depthWrite?: boolean
+	transparent?: boolean
 	xColor?: ColorRepresentation
 	yColor?: ColorRepresentation
 	zColor?: ColorRepresentation
@@ -33,6 +37,36 @@ const end = new Vector3()
 const xColor = new Color()
 const yColor = new Color()
 const zColor = new Color()
+
+/**
+ * Sends a zero-length segment to `(2, 2, 2)` in clip space, outside the [-1, 1]
+ * volume, so the whole instance is rejected before rasterization. Every vertex
+ * of the instance lands there, so the primitive is clipped rather than
+ * interpolated against the frustum.
+ */
+export const rejectCollapsedSegments = (vertexShader: string): string =>
+	vertexShader.replace(
+		'void main() {',
+		'void main() {\n\tif ( instanceStart == instanceEnd ) { gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 ); return; }'
+	)
+
+/**
+ * A hidden or freed slot is collapsed to a zero-length segment (see
+ * `writeAxesPositions`), but `LineSegments2` draws a round cap for one, leaving
+ * a dot of `linewidth` pixels behind wherever the helper used to be. Reject
+ * those instances in the vertex shader instead.
+ *
+ * `customProgramCacheKey` has to move with `onBeforeCompile`. Without it three
+ * may hand this material a program compiled for an unpatched `LineMaterial`,
+ * and the scene draws lines with one of those too.
+ */
+const hideCollapsedHelpers = (material: LineMaterial): void => {
+	material.onBeforeCompile = (parameters) => {
+		parameters.vertexShader = rejectCollapsedSegments(parameters.vertexShader)
+	}
+
+	material.customProgramCacheKey = () => 'batched-axes-helpers'
+}
 
 export class BatchedAxesHelpers extends LineSegments2 {
 	capacity: number
@@ -68,7 +102,12 @@ export class BatchedAxesHelpers extends LineSegments2 {
 			linewidth: options.linewidth ?? 2,
 			worldUnits: options.worldUnits ?? false,
 			vertexColors: true,
+			depthTest: options.depthTest ?? true,
+			depthWrite: options.depthWrite ?? true,
+			transparent: options.transparent ?? false,
 		})
+
+		hideCollapsedHelpers(material)
 
 		super(geometry, material)
 
@@ -313,19 +352,16 @@ export class BatchedAxesHelpers extends LineSegments2 {
 
 		const length = this.lengths[index] || this.axisLength
 
-		// X axis
 		start.set(0, 0, 0).applyMatrix4(matrix4)
 		end.set(length, 0, 0).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)
 		offset += FLOATS_PER_SEGMENT
 
-		// Y axis
 		start.set(0, 0, 0).applyMatrix4(matrix4)
 		end.set(0, length, 0).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)
 		offset += FLOATS_PER_SEGMENT
 
-		// Z axis
 		start.set(0, 0, 0).applyMatrix4(matrix4)
 		end.set(0, 0, length).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)

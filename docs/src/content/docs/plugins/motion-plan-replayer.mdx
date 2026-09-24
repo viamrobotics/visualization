@@ -1,0 +1,126 @@
+---
+title: <MotionPlanReplayer />
+description: Upload a motion plan JSON and step through its trajectory in 3D inside a Viam visualizer.
+---
+
+`<MotionPlanReplayer />` adds a floating panel to the visualizer for replaying motion plans. Drop in a motion plan JSON (the request/result payload emitted by RDK's motion service) and the plugin parses it client-side into per-step snapshots, then renders the frame system — arm links, joints, and obstacles — in 3D. A scrubber lets you play, pause, and step through the trajectory.
+
+## Usage
+
+Mount `<MotionPlanReplayer />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { MotionPlanReplayer } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<MotionPlanReplayer />
+	</Visualizer>
+</div>
+```
+
+## Uploading a plan
+
+Click the upload button in the panel and select a motion plan JSON file. Each uploaded plan is added to the list with a status:
+
+- **idle** — listed but not parsed yet. Plans seeded through the `plans` prop start here; they are parsed on first selection.
+- **ready** — parsed successfully; select it to render and scrub.
+- **no-trajectory** — the plan parsed but has no trajectory steps to replay.
+- **error** — the file could not be parsed as a motion plan.
+
+Selecting a plan parses it if needed, spawns its entities, and reveals the scrubber. Removing the plan — or calling `clearActivePlan` — tears those entities back down.
+
+## Scrubbing
+
+Once a plan is selected, the scrubber appears at the bottom of the viewport:
+
+1. **Play / pause** steps through the trajectory automatically.
+2. **Previous / next** advance one step at a time.
+3. **Jump to start / end** snap to the first or last step.
+4. The **slider** seeks to any step directly.
+
+Each step reconciles the scene against that step's snapshot, moving joints and links to their pose for that frame.
+
+## Per-frame display config
+
+Plan entities behave like any other scene entity: select one in the 3D view to open the **Details** panel, where you can change its color, opacity, and axes-helper visibility, or hide it from the left-hand tree. These edits **persist as you scrub** — they are captured before each step's reconcile and restored afterward, so stepping through the trajectory doesn't reset them.
+
+Plan frames render **without axes helpers by default** — including arm origins and end-effectors. Turn them on per frame from the Details panel; the toggle then survives scrubbing like any other display edit.
+
+Display edits are session-only: reloading the plan or refreshing the page restores the defaults.
+
+## Props
+
+| Prop       | Type          | Default | Description                                                                                       |
+| ---------- | ------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `plans`    | `PlanEntry[]` | —       | Seeds the plan list on mount — useful when your app already has plan payloads (e.g. from a DB).   |
+| `children` | `Snippet`     | —       | Rendered inside the panel's action area, above the upload button — a place for your own controls. |
+
+```svelte
+<MotionPlanReplayer plans={[{ name: 'grab-cup', content: planJson }]} />
+```
+
+## Adding plans from your own source
+
+The panel is portaled out of `<MotionPlanReplayer />`, so host children can't
+reach context via `useMotionPlanReplayer()`. Pass `replayer` through the
+`children` snippet instead:
+
+```svelte
+<MotionPlanReplayer>
+	{#snippet children(replayer)}
+		<PlanDatabasePicker {replayer} />
+	{/snippet}
+</MotionPlanReplayer>
+```
+
+```svelte
+<!-- PlanDatabasePicker.svelte — your component, your data fetching -->
+<script lang="ts">
+	import type { MotionPlanReplayerContext } from '@viamrobotics/visualization/plugins'
+
+	interface Props {
+		replayer: MotionPlanReplayerContext
+	}
+
+	const { replayer }: Props = $props()
+</script>
+
+<button onclick={async () => replayer.addPlan('from-db', await fetchPlan())}>
+	Load from database
+</button>
+```
+
+`addPlan(name, content)` parses, appends, and selects. The context also exposes
+`plans`, `activePlanIndex`, `removePlan`, `selectPlan`, `setStep`, and
+`clearActivePlan`.
+
+Optional third arg `precomputedSnapshots` skips client parse (status `ready`
+immediately):
+
+```ts
+replayer.addPlan('from-db', planJson, snapshots)
+```
+
+### Adding a plan from server-computed transforms
+
+Use when transforms are computed outside this package (e.g. RDK FK server-side).
+Bytes avoid sharing this package's protobuf types — wire format is the contract.
+Serialize with your own `common.v1.Transform` (e.g. protobuf-ts `Transform.toBinary(t)`),
+then build snapshots with the exported `transformBytesToSnapshots` helper and hand them
+to `addPlan`:
+
+```ts
+import { transformBytesToSnapshots } from '@viamrobotics/visualization/plugins'
+
+// transformsPerStep: Uint8Array[][] — one Uint8Array per transform, one array per step
+replayer.addPlan('from-server', '', transformBytesToSnapshots(transformsPerStep))
+```
+
+Keep each frame's `uuid` stable across steps so reconcile updates in place
+instead of respawning on scrub.
+
+Calling `useMotionPlanReplayer()` outside a `<MotionPlanReplayer />` throws.

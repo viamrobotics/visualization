@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/viam-labs/motion-tools/draw/v1"
+	v1 "github.com/viamrobotics/visualization/draw/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -35,6 +35,8 @@ const (
 const (
 	// DrawServiceAddEntityProcedure is the fully-qualified name of the DrawService's AddEntity RPC.
 	DrawServiceAddEntityProcedure = "/draw.v1.DrawService/AddEntity"
+	// DrawServiceAddEntitiesProcedure is the fully-qualified name of the DrawService's AddEntities RPC.
+	DrawServiceAddEntitiesProcedure = "/draw.v1.DrawService/AddEntities"
 	// DrawServiceUpdateEntityProcedure is the fully-qualified name of the DrawService's UpdateEntity
 	// RPC.
 	DrawServiceUpdateEntityProcedure = "/draw.v1.DrawService/UpdateEntity"
@@ -72,6 +74,10 @@ const (
 type DrawServiceClient interface {
 	// Add an entity to the scene.
 	AddEntity(context.Context, *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error)
+	// Add many entities to the scene in a single round trip. Equivalent to
+	// calling AddEntity once per entity. The batch is validated in full before
+	// any of it is stored, so a malformed entity rejects the whole request.
+	AddEntities(context.Context, *connect.Request[v1.AddEntitiesRequest]) (*connect.Response[v1.AddEntitiesResponse], error)
 	// Update an entity in the scene.
 	UpdateEntity(context.Context, *connect.Request[v1.UpdateEntityRequest]) (*connect.Response[v1.UpdateEntityResponse], error)
 	// Remove an entity from the scene.
@@ -111,6 +117,12 @@ func NewDrawServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			httpClient,
 			baseURL+DrawServiceAddEntityProcedure,
 			connect.WithSchema(drawServiceMethods.ByName("AddEntity")),
+			connect.WithClientOptions(opts...),
+		),
+		addEntities: connect.NewClient[v1.AddEntitiesRequest, v1.AddEntitiesResponse](
+			httpClient,
+			baseURL+DrawServiceAddEntitiesProcedure,
+			connect.WithSchema(drawServiceMethods.ByName("AddEntities")),
 			connect.WithClientOptions(opts...),
 		),
 		updateEntity: connect.NewClient[v1.UpdateEntityRequest, v1.UpdateEntityResponse](
@@ -185,6 +197,7 @@ func NewDrawServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // drawServiceClient implements DrawServiceClient.
 type drawServiceClient struct {
 	addEntity           *connect.Client[v1.AddEntityRequest, v1.AddEntityResponse]
+	addEntities         *connect.Client[v1.AddEntitiesRequest, v1.AddEntitiesResponse]
 	updateEntity        *connect.Client[v1.UpdateEntityRequest, v1.UpdateEntityResponse]
 	removeEntity        *connect.Client[v1.RemoveEntityRequest, v1.RemoveEntityResponse]
 	streamEntityChanges *connect.Client[v1.StreamEntityChangesRequest, v1.StreamEntityChangesResponse]
@@ -201,6 +214,11 @@ type drawServiceClient struct {
 // AddEntity calls draw.v1.DrawService.AddEntity.
 func (c *drawServiceClient) AddEntity(ctx context.Context, req *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error) {
 	return c.addEntity.CallUnary(ctx, req)
+}
+
+// AddEntities calls draw.v1.DrawService.AddEntities.
+func (c *drawServiceClient) AddEntities(ctx context.Context, req *connect.Request[v1.AddEntitiesRequest]) (*connect.Response[v1.AddEntitiesResponse], error) {
+	return c.addEntities.CallUnary(ctx, req)
 }
 
 // UpdateEntity calls draw.v1.DrawService.UpdateEntity.
@@ -262,6 +280,10 @@ func (c *drawServiceClient) GetEntityChunk(ctx context.Context, req *connect.Req
 type DrawServiceHandler interface {
 	// Add an entity to the scene.
 	AddEntity(context.Context, *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error)
+	// Add many entities to the scene in a single round trip. Equivalent to
+	// calling AddEntity once per entity. The batch is validated in full before
+	// any of it is stored, so a malformed entity rejects the whole request.
+	AddEntities(context.Context, *connect.Request[v1.AddEntitiesRequest]) (*connect.Response[v1.AddEntitiesResponse], error)
 	// Update an entity in the scene.
 	UpdateEntity(context.Context, *connect.Request[v1.UpdateEntityRequest]) (*connect.Response[v1.UpdateEntityResponse], error)
 	// Remove an entity from the scene.
@@ -297,6 +319,12 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 		DrawServiceAddEntityProcedure,
 		svc.AddEntity,
 		connect.WithSchema(drawServiceMethods.ByName("AddEntity")),
+		connect.WithHandlerOptions(opts...),
+	)
+	drawServiceAddEntitiesHandler := connect.NewUnaryHandler(
+		DrawServiceAddEntitiesProcedure,
+		svc.AddEntities,
+		connect.WithSchema(drawServiceMethods.ByName("AddEntities")),
 		connect.WithHandlerOptions(opts...),
 	)
 	drawServiceUpdateEntityHandler := connect.NewUnaryHandler(
@@ -369,6 +397,8 @@ func NewDrawServiceHandler(svc DrawServiceHandler, opts ...connect.HandlerOption
 		switch r.URL.Path {
 		case DrawServiceAddEntityProcedure:
 			drawServiceAddEntityHandler.ServeHTTP(w, r)
+		case DrawServiceAddEntitiesProcedure:
+			drawServiceAddEntitiesHandler.ServeHTTP(w, r)
 		case DrawServiceUpdateEntityProcedure:
 			drawServiceUpdateEntityHandler.ServeHTTP(w, r)
 		case DrawServiceRemoveEntityProcedure:
@@ -402,6 +432,10 @@ type UnimplementedDrawServiceHandler struct{}
 
 func (UnimplementedDrawServiceHandler) AddEntity(context.Context, *connect.Request[v1.AddEntityRequest]) (*connect.Response[v1.AddEntityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.AddEntity is not implemented"))
+}
+
+func (UnimplementedDrawServiceHandler) AddEntities(context.Context, *connect.Request[v1.AddEntitiesRequest]) (*connect.Response[v1.AddEntitiesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("draw.v1.DrawService.AddEntities is not implemented"))
 }
 
 func (UnimplementedDrawServiceHandler) UpdateEntity(context.Context, *connect.Request[v1.UpdateEntityRequest]) (*connect.Response[v1.UpdateEntityResponse], error) {

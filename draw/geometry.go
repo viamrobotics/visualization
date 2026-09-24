@@ -14,20 +14,20 @@ import (
 type DrawnGeometry struct {
 	// Geometry is the underlying spatial geometry to render.
 	Geometry spatialmath.Geometry
-	// Colors are the colors used to render the geometry. For simple geometries
-	// (boxes, spheres, capsules) supply a single color; for complex geometries
-	// such as point clouds, supply either a single color or one color per vertex.
+	// Colors are the colors used to render the geometry. For simple geometries (boxes,
+	// spheres, capsules) supply a single color. For complex geometries such as point clouds,
+	// supply either a single color or one color per vertex.
 	Colors []Color
 }
 
-// DrawnGeometryConfig is the resolved option state used internally by NewDrawnGeometry.
-// Most callers do not construct it directly; build a DrawnGeometry by passing
-// DrawGeometryOption values to NewDrawnGeometry instead.
+// DrawnGeometryConfig is the resolved option state used internally by NewDrawnGeometry. Most
+// callers do not construct it directly. Build a DrawnGeometry by passing DrawGeometryOption
+// values to NewDrawnGeometry instead.
 type DrawnGeometryConfig struct {
 	drawColorsConfig
 
 	// downscalingThreshold is the minimum spacing (in millimeters) between retained
-	// point-cloud points; 0 disables downscaling. Only consulted for point-cloud
+	// point-cloud points, where 0 disables downscaling. Only consulted for point-cloud
 	// geometries.
 	downscalingThreshold float64
 }
@@ -51,21 +51,20 @@ func WithGeometryColor(color Color) DrawGeometryOption {
 	return withColors[*DrawnGeometryConfig]([]Color{color})
 }
 
-// WithGeometryColors assigns multiple colors to the geometry. Most simple geometries
-// only honor the first color; point clouds may use one color per vertex when the
-// length matches the point count.
+// WithGeometryColors assigns multiple colors to the geometry. Most simple geometries only
+// honor the first color. Point clouds may use one color per vertex when the length matches
+// the point count.
 func WithGeometryColors(colors ...Color) DrawGeometryOption {
 	return withColors[*DrawnGeometryConfig](colors)
 }
 
-// WithGeometryDownscaling reduces the number of rendered points by keeping only
-// points whose mutual distance exceeds threshold (millimeters). A threshold of 0
-// (the default) disables downscaling. The option is only honored when the geometry
-// is a point cloud; it is ignored for other geometry types.
+// WithGeometryDownscaling reduces the number of rendered points by keeping only points whose
+// mutual distance exceeds threshold (millimeters). A threshold of 0 (the default) disables
+// downscaling. The option is only honored when the geometry is a point cloud and is ignored
+// for other geometry types.
 //
-// Note: the underlying algorithm is O(n^2) in the input point count, so large
-// Note: the underlying algorithm is O(n^2) in the input point count, so small
-// thresholds (which retain more points) on dense clouds can be slow.
+// Note: the underlying algorithm is O(n^2) in the input point count, so small thresholds
+// (which retain more points) on dense clouds can be slow.
 func WithGeometryDownscaling(threshold float64) DrawGeometryOption {
 	return func(config *DrawnGeometryConfig) {
 		config.downscalingThreshold = threshold
@@ -78,6 +77,9 @@ func WithGeometryDownscaling(threshold float64) DrawGeometryOption {
 // converts it to a basic octree before storage. Returns an error if the threshold
 // is negative or if octree conversion fails.
 func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOption) (*DrawnGeometry, error) {
+	// Lower geometries with no wire representation (e.g. a Cylinder, whose ToProtobuf panics)
+	// to a renderable equivalent before serializing or storing them.
+	geometry = renderableGeometry(geometry)
 	proto := geometry.ToProtobuf()
 	isPointCloud := proto.GetPointcloud() != nil
 
@@ -117,13 +119,12 @@ func NewDrawnGeometry(geometry spatialmath.Geometry, options ...DrawGeometryOpti
 	return &DrawnGeometry{Geometry: drawnGeometry, Colors: config.colors}, nil
 }
 
-// Draw wraps the DrawnGeometry in a Transform identified by name. If name is empty,
-// the geometry's existing label is used. The DrawableOptions control placement
-// (parent frame, pose, center), identity (UUID), and visibility — see
-// DrawableOption for the full set.
+// Draw wraps the DrawnGeometry in a Transform identified by name. If name is empty, the
+// geometry's existing label is used. The DrawableOptions control placement (parent frame,
+// pose, center), identity (UUID), and visibility. See DrawableOption for the full set.
 //
-// The error return is currently always nil; it is kept for symmetry with
-// DrawnPointCloud.Draw, where octree conversion can fail.
+// The error return is always nil. It is kept for symmetry with DrawnPointCloud.Draw, where
+// octree conversion can fail.
 func (drawnGeometry *DrawnGeometry) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	if name == "" {
 		name = drawnGeometry.Geometry.Label()

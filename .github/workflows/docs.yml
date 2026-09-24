@@ -65,6 +65,9 @@ jobs:
       - name: Build root app
         env:
           BASE_PATH: /visualization/playground
+          # The deployed playground reports to Sentry (hooks.client.ts). Without this the maps are
+          # never uploaded and every stack trace stays minified. PR previews get no token on purpose.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: pnpm build
 
       - name: Upload app build
@@ -143,13 +146,15 @@ jobs:
         run: pnpm build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/dist
-          publish_branch: gh-pages
-          # Preserves pr-preview/* directories deployed by pr-preview.yml.
-          keep_files: true
-          user_name: github-actions[bot]
-          user_email: github-actions[bot]@users.noreply.github.com
-          commit_message: 'docs: deploy ${{ github.sha }}'
+          folder: docs/dist
+          branch: gh-pages
+          # `_app/immutable` names each chunk by content hash, so a merging deploy supersedes
+          # nothing and accumulates every build's chunks forever.
+          clean: true
+          # The one tree this job does not own: pr-preview.yml deploys into it from other workflows.
+          clean-exclude: pr-preview/**
+          git-config-name: github-actions[bot]
+          git-config-email: github-actions[bot]@users.noreply.github.com
+          commit-message: 'docs: deploy ${{ github.sha }}'

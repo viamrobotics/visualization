@@ -1,7 +1,7 @@
-// Package api provides high-level drawing functions for the motion-tools visualizer.
+// Package api provides high-level drawing functions for the Viam visualizer.
 //
 // This package contains the drawing API for creating and managing 3D visualizations in a live
-// motion-tools visualizer instance. All functions communicate with the DrawService via Connect-RPC,
+// Viam visualizer instance. All functions communicate with the DrawService via Connect-RPC,
 // allowing real-time updates to geometric primitives, 3D models, reference frames, and robot states.
 //
 // # Getting Started
@@ -29,8 +29,8 @@
 //
 //	import (
 //	    "github.com/golang/geo/r3"
-//	    "github.com/viam-labs/motion-tools/client/api"
-//	    "github.com/viam-labs/motion-tools/draw"
+//	    "github.com/viamrobotics/visualization/client/api"
+//	    "github.com/viamrobotics/visualization/draw"
 //	)
 //
 //	func main() {

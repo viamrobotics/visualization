@@ -1,6 +1,6 @@
 # Draw
 
-The `draw` package provides a Go API for creating 3D visualizations with Viam's motion tools. Build scenes with geometries, arrows, lines, points, models, and frame systems—then serialize them for rendering in the motion-tools visualizer.
+The `draw` package provides a Go API for creating 3D visualizations with Viam Visualization. Build scenes with geometries, arrows, lines, points, models, and frame systems—then serialize them for rendering in the Viam visualizer.
 
 ## Documentation
 
@@ -29,7 +29,7 @@ import (
     "os"
 
     "github.com/golang/geo/r3"
-    "github.com/viam-labs/motion-tools/draw"
+    "github.com/viamrobotics/visualization/draw"
     "go.viam.com/rdk/spatialmath"
 )
 
@@ -101,7 +101,7 @@ gzipData, err := snapshot.MarshalBinaryGzip()
 
 Any instance of the visualizer can accept snapshot files via drag-and-drop.
 
-<!-- TODO: Adding snapshots to motion tools via component props -->
+<!-- TODO: Adding snapshots to the visualizer via component props -->
 
 ### Rendering with the draw server
 

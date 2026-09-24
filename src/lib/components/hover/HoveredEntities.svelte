@@ -1,25 +1,24 @@
 <script lang="ts">
-	import { traits, useQuery, useTrait } from '$lib/ecs'
+	import { traits, useQuery } from '$lib/ecs'
 	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
 
 	import HoveredEntity from './HoveredEntity.svelte'
+	import HoveredPointMarker from './HoveredPointMarker.svelte'
 	import LinkedHoveredEntity from './LinkedHoveredEntity.svelte'
 
 	const linkedEntities = useLinkedEntities()
-	const selected = useQuery(traits.Selected)
+
+	const hovered = useQuery(traits.Selected, traits.InstancedMatrix)
 </script>
 
-{#each selected.current as entity (entity)}
-	{@const isHovered = useTrait(() => entity, traits.Hovered)}
+{#each hovered.current as entity (entity)}
+	<HoveredPointMarker {entity} />
+	<HoveredEntity {entity} />
 
-	{#if isHovered}
-		<HoveredEntity {entity} />
-
-		{#each linkedEntities.current as linkedEntity (linkedEntity)}
-			<LinkedHoveredEntity
-				{linkedEntity}
-				{entity}
-			/>
-		{/each}
-	{/if}
+	{#each linkedEntities.current as linkedEntity (linkedEntity)}
+		<LinkedHoveredEntity
+			{linkedEntity}
+			{entity}
+		/>
+	{/each}
 {/each}

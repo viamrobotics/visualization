@@ -1,70 +1,122 @@
 package api
 
 import (
-	"math"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
 
-func TestDrawNurbs(t *testing.T) {
-	startTestServer(t)
+// A cubic curve needs four control points and len(points)+degree+1 knots.
+func testNurbs(t *testing.T) ([]spatialmath.Pose, []float64) {
+	t.Helper()
+	return testPoses(4), []float64{0, 0, 0, 0, 1, 1, 1, 1}
+}
 
-	t.Run("DrawNurbs", func(t *testing.T) {
-		numControlPoints := 20
-		degree := 3
+func TestDrawNurbsSendsADrawing(t *testing.T) {
+	fake := startFake(t)
+	points, knots := testNurbs(t)
 
-		controlPoints := make([]spatialmath.Pose, numControlPoints)
-		weights := make([]float64, numControlPoints)
-		knots := make([]float64, numControlPoints+degree+1)
+	_, err := DrawNurbs(DrawNurbsOptions{Name: "curve", ControlPoints: points, Knots: knots})
+	test.That(t, err, test.ShouldBeNil)
 
-		for i := 0; i <= degree; i++ {
-			knots[i] = 0
-		}
+	test.That(t, fake.onlyAddedDrawing(t).GetPhysicalObject().GetNurbs(), test.ShouldNotBeNil)
+}
 
-		radius := 500.0
-		height := 1000.0
-		turns := 2.0
+// Degree, Weights and LineWidth are each forwarded only when set, so the draw
+// layer's defaults apply otherwise.
+func TestDrawNurbsOptionalFields(t *testing.T) {
+	points, knots := testNurbs(t)
 
-		for i := 0; i < numControlPoints; i++ {
-			t := float64(i) / float64(numControlPoints-1)
-			angle := 2 * math.Pi * turns * t
-			z := height * t
+	for _, tc := range []struct {
+		name      string
+		degree    int32
+		weights   []float64
+		lineWidth float32
+		wantErr   bool
+	}{
+		{name: "all defaults"},
+		{name: "an explicit cubic degree", degree: 3},
+		{name: "uniform weights", weights: []float64{1, 1, 1, 1}},
+		{name: "a line width", lineWidth: 25},
+		{name: "a non-positive degree falls back to the default", degree: -1},
+		{name: "a wrong weight count is rejected", weights: []float64{1, 1}, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := startFake(t)
 
-			controlPoints[i] = spatialmath.NewPose(
-				r3.Vector{
-					X: radius * math.Cos(angle),
-					Y: radius * math.Sin(angle),
-					Z: z,
-				},
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			)
-			weights[i] = 1.0
+			_, err := DrawNurbs(DrawNurbsOptions{
+				Name:          "curve",
+				ControlPoints: points,
+				Knots:         knots,
+				Degree:        tc.degree,
+				Weights:       tc.weights,
+				LineWidth:     tc.lineWidth,
+			})
 
-			if i < numControlPoints {
-				knot := float64(i+1) / float64(numControlPoints-degree)
-				if knot > 1.0 {
-					knot = 1.0
-				}
-				if i+degree+1 < len(knots) {
-					knots[i+degree+1] = knot
-				}
+			if tc.wantErr {
+				test.That(t, err, test.ShouldNotBeNil)
+				test.That(t, fake.addEntityCount(), test.ShouldEqual, 0)
+				return
 			}
-		}
-
-		uuid, err := DrawNurbs(DrawNurbsOptions{
-			Name:          "nurbs-1",
-			ControlPoints: controlPoints,
-			Knots:         knots,
-			Degree:        int32(degree),
-			Weights:       weights,
-			Color:         draw.ColorFromHex("#40E0D0"),
-			LineWidth:     20.0,
+			test.That(t, err, test.ShouldBeNil)
+			test.That(t, fake.addEntityCount(), test.ShouldEqual, 1)
 		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+	}
+}
+
+func TestDrawNurbsRejections(t *testing.T) {
+	points, knots := testNurbs(t)
+
+	t.Run("a non-ascii name is rejected first", func(t *testing.T) {
+		requireNoServer(t)
+
+		_, err := DrawNurbs(DrawNurbsOptions{
+			Name: "café", ControlPoints: points, Knots: knots,
+		})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "not ascii")
+	})
+
+	t.Run("no visualizer is reported as such", func(t *testing.T) {
+		requireNoServer(t)
+
+		_, err := DrawNurbs(DrawNurbsOptions{Name: "ok", ControlPoints: points, Knots: knots})
+
+		test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
+	})
+
+	t.Run("a mismatched knot count is rejected", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawNurbs(DrawNurbsOptions{
+			Name:          "bad-knots",
+			ControlPoints: points,
+			Knots:         []float64{0, 1},
+		})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "failed to create NURBS curve")
+		test.That(t, fake.addEntityCount(), test.ShouldEqual, 0)
+	})
+
+	t.Run("no control points is rejected", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawNurbs(DrawNurbsOptions{Name: "empty"})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, fake.addEntityCount(), test.ShouldEqual, 0)
+	})
+
+	t.Run("an RPC failure is wrapped", func(t *testing.T) {
+		fake := startFake(t)
+		fake.errs["AddEntity"] = errRPCBoom
+
+		_, err := DrawNurbs(DrawNurbsOptions{Name: "rpc", ControlPoints: points, Knots: knots})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntity RPC failed")
 	})
 }

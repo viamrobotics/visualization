@@ -24,9 +24,26 @@ import { ColorFormat, Metadata, Relationship } from '$lib/buf/draw/v1/metadata_p
 import { STRIDE } from '$lib/buffer'
 import { createChunkLoader, type EntityChunk } from '$lib/chunking'
 import { traits } from '$lib/ecs'
-import { createPose } from '$lib/transform'
+import { Pose } from '$lib/math'
 
-import { drawDrawing, drawTransform, updateMetadata, updateTransform } from '../draw'
+import { drawDrawing, drawTransform, updateDrawing, updateMetadata, updateTransform } from '../draw'
+
+/** Packs a flat list of float32 pose components into the proto's little-endian byte layout. */
+const packPoses = (...values: number[]): Uint8Array<ArrayBuffer> => {
+	const floats = new Float32Array(values)
+	return new Uint8Array(floats.buffer as ArrayBuffer)
+}
+
+/** Builds an arrows Drawing carrying the given packed poses under a stable UUID. */
+const arrowsDrawing = (poses: number[], uuid = 1) =>
+	new Drawing({
+		referenceFrame: 'arrows-update',
+		uuid: fakeUuidBytes(uuid),
+		physicalObject: new Shape({
+			geometryType: { case: 'arrows', value: new Arrows({ poses: packPoses(...poses) }) },
+		}),
+		metadata: new Metadata({ colors: new Uint8Array([0, 0, 255]) }),
+	})
 
 const fakeUuidBytes = (n: number) => {
 	const bytes = new Uint8Array(16)
@@ -44,7 +61,7 @@ describe('drawTransform', () => {
 			referenceFrame: 'box-frame',
 			poseInObserverFrame: {
 				referenceFrame: 'arm',
-				pose: createPose({ x: 100, y: 200, z: 300 }),
+				pose: new Pose(100, 200, 300),
 			},
 			physicalObject: new Geometry({
 				geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 20, z: 30 } } },
@@ -55,7 +72,7 @@ describe('drawTransform', () => {
 
 		expect(entity.get(traits.Name)).toBe('box-frame')
 		expect(hierarchy.getParentName(entity)).toBe('arm')
-		// Pose translation is in mm; matrix translation is in m (× 0.001).
+		// Pose translation is in mm. Matrix translation is in m, so the factor is 0.001.
 		const matrix = entity.get(traits.Matrix)
 		expect(matrix?.elements[12]).toBeCloseTo(0.1)
 		expect(matrix?.elements[13]).toBeCloseTo(0.2)
@@ -121,7 +138,7 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const transform = new Transform({
 			referenceFrame: 'arm',
-			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'world', pose: new Pose() },
 		})
 
 		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
@@ -134,7 +151,14 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
 		const positions = new Float32Array(6)
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: undefined })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({
+			id: 0,
+			positions,
+			colors: undefined,
+			bounds: undefined,
+			boundsTree: undefined,
+			shuffled: 0,
+		})
 
 		const pointCloud = new Uint8Array(0)
 		const metadataColors = new Uint8Array([0, 255, 0])
@@ -163,7 +187,14 @@ describe('drawTransform', () => {
 		const positions = new Float32Array(6)
 		const pcdColors = new Uint8Array([255, 0, 0, 0, 255, 0])
 		const metadataColors = new Uint8Array([0, 255, 0, 0, 0, 255])
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: pcdColors })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({
+			id: 0,
+			positions,
+			colors: pcdColors,
+			bounds: undefined,
+			boundsTree: undefined,
+			shuffled: 0,
+		})
 
 		const pointCloud = new Uint8Array(0)
 		const base64Colors = btoa(String.fromCharCode(...metadataColors))
@@ -195,7 +226,7 @@ describe('drawDrawing', () => {
 		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'line-1',
-			poseInObserverFrame: { referenceFrame: 'base', pose: createPose({ x: 5, y: 6, z: 7 }) },
+			poseInObserverFrame: { referenceFrame: 'base', pose: new Pose(5, 6, 7) },
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'line',
@@ -272,7 +303,7 @@ describe('drawDrawing', () => {
 		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'robot-invisible',
-			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'arm', pose: new Pose() },
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'model',
@@ -323,7 +354,7 @@ describe('drawDrawing', () => {
 		world = createWorld()
 		const drawing = new Drawing({
 			referenceFrame: 'robot-model',
-			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'arm', pose: new Pose() },
 			physicalObject: new Shape({
 				geometryType: {
 					case: 'model',
@@ -359,7 +390,7 @@ describe('drawDrawing', () => {
 
 	it('adds point-specific traits for points drawings', () => {
 		world = createWorld()
-		const center = createPose({ x: 10, y: 20, z: 30 })
+		const center = new Pose(10, 20, 30)
 		const drawing = new Drawing({
 			referenceFrame: 'points-1',
 			physicalObject: new Shape({
@@ -374,7 +405,8 @@ describe('drawDrawing', () => {
 
 		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
-		expect(entity.get(traits.Center)).toStrictEqual(center)
+		// Center holds the decoded wire object, not a Pose instance — compare fields only.
+		expect(entity.get(traits.Center)).toEqual(center)
 		expect(entity.has(traits.BufferGeometry)).toBe(true)
 		expect(entity.has(traits.Points)).toBe(true)
 		expect(entity.get(traits.PointSize)).toBe(8)
@@ -391,14 +423,14 @@ describe('updateTransform', () => {
 
 		const initial = new Transform({
 			referenceFrame: 'child',
-			poseInObserverFrame: { referenceFrame: 'arm', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'arm', pose: {} },
 		})
 		const { entity } = drawTransform(world, initial, traits.SnapshotAPI)
 		expect(hierarchy.getParentName(entity)).toBe('arm')
 
 		updateTransform(entity, {
 			...initial,
-			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'world', pose: {} },
 		} as Transform)
 
 		expect(hierarchy.getParentName(entity)).toBeUndefined()
@@ -409,17 +441,62 @@ describe('updateTransform', () => {
 
 		const initial = new Transform({
 			referenceFrame: 'child',
-			poseInObserverFrame: { referenceFrame: 'world', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'world', pose: new Pose() },
 		})
 		const { entity } = drawTransform(world, initial, traits.SnapshotAPI)
 		expect(hierarchy.getParentName(entity)).toBeUndefined()
 
 		updateTransform(entity, {
 			...initial,
-			poseInObserverFrame: { referenceFrame: 'base', pose: createPose() },
+			poseInObserverFrame: { referenceFrame: 'base', pose: {} },
 		} as Transform)
 
 		expect(hierarchy.getParentName(entity)).toBe('base')
+	})
+})
+
+describe('updateDrawing arrows', () => {
+	let world: World
+	afterEach(() => world?.destroy())
+
+	it('rewrites the Positions buffer to the new poses when re-drawn under the same UUID', () => {
+		world = createWorld()
+
+		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
+		expect([...(entity.get(traits.Positions) ?? [])]).toEqual([100, 0, 0, 0, 0, 1])
+
+		updateDrawing(world, entity, arrowsDrawing([500, 200, 0, 1, 0, 0]))
+
+		expect([...(entity.get(traits.Positions) ?? [])]).toEqual([500, 200, 0, 1, 0, 0])
+	})
+
+	it('keeps arrow poses in raw millimeters on update (mm->m conversion happens downstream, not twice)', () => {
+		world = createWorld()
+
+		// The ADD path stores poses verbatim in mm. The shader, raycast and hover scale by 0.001.
+		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
+		expect(entity.get(traits.Positions)?.[0]).toBe(100)
+
+		// The UPDATE path must not re-apply inMeters — that double-converts and collapses
+		// arrows toward the origin (0.5mm instead of 500mm) once the update actually re-renders.
+		updateDrawing(world, entity, arrowsDrawing([500, 0, 0, 0, 0, 1]))
+		expect(entity.get(traits.Positions)?.[0]).toBe(500)
+	})
+
+	it('notifies renderers watching Positions so the arrows re-render in place', () => {
+		world = createWorld()
+
+		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
+
+		let notified: Float32Array | undefined
+		const unsubscribe = world.onChange(traits.Positions, (changed) => {
+			notified = changed.get(traits.Positions)
+		})
+
+		updateDrawing(world, entity, arrowsDrawing([500, 0, 0, 0, 0, 1]))
+		unsubscribe()
+
+		expect(notified?.[0]).toBe(500)
 	})
 })
 

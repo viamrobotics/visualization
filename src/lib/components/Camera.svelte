@@ -2,6 +2,7 @@
 	import { T } from '@threlte/core'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { TRANSFORM_CONTROLS_LAYER } from '$lib/three/renderLayers'
 
 	let { children, ...rest } = $props()
 
@@ -15,6 +16,7 @@
 		near={0.001}
 		up={[0, 0, 1]}
 		oncreate={(ref) => {
+			ref.layers.enable(TRANSFORM_CONTROLS_LAYER)
 			ref.lookAt(0, 0, 0)
 		}}
 		{...rest}
@@ -29,6 +31,7 @@
 		zoom={200}
 		up={[0, 0, 1]}
 		oncreate={(ref) => {
+			ref.layers.enable(TRANSFORM_CONTROLS_LAYER)
 			ref.lookAt(0, 0, 0)
 		}}
 		{...rest}

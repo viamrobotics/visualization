@@ -1,0 +1,65 @@
+---
+title: <Logs />
+description: Collect and display info, warning, and error messages inside a Viam visualizer.
+---
+
+`<Logs />` adds a logs button to the workspace toolbar and a floating, filterable log panel. Code elsewhere — other plugins or your own app — pushes messages through the `useLogs` hook; the button badges unread warning and error counts, and the panel lists entries newest-first with per-level (**info** / **warn** / **error**) toggles.
+
+Identical messages are de-duplicated into a single entry with a running count, and the buffer keeps only the 200 most recent entries.
+
+## Usage
+
+Mount `<Logs />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Logs } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<Logs />
+	</Visualizer>
+</div>
+```
+
+## Writing logs
+
+Use `useLogs` from anywhere inside `<Visualizer />` to append a message. The level defaults to `info`:
+
+```svelte
+<script lang="ts">
+	import { useLogs } from '@viamrobotics/visualization/plugins'
+
+	const logs = useLogs()
+
+	logs.add('Calibration complete')
+	logs.add('Sensor reading is stale', 'warn')
+	logs.add('Failed to reach device', 'error')
+</script>
+```
+
+`useLogs()` returns a no-op sink when `<Logs />` isn't mounted, so callers can log unconditionally — the messages are simply dropped if there's no panel to receive them.
+
+## Reading logs
+
+The same hook exposes the current entries and per-level slices for building your own UI:
+
+```svelte
+<script lang="ts">
+	import { useLogs } from '@viamrobotics/visualization/plugins'
+
+	const logs = useLogs()
+</script>
+
+<p>{logs.errors.length} errors, {logs.warnings.length} warnings</p>
+```
+
+`logs.current` is the full list (newest first); `logs.errors` and `logs.warnings` are the error- and warn-level subsets.
+
+## Dependencies
+
+- **External packages:** none.
+- **Plugins:** none required. `<DrawService />` writes its connection status and errors to `<Logs />` when both are mounted, so pairing them surfaces draw-server diagnostics in the panel.
+- **Runtime:** none.

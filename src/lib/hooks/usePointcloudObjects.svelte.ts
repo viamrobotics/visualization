@@ -1,304 +1,35 @@
-import type { ConfigurableTrait, Entity } from 'koota'
-
-import { VisionClient } from '@viamrobotics/sdk'
-import {
-	createResourceClient,
-	createResourceQuery,
-	useResourceNames,
-} from '@viamrobotics/svelte-sdk'
-import { getContext, setContext, untrack } from 'svelte'
-import { Matrix4 } from 'three'
-
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
-import { hierarchy, traits, useWorld } from '$lib/ecs'
-import { parsePcdInWorker } from '$lib/lib'
-import { useLogs } from '$lib/plugins'
-import { createPose, poseToMatrix } from '$lib/transform'
-
-import { useEnvironment } from './useEnvironment.svelte'
-import { RefreshRates, useSettings } from './useSettings.svelte'
+import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
+import { getContext, setContext } from 'svelte'
 
 const key = Symbol('pointcloud-object-context')
 
 interface Context {
 	refetch: () => void
+	readonly services: string[]
+	/** Each mounted vision service registers its own refetch here, keyed by partID:name. */
+	readonly refetchers: Map<string, () => void>
 }
 
-const matrix4 = new Matrix4()
-
 export const providePointcloudObjects = (partID: () => string) => {
-	const world = useWorld()
-	const environment = useEnvironment()
-	const settings = useSettings()
-	const { refreshRates, disabledVisionServices } = $derived(settings.current)
-	const services = useResourceNames(partID, 'vision')
+	const statuses = useResourceStatuses(partID, 'vision')
+	const refetchers = new Map<string, () => void>()
 
-	const clients = $derived(
-		services.current.map((service) =>
-			createResourceClient(VisionClient, partID, () => service.name)
-		)
+	const services = $derived(
+		statuses.current
+			.map((status) => status.name?.name)
+			.filter((name): name is string => name !== undefined)
 	)
-
-	const propQueries = $derived(
-		clients.map(
-			(client) =>
-				[
-					client.current?.name,
-					createResourceQuery(client, 'getProperties', {
-						staleTime: Infinity,
-						refetchOnMount: false,
-						refetchInterval: false,
-					}),
-				] as const
-		)
-	)
-
-	const fetchedPropQueries = $derived(propQueries.every(([, query]) => query.isPending === false))
-
-	const enabledClients = $derived.by(() => {
-		const results = []
-
-		for (const client of clients) {
-			if (
-				environment.current.viewerMode === 'monitor' &&
-				fetchedPropQueries &&
-				client.current?.name &&
-				interval !== RefetchRates.OFF &&
-				disabledVisionServices[client.current?.name] !== true
-			) {
-				results.push(client as { current: VisionClient })
-			}
-		}
-
-		return results
-	})
-
-	/**
-	 * Some machines have a lot of vision services, so before enabling all of them
-	 * we'll first check pointcloud object support.
-	 *
-	 * We'll disable cameras that don't support pointclouds,
-	 * but still allow users to manually enable if they want to.
-	 */
-	$effect(() => {
-		for (const [name, query] of propQueries) {
-			if (
-				name &&
-				query.data?.objectPointCloudsSupported === false &&
-				disabledVisionServices[name] === undefined
-			) {
-				disabledVisionServices[name] = true
-			}
-		}
-	})
-
-	const logs = useLogs()
-	const interval = $derived(refreshRates[RefreshRates.vision])
-
-	const options = $derived({
-		enabled: interval !== RefetchRates.OFF,
-		refetchInterval: (interval === RefetchRates.MANUAL ? false : interval) as number | false,
-	})
-
-	const queries = $derived(
-		enabledClients.map(
-			(client) =>
-				[
-					client.current.name,
-					createResourceQuery(client, 'getObjectPointClouds', [''], () => options),
-				] as const
-		)
-	)
-
-	$effect(() => {
-		for (const [name, query] of queries) {
-			untrack(() => {
-				$effect(() => {
-					if (query.isFetching) {
-						logs.add(`Fetching pointcloud for ${name}...`)
-					} else if (query.error) {
-						logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error')
-					}
-				})
-			})
-		}
-	})
-
-	const entities = new Map<string, Entity>()
-	const queryEntityKeys = new Map<string, Set<string>>()
-
-	const destroyEntity = (key: string) => {
-		const entity = entities.get(key)
-		if (entity) {
-			if (world.has(entity)) entity.destroy()
-			entities.delete(key)
-		}
-	}
-
-	$effect(() => {
-		const currentPartID = partID()
-		const activeQueryKeys = new Set<string>()
-
-		for (const [name, query] of queries) {
-			const queryKey = `${currentPartID}:${name}`
-			activeQueryKeys.add(queryKey)
-
-			$effect(() => {
-				const { data } = query
-
-				let disposed = false
-				const nextKeys = new Set<string>()
-
-				const reconcileRemovedKeys = () => {
-					const prevKeys = queryEntityKeys.get(queryKey) ?? new Set<string>()
-
-					for (const key of prevKeys) {
-						if (!nextKeys.has(key)) {
-							destroyEntity(key)
-						}
-					}
-
-					queryEntityKeys.set(queryKey, new Set(nextKeys))
-				}
-
-				if (!data || data.length === 0) {
-					reconcileRemovedKeys()
-
-					return () => {
-						disposed = true
-					}
-				}
-
-				let index = 0
-
-				for (const { geometries: geometriesInFrame, pointCloud } of data) {
-					if (pointCloud.length > 0) {
-						const pointcloudLabel = `${name} pointcloud ${index + 1}`
-						nextKeys.add(pointcloudLabel)
-
-						parsePcdInWorker(pointCloud)
-							.then(({ positions, colors }) => {
-								if (disposed) {
-									return
-								}
-
-								if (!nextKeys.has(pointcloudLabel)) {
-									return
-								}
-
-								const existing = entities.get(pointcloudLabel)
-								const metadata = {
-									colors,
-									colorFormat: ColorFormat.RGB,
-								}
-
-								if (existing) {
-									const geometry = existing.get(traits.BufferGeometry)
-
-									if (geometry) {
-										updateBufferGeometry(geometry, positions, metadata)
-									}
-								} else {
-									const geometry = createBufferGeometry(positions, metadata)
-
-									const entity = world.spawn(
-										traits.Name(pointcloudLabel),
-										traits.BufferGeometry(geometry),
-										traits.Points
-									)
-
-									entities.set(pointcloudLabel, entity)
-								}
-							})
-							.catch((error) => {
-								if (disposed) {
-									return
-								}
-
-								logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error')
-							})
-					}
-
-					if (geometriesInFrame) {
-						let geometryIndex = 0
-
-						for (const geometry of geometriesInFrame.geometries) {
-							const geometryLabel = `${name} pointcloud ${index + 1} geometry ${geometryIndex + 1}`
-
-							nextKeys.add(geometryLabel)
-
-							const center = createPose(geometry.center)
-							const existing = entities.get(geometryLabel)
-
-							if (existing) {
-								hierarchy.setParent(existing, geometriesInFrame.referenceFrame)
-								poseToMatrix(center, matrix4)
-								const matrix = existing.get(traits.Matrix)
-								if (matrix && !matrix.equals(matrix4)) {
-									matrix.copy(matrix4)
-									existing.changed(traits.Matrix)
-								}
-								traits.updateGeometryTrait(existing, geometry)
-							} else {
-								const entityTraits: ConfigurableTrait[] = [
-									traits.Name(geometryLabel),
-									...hierarchy.parentTraits(geometriesInFrame.referenceFrame),
-									traits.Matrix(poseToMatrix(center, new Matrix4())),
-									traits.GeometriesAPI,
-									traits.Geometry(geometry),
-									traits.Opacity(0.2),
-									traits.Color({ r: 0, g: 1, b: 0 }),
-								]
-
-								const entity = world.spawn(...entityTraits)
-
-								entities.set(geometryLabel, entity)
-							}
-
-							geometryIndex += 1
-						}
-					}
-
-					index += 1
-				}
-
-				reconcileRemovedKeys()
-
-				return () => {
-					disposed = true
-				}
-			})
-		}
-
-		// cleanup queries that disappeared entirely
-		for (const [queryKey, keys] of queryEntityKeys) {
-			if (!activeQueryKeys.has(queryKey)) {
-				for (const key of keys) {
-					destroyEntity(key)
-				}
-				queryEntityKeys.delete(queryKey)
-			}
-		}
-	})
-
-	$effect(() => {
-		return () => {
-			for (const [, entity] of entities) {
-				entity.destroy()
-			}
-
-			entities.clear()
-		}
-	})
 
 	setContext<Context>(key, {
 		refetch() {
-			for (const [, query] of queries) {
-				query.refetch()
+			for (const refetch of refetchers.values()) {
+				refetch()
 			}
 		},
+		get services() {
+			return services
+		},
+		refetchers,
 	})
 }
 

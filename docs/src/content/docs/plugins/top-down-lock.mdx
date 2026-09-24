@@ -1,0 +1,39 @@
+---
+title: <TopDownLock />
+description: Lock a Viam visualizer's camera to a fixed top-down view.
+---
+
+`<TopDownLock />` pins the camera to a straight overhead (bird's-eye) view for as long as it is mounted. It forces the polar angle to `0` and clamps the min and max polar angle so the view can't be tilted — panning and zooming still work. Unmounting the plugin restores the previous tilt limits.
+
+The plugin is **headless**: it renders nothing and adds no UI. Mount it to force a 2D-style, floor-plan perspective; remove it to hand tilt control back to the user.
+
+## Usage
+
+Mount `<TopDownLock />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { TopDownLock } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<TopDownLock />
+	</Visualizer>
+</div>
+```
+
+To toggle the lock at runtime, mount the plugin conditionally — it locks on mount and restores on unmount:
+
+```svelte
+{#if topDown}
+	<TopDownLock />
+{/if}
+```
+
+## Dependencies
+
+- **External packages:** none.
+- **Plugins:** none.
+- **Runtime:** acts on the visualizer's active camera controls. It only takes effect with the default orbit-style controls, which expose a polar angle. While another plugin swaps in trackball controls — for example `<Focus />` during focus mode — there is no polar angle to clamp and the lock stays inert until those controls are relinquished.

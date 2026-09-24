@@ -125,7 +125,6 @@
 			controls.current.enabled = true
 		}
 
-		// Close the loop
 		const nextPositions = new Float32Array(positions.length + 3)
 		nextPositions.set(positions)
 		nextPositions[positions.length] = startX
@@ -191,7 +190,8 @@
 						}
 					}
 				},
-				// intersectsPoint is not yet in typedef, this can be removed when it is added
+				// `ShapecastCallbacks` has no `intersectsPoint`. `PointsBVH.shapecast` declares one,
+				// but it takes a point index rather than the `Vector3` the runtime passes here.
 			} as ShapecastCallbacks)
 		}
 
@@ -247,7 +247,6 @@
 
 	const lassos = useQuery(selectionTraits.Lasso)
 
-	// On unmount, destroy all lasso related entities
 	$effect(() => {
 		return () => {
 			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {

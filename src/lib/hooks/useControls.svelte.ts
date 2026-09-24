@@ -1,6 +1,5 @@
 import type { CameraControlsRef } from '@threlte/extras'
 import type { Vector3Tuple } from 'three'
-import type { TrackballControls } from 'three/examples/jsm/Addons.js'
 
 import { getContext, setContext } from 'svelte'
 
@@ -13,37 +12,35 @@ export interface CameraPose {
 }
 
 interface CameraControlsContext {
-	current: CameraControlsRef | TrackballControls | undefined
-	set(current: CameraControlsRef | TrackballControls): void
+	current: CameraControlsRef | undefined
+	set(current: CameraControlsRef): void
 	setPose(pose: CameraPose, animate?: boolean): void
 	setInitialPose(): void
 	setZoom(zoom: number): void
 }
 
 export const provideCameraControls = (initialCameraPose: () => CameraPose | undefined) => {
-	let controls = $state.raw<CameraControlsRef | TrackballControls>()
+	let controls = $state.raw<CameraControlsRef>()
 
 	const setPose = (pose: CameraPose, animate = false) => {
+		if (!controls) return
+
 		const [x, y, z] = pose.position
 		const [lookAtX, lookAtY, lookAtZ] = pose.lookAt
 
-		if (controls && 'setPosition' in controls) {
-			controls.setPosition(x, y, z, animate)
-			controls.setLookAt(x, y, z, lookAtX, lookAtY, lookAtZ, animate)
-		}
+		controls.setPosition(x, y, z, animate)
+		controls.setLookAt(x, y, z, lookAtX, lookAtY, lookAtZ, animate)
 	}
 
 	const setZoom = (zoom: number) => {
-		if (controls && 'zoomTo' in controls) controls?.zoomTo(zoom)
+		controls?.zoomTo(zoom)
 	}
 
 	const setInitialPose = () => {
-		if (controls && 'setPosition' in controls) {
-			const pose = initialCameraPose()
-			setPose(pose ?? { position: [3, 3, 3], lookAt: [0, 0, 0] }, true)
-		} else if (controls) {
-			controls.reset()
-		}
+		if (!controls) return
+
+		const pose = initialCameraPose()
+		setPose(pose ?? { position: [3, 3, 3], lookAt: [0, 0, 0] }, true)
 	}
 
 	$effect(() => {

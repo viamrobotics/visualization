@@ -34,24 +34,27 @@ export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 
 	{
+		// houserules-owned files, refreshed by `npx houserules update`
+		ignores: [
+			'**/.claude/agents/**',
+			'.claude/houserules.config.json',
+			'.claude/houserules.manifest.json',
+			'**/.claude/ledgers/**',
+			'**/.claude/plans/**',
+			'**/.claude/scripts/**',
+			'.claude/settings.ci.json',
+			'**/.claude/skills/**',
+			'**/.claude/templates/**',
+		],
+	},
+
+	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
-		// See more details at: https://typescript-eslint.io/packages/parser/
 		languageOptions: {
 			parserOptions: {
-				extraFileExtensions: ['.svelte'], // Add support for additional file extensions, such as .svelte
+				extraFileExtensions: ['.svelte'],
 				parser: ts.parser,
 				projectService: true,
-				// Specify a parser for each language, if needed:
-				// parser: {
-				//   ts: ts.parser,
-				//   js: espree,    // Use espree for .js files (add: import espree from 'espree')
-				//   typescript: ts.parser
-				// },
-
-				// We recommend importing and specifying svelte.config.js.
-				// By doing so, some rules in eslint-plugin-svelte will automatically read the configuration and adjust their behavior accordingly.
-				// While certain Svelte settings may be statically loaded from svelte.config.js even if you don’t specify it,
-				// explicitly specifying it ensures better compatibility and functionality.
 				svelteConfig,
 			},
 		},
@@ -142,6 +145,44 @@ export default defineConfig(
 			// 		},
 			// 	},
 			// ],
+		},
+	},
+
+	{
+		name: 'viam/no-barrel-imports',
+		files: ['src/lib/**'],
+		// The barrels themselves, which legitimately re-export their own directory.
+		ignores: ['src/lib/index.ts', 'src/lib/lib.ts', 'src/lib/plugins/index.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					paths: [
+						{
+							name: '$lib',
+							message:
+								"Import the module directly (e.g. '$lib/components/overlay/Portals/DashboardPortal.svelte'). '$lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
+						},
+						{
+							name: '$lib/lib',
+							message:
+								"Import the module directly (e.g. '$lib/loaders/pcd'). '$lib/lib' is a published entry point, not for internal use.",
+						},
+						{
+							name: '$lib/plugins',
+							message:
+								"Import the plugin module directly (e.g. '$lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
+						},
+					],
+					patterns: [
+						{
+							group: ['$lib/index*', '$lib/lib.*', '$lib/plugins/index*'],
+							message:
+								'Barrel import spelled via its index file. Import the module directly instead.',
+						},
+					],
+				},
+			],
 		},
 	}
 )

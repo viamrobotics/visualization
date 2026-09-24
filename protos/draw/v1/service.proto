@@ -8,12 +8,17 @@ import "draw/v1/metadata.proto";
 import "draw/v1/scene.proto";
 import "google/protobuf/field_mask.proto";
 
-option go_package = "github.com/viam-labs/motion-tools/draw/v1;drawv1";
+option go_package = "github.com/viamrobotics/visualization/draw/v1;drawv1";
 
 // DrawService provides visualization APIs for managing transforms and custom drawing primitives
 service DrawService {
   // Add an entity to the scene.
   rpc AddEntity(AddEntityRequest) returns (AddEntityResponse);
+
+  // Add many entities to the scene in a single round trip. Equivalent to
+  // calling AddEntity once per entity. The batch is validated in full before
+  // any of it is stored, so a malformed entity rejects the whole request.
+  rpc AddEntities(AddEntitiesRequest) returns (AddEntitiesResponse);
 
   // Update an entity in the scene.
   rpc UpdateEntity(UpdateEntityRequest) returns (UpdateEntityResponse);
@@ -56,6 +61,14 @@ enum EntityChangeType {
   ENTITY_CHANGE_TYPE_UPDATED = 3;
 }
 
+// A subset of the entities in a scene, used to describe a bulk removal.
+enum EntityScope {
+  ENTITY_SCOPE_UNSPECIFIED = 0;
+  ENTITY_SCOPE_ALL = 1;
+  ENTITY_SCOPE_TRANSFORMS = 2;
+  ENTITY_SCOPE_DRAWINGS = 3;
+}
+
 message AddEntityRequest {
   oneof entity {
     viam.common.v1.Transform transform = 1;
@@ -65,6 +78,15 @@ message AddEntityRequest {
 
 message AddEntityResponse {
   bytes uuid = 1;
+}
+
+message AddEntitiesRequest {
+  repeated AddEntityRequest entities = 1;
+}
+
+message AddEntitiesResponse {
+  // One UUID per entity in the request, in the same order.
+  repeated bytes uuids = 1;
 }
 
 message UpdateEntityRequest {
@@ -94,12 +116,19 @@ message RemoveAllTransformsResponse {
 message StreamEntityChangesRequest {}
 message StreamEntityChangesResponse {
   EntityChangeType change_type = 1;
+
+  // Unset when cleared_scope is set: a bulk removal names no individual entity.
   oneof entity {
     viam.common.v1.Transform transform = 2;
     Drawing drawing = 3;
   }
 
   google.protobuf.FieldMask updated_fields = 4;
+
+  // Set on a bulk removal, alongside change_type = ENTITY_CHANGE_TYPE_REMOVED:
+  // every entity in this scope was removed. Sent as a single event rather than
+  // one REMOVED per entity, so clearing a large scene cannot flood subscribers.
+  EntityScope cleared_scope = 5;
 }
 
 message RemoveAllDrawingsRequest {}

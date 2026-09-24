@@ -1,15 +1,10 @@
 @import 'tailwindcss';
-@config "../tailwind.config.ts";
+@import '@viamrobotics/tailwind-config';
+
+@source '../node_modules/@viamrobotics/prime-core/dist';
+@source '../node_modules/@viamrobotics/test-widgets/dist';
 
 @plugin '@tailwindcss/forms';
-
-@source '../node_modules/@skeletonlabs/skeleton-svelte';
-
-@import '@skeletonlabs/skeleton';
-@import '@skeletonlabs/skeleton/optional/presets';
-@import '@skeletonlabs/skeleton/themes/cerberus';
-
-@import '@viamrobotics/prime-core/prime.css';
 
 body {
 	height: 100dvh;
@@ -48,22 +43,22 @@ select {
 	background-color: var(--in-bg-a);
 }
 
-.motion-tools-table {
+.visualization-table {
 	@apply w-full table-auto;
 }
-.motion-tools-table thead {
+.visualization-table thead {
 	@apply border-light bg-light border;
 }
-.motion-tools-table thead th {
+.visualization-table thead th {
 	@apply border-light text-subtle-1 border px-2.5 py-1 text-xs font-normal whitespace-nowrap;
 }
-.motion-tools-table thead th abbr {
+.visualization-table thead th abbr {
 	@apply text-disabled;
 }
 
-.motion-tools-table tbody {
+.visualization-table tbody {
 	@apply border-light border;
 }
-.motion-tools-table tbody th {
-	@apply border-light font-roboto-mono text-default h-[40px] gap-2 border px-1.5 text-center text-xs font-normal;
+.visualization-table tbody th {
+	@apply border-light font-roboto-mono text-default h-10 gap-2 border px-1.5 text-center text-xs font-normal;
 }

@@ -4,8 +4,9 @@
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Quaternion } from 'three'
 
-	import { SettingsPortal } from '$lib'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import SettingsPortal from '$lib/components/overlay/Portals/SettingsPortal.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import CameraFeed from './CameraFeed.svelte'
@@ -29,28 +30,42 @@
 	const { renderer } = useThrelte()
 	const { isPresenting } = useXR()
 	const settings = useSettings()
-	const partID = usePartID()
+	const resourceByName = useResourceByName()
+	const environment = useEnvironment()
+
+	// Publish the session state so the default camera, the grid and the DOM panels
+	// can stand down without every one of them depending on `@threlte/xr`.
+	$effect(() => {
+		environment.current.isImmersive = $isPresenting
+
+		return () => {
+			environment.current.isImmersive = false
+		}
+	})
 
 	const enableXR = $derived(settings.current.enableXR)
 
-	// Get all enabled camera widgets for the current part
+	// Cameras chosen for in-headset display in the AR settings panel. Guard against
+	// stale names — a selected camera that was removed or is no longer a camera.
 	const enabledCameras = $derived.by(() => {
-		const openWidgets = settings.current.openCameraWidgets
-		const currentPartID = partID.current
-		return openWidgets[currentPartID] || []
+		const names = new Set<string>()
+		for (const name of settings.current.xrCameras) {
+			if (resourceByName.current[name]?.subtype === 'camera') {
+				names.add(name)
+			}
+		}
+		return [...names]
 	})
 
-	// Track camera aspect ratios to compute proper spacing
 	const cameraAspects = new SvelteMap<string, number>()
 
 	const CAMERA_SCALE = 0.8
-	const CAMERA_GAP = 0.15 // gap between feed edges
+	const CAMERA_GAP = 0.15
 
 	// Compute spacing from the widest camera feed (default 16:9 before any aspect is known)
 	const maxAspect = $derived(cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9)
 	const feedSpacing = $derived(maxAspect * CAMERA_SCALE + CAMERA_GAP)
 
-	// Get arms assigned to controllers
 	const controllerConfig = $derived(settings.current.xrController)
 	const leftArmName = $derived(controllerConfig.left.armName)
 	const rightArmName = $derived(controllerConfig.right.armName)
@@ -124,7 +139,6 @@
 			{/each}
 		{/if}
 
-		<!-- Render joint limits widgets only for arms assigned to controllers, on the matching side -->
 		{#if leftArmName}
 			<JointLimitsWidget
 				armName={leftArmName}
@@ -139,10 +153,6 @@
 				scale={0.6}
 			/>
 		{/if}
-
-		<!-- XR Controller Configuration Panel -->
-		<!-- Temporarily disabled due to connection issues -->
-		<!-- <XRConfigPanel offset={{ x: 0, y: 2.5, z: -2.5 }} scale={0.7} /> -->
 
 		<XRToast />
 		<DebugPanel />

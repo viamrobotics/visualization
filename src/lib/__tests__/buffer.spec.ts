@@ -41,6 +41,35 @@ describe('asFloat32Array', () => {
 		expect(result[0]).toBeCloseTo(1)
 		expect(result[1]).toBeCloseTo(2)
 	})
+
+	it('leaves the source bytes untouched when transforming', () => {
+		const original = new Float32Array([1000, 2000, 3000])
+		const bytes = new Uint8Array(original.buffer)
+
+		asFloat32Array(bytes, (v) => v * 0.001)
+
+		expect([...original]).toEqual([1000, 2000, 3000])
+	})
+
+	it('is idempotent across repeated reads of the same bytes', () => {
+		const original = new Float32Array([1000, 2000, 3000])
+		const bytes = new Uint8Array(original.buffer)
+
+		const first = asFloat32Array(bytes, (v) => v * 0.001)
+		const second = asFloat32Array(bytes, (v) => v * 0.001)
+
+		expect([...second]).toEqual([...first])
+		expect(second[0]).toBeCloseTo(1)
+	})
+
+	it('still returns a zero-copy view when no transform is given', () => {
+		const original = new Float32Array([1, 2, 3])
+		const bytes = new Uint8Array(original.buffer)
+
+		const result = asFloat32Array(bytes)
+
+		expect(result.buffer).toBe(original.buffer)
+	})
 })
 
 describe('asColor', () => {

@@ -528,7 +528,7 @@ const file_draw_v1_scene_proto_rawDesc = "" +
 	"\x13RENDER_SHAPES_LINES\x10\x02\x12\x18\n" +
 	"\x14RENDER_SHAPES_POINTS\x10\x03\x12\x17\n" +
 	"\x13RENDER_SHAPES_MODEL\x10\x04\x12\x17\n" +
-	"\x13RENDER_SHAPES_NURBS\x10\x05B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x13RENDER_SHAPES_NURBS\x10\x05B6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_scene_proto_rawDescOnce sync.Once

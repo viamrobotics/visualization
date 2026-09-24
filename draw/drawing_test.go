@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/geo/r3"
 	"github.com/google/uuid"
-	fixtures "github.com/viam-labs/motion-tools/draw/fixtures"
+	fixtures "github.com/viamrobotics/visualization/draw/fixtures"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )

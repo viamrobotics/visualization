@@ -1,11 +1,11 @@
-import type { Pose, Transform } from '@viamrobotics/sdk'
-
 import type { Frame, FrameGeometry } from '$lib/frame'
+import type { Transform } from '$lib/geometry'
 import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import type { PartConfig } from '$lib/hooks/usePartConfig.svelte'
 
 import { frameGeometryFromTransform } from '$lib/geometry'
-import { applyEulerDeltaToPose, createPose, createPoseFromFrame } from '$lib/transform'
+import { Pose } from '$lib/math'
+import { setOrientationFromEuler } from '$lib/math/transform'
 
 /**
  * Resolves current frames for fragment-defined components from live framesystem
@@ -32,7 +32,7 @@ export function resolveFragmentCurrentFrames(
 		const observed = transform?.poseInObserverFrame
 		if (!observed) continue
 
-		const pose = createPose(observed.pose)
+		const pose = new Pose().copy(observed.pose)
 
 		result[name] = {
 			id: meta.id,
@@ -65,11 +65,7 @@ export interface FrameDelta {
 	componentName: string
 	translation?: { x?: number; y?: number; z?: number }
 	orientation?: { roll?: number; pitch?: number; yaw?: number }
-	// Like translation/orientation, only the changed fields are sent (all in mm).
-	// Omit `type` to resize the current shape (unspecified dims fall back to the
-	// current geometry); include `type` only to change the shape, in which case
-	// send that type's dims (box → x/y/z, sphere → r, capsule → r/l). `type: 'none'`
-	// removes the component's geometry.
+	/** Only the changed fields are sent, all in mm. Omit `type` to resize the current shape, and unspecified dims fall back to the current geometry. Include `type` only to change the shape, then send that type's dims (box x/y/z, sphere r, capsule r/l). `type: 'none'` removes the geometry. */
 	geometry?: {
 		type?: FrameGeometry
 		x?: number
@@ -268,7 +264,7 @@ export function validateProposedFrameDeltas(
 			continue
 		}
 
-		const previousPose = createPoseFromFrame(frame)
+		const previousPose = new Pose().setFromFrame(frame)
 		const previousParent = frame.parent
 		const previousGeometry = frame.geometry
 
@@ -283,18 +279,18 @@ export function validateProposedFrameDeltas(
 		}
 
 		const newParent = delta.parent ?? previousParent
-		const newPose: Pose = {
-			x: delta.translation?.x ?? previousPose.x,
-			y: delta.translation?.y ?? previousPose.y,
-			z: delta.translation?.z ?? previousPose.z,
-			oX: previousPose.oX,
-			oY: previousPose.oY,
-			oZ: previousPose.oZ,
-			theta: previousPose.theta,
-		}
+		const newPose = new Pose(
+			delta.translation?.x ?? previousPose.x,
+			delta.translation?.y ?? previousPose.y,
+			delta.translation?.z ?? previousPose.z,
+			previousPose.oX,
+			previousPose.oY,
+			previousPose.oZ,
+			previousPose.theta
+		)
 
 		if (delta.orientation) {
-			applyEulerDeltaToPose(previousPose, delta.orientation, newPose)
+			setOrientationFromEuler(previousPose, delta.orientation, newPose)
 		}
 
 		if (

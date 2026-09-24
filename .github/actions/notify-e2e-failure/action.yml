@@ -1,0 +1,97 @@
+name: Notify on a new e2e failure
+description: >
+  Posts to Slack only when the set of failing tests differs from the last set
+  this workflow reported, so a baseline that has been stale for a week does not
+  produce a message on every merge.
+
+inputs:
+  scope:
+    description: Namespaces the dedup state, so two workflows never suppress each other.
+    required: true
+  message:
+    description: First line of the Slack message. The failing set is appended to it.
+    required: true
+  slack-token:
+    description: Bot token for chat.postMessage.
+    required: true
+  channel:
+    description: Slack channel ID.
+    required: true
+  report:
+    description: Playwright JSON report to read the failing set from.
+    default: test-results/report.json
+
+runs:
+  using: composite
+  steps:
+    - name: Fingerprint the failing set
+      id: failures
+      shell: bash
+      run: node "$GITHUB_WORKSPACE/.github/scripts/e2e-failure-fingerprint.js" "${{ inputs.report }}"
+
+    # The key *is* the fingerprint, so a hit means "already reported". Nothing
+    # reads the file. A hit also refreshes the entry, so a failure that keeps
+    # recurring keeps its own marker from being evicted.
+    - name: Look up whether this set was already reported
+      id: reported
+      if: steps.failures.outputs.fingerprint != 'unknown'
+      uses: actions/cache/restore@v4
+      with:
+        path: .e2e-notified
+        key: e2e-notified-${{ inputs.scope }}-${{ steps.failures.outputs.fingerprint }}
+
+    - name: Decide whether to post
+      id: decide
+      shell: bash
+      env:
+        FINGERPRINT: ${{ steps.failures.outputs.fingerprint }}
+        ALREADY_REPORTED: ${{ steps.reported.outputs.cache-hit }}
+      run: |
+        # An unknown fingerprint means no report was written at all, which is a
+        # broken run rather than a known-failing test. Those always post.
+        if [ "$FINGERPRINT" = "unknown" ] || [ "$ALREADY_REPORTED" != "true" ]; then
+          echo "post=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "post=false" >> "$GITHUB_OUTPUT"
+          echo "Same failing set as the last report ($FINGERPRINT). Staying quiet."
+        fi
+
+    # The summary is multi-line and carries test titles, so it reaches bash through
+    # env rather than being interpolated into the YAML. jq then escapes it into a
+    # single-line JSON payload: a real newline or a quote in a test title would
+    # otherwise break the notify step on a run that is already failing.
+    - name: Build the Slack payload
+      id: payload
+      if: steps.decide.outputs.post == 'true'
+      shell: bash
+      env:
+        CHANNEL: ${{ inputs.channel }}
+        MESSAGE: ${{ inputs.message }}
+        SUMMARY: ${{ steps.failures.outputs.summary }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        text=$(printf '%s\n\n%s\n\nRun: %s' "$MESSAGE" "$SUMMARY" "$RUN_URL")
+        printf 'json=%s\n' \
+          "$(jq -cn --arg channel "$CHANNEL" --arg text "$text" '{channel:$channel,text:$text}')" \
+          >> "$GITHUB_OUTPUT"
+
+    - name: Notify Slack
+      if: steps.decide.outputs.post == 'true'
+      uses: slackapi/slack-github-action@v2
+      with:
+        method: chat.postMessage
+        token: ${{ inputs.slack-token }}
+        errors: true
+        payload: ${{ steps.payload.outputs.json }}
+
+    - name: Record that this set was reported
+      if: steps.decide.outputs.post == 'true' && steps.failures.outputs.fingerprint != 'unknown'
+      shell: bash
+      run: echo "${{ steps.failures.outputs.fingerprint }}" > .e2e-notified
+
+    - name: Save the marker
+      if: steps.decide.outputs.post == 'true' && steps.failures.outputs.fingerprint != 'unknown'
+      uses: actions/cache/save@v4
+      with:
+        path: .e2e-notified
+        key: e2e-notified-${{ inputs.scope }}-${{ steps.failures.outputs.fingerprint }}

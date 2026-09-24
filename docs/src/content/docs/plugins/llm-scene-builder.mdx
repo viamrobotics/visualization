@@ -13,9 +13,9 @@ The plugin is model-agnostic: you wire in whatever LLM backend you prefer via th
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { LLMSceneBuilder } from '@viamrobotics/motion-tools/plugins'
-	import type { ComponentFrameInfo, FrameDelta } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { LLMSceneBuilder } from '@viamrobotics/visualization/plugins'
+	import type { ComponentFrameInfo, FrameDelta } from '@viamrobotics/visualization/plugins'
 
 	async function handleInfer(
 		prompt: string,
@@ -110,36 +110,59 @@ interface FrameDelta {
 
 The plugin validates every delta before showing the diff: unknown component names, self-referential parent assignments, non-finite numbers, and geometry with missing or non-positive dimensions are surfaced as errors without blocking the rest of the update batch.
 
+## The scene-builder contract
+
+Getting good deltas out of a model is mostly prompt work: millimeters, Euler degrees wrapped to [-180, 180], deltas rather than whole frames, one entry per component, and a refusal policy for "add a component". That prompt and its schemas ship with the package so you don't have to rebuild them:
+
+```ts
+import {
+	SCENE_BUILDER_SYSTEM_PROMPT,
+	SceneBuilderRequestSchema,
+	SceneBuilderResponseSchema,
+	sceneBuilderSystemMessage,
+} from '@viamrobotics/visualization/scene-builder'
+```
+
+This is a **separate entry point from `/plugins` on purpose**. `/plugins` is a Svelte barrel — importing it from a Node or edge handler pulls in every plugin's components. `/scene-builder` is pure TypeScript with no Svelte, three.js, or DOM dependency, so it is safe to import server-side.
+
+Nothing here is required. It is a reference implementation of the contract `onInfer` is built around: bringing your own model means changing the call, not rewriting the prompt.
+
 ## Example: using the Anthropic SDK
 
-Set `ANTHROPIC_API_KEY` in your environment (see `.env.example`). A minimal server-side route using the Anthropic SDK:
+`SceneBuilderResponseSchema` is a Zod schema, so it can drive structured outputs directly — the model is constrained to the response shape rather than asked to produce JSON and hoped at:
 
 ```ts
 // src/routes/api/infer-frames/+server.ts  (SvelteKit)
 import Anthropic from '@anthropic-ai/sdk'
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
+import {
+	SceneBuilderRequestSchema,
+	SceneBuilderResponseSchema,
+	sceneBuilderSystemMessage,
+} from '@viamrobotics/visualization/scene-builder'
+
+const client = new Anthropic() // reads ANTHROPIC_API_KEY from the environment
 
 export async function POST({ request }) {
-	const { prompt, components } = await request.json()
+	const { prompt, components } = SceneBuilderRequestSchema.parse(await request.json())
 
-	const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-	const message = await client.messages.create({
-		model: 'claude-sonnet-4-6',
-		max_tokens: 1024,
-		messages: [
-			{
-				role: 'user',
-				content: [
-					{
-						type: 'text',
-						text: `Current robot frame configuration (JSON):\n${JSON.stringify(components, null, 2)}\n\nUser request: ${prompt}\n\nRespond with JSON matching the schema: { updates: FrameDelta[], explanation: string }`,
-					},
-				],
-			},
-		],
+	const message = await client.messages.parse({
+		model: 'claude-opus-5',
+		max_tokens: 16000,
+		system: sceneBuilderSystemMessage(components),
+		messages: [{ role: 'user', content: prompt }],
+		output_config: { format: zodOutputFormat(SceneBuilderResponseSchema) },
 	})
 
-	const text = message.content.find((b) => b.type === 'text')?.text ?? '{}'
-	return new Response(text, { headers: { 'Content-Type': 'application/json' } })
+	return Response.json(message.parsed_output)
 }
 ```
+
+<Aside type="tip">
+	`sceneBuilderSystemMessage(components)` appends the serialized component context to
+	`SCENE_BUILDER_SYSTEM_PROMPT`. Keeping the components in the system message rather than the user
+	turn means the prompt prefix is stable per scene, so repeated edits to the same scene hit the
+	prompt cache.
+</Aside>
+
+Any provider works — the prompt and schemas are provider-agnostic. Use whichever SDK you prefer and validate the result with `SceneBuilderResponseSchema` before returning it.

@@ -19,5 +19,38 @@ draw/__snapshots__
 e2e/*.ts-snapshots
 static/test-fixtures
 
+# Captured motion plans are often two JSON objects concatenated with no
+# separator (request + response), so they are not valid JSON and prettier
+# cannot round-trip them.
+src/lib/plugins/MotionPlanReplayer/__tests__/__fixtures__/
+
+# A 225-step capture, stored minified because it is 2,000 lines pretty-printed
+# and nothing reads it by eye. Its sibling fixtures are small and stay formatted.
+src/lib/motion/__tests__/__fixtures__/plan-linear-constrained.json
+
 # IDE
 .cursor
+
+# houserules:prettierignore start
+# Installed by houserules and tracked by content hash. Formatting these rewrites
+# bytes houserules owns, which makes `npx houserules update` skip them as your edits.
+.claude/agents/
+.claude/debug/
+.claude/houserules.config.json
+.claude/houserules.manifest.json
+.claude/mcp/
+.claude/output-styles/
+.claude/plans/
+.claude/reference/
+.claude/rules/
+.claude/scripts/
+.claude/settings.ci.json
+.claude/skills/
+.claude/state/
+.claude/templates/
+# houserules:prettierignore end
+
+# RDK test fixtures, kept byte-identical to their copies in viamrobotics/rdk, and the golden
+# files the Go generators in rdk-math/ write.
+src/lib/math/rdk-math/data/
+src/lib/math/rdk-math/testdata/

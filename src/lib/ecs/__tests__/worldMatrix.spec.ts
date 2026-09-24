@@ -1,14 +1,10 @@
 import { createWorld, type World } from 'koota'
-import { Matrix4 } from 'three'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { assertExists } from '$lib/assert'
 import { relations, traits } from '$lib/ecs'
 import { installWorldMatrixListeners } from '$lib/ecs/worldMatrix'
-import { createPose, poseToMatrix } from '$lib/transform'
-
-const matrixOf = (pose: Parameters<typeof createPose>[0]) =>
-	poseToMatrix(createPose(pose), new Matrix4())
+import { Pose } from '$lib/math'
 
 describe('worldMatrix system', () => {
 	let world: World
@@ -28,7 +24,7 @@ describe('worldMatrix system', () => {
 		world = createWorld()
 		unsub = installWorldMatrixListeners(world)
 
-		const entity = world.spawn(traits.Matrix(matrixOf({ x: 100, y: 200, z: 300 })))
+		const entity = world.spawn(traits.Matrix(new Pose(100, 200, 300).toMatrix4()))
 		await tick()
 
 		const worldMat = entity.get(traits.WorldMatrix)
@@ -42,10 +38,10 @@ describe('worldMatrix system', () => {
 		world = createWorld()
 		unsub = installWorldMatrixListeners(world)
 
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(matrixOf({ x: 100, y: 0, z: 0 })))
+		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100, 0, 0).toMatrix4()))
 		const child = world.spawn(
 			relations.ChildOf(parent),
-			traits.Matrix(matrixOf({ x: 50, y: 0, z: 0 }))
+			traits.Matrix(new Pose(50, 0, 0).toMatrix4())
 		)
 		await tick()
 
@@ -57,10 +53,25 @@ describe('worldMatrix system', () => {
 		world = createWorld()
 		unsub = installWorldMatrixListeners(world)
 
-		const entity = world.spawn(traits.EditedMatrix(matrixOf({ x: 42 })))
+		const entity = world.spawn(traits.EditedMatrix(new Pose(42, 0, 0).toMatrix4()))
 		await tick()
 
 		expect(entity.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.042)
+	})
+
+	it('renders LiveMatrix when no edit is staged', async () => {
+		world = createWorld()
+		unsub = installWorldMatrixListeners(world)
+
+		// baseline at +10 mm, live at +30 mm, no EditedMatrix — the frame follows
+		// live kinematics rather than the saved baseline.
+		const entity = world.spawn(
+			traits.Matrix(new Pose(10).toMatrix4()),
+			traits.LiveMatrix(new Pose(30).toMatrix4())
+		)
+		await tick()
+
+		expect(entity.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.03)
 	})
 
 	it('blends live × baseline⁻¹ × edited when all three are present', async () => {
@@ -71,9 +82,9 @@ describe('worldMatrix system', () => {
 		// edited at +10 mm — same as baseline, no user delta
 		// rendered = live × baseline⁻¹ × edited = +30 mm = +0.030 m
 		const entity = world.spawn(
-			traits.Matrix(matrixOf({ x: 10 })),
-			traits.LiveMatrix(matrixOf({ x: 30 })),
-			traits.EditedMatrix(matrixOf({ x: 10 }))
+			traits.Matrix(new Pose(10).toMatrix4()),
+			traits.LiveMatrix(new Pose(30).toMatrix4()),
+			traits.EditedMatrix(new Pose(10).toMatrix4())
 		)
 		await tick()
 
@@ -84,15 +95,15 @@ describe('worldMatrix system', () => {
 		world = createWorld()
 		unsub = installWorldMatrixListeners(world)
 
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(matrixOf({ x: 100, y: 0, z: 0 })))
-		const child = world.spawn(relations.ChildOf(parent), traits.Matrix(matrixOf({ x: 50 })))
+		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100).toMatrix4()))
+		const child = world.spawn(relations.ChildOf(parent), traits.Matrix(new Pose(50).toMatrix4()))
 		await tick()
 		expect(child.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.15)
 
 		// Mutate parent.Matrix in place + entity.changed — same idiom call sites use.
 		const parentMatrix = parent.get(traits.Matrix)
 		assertExists(parentMatrix, 'Parent matrix is undefined')
-		poseToMatrix(createPose({ x: 200 }), parentMatrix)
+		new Pose(200).toMatrix4(parentMatrix)
 		parent.changed(traits.Matrix)
 		await tick()
 
@@ -103,14 +114,14 @@ describe('worldMatrix system', () => {
 		world = createWorld()
 		unsub = installWorldMatrixListeners(world)
 
-		const entity = world.spawn(traits.Matrix(matrixOf({ x: 0 })))
+		const entity = world.spawn(traits.Matrix())
 		const matrix = entity.get(traits.Matrix)!
 
-		poseToMatrix(createPose({ x: 1 }), matrix)
+		new Pose(1).toMatrix4(matrix)
 		entity.changed(traits.Matrix)
-		poseToMatrix(createPose({ x: 2 }), matrix)
+		new Pose(2).toMatrix4(matrix)
 		entity.changed(traits.Matrix)
-		poseToMatrix(createPose({ x: 3 }), matrix)
+		new Pose(3).toMatrix4(matrix)
 		entity.changed(traits.Matrix)
 		await tick()
 

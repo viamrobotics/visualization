@@ -77,8 +77,8 @@
 	origin.registerCommit(() => commit())
 
 	leftPad.thumbstick.on('change', ({ value }) => {
-		// While the grip is held, the left controller drives fine rotation;
-		// ignore the thumbstick so the two inputs don't fight each other.
+		// While the grip is held, the left controller drives fine rotation. Ignore the
+		// thumbstick so the two inputs don't fight each other.
 		if (leftPad.squeeze.pressed || typeof value === 'number') return
 
 		const { x: vx, y: vy } = value
@@ -104,9 +104,9 @@
 		} else {
 			headForward.normalize()
 		}
-		// headForward is in the composed XR reference space; rotate into zUp
-		// so the stick direction maps to the user's physical gaze regardless
-		// of the current origin rotation.
+		// headForward is in the composed XR reference space. Rotate into zUp so the
+		// stick direction maps to the user's physical gaze regardless of the current
+		// origin rotation.
 		origin.toZUpDir(headForward)
 		headRight.set(headForward.y, -headForward.x, 0)
 
@@ -167,8 +167,8 @@
 	leftPad.squeeze.on('change', () => {
 		const ray = leftController.current?.targetRay
 		if (leftPad.squeeze.pressed && ray) {
-			// Controller yaw in composed = yaw_zUp − origin.rotation; convert
-			// to zUp so the delta stays stable while origin.rotation updates.
+			// Controller yaw in composed = yaw_zUp − origin.rotation. Convert to zUp
+			// so the delta stays stable while origin.rotation updates.
 			fineRotateStartYaw = quatYaw(ray.quaternion) + origin.rotation
 			fineRotateOriginStart = origin.rotation
 			fineRotating = true
@@ -272,7 +272,7 @@
 			const p = leftHand.current?.targetRay.position
 			if (p) {
 				translating = true
-				// Pinch start position in zUp; delta is cumulative from here.
+				// Pinch start position in zUp. The delta is cumulative from here.
 				origin.toZUpPos(startLeftPinchTranslation, p)
 			}
 		})

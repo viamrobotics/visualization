@@ -30,7 +30,6 @@ DATA binary
 		const offset = i * stride
 		const pi = i * 3
 
-		// XYZ
 		view.setFloat32(offset + 0, positions[pi + 0], true)
 		view.setFloat32(offset + 4, positions[pi + 1], true)
 		view.setFloat32(offset + 8, positions[pi + 2], true)
@@ -40,10 +39,9 @@ DATA binary
 			const g = colors![pi + 1]
 			const b = colors![pi + 2]
 
-			// pack into uint32
 			const packed = (r << 16) | (g << 8) | b
 
-			// write as float32
+			// The PCD rgb field is declared TYPE F, so the packed integer goes in as raw bytes.
 			view.setUint32(offset + 12, packed, true)
 		}
 	}

@@ -157,4 +157,4 @@ echo "Wrote fresh credentials to $ENV_FILE"
 
 echo ""
 echo "=== Setup complete ==="
-echo "Run e2e tests with: pnpm test:e2e"
+echo "Run e2e tests with: pnpm e2e"

@@ -36,13 +36,10 @@ export const useMouseRaycaster = (getOptions?: () => MouseRaycasterOptions) => {
 
 	const { camera, dom, scene } = useThrelte()
 
+	/** Writes the pointer position into `vec` as normalized device coordinates, -1 to +1 on both axes. */
 	const getNormalizedCoordinates = (event: PointerEvent, vec: Vector2): void => {
 		const rect = dom.getBoundingClientRect()
 
-		/*
-		 * Calculate pointer position in normalized device coordinates
-		 * (-1 to +1) for both components
-		 */
 		vec.x = ((event.clientX - rect.x) / dom.clientWidth) * 2 - 1
 		vec.y = -(((event.clientY - rect.y) / dom.clientHeight) * 2) + 1
 	}
@@ -62,7 +59,6 @@ export const useMouseRaycaster = (getOptions?: () => MouseRaycasterOptions) => {
 			return
 		}
 
-		// Update the picking ray with the camera and pointer position
 		raycaster.setFromCamera(pointerUp, camera.current)
 
 		const currentIntersections = raycaster.intersectObjects(scene.children, true)

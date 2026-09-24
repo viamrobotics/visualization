@@ -75,6 +75,59 @@ func (EntityChangeType) EnumDescriptor() ([]byte, []int) {
 	return file_draw_v1_service_proto_rawDescGZIP(), []int{0}
 }
 
+// A subset of the entities in a scene, used to describe a bulk removal.
+type EntityScope int32
+
+const (
+	EntityScope_ENTITY_SCOPE_UNSPECIFIED EntityScope = 0
+	EntityScope_ENTITY_SCOPE_ALL         EntityScope = 1
+	EntityScope_ENTITY_SCOPE_TRANSFORMS  EntityScope = 2
+	EntityScope_ENTITY_SCOPE_DRAWINGS    EntityScope = 3
+)
+
+// Enum value maps for EntityScope.
+var (
+	EntityScope_name = map[int32]string{
+		0: "ENTITY_SCOPE_UNSPECIFIED",
+		1: "ENTITY_SCOPE_ALL",
+		2: "ENTITY_SCOPE_TRANSFORMS",
+		3: "ENTITY_SCOPE_DRAWINGS",
+	}
+	EntityScope_value = map[string]int32{
+		"ENTITY_SCOPE_UNSPECIFIED": 0,
+		"ENTITY_SCOPE_ALL":         1,
+		"ENTITY_SCOPE_TRANSFORMS":  2,
+		"ENTITY_SCOPE_DRAWINGS":    3,
+	}
+)
+
+func (x EntityScope) Enum() *EntityScope {
+	p := new(EntityScope)
+	*p = x
+	return p
+}
+
+func (x EntityScope) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EntityScope) Descriptor() protoreflect.EnumDescriptor {
+	return file_draw_v1_service_proto_enumTypes[1].Descriptor()
+}
+
+func (EntityScope) Type() protoreflect.EnumType {
+	return &file_draw_v1_service_proto_enumTypes[1]
+}
+
+func (x EntityScope) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EntityScope.Descriptor instead.
+func (EntityScope) EnumDescriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{1}
+}
+
 type AddEntityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Entity:
@@ -201,6 +254,95 @@ func (x *AddEntityResponse) GetUuid() []byte {
 	return nil
 }
 
+type AddEntitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entities      []*AddEntityRequest    `protobuf:"bytes,1,rep,name=entities,proto3" json:"entities,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddEntitiesRequest) Reset() {
+	*x = AddEntitiesRequest{}
+	mi := &file_draw_v1_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddEntitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddEntitiesRequest) ProtoMessage() {}
+
+func (x *AddEntitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddEntitiesRequest.ProtoReflect.Descriptor instead.
+func (*AddEntitiesRequest) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AddEntitiesRequest) GetEntities() []*AddEntityRequest {
+	if x != nil {
+		return x.Entities
+	}
+	return nil
+}
+
+type AddEntitiesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// One UUID per entity in the request, in the same order.
+	Uuids         [][]byte `protobuf:"bytes,1,rep,name=uuids,proto3" json:"uuids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddEntitiesResponse) Reset() {
+	*x = AddEntitiesResponse{}
+	mi := &file_draw_v1_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddEntitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddEntitiesResponse) ProtoMessage() {}
+
+func (x *AddEntitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_draw_v1_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddEntitiesResponse.ProtoReflect.Descriptor instead.
+func (*AddEntitiesResponse) Descriptor() ([]byte, []int) {
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AddEntitiesResponse) GetUuids() [][]byte {
+	if x != nil {
+		return x.Uuids
+	}
+	return nil
+}
+
 type UpdateEntityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Uuid  []byte                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
@@ -217,7 +359,7 @@ type UpdateEntityRequest struct {
 
 func (x *UpdateEntityRequest) Reset() {
 	*x = UpdateEntityRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[2]
+	mi := &file_draw_v1_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -229,7 +371,7 @@ func (x *UpdateEntityRequest) String() string {
 func (*UpdateEntityRequest) ProtoMessage() {}
 
 func (x *UpdateEntityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[2]
+	mi := &file_draw_v1_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -242,7 +384,7 @@ func (x *UpdateEntityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateEntityRequest.ProtoReflect.Descriptor instead.
 func (*UpdateEntityRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{2}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpdateEntityRequest) GetUuid() []byte {
@@ -308,7 +450,7 @@ type UpdateEntityResponse struct {
 
 func (x *UpdateEntityResponse) Reset() {
 	*x = UpdateEntityResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[3]
+	mi := &file_draw_v1_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +462,7 @@ func (x *UpdateEntityResponse) String() string {
 func (*UpdateEntityResponse) ProtoMessage() {}
 
 func (x *UpdateEntityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[3]
+	mi := &file_draw_v1_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +475,7 @@ func (x *UpdateEntityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateEntityResponse.ProtoReflect.Descriptor instead.
 func (*UpdateEntityResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{3}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{5}
 }
 
 type RemoveEntityRequest struct {
@@ -345,7 +487,7 @@ type RemoveEntityRequest struct {
 
 func (x *RemoveEntityRequest) Reset() {
 	*x = RemoveEntityRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[4]
+	mi := &file_draw_v1_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -357,7 +499,7 @@ func (x *RemoveEntityRequest) String() string {
 func (*RemoveEntityRequest) ProtoMessage() {}
 
 func (x *RemoveEntityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[4]
+	mi := &file_draw_v1_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +512,7 @@ func (x *RemoveEntityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveEntityRequest.ProtoReflect.Descriptor instead.
 func (*RemoveEntityRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{4}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RemoveEntityRequest) GetUuid() []byte {
@@ -388,7 +530,7 @@ type RemoveEntityResponse struct {
 
 func (x *RemoveEntityResponse) Reset() {
 	*x = RemoveEntityResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[5]
+	mi := &file_draw_v1_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -400,7 +542,7 @@ func (x *RemoveEntityResponse) String() string {
 func (*RemoveEntityResponse) ProtoMessage() {}
 
 func (x *RemoveEntityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[5]
+	mi := &file_draw_v1_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -413,7 +555,7 @@ func (x *RemoveEntityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveEntityResponse.ProtoReflect.Descriptor instead.
 func (*RemoveEntityResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{5}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{7}
 }
 
 type RemoveAllTransformsRequest struct {
@@ -424,7 +566,7 @@ type RemoveAllTransformsRequest struct {
 
 func (x *RemoveAllTransformsRequest) Reset() {
 	*x = RemoveAllTransformsRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[6]
+	mi := &file_draw_v1_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +578,7 @@ func (x *RemoveAllTransformsRequest) String() string {
 func (*RemoveAllTransformsRequest) ProtoMessage() {}
 
 func (x *RemoveAllTransformsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[6]
+	mi := &file_draw_v1_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +591,7 @@ func (x *RemoveAllTransformsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllTransformsRequest.ProtoReflect.Descriptor instead.
 func (*RemoveAllTransformsRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{6}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{8}
 }
 
 type RemoveAllTransformsResponse struct {
@@ -461,7 +603,7 @@ type RemoveAllTransformsResponse struct {
 
 func (x *RemoveAllTransformsResponse) Reset() {
 	*x = RemoveAllTransformsResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[7]
+	mi := &file_draw_v1_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -473,7 +615,7 @@ func (x *RemoveAllTransformsResponse) String() string {
 func (*RemoveAllTransformsResponse) ProtoMessage() {}
 
 func (x *RemoveAllTransformsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[7]
+	mi := &file_draw_v1_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -486,7 +628,7 @@ func (x *RemoveAllTransformsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllTransformsResponse.ProtoReflect.Descriptor instead.
 func (*RemoveAllTransformsResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{7}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RemoveAllTransformsResponse) GetCount() int32 {
@@ -504,7 +646,7 @@ type StreamEntityChangesRequest struct {
 
 func (x *StreamEntityChangesRequest) Reset() {
 	*x = StreamEntityChangesRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[8]
+	mi := &file_draw_v1_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -516,7 +658,7 @@ func (x *StreamEntityChangesRequest) String() string {
 func (*StreamEntityChangesRequest) ProtoMessage() {}
 
 func (x *StreamEntityChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[8]
+	mi := &file_draw_v1_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -529,25 +671,31 @@ func (x *StreamEntityChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEntityChangesRequest.ProtoReflect.Descriptor instead.
 func (*StreamEntityChangesRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{8}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{10}
 }
 
 type StreamEntityChangesResponse struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	ChangeType EntityChangeType       `protobuf:"varint,1,opt,name=change_type,json=changeType,proto3,enum=draw.v1.EntityChangeType" json:"change_type,omitempty"`
+	// Unset when cleared_scope is set: a bulk removal names no individual entity.
+	//
 	// Types that are valid to be assigned to Entity:
 	//
 	//	*StreamEntityChangesResponse_Transform
 	//	*StreamEntityChangesResponse_Drawing
 	Entity        isStreamEntityChangesResponse_Entity `protobuf_oneof:"entity"`
 	UpdatedFields *fieldmaskpb.FieldMask               `protobuf:"bytes,4,opt,name=updated_fields,json=updatedFields,proto3" json:"updated_fields,omitempty"`
+	// Set on a bulk removal, alongside change_type = ENTITY_CHANGE_TYPE_REMOVED:
+	// every entity in this scope was removed. Sent as a single event rather than
+	// one REMOVED per entity, so clearing a large scene cannot flood subscribers.
+	ClearedScope  EntityScope `protobuf:"varint,5,opt,name=cleared_scope,json=clearedScope,proto3,enum=draw.v1.EntityScope" json:"cleared_scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StreamEntityChangesResponse) Reset() {
 	*x = StreamEntityChangesResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[9]
+	mi := &file_draw_v1_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +707,7 @@ func (x *StreamEntityChangesResponse) String() string {
 func (*StreamEntityChangesResponse) ProtoMessage() {}
 
 func (x *StreamEntityChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[9]
+	mi := &file_draw_v1_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +720,7 @@ func (x *StreamEntityChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamEntityChangesResponse.ProtoReflect.Descriptor instead.
 func (*StreamEntityChangesResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{9}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *StreamEntityChangesResponse) GetChangeType() EntityChangeType {
@@ -614,6 +762,13 @@ func (x *StreamEntityChangesResponse) GetUpdatedFields() *fieldmaskpb.FieldMask 
 	return nil
 }
 
+func (x *StreamEntityChangesResponse) GetClearedScope() EntityScope {
+	if x != nil {
+		return x.ClearedScope
+	}
+	return EntityScope_ENTITY_SCOPE_UNSPECIFIED
+}
+
 type isStreamEntityChangesResponse_Entity interface {
 	isStreamEntityChangesResponse_Entity()
 }
@@ -638,7 +793,7 @@ type RemoveAllDrawingsRequest struct {
 
 func (x *RemoveAllDrawingsRequest) Reset() {
 	*x = RemoveAllDrawingsRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[10]
+	mi := &file_draw_v1_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +805,7 @@ func (x *RemoveAllDrawingsRequest) String() string {
 func (*RemoveAllDrawingsRequest) ProtoMessage() {}
 
 func (x *RemoveAllDrawingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[10]
+	mi := &file_draw_v1_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +818,7 @@ func (x *RemoveAllDrawingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllDrawingsRequest.ProtoReflect.Descriptor instead.
 func (*RemoveAllDrawingsRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{10}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{12}
 }
 
 type RemoveAllDrawingsResponse struct {
@@ -675,7 +830,7 @@ type RemoveAllDrawingsResponse struct {
 
 func (x *RemoveAllDrawingsResponse) Reset() {
 	*x = RemoveAllDrawingsResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[11]
+	mi := &file_draw_v1_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -687,7 +842,7 @@ func (x *RemoveAllDrawingsResponse) String() string {
 func (*RemoveAllDrawingsResponse) ProtoMessage() {}
 
 func (x *RemoveAllDrawingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[11]
+	mi := &file_draw_v1_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -700,7 +855,7 @@ func (x *RemoveAllDrawingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllDrawingsResponse.ProtoReflect.Descriptor instead.
 func (*RemoveAllDrawingsResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{11}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RemoveAllDrawingsResponse) GetCount() int32 {
@@ -719,7 +874,7 @@ type SetSceneRequest struct {
 
 func (x *SetSceneRequest) Reset() {
 	*x = SetSceneRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[12]
+	mi := &file_draw_v1_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -731,7 +886,7 @@ func (x *SetSceneRequest) String() string {
 func (*SetSceneRequest) ProtoMessage() {}
 
 func (x *SetSceneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[12]
+	mi := &file_draw_v1_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -744,7 +899,7 @@ func (x *SetSceneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSceneRequest.ProtoReflect.Descriptor instead.
 func (*SetSceneRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{12}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SetSceneRequest) GetSceneMetadata() *SceneMetadata {
@@ -762,7 +917,7 @@ type SetSceneResponse struct {
 
 func (x *SetSceneResponse) Reset() {
 	*x = SetSceneResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[13]
+	mi := &file_draw_v1_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +929,7 @@ func (x *SetSceneResponse) String() string {
 func (*SetSceneResponse) ProtoMessage() {}
 
 func (x *SetSceneResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[13]
+	mi := &file_draw_v1_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +942,7 @@ func (x *SetSceneResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSceneResponse.ProtoReflect.Descriptor instead.
 func (*SetSceneResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{13}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{15}
 }
 
 type StreamSceneChangesRequest struct {
@@ -798,7 +953,7 @@ type StreamSceneChangesRequest struct {
 
 func (x *StreamSceneChangesRequest) Reset() {
 	*x = StreamSceneChangesRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[14]
+	mi := &file_draw_v1_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -810,7 +965,7 @@ func (x *StreamSceneChangesRequest) String() string {
 func (*StreamSceneChangesRequest) ProtoMessage() {}
 
 func (x *StreamSceneChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[14]
+	mi := &file_draw_v1_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -823,7 +978,7 @@ func (x *StreamSceneChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamSceneChangesRequest.ProtoReflect.Descriptor instead.
 func (*StreamSceneChangesRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{14}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{16}
 }
 
 type StreamSceneChangesResponse struct {
@@ -835,7 +990,7 @@ type StreamSceneChangesResponse struct {
 
 func (x *StreamSceneChangesResponse) Reset() {
 	*x = StreamSceneChangesResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[15]
+	mi := &file_draw_v1_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -847,7 +1002,7 @@ func (x *StreamSceneChangesResponse) String() string {
 func (*StreamSceneChangesResponse) ProtoMessage() {}
 
 func (x *StreamSceneChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[15]
+	mi := &file_draw_v1_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,7 +1015,7 @@ func (x *StreamSceneChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamSceneChangesResponse.ProtoReflect.Descriptor instead.
 func (*StreamSceneChangesResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{15}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *StreamSceneChangesResponse) GetSceneMetadata() *SceneMetadata {
@@ -878,7 +1033,7 @@ type RemoveAllRequest struct {
 
 func (x *RemoveAllRequest) Reset() {
 	*x = RemoveAllRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[16]
+	mi := &file_draw_v1_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -890,7 +1045,7 @@ func (x *RemoveAllRequest) String() string {
 func (*RemoveAllRequest) ProtoMessage() {}
 
 func (x *RemoveAllRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[16]
+	mi := &file_draw_v1_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -903,7 +1058,7 @@ func (x *RemoveAllRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllRequest.ProtoReflect.Descriptor instead.
 func (*RemoveAllRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{16}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{18}
 }
 
 type RemoveAllResponse struct {
@@ -916,7 +1071,7 @@ type RemoveAllResponse struct {
 
 func (x *RemoveAllResponse) Reset() {
 	*x = RemoveAllResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[17]
+	mi := &file_draw_v1_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -928,7 +1083,7 @@ func (x *RemoveAllResponse) String() string {
 func (*RemoveAllResponse) ProtoMessage() {}
 
 func (x *RemoveAllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[17]
+	mi := &file_draw_v1_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -941,7 +1096,7 @@ func (x *RemoveAllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveAllResponse.ProtoReflect.Descriptor instead.
 func (*RemoveAllResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{17}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RemoveAllResponse) GetTransformCount() int32 {
@@ -968,7 +1123,7 @@ type CreateRelationshipRequest struct {
 
 func (x *CreateRelationshipRequest) Reset() {
 	*x = CreateRelationshipRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[18]
+	mi := &file_draw_v1_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -980,7 +1135,7 @@ func (x *CreateRelationshipRequest) String() string {
 func (*CreateRelationshipRequest) ProtoMessage() {}
 
 func (x *CreateRelationshipRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[18]
+	mi := &file_draw_v1_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -993,7 +1148,7 @@ func (x *CreateRelationshipRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelationshipRequest.ProtoReflect.Descriptor instead.
 func (*CreateRelationshipRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{18}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CreateRelationshipRequest) GetSourceUuid() []byte {
@@ -1018,7 +1173,7 @@ type CreateRelationshipResponse struct {
 
 func (x *CreateRelationshipResponse) Reset() {
 	*x = CreateRelationshipResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[19]
+	mi := &file_draw_v1_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1030,7 +1185,7 @@ func (x *CreateRelationshipResponse) String() string {
 func (*CreateRelationshipResponse) ProtoMessage() {}
 
 func (x *CreateRelationshipResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[19]
+	mi := &file_draw_v1_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1043,7 +1198,7 @@ func (x *CreateRelationshipResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelationshipResponse.ProtoReflect.Descriptor instead.
 func (*CreateRelationshipResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{19}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{21}
 }
 
 type DeleteRelationshipRequest struct {
@@ -1056,7 +1211,7 @@ type DeleteRelationshipRequest struct {
 
 func (x *DeleteRelationshipRequest) Reset() {
 	*x = DeleteRelationshipRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[20]
+	mi := &file_draw_v1_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1223,7 @@ func (x *DeleteRelationshipRequest) String() string {
 func (*DeleteRelationshipRequest) ProtoMessage() {}
 
 func (x *DeleteRelationshipRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[20]
+	mi := &file_draw_v1_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1236,7 @@ func (x *DeleteRelationshipRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRelationshipRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRelationshipRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{20}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *DeleteRelationshipRequest) GetSourceUuid() []byte {
@@ -1106,7 +1261,7 @@ type DeleteRelationshipResponse struct {
 
 func (x *DeleteRelationshipResponse) Reset() {
 	*x = DeleteRelationshipResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[21]
+	mi := &file_draw_v1_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1118,7 +1273,7 @@ func (x *DeleteRelationshipResponse) String() string {
 func (*DeleteRelationshipResponse) ProtoMessage() {}
 
 func (x *DeleteRelationshipResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[21]
+	mi := &file_draw_v1_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1131,7 +1286,7 @@ func (x *DeleteRelationshipResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRelationshipResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRelationshipResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{21}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
 }
 
 type GetEntityChunkRequest struct {
@@ -1144,7 +1299,7 @@ type GetEntityChunkRequest struct {
 
 func (x *GetEntityChunkRequest) Reset() {
 	*x = GetEntityChunkRequest{}
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1156,7 +1311,7 @@ func (x *GetEntityChunkRequest) String() string {
 func (*GetEntityChunkRequest) ProtoMessage() {}
 
 func (x *GetEntityChunkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[22]
+	mi := &file_draw_v1_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1169,7 +1324,7 @@ func (x *GetEntityChunkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEntityChunkRequest.ProtoReflect.Descriptor instead.
 func (*GetEntityChunkRequest) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{22}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetEntityChunkRequest) GetUuid() []byte {
@@ -1205,7 +1360,7 @@ type GetEntityChunkResponse struct {
 
 func (x *GetEntityChunkResponse) Reset() {
 	*x = GetEntityChunkResponse{}
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1372,7 @@ func (x *GetEntityChunkResponse) String() string {
 func (*GetEntityChunkResponse) ProtoMessage() {}
 
 func (x *GetEntityChunkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_draw_v1_service_proto_msgTypes[23]
+	mi := &file_draw_v1_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1385,7 @@ func (x *GetEntityChunkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEntityChunkResponse.ProtoReflect.Descriptor instead.
 func (*GetEntityChunkResponse) Descriptor() ([]byte, []int) {
-	return file_draw_v1_service_proto_rawDescGZIP(), []int{23}
+	return file_draw_v1_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetEntityChunkResponse) GetEntity() isGetEntityChunkResponse_Entity {
@@ -1298,7 +1453,11 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\adrawing\x18\x02 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawingB\b\n" +
 	"\x06entity\"'\n" +
 	"\x11AddEntityResponse\x12\x12\n" +
-	"\x04uuid\x18\x01 \x01(\fR\x04uuid\"\xdf\x01\n" +
+	"\x04uuid\x18\x01 \x01(\fR\x04uuid\"K\n" +
+	"\x12AddEntitiesRequest\x125\n" +
+	"\bentities\x18\x01 \x03(\v2\x19.draw.v1.AddEntityRequestR\bentities\"+\n" +
+	"\x13AddEntitiesResponse\x12\x14\n" +
+	"\x05uuids\x18\x01 \x03(\fR\x05uuids\"\xdf\x01\n" +
 	"\x13UpdateEntityRequest\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\fR\x04uuid\x129\n" +
 	"\ttransform\x18\x02 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
@@ -1312,13 +1471,14 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x1aRemoveAllTransformsRequest\"3\n" +
 	"\x1bRemoveAllTransformsResponse\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"\x1c\n" +
-	"\x1aStreamEntityChangesRequest\"\x8f\x02\n" +
+	"\x1aStreamEntityChangesRequest\"\xca\x02\n" +
 	"\x1bStreamEntityChangesResponse\x12:\n" +
 	"\vchange_type\x18\x01 \x01(\x0e2\x19.draw.v1.EntityChangeTypeR\n" +
 	"changeType\x129\n" +
 	"\ttransform\x18\x02 \x01(\v2\x19.viam.common.v1.TransformH\x00R\ttransform\x12,\n" +
 	"\adrawing\x18\x03 \x01(\v2\x10.draw.v1.DrawingH\x00R\adrawing\x12A\n" +
-	"\x0eupdated_fields\x18\x04 \x01(\v2\x1a.google.protobuf.FieldMaskR\rupdatedFieldsB\b\n" +
+	"\x0eupdated_fields\x18\x04 \x01(\v2\x1a.google.protobuf.FieldMaskR\rupdatedFields\x129\n" +
+	"\rcleared_scope\x18\x05 \x01(\x0e2\x14.draw.v1.EntityScopeR\fclearedScopeB\b\n" +
 	"\x06entity\"\x1a\n" +
 	"\x18RemoveAllDrawingsRequest\"1\n" +
 	"\x19RemoveAllDrawingsResponse\x12\x14\n" +
@@ -1357,9 +1517,15 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\x1eENTITY_CHANGE_TYPE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ENTITY_CHANGE_TYPE_ADDED\x10\x01\x12\x1e\n" +
 	"\x1aENTITY_CHANGE_TYPE_REMOVED\x10\x02\x12\x1e\n" +
-	"\x1aENTITY_CHANGE_TYPE_UPDATED\x10\x032\x84\b\n" +
+	"\x1aENTITY_CHANGE_TYPE_UPDATED\x10\x03*y\n" +
+	"\vEntityScope\x12\x1c\n" +
+	"\x18ENTITY_SCOPE_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10ENTITY_SCOPE_ALL\x10\x01\x12\x1b\n" +
+	"\x17ENTITY_SCOPE_TRANSFORMS\x10\x02\x12\x19\n" +
+	"\x15ENTITY_SCOPE_DRAWINGS\x10\x032\xce\b\n" +
 	"\vDrawService\x12B\n" +
-	"\tAddEntity\x12\x19.draw.v1.AddEntityRequest\x1a\x1a.draw.v1.AddEntityResponse\x12K\n" +
+	"\tAddEntity\x12\x19.draw.v1.AddEntityRequest\x1a\x1a.draw.v1.AddEntityResponse\x12H\n" +
+	"\vAddEntities\x12\x1b.draw.v1.AddEntitiesRequest\x1a\x1c.draw.v1.AddEntitiesResponse\x12K\n" +
 	"\fUpdateEntity\x12\x1c.draw.v1.UpdateEntityRequest\x1a\x1d.draw.v1.UpdateEntityResponse\x12K\n" +
 	"\fRemoveEntity\x12\x1c.draw.v1.RemoveEntityRequest\x1a\x1d.draw.v1.RemoveEntityResponse\x12b\n" +
 	"\x13StreamEntityChanges\x12#.draw.v1.StreamEntityChangesRequest\x1a$.draw.v1.StreamEntityChangesResponse0\x01\x12?\n" +
@@ -1370,7 +1536,7 @@ const file_draw_v1_service_proto_rawDesc = "" +
 	"\tRemoveAll\x12\x19.draw.v1.RemoveAllRequest\x1a\x1a.draw.v1.RemoveAllResponse\x12]\n" +
 	"\x12CreateRelationship\x12\".draw.v1.CreateRelationshipRequest\x1a#.draw.v1.CreateRelationshipResponse\x12]\n" +
 	"\x12DeleteRelationship\x12\".draw.v1.DeleteRelationshipRequest\x1a#.draw.v1.DeleteRelationshipResponse\x12Q\n" +
-	"\x0eGetEntityChunk\x12\x1e.draw.v1.GetEntityChunkRequest\x1a\x1f.draw.v1.GetEntityChunkResponseB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x0eGetEntityChunk\x12\x1e.draw.v1.GetEntityChunkRequest\x1a\x1f.draw.v1.GetEntityChunkResponseB6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_service_proto_rawDescOnce sync.Once
@@ -1384,84 +1550,91 @@ func file_draw_v1_service_proto_rawDescGZIP() []byte {
 	return file_draw_v1_service_proto_rawDescData
 }
 
-var file_draw_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_draw_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_draw_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_draw_v1_service_proto_goTypes = []any{
 	(EntityChangeType)(0),               // 0: draw.v1.EntityChangeType
-	(*AddEntityRequest)(nil),            // 1: draw.v1.AddEntityRequest
-	(*AddEntityResponse)(nil),           // 2: draw.v1.AddEntityResponse
-	(*UpdateEntityRequest)(nil),         // 3: draw.v1.UpdateEntityRequest
-	(*UpdateEntityResponse)(nil),        // 4: draw.v1.UpdateEntityResponse
-	(*RemoveEntityRequest)(nil),         // 5: draw.v1.RemoveEntityRequest
-	(*RemoveEntityResponse)(nil),        // 6: draw.v1.RemoveEntityResponse
-	(*RemoveAllTransformsRequest)(nil),  // 7: draw.v1.RemoveAllTransformsRequest
-	(*RemoveAllTransformsResponse)(nil), // 8: draw.v1.RemoveAllTransformsResponse
-	(*StreamEntityChangesRequest)(nil),  // 9: draw.v1.StreamEntityChangesRequest
-	(*StreamEntityChangesResponse)(nil), // 10: draw.v1.StreamEntityChangesResponse
-	(*RemoveAllDrawingsRequest)(nil),    // 11: draw.v1.RemoveAllDrawingsRequest
-	(*RemoveAllDrawingsResponse)(nil),   // 12: draw.v1.RemoveAllDrawingsResponse
-	(*SetSceneRequest)(nil),             // 13: draw.v1.SetSceneRequest
-	(*SetSceneResponse)(nil),            // 14: draw.v1.SetSceneResponse
-	(*StreamSceneChangesRequest)(nil),   // 15: draw.v1.StreamSceneChangesRequest
-	(*StreamSceneChangesResponse)(nil),  // 16: draw.v1.StreamSceneChangesResponse
-	(*RemoveAllRequest)(nil),            // 17: draw.v1.RemoveAllRequest
-	(*RemoveAllResponse)(nil),           // 18: draw.v1.RemoveAllResponse
-	(*CreateRelationshipRequest)(nil),   // 19: draw.v1.CreateRelationshipRequest
-	(*CreateRelationshipResponse)(nil),  // 20: draw.v1.CreateRelationshipResponse
-	(*DeleteRelationshipRequest)(nil),   // 21: draw.v1.DeleteRelationshipRequest
-	(*DeleteRelationshipResponse)(nil),  // 22: draw.v1.DeleteRelationshipResponse
-	(*GetEntityChunkRequest)(nil),       // 23: draw.v1.GetEntityChunkRequest
-	(*GetEntityChunkResponse)(nil),      // 24: draw.v1.GetEntityChunkResponse
-	(*v1.Transform)(nil),                // 25: viam.common.v1.Transform
-	(*Drawing)(nil),                     // 26: draw.v1.Drawing
-	(*fieldmaskpb.FieldMask)(nil),       // 27: google.protobuf.FieldMask
-	(*SceneMetadata)(nil),               // 28: draw.v1.SceneMetadata
-	(*Relationship)(nil),                // 29: draw.v1.Relationship
+	(EntityScope)(0),                    // 1: draw.v1.EntityScope
+	(*AddEntityRequest)(nil),            // 2: draw.v1.AddEntityRequest
+	(*AddEntityResponse)(nil),           // 3: draw.v1.AddEntityResponse
+	(*AddEntitiesRequest)(nil),          // 4: draw.v1.AddEntitiesRequest
+	(*AddEntitiesResponse)(nil),         // 5: draw.v1.AddEntitiesResponse
+	(*UpdateEntityRequest)(nil),         // 6: draw.v1.UpdateEntityRequest
+	(*UpdateEntityResponse)(nil),        // 7: draw.v1.UpdateEntityResponse
+	(*RemoveEntityRequest)(nil),         // 8: draw.v1.RemoveEntityRequest
+	(*RemoveEntityResponse)(nil),        // 9: draw.v1.RemoveEntityResponse
+	(*RemoveAllTransformsRequest)(nil),  // 10: draw.v1.RemoveAllTransformsRequest
+	(*RemoveAllTransformsResponse)(nil), // 11: draw.v1.RemoveAllTransformsResponse
+	(*StreamEntityChangesRequest)(nil),  // 12: draw.v1.StreamEntityChangesRequest
+	(*StreamEntityChangesResponse)(nil), // 13: draw.v1.StreamEntityChangesResponse
+	(*RemoveAllDrawingsRequest)(nil),    // 14: draw.v1.RemoveAllDrawingsRequest
+	(*RemoveAllDrawingsResponse)(nil),   // 15: draw.v1.RemoveAllDrawingsResponse
+	(*SetSceneRequest)(nil),             // 16: draw.v1.SetSceneRequest
+	(*SetSceneResponse)(nil),            // 17: draw.v1.SetSceneResponse
+	(*StreamSceneChangesRequest)(nil),   // 18: draw.v1.StreamSceneChangesRequest
+	(*StreamSceneChangesResponse)(nil),  // 19: draw.v1.StreamSceneChangesResponse
+	(*RemoveAllRequest)(nil),            // 20: draw.v1.RemoveAllRequest
+	(*RemoveAllResponse)(nil),           // 21: draw.v1.RemoveAllResponse
+	(*CreateRelationshipRequest)(nil),   // 22: draw.v1.CreateRelationshipRequest
+	(*CreateRelationshipResponse)(nil),  // 23: draw.v1.CreateRelationshipResponse
+	(*DeleteRelationshipRequest)(nil),   // 24: draw.v1.DeleteRelationshipRequest
+	(*DeleteRelationshipResponse)(nil),  // 25: draw.v1.DeleteRelationshipResponse
+	(*GetEntityChunkRequest)(nil),       // 26: draw.v1.GetEntityChunkRequest
+	(*GetEntityChunkResponse)(nil),      // 27: draw.v1.GetEntityChunkResponse
+	(*v1.Transform)(nil),                // 28: viam.common.v1.Transform
+	(*Drawing)(nil),                     // 29: draw.v1.Drawing
+	(*fieldmaskpb.FieldMask)(nil),       // 30: google.protobuf.FieldMask
+	(*SceneMetadata)(nil),               // 31: draw.v1.SceneMetadata
+	(*Relationship)(nil),                // 32: draw.v1.Relationship
 }
 var file_draw_v1_service_proto_depIdxs = []int32{
-	25, // 0: draw.v1.AddEntityRequest.transform:type_name -> viam.common.v1.Transform
-	26, // 1: draw.v1.AddEntityRequest.drawing:type_name -> draw.v1.Drawing
-	25, // 2: draw.v1.UpdateEntityRequest.transform:type_name -> viam.common.v1.Transform
-	26, // 3: draw.v1.UpdateEntityRequest.drawing:type_name -> draw.v1.Drawing
-	27, // 4: draw.v1.UpdateEntityRequest.updated_fields:type_name -> google.protobuf.FieldMask
-	0,  // 5: draw.v1.StreamEntityChangesResponse.change_type:type_name -> draw.v1.EntityChangeType
-	25, // 6: draw.v1.StreamEntityChangesResponse.transform:type_name -> viam.common.v1.Transform
-	26, // 7: draw.v1.StreamEntityChangesResponse.drawing:type_name -> draw.v1.Drawing
-	27, // 8: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
-	28, // 9: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
-	28, // 10: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
-	29, // 11: draw.v1.CreateRelationshipRequest.relationship:type_name -> draw.v1.Relationship
-	25, // 12: draw.v1.GetEntityChunkResponse.transform:type_name -> viam.common.v1.Transform
-	26, // 13: draw.v1.GetEntityChunkResponse.drawing:type_name -> draw.v1.Drawing
-	1,  // 14: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
-	3,  // 15: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
-	5,  // 16: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
-	9,  // 17: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
-	13, // 18: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
-	15, // 19: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
-	7,  // 20: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
-	11, // 21: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
-	17, // 22: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
-	19, // 23: draw.v1.DrawService.CreateRelationship:input_type -> draw.v1.CreateRelationshipRequest
-	21, // 24: draw.v1.DrawService.DeleteRelationship:input_type -> draw.v1.DeleteRelationshipRequest
-	23, // 25: draw.v1.DrawService.GetEntityChunk:input_type -> draw.v1.GetEntityChunkRequest
-	2,  // 26: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
-	4,  // 27: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
-	6,  // 28: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
-	10, // 29: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
-	14, // 30: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
-	16, // 31: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
-	8,  // 32: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
-	12, // 33: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
-	18, // 34: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
-	20, // 35: draw.v1.DrawService.CreateRelationship:output_type -> draw.v1.CreateRelationshipResponse
-	22, // 36: draw.v1.DrawService.DeleteRelationship:output_type -> draw.v1.DeleteRelationshipResponse
-	24, // 37: draw.v1.DrawService.GetEntityChunk:output_type -> draw.v1.GetEntityChunkResponse
-	26, // [26:38] is the sub-list for method output_type
-	14, // [14:26] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	28, // 0: draw.v1.AddEntityRequest.transform:type_name -> viam.common.v1.Transform
+	29, // 1: draw.v1.AddEntityRequest.drawing:type_name -> draw.v1.Drawing
+	2,  // 2: draw.v1.AddEntitiesRequest.entities:type_name -> draw.v1.AddEntityRequest
+	28, // 3: draw.v1.UpdateEntityRequest.transform:type_name -> viam.common.v1.Transform
+	29, // 4: draw.v1.UpdateEntityRequest.drawing:type_name -> draw.v1.Drawing
+	30, // 5: draw.v1.UpdateEntityRequest.updated_fields:type_name -> google.protobuf.FieldMask
+	0,  // 6: draw.v1.StreamEntityChangesResponse.change_type:type_name -> draw.v1.EntityChangeType
+	28, // 7: draw.v1.StreamEntityChangesResponse.transform:type_name -> viam.common.v1.Transform
+	29, // 8: draw.v1.StreamEntityChangesResponse.drawing:type_name -> draw.v1.Drawing
+	30, // 9: draw.v1.StreamEntityChangesResponse.updated_fields:type_name -> google.protobuf.FieldMask
+	1,  // 10: draw.v1.StreamEntityChangesResponse.cleared_scope:type_name -> draw.v1.EntityScope
+	31, // 11: draw.v1.SetSceneRequest.scene_metadata:type_name -> draw.v1.SceneMetadata
+	31, // 12: draw.v1.StreamSceneChangesResponse.scene_metadata:type_name -> draw.v1.SceneMetadata
+	32, // 13: draw.v1.CreateRelationshipRequest.relationship:type_name -> draw.v1.Relationship
+	28, // 14: draw.v1.GetEntityChunkResponse.transform:type_name -> viam.common.v1.Transform
+	29, // 15: draw.v1.GetEntityChunkResponse.drawing:type_name -> draw.v1.Drawing
+	2,  // 16: draw.v1.DrawService.AddEntity:input_type -> draw.v1.AddEntityRequest
+	4,  // 17: draw.v1.DrawService.AddEntities:input_type -> draw.v1.AddEntitiesRequest
+	6,  // 18: draw.v1.DrawService.UpdateEntity:input_type -> draw.v1.UpdateEntityRequest
+	8,  // 19: draw.v1.DrawService.RemoveEntity:input_type -> draw.v1.RemoveEntityRequest
+	12, // 20: draw.v1.DrawService.StreamEntityChanges:input_type -> draw.v1.StreamEntityChangesRequest
+	16, // 21: draw.v1.DrawService.SetScene:input_type -> draw.v1.SetSceneRequest
+	18, // 22: draw.v1.DrawService.StreamSceneChanges:input_type -> draw.v1.StreamSceneChangesRequest
+	10, // 23: draw.v1.DrawService.RemoveAllTransforms:input_type -> draw.v1.RemoveAllTransformsRequest
+	14, // 24: draw.v1.DrawService.RemoveAllDrawings:input_type -> draw.v1.RemoveAllDrawingsRequest
+	20, // 25: draw.v1.DrawService.RemoveAll:input_type -> draw.v1.RemoveAllRequest
+	22, // 26: draw.v1.DrawService.CreateRelationship:input_type -> draw.v1.CreateRelationshipRequest
+	24, // 27: draw.v1.DrawService.DeleteRelationship:input_type -> draw.v1.DeleteRelationshipRequest
+	26, // 28: draw.v1.DrawService.GetEntityChunk:input_type -> draw.v1.GetEntityChunkRequest
+	3,  // 29: draw.v1.DrawService.AddEntity:output_type -> draw.v1.AddEntityResponse
+	5,  // 30: draw.v1.DrawService.AddEntities:output_type -> draw.v1.AddEntitiesResponse
+	7,  // 31: draw.v1.DrawService.UpdateEntity:output_type -> draw.v1.UpdateEntityResponse
+	9,  // 32: draw.v1.DrawService.RemoveEntity:output_type -> draw.v1.RemoveEntityResponse
+	13, // 33: draw.v1.DrawService.StreamEntityChanges:output_type -> draw.v1.StreamEntityChangesResponse
+	17, // 34: draw.v1.DrawService.SetScene:output_type -> draw.v1.SetSceneResponse
+	19, // 35: draw.v1.DrawService.StreamSceneChanges:output_type -> draw.v1.StreamSceneChangesResponse
+	11, // 36: draw.v1.DrawService.RemoveAllTransforms:output_type -> draw.v1.RemoveAllTransformsResponse
+	15, // 37: draw.v1.DrawService.RemoveAllDrawings:output_type -> draw.v1.RemoveAllDrawingsResponse
+	21, // 38: draw.v1.DrawService.RemoveAll:output_type -> draw.v1.RemoveAllResponse
+	23, // 39: draw.v1.DrawService.CreateRelationship:output_type -> draw.v1.CreateRelationshipResponse
+	25, // 40: draw.v1.DrawService.DeleteRelationship:output_type -> draw.v1.DeleteRelationshipResponse
+	27, // 41: draw.v1.DrawService.GetEntityChunk:output_type -> draw.v1.GetEntityChunkResponse
+	29, // [29:42] is the sub-list for method output_type
+	16, // [16:29] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_draw_v1_service_proto_init() }
@@ -1476,15 +1649,15 @@ func file_draw_v1_service_proto_init() {
 		(*AddEntityRequest_Transform)(nil),
 		(*AddEntityRequest_Drawing)(nil),
 	}
-	file_draw_v1_service_proto_msgTypes[2].OneofWrappers = []any{
+	file_draw_v1_service_proto_msgTypes[4].OneofWrappers = []any{
 		(*UpdateEntityRequest_Transform)(nil),
 		(*UpdateEntityRequest_Drawing)(nil),
 	}
-	file_draw_v1_service_proto_msgTypes[9].OneofWrappers = []any{
+	file_draw_v1_service_proto_msgTypes[11].OneofWrappers = []any{
 		(*StreamEntityChangesResponse_Transform)(nil),
 		(*StreamEntityChangesResponse_Drawing)(nil),
 	}
-	file_draw_v1_service_proto_msgTypes[23].OneofWrappers = []any{
+	file_draw_v1_service_proto_msgTypes[25].OneofWrappers = []any{
 		(*GetEntityChunkResponse_Transform)(nil),
 		(*GetEntityChunkResponse_Drawing)(nil),
 	}
@@ -1493,8 +1666,8 @@ func file_draw_v1_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_draw_v1_service_proto_rawDesc), len(file_draw_v1_service_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   24,
+			NumEnums:      2,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

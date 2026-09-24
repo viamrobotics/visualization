@@ -1,171 +1,248 @@
 package api
 
 import (
-	"math"
 	"testing"
 
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/test"
 )
 
-// generateTorusKnotPoints generates points along a torus knot for testing.
-func generateTorusKnotPoints() []r3.Vector {
-	R := 2000.0
-	r := 500.0
-	rTube := 300.0
-	p := 2
-	q := 3
-	nPath := 500
-	nRing := 50
+var fourPoints = []r3.Vector{{X: 0}, {X: 100}, {X: 200}, {X: 300}}
 
-	points := make([]r3.Vector, 0, nPath*nRing)
+func TestDrawPointsPositions(t *testing.T) {
+	fake := startFake(t)
 
-	maxT := 2 * math.Pi * float64(q)
-
-	for i := range nPath {
-		t0 := maxT * float64(i) / float64(nPath)
-		t1 := maxT * float64(i+1) / float64(nPath)
-
-		cx := (R + r*math.Cos(float64(q)*t0)) * math.Cos(float64(p)*t0)
-		cy := (R + r*math.Cos(float64(q)*t0)) * math.Sin(float64(p)*t0)
-		cz := r * math.Sin(float64(q)*t0)
-
-		nx := (R + r*math.Cos(float64(q)*t1)) * math.Cos(float64(p)*t1)
-		ny := (R + r*math.Cos(float64(q)*t1)) * math.Sin(float64(p)*t1)
-		nz := r * math.Sin(float64(q)*t1)
-
-		tx := nx - cx
-		ty := ny - cy
-		tz := nz - cz
-
-		ux, uy, uz := 0.0, 0.0, 1.0
-
-		nx1 := ty*uz - tz*uy
-		ny1 := tz*ux - tx*uz
-		nz1 := tx*uy - ty*ux
-
-		nLen := math.Sqrt(nx1*nx1 + ny1*ny1 + nz1*nz1)
-		if nLen == 0 {
-			nx1, ny1, nz1 = 0, 1, 0
-			nLen = 1
-		}
-		nx1 /= nLen
-		ny1 /= nLen
-		nz1 /= nLen
-
-		bx := ty*nz1 - tz*ny1
-		by := tz*nx1 - tx*nz1
-		bz := tx*ny1 - ty*nx1
-
-		bLen := math.Sqrt(bx*bx + by*by + bz*bz)
-		bx /= bLen
-		by /= bLen
-		bz /= bLen
-
-		for j := range nRing {
-			theta := 2 * math.Pi * float64(j) / float64(nRing)
-			cosT := math.Cos(theta)
-			sinT := math.Sin(theta)
-
-			ox := cosT*nx1*rTube + sinT*bx*rTube
-			oy := cosT*ny1*rTube + sinT*by*rTube
-			oz := cosT*nz1*rTube + sinT*bz*rTube
-
-			points = append(points, r3.Vector{
-				X: cx + ox,
-				Y: cy + oy,
-				Z: cz + oz,
-			})
-		}
-	}
-
-	return points
-}
-
-// runDrawPointsTest generates torus knot points and draws them with the given colors.
-func runDrawPointsTest(t *testing.T, name string, colors *[]draw.Color) {
-	t.Helper()
-
-	points := generateTorusKnotPoints()
-
-	options := DrawPointsOptions{Name: name, Positions: points}
-	if colors != nil {
-		options.Colors = *colors
-	}
-	uuid, err := DrawPoints(options)
+	_, err := DrawPoints(DrawPointsOptions{
+		Name:      "points",
+		Positions: []r3.Vector{{X: 1, Y: 2, Z: 3}},
+	})
 	test.That(t, err, test.ShouldBeNil)
-	test.That(t, uuid, test.ShouldNotBeNil)
+
+	points := fake.onlyAddedDrawing(t).GetPhysicalObject().GetPoints()
+	test.That(t, points, test.ShouldNotBeNil)
+	test.That(t, decodeFloats(t, points.GetPositions()), test.ShouldResemble, []float32{1, 2, 3})
 }
 
-func TestDrawPoints(t *testing.T) {
-	startTestServer(t)
+// The color switch has the same four arms as DrawLine, but no-colors takes the
+// explicit DefaultPointColor rather than falling through to the draw layer.
+func TestDrawPointsColorBranches(t *testing.T) {
+	red := draw.ColorFromRGB(255, 0, 0)
+	green := draw.ColorFromRGB(0, 255, 0)
 
-	t.Run("DrawPoints", func(t *testing.T) {
-		runDrawPointsTest(t, "myPoints", nil)
-	})
+	for _, tc := range []struct {
+		name       string
+		colors     []draw.Color
+		wantLength int
+	}{
+		{name: "no colors uses the default", colors: nil, wantLength: 3},
+		{name: "one color is shared", colors: []draw.Color{red}, wantLength: 3},
+		{
+			name:       "one color per point",
+			colors:     []draw.Color{red, green, red, green},
+			wantLength: 12,
+		},
+		{name: "a shorter palette cycles", colors: []draw.Color{red, green}, wantLength: 12},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := startFake(t)
 
-	t.Run("DrawPointsWithSingleColor", func(t *testing.T) {
-		runDrawPointsTest(t, "myPointsSingleColor", &[]draw.Color{draw.ColorFromName("yellow")})
-	})
+			_, err := DrawPoints(DrawPointsOptions{
+				Name:      "colors",
+				Positions: fourPoints,
+				Colors:    tc.colors,
+			})
+			test.That(t, err, test.ShouldBeNil)
 
-	t.Run("DrawPointsWithColorPalette", func(t *testing.T) {
-		runDrawPointsTest(t, "myPointsPalette", &[]draw.Color{
-			draw.ColorFromName("yellow"),
-			draw.ColorFromName("red"),
-			draw.ColorFromName("blue"),
+			colors := fake.onlyAddedDrawing(t).GetMetadata().GetColors()
+			test.That(t, colors, test.ShouldHaveLength, tc.wantLength)
 		})
+	}
+}
+
+func TestDrawPointsDefaultColorIsGray(t *testing.T) {
+	fake := startFake(t)
+
+	_, err := DrawPoints(DrawPointsOptions{Name: "gray", Positions: fourPoints})
+	test.That(t, err, test.ShouldBeNil)
+
+	expected := []byte{
+		draw.DefaultPointColor.R,
+		draw.DefaultPointColor.G,
+		draw.DefaultPointColor.B,
+	}
+	test.That(t, fake.onlyAddedDrawing(t).GetMetadata().GetColors(), test.ShouldResemble, expected)
+}
+
+func TestDrawPointsSize(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		size float32
+		want float32
+	}{
+		{name: "zero uses the default", size: 0, want: 10},
+		{name: "a size is forwarded", size: 250, want: 250},
+		{name: "a negative falls back to the default", size: -5, want: 10},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := startFake(t)
+
+			_, err := DrawPoints(DrawPointsOptions{
+				Name:      "size",
+				Positions: fourPoints,
+				PointSize: tc.size,
+			})
+			test.That(t, err, test.ShouldBeNil)
+
+			points := fake.onlyAddedDrawing(t).GetPhysicalObject().GetPoints()
+			test.That(t, points.GetPointSize(), test.ShouldEqual, tc.want)
+		})
+	}
+}
+
+func TestDrawPointsRejections(t *testing.T) {
+	t.Run("a non-ascii name is rejected first", func(t *testing.T) {
+		requireNoServer(t)
+
+		_, err := DrawPoints(DrawPointsOptions{Name: "café", Positions: fourPoints})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "not ascii")
 	})
 
-	t.Run("DrawPointsWithPerPointColors", func(t *testing.T) {
-		points := generateTorusKnotPoints()
-		n := float32(len(points))
-		colors := make([]draw.Color, len(points))
-		for i := range colors {
-			frac := float32(i) / n
-			colors[i] = draw.ColorFromHSV(frac, 0.5+0.5*frac, 1.0)
-		}
+	t.Run("no visualizer is reported as such", func(t *testing.T) {
+		requireNoServer(t)
 
-		runDrawPointsTest(t, "myPointsPerPoint", &colors)
+		_, err := DrawPoints(DrawPointsOptions{Name: "ok", Positions: fourPoints})
+
+		test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
 	})
 
-	t.Run("DrawPointsWithPointSize", func(t *testing.T) {
-		points := generateTorusKnotPoints()
+	t.Run("empty positions cannot form points", func(t *testing.T) {
+		fake := startFake(t)
 
-		uuid, err := DrawPoints(DrawPointsOptions{
-			Name:      "myPointsWithSize",
-			Positions: points,
-			PointSize: 50,
-			Colors:    []draw.Color{draw.ColorFromName("green")},
+		_, err := DrawPoints(DrawPointsOptions{Name: "empty"})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "failed to create points")
+		test.That(t, fake.addEntityCount(), test.ShouldEqual, 0)
+	})
+
+	t.Run("an RPC failure is wrapped", func(t *testing.T) {
+		fake := startFake(t)
+		fake.errs["AddEntity"] = errRPCBoom
+
+		_, err := DrawPoints(DrawPointsOptions{Name: "rpc", Positions: fourPoints})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntity RPC failed")
+	})
+}
+
+// ChunkSize > 0 takes a different path entirely: one AddEntity carrying a chunks
+// descriptor, then UpdateEntity per remaining chunk.
+func TestDrawPointsChunkedDelivery(t *testing.T) {
+	t.Run("declares the chunk geometry up front", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:      "chunked",
+			Positions: fourPoints,
+			ChunkSize: 2,
 		})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+
+		chunks := fake.onlyAddedDrawing(t).GetMetadata().GetChunks()
+		test.That(t, chunks, test.ShouldNotBeNil)
+		test.That(t, chunks.GetChunkSize(), test.ShouldEqual, uint32(2))
+		test.That(t, chunks.GetTotal(), test.ShouldEqual, uint32(4))
+		// float32 xyz per point.
+		test.That(t, chunks.GetStride(), test.ShouldEqual, uint32(12))
 	})
 
-	t.Run("DrawPointsInChunks", func(t *testing.T) {
-		const numPoints = 2_500_000
-		points := make([]r3.Vector, numPoints)
+	t.Run("sends the remaining chunks as updates", func(t *testing.T) {
+		fake := startFake(t)
 
-		goldenAngle := math.Pi * (3 - math.Sqrt(5))
-		for i := range numPoints {
-			frac := float64(i) / float64(numPoints)
-			phi := math.Acos(1 - 2*frac)
-			theta := goldenAngle * float64(i)
-			r := 2000.0
-			points[i] = r3.Vector{
-				X: r * math.Sin(phi) * math.Cos(theta),
-				Y: r * math.Sin(phi) * math.Sin(theta),
-				Z: r * math.Cos(phi),
-			}
-		}
-
-		uuid, err := DrawPoints(DrawPointsOptions{
-			Name:      "chunked_points",
-			Positions: points,
-			Colors:    []draw.Color{draw.ColorFromName("lime")},
-			ChunkSize: 500_000,
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:      "chunked",
+			Positions: fourPoints,
+			ChunkSize: 2,
 		})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+
+		fake.mu.Lock()
+		defer fake.mu.Unlock()
+		test.That(t, fake.addEntity, test.ShouldHaveLength, 1)
+		test.That(t, fake.updateEntity, test.ShouldNotBeEmpty)
+	})
+
+	t.Run("a chunk size at or above the total still chunks", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:      "one-chunk",
+			Positions: fourPoints,
+			ChunkSize: 100,
+		})
+		test.That(t, err, test.ShouldBeNil)
+
+		chunks := fake.onlyAddedDrawing(t).GetMetadata().GetChunks()
+		test.That(t, chunks, test.ShouldNotBeNil)
+		test.That(t, chunks.GetChunkSize(), test.ShouldEqual, uint32(100))
+	})
+
+	t.Run("zero leaves the payload unchunked", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:      "unchunked",
+			Positions: fourPoints,
+			ChunkSize: 0,
+		})
+		test.That(t, err, test.ShouldBeNil)
+
+		test.That(t, fake.onlyAddedDrawing(t).GetMetadata().GetChunks(), test.ShouldBeNil)
+		fake.mu.Lock()
+		defer fake.mu.Unlock()
+		test.That(t, fake.updateEntity, test.ShouldBeEmpty)
+	})
+
+	t.Run("OnProgress is called and reaches completion", func(t *testing.T) {
+		startFake(t)
+
+		var reports []draw.ChunkProgress
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:       "progress",
+			Positions:  fourPoints,
+			ChunkSize:  2,
+			OnProgress: func(p draw.ChunkProgress) { reports = append(reports, p) },
+		})
+		test.That(t, err, test.ShouldBeNil)
+
+		test.That(t, reports, test.ShouldNotBeEmpty)
+		last := reports[len(reports)-1]
+		test.That(t, last.Sent, test.ShouldEqual, last.Total)
+	})
+
+	t.Run("a nil OnProgress is not a nil call", func(t *testing.T) {
+		startFake(t)
+
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:       "no-progress",
+			Positions:  fourPoints,
+			ChunkSize:  2,
+			OnProgress: nil,
+		})
+
+		test.That(t, err, test.ShouldBeNil)
+	})
+
+	t.Run("a build failure is reported before any RPC", func(t *testing.T) {
+		fake := startFake(t)
+
+		_, err := DrawPoints(DrawPointsOptions{Name: "empty", ChunkSize: 2})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, fake.addEntityCount(), test.ShouldEqual, 0)
 	})
 }

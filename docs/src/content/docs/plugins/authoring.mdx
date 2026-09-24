@@ -1,0 +1,494 @@
+---
+title: Authoring plugins
+description: Build a custom plugin for the Viam visualizer — a Svelte component you mount inside <Visualizer /> — for your own app or to contribute back.
+---
+
+import { Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components'
+
+Every feature listed under **Plugins** in this sidebar — [`<SelectionTool />`](../selection/), [`<MeasureTool />`](../measure-tool/), [`<Skybox />`](../skybox/), and the rest — is "just" a Svelte 5 component mounted as a child of `<Visualizer />`. There is no plugin manifest, no registration call, no lifecycle interface to implement. If you can write a Svelte component, you can write a plugin.
+
+This guide shows how, using the built-in plugins as worked examples. Each section points at the one that demonstrates its pattern best.
+
+<Aside
+	type="note"
+	title="Two audiences, one component"
+>
+	The component you write is identical whether you ship it inside your own app or contribute it back
+	to Viam Visualization. Only the **import paths** and the **packaging** differ. Where that matters,
+	this guide splits into <b>In your app</b> and <b>In the repo</b> tabs.
+</Aside>
+
+## How a plugin fits into the scene
+
+`<Visualizer />` renders your children _inside_ its Threlte `<Canvas>` — specifically inside the `<Scene>`, wrapped in every context the visualizer provides. That single fact drives everything else:
+
+- Your component runs inside the **Threlte scene graph**, so it can render 3D objects with `<T>` directly and they appear in the world.
+- It runs inside the **Koota ECS world** and the visualizer's **shared-state contexts**, so it reads and mutates scene state through hooks — no prop threading.
+- It renders inside a WebGL canvas, so DOM chrome (buttons, panels) can't sit inline. Instead you **teleport** it to a named overlay region with a Portal.
+
+```
+┌────────────────────────────────────────────────────┐
+│  [ dashboard ]                      [ workspace ]  │  DashboardPortal / WorkspacePortal
+│                                                    │
+│                                                    │
+│                   3-D scene                        │  <T> … />  renders here
+│               (your children)                      │
+│                                                    │
+│                                      [ controls ]  │  camera controls
+└────────────────────────────────────────────────────┘
+```
+
+<Aside
+	type="caution"
+	title="Rendering is on-demand"
+>
+	The canvas uses `renderMode="on-demand"` — it only repaints when Threlte's reactive props change.
+	If you mutate a Three.js object _imperatively_ (outside Threlte's reactivity), call `invalidate()`
+	from `useThrelte()` afterward or nothing repaints. Prefer declarative props and `useTask` over
+	manual mutation.
+</Aside>
+
+## Your first plugin
+
+Start with the simplest possible plugin: a component that drops an object into the scene. This one renders a small sphere at a configurable position.
+
+```svelte
+<!-- Waypoint.svelte -->
+<script lang="ts">
+	import { T } from '@threlte/core'
+
+	interface Props {
+		position?: [x: number, y: number, z: number]
+	}
+
+	let { position = [0, 0, 0] }: Props = $props()
+</script>
+
+<T.Mesh {position}>
+	<T.SphereGeometry args={[0.05]} />
+	<T.MeshStandardMaterial color="hotpink" />
+</T.Mesh>
+```
+
+Mount it as a child of `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+
+	import Waypoint from './Waypoint.svelte'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<Waypoint position={[0, 0, 0.5]} />
+	</Visualizer>
+</div>
+```
+
+That's a complete, working plugin. Now give it a control. Because the button lives in the DOM overlay rather than the 3D scene, wrap it in `DashboardPortal` to teleport it into the top toolbar, and drive visibility from local state:
+
+```svelte
+<!-- Waypoint.svelte -->
+<script lang="ts">
+	import { T } from '@threlte/core'
+	import { IconButton } from '@viamrobotics/prime-core'
+
+	import { DashboardPortal } from '@viamrobotics/visualization'
+
+	interface Props {
+		position?: [x: number, y: number, z: number]
+	}
+
+	let { position = [0, 0, 0] }: Props = $props()
+	let visible = $state(true)
+</script>
+
+<DashboardPortal>
+	<IconButton
+		icon={visible ? 'eye-outline' : 'eye-off-outline'}
+		label="Toggle waypoint"
+		variant="secondary"
+		onclick={() => (visible = !visible)}
+	/>
+</DashboardPortal>
+
+{#if visible}
+	<T.Mesh {position}>
+		<T.SphereGeometry args={[0.05]} />
+		<T.MeshStandardMaterial color="hotpink" />
+	</T.Mesh>
+{/if}
+```
+
+The rest of this guide is the toolkit for going further.
+
+## Rendering into the scene
+
+Anything you can render with [Threlte](https://threlte.xyz/) works inside a plugin, because your children already live in the `<Canvas>`:
+
+- **3D objects** — `<T>` and `<T.Mesh>` from `@threlte/core`, or higher-level helpers from `@threlte/extras`. [`<Skybox />`](../skybox/) is a pure-scene plugin: it loads a texture and renders a single `<T>`.
+- **In-scene DOM labels** — `<HTML>` from `@threlte/extras` anchors HTML to a world position. [`<MeasureTool />`](../measure-tool/) uses it to float a distance readout at the midpoint of a measurement.
+- **Per-frame work** — `useTask(() => { … })` from `@threlte/core` runs a callback in Threlte's render loop; use it instead of `$effect` for anything animated.
+- **Performance** — opt display-only geometry out of hit-testing with `raycast={() => null}` or `bvh={{ enabled: false }}`.
+
+After any _imperative_ Three.js mutation, call `invalidate()` from `useThrelte()` so the on-demand renderer repaints.
+
+## Adding overlay UI
+
+To place DOM chrome in the visualizer's overlay, render it into one of the exported Portal components. Each teleports its contents to a fixed region:
+
+| Portal            | Lands in                       | Use for                                                   |
+| ----------------- | ------------------------------ | --------------------------------------------------------- |
+| `DashboardPortal` | Top-center toolbar             | Mode toggles and tool buttons                             |
+| `WorkspacePortal` | Top-right, by the viewer badge | Panel launchers and workspace-level toggles               |
+| `SettingsPortal`  | A new tab in the settings pane | Plugin configuration that belongs with the other settings |
+| `FloatingPanel`   | A draggable, resizable panel   | Rich UI that shouldn't crowd the toolbar                  |
+| `OverlayPortal`   | The overlay region itself      | Banners and other chrome that none of the above fits      |
+
+```svelte
+<script lang="ts">
+	import { DashboardPortal } from '@viamrobotics/visualization'
+</script>
+
+<DashboardPortal>
+	<!-- your button / control here -->
+</DashboardPortal>
+```
+
+<Aside
+	type="tip"
+	title="Bring your own button"
+>
+	The dashboard `Button` the built-in plugins use is internal and **not** exported. Put a prime-core
+	[`IconButton`](https://design.viam.com/) (or any element of your own) inside the Portal instead —
+	it keeps you aligned with the visualizer's design system.
+</Aside>
+
+For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `FloatingPanel` whose `isOpen` you bind — this is exactly how [`<ControlWidgets />`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/ControlWidgets/ControlWidgets.svelte) works:
+
+```svelte
+<script lang="ts">
+	import { IconButton } from '@viamrobotics/prime-core'
+
+	import { FloatingPanel, WorkspacePortal } from '@viamrobotics/visualization'
+
+	let open = $state(false)
+</script>
+
+<WorkspacePortal>
+	<IconButton
+		icon="cog"
+		label="Diagnostics"
+		variant="secondary"
+		onclick={() => (open = !open)}
+	/>
+</WorkspacePortal>
+
+<FloatingPanel
+	title="Diagnostics"
+	bind:isOpen={open}
+	defaultSize={{ width: 320, height: 480 }}
+	resizable
+>
+	<!-- panel body -->
+</FloatingPanel>
+```
+
+To add UI to the per-entity **details card** instead, contribute a section with `useDetailsSection`. Every card renders it with that card's `{ entity }`, and the optional `when` gates which entities get it — this is another contribution point, like keyboard shortcuts and workspace modes below:
+
+```svelte
+<script lang="ts">
+	import { traits, useDetailsSection } from '@viamrobotics/visualization'
+
+	useDetailsSection({
+		snippet: batteryRow,
+		when: (entity) => entity.has(traits.FramesAPI),
+	})
+</script>
+
+{#snippet batteryRow({ entity })}
+	<!-- rows for this entity's card -->
+{/snippet}
+```
+
+Sections render at the bottom of the card in registration order. An embedding app can also pass a `details` snippet straight to `<Visualizer />` — it is registered as a section automatically. For an entity whose card is fully custom, add the `traits.CustomDetails` tag to it: the card then suppresses its default pose, color, opacity, and axes rows and shows only contributed content.
+
+## Reading and writing scene state
+
+Shared scene state lives in a [Koota](https://github.com/pmndrs/koota) ECS world, not Svelte stores. `<Visualizer />` provides the world; your plugin consumes it. The whole ECS surface a plugin needs is exported from the package root:
+
+```ts
+import {
+	useWorld, // the raw Koota World
+	useQuery, // reactive query → { current }
+	useTrait, // reactive single-entity trait → { current }
+	traits, // built-in trait namespace
+	relations, // built-in relation namespace
+} from '@viamrobotics/visualization'
+```
+
+Read the set of entities carrying a trait, and react to it, with `useQuery`:
+
+```svelte
+<script lang="ts">
+	import { traits, useQuery } from '@viamrobotics/visualization'
+
+	const selected = useQuery(traits.Selected)
+</script>
+
+<p>{selected.current.length} selected</p>
+```
+
+Read a single entity's trait with `useTrait` — note the target is a **getter function**:
+
+```ts
+import { traits, useTrait } from '@viamrobotics/visualization'
+
+const name = useTrait(() => entity, traits.Name)
+// name.current updates whenever the Name trait changes
+```
+
+### Defining your own traits
+
+A plugin can spawn its own entities and tag them with traits it defines. Traits come straight from `koota`: a factory returning `() => true` is a marker; anything else is a data trait with a default.
+
+```ts
+// waypointTraits.ts
+import { trait } from 'koota'
+
+export const Waypoint = trait() // marker
+export const Label = trait('') // data (string, default '')
+```
+
+```svelte
+<script lang="ts">
+	import { useWorld } from '@viamrobotics/visualization'
+
+	import { Label, Waypoint } from './waypointTraits'
+
+	const world = useWorld()
+
+	function drop(x: number, y: number, z: number) {
+		world.spawn(Waypoint, Label('Home'))
+	}
+</script>
+```
+
+Use standard Koota on the world and entities: `world.query(Waypoint)`, `entity.add(...)`, `entity.get(Label)`, `entity.set(Label, 'Dock')`, `entity.destroy()`. For array-of-struct traits you mutate in place, call `entity.changed(Trait)` afterward so queries re-run. [`<SelectionTool />`](../selection/) is the reference: [`traits.ts`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/Selection/traits.ts) defines its own traits, and it exports them so consumers can read the selection down to the enclosed points.
+
+Relations (`relation({ ... })`) model links between entities — parent/child, "captured by", and so on. See the built-in [`relations`](https://github.com/pmndrs/koota#relationships) namespace and the Selection plugin's `relations.ts`.
+
+## Sharing state with a hook
+
+To let the host app (or your own sub-components) read a plugin's state, expose it through Svelte context using the project's `provide*` / `use*` convention: a `Symbol()` key, and an object of **getters** so reactivity survives the context boundary.
+
+```ts
+// useWaypoints.svelte.ts
+import { getContext, setContext } from 'svelte'
+
+const KEY = Symbol('waypoints')
+
+export const provideWaypoints = () => {
+	let count = $state(0)
+
+	return setContext(KEY, {
+		get count() {
+			return count
+		},
+		add() {
+			count += 1
+		},
+	})
+}
+
+export const useWaypoints = () => getContext<ReturnType<typeof provideWaypoints>>(KEY)
+```
+
+Your plugin's root component calls `provideWaypoints()`; its children — and the host app — call `useWaypoints()`. This is exactly the shape of [`useFullscreen`](../fullscreen/) and [`useSelectionPlugin`](../selection/#reading-the-selection), and it's how a plugin publishes an API without prop drilling.
+
+## Reacting to user input
+
+Tool plugins that need the pointer claim it through the shared `useSettings` hook, which exposes an `interactionMode` (`'navigate' | 'measure' | 'select' | 'gizmo' | 'move'`). Flip it when your tool activates so other tools stand down:
+
+```svelte
+<script lang="ts">
+	import { useSettings } from '@viamrobotics/visualization'
+
+	const settings = useSettings()
+	const active = $derived(settings.current.interactionMode === 'measure')
+
+	function toggle() {
+		settings.current.interactionMode = active ? 'navigate' : 'measure'
+	}
+</script>
+```
+
+For picking points and objects in the scene, use Threlte's pointer events — the visualizer already enables [`interactivity()`](https://threlte.xyz/docs/reference/extras/interactivity), so `<T.Mesh onclick={…} onpointermove={…}>` and `<HTML>` handlers work out of the box.
+
+<Aside
+	type="note"
+	title="In the repo: useMouseRaycaster"
+>
+	Plugins contributed to Viam Visualization have access to the internal `useMouseRaycaster` hook
+	(`$lib/hooks/useMouseRaycaster.svelte`), which wraps a shared, BVH-accelerated raycaster with
+	`onclick` / `onmove` callbacks gated by an `enabled` flag. The built-in
+	[`MeasureTool`](../measure-tool/) plugin uses it. It is not part of the public package, so plugins
+	living in an external app use Threlte's pointer events instead.
+</Aside>
+
+## Contributing keyboard shortcuts
+
+Keyboard input is a **contribution point**: a plugin declares a binding where the behavior lives, and the visualizer owns the single window listener that dispatches it. This is the same declare-while-mounted shape as the overlay Portals and `SettingsPortal` tabs — the plugin contributes content, core owns the collection, and one owner renders or executes it.
+
+```svelte
+<script lang="ts">
+	import { useHotkey } from '@viamrobotics/visualization'
+
+	let visible = $state(true)
+
+	useHotkey({
+		key: 'g',
+		description: 'Toggle my overlay',
+		run: () => (visible = !visible),
+	})
+</script>
+```
+
+The binding registers when the component mounts and releases when it unmounts. Pass `when` to gate it on state instead of lifecycle — it is evaluated at the moment the key is pressed, so it can read any reactive value with no effect wiring:
+
+```ts
+useHotkey({
+	key: '1',
+	description: 'Translate',
+	when: () => environment.current.mode === 'build',
+	run: () => (settings.current.transformMode = 'translate'),
+})
+```
+
+Dispatch policy belongs to the dispatcher, not to your binding: keys typed into inputs are skipped, presses with a modifier held are skipped, and nothing dispatches while the host sets `inputBindingsEnabled` to `false`. Two bindings may share a key only when their `when` conditions cannot hold at once — the built-in build and move dashboards both bind `1` this way — and overlapping dispatches are logged in dev builds.
+
+## Contributing a workspace mode
+
+Workspace modes follow the same contribution shape. The visualizer has three (`monitor`, `build`, `move`), every one contributed by a plugin, and the active one is persisted across sessions — so a plugin that owns a mode must declare it reachable while mounted, or a stored mode could name UI that no longer exists. `useEnvironmentMode` does exactly that: it registers in setup and releases on unmount. Registration order is priority order: a persisted mode nothing currently contributes resolves to the first-registered mode, and with no mode plugins mounted at all the mode is `none` — a bare renderer with no mode UI.
+
+```svelte
+<script lang="ts">
+	import { useEnvironment, useEnvironmentMode } from '@viamrobotics/visualization'
+
+	const environment = useEnvironment()
+
+	useEnvironmentMode('move')
+
+	const isMoveMode = $derived(environment.current.mode === 'move')
+</script>
+
+{#if isMoveMode}
+	<!-- mode-specific dashboard, controls, panels -->
+{/if}
+```
+
+The user's choice is remembered: leaving the mode unreachable falls back to `monitor`, and remounting the contributing plugin returns to it. Registration is refcounted, so a remount that mounts the replacement before unmounting the original never drops the mode.
+
+Note that the mode set is closed — contributing declares an _existing_ `EnvironmentMode` reachable, it does not define new modes. Read the active mode from `useEnvironment().current.mode` and the currently reachable set from `useEnvironment().availableModes`. This is exactly how the built-in [`MoveFrame`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/MoveFrame/MoveFrame.svelte) plugin works.
+
+## Contributing a deep-link parameter
+
+Deep-link parameters are a contribution point, like hotkeys and workspace modes: a plugin declares the parameter it wants and core owns reading the URL and dispatching it. Call `useDeepLinkParam` with the un-prefixed key and a callback:
+
+```svelte
+<script lang="ts">
+	import { useDeepLinkParam } from '@viamrobotics/visualization'
+
+	useDeepLinkParam('waypoints', (values) => {
+		// apply the URL's viz.waypoints values
+	})
+</script>
+```
+
+The key is written without the `viz.` prefix, so `'waypoints'` above reads `viz.waypoints` from the URL. `apply` runs once, in setup, with every value for that key in URL order. A value is handed over as written, so a parameter that takes a list splits it itself, the way `viz.select` splits on commas. Only the first consumer to mount for a given key ever sees it, so a remount does nothing. See [Deep linking](../../guides/deep-linking/) for the URL format and how the built-in `viz.mode` and `viz.select` parameters behave.
+
+## Optional dependencies
+
+The plugin model is the right home for heavy or situational dependencies: keep the import inside the plugin, and consumers only pay for it when they mount it. [`<SelectionTool />`](../selection/) needs `earcut`; [`<DrawService />`](../draw-service/) needs the Connect RPC client. Neither is pulled in unless you use that plugin.
+
+If your plugin needs an extra package, import it normally, declare it a peer dependency of your plugin, and document the one-line install in your plugin's own docs — the same way the built-in plugin pages open with an **Install** section.
+
+## Packaging your plugin
+
+<Tabs syncKey="plugin-target">
+	<TabItem label="In your app">
+		Nothing special — a plugin is a component. Put the `.svelte` file (and any `use*.svelte.ts`
+		hook or trait module) wherever your app keeps components, then import `Visualizer` from
+		`@viamrobotics/visualization` and your plugin from its own path, and mount it as a child:
+
+    	```svelte
+    	<script lang="ts">
+    		import { Visualizer } from '@viamrobotics/visualization'
+
+    		import Waypoint from '$lib/Waypoint.svelte'
+    	</script>
+
+    	<div class="h-screen w-screen">
+    		<Visualizer>
+    			<Waypoint />
+    		</Visualizer>
+    	</div>
+    	```
+
+    	Import scene/ECS/portal helpers from the package root (`@viamrobotics/visualization`), Threlte
+    	primitives from `@threlte/core` / `@threlte/extras`, and `trait` / `relation` from `koota`. To
+    	share a plugin across projects, extract it to your own package with `@viamrobotics/visualization`
+    	as a peer dependency — it stays a plain Svelte component.
+
+    </TabItem>
+    <TabItem label="In the repo">
+    	Contributing a plugin back means it ships in `@viamrobotics/visualization/plugins` for everyone.
+    	Plugins in the repo import through the `$lib` alias, so they can use internal hooks
+    	(`useCameraControls`, `useMouseRaycaster`, …) and components that aren't publicly exported.
+
+    	<Steps>
+
+    	1. Create a directory under [`src/lib/plugins/`](https://github.com/viamrobotics/visualization/tree/main/src/lib/plugins)
+    	   named after the plugin, e.g. `src/lib/plugins/Waypoint/`. Put the root component
+    	   (`Waypoint.svelte`), any context hook (`useWaypoints.svelte.ts`), and trait modules there.
+    	   Import shared code via `$lib`, `$lib/ecs`, and `$lib/hooks/*`.
+
+    	2. Export it from [`src/lib/plugins/index.ts`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/index.ts):
+
+    	   ```ts
+    	   // Waypoint
+    	   export { default as Waypoint } from './Waypoint/Waypoint.svelte'
+    	   export { useWaypoints } from './Waypoint/useWaypoints.svelte'
+    	   ```
+
+    	3. Add a `__tests__/` directory next to the component and cover the behavior with Vitest
+    	   (`*.svelte.spec.ts`), following the neighboring plugins.
+
+    	4. Write a docs page at `docs/src/content/docs/plugins/waypoint.mdx` (use an existing plugin
+    	   page as the template) and add it to the **Plugins** sidebar group in
+    	   [`docs/astro.config.mjs`](https://github.com/viamrobotics/visualization/blob/main/docs/astro.config.mjs).
+
+    	5. Add a changeset — `pnpm changeset`, `minor` for a new plugin — then verify:
+
+    	   ```bash
+    	   pnpm check   # svelte-check + go vet
+    	   pnpm lint    # prettier + eslint
+    	   pnpm test    # vitest
+    	   ```
+
+    	</Steps>
+
+    </TabItem>
+
+</Tabs>
+
+## Checklist
+
+- [ ] The plugin is a child of `<Visualizer />` — it relies on the contexts the visualizer provides, not props passed down from the host.
+- [ ] DOM UI is teleported through a Portal (`DashboardPortal` / `WorkspacePortal` / `SettingsPortal` / `FloatingPanel`), never rendered inline in the canvas.
+- [ ] Shared state goes through the ECS world (`useWorld` / `useQuery` / `useTrait`); UI-only state stays local (`$state` / `$derived`).
+- [ ] Any published API is a `use*` hook backed by a `provide*` context with getters.
+- [ ] Imperative Three.js mutations are followed by `invalidate()`.
+- [ ] Optional dependencies live inside the plugin and are documented with an install line.
+- [ ] External plugins import only from `@viamrobotics/visualization`, `/plugins`, `/lib`, and peer packages — internal `$lib/*` paths are for in-repo plugins only.

@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang/geo/r3"
 	"github.com/google/uuid"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
@@ -213,45 +213,38 @@ func writeSnapshot(t *testing.T, snapshot *Snapshot, filename string) {
 		t.Fatal(err)
 	}
 
-	// Marshal to JSON
 	jsonBytes, err := snapshot.MarshalJSON()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Marshal to binary
 	binaryBytes, err := snapshot.MarshalBinary()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Marshal to gzip-compressed binary
 	gzipBytes, err := snapshot.MarshalBinaryGzip()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Write JSON file
 	jsonPath := filepath.Join(dir, filename)
 	if err := os.WriteFile(jsonPath, jsonBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Write binary file
 	binaryFilename := strings.TrimSuffix(filename, ".json") + ".pb"
 	binaryPath := filepath.Join(dir, binaryFilename)
 	if err := os.WriteFile(binaryPath, binaryBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Write gzip-compressed binary file (replace .json with .pb.gz)
 	gzipFilename := strings.TrimSuffix(filename, ".json") + ".pb.gz"
 	gzipPath := filepath.Join(dir, gzipFilename)
 	if err := os.WriteFile(gzipPath, gzipBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Log sizes for benchmarking
 	t.Logf("Generated %s: %d transforms, %d drawings", filename, len(snapshot.Transforms()), len(snapshot.Drawings()))
 	t.Logf("  JSON: %d bytes", len(jsonBytes))
 	t.Logf("  Binary: %d bytes (%.1f%% of JSON)", len(binaryBytes), float64(len(binaryBytes))/float64(len(jsonBytes))*100)
@@ -273,23 +266,22 @@ func TestGeneratingSnapshots(t *testing.T) {
 		voxelScale := 500.0
 		voxelSize := r3.Vector{X: voxelScale, Y: voxelScale, Z: voxelScale}
 
-		woodColor := NewColor(WithName("saddlebrown"))                 // wood
-		roofColor := NewColor(WithName("maroon"))                      // roof
-		windowColor := NewColor(WithName("blue")).SetAlpha(uint8(128)) // window
-		doorColor := NewColor(WithName("sienna"))                      // door
-		chimneyColor := NewColor(WithName("darkgray"))                 // chimney
-		benchColor := NewColor(WithName("lightgray"))                  // bench
-		chestColor := NewColor(WithName("darkgoldenrod"))              // chest
-		furnitureColor := NewColor(WithName("peru"))                   // furniture
+		woodColor := NewColor(WithName("saddlebrown"))
+		roofColor := NewColor(WithName("maroon"))
+		windowColor := NewColor(WithName("blue")).SetAlpha(uint8(128))
+		doorColor := NewColor(WithName("sienna"))
+		chimneyColor := NewColor(WithName("darkgray"))
+		benchColor := NewColor(WithName("lightgray"))
+		chestColor := NewColor(WithName("darkgoldenrod"))
+		furnitureColor := NewColor(WithName("peru"))
 
-		// Create frame system and house root frame
 		fs := referenceframe.NewEmptyFrameSystem("world")
 		houseFrame, _ := referenceframe.NewStaticFrame("house", spatialmath.NewZeroPose())
 		if err := fs.AddFrame(houseFrame, fs.World()); err != nil {
 			t.Fatal(err)
 		}
 
-		// Create floor parent frame (origin at the corner of the floor)
+		// Floor frame origin is the corner of the floor.
 		floorOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -4 * voxelScale, Y: -3 * voxelScale, Z: 0})
 		floorParent, _ := referenceframe.NewStaticFrame("floor", floorOrigin)
 		if err := fs.AddFrame(floorParent, houseFrame); err != nil {
@@ -303,7 +295,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		// Create walls parent frame (origin at corner of the walls at ground level)
+		// Walls frame origin is the wall corner at ground level.
 		wallsOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -4 * voxelScale, Y: -3 * voxelScale, Z: 1 * voxelScale})
 		wallsParent, _ := referenceframe.NewStaticFrame("walls", wallsOrigin)
 		if err := fs.AddFrame(wallsParent, houseFrame); err != nil {
@@ -347,7 +339,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		// Create windows parent frame (origin at first window position)
+		// Windows frame origin is the first window position.
 		windowsOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -1 * 500, Y: 2 * 500, Z: 2 * 500})
 		windowsParent, _ := referenceframe.NewStaticFrame("windows", windowsOrigin)
 		if err := fs.AddFrame(windowsParent, houseFrame); err != nil {
@@ -361,7 +353,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		// Left wall window (relative to windows origin)
 		addVoxelFrame(t, fs, windowsParent, "left_window", -3, -2, 0, voxelScale)
 
-		// Create roof parent frame (origin at corner of the roof base)
+		// Roof frame origin is the corner of the roof base.
 		roofOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -5 * 500, Y: -4 * 500, Z: 5 * 500})
 		roofParent, _ := referenceframe.NewStaticFrame("roof", roofOrigin)
 		if err := fs.AddFrame(roofParent, houseFrame); err != nil {
@@ -393,7 +385,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		// Create door parent frame (origin at door position)
+		// Door frame origin is the door position.
 		doorOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: 1 * 500, Y: -5 * 500, Z: 1 * 500})
 		doorParent, _ := referenceframe.NewStaticFrame("door", doorOrigin)
 		if err := fs.AddFrame(doorParent, houseFrame); err != nil {
@@ -406,7 +398,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		addVoxelFrame(t, fs, doorParent, "door_3", 0, 0, 1, voxelScale)
 		addVoxelFrame(t, fs, doorParent, "door_4", 0, 1, 1, voxelScale)
 
-		// Create chimney parent frame (origin at chimney base)
+		// Chimney frame origin is the chimney base.
 		chimneyOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: 2 * 500, Y: 1 * 500, Z: 6 * 500})
 		chimneyParent, _ := referenceframe.NewStaticFrame("chimney", chimneyOrigin)
 		if err := fs.AddFrame(chimneyParent, houseFrame); err != nil {
@@ -419,7 +411,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		addVoxelFrame(t, fs, chimneyParent, "chimney_3", 0, 0, 2, voxelScale)
 		addVoxelFrame(t, fs, chimneyParent, "chimney_4", 0, 0, 3, voxelScale)
 
-		// Create table parent frame (origin at table position)
+		// Table frame origin is the table position.
 		tableOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -1 * 500, Y: 0, Z: 1 * 500})
 		tableParent, _ := referenceframe.NewStaticFrame("table", tableOrigin)
 		if err := fs.AddFrame(tableParent, houseFrame); err != nil {
@@ -430,7 +422,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 		addVoxelFrame(t, fs, tableParent, "table_1", 0, 0, 0, voxelScale)
 		addVoxelFrame(t, fs, tableParent, "table_2", 1, 0, 0, voxelScale)
 
-		// Create bench parent frame (origin at bench position)
+		// Bench frame origin is the bench position.
 		benchOrigin := spatialmath.NewPoseFromPoint(r3.Vector{X: -3 * 500, Y: -2 * 500, Z: 1 * 500})
 		benchParent, _ := referenceframe.NewStaticFrame("bench", benchOrigin)
 		if err := fs.AddFrame(benchParent, houseFrame); err != nil {
@@ -453,8 +445,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Create color map for the frame system
-		// Include "house" so the entire frame hierarchy is rendered
+		// Include "house" so the entire frame hierarchy is rendered.
 		frameColors := map[string]Color{
 			"house":   woodColor, // Root frame needs a color for hierarchy
 			"floor":   woodColor,
@@ -468,7 +459,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			"chest":   chestColor,
 		}
 
-		// Draw the frame system
 		inputs := referenceframe.NewZeroInputs(fs)
 		_, err := snapshot.DrawFrameSystemGeometries(DrawFrameSystemGeometriesOptions{
 			FrameSystem: fs,
@@ -582,22 +572,19 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 		plotSize := 3000.0     // Each plot is 3m x 3m (scaled up)
 		plotThickness := 200.0 // Thick enough to cover axes helper gizmo
-		gridSize := 8          // 8x8 grid
+		gridSize := 8
 
-		// Create frame system
 		fs := referenceframe.NewEmptyFrameSystem("world")
 		rootFrame, _ := referenceframe.NewStaticFrame("root", spatialmath.NewZeroPose())
 		if err := fs.AddFrame(rootFrame, fs.World()); err != nil {
 			t.Fatal(err)
 		}
 
-		// Create color map
 		frameColors := map[string]Color{
 			"root":   grassColor, // Default color
 			"people": citizenColor,
 		}
 
-		// Create city plots in a grid
 		for i := 0; i < gridSize; i++ {
 			for j := 0; j < gridSize; j++ {
 				x := float64(i-gridSize/2) * plotSize
@@ -605,7 +592,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 
 				plotName := fmt.Sprintf("plot_%d_%d", i, j)
 
-				// Determine plot type (roads, grass, concrete)
 				var plotColor Color
 				isRoad := (i == gridSize/2 || j == gridSize/2)  // Cross roads through center
 				isConcrete := !isRoad && (i%2 == 0 && j%2 == 0) // Some plots are concrete
@@ -631,7 +617,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 				}
 				frameColors[plotName] = plotColor
 
-				// Add buildings on some non-road plots
 				if !isRoad && rng.Float64() < 0.4 { // 40% chance of building
 					buildingHeight := 2000.0 + rng.Float64()*6000.0 // Random height 2-8m
 					buildingWidth := 2000.0 + rng.Float64()*800.0   // Random width 2-2.8m
@@ -656,13 +641,12 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		// Create people parent frame
 		peopleFrame, _ := referenceframe.NewStaticFrame("people", spatialmath.NewZeroPose())
 		if err := fs.AddFrame(peopleFrame, rootFrame); err != nil {
 			t.Fatal(err)
 		}
 
-		numCitizens := 150 // Many citizens walking around
+		numCitizens := 150
 		citizenHeight := 200.0
 		cityBounds := (float64(gridSize)/2.0 - 0.5) * plotSize
 
@@ -692,7 +676,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			frameColors[personName] = citizenColor
 		}
 
-		// Draw the frame system
 		inputs := referenceframe.FrameSystemInputs{}
 		_, err := snapshot.DrawFrameSystemGeometries(DrawFrameSystemGeometriesOptions{
 			FrameSystem: fs,
@@ -706,7 +689,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 		writeSnapshot(t, snapshot, "visualization_snapshot_capsule.json")
 	})
 
-	// generates a snapshot showcasing arrow drawings
 	t.Run("snapshot arrows", func(t *testing.T) {
 
 		snapshot := NewSnapshot(
@@ -719,7 +701,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			),
 		)
 
-		// 1. Create a box geometry at origin
 		boxPose := spatialmath.NewPoseFromPoint(r3.Vector{X: -800, Y: 0, Z: 300})
 		box, err := spatialmath.NewBox(
 			spatialmath.NewZeroPose(),
@@ -739,7 +720,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Create thousands of arrows pointing to box faces
 		var boxArrowPoses []spatialmath.Pose
 		boxHalfSize := 200.0    // half of 400mm
 		numArrowsPerFace := 500 // 500 arrows per face = 3000 total arrows
@@ -801,7 +781,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// 2. Create a sphere geometry
 		spherePose := spatialmath.NewPoseFromPoint(r3.Vector{X: 800, Y: 0, Z: 300})
 		sphere, err := spatialmath.NewSphere(
 			spatialmath.NewZeroPose(),
@@ -821,11 +800,10 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Create thousands of arrows pointing radially inward to sphere surface
 		var sphereArrowPoses []spatialmath.Pose
 		sphereCenter := r3.Vector{X: 800, Y: 0, Z: 300}
 		sphereRadius := 250.0
-		numSphereArrows := 2000 // 2000 arrows around the sphere
+		numSphereArrows := 2000
 
 		for i := 0; i < numSphereArrows; i++ {
 			theta := 2 * math.Pi * float64(i) / ((1 + math.Sqrt(5)) / 2) // Golden angle
@@ -865,7 +843,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// 3. Create a capsule geometry
 		capsulePose := spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: 800})
 		capsule, err := spatialmath.NewCapsule(
 			spatialmath.NewZeroPose(),
@@ -886,12 +863,11 @@ func TestGeneratingSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Create thousands of arrows pointing to capsule surface
 		var capsuleArrowPoses []spatialmath.Pose
 		capsuleCenter := r3.Vector{X: 0, Y: 0, Z: 800}
 		capsuleRadius := 150.0
 		capsuleLength := 600.0
-		numCapsuleArrows := 3000 // 3000 arrows around the capsule
+		numCapsuleArrows := 3000
 
 		numRings := 50
 		arrowsPerRing := numCapsuleArrows / numRings
@@ -928,7 +904,7 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		_, err = snapshot.DrawArrows(DrawArrowsOptions{	
+		_, err = snapshot.DrawArrows(DrawArrowsOptions{
 			Name:   "capsule-surface-arrows",
 			Parent: "world",
 			Pose:   spatialmath.NewZeroPose(),
@@ -1046,9 +1022,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 			path2 = append(path2, r3.Vector{X: x, Y: y, Z: z})
 		}
 		_, err = snapshot.DrawLine(DrawLineOptions{
-			Name:   "zigzag-path",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+			Name:      "zigzag-path",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: path2,
 			LineWidth: 20.0,
 			DotSize:   10.0,
@@ -1071,9 +1047,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 			path3 = append(path3, r3.Vector{X: x, Y: y, Z: z})
 		}
 		_, err = snapshot.DrawLine(DrawLineOptions{
-			Name:   "spiral-path",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+			Name:      "spiral-path",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: path3,
 			LineWidth: 12.0,
 			DotSize:   10.0,
@@ -1090,9 +1066,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		path4 = append(path4, r3.Vector{X: 1000, Y: 1500, Z: 1200})
 		path4 = append(path4, r3.Vector{X: 3500, Y: 3500, Z: 500})
 		_, err = snapshot.DrawLine(DrawLineOptions{
-			Name:   "straight-path",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+			Name:      "straight-path",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: path4,
 			LineWidth: 25.0,
 			DotSize:   10.0,
@@ -1132,7 +1108,6 @@ func TestGeneratingSnapshots(t *testing.T) {
 		writeSnapshot(t, snapshot, "visualization_snapshot_line.json")
 	})
 
-	// generates a snapshot showcasing points shapes
 	t.Run("snapshot points", func(t *testing.T) {
 		rng := rand.New(rand.NewSource(42))
 		snapshot := NewSnapshot(
@@ -1157,9 +1132,9 @@ func TestGeneratingSnapshots(t *testing.T) {
 		}
 
 		_, err := snapshot.DrawPoints(DrawPointsOptions{
-			Name:   "grid-points",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+			Name:      "grid-points",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: gridPoints,
 			Colors:    []Color{NewColor(WithName("red"))},
 			PointSize: pointSize,
@@ -1188,19 +1163,19 @@ func TestGeneratingSnapshots(t *testing.T) {
 			sphereColors = append(sphereColors, NewColor(WithHSV(float32(hue), 1.0, 1.0)))
 		}
 
-		_, err = snapshot.DrawPoints(DrawPointsOptions{	
-			Name:   "sphere-points",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+		_, err = snapshot.DrawPoints(DrawPointsOptions{
+			Name:      "sphere-points",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: spherePoints,
 			Colors:    sphereColors,
 			PointSize: pointSize,
 		})
 		if err != nil {
 			t.Fatal(err)
-		}	
+		}
 
-		// 3. Parametric surface (wave) - 100mm spacing between points\
+		// 3. Parametric surface (wave), 100mm spacing between points
 		var wavePoints []r3.Vector
 		for x := -5000.0; x <= 5000.0; x += 100.0 {
 			for y := -5000.0; y <= 5000.0; y += 100.0 {
@@ -1210,22 +1185,21 @@ func TestGeneratingSnapshots(t *testing.T) {
 			}
 		}
 
-		_, err = snapshot.DrawPoints(DrawPointsOptions{	
-			Name:   "wave-points",
-			Parent: "world",
-			Pose:   spatialmath.NewZeroPose(),
+		_, err = snapshot.DrawPoints(DrawPointsOptions{
+			Name:      "wave-points",
+			Parent:    "world",
+			Pose:      spatialmath.NewZeroPose(),
 			Positions: wavePoints,
 			Colors:    []Color{NewColor(WithName("blue"))},
 			PointSize: pointSize,
 		})
 		if err != nil {
 			t.Fatal(err)
-		}	
+		}
 
 		writeSnapshot(t, snapshot, "visualization_snapshot_points.json")
 	})
 
-	// generates a snapshot showcasing model shapes with fun models
 	t.Run("snapshot model", func(t *testing.T) {
 		snapshot := NewSnapshot(
 			WithSceneCamera(
@@ -1243,14 +1217,14 @@ func TestGeneratingSnapshots(t *testing.T) {
 			return spatialmath.NewPose(r3.Vector{X: x, Y: y, Z: z}, orientation)
 		}
 
-		// 1. Duck - Classic rubber duck from URL
+		// A URL-referenced asset the browser fetches for itself.
 		duckURL := "http://localhost:5173/models/Duck.glb"
 		duckSize := uint64(120072)
 		duckAsset, err := NewURLModelAsset("model/gltf-binary", duckURL, WithModelAssetSizeBytes(duckSize))
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = snapshot.DrawModel(DrawModelOptions{	
+		_, err = snapshot.DrawModel(DrawModelOptions{
 			Name:   "duck",
 			Parent: "world",
 			Pose:   createPose(-2000, -2000, 0),
@@ -1260,70 +1234,10 @@ func TestGeneratingSnapshots(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatal(err)
-		}	
-
-		// 2. Avocado - Fresh avocado from URL
-		avocadoURL := "http://localhost:5173/models/Avocado.glb"
-		avocadoSize := uint64(8110256)
-		avocadoAsset, err := NewURLModelAsset("model/gltf-binary", avocadoURL, WithModelAssetSizeBytes(avocadoSize))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = snapshot.DrawModel(DrawModelOptions{	
-			Name:   "avocado",
-			Parent: "world",
-			Pose:   createPose(0, -2000, 0),
-			ModelOptions: []DrawModelOption{
-				WithModelAssets(avocadoAsset),
-				WithModelScale(r3.Vector{X: 20.0, Y: 20.0, Z: 20.0}),
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
 		}
 
-		// 3. Lantern - Medieval lantern from URL
-		lanternURL := "http://localhost:5173/models/Lantern.glb"
-		lanternSize := uint64(9564180)
-		lanternAsset, err := NewURLModelAsset("model/gltf-binary", lanternURL, WithModelAssetSizeBytes(lanternSize))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = snapshot.DrawModel(DrawModelOptions{	
-			Name:   "lantern",
-			Parent: "world",
-			Pose:   createPose(2000, -2000, 0),
-			ModelOptions: []DrawModelOption{
-				WithModelAssets(lanternAsset),
-				WithModelScale(r3.Vector{X: 0.04, Y: 0.04, Z: 0.04}),
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 4. Animated Box - An animated box scene from GLB data (no animation for deterministic screenshots)
-		boxData, err := os.ReadFile(filepath.Join(".", fixturesDir, "BoxAnimated.glb"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		boxAsset, err := NewBinaryModelAsset("model/gltf-binary", boxData, WithModelAssetSizeBytes(uint64(len(boxData))))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = snapshot.DrawModel(DrawModelOptions{		
-			Name:   "box",
-			Parent: "world",
-			Pose:   createPose(-2000, 2000, 600),
-			ModelOptions: []DrawModelOption{
-				WithModelAssets(boxAsset),
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 5. Milk Truck - Cesium's iconic milk truck from GLB data
+		// An asset carried as bytes inside the snapshot, and scaled, so the two
+		// delivery paths and the scale option are both covered.
 		milkTruckData, err := os.ReadFile(filepath.Join(".", fixturesDir, "CesiumMilkTruck.glb"))
 		if err != nil {
 			t.Fatal(err)
@@ -1332,35 +1246,13 @@ func TestGeneratingSnapshots(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = snapshot.DrawModel(DrawModelOptions{	
+		_, err = snapshot.DrawModel(DrawModelOptions{
 			Name:   "milktruck",
 			Parent: "world",
 			Pose:   createPose(0, 2000, 0),
 			ModelOptions: []DrawModelOption{
 				WithModelAssets(milkTruckAsset),
 				WithModelScale(r3.Vector{X: 0.4, Y: 0.4, Z: 0.4}),
-			},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 6. Fox - Animated fox character from GLB data
-		foxData, err := os.ReadFile(filepath.Join(".", fixturesDir, "Fox.glb"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		foxAsset, err := NewBinaryModelAsset("model/gltf-binary", foxData, WithModelAssetSizeBytes(uint64(len(foxData))))
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = snapshot.DrawModel(DrawModelOptions{	
-			Name:   "fox",
-			Parent: "world",
-			Pose:   createPose(2000, 2000, 0),
-			ModelOptions: []DrawModelOption{
-				WithModelAssets(foxAsset),
-				WithModelScale(r3.Vector{X: 0.02, Y: 0.02, Z: 0.02}),
 			},
 		})
 		if err != nil {

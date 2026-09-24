@@ -1,0 +1,123 @@
+name: E2E Tests
+
+# Post-deploy rather than per-PR, unchanged from before. What changed is what is
+# under test: the `e2e` job builds and serves the app locally, so it can fail on
+# a real regression, and a separate `playground` job checks the deploy that just
+# went out. The old single job ran two specs against the deploy with
+# `--update-snapshots`, which rewrote any baseline that disagreed and could not
+# fail.
+
+on:
+  workflow_run:
+    workflows: [Deploy Docs]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Drawing and matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          go: 'true'
+          bun: 'true'
+
+      # Both binaries the drawing fixtures exec: one draw server per worker, and
+      # the scene binary that puts entities on screen.
+      - name: Build Go binaries
+        run: pnpm go-build
+
+      # VITE_CONFIGS is a build-time define. Left unset it only warns, but an
+      # empty object is what `pnpm dev` passes, and matching it keeps the app
+      # from dialing a machine if a config ever reaches this runner.
+      - name: Build the app
+        run: pnpm vite-build
+        env:
+          VITE_CONFIGS: '{}'
+          WS_PORT: '3000'
+          STATIC_PORT: '5173'
+
+      # No --update-snapshots. A pixel change fails here and gets rebaselined
+      # deliberately through update-e2e-baselines.yml.
+      - name: Run Playwright tests
+        run: pnpm playwright test --project=drawing --project=matrix
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload traces and diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Posts only when the failing set changed. See the action for why.
+      - name: Notify Slack on a new failure
+        if: failure()
+        uses: ./.github/actions/notify-e2e-failure
+        with:
+          scope: post-deploy
+          message: 'E2E tests failed on main@${{ github.event.workflow_run.head_sha || github.sha }}. Report and traces are attached to the run.'
+          slack-token: ${{ secrets.VIZ_E2E_SLACK_BOT_TOKEN }}
+          channel: C05D8LPC2TA
+
+  playground:
+    name: Deployed playground
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Smoke the deploy
+        run: pnpm playwright test --config playwright.playground.config.ts --project=playground
+
+      # Named apart from the `e2e` job's artifacts because both jobs upload into
+      # the same workflow run and matching names collide.
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-playground
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload traces and diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-playground
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Notify Slack on a new failure
+        if: failure()
+        uses: ./.github/actions/notify-e2e-failure
+        with:
+          scope: playground
+          message: 'The deployed playground failed its smoke test after main@${{ github.event.workflow_run.head_sha || github.sha }}. Report and traces are attached to the run.'
+          slack-token: ${{ secrets.VIZ_E2E_SLACK_BOT_TOKEN }}
+          channel: C05D8LPC2TA

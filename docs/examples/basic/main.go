@@ -1,5 +1,5 @@
 // Package main is a small standalone example that exercises the
-// motion-tools client/api package. It draws a box, a line, a ring of pose
+// Viam Visualization client/api package. It draws a box, a line, a ring of pose
 // arrows, and a pair of reference frames, then animates the box in place.
 //
 // The visualizer must be running: make up
@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/client/api"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/client/api"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 )

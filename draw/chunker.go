@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"connectrpc.com/connect"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 )
 
 const defaultChunkSize = 500_000
@@ -35,9 +35,9 @@ func (b *baseChunker) numChunks(total uint32) int {
 
 // Chunk holds a single chunk of data as a ready-to-send proto.
 type Chunk struct {
-	// Proto is the drawv1.Drawing payload for this chunk; the first chunk carries
-	// the full entity shape, while later chunks carry only the additional data
-	// to append.
+	// Proto is the drawv1.Drawing payload for this chunk. The first chunk
+	// carries the full entity shape, while later chunks carry only the
+	// additional data to append.
 	Proto *drawv1.Drawing
 	// Start is the index of the first element in this chunk relative to the full
 	// entity (0 for the first chunk, ChunkSize for the second, and so on).
@@ -95,7 +95,7 @@ type ChunkSender struct {
 // NewChunkSender returns a ChunkSender that ferries the given chunker's output to
 // the supplied draw service client. metadata supplies the chunk-size, total
 // element count, and stride attached to the first chunk. onProgress is invoked
-// after each successful chunk send; pass nil to skip progress reporting.
+// after each successful chunk send. Pass nil to skip progress reporting.
 func NewChunkSender(
 	chunker DrawableChunker,
 	client drawv1connect.DrawServiceClient,
@@ -111,11 +111,11 @@ func NewChunkSender(
 }
 
 // Next sends the next chunk to the draw service. The first call issues an
-// AddEntity RPC to create the entity (and records the server-assigned UUID for
-// retrieval via UUID); subsequent calls issue UpdateEntity RPCs against that UUID.
-// After each successful send, the configured progress callback (if any) is invoked.
-// Returns io.EOF when every chunk has been sent, or a wrapped RPC error if a send
-// fails.
+// AddEntity RPC to create the entity and records the server-assigned UUID for
+// retrieval via UUID. Subsequent calls issue UpdateEntity RPCs against that
+// UUID. After each successful send, the configured progress callback (if any)
+// is invoked. Returns io.EOF when every chunk has been sent, or a wrapped RPC
+// error if a send fails.
 func (s *ChunkSender) Next() error {
 	if s.done {
 		return io.EOF
@@ -179,7 +179,7 @@ func (s *ChunkSender) UUID() []byte {
 	return s.uuid
 }
 
-// Done reports whether the sender has exhausted its chunk channel; once true,
+// Done reports whether the sender has exhausted its chunk channel. Once true,
 // subsequent calls to Next return io.EOF without making any RPCs.
 func (s *ChunkSender) Done() bool {
 	return s.done

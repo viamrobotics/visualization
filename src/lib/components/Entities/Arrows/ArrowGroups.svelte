@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
+	import { useThrelte } from '@threlte/core'
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
 
@@ -11,6 +12,7 @@
 	import Arrows from './Arrows.svelte'
 
 	const world = useWorld()
+	const { invalidate } = useThrelte()
 
 	const map = new SvelteMap<Entity, InstancedArrows>()
 
@@ -33,11 +35,34 @@
 	}
 
 	/**
-	 * TODO: more granular updates here, but this should be fine for now.
+	 * Re-drawing an arrows entity in place (same UUID) rewrites its Positions/Colors
+	 * traits. Push the new buffers straight into the already-mounted InstancedArrows so it
+	 * re-renders without a remount.
 	 */
 	const onChange = (entity: Entity) => {
-		onRemove(entity)
-		onAdd(entity)
+		if (!entity.has(traits.Arrows)) return
+
+		const existing = map.get(entity)
+		const poses = entity.get(traits.Positions)
+		if (!existing || !poses) {
+			onRemove(entity)
+			onAdd(entity)
+			return
+		}
+
+		const colors = entity.get(traits.Colors)
+		const countChanged = poses.length / STRIDE.ARROWS !== existing.count
+		const colorLayoutChanged =
+			(colors !== undefined) !== (existing.attributes.instanceColor !== undefined)
+
+		if (countChanged || colorLayoutChanged) {
+			onRemove(entity)
+			onAdd(entity)
+			return
+		}
+
+		existing.update({ poses, colors, headAtPose: entity.get(traits.Arrows)?.headAtPose })
+		invalidate()
 	}
 
 	const onRemove = (entity: Entity) => {
@@ -48,17 +73,23 @@
 	$effect(() => {
 		const unsubAdd = world.onAdd(traits.Arrows, onAdd)
 		const unsubRemove = world.onRemove(traits.Arrows, onRemove)
-		const unsubPoseChange = world.onChange(traits.Arrows, onChange)
+		const unsubArrowsChange = world.onChange(traits.Arrows, onChange)
+		const unsubPositionsChange = world.onChange(traits.Positions, onChange)
+		const unsubColorChange = world.onChange(traits.Color, onChange)
+		const unsubColorsChange = world.onChange(traits.Colors, onChange)
 
 		return () => {
 			unsubAdd()
 			unsubRemove()
-			unsubPoseChange()
+			unsubArrowsChange()
+			unsubPositionsChange()
+			unsubColorChange()
+			unsubColorsChange()
 		}
 	})
 </script>
 
-{#each map as [entity, arrows] (entity)}
+{#each map as [entity, arrows] (arrows)}
 	<Arrows
 		{entity}
 		{arrows}

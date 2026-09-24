@@ -332,7 +332,7 @@ const file_draw_v1_metadata_proto_rawDesc = "" +
 	"\a_chunks*A\n" +
 	"\vColorFormat\x12\x1c\n" +
 	"\x18COLOR_FORMAT_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10COLOR_FORMAT_RGB\x10\x01B2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x10COLOR_FORMAT_RGB\x10\x01B6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_metadata_proto_rawDescOnce sync.Once

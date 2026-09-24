@@ -2,14 +2,13 @@ package draw
 
 import "fmt"
 
-// ModelAsset represents a 3D model asset sourced from either a URL or inline binary
-// data. Use NewURLModelAsset or NewBinaryModelAsset to construct one; that path
-// guarantees exactly one of URLContent or DataContent is populated. Common formats
-// include GLB, GLTF, PLY, and PCD.
+// ModelAsset represents a 3D model asset sourced from either a URL or inline binary data.
+// Use NewURLModelAsset or NewBinaryModelAsset to construct one. That path guarantees exactly
+// one of URLContent or DataContent is populated. Common formats include GLB, GLTF, PLY, and PCD.
 type ModelAsset struct {
 	// MimeType is the IANA media type of the asset (e.g., "model/gltf-binary").
 	MimeType string
-	// SizeBytes is the expected payload size in bytes; the visualizer uses it for
+	// SizeBytes is the expected payload size in bytes. The visualizer uses it for
 	// progress reporting during asset loading. Optional.
 	SizeBytes *uint64
 	// URLContent is the URL the visualizer should fetch the asset from. Mutually
@@ -19,14 +18,12 @@ type ModelAsset struct {
 	DataContent *[]byte
 }
 
-// drawModelAssetConfig is a configuration for drawing a model asset
 type drawModelAssetConfig struct {
 	sizeBytes   *uint64
 	urlContent  *string
 	dataContent *[]byte
 }
 
-// newDrawModelAssetConfig creates a new draw model asset configuration
 func newDrawModelAssetConfig() *drawModelAssetConfig {
 	return &drawModelAssetConfig{
 		sizeBytes:   nil,
@@ -39,9 +36,9 @@ func newDrawModelAssetConfig() *drawModelAssetConfig {
 // NewURLModelAsset or NewBinaryModelAsset.
 type DrawModelAssetOption func(*drawModelAssetConfig)
 
-// WithModelAssetSizeBytes records the expected payload size of the asset. The
-// visualizer uses this value for progress reporting while the asset loads; it does
-// not validate the payload against the size.
+// WithModelAssetSizeBytes records the expected payload size of the asset. The visualizer
+// uses this value for progress reporting while the asset loads. It does not validate
+// the payload against the size.
 func WithModelAssetSizeBytes(sizeBytes uint64) DrawModelAssetOption {
 	return func(config *drawModelAssetConfig) {
 		config.sizeBytes = &sizeBytes

@@ -1,8 +1,12 @@
 import { getContext, setContext } from 'svelte'
 
+/** Port the Go draw server listens on. Matches `draw-server -port`. */
+export const DEFAULT_DRAW_SERVICE_PORT = '3030'
+
 export interface DrawConnectionConfig {
 	backendIP: string
-	websocketPort: string
+	/** Defaults to {@link DEFAULT_DRAW_SERVICE_PORT}. */
+	port?: string
 }
 
 interface Context {

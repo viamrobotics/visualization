@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { T, useTask } from '@threlte/core'
 	import { useController, type XRController } from '@threlte/xr'
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { CanvasTexture, Mesh, PlaneGeometry, Raycaster } from 'three'
 
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
@@ -18,30 +18,26 @@
 	const settings = useSettings()
 	const armClient = useArmClient()
 	const partID = usePartID()
-	let resources = useResourceNames(() => partID.current)
+	let resources = useResourceStatuses(() => partID.current)
 
-	// Get available arms and grippers
 	const armNames = $derived(armClient.names || [])
 	const gripperNames = $derived(
 		resources?.current
-			?.filter((r) => r.subtype === 'gripper' && r.type === 'component')
-			.map((r) => r.name) || []
+			?.filter((r) => r.name?.subtype === 'gripper' && r.name.type === 'component')
+			.map((r) => r.name?.name)
+			.filter((name): name is string => name !== undefined) || []
 	)
 
-	// Local state for UI
 	type Hand = 'left' | 'right'
 	let selectedHand = $state<Hand>('right')
 
-	// Get current config for selected hand
 	const currentConfig = $derived(settings.current.xrController[selectedHand])
 
-	// Local form state (editable) — synced from currentConfig via effect
 	let formArmName = $state<string>()
 	let formGripperName = $state<string>()
 	let formScaleFactor = $state<number>(1)
 	let formRotationEnabled = $state<boolean>(true)
 
-	// Sync form state when selected hand or config changes
 	$effect(() => {
 		const cfg = currentConfig
 		formArmName = cfg.armName
@@ -50,7 +46,6 @@
 		formRotationEnabled = cfg.rotationEnabled
 	})
 
-	// Canvas setup
 	const CANVAS_WIDTH = 600
 	const CANVAS_HEIGHT = 500
 
@@ -58,7 +53,6 @@
 	let texture = $state<CanvasTexture>()
 	let geometry = $state<PlaneGeometry>()
 
-	// Initialize canvas
 	$effect(() => {
 		if (!canvas) {
 			canvas = document.createElement('canvas')
@@ -66,13 +60,11 @@
 			canvas.height = CANVAS_HEIGHT
 			texture = new CanvasTexture(canvas)
 
-			// Calculate aspect ratio for plane geometry
 			const aspect = CANVAS_WIDTH / CANVAS_HEIGHT
 			geometry = new PlaneGeometry(1.5, 1.5 / aspect)
 		}
 	})
 
-	// UI element bounds for interaction
 	interface UIElement {
 		x: number
 		y: number
@@ -84,30 +76,24 @@
 
 	let uiElements: UIElement[] = []
 
-	// Mesh ref for raycasting
 	let meshRef = $state<Mesh>()
 
-	// Controller interaction
 	const rightController = useController('right')
 	const leftController = useController('left')
 
-	// Interaction state
 	let hoveredElement = $state<UIElement>()
 	let lastButtonPressed = $state(false)
 
-	// Handle click on UI element
 	function handleClick(element: UIElement) {
 		if (element.type === 'tab') {
 			selectedHand = element.id as Hand
 		} else if (element.type === 'button' && element.id === 'apply') {
 			applySettings()
 		} else if (element.id === 'arm-dropdown') {
-			// Cycle through arms
 			const currentIndex = armNames.indexOf(formArmName || '')
 			const nextIndex = (currentIndex + 1) % (armNames.length + 1)
 			formArmName = nextIndex === armNames.length ? undefined : armNames[nextIndex]
 		} else if (element.id === 'gripper-dropdown') {
-			// Cycle through grippers
 			const currentIndex = gripperNames.indexOf(formGripperName || '')
 			const nextIndex = (currentIndex + 1) % (gripperNames.length + 1)
 			formGripperName = nextIndex === gripperNames.length ? undefined : gripperNames[nextIndex]
@@ -119,20 +105,17 @@
 	// Reusable raycaster to avoid per-frame allocation
 	const raycaster = new Raycaster()
 
-	// Check for ray intersection with panel
 	function checkIntersection(controllerRef: typeof rightController) {
 		if (!meshRef || !controllerRef.current) return
 
 		const controller = controllerRef.current
 
-		// Get controller's world position and direction
 		const tempMatrix = controller.targetRay.matrixWorld
 		if (!tempMatrix || !tempMatrix.elements) return
 
 		raycaster.ray.origin.setFromMatrixPosition(tempMatrix)
 		raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix).normalize()
 
-		// Check intersection with mesh
 		const intersects = raycaster.intersectObject(meshRef, false)
 
 		if (intersects.length > 0) {
@@ -140,11 +123,9 @@
 			const uv = intersect.uv
 
 			if (uv) {
-				// Map UV to canvas coordinates
 				const canvasX = uv.x * CANVAS_WIDTH
 				const canvasY = (1 - uv.y) * CANVAS_HEIGHT
 
-				// Check which UI element was hit
 				const hitElement = uiElements.find(
 					(el) =>
 						canvasX >= el.x &&
@@ -162,12 +143,10 @@
 		return undefined
 	}
 
-	// Monitor controller A/X button every frame
 	useTask(() => {
 		const controller = rightController.current || leftController.current
 		if (!controller) return
 
-		// Check for intersection
 		const hitElement = checkIntersection(rightController.current ? rightController : leftController)
 
 		// Check for A/X button press (rising edge) - gamepad button 4
@@ -181,7 +160,6 @@
 		lastButtonPressed = buttonPressed
 	})
 
-	// Apply settings
 	function applySettings() {
 		settings.current.xrController[selectedHand] = {
 			armName: formArmName,
@@ -191,24 +169,19 @@
 		}
 	}
 
-	// Render functions
 	function renderHeader(ctx: CanvasRenderingContext2D, width: number) {
-		// Header background
 		ctx.fillStyle = '#0a0a0a'
 		ctx.fillRect(0, 0, width, 50)
 
-		// Title
 		ctx.fillStyle = '#ffffff'
 		ctx.font = 'bold 20px sans-serif'
 		ctx.textBaseline = 'middle'
 		ctx.fillText('XR Controller Configuration', 20, 20)
 
-		// Instruction text
 		ctx.font = '12px sans-serif'
 		ctx.fillStyle = '#999999'
 		ctx.fillText('Use A/X button to click', 20, 38)
 
-		// Separator line
 		ctx.strokeStyle = '#444444'
 		ctx.lineWidth = 2
 		ctx.beginPath()
@@ -222,10 +195,8 @@
 		const tabHeight = 40
 		const tabWidth = width / 2
 
-		// Clear UI elements for tabs
 		uiElements = uiElements.filter((el) => el.type !== 'tab')
 
-		// Left tab
 		ctx.fillStyle = selectedHand === 'left' ? '#333333' : '#1a1a1a'
 		ctx.fillRect(0, tabY, tabWidth, tabHeight)
 		ctx.fillStyle = '#ffffff'
@@ -243,7 +214,6 @@
 			id: 'left',
 		})
 
-		// Right tab
 		ctx.fillStyle = selectedHand === 'right' ? '#333333' : '#1a1a1a'
 		ctx.fillRect(tabWidth, tabY, tabWidth, tabHeight)
 		ctx.fillStyle = '#ffffff'
@@ -258,7 +228,6 @@
 			id: 'right',
 		})
 
-		// Tab separator line
 		ctx.strokeStyle = '#444444'
 		ctx.lineWidth = 2
 		ctx.beginPath()
@@ -276,10 +245,8 @@
 		const controlX = 200
 		const controlWidth = 350
 
-		// Clear form control UI elements
 		uiElements = uiElements.filter((el) => el.type === 'tab')
 
-		// Arm dropdown
 		ctx.fillStyle = '#ffffff'
 		ctx.font = '16px sans-serif'
 		ctx.textBaseline = 'middle'
@@ -300,7 +267,6 @@
 			id: 'arm-dropdown',
 		})
 
-		// Gripper dropdown
 		ctx.fillText('Gripper:', labelX, formY + rowHeight * 1 + 25)
 
 		const gripperDropdownY = formY + rowHeight * 1 + 10
@@ -322,10 +288,8 @@
 			id: 'gripper-dropdown',
 		})
 
-		// Scale factor slider
 		ctx.fillText('Scale Factor:', labelX, formY + rowHeight * 2 + 25)
 
-		// Slider track
 		const sliderX = controlX
 		const sliderY = formY + rowHeight * 2 + 20
 		const sliderWidth = 250
@@ -334,23 +298,19 @@
 		ctx.fillStyle = '#333333'
 		ctx.fillRect(sliderX, sliderY, sliderWidth, sliderHeight)
 
-		// Slider thumb
 		const thumbPos = ((formScaleFactor - 0.1) / (3 - 0.1)) * sliderWidth
 		ctx.fillStyle = '#4CAF50'
 		ctx.beginPath()
 		ctx.arc(sliderX + thumbPos, sliderY + sliderHeight / 2, 12, 0, Math.PI * 2)
 		ctx.fill()
 
-		// Scale value text
 		ctx.fillStyle = '#ffffff'
 		ctx.font = '14px sans-serif'
 		ctx.fillText(formScaleFactor.toFixed(1), sliderX + sliderWidth + 15, sliderY + sliderHeight / 2)
 
-		// Rotation checkbox
 		ctx.font = '16px sans-serif'
 		ctx.fillText('Enable Rotation', labelX, formY + rowHeight * 3 + 25)
 
-		// Checkbox
 		const checkboxX = controlX
 		const checkboxY = formY + rowHeight * 3 + 10
 		const checkboxSize = 30
@@ -373,7 +333,6 @@
 			id: 'rotation-checkbox',
 		})
 
-		// Apply button
 		const buttonY = formY + rowHeight * 4 + 10
 		const buttonX = width / 2 - 100
 		const buttonWidth = 200
@@ -398,25 +357,20 @@
 		ctx.textAlign = 'left'
 	}
 
-	// Render canvas
 	$effect(() => {
 		if (canvas) {
 			const ctx = canvas.getContext('2d')
 			if (!ctx) return
 
-			// Clear canvas
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-			// Background
 			ctx.fillStyle = '#1a1a1a'
 			ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-			// Render components
 			renderHeader(ctx, canvas.width)
 			renderTabs(ctx, canvas.width)
 			renderFormControls(ctx, canvas.width)
 
-			// Mark texture for update
 			if (texture) {
 				texture.needsUpdate = true
 			}

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/viam-labs/motion-tools/client/server"
+	"github.com/viamrobotics/visualization/client/server"
 )
 
 func TestGetClient_NilBeforeStart(t *testing.T) {

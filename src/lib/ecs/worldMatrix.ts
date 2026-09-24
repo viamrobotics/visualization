@@ -1,18 +1,23 @@
 import { type Entity, type World } from 'koota'
 import { Matrix4 } from 'three'
 
-import { composeLocalMatrix } from '$lib/transform'
+import { composeLocalMatrix } from '$lib/math/transform'
 
 import { ChildOf } from './relations'
 import { EditedMatrix, LiveMatrix, Matrix, Name, WorldMatrix } from './traits'
 
 /**
- * Compute the entity's local-to-parent transform into `out`. Mirrors the
- * blend used by `Frame.svelte` so `WorldMatrix` agrees with the displayed
- * scenegraph.
+ * Compute the entity's local-to-parent transform into `out`.
  *
- * - All three matrix traits present: `live × baseline⁻¹ × edited`.
- * - Otherwise: prefer `EditedMatrix` over `Matrix`.
+ * `EditedMatrix` is optional — it's present only while the user has a staged
+ * edit for the frame (the editing layer owns its lifecycle). The blend picks
+ * the most specific source available:
+ *
+ * - Staged edit over live data: `live × baseline⁻¹ × edited` (previews the
+ *   edit on top of the latest kinematics).
+ * - Live data, no edit: `live`.
+ * - Staged edit, no live data (e.g. an offline part): `edited`.
+ * - Neither: the saved-config `baseline`.
  *
  * Returns `true` after writing to `out`; returns `false` and leaves `out`
  * untouched when the entity has no matrix-shaped trait.
@@ -24,6 +29,11 @@ const toLocalMatrix = (entity: Entity, out: Matrix4): boolean => {
 
 	if (liveMatrix && matrix && editedMatrix) {
 		composeLocalMatrix(liveMatrix, matrix, editedMatrix, out)
+		return true
+	}
+
+	if (liveMatrix) {
+		out.copy(liveMatrix)
 		return true
 	}
 

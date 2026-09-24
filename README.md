@@ -14,7 +14,7 @@
 ## Quick start
 
 ```bash
-make setup     # one-time: install Node 22, pnpm, bun, Go, buf, project deps
+make setup     # one-time: install Node 22, pnpm, Go, buf, project deps
 make up        # http://localhost:5173
 ```
 

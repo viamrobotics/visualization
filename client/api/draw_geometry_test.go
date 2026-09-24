@@ -1,122 +1,106 @@
 package api
 
 import (
-	"math"
 	"testing"
-	"time"
 
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
 
-var offset = r3.Vector{X: 0, Y: 1000, Z: 0}
+func testBox(t *testing.T, label string) spatialmath.Geometry {
+	t.Helper()
+	box, err := spatialmath.NewBox(
+		spatialmath.NewZeroPose(),
+		r3.Vector{X: 100, Y: 100, Z: 100},
+		label,
+	)
+	test.That(t, err, test.ShouldBeNil)
+	return box
+}
 
-func TestDrawGeometry(t *testing.T) {
-	startTestServer(t)
+func TestDrawGeometrySendsATransform(t *testing.T) {
+	fake := startFake(t)
 
-	t.Run("DrawGeometry box", func(t *testing.T) {
-		box, err := spatialmath.NewBox(
-			spatialmath.NewPose(
-				r3.Vector{X: 1001, Y: 1, Z: 1}.Add(offset),
-				&spatialmath.OrientationVectorDegrees{Theta: 45, OX: 0, OY: 0, OZ: 1},
-			),
-			r3.Vector{X: 101, Y: 100, Z: 200},
-			"DrawGeometry box",
-		)
-		test.That(t, err, test.ShouldBeNil)
+	_, err := DrawGeometry(DrawGeometryOptions{
+		Name:     "my-box",
+		Geometry: testBox(t, "box-label"),
+		Color:    draw.ColorFromRGB(255, 0, 0),
+	})
+	test.That(t, err, test.ShouldBeNil)
 
-		uuid, err := DrawGeometry(DrawGeometryOptions{
-			ID:       "box",
-			Geometry: box,
-			Color:    draw.ColorFromName("purple"),
-		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+	// A geometry travels as a Transform, not a Drawing.
+	transform := fake.onlyAddedTransform(t)
+	test.That(t, transform.GetReferenceFrame(), test.ShouldEqual, "my-box")
+	test.That(t, transform.GetPhysicalObject(), test.ShouldNotBeNil)
+}
+
+func TestDrawGeometryRequiresAVisualizer(t *testing.T) {
+	requireNoServer(t)
+
+	_, err := DrawGeometry(DrawGeometryOptions{Name: "x", Geometry: testBox(t, "b")})
+
+	test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
+}
+
+func TestDrawGeometryWrapsRPCFailures(t *testing.T) {
+	fake := startFake(t)
+	fake.errs["AddEntity"] = errRPCBoom
+
+	_, err := DrawGeometry(DrawGeometryOptions{Name: "x", Geometry: testBox(t, "b")})
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntity RPC failed")
+}
+
+// DrawGeometry does not run the ascii check that DrawLine and the other drawing
+// calls run, so a name it would reject reaches the server instead. See
+// TestNameValidationIsInconsistentAcrossTheAPI for the full split.
+func TestDrawGeometryDoesNotValidateTheName(t *testing.T) {
+	fake := startFake(t)
+
+	_, err := DrawGeometry(DrawGeometryOptions{
+		Name:     "café",
+		Geometry: testBox(t, "box-label"),
 	})
 
-	t.Run("DrawGeometry sphere", func(t *testing.T) {
-		sphere, err := spatialmath.NewSphere(
-			spatialmath.NewPose(
-				r3.Vector{X: 1, Y: 1000, Z: 0}.Add(offset),
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			),
-			100,
-			"DrawGeometry sphere",
-		)
-		test.That(t, err, test.ShouldBeNil)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, fake.onlyAddedTransform(t).GetReferenceFrame(), test.ShouldEqual, "café")
+}
 
-		uuid, err := DrawGeometry(DrawGeometryOptions{
-			ID:       "sphere",
-			Geometry: sphere,
-			Color:    draw.ColorFromName("red"),
-		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+// The ascii check guards six of the twelve Draw* entry points. The calls that
+// derive names from RDK types are arguably fine without it, but DrawGeometry and
+// DrawGeometriesInFrame take a caller-supplied name and still skip it.
+func TestNameValidationIsInconsistentAcrossTheAPI(t *testing.T) {
+	nonASCII := "café"
+
+	t.Run("DrawLine rejects it", func(t *testing.T) {
+		startFake(t)
+
+		_, err := DrawLine(DrawLineOptions{Name: nonASCII, Positions: twoPointLine})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "not ascii")
 	})
 
-	t.Run("DrawGeometry capsule", func(t *testing.T) {
-		capsule, err := spatialmath.NewCapsule(
-			spatialmath.NewPose(
-				r3.Vector{X: -1002, Y: 3, Z: 0}.Add(offset),
-				&spatialmath.OrientationVectorDegrees{Theta: 90, OX: 1, OY: 0, OZ: 1},
-			),
-			102,
-			300,
-			"DrawGeometry capsule",
-		)
-		test.That(t, err, test.ShouldBeNil)
+	t.Run("DrawPoints rejects it", func(t *testing.T) {
+		startFake(t)
 
-		uuid, err := DrawGeometry(DrawGeometryOptions{
-			ID:       "capsule",
-			Geometry: capsule,
-			Color:    draw.ColorFromName("orange"),
-		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
+		_, err := DrawPoints(DrawPointsOptions{Name: nonASCII, Positions: fourPoints})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "not ascii")
 	})
 
-	t.Run("DrawGeometry mesh", func(t *testing.T) {
-		mesh, err := spatialmath.NewMeshFromPLYFile("../data/lod_500.ply")
-		test.That(t, err, test.ShouldBeNil)
+	t.Run("DrawGeometry accepts it", func(t *testing.T) {
+		startFake(t)
 
-		pose := spatialmath.NewPose(
-			r3.Vector{X: -343.34, Y: -139.51, Z: 537.44}.Add(offset),
-			&spatialmath.OrientationVectorDegrees{Theta: 90, OX: -0.9943171068536344, OY: -0.0046240014351797976, OZ: -0.10635840177882347},
-		)
-		meshInWorld := mesh.Transform(pose).(*spatialmath.Mesh)
-		meshInWorld.SetLabel("DrawGeometry mesh")
-
-		uuid, err := DrawGeometry(DrawGeometryOptions{
-			ID:       "mesh",
-			Geometry: meshInWorld,
-			Color:    draw.ColorFromName("blue"),
+		_, err := DrawGeometry(DrawGeometryOptions{
+			Name:     nonASCII,
+			Geometry: testBox(t, "b"),
 		})
+
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
-	})
-
-	t.Run("DrawGeometry updating", func(t *testing.T) {
-		for i := 0; i < 100; i++ {
-			box, err := spatialmath.NewBox(
-				spatialmath.NewPose(
-					r3.Vector{X: math.Sin(float64(i)/16.) * 1000, Y: 1, Z: 1}.Add(offset),
-					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
-				),
-				r3.Vector{X: 101, Y: 100, Z: 200},
-				"DrawGeometry box updating",
-			)
-			test.That(t, err, test.ShouldBeNil)
-
-			uuid, err := DrawGeometry(DrawGeometryOptions{
-				ID:       "box",
-				Geometry: box,
-				Color:    draw.ColorFromName("purple"),
-			})
-			test.That(t, err, test.ShouldBeNil)
-			test.That(t, uuid, test.ShouldNotBeNil)
-			time.Sleep(16 * time.Millisecond)
-		}
 	})
 }

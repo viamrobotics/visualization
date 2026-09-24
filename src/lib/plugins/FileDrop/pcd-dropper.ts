@@ -1,0 +1,31 @@
+import { isArrayBuffer } from 'lodash-es'
+
+import {
+	type FileDropper,
+	FileDropperError,
+	type FileDropperParams,
+	parseFailure,
+} from '$lib/fileDropper'
+import { parsePcdInWorker } from '$lib/loaders/pcd'
+
+export const pcdDropper: FileDropper = async (params: FileDropperParams) => {
+	const { name, content } = params
+	if (!isArrayBuffer(content)) {
+		return {
+			success: false,
+			error: new FileDropperError(`${name} failed to load.`),
+		}
+	}
+
+	try {
+		const result = await parsePcdInWorker(new Uint8Array(content))
+		return {
+			success: true,
+			name,
+			type: 'pcd',
+			pcd: result,
+		}
+	} catch (error) {
+		return parseFailure(name, error)
+	}
+}

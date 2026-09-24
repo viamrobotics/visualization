@@ -1,10 +1,4 @@
-import {
-	type ConfigurableTrait,
-	type Entity,
-	type QueryResult,
-	type Trait,
-	type World,
-} from 'koota'
+import { type ConfigurableTrait, type Entity, type World } from 'koota'
 
 import { ChildOf } from './relations'
 import * as traits from './traits'
@@ -98,10 +92,7 @@ export const destroyEntityTree = (world: World, entity: Entity): void => {
  *      it. This catches the case where the orphan is the only entity in
  *      the world with that `Name`.
  */
-export const resolveOrphans = (
-	named: QueryResult<[Trait<() => string>]>,
-	orphans: QueryResult<[Trait<() => string>]>
-): void => {
+export const resolveOrphans = (named: readonly Entity[], orphans: readonly Entity[]): void => {
 	const index = new Map<string, Entity>()
 	for (const entity of named) {
 		const name = entity.get(traits.Name)

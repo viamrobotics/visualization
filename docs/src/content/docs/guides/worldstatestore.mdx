@@ -21,7 +21,7 @@ The `<Visualizer />` subscribes and relies on the `WorldStateStoreService` to em
 
 This guide walks through that loop with one concrete example: an **obstacle store** that polls a Viam sensor named `obstacle-sensor`, reconciles the readings against its internal state, and streams the deltas. The sensor's `Readings()` returns a list of obstacles, each with a stable `id`, a position, dimensions, and an `ending_soon` boolean. The store keys off the `id`: same `id`, different position or dimensions ⇒ `UPDATED`; previously-seen `id` missing from a tick ⇒ `REMOVED`. Newly-added obstacles render blue at 50% opacity, the final frame before removal renders red at 50% opacity, and steady-state obstacles render orange — all driven by the diff plus the `ending_soon` signal.
 
-The complete runnable module lives at [`docs/examples/worldstatestore/`](https://github.com/viam-labs/motion-tools/tree/main/docs/examples/worldstatestore). Use [`store.go`](https://github.com/viam-labs/motion-tools/blob/main/docs/examples/worldstatestore/store.go) as the reference implementation while reading the rest of this guide.
+The complete runnable module lives at [`docs/examples/worldstatestore/`](https://github.com/viamrobotics/visualization/tree/main/docs/examples/worldstatestore). Use [`store.go`](https://github.com/viamrobotics/visualization/blob/main/docs/examples/worldstatestore/store.go) as the reference implementation while reading the rest of this guide.
 
 ## Module layout
 
@@ -35,7 +35,7 @@ obstacle-store/
 ## Install
 
 ```bash
-go get github.com/viam-labs/motion-tools/draw
+go get github.com/viamrobotics/visualization/draw
 go get go.viam.com/rdk
 go get go.viam.com/api
 ```
@@ -54,7 +54,7 @@ import (
     "time"
 
     "github.com/golang/geo/r3"
-    "github.com/viam-labs/motion-tools/draw"
+    "github.com/viamrobotics/visualization/draw"
     commonpb "go.viam.com/api/common/v1"
     pb "go.viam.com/api/service/worldstatestore/v1"
     "go.viam.com/rdk/components/sensor"

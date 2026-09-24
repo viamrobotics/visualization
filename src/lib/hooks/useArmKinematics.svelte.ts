@@ -2,9 +2,11 @@ import { ArmClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
-	useResourceNames,
+	useResourceStatuses,
 } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
+
+import { STATIC_RESOURCE_QUERY_OPTIONS } from '$lib/staticResourceQuery'
 
 const key = Symbol('arm-kinematics-context')
 
@@ -20,20 +22,21 @@ interface Context {
 }
 
 export const provideArmKinematics = (partID: () => string) => {
-	const arms = useResourceNames(partID, 'arm')
-	// Kinematics are static config data, so fetch once and cache indefinitely
-	const options = { staleTime: Infinity, refetchOnMount: false, refetchInterval: false as const }
+	const arms = useResourceStatuses(partID, 'arm')
 
-	const names = $derived(arms.current.map((arm) => arm.name))
-
-	const clients = $derived(
-		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
+	const names = $derived(
+		arms.current.map((arm) => arm.name?.name).filter((name): name is string => name !== undefined)
 	)
+
+	const clients = $derived(names.map((name) => createResourceClient(ArmClient, partID, () => name)))
 
 	const kinematicsQueries = $derived(
 		clients.map(
 			(client) =>
-				[client.current?.name, createResourceQuery(client, 'getKinematics', () => options)] as const
+				[
+					client.name,
+					createResourceQuery(client, 'getKinematics', () => STATIC_RESOURCE_QUERY_OPTIONS),
+				] as const
 		)
 	)
 

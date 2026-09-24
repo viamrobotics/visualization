@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/golang/geo/r3"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/referenceframe"
@@ -53,14 +53,14 @@ func entityKey(name, parent string) string {
 
 // Transforms returns the transforms (physical entities in the frame system) the
 // snapshot has accumulated. The returned slice is the snapshot's own backing
-// storage; callers should not mutate it.
+// storage, so callers should not mutate it.
 func (snapshot *Snapshot) Transforms() []*commonv1.Transform {
 	return snapshot.transforms
 }
 
 // Drawings returns the drawings (non-physical visualizations) the snapshot has
-// accumulated. The returned slice is the snapshot's own backing storage; callers
-// should not mutate it.
+// accumulated. The returned slice is the snapshot's own backing storage, so
+// callers should not mutate it.
 func (snapshot *Snapshot) Drawings() []*Drawing {
 	return snapshot.drawings
 }
@@ -89,7 +89,7 @@ func (snapshot *Snapshot) ToProto() *drawv1.Snapshot {
 
 // MarshalJSON marshals the snapshot to JSON via protojson, emitting unpopulated
 // fields so the output round-trips faithfully. JSON is the most human-readable
-// format and is convenient for debugging; for delivery to the visualizer, prefer
+// format and is convenient for debugging. For delivery to the visualizer, prefer
 // MarshalBinary or MarshalBinaryGzip.
 func (snapshot *Snapshot) MarshalJSON() ([]byte, error) {
 	marshaler := protojson.MarshalOptions{
@@ -101,7 +101,7 @@ func (snapshot *Snapshot) MarshalJSON() ([]byte, error) {
 
 // MarshalBinary marshals the snapshot to a compact binary protobuf payload. This
 // is the recommended format when payload size matters but the consumer cannot
-// decompress gzip; otherwise prefer MarshalBinaryGzip.
+// decompress gzip. Otherwise prefer MarshalBinaryGzip.
 func (snapshot *Snapshot) MarshalBinary() ([]byte, error) {
 	return proto.Marshal(snapshot.ToProto())
 }
@@ -385,7 +385,7 @@ func (snapshot *Snapshot) DrawPoints(opts DrawPointsOptions) ([]byte, error) {
 
 // snapshotDrawableOpts builds the DrawableOption slice for a single-entity
 // Snapshot method. When id is non-empty the UUID is derived from that string
-// (stable across calls); otherwise it is derived from name+parent.
+// and is stable across calls. When id is empty the UUID is derived from name+parent.
 func snapshotDrawableOpts(
 	name, id, parent string,
 	pose spatialmath.Pose,
@@ -577,7 +577,7 @@ func (snapshot *Snapshot) DrawWorldState(opts DrawWorldStateOptions) ([][]byte, 
 // DrawGeometryOptions configures a Snapshot.DrawGeometry call.
 type DrawGeometryOptions struct {
 	// ID is a stable identifier. When set, re-calling with the same ID derives a
-	// stable UUID; when empty, the UUID is derived from Name and Parent.
+	// stable UUID. When empty, the UUID is derived from Name and Parent.
 	ID string
 	// Name labels the entity. When empty, the geometry's own label is used.
 	Name string
@@ -597,7 +597,7 @@ type DrawGeometryOptions struct {
 
 // DrawLineOptions configures a Snapshot.DrawLine call.
 type DrawLineOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -607,8 +607,8 @@ type DrawLineOptions struct {
 	Pose spatialmath.Pose
 	// Positions defines the polyline vertices. Must contain at least two points.
 	Positions []r3.Vector
-	// Colors controls segment colors. Empty = default blue; 1 = shared; len(Positions) =
-	// per-vertex; other = palette cycle.
+	// Colors controls segment colors. Empty = default blue, 1 = shared, len(Positions) =
+	// per-vertex, other = palette cycle.
 	Colors []Color
 	// DotColors controls vertex-dot colors using the same rules as Colors.
 	// When empty, uses DefaultLineDotColor.
@@ -625,7 +625,7 @@ type DrawLineOptions struct {
 
 // DrawPointsOptions configures a Snapshot.DrawPoints call.
 type DrawPointsOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -635,8 +635,8 @@ type DrawPointsOptions struct {
 	Pose spatialmath.Pose
 	// Positions are the locations of each point. Must contain at least one position.
 	Positions []r3.Vector
-	// Colors controls point colors. Empty = DefaultPointColor (gray); 1 = shared;
-	// len(Positions) = per-point; other = palette cycle.
+	// Colors controls point colors. Empty = DefaultPointColor (gray), 1 = shared,
+	// len(Positions) = per-point, other = palette cycle.
 	Colors []Color
 	// PointSize is the rendered point diameter in mm. 0 uses DefaultPointSize (10mm).
 	PointSize float32
@@ -648,7 +648,7 @@ type DrawPointsOptions struct {
 
 // DrawArrowsOptions configures a Snapshot.DrawArrows call.
 type DrawArrowsOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -658,8 +658,8 @@ type DrawArrowsOptions struct {
 	Pose spatialmath.Pose
 	// Poses are the positions and orientations rendered as individual arrows. Required.
 	Poses []spatialmath.Pose
-	// Colors controls arrow colors. Empty = DefaultArrowColor (green); 1 = shared;
-	// len(Poses) = per-arrow; other = palette cycle.
+	// Colors controls arrow colors. Empty = DefaultArrowColor (green), 1 = shared,
+	// len(Poses) = per-arrow, other = palette cycle.
 	Colors []Color
 	// ShowAxesHelper controls whether the axes helper is shown. Nil defaults to true.
 	ShowAxesHelper *bool
@@ -669,7 +669,7 @@ type DrawArrowsOptions struct {
 
 // DrawFrameOptions configures a Snapshot.DrawFrame call.
 type DrawFrameOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name is the frame name. Required.
 	Name string
@@ -687,7 +687,7 @@ type DrawFrameOptions struct {
 
 // DrawModelOptions configures a Snapshot.DrawModel call.
 type DrawModelOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -720,7 +720,7 @@ type DrawFrameSystemGeometriesOptions struct {
 
 // DrawNurbsOptions configures a Snapshot.DrawNurbs call.
 type DrawNurbsOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -748,7 +748,7 @@ type DrawNurbsOptions struct {
 
 // DrawPointCloudOptions configures a Snapshot.DrawPointCloud call.
 type DrawPointCloudOptions struct {
-	// ID is a stable identifier; empty derives UUID from Name and Parent.
+	// ID is a stable identifier. Empty derives the UUID from Name and Parent.
 	ID string
 	// Name labels the entity in the visualizer.
 	Name string
@@ -761,8 +761,8 @@ type DrawPointCloudOptions struct {
 	// DownscalingThreshold keeps only points whose mutual distance exceeds this
 	// threshold (mm). 0 disables downscaling.
 	DownscalingThreshold float64
-	// Colors controls cloud coloring. Empty = per-point color data from the cloud;
-	// 1 = shared override; PointCloud.Size() = per-point; other = palette cycle.
+	// Colors controls cloud coloring. Empty = per-point color data from the cloud,
+	// 1 = shared override, PointCloud.Size() = per-point, other = palette cycle.
 	Colors []Color
 	// ShowAxesHelper controls whether the axes helper is shown. Nil defaults to true.
 	ShowAxesHelper *bool
@@ -777,8 +777,8 @@ type DrawGeometriesInFrameOptions struct {
 	ID string
 	// Geometries is the set of geometries to render. Required, at least one.
 	Geometries *referenceframe.GeometriesInFrame
-	// Colors controls geometry colors. Empty = red; 1 = shared; len(Geometries) =
-	// per-geometry; other = palette cycle.
+	// Colors controls geometry colors. Empty = red, 1 = shared, len(Geometries) =
+	// per-geometry, other = palette cycle.
 	Colors []Color
 	// DownscalingThreshold reduces rendered point count for point-cloud geometries.
 	// 0 disables downscaling.
@@ -807,7 +807,7 @@ type DrawWorldStateOptions struct {
 	FrameSystem *referenceframe.FrameSystem
 	// Inputs are the frame system inputs for evaluating frame poses.
 	Inputs referenceframe.FrameSystemInputs
-	// Colors controls obstacle colors. Empty = ChromaticColorChooser palette;
-	// 1 = shared; obstacle count = per-obstacle; other = palette cycle.
+	// Colors controls obstacle colors. Empty = ChromaticColorChooser palette, 1 = shared,
+	// obstacle count = per-obstacle, other = palette cycle.
 	Colors []Color
 }

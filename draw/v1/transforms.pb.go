@@ -77,7 +77,7 @@ const file_draw_v1_transforms_proto_rawDesc = "" +
 	"Transforms\x129\n" +
 	"\n" +
 	"transforms\x18\x01 \x03(\v2\x19.viam.common.v1.TransformR\n" +
-	"transformsB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"transformsB6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_transforms_proto_rawDescOnce sync.Once

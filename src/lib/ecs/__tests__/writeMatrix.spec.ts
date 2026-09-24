@@ -1,25 +1,12 @@
 import { createWorld } from 'koota'
-import { Matrix4 } from 'three'
 import { describe, expect, it, vi } from 'vitest'
 
 import { traits } from '$lib/ecs'
-import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
 import { writeMatrix } from '../traits'
 
-const matrix = () =>
-	poseToMatrix(
-		createPose({
-			x: 10,
-			y: 20,
-			z: 30,
-			oX: 0.6,
-			oY: 0.8,
-			oZ: 0,
-			theta: 45,
-		}),
-		new Matrix4()
-	)
+const matrix = () => new Pose(10, 20, 30, 0.6, 0.8, 0, 45).toMatrix4()
 
 describe('writeMatrix', () => {
 	it('no-ops when the entity has no Matrix trait', () => {
@@ -32,7 +19,7 @@ describe('writeMatrix', () => {
 		const world = createWorld()
 		const entity = world.spawn(traits.Matrix(matrix()))
 		writeMatrix(entity, { x: 99 })
-		const pose = matrixToPose(entity.get(traits.Matrix)!, createPose())
+		const pose = new Pose().setFromMatrix4(entity.get(traits.Matrix)!)
 		expect(pose.x).toBeCloseTo(99)
 		expect(pose.y).toBeCloseTo(20)
 		expect(pose.z).toBeCloseTo(30)
@@ -42,7 +29,7 @@ describe('writeMatrix', () => {
 		const world = createWorld()
 		const entity = world.spawn(traits.Matrix(matrix()))
 		writeMatrix(entity, { theta: 90 })
-		const pose = matrixToPose(entity.get(traits.Matrix)!, createPose())
+		const pose = new Pose().setFromMatrix4(entity.get(traits.Matrix)!)
 		expect(pose.x).toBeCloseTo(10)
 		expect(pose.theta).toBeCloseTo(90)
 		expect(pose.oX).toBeCloseTo(0.6)
@@ -72,7 +59,7 @@ describe('writeMatrix', () => {
 		const world = createWorld()
 		const entity = world.spawn(traits.Matrix(matrix()))
 		writeMatrix(entity, { x: undefined })
-		const pose = matrixToPose(entity.get(traits.Matrix)!, createPose())
+		const pose = new Pose().setFromMatrix4(entity.get(traits.Matrix)!)
 		expect(pose.x).toBeCloseTo(10)
 		expect(pose.y).toBeCloseTo(20)
 		expect(pose.z).toBeCloseTo(30)

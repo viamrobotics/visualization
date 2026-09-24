@@ -1,0 +1,151 @@
+name: Update E2E Baselines
+
+# Rebaselining is a deliberate act, so it is a dispatch rather than something
+# the post-deploy run does on its own. It also has to happen here rather than on
+# a laptop: baselines are keyed by platform, CI runs linux on x86_64, and an
+# Apple Silicon machine can only produce arm64 pixels.
+
+on:
+  workflow_dispatch:
+    inputs:
+      projects:
+        description: Which projects to rebaseline
+        type: choice
+        default: drawing
+        options: [drawing, robot, both]
+      branch:
+        description: Branch to push the refreshed baselines to
+        type: string
+        default: update-e2e-baselines
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  E2E_ORG: Viam Viz E2E
+  E2E_LOCATION: e2e-tests
+  # Any e2e machine older than this is from a run that died before teardown.
+  # Longer than the job timeout, so it can never delete a live machine.
+  STALE_MACHINE_AGE_MINUTES: 120
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
+        with:
+          go: 'true'
+          bun: 'true'
+
+      - name: Build Go binaries
+        run: pnpm go-build
+
+      - name: Build the app
+        run: pnpm vite-build
+        env:
+          VITE_CONFIGS: '{}'
+          WS_PORT: '3000'
+          STATIC_PORT: '5173'
+
+      - name: Rebaseline the drawing project
+        if: inputs.projects == 'drawing' || inputs.projects == 'both'
+        run: pnpm playwright test --project=drawing --update-snapshots
+
+      # The robot project needs a cloud machine, so it only runs when asked for.
+      - name: Install Viam CLI
+        if: inputs.projects == 'robot' || inputs.projects == 'both'
+        run: |
+          sudo curl --compressed -o /usr/local/bin/viam https://storage.googleapis.com/packages.viam.com/apps/viam-cli/viam-cli-stable-linux-amd64
+          sudo chmod a+rx /usr/local/bin/viam
+
+      - name: Log in to Viam CLI
+        if: inputs.projects == 'robot' || inputs.projects == 'both'
+        run: viam login api-key --key-id="$VIAM_KEY_ID" --key="$VIAM_KEY_VALUE"
+        env:
+          VIAM_KEY_ID: ${{ secrets.VIAM_KEY_ID }}
+          VIAM_KEY_VALUE: ${{ secrets.VIAM_KEY_VALUE }}
+
+      - name: Rebaseline the robot project
+        if: inputs.projects == 'robot' || inputs.projects == 'both'
+        run: ./e2e/setup.sh && pnpm playwright test --project=robot --workers=1 --update-snapshots
+
+      - name: Open or update the baseline PR
+        id: baseline-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add 'e2e/**/*-snapshots/'
+
+          if git diff --staged --quiet; then
+            echo "Baselines already match this run"
+            echo "pr_url=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git checkout -B "${{ inputs.branch }}"
+          git commit -m "Update e2e baselines for ${{ inputs.projects }}"
+          git push --force origin "HEAD:${{ inputs.branch }}"
+
+          EXISTING=$(gh pr list --head "${{ inputs.branch }}" --state open --json number --jq '.[0].number')
+
+          if [ -z "$EXISTING" ]; then
+            PR_URL=$(gh pr create \
+              --head "${{ inputs.branch }}" \
+              --base main \
+              --title "Update e2e baselines (${{ inputs.projects }})" \
+              --body "Recorded on ubuntu-latest from ${{ github.sha }} by a manual run of Update E2E Baselines. Review the image diffs before merging: a baseline that changed without an intended UI change is a regression, not a refresh.")
+          else
+            PR_URL=$(gh pr view "$EXISTING" --json url --jq '.url')
+          fi
+
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      # Same leak as the nightly: a run killed between provisioning and teardown
+      # leaves a cloud machine up indefinitely. Machines are named
+      # `e2e-<user>-<epoch millis>` by robot.setup.ts, so the age is readable
+      # from the name and needs no extra API call. `always()` because the leak
+      # this cleans up comes from the runs that did not finish.
+      - name: Sweep leaked machines
+        if: always() && (inputs.projects == 'robot' || inputs.projects == 'both')
+        run: |
+          # A run killed before the install step has no CLI to sweep with.
+          command -v viam >/dev/null || exit 0
+
+          CUTOFF=$(( $(date +%s) - STALE_MACHINE_AGE_MINUTES * 60 ))
+
+          viam machines list --organization "$E2E_ORG" --location "$E2E_LOCATION" \
+            | grep -oE 'e2e-[a-zA-Z0-9_.-]+-[0-9]{13}' \
+            | sort -u \
+            | while read -r machine; do
+                created_ms=${machine##*-}
+                if [ "$(( created_ms / 1000 ))" -lt "$CUTOFF" ]; then
+                  echo "Deleting leaked machine $machine"
+                  viam machines delete --machine "$machine" \
+                    --organization "$E2E_ORG" --location "$E2E_LOCATION" || true
+                fi
+              done
+
+      - name: Notify Slack
+        if: steps.baseline-pr.outputs.pr_url != ''
+        uses: slackapi/slack-github-action@v2
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.VIZ_E2E_SLACK_BOT_TOKEN }}
+          errors: true
+          payload: |
+            channel: C05D8LPC2TA
+            text: "Refreshed e2e baselines (${{ inputs.projects }}) are ready for review: ${{ steps.baseline-pr.outputs.pr_url }}"

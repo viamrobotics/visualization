@@ -1,26 +1,36 @@
-import type { Entity } from 'koota'
-
 import { commonApi, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { createRobotQuery, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
-import { untrack } from 'svelte'
-import { Matrix4 } from 'three'
+import { type Entity, Not } from 'koota'
+import { getContext, setContext, untrack } from 'svelte'
 
-import { RefetchRates } from '$lib/components/overlay/RefreshRate.svelte'
+import { RefetchRates } from '$lib/components/overlay/refetchRates'
 import { traits, useParentName, useQuery, useTrait } from '$lib/ecs'
-import { useLogs } from '$lib/plugins'
-import { poseToMatrix } from '$lib/transform'
+import { originFrameName } from '$lib/kinematicsFrames'
+import { Pose } from '$lib/math'
+import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
-import { useEnvironment } from './useEnvironment.svelte'
+import { isPoseStale } from './poseStaleness/isPoseStale'
 import { useFrames } from './useFrames.svelte'
-import { useRefetchPoses } from './useRefetchPoses'
-import { useResourceByName } from './useResourceByName.svelte'
 import { RefreshRates, useSettings } from './useSettings.svelte'
 
-/**
- * Component subtypes whose live kinematics pose is reported under a
- * `<name>_origin` frame rather than the bare component name.
- */
-const originFrameComponentTypes = new Set(['arm', 'gantry', 'gripper', 'base'])
+/** How often the freshness gap is re-measured. */
+const FRESHNESS_TICK_MS = 500
+
+const tempPose = new Pose()
+
+const key = Symbol('use-poses-context')
+
+export interface Context {
+	/**
+	 * True while the scene is drawing poses older than the poll rate can
+	 * explain. A frozen frame is indistinguishable from a stationary one, so
+	 * nothing else gives the staleness away.
+	 */
+	readonly isStale: boolean
+
+	/** Refetches the pose of every frame the current part config expects. */
+	refetch: () => Promise<PromiseSettledResult<unknown>[]>
+}
 
 /**
  * Mirrors each live-machine frame's kinematics-resolved pose into its
@@ -28,29 +38,41 @@ const originFrameComponentTypes = new Set(['arm', 'gantry', 'gripper', 'base'])
  * `getPose` poll per frame, writing the result so `Frame.svelte` can compose
  * the rendered transform via `composeLocalMatrix(live, baseline, edited)`.
  *
+ * A frame carrying `ConfigOnlyFrame` is left out: the machine's frame system
+ * has no such frame, so polling it only produces an error every tick and a
+ * freshness gap that reads as the whole scene having gone stale.
+ *
  * Replaces the former per-entity `<Pose>` wrapper component with a single
  * reactor mounted alongside the other `provide*` hooks. Each frame's query is
  * built in its own `$effect.root` and tracked in a stable map, so adding or
  * removing one frame never tears down the other frames' queries.
  */
 export const providePoses = (partID: () => string) => {
-	const environment = useEnvironment()
 	const settings = useSettings()
 	const logs = useLogs()
 	const robotClient = useRobotClient(partID)
 	const connectionStatus = useConnectionStatus(partID)
-	const resourceByName = useResourceByName()
 	const frames = useFrames()
-	const { addQueryToRefetch } = useRefetchPoses()
 
-	const frameEntities = useQuery(traits.FramesAPI)
+	const frameEntities = useQuery(traits.FramesAPI, Not(traits.ConfigOnlyFrame))
+
+	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
 
 	const interval = $derived(settings.current.refreshRates[RefreshRates.poses])
-
 	const options = $derived({
-		enabled: interval !== RefetchRates.OFF && environment.current.viewerMode === 'monitor',
+		enabled: partID() !== '' && interval !== RefetchRates.OFF && isConnected,
+		// The chosen refresh rate is the only thing that polls a pose. Focus is not:
+		// `Manual` leaves these queries enabled with no interval, so refetching on
+		// focus would fire one request per frame in the scene.
+		refetchOnWindowFocus: false,
 		refetchInterval: interval === RefetchRates.MANUAL ? (false as const) : interval,
 	})
+
+	/** The scene draws one node per component, at its mount, so the query redirects there. */
+	const toQueryName = (frameName: string | undefined): string | undefined =>
+		frameName !== undefined && frames.kinematicsComponents.has(frameName)
+			? originFrameName(frameName)
+			: frameName
 
 	/**
 	 * Builds one frame's `getPose` query plus the reactive name/parent it reads.
@@ -60,40 +82,37 @@ export const providePoses = (partID: () => string) => {
 	 * over the frame list, which would tear down and re-fetch *every* frame's
 	 * query whenever a single frame is added or removed.
 	 *
-	 * Within a stable entry, name / parent / subtype reactivity flows through
-	 * the query's args closure, so a reparent or subtype update refetches
+	 * Within a stable entry, name / parent / kinematics reactivity flows through
+	 * the query's args closure, so a reparent or a newly-arrived model refetches
 	 * without rebuilding anything.
 	 */
 	const buildEntry = (entity: Entity) => {
 		const name = useTrait(() => entity, traits.Name)
 		const parentName = useParentName(() => entity)
 
-		// Resolve the `<name>_origin` frame names inside the query's (already
-		// reactive) args closure, so name / parent / subtype changes refetch
-		// without turning each frame into its own module-level `$derived`s.
+		/**
+		 * The name to ask for this frame's pose by, or `''` once the entity is gone.
+		 *
+		 * A destroyed entity has no `Name`, and this entry outlives it by a flush,
+		 * so the empty case is how the query learns its frame no longer exists.
+		 * `entity.isAlive()` would read better here but is not reactive, so it would
+		 * never recompute. rdk rejects a nameless pose request outright.
+		 */
+		const queryName = $derived(toQueryName(name.current) ?? '')
+
 		const query = createRobotQuery(
 			robotClient,
 			'getPose',
 			() => {
-				const frameName = name.current
-				const parentFrameName = parentName.current
-				const resource = frameName ? resourceByName.current[frameName] : undefined
-				const parentResource = parentFrameName ? resourceByName.current[parentFrameName] : undefined
-
-				const resolvedName = originFrameComponentTypes.has(resource?.subtype ?? '')
-					? `${frameName}_origin`
-					: frameName
-				const resolvedParent = originFrameComponentTypes.has(parentResource?.subtype ?? '')
-					? `${parentFrameName}_origin`
-					: parentFrameName
-
-				return [resolvedName, resolvedParent ?? 'world', []] as [
+				// Parent too: measured from a parent arm's tip, children would mount at
+				// the wrong end of the arm.
+				return [queryName, toQueryName(parentName.current) ?? 'world', []] as [
 					string,
 					string,
 					commonApi.Transform[],
 				]
 			},
-			() => options
+			() => ({ ...options, enabled: options.enabled && queryName !== '' })
 		)
 
 		return { entity, name, query }
@@ -105,6 +124,13 @@ export const providePoses = (partID: () => string) => {
 	let entries = $state.raw<PoseEntry[]>([])
 
 	/**
+	 * When a frame last joined the polled set. A frame that arrives long after
+	 * polling started has no pose yet through no fault of the machine, so the
+	 * freshness window restarts here instead of running from `pollingStartedAt`.
+	 */
+	let framesJoinedAt = $state(0)
+
+	/**
 	 * Reconcile the query map against the live frame set: a newly-added frame
 	 * gets a fresh `$effect.root`, a departed one is disposed, and a tick that
 	 * doesn't change membership is a no-op. `entries` is only reassigned when
@@ -113,6 +139,7 @@ export const providePoses = (partID: () => string) => {
 	$effect(() => {
 		const present = new Set(frameEntities.current)
 		let changed = false
+		let joined = false
 
 		for (const entity of frameEntities.current) {
 			if (entryByEntity.has(entity)) continue
@@ -123,6 +150,7 @@ export const providePoses = (partID: () => string) => {
 			})
 			entryByEntity.set(entity, { ...built, dispose })
 			changed = true
+			joined = true
 		}
 
 		for (const [entity, entry] of entryByEntity) {
@@ -130,6 +158,10 @@ export const providePoses = (partID: () => string) => {
 			entry.dispose()
 			entryByEntity.delete(entity)
 			changed = true
+		}
+
+		if (joined) {
+			framesJoinedAt = Date.now()
 		}
 
 		if (changed) {
@@ -145,44 +177,29 @@ export const providePoses = (partID: () => string) => {
 		entryByEntity.clear()
 	})
 
-	// Register every query with the manual-refetch registry so the
-	// ConnectionSettings "refetch poses" action reaches each one.
-	$effect(() => {
-		const unsubs = entries.map(({ query }) => addQueryToRefetch(query))
-		return () => {
-			for (const unsub of unsubs) unsub()
-		}
-	})
+	// Only the per-frame "Fetching..." notices collapse to one summary at a live
+	// rate. Errors are always reported per frame: they are what marks the frame's
+	// row in the world tree, and repeats collapse into a single counted line.
+	const isLiveRate = $derived(interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60)
 
-	// Kick an initial fetch for every frame once connected in monitor mode.
 	$effect(() => {
-		if (
-			environment.current.viewerMode === 'monitor' &&
-			frames.current &&
-			connectionStatus.current === MachineConnectionEvent.CONNECTED
-		) {
-			// Read `entries` inside `untrack` so this fires on the connect edge,
-			// not every time a frame is added — new entries auto-fetch on creation.
-			untrack(() => {
-				for (const { query } of entries) query.refetch()
-			})
-		}
-	})
-
-	// Per-frame fetch/error logging. A single message at high refresh rates
-	// avoids one log line per frame per tick.
-	$effect(() => {
-		if (interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60) {
-			return logs.add(`Fetching poses every ${interval}ms...`)
+		if (isLiveRate) {
+			logs.add(`Fetching poses every ${interval}ms...`, 'info', { folder: 'frames' })
 		}
 
 		for (const { name, query } of entries) {
 			untrack(() => {
 				$effect(() => {
-					if (query.isFetching) {
-						logs.add(`Fetching pose for ${name.current}...`)
-					} else if (query.error) {
-						logs.add(`Error fetching pose for ${name.current}: ${query.error.message}`, 'error')
+					if (query.error) {
+						logs.add(`Error fetching pose for ${name.current}: ${query.error.message}`, 'error', {
+							resource: name.current,
+							folder: 'frames',
+						})
+					} else if (query.isFetching && !isLiveRate) {
+						logs.add(`Fetching pose for ${name.current}...`, 'info', {
+							resource: name.current,
+							folder: 'frames',
+						})
 					}
 				})
 			})
@@ -201,20 +218,74 @@ export const providePoses = (partID: () => string) => {
 		for (const { entity, query } of entries) {
 			untrack(() => {
 				$effect(() => {
-					if (environment.current.viewerMode !== 'monitor') return
-
 					const pose = query.data?.pose
 					if (!pose || !entity.isAlive()) return
 
 					const live = entity.get(traits.LiveMatrix)
 					if (live) {
-						poseToMatrix(pose, live)
+						tempPose.copy(pose).toMatrix4(live)
+
 						entity.changed(traits.LiveMatrix)
 					} else {
-						entity.add(traits.LiveMatrix(poseToMatrix(pose, new Matrix4())))
+						entity.add(traits.LiveMatrix(tempPose.copy(pose).toMatrix4()))
 					}
 				})
 			})
 		}
 	})
+
+	const expectedFrameNames = () => frames.current.map(({ referenceFrame }) => referenceFrame)
+
+	let now = $state(0)
+	let pollingStartedAt = $state(0)
+
+	// A stalled scene emits no reactive updates of its own, so the gap has to be
+	// re-measured against a clock. Restarts on the part it is measuring, so one
+	// machine's gap is never carried into the next.
+	$effect(() => {
+		partID()
+
+		if (!options.enabled) return
+
+		pollingStartedAt = now = Date.now()
+
+		const id = setInterval(() => {
+			now = Date.now()
+		}, FRESHNESS_TICK_MS)
+
+		return () => clearInterval(id)
+	})
+
+	const lastPoseAt = $derived.by(() => {
+		let latest = 0
+		for (const { query } of entries) {
+			latest = Math.max(latest, query.dataUpdatedAt)
+		}
+		return latest
+	})
+
+	// A paused scene is deliberately showing a snapshot, not a broken one, and a
+	// scene with no pose queries yet has no pose old enough to warn about.
+	const isStale = $derived(
+		options.enabled &&
+			entries.length > 0 &&
+			isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
+	)
+
+	setContext<Context>(key, {
+		get isStale() {
+			return isStale
+		},
+		refetch: () => {
+			const expected = new Set(expectedFrameNames())
+			const currentEntries = entries.filter(
+				({ name }) => name.current !== undefined && expected.has(name.current)
+			)
+			return Promise.allSettled(currentEntries.map(({ query }) => query.refetch()))
+		},
+	})
+}
+
+export const usePoses = () => {
+	return getContext<Context>(key)
 }

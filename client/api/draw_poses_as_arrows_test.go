@@ -1,156 +1,100 @@
 package api
 
 import (
-	"math"
-	"math/rand"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
 
-// generateSpherePoses generates poses distributed on a sphere surface, with orientations pointing toward the center.
-func generateSpherePoses(numPoints int, radius, centerX, centerY, centerZ float64) []spatialmath.Pose {
-	var poses []spatialmath.Pose
-
-	for i := range numPoints {
-		phi := math.Acos(1 - 2*float64(i)/float64(numPoints))
-		theta := math.Pi * (1 + math.Sqrt(5)) * float64(i)
-
-		x := radius * math.Sin(phi) * math.Cos(theta)
-		y := radius * math.Sin(phi) * math.Sin(theta)
-		z := radius * math.Cos(phi)
-
-		x += centerX
-		y += centerY
-		z += centerZ
-
-		dx := centerX - x
-		dy := centerY - y
-		dz := centerZ - z
-
-		length := math.Sqrt(dx*dx + dy*dy + dz*dz)
-
-		pose := spatialmath.NewPose(
-			r3.Vector{X: x, Y: y, Z: z},
-			&spatialmath.OrientationVectorDegrees{
-				OX:    dx / length,
-				OY:    dy / length,
-				OZ:    dz / length,
-				Theta: 0,
-			},
-		)
-
-		poses = append(poses, pose)
+func testPoses(count int) []spatialmath.Pose {
+	poses := make([]spatialmath.Pose, count)
+	for i := range poses {
+		poses[i] = spatialmath.NewZeroPose()
 	}
-
 	return poses
 }
 
-// runDrawPosesAsArrowsTest generates sphere poses, draws them with the given colors, and draws a reference sphere.
-func runDrawPosesAsArrowsTest(t *testing.T, numPoints int, colors *[]draw.Color) {
-	t.Helper()
+func TestDrawPosesAsArrowsSendsADrawing(t *testing.T) {
+	fake := startFake(t)
 
-	const radius = 1000.0
-	centerX, centerY, centerZ := 0.0, 0.0, -300.0
+	_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Name: "arrows", Poses: testPoses(3)})
+	test.That(t, err, test.ShouldBeNil)
 
-	poses := generateSpherePoses(numPoints, radius, centerX, centerY, centerZ)
+	test.That(t, fake.onlyAddedDrawing(t).GetPhysicalObject().GetArrows(), test.ShouldNotBeNil)
+}
 
-	options := DrawPosesAsArrowsOptions{Name: "mySpherePoses", Poses: poses}
-	if colors != nil {
-		options.Colors = *colors
+func TestDrawPosesAsArrowsColorBranches(t *testing.T) {
+	red := draw.ColorFromRGB(255, 0, 0)
+	green := draw.ColorFromRGB(0, 255, 0)
+
+	for _, tc := range []struct {
+		name       string
+		colors     []draw.Color
+		wantLength int
+	}{
+		{name: "empty uses DefaultArrowColor", colors: nil, wantLength: 3},
+		{name: "one color is shared", colors: []draw.Color{red}, wantLength: 3},
+		{
+			name:       "one color per pose",
+			colors:     []draw.Color{red, green, red},
+			wantLength: 9,
+		},
+		{name: "a shorter palette cycles", colors: []draw.Color{red, green}, wantLength: 9},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := startFake(t)
+
+			_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{
+				Name:   "colors",
+				Poses:  testPoses(3),
+				Colors: tc.colors,
+			})
+			test.That(t, err, test.ShouldBeNil)
+
+			colors := fake.onlyAddedDrawing(t).GetMetadata().GetColors()
+			test.That(t, colors, test.ShouldHaveLength, tc.wantLength)
+		})
 	}
-	uuid, err := DrawPosesAsArrows(options)
-	test.That(t, err, test.ShouldBeNil)
-	test.That(t, uuid, test.ShouldNotBeNil)
-
-	sphere, err := spatialmath.NewSphere(
-		spatialmath.NewPose(
-			r3.Vector{X: centerX, Y: centerY, Z: centerZ},
-			&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-		),
-		radius,
-		"mySphere",
-	)
-	test.That(t, err, test.ShouldBeNil)
-
-	uuid, err = DrawGeometry(DrawGeometryOptions{Geometry: sphere, Color: draw.ColorFromName("aqua")})
-	test.That(t, err, test.ShouldBeNil)
-	test.That(t, uuid, test.ShouldNotBeNil)
 }
 
-func TestDrawPosesAsArrows(t *testing.T) {
-	startTestServer(t)
+func TestDrawPosesAsArrowsRejections(t *testing.T) {
+	t.Run("a non-ascii name is rejected first", func(t *testing.T) {
+		requireNoServer(t)
 
-	t.Run("DrawPosesAsArrows", func(t *testing.T) {
-		runDrawPosesAsArrowsTest(t, 100_000, nil)
+		_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Name: "café", Poses: testPoses(1)})
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "not ascii")
 	})
 
-	t.Run("DrawPosesAsArrowsWithSingleColor", func(t *testing.T) {
-		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.ColorFromName("yellow")})
+	t.Run("no visualizer is reported as such", func(t *testing.T) {
+		requireNoServer(t)
+
+		_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Name: "ok", Poses: testPoses(1)})
+
+		test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
 	})
 
-	t.Run("DrawPosesAsArrowsWithColorPalette", func(t *testing.T) {
-		runDrawPosesAsArrowsTest(t, 10_000, &[]draw.Color{draw.ColorFromName("yellow"), draw.ColorFromName("red")})
-	})
+	t.Run("an RPC failure is wrapped", func(t *testing.T) {
+		fake := startFake(t)
+		fake.errs["AddEntity"] = errRPCBoom
 
-	t.Run("DrawPosesAsArrowsWithPerPointColors", func(t *testing.T) {
-		n := 10_000
-		colors := make([]draw.Color, n)
-		for i := range colors {
-			t := float32(i) / float32(n)
-			colors[i] = draw.ColorFromHSV(t, 0.5+0.5*t, 1.0)
-		}
+		_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Name: "rpc", Poses: testPoses(1)})
 
-		runDrawPosesAsArrowsTest(t, n, &colors)
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntity RPC failed")
 	})
 }
 
-func TestPosesAsArrowStress(t *testing.T) {
-	t.Skip("Run only if you want to punish your computer.")
+// No poses is accepted rather than rejected, so an empty arrows drawing is a
+// legal thing to send.
+func TestDrawPosesAsArrowsAcceptsNoPoses(t *testing.T) {
+	fake := startFake(t)
 
-	startTestServer(t)
+	_, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Name: "empty"})
 
-	t.Run("TestArrowStress", func(t *testing.T) {
-		const (
-			numPoints = 4_000_000
-			width     = 50_000
-		)
-
-		var poses []spatialmath.Pose
-		var colors []draw.Color
-		pallet := []draw.Color{
-			draw.ColorFromHex("#6200EA"),
-			draw.ColorFromHex("#EF5350"),
-			draw.ColorFromHex("#0091EA"),
-			draw.ColorFromHex("#E53935"),
-			draw.ColorFromHex("#D32F2F"),
-			draw.ColorFromName("blue"),
-		}
-
-		for i := range numPoints {
-			pose := spatialmath.NewPose(
-				r3.Vector{
-					X: rand.Float64()*width - width/2,
-					Y: rand.Float64()*width - width/2,
-					Z: rand.Float64()*width - width/2,
-				},
-				&spatialmath.OrientationVectorDegrees{
-					OX:    rand.Float64()*2 - 1,
-					OY:    rand.Float64()*2 - 1,
-					OZ:    rand.Float64()*2 - 1,
-					Theta: 0,
-				},
-			)
-
-			poses = append(poses, pose)
-			colors = append(colors, pallet[i%len(pallet)])
-		}
-
-		uuid, err := DrawPosesAsArrows(DrawPosesAsArrowsOptions{Poses: poses, Colors: colors})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, uuid, test.ShouldNotBeNil)
-	})
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, fake.addEntityCount(), test.ShouldEqual, 1)
 }

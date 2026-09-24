@@ -1,0 +1,71 @@
+name: Setup E2E
+description: Checkout, toolchains, dependencies, and a cached Playwright browser.
+
+inputs:
+  ref:
+    description: Commit to check out. Defaults to the triggering ref.
+    required: false
+    default: ''
+  go:
+    description: Install Go. Needed by any job that builds the draw server or the scene binary.
+    required: false
+    default: 'false'
+  bun:
+    description: Install Bun. Needed by any job that serves the production build.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.ref }}
+
+    - uses: pnpm/action-setup@v6
+      with:
+        run_install: false
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: 'pnpm'
+
+    - name: Setup Bun
+      if: inputs.bun == 'true'
+      uses: oven-sh/setup-bun@v2
+
+    - name: Setup Go
+      if: inputs.go == 'true'
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Set up wireit caching
+      if: inputs.go == 'true'
+      uses: google/wireit@setup-github-actions-caching/v2
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install
+
+    # Keyed on the resolved Playwright version so a bump invalidates the cache
+    # rather than silently pairing new library code with an old browser build.
+    - name: Get Playwright version
+      id: playwright-version
+      shell: bash
+      run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm playwright install chromium --with-deps

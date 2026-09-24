@@ -1,4 +1,308 @@
-# motion-tools
+# visualization
+
+## 2.6.1
+
+### Patch Changes
+
+- 923367b: Toon and wireframe render modes draw colors without tone mapping.
+- 3509c21: Opacity edits apply to every object type and survive a scene sync.
+- 923367b: Realistic shading is now the render mode for every user, lit by an off-axis key light.
+
+## 2.6.0
+
+### Minor Changes
+
+- 3118e9c: Add obstacles to the scene from a new plus menu in the World panel header.
+
+### Patch Changes
+
+- 6f6f115: Bump `@viamrobotics/test-widgets` to 0.15.0
+- daf1bbf: Apply every `fragment_mods` entry sharing a fragment id, so a part that imports one fragment twice no longer loses the second import's overrides.
+- daf1bbf: Allow editing a fragment component's frame unless a fragment variable actually supplies one of its fields, rather than whenever the fragment declares any variable.
+- daf1bbf: Resolve fragment-provided frames the way the server does, so build mode draws them instead of filing their components under "Frameless components".
+- daf1bbf: Write a frame edit on a fragment component as only the fields that changed, so a field the fragment binds to a variable keeps its binding.
+
+## 2.5.1
+
+### Patch Changes
+
+- fd6d243: Adding a frame in build mode no longer reports the scene's poses as stale.
+- 97bacc6: Hold indexed point clouds at full detail under the point budget. Draw range addresses the index when a geometry has one, and three-mesh-bvh reorders that index spatially for picking, so decimating it drew a contiguous chunk of the cloud instead of the uniform sample `shuffled` describes — whole regions of a scan vanished while the camera moved and returned when it settled. Only clouds that opt into selection picking are indexed, so this was invisible until a scene both exceeded the budget and enabled the selection tool.
+
+## 2.5.0
+
+### Minor Changes
+
+- 9c2b451: Open the visualizer from viz.mode and viz.select query parameters, with a useDeepLinkParam hook for plugins to claim their own
+
+## 2.4.0
+
+### Minor Changes
+
+- b1bbc99: Add a button to the logs panel header that clears all logs.
+
+### Patch Changes
+
+- 2bc71e8: Fix spurious pose and frame errors when switching machines quickly.
+- 8837ea8: Load world state store transforms directly instead of through per-transform queries.
+- 5586bc1: Redraw frames after a machine reconnects instead of leaving the scene empty until reload.
+- 5586bc1: Retry arm kinematics and model fetches so a dropped request does not leave an arm undrawn.
+- 0ce3365: Offer interpolated preview playback, filling in frames between planned waypoints
+- b1bbc99: Switching parts clears the logs panel instead of keeping the previous machine's lines.
+
+## 2.3.1
+
+### Patch Changes
+
+- 8f64dc4: Fetch each arm's 3D models from its own component, so an arm appearing or disappearing no longer rebuilds every other arm's model query.
+- 8f64dc4: Render each vision service's pointcloud objects from its own component, so one service that is slow, unhealthy, or being rebuilt no longer blocks every other service's objects from rendering.
+- 8f64dc4: Render each camera's pointcloud from its own component, so one camera that is slow, unhealthy, or being rebuilt no longer blocks every other camera's pointcloud from rendering.
+- 59c8592: Source the pointcloud, pointcloud object, and arm model resource lists from machine status, so a resource going unhealthy no longer drops out of the list and remounts everything derived from it.
+- 59c8592: Source every resource list from machine status, so a resource going unhealthy no longer drops out of the list and remounts everything derived from it.
+
+## 2.3.0
+
+### Minor Changes
+
+- e50042d: Add world tree filter
+- 5e80ef4: Update camera smoothing to match common cad apps
+- 9aff0ee: Replace the Focus plugin with Isolate, add an F focus hotkey, and move dolly to Q and E
+- 3f36a76: Mark world tree rows and folders that are logging warnings or errors
+
+### Patch Changes
+
+- cd6489e: Add a Preview move action that asks the motion service to plan without executing
+- 3f36a76: Report pose errors that were dropped at live refresh rates and during frame moves
+- 7f7ac1f: Fix frame axes helpers leaving a dot behind after they are hidden or removed
+- 3f36a76: Stop requesting frames and poses before the machine connects
+- 2c1c148: Fix an arrows entity becoming unremovable when its colors buffer is longer than its pose buffer
+- e92cc15: Draw a previewed plan as ghost frames the collision panel reports on
+- 2f56955: Reject a malformed joint axis instead of drawing a meaningless rotation
+- ca38d7e: Scrub a previewed plan and execute it without planning again
+- 2450fb7: Keep the scene drawn when a machine disconnects instead of wiping it. World state entities, arm 3D models, pointclouds, and pointcloud objects now survive a drop and a redial, and a point cloud interrupted mid-stream resumes its remaining chunks on reconnect rather than staying half-written. Requires @viamrobotics/svelte-sdk 1.3.0, which keys queries on the addressed part and resource so a torn-down client no longer empties their data.
+
+## 2.2.0
+
+### Minor Changes
+
+- 7ff2d47: Add wireframe and realistic shading modes to the scene settings panel
+
+### Patch Changes
+
+- 9b9175f: Adding a frame to a frameless component now creates a frame with no geometry
+
+## 2.1.0
+
+### Minor Changes
+
+- cdb140a: Add folder actions
+
+### Patch Changes
+
+- f50b758: Render cylinder geometries as an instanced primitive, alongside boxes, capsules and spheres
+
+## 2.0.0
+
+### Major Changes
+
+- bccc909: Remove the deprecated `client/client` v1 API and its WebSocket transport, rename `traits.DrawServiceAPI` to `traits.DrawAPI`, replace the `<DrawService />` `websocketPort` prop with a `port` that actually selects the draw server, drop the bundled LLM scene builder backend in favor of the prompt and schemas now exported from `@viamrobotics/visualization/scene-builder`, and retire the Bun dev server now that the Go draw server serves static files
+- 3d89eb8: Move build mode into the opt-in `BuildFrames` plugin, which now also owns the transform-mode and custom-geometry hotkeys, and hide the mode toggle when monitor is the only reachable mode
+- 5a38260: Add `useDetailsSection` so plugins contribute per-entity content to the details cards, and remove the `DetailsPortal` export along with the unused details portal targets, which never had a working landing zone
+- 3fd52f8: Move the file drop target into the opt-in `FileDrop` plugin, and export `OverlayPortal` for plugin chrome that no toolbar or panel portal fits
+- 9ab2c22: Keep build mode live instead of freezing a machine snapshot while editing
+- 4420a06: Move the frame POV panels into the opt-in `FramePov` plugin
+- 365fa3c: Move monitor mode into the opt-in `Monitor` plugin: every mode is now plugin-contributed with mount order as priority, the mode is `none` when no mode plugins are mounted, and each mode plugin owns its own details cards
+- d7a92cb: Rename the package from `@viamrobotics/motion-tools` to `@viamrobotics/visualization` and the Go module from `github.com/viam-labs/motion-tools` to `github.com/viamrobotics/visualization`
+- f6d7f66: Move the settings popover into the opt-in `Settings` plugin, and make `@zag-js/tabs` an optional peer dependency
+- adeb956: Move the world tree panel into the opt-in `WorldTree` plugin, and make `@zag-js/tree-view` and `svelte-virtuallists` optional peer dependencies
+
+### Minor Changes
+
+- 48a6a01: Add frameless components to the world tree
+- b58b4fd: Share trajectory playback between the plan replayer and the move panel
+
+  `MotionPlanReplayerContext.setStep` now pauses playback when called, rather than only applying the step, since a caller scrubbing by hand almost always means "take over from here."
+
+- ce0f501: Publish immersive session state as `useEnvironment().current.isImmersive` so only the XR plugin needs `@threlte/xr`, and make the plugin-only peers `@threlte/xr`, `@threlte/rapier`, and `@dimforge/rapier3d-compat` optional
+
+### Patch Changes
+
+- 85d16c8: Reconstruct RDK's flattened frame system from a robot's frame system config, placing a part's configured geometry on its origin frame even when the part also carries a kinematic model
+- 6928474: Create points BVH in a web worker
+- 9454975: Render cylinders by lowering to mesh; bump rdk to open-cylinder release
+- 0cc741a: Fix incorrect raycasting with individual points and turn on hover details by default
+- 0d248c2: Replace the three-perf render stats overlay with a more expressive custom pane
+- 583feac: Include self in ghost frames
+- 8ea9eab: Don't reset queries on disconnect
+
+## 1.45.1
+
+### Patch Changes
+
+- e08b88f: Show details panel for non-movable objects in move mode
+
+## 1.45.0
+
+### Minor Changes
+
+- 7801e62: Add `useHotkey` so features and plugins contribute keyboard shortcuts declaratively
+- 7cfcc26: Add `useEnvironmentMode` so a persisted mode resolves back to monitor when the plugin contributing it is not mounted
+
+### Patch Changes
+
+- f8e10a0: Keep a plan's snapshots with the plan when another one is removed
+- cee7c2b: Cut pointcloud draw range when moving camera to avoid frame stutters
+- 7729bee: Fix `Visualizer` imports pulling `@viamrobotics/test-widgets` through the plugins barrel
+- 59813bb: Read mesh data delivered as a number array, the shape a component's kinematics arrives in over protobuf-JSON, alongside the base64 shape plan dumps use
+
+## 1.44.0
+
+### Minor Changes
+
+- f5bc780: Add folders to treeview
+
+### Patch Changes
+
+- 88dd8c4: Drive plan joints by RDK's schema order, not their declaration order
+- 0780313: Infer an untyped geometry's shape from whichever dimensions it sets, the way RDK's `ParseConfig` dispatches on them
+
+## 1.43.1
+
+### Patch Changes
+
+- c61ce9b: Keep the Viam tweakpane theme applied when a second visualizer mounts, instead of falling back to Tweakpane's dark defaults
+- f7cd229: Do not show stale pose indicator if not connected to a robot
+- 7f76463: Show last pointcloud objects snapshot in build mode
+
+## 1.43.0
+
+### Minor Changes
+
+- 1df9610: Derive frames and geometries from frame system kinematics instead of polling `getGeometries`
+- f4cad4d: Render STL collision meshes alongside PLY, and rotate unoriented link geometry into its own frame
+
+### Patch Changes
+
+- d6e1289: Migrate workspace panels to popovers
+- 55b7a17: Move the shared plan kinematics into `$lib/motion`
+- c6fe538: Read a plan model's output frame from where RDK writes it
+- 2880ef6: Memory leak fix with ply files
+- 9be560c: Drive mimic joints from the joint they mimic when replaying a plan, and keep the joints declared after one on their own columns
+
+## 1.42.0
+
+### Minor Changes
+
+- d6cefbc: Warn in the world tree header when live poses stop updating
+- 1d175f0: Improve toggle mode UX
+
+### Patch Changes
+
+- 4011ee5: Enable horizontal scrolling in treeview
+- d6cefbc: Replace prime tooltips with a portalled zag-js tooltip that respects host app stacking
+- f522222: Read every orientation and geometry encoding RDK accepts in a machine config
+- 50aedd2: Fix stale pose warning appearing late, not at all, or after poses recover
+- b8d6222: Give dropdown panels a bordered surface and an arrow pointing at their trigger
+- 938719c: Stability fixes
+- aed21ae: Share spatialmath JSON decoding between the frame system and motion plan readers
+
+## 1.41.1
+
+### Patch Changes
+
+- b22115a: Better error states in build mode
+- 8549b91: POV widget improvements
+- 5faf86d: Ensure build mode takes most recent pose snapshot when starting up
+- 4a46eb1: Build mode fixes
+
+## 1.41.0
+
+### Minor Changes
+
+- 8d92e23: Add dedicated move mode
+- 2756206: Add batch and partial-update draw APIs: `AddEntities`, `UpdateTransform`, and `UpdateEntity`
+- 2756206: Stop dropping draw service entity changes under load
+- 00ee712: Add collision warnings to the `MoveFrame` plugin
+
+### Patch Changes
+
+- 86dcace: Support prismatic joint FK
+- 83796b8: Improved selection state for no-geometry frames
+- 96879b4: Render world state obstacles
+- 96879b4: Local Motion Plan Replayer quick hits
+- e1c977d: Support axis-angles and warn on skipped frames/orients
+- 6207580: Improved parent options during frame editing reparenting
+
+## 1.40.0
+
+### Minor Changes
+
+- f6b9142: Move frame plugin UX improvements
+
+### Patch Changes
+
+- 1c61c5c: Add tests for the new `Pose` class
+- d2c58fe: Use Three.js-like api for pose math
+
+## 1.39.0
+
+### Minor Changes
+
+- 51ea2d8: Add frame edit undo / redo
+
+### Patch Changes
+
+- 79c4bfc: make upload motion plan callback usable via server RDK path
+- ff3e614: Restrict motion plan replayer to monitor mode
+
+## 1.38.0
+
+### Minor Changes
+
+- d34e066: Add control widgets for all resource types through a new ControlWidgets plugin, including a Move control for the built-in motion service
+- 9f08bcf: Add `MoveFrame` plugin to easily move entities with a motion service
+- c33ca6b: Select in-headset AR cameras from the XR settings panel instead of the control widgets plugin
+
+### Patch Changes
+
+- 8afe4a4: Add do command widgets to ControlWidgets plugin
+
+## 1.37.1
+
+### Patch Changes
+
+- 8627748: Fix updating arrows
+- b476aaa: Fix motion plan replayer provider surface for app
+- 7dce2eb: Remove skeletonlabs dependency and uses badges for logs chips
+
+## 1.37.0
+
+### Minor Changes
+
+- f563895: Toggle independent arm position widgets with per-arm switches
+- 04f4e2e: Motion plan replayer + docs
+- 2c86fdd: Dedicated edit mode
+
+### Patch Changes
+
+- 339cb67: Refactor frame editing for plugin extraction
+- 76b5ae0: Migrate camera and arm position widgets to use FloatingPanel
+- f563895: Add individual switches for arm widgets, similar to cameras
+- fec460a: Fix tweakpane styling race condition
+- 27b41ec: Add the motion plan JSON parser (`parsePlan`) for the Motion Plan Replayer: validates and normalizes plan JSON into a `ParsedPlan` (frames, parents, trajectory, goals).
+- 2da1274: Add frame-descriptor derivation for the Motion Plan Replayer: converts a `ParsedPlan` into static and jointed `FrameDescriptor`s (geometry, orientation conversion, joint-index mapping, end-effector reparenting).
+- 0f42c63: Add per-step snapshot generation (`parsedPlanToSnapshots`) and the `PartOfPlan` ECS relation for the Motion Plan Replayer, turning frame descriptors into renderable snapshots grouped under a plan entity.
+- 7292c08: Add the Motion Plan Replayer plugin shell: a dashboard-mounted floating panel that uploads plan JSON files, parses them into snapshots, and lists them with ready/error/no-trajectory status. Exposes an `extraSource` snippet receiving `addPlan` so an embedding app can inject its own plan source (e.g. a DB picker) without escaping the plugin's context.
+- ddfa766: Render Motion Plan Replayer plans in 3D and add the timeline scrubber. Selecting a plan spawns its snapshot entities under a plan entity, and a bottom scrubber (play/pause, step, seek) resolves each slider position to the corresponding snapshot via `reconcileSnapshotEntities`. Plan entities are tinted and torn down as a group through the `PartOfPlan` relation.
+- a388301: Add persistent per-frame display config to the Motion Plan Replayer. Per-frame color, opacity, visibility, and axes edits made via the scene Details panel and tree now persist across scrubbing instead of being reset each step. Also fixes the Details panel "show axes helper" toggle, which previously had no effect because the batched axes renderer never reacted to the trait being added or removed at runtime.
+- 3f4bd3b: Render mesh geometry in the Motion Plan Replayer.
+
+## 1.36.2
+
+### Patch Changes
+
+- 191c8ec: Snapping and local transform improvements
+- 6b481e4: Fix transform controls & fragment editing
 
 ## 1.36.1
 

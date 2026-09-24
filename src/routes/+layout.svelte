@@ -1,21 +1,39 @@
 <script lang="ts">
+	import '@viamrobotics/tailwind-config/fonts'
+
 	import '../app.css'
 
 	import type { DialConf } from '@viamrobotics/sdk'
 
 	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
 
+	import { page } from '$app/state'
 	import { Visualizer } from '$lib'
-	import { backendIP, websocketPort } from '$lib/defines'
-	import { DrawService, Focus, Logs, MeasureTool, XR } from '$lib/plugins'
+	import { backendIP, drawServicePort } from '$lib/defines'
+	import {
+		BuildFrames,
+		ControlWidgets,
+		DrawService,
+		FileDrop,
+		FramePov,
+		Isolate,
+		Logs,
+		MeasureTool,
+		Monitor,
+		MotionPlanReplayer,
+		MoveFrame,
+		Settings,
+		WorldTree,
+		XR,
+	} from '$lib/plugins'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
-	import StandaloneLLMWrapper from './lib/components/StandaloneLLMWrapper.svelte'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
+	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
 	import { getDialConfs } from './lib/robots'
 
 	provideConnectionConfigs()
@@ -41,16 +59,14 @@
 	const dialConfig = $derived(partID ? dialConfigs[partID] : undefined)
 
 	let isMachinesPageOpen = $state(false)
+
+	let pluginsEnabled = true
+
+	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
 </script>
 
 <ViamProvider
-	config={{
-		defaultOptions: {
-			queries: {
-				staleTime: Infinity,
-			},
-		},
-	}}
+	options={{ resetQueriesOnDisconnect: false }}
 	{dialConfigs}
 >
 	<ViamAppProvider
@@ -71,17 +87,26 @@
 			>
 				{@render children()}
 
-				{#snippet dashboard()}
+				{#if pluginsEnabled}
+					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
+					<Isolate />
+					<MeasureTool />
+
+					<Monitor />
+					<BuildFrames />
+					<MoveFrame />
+					<MotionPlanReplayer />
+
+					<XR />
+
+					<Logs />
+					<ControlWidgets />
 					<Machines bind:isOpen={isMachinesPageOpen} />
-				{/snippet}
-
-				<Logs />
-				<DrawService config={{ backendIP, websocketPort }} />
-				<Focus />
-				<MeasureTool />
-				<StandaloneLLMWrapper />
-
-				<XR />
+					<WorldTree />
+					<Settings />
+					<FileDrop />
+					<FramePov />
+				{/if}
 			</Visualizer>
 		</MachineConnectionProvider>
 	</ViamAppProvider>

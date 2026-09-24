@@ -76,7 +76,7 @@ func TestDrawnFrames_ToTransforms(t *testing.T) {
 		test.That(t, len(transforms), test.ShouldEqual, 2)
 		// Sphere has an explicit color — metadata should be present.
 		test.That(t, transforms[0].Metadata, test.ShouldNotBeNil)
-		// BoxFrame has no explicit color — falls back to magenta, metadata still set.
+		// BoxFrame has no explicit color, so it falls back to red, but metadata is still set.
 		test.That(t, transforms[1].Metadata, test.ShouldNotBeNil)
 	})
 

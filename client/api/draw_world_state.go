@@ -1,13 +1,8 @@
 package api
 
 import (
-	"context"
-	"fmt"
-
-	"connectrpc.com/connect"
-	"github.com/viam-labs/motion-tools/client/server"
-	"github.com/viam-labs/motion-tools/draw"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/referenceframe"
 )
 
@@ -28,11 +23,7 @@ type DrawWorldStateOptions struct {
 	// Inputs are the frame system inputs used to evaluate frame poses during
 	// obstacle resolution.
 	Inputs referenceframe.FrameSystemInputs
-	// Colors controls how the obstacles are colored. With no colors,
-	// obstacles are colored by cycling draw.ChromaticColorChooser. Pass one
-	// color to share it across all obstacles; pass exactly the obstacle
-	// count for per-obstacle colors; pass any other count to cycle through
-	// the slice as a palette.
+	// Colors controls how the obstacles are colored. With no colors, obstacles are colored by cycling draw.ChromaticColorChooser. Pass one color to share it across all obstacles. Pass exactly the obstacle count for per-obstacle colors. Pass any other count to cycle through the slice as a palette.
 	Colors []draw.Color
 }
 
@@ -43,8 +34,7 @@ type DrawWorldStateOptions struct {
 //
 // Returns ErrVisualizerNotRunning if no visualizer is reachable, the
 // underlying error if obstacle resolution fails or geometry construction
-// fails (see draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if any
-// AddEntity call fails.
+// fails (see draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if the AddEntities call fails.
 func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
@@ -81,15 +71,5 @@ func DrawWorldState(options DrawWorldStateOptions) ([][]byte, error) {
 		return nil, err
 	}
 
-	uuids := make([][]byte, 0, len(transforms))
-	for _, transform := range transforms {
-		req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Transform{Transform: transform}})
-		resp, err := client.AddEntity(context.Background(), req)
-		if err != nil {
-			return nil, fmt.Errorf("AddEntity RPC failed: %w", err)
-		}
-		uuids = append(uuids, resp.Msg.Uuid)
-	}
-
-	return uuids, nil
+	return addTransforms(client, transforms)
 }

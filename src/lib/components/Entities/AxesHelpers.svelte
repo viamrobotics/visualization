@@ -39,7 +39,7 @@
 		for (const entity of dirty) {
 			const worldMatrix = entity.get(traits.WorldMatrix)
 
-			if (entity.isAlive() && worldMatrix) {
+			if (entity.isAlive() && worldMatrix && entity.has(traits.ShowAxesHelper)) {
 				let instance = instances.get(entity)
 
 				if (instance === undefined) {
@@ -84,6 +84,8 @@
 		if (dirty.size > 0) schedule()
 
 		const unsubs = [
+			world.onAdd(traits.ShowAxesHelper, enqueue),
+			world.onRemove(traits.ShowAxesHelper, enqueue),
 			world.onAdd(traits.WorldMatrix, enqueue),
 			world.onChange(traits.WorldMatrix, enqueue),
 			world.onRemove(traits.WorldMatrix, enqueue),

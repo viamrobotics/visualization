@@ -22,20 +22,23 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 		EdgesGeometry,
 		LineBasicMaterial,
 		Matrix4,
-		MeshToonMaterial,
 		Sphere,
 		Vector3,
 	} from 'three'
 
 	import { asColor } from '$lib/buffer'
 	import { colors, darkenColor } from '$lib/color'
-	import { traits, useWorld } from '$lib/ecs'
+	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
 	import { composeBoxMatrix } from './composeBoxMatrix'
 	import { useInstancedEntityEvents } from './hooks/useEntityEvents.svelte'
+	import { useSurfaceMaterials } from './hooks/useSurfaceMaterials.svelte'
 
 	const { invalidate, renderer } = useThrelte()
 	const world = useWorld()
+	const settings = useSettings()
 
 	/**
 	 * Shared unit geometries — every instance references these and sets its
@@ -46,18 +49,23 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 	const unitBoxEdges = new EdgesGeometry(unitBox, 0)
 
 	/**
-	 * Box meshes render transparent by default (`Opacity` trait absent → 0.7);
+	 * Box meshes render transparent by default (see `resolveOpacity`);
 	 * per-instance alpha is written via `setOpacityAt`. The base color stays
 	 * white so per-instance colors aren't tinted. Whole-object culling is
 	 * disabled because the library culls per instance against a bounding sphere
 	 * it derives from each instance matrix.
 	 */
-	const instancedBoxes = new InstancedMesh2(unitBox, new MeshToonMaterial({ transparent: true }), {
-		renderer,
-	})
+	const faceParameters = { transparent: true }
+	const instancedBoxes = new InstancedMesh2(
+		unitBox,
+		createSurfaceMaterial(settings.current.renderMode, faceParameters),
+		{ renderer }
+	)
 	instancedBoxes.sortObjects = true
 	instancedBoxes.customSort = createRadixSort(instancedBoxes)
 	instancedBoxes.frustumCulled = false
+	instancedBoxes.castShadow = true
+	instancedBoxes.receiveShadow = true
 
 	/**
 	 * Keep raycasts on the library's linear (non-BVH) path, but neutralize
@@ -70,9 +78,20 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 	 */
 	instancedBoxes.boundingSphere = new Sphere(new Vector3(), Infinity)
 
-	const instancedBoxEdges = new InstancedMesh2(unitBoxEdges, new LineBasicMaterial(), {
-		renderer,
-	})
+	useSurfaceMaterials([{ mesh: instancedBoxes, parameters: faceParameters }])
+
+	/**
+	 * The outline fades with the faces it wraps, so the edges mesh carries the
+	 * same per-instance alpha. The library writes that alpha into the colors
+	 * texture regardless, but the renderer only blends it on a transparent
+	 * material — unconditional here, matching `faceParameters`, so edges and
+	 * faces stay in one pass instead of being ordered against each other.
+	 */
+	const instancedBoxEdges = new InstancedMesh2(
+		unitBoxEdges,
+		new LineBasicMaterial({ transparent: true }),
+		{ renderer }
+	)
 	instancedBoxEdges.frustumCulled = false
 
 	/**
@@ -104,7 +123,7 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 	const matrix = new Matrix4()
 	const colorUtil = new Color()
 
-	/** Same resolution order as `Frame.svelte`. */
+	/** Same resolution order as `Capsules.svelte` / `Spheres.svelte`. */
 	const resolveColor = (entity: Entity): Color => {
 		const vertexColors = entity.get(traits.Colors)
 		if (vertexColors && vertexColors.length >= 3) {
@@ -121,13 +140,15 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 
 	const writeAppearance = (entity: Entity, ids: InstanceIds) => {
 		const color = resolveColor(entity)
+		const opacity = resolveOpacity(entity)
 		const visible = !entity.has(traits.InheritedInvisible) && !entity.has(traits.ColliderHidden)
 
 		instancedBoxes.setColorAt(ids.face, color)
-		instancedBoxes.setOpacityAt(ids.face, entity.get(traits.Opacity) ?? 0.7)
+		instancedBoxes.setOpacityAt(ids.face, opacity)
 		instancedBoxes.setVisibilityAt(ids.face, visible)
 
 		instancedBoxEdges.setColorAt(ids.edge, darkenColor(color, 10))
+		instancedBoxEdges.setOpacityAt(ids.edge, opacity)
 		instancedBoxEdges.setVisibilityAt(ids.edge, visible)
 
 		/**
@@ -261,6 +282,9 @@ on each hit, which `useInstancedEntityEvents` maps back to the entity.
 			world.onAdd(traits.Opacity, enqueueAppearance),
 			world.onChange(traits.Opacity, enqueueAppearance),
 			world.onRemove(traits.Opacity, enqueueAppearance),
+			world.onAdd(traits.OpacityOverride, enqueueAppearance),
+			world.onChange(traits.OpacityOverride, enqueueAppearance),
+			world.onRemove(traits.OpacityOverride, enqueueAppearance),
 			world.onAdd(traits.InheritedInvisible, enqueueAppearance),
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),

@@ -2,12 +2,10 @@ import { ResourceName } from '@viamrobotics/sdk'
 import twColors from 'tailwindcss/colors'
 import { Color, type ColorRepresentation, type RGB } from 'three'
 
-// Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
 	return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055
 }
 
-// Step 4: sRGB → hex
 const toHex = (x: number) => {
 	const hex = Math.round(x * 255)
 		.toString(16)
@@ -26,14 +24,11 @@ const oklchToHex = (raw: string) => {
 	const c = Number.parseFloat(match[2])
 	const h = Number.parseFloat(match[3])
 
-	// Convert h from degrees to radians
 	const hRad = (h * Math.PI) / 180
 
-	// Step 1: OKLCH → OKLab
 	const aa = c * Math.cos(hRad)
 	const bb = c * Math.sin(hRad)
 
-	// Step 2: OKLab → linear sRGB
 	const l_ = l + 0.3963377774 * aa + 0.2158037573 * bb
 	const m_ = l - 0.1055613458 * aa - 0.0638541728 * bb
 	const s_ = l - 0.0894841775 * aa - 1.291485548 * bb
@@ -56,10 +51,9 @@ const oklchToHex = (raw: string) => {
 const original = new Color()
 const hsl = { h: 0, s: 0, l: 0 }
 /**
- * Darkens a THREE.Color by a given percentage while preserving hue.
- * @param color The original THREE.Color instance.
- * @param percent The percentage to darken (0-100).
- * @returns A new THREE.Color instance with the darkened color.
+ * Darkens a color by a percentage of its HSL lightness, preserving hue and saturation.
+ *
+ * @param percent 0 to 100.
  */
 export const darkenColor = (value: ColorRepresentation, percent: number): Color => {
 	original.set(value)
@@ -80,29 +74,45 @@ export const subtypeToColor = (subtype?: string) => {
 	return new Color(colorValue)
 }
 
-const darkness = '600'
+const darker = '600'
+const lighter = '400'
 
 export const colors = {
-	default: oklchToHex(twColors.gray[darkness]),
+	default: oklchToHex(twColors.gray[darker]),
 } as const
 
 export const resourceColors = {
-	arm: oklchToHex(twColors.amber[darkness]),
-	camera: oklchToHex(twColors.blue[darkness]),
-	base: oklchToHex(twColors.slate[darkness]),
-	board: oklchToHex(twColors.emerald[darkness]),
-	button: oklchToHex(twColors.gray[darkness]),
-	encoder: oklchToHex(twColors.lime[darkness]),
-	gantry: oklchToHex(twColors.purple[darkness]),
-	gripper: oklchToHex(twColors.cyan[darkness]),
-	motor: oklchToHex(twColors.orange[darkness]),
-	movement_sensor: oklchToHex(twColors.indigo[darkness]),
-	pose_tracker: oklchToHex(twColors.rose[darkness]),
-	power_sensor: oklchToHex(twColors.violet[darkness]),
-	sensor: oklchToHex(twColors.teal[darkness]),
-	servo: oklchToHex(twColors.yellow[darkness]),
-	switch: oklchToHex(twColors.stone[darkness]),
-	webcam: oklchToHex(twColors.sky[darkness]),
+	// components
+	arm: oklchToHex(twColors.amber[darker]),
+	camera: oklchToHex(twColors.blue[darker]),
+	base: oklchToHex(twColors.slate[darker]),
+	board: oklchToHex(twColors.emerald[darker]),
+	button: oklchToHex(twColors.gray[darker]),
+	encoder: oklchToHex(twColors.lime[darker]),
+	gantry: oklchToHex(twColors.purple[darker]),
+	gripper: oklchToHex(twColors.cyan[darker]),
+	motor: oklchToHex(twColors.orange[darker]),
+	movement_sensor: oklchToHex(twColors.indigo[darker]),
+	pose_tracker: oklchToHex(twColors.rose[darker]),
+	power_sensor: oklchToHex(twColors.violet[darker]),
+	sensor: oklchToHex(twColors.teal[darker]),
+	servo: oklchToHex(twColors.yellow[darker]),
+	switch: oklchToHex(twColors.stone[darker]),
+	webcam: oklchToHex(twColors.sky[darker]),
+	audio_in: oklchToHex(twColors.sky[lighter]),
+	audio_out: oklchToHex(twColors.violet[lighter]),
+	generic: oklchToHex(twColors.gray[lighter]),
+	input_controller: oklchToHex(twColors.fuchsia[lighter]),
+	// services
+	motion: oklchToHex(twColors.green[darker]),
+	navigation: oklchToHex(twColors.red[darker]),
+	slam: oklchToHex(twColors.pink[darker]),
+	vision: oklchToHex(twColors.fuchsia[darker]),
+	mlmodel: oklchToHex(twColors.neutral[darker]),
+	discovery: oklchToHex(twColors.zinc[darker]),
+	data_manager: oklchToHex(twColors.emerald[lighter]),
+	video: oklchToHex(twColors.rose[lighter]),
+	world_state_store: oklchToHex(twColors.amber[lighter]),
 } as const
 
 export const isColorRepresentation = (color: unknown): color is ColorRepresentation => {
@@ -145,14 +155,6 @@ export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 
 		color.g > 1 ? color.g / 255 : color.g,
 		color.b > 1 ? color.b / 255 : color.b
 	)
-}
-
-export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
-	if (typeof opacity !== 'number') {
-		return defaultOpacity
-	}
-
-	return opacity > 1 ? opacity / 100 : opacity
 }
 
 const isColor = (color: unknown): color is Color => {

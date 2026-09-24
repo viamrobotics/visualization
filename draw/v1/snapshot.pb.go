@@ -106,7 +106,7 @@ const file_draw_v1_snapshot_proto_rawDesc = "" +
 	"\bdrawings\x18\x02 \x03(\v2\x10.draw.v1.DrawingR\bdrawings\x12\x12\n" +
 	"\x04uuid\x18\x03 \x01(\fR\x04uuid\x12B\n" +
 	"\x0escene_metadata\x18\x04 \x01(\v2\x16.draw.v1.SceneMetadataH\x00R\rsceneMetadata\x88\x01\x01B\x11\n" +
-	"\x0f_scene_metadataB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\x0f_scene_metadataB6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_snapshot_proto_rawDescOnce sync.Once

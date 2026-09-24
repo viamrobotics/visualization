@@ -9,6 +9,8 @@ import glsl from 'vite-plugin-glsl'
 import mkcert from 'vite-plugin-mkcert'
 import { defineConfig } from 'vitest/config'
 
+import { version } from './package.json'
+
 dns.setDefaultResultOrder('verbatim')
 
 const https = process.argv.includes('--https')
@@ -20,7 +22,15 @@ export default defineConfig({
 		sentrySvelteKit({
 			sourceMapsUploadOptions: {
 				org: 'viam',
+				// Sentry project slug, not the package name. It stays until the project is
+				// renamed in Sentry; a mismatch silently breaks symbolication.
 				project: 'motion-tools',
+				// Must match `release` in hooks.client.ts. The default is the git HEAD SHA, which no
+				// event references, so uploaded maps would never be applied to a stack trace.
+				release: { name: version },
+				// Symbolication needs these uploaded, not served. Deletion is not gated on the auth
+				// token, so a build without one still keeps them out of the deployed site.
+				sourcemaps: { filesToDeleteAfterUpload: ['./build/**/*.map'] },
 			},
 		}),
 		devtoolsJson(),
@@ -32,21 +42,17 @@ export default defineConfig({
 
 	define: {
 		BACKEND_IP: JSON.stringify('localhost'),
-		WS_PORT: JSON.stringify(process.env.WS_PORT || '3000'),
+		DRAW_SERVICE_PORT: JSON.stringify(process.env.DRAW_SERVICE_PORT || '3030'),
 	},
-
 	optimizeDeps: {
-		esbuildOptions: {
-			target: 'esnext',
-		},
-		// @testing-library/svelte is excluded so its Svelte components aren't
-		// pre-bundled, but its CJS grandchild aria-query (via @testing-library/dom)
-		// must still be optimized or Rolldown won't expose its named exports.
-		//
-		// PCDLoader is imported by the pcd web worker (loaders/pcd/worker.ts). Vite
-		// discovers worker deps lazily, so without this the dep optimizer re-bundles
-		// mid-run and reloads the page, flaking out whatever tests are importing then.
+		rolldownOptions: {},
+		// @testing-library/svelte is excluded so its Svelte components are not pre-bundled.
+		// Its CJS grandchild aria-query must still be optimized or Rolldown will not expose
+		// its named exports.
+		// The collision tests import rapier3d-compat directly. Discovering it mid-run makes
+		// Vite re-optimize and reload the test worker, which vitest flags as flaky.
 		include: [
+			'@dimforge/rapier3d-compat',
 			'@testing-library/svelte > @testing-library/dom',
 			'three/examples/jsm/loaders/PCDLoader.js',
 		],

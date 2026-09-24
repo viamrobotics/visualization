@@ -1,33 +1,31 @@
 package api
 
 import (
-	"context"
 	"fmt"
 
-	"connectrpc.com/connect"
-	"github.com/viam-labs/motion-tools/client/server"
-	"github.com/viam-labs/motion-tools/draw"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/referenceframe"
 )
 
 // DrawGeometriesInFrameOptions configures a DrawGeometriesInFrame call.
 type DrawGeometriesInFrameOptions struct {
-	// ID is an optional identifier prefix for this batch. When non-empty, each
-	// drawn geometry's identity is derived from "ID:label:parent" rather than
-	// the default "label:parent", which prevents collisions between batches
-	// that share geometry labels and a parent frame (e.g., two robots whose
-	// link geometries collide on label). Calling DrawGeometriesInFrame again
-	// with the same ID and matching geometries updates the previous batch in
-	// place; passing a fresh ID creates a new, independent set of entities.
+	// ID is an optional identifier prefix for this batch. When non-empty,
+	// each drawn geometry's identity is derived from "ID:label:parent"
+	// rather than the default "label:parent", which prevents collisions
+	// between batches that share geometry labels and a parent frame (e.g.,
+	// two robots whose link geometries collide on label). Calling
+	// DrawGeometriesInFrame again with the same ID and matching geometries
+	// updates the previous batch in place. A fresh ID creates a new,
+	// independent set of entities.
 	ID string
 	// Geometries is the set of geometries to render. Required and must contain
 	// at least one geometry.
 	Geometries *referenceframe.GeometriesInFrame
 	// Colors controls how the geometries are colored. When empty, every
 	// geometry is rendered red. Pass one color to share it across all
-	// geometries; pass exactly len(Geometries) colors for per-geometry colors;
-	// pass any other count to cycle through the slice as a palette.
+	// geometries. Pass exactly len(Geometries) colors for per-geometry
+	// colors. Pass any other count to cycle through the slice as a palette.
 	Colors []draw.Color
 	// DownscalingThreshold reduces the rendered point count for any point-cloud
 	// geometries by keeping only points whose mutual distance exceeds this
@@ -45,8 +43,8 @@ type DrawGeometriesInFrameOptions struct {
 //
 // Returns ErrVisualizerNotRunning if no visualizer is reachable, an error if
 // Geometries is empty or the underlying construction fails (see
-// draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if any AddEntity call
-// fails.
+// draw.NewDrawnGeometriesInFrame), or a wrapped RPC error if the AddEntities
+// call fails.
 func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, error) {
 	client := server.GetClient()
 	if client == nil {
@@ -87,15 +85,5 @@ func DrawGeometriesInFrame(options DrawGeometriesInFrameOptions) ([][]byte, erro
 		return nil, fmt.Errorf("failed to create transforms: %w", err)
 	}
 
-	var uuids [][]byte
-	for _, transform := range transforms {
-		req := connect.NewRequest(&drawv1.AddEntityRequest{Entity: &drawv1.AddEntityRequest_Transform{Transform: transform}})
-		resp, err := client.AddEntity(context.Background(), req)
-		if err != nil {
-			return nil, fmt.Errorf("AddEntity RPC failed: %w", err)
-		}
-		uuids = append(uuids, resp.Msg.Uuid)
-	}
-
-	return uuids, nil
+	return addTransforms(client, transforms)
 }

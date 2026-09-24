@@ -1,6 +1,6 @@
 package api
 
-import "github.com/viam-labs/motion-tools/draw"
+import "github.com/viamrobotics/visualization/draw"
 
 // Attrs holds common attributes for all Draw* calls.
 type Attrs struct {

@@ -1,0 +1,53 @@
+---
+title: <Settings />
+description: The settings popover — connection, scene, point cloud, vision, and debug controls, plus the host for SettingsPortal tabs.
+---
+
+`<Settings />` adds the cog button to the workspace controls and the popover behind it. The popover is tabbed: **Connection**, **Scene**, **Pointclouds**, **Vision**, **Debug**, and **Weblabs**, followed by any tabs plugins contribute through [`SettingsPortal`](../authoring/#adding-overlay-ui).
+
+The values it edits live in the `useSettings` store, which is persisted to IndexedDB — grid size and fade, point size and colour, line widths, refresh rates, disabled cameras, render toggles, and the measurement axis constraints.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Settings } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<Settings />
+	</Visualizer>
+</div>
+```
+
+## Editing settings without the popover
+
+Every setting remains readable and writable through `useSettings`, whether or not this plugin is mounted. A host that wants one control rather than the whole popover can write the field directly:
+
+```svelte
+<script lang="ts">
+	import { useThrelte } from '@threlte/core'
+	import { useSettings } from '@viamrobotics/visualization'
+
+	const settings = useSettings()
+	const { invalidate } = useThrelte()
+
+	const setPointSize = (metres: number) => {
+		settings.current.pointSize = metres
+		// The canvas renders on demand, and this plugin is what normally invalidates
+		// after a settings change — so do it here when it isn't mounted.
+		invalidate()
+	}
+</script>
+```
+
+<aside>
+	Without `<Settings />` mounted, nothing repaints the canvas in response to a settings change. Call
+	`invalidate()` from `useThrelte()` yourself after writing one.
+</aside>
+
+## SettingsPortal without Settings
+
+`SettingsPortal` registers its tab into a context the visualizer always provides, so a plugin that uses it is safe to mount on its own — the tab is recorded and simply never rendered. Nothing throws, and the tab appears as soon as `<Settings />` is mounted alongside it.

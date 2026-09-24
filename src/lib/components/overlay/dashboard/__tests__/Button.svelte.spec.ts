@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/svelte'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
@@ -45,12 +46,15 @@ describe('<Button> (dashboard)', () => {
 		expect(label.className).toContain('border-gray-5')
 	})
 
-	it('renders the hotkey in the tooltip description', () => {
+	it('renders the hotkey in the tooltip description', async () => {
+		const user = userEvent.setup()
 		render(Button, {
 			props: { icon: 'cursor-move', description: 'Translate', hotkey: '1' },
 		})
 
-		expect(screen.getByText('1')).toBeInTheDocument()
+		await user.hover(screen.getByRole('radio', { name: 'Translate' }))
+
+		expect(await screen.findByText('1')).toBeInTheDocument()
 	})
 
 	it('preserves aria and role when disableTooltip is true and active', () => {

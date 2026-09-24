@@ -1,0 +1,16 @@
+{
+	"plan": [
+		{
+			"arm-1": [0, 0, 0, 0, 0, 0],
+			"arm-1_origin": [],
+			"gantry-1": [50],
+			"gantry-1_origin": []
+		},
+		{
+			"arm-1": [0, 0, 0, 0, 0, 0],
+			"arm-1_origin": [],
+			"gantry-1": [90.00000000000001],
+			"gantry-1_origin": []
+		}
+	]
+}

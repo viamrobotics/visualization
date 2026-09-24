@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/viam-labs/motion-tools/client/server"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // DeleteRelationshipOptions configures a DeleteRelationship call.

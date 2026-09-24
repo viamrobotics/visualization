@@ -116,7 +116,6 @@ func TestNewLine(t *testing.T) {
 	t.Run("ErrorInvalidLineColorCount", func(t *testing.T) {
 		red := NewColor(WithName("red"))
 		blue := NewColor(WithName("blue"))
-		// Three positions but only two line colors: invalid
 		_, err := NewLine(threePositions, WithPerLineColors(red, blue))
 		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "line colors must have length 1")
@@ -125,7 +124,6 @@ func TestNewLine(t *testing.T) {
 	t.Run("ErrorInvalidDotColorCount", func(t *testing.T) {
 		red := NewColor(WithName("red"))
 		blue := NewColor(WithName("blue"))
-		// Three positions but only two dot colors: invalid
 		_, err := NewLine(threePositions, WithPerDotColors(red, blue))
 		test.That(t, err, test.ShouldNotBeNil)
 		test.That(t, err.Error(), test.ShouldContainSubstring, "dot colors must have length 1")
@@ -175,7 +173,7 @@ func TestLine_Draw(t *testing.T) {
 		test.That(t, protoLine.DotColors, test.ShouldResemble, []byte{0x00, 0x00, 0xff})
 		// line colors: red (255, 0, 0) in metadata
 		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00})
-		// default alpha (255) — single uniform byte
+		// default alpha (255), a single uniform byte
 		test.That(t, proto.Metadata.Opacities, test.ShouldResemble, []byte{0xff})
 	})
 }

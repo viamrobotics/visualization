@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Select, Switch } from '@viamrobotics/prime-core'
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -9,13 +9,21 @@
 	const settings = useSettings()
 	const armClient = useArmClient()
 	const partID = usePartID()
-	const resources = useResourceNames(() => partID.current, 'gripper')
+	const resources = useResourceStatuses(() => partID.current, 'gripper')
+	const cameraResources = useResourceStatuses(() => partID.current, 'camera')
 
 	const armNames = $derived(armClient.names || [])
 	const gripperNames = $derived(
 		resources.current
-			.filter((r) => r.subtype === 'gripper' && r.type === 'component')
-			.map((r) => r.name)
+			.filter((r) => r.name?.subtype === 'gripper' && r.name.type === 'component')
+			.map((r) => r.name?.name)
+			.filter((name): name is string => name !== undefined)
+	)
+	const cameraNames = $derived(
+		cameraResources.current
+			.filter((r) => r.name?.subtype === 'camera' && r.name.type === 'component')
+			.map((r) => r.name?.name)
+			.filter((name): name is string => name !== undefined)
 	)
 
 	const config = $derived(settings.current.xrController)
@@ -49,6 +57,16 @@
 			[key]: value,
 		}
 	}
+
+	function toggleCamera(name: string, on: boolean) {
+		const next = new Set(settings.current.xrCameras)
+		if (on) {
+			next.add(name)
+		} else {
+			next.delete(name)
+		}
+		settings.current.xrCameras = [...next]
+	}
 </script>
 
 <div class="flex flex-col gap-2.5 text-xs">
@@ -56,6 +74,24 @@
 		<label class="flex items-center justify-between gap-2">
 			Enable VR / AR mode <Switch bind:on={settings.current.enableXR} />
 		</label>
+
+		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Cameras</strong></h3>
+
+		{#if cameraNames.length === 0}
+			<p class="text-subtle-2">No cameras on this machine.</p>
+		{:else}
+			{#each cameraNames as name (name)}
+				<label class="flex items-center justify-between gap-2">
+					{name}
+					<Switch
+						on={settings.current.xrCameras.includes(name)}
+						on:change={(event) => {
+							toggleCamera(name, event.detail)
+						}}
+					/>
+				</label>
+			{/each}
+		{/if}
 
 		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Left Controller</strong></h3>
 
@@ -118,7 +154,6 @@
 			/>
 		</label>
 
-		<!-- Right Controller -->
 		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Right Controller</strong></h3>
 
 		<label class="flex items-center justify-between gap-2">
@@ -200,7 +235,6 @@
 		outline: none;
 	}
 
-	/* Webkit browsers (Chrome, Safari, Edge) */
 	input[type='range']::-webkit-slider-track {
 		background: transparent;
 		height: 0.5rem;
@@ -217,7 +251,6 @@
 		border: 2px solid white;
 	}
 
-	/* Firefox */
 	input[type='range']::-moz-range-track {
 		background: transparent;
 		height: 0.5rem;

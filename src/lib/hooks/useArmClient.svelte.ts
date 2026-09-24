@@ -2,7 +2,7 @@ import { ArmClient } from '@viamrobotics/sdk'
 import {
 	createResourceClient,
 	createResourceQuery,
-	useResourceNames,
+	useResourceStatuses,
 } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
@@ -14,19 +14,18 @@ interface Context {
 }
 
 export const provideArmClient = (partID: () => string) => {
-	const arms = useResourceNames(partID, 'arm')
+	const arms = useResourceStatuses(partID, 'arm')
 	const options = { refetchInterval: 500 }
 
-	const names = $derived(arms.current.map((arm) => arm.name))
-
-	const clients = $derived(
-		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
+	const names = $derived(
+		arms.current.map((arm) => arm.name?.name).filter((name): name is string => name !== undefined)
 	)
+
+	const clients = $derived(names.map((name) => createResourceClient(ArmClient, partID, () => name)))
 
 	const jointPositionsQueries = $derived(
 		clients.map(
-			(client) =>
-				[client.current?.name, createResourceQuery(client, 'getJointPositions', options)] as const
+			(client) => [client.name, createResourceQuery(client, 'getJointPositions', options)] as const
 		)
 	)
 

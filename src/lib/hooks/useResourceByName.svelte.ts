@@ -1,6 +1,6 @@
 import type { ResourceName } from '@viamrobotics/sdk'
 
-import { useResourceNames } from '@viamrobotics/svelte-sdk'
+import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 const RESOURCE_BY_NAME_CONTEXT_KEY = Symbol('resource-by-name-context')
@@ -10,11 +10,11 @@ interface Context {
 }
 
 const createResourceByName = (partID: () => string) => {
-	const resourceNames = useResourceNames(partID)
+	const statuses = useResourceStatuses(partID)
 	const resourceByName = $derived.by(() => {
 		const results: Record<string, ResourceName> = {}
-		for (const resourceName of resourceNames.current) {
-			results[resourceName.name] = resourceName
+		for (const { name } of statuses.current) {
+			if (name) results[name.name] = name
 		}
 
 		return results

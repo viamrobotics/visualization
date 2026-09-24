@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Portal } from '@threlte/extras'
+	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
 
 	import FullscreenButton from './FullscreenButton.svelte'
 	import { useFullscreen } from './useFullscreen.svelte'
@@ -16,6 +16,6 @@
 	})
 </script>
 
-<Portal id="dom">
+<WorkspacePortal>
 	<FullscreenButton bind:fullscreen={fullscreen.active} />
-</Portal>
+</WorkspacePortal>

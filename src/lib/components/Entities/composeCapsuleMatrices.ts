@@ -3,8 +3,9 @@ import type { Entity } from 'koota'
 import { Matrix4, Vector3 } from 'three'
 
 import { traits } from '$lib/ecs'
-import { poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
+const tempPose = new Pose()
 const centerMatrix = new Matrix4()
 const baseMatrix = new Matrix4()
 const partMatrix = new Matrix4()
@@ -45,7 +46,7 @@ export const composeCapsuleMatrices = (
 
 	const center = entity.get(traits.Center)
 	if (center) {
-		baseMatrix.multiply(poseToMatrix(center, centerMatrix))
+		baseMatrix.multiply(tempPose.copy(center).toMatrix4(centerMatrix))
 	}
 
 	const r = capsule.r * MM_TO_M
@@ -99,7 +100,7 @@ export const composeCapsuleBoundsMatrix = (entity: Entity, out: Matrix4): boolea
 
 	const center = entity.get(traits.Center)
 	if (center) {
-		out.multiply(poseToMatrix(center, centerMatrix))
+		out.multiply(tempPose.copy(center).toMatrix4(centerMatrix))
 	}
 
 	const diameter = 2 * capsule.r * MM_TO_M

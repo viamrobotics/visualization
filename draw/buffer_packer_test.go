@@ -3,7 +3,7 @@ package draw
 import (
 	"testing"
 
-	fixtures "github.com/viam-labs/motion-tools/draw/fixtures"
+	fixtures "github.com/viamrobotics/visualization/draw/fixtures"
 	"go.viam.com/test"
 )
 

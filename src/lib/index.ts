@@ -1,16 +1,22 @@
-/** @deprecated MotionTools has been renamed to Visualizer. This export will be removed in v2. */
-export { default as MotionTools } from './components/App.svelte'
 export { default as Visualizer } from './components/App.svelte'
 
 export { useSettings } from './hooks/useSettings.svelte'
+export { type HotkeyBinding, useHotkey } from './hooks/useHotkeys.svelte'
+export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
+export { type DetailsSection, useDetailsSection } from './hooks/useDetailsSections.svelte'
+export {
+	type EnvironmentMode,
+	useEnvironmentMode,
+	useEnvironment,
+} from './hooks/useEnvironment.svelte'
 export { default as SettingsPortal } from './components/overlay/Portals/SettingsPortal.svelte'
 export { default as DashboardPortal } from './components/overlay/Portals/DashboardPortal.svelte'
-export { default as DetailsPortal } from './components/overlay/Portals/DetailsPortal.svelte'
+export { default as WorkspacePortal } from './components/overlay/Portals/WorkspacePortal.svelte'
+export { default as ModeTogglePortal } from './components/overlay/Portals/ModeTogglePortal.svelte'
+export { default as OverlayPortal } from './components/overlay/Portals/OverlayPortal.svelte'
 
-// Plugins
 export { default as PCD } from './components/PCD.svelte'
 
-// ECS
 export * as relations from './ecs/relations'
 export * as traits from './ecs/traits'
 

@@ -1,38 +1,42 @@
+<!--
+@component
+
+Dispatches the shortcuts contributed through `useHotkey`. Features declare bindings where their behavior lives; this component owns the one window listener and the policy deciding when any of them may fire.
+-->
 <script lang="ts">
-	import { PressedKeys } from 'runed'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useHotkeys } from '$lib/hooks/useHotkeys.svelte'
 
-	import { traits, useQuery } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	const environment = useEnvironment()
+	const hotkeys = useHotkeys()
 
-	const selected = useQuery(traits.Selected)
+	const isEditable = (target: EventTarget | null) =>
+		target instanceof HTMLElement &&
+		(target.isContentEditable || target.closest('input, textarea, select') !== null)
 
-	const settings = useSettings()
-	const keys = new PressedKeys()
+	const onkeydown = (event: KeyboardEvent) => {
+		if (!environment.current.inputBindingsEnabled) return
+		// Modified presses belong to the browser (cmd+c) or to handlers with their
+		// own modifier semantics; repeats would re-fire toggles while a key is held.
+		if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
+		if (isEditable(event.target)) return
 
-	keys.onKeys('c', () => {
-		settings.current.cameraMode =
-			settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
-	})
+		const bindings = hotkeys.bindings.get(event.key.toLowerCase())
+		if (bindings === undefined) return
 
-	keys.onKeys('1', () => {
-		settings.current.transformMode = 'translate'
-	})
+		const applicable = [...bindings].filter((binding) => binding.when?.() ?? true)
 
-	keys.onKeys('2', () => {
-		settings.current.transformMode = 'rotate'
-	})
-
-	keys.onKeys('3', () => {
-		settings.current.transformMode = 'scale'
-	})
-
-	keys.onKeys('h', () => {
-		for (const entity of selected.current) {
-			if (entity?.has(traits.Invisible)) {
-				entity.remove(traits.Invisible)
-			} else {
-				entity?.add(traits.Invisible)
-			}
+		if (import.meta.env.DEV && applicable.length > 1) {
+			console.warn(
+				`[KeyboardBindings] ${applicable.length} bindings apply to "${event.key}": ` +
+					applicable.map((binding) => binding.description).join(', ')
+			)
 		}
-	})
+
+		for (const binding of applicable) {
+			binding.run()
+		}
+	}
 </script>
+
+<svelte:window {onkeydown} />

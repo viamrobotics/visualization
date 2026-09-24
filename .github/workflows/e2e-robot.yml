@@ -1,0 +1,107 @@
+name: E2E Robot Tests
+
+# The robot specs provision a real cloud machine, so they are not part of the
+# post-deploy run. Nightly catches drift against the RDK without making every
+# deploy wait on a machine coming online.
+
+on:
+  schedule:
+    # 07:00 UTC, which is outside working hours in every timezone the team is in.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  E2E_ORG: Viam Viz E2E
+  E2E_LOCATION: e2e-tests
+  # Any e2e machine older than this is from a run that died before teardown.
+  # Longer than the job timeout, so it can never delete a live machine.
+  STALE_MACHINE_AGE_MINUTES: 120
+
+jobs:
+  robot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
+        with:
+          go: 'true'
+
+      - name: Install Viam CLI
+        run: |
+          sudo curl --compressed -o /usr/local/bin/viam https://storage.googleapis.com/packages.viam.com/apps/viam-cli/viam-cli-stable-linux-amd64
+          sudo chmod a+rx /usr/local/bin/viam
+
+      - name: Log in to Viam CLI
+        run: viam login api-key --key-id="$VIAM_KEY_ID" --key="$VIAM_KEY_VALUE"
+        env:
+          VIAM_KEY_ID: ${{ secrets.VIAM_KEY_ID }}
+          VIAM_KEY_VALUE: ${{ secrets.VIAM_KEY_VALUE }}
+
+      - name: Run e2e setup
+        run: ./e2e/setup.sh
+
+      # --workers=1 because all four specs push conflicting configs at the one
+      # machine the setup project provisioned.
+      - name: Run robot tests
+        run: pnpm playwright test --project=robot --workers=1
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-robot
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload traces and diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-robot
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload the viam-server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viam-server-log
+          path: e2e/.bin/viam-server.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Runs even when the tests pass, because the leak this cleans up comes from
+      # a run that never reached its teardown project at all. Machines are named
+      # `e2e-<user>-<epoch millis>` by robot.setup.ts, so the age is readable
+      # from the name and needs no extra API call.
+      - name: Sweep leaked machines
+        if: always()
+        run: |
+          CUTOFF=$(( $(date +%s) - STALE_MACHINE_AGE_MINUTES * 60 ))
+
+          viam machines list --organization "$E2E_ORG" --location "$E2E_LOCATION" \
+            | grep -oE 'e2e-[a-zA-Z0-9_.-]+-[0-9]{13}' \
+            | sort -u \
+            | while read -r machine; do
+                created_ms=${machine##*-}
+                if [ "$(( created_ms / 1000 ))" -lt "$CUTOFF" ]; then
+                  echo "Deleting leaked machine $machine"
+                  viam machines delete --machine "$machine" \
+                    --organization "$E2E_ORG" --location "$E2E_LOCATION" || true
+                fi
+              done
+
+      - name: Notify Slack on a new failure
+        if: failure()
+        uses: ./.github/actions/notify-e2e-failure
+        with:
+          scope: robot-nightly
+          message: 'Nightly robot e2e tests failed on main. Report, traces, and the viam-server log are attached to the run.'
+          slack-token: ${{ secrets.VIZ_E2E_SLACK_BOT_TOKEN }}
+          channel: C05D8LPC2TA

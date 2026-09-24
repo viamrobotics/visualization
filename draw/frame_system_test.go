@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/geo/r3"
-	fixtures "github.com/viam-labs/motion-tools/draw/fixtures"
+	fixtures "github.com/viamrobotics/visualization/draw/fixtures"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
@@ -105,19 +105,17 @@ func TestDrawnFrameSystem_ToTransforms(t *testing.T) {
 		transforms, err := drawn.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 
-		// "other_child" explicitly set to blue
 		test.That(t, transforms[1].ReferenceFrame, test.ShouldEqual, "other_child:box")
 		// blue = \x00\x00\xff
 		test.That(t, fixtures.Byte64EncodedToString(transforms[1].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\x00\x00\xff")
 
-		// "test" explicitly set to red
 		test.That(t, transforms[2].ReferenceFrame, test.ShouldEqual, "test:box")
 		// red = \xff\x00\x00
 		test.That(t, fixtures.Byte64EncodedToString(transforms[2].Metadata.Fields["colors"].GetStringValue()), test.ShouldResemble, "\xff\x00\x00")
 	})
 
 	t.Run("InheritsParentColor", func(t *testing.T) {
-		// "child" has no explicit color; it should inherit red from its parent "test"
+		// "child" has no explicit color, so it should inherit red from its parent "test"
 		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs), WithFrameSystemColors(map[string]Color{
 			"test": NewColor(WithName("red")),
 		}))
@@ -134,7 +132,6 @@ func TestDrawnFrameSystem_ToTransforms(t *testing.T) {
 	t.Run("FrameNamesUsedAsPrefix", func(t *testing.T) {
 		drawn := NewDrawnFrameSystem(fs, referenceframe.NewZeroInputs(fs))
 
-		// Frame names are always used as the prefix for geometry labels
 		transforms, err := drawn.ToTransforms()
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, len(transforms), test.ShouldEqual, 3)

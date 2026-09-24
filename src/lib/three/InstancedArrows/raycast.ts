@@ -80,14 +80,9 @@ export function meshBoundsRaycast(
 	})
 }
 
-/**
- * Currently unused. In the future will be used for click only (not mousemove) due to complexity.
- */
 export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects: Intersection[]) {
-	// Ensure transforms are current
 	this.shaftMesh.updateMatrixWorld(true)
 
-	// Transform ray into local space of the mesh
 	inverseMatrix.copy(this.shaftMesh.matrixWorld).invert()
 	localRay.copy(raycaster.ray).applyMatrix4(inverseMatrix)
 	localRay.direction.normalize()
@@ -101,8 +96,6 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 	const array = this.poses.array as Float32Array
 	const stride = 6
 
-	// Optional quick coarse reject: if you maintain a global bounds box/sphere, test it here.
-
 	let bestDistance = Infinity
 	let bestPointWorld: Vector3 | null = null
 	let bestInstanceId = -1
@@ -110,7 +103,7 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 	for (let instanceId = 0; instanceId < this.count; instanceId++) {
 		const i = instanceId * stride
 
-		// origin is in mm in your data, so scale it to match render
+		// Pose origins are stored in millimetres, so scale them into rendered units.
 		const ox = array[i + 0] * poseScale
 		const oy = array[i + 1] * poseScale
 		const oz = array[i + 2] * poseScale
@@ -126,7 +119,7 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 		if (dlen > 0) direction.multiplyScalar(1 / dlen)
 		else direction.set(0, 1, 0)
 
-		// If shader shifts so the TIP is at origin, mirror it here
+		// The shader puts the tip at the pose origin when headAtOrigin is set, so walk the start back one arrow length to match.
 		if (headAtOrigin > 0.5) {
 			segmentStart.addScaledVector(direction, -this.arrowLength)
 		}
@@ -147,7 +140,6 @@ export function raycast(this: InstancedArrows, raycaster: Raycaster, intersects:
 		const t = closestPointRay.clone().sub(localRay.origin).dot(localRay.direction)
 		if (t < raycaster.near || t > raycaster.far) continue
 
-		// Convert closest point back to world for intersection result
 		const worldPoint = closestPointRay.clone().applyMatrix4(this.shaftMesh.matrixWorld)
 		const worldDistance = raycaster.ray.origin.distanceTo(worldPoint)
 

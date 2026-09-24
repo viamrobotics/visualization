@@ -47,7 +47,7 @@ var achromaticNames = map[string]bool{
 var (
 	// ChromaticColorChooser is a package-level ColorChooser that cycles through all SVG
 	// named colors with a perceptible hue. Like all ColorChoosers, it is not safe for
-	// concurrent use; create your own instance with NewColorChooser if you need isolated
+	// concurrent use. Create your own instance with NewColorChooser if you need isolated
 	// state or a different palette.
 	ChromaticColorChooser ColorChooser
 
@@ -76,7 +76,7 @@ func init() {
 // distinct colors to multiple objects. Each call to Next advances an internal counter
 // and wraps around to the start of the palette once the end is reached.
 //
-// ColorChooser is not safe for concurrent use; callers that share an instance across
+// ColorChooser is not safe for concurrent use. Callers that share an instance across
 // goroutines must provide their own synchronization.
 type ColorChooser struct {
 	count  int

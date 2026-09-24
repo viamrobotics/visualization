@@ -1,4 +1,4 @@
-// Package draw provides a Go API for building 3D scenes for the motion-tools visualizer.
+// Package draw provides a Go API for building 3D scenes for the Viam visualizer.
 //
 // This package contains the in-memory scene builder for assembling snapshots of geometric
 // primitives, 3D models, frame systems, and robot states. Snapshots can be serialized to
@@ -25,7 +25,7 @@
 //	    "os"
 //
 //	    "github.com/golang/geo/r3"
-//	    "github.com/viam-labs/motion-tools/draw"
+//	    "github.com/viamrobotics/visualization/draw"
 //	    "go.viam.com/rdk/spatialmath"
 //	)
 //

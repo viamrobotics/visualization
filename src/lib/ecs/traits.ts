@@ -1,15 +1,23 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-import { type Pose, Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { type Entity, trait } from 'koota'
 import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-import { createBox, createCapsule, createSphere } from '$lib/geometry'
+import {
+	createBox,
+	createCapsule,
+	createCylinder,
+	createSphere,
+	type Geometry as ViamGeometry,
+} from '$lib/geometry'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { parsePlyInput } from '$lib/ply'
-import { createPose, matrixToPose, poseToMatrix } from '$lib/transform'
+import { Pose, type PosePatch } from '$lib/math'
+import { isParsedFrom, parseMesh } from '$lib/mesh'
+import { attachPointsBvh } from '$lib/three/pointsBvh'
+
+import { setOrAddTrait } from './setOrAddTrait'
 
 export const Name = trait(() => '')
 export const UUID = trait(() => '')
@@ -47,7 +55,7 @@ export const Center = trait({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
  */
 export const Matrix = trait(() => new Matrix4())
 
-/** User-staged local transform during a `FrameEditSession`. */
+/** User-staged local transform written by frame-editing tools (see `FrameEditor`). */
 export const EditedMatrix = trait(() => new Matrix4())
 
 /**
@@ -93,8 +101,8 @@ export const InheritedInvisible = trait(() => true)
 
 /**
  * Marks a geometry entity whose 3D arm model is being rendered in place of its
- * collider, so the collider renderers (`Mesh`, `Boxes`, `Capsules`, `Spheres`)
- * skip it. Maintained by `provide3DModels`; kept separate from `Invisible` so
+ * collider, so the collider renderers (`Mesh`, `Boxes`, `Capsules`, `Cylinders`,
+ * `Spheres`) skip it. Maintained by `provide3DModels`; kept separate from `Invisible` so
  * it never disturbs the user's own visibility toggles or hides the CAD model.
  */
 export const ColliderHidden = trait()
@@ -116,17 +124,26 @@ export const Instances = trait({
 
 export const RenderOrder = trait(() => 0)
 
+/**
+ * Alpha the entity's source asked for — server metadata, or whatever the
+ * spawner chose. Reconcilers rewrite it on every tick, so nothing a user does
+ * belongs here. See `OpacityOverride`.
+ */
 export const Opacity = trait(() => 1)
 
 /**
+ * Alpha the user picked in the details panel. Absent until they touch the
+ * slider, and no reconciler may write it, which is what makes the edit survive
+ * the next sync. `resolveOpacity` ranks it above `Opacity`.
+ */
+export const OpacityOverride = trait(() => 1)
+
+/**
  * The color of an object
- * @default { r: 1, g: 0, b: 0 }
+ * @default { r: 0, g: 0, b: 0 }
  */
 export const Color = trait({ r: 0, g: 0, b: 0 })
 
-/**
- * Material properties
- */
 export const Material = trait({
 	depthTest: false,
 	depthWrite: true,
@@ -150,10 +167,15 @@ export const Arrows = trait({
 	headAtPose: true,
 })
 
-/**
- * Render entity as points
- */
 export const Points = trait(() => true)
+
+/**
+ * A cloud whose buffer was shuffled at parse time. `total` is the live point count, tracked
+ * because draw range alone can't tell a decimated cloud from one that shrank into a reused
+ * buffer. `shuffled` is how many leading points are a uniform spatial subsample — decimating
+ * past it would draw the scan-ordered tail, which is a wedge rather than a sample.
+ */
+export const PointSampling = trait({ total: 0, shuffled: 0 })
 
 /**
  * A box, in mm
@@ -170,6 +192,12 @@ export const Capsule = trait({ l: 200, r: 50 })
  */
 export const Sphere = trait({ r: 200 })
 
+/**
+ * A cylinder, in mm, about the Z axis. `l` is the full height, not a half
+ * extent. `capped` false is an open tube, which renders without end caps.
+ */
+export const Cylinder = trait({ r: 50, l: 200, capped: true })
+
 export const BufferGeometry = trait(() => new ThreeBufferGeometry())
 
 export const GLTF = trait(() => ({
@@ -178,11 +206,35 @@ export const GLTF = trait(() => ({
 }))
 
 export const FramesAPI = trait(() => true)
-export const GeometriesAPI = trait(() => true)
+
+/**
+ * A frame the part config declares that the machine's frame system does not
+ * have, because the edit adding it is still unsaved. `getPose` cannot resolve a
+ * frame the machine never built, so pose polling excludes these with
+ * `Not(ConfigOnlyFrame)` and the scene draws them from their config pose.
+ */
+export const ConfigOnlyFrame = trait(() => true)
+
+/**
+ * A link inside a component's kinematic model. IK re-solves its pose, so it is
+ * neither rigid with its parent nor drivable by the motion service.
+ */
+export const KinematicLink = trait(() => true)
+
+/**
+ * Drawn into the scene through the draw API, rather than sourced from the robot.
+ * The distinction drives grouping in the world tree and which entities may be
+ * related to one another.
+ */
 export const DrawAPI = trait(() => true)
-export const DrawServiceAPI = trait(() => true)
 export const WorldStateStoreAPI = trait(() => true)
 export const SnapshotAPI = trait(() => true)
+
+/** A cloud from a camera's `GetPointCloud`. */
+export const PointCloudAPI = trait(() => true)
+
+/** A cloud or bounding geometry from a vision service's `GetObjectPointClouds`. */
+export const PointCloudObjectAPI = trait(() => true)
 
 /**
  * Marker trait for entities created from user-dropped files (PLY, PCD, etc.)
@@ -190,11 +242,18 @@ export const SnapshotAPI = trait(() => true)
 export const DroppedFile = trait(() => true)
 
 /**
- * Marker trait for entities the dashboard's TransformControls may attach to —
- * editable frames and ad-hoc custom geometries. Other entity kinds (lines,
- * points, batched arrows, etc.) are deliberately excluded.
+ * A component that the part config declares with no frame. It carries a `Name`
+ * so the world tree can list it, and nothing else — there is no scene object
+ * behind it. Queries that assume one (labels, orphan resolution, relationship
+ * targets) exclude it with `Not(FramelessComponent)`.
  */
-export const Transformable = trait(() => true)
+export const FramelessComponent = trait()
+
+/**
+ * This entity has somewhere for an edit to land: a config entry, or an ad-hoc
+ * geometry that stages into `Matrix`. Opt-in, so an unrecognized frame is inert.
+ */
+export const Editable = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
 
@@ -236,20 +295,19 @@ export const ReferenceFrame = trait(() => true)
  */
 export const ChunkProgress = trait({ loaded: 0, total: 0 })
 
-/**
- * Interaction layers for entities
- */
 export type InteractionLayerValue = 'selectTool'
 export const SelectToolInteractionLayer = trait(() => true)
 
 /**
- * This entity is selected by the user
+ * Marker for entities that exist to be looked at, not interacted with — move
+ * ghosts, previews, and other transient display-only geometry. Pointer events
+ * that land on one are ignored and left to propagate, so whatever sits behind
+ * it hovers and selects as if the entity weren't there.
  */
+export const NonSelectable = trait(() => true)
+
 export const Selected = trait()
 
-/**
- * This entity can be safely removed from the scene by the user
- */
 export const Removable = trait(() => true)
 
 export const Geometry = (geometry: ViamGeometry) => {
@@ -259,8 +317,10 @@ export const Geometry = (geometry: ViamGeometry) => {
 		return Capsule(createCapsule(geometry.geometryType.value))
 	} else if (geometry.geometryType.case === 'sphere') {
 		return Sphere(createSphere(geometry.geometryType.value))
+	} else if (geometry.geometryType.case === 'cylinder') {
+		return Cylinder(createCylinder(geometry.geometryType.value))
 	} else if (geometry.geometryType.case === 'mesh') {
-		return BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh))
+		return BufferGeometry(parseMesh(geometry.geometryType.value))
 	}
 
 	return ReferenceFrame
@@ -268,7 +328,7 @@ export const Geometry = (geometry: ViamGeometry) => {
 
 export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => {
 	if (!geometry) {
-		entity.remove(Box, Capsule, Sphere, BufferGeometry)
+		entity.remove(Box, Capsule, Cylinder, Sphere, BufferGeometry)
 		return
 	}
 
@@ -278,7 +338,7 @@ export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => 
 			const cur = entity.get(Box)!
 			if (cur.x !== next.x || cur.y !== next.y || cur.z !== next.z) entity.set(Box, next)
 		} else {
-			entity.remove(Capsule, Sphere, BufferGeometry)
+			entity.remove(Capsule, Cylinder, Sphere, BufferGeometry)
 			entity.add(Box(next))
 		}
 	} else if (geometry.geometryType.case === 'capsule') {
@@ -287,7 +347,7 @@ export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => 
 			const cur = entity.get(Capsule)!
 			if (cur.r !== next.r || cur.l !== next.l) entity.set(Capsule, next)
 		} else {
-			entity.remove(Box, Sphere, BufferGeometry)
+			entity.remove(Box, Cylinder, Sphere, BufferGeometry)
 			entity.add(Capsule(next))
 		}
 	} else if (geometry.geometryType.case === 'sphere') {
@@ -296,17 +356,32 @@ export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => 
 			const cur = entity.get(Sphere)!
 			if (cur.r !== next.r) entity.set(Sphere, next)
 		} else {
-			entity.remove(Box, Capsule, BufferGeometry)
+			entity.remove(Box, Capsule, Cylinder, BufferGeometry)
 			entity.add(Sphere(next))
 		}
+	} else if (geometry.geometryType.case === 'cylinder') {
+		const next = createCylinder(geometry.geometryType.value)
+		if (entity.has(Cylinder)) {
+			const cur = entity.get(Cylinder)!
+			if (cur.r !== next.r || cur.l !== next.l || cur.capped !== next.capped) {
+				entity.set(Cylinder, next)
+			}
+		} else {
+			entity.remove(Box, Capsule, Sphere, BufferGeometry)
+			entity.add(Cylinder(next))
+		}
 	} else if (geometry.geometryType.case === 'mesh') {
+		const mesh = geometry.geometryType.value
 		if (entity.has(BufferGeometry)) {
 			const old = entity.get(BufferGeometry)
-			entity.set(BufferGeometry, parsePlyInput(geometry.geometryType.value.mesh))
+			// Reparsing an STL/PLY, re-uploading it, and rebuilding its EdgesGeometry all cost far
+			// more than the byte compare that rules them out.
+			if (old && isParsedFrom(old, mesh)) return
+			entity.set(BufferGeometry, parseMesh(mesh))
 			old?.dispose()
 		} else {
-			entity.remove(Box, Sphere, Capsule)
-			entity.add(BufferGeometry(parsePlyInput(geometry.geometryType.value.mesh)))
+			entity.remove(Box, Sphere, Capsule, Cylinder)
+			entity.add(BufferGeometry(parseMesh(mesh)))
 		}
 	} else if (geometry.geometryType.case === 'pointcloud') {
 		updatePointCloud(entity, geometry.geometryType.value.pointCloud)
@@ -315,20 +390,18 @@ export const updateGeometryTrait = (entity: Entity, geometry?: ViamGeometry) => 
 
 /**
  * Patches an entity's `Matrix` trait in-place via the `Pose` round-trip
- * (`matrixToPose` → merge → `poseToMatrix`), then signals `entity.changed(Matrix)`.
- * No-ops silently if the entity has no `Matrix` trait.
+ * (`setFromMatrix4` → `merge` → `toMatrix4`), then signals `entity.changed(Matrix)`.
+ * No-ops silently if the entity has no `Matrix` trait, or if the patch would
+ * change nothing.
  */
-export const writeMatrix = (entity: Entity, patch: Partial<Pose>) => {
+export const writeMatrix = (entity: Entity, patch: PosePatch) => {
 	const matrix = entity.get(Matrix)
 	if (!matrix) return
 
-	const pose = matrixToPose(matrix, createPose())
-	const filtered = Object.fromEntries(
-		Object.entries(patch).filter(([, v]) => v !== undefined)
-	) as Partial<Pose>
-	if (Object.keys(filtered).length === 0) return
-	Object.assign(pose, filtered)
-	poseToMatrix(pose, matrix)
+	const defined = Object.values(patch).some((value) => value !== undefined)
+	if (!defined) return
+
+	new Pose().setFromMatrix4(matrix).merge(patch).toMatrix4(matrix)
 	entity.changed(Matrix)
 }
 
@@ -337,10 +410,15 @@ const updatePointCloud = (entity: Entity, pointCloud: Uint8Array): void => {
 		.then((parsed) => {
 			if (!entity.isAlive()) return
 
+			setOrAddTrait(entity, PointSampling, {
+				total: parsed.positions.length / 3,
+				shuffled: parsed.shuffled,
+			})
+
 			const buffer = entity.get(BufferGeometry)
 			let colors = parsed.colors
 			if (buffer) {
-				// Reapply single color trait if the point count changed
+				// Rebuild per-point colors from the single Color trait when the parsed cloud has none.
 				if (parsed.colors === undefined) {
 					const color = entity.get(Color)
 					if (color) {
@@ -357,19 +435,27 @@ const updatePointCloud = (entity: Entity, pointCloud: Uint8Array): void => {
 					}
 				}
 
-				// When the point count changes, attributes must be reallocated.
-				const oldCount = buffer.getAttribute('position').count
+				// Attributes must be reallocated when the point count changes, and an
+				// entity can hold an attribute-less geometry: `parseMeshInput` returns
+				// one for empty or truncated bytes.
+				const oldCount = buffer.getAttribute('position')?.count ?? 0
 				const newCount = parsed.positions.length / 3
 				if (oldCount === newCount) {
-					updateBufferGeometry(buffer, parsed.positions, {
-						colors,
-						colorFormat: ColorFormat.RGB,
-					})
+					updateBufferGeometry(
+						buffer,
+						parsed.positions,
+						{ colors, colorFormat: ColorFormat.RGB },
+						parsed.bounds
+					)
+					// Replaces the tree built for the points this update just overwrote.
+					if (parsed.boundsTree) attachPointsBvh(buffer, parsed.boundsTree)
 				} else {
-					const fresh = createBufferGeometry(parsed.positions, {
-						colors,
-						colorFormat: ColorFormat.RGB,
-					})
+					const fresh = createBufferGeometry(
+						parsed.positions,
+						{ colors, colorFormat: ColorFormat.RGB },
+						parsed.bounds
+					)
+					if (parsed.boundsTree) attachPointsBvh(fresh, parsed.boundsTree)
 					buffer.dispose()
 					entity.set(BufferGeometry, fresh)
 				}
@@ -377,15 +463,14 @@ const updatePointCloud = (entity: Entity, pointCloud: Uint8Array): void => {
 				return
 			}
 
-			entity.remove(Box, Capsule, Sphere)
-			entity.add(
-				BufferGeometry(
-					createBufferGeometry(parsed.positions, {
-						colors: parsed.colors,
-						colorFormat: ColorFormat.RGB,
-					})
-				)
+			entity.remove(Box, Capsule, Cylinder, Sphere)
+			const geometry = createBufferGeometry(
+				parsed.positions,
+				{ colors: parsed.colors, colorFormat: ColorFormat.RGB },
+				parsed.bounds
 			)
+			if (parsed.boundsTree) attachPointsBvh(geometry, parsed.boundsTree)
+			entity.add(BufferGeometry(geometry))
 			if (!entity.has(Points)) entity.add(Points)
 		})
 		.catch((error) => {

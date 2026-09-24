@@ -3,13 +3,9 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { traits } from '$lib/ecs'
-import { createPose, poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
 import { composeCapsuleBoundsMatrix, composeCapsuleMatrices } from '../composeCapsuleMatrices'
-
-/** Build a world matrix from a pose the way the WorldMatrix system does. */
-const poseMatrix = (pose: Parameters<typeof createPose>[0]) =>
-	poseToMatrix(createPose(pose), new Matrix4())
 
 const decompose = (matrix: Matrix4) => {
 	const position = new Vector3()
@@ -49,7 +45,7 @@ describe('composeCapsuleMatrices', () => {
 		// r = 50 mm, l = 200 mm → midsection = 100 mm, halfMid = 50 mm.
 		const entity = world.spawn(
 			traits.Capsule({ r: 50, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ x: 1000, y: 2000, z: 3000 }))
+			traits.WorldMatrix(new Pose(1000, 2000, 3000).toMatrix4())
 		)
 
 		expect(composeCapsuleMatrices(entity, body, headTop, headBottom)).toBe(true)
@@ -82,7 +78,7 @@ describe('composeCapsuleMatrices', () => {
 		// the two poles should sit at ±l/2 about the capsule origin (z = 3 m here).
 		const entity = world.spawn(
 			traits.Capsule({ r: 50, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ x: 0, y: 0, z: 3000 }))
+			traits.WorldMatrix(new Pose(0, 0, 3000).toMatrix4())
 		)
 
 		composeCapsuleMatrices(entity, body, headTop, headBottom)
@@ -97,10 +93,7 @@ describe('composeCapsuleMatrices', () => {
 
 	it('collapses the body to zero height when l ≤ 2r (sphere case)', () => {
 		// l = 2r → no midsection: body z-scale is 0 and both caps meet at origin.
-		const entity = world.spawn(
-			traits.Capsule({ r: 100, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ x: 0, y: 0, z: 0 }))
-		)
+		const entity = world.spawn(traits.Capsule({ r: 100, l: 200 }), traits.WorldMatrix())
 
 		composeCapsuleMatrices(entity, body, headTop, headBottom)
 
@@ -114,8 +107,8 @@ describe('composeCapsuleMatrices', () => {
 		// is rotated onto world +y for every part.
 		const entity = world.spawn(
 			traits.Capsule({ r: 50, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ oZ: 1, theta: 90 })),
-			traits.Center(createPose({ x: 500 }))
+			traits.WorldMatrix(new Pose(0, 0, 0, 0, 0, 1, 90).toMatrix4()),
+			traits.Center(new Pose(500, 0, 0))
 		)
 
 		composeCapsuleMatrices(entity, body, headTop, headBottom)
@@ -131,11 +124,11 @@ describe('composeCapsuleMatrices', () => {
 	})
 
 	it.each([
-		['Capsule', () => world.spawn(traits.WorldMatrix(poseMatrix({ x: 1000 })))],
+		['Capsule', () => world.spawn(traits.WorldMatrix(new Pose(1000, 0, 0).toMatrix4()))],
 		['WorldMatrix', () => world.spawn(traits.Capsule({ r: 50, l: 200 }))],
 	])('returns false and leaves the matrices untouched when %s is missing', (_missing, spawn) => {
 		const entity = spawn()
-		const sentinel = poseMatrix({ x: 9000, y: 9000, z: 9000 })
+		const sentinel = new Pose(9000, 9000, 9000).toMatrix4()
 		body.copy(sentinel)
 		headTop.copy(sentinel)
 		headBottom.copy(sentinel)
@@ -162,7 +155,7 @@ describe('composeCapsuleBoundsMatrix', () => {
 	it('scales the selection bounds to (2r, 2r, l) in meters', () => {
 		const entity = world.spawn(
 			traits.Capsule({ r: 50, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ x: 1000, y: 2000, z: 3000 }))
+			traits.WorldMatrix(new Pose(1000, 2000, 3000).toMatrix4())
 		)
 
 		expect(composeCapsuleBoundsMatrix(entity, bounds)).toBe(true)
@@ -181,10 +174,7 @@ describe('composeCapsuleBoundsMatrix', () => {
 	it('clamps the axial extent to 2r when l ≤ 2r (sphere bounds)', () => {
 		// l = 150 mm < 2r = 200 mm: the capsule renders as a sphere of radius r,
 		// so the bounds are 2r on every axis.
-		const entity = world.spawn(
-			traits.Capsule({ r: 100, l: 150 }),
-			traits.WorldMatrix(poseMatrix({}))
-		)
+		const entity = world.spawn(traits.Capsule({ r: 100, l: 150 }), traits.WorldMatrix())
 
 		composeCapsuleBoundsMatrix(entity, bounds)
 
@@ -197,8 +187,8 @@ describe('composeCapsuleBoundsMatrix', () => {
 	it('applies Center between WorldMatrix and the bounds scale', () => {
 		const entity = world.spawn(
 			traits.Capsule({ r: 50, l: 200 }),
-			traits.WorldMatrix(poseMatrix({ oZ: 1, theta: 90 })),
-			traits.Center(createPose({ x: 500 }))
+			traits.WorldMatrix(new Pose(0, 0, 0, 0, 0, 1, 90).toMatrix4()),
+			traits.Center(new Pose(500, 0, 0))
 		)
 
 		composeCapsuleBoundsMatrix(entity, bounds)
@@ -212,11 +202,11 @@ describe('composeCapsuleBoundsMatrix', () => {
 	})
 
 	it.each([
-		['Capsule', () => world.spawn(traits.WorldMatrix(poseMatrix({ x: 1000 })))],
+		['Capsule', () => world.spawn(traits.WorldMatrix(new Pose(1000, 0, 0).toMatrix4()))],
 		['WorldMatrix', () => world.spawn(traits.Capsule({ r: 50, l: 200 }))],
 	])('returns false and leaves out untouched when %s is missing', (_missing, spawn) => {
 		const entity = spawn()
-		const sentinel = poseMatrix({ x: 9000, y: 9000, z: 9000 })
+		const sentinel = new Pose(9000, 9000, 9000).toMatrix4()
 		bounds.copy(sentinel)
 
 		expect(composeCapsuleBoundsMatrix(entity, bounds)).toBe(false)

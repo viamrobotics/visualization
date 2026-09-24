@@ -1,0 +1,33 @@
+---
+title: <Focus />
+description: Isolate the current selection in a Viam visualizer and frame the camera on it.
+---
+
+`<Focus />` adds a **Focus selection** toggle to the dashboard (hotkey `/`). Entering focus mode hides everything except the selected entities — keeping their ancestors and geometry visible — and reframes the camera to fit them, with a trackball orbit gizmo for inspecting the selection from any angle. Exiting restores every hidden entity and returns the camera to where it was.
+
+The selection is snapshotted when focus begins, so selecting or deselecting entities while focused doesn't change what's shown — the isolated view stays put. Entities you had already hidden before focusing stay hidden and are not revealed on exit.
+
+## Usage
+
+Mount `<Focus />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Focus } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<Focus />
+	</Visualizer>
+</div>
+```
+
+Select one or more entities in the 3D view, then click the **Focus selection** button in the dashboard or press `/`. Press `/` again — or click the button — to exit.
+
+## Dependencies
+
+- **External packages:** none.
+- **Plugins:** none.
+- **Runtime:** operates on the visualizer's current selection — the entities selected by clicking them in the scene. The toggle stays disabled until at least one entity is selected. While active, focus temporarily swaps the scene's camera controls for trackball controls, which is why `<TopDownLock />` has no effect during focus.

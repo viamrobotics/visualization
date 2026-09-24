@@ -1,12 +1,9 @@
-// Generates the auto-generated API reference pages by running gomarkdoc on
-// the Go packages and prepending Starlight frontmatter.
-//
-// Run from the docs/ directory:
-//
-//   pnpm gen:api
-//
-// gomarkdoc must be on $PATH (or installed under $GOPATH/bin). Outputs are
-// gitignored — they're regenerated as part of `pnpm dev` / `pnpm build`.
+/**
+ * Regenerates the API reference pages under docs/src/content/docs/api.
+ *
+ * Usage: pnpm gen:api, run from docs/.
+ * Requires gomarkdoc on $PATH or under $GOPATH/bin.
+ */
 
 import child_process from 'node:child_process'
 import fs from 'node:fs'

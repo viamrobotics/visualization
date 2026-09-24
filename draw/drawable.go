@@ -17,7 +17,7 @@ var uuidNamespace = uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 type DrawConfig struct {
 	// UUID is a stable, byte-encoded identifier for the resulting Drawing or Transform.
 	UUID []byte
-	// Name is the reference-frame name used to identify the Drawing or Transform; it
+	// Name is the reference-frame name used to identify the Drawing or Transform. It
 	// is also used as the geometry/shape label in serialized output.
 	Name string
 	// Parent is the name of the reference frame this entity is attached to.
@@ -29,7 +29,7 @@ type DrawConfig struct {
 	// ShowAxesHelper requests that the visualizer render an RGB XYZ axes helper at
 	// the entity's origin.
 	ShowAxesHelper bool
-	// Invisible hides the entity from rendering by default; the user can still toggle
+	// Invisible hides the entity from rendering by default. The user can still toggle
 	// it on in the visualizer.
 	Invisible bool
 }
@@ -42,7 +42,6 @@ type drawableTransform interface {
 	Draw(name string, options ...DrawableOption) (*commonv1.Transform, error)
 }
 
-// Compile-time interface conformance checks.
 var (
 	_ drawableDrawing   = Arrows{}
 	_ drawableDrawing   = Line{}
@@ -120,8 +119,8 @@ func WithAxesHelper(show bool) DrawableOption {
 	}
 }
 
-// WithInvisible hides the entity from rendering by default when set to true; the
-// user can still toggle visibility on in the visualizer. Defaults to false.
+// WithInvisible hides the entity from rendering by default when set to true. The user can
+// still toggle visibility on in the visualizer. Defaults to false.
 func WithInvisible(invisible bool) DrawableOption {
 	return func(config *drawableConfig) {
 		config.invisible = invisible

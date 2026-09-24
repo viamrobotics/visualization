@@ -6,7 +6,7 @@
 	import type { HoverInfo } from '$lib/HoverUpdater.svelte'
 
 	import { traits, useTrait } from '$lib/ecs'
-	import { OrientationVector } from '$lib/three/OrientationVector'
+	import { OrientationVector } from '$lib/math/OrientationVector'
 
 	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
 

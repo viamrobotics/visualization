@@ -12,7 +12,6 @@
 	const MAX_VISIBLE = 5
 	const PLANE_WIDTH = 0.7
 
-	// Offscreen canvas (created once)
 	const canvas = document.createElement('canvas')
 	canvas.width = CANVAS_WIDTH
 	canvas.height = 1
@@ -67,14 +66,12 @@
 		ctx.lineJoin = 'round'
 
 		if (variant === 'success') {
-			// Checkmark
 			ctx.beginPath()
 			ctx.moveTo(cx - size * 0.35, cy + size * 0.05)
 			ctx.lineTo(cx - size * 0.08, cy + size * 0.3)
 			ctx.lineTo(cx + size * 0.4, cy - size * 0.25)
 			ctx.stroke()
 		} else if (variant === 'danger') {
-			// X mark
 			const s = size * 0.28
 			ctx.beginPath()
 			ctx.moveTo(cx - s, cy - s)
@@ -83,7 +80,6 @@
 			ctx.lineTo(cx - s, cy + s)
 			ctx.stroke()
 		} else if (variant === 'warning') {
-			// Triangle outline with !
 			ctx.lineWidth = 3
 			ctx.beginPath()
 			ctx.moveTo(cx, cy - size * 0.32)
@@ -91,7 +87,6 @@
 			ctx.lineTo(cx - size * 0.34, cy + size * 0.26)
 			ctx.closePath()
 			ctx.stroke()
-			// Exclamation mark
 			ctx.lineWidth = 3
 			ctx.beginPath()
 			ctx.moveTo(cx, cy - size * 0.12)
@@ -101,16 +96,13 @@
 			ctx.arc(cx, cy + size * 0.16, 2, 0, Math.PI * 2)
 			ctx.fill()
 		} else {
-			// Info: circle with i
 			ctx.lineWidth = 3
 			ctx.beginPath()
 			ctx.arc(cx, cy, size * 0.32, 0, Math.PI * 2)
 			ctx.stroke()
-			// i dot
 			ctx.beginPath()
 			ctx.arc(cx, cy - size * 0.15, 2.5, 0, Math.PI * 2)
 			ctx.fill()
-			// i stem
 			ctx.lineWidth = 3
 			ctx.beginPath()
 			ctx.moveTo(cx, cy - size * 0.04)
@@ -143,26 +135,21 @@
 			drawRoundRect(ctx, 0, y, CANVAS_WIDTH, TOAST_HEIGHT, radius)
 			ctx.clip()
 
-			// Fill background
 			ctx.fillStyle = style.bg
 			ctx.fillRect(0, y, CANVAS_WIDTH, TOAST_HEIGHT)
 
-			// Accent bar on left
 			ctx.fillStyle = style.accent
 			ctx.fillRect(0, y, accentBarWidth, TOAST_HEIGHT)
 
 			ctx.restore()
 
-			// Subtle border
 			ctx.strokeStyle = style.accent + '50' // 31% opacity
 			ctx.lineWidth = 2
 			drawRoundRect(ctx, 1, y + 1, CANVAS_WIDTH - 2, TOAST_HEIGHT - 2, radius)
 			ctx.stroke()
 
-			// Icon
 			drawIcon(ctx, toast.variant, iconCenterX, y + TOAST_HEIGHT / 2, 28)
 
-			// Message text
 			ctx.fillStyle = '#ffffff'
 			ctx.font = '28px sans-serif'
 			ctx.textBaseline = 'middle'
@@ -174,7 +161,6 @@
 		texture.needsUpdate = true
 	}
 
-	// Combined effect: resize canvas, update geometry, render
 	$effect(() => {
 		const toasts = visibleToasts
 
@@ -198,7 +184,6 @@
 		untrack(() => geometry?.dispose())
 	}
 
-	// Cleanup
 	$effect(() => {
 		return dispose
 	})

@@ -12,8 +12,8 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/test"
 	"golang.org/x/net/http2"
@@ -443,7 +443,7 @@ func TestDrawService_UpdateEntity(t *testing.T) {
 		}))
 		test.That(t, err, test.ShouldBeNil)
 
-		// Incoming has no physical_object set; mask names physical_object -- it should be cleared.
+		// Incoming has no physical_object set and the mask names physical_object, so it should be cleared.
 		_, err = client.UpdateEntity(context.Background(), connect.NewRequest(&drawv1.UpdateEntityRequest{
 			Uuid:          id[:],
 			Entity:        &drawv1.UpdateEntityRequest_Drawing{Drawing: sampleDrawing("d1")},
@@ -977,7 +977,6 @@ func drainSnapshot(t *testing.T, stream *connect.ServerStreamForClient[drawv1.St
 	}
 }
 
-
 func addTransformAndDrawing(t *testing.T, client drawv1connect.DrawServiceClient) ([]byte, []byte) {
 	t.Helper()
 	tResp, err := client.AddEntity(context.Background(), connect.NewRequest(&drawv1.AddEntityRequest{
@@ -1239,7 +1238,6 @@ func TestDrawService_CascadeRelationships(t *testing.T) {
 
 		drainSnapshot(t, sr.stream, 2)
 
-		// First event: REMOVED for target
 		test.That(t, sr.stream.Receive(), test.ShouldBeTrue)
 		removed := sr.stream.Msg()
 		test.That(t, removed.ChangeType, test.ShouldEqual, drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED)
@@ -1293,7 +1291,7 @@ func TestDrawService_CascadeRelationships(t *testing.T) {
 		client := newTestServer(t, svc)
 		srcUUID, tgtUUID := addTransformAndDrawing(t, client)
 
-		// source=transform, target=drawing — rel lives on the transform
+		// source=drawing, target=transform — rel lives on the drawing
 		_, err := client.CreateRelationship(context.Background(), connect.NewRequest(&drawv1.CreateRelationshipRequest{
 			SourceUuid:   tgtUUID,
 			Relationship: &drawv1.Relationship{TargetUuid: srcUUID, Type: "HoverLink"},

@@ -4,8 +4,8 @@ import type { Transform } from '@viamrobotics/sdk'
 
 import { UuidTool } from 'uuid-tool'
 
-import { createGeometryFromFrame } from './geometry'
-import { createPoseFromFrame } from './transform'
+import { createGeometryFromFrame } from '$lib/geometry'
+import { Pose } from '$lib/math'
 
 type FrameGeometryMap = {
 	none: { type: 'none' }
@@ -21,6 +21,8 @@ type FrameOrientationMap = {
 	euler_angles: { type: 'euler_angles'; value: { roll: number; pitch: number; yaw: number } }
 	ov_degrees: { type: 'ov_degrees'; value: { x: number; y: number; z: number; th: number } }
 	ov_radians: { type: 'ov_radians'; value: { x: number; y: number; z: number; th: number } }
+	/** rdk's `R4AA`: an axis plus a rotation about it, in radians. */
+	axis_angles: { type: 'axis_angles'; value: { x: number; y: number; z: number; th: number } }
 }
 
 export type FrameOrientation = keyof FrameOrientationMap
@@ -43,21 +45,20 @@ export interface Frame<
 	geometry?: FrameGeometryMap[T]
 }
 
-export const createFrame = <
-	T extends FrameGeometry = 'box',
-	K extends FrameOrientation = 'ov_degrees',
->(
-	geometry?: FrameGeometryMap[T]
-): Frame<T> => {
+/**
+ * A frame at its parent's origin with no geometry, matching what app.viam.com
+ * writes when a frameless component gets a frame. The user picks a shape after,
+ * so guessing one here would put a body in the scene they never asked for.
+ */
+export const createFrame = (): Frame => {
 	return {
 		parent: 'world',
 		translation: { x: 0, y: 0, z: 0 },
 		orientation: {
 			type: 'ov_degrees',
 			value: { x: 0, y: 0, z: 1, th: 0 },
-		} as FrameOrientationMap[K],
-		geometry: (geometry ?? { type: 'box', x: 100, y: 100, z: 100 }) as FrameGeometryMap[T],
-	} satisfies Frame<T>
+		},
+	} satisfies Frame
 }
 
 export const createTransformFromFrame = (name: string, frame: Partial<Frame>): Transform => {
@@ -66,7 +67,7 @@ export const createTransformFromFrame = (name: string, frame: Partial<Frame>): T
 		referenceFrame: name,
 		poseInObserverFrame: {
 			referenceFrame: frame.parent ?? 'world',
-			pose: createPoseFromFrame(frame),
+			pose: new Pose().setFromFrame(frame),
 		},
 		physicalObject: createGeometryFromFrame(frame),
 	} satisfies Transform

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Motion Tools Development Environment Setup Script
+# Viam Visualization Development Environment Setup Script
 
 set -euo pipefail
 
@@ -120,22 +120,6 @@ check_and_install_pnpm() {
     log_success "pnpm installed successfully"
 }
 
-check_and_install_bun() {
-    if command_exists bun; then
-        log_success "bun is already installed (version: $(bun --version))"
-        return 0
-    fi
-    
-    log_info "Installing bun..."
-    curl -fsSL https://bun.sh/install | bash
-    
-    # Source bun for this session
-    export BUN_INSTALL="$HOME/.bun"
-    export PATH="$BUN_INSTALL/bin:$PATH"
-    
-    log_success "bun installed successfully"
-}
-
 check_and_install_go() {
     if command_exists go; then
         local current_version=$(go version | sed 's/go version go//' | cut -d' ' -f1)
@@ -239,9 +223,6 @@ print_shell_config() {
     echo 'export PNPM_HOME="$HOME/.local/share/pnpm"'
     echo 'export PATH="$PNPM_HOME:$PATH"'
     echo
-    echo 'export BUN_INSTALL="$HOME/.bun"'
-    echo 'export PATH="$BUN_INSTALL/bin:$PATH"'
-    echo
     echo 'export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"'
     echo
     echo 'export PATH="$HOME/.buf/bin:$PATH"'
@@ -262,22 +243,19 @@ main() {
     # Step 3: Install pnpm
     check_and_install_pnpm
     
-    # Step 4: Install bun
-    check_and_install_bun
-    
-    # Step 5: Install Go
+    # Step 4: Install Go
     check_and_install_go
     
-    # Step 6: Install buf
+    # Step 5: Install buf
     check_and_install_buf
     
-    # Step 7: Install Go tools
+    # Step 6: Install Go tools
     install_go_tools
     
-    # Step 8: Install Node.js dependencies
+    # Step 7: Install Node.js dependencies
     install_node_dependencies
     
-    # Step 9: Generate protobuf code
+    # Step 8: Generate protobuf code
     pnpm proto
 
     echo 
@@ -287,7 +265,7 @@ main() {
     print_shell_config
     
     echo -e "  1. Follow the shell configuration instructions above"
-    echo -e "  2. Run '${YELLOW}pnpm up${NC}' (or '${YELLOW}make up${NC}') to start the development server"
+    echo -e "  2. Run '${YELLOW}pnpm run up${NC}' (or '${YELLOW}make up${NC}') to start the development server"
     echo -e "  3. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
     echo
 }

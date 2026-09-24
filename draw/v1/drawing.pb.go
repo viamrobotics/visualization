@@ -777,7 +777,7 @@ const file_draw_v1_drawing_proto_rawDesc = "" +
 	"\x04uuid\x18\x04 \x01(\fR\x04uuid\x122\n" +
 	"\bmetadata\x18\x05 \x01(\v2\x11.draw.v1.MetadataH\x01R\bmetadata\x88\x01\x01B\x12\n" +
 	"\x10_physical_objectB\v\n" +
-	"\t_metadataB2Z0github.com/viam-labs/motion-tools/draw/v1;drawv1b\x06proto3"
+	"\t_metadataB6Z4github.com/viamrobotics/visualization/draw/v1;drawv1b\x06proto3"
 
 var (
 	file_draw_v1_drawing_proto_rawDescOnce sync.Once

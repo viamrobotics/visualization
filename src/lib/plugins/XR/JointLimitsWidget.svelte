@@ -26,11 +26,9 @@
 		status: 'safe' | 'caution' | 'danger'
 	}
 
-	// Get joint limits and current positions for this arm
 	const jointLimits = $derived(armKinematics.kinematics[armName])
 	const currentPositions = $derived(armClient.currentPositions[armName])
 
-	// Combine limits and positions into display data
 	const jointData = $derived.by((): JointLimitData[] | undefined => {
 		if (!jointLimits || !currentPositions) return undefined
 
@@ -70,7 +68,6 @@
 	let texture: CanvasTexture | undefined = $state()
 	let geometry: PlaneGeometry | undefined = $state()
 
-	// Initialize canvas
 	$effect(() => {
 		if (!canvas && jointData && jointData.length > 0) {
 			canvas = document.createElement('canvas')
@@ -78,21 +75,17 @@
 			canvas.height = canvasHeight
 			texture = new CanvasTexture(canvas)
 
-			// Calculate aspect ratio for plane geometry
 			const aspect = CANVAS_WIDTH / canvasHeight
-			// Width in 3D space, height based on aspect
 			geometry = new PlaneGeometry(1.2, 1.2 / aspect)
 		}
 	})
 
-	// Update canvas height when number of joints changes
 	$effect(() => {
 		if (canvas && jointData) {
 			const newHeight = HEADER_HEIGHT + jointData.length * ROW_HEIGHT
 			if (canvas.height !== newHeight) {
 				canvas.height = newHeight
 
-				// Update geometry for new aspect ratio
 				const aspect = CANVAS_WIDTH / newHeight
 				geometry?.dispose()
 				geometry = new PlaneGeometry(1.2, 1.2 / aspect)
@@ -100,21 +93,17 @@
 		}
 	})
 
-	// Render header with arm name
 	function renderHeader(ctx: CanvasRenderingContext2D, width: number) {
 		const s = RESOLUTION_SCALE
 
-		// Header background
 		ctx.fillStyle = '#0a0a0a'
 		ctx.fillRect(0, 0, width, HEADER_HEIGHT)
 
-		// Arm name
 		ctx.fillStyle = '#ffffff'
 		ctx.font = `bold ${36 * s}px monospace`
 		ctx.textBaseline = 'middle'
 		ctx.fillText(armName, 20 * s, HEADER_HEIGHT / 2)
 
-		// Separator line
 		ctx.strokeStyle = '#444444'
 		ctx.lineWidth = 4 * s
 		ctx.beginPath()
@@ -135,7 +124,6 @@
 		return '#44ff44'
 	}
 
-	// Render joint data to canvas
 	function renderJointLimits(
 		ctx: CanvasRenderingContext2D,
 		joints: JointLimitData[],
@@ -149,37 +137,30 @@
 		for (const joint of joints) {
 			const y = HEADER_HEIGHT + index * rowHeight
 
-			// Background row
 			ctx.fillStyle = index % 2 === 0 ? '#1a1a1a' : '#222222'
 			ctx.fillRect(0, y, width, rowHeight)
 
-			// Joint label
 			ctx.fillStyle = '#ffffff'
 			ctx.font = `bold ${32 * s}px monospace`
 			ctx.textBaseline = 'middle'
 			ctx.fillText(joint.jointId, 20 * s, y + rowHeight / 2)
 
-			// Progress bar dimensions
 			const barX = 240 * s
 			const barY = y + (rowHeight - 60 * s) / 2
 			const barWidth = 360 * s
 			const barHeight = 60 * s
 
-			// Progress bar background
 			ctx.fillStyle = '#333333'
 			ctx.fillRect(barX, barY, barWidth, barHeight)
 
-			// Progress bar fill (colored by status)
 			const fillWidth = barWidth * (joint.percentage / 100)
 			ctx.fillStyle = getJointColor(joint.status)
 			ctx.fillRect(barX, barY, fillWidth, barHeight)
 
-			// Progress bar border
 			ctx.strokeStyle = '#666666'
 			ctx.lineWidth = 4 * s
 			ctx.strokeRect(barX, barY, barWidth, barHeight)
 
-			// Current value text
 			ctx.fillStyle = '#ffffff'
 			ctx.font = `${28 * s}px monospace`
 			ctx.fillText(
@@ -192,22 +173,17 @@
 		}
 	}
 
-	// Update canvas when joint data changes
 	$effect(() => {
 		if (canvas && jointData && jointData.length > 0) {
 			const ctx = canvas.getContext('2d')
 			if (!ctx) return
 
-			// Clear canvas
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-			// Render header with arm name
 			renderHeader(ctx, canvas.width)
 
-			// Render joint limits
 			renderJointLimits(ctx, jointData, canvas.width, canvas.height)
 
-			// Mark texture for update
 			if (texture) {
 				texture.needsUpdate = true
 			}

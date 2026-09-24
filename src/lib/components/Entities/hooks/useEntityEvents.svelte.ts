@@ -3,9 +3,9 @@ import type { Entity } from 'koota'
 import { type IntersectionEvent, useCursor } from '@threlte/extras'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
-import { traits, useTrait, useWorld } from '$lib/ecs'
+import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'
 import { type HoverInfo, updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { OrientationVector } from '$lib/three/OrientationVector'
+import { OrientationVector } from '$lib/math/OrientationVector'
 
 const tempHoverMatrix = new Matrix4()
 const hoverQuat = new Quaternion()
@@ -33,6 +33,15 @@ const createEntityEvents = (
 
 	const world = useWorld()
 
+	/**
+	 * A hit on a `NonSelectable` entity is treated as if the object weren't
+	 * there: no cursor change, no hover or selection, and — because the handler
+	 * returns before `stopPropagation` — the next intersection along the ray
+	 * still receives the event, so a ghost never shadows the geometry behind it.
+	 */
+	const isNonSelectable = (event: IntersectionEvent<MouseEvent>) =>
+		entityForEvent(event)?.has(traits.NonSelectable) ?? false
+
 	const hoverEntity = (currentEntity: Entity, event: IntersectionEvent<MouseEvent>) => {
 		const hoverInfo = updateHoverInfo(currentEntity, event)
 
@@ -45,17 +54,20 @@ const createEntityEvents = (
 			} else {
 				composed.copy(tempHoverMatrix)
 			}
-			currentEntity.add(
-				traits.InstancedMatrix({
-					matrix: composed,
-					index: hoverInfo.index,
-				})
-			)
+			// An instanced renderer can drop `Hovered` without dropping
+			// `InstancedMatrix` (see the invisibility handling in `writeAppearance`),
+			// so this has to overwrite a leftover matrix rather than skip it.
+			setOrAddTrait(currentEntity, traits.InstancedMatrix, {
+				matrix: composed,
+				index: hoverInfo.index,
+			})
 		}
 		currentEntity.add(traits.Hovered)
 	}
 
 	const onpointerenter = (event: IntersectionEvent<MouseEvent>) => {
+		if (isNonSelectable(event)) return
+
 		event.stopPropagation()
 		cursor.onPointerEnter()
 
@@ -67,6 +79,8 @@ const createEntityEvents = (
 	}
 
 	const onpointermove = (event: IntersectionEvent<MouseEvent>) => {
+		if (isNonSelectable(event)) return
+
 		event.stopPropagation()
 
 		const currentEntity = entityForEvent(event)
@@ -99,6 +113,8 @@ const createEntityEvents = (
 	}
 
 	const onpointerleave = (event: IntersectionEvent<MouseEvent>) => {
+		if (isNonSelectable(event)) return
+
 		event.stopPropagation()
 		cursor.onPointerLeave()
 
@@ -113,10 +129,14 @@ const createEntityEvents = (
 	}
 
 	const onpointerdown = (event: IntersectionEvent<MouseEvent>) => {
+		if (isNonSelectable(event)) return
+
 		down.copy(event.pointer)
 	}
 
 	const onclick = (event: IntersectionEvent<MouseEvent>) => {
+		if (isNonSelectable(event)) return
+
 		event.stopPropagation()
 
 		if (down.distanceToSquared(event.pointer) >= 0.1) {
@@ -143,8 +163,10 @@ const createEntityEvents = (
 			}
 		}
 
-		if (event.instanceId || event.batchId) {
-			currentEntity.add(traits.InstanceId(event.instanceId ?? event.batchId))
+		// `!== undefined`, because instance 0 is a valid hit
+		const instanceId = event.instanceId ?? event.batchId
+		if (instanceId !== undefined) {
+			setOrAddTrait(currentEntity, traits.InstanceId, instanceId)
 		}
 	}
 
@@ -162,9 +184,9 @@ const createEntityEvents = (
  * targets the closed-over entity.
  *
  * Layers invisibility on top of the shared handlers: enter/move/down/click are
- * suppressed while the entity is invisible (raycasting still hits the visible
- * leaf mesh of Frame/Geometry/GLTF, so the scene's visibility filter can't
- * block them — added in #577, migrated to InheritedInvisible in #710).
+ * suppressed while the entity is invisible, because raycasting still hits the
+ * visible leaf mesh of `Mesh.svelte`, `GeometryModel.svelte`, or `GLTF.svelte`
+ * and the scene visibility filter cannot block them.
  * `onpointerleave` is intentionally left active. The effect tears down a stale
  * Hovered/InstancedMatrix for an entity that turns invisible while hovered,
  * since the guarded handlers can no longer fire to clean it up.

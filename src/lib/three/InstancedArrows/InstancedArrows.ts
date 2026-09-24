@@ -151,14 +151,25 @@ export class InstancedArrows extends Group {
 		this.add(this.shaftMesh, this.headMesh)
 	}
 
+	/**
+	 * Copies as much of each buffer as this instance has room for, dropping the
+	 * rest. The colors buffer is sized independently of the poses, so a caller
+	 * that sends more colors than arrows is writing past the end of the
+	 * attribute. `TypedArray.set` throws on that rather than truncating, and the
+	 * throw would surface inside the koota `onAdd` that `entity.add` runs
+	 * synchronously, taking the whole draw-service flush down with it and
+	 * stranding the entity the flush was spawning.
+	 */
 	update(arrows: { poses?: Float32Array; colors?: Uint8Array; headAtPose?: boolean }) {
 		if (arrows.poses) {
-			this.poses.array.set(arrows.poses)
+			const poses = this.poses.array
+			poses.set(arrows.poses.subarray(0, poses.length))
 			this.poses.needsUpdate = true
 		}
 
 		if (arrows.colors && this.attributes.instanceColor) {
-			this.attributes.instanceColor.array.set(arrows.colors)
+			const colors = this.attributes.instanceColor.array
+			colors.set(arrows.colors.subarray(0, colors.length))
 			this.attributes.instanceColor.needsUpdate = true
 		}
 	}

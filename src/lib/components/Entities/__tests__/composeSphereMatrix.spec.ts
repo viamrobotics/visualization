@@ -3,13 +3,9 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { traits } from '$lib/ecs'
-import { createPose, poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
 import { composeSphereBoundsMatrix, composeSphereMatrix } from '../composeSphereMatrix'
-
-/** Build a world matrix from a pose the way the WorldMatrix system does. */
-const poseMatrix = (pose: Parameters<typeof createPose>[0]) =>
-	poseToMatrix(createPose(pose), new Matrix4())
 
 const decompose = (matrix: Matrix4) => {
 	const position = new Vector3()
@@ -31,7 +27,7 @@ describe('composeSphereMatrix', () => {
 	it('composes WorldMatrix × radius scale (mm → m) when no Center is present', () => {
 		const entity = world.spawn(
 			traits.Sphere({ r: 250 }),
-			traits.WorldMatrix(poseMatrix({ x: 1000, y: 2000, z: 3000 }))
+			traits.WorldMatrix(new Pose(1000, 2000, 3000).toMatrix4())
 		)
 		const out = new Matrix4()
 
@@ -59,8 +55,8 @@ describe('composeSphereMatrix', () => {
 		// offset is rotated by it and lands on world +y.
 		const entity = world.spawn(
 			traits.Sphere({ r: 100 }),
-			traits.WorldMatrix(poseMatrix({ oZ: 1, theta: 90 })),
-			traits.Center(createPose({ x: 500 }))
+			traits.WorldMatrix(new Pose(0, 0, 0, 0, 0, 1, 90).toMatrix4()),
+			traits.Center(new Pose(500))
 		)
 		const out = new Matrix4()
 
@@ -81,11 +77,11 @@ describe('composeSphereMatrix', () => {
 	})
 
 	it.each([
-		['Sphere', () => world.spawn(traits.WorldMatrix(poseMatrix({ x: 1000 })))],
+		['Sphere', () => world.spawn(traits.WorldMatrix(new Pose(1000, 0, 0).toMatrix4()))],
 		['WorldMatrix', () => world.spawn(traits.Sphere({ r: 100 }))],
 	])('returns false and leaves out untouched when %s is missing', (_missing, spawn) => {
 		const entity = spawn()
-		const sentinel = poseMatrix({ x: 9000, y: 9000, z: 9000 })
+		const sentinel = new Pose(9000, 9000, 9000).toMatrix4()
 		const out = sentinel.clone()
 
 		expect(composeSphereMatrix(entity, out)).toBe(false)
@@ -107,7 +103,7 @@ describe('composeSphereBoundsMatrix', () => {
 	it('scales the selection bounds to the diameter (2r) on every axis', () => {
 		const entity = world.spawn(
 			traits.Sphere({ r: 250 }),
-			traits.WorldMatrix(poseMatrix({ x: 1000, y: 2000, z: 3000 }))
+			traits.WorldMatrix(new Pose(1000, 2000, 3000).toMatrix4())
 		)
 
 		expect(composeSphereBoundsMatrix(entity, bounds)).toBe(true)
@@ -126,8 +122,8 @@ describe('composeSphereBoundsMatrix', () => {
 	it('applies Center between WorldMatrix and the bounds scale', () => {
 		const entity = world.spawn(
 			traits.Sphere({ r: 100 }),
-			traits.WorldMatrix(poseMatrix({ oZ: 1, theta: 90 })),
-			traits.Center(createPose({ x: 500 }))
+			traits.WorldMatrix(new Pose(0, 0, 0, 0, 0, 1, 90).toMatrix4()),
+			traits.Center(new Pose(500, 0, 0))
 		)
 
 		composeSphereBoundsMatrix(entity, bounds)
@@ -142,11 +138,11 @@ describe('composeSphereBoundsMatrix', () => {
 	})
 
 	it.each([
-		['Sphere', () => world.spawn(traits.WorldMatrix(poseMatrix({ x: 1000 })))],
+		['Sphere', () => world.spawn(traits.WorldMatrix(new Pose(1000, 0, 0).toMatrix4()))],
 		['WorldMatrix', () => world.spawn(traits.Sphere({ r: 100 }))],
 	])('returns false and leaves out untouched when %s is missing', (_missing, spawn) => {
 		const entity = spawn()
-		const sentinel = poseMatrix({ x: 9000, y: 9000, z: 9000 })
+		const sentinel = new Pose(9000, 9000, 9000).toMatrix4()
 		bounds.copy(sentinel)
 
 		expect(composeSphereBoundsMatrix(entity, bounds)).toBe(false)

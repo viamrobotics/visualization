@@ -6,16 +6,14 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/client/server"
-	"github.com/viam-labs/motion-tools/draw"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	"github.com/viamrobotics/visualization/draw"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // DrawPointsOptions configures a DrawPoints call.
 type DrawPointsOptions struct {
-	// ID is a stable identifier for the entity. When set, calling DrawPoints
-	// again with the same ID updates the existing entity in place; when empty,
-	// each call creates a new entity with a freshly generated UUID.
+	// ID is a stable identifier for the entity. When set, calling DrawPoints again with the same ID updates the existing entity in place. When empty, each call creates a new entity with a freshly generated UUID.
 	ID string
 	// Name labels the entity in the visualizer. Must be ASCII printable and at
 	// most 100 characters.
@@ -26,10 +24,7 @@ type DrawPointsOptions struct {
 	// Positions are the locations of each point. Must contain at least one
 	// position.
 	Positions []r3.Vector
-	// Colors controls how the points are colored. With no colors, every point
-	// uses draw.DefaultPointColor (gray). Pass one color to share it across all
-	// points; pass exactly len(Positions) colors for per-point colors; pass any
-	// other count to cycle through the slice as a palette.
+	// Colors controls how the points are colored. With no colors, every point uses draw.DefaultPointColor (gray). Pass one color to share it across all points. Pass exactly len(Positions) colors for per-point colors. Pass any other count to cycle through the slice as a palette.
 	Colors []draw.Color
 	// PointSize is the rendered diameter of each point in millimeters. 0 (the
 	// default) uses draw.DefaultPointSize (10mm).
@@ -47,17 +42,9 @@ type DrawPointsOptions struct {
 	Attrs *Attrs
 }
 
-// DrawPoints sends a set of points to the visualizer as a drawing. Passing an
-// ID that already exists updates the previously drawn entity in place;
-// otherwise a new entity is created. When ChunkSize > 0, the positions are
-// streamed over multiple RPCs and OnProgress (if provided) is invoked after
-// each chunk. Returns the UUID assigned by the server.
+// DrawPoints sends a set of points to the visualizer as a drawing. Passing an ID that already exists updates the previously drawn entity in place. Otherwise a new entity is created. When ChunkSize > 0, the positions are streamed over multiple RPCs and OnProgress (if provided) is invoked after each chunk. Returns the UUID assigned by the server.
 //
-// Returns an error when Name is not ASCII printable or exceeds 100 characters,
-// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
-// validation error if the points cannot be constructed (see draw.NewPoints —
-// empty positions, mismatched color count, etc.), or a wrapped RPC error if a
-// network call fails.
+// Returns an error when Name is not ASCII printable or exceeds 100 characters, ErrVisualizerNotRunning if no visualizer is reachable, the underlying validation error if the points cannot be constructed (see draw.NewPoints, which rejects empty positions and a mismatched color count), or a wrapped RPC error if a network call fails.
 func DrawPoints(options DrawPointsOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

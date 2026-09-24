@@ -8,13 +8,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -35,8 +36,6 @@ type storedEntity struct {
 	transform *commonv1.Transform
 	drawing   *drawv1.Drawing
 }
-
-const entitySubscriberBufferSize = 64
 
 type chunkedEntity struct {
 	mu               sync.Mutex
@@ -88,13 +87,13 @@ func (entity *chunkedEntity) close() {
 	entity.opacities.close()
 }
 
-// DrawService is the in-memory backing store and Connect-RPC handler for the draw
-// service. It keeps every transform and drawing keyed by UUID, persists scene
-// metadata, and fans out add/update/remove events to streaming subscribers.
+// DrawService is the in-memory backing store and Connect-RPC handler for the draw service. It
+// keeps every transform and drawing keyed by UUID, persists scene metadata, and fans out
+// add/update/remove events to streaming subscribers.
 //
-// Chunked drawings (point clouds and similar large entities) are accumulated to
-// disk under a configurable temp directory and served on demand via
-// GetEntityChunk; the rest of the state lives entirely in memory.
+// Chunked drawings (point clouds and similar large entities) are accumulated to disk under a
+// configurable temp directory and served on demand via GetEntityChunk. The rest of the state
+// lives entirely in memory.
 //
 // All public methods are safe for concurrent use.
 type DrawService struct {
@@ -104,8 +103,8 @@ type DrawService struct {
 	sceneMetadata *drawv1.SceneMetadata
 	tempDir       string
 
-	entitySubs map[uint64]chan *drawv1.StreamEntityChangesResponse
-	sceneSubs  map[uint64]chan *drawv1.StreamSceneChangesResponse
+	entitySubs map[uint64]*entitySubscriber
+	sceneSubs  map[uint64]*sceneSubscriber
 	nextSubID  atomic.Uint64
 }
 
@@ -127,8 +126,8 @@ func NewDrawService(tempDir string) *DrawService {
 		chunked:       make(map[uuid.UUID]*chunkedEntity),
 		sceneMetadata: nil,
 		tempDir:       tempDir,
-		entitySubs:    make(map[uint64]chan *drawv1.StreamEntityChangesResponse),
-		sceneSubs:     make(map[uint64]chan *drawv1.StreamSceneChangesResponse),
+		entitySubs:    make(map[uint64]*entitySubscriber),
+		sceneSubs:     make(map[uint64]*sceneSubscriber),
 	}
 }
 
@@ -151,82 +150,172 @@ func cleanTempDir(dir string) {
 	}
 }
 
+// notifyEntityChange publishes a change to every entity subscriber. A nil msg is ignored.
+//
+// Callers hold svc.mu. That is safe because push only takes the subscriber's own lock and a
+// non-blocking channel send, so it cannot block on a stalled consumer. The lock order is
+// always svc.mu then sub.mu, and svc.mu is never held across a stream.Send.
+//
+// Invariant: the entity carried by msg must not be mutated afterwards. The message is queued
+// by pointer and may be marshalled on another goroutine at any later time. To change a stored
+// entity, clone it, mutate the clone, and replace the stored pointer — see
+// withEntityMetadataRelationships.
 func (svc *DrawService) notifyEntityChange(msg *drawv1.StreamEntityChangesResponse) {
-	for _, ch := range svc.entitySubs {
-		select {
-		case ch <- msg:
-		default:
-			log.Printf("draw: entity change dropped for slow consumer")
-		}
+	if msg == nil {
+		return
 	}
+	for _, sub := range svc.entitySubs {
+		sub.push(msg)
+	}
+}
+
+// notifyEntityCleared publishes a single bulk-removal event covering every entity in scope,
+// rather than one REMOVED per entity. Clearing a large scene would otherwise publish hundreds of
+// messages in one lock hold.
+func (svc *DrawService) notifyEntityCleared(scope drawv1.EntityScope) {
+	svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
+		ChangeType:   drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
+		ClearedScope: scope,
+	})
 }
 
 func (svc *DrawService) notifySceneChange(msg *drawv1.StreamSceneChangesResponse) {
-	for _, ch := range svc.sceneSubs {
-		select {
-		case ch <- msg:
-		default:
-			log.Printf("draw: scene change dropped for slow consumer")
-		}
+	if msg == nil {
+		return
+	}
+	for _, sub := range svc.sceneSubs {
+		sub.push(msg)
 	}
 }
 
-func (svc *DrawService) addEntitySub() (uint64, chan *drawv1.StreamEntityChangesResponse) {
+func (svc *DrawService) addEntitySub() (uint64, *entitySubscriber) {
 	id := svc.nextSubID.Add(1)
-	ch := make(chan *drawv1.StreamEntityChangesResponse, entitySubscriberBufferSize)
-	svc.entitySubs[id] = ch
-	return id, ch
+	sub := newEntitySubscriber()
+	svc.entitySubs[id] = sub
+	return id, sub
 }
 
 func (svc *DrawService) removeEntitySub(id uint64) {
-	if ch, ok := svc.entitySubs[id]; ok {
+	if sub, ok := svc.entitySubs[id]; ok {
 		delete(svc.entitySubs, id)
-		close(ch)
+		sub.close()
 	}
 }
 
-func (svc *DrawService) addSceneSub() (uint64, chan *drawv1.StreamSceneChangesResponse) {
+func (svc *DrawService) addSceneSub() (uint64, *sceneSubscriber) {
 	id := svc.nextSubID.Add(1)
-	ch := make(chan *drawv1.StreamSceneChangesResponse, entitySubscriberBufferSize)
-	svc.sceneSubs[id] = ch
-	return id, ch
+	sub := newSceneSubscriber()
+	svc.sceneSubs[id] = sub
+	return id, sub
 }
 
 func (svc *DrawService) removeSceneSub(id uint64) {
-	if ch, ok := svc.sceneSubs[id]; ok {
+	if sub, ok := svc.sceneSubs[id]; ok {
 		delete(svc.sceneSubs, id)
-		close(ch)
+		sub.close()
 	}
 }
 
-// AddEntity stores a transform or drawing and returns the assigned UUID. If the
-// incoming entity carries a valid Uuid, that ID is used (replacing any existing
-// entity with the same ID — i.e. upsert); otherwise a fresh UUID is generated.
+// AddEntity stores a transform or drawing and returns the assigned UUID. If the incoming
+// entity carries a valid Uuid, that ID is used, replacing any existing entity with the same
+// ID — an upsert. Otherwise a fresh UUID is generated.
 //
-// Drawings whose metadata.chunks field is set are registered as chunked entities:
-// the first call captures the template and the initial chunk, and subsequent
-// chunks must be delivered via UpdateEntity.
+// Drawings whose metadata.chunks field is set are registered as chunked entities: the first
+// call captures the template and the initial chunk, and subsequent chunks must be delivered
+// via UpdateEntity.
 //
-// Returns InvalidArgument if the entity, transform, or drawing field is missing,
-// and Internal if a chunked entity cannot be initialized on disk.
+// Returns InvalidArgument if the entity, transform, or drawing field is missing, and Internal
+// if a chunked entity cannot be initialized on disk.
 func (svc *DrawService) AddEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.AddEntityRequest],
 ) (*connect.Response[drawv1.AddEntityResponse], error) {
-	if req.Msg.GetEntity() == nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity is required"))
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	id, err := svc.addEntityLocked(req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&drawv1.AddEntityResponse{Uuid: id[:]}), nil
+}
+
+// AddEntities stores every entity in the batch and returns their UUIDs in request order.
+// Semantics per entity match AddEntity, and the batch is applied under a single lock so no
+// other RPC observes the store midway through it.
+//
+// Returns InvalidArgument if the batch is empty or any entity is malformed. Every entity is
+// checked before any is stored, so a malformed entity anywhere in the batch leaves the store
+// untouched. That guarantee does not extend to Internal errors: a chunked drawing whose buffer
+// cannot be created partway through the batch leaves the entities before it stored.
+//
+// Note this is atomic with respect to the store, not to stream subscribers. Changes are queued
+// per entity and delivered as the consumer drains them, so a subscriber can observe part of a
+// batch before the rest arrives.
+func (svc *DrawService) AddEntities(
+	_ context.Context,
+	req *connect.Request[drawv1.AddEntitiesRequest],
+) (*connect.Response[drawv1.AddEntitiesResponse], error) {
+	entities := req.Msg.GetEntities()
+	if len(entities) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entities is required"))
+	}
+
+	for i, entity := range entities {
+		if err := validateAddEntity(entity); err != nil {
+			return nil, fmt.Errorf("entity %d: %w", i, err)
+		}
 	}
 
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
-	var changeMsg *drawv1.StreamEntityChangesResponse
-	var id uuid.UUID
+	uuids := make([][]byte, 0, len(entities))
+	for i, entity := range entities {
+		id, err := svc.addEntityLocked(entity)
+		if err != nil {
+			return nil, fmt.Errorf("entity %d: %w", i, err)
+		}
+		uuids = append(uuids, id[:])
+	}
 
-	switch e := req.Msg.Entity.(type) {
+	return connect.NewResponse(&drawv1.AddEntitiesResponse{Uuids: uuids}), nil
+}
+
+// validateAddEntity reports whether a request carries a well-formed entity. Kept separate from
+// addEntityLocked so a batch can be checked in full before any of it is stored.
+func validateAddEntity(msg *drawv1.AddEntityRequest) error {
+	switch e := msg.GetEntity().(type) {
 	case *drawv1.AddEntityRequest_Transform:
 		if e.Transform == nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("transform is required"))
+			return connect.NewError(connect.CodeInvalidArgument, errors.New("transform is required"))
+		}
+	case *drawv1.AddEntityRequest_Drawing:
+		if e.Drawing == nil {
+			return connect.NewError(connect.CodeInvalidArgument, errors.New("drawing is required"))
+		}
+	case nil:
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("entity is required"))
+	default:
+		return connect.NewError(connect.CodeInvalidArgument, errors.New("entity must be a transform or drawing"))
+	}
+	return nil
+}
+
+// addEntityLocked stores one entity and publishes its change. svc.mu must be held.
+func (svc *DrawService) addEntityLocked(msg *drawv1.AddEntityRequest) (uuid.UUID, error) {
+	var id uuid.UUID
+	if msg.GetEntity() == nil {
+		return id, connect.NewError(connect.CodeInvalidArgument, errors.New("entity is required"))
+	}
+
+	var changeMsg *drawv1.StreamEntityChangesResponse
+
+	switch e := msg.Entity.(type) {
+	case *drawv1.AddEntityRequest_Transform:
+		if e.Transform == nil {
+			return id, connect.NewError(connect.CodeInvalidArgument, errors.New("transform is required"))
 		}
 		id = resolveEntityUUID(e.Transform.GetUuid())
 		_, exists := svc.entities[id]
@@ -238,7 +327,7 @@ func (svc *DrawService) AddEntity(
 		}
 	case *drawv1.AddEntityRequest_Drawing:
 		if e.Drawing == nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("drawing is required"))
+			return id, connect.NewError(connect.CodeInvalidArgument, errors.New("drawing is required"))
 		}
 		id = resolveEntityUUID(e.Drawing.GetUuid())
 		_, exists := svc.entities[id]
@@ -251,26 +340,26 @@ func (svc *DrawService) AddEntity(
 				template := proto.Clone(e.Drawing).(*drawv1.Drawing)
 				entity, err := newChunkedEntity(chunks, template, svc.tempDir)
 				if err != nil {
-					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("create chunked entity: %w", err))
+					return id, connect.NewError(connect.CodeInternal, fmt.Errorf("create chunked entity: %w", err))
 				}
 				entity.mu.Lock()
 				if err := entity.data.write(data); err != nil {
 					entity.mu.Unlock()
 					entity.close()
-					return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", err))
+					return id, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial chunk: %w", err))
 				}
 				if metadata != nil {
 					if err := entity.colors.write(metadata.GetColors()); err != nil {
 						entity.mu.Unlock()
 						entity.close()
-						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", err))
+						return id, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial colors: %w", err))
 					}
 					opacities := metadata.GetOpacities()
 					entity.opacitiesUniform = len(opacities) == 1
 					if err := entity.opacities.write(opacities); err != nil {
 						entity.mu.Unlock()
 						entity.close()
-						return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", err))
+						return id, connect.NewError(connect.CodeInternal, fmt.Errorf("write initial opacities: %w", err))
 					}
 				}
 				entity.mu.Unlock()
@@ -285,12 +374,12 @@ func (svc *DrawService) AddEntity(
 			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.Drawing},
 		}
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity must be a transform or drawing"))
+		return id, connect.NewError(connect.CodeInvalidArgument, errors.New("entity must be a transform or drawing"))
 	}
 
 	svc.notifyEntityChange(changeMsg)
 
-	return connect.NewResponse(&drawv1.AddEntityResponse{Uuid: id[:]}), nil
+	return id, nil
 }
 
 // extractShapeData returns the raw position/pose bytes from any shape type.
@@ -343,15 +432,13 @@ func addedOrUpdated(exists bool) drawv1.EntityChangeType {
 	return drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED
 }
 
-// UpdateEntity replaces or partially updates an existing entity identified by
-// UUID. When updated_fields is non-empty, only the listed proto field paths are
-// merged into the stored entity; otherwise the incoming entity replaces the
-// stored one wholesale. The kind of the incoming entity must match the kind of
-// the stored entity (transform vs. drawing).
+// UpdateEntity replaces or partially updates an existing entity identified by UUID. When
+// updated_fields is non-empty, only the listed proto field paths are merged into the stored
+// entity. Otherwise the incoming entity replaces the stored one wholesale. The kind of the
+// incoming entity must match the kind of the stored entity (transform vs. drawing).
 //
-// For chunked drawings, UpdateEntity is also the channel for delivering
-// subsequent chunks: each call appends positions, colors, and opacities to the
-// on-disk buffer for the entity.
+// For chunked drawings, UpdateEntity is also the channel for delivering subsequent chunks:
+// each call appends positions, colors, and opacities to the on-disk buffer for the entity.
 //
 // Returns InvalidArgument for missing or malformed inputs, NotFound when no
 // entity has the given UUID, and Internal if a chunk cannot be persisted.
@@ -389,7 +476,13 @@ func (svc *DrawService) UpdateEntity(
 		if existing.kind != entityKindTransform {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity type mismatch: existing entity is a drawing, not a transform"))
 		}
-		if err := validateTransformUpdate(existing.transform, e.Transform); err != nil {
+		if err := validateFieldMask(e.Transform, req.Msg.GetUpdatedFields().GetPaths()); err != nil {
+			return nil, err
+		}
+		if err := rejectNestedTransformMetadata(req.Msg.GetUpdatedFields().GetPaths()); err != nil {
+			return nil, err
+		}
+		if err := validateTransformUpdate(existing.transform, e.Transform, req.Msg.UpdatedFields); err != nil {
 			return nil, err
 		}
 		updated := applyTransformUpdate(existing.transform, e.Transform, req.Msg.UpdatedFields)
@@ -406,11 +499,26 @@ func (svc *DrawService) UpdateEntity(
 		if existing.kind != entityKindDrawing {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("entity type mismatch: existing entity is a transform, not a drawing"))
 		}
-		if err := validateDrawingUpdate(existing.drawing, e.Drawing); err != nil {
+		if err := validateFieldMask(e.Drawing, req.Msg.GetUpdatedFields().GetPaths()); err != nil {
+			return nil, err
+		}
+		if err := validateDrawingUpdate(existing.drawing, e.Drawing, req.Msg.UpdatedFields); err != nil {
 			return nil, err
 		}
 
-		if entity, ok := svc.chunked[id]; ok {
+		// A chunked drawing receives its payload through UpdateEntity, so an unmasked update is
+		// the next chunk. A masked update is a field patch (a recolor, a move) and must not be
+		// appended to the buffer.
+		//
+		// TODO: define how a masked update interacts with the chunk buffer. A chunked entity
+		// keeps its element data on disk rather than in physical_object, so a mask that selects
+		// the shape (physical_object, or a nested path such as
+		// physical_object.points.positions) patches a proto field that is not the source of
+		// truth, and the patch is invisible to GetEntityChunk. Masks that only touch metadata or
+		// the pose are unaffected. Until this is settled, partial element updates on a chunked
+		// entity are undefined; redraw the entity instead.
+		// Redraw the entity instead.
+		if entity, ok := svc.chunked[id]; ok && len(req.Msg.GetUpdatedFields().GetPaths()) == 0 {
 			if err := svc.accumulateChunk(entity, e.Drawing); err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("accumulate chunk: %w", err))
 			}
@@ -418,7 +526,9 @@ func (svc *DrawService) UpdateEntity(
 		}
 
 		updated := applyDrawingUpdate(existing.drawing, e.Drawing, req.Msg.UpdatedFields)
+		warnOnAttributeCountMismatch(id, updated)
 		svc.entities[id] = storedEntity{kind: entityKindDrawing, drawing: updated}
+		svc.syncChunkedTemplate(id, e.Drawing, req.Msg.UpdatedFields)
 		changeMsg = &drawv1.StreamEntityChangesResponse{
 			ChangeType:    drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_UPDATED,
 			Entity:        &drawv1.StreamEntityChangesResponse_Drawing{Drawing: updated},
@@ -431,6 +541,33 @@ func (svc *DrawService) UpdateEntity(
 	svc.notifyEntityChange(changeMsg)
 
 	return connect.NewResponse(&drawv1.UpdateEntityResponse{}), nil
+}
+
+// syncChunkedTemplate applies a partial update to a chunked entity's replay template.
+//
+// A chunked drawing is replayed to new subscribers from its template rather than from the
+// stored entity, because the payload has to be rebuilt from the on-disk buffer. Updating only
+// the stored entity would therefore be invisible to anyone connecting later: they would
+// receive the pose and metadata the entity was created with, and nothing would ever correct
+// it.
+//
+// Shape masks are skipped. A chunked entity's elements live in the buffer, not in the template's
+// physical_object, so there is nothing meaningful to sync; see the TODO in UpdateEntity.
+//
+// svc.mu must be held.
+func (svc *DrawService) syncChunkedTemplate(id uuid.UUID, incoming *drawv1.Drawing, mask *fieldmaskpb.FieldMask) {
+	if len(mask.GetPaths()) == 0 || maskSelects(mask, DrawingPathShape) {
+		return
+	}
+
+	chunked, ok := svc.chunked[id]
+	if !ok {
+		return
+	}
+
+	chunked.mu.Lock()
+	defer chunked.mu.Unlock()
+	chunked.template = applyDrawingUpdate(chunked.template, incoming, mask)
 }
 
 func (svc *DrawService) accumulateChunk(entity *chunkedEntity, drawing *drawv1.Drawing) error {
@@ -522,19 +659,24 @@ func drawingShapeTypeCase(s *drawv1.Shape) string {
 	}
 }
 
-func validateTransformUpdate(existing, incoming *commonv1.Transform) error {
-	if incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
+// validateTransformUpdate rejects updates that would change a transform's identity or shape.
+//
+// Only fields the mask selects are checked: a partial update that leaves reference_frame unset
+// is not trying to change it, and reading the unset field as a rename would make every masked
+// update fail unless the caller redundantly echoed fields it was not updating.
+func validateTransformUpdate(existing, incoming *commonv1.Transform, mask interface{ GetPaths() []string }) error {
+	if maskSelects(mask, "reference_frame") && incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
-			"cannot change reference_frame from %q to %q remove the existing entity and add a new one instead",
+			"cannot change reference_frame from %q to %q; remove the existing entity and add a new one instead",
 			existing.GetReferenceFrame(), incoming.GetReferenceFrame(),
 		))
 	}
 
 	existingCase := transformGeometryTypeCase(existing.GetPhysicalObject())
 	incomingCase := transformGeometryTypeCase(incoming.GetPhysicalObject())
-	if existingCase != "" && incomingCase != "" && existingCase != incomingCase {
+	if maskSelects(mask, "physical_object") && existingCase != "" && incomingCase != "" && existingCase != incomingCase {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
-			"cannot change physical_object geometry type from %q to %q remove the existing entity and add a new one instead",
+			"cannot change physical_object geometry type from %q to %q; remove the existing entity and add a new one instead",
 			existingCase, incomingCase,
 		))
 	}
@@ -542,19 +684,21 @@ func validateTransformUpdate(existing, incoming *commonv1.Transform) error {
 	return nil
 }
 
-func validateDrawingUpdate(existing, incoming *drawv1.Drawing) error {
-	if incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
+// validateDrawingUpdate mirrors validateTransformUpdate. See that function for why the mask
+// gates each check.
+func validateDrawingUpdate(existing, incoming *drawv1.Drawing, mask interface{ GetPaths() []string }) error {
+	if maskSelects(mask, "reference_frame") && incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
-			"cannot change reference_frame from %q to %q remove the existing entity and add a new one instead",
+			"cannot change reference_frame from %q to %q; remove the existing entity and add a new one instead",
 			existing.GetReferenceFrame(), incoming.GetReferenceFrame(),
 		))
 	}
 
 	existingCase := drawingShapeTypeCase(existing.GetPhysicalObject())
 	incomingCase := drawingShapeTypeCase(incoming.GetPhysicalObject())
-	if existingCase != "" && incomingCase != "" && existingCase != incomingCase {
+	if maskSelects(mask, "physical_object") && existingCase != "" && incomingCase != "" && existingCase != incomingCase {
 		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
-			"cannot change physical_object geometry type from %q to %q remove the existing entity and add a new one instead",
+			"cannot change physical_object geometry type from %q to %q; remove the existing entity and add a new one instead",
 			existingCase, incomingCase,
 		))
 	}
@@ -562,21 +706,147 @@ func validateDrawingUpdate(existing, incoming *drawv1.Drawing) error {
 	return nil
 }
 
-func applyFieldMask(dst, src proto.Message, paths []string) {
-	dstRef := dst.ProtoReflect()
-	srcRef := src.ProtoReflect()
-	fields := dstRef.Descriptor().Fields()
+// validateFieldMask checks every path in the mask against msg's descriptor.
+//
+// FieldMask paths are proto field names (snake_case), not Go or JSON names, and may name a
+// nested field with dots ("pose_in_observer_frame.pose"). Silently skipping an unrecognized
+// path would let a misspelled mask, or one written with the Go name PoseInObserverFrame or the
+// JSON name poseInObserverFrame, report success while updating nothing. The FieldMask spec
+// requires unmappable paths be rejected with InvalidArgument, so that is what we do.
+//
+// fieldmaskpb.New does the walk, which also enforces the spec rule that a repeated or map field
+// may only appear last in a path.
+func validateFieldMask(msg proto.Message, paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+	if _, err := fieldmaskpb.New(msg, paths...); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"invalid updated_fields: %w; paths are proto field names such as %s, and may be nested with dots",
+			err, strings.Join(fieldNames(msg), ", "),
+		))
+	}
+	return nil
+}
+
+func fieldNames(msg proto.Message) []string {
+	fields := msg.ProtoReflect().Descriptor().Fields()
+	names := make([]string, 0, fields.Len())
+	for i := range fields.Len() {
+		names = append(names, string(fields.Get(i).Name()))
+	}
+	return names
+}
+
+// rejectNestedTransformMetadata refuses a mask that reaches inside a transform's metadata.
+//
+// A transform stores metadata as an untyped google.protobuf.Struct, so the only paths a mask can
+// express are "metadata" and "metadata.fields", and both replace the whole thing. Accepting
+// either of the nested spellings would imply a surgical update that the encoding cannot deliver.
+// A drawing's metadata is a typed message and does support per-attribute paths, which is why
+// this restriction is specific to transforms.
+func rejectNestedTransformMetadata(paths []string) error {
 	for _, path := range paths {
-		fd := fields.ByName(protoreflect.Name(path))
-		if fd == nil {
-			continue
-		}
-		if srcRef.Has(fd) {
-			dstRef.Set(fd, srcRef.Get(fd))
-		} else {
-			dstRef.Clear(fd)
+		if strings.HasPrefix(path, TransformPathMetadata+".") {
+			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+				"updated_fields path %q reaches into a transform's metadata, which is an untyped struct "+
+					"and can only be replaced wholesale; select %q and send the complete metadata instead",
+				path, TransformPathMetadata,
+			))
 		}
 	}
+	return nil
+}
+
+// maskSelects reports whether the mask reaches into field, either by naming it outright or by
+// naming something within it. An empty mask selects every field, matching the wholesale-replace
+// semantics of an UpdateEntity call without a mask.
+func maskSelects(mask interface{ GetPaths() []string }, field string) bool {
+	if mask == nil || len(mask.GetPaths()) == 0 {
+		return true
+	}
+	for _, path := range mask.GetPaths() {
+		if path == field || strings.HasPrefix(path, field+".") {
+			return true
+		}
+	}
+	return false
+}
+
+// applyFieldMask copies the fields named by paths from src onto dst, leaving everything else on
+// dst alone. Paths may be nested ("pose_in_observer_frame.pose"), which is how a caller moves an
+// entity without also rewriting the observer frame it is attached to.
+//
+// Paths are assumed to have been checked by validateFieldMask.
+func applyFieldMask(dst, src proto.Message, paths []string) {
+	for _, path := range paths {
+		applyFieldPath(dst.ProtoReflect(), src.ProtoReflect(), strings.Split(path, "."))
+	}
+}
+
+func applyFieldPath(dst, src protoreflect.Message, segments []string) {
+	fd := dst.Descriptor().Fields().ByName(protoreflect.Name(segments[0]))
+	if fd == nil {
+		return
+	}
+
+	if len(segments) == 1 {
+		if !src.Has(fd) {
+			// The mask selects this field and the incoming message leaves it unset, which the
+			// FieldMask spec defines as a clear rather than a no-op.
+			dst.Clear(fd)
+			return
+		}
+		setFieldCloned(dst, src, fd)
+		return
+	}
+
+	// Descending only makes sense into a singular message. validateFieldMask rejects a path that
+	// continues past a scalar, a list, or a map.
+	if fd.Message() == nil || fd.IsList() || fd.IsMap() {
+		return
+	}
+	// Nothing on either side, so every leaf under this path is already absent.
+	if !src.Has(fd) && !dst.Has(fd) {
+		return
+	}
+	// src.Get on an unset message field yields an empty read-only message, which is what we want:
+	// the selected leaves read as unset and are cleared on dst.
+	applyFieldPath(dst.Mutable(fd).Message(), src.Get(fd).Message(), segments[1:])
+}
+
+// setFieldCloned copies one field from src to dst, deep-copying any message values.
+//
+// Sharing a message pointer would alias the caller's request proto into the stored entity, which
+// is then published to subscribers by pointer and must not change afterwards. Scalars and bytes
+// are copied by value or reference from a request that is discarded once the RPC returns, so
+// they need no clone.
+func setFieldCloned(dst, src protoreflect.Message, fd protoreflect.FieldDescriptor) {
+	switch {
+	case fd.IsMap():
+		dst.Clear(fd)
+		out := dst.Mutable(fd).Map()
+		src.Get(fd).Map().Range(func(key protoreflect.MapKey, value protoreflect.Value) bool {
+			out.Set(key, clonedValue(fd.MapValue(), value))
+			return true
+		})
+	case fd.IsList():
+		dst.Clear(fd)
+		out := dst.Mutable(fd).List()
+		in := src.Get(fd).List()
+		for i := range in.Len() {
+			out.Append(clonedValue(fd, in.Get(i)))
+		}
+	default:
+		dst.Set(fd, clonedValue(fd, src.Get(fd)))
+	}
+}
+
+func clonedValue(fd protoreflect.FieldDescriptor, value protoreflect.Value) protoreflect.Value {
+	if fd.Message() == nil {
+		return value
+	}
+	return protoreflect.ValueOfMessage(proto.Clone(value.Message().Interface()).ProtoReflect())
 }
 
 func entityMetadataRelationships(e storedEntity) []*drawv1.Relationship {
@@ -592,18 +862,49 @@ func entityMetadataRelationships(e storedEntity) []*drawv1.Relationship {
 	return nil
 }
 
-func setEntityMetadataRelationships(e *storedEntity, rels []*drawv1.Relationship) {
+// withEntityMetadataRelationships returns a copy of e whose metadata carries rels.
+//
+// The stored proto is cloned rather than mutated: the previous pointer has already been handed
+// to subscribers by notifyEntityChange and may still be queued, unmarshalled, in another
+// goroutine. See the invariant documented on notifyEntityChange.
+func withEntityMetadataRelationships(e storedEntity, rels []*drawv1.Relationship) storedEntity {
 	switch e.kind {
 	case entityKindDrawing:
-		if e.drawing.Metadata == nil {
-			e.drawing.Metadata = &drawv1.Metadata{}
+		drawing := proto.Clone(e.drawing).(*drawv1.Drawing)
+		if drawing.Metadata == nil {
+			drawing.Metadata = &drawv1.Metadata{}
 		}
-		e.drawing.Metadata.Relationships = rels
+		drawing.Metadata.Relationships = rels
+		return storedEntity{kind: entityKindDrawing, drawing: drawing}
 	case entityKindTransform:
-		if e.transform.Metadata == nil {
-			e.transform.Metadata = MetadataToStruct(NewMetadata())
+		transform := proto.Clone(e.transform).(*commonv1.Transform)
+		if transform.Metadata == nil {
+			transform.Metadata = MetadataToStruct(NewMetadata())
 		}
-		SetRelationshipsOnStruct(e.transform.Metadata, rels)
+		SetRelationshipsOnStruct(transform.Metadata, rels)
+		return storedEntity{kind: entityKindTransform, transform: transform}
+	}
+	return e
+}
+
+// removedChangeMsg builds the REMOVED event for a stored entity. Returns nil
+// for an entity whose kind is neither transform nor drawing, which would mean
+// the store was populated through a path that skipped both AddEntity branches.
+func removedChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
+	switch e.kind {
+	case entityKindTransform:
+		return &drawv1.StreamEntityChangesResponse{
+			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
+			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: e.transform},
+		}
+	case entityKindDrawing:
+		return &drawv1.StreamEntityChangesResponse{
+			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
+			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: e.drawing},
+		}
+	default:
+		log.Printf("draw: cannot build removed event for entity of unknown kind %d", e.kind)
+		return nil
 	}
 }
 
@@ -621,15 +922,15 @@ func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
 	return msg
 }
 
-// CreateRelationship creates or replaces a relationship from the source entity
-// to the target named in the relationship. Relationships are stored in the
-// source entity's metadata; an existing relationship with the same target_uuid
-// is replaced in place rather than duplicated. The change is published to entity
-// subscribers as an UPDATED event on the source.
+// CreateRelationship creates or replaces a relationship from the source entity to the target
+// named in the relationship. Relationships are stored in the source entity's metadata, and an
+// existing relationship with the same target_uuid is replaced in place rather than
+// duplicated. The change is published to entity subscribers as an UPDATED event on the
+// source.
 //
-// Returns InvalidArgument for missing source_uuid, relationship, or
-// target_uuid, when source and target UUIDs are equal, or when a UUID byte
-// slice cannot be parsed; NotFound when either entity does not exist.
+// Returns InvalidArgument for missing source_uuid, relationship, or target_uuid, when source
+// and target UUIDs are equal, or when a UUID byte slice cannot be parsed. Returns NotFound
+// when either entity does not exist.
 func (svc *DrawService) CreateRelationship(
 	_ context.Context,
 	req *connect.Request[drawv1.CreateRelationshipRequest],
@@ -667,22 +968,26 @@ func (svc *DrawService) CreateRelationship(
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("target entity %s not found", targetID))
 	}
 
-	rels := entityMetadataRelationships(source)
+	// Build a fresh slice: writing into the one returned by entityMetadataRelationships would
+	// mutate the stored proto's backing array, which subscribers may still hold.
+	existing := entityMetadataRelationships(source)
+	rels := make([]*drawv1.Relationship, 0, len(existing)+1)
 	replaced := false
-	for i, r := range rels {
+	for _, r := range existing {
 		if bytes.Equal(r.TargetUuid, req.Msg.GetRelationship().GetTargetUuid()) {
-			rels[i] = req.Msg.Relationship
+			rels = append(rels, req.Msg.Relationship)
 			replaced = true
-			break
+			continue
 		}
+		rels = append(rels, r)
 	}
 	if !replaced {
 		rels = append(rels, req.Msg.Relationship)
 	}
-	setEntityMetadataRelationships(&source, rels)
-	svc.entities[sourceID] = source
+	updated := withEntityMetadataRelationships(source, rels)
+	svc.entities[sourceID] = updated
 
-	svc.notifyEntityChange(entityChangeMsg(source))
+	svc.notifyEntityChange(entityChangeMsg(updated))
 
 	return connect.NewResponse(&drawv1.CreateRelationshipResponse{}), nil
 }
@@ -730,17 +1035,24 @@ func (svc *DrawService) DeleteRelationship(
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("relationship not found"))
 	}
 
-	setEntityMetadataRelationships(&source, filtered)
-	svc.entities[sourceID] = source
+	updated := withEntityMetadataRelationships(source, filtered)
+	svc.entities[sourceID] = updated
 
-	svc.notifyEntityChange(entityChangeMsg(source))
+	svc.notifyEntityChange(entityChangeMsg(updated))
 
 	return connect.NewResponse(&drawv1.DeleteRelationshipResponse{}), nil
 }
 
-// cascadeRemoveRelationships removes any relationship pointing at removedID from all remaining
-// entities, emitting UPDATED events for each affected source.
-func (svc *DrawService) cascadeRemoveRelationships(removedID uuid.UUID) {
+// cascadeRemoveRelationships removes any relationship pointing at one of the removed IDs from
+// all remaining entities, emitting at most one UPDATED event per affected source.
+//
+// Takes the whole removed set rather than a single ID so a bulk removal is one pass over the
+// store: calling this once per removed entity is O(removed * remaining) in both work and
+// published messages.
+func (svc *DrawService) cascadeRemoveRelationships(removed map[uuid.UUID]struct{}) {
+	if len(removed) == 0 {
+		return
+	}
 	for id, entity := range svc.entities {
 		rels := entityMetadataRelationships(entity)
 		if len(rels) == 0 {
@@ -748,17 +1060,19 @@ func (svc *DrawService) cascadeRemoveRelationships(removedID uuid.UUID) {
 		}
 		filtered := make([]*drawv1.Relationship, 0, len(rels))
 		for _, r := range rels {
-			if bytes.Equal(r.TargetUuid, removedID[:]) {
-				continue
+			if targetID, err := uuid.FromBytes(r.TargetUuid); err == nil {
+				if _, ok := removed[targetID]; ok {
+					continue
+				}
 			}
 			filtered = append(filtered, r)
 		}
 		if len(filtered) == len(rels) {
 			continue
 		}
-		setEntityMetadataRelationships(&entity, filtered)
-		svc.entities[id] = entity
-		svc.notifyEntityChange(entityChangeMsg(entity))
+		updated := withEntityMetadataRelationships(entity, filtered)
+		svc.entities[id] = updated
+		svc.notifyEntityChange(entityChangeMsg(updated))
 	}
 }
 
@@ -791,41 +1105,26 @@ func (svc *DrawService) RemoveEntity(
 	}
 
 	delete(svc.entities, id)
-	if entity, ok := svc.chunked[id]; ok {
-		entity.close()
+	if chunked, ok := svc.chunked[id]; ok {
+		chunked.close()
 		delete(svc.chunked, id)
 	}
 
-	var changeMsg *drawv1.StreamEntityChangesResponse
-	switch entity.kind {
-	case entityKindTransform:
-		changeMsg = &drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
-		}
-	case entityKindDrawing:
-		changeMsg = &drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: entity.drawing},
-		}
-	}
-	svc.notifyEntityChange(changeMsg)
-	svc.cascadeRemoveRelationships(id)
+	svc.notifyEntityChange(removedChangeMsg(entity))
+	svc.cascadeRemoveRelationships(map[uuid.UUID]struct{}{id: {}})
 
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
 
-// GetEntityChunk returns a single chunk of accumulated data from a chunked
-// entity, starting at the requested element index. The call blocks until enough
-// data has been accumulated to satisfy the request or the entity is marked
-// complete; passing a context with a deadline is the recommended way to bound
-// the wait. The Done flag in the response is set when the returned chunk
-// finishes the entity.
+// GetEntityChunk returns a single chunk of accumulated data from a chunked entity, starting
+// at the requested element index. The call blocks until enough data has been accumulated to
+// satisfy the request or the entity is marked complete. Passing a context with a deadline is
+// the recommended way to bound the wait. The Done flag in the response is set when the
+// returned chunk finishes the entity.
 //
-// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no
-// chunked entity has the given UUID, Canceled if the context is cancelled
-// before the chunk becomes available, and Internal if the chunk cannot be
-// rebuilt from the on-disk buffer.
+// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no chunked entity
+// has the given UUID, Canceled if the context is cancelled before the chunk becomes
+// available, and Internal if the chunk cannot be rebuilt from the on-disk buffer.
 func (svc *DrawService) GetEntityChunk(
 	ctx context.Context,
 	req *connect.Request[drawv1.GetEntityChunkRequest],
@@ -894,19 +1193,19 @@ func (svc *DrawService) GetEntityChunk(
 	}), nil
 }
 
-// StreamEntityChanges streams ADDED, UPDATED, and REMOVED events for every
-// transform and drawing in the scene. On connect, the current world state is
-// replayed as a series of ADDED events so new subscribers see existing entities
-// before live updates begin. The stream ends when the request context is
-// cancelled. Subscriber channels have a bounded buffer; events that would block
-// a slow consumer are dropped and a warning is logged.
+// StreamEntityChanges streams ADDED, UPDATED, and REMOVED events for every transform and
+// drawing in the scene. On connect, the current world state is replayed as a series of
+// ADDED events so new subscribers see existing entities before live updates begin. The
+// stream ends when the request context is cancelled. Changes queue per subscriber and are
+// never dropped. A subscriber that falls further behind than maxPendingEntityChanges has its
+// stream closed with ResourceExhausted so it can reconnect and take a fresh replay.
 func (svc *DrawService) StreamEntityChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamEntityChangesRequest],
 	stream *connect.ServerStream[drawv1.StreamEntityChangesResponse],
 ) error {
 	svc.mu.Lock()
-	subID, ch := svc.addEntitySub()
+	subID, sub := svc.addEntitySub()
 
 	replay := make([]*drawv1.StreamEntityChangesResponse, 0, len(svc.entities))
 	for id, entity := range svc.entities {
@@ -931,29 +1230,45 @@ func (svc *DrawService) StreamEntityChanges(
 	}
 	svc.mu.Unlock()
 
-	for _, msg := range replay {
-		if err := stream.Send(msg); err != nil {
-			return err
-		}
-	}
-
+	// Registered before the replay loop: a client that disconnects mid-replay
+	// would otherwise leave its channel in svc.entitySubs with nobody draining
+	// it, filling up and logging a drop on every subsequent mutation forever.
 	defer func() {
 		svc.mu.Lock()
 		svc.removeEntitySub(subID)
 		svc.mu.Unlock()
 	}()
 
+	for _, msg := range replay {
+		if err := stream.Send(msg); err != nil {
+			return err
+		}
+	}
+
 	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case msg, ok := <-ch:
-			if !ok {
-				return nil
-			}
+		msgs, overflow, closed := sub.take()
+		if overflow {
+			log.Printf("draw: subscriber %d fell more than %d changes behind; closing stream for resync", subID, maxPendingEntityChanges)
+			return connect.NewError(
+				connect.CodeResourceExhausted,
+				errors.New("entity change queue overflow; reconnect for a fresh snapshot"),
+			)
+		}
+		for _, msg := range msgs {
 			if err := stream.Send(msg); err != nil {
 				return err
 			}
+		}
+		if len(msgs) > 0 {
+			continue
+		}
+		if closed {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-sub.notify:
 		}
 	}
 }
@@ -998,14 +1313,19 @@ func (entity *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, u
 	setShapeData(drawing, chunkData)
 
 	if len(chunkColors) > 0 || len(chunkOpacities) > 0 {
-		md := &drawv1.Metadata{}
+		// Override only the packed buffers, keeping the rest of the template's metadata.
+		// Replacing it wholesale would drop the chunks descriptor, which is how a client
+		// recognizes a chunked entity and knows to keep pulling. A subscriber replayed
+		// without it would render the first chunk and stop.
+		if drawing.Metadata == nil {
+			drawing.Metadata = &drawv1.Metadata{}
+		}
 		if len(chunkColors) > 0 {
-			md.Colors = chunkColors
+			drawing.Metadata.Colors = chunkColors
 		}
 		if len(chunkOpacities) > 0 {
-			md.Opacities = chunkOpacities
+			drawing.Metadata.Opacities = chunkOpacities
 		}
-		drawing.Metadata = md
 	}
 
 	return drawing, chunkElements, nil
@@ -1059,7 +1379,7 @@ func (svc *DrawService) StreamSceneChanges(
 	stream *connect.ServerStream[drawv1.StreamSceneChangesResponse],
 ) error {
 	svc.mu.Lock()
-	subID, ch := svc.addSceneSub()
+	subID, sub := svc.addSceneSub()
 	svc.mu.Unlock()
 
 	defer func() {
@@ -1069,16 +1389,20 @@ func (svc *DrawService) StreamSceneChanges(
 	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case msg, ok := <-ch:
-			if !ok {
-				return nil
-			}
+		msg, closed := sub.take()
+		if msg != nil {
 			if err := stream.Send(msg); err != nil {
 				return err
 			}
+			continue
+		}
+		if closed {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-sub.notify:
 		}
 	}
 }
@@ -1093,7 +1417,7 @@ func (svc *DrawService) RemoveAllTransforms(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
-	removedIDs := make([]uuid.UUID, 0)
+	removedIDs := make(map[uuid.UUID]struct{})
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindTransform {
@@ -1101,15 +1425,10 @@ func (svc *DrawService) RemoveAllTransforms(
 		}
 		delete(svc.entities, id)
 		count++
-		removedIDs = append(removedIDs, id)
-		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
-		})
+		removedIDs[id] = struct{}{}
 	}
-	for _, id := range removedIDs {
-		svc.cascadeRemoveRelationships(id)
-	}
+	svc.notifyEntityCleared(drawv1.EntityScope_ENTITY_SCOPE_TRANSFORMS)
+	svc.cascadeRemoveRelationships(removedIDs)
 
 	return connect.NewResponse(&drawv1.RemoveAllTransformsResponse{Count: count}), nil
 }
@@ -1125,7 +1444,7 @@ func (svc *DrawService) RemoveAllDrawings(
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 
-	removedIDs := make([]uuid.UUID, 0)
+	removedIDs := make(map[uuid.UUID]struct{})
 	var count int32
 	for id, entity := range svc.entities {
 		if entity.kind != entityKindDrawing {
@@ -1137,15 +1456,10 @@ func (svc *DrawService) RemoveAllDrawings(
 			delete(svc.chunked, id)
 		}
 		count++
-		removedIDs = append(removedIDs, id)
-		svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
-			ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-			Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: entity.drawing},
-		})
+		removedIDs[id] = struct{}{}
 	}
-	for _, id := range removedIDs {
-		svc.cascadeRemoveRelationships(id)
-	}
+	svc.notifyEntityCleared(drawv1.EntityScope_ENTITY_SCOPE_DRAWINGS)
+	svc.cascadeRemoveRelationships(removedIDs)
 
 	return connect.NewResponse(&drawv1.RemoveAllDrawingsResponse{Count: count}), nil
 }
@@ -1172,18 +1486,11 @@ func (svc *DrawService) RemoveAll(
 		switch entity.kind {
 		case entityKindTransform:
 			transformCount++
-			svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
-				ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-				Entity:     &drawv1.StreamEntityChangesResponse_Transform{Transform: entity.transform},
-			})
 		case entityKindDrawing:
 			drawingCount++
-			svc.notifyEntityChange(&drawv1.StreamEntityChangesResponse{
-				ChangeType: drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_REMOVED,
-				Entity:     &drawv1.StreamEntityChangesResponse_Drawing{Drawing: entity.drawing},
-			})
 		}
 	}
+	svc.notifyEntityCleared(drawv1.EntityScope_ENTITY_SCOPE_ALL)
 
 	return connect.NewResponse(&drawv1.RemoveAllResponse{
 		TransformCount: transformCount,

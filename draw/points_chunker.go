@@ -3,7 +3,7 @@ package draw
 import (
 	"log"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // PointsChunker is a DrawableChunker that splits a Points value into chunks of
@@ -17,8 +17,8 @@ type PointsChunker struct {
 
 // NewPointsChunker returns a PointsChunker that streams points as a series of
 // chunks. name labels the resulting entity in the visualizer. chunkSize sets the
-// maximum number of positions per chunk; pass 0 (or any non-positive value) to
-// use the package default. opts apply to the resulting entity as a whole — see
+// maximum number of positions per chunk. Pass 0 (or any non-positive value) to
+// use the package default. opts apply to the resulting entity as a whole. See
 // DrawableOption for the supported set.
 func NewPointsChunker(points *Points, name string, chunkSize int, opts ...DrawableOption) *PointsChunker {
 	return &PointsChunker{
@@ -37,9 +37,9 @@ func (chunker *PointsChunker) NumChunks() int {
 	return chunker.numChunks(chunker.TotalElements())
 }
 
-// Chunks returns a channel that yields each chunk in order. The channel is
-// closed when all chunks have been produced; chunk-generation errors are logged
-// and cause the channel to close early.
+// Chunks returns a channel that yields each chunk in order. The channel is closed
+// when all chunks have been produced. Chunk-generation errors are logged and
+// cause the channel to close early.
 func (chunker *PointsChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {

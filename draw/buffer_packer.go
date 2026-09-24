@@ -38,7 +38,6 @@ func (packer *BufferPacker[T]) Write(values ...T) {
 // Read returns the packed buffer as little-endian bytes. For uint8 buffers, returns the buffer directly.
 // For float32 buffers, converts each value to its little-endian byte representation.
 func (packer *BufferPacker[T]) Read() []byte {
-	// Optimization for uint8 (byte)
 	if buf, ok := any(packer.buffer).([]uint8); ok {
 		return buf
 	}

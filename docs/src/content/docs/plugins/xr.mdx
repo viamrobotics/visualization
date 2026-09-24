@@ -1,0 +1,50 @@
+---
+title: <XR />
+description: View and teleoperate a machine in an immersive WebXR (AR/VR) session.
+---
+
+`<XR />` brings the visualizer into a headset. It adds an **AR** button that starts an immersive WebXR session (on a device such as a Meta Quest) and an **AR** settings panel for configuring it. Inside the session the scene is pinned to a real-world origin so the machine appears at a fixed spot in the room; depending on the mode you can teleoperate arms with the controllers or reposition frames in space, with optional floating camera feeds and joint-limit readouts.
+
+A WebXR-capable device and browser are required — on a regular desktop browser the button is present but can't start a session.
+
+## Usage
+
+Mount `<XR />` inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { XR } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<XR />
+	</Visualizer>
+</div>
+```
+
+## Enabling and configuring
+
+`<XR />` adds an **AR** section to the visualizer's settings panel. From there you:
+
+1. **Enable VR / AR mode** — turns on the session button.
+2. **Choose cameras** — pick which of the machine's cameras appear as floating feeds in the headset.
+3. **Assign arms and grippers** to the left and right controllers, and set per-controller motion **scale** and **rotation** behavior.
+
+The active interaction mode determines what the controllers do in-session:
+
+- **arm-teleop** — drive the assigned arms with the controllers.
+- **frame-configure** — grab and reposition frames in the scene.
+
+Put the headset on, open the machine's page, and tap **AR** to enter. Exiting the session resets the scene origin.
+
+## Props
+
+`<XR />` forwards any extra props to the underlying `@threlte/xr` `<XRButton />`, so you can pass through attributes to style or label the session button.
+
+## Dependencies
+
+- **External packages:** `@threlte/xr`, an optional peer — install it to mount this plugin — and `@viamrobotics/svelte-sdk`, a required peer installed alongside the package.
+- **Plugins:** none. Camera feeds, controller arm/gripper assignments, and other session options are all configured in the plugin's own **AR** settings panel. See [Plugin dependencies](../dependencies/).
+- **Runtime:** a WebXR-capable device to enter a session, and a live machine connection for teleoperation (the assigned arms and grippers).

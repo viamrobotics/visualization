@@ -1,0 +1,31 @@
+---
+title: <FramePov />
+description: Per-frame point-of-view panels that render the scene from a frame's perspective.
+---
+
+`<FramePov />` renders a floating panel for each frame the user has opened a POV widget on. Each panel draws the scene through a camera parented to that frame, with a slider for the field of view — useful for checking what a camera or gripper frame actually faces.
+
+Which frames are open is stored per part in `settings.openFramePovWidgets`, so the panels return on reload. Panels are opened from a frame's details card, which means this plugin pairs with a live machine connection and a frame system to point at.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { FramePov } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<FramePov />
+	</Visualizer>
+</div>
+```
+
+## Runtime requirements
+
+- A **live machine connection**, so there are frames to view from.
+- Panels are opened from the details card of a selected frame — there is no toolbar button.
+- Each panel renders a second `<View>` of the scene, so several open at once cost real frame time.
+
+While an immersive [`<XR />`](../xr/) session is active the panels are hidden, since the headset owns the canvas.

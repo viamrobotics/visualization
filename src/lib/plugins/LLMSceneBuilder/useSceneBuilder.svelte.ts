@@ -6,7 +6,7 @@ import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import { useFrames } from '$lib/hooks/useFrames.svelte'
 import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-import { createPoseFromFrame, poseToEulerDegrees } from '$lib/transform'
+import { Pose } from '$lib/math'
 
 import {
 	type FrameDelta,
@@ -48,8 +48,7 @@ export interface ComponentFrameInfo {
 	frame: {
 		parent: Frame['parent']
 		translation: Frame['translation']
-		// Not Frame['orientation'] — stored frames use OV/quaternion; the callback passes
-		// the LLM-friendly Euler-degrees projection of that orientation. Exported explicit type.
+		/** Euler degrees, not `Frame['orientation']`. Stored frames use OV or quaternion, and the callback receives the Euler-degrees projection of that orientation. */
 		orientation: FrameEulerDegrees
 		geometry?: Frame['geometry']
 	}
@@ -127,8 +126,8 @@ export const provideSceneBuilder = (onInfer: InferCallback): void => {
 				u.pose.oZ !== u.previousPose.oZ ||
 				u.pose.theta !== u.previousPose.theta
 			) {
-				const prev = poseToEulerDegrees(u.previousPose)
-				const next = poseToEulerDegrees(u.pose)
+				const prev = u.previousPose.toEulerDegrees()
+				const next = u.pose.toEulerDegrees()
 				for (const axis of ['yaw', 'pitch', 'roll'] as const) {
 					if (Math.abs(next[axis] - prev[axis]) > 0.01) {
 						changes.push({
@@ -205,8 +204,8 @@ export const provideSceneBuilder = (onInfer: InferCallback): void => {
 			const partComponents = partConfig.current.components
 				.filter((c) => c.frame !== undefined)
 				.map(({ name, frame }) => {
-					const pose = createPoseFromFrame(frame!)
-					const orientation = poseToEulerDegrees(pose)
+					const pose = new Pose().setFromFrame(frame!)
+					const orientation = pose.toEulerDegrees()
 					return {
 						name,
 						frame: {
@@ -223,8 +222,8 @@ export const provideSceneBuilder = (onInfer: InferCallback): void => {
 			const fragmentComponents = Object.entries(fragmentFrames)
 				.filter(([, current]) => current.frame !== undefined)
 				.map(([name, current]) => {
-					const pose = createPoseFromFrame(current.frame!)
-					const orientation = poseToEulerDegrees(pose)
+					const pose = new Pose().setFromFrame(current.frame!)
+					const orientation = pose.toEulerDegrees()
 					return {
 						name,
 						frame: {

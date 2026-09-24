@@ -3,8 +3,9 @@ import type { Entity } from 'koota'
 import { Matrix4, Vector3 } from 'three'
 
 import { traits } from '$lib/ecs'
-import { poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
+const tempPose = new Pose()
 const centerMatrix = new Matrix4()
 const dimensions = new Vector3()
 
@@ -31,7 +32,7 @@ export const composeBoxMatrix = (entity: Entity, out: Matrix4): boolean => {
 
 	const center = entity.get(traits.Center)
 	if (center) {
-		out.multiply(poseToMatrix(center, centerMatrix))
+		out.multiply(tempPose.copy(center).toMatrix4(centerMatrix))
 	}
 
 	out.scale(dimensions.set(box.x * MM_TO_M, box.y * MM_TO_M, box.z * MM_TO_M))

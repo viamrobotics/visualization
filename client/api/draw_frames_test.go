@@ -4,102 +4,129 @@ import (
 	"testing"
 
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
 
-func TestDrawFrames(t *testing.T) {
-	startTestServer(t)
-	defer stopTestServer()
+func testAxesFrame(t *testing.T, name string) referenceframe.Frame {
+	t.Helper()
+	frame, err := referenceframe.NewStaticFrame(name, spatialmath.NewZeroPose())
+	test.That(t, err, test.ShouldBeNil)
+	return frame
+}
 
-	t.Run("DrawFrames", func(t *testing.T) {
-		axesFrame, err := referenceframe.NewStaticFrame("DrawFrames Axes", spatialmath.NewPose(
-			r3.Vector{X: 1001, Y: 1, Z: 1},
-			&spatialmath.OrientationVectorDegrees{Theta: 45, OX: 0, OY: 0, OZ: 1},
-		))
-		test.That(t, err, test.ShouldBeNil)
+func testGeometryFrame(t *testing.T, name, label string) referenceframe.Frame {
+	t.Helper()
+	box, err := spatialmath.NewBox(
+		spatialmath.NewZeroPose(),
+		r3.Vector{X: 10, Y: 10, Z: 10},
+		label,
+	)
+	test.That(t, err, test.ShouldBeNil)
+	frame, err := referenceframe.NewStaticFrameWithGeometry(name, spatialmath.NewZeroPose(), box)
+	test.That(t, err, test.ShouldBeNil)
+	return frame
+}
 
-		sphere, err := spatialmath.NewSphere(
-			spatialmath.NewPose(
-				r3.Vector{X: 0, Y: 0, Z: 0},
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			),
-			100,
-			"",
-		)
-		test.That(t, err, test.ShouldBeNil)
+// A bare frame contributes one axes transform, and a frame with geometry
+// contributes one transform per geometry.
+func TestDrawFramesEmitsOneTransformPerGeometry(t *testing.T) {
+	fake := startFake(t)
 
-		sphereFrame, err := referenceframe.NewStaticFrameWithGeometry(
-			"DrawFrames Sphere",
-			spatialmath.NewPose(
-				r3.Vector{X: 1501, Y: 0, Z: 0},
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			),
-			sphere,
-		)
-		test.That(t, err, test.ShouldBeNil)
+	uuids, err := DrawFrames(DrawFramesOptions{
+		Frames: []referenceframe.Frame{
+			testAxesFrame(t, "bare"),
+			testGeometryFrame(t, "with-box", "box"),
+		},
+	})
+	test.That(t, err, test.ShouldBeNil)
 
-		capsule, err := spatialmath.NewCapsule(
-			spatialmath.NewPose(
-				r3.Vector{X: 0, Y: 0, Z: 0},
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			),
-			102,
-			300,
-			"Capsule",
-		)
-		test.That(t, err, test.ShouldBeNil)
+	test.That(t, fake.addEntities, test.ShouldHaveLength, 1)
+	test.That(t, uuids, test.ShouldHaveLength, 2)
+}
 
-		capsuleFrame, err := referenceframe.NewStaticFrameWithGeometry("DrawFrames Capsule", spatialmath.NewPose(
-			r3.Vector{X: 2002, Y: 3, Z: 200},
-			&spatialmath.OrientationVectorDegrees{Theta: 90, OX: 1, OY: 0, OZ: 1},
-		), capsule)
-		test.That(t, err, test.ShouldBeNil)
+func TestDrawFramesBatchesIntoOneCall(t *testing.T) {
+	fake := startFake(t)
 
-		frames := []referenceframe.Frame{axesFrame, sphereFrame, capsuleFrame}
-		uuids, err := DrawFrames(DrawFramesOptions{
-			Frames: frames,
+	_, err := DrawFrames(DrawFramesOptions{
+		Frames: []referenceframe.Frame{
+			testAxesFrame(t, "a"),
+			testAxesFrame(t, "b"),
+			testAxesFrame(t, "c"),
+		},
+	})
+	test.That(t, err, test.ShouldBeNil)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	test.That(t, fake.addEntities, test.ShouldHaveLength, 1)
+	test.That(t, fake.addEntity, test.ShouldBeEmpty)
+	test.That(t, fake.addEntities[0].GetEntities(), test.ShouldHaveLength, 3)
+}
+
+// Colors is a name-keyed map, so a frame missing from it takes the default
+// rather than erroring.
+func TestDrawFramesColorsByName(t *testing.T) {
+	fake := startFake(t)
+
+	_, err := DrawFrames(DrawFramesOptions{
+		Frames: []referenceframe.Frame{testAxesFrame(t, "named"), testAxesFrame(t, "unnamed")},
+		Colors: map[string]draw.Color{"named": draw.ColorFromRGB(0, 255, 0)},
+	})
+	test.That(t, err, test.ShouldBeNil)
+
+	test.That(t, fake.addEntities[0].GetEntities(), test.ShouldHaveLength, 2)
+}
+
+func TestDrawFramesIDNamespacesTheBatch(t *testing.T) {
+	uuidFor := func(t *testing.T, id string) []byte {
+		t.Helper()
+		fake := startFake(t)
+		_, err := DrawFrames(DrawFramesOptions{
+			ID:     id,
+			Frames: []referenceframe.Frame{testAxesFrame(t, "shared")},
 		})
 		test.That(t, err, test.ShouldBeNil)
-		test.That(t, len(uuids), test.ShouldEqual, 3)
-	})
+		return fake.addEntities[0].GetEntities()[0].GetTransform().GetUuid()
+	}
 
-	t.Run("DrawFramesWithColors", func(t *testing.T) {
-		box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 100, Y: 100, Z: 100}, "Box")
-		test.That(t, err, test.ShouldBeNil)
-		redFrame, err := referenceframe.NewStaticFrameWithGeometry(
-			"DrawFrames Red",
-			spatialmath.NewPose(r3.Vector{X: 500, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
-			box,
-		)
-		test.That(t, err, test.ShouldBeNil)
+	var noID, withID []byte
+	t.Run("no id", func(t *testing.T) { noID = uuidFor(t, "") })
+	t.Run("robot-a", func(t *testing.T) { withID = uuidFor(t, "robot-a") })
 
-		sphere, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), 75, "Sphere")
-		test.That(t, err, test.ShouldBeNil)
-		blueFrame, err := referenceframe.NewStaticFrameWithGeometry(
-			"DrawFrames Blue",
-			spatialmath.NewPose(r3.Vector{X: -500, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
-			sphere,
-		)
-		test.That(t, err, test.ShouldBeNil)
+	test.That(t, withID, test.ShouldNotResemble, noID)
+}
 
-		// noColorFrame has no entry in Colors and should default to magenta.
-		noColorFrame, err := referenceframe.NewStaticFrame(
-			"DrawFrames Default",
-			spatialmath.NewPose(r3.Vector{X: 0, Y: 500, Z: 0}, &spatialmath.OrientationVectorDegrees{OZ: 1}),
-		)
-		test.That(t, err, test.ShouldBeNil)
+// An empty batch short-circuits in addTransforms: no RPC, an empty slice, and
+// no error.
+func TestDrawFramesWithNoFramesSendsNothing(t *testing.T) {
+	fake := startFake(t)
 
-		uuids, err := DrawFrames(DrawFramesOptions{
-			Frames: []referenceframe.Frame{redFrame, blueFrame, noColorFrame},
-			Colors: map[string]draw.Color{
-				"DrawFrames Red":  draw.ColorFromName("red"),
-				"DrawFrames Blue": draw.ColorFromName("blue"),
-			},
-		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, len(uuids), test.ShouldEqual, 3)
-	})
+	uuids, err := DrawFrames(DrawFramesOptions{})
+
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, uuids, test.ShouldBeEmpty)
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	test.That(t, fake.addEntities, test.ShouldBeEmpty)
+}
+
+func TestDrawFramesRequiresAVisualizer(t *testing.T) {
+	requireNoServer(t)
+
+	_, err := DrawFrames(DrawFramesOptions{Frames: []referenceframe.Frame{testAxesFrame(t, "a")}})
+
+	test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
+}
+
+func TestDrawFramesWrapsRPCFailures(t *testing.T) {
+	fake := startFake(t)
+	fake.errs["AddEntities"] = errRPCBoom
+
+	_, err := DrawFrames(DrawFramesOptions{Frames: []referenceframe.Frame{testAxesFrame(t, "a")}})
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntities RPC failed")
 }

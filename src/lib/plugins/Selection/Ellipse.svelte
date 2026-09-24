@@ -210,7 +210,8 @@
 						}
 					}
 				},
-				// intersectsPoint is not yet in typedef, this can be removed when it is added
+				// `ShapecastCallbacks` has no `intersectsPoint`. `PointsBVH.shapecast` declares one,
+				// but it takes a point index rather than the `Vector3` the runtime passes here.
 			} as ShapecastCallbacks)
 		}
 
@@ -266,7 +267,6 @@
 
 	const ellipses = useQuery(selectionTraits.Ellipse)
 
-	// On unmount, destroy all lasso related entities
 	$effect(() => {
 		return () => {
 			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {

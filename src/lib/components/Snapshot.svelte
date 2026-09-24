@@ -4,7 +4,7 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 
 ```svelte
 <script>
-  import { Snapshot } from '@viamrobotics/motion-tools'
+  import { Snapshot } from '@viamrobotics/visualization'
   import { mySnapshot } from './data'
 </script>
 

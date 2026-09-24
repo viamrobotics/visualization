@@ -1,7 +1,7 @@
 package draw
 
 import (
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 )
@@ -9,13 +9,13 @@ import (
 // Shape represents a drawable non-physical geometric shape or object in 3D space. A
 // Shape carries exactly one geometry positioned at Center and identified by Label.
 //
-// Use NewShape to construct a Shape; that path guarantees only one geometry pointer
-// is non-nil. If multiple are set manually, ToProto serializes the first non-nil
-// pointer in the order Arrows, Line, Points, Model, Nurbs.
+// Use NewShape to construct a Shape, because that path guarantees only one geometry
+// pointer is non-nil. If multiple are set manually, ToProto serializes the first
+// non-nil pointer in the order Arrows, Line, Points, Model, Nurbs.
 type Shape struct {
 	// Center is the pose of the shape within the parent Drawing's local frame.
 	Center spatialmath.Pose
-	// Label is a human-readable name for the shape; surfaced in the visualizer UI.
+	// Label is a human-readable name for the shape, surfaced in the visualizer UI.
 	Label string
 	// Arrows, when set, identifies the shape as an Arrows geometry.
 	Arrows *Arrows
@@ -29,7 +29,6 @@ type Shape struct {
 	Nurbs *Nurbs
 }
 
-// drawShapeConfig is a configuration for drawing a shape
 type drawShapeConfig struct {
 	arrows *Arrows
 	line   *Line
@@ -38,7 +37,6 @@ type drawShapeConfig struct {
 	nurbs  *Nurbs
 }
 
-// newDrawShapeConfig creates a new draw shape configuration
 func newDrawShapeConfig() *drawShapeConfig {
 	return &drawShapeConfig{
 		arrows: nil,
@@ -49,7 +47,6 @@ func newDrawShapeConfig() *drawShapeConfig {
 	}
 }
 
-// drawShapeOption is a function that configures a draw shape configuration
 type drawShapeOption func(*drawShapeConfig)
 
 func (config *drawShapeConfig) clear() {
@@ -239,7 +236,7 @@ type Drawing struct {
 
 // NewDrawing returns a Drawing whose identity, placement, and universal metadata
 // fields are taken from config. Type-specific metadata can be overlaid via
-// metadataOpts; see DrawConfig.BuildMetadata for the precedence rules.
+// metadataOpts. See DrawConfig.BuildMetadata for the precedence rules.
 func NewDrawing(config *DrawConfig, shape Shape, metadataOpts ...DrawMetadataOption) *Drawing {
 	return &Drawing{
 		UUID:     config.UUID,
@@ -269,13 +266,13 @@ func (drawing Drawing) ToProto() *drawv1.Drawing {
 // visibility, and inter-entity relationships.
 type Metadata struct {
 	// Colors holds either a single fill color or one color per geometry component.
-	// The exact interpretation depends on the geometry type; see each primitive's
+	// The exact interpretation depends on the geometry type. See each primitive's
 	// documentation.
 	Colors []Color
 	// ShowAxesHelper controls whether the visualizer renders an RGB XYZ axes helper
 	// at the entity's origin.
 	ShowAxesHelper bool
-	// Invisible hides the entity from rendering by default; the user can still
+	// Invisible hides the entity from rendering by default. The user can still
 	// toggle visibility on in the visualizer.
 	Invisible bool
 	// Relationships expresses links to other entities (such as parent/child
@@ -303,7 +300,6 @@ func (metadata *Metadata) SetRelationships(relationships []*drawv1.Relationship)
 	metadata.Relationships = relationships
 }
 
-// drawMetadataConfig is a configuration for drawing metadata
 type drawMetadataConfig struct {
 	drawColorsConfig
 	showAxesHelper bool
@@ -311,12 +307,11 @@ type drawMetadataConfig struct {
 	relationships  []*drawv1.Relationship
 }
 
-// DrawMetadataOption configures a Metadata. Options accumulate; later options that
-// set the same field overwrite earlier ones. Used by NewMetadata, NewDrawing, and
-// NewTransform (via DrawConfig.BuildMetadata).
+// DrawMetadataOption configures a Metadata. Options accumulate, and later options
+// that set the same field overwrite earlier ones. Used by NewMetadata, NewDrawing,
+// and NewTransform (via DrawConfig.BuildMetadata).
 type DrawMetadataOption func(*drawMetadataConfig)
 
-// newDrawMetadataConfig creates a new draw metadata configuration
 func newDrawMetadataConfig() *drawMetadataConfig {
 	return &drawMetadataConfig{
 		drawColorsConfig: newDrawColorsConfig(),
@@ -324,7 +319,7 @@ func newDrawMetadataConfig() *drawMetadataConfig {
 }
 
 // WithMetadataColors sets the Colors field on the resulting Metadata. Pass either
-// a single color (applied to all components) or one color per component; the
+// a single color (applied to all components) or one color per component. The
 // component-count interpretation is geometry-specific.
 func WithMetadataColors(colors ...Color) DrawMetadataOption {
 	return withColors[*drawMetadataConfig](colors)
@@ -337,8 +332,8 @@ func WithMetadataAxesHelper(show bool) DrawMetadataOption {
 	}
 }
 
-// WithMetadataInvisible hides the entity from rendering by default when set to true;
-// the user can still toggle visibility on in the visualizer.
+// WithMetadataInvisible hides the entity from rendering by default when set to true.
+// The user can still toggle visibility on in the visualizer.
 func WithMetadataInvisible(invisible bool) DrawMetadataOption {
 	return func(config *drawMetadataConfig) {
 		config.invisible = invisible
@@ -393,8 +388,8 @@ func NewMetadata(options ...DrawMetadataOption) Metadata {
 }
 
 // ToProto converts the Metadata to a drawv1.Metadata proto message. When every
-// color shares the same alpha channel, the opacity is stored as a single byte;
-// otherwise, one opacity byte per color is stored.
+// color shares the same alpha channel, the opacity is stored as a single byte.
+// Otherwise one opacity byte per color is stored.
 func (metadata Metadata) ToProto() *drawv1.Metadata {
 	proto := &drawv1.Metadata{
 		Colors:         packColors(metadata.Colors),

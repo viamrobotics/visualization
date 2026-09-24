@@ -1,6 +1,6 @@
 ---
 title: <Skybox />
-description: Render an equirectangular skybox dome around the motion-tools scene.
+description: Render an equirectangular skybox dome around the Viam visualizer scene.
 ---
 
 `<Skybox />` wraps the scene in a [grounded skybox dome](https://threejs.org/examples/?q=skybox#webgl_materials_envmaps_groundprojected) loaded from an equirectangular image, anchoring the lower hemisphere to the world XY plane so geometry sits convincingly on the ground.
@@ -11,8 +11,8 @@ Use it to add real-world context to a snapshot — a warehouse, a lab, or any 36
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { Skybox } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Skybox } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">

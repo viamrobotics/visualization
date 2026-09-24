@@ -1,0 +1,61 @@
+---
+title: <BuildFrames />
+description: Author the scene from the part config — transform gizmos, snapping, frame creation, and staged edits.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+`<BuildFrames />` contributes **build mode**: the mode where you author a machine's frames instead of watching them. Mounting it adds
+
+- the **Build** button to the workspace mode toggle,
+- the transform toolbar — translate / rotate / scale gizmos, snapping with per-axis increments, and local / world space,
+- a **Frameless components** folder in the [world tree](../world-tree/), listing the config's components that have no frame yet. Selecting one offers to add its frame, and the new frame inherits the selection.
+- the _Live updates paused_ banner, with undo / redo of staged frame edits and <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>S</kbd> to save,
+- the build-mode keyboard shortcuts, dispatched by the visualizer while build mode is active: <kbd>0</kbd>–<kbd>3</kbd> for the transform mode, and <kbd>=</kbd> / <kbd>-</kbd> to add or remove a custom geometry.
+
+While build mode is active the live frame and pose queries are paused, so staged edits aren't overwritten by the machine.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { BuildFrames } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<BuildFrames />
+	</Visualizer>
+</div>
+```
+
+## Contributing a mode
+
+Build mode exists only while this plugin is mounted. It declares itself with `useEnvironmentMode`, the same hook [`MoveFrame`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/MoveFrame/MoveFrame.svelte) uses for move mode:
+
+```svelte
+<script lang="ts">
+	import { useEnvironmentMode } from '@viamrobotics/visualization'
+
+	useEnvironmentMode('build')
+</script>
+```
+
+<Aside
+	type="caution"
+	title="Why registration matters"
+>
+	The active mode is persisted across sessions. Without registration, a host that stops mounting
+	this plugin would restore a `build` mode it can no longer render — and because build mode pauses
+	live queries, the result is an empty scene with no UI to escape it. Registering makes an
+	unreachable stored mode resolve back to `monitor`, and the user's choice is remembered for when
+	the plugin returns.
+</Aside>
+
+`useEnvironment().availableModes` lists what is currently reachable, in registration order. The mode toggle reads it to hide itself entirely when there are fewer than two modes, so a viewer with no mode plugins shows no toggle at all.
+
+## Runtime requirements
+
+- A **`partID`**, and edit permissions on that part, for the frame-editing affordances.
+- Mount order is button order and fallback priority: mount [`<Monitor />`](../monitor/), then `<BuildFrames />`, then `<MoveFrame />` for the conventional monitor | build | move layout.

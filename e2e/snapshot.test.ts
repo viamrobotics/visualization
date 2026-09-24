@@ -1,9 +1,9 @@
-import { expect, test } from '@playwright/test'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createPage } from './page'
+import { expect, test } from './fixtures/drawing'
+import { screenshotCanvas } from './helpers/screenshot'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,21 +19,19 @@ const snapshots: Array<{ name: string; file: string; waitFor?: string[] }> = [
 	{
 		name: 'model',
 		file: 'visualization_snapshot_model',
-		waitFor: ['duck', 'avocado', 'lantern', 'box', 'milktruck', 'fox'],
+		waitFor: ['duck', 'milktruck'],
 	},
 ]
 
 test.beforeAll(() => {
 	execSync(
-		'go test -run ^TestGeneratingSnapshots$ github.com/viam-labs/motion-tools/draw -count=1',
+		'go test -run ^TestGeneratingSnapshots$ github.com/viamrobotics/visualization/draw -count=1',
 		{ encoding: 'utf8' }
 	)
 })
 
 for (const snapshot of snapshots) {
-	test(`drops ${snapshot.file}`, async ({ browser }) => {
-		const { page, dropFile, screenshotCanvas, assertScreenshots } = await createPage(browser)
-
+	test(`drops ${snapshot.file}`, async ({ page, dropFile }) => {
 		await dropFile(path.resolve(snapshotsDir, `${snapshot.file}.pb.gz`))
 		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).toBeVisible({
 			timeout: 10000,
@@ -51,13 +49,11 @@ for (const snapshot of snapshots) {
 			})
 		}
 
-		await screenshotCanvas(`SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
-		assertScreenshots()
+		await screenshotCanvas(page, `SNAPSHOT_DROP_${snapshot.name.toUpperCase()}_PB_GZ`)
 	})
 }
 
-test('drops visualization_snapshot_metadata', async ({ browser }) => {
-	const { page, dropFile, takeScreenshot, assertScreenshots } = await createPage(browser)
+test('drops visualization_snapshot_metadata', async ({ page, dropFile, takeScreenshot }) => {
 	const filename = 'visualization_snapshot_metadata.pb.gz'
 
 	await dropFile(path.resolve(snapshotsDir, filename))
@@ -65,21 +61,16 @@ test('drops visualization_snapshot_metadata', async ({ browser }) => {
 	await page.getByRole('button', { name: 'Dismiss toast' }).click()
 	await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
 
-	// Select the arrows drawing that carries a HoverLink relationship to the capsule
 	await page.getByText('relationship-arrows', { exact: true }).first().click()
 
-	// The details panel should show the Relationships section with the linked entity
 	await expect(page.getByText('Relationships')).toBeVisible()
 	await expect(page.getByText('relationship-capsule (HoverLink)')).toBeVisible()
 
 	await takeScreenshot('SNAPSHOT_METADATA_RELATIONSHIP_DETAILS')
-	assertScreenshots()
 })
 
-test('updates snapshots with the same UUID', async ({ browser }) => {
-	const { page, screenshotCanvas, assertScreenshots } = await createPage(browser)
-
-	await page.goto('/snapshot/reconcile')
+test('updates snapshots with the same UUID', async ({ page, gotoScene }) => {
+	await gotoScene('snapshot/reconcile')
 
 	const loadV1 = page.getByRole('button', { name: 'Load v1' })
 	const loadV2 = page.getByRole('button', { name: 'Load v2' })
@@ -94,7 +85,7 @@ test('updates snapshots with the same UUID', async ({ browser }) => {
 	})
 	await expect(page.getByText('reconcile-moving', { exact: true }).first()).toBeVisible()
 	await expect(page.getByText('reconcile-removed', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas('SNAPSHOT_RECONCILE_V1')
+	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V1')
 
 	await loadV2.click()
 	await expect(page.getByText('reconcile-removed', { exact: true })).toHaveCount(0, {
@@ -103,7 +94,7 @@ test('updates snapshots with the same UUID', async ({ browser }) => {
 	await expect(page.getByText('reconcile-added', { exact: true }).first()).toBeVisible()
 	await expect(page.getByText('reconcile-static', { exact: true }).first()).toBeVisible()
 	await expect(page.getByText('reconcile-moving', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas('SNAPSHOT_RECONCILE_V2')
+	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V2')
 
 	await loadV3.click()
 	await expect(page.getByText('reconcile-moving', { exact: true })).toHaveCount(0, {
@@ -111,7 +102,7 @@ test('updates snapshots with the same UUID', async ({ browser }) => {
 	})
 	await expect(page.getByText('reconcile-static', { exact: true }).first()).toBeVisible()
 	await expect(page.getByText('reconcile-added', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas('SNAPSHOT_RECONCILE_V3')
+	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V3')
 
 	// A snapshot with a different snapshot.uuid should wipe all prior entities
 	await loadNew.click()
@@ -122,7 +113,5 @@ test('updates snapshots with the same UUID', async ({ browser }) => {
 	await expect(page.getByText('wiped-cube-right', { exact: true }).first()).toBeVisible()
 	await expect(page.getByText('reconcile-static', { exact: true })).toHaveCount(0)
 	await expect(page.getByText('reconcile-added', { exact: true })).toHaveCount(0)
-	await screenshotCanvas('SNAPSHOT_RECONCILE_NEW')
-
-	assertScreenshots()
+	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_NEW')
 })

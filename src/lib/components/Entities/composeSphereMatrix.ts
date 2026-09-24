@@ -3,8 +3,9 @@ import type { Entity } from 'koota'
 import { Matrix4, Vector3 } from 'three'
 
 import { traits } from '$lib/ecs'
-import { poseToMatrix } from '$lib/transform'
+import { Pose } from '$lib/math'
 
+const tempPose = new Pose()
 const centerMatrix = new Matrix4()
 const scale = new Vector3()
 
@@ -32,7 +33,7 @@ export const composeSphereMatrix = (entity: Entity, out: Matrix4): boolean => {
 
 	const center = entity.get(traits.Center)
 	if (center) {
-		out.multiply(poseToMatrix(center, centerMatrix))
+		out.multiply(tempPose.copy(center).toMatrix4(centerMatrix))
 	}
 
 	out.scale(scale.setScalar(sphere.r * MM_TO_M))
@@ -64,7 +65,7 @@ export const composeSphereBoundsMatrix = (entity: Entity, out: Matrix4): boolean
 
 	const center = entity.get(traits.Center)
 	if (center) {
-		out.multiply(poseToMatrix(center, centerMatrix))
+		out.multiply(tempPose.copy(center).toMatrix4(centerMatrix))
 	}
 
 	out.scale(scale.setScalar(2 * sphere.r * MM_TO_M))

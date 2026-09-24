@@ -39,9 +39,9 @@
 	const leftController = fromStore(useController('left'))
 	const leftWrist = fromStore(useHandJoint('left', 'wrist'))
 
-	// Prefer the hand wrist joint when hand tracking is active; fall back to
-	// the controller grip. Both are three.js Groups updated per frame by
-	// WebXR, so attaching as a child follows the wrist automatically.
+	// Prefer the hand wrist joint when hand tracking is active, and fall back to the
+	// controller grip. Both are three.js Groups updated per frame by WebXR, so attaching
+	// as a child follows the wrist automatically.
 	const parent = $derived(leftWrist.current ?? leftController.current?.grip)
 
 	const group = new Group()

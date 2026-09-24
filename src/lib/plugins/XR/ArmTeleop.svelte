@@ -7,7 +7,7 @@
 	import { Quaternion, Vector3 } from 'three'
 
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { OrientationVector } from '$lib/three/OrientationVector'
+	import { OrientationVector } from '$lib/math/OrientationVector'
 
 	import { calculatePositionTarget, getFrameTransformationQuaternion } from './math'
 	import { xrToast } from './toasts.svelte'
@@ -38,14 +38,12 @@
 		initialGripperName: gripperName,
 	}))()
 
-	// Create Viam Arm Client
 	const armClient = createResourceClient(
 		ArmClient,
 		() => partID.current,
 		() => armName
 	)
 
-	// Create Viam Gripper Client (optional)
 	const gripperClient = initialGripperName
 		? createResourceClient(
 				GripperClient,
@@ -54,27 +52,23 @@
 			)
 		: undefined
 
-	// Get XR Context for Raw Input
 	const { session } = useXR()
 	const controller = useController(initialHand)
 
 	let isControlling = $state(false)
-	let wasPressed = false // Frame-to-frame state for edge detection (squeeze button)
-	let wasTriggerPressed = false // Frame-to-frame state for trigger
-	let wasBPressed = false // Frame-to-frame state for B button
+	let wasPressed = false
+	let wasTriggerPressed = false
+	let wasBPressed = false
 	let isSending = false
 	let isReturning = false // Prevent control during return to saved pose
 	let gripperStopTimeout: ReturnType<typeof setTimeout> | null = null
 
-	// Stack to store saved poses - can return to previous positions
 	let poseStack: VIAM.Pose[] = []
 
-	// Reference States
 	let controllerRefPos = new Vector3()
 	// The Controller's rotation at start, converted to Robot Frame
 	let controllerRefRotRobot = new Quaternion()
 
-	// Robot Reference (Viam Checkpoint)
 	let robotRefPos = { x: 0, y: 0, z: 0 }
 	let robotRefQuat = new Quaternion()
 	let robotRefOV = new OrientationVector() // Keep default radians - setUnits breaks toQuaternion!
@@ -83,10 +77,8 @@
 	// This maintains the relationship: armRot = controllerRot * offset
 	let controllerToArmOffset = new Quaternion()
 
-	// Transformation Frame
 	const qTransform = getFrameTransformationQuaternion()
 
-	// Throttling
 	let lastCommandTime = 0
 	let errorTimeout = 0
 	let lastErrorHapticTime = 0
@@ -96,7 +88,6 @@
 	let lastErrorToastTime = 0
 	const ERROR_TOAST_COOLDOWN = 3000 // ms - don't spam error toasts
 
-	// Haptic Feedback Helper
 	function triggerHapticFeedback(intensity: number = 0.5, duration: number = 100) {
 		const currentSession = $session
 		if (!currentSession) return
@@ -130,14 +121,12 @@
 		}
 	}
 
-	// Ghost Visualization State
 	let ghostPos = new Vector3()
 	let ghostRot = new Quaternion()
 	let ghostPosArray = $state<[number, number, number]>([0, 0, 0])
 	let ghostRotArray = $state<[number, number, number, number]>([0, 0, 0, 1])
 
 	useTask(() => {
-		// 1. Get Input Source
 		const currentSession = $session
 		if (!currentSession || !controller.current) return
 
@@ -145,10 +134,7 @@
 
 		if (!inputSource || !inputSource.gamepad) return
 
-		// 2. Poll Buttons
-		// Trigger (button 0) - Gripper control
-		// Squeeze/Grip (button 1) - Arm control
-		// B button (button 5 on Quest controllers) - Return to saved pose
+		// Trigger (button 0) drives the gripper, squeeze (button 1) the arm, and B (button 5 on Quest controllers) the return to a saved pose.
 		const trigger = inputSource.gamepad.buttons[0]
 		const squeeze = inputSource.gamepad.buttons[1]
 		const bButton = inputSource.gamepad.buttons[5]
@@ -156,28 +142,18 @@
 		const isTriggerPressed = trigger && trigger.pressed
 		const isBPressed = bButton && bButton.pressed
 
-		// 3. Edge Detection & State Machine - ARM CONTROL (Squeeze)
 		if (isPressed && !wasPressed) {
-			// Rising Edge: Start Control
 			if (armClient.current) {
 				handleStartControl(controller.current)
 			}
-		} else if (
-			!isPressed &&
-			wasPressed && // Falling Edge: Stop Control
-			isControlling
-		) {
+		} else if (!isPressed && wasPressed && isControlling) {
 			isControlling = false
-			// Haptic feedback: short pulse on teleop end
 			triggerHapticFeedback(0.3, 80)
-			// Log final position
 			handleStopControl()
 		}
 
-		// 4. Edge Detection - GRIPPER CONTROL (Trigger)
 		if (gripperClient?.current) {
 			if (isTriggerPressed && !wasTriggerPressed) {
-				// Trigger pressed: Grab/close gripper
 				// Clear any pending stop timeout
 				if (gripperStopTimeout) {
 					clearTimeout(gripperStopTimeout)
@@ -185,7 +161,6 @@
 				}
 				gripperClient.current.grab().catch((error) => console.warn('Gripper grab failed:', error))
 			} else if (!isTriggerPressed && wasTriggerPressed) {
-				// Trigger released: Open gripper, then stop after 1 second
 				// Clear any pending stop timeout
 				if (gripperStopTimeout) {
 					clearTimeout(gripperStopTimeout)
@@ -193,7 +168,6 @@
 				}
 				gripperClient.current.open().catch((error) => console.warn('Gripper open failed:', error))
 
-				// Schedule stop after 1 second
 				gripperStopTimeout = setTimeout(() => {
 					gripperClient?.current
 						?.stop()
@@ -203,7 +177,6 @@
 			}
 		}
 
-		// 5. Edge Detection - RETURN TO SAVED POSE (B Button)
 		if (isBPressed && !wasBPressed) {
 			if (poseStack.length > 0) {
 				handleReturnToPose()
@@ -216,13 +189,12 @@
 		wasTriggerPressed = isTriggerPressed
 		wasBPressed = isBPressed
 
-		// 6. Control Loop (skip if returning to saved pose)
 		if (isControlling && armClient.current && !isReturning) {
 			handleControlFrame(controller.current)
 		}
 	})
 
-	// Helper to transform XR Quaternion to Robot Frame: T * q * inv(T)
+	/** Transform an XR-frame quaternion into the robot frame, `T * q * inv(T)`. */
 	function transformToRobotFrame(q: Quaternion, transform: Quaternion) {
 		const transformInv = transform.clone().invert()
 		return transform.clone().multiply(q).multiply(transformInv)
@@ -243,7 +215,6 @@
 			robotRefOV.set(oX, oY, oZ, (theta * Math.PI) / 180) // SDK returns degrees, convert to radians
 			robotRefQuat = robotRefOV.toQuaternion(new Quaternion()).normalize()
 
-			// Save this pose to the stack for quick return
 			poseStack.push({ x, y, z, oX, oY, oZ, theta })
 
 			// Use grip space for tracking
@@ -255,8 +226,7 @@
 
 			controllerRefPos.copy(grip.position)
 
-			// 1. Capture Reference and Transform to Robot Frame straight away
-			// Matches Dart: referenceRotationQuaternionViamPhone
+			// Matches the Dart implementation's `referenceRotationQuaternionViamPhone`.
 			controllerRefRotRobot = transformToRobotFrame(grip.quaternion, qTransform).normalize()
 
 			// 2. Compute offset from controller orientation to arm orientation
@@ -272,7 +242,6 @@
 
 			isControlling = true
 
-			// Haptic feedback: short pulse on teleop start
 			triggerHapticFeedback(0.5, 100)
 		} catch (error) {
 			console.error('[ArmTeleop] Failed to start teleop:', error)
@@ -296,10 +265,8 @@
 		const currentControllerPos = grip.position
 		const currentControllerRot = grip.quaternion
 
-		// Calculate Delta XR for visualizer
 		const deltaXR = currentControllerPos.clone().sub(controllerRefPos)
 
-		// --- Position Step ---
 		const targetPos = calculatePositionTarget(
 			currentControllerPos,
 			controllerRefPos,
@@ -308,50 +275,39 @@
 			scaleFactor
 		)
 
-		// --- Rotation Step ---
 		let targetOV
 		if (rotationEnabled) {
-			// ABSOLUTE ROTATION: Transform controller orientation to robot frame, then apply offset
-			// 1. Transform XR Frame → Robot Frame using sandwich transform: T * q * T^-1
+			// Transform the controller orientation from the XR frame into the robot frame with the sandwich transform `T * q * T^-1`.
 			const currentRotRobot = transformToRobotFrame(currentControllerRot, qTransform).normalize()
 
 			// 2. Apply offset to maintain initial controller→arm relationship
 			// targetArmRot = currentControllerRot * offset
 			const targetArmRotQuat = currentRotRobot.clone().multiply(controllerToArmOffset).normalize()
 
-			// 3. Convert to Viam OrientationVector using proper Dart-matching algorithm
-			// Keep radians - conversion to degrees happens when sending to backend
+			// Radians here. The conversion to degrees happens when the command is sent.
 			targetOV = new OrientationVector().setFromQuaternion(targetArmRotQuat)
 
-			// Update Ghost Rotation for visualizer
 			ghostRot.copy(currentControllerRot)
 		} else {
 			// Keep orientation fixed to start - use original OV
 			targetOV = robotRefOV
-			ghostRot.copy(grip.quaternion) // Just track hand
+			ghostRot.copy(grip.quaternion)
 		}
 
 		// --- Update Ghost Visualizer ---
 		ghostPos.copy(controllerRefPos).add(deltaXR.multiplyScalar(scaleFactor))
 
-		/* 
-		   Ghost Rotation is handled above for simplicity.
-		   Strictly, visualizer should probably show the Robot Frame rotation mapped back to XR,
-		   but showing raw controller rotation is better for "feeling" where your hand is.
-		*/
+		// The visualizer shows the raw controller rotation rather than the robot-frame rotation mapped back to XR, because raw rotation reads better as feedback for where your hand is.
 
 		ghostPosArray = ghostPos.toArray()
 		ghostRotArray = ghostRot.toArray()
 
-		// --- Send Command ---
 		if (now - lastCommandTime < COMMAND_INTERVAL) return
 		if (isSending) return
 
-		// If in error state, provide haptic feedback and skip sending
 		if (now < errorTimeout) {
-			// Buzz controller to indicate IK constraint error (throttled)
 			if (now - lastErrorHapticTime > ERROR_HAPTIC_INTERVAL) {
-				triggerHapticFeedback(0.7, 150) // Stronger, longer pulse for errors
+				triggerHapticFeedback(0.7, 150)
 				lastErrorHapticTime = now
 			}
 			return
@@ -424,13 +380,11 @@
 	async function handleReturnToPose() {
 		if (!armClient.current || poseStack.length === 0) return
 
-		// Pop the last saved pose
 		const savedPose = poseStack.pop()!
 
 		isReturning = true
 
 		try {
-			// Use moveToPosition to return to the saved pose
 			await armClient.current.moveToPosition(savedPose)
 			xrToast.success('Returned to saved position')
 		} catch (error) {
@@ -443,7 +397,6 @@
 </script>
 
 {#if isControlling}
-	<!-- Ghost Marker (Target Position in XR Space) -->
 	<T.Mesh
 		position={ghostPosArray}
 		quaternion={ghostRotArray}
@@ -456,7 +409,6 @@
 		<T.AxesHelper args={[0.2]} />
 	</T.Mesh>
 
-	<!-- Original Reference Marker -->
 	<T.Mesh position={controllerRefPos.toArray()}>
 		<T.SphereGeometry args={[0.02]} />
 		<T.MeshBasicMaterial

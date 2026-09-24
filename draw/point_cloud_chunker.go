@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/golang/geo/r3"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 	"go.viam.com/rdk/pointcloud"
 )
 
@@ -20,10 +20,10 @@ type PointCloudChunker struct {
 }
 
 // NewPointCloudChunker returns a PointCloudChunker that streams pointCloud as a
-// series of chunks. name labels the resulting entity in the visualizer.
-// chunkSize sets the maximum number of points per chunk; pass 0 (or any
-// non-positive value) to use the package default. opts apply to the resulting
-// entity as a whole — see DrawableOption for the supported set.
+// series of chunks. name labels the resulting entity in the visualizer. chunkSize
+// sets the maximum number of points per chunk. Pass 0 (or any non-positive value)
+// to use the package default. opts apply to the resulting entity as a whole. See
+// DrawableOption for the supported set.
 func NewPointCloudChunker(pointCloud *DrawnPointCloud, name string, chunkSize int, opts ...DrawableOption) *PointCloudChunker {
 	return &PointCloudChunker{
 		baseChunker: newBaseChunker(name, chunkSize, opts),
@@ -41,9 +41,9 @@ func (chunker *PointCloudChunker) NumChunks() int {
 	return chunker.numChunks(chunker.TotalElements())
 }
 
-// Chunks returns a channel that yields each chunk in order. The channel is
-// closed when all chunks have been produced; chunk-generation errors are logged
-// and cause the channel to close early.
+// Chunks returns a channel that yields each chunk in order. The channel is closed
+// when all chunks have been produced. Chunk-generation errors are logged and
+// cause the channel to close early.
 func (chunker *PointCloudChunker) Chunks() <-chan Chunk {
 	ch := make(chan Chunk)
 	go func() {

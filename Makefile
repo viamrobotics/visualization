@@ -9,4 +9,4 @@ setup:
 	@./etc/setup.sh
 
 up:
-	@pnpm up
+	@pnpm run up

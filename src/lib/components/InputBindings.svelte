@@ -19,8 +19,8 @@
 			truckRight: [key('d'), gamepadAxis('leftStick', 'x', 1)],
 			forward: [key('w'), gamepadAxis('leftStick', 'y', -1)],
 			backward: [key('s'), gamepadAxis('leftStick', 'y', 1)],
-			dollyIn: [key('r'), gamepadButton('rightBumper')],
-			dollyOut: [key('f'), gamepadButton('leftBumper')],
+			dollyIn: [key('e'), gamepadButton('rightBumper')],
+			dollyOut: [key('q'), gamepadButton('leftBumper')],
 			rotateLeft: [key('arrowleft'), gamepadAxis('rightStick', 'x', -1)],
 			rotateRight: [key('arrowright'), gamepadAxis('rightStick', 'x', 1)],
 			tiltUp: [key('arrowup'), gamepadAxis('rightStick', 'y', 1)],
@@ -72,7 +72,7 @@
 		(delta) => {
 			const dt = delta * 1000
 
-			// Disallow keyboard navigation if the user is holding down the meta key
+			// Disallow keyboard navigation while the user holds meta or control.
 			if (keyboard.key('meta').pressed || keyboard.key('control').pressed) {
 				return
 			}
