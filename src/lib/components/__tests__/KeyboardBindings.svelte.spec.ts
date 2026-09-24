@@ -21,6 +21,16 @@ const renderExecutor = () => {
 	return { environment, hotkeys }
 }
 
+// Registered after KeyboardBindings' own listener, so it observes whether that
+// listener called preventDefault rather than user-event's own internal bookkeeping.
+const captureKeydownDefaultPrevented = () => {
+	let defaultPrevented = false
+	window.addEventListener('keydown', (event) => {
+		defaultPrevented = event.defaultPrevented
+	})
+	return () => defaultPrevented
+}
+
 describe('KeyboardBindings executor', () => {
 	it('runs an applicable binding when its key is pressed', async () => {
 		const user = userEvent.setup()
@@ -124,5 +134,44 @@ describe('KeyboardBindings executor', () => {
 		expect(first).toHaveBeenCalledTimes(1)
 		expect(second).toHaveBeenCalledTimes(1)
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining('2 bindings apply to "x"'))
+	})
+
+	it('prevents the default action for a binding that opts in', async () => {
+		const user = userEvent.setup()
+		const { hotkeys } = renderExecutor()
+		const defaultPrevented = captureKeydownDefaultPrevented()
+
+		hotkeys.register({ key: 'c', description: 'test', preventDefault: true, run: () => undefined })
+		await user.keyboard('c')
+
+		expect(defaultPrevented()).toBe(true)
+	})
+
+	it('does not prevent the default action for a binding that does not opt in', async () => {
+		const user = userEvent.setup()
+		const { hotkeys } = renderExecutor()
+		const defaultPrevented = captureKeydownDefaultPrevented()
+
+		hotkeys.register({ key: 'c', description: 'test', run: () => undefined })
+		await user.keyboard('c')
+
+		expect(defaultPrevented()).toBe(false)
+	})
+
+	it('does not prevent the default action when the opted-in binding is inapplicable', async () => {
+		const user = userEvent.setup()
+		const { hotkeys } = renderExecutor()
+		const defaultPrevented = captureKeydownDefaultPrevented()
+
+		hotkeys.register({
+			key: 'c',
+			description: 'test',
+			when: () => false,
+			preventDefault: true,
+			run: () => undefined,
+		})
+		await user.keyboard('c')
+
+		expect(defaultPrevented()).toBe(false)
 	})
 })

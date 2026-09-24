@@ -12,6 +12,7 @@ export type TreeFolderId =
 	| 'pointcloud-objects'
 	| 'world-state-store'
 	| 'drawn'
+	| 'gizmos'
 	| 'imported-files'
 	| 'other'
 
@@ -52,6 +53,7 @@ export const treeFolders: TreeFolder[] = [
 	},
 	{ id: 'world-state-store', name: 'World state store', sources: [traits.WorldStateStoreAPI] },
 	{ id: 'drawn', name: 'Drawn', sources: [traits.DrawAPI, traits.SnapshotAPI] },
+	{ id: 'gizmos', name: 'Gizmos', sources: [traits.Gizmo] },
 	{ id: 'imported-files', name: 'Imported files', sources: [traits.DroppedFile] },
 	{ id: 'other', name: 'Other', sources: [] },
 ]

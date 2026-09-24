@@ -5,14 +5,13 @@
 	import { Element } from 'svelte-tweakpane-ui'
 	import { type Intersection, Vector3 } from 'three'
 
+	import MeasurePoint from '$lib/components/MeasurePoint.svelte'
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
 	import { useMouseRaycaster } from '$lib/hooks/useMouseRaycaster.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-
-	import MeasurePoint from './MeasurePoint.svelte'
 
 	const settings = useSettings()
 
@@ -163,7 +162,7 @@
 				position={htmlPosition.lerpVectors(p1, p2, 0.5).toArray()}
 				zIndexRange={[3, 0]}
 			>
-				<div class="border border-black bg-white px-1 py-0.5 text-xs">
+				<div class="font-roboto-mono border border-black bg-white px-1 py-0.5 text-xs">
 					{p1.distanceTo(p2).toFixed(3)}<span class="text-subtle-2">m</span>
 				</div>
 			</HTML>
