@@ -307,40 +307,59 @@ describe('releaseMesh', () => {
 })
 
 describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh update', () => {
-	const swap = (batches: ReturnType<typeof createBatches>, from: BufferGeometry) => {
-		const ids = batches.addMesh(batches.registerMesh(from))
+	/**
+	 * Two entities share the mesh on purpose. With a single holder,
+	 * `deleteGeometry` force-deletes the instances itself, which hides whether
+	 * the caller released its own.
+	 */
+	const swapOneOfTwoSharers = (
+		batches: ReturnType<typeof createBatches>,
+		from: BufferGeometry,
+		to: BufferGeometry
+	) => {
+		batches.addMesh(batches.registerMesh(from))
+		const swapping = batches.addMesh(batches.registerMesh(from))
 
-		return (to: BufferGeometry) => {
-			batches.release(ids)
-			batches.releaseMesh(from)
-			return batches.addMesh(batches.registerMesh(to))
-		}
+		batches.release(swapping)
+		batches.releaseMesh(from)
+		return batches.addMesh(batches.registerMesh(to))
 	}
 
-	it('leaves one live instance, not two', () => {
+	it('leaves one instance per entity, not a leaked third', () => {
 		const batches = createBatches()
 
-		swap(batches, new SphereGeometry(1, 8, 6))(new BoxGeometry(2, 2, 2))
+		swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), new BoxGeometry(2, 2, 2))
 
-		expect(batches.faces.instanceCount).toBe(1)
+		expect(batches.faces.instanceCount).toBe(2)
+	})
+
+	it('leaves one outline instance per entity too', () => {
+		const batches = createBatches()
+
+		swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), new BoxGeometry(2, 2, 2))
+
+		expect(batches.edges.instanceCount).toBe(2)
 	})
 
 	it('points the new instance at the new geometry', () => {
 		const batches = createBatches()
 		const replacement = new BoxGeometry(2, 2, 2)
 
-		const ids = swap(batches, new SphereGeometry(1, 8, 6))(replacement)
+		const ids = swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), replacement)
 
-		expect(
-			batches.faces.getGeometryRangeAt(batches.faces.getGeometryIdAt(ids.face))?.vertexCount
-		).toBe(replacement.getAttribute('position').count)
+		const range = batches.faces.getGeometryRangeAt(batches.faces.getGeometryIdAt(ids.face))
+		expect(range?.vertexCount).toBe(replacement.getAttribute('position').count)
 	})
 
-	it('leaves one live outline instance too', () => {
+	it('keeps the upload alive for the entity that did not swap', () => {
 		const batches = createBatches()
+		const shared = new SphereGeometry(1, 8, 6)
 
-		swap(batches, new SphereGeometry(1, 8, 6))(new BoxGeometry(2, 2, 2))
+		swapOneOfTwoSharers(batches, shared, new BoxGeometry(2, 2, 2))
 
-		expect(batches.edges.instanceCount).toBe(1)
+		const slot = batches.registerMesh(shared)
+		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(
+			shared.getAttribute('position').count
+		)
 	})
 })
