@@ -2,6 +2,8 @@ import {
 	BoxGeometry,
 	BufferAttribute,
 	BufferGeometry,
+	InterleavedBuffer,
+	InterleavedBufferAttribute,
 	MeshBasicMaterial,
 	SphereGeometry,
 } from 'three'
@@ -53,12 +55,69 @@ describe('toFacesBatchLayout, converging what a batch would reject or misread', 
 		expect(color.getX(5)).toBe(1)
 	})
 
-	it('clamps an index pointing past its own vertices, which would read another entity', () => {
+	it('collapses a triangle indexing past its own vertices, which would read another entity', () => {
 		const geometry = new BufferGeometry()
-		geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3))
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(12), 3))
 		geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 70_000]), 1))
 
-		expect(toFacesBatchLayout(geometry).index?.getX(2)).toBe(2)
+		const index = toFacesBatchLayout(geometry).index
+
+		expect([index?.getX(0), index?.getX(1), index?.getX(2)]).toEqual([0, 0, 0])
+	})
+
+	it('rebuilds a normalized index, which would otherwise read back as a fraction', () => {
+		const geometry = new BufferGeometry()
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3))
+		geometry.setIndex(new BufferAttribute(new Uint16Array([0, 1, 2]), 1, true))
+
+		const index = toFacesBatchLayout(geometry).index
+
+		expect(index?.normalized).toBe(false)
+		expect([index?.getX(0), index?.getX(1), index?.getX(2)]).toEqual([0, 1, 2])
+	})
+
+	it('rebuilds a non-normalized integer attribute, which would retype the whole batch buffer', () => {
+		const geometry = new BufferGeometry()
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3))
+		geometry.setAttribute(
+			'normal',
+			new BufferAttribute(new Uint8Array([0, 0, 1, 0, 0, 1, 0, 0, 1]), 3)
+		)
+
+		const normal = toFacesBatchLayout(geometry).getAttribute('normal')
+
+		expect(normal.array).toBeInstanceOf(Float32Array)
+		expect(normal.getZ(0)).toBe(1)
+	})
+
+	it('reads an interleaved attribute at its own stride and offset', () => {
+		const geometry = new BufferGeometry()
+		const interleaved = new InterleavedBuffer(
+			new Float32Array([0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1]),
+			6
+		)
+		geometry.setAttribute('position', new InterleavedBufferAttribute(interleaved, 3, 0))
+		geometry.setAttribute('color', new InterleavedBufferAttribute(interleaved, 3, 3))
+
+		const color = toFacesBatchLayout(geometry).getAttribute('color')
+
+		expect([color.getX(0), color.getY(0), color.getZ(0)]).toEqual([1, 0, 0])
+		expect([color.getX(2), color.getY(2), color.getZ(2)]).toEqual([0, 0, 1])
+	})
+
+	it('derives outlines from the repaired geometry, not the corrupt source', () => {
+		const batches = createBatches()
+		const geometry = new BufferGeometry()
+		geometry.setAttribute(
+			'position',
+			new BufferAttribute(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]), 3)
+		)
+		geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2, 0, 2, 999]), 1))
+
+		batches.registerMesh(geometry)
+		const positions = batches.edges.geometry.getAttribute('position').array
+
+		expect(positions.some((value) => Number.isNaN(value))).toBe(false)
 	})
 
 	it('leaves an in-range index untouched', () => {

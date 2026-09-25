@@ -242,7 +242,12 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 			}
 
 			const faceGeometry = toFacesBatchLayout(geometry)
-			const edgeGeometry = new EdgesGeometry(geometry, 0)
+
+			// Derived from the converged geometry, not the source: an out-of-range
+			// index would otherwise reach `EdgesGeometry` unrepaired and put NaN
+			// positions into the shared outline buffer, which takes the whole
+			// batch's bounding sphere with it.
+			const edgeGeometry = new EdgesGeometry(faceGeometry, 0)
 
 			const slot = {
 				faceGeometry: allocateFaceGeometry(faceGeometry),

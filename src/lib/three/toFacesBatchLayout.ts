@@ -1,4 +1,6 @@
-import { BufferAttribute, type BufferGeometry } from 'three'
+import { BufferAttribute, type BufferGeometry, type InterleavedBufferAttribute } from 'three'
+
+type SourceAttribute = BufferAttribute | InterleavedBufferAttribute
 
 /** Every attribute a faces batch carries, and the value invented where one is absent. */
 const ATTRIBUTES = [
@@ -8,10 +10,7 @@ const ATTRIBUTES = [
 	{ name: 'uv', itemSize: 2, missing: 0 },
 ] as const
 
-/**
- * The packings `MathUtils.denormalize` knows. It throws on anything else, so a
- * `normalized` flag on another type is read as raw values instead.
- */
+/** The packings `MathUtils.denormalize` knows. It throws on any other. */
 const DENORMALIZABLE = new Set([
 	Int8Array,
 	Uint8Array,
@@ -21,15 +20,40 @@ const DENORMALIZABLE = new Set([
 	Uint32Array,
 ])
 
+const isInterleaved = (source: SourceAttribute): source is InterleavedBufferAttribute =>
+	(source as InterleavedBufferAttribute).isInterleavedBufferAttribute === true
+
+/**
+ * Reads one component as a plain float.
+ *
+ * `getComponent` is the reader to prefer: it is the only one that accounts for
+ * an interleaved attribute's stride and offset, and it denormalizes. It throws
+ * for the two array types `MathUtils.denormalize` does not cover, so those read
+ * through directly. Neither loader here produces one, and a direct read of a
+ * normalized `Uint8ClampedArray` would be off by its scale factor.
+ */
+const readComponent = (source: SourceAttribute, vertex: number, component: number): number => {
+	if (!source.normalized || DENORMALIZABLE.has(source.array.constructor as never)) {
+		return source.getComponent(vertex, component)
+	}
+
+	return isInterleaved(source)
+		? source.data.array[vertex * source.data.stride + source.offset + component]
+		: source.array[vertex * source.itemSize + component]
+}
+
 /**
  * Rewrites `name` as exactly `vertexCount` plain float entries of `itemSize`
  * components, substituting `missing` for anything the source does not supply.
  *
  * A batch fixes its layout from the first geometry added and rejects every
- * later one that differs, down to each attribute's `itemSize` and `normalized`
- * flag (`_validateGeometry`). It then copies each attribute by length, not by
- * the vertex count it reserved, so an attribute longer than `position` writes
- * past the reservation and into another geometry's space.
+ * later one whose `itemSize` or `normalized` flag differs
+ * (`_validateGeometry`), and it copies by the attribute's own length rather
+ * than the vertex count it reserved, so one longer than `position` writes into
+ * the next geometry's space. The array type matters too, because
+ * `_initializeGeometry` takes the batch's whole buffer type from the first
+ * geometry: one stray `Uint16Array` would truncate every float written after
+ * it, and `PLYLoader` builds exactly that for a `property uchar nx` normal.
  */
 const setFloatAttribute = (
 	geometry: BufferGeometry,
@@ -38,12 +62,14 @@ const setFloatAttribute = (
 	itemSize: number,
 	missing: number
 ): void => {
-	const source = geometry.getAttribute(name)
+	const source = geometry.getAttribute(name) as SourceAttribute | undefined
 	if (
 		source !== undefined &&
 		source.itemSize === itemSize &&
 		source.count === vertexCount &&
-		!source.normalized
+		!source.normalized &&
+		!isInterleaved(source) &&
+		source.array instanceof Float32Array
 	) {
 		return
 	}
@@ -51,14 +77,12 @@ const setFloatAttribute = (
 	const values = new Float32Array(vertexCount * itemSize).fill(missing)
 
 	if (source !== undefined) {
-		const denormalizes = source.normalized && DENORMALIZABLE.has(source.array.constructor as never)
 		const shared = Math.min(source.count, vertexCount)
+		const components = Math.min(source.itemSize, itemSize)
 
 		for (let vertex = 0; vertex < shared; vertex += 1) {
-			for (let component = 0; component < Math.min(source.itemSize, itemSize); component += 1) {
-				values[vertex * itemSize + component] = denormalizes
-					? source.getComponent(vertex, component)
-					: source.array[vertex * source.itemSize + component]
+			for (let component = 0; component < components; component += 1) {
+				values[vertex * itemSize + component] = readComponent(source, vertex, component)
 			}
 		}
 	}
@@ -67,13 +91,15 @@ const setFloatAttribute = (
 }
 
 /**
- * Indexes `geometry` if it has no index, and rewrites one that points outside
- * its own vertices.
+ * Indexes `geometry` if it has none, and rewrites one that points outside its
+ * own vertices.
  *
- * `setGeometryAt` writes `vertexStart + index` into the shared buffer without a
+ * `setGeometryAt` writes `vertexStart + index` into the shared buffer with no
  * range check, so an index past the geometry's own vertex count reads another
- * entity's data, and one past 65535 wraps. Outside a batch a corrupt index only
- * garbles its own mesh, and clamping keeps it that way.
+ * entity's data, and one past 65535 wraps. A triangle with any such corner
+ * collapses to zero area rather than being clamped corner by corner: a clamped
+ * corner still spans the mesh, and a plausible-looking wrong face is worse to
+ * debug than a missing one.
  *
  * An invented index welds nothing, so it buys no sharing the geometry did not
  * already have. It is still the cheap direction to converge on: expanding a
@@ -85,41 +111,55 @@ const setSafeIndex = (geometry: BufferGeometry, vertexCount: number): void => {
 	const last = vertexCount - 1
 
 	if (source === null) {
-		const indices = new Uint32Array(vertexCount)
+		const invented = new Uint32Array(vertexCount)
 		for (let vertex = 0; vertex < vertexCount; vertex += 1) {
-			indices[vertex] = vertex
+			invented[vertex] = vertex
 		}
-		geometry.setIndex(new BufferAttribute(indices, 1))
+		geometry.setIndex(new BufferAttribute(invented, 1))
 		return
 	}
 
-	let outOfRange = false
+	const rebuilt = new Uint32Array(source.count)
+	let corrupt = false
+
 	for (let entry = 0; entry < source.count; entry += 1) {
-		const value = source.getX(entry)
-		if (value < 0 || value > last) {
-			outOfRange = true
-			break
+		// Read through rather than `getX`, which denormalizes: a normalized index
+		// would come back a fraction, pass the range test, and collapse the mesh.
+		const value = source.array[entry]
+		if (!(value >= 0 && value <= last)) {
+			corrupt = true
 		}
+		rebuilt[entry] = value
 	}
 
-	if (!outOfRange) {
+	if (!corrupt && !source.normalized) {
 		return
 	}
 
-	const clamped = new Uint32Array(source.count)
-	for (let entry = 0; entry < source.count; entry += 1) {
-		clamped[entry] = Math.min(Math.max(source.getX(entry), 0), last)
+	for (let corner = 0; corner + 2 < source.count; corner += 3) {
+		if (rebuilt[corner] > last || rebuilt[corner + 1] > last || rebuilt[corner + 2] > last) {
+			rebuilt[corner] = 0
+			rebuilt[corner + 1] = 0
+			rebuilt[corner + 2] = 0
+		}
 	}
-	geometry.setIndex(new BufferAttribute(clamped, 1))
+
+	// A tail too short to form a triangle draws nothing, but still has to be in
+	// range, because the batch offsets every entry it copies.
+	for (let entry = source.count - (source.count % 3); entry < source.count; entry += 1) {
+		rebuilt[entry] = 0
+	}
+
+	geometry.setIndex(new BufferAttribute(rebuilt, 1))
 }
 
 /**
  * Rewrites `geometry` into the one layout a faces batch accepts: indexed, with
- * `position`, `normal`, `color` and `uv`, every one a plain non-normalized
- * float array of the same length, and nothing else.
+ * `position`, `normal`, `color` and `uv`, each a plain non-normalized
+ * `Float32Array` of the same length, and nothing else.
  *
- * Meshes from RDK agree on none of that, and a batch rejects or silently
- * corrupts what does not match, so each geometry is rebuilt rather than
+ * Meshes from RDK agree on none of that, and a batch either rejects or silently
+ * corrupts what does not match, so every geometry is rebuilt rather than
  * trusted. See `setFloatAttribute` and `setSafeIndex` for what each guards.
  *
  * `uv` is carried even though no material samples it today. A textured mesh
@@ -128,7 +168,9 @@ const setSafeIndex = (geometry: BufferGeometry, vertexCount: number): void => {
  * texel without erroring.
  *
  * Returns a new geometry. The caller owns it, and should dispose it once
- * `addGeometry` has copied it into the batch.
+ * `addGeometry` has copied it into the batch. Build any `EdgesGeometry` from
+ * the result too, not from the source, or the outline is derived from the very
+ * index this repaired.
  *
  * @throws If `geometry` has no `position` attribute, which is not a mesh.
  */
@@ -147,9 +189,10 @@ export const toFacesBatchLayout = (geometry: BufferGeometry): BufferGeometry => 
 		}
 	}
 
-	// Before `setSafeIndex`, so shared vertices are still shared and smooth
-	// geometry averages its normals. An invented index would unshare every
-	// vertex and flat-shade the mesh.
+	// Ahead of the normals, which read through the index: an out-of-range corner
+	// would otherwise read past `position` and write NaN into the shared buffer.
+	setSafeIndex(converged, vertexCount)
+
 	if (converged.getAttribute('normal') === undefined) {
 		converged.computeVertexNormals()
 	}
@@ -157,8 +200,6 @@ export const toFacesBatchLayout = (geometry: BufferGeometry): BufferGeometry => 
 	for (const { name, itemSize, missing } of ATTRIBUTES) {
 		setFloatAttribute(converged, vertexCount, name, itemSize, missing)
 	}
-
-	setSafeIndex(converged, vertexCount)
 
 	return converged
 }
