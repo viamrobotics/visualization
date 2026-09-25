@@ -550,7 +550,6 @@
 		"@testing-library/jest-dom": "6.8.0",
 		"@testing-library/svelte": "5.2.8",
 		"@testing-library/user-event": "^14.6.1",
-		"@three.ez/instanced-mesh": "0.3.16",
 		"@threlte/core": "8.5.14",
 		"@threlte/extras": "9.21.1",
 		"@threlte/rapier": "3.5.0",
@@ -644,7 +643,8 @@
 		"runed": ">=0.28",
 		"svelte": ">=5",
 		"svelte-tweakpane-ui": ">=1.5",
-		"svelte-virtuallists": ">=1"
+		"svelte-virtuallists": ">=1",
+		"three": ">=0.181"
 	},
 	"peerDependenciesMeta": {
 		"@connectrpc/connect": {

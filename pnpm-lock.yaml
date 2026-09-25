@@ -148,9 +148,6 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
-      '@three.ez/instanced-mesh':
-        specifier: 0.3.16
-        version: 0.3.16(three@0.185.1)
       '@threlte/core':
         specifier: 8.5.14
         version: 8.5.14(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.185.1)
@@ -1997,11 +1994,6 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@three.ez/instanced-mesh@0.3.16':
-    resolution: {integrity: sha512-cTBK6I7mdzDku8U2VUZZQ24+260jgdSgbXw6kh4XReyeYFTATk0Jol0Y3EEeyMHLcj5pRjW8KFVN8kbUi9Juzg==}
-    peerDependencies:
-      three: '>=0.159.0'
-
   '@threejs-kit/instanced-sprite-mesh@2.5.1':
     resolution: {integrity: sha512-pmt1ALRhbHhCJQTj2FuthH6PeLIeaM4hOuS2JO3kWSwlnvx/9xuUkjFR3JOi/myMqsH7pSsLIROSaBxDfttjeA==}
     peerDependencies:
@@ -2561,9 +2553,6 @@ packages:
   builtin-modules@5.0.0:
     resolution: {integrity: sha512-bkXY9WsVpY7CvMhKSR6pZilZu9Ln5WDrKVBUXf2S443etkmEO4V58heTecXcUIsNsi4Rx8JUO4NfX1IcQl4deg==}
     engines: {node: '>=18.20'}
-
-  bvh.js@0.0.13:
-    resolution: {integrity: sha512-7jVxKGyyATOwEoqFvghXoStJXkkmqf7JIXYEG44eMtMXQoeCwZL2n1z5/kZogFKvCaN7XweS2TKnqdyDrd0DJA==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -6364,11 +6353,6 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@three.ez/instanced-mesh@0.3.16(three@0.185.1)':
-    dependencies:
-      bvh.js: 0.0.13
-      three: 0.185.1
-
   '@threejs-kit/instanced-sprite-mesh@2.5.1(@types/three@0.185.4)(three@0.185.1)':
     dependencies:
       diet-sprite: 0.0.1
@@ -7126,8 +7110,6 @@ snapshots:
   bsonfy@1.0.2: {}
 
   builtin-modules@5.0.0: {}
-
-  bvh.js@0.0.13: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:

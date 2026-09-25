@@ -8,7 +8,7 @@ import { useTrait } from './useTrait.svelte'
  * that reach it — every other spawner writes `Opacity` — and they read as
  * translucent so the CAD model they wrap stays visible through them.
  */
-export const DEFAULT_GEOMETRY_OPACITY = 0.7
+export const DEFAULT_GEOMETRY_OPACITY = 0.5
 
 /**
  * The alpha a renderer should draw `entity` at. The user's edit outranks the

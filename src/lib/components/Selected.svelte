@@ -8,6 +8,7 @@
 	import { composeBoxMatrix } from '$lib/components/Entities/composeBoxMatrix'
 	import { composeCapsuleBoundsMatrix } from '$lib/components/Entities/composeCapsuleMatrices'
 	import { composeCylinderBoundsMatrix } from '$lib/components/Entities/composeCylinderMatrix'
+	import { composeMeshBoundsMatrix } from '$lib/components/Entities/composeMeshMatrix'
 	import { composeSphereBoundsMatrix } from '$lib/components/Entities/composeSphereMatrix'
 	import { traits, useQuery } from '$lib/ecs'
 	import { BatchedAxesHelpers } from '$lib/three/BatchedAxesHelper'
@@ -65,15 +66,16 @@
 	 */
 	const setHelperBounds = (entity: Entity, obbHelper: OBBHelper): boolean => {
 		/**
-		 * Boxes, capsules, cylinders, and spheres render instanced, so the
-		 * entity's named scene object carries no geometry — derive the OBB
-		 * straight from traits.
+		 * Boxes, capsules, cylinders, spheres, and parsed meshes all render
+		 * batched, so the entity has no named scene object carrying geometry —
+		 * derive the OBB straight from traits.
 		 */
 		if (
 			composeBoxMatrix(entity, matrix4) ||
 			composeCapsuleBoundsMatrix(entity, matrix4) ||
 			composeCylinderBoundsMatrix(entity, matrix4) ||
-			composeSphereBoundsMatrix(entity, matrix4)
+			composeSphereBoundsMatrix(entity, matrix4) ||
+			composeMeshBoundsMatrix(entity, matrix4)
 		) {
 			obbHelper.setFromMatrix4(matrix4)
 			return true

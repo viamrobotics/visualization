@@ -1,157 +1,119 @@
+<!--
+@component
+
+Allocates a batched instance in `ShapeBatches` for one entity carrying a
+`BufferGeometry` trait, so a parsed mesh sorts against the primitives instead of
+against them. Three orders transparent objects by each object's `matrixWorld`
+position, and a batch is one object, so anything left outside it draws wholly
+before or wholly after every batched shape no matter where it sits.
+
+The geometry is uploaded once per distinct mesh and refcounted, so several
+entities sharing a mesh share the upload.
+-->
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { type Snippet } from 'svelte'
-	import { Color, DoubleSide, FrontSide, Group, Mesh } from 'three'
+	import { useThrelte } from '@threlte/core'
+	import { Color, Matrix4 } from 'three'
+
+	import type { ShapeInstanceIds } from '$lib/three/shapeBatches'
 
 	import { asColor } from '$lib/buffer'
-	import { colors, darkenColor } from '$lib/color'
+	import { colors } from '$lib/color'
 	import { traits, useOpacity, useTag, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
-	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
-	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import { composeMeshMatrix } from './composeMeshMatrix'
+	import { useShapeBatches } from './useShapeBatches'
 
 	interface Props {
 		entity: Entity
-		children?: Snippet
 	}
 
-	const { entity, children }: Props = $props()
+	const { entity }: Props = $props()
 
 	const { invalidate } = useThrelte()
-	const settings = useSettings()
+	const shapes = useShapeBatches()
 
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
 	const center = useTrait(() => entity, traits.Center)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 	const colliderHidden = useTag(() => entity, traits.ColliderHidden)
-	const name = useTrait(() => entity, traits.Name)
 	const entityColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
 	const opacity = useOpacity(() => entity)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
-	const materialProps = useTrait(() => entity, traits.Material)
-	const renderOrder = useTrait(() => entity, traits.RenderOrder)
+
+	const colorUtil = new Color()
+	const matrix = new Matrix4()
+
+	/**
+	 * A geometry that parsed to nothing would upload an empty slot and draw
+	 * nothing, so it is skipped until the trait is replaced with a real one.
+	 */
+	const geometry = $derived.by(() => {
+		const parsed = bufferGeometry.current
+		if (!parsed || (parsed.getAttribute('position')?.count ?? 0) === 0) return undefined
+		return parsed
+	})
+
+	/**
+	 * Per-vertex colors ride in the geometry and multiply with the instance
+	 * color, so an instance color of white is what leaves them untinted.
+	 */
+	const hasVertexColors = $derived(geometry?.getAttribute('color') !== undefined)
 
 	const color = $derived.by(() => {
-		if (entityColors.current) {
-			return asColor(entityColors.current, new Color())
-		}
+		if (hasVertexColors) return colorUtil.set(0xffffff)
+		if (entityColors.current) return asColor(entityColors.current, colorUtil)
 
-		if (entityColor.current) {
-			return new Color().setRGB(entityColor.current.r, entityColor.current.g, entityColor.current.b)
-		}
+		const rgb = entityColor.current
+		if (rgb) return colorUtil.setRGB(rgb.r, rgb.g, rgb.b)
 
-		return colors.default
+		return colorUtil.set(colors.default)
 	})
 
-	const hasVertexColors = $derived(bufferGeometry.current?.getAttribute('color') !== undefined)
-
-	const currentOpacity = $derived(opacity.current)
-	const isTransparent = $derived(currentOpacity < 1)
-
-	const events = useEntityEvents(() => entity)
-
-	const group = new Group()
-	group.matrixAutoUpdate = false
+	let instance = $state.raw<ShapeInstanceIds | undefined>()
 
 	$effect(() => {
-		if (!worldMatrix.current) return
+		const current = geometry
+		if (!current) return
 
-		group.matrix.copy(worldMatrix.current)
+		const allocated = shapes.addMesh(entity, shapes.registerMesh(current))
+		instance = allocated
+
+		return () => {
+			shapes.release(allocated)
+			shapes.releaseMesh(current)
+			instance = undefined
+		}
+	})
+
+	$effect(() => {
+		// Read both so a pose change re-runs this, not only an instance swap.
+		void worldMatrix.current
+		void center.current
+
+		if (!instance || !composeMeshMatrix(entity, matrix)) return
+
+		shapes.setMatrix(instance, matrix)
+		invalidate()
+	})
+
+	$effect(() => {
+		if (!instance) return
+
+		const visible = invisible.current !== true && !colliderHidden.current
+		shapes.setAppearance(instance, color, opacity.current, visible)
 
 		/**
-		 * Keep position/quaternion/scale in sync with matrix so TransformControls
-		 * (which reads/writes those fields) sees the entity's actual transform on
-		 * drag start. Without this, the gizmo applies its drag delta against an
-		 * identity baseline and the frame snaps to identity on first onChange.
+		 * Mirrors `useEntityEvents`' invisibility watcher: an instance that
+		 * vanishes under a motionless cursor gets no pointerleave until the
+		 * pointer moves, so drop its hover state here.
 		 */
-		group.matrix.decompose(group.position, group.quaternion, group.scale)
-
-		group.updateMatrixWorld()
-		invalidate()
-	})
-
-	// Threlte swaps the attached material when `is` changes and disposes every one
-	// it held once this component unmounts, so a mode change needs no cleanup here.
-	const material = $derived(createSurfaceMaterial(settings.current.renderMode, {}))
-
-	$effect(() => {
-		material.depthWrite = !isTransparent
-		material.opacity = currentOpacity
-		if (material.transparent !== isTransparent) {
-			material.transparent = isTransparent
-			material.needsUpdate = true
+		if (!visible && entity.has(traits.Hovered)) {
+			entity.remove(traits.Hovered)
 		}
+
 		invalidate()
-	})
-
-	const mesh = new Mesh()
-	const tempPose = new Pose()
-
-	$effect(() => {
-		if (center.current) {
-			tempPose.copy(center.current).toObject3D(mesh)
-			invalidate()
-		}
 	})
 </script>
-
-<T
-	is={group}
-	visible={invisible.current !== true && !colliderHidden.current}
->
-	<T
-		is={mesh}
-		name={entity}
-		userData.name={name}
-		renderOrder={renderOrder.current}
-		castShadow
-		receiveShadow
-		{...events}
-	>
-		{#if bufferGeometry.current}
-			<!--
-			Keyed on the geometry: Threlte disposes a <T>'s object on unmount only, never
-			when `is`/`args` swap it. Unkeyed, each swap orphans an undisposed EdgesGeometry.
-		-->
-			{#key bufferGeometry.current}
-				<T is={bufferGeometry.current}>
-					{#snippet children({ ref: geo })}
-						<!--
-						TODO(mp) currently some bufferGeometries are coming in empty,
-						this is a quick fix but this should be handled upstream
-					-->
-						{#if (geo.getAttribute('position')?.array.length ?? 0) > 0}
-							<T.LineSegments
-								raycast={() => null}
-								bvh={{ enabled: false }}
-							>
-								<T.EdgesGeometry args={[geo, 0]} />
-								<T.LineBasicMaterial
-									color={darkenColor(color, 10)}
-									transparent
-									opacity={currentOpacity}
-									depthWrite={!isTransparent}
-								/>
-							</T.LineSegments>
-						{/if}
-					{/snippet}
-				</T>
-			{/key}
-		{/if}
-
-		<T
-			is={material}
-			color={hasVertexColors ? 0xffffff : color}
-			vertexColors={hasVertexColors}
-			side={bufferGeometry.current ? DoubleSide : FrontSide}
-			depthTest={materialProps.current?.depthTest ?? true}
-		/>
-
-		{@render children?.()}
-	</T>
-</T>

@@ -76,35 +76,44 @@
 	})
 
 	/**
-	 * Points transparency is very costly for the GPU, so we turn it on conservatively.
-	 * Uniform opacity (entity trait) and per-vertex RGBA alpha are both considered here
-	 * to avoid the two sources conflicting with each other.
+	 * Whether the cloud is drawn at less than full alpha, from either source.
+	 * Both are considered here so the two cannot conflict.
 	 */
-	$effect(() => {
+	const isFaded = $derived.by(() => {
+		if (opacity.current < 1) return true
+
 		const vertexColors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
+		if (!vertexColors || !positions) return false
 
-		material.vertexColors = vertexColors !== undefined
+		if (positions.array.length / vertexColors.array.length !== 0.75) return false
 
-		const hasUniformOpacity = opacity.current < 1
-		material.opacity = opacity.current
-
-		let hasVertexAlpha = false
-		if (vertexColors && positions) {
-			const hasAlphaChannel = positions.array.length / vertexColors.array.length === 0.75
-			if (hasAlphaChannel) {
-				for (let i = 3, l = vertexColors.array.length; i < l; i += 4) {
-					if (vertexColors.array[i] < 1) {
-						hasVertexAlpha = true
-						break
-					}
-				}
-			}
+		for (let index = 3, length = vertexColors.array.length; index < length; index += 4) {
+			if (vertexColors.array[index] < 1) return true
 		}
 
-		const transparent = hasUniformOpacity || hasVertexAlpha
-		if (material.transparent !== transparent) {
-			material.transparent = transparent
+		return false
+	})
+
+	$effect(() => {
+		material.vertexColors = geometry.current?.getAttribute('color') !== undefined
+		material.opacity = opacity.current
+
+		/**
+		 * A faded cloud fades through MSAA coverage rather than blending, so it
+		 * stays in the opaque pass and the depth buffer orders it.
+		 *
+		 * Blending would put it in the transparent pass, where three sorts each
+		 * object by its `matrixWorld` position. A cloud sits at its own origin
+		 * while its points are spread across the scene, and the geometry it
+		 * intersects is one `BatchedMesh` with the same problem, so the two cannot
+		 * be ordered against each other: the cloud either hides behind geometry it
+		 * is in front of, or paints over geometry it is behind. Coverage sidesteps
+		 * the sort entirely. It costs smooth alpha, roughly one step per MSAA
+		 * sample, which on points reads as the cloud thinning out.
+		 */
+		if (material.alphaToCoverage !== isFaded) {
+			material.alphaToCoverage = isFaded
 			material.needsUpdate = true
 		}
 
@@ -114,6 +123,7 @@
 	$effect(() => {
 		material.depthTest = materialProps.current?.depthTest ?? true
 		material.depthWrite = materialProps.current?.depthWrite ?? true
+
 		invalidate()
 	})
 
@@ -145,7 +155,7 @@
 		is={points}
 		name={entity}
 		visible={invisible.current !== true}
-		renderOrder={renderOrder.current}
+		renderOrder={renderOrder.current ?? 0}
 		{...events}
 	>
 		<T is={geometry.current} />

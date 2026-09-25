@@ -1,25 +1,24 @@
-import type { BufferGeometry, MaterialParameters, Mesh } from 'three'
+import type { Material, MaterialParameters } from 'three'
 
 import { useThrelte } from '@threlte/core'
-
-import type { SurfaceMaterial } from '$lib/three/surfaceShading'
 
 import { useSettings } from '$lib/hooks/useSettings.svelte'
 import { createSurfaceMaterial } from '$lib/three/surfaceShading'
 
 interface Surface {
-	mesh: Mesh<BufferGeometry, SurfaceMaterial>
+	/** Only the material slot is read and replaced, so a `BatchedMesh` qualifies too. */
+	mesh: { material: Material }
 	/** The per-shape material options, reapplied to every material the mode swap builds. */
 	parameters: MaterialParameters
 }
 
 /**
  * Re-shades each faces mesh when the render mode changes and disposes the material
- * it replaced. `InstancedMesh2` re-patches its material on every render, so the
- * swap itself is a plain assignment.
+ * it replaced. Both batching and instancing are renderer-side defines keyed off the
+ * object, not the material, so the swap is a plain assignment.
  *
  * The mount pass is skipped: callers build their first material with
- * `createSurfaceMaterial` themselves, because `InstancedMesh2` needs one at
+ * `createSurfaceMaterial` themselves, because both mesh types need one at
  * construction.
  */
 export const useSurfaceMaterials = (surfaces: Surface[]) => {
