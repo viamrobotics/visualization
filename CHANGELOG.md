@@ -1,5 +1,16 @@
 # visualization
 
+## 2.7.0
+
+### Minor Changes
+
+- c592002: Require three 0.181 or newer as a peer dependency
+- 7dd5b19: Details panel splits into Details and Appearance tabs.
+
+### Patch Changes
+
+- c592002: Draw every batchable transparent surface through one BatchedMesh so primitives and parsed meshes sort against each other by depth
+
 ## 2.6.1
 
 ### Patch Changes
