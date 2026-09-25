@@ -2,11 +2,12 @@
 	import type { Snippet } from 'svelte'
 
 	import { T, useThrelte } from '@threlte/core'
-	import { Environment, Grid, interactivity, PortalTarget } from '@threlte/extras'
+	import { Grid, interactivity, PortalTarget } from '@threlte/extras'
 	import { ShaderMaterial } from 'three'
 
 	import Camera from '$lib/components/Camera.svelte'
 	import Entities from '$lib/components/Entities/Entities.svelte'
+	import EnvironmentMap from '$lib/components/EnvironmentMap.svelte'
 	import RealisticLighting from '$lib/components/RealisticLighting.svelte'
 	import Selected from '$lib/components/Selected.svelte'
 	import SelectedTransformControls from '$lib/components/SelectedTransformControls.svelte'
@@ -17,7 +18,6 @@
 	import { providePointBudget } from '$lib/hooks/usePointBudget.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
-	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 	import BatchedArrows from './BatchedArrows.svelte'
 	import CameraControls from './CameraControls.svelte'
 	import KeyboardBindings from './KeyboardBindings.svelte'
@@ -75,7 +75,7 @@
 </script>
 
 <KeyboardBindings />
-<Environment url={hdrImage} />
+<EnvironmentMap />
 
 <PointerMissBox />
 <SelectedTransformControls />
