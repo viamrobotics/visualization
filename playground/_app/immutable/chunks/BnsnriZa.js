@@ -1,4 +1,4 @@
-(function(){try{var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{};e.SENTRY_RELEASE={id:`2.6.1`}}catch{}})();try{(function(){var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`8c584235-cb39-4b66-a3ee-4435729b1388`,e._sentryDebugIdIdentifier=`sentry-dbid-8c584235-cb39-4b66-a3ee-4435729b1388`)})()}catch{}var e=({status:e,message:t})=>`<!doctype html>
+(function(){try{var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{};e.SENTRY_RELEASE={id:`2.7.0`}}catch{}})();try{(function(){var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`8c584235-cb39-4b66-a3ee-4435729b1388`,e._sentryDebugIdIdentifier=`sentry-dbid-8c584235-cb39-4b66-a3ee-4435729b1388`)})()}catch{}var e=({status:e,message:t})=>`<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
