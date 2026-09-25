@@ -305,3 +305,42 @@ describe('releaseMesh', () => {
 		expect(() => batches.releaseMesh(new SphereGeometry(1, 8, 6))).not.toThrow()
 	})
 })
+
+describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh update', () => {
+	const swap = (batches: ReturnType<typeof createBatches>, from: BufferGeometry) => {
+		const ids = batches.addMesh(batches.registerMesh(from))
+
+		return (to: BufferGeometry) => {
+			batches.release(ids)
+			batches.releaseMesh(from)
+			return batches.addMesh(batches.registerMesh(to))
+		}
+	}
+
+	it('leaves one live instance, not two', () => {
+		const batches = createBatches()
+
+		swap(batches, new SphereGeometry(1, 8, 6))(new BoxGeometry(2, 2, 2))
+
+		expect(batches.faces.instanceCount).toBe(1)
+	})
+
+	it('points the new instance at the new geometry', () => {
+		const batches = createBatches()
+		const replacement = new BoxGeometry(2, 2, 2)
+
+		const ids = swap(batches, new SphereGeometry(1, 8, 6))(replacement)
+
+		expect(
+			batches.faces.getGeometryRangeAt(batches.faces.getGeometryIdAt(ids.face))?.vertexCount
+		).toBe(replacement.getAttribute('position').count)
+	})
+
+	it('leaves one live outline instance too', () => {
+		const batches = createBatches()
+
+		swap(batches, new SphereGeometry(1, 8, 6))(new BoxGeometry(2, 2, 2))
+
+		expect(batches.edges.instanceCount).toBe(1)
+	})
+})
