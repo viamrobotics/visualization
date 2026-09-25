@@ -76,11 +76,10 @@
 	})
 
 	/**
-	 * Points transparency is very costly for the GPU, so we turn it on conservatively.
-	 * Uniform opacity (entity trait) and per-vertex RGBA alpha are both considered here
-	 * to avoid the two sources conflicting with each other.
+	 * Whether the cloud is drawn at less than full alpha, from either source.
+	 * Both are considered here so the two cannot conflict.
 	 */
-	const isTransparent = $derived.by(() => {
+	const isFaded = $derived.by(() => {
 		if (opacity.current < 1) return true
 
 		const vertexColors = geometry.current?.getAttribute('color')
@@ -100,8 +99,21 @@
 		material.vertexColors = geometry.current?.getAttribute('color') !== undefined
 		material.opacity = opacity.current
 
-		if (material.transparent !== isTransparent) {
-			material.transparent = isTransparent
+		/**
+		 * A faded cloud fades through MSAA coverage rather than blending, so it
+		 * stays in the opaque pass and the depth buffer orders it.
+		 *
+		 * Blending would put it in the transparent pass, where three sorts each
+		 * object by its `matrixWorld` position. A cloud sits at its own origin
+		 * while its points are spread across the scene, and the geometry it
+		 * intersects is one `BatchedMesh` with the same problem, so the two cannot
+		 * be ordered against each other: the cloud either hides behind geometry it
+		 * is in front of, or paints over geometry it is behind. Coverage sidesteps
+		 * the sort entirely. It costs smooth alpha, roughly one step per MSAA
+		 * sample, which on points reads as the cloud thinning out.
+		 */
+		if (material.alphaToCoverage !== isFaded) {
+			material.alphaToCoverage = isFaded
 			material.needsUpdate = true
 		}
 
@@ -110,14 +122,7 @@
 
 	$effect(() => {
 		material.depthTest = materialProps.current?.depthTest ?? true
-
-		/**
-		 * A transparent cloud that writes depth erases whatever the sort placed
-		 * behind it, and three keys that sort off the object's origin, which says
-		 * nothing about where a cloud's points actually are. An explicit `Material`
-		 * trait still wins, so a caller that wants the writes can ask for them.
-		 */
-		material.depthWrite = materialProps.current?.depthWrite ?? !isTransparent
+		material.depthWrite = materialProps.current?.depthWrite ?? true
 
 		invalidate()
 	})

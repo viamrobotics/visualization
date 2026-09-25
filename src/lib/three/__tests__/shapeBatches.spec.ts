@@ -24,9 +24,30 @@ describe('toFacesBatchLayout', () => {
 		expect(toFacesBatchLayout(new BoxGeometry(1, 1, 1)).index).toBeNull()
 	})
 
-	it('keeps position and normal and nothing else', () => {
+	it('keeps position, normal and color and nothing else', () => {
 		const flattened = toFacesBatchLayout(new BoxGeometry(1, 1, 1))
-		expect(Object.keys(flattened.attributes).toSorted()).toEqual(['normal', 'position'])
+		expect(Object.keys(flattened.attributes).toSorted()).toEqual(['color', 'normal', 'position'])
+	})
+
+	it('invents white for a geometry with no color of its own', () => {
+		const flattened = toFacesBatchLayout(new BoxGeometry(1, 1, 1))
+		const color = flattened.getAttribute('color')
+
+		expect([color.getX(0), color.getY(0), color.getZ(0)]).toEqual([1, 1, 1])
+	})
+
+	it('unpacks a normalized color into plain floats, so the batch layouts agree', () => {
+		const geometry = new BoxGeometry(1, 1, 1).toNonIndexed()
+		const vertexCount = geometry.getAttribute('position').count
+		geometry.setAttribute(
+			'color',
+			new BufferAttribute(new Uint8Array(vertexCount * 3).fill(255), 3, true)
+		)
+
+		const color = toFacesBatchLayout(geometry).getAttribute('color')
+
+		expect(color.normalized).toBe(false)
+		expect(color.getX(0)).toBe(1)
 	})
 
 	it('expands an indexed geometry to one vertex per corner', () => {

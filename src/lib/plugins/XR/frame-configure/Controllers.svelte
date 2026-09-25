@@ -29,7 +29,7 @@
 	type CapsuleBase = { type: 'capsule'; r: number; l: number }
 	type GeometryBase = BoxBase | SphereBase | CapsuleBase
 
-	const { camera, renderer, scene } = useThrelte()
+	const { camera, renderer } = useThrelte()
 
 	const partConfig = usePartConfig()
 	const transformControls = useTransformControls()
@@ -183,10 +183,8 @@
 			return
 		}
 
-		const target = worldMatrix.current ? anchor : undefined
-
-		if (target && target !== scene) {
-			controls.attach(target)
+		if (worldMatrix.current) {
+			controls.attach(anchor)
 			attached = true
 		} else {
 			controls.detach()
