@@ -643,7 +643,8 @@
 		"runed": ">=0.28",
 		"svelte": ">=5",
 		"svelte-tweakpane-ui": ">=1.5",
-		"svelte-virtuallists": ">=1"
+		"svelte-virtuallists": ">=1",
+		"three": ">=0.181"
 	},
 	"peerDependenciesMeta": {
 		"@connectrpc/connect": {
