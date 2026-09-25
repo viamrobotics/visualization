@@ -1,16 +1,21 @@
 <script lang="ts">
-	import { Icon, Tooltip } from '@viamrobotics/prime-core'
+	import { Tooltip } from '@viamrobotics/prime-core'
 
 	import IKCandidateDetail from './IKCandidateDetail.svelte'
 	import IKCandidateRow from './IKCandidateRow.svelte'
 	import IKSeedGroup from './IKSeedGroup.svelte'
 	import IKStatusDot from './IKStatusDot.svelte'
 	import { IK_STATUS_DESCRIPTION, IK_STATUS_LABEL, type IKStatus } from './parse-ik-solutions'
-	import { useIKInspection } from './useIKInspection.svelte'
+	import { type IKSortMode, useIKInspection } from './useIKInspection.svelte'
 
 	const ctx = useIKInspection()
 
 	const ORDER: IKStatus[] = ['valid', 'path-invalid', 'invalid']
+
+	const SORT_DESCRIPTION: Record<IKSortMode, string> = {
+		seed: 'Group by random seed that generated the candidates.',
+		cost: 'Sort by Euclidian (Pythogorian) distance of join movement along the path.',
+	}
 </script>
 
 <div class="flex h-full flex-col">
@@ -23,55 +28,44 @@
 		<div class="flex flex-wrap items-center gap-1">
 			{#each ORDER as status (status)}
 				{@const active = ctx.statusFilter.has(status)}
-				<button
-					type="button"
-					aria-pressed={active}
-					class={[
-						'flex items-center gap-1 rounded border px-1.5 py-0.5 tabular-nums',
-						'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
-						active ? 'border-medium bg-light' : 'border-light text-subtle-2',
-					]}
-					onclick={() => ctx.toggleStatusFilter(status)}
+				<Tooltip
+					let:tooltipID
+					location="bottom"
 				>
-					<IKStatusDot {status} />
-					{ctx.counts[status]}
-					<span class="sr-only">{IK_STATUS_LABEL[status]}</span>
-				</button>
+					<button
+						type="button"
+						aria-pressed={active}
+						aria-describedby={tooltipID}
+						class={[
+							'flex items-center gap-1 rounded border px-1.5 py-0.5 tabular-nums',
+							'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
+							active ? 'border-medium bg-light' : 'border-light text-subtle-2',
+						]}
+						onclick={() => ctx.toggleStatusFilter(status)}
+					>
+						<IKStatusDot {status} />
+						{ctx.counts[status]}
+						<span class="sr-only">{IK_STATUS_LABEL[status]}</span>
+					</button>
+					<span slot="description">
+						<span class="font-medium">{IK_STATUS_LABEL[status]}</span> — {IK_STATUS_DESCRIPTION[
+							status
+						]}
+					</span>
+				</Tooltip>
 			{/each}
-
-			<Tooltip
-				let:tooltipID
-				location="bottom"
-			>
-				<button
-					type="button"
-					aria-describedby={tooltipID}
-					aria-label="What the colours mean"
-					class="text-subtle-1 hover:text-default hover:bg-ghost-light focus-visible:ring-info-dark rounded p-0.5 focus-visible:ring-1 focus-visible:outline-none"
-				>
-					<Icon
-						name="help-circle-outline"
-						size="sm"
-						aria-hidden="true"
-					/>
-				</button>
-				<span slot="description">
-					{#each ORDER as status (status)}
-						<span class="mb-0.5 block last:mb-0">
-							<span class="font-medium">{IK_STATUS_LABEL[status]}</span> — {IK_STATUS_DESCRIPTION[
-								status
-							]}
-						</span>
-					{/each}
-				</span>
-			</Tooltip>
 
 			<div class="ml-auto flex items-center gap-1">
 				<span class="text-subtle-1">Sort</span>
 				{#each [['seed', 'Seed'], ['cost', 'Cost']] as const as [mode, label] (mode)}
+				<Tooltip
+					let:tooltipID
+					location="bottom"
+				>
 					<button
 						type="button"
 						aria-pressed={ctx.sortMode === mode}
+						aria-describedby={tooltipID}
 						class={[
 							'rounded border px-1.5 py-0.5',
 							'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
@@ -81,6 +75,10 @@
 					>
 						{label}
 					</button>
+					<span slot="description">
+						<span class="font-medium">{label}</span> — {SORT_DESCRIPTION[mode]}
+					</span>
+				</Tooltip>
 				{/each}
 			</div>
 		</div>
