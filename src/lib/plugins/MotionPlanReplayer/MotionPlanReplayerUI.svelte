@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Icon, ToastVariant, Tooltip, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 	import { onDestroy } from 'svelte'
 
@@ -149,26 +149,33 @@
 						{/if}
 					</span>
 					<span class="grow truncate">{plan.name}</span>
-					<button
-						type="button"
-						class="text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
-						aria-label={`Inspect IK for ${plan.name}`}
-						aria-disabled={ik.status === 'loading'}
-						onclick={(e) => {
-							e.stopPropagation()
-							if (ik.status === 'loading') return
-							// Inspect mode takes the panel over, leaving no control for a replayed plan's
-							// geometry — so it goes rather than lingering unreachable in the scene.
-							ctx.clearActivePlan()
-							void ik.inspect(plan.name, plan.content)
-						}}
+					<Tooltip
+						let:tooltipID
+						location="bottom"
 					>
-						<Icon
-							name="bug-outline"
-							size="sm"
-							aria-hidden="true"
-						/>
-					</button>
+						<button
+							type="button"
+							class="border-success-medium text-success-dark hover:bg-success-light active:bg-success-light focus-visible:ring-success-dark ml-1 rounded border p-0.5 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
+							aria-label={`Inspect IK for ${plan.name}`}
+							aria-describedby={tooltipID}
+							aria-disabled={ik.status === 'loading'}
+							onclick={(e) => {
+								e.stopPropagation()
+								if (ik.status === 'loading') return
+								// Inspect mode takes the panel over, leaving no control for a replayed plan's
+								// geometry — so it goes rather than lingering unreachable in the scene.
+								ctx.clearActivePlan()
+								void ik.inspect(plan.name, plan.content)
+							}}
+						>
+							<Icon
+								name="bug-outline"
+								size="sm"
+								aria-hidden="true"
+							/>
+						</button>
+						<p slot="description">Inspect IK plans</p>
+					</Tooltip>
 
 					<button
 						type="button"
