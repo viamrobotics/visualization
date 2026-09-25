@@ -19,6 +19,58 @@ const createLargeGeometry = (triangles: number): BufferGeometry => {
 	return geometry
 }
 
+describe('toFacesBatchLayout, converging what a batch would reject or misread', () => {
+	it('rebuilds a normalized normal, which a batch rejects outright', () => {
+		const box = new BoxGeometry(1, 1, 1)
+		const vertexCount = box.getAttribute('position').count
+		box.setAttribute(
+			'normal',
+			new BufferAttribute(new Int16Array(vertexCount * 3).fill(32767), 3, true)
+		)
+
+		const normal = toFacesBatchLayout(box).getAttribute('normal')
+
+		expect(normal.normalized).toBe(false)
+		expect(normal.getX(0)).toBe(1)
+	})
+
+	it('truncates an attribute longer than position, which would overrun the batch buffer', () => {
+		const geometry = new BufferGeometry()
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3))
+		geometry.setAttribute('normal', new BufferAttribute(new Float32Array(3000), 3))
+
+		expect(toFacesBatchLayout(geometry).getAttribute('normal').count).toBe(3)
+	})
+
+	it('pads an attribute shorter than position rather than reading past it', () => {
+		const geometry = new BufferGeometry()
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(18), 3))
+		geometry.setAttribute('color', new BufferAttribute(new Float32Array([1, 0, 0, 0, 1, 0]), 3))
+
+		const color = toFacesBatchLayout(geometry).getAttribute('color')
+
+		expect(color.count).toBe(6)
+		expect(color.getX(5)).toBe(1)
+	})
+
+	it('clamps an index pointing past its own vertices, which would read another entity', () => {
+		const geometry = new BufferGeometry()
+		geometry.setAttribute('position', new BufferAttribute(new Float32Array(9), 3))
+		geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 70_000]), 1))
+
+		expect(toFacesBatchLayout(geometry).index?.getX(2)).toBe(2)
+	})
+
+	it('leaves an in-range index untouched', () => {
+		const box = new BoxGeometry(1, 1, 1)
+		expect(toFacesBatchLayout(box).index?.getX(5)).toBe(box.index?.getX(5))
+	})
+
+	it('rejects a geometry with no position, which is not a mesh', () => {
+		expect(() => toFacesBatchLayout(new BufferGeometry())).toThrow(/no position attribute/)
+	})
+})
+
 describe('toFacesBatchLayout', () => {
 	it('keeps an existing index, so shared vertices are not expanded', () => {
 		const box = new BoxGeometry(1, 1, 1)
@@ -176,15 +228,17 @@ describe('releaseMesh', () => {
 		expect(() => batches.faces.getGeometryRangeAt(slot.faceGeometry)).toThrow()
 	})
 
-	it('re-registering after a release uploads again rather than reusing a dead slot', () => {
+	it('re-registering after a release uploads the geometry again', () => {
 		const batches = createBatches()
 		const geometry = new SphereGeometry(1, 8, 6)
+		const vertexCount = geometry.getAttribute('position').count
 
 		batches.registerMesh(geometry)
 		batches.releaseMesh(geometry)
 		const slot = batches.registerMesh(geometry)
 
-		expect(() => batches.faces.getGeometryRangeAt(slot.faceGeometry)).not.toThrow()
+		// `deleteGeometry` recycles ids, so the slot number alone proves nothing.
+		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(vertexCount)
 	})
 
 	it('ignores a geometry that was never registered', () => {
