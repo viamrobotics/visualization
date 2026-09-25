@@ -1,70 +1,101 @@
 import { BufferAttribute, type BufferGeometry } from 'three'
 
-const COLOR_ITEM_SIZE = 3
+/** `position` is absent because it is the one attribute every geometry already has. */
+const OPTIONAL_ATTRIBUTES = [
+	{ name: 'color', itemSize: 3, missing: 1 },
+	{ name: 'uv', itemSize: 2, missing: 0 },
+] as const
 
-/**
- * Gives `geometry` a plain float RGB `color` attribute, rebuilding one that is
- * packed differently and inventing white where there is none.
- *
- * One batch means one material, so `vertexColors` is on for every instance in
- * it. A geometry without the attribute would read garbage, and `PLYLoader` can
- * hand back colors normalized or with an alpha channel, which
- * `_validateGeometry` rejects against a batch expecting neither.
- */
-const setFloatRgbColor = (geometry: BufferGeometry): void => {
-	const source = geometry.getAttribute('color')
-	if (source !== undefined && source.itemSize === COLOR_ITEM_SIZE && !source.normalized) {
+/** Substitutes `missing` for an attribute the geometry lacks, and unpacks one it stores differently. */
+const setFloatAttribute = (
+	geometry: BufferGeometry,
+	name: string,
+	itemSize: number,
+	missing: number
+): void => {
+	const source = geometry.getAttribute(name)
+	if (source !== undefined && source.itemSize === itemSize && !source.normalized) {
 		return
 	}
 
 	const vertexCount = geometry.getAttribute('position').count
-	const rgb = new Float32Array(vertexCount * COLOR_ITEM_SIZE)
+	const values = new Float32Array(vertexCount * itemSize).fill(missing)
 
-	if (source === undefined) {
-		rgb.fill(1)
-	} else {
-		// `getX`/`getY`/`getZ` undo the source's normalization, whatever it was.
+	if (source !== undefined) {
+		// `getComponent` undoes the source's normalization, whatever it was.
 		for (let vertex = 0; vertex < vertexCount; vertex += 1) {
-			rgb[vertex * COLOR_ITEM_SIZE] = source.getX(vertex)
-			rgb[vertex * COLOR_ITEM_SIZE + 1] = source.getY(vertex)
-			rgb[vertex * COLOR_ITEM_SIZE + 2] = source.getZ(vertex)
+			for (let component = 0; component < itemSize; component += 1) {
+				values[vertex * itemSize + component] = source.getComponent(vertex, component)
+			}
 		}
 	}
 
-	geometry.setAttribute('color', new BufferAttribute(rgb, COLOR_ITEM_SIZE))
+	geometry.setAttribute(name, new BufferAttribute(values, itemSize))
+}
+
+/** Lists the vertices in order. Welds nothing, so it buys no sharing a geometry didn't already have. */
+const setTrivialIndex = (geometry: BufferGeometry): void => {
+	if (geometry.index !== null) {
+		return
+	}
+
+	const vertexCount = geometry.getAttribute('position').count
+	const indices = new Uint32Array(vertexCount)
+	for (let vertex = 0; vertex < vertexCount; vertex += 1) {
+		indices[vertex] = vertex
+	}
+
+	geometry.setIndex(new BufferAttribute(indices, 1))
 }
 
 /**
- * Rewrites `geometry` into the layout every geometry in a faces batch shares:
- * non-indexed, `position` + `normal` + `color`, nothing else.
+ * Rewrites `geometry` into the one layout a faces batch accepts: indexed, with
+ * `position`, `normal`, `color` and `uv`, and nothing else.
  *
- * `BatchedMesh` rejects a geometry whose attribute set differs from the batch's
- * (`_validateGeometry`), and meshes arriving from RDK are indexed or not, with
- * or without `uv`, with or without color. Dropping the index is the cheap
- * direction to converge on: these meshes share few vertices, so `toNonIndexed`
- * costs a few percent more, and it removes the index buffer from the batch
- * entirely. Nothing reads `uv`, because `createSurfaceMaterial` never sets a
- * map.
+ * A `BatchedMesh` fixes its layout from the first geometry added and rejects
+ * every later one that differs, down to each attribute's `itemSize` and
+ * `normalized` flag (`_validateGeometry`). Meshes from RDK agree on none of
+ * that, so each one is rebuilt rather than trusted.
+ *
+ * Two of the choices are not obvious:
+ *
+ * `uv` is carried even though no material samples it today. A textured mesh
+ * arriving later cannot add the attribute to a batch that is already running,
+ * and its material would declare `attribute vec2 uv`, read zeros, and sample a
+ * single texel without erroring.
+ *
+ * Geometries converge on indexed rather than on non-indexed, which would mean
+ * expanding shared vertices instead of inventing an index. Expanding costs
+ * about three times the memory on a smooth mesh, and makes the GPU re-run the
+ * vertex shader for vertices it could otherwise have reused. Inventing an index
+ * costs 4 bytes per vertex, whatever the geometry looks like.
  *
  * Returns a new geometry. The caller owns it, and should dispose it once
  * `addGeometry` has copied it into the batch.
  */
 export const toFacesBatchLayout = (geometry: BufferGeometry): BufferGeometry => {
-	const flattened = geometry.index === null ? geometry.clone() : geometry.toNonIndexed()
+	const converged = geometry.clone()
 
-	for (const name of Object.keys(flattened.attributes)) {
-		if (name !== 'position' && name !== 'normal' && name !== 'color') {
-			flattened.deleteAttribute(name)
+	const kept = new Set<string>([
+		'position',
+		'normal',
+		...OPTIONAL_ATTRIBUTES.map(({ name }) => name),
+	])
+	for (const name of Object.keys(converged.attributes)) {
+		if (!kept.has(name)) {
+			converged.deleteAttribute(name)
 		}
 	}
 
-	// Flat normals, the geometry being non-indexed by this point. STL and the unit
-	// primitives both ship normals, so this is the PLY fallback.
-	if (flattened.getAttribute('normal') === undefined) {
-		flattened.computeVertexNormals()
+	if (converged.getAttribute('normal') === undefined) {
+		converged.computeVertexNormals()
 	}
 
-	setFloatRgbColor(flattened)
+	for (const { name, itemSize, missing } of OPTIONAL_ATTRIBUTES) {
+		setFloatAttribute(converged, name, itemSize, missing)
+	}
 
-	return flattened
+	setTrivialIndex(converged)
+
+	return converged
 }

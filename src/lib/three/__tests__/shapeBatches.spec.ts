@@ -20,13 +20,54 @@ const createLargeGeometry = (triangles: number): BufferGeometry => {
 }
 
 describe('toFacesBatchLayout', () => {
-	it('drops the index, so every geometry in the batch agrees on having none', () => {
-		expect(toFacesBatchLayout(new BoxGeometry(1, 1, 1)).index).toBeNull()
+	it('keeps an existing index, so shared vertices are not expanded', () => {
+		const box = new BoxGeometry(1, 1, 1)
+		expect(toFacesBatchLayout(box).index?.count).toBe(box.index?.count)
 	})
 
-	it('keeps position, normal and color and nothing else', () => {
-		const flattened = toFacesBatchLayout(new BoxGeometry(1, 1, 1))
-		expect(Object.keys(flattened.attributes).toSorted()).toEqual(['color', 'normal', 'position'])
+	it('keeps the vertex count of an indexed geometry', () => {
+		const box = new BoxGeometry(1, 1, 1)
+		expect(toFacesBatchLayout(box).getAttribute('position').count).toBe(24)
+	})
+
+	it('invents an index for a geometry without one, so the batch agrees on having them', () => {
+		const flat = new BoxGeometry(1, 1, 1).toNonIndexed()
+		const indexed = toFacesBatchLayout(flat)
+
+		expect(indexed.index?.count).toBe(36)
+		expect(indexed.index?.getX(5)).toBe(5)
+	})
+
+	it('keeps position, normal, color and uv and nothing else', () => {
+		const converged = toFacesBatchLayout(new BoxGeometry(1, 1, 1))
+		expect(Object.keys(converged.attributes).toSorted()).toEqual([
+			'color',
+			'normal',
+			'position',
+			'uv',
+		])
+	})
+
+	it('invents zeroed uv for a geometry with none, so a textured mesh can join later', () => {
+		const bare = new BufferGeometry()
+		bare.setAttribute(
+			'position',
+			new BufferAttribute(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), 3)
+		)
+
+		const uv = toFacesBatchLayout(bare).getAttribute('uv')
+
+		expect(uv.itemSize).toBe(2)
+		expect([uv.getX(0), uv.getY(0)]).toEqual([0, 0])
+	})
+
+	it('keeps the uv a geometry arrives with', () => {
+		const box = new BoxGeometry(1, 1, 1)
+		const source = box.getAttribute('uv')
+
+		const uv = toFacesBatchLayout(box).getAttribute('uv')
+
+		expect(uv.getX(3)).toBe(source.getX(3))
 	})
 
 	it('invents white for a geometry with no color of its own', () => {
@@ -50,12 +91,6 @@ describe('toFacesBatchLayout', () => {
 		expect(color.getX(0)).toBe(1)
 	})
 
-	it('expands an indexed geometry to one vertex per corner', () => {
-		const box = new BoxGeometry(1, 1, 1)
-		const flattened = toFacesBatchLayout(box)
-		expect(flattened.getAttribute('position').count).toBe(box.index?.count)
-	})
-
 	it('computes normals for a geometry that arrives without them', () => {
 		const bare = new BufferGeometry()
 		bare.setAttribute(
@@ -67,10 +102,11 @@ describe('toFacesBatchLayout', () => {
 	})
 
 	it('leaves the source geometry alone', () => {
-		const box = new BoxGeometry(1, 1, 1)
-		toFacesBatchLayout(box)
-		expect(box.index).not.toBeNull()
-		expect(box.getAttribute('uv')).toBeDefined()
+		const flat = new BoxGeometry(1, 1, 1).toNonIndexed()
+
+		toFacesBatchLayout(flat)
+
+		expect(flat.index).toBeNull()
 	})
 })
 
@@ -101,13 +137,20 @@ describe('registerMesh', () => {
 		expect(second.faceGeometry).not.toBe(first.faceGeometry)
 	})
 
-	it('grows the buffer for a mesh larger than everything allocated so far', () => {
+	it('grows the vertex buffer for a mesh larger than everything allocated so far', () => {
 		const batches = createBatches()
-		const large = createLargeGeometry(20_000)
 
-		const slot = batches.registerMesh(large)
+		const slot = batches.registerMesh(createLargeGeometry(20_000))
 
 		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(60_000)
+	})
+
+	it('grows the index buffer alongside it', () => {
+		const batches = createBatches()
+
+		const slot = batches.registerMesh(createLargeGeometry(20_000))
+
+		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.indexCount).toBe(60_000)
 	})
 })
 

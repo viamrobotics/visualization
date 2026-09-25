@@ -28,8 +28,6 @@ instance writes and one `invalidate()`.
 	const world = useWorld()
 	const shapes = useShapeBatches()
 
-	const shapeFor = (capped: boolean): Shape => (capped ? 'cappedCylinder' : 'tube')
-
 	/** `shape` is kept so a `capped` flip can be spotted without re-reading the batch. */
 	interface CylinderInstance {
 		ids: ShapeInstanceIds
@@ -103,7 +101,7 @@ instance writes and one `invalidate()`.
 			const cylinder = entity.isAlive() ? entity.get(traits.Cylinder) : undefined
 
 			if (cylinder && composeCylinderMatrix(entity, matrix)) {
-				const shape = shapeFor(cylinder.capped)
+				const shape = cylinder.capped ? 'cappedCylinder' : 'tube'
 
 				if (instance === undefined) {
 					addInstance(entity, shape)

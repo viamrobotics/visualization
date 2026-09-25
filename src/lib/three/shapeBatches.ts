@@ -69,6 +69,9 @@ const INITIAL_INSTANCE_CAPACITY = 256
 /** How much darker an outline is than the face it wraps, in percent. */
 const EDGE_DARKEN = 10
 
+const sumIndices = (geometries: BufferGeometry[]): number =>
+	geometries.reduce((total, geometry) => total + (geometry.getIndex()?.count ?? 0), 0)
+
 const sumVertices = (geometries: BufferGeometry[]): number =>
 	geometries.reduce((total, geometry) => total + geometry.getAttribute('position').count, 0)
 
@@ -133,10 +136,15 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 	const edgeGeometries = SHAPES.map((shape) => EDGE_GEOMETRIES[shape])
 
 	const initialFaceVertices = sumVertices(faceGeometries)
+	const initialFaceIndices = sumIndices(faceGeometries)
 	const initialEdgeVertices = sumVertices(edgeGeometries)
 
-	/** Both batches are non-indexed (see `toFacesBatchLayout`), hence no index budget. */
-	const faces = new BatchedMesh(INITIAL_INSTANCE_CAPACITY, initialFaceVertices, 0, facesMaterial)
+	const faces = new BatchedMesh(
+		INITIAL_INSTANCE_CAPACITY,
+		initialFaceVertices,
+		initialFaceIndices,
+		facesMaterial
+	)
 	faces.castShadow = true
 	faces.receiveShadow = true
 
@@ -173,8 +181,12 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 	 */
 	Object.assign(edges, { isMesh: false, isLine: true, isLineSegments: true })
 
-	const allocateFaceGeometry = createBatchedGeometryAllocator(faces, initialFaceVertices)
-	const allocateEdgeGeometry = createBatchedGeometryAllocator(edges, initialEdgeVertices)
+	const allocateFaceGeometry = createBatchedGeometryAllocator(
+		faces,
+		initialFaceVertices,
+		initialFaceIndices
+	)
+	const allocateEdgeGeometry = createBatchedGeometryAllocator(edges, initialEdgeVertices, 0)
 
 	const faceGeometryIds = {} as Record<Shape, number>
 	const edgeGeometryIds = {} as Record<Shape, number>
