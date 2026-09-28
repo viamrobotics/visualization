@@ -1,16 +1,13 @@
+import type { PlainMessage } from '@bufbuild/protobuf'
+import type { cameraApi } from '@viamrobotics/sdk'
+
 /**
- * A camera's pinhole intrinsics. Field names match
- * `viam.component.camera.v1.IntrinsicParameters`, so a `GetProperties` reply's
- * `intrinsicParameters` satisfies this as-is.
+ * A camera's pinhole intrinsics, as `GetProperties` reports them.
+ *
+ * The fields of `IntrinsicParameters` without the `Message` methods, so a reply satisfies
+ * it and a test can write one as a literal.
  */
-export interface Intrinsics {
-	widthPx: number
-	heightPx: number
-	focalXPx: number
-	focalYPx: number
-	centerXPx: number
-	centerYPx: number
-}
+export type Intrinsics = PlainMessage<cameraApi.IntrinsicParameters>
 
 /** Image corners as fractions of the image, wound clockwise from the top left. */
 const CORNERS = [
