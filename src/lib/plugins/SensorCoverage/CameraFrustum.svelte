@@ -70,14 +70,16 @@ the reason the matrix is copied rather than decomposed into props.
 	})
 </script>
 
-<T
-	is={lines}
-	name={entity}
-	userData.name={name.current}
-	dispose={false}
-	raycast={() => null}
-	visible={invisible.current !== true}
->
-	<T is={geometry} />
-	<T is={material} />
-</T>
+{#if worldMatrix.current}
+	<T
+		is={lines}
+		name={entity}
+		userData.name={name.current}
+		dispose={false}
+		raycast={() => null}
+		visible={invisible.current !== true}
+	>
+		<T is={geometry} />
+		<T is={material} />
+	</T>
+{/if}

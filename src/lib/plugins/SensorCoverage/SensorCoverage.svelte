@@ -12,8 +12,9 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 	import type { Entity } from 'koota'
 
 	import SettingsPortal from '$lib/components/overlay/Portals/SettingsPortal.svelte'
-	import { traits, useQuery } from '$lib/ecs'
+	import { traits } from '$lib/ecs'
 	import { useDetailsSection } from '$lib/hooks/useDetailsSections.svelte'
+	import { useFrameEntities } from '$lib/hooks/useFrameEntities.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import CameraFrustum from './CameraFrustum.svelte'
@@ -32,21 +33,13 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 		frusta.current.filter(({ name }) => settings.current.disabledCoverageCameras[name] !== true)
 	)
 
-	// A camera's frame carries the camera's own name, so one pass over the named entities
-	// resolves every frustum's parent — cheaper than a lookup per camera.
-	const namedEntities = useQuery(traits.Name)
-	const entityByName = $derived.by(() => {
-		const result = new Map<string, Entity>()
-
-		for (const entity of namedEntities.current) {
-			const name = entity.get(traits.Name)
-			if (name !== undefined) result.set(name, entity)
-		}
-
-		return result
-	})
+	// A camera's frame carries the camera's own name, which is what resolves a frustum to the
+	// frame it hangs off.
+	const frameEntities = useFrameEntities()
 
 	const isCameraFrame = (entity: Entity): boolean => {
+		if (!entity.has(traits.FramesAPI)) return false
+
 		const name = entity.get(traits.Name)
 		return name !== undefined && cameraNames.has(name)
 	}
@@ -70,7 +63,7 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 
 {#if settings.current.enableSensorCoverage}
 	{#each visible as frustum (frustum.name)}
-		{@const entity = entityByName.get(frustum.name)}
+		{@const entity = frameEntities.current.get(frustum.name)}
 
 		<!-- A camera with no frame has no pose to draw from. -->
 		{#if entity !== undefined}
