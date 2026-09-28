@@ -13,14 +13,24 @@ export interface HotkeyKeybinding extends BaseKeybinding {
 	/** `KeyboardEvent.key`, lowercased. */
 	key: string
 	/**
-	 * Whether held Shift is part of the shortcut. Shift is the only modifier dispatch takes:
-	 * the command key belongs to the browser, and Option rewrites the character macOS
-	 * reports, so an Option shortcut would have to be matched by `code` instead.
-	 *
-	 * A shortcut without it never fires while Shift is held, so `h` and `Shift+H` stay
-	 * separate.
+	 * Whether held Shift is part of the shortcut. A shortcut without it never fires while
+	 * Shift is held, so `h` and `Shift+H` stay separate.
 	 */
 	shift?: boolean
+	/**
+	 * Whether the platform's command key is part of the shortcut: the command key on Apple
+	 * devices, control elsewhere.
+	 *
+	 * Option is deliberately absent. macOS rewrites the character it reports, so `Option+H`
+	 * arrives as `˙`, and matching it would mean keying the whole catalog on
+	 * `KeyboardEvent.code` instead.
+	 */
+	mod?: boolean
+	/**
+	 * Whether to cancel the browser's own response to the press. Needed where the browser
+	 * claims the combination, such as the save dialog on `⌘S`.
+	 */
+	preventDefault?: boolean
 }
 
 /**
@@ -34,17 +44,4 @@ export interface CameraKeybinding extends BaseKeybinding {
 	key: string
 }
 
-/**
- * A shortcut its own component matches, such as `⌘Z` in `BuildActionsBar` and held Shift in
- * `SelectionTool`. Registered so it reaches the settings listing, never dispatched.
- *
- * Dispatch matches a single key plus Shift, so these combinations could not go through it
- * even if they were handed to it.
- */
-export interface FixedKeybinding extends BaseKeybinding {
-	kind: 'fixed'
-	/** Keys in press order. `Mod` renders as the platform's command or control key. */
-	combo: readonly string[]
-}
-
-export type Keybinding = CameraKeybinding | FixedKeybinding | HotkeyKeybinding
+export type Keybinding = CameraKeybinding | HotkeyKeybinding

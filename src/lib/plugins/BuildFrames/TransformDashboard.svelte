@@ -4,10 +4,10 @@
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
+	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
-	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 
 	const settings = useSettings()
 	const environment = useEnvironment()

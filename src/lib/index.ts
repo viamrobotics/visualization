@@ -1,13 +1,7 @@
 export { default as Visualizer } from './components/App.svelte'
 
 export { useSettings } from './hooks/useSettings.svelte'
-export {
-	type HotkeyDefinition,
-	type Keybinding,
-	useCameraKeybinding,
-	useFixedKeybinding,
-	useHotkey,
-} from './keybindings'
+export { type HotkeyDefinition, type Keybinding, useHotkey, useKeybinding } from './keybindings'
 export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
 export { type DetailsSection, useDetailsSection } from './hooks/useDetailsSections.svelte'
 export {

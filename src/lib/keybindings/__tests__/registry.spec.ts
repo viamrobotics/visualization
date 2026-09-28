@@ -1,16 +1,26 @@
-import type { HotkeyKeybinding } from '$lib/keybindings'
-
 import { describe, expect, it, vi } from 'vitest'
+
+import type { HotkeyKeybinding } from '$lib/keybindings'
 
 import { createKeybindings } from '$lib/keybindings'
 
-const hotkey = (id: string, key: string, shift = false): HotkeyKeybinding => ({
+const hotkey = (
+	id: string,
+	key: string,
+	modifiers: { shift?: boolean; mod?: boolean } = {}
+): HotkeyKeybinding => ({
 	id,
 	kind: 'hotkey',
 	key,
-	shift,
+	...modifiers,
 	description: id,
 	group: 'View',
+})
+
+const press = (key: string, modifiers: { shift?: boolean; mod?: boolean } = {}) => ({
+	key,
+	shift: modifiers.shift ?? false,
+	mod: modifiers.mod ?? false,
 })
 
 describe('keybinding registry', () => {
@@ -25,23 +35,24 @@ describe('keybinding registry', () => {
 		expect(keybindings.bindings).toEqual([])
 	})
 
-	it('lists a binding registered without a handler', () => {
+	it('lists a binding registered without a handler but never runs it', () => {
 		const keybindings = createKeybindings()
-		const binding: HotkeyKeybinding = hotkey('listed', 'l')
+		const binding = hotkey('listed', 'l')
 
 		keybindings.register(binding)
 
 		expect(keybindings.bindings).toEqual([binding])
-		expect(keybindings.handlersFor('l', false)).toEqual([])
+		expect(keybindings.matching(press('l'))).toEqual([])
 	})
 
-	it('resolves a press to its handler regardless of case', () => {
+	it('matches a press to its handler regardless of case', () => {
 		const keybindings = createKeybindings()
 		const handler = { run: vi.fn() }
+		const binding = hotkey('c', 'c')
 
-		keybindings.register(hotkey('c', 'c'), handler)
+		keybindings.register(binding, handler)
 
-		expect(keybindings.handlersFor('C', false)).toEqual([handler])
+		expect(keybindings.matching(press('C'))).toEqual([{ binding, handler }])
 	})
 
 	it('keeps a shifted press separate from an unshifted one', () => {
@@ -50,21 +61,45 @@ describe('keybinding registry', () => {
 		const shifted = { run: vi.fn() }
 
 		keybindings.register(hotkey('hide', 'h'), plain)
-		keybindings.register(hotkey('show-all', 'h', true), shifted)
+		keybindings.register(hotkey('show-all', 'h', { shift: true }), shifted)
 
-		expect(keybindings.handlersFor('h', false)).toEqual([plain])
-		expect(keybindings.handlersFor('H', true)).toEqual([shifted])
+		expect(keybindings.matching(press('h'))[0]?.handler).toBe(plain)
+		expect(keybindings.matching(press('H', { shift: true }))[0]?.handler).toBe(shifted)
 	})
 
-	it('resolves nothing for an unbound press', () => {
+	it('keeps a modified press separate from an unmodified one', () => {
+		const keybindings = createKeybindings()
+		const plain = { run: vi.fn() }
+		const modified = { run: vi.fn() }
+
+		keybindings.register(hotkey('select-mode', 's'), plain)
+		keybindings.register(hotkey('save', 's', { mod: true }), modified)
+
+		expect(keybindings.matching(press('s'))[0]?.handler).toBe(plain)
+		expect(keybindings.matching(press('s', { mod: true }))[0]?.handler).toBe(modified)
+	})
+
+	it('distinguishes redo from undo by the shift qualifier', () => {
+		const keybindings = createKeybindings()
+		const undo = { run: vi.fn() }
+		const redo = { run: vi.fn() }
+
+		keybindings.register(hotkey('undo', 'z', { mod: true }), undo)
+		keybindings.register(hotkey('redo', 'z', { mod: true, shift: true }), redo)
+
+		expect(keybindings.matching(press('z', { mod: true }))[0]?.handler).toBe(undo)
+		expect(keybindings.matching(press('z', { mod: true, shift: true }))[0]?.handler).toBe(redo)
+	})
+
+	it('matches nothing for an unbound press', () => {
 		const keybindings = createKeybindings()
 
 		keybindings.register(hotkey('c', 'c'), { run: () => undefined })
 
-		expect(keybindings.handlersFor('j', false)).toEqual([])
+		expect(keybindings.matching(press('j'))).toEqual([])
 	})
 
-	// Hosts compose their own plugin set, so two plugins claiming one key is a runtime
+	// Hosts compose their own plugin set, so two plugins claiming one press is a runtime
 	// fact. Nothing static can rule it out.
 	it('warns when two bindings claim the same press', () => {
 		const keybindings = createKeybindings()
@@ -81,7 +116,7 @@ describe('keybinding registry', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 
 		keybindings.register(hotkey('plain', 'h'), { run: () => undefined })
-		keybindings.register(hotkey('shifted', 'h', true), { run: () => undefined })
+		keybindings.register(hotkey('shifted', 'h', { shift: true }), { run: () => undefined })
 
 		expect(warn).not.toHaveBeenCalled()
 	})

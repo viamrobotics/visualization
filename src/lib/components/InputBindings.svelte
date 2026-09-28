@@ -5,7 +5,7 @@
 	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
 	import { MathUtils, Vector3 } from 'three'
 
-	import { useCameraKeybinding } from '$lib/keybindings'
+	import { useKeybinding } from '$lib/keybindings'
 
 	interface Props {
 		cameraControls: CameraControlsRef
@@ -13,70 +13,80 @@
 
 	let { cameraControls }: Props = $props()
 
-	const truckLeft = useCameraKeybinding({
+	const truckLeft = useKeybinding({
+		kind: 'camera',
 		id: 'camera.truckLeft',
 		key: 'a',
 		description: 'Move left',
 		group: 'Camera',
 	})
 
-	const truckRight = useCameraKeybinding({
+	const truckRight = useKeybinding({
+		kind: 'camera',
 		id: 'camera.truckRight',
 		key: 'd',
 		description: 'Move right',
 		group: 'Camera',
 	})
 
-	const forward = useCameraKeybinding({
+	const forward = useKeybinding({
+		kind: 'camera',
 		id: 'camera.forward',
 		key: 'w',
 		description: 'Move forward',
 		group: 'Camera',
 	})
 
-	const backward = useCameraKeybinding({
+	const backward = useKeybinding({
+		kind: 'camera',
 		id: 'camera.backward',
 		key: 's',
 		description: 'Move backward',
 		group: 'Camera',
 	})
 
-	const dollyIn = useCameraKeybinding({
+	const dollyIn = useKeybinding({
+		kind: 'camera',
 		id: 'camera.dollyIn',
 		key: 'e',
 		description: 'Move toward the target',
 		group: 'Camera',
 	})
 
-	const dollyOut = useCameraKeybinding({
+	const dollyOut = useKeybinding({
+		kind: 'camera',
 		id: 'camera.dollyOut',
 		key: 'q',
 		description: 'Move away from the target',
 		group: 'Camera',
 	})
 
-	const rotateLeft = useCameraKeybinding({
+	const rotateLeft = useKeybinding({
+		kind: 'camera',
 		id: 'camera.rotateLeft',
 		key: 'arrowleft',
 		description: 'Orbit left',
 		group: 'Camera',
 	})
 
-	const rotateRight = useCameraKeybinding({
+	const rotateRight = useKeybinding({
+		kind: 'camera',
 		id: 'camera.rotateRight',
 		key: 'arrowright',
 		description: 'Orbit right',
 		group: 'Camera',
 	})
 
-	const tiltUp = useCameraKeybinding({
+	const tiltUp = useKeybinding({
+		kind: 'camera',
 		id: 'camera.tiltUp',
 		key: 'arrowup',
 		description: 'Orbit up',
 		group: 'Camera',
 	})
 
-	const tiltDown = useCameraKeybinding({
+	const tiltDown = useKeybinding({
+		kind: 'camera',
 		id: 'camera.tiltDown',
 		key: 'arrowdown',
 		description: 'Orbit down',

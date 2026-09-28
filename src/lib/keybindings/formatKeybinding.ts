@@ -19,10 +19,16 @@ export const formatKey = (key: string): string => {
 }
 
 /** The keys of a binding, in press order, before any of them are printed. */
-const toTokens = (binding: Keybinding): readonly string[] => {
-	if (binding.kind === 'fixed') return binding.combo
-	if (binding.kind === 'hotkey' && binding.shift) return ['Shift', binding.key]
-	return [binding.key]
+const toTokens = (binding: Keybinding): string[] => {
+	if (binding.kind !== 'hotkey') return [binding.key]
+
+	const tokens: string[] = []
+
+	if (binding.mod) tokens.push('Mod')
+	if (binding.shift) tokens.push('Shift')
+	tokens.push(binding.key)
+
+	return tokens
 }
 
 /**

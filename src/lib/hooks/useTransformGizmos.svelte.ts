@@ -1,4 +1,4 @@
-import { getContext, onDestroy, setContext } from 'svelte'
+import { getContext, setContext, untrack } from 'svelte'
 import { SvelteSet } from 'svelte/reactivity'
 
 import { useKeybindings } from '$lib/keybindings'
@@ -89,6 +89,7 @@ export const useTransformGizmos = (): Context => {
 
 /** Publishes a gizmo's modes for as long as the calling component is mounted. */
 export const useTransformGizmo = (gizmo: TransformGizmo) => {
-	const release = useTransformGizmos().register(gizmo)
-	onDestroy(release)
+	const gizmos = useTransformGizmos()
+
+	$effect(() => untrack(() => gizmos.register(gizmo)))
 }

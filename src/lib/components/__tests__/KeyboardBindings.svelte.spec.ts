@@ -1,8 +1,8 @@
-import type { CameraKeybinding, HotkeyKeybinding } from '$lib/keybindings'
-
 import { render } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+
+import type { CameraKeybinding, HotkeyKeybinding } from '$lib/keybindings'
 
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '$lib/keybindings'
@@ -32,6 +32,15 @@ const SHOW_ALL_HIDDEN: HotkeyKeybinding = {
 	shift: true,
 	description: 'Show every hidden object',
 	group: 'View',
+}
+
+const SAVE: HotkeyKeybinding = {
+	id: 'editing.save',
+	kind: 'hotkey',
+	key: 's',
+	mod: true,
+	description: 'Save staged frame edits',
+	group: 'Editing',
 }
 
 const CAMERA_FORWARD: CameraKeybinding = {
@@ -146,13 +155,50 @@ describe('KeyboardBindings executor', () => {
 		input.remove()
 	})
 
-	it('ignores presses while a modifier is held', async () => {
+	it('ignores a press whose modifier the binding did not declare', async () => {
 		const user = userEvent.setup()
 		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 
 		keybindings.register(TOGGLE_PROJECTION, { run })
 		await user.keyboard('{Meta>}c{/Meta}')
+
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('dispatches a press whose modifier the binding declared', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(SAVE, { run })
+		await user.keyboard('{Meta>}s{/Meta}')
+
+		expect(run).toHaveBeenCalledTimes(1)
+	})
+
+	it('runs a modified shortcut even while an input has focus', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+		const input = document.createElement('input')
+		document.body.append(input)
+
+		keybindings.register(SAVE, { run })
+		input.focus()
+		await user.keyboard('{Meta>}s{/Meta}')
+
+		expect(run).toHaveBeenCalledTimes(1)
+		input.remove()
+	})
+
+	it('ignores a press while Option is held, which macOS reports as another character', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(TOGGLE_PROJECTION, { run })
+		await user.keyboard('{Alt>}c{/Alt}')
 
 		expect(run).not.toHaveBeenCalled()
 	})

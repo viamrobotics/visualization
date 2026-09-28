@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
-	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
 	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
+	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
 
 	import { moveGizmoOptions } from './moveGizmoOptions.svelte'
 

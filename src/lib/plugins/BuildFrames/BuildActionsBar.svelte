@@ -8,7 +8,7 @@
 	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useFixedKeybinding } from '$lib/keybindings'
+	import { useHotkey } from '$lib/keybindings'
 
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
@@ -16,61 +16,45 @@
 
 	const { ...rest } = $props()
 
-	const undoKeybinding = useFixedKeybinding({
+	const undoKeybinding = useHotkey({
 		id: 'editing.undo',
-		combo: ['Mod', 'z'],
+		key: 'z',
+		mod: true,
+		preventDefault: true,
 		description: 'Undo the last frame edit',
 		group: 'Editing',
+		when: () => partConfig.canUndoFrameEdit,
+		run: () => partConfig.undoFrameEdit(),
 	})
 
-	const redoKeybinding = useFixedKeybinding({
+	const redoKeybinding = useHotkey({
 		id: 'editing.redo',
-		combo: ['Mod', 'Shift', 'z'],
+		key: 'z',
+		mod: true,
+		shift: true,
+		preventDefault: true,
 		description: 'Redo the last undone frame edit',
 		group: 'Editing',
+		when: () => partConfig.canRedoFrameEdit,
+		run: () => partConfig.redoFrameEdit(),
 	})
 
-	const saveKeybinding = useFixedKeybinding({
+	const saveKeybinding = useHotkey({
 		id: 'editing.save',
-		combo: ['Mod', 's'],
+		key: 's',
+		mod: true,
+		preventDefault: true,
 		description: 'Save staged frame edits',
 		group: 'Editing',
+		when: () => environment.current.isStandalone,
+		run: () => partConfig.save(),
 	})
 
 	const discard = () => {
 		partConfig.discardChanges()
 		resetStagedEdits(world)
 	}
-
-	const handleKeydown = (event: KeyboardEvent) => {
-		if (environment.current.mode !== 'build') return
-
-		const modifier = event.metaKey || event.ctrlKey
-		const key = event.key.toLowerCase()
-
-		if (modifier && key === 's' && environment.current.isStandalone) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.save()
-			return
-		}
-
-		const redo = modifier && (key === 'y' || (key === 'z' && event.shiftKey))
-		const undo = modifier && key === 'z' && !event.shiftKey
-
-		if (redo && partConfig.canRedoFrameEdit) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.redoFrameEdit()
-		} else if (undo && partConfig.canUndoFrameEdit) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.undoFrameEdit()
-		}
-	}
 </script>
-
-<svelte:window onkeydowncapture={handleKeydown} />
 
 <OverlayPortal>
 	{#if environment.current.mode === 'build'}

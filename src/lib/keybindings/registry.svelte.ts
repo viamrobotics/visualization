@@ -1,13 +1,7 @@
-import type {
-	CameraKeybinding,
-	FixedKeybinding,
-	HotkeyKeybinding,
-	Keybinding,
-	KeybindingGroup,
-} from './keybinding'
-
-import { getContext, onDestroy, setContext } from 'svelte'
+import { getContext, setContext, untrack } from 'svelte'
 import { SvelteSet } from 'svelte/reactivity'
+
+import type { CameraKeybinding, HotkeyKeybinding, Keybinding } from './keybinding'
 
 export const KEYBINDINGS_CONTEXT_KEY = Symbol('keybindings')
 
@@ -37,15 +31,27 @@ interface Context {
 	 * settings listing should show.
 	 */
 	readonly bindings: readonly Keybinding[]
-	/** The handlers a press should run, in registration order. */
-	handlersFor: (key: string, shift: boolean) => HotkeyHandler[]
+	/** The shortcuts a press should run, in registration order. */
+	matching: (press: Press) => MatchedHotkey[]
 	register: (binding: Keybinding, handler?: HotkeyHandler) => () => void
 }
 
-const matchesPress = (binding: Keybinding, key: string, shift: boolean) =>
+export interface MatchedHotkey {
+	binding: HotkeyKeybinding
+	handler: HotkeyHandler
+}
+
+export interface Press {
+	key: string
+	shift: boolean
+	mod: boolean
+}
+
+const matchesPress = (binding: Keybinding, press: Press): binding is HotkeyKeybinding =>
 	binding.kind === 'hotkey' &&
-	binding.key === key.toLowerCase() &&
-	(binding.shift ?? false) === shift
+	binding.key === press.key.toLowerCase() &&
+	(binding.shift ?? false) === press.shift &&
+	(binding.mod ?? false) === press.mod
 
 export const createKeybindings = (): Context => {
 	const registrations = new SvelteSet<Registration>()
@@ -53,8 +59,14 @@ export const createKeybindings = (): Context => {
 	const warnOnCollision = (binding: Keybinding) => {
 		if (binding.kind !== 'hotkey') return
 
+		const press: Press = {
+			key: binding.key,
+			shift: binding.shift ?? false,
+			mod: binding.mod ?? false,
+		}
+
 		for (const existing of registrations) {
-			if (matchesPress(existing.binding, binding.key, binding.shift ?? false)) {
+			if (matchesPress(existing.binding, press)) {
 				console.warn(
 					`[keybindings] "${binding.id}" and "${existing.binding.id}" both claim the same press`
 				)
@@ -66,16 +78,16 @@ export const createKeybindings = (): Context => {
 		get bindings() {
 			return [...registrations].map((registration) => registration.binding)
 		},
-		handlersFor(key, shift) {
-			const handlers: HotkeyHandler[] = []
+		matching(press) {
+			const matched: MatchedHotkey[] = []
 
 			for (const { binding, handler } of registrations) {
-				if (handler !== undefined && matchesPress(binding, key, shift)) {
-					handlers.push(handler)
+				if (handler !== undefined && matchesPress(binding, press)) {
+					matched.push({ binding, handler })
 				}
 			}
 
-			return handlers
+			return matched
 		},
 		register(binding, handler) {
 			if (import.meta.env.DEV) {
@@ -100,13 +112,7 @@ export const useKeybindings = (): Context => {
 	return getContext<Context>(KEYBINDINGS_CONTEXT_KEY)
 }
 
-export interface HotkeyDefinition extends HotkeyHandler {
-	id: string
-	key: string
-	shift?: boolean
-	description: string
-	group: KeybindingGroup
-}
+export interface HotkeyDefinition extends HotkeyHandler, Omit<HotkeyKeybinding, 'kind'> {}
 
 /**
  * Declares a keyboard shortcut and its behavior for as long as the calling component is
@@ -116,31 +122,25 @@ export interface HotkeyDefinition extends HotkeyHandler {
  */
 export const useHotkey = ({ when, run, ...rest }: HotkeyDefinition): HotkeyKeybinding => {
 	const binding: HotkeyKeybinding = { ...rest, kind: 'hotkey' }
-	const release = useKeybindings().register(binding, { when, run })
+	const keybindings = useKeybindings()
 
-	onDestroy(release)
-
-	return binding
-}
-
-/** Lists a camera shortcut while its poller is mounted. `InputBindings` reads the key. */
-export const useCameraKeybinding = (
-	definition: Omit<CameraKeybinding, 'kind'>
-): CameraKeybinding => {
-	const binding: CameraKeybinding = { ...definition, kind: 'camera' }
-	const release = useKeybindings().register(binding)
-
-	onDestroy(release)
+	// Untracked: registering reads the set of registrations to check for a collision, and
+	// taking a dependency on it would re-run this every time any other shortcut registers.
+	$effect(() => untrack(() => keybindings.register(binding, { when, run })))
 
 	return binding
 }
 
-/** Lists a shortcut the calling component matches itself, such as `⌘Z`. */
-export const useFixedKeybinding = (definition: Omit<FixedKeybinding, 'kind'>): FixedKeybinding => {
-	const binding: FixedKeybinding = { ...definition, kind: 'fixed' }
-	const release = useKeybindings().register(binding)
+/**
+ * Lists a shortcut the dispatcher does not run. `InputBindings` polls these every frame
+ * instead, because holding the key has to keep moving the camera rather than fire once.
+ *
+ * @returns The shortcut, for handing to `Kbd`.
+ */
+export const useKeybinding = (binding: CameraKeybinding): CameraKeybinding => {
+	const keybindings = useKeybindings()
 
-	onDestroy(release)
+	$effect(() => untrack(() => keybindings.register(binding)))
 
 	return binding
 }

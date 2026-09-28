@@ -16,19 +16,28 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 
 	const onkeydown = (event: KeyboardEvent) => {
 		if (!environment.current.inputBindingsEnabled) return
-		// Modified presses belong to the browser (cmd+c) or to handlers with their
-		// own modifier semantics; repeats would re-fire toggles while a key is held.
-		if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
-		if (isEditable(event.target)) return
+		// Repeats would re-fire a toggle while the key is held. Option is never part of a
+		// shortcut, because macOS rewrites the character it reports.
+		if (event.repeat || event.altKey) return
 
-		const handlers = keybindings.handlersFor(event.key, event.shiftKey)
+		const mod = event.metaKey || event.ctrlKey
 
-		for (const handler of handlers) {
-			if (handler.when?.() ?? true) {
-				handler.run()
+		// An unmodified press typed into a field belongs to the field. A modified one does
+		// not, so ⌘S still saves while an input has focus.
+		if (!mod && isEditable(event.target)) return
+
+		const matched = keybindings.matching({ key: event.key, shift: event.shiftKey, mod })
+
+		for (const { binding, handler } of matched) {
+			if (!(handler.when?.() ?? true)) continue
+
+			if (binding.preventDefault) {
+				event.preventDefault()
 			}
+
+			handler.run()
 		}
 	}
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window onkeydowncapture={onkeydown} />
