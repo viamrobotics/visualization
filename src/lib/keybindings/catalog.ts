@@ -26,9 +26,6 @@ export interface HotkeyKeybinding extends BaseKeybinding {
 	 * Whether held Shift is part of the binding. Shift is the only modifier the registry
 	 * takes: the command key belongs to the browser, and Option rewrites the character
 	 * macOS reports, so an Option binding would have to be matched by `code` instead.
-	 *
-	 * A binding without it never fires while Shift is held, so `h` and `Shift+H` stay
-	 * separate shortcuts.
 	 */
 	shift?: boolean
 }
@@ -44,11 +41,12 @@ export interface CameraKeybinding extends BaseKeybinding {
 }
 
 /**
- * Implemented by its own handler and listed for discoverability only.
+ * A shortcut the catalog describes but does not dispatch. Its own component matches the
+ * keys, such as `⌘Z` in `BuildActionsBar` and held Shift in `Lasso`.
  *
- * These are the conventions a user already expects to work, so nothing is gained by letting
- * them move. Leaving them off the listing would read as "unsupported" rather than "not
- * configurable", which is why they are here at all.
+ * Listing it here is what puts it in the settings panel, so a user can find it. It is not
+ * rebindable: the registry matches a single key plus Shift, so it could not dispatch these
+ * combinations even if they were registered.
  */
 export interface FixedKeybinding extends BaseKeybinding {
 	kind: 'fixed'
