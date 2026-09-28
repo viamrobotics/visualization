@@ -19,6 +19,7 @@ the reason the matrix is copied rather than decomposed into props.
 
 	interface Props {
 		entity: Entity
+
 		/** Line-segment endpoints from `frustumPositions`. */
 		positions: Float32Array
 	}
@@ -50,29 +51,22 @@ the reason the matrix is copied rather than decomposed into props.
 	const lines = new LineSegments2(geometry, material)
 	lines.matrixAutoUpdate = false
 
-	$effect.pre(() => {
+	$effect(() => {
 		geometry.setPositions(positions)
 		invalidate()
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		const { r, g, b } = color.current ?? FALLBACK_COLOR
 		material.color.setRGB(r, g, b)
 		invalidate()
 	})
 
-	$effect.pre(() => {
+	$effect(() => {
 		if (!worldMatrix.current) return
 		lines.matrix.copy(worldMatrix.current)
 		lines.updateMatrixWorld()
 		invalidate()
-	})
-
-	$effect(() => {
-		return () => {
-			geometry.dispose()
-			material.dispose()
-		}
 	})
 </script>
 
@@ -83,4 +77,7 @@ the reason the matrix is copied rather than decomposed into props.
 	dispose={false}
 	raycast={() => null}
 	visible={invisible.current !== true}
-/>
+>
+	<T is={geometry} />
+	<T is={material} />
+</T>

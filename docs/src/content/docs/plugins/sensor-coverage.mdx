@@ -1,0 +1,63 @@
+---
+title: <SensorCoverage />
+description: Draws each camera's view frustum from its own frame, so you can see where a camera reaches without opening a feed.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+`<SensorCoverage />` draws each of the machine's cameras as a wireframe view frustum, pinned to that camera's frame. It answers placement questions directly in the scene: whether something is in view at this arm pose, whether two wrist cameras leave a blind spot between them, whether the gripper occludes the shot, etc.
+
+The frustum comes from the intrinsics the camera reports through `GetProperties`, so it is the real field of view, not an assumed one.
+
+<Aside
+	type="note"
+	title="Coverage, not simulation"
+>
+	This draws the boundary of what a camera can see. It does not render the image the camera would
+	produce.
+</Aside>
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { SensorCoverage } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<SensorCoverage />
+	</Visualizer>
+</div>
+```
+
+## Controls
+
+Mounting the plugin adds a **Sensors** tab to the settings pane:
+
+| Control             | Effect                                                                     |
+| ------------------- | -------------------------------------------------------------------------- |
+| **Camera coverage** | Master switch. Off draws nothing, and leaves the per-camera choices alone. |
+| **Range (m)**       | Far-plane depth. See [Range](#range) below.                                |
+| **Cameras**         | Per-camera switches, with a note on any camera reporting no intrinsics.    |
+
+## Range
+
+A camera reports no depth range, so how far the frustum reaches is a display choice rather than a camera property. The default is 2 m.
+
+The near plane is fixed at the camera origin, which is why the four side edges converge to a point at the lens rather than being cut off by a near rectangle.
+
+## Which cameras draw
+
+A camera is drawn when all of these hold:
+
+- It reports `intrinsicParameters` with a positive focal length on both axes.
+- Its principal point falls inside the image. A camera that reports the message but leaves the values zero fails this, and is listed as having no intrinsics rather than drawn skewed.
+- It has a frame in the frame system. Without one there is no pose to draw from.
+
+A frustum takes its colour from its frame's own color, so it matches the rest of that camera's geometry in the scene. It is excluded from hit-testing, so it never blocks a click on anything behind it.
+
+## Runtime requirements
+
+`GetProperties` is called once per camera and never polled, since intrinsics are fixed for the life of a camera. The reply is fetched whether or not the drawing is switched on, so the settings panel can tell a camera with no intrinsics apart from one that is merely switched off.

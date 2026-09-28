@@ -22,6 +22,15 @@ export interface DetailsSection {
 	tab?: DetailsTabId
 }
 
+/** The default tab, applied to a section that names none. */
+const DEFAULT_TAB: DetailsTabId = 'details'
+
+/** The sections belonging to `tab`, in registration order. */
+export const sectionsForTab = (
+	sections: readonly DetailsSection[],
+	tab: DetailsTabId
+): DetailsSection[] => sections.filter((section) => (section.tab ?? DEFAULT_TAB) === tab)
+
 interface Context {
 	/** Registered sections, in registration order — which is render order. */
 	readonly current: DetailsSection[]

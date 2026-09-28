@@ -9,7 +9,7 @@ registration order.
 
 	import type { DetailsTabId } from '$lib/hooks/useDetailsSections.svelte'
 
-	import { useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
+	import { sectionsForTab, useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 
 	interface Props {
 		entity: Entity
@@ -20,9 +20,7 @@ registration order.
 
 	const sections = useDetailsSections()
 
-	const visible = $derived(
-		(sections?.current ?? []).filter((section) => (section.tab ?? 'details') === tab)
-	)
+	const visible = $derived(sectionsForTab(sections?.current ?? [], tab))
 </script>
 
 {#each visible as section (section)}
