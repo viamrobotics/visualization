@@ -43,7 +43,9 @@ interface Context {
 }
 
 const matchesPress = (binding: Keybinding, key: string, shift: boolean) =>
-	binding.kind === 'hotkey' && binding.key === key.toLowerCase() && (binding.shift ?? false) === shift
+	binding.kind === 'hotkey' &&
+	binding.key === key.toLowerCase() &&
+	(binding.shift ?? false) === shift
 
 export const createKeybindings = (): Context => {
 	const registrations = new SvelteSet<Registration>()

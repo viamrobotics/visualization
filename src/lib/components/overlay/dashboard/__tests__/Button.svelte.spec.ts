@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
-import { KEYBINDINGS } from '$lib/keybindings'
+import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 
 import Button from '../Button.svelte'
 
@@ -54,7 +54,7 @@ describe('<Button> (dashboard)', () => {
 			props: {
 				icon: 'cursor-move',
 				description: 'Translate',
-				keybinding: KEYBINDINGS.transformTranslate,
+				keybinding: TRANSFORM_KEYBINDINGS.translate,
 			},
 		})
 
