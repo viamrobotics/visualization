@@ -8,7 +8,7 @@ import { useWorld } from '$lib/ecs'
 
 import type { IKStatus } from './parse-ik-solutions'
 
-import { type ParsedPlan, parsePlan } from '../parse-plan'
+import { type ParsedPlan, parsePlan, splitJsonObjects } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'
 import {
 	applySnapshot,
@@ -68,7 +68,8 @@ const readRequestExtras = (
 	content: string
 ): { startConfiguration: Record<string, number[]>; worldState: unknown } => {
 	try {
-		const raw = JSON.parse(content) as {
+		const [request] = splitJsonObjects(content)
+		const raw = JSON.parse(request) as {
 			start_state?: { configuration?: Record<string, number[]> }
 			world_state?: unknown
 		}

@@ -94,7 +94,7 @@ const readJSONObject = (text: string, start: number): { raw: string; end: number
 	return null
 }
 
-const splitJsonObjects = (content: string): string[] => {
+export const splitJsonObjects = (content: string): string[] => {
 	const chunks: string[] = []
 	let index = 0
 	for (let i = 0; i < 8; i++) {
