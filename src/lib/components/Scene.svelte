@@ -13,11 +13,9 @@
 	import { traits, useQuery } from '$lib/ecs'
 	import { bvh } from '$lib/hooks/plugins/bvh.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { providePointBudget } from '$lib/hooks/usePointBudget.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useTransformModeHotkeys } from '$lib/hooks/useTransformModeHotkeys.svelte'
-	import { KEYBINDINGS } from '$lib/keybindings'
+	import { useHotkey } from '$lib/keybindings'
 
 	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 	import BatchedArrows from './BatchedArrows.svelte'
@@ -59,9 +57,11 @@
 	const selected = useQuery(traits.Selected)
 	const hidden = useQuery(traits.Invisible)
 
-	useTransformModeHotkeys()
-
-	useHotkey(KEYBINDINGS.toggleSelectionVisibility, {
+	useHotkey({
+		id: 'view.toggleSelectionVisibility',
+		key: 'h',
+		description: 'Hide or show the selection',
+		group: 'View',
 		when: () => selected.current.length > 0,
 		run: () => {
 			for (const entity of selected.current) {
@@ -74,7 +74,12 @@
 		},
 	})
 
-	useHotkey(KEYBINDINGS.showAllHidden, {
+	useHotkey({
+		id: 'view.showAllHidden',
+		key: 'h',
+		shift: true,
+		description: 'Show every hidden object',
+		group: 'View',
 		when: () => hidden.current.length > 0,
 		run: () => {
 			for (const entity of hidden.current) {

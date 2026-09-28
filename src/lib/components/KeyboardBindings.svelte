@@ -5,11 +5,10 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 -->
 <script lang="ts">
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useHotkeys } from '$lib/hooks/useHotkeys.svelte'
-	import { getHotkeyForKey } from '$lib/keybindings'
+	import { useKeybindings } from '$lib/keybindings'
 
 	const environment = useEnvironment()
-	const hotkeys = useHotkeys()
+	const keybindings = useKeybindings()
 
 	const isEditable = (target: EventTarget | null) =>
 		target instanceof HTMLElement &&
@@ -22,22 +21,12 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 		if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
 		if (isEditable(event.target)) return
 
-		const binding = getHotkeyForKey(event.key, event.shiftKey)
-		if (binding === undefined) return
+		const handlers = keybindings.handlersFor(event.key, event.shiftKey)
 
-		const handlers = hotkeys.handlers.get(binding.id)
-		if (handlers === undefined) return
-
-		const applicable = [...handlers].filter((handler) => handler.when?.() ?? true)
-
-		// One key means one action now, so a second applicable handler is two components
-		// implementing the same shortcut rather than two features sharing a key.
-		if (import.meta.env.DEV && applicable.length > 1) {
-			console.warn(`[KeyboardBindings] ${applicable.length} components implement "${binding.id}"`)
-		}
-
-		for (const handler of applicable) {
-			handler.run()
+		for (const handler of handlers) {
+			if (handler.when?.() ?? true) {
+				handler.run()
+			}
 		}
 	}
 </script>

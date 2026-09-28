@@ -2,7 +2,7 @@
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
-	import { KEYBINDINGS } from '$lib/keybindings'
+	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 
 	import { moveGizmoOptions } from './moveGizmoOptions.svelte'
 
@@ -24,8 +24,8 @@
 			icon="cursor-move"
 			class="rounded-r-none"
 			active={moveGizmoOptions.mode === 'translate'}
-			description={KEYBINDINGS.transformTranslate.description}
-			keybinding={KEYBINDINGS.transformTranslate}
+			description={TRANSFORM_KEYBINDINGS.translate.description}
+			keybinding={TRANSFORM_KEYBINDINGS.translate}
 			onclick={() => {
 				moveGizmoOptions.mode = 'translate'
 			}}
@@ -34,8 +34,8 @@
 			icon="sync"
 			class="-ml-px rounded-l-none"
 			active={moveGizmoOptions.mode === 'rotate'}
-			description={KEYBINDINGS.transformRotate.description}
-			keybinding={KEYBINDINGS.transformRotate}
+			description={TRANSFORM_KEYBINDINGS.rotate.description}
+			keybinding={TRANSFORM_KEYBINDINGS.rotate}
 			onclick={() => {
 				moveGizmoOptions.mode = 'rotate'
 			}}

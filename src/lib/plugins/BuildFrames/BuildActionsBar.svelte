@@ -8,13 +8,34 @@
 	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { KEYBINDINGS } from '$lib/keybindings'
+	import { useFixedKeybinding } from '$lib/keybindings'
 
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
 	const world = useWorld()
 
 	const { ...rest } = $props()
+
+	const undoKeybinding = useFixedKeybinding({
+		id: 'editing.undo',
+		combo: ['Mod', 'z'],
+		description: 'Undo the last frame edit',
+		group: 'Editing',
+	})
+
+	const redoKeybinding = useFixedKeybinding({
+		id: 'editing.redo',
+		combo: ['Mod', 'Shift', 'z'],
+		description: 'Redo the last undone frame edit',
+		group: 'Editing',
+	})
+
+	const saveKeybinding = useFixedKeybinding({
+		id: 'editing.save',
+		combo: ['Mod', 's'],
+		description: 'Save staged frame edits',
+		group: 'Editing',
+	})
 
 	const discard = () => {
 		partConfig.discardChanges()
@@ -80,7 +101,7 @@
 						<div class="flex items-center gap-2">
 							<Undo2 size={14} />
 							Undo
-							<Kbd binding={KEYBINDINGS.undo} />
+							<Kbd binding={undoKeybinding} />
 						</div>
 					</Button>
 
@@ -92,7 +113,7 @@
 						<div class="flex items-center gap-2">
 							<Redo2 size={14} />
 							Redo
-							<Kbd binding={KEYBINDINGS.redo} />
+							<Kbd binding={redoKeybinding} />
 						</div>
 					</Button>
 
@@ -115,7 +136,7 @@
 						>
 							<div class="flex items-center gap-2">
 								Save
-								<Kbd binding={KEYBINDINGS.save} />
+								<Kbd binding={saveKeybinding} />
 							</div>
 						</Button>
 					{/if}

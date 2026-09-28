@@ -4,7 +4,18 @@ export type {
 	HotkeyKeybinding,
 	Keybinding,
 	KeybindingGroup,
-} from './catalog'
+} from './keybinding'
 
-export { ALL_KEYBINDINGS, getHotkeyForKey, KEYBINDINGS } from './catalog'
+export type { HotkeyDefinition, HotkeyHandler } from './registry.svelte'
+
+export {
+	createKeybindings,
+	KEYBINDINGS_CONTEXT_KEY,
+	provideKeybindings,
+	useCameraKeybinding,
+	useFixedKeybinding,
+	useHotkey,
+	useKeybindings,
+} from './registry.svelte'
+
 export { formatKey, formatKeybinding, keybindingParts } from './formatKeybinding'

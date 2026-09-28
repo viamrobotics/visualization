@@ -2,17 +2,25 @@
 	import type { Keybinding, KeybindingGroup } from '$lib/keybindings'
 
 	import Kbd from '$lib/components/overlay/Kbd.svelte'
-	import { ALL_KEYBINDINGS } from '$lib/keybindings'
+	import { useKeybindings } from '$lib/keybindings'
 
 	const GROUP_ORDER: KeybindingGroup[] = ['Camera', 'Transform', 'View', 'Selection', 'Editing']
 
-	const groups = GROUP_ORDER.map((group) => ({
-		group,
-		bindings: ALL_KEYBINDINGS.filter((binding) => binding.group === group),
-	})).filter(({ bindings }) => bindings.length > 0)
+	const keybindings = useKeybindings()
 
-	// A fixed binding is a convention the user already expects, so it is listed to be
-	// discoverable and marked as something they cannot move.
+	// Two components can announce one shortcut, such as a gesture both selection tools
+	// honour, and it should be listed once.
+	const unique = $derived([
+		...new Map(keybindings.bindings.map((binding) => [binding.id, binding])).values(),
+	])
+
+	const groups = $derived(
+		GROUP_ORDER.map((group) => ({
+			group,
+			bindings: unique.filter((binding) => binding.group === group),
+		})).filter(({ bindings }) => bindings.length > 0)
+	)
+
 	const isFixed = (binding: Keybinding) => binding.kind === 'fixed'
 </script>
 

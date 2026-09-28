@@ -2,8 +2,7 @@
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import { traits, useQuery } from '$lib/ecs'
-	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
-	import { KEYBINDINGS } from '$lib/keybindings'
+	import { useHotkey } from '$lib/keybindings'
 
 	import { provideIsolate } from './provideIsolate.svelte'
 
@@ -15,7 +14,11 @@
 
 	const canIsolate = $derived(selected.current.length > 0 || isolating)
 
-	useHotkey(KEYBINDINGS.isolateSelection, {
+	const isolate = useHotkey({
+		id: 'view.isolateSelection',
+		key: '/',
+		description: 'Isolate selection',
+		group: 'View',
 		when: () => canIsolate,
 		run: () => (isolating = !isolating),
 	})
@@ -27,8 +30,8 @@
 			icon="crop-free"
 			active={isolating}
 			disabled={!canIsolate}
-			description={KEYBINDINGS.isolateSelection.description}
-			keybinding={KEYBINDINGS.isolateSelection}
+			description={isolate.description}
+			keybinding={isolate}
 			onclick={() => (isolating = !isolating)}
 		/>
 	</fieldset>

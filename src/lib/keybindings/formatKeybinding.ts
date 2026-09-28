@@ -1,4 +1,4 @@
-import type { Keybinding } from './catalog'
+import type { Keybinding } from './keybinding'
 
 const ARROW_SYMBOLS: Record<string, string> = {
 	arrowup: '↑',

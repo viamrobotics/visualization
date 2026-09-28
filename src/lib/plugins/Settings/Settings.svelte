@@ -20,11 +20,11 @@
 
 	const BUILT_IN_TABS = [
 		{ label: 'Scene', component: SceneSettings },
-		{ label: 'Controls', component: ControlsSettings },
-		{ label: 'Keybindings', component: KeybindingsSettings },
 		{ label: 'Frames', component: FramesSettings },
 		{ label: 'Pointclouds', component: PointcloudSettings },
 		{ label: 'Vision', component: VisionSettings },
+		{ label: 'Controls', component: ControlsSettings },
+		{ label: 'Keybindings', component: KeybindingsSettings },
 		{ label: 'Debug', component: DebugSettings },
 		{ label: 'Weblabs', component: WeblabSettings },
 	]

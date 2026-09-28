@@ -11,6 +11,7 @@
 	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
 	import { traits, useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useFixedKeybinding } from '$lib/keybindings'
 
 	import Ellipse from './Ellipse.svelte'
 	import Lasso from './Lasso.svelte'
@@ -43,6 +44,13 @@
 	const isSelectionMode = $derived(settings.current.interactionMode === 'select')
 
 	const selectionPlugin = provideSelectionPlugin()
+
+	useFixedKeybinding({
+		id: 'selection.addToSelection',
+		combo: ['Shift'],
+		description: 'Hold while dragging to add to the selection',
+		group: 'Selection',
+	})
 
 	let selectionType = $state<SelectionType>('lasso')
 

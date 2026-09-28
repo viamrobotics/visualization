@@ -7,7 +7,7 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
-	import { KEYBINDINGS } from '$lib/keybindings'
+	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 
 	const settings = useSettings()
 	const environment = useEnvironment()
@@ -31,8 +31,8 @@
 				icon="mouse-pointer"
 				class="rounded-r-none"
 				active={settings.current.transformMode === 'none'}
-				description={KEYBINDINGS.transformNone.description}
-				keybinding={KEYBINDINGS.transformNone}
+				description={TRANSFORM_KEYBINDINGS.none.description}
+				keybinding={TRANSFORM_KEYBINDINGS.none}
 				onclick={() => {
 					settings.current.transformMode = 'none'
 				}}
@@ -41,8 +41,8 @@
 				icon="cursor-move"
 				class="-ml-px rounded-none"
 				active={settings.current.transformMode === 'translate'}
-				description={KEYBINDINGS.transformTranslate.description}
-				keybinding={KEYBINDINGS.transformTranslate}
+				description={TRANSFORM_KEYBINDINGS.translate.description}
+				keybinding={TRANSFORM_KEYBINDINGS.translate}
 				onclick={() => {
 					settings.current.transformMode = 'translate'
 				}}
@@ -51,8 +51,8 @@
 				icon="sync"
 				class="-ml-px rounded-none"
 				active={settings.current.transformMode === 'rotate'}
-				description={KEYBINDINGS.transformRotate.description}
-				keybinding={KEYBINDINGS.transformRotate}
+				description={TRANSFORM_KEYBINDINGS.rotate.description}
+				keybinding={TRANSFORM_KEYBINDINGS.rotate}
 				onclick={() => {
 					settings.current.transformMode = 'rotate'
 				}}
@@ -61,8 +61,8 @@
 				icon="resize"
 				class="-ml-px rounded-l-none"
 				active={settings.current.transformMode === 'scale'}
-				description={KEYBINDINGS.transformScale.description}
-				keybinding={KEYBINDINGS.transformScale}
+				description={TRANSFORM_KEYBINDINGS.scale.description}
+				keybinding={TRANSFORM_KEYBINDINGS.scale}
 				onclick={() => {
 					settings.current.transformMode = 'scale'
 				}}
