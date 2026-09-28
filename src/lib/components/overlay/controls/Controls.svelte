@@ -8,6 +8,7 @@
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { KEYBINDINGS } from '$lib/keybindings'
 
 	const { scene } = useThrelte()
 	const settings = useSettings()
@@ -25,15 +26,11 @@
 		focusCameraOnEntities(cameraControls.current, scene, selected.current)
 	}
 
-	useHotkey({
-		key: 'c',
-		description: 'Toggle camera projection',
+	useHotkey(KEYBINDINGS.toggleProjection, {
 		run: toggleProjection,
 	})
 
-	useHotkey({
-		key: 'f',
-		description: 'Focus object',
+	useHotkey(KEYBINDINGS.focusSelection, {
 		when: () => canFocus,
 		run: focusSelection,
 	})
@@ -46,8 +43,8 @@
 		<Button
 			class="rounded-b-none"
 			icon="image-filter-center-focus"
-			description="Focus object"
-			hotkey="F"
+			description={KEYBINDINGS.focusSelection.description}
+			keybinding={KEYBINDINGS.focusSelection}
 			disabled={!canFocus}
 			tooltipLocation="left"
 			onclick={focusSelection}
@@ -65,7 +62,7 @@
 			class="-my-0.5 rounded-t-none"
 			icon={isOrthographic ? 'grid-orthographic' : 'grid-perspective'}
 			description={isOrthographic ? 'Switch to perspective view' : 'Switch to orthographic view'}
-			hotkey="C"
+			keybinding={KEYBINDINGS.toggleProjection}
 			tooltipLocation="left"
 			onclick={toggleProjection}
 		/>

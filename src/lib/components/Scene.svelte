@@ -16,6 +16,8 @@
 	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { providePointBudget } from '$lib/hooks/usePointBudget.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useTransformModeHotkeys } from '$lib/hooks/useTransformModeHotkeys.svelte'
+	import { KEYBINDINGS } from '$lib/keybindings'
 
 	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 	import BatchedArrows from './BatchedArrows.svelte'
@@ -55,10 +57,11 @@
 	providePointBudget(() => settings.current.pointBudget)
 
 	const selected = useQuery(traits.Selected)
+	const hidden = useQuery(traits.Invisible)
 
-	useHotkey({
-		key: 'h',
-		description: 'Hide or show the selection',
+	useTransformModeHotkeys()
+
+	useHotkey(KEYBINDINGS.toggleSelectionVisibility, {
 		when: () => selected.current.length > 0,
 		run: () => {
 			for (const entity of selected.current) {
@@ -67,6 +70,15 @@
 				} else {
 					entity?.add(traits.Invisible)
 				}
+			}
+		},
+	})
+
+	useHotkey(KEYBINDINGS.showAllHidden, {
+		when: () => hidden.current.length > 0,
+		run: () => {
+			for (const entity of hidden.current) {
+				entity?.remove(traits.Invisible)
 			}
 		},
 	})

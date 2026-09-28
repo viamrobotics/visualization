@@ -1,54 +1,50 @@
 import { describe, expect, it } from 'vitest'
 
-import { createHotkeys, type HotkeyBinding } from '$lib/hooks/useHotkeys.svelte'
+import { createHotkeys, type HotkeyHandler } from '$lib/hooks/useHotkeys.svelte'
+import { KEYBINDINGS } from '$lib/keybindings'
 
-const binding = (key: string): HotkeyBinding => ({
-	key,
-	description: `binding for ${key}`,
-	run: () => undefined,
-})
+const handler = (): HotkeyHandler => ({ run: () => undefined })
 
 describe('createHotkeys registry', () => {
-	it('stores bindings under their lowercased key', () => {
+	it('stores handlers under the binding id', () => {
 		const hotkeys = createHotkeys()
-		const registered = binding('C')
+		const registered = handler()
 
-		hotkeys.register(registered)
+		hotkeys.register(KEYBINDINGS.toggleProjection, registered)
 
-		expect([...(hotkeys.bindings.get('c') ?? [])]).toEqual([registered])
-		expect(hotkeys.bindings.has('C')).toBe(false)
+		expect([...(hotkeys.handlers.get('camera.toggleProjection') ?? [])]).toEqual([registered])
 	})
 
-	it('keeps other bindings on the same key when one is released', () => {
+	it('keeps other handlers for the same binding when one is released', () => {
 		const hotkeys = createHotkeys()
-		const first = binding('x')
-		const second = binding('x')
+		const first = handler()
+		const second = handler()
 
-		const release = hotkeys.register(first)
-		hotkeys.register(second)
+		const release = hotkeys.register(KEYBINDINGS.isolateSelection, first)
+		hotkeys.register(KEYBINDINGS.isolateSelection, second)
 		release()
 
-		expect([...(hotkeys.bindings.get('x') ?? [])]).toEqual([second])
+		expect([...(hotkeys.handlers.get('view.isolateSelection') ?? [])]).toEqual([second])
 	})
 
-	it('drops the key once its last binding is released', () => {
+	it('drops the binding once its last handler is released', () => {
 		const hotkeys = createHotkeys()
 
-		const release = hotkeys.register(binding('x'))
+		const release = hotkeys.register(KEYBINDINGS.isolateSelection, handler())
 		release()
 
-		expect(hotkeys.bindings.has('x')).toBe(false)
+		expect(hotkeys.handlers.has('view.isolateSelection')).toBe(false)
 	})
 
 	it('ignores a release called more than once', () => {
 		const hotkeys = createHotkeys()
-		const stale = binding('x')
+		const stale = handler()
 
-		const release = hotkeys.register(stale)
+		const release = hotkeys.register(KEYBINDINGS.isolateSelection, stale)
 		release()
-		hotkeys.register(stale)
+		hotkeys.register(KEYBINDINGS.isolateSelection, stale)
 		release()
 
-		expect(hotkeys.bindings.get('x')?.has(stale)).toBe(true)
+		expect(hotkeys.handlers.get('view.isolateSelection')?.has(stale)).toBe(true)
 	})
 })

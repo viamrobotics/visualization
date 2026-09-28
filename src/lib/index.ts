@@ -1,7 +1,8 @@
 export { default as Visualizer } from './components/App.svelte'
 
 export { useSettings } from './hooks/useSettings.svelte'
-export { type HotkeyBinding, useHotkey } from './hooks/useHotkeys.svelte'
+export { type HotkeyHandler, useHotkey } from './hooks/useHotkeys.svelte'
+export { type HotkeyKeybinding, type Keybinding, KEYBINDINGS } from './keybindings'
 export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
 export { type DetailsSection, useDetailsSection } from './hooks/useDetailsSections.svelte'
 export {

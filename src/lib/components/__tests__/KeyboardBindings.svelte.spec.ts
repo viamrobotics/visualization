@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import { createHotkeys, HOTKEYS_CONTEXT_KEY } from '$lib/hooks/useHotkeys.svelte'
+import { KEYBINDINGS } from '$lib/keybindings'
 
 import KeyboardBindings from '../KeyboardBindings.svelte'
 
@@ -22,26 +23,61 @@ const renderExecutor = () => {
 }
 
 describe('KeyboardBindings executor', () => {
-	it('runs an applicable binding when its key is pressed', async () => {
+	it('runs an applicable handler when the binding key is pressed', async () => {
 		const user = userEvent.setup()
 		const { hotkeys } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
 		await user.keyboard('c')
 
 		expect(run).toHaveBeenCalledTimes(1)
 	})
 
-	it('matches keys case-insensitively', async () => {
+	it('matches keys case-insensitively', () => {
+		const { hotkeys } = renderExecutor()
+		const run = vi.fn()
+
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'C' }))
+
+		expect(run).toHaveBeenCalledTimes(1)
+	})
+
+	it('ignores a key no binding claims', async () => {
 		const user = userEvent.setup()
 		const { hotkeys } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'C', description: 'test', run })
-		await user.keyboard('c')
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
+		await user.keyboard('j')
 
-		expect(run).toHaveBeenCalledTimes(1)
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('ignores a camera key, which InputBindings polls instead', async () => {
+		const user = userEvent.setup()
+		const { hotkeys } = renderExecutor()
+		const run = vi.fn()
+
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
+		await user.keyboard(KEYBINDINGS.cameraForward.key)
+
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('dispatches a shifted press to its own binding', async () => {
+		const user = userEvent.setup()
+		const { hotkeys } = renderExecutor()
+		const toggle = vi.fn()
+		const showAll = vi.fn()
+
+		hotkeys.register(KEYBINDINGS.toggleSelectionVisibility, { run: toggle })
+		hotkeys.register(KEYBINDINGS.showAllHidden, { run: showAll })
+		await user.keyboard('{Shift>}h{/Shift}')
+
+		expect(showAll).toHaveBeenCalledTimes(1)
+		expect(toggle).not.toHaveBeenCalled()
 	})
 
 	it('consults when() at dispatch time', async () => {
@@ -50,7 +86,7 @@ describe('KeyboardBindings executor', () => {
 		const run = vi.fn()
 		let applicable = false
 
-		hotkeys.register({ key: 'c', description: 'test', when: () => applicable, run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { when: () => applicable, run })
 
 		await user.keyboard('c')
 		expect(run).not.toHaveBeenCalled()
@@ -67,7 +103,7 @@ describe('KeyboardBindings executor', () => {
 		const input = document.createElement('input')
 		document.body.append(input)
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
 		input.focus()
 		await user.keyboard('c')
 
@@ -81,7 +117,7 @@ describe('KeyboardBindings executor', () => {
 		const { hotkeys } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
 		await user.keyboard('{Meta>}c{/Meta}')
 
 		expect(run).not.toHaveBeenCalled()
@@ -91,7 +127,7 @@ describe('KeyboardBindings executor', () => {
 		const { hotkeys } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
 		// userEvent cannot express auto-repeat, so dispatch the raw event.
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', repeat: true }))
 
@@ -103,26 +139,28 @@ describe('KeyboardBindings executor', () => {
 		const { environment, hotkeys } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run })
 		environment.current.inputBindingsEnabled = false
 		await user.keyboard('c')
 
 		expect(run).not.toHaveBeenCalled()
 	})
 
-	it('runs every applicable binding on a shared key and warns about the collision', async () => {
+	it('runs every handler for one binding and warns that two components implement it', async () => {
 		const user = userEvent.setup()
 		const { hotkeys } = renderExecutor()
 		const warn = vi.spyOn(console, 'warn')
 		const first = vi.fn()
 		const second = vi.fn()
 
-		hotkeys.register({ key: 'x', description: 'first', run: first })
-		hotkeys.register({ key: 'x', description: 'second', run: second })
-		await user.keyboard('x')
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run: first })
+		hotkeys.register(KEYBINDINGS.toggleProjection, { run: second })
+		await user.keyboard('c')
 
 		expect(first).toHaveBeenCalledTimes(1)
 		expect(second).toHaveBeenCalledTimes(1)
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('2 bindings apply to "x"'))
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining('2 components implement "camera.toggleProjection"')
+		)
 	})
 })

@@ -27,6 +27,7 @@
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import { provideTransformGizmos } from '$lib/hooks/useTransformGizmos.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
 	import { provideFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
 	import { domPortal } from '$lib/portal'
@@ -90,6 +91,7 @@
 	provideWorld()
 	provideSettingsTabs()
 	provideHotkeys()
+	provideTransformGizmos()
 
 	const settings = provideSettings()
 	const environment = provideEnvironment()

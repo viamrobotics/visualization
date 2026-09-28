@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
+import { KEYBINDINGS } from '$lib/keybindings'
+
 import Button from '../Button.svelte'
 
 describe('<Button> (dashboard)', () => {
@@ -46,10 +48,14 @@ describe('<Button> (dashboard)', () => {
 		expect(label.className).toContain('border-gray-5')
 	})
 
-	it('renders the hotkey in the tooltip description', async () => {
+	it('renders the keybinding in the tooltip description', async () => {
 		const user = userEvent.setup()
 		render(Button, {
-			props: { icon: 'cursor-move', description: 'Translate', hotkey: '1' },
+			props: {
+				icon: 'cursor-move',
+				description: 'Translate',
+				keybinding: KEYBINDINGS.transformTranslate,
+			},
 		})
 
 		await user.hover(screen.getByRole('radio', { name: 'Translate' }))

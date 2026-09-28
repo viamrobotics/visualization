@@ -1,50 +1,50 @@
 import { getContext, onDestroy, setContext } from 'svelte'
 import { SvelteMap, SvelteSet } from 'svelte/reactivity'
 
+import type { HotkeyKeybinding } from '$lib/keybindings'
+
 export const HOTKEYS_CONTEXT_KEY = Symbol('hotkeys')
 
-export interface HotkeyBinding {
-	/** `KeyboardEvent.key` to match, case-insensitively. Single keys only — presses with a modifier held never dispatch. */
-	key: string
-	/** What the binding does, for tooltips and shortcut listings. */
-	description: string
+export interface HotkeyHandler {
 	/**
-	 * Whether the binding applies right now. Evaluated when the key is pressed, so
-	 * it can close over reactive state with no effect wiring. Omitted = applies
-	 * whenever the registrant is mounted.
+	 * Whether the shortcut applies right now. Evaluated when the key is pressed, so it can
+	 * close over reactive state with no effect wiring. Omitted = applies whenever the
+	 * registrant is mounted.
+	 *
+	 * Test what the action needs, never which mode the app is in. A mode check here is how
+	 * two features end up fighting over one key.
 	 */
 	when?: () => boolean
 	run: () => void
 }
 
 interface Context {
-	/** Registered bindings by normalized key. Reactive, for shortcut listings. */
-	readonly bindings: ReadonlyMap<string, ReadonlySet<HotkeyBinding>>
-	/** Adds `binding` and returns its release function. Identity-based — each registration stands alone. */
-	register: (binding: HotkeyBinding) => () => void
+	/** Registered handlers by catalog id. Reactive, for shortcut listings. */
+	readonly handlers: ReadonlyMap<string, ReadonlySet<HotkeyHandler>>
+	/** Adds `handler` and returns its release function. Identity-based — each registration stands alone. */
+	register: (binding: HotkeyKeybinding, handler: HotkeyHandler) => () => void
 }
 
 export const createHotkeys = (): Context => {
-	const bindings = new SvelteMap<string, SvelteSet<HotkeyBinding>>()
+	const handlers = new SvelteMap<string, SvelteSet<HotkeyHandler>>()
 
 	return {
-		get bindings() {
-			return bindings
+		get handlers() {
+			return handlers
 		},
-		register(binding) {
-			const key = binding.key.toLowerCase()
-			const set = bindings.get(key) ?? new SvelteSet()
-			set.add(binding)
-			bindings.set(key, set)
+		register(binding, handler) {
+			const set = handlers.get(binding.id) ?? new SvelteSet()
+			set.add(handler)
+			handlers.set(binding.id, set)
 
 			let released = false
 			return () => {
 				if (released) return
 				released = true
 
-				set.delete(binding)
+				set.delete(handler)
 				if (set.size === 0) {
-					bindings.delete(key)
+					handlers.delete(binding.id)
 				}
 			}
 		},
@@ -62,12 +62,11 @@ export const useHotkeys = () => {
 }
 
 /**
- * Contributes a keyboard shortcut for as long as the calling component is
- * mounted. Dispatch belongs to the visualizer's always-mounted `KeyboardBindings`
- * dispatcher; a binding is inert unless the component declaring it is mounted
- * and its `when` holds.
+ * Contributes the behavior for a catalogued shortcut for as long as the calling component
+ * is mounted. Dispatch belongs to the visualizer's always-mounted `KeyboardBindings`
+ * dispatcher; a shortcut is inert unless some component implements it and its `when` holds.
  */
-export const useHotkey = (binding: HotkeyBinding) => {
-	const release = useHotkeys().register(binding)
+export const useHotkey = (binding: HotkeyKeybinding, handler: HotkeyHandler) => {
+	const release = useHotkeys().register(binding, handler)
 	onDestroy(release)
 }

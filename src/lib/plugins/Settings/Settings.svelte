@@ -11,6 +11,7 @@
 	import ControlsSettings from './ControlsSettings.svelte'
 	import DebugSettings from './DebugSettings.svelte'
 	import FramesSettings from './FramesSettings.svelte'
+	import KeybindingsSettings from './KeybindingsSettings.svelte'
 	import PointcloudSettings from './PointcloudSettings.svelte'
 	import SceneSettings from './SceneSettings.svelte'
 	import Tabs from './Tabs.svelte'
@@ -20,6 +21,7 @@
 	const BUILT_IN_TABS = [
 		{ label: 'Scene', component: SceneSettings },
 		{ label: 'Controls', component: ControlsSettings },
+		{ label: 'Keybindings', component: KeybindingsSettings },
 		{ label: 'Frames', component: FramesSettings },
 		{ label: 'Pointclouds', component: PointcloudSettings },
 		{ label: 'Vision', component: VisionSettings },
