@@ -2,24 +2,42 @@ import { render } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { HotkeyKeybinding } from '$lib/keybindings'
+
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
-import { createHotkeys, HOTKEYS_CONTEXT_KEY } from '$lib/hooks/useHotkeys.svelte'
-import { KEYBINDINGS } from '$lib/keybindings'
+import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '$lib/keybindings'
 
 import KeyboardBindings from '../KeyboardBindings.svelte'
 
+const TOGGLE_PROJECTION: HotkeyKeybinding = {
+	id: 'camera.toggleProjection',
+	kind: 'hotkey',
+	key: 'c',
+	description: 'Toggle camera projection',
+	group: 'Camera',
+}
+
+const SHOW_ALL_HIDDEN: HotkeyKeybinding = {
+	id: 'view.showAllHidden',
+	kind: 'hotkey',
+	key: 'h',
+	shift: true,
+	description: 'Show every hidden object',
+	group: 'View',
+}
+
 const renderExecutor = () => {
 	const environment = createEnvironment()
-	const hotkeys = createHotkeys()
+	const keybindings = createKeybindings()
 
 	render(KeyboardBindings, {
 		context: new Map<symbol, unknown>([
 			[ENVIRONMENT_CONTEXT_KEY, environment],
-			[HOTKEYS_CONTEXT_KEY, hotkeys],
+			[KEYBINDINGS_CONTEXT_KEY, keybindings],
 		]),
 	})
 
-	return { environment, hotkeys }
+	return { environment, keybindings }
 }
 
 describe('KeyboardBindings executor', () => {
