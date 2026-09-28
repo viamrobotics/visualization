@@ -58,27 +58,27 @@
 			<div class="ml-auto flex items-center gap-1">
 				<span class="text-subtle-1">Sort</span>
 				{#each [['seed', 'Seed'], ['cost', 'Cost']] as const as [mode, label] (mode)}
-				<Tooltip
-					let:tooltipID
-					location="bottom"
-				>
-					<button
-						type="button"
-						aria-pressed={ctx.sortMode === mode}
-						aria-describedby={tooltipID}
-						class={[
-							'rounded border px-1.5 py-0.5',
-							'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
-							ctx.sortMode === mode ? 'border-medium bg-light' : 'border-light text-subtle-2',
-						]}
-						onclick={() => ctx.setSortMode(mode)}
+					<Tooltip
+						let:tooltipID
+						location="bottom"
 					>
-						{label}
-					</button>
-					<span slot="description">
-						<span class="font-medium">{label}</span> — {SORT_DESCRIPTION[mode]}
-					</span>
-				</Tooltip>
+						<button
+							type="button"
+							aria-pressed={ctx.sortMode === mode}
+							aria-describedby={tooltipID}
+							class={[
+								'rounded border px-1.5 py-0.5',
+								'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
+								ctx.sortMode === mode ? 'border-medium bg-light' : 'border-light text-subtle-2',
+							]}
+							onclick={() => ctx.setSortMode(mode)}
+						>
+							{label}
+						</button>
+						<span slot="description">
+							<span class="font-medium">{label}</span> — {SORT_DESCRIPTION[mode]}
+						</span>
+					</Tooltip>
 				{/each}
 			</div>
 		</div>
