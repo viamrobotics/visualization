@@ -6,11 +6,20 @@ import { SvelteSet } from 'svelte/reactivity'
 
 export const DETAILS_SECTIONS_CONTEXT_KEY = Symbol('details-sections')
 
+/** Which of a details card's tabs a section renders into. */
+export type DetailsTabId = 'details' | 'appearance'
+
 export interface DetailsSection {
 	/** Rendered inside every applicable details card, with that card's entity. */
 	snippet: Snippet<[{ entity: Entity }]>
 	/** Per-entity gate, checked when the card renders. Omitted = every card. */
 	when?: (entity: Entity) => boolean
+	/**
+	 * Where the section lands. Defaults to `details`, the tab that carries pose,
+	 * dimensions, and relationships. Use `appearance` for a control over how the
+	 * entity is drawn, beside colour and opacity.
+	 */
+	tab?: DetailsTabId
 }
 
 interface Context {
