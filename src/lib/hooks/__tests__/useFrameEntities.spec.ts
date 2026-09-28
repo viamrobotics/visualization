@@ -32,12 +32,12 @@ describe('frame entity lookup', () => {
 	})
 
 	it('resolves the frame, not a world-state transform sharing its name', () => {
+		const frame = world.spawn(traits.FramesAPI, traits.Name('wrist-cam'))
 		world.spawn(
 			traits.WorldStateStoreAPI,
 			traits.Name('wrist-cam'),
 			traits.WorldMatrix(new Matrix4())
 		)
-		const frame = world.spawn(traits.FramesAPI, traits.Name('wrist-cam'))
 
 		expect(lookup().get('wrist-cam')).toBe(frame)
 	})
