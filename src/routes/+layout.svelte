@@ -26,9 +26,6 @@
 		WorldTree,
 		XR,
 	} from '$lib/plugins'
-	// Deep import on purpose: the mock stays out of the package's public exports so real hosts
-	// cannot reach for it instead of wiring their own solver.
-	import { inspectIK } from '$lib/plugins/MotionPlanReplayer/inspect-ik/inspect-ik-client'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
@@ -44,6 +41,10 @@
 	const connectionConfig = useActiveConnectionConfig()
 
 	let { children } = $props()
+
+	// The standalone app has no IK solver, so inspection surfaces this as its error state.
+	const resolveIKSolutions = () =>
+		Promise.reject(new Error('IK inspection is not available in the standalone app.'))
 
 	let dialConfigs = $derived.by<Record<string, DialConf>>(() => {
 		if (connectionConfig.current) {
@@ -98,7 +99,7 @@
 					<Monitor />
 					<BuildFrames />
 					<MoveFrame />
-					<MotionPlanReplayer resolveIKSolutions={inspectIK} />
+					<MotionPlanReplayer {resolveIKSolutions} />
 
 					<XR />
 
