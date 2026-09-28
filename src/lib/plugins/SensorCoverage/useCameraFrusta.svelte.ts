@@ -17,8 +17,6 @@ export interface CameraFrustum {
 }
 
 export interface CameraFrustaOptions {
-	/** Whether to query the part's cameras at all. */
-	enabled: () => boolean
 	/** Far-plane depth, in metres. */
 	range: () => number
 }
@@ -33,7 +31,7 @@ export interface CameraFrustaOptions {
  *
  * Must be called during setup, inside `<SceneProviders>`.
  */
-export const useCameraFrusta = ({ enabled, range }: CameraFrustaOptions) => {
+export const useCameraFrusta = ({ range }: CameraFrustaOptions) => {
 	const partID = usePartID()
 	const statuses = useResourceStatuses(() => partID.current, 'camera')
 
@@ -54,16 +52,14 @@ export const useCameraFrusta = ({ enabled, range }: CameraFrustaOptions) => {
 	)
 
 	// Intrinsics are fixed for the life of a camera, so the reply is fetched once and
-	// never polled.
+	// never polled. It is fetched even with the drawing switched off, so the settings
+	// panel can say which cameras report none rather than blaming the switch.
 	const queries = $derived(
 		clients.map(
 			(client) =>
 				[
 					client.name,
-					createResourceQuery(client, 'getProperties', () => ({
-						refetchInterval: false,
-						enabled: enabled(),
-					})),
+					createResourceQuery(client, 'getProperties', { refetchInterval: false }),
 				] as const
 		)
 	)

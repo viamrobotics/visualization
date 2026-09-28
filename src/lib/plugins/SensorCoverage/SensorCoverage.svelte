@@ -13,19 +13,19 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 
 	import SettingsPortal from '$lib/components/overlay/Portals/SettingsPortal.svelte'
 	import { traits, useQuery } from '$lib/ecs'
+	import { useDetailsSection } from '$lib/hooks/useDetailsSections.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import CameraFrustum from './CameraFrustum.svelte'
 	import SensorCoverageSettings from './SensorCoverageSettings.svelte'
+	import SensorCoverageToggle from './SensorCoverageToggle.svelte'
 	import { useCameraFrusta } from './useCameraFrusta.svelte'
 
 	const settings = useSettings()
 
-	const frusta = useCameraFrusta({
-		enabled: () => settings.current.enableSensorCoverage,
-		range: () => settings.current.sensorCoverageRange,
-	})
+	const frusta = useCameraFrusta({ range: () => settings.current.sensorCoverageRange })
 
+	const cameraNames = $derived(new Set(frusta.names))
 	const withIntrinsics = $derived(new Set(frusta.current.map(({ name }) => name)))
 
 	const visible = $derived(
@@ -45,7 +45,21 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 
 		return result
 	})
+
+	const isCameraFrame = (entity: Entity): boolean => {
+		const name = entity.get(traits.Name)
+		return name !== undefined && cameraNames.has(name)
+	}
+
+	useDetailsSection({ snippet: coverageRow, when: isCameraFrame, tab: 'appearance' })
 </script>
+
+{#snippet coverageRow({ entity }: { entity: Entity })}
+	<SensorCoverageToggle
+		{entity}
+		{withIntrinsics}
+	/>
+{/snippet}
 
 <SettingsPortal label="Sensors">
 	<SensorCoverageSettings
