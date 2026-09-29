@@ -3,16 +3,24 @@
 
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import { traits, useWorld } from '$lib/ecs'
+	import { poseStalenessSummary } from '$lib/hooks/poseStaleness/poseStalenessSummary'
+	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
+	import { usePoses } from '$lib/hooks/usePoses.svelte'
 
 	import type { TreeNode } from './buildTree'
 
 	import AddObjectMenu from './AddObjectMenu.svelte'
 	import FilterBar from './FilterBar.svelte'
-	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
 	import Tree from './Tree.svelte'
 	import { useTree } from './useTree.svelte'
 
 	const world = useWorld()
+
+	const health = useResourceHealth()
+	const poses = usePoses()
+	const stalenessAnnouncement = $derived(
+		poses.isStale ? poseStalenessSummary(health.unhealthy) : ''
+	)
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
@@ -36,9 +44,20 @@
 	bodyClass="flex flex-col bg-white"
 >
 	{#snippet headerSuffix()}
-		<PoseStalenessIndicator />
 		<AddObjectMenu />
 	{/snippet}
+
+	<!--
+		The warning is announced from the panel rather than from the Frames row that
+		carries the icon: that row can be collapsed or scrolled out of the virtual
+		list, and a live region only announces while it is mounted.
+	-->
+	<div
+		role="status"
+		class="sr-only"
+	>
+		{stalenessAnnouncement}
+	</div>
 
 	<FilterBar bind:value={filter} />
 
