@@ -30,14 +30,17 @@
 >
 	{#snippet children(tooltipID)}
 		<span
-			class={status === 'error' ? 'text-danger-dark' : 'text-warning-dark'}
+			class={[
+				'flex size-4 shrink-0 items-center justify-center rounded-sm text-white',
+				status === 'error' ? 'bg-danger-bright' : 'bg-warning-bright',
+			]}
 			aria-describedby={tooltipID}
 			role="img"
 			aria-label="{label} is reporting {status === 'error' ? 'errors' : 'warnings'}"
 		>
 			<Icon
-				name={status === 'error' ? 'alert-circle' : 'alert-outline'}
-				size="sm"
+				name={status === 'error' ? 'alert-circle' : 'alert'}
+				size="xs"
 			/>
 		</span>
 	{/snippet}
