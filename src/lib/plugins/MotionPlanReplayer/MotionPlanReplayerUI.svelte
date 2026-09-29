@@ -3,7 +3,6 @@
 
 	import { Icon, ToastVariant, Tooltip, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
-	import { onDestroy } from 'svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
@@ -37,7 +36,7 @@
 	let isOpen = $state(true)
 
 	// Unmounting means leaving replay mode. Geometry left behind would have no controls to remove it.
-	onDestroy(() => {
+	$effect(() => () => {
 		ctx.clearActivePlan()
 		ik.exit()
 	})
@@ -179,7 +178,7 @@
 
 					<button
 						type="button"
-						class="text-subtle-1 ml-1 rounded px-1 hover:text-red-500"
+						class="text-subtle-1 hover:text-danger-dark ml-1 rounded px-1"
 						onclick={(e) => {
 							e.stopPropagation()
 							ctx.removePlan(i)
@@ -190,10 +189,10 @@
 				</div>
 
 				{#if plan.status === 'error'}
-					<div class="pl-5 text-[10px] text-red-600">{plan.error}</div>
+					<div class="text-danger-dark pl-5 text-[10px]">{plan.error}</div>
 				{/if}
 				{#if plan.status === 'no-trajectory'}
-					<div class="pl-5 text-[10px] text-yellow-600">No trajectory — nothing to replay</div>
+					<div class="text-warning-dark pl-5 text-[10px]">No trajectory — nothing to replay</div>
 				{/if}
 			{/each}
 

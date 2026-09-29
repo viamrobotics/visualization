@@ -12,13 +12,7 @@
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
-		/**
-		 * Resizes an already-open panel, for content that changes shape at runtime. `defaultSize` is
-		 * zag's uncontrolled initial value and is ignored after mount, and `api.setSize` shares the
-		 * resize-drag's action so it no-ops outside a gesture — driving the machine's controlled
-		 * `size` is what actually moves the panel. Pass a stable object reference: the size is
-		 * re-applied whenever it changes, discarding a manual resize.
-		 */
+		/** Pass a stable object reference: the size is re-applied whenever it changes, discarding a manual resize.*/
 		size?: { width: number; height: number }
 		minSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }

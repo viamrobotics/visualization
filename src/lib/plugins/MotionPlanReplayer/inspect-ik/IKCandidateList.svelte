@@ -14,7 +14,7 @@
 
 	const SORT_DESCRIPTION: Record<IKSortMode, string> = {
 		seed: 'Group by random seed that generated the candidates.',
-		cost: 'Sort by Euclidian (Pythogorian) distance of joint positions.',
+		cost: 'Sort by Euclidean (Pythagorean) distance of joint positions.',
 	}
 </script>
 
