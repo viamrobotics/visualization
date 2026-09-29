@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { NumericInput } from '@viamrobotics/prime-core'
 
+	import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+
+	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
+
 	import type { IKCandidate } from './ik-candidates'
 	import type { PoseKind, PoseSet } from './pose-sets'
 
-	import Scrubber from '../Scrubber.svelte'
 	import IKStatusDot from './IKStatusDot.svelte'
 	import { MAX_PATH_STEPS, MIN_PATH_STEPS } from './interpolate-configuration'
 	import { hasSolution, IK_STATUS_LABEL, isScored } from './parse-ik-solutions'
@@ -16,11 +19,9 @@
 		poseVisibility: Record<PoseKind, boolean>
 		setPoseVisible: (kind: PoseKind, visible: boolean) => void
 		pathSteps: number
-		pathStep: number
-		pathLength: number
+		pathPlayer: TrajectoryPlayer
 		lastGoodStepIndex: number | null
 		setPathSteps: (steps: number) => void
-		setPathStep: (index: number) => void
 	}
 
 	const {
@@ -29,11 +30,9 @@
 		poseVisibility,
 		setPoseVisible,
 		pathSteps,
-		pathStep,
-		pathLength,
+		pathPlayer,
 		lastGoodStepIndex,
 		setPathSteps,
-		setPathStep,
 	}: Props = $props()
 
 	const stepsInputID = $props.id()
@@ -92,7 +91,7 @@
 			</button>
 		{/each}
 
-		{#if pathLength > 0}
+		{#if pathPlayer.totalSteps > 0}
 			{@const shown = poseVisibility.path}
 			<button
 				type="button"
@@ -113,7 +112,7 @@
 		{/if}
 	</div>
 
-	{#if pathLength > 0}
+	{#if pathPlayer.totalSteps > 0}
 		<div class="flex flex-col gap-1">
 			<div class="flex items-center gap-2">
 				<label
@@ -134,12 +133,12 @@
 				<span class="text-subtle-1">steps from start to end</span>
 			</div>
 
-			<Scrubber
-				currentStep={pathStep}
-				totalSteps={pathLength}
-				onseek={setPathStep}
-				markIndex={lastGoodStepIndex}
-				markLabel="last good"
+			<TrajectoryScrubber
+				player={pathPlayer}
+				label="IK path"
+				highlight={lastGoodStepIndex === null
+					? undefined
+					: { step: lastGoodStepIndex, label: 'last good' }}
 			/>
 		</div>
 	{:else if candidate.status === 'invalid' && solved}

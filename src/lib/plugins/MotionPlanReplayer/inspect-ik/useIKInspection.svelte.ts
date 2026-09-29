@@ -5,6 +5,7 @@ import type { Transform } from '$lib/buf/common/v1/common_pb'
 import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 
 import { useWorld } from '$lib/ecs'
+import { createTrajectoryPlayer, type TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
 
 import type { IKStatus } from './parse-ik-solutions'
 
@@ -101,9 +102,8 @@ export interface IKInspectionContext {
 	readonly poseVisibility: Record<PoseKind, boolean>
 	/** Requested interpolation resolution; the built path can be one longer once last-good splices in. */
 	readonly pathSteps: number
-	readonly pathStep: number
-	/** 0 when the selected candidate has no interpolatable path. */
-	readonly pathLength: number
+	/** Walks the interpolated path. `totalSteps` is 0 when the candidate has no interpolatable path. */
+	readonly pathPlayer: TrajectoryPlayer
 	readonly lastGoodStepIndex: number | null
 	inspect: (planName: string, planContent: string) => Promise<void>
 	exit: () => void
@@ -114,7 +114,6 @@ export interface IKInspectionContext {
 	toggleSeed: (seedIndex: number) => void
 	setPoseVisible: (kind: PoseKind, visible: boolean) => void
 	setPathSteps: (steps: number) => void
-	setPathStep: (index: number) => void
 	clear: () => void
 }
 
@@ -145,7 +144,6 @@ export const provideIKInspection = (
 	let sortMode = $state<IKSortMode>('seed')
 	let poseVisibility = $state<Record<PoseKind, boolean>>(allVisible())
 	let pathSteps = $state(DEFAULT_PATH_STEPS)
-	let pathStep = $state(0)
 	let pathLength = $state(0)
 	let lastGoodStepIndex = $state<number | null>(null)
 	let candidates = $state.raw<IKCandidate[]>([])
@@ -161,13 +159,25 @@ export const provideIKInspection = (
 		selectedCandidate ? poseSetsForCandidate(selectedCandidate, startConfiguration) : []
 	)
 
+	const pathPlayer = createTrajectoryPlayer({
+		totalSteps: () => pathLength,
+		onStep: (step) => {
+			const drawn = drawnSets.get('path')
+			const snapshot = pathSnapshots[step]
+			if (!drawn || !snapshot) return false
+
+			applySnapshot(world, drawn, snapshot, PATH_STYLE)
+			invalidate()
+		},
+	})
+
 	const clearPath = () => {
 		const drawn = drawnSets.get('path')
 		if (drawn) destroyDrawnSet(drawn)
 		drawnSets.delete('path')
 		pathSnapshots = []
 		pathLength = 0
-		pathStep = 0
+		pathPlayer.reset()
 		lastGoodStepIndex = null
 	}
 
@@ -175,15 +185,6 @@ export const provideIKInspection = (
 		clearPath()
 		for (const drawn of drawnSets.values()) destroyDrawnSet(drawn)
 		drawnSets.clear()
-	}
-
-	const applyPathStep = (index: number) => {
-		const drawn = drawnSets.get('path')
-		const snapshot = pathSnapshots[index]
-		if (!drawn || !snapshot) return
-
-		applySnapshot(world, drawn, snapshot, PATH_STYLE)
-		pathStep = index
 	}
 
 	/**
@@ -195,7 +196,7 @@ export const provideIKInspection = (
 		// held as a fraction rather than an index. A candidate change arrives via drawSelection,
 		// which has already cleared the path — so this reads 0 there and the new path starts at its
 		// beginning.
-		const heldFraction = pathLength > 1 ? pathStep / (pathLength - 1) : 0
+		const heldFraction = pathLength > 1 ? pathPlayer.currentStep / (pathLength - 1) : 0
 		clearPath()
 
 		const end = candidate?.solution.configuration
@@ -221,7 +222,7 @@ export const provideIKInspection = (
 		const drawn = createDrawnSet(world, PREFIX.path)
 		drawnSets.set('path', drawn)
 		setDrawnSetVisible(drawn, poseVisibility.path)
-		applyPathStep(Math.round(heldFraction * (pathLength - 1)))
+		pathPlayer.seek(Math.round(heldFraction * (pathLength - 1)))
 	}
 
 	const teardownScene = () => {
@@ -374,12 +375,7 @@ export const provideIKInspection = (
 		get pathSteps() {
 			return pathSteps
 		},
-		get pathStep() {
-			return pathStep
-		},
-		get pathLength() {
-			return pathLength
-		},
+		pathPlayer,
 		get lastGoodStepIndex() {
 			return lastGoodStepIndex
 		},
@@ -418,10 +414,6 @@ export const provideIKInspection = (
 			if (!Number.isFinite(next) || next === pathSteps) return
 			pathSteps = next
 			rebuildPath(candidates.find((candidate) => candidate.id === selectedId))
-			invalidate()
-		},
-		setPathStep: (index) => {
-			applyPathStep(Math.max(0, Math.min(pathLength - 1, index)))
 			invalidate()
 		},
 		clear,

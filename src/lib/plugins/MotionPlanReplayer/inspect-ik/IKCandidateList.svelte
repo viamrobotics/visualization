@@ -128,11 +128,9 @@
 				poseVisibility={ctx.poseVisibility}
 				setPoseVisible={ctx.setPoseVisible}
 				pathSteps={ctx.pathSteps}
-				pathStep={ctx.pathStep}
-				pathLength={ctx.pathLength}
+				pathPlayer={ctx.pathPlayer}
 				lastGoodStepIndex={ctx.lastGoodStepIndex}
 				setPathSteps={ctx.setPathSteps}
-				setPathStep={ctx.setPathStep}
 			/>
 		{/key}
 	{/if}
