@@ -121,17 +121,19 @@
 	</div>
 
 	{#if ctx.selectedCandidate}
-		<IKCandidateDetail
-			candidate={ctx.selectedCandidate}
-			poseSets={ctx.poseSets}
-			poseVisibility={ctx.poseVisibility}
-			setPoseVisible={ctx.setPoseVisible}
-			pathSteps={ctx.pathSteps}
-			pathStep={ctx.pathStep}
-			pathLength={ctx.pathLength}
-			lastGoodStepIndex={ctx.lastGoodStepIndex}
-			setPathSteps={ctx.setPathSteps}
-			setPathStep={ctx.setPathStep}
-		/>
+		{#key ctx.selectedCandidate.id}
+			<IKCandidateDetail
+				candidate={ctx.selectedCandidate}
+				poseSets={ctx.poseSets}
+				poseVisibility={ctx.poseVisibility}
+				setPoseVisible={ctx.setPoseVisible}
+				pathSteps={ctx.pathSteps}
+				pathStep={ctx.pathStep}
+				pathLength={ctx.pathLength}
+				lastGoodStepIndex={ctx.lastGoodStepIndex}
+				setPathSteps={ctx.setPathSteps}
+				setPathStep={ctx.setPathStep}
+			/>
+		{/key}
 	{/if}
 </div>

@@ -128,7 +128,8 @@
 					max={MAX_PATH_STEPS}
 					step={1}
 					cx="w-16"
-					onchange={(event: Event) => setPathSteps(Number((event.target as HTMLInputElement).value))}
+					onchange={(event: Event) =>
+						setPathSteps(Number((event.target as HTMLInputElement).value))}
 				/>
 				<span class="text-subtle-1">steps from start to end</span>
 			</div>
