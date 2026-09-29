@@ -8,10 +8,6 @@
 </script>
 
 <div class="flex h-full flex-col text-xs">
-	<!--
-		The back control lives in the body rather than the panel header: the header is a zag drag
-		trigger, and a button inside it competes with the drag gesture.
-	-->
 	<button
 		type="button"
 		class="border-light text-subtle-1 hover:bg-ghost-light hover:text-default focus-visible:ring-info-dark flex shrink-0 items-center gap-1 border-b px-2 py-1.5 text-left focus-visible:ring-1 focus-visible:outline-none"

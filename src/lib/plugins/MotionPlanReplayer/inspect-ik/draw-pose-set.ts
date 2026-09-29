@@ -3,7 +3,7 @@ import type { Entity, World } from 'koota'
 import type { Transform } from '$lib/buf/common/v1/common_pb'
 import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
 
-import { traits } from '$lib/ecs'
+import { setOrAddTrait, traits } from '$lib/ecs'
 import { reconcileSnapshotEntities, type SnapshotEntity } from '$lib/snapshot'
 
 import { transformsToSnapshot } from '../plan-to-snapshots'
@@ -15,21 +15,6 @@ import { OBSTACLE_PREFIX } from './world-state-obstacles'
 export interface DrawnSet {
 	root: Entity
 	entityMap: Map<string, SnapshotEntity>
-}
-
-// koota's `set` writes the trait's store slot but will not add an absent trait — the entity's
-// mask is untouched, so `has` stays false and nothing querying the trait ever sees the value.
-// Plan transforms carry no color metadata, so `Color` is always absent on spawn; `Opacity` only
-// happens to be present because `drawTransform` adds it unconditionally. Guard both rather than
-// depend on that.
-const setOrAddColor = (entity: Entity, value: PoseStyle['rgb']) => {
-	if (entity.has(traits.Color)) entity.set(traits.Color, value)
-	else entity.add(traits.Color(value))
-}
-
-const setOrAddOpacity = (entity: Entity, value: number) => {
-	if (entity.has(traits.Opacity)) entity.set(traits.Opacity, value)
-	else entity.add(traits.Opacity(value))
 }
 
 /**
@@ -61,13 +46,14 @@ export const applySnapshot = (
 
 		// Frames without geometry carry `ReferenceFrame` and render as axes, which the plan colour
 		// would not apply to anyway.
-		if (!spawned.entity.has(traits.ReferenceFrame)) setOrAddColor(spawned.entity, style.rgb)
+		if (!spawned.entity.has(traits.ReferenceFrame))
+			setOrAddTrait(spawned.entity, traits.Color, style.rgb)
 	}
 
 	// Colour survives reconcile, but its metadata pass resets Opacity to the default — so opacity has
 	// to be re-applied to entities that merely survived the step, not only to newly spawned ones.
 	for (const entry of [...result.spawned, ...result.updated]) {
-		setOrAddOpacity(entry.entity, style.opacity)
+		setOrAddTrait(entry.entity, traits.Opacity, style.opacity)
 	}
 
 	drawn.entityMap = result.current

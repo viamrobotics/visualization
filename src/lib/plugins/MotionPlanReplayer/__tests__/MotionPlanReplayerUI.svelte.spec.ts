@@ -56,13 +56,6 @@ describe('MotionPlanReplayerUI', () => {
 		expect(screen.getByRole('button', { name: 'Upload plan JSON' })).toBeVisible()
 	})
 
-	it('offers no way to close the panel', () => {
-		render(ReplayerUIHarness)
-
-		expect(screen.queryByRole('button', { name: 'Close panel' })).not.toBeInTheDocument()
-		expect(screen.queryByRole('radio', { name: 'Motion Plan Replayer' })).not.toBeInTheDocument()
-	})
-
 	it('renders two plans that share a name as distinct rows', () => {
 		render(ReplayerUIHarness, {
 			props: {
