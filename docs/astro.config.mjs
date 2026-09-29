@@ -65,6 +65,7 @@ export default defineConfig({
 						{ label: '<Monitor />', link: '/plugins/monitor/' },
 						{ label: '<MotionPlanReplayer />', link: '/plugins/motion-plan-replayer/' },
 						{ label: '<SelectionTool />', link: '/plugins/selection/' },
+						{ label: '<SensorCoverage />', link: '/plugins/sensor-coverage/' },
 						{ label: '<Settings />', link: '/plugins/settings/' },
 						{ label: '<Skybox />', link: '/plugins/skybox/' },
 						{ label: '<TopDownLock />', link: '/plugins/top-down-lock/' },
