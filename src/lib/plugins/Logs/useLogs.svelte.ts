@@ -34,6 +34,15 @@ interface Context {
 	warnCount: number
 	add(message: string, level?: Level, target?: LogTarget): void
 	/**
+	 * Drops one line, matched the same way `add` collapses repeats. For a warning
+	 * that describes a state rather than an event: once the condition stops
+	 * holding, a line nothing can withdraw goes on reporting a failure that has
+	 * already been fixed.
+	 *
+	 * Silent when no line matches, so a caller can retract unconditionally.
+	 */
+	retract(message: string, level: Level, target?: LogTarget): void
+	/**
 	 * Drops every line and the row alerts they raised. Lines are about one machine,
 	 * so switching parts has to evict them rather than report the old part's
 	 * failures against the new part's resources.
@@ -152,6 +161,17 @@ export const provideLogs = () => {
 		get warnCount() {
 			return warnCount
 		},
+		retract(message, level, target = {}) {
+			untrack(() => {
+				const key = dedupKey(level, target, message)
+				const match = entries.get(key)
+				if (!match) return
+
+				entries.delete(key)
+				tally(match, -1)
+				version++
+			})
+		},
 		clear() {
 			untrack(() => {
 				// Tallies are derived from `entries`, so an empty log has no alerts left
@@ -242,6 +262,9 @@ const facade: Context = {
 	},
 	add(message, level, target) {
 		context?.add(message, level, target)
+	},
+	retract(message, level, target) {
+		context?.retract(message, level, target)
 	},
 	clear() {
 		context?.clear()

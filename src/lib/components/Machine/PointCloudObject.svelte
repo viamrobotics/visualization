@@ -9,6 +9,7 @@
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { RefetchRates } from '$lib/components/overlay/refetchRates'
 	import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
+	import { FRAME_ENTITY_QUERY } from '$lib/hooks/useFrameEntities.svelte'
 	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -92,6 +93,59 @@
 		}
 	})
 
+	/**
+	 * The observer's world pose, or undefined when the response named no reference
+	 * frame or that frame has no pose yet. Queried straight off the world because
+	 * this runs from a promise callback, where a `$derived` registers no dependency
+	 * and would latch whatever the world held the first time.
+	 */
+	const noReferenceFrameWarning = $derived(
+		`${name} named no reference frame, drawing its pointcloud at the world origin`
+	)
+	const warningTarget = $derived({ resource: name, folder: 'pointcloud-objects' })
+
+	const capturePose = (referenceFrame: string | undefined): Matrix4 | undefined => {
+		if (!referenceFrame) {
+			logs.add(noReferenceFrameWarning, 'warn', warningTarget)
+			return undefined
+		}
+
+		logs.retract(noReferenceFrameWarning, 'warn', warningTarget)
+
+		const pose = world
+			.query(...FRAME_ENTITY_QUERY)
+			.find((frame) => frame.get(traits.Name) === referenceFrame)
+			?.get(traits.WorldMatrix)
+
+		// Frames load after the first response on a cold start, so this is routinely
+		// true when raised and false a moment later.
+		const missingFrameWarning = `${referenceFrame} has no frame, drawing ${name}'s pointcloud at the world origin`
+		if (pose) logs.retract(missingFrameWarning, 'warn', warningTarget)
+		else logs.add(missingFrameWarning, 'warn', warningTarget)
+
+		return pose
+	}
+
+	/**
+	 * Hold the cloud at the pose the observer had when it captured. Points come
+	 * back in the observer's frame at one instant, so composing them through its
+	 * live pose would draw an already-captured cloud where it was never seen.
+	 */
+	const pinAtCapture = (target: Entity, pose: Matrix4) => {
+		const worldMatrix = target.get(traits.WorldMatrix)
+
+		if (worldMatrix) {
+			worldMatrix.copy(pose)
+			target.changed(traits.WorldMatrix)
+		} else {
+			target.add(traits.WorldMatrix(pose.clone()))
+		}
+
+		if (!target.has(traits.MatrixAutoUpdate)) {
+			target.add(traits.MatrixAutoUpdate(false))
+		}
+	}
+
 	const entities = new Map<string, Entity>()
 	let drawnKeys = new Set<string>()
 
@@ -155,6 +209,12 @@
 							return
 						}
 
+						const referenceFrame = geometriesInFrame?.referenceFrame
+						const pose = capturePose(referenceFrame)
+						// `Orphan` is hidden from the world tree until it resolves, so a
+						// reference frame absent from the scene would drop the cloud out of
+						// the tree while it still draws. Park it at the root instead.
+						const parentFrame = pose ? referenceFrame : undefined
 						const existing = entities.get(pointcloudLabel)
 						const metadata = {
 							colors,
@@ -162,6 +222,7 @@
 						}
 
 						if (existing) {
+							hierarchy.setParent(existing, parentFrame)
 							const geometry = existing.get(traits.BufferGeometry)
 
 							if (geometry) {
@@ -172,12 +233,14 @@
 									total: positions.length / 3,
 									shuffled,
 								})
+								if (pose) pinAtCapture(existing, pose)
 							}
 						} else {
 							const geometry = createBufferGeometry(positions, metadata, bounds)
 							if (boundsTree) attachPointsBvh(geometry, boundsTree)
 
 							const entity = world.spawn(
+								...hierarchy.parentTraits(parentFrame),
 								traits.Name(pointcloudLabel),
 								traits.BufferGeometry(geometry),
 								traits.Points,
@@ -185,6 +248,8 @@
 								traits.PointSampling({ total: positions.length / 3, shuffled }),
 								traits.PointCloudObjectAPI
 							)
+
+							if (pose) pinAtCapture(entity, pose)
 
 							entities.set(pointcloudLabel, entity)
 						}

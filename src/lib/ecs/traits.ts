@@ -72,6 +72,17 @@ export const LiveMatrix = trait(() => new Matrix4())
 export const WorldMatrix = trait(() => new Matrix4())
 
 /**
+ * When false, `provideWorldMatrix` leaves this entity's `WorldMatrix` alone and
+ * stops the walk descending into its children. The entity holds whatever world
+ * transform was last written to it, and whoever turned the flag off owns that
+ * value from then on. Mirrors `Object3D.matrixAutoUpdate`.
+ *
+ * Absence means updates are on, so adding the trait bare turns them off — the
+ * only reason to add it.
+ */
+export const MatrixAutoUpdate = trait(() => false)
+
+/**
  * World-space transform of a hovered instance inside a points/arrows batch,
  * paired with the instance index in the parent batched mesh.
  */

@@ -110,6 +110,45 @@ describe('provideLogs', () => {
 		expect(logs.warnCount).toBe(1)
 	})
 
+	it('drops the matching line on retract', () => {
+		const logs = provideLogs()
+		logs.add('arm has no frame', 'warn', ARM)
+		logs.add('Fetching pose for arm...', 'info', ARM)
+
+		logs.retract('arm has no frame', 'warn', ARM)
+
+		expect(logs.current.map((log) => log.message)).toEqual(['Fetching pose for arm...'])
+	})
+
+	it('clears the row alert a retracted line raised', () => {
+		const logs = provideLogs()
+		logs.add('arm has no frame', 'warn', ARM)
+
+		logs.retract('arm has no frame', 'warn', ARM)
+
+		expect(logs.statusFor(ARM)).toBeUndefined()
+	})
+
+	it('leaves a line alone when retracting the same message at another level', () => {
+		const logs = provideLogs()
+		logs.add('Unreachable', 'error', ARM)
+
+		logs.retract('Unreachable', 'warn', ARM)
+
+		expect(logs.statusFor(ARM)).toBe('error')
+	})
+
+	it('re-counts a retracted line from one when it is added again', () => {
+		const logs = provideLogs()
+		logs.add('arm has no frame', 'warn', ARM)
+		logs.add('arm has no frame', 'warn', ARM)
+		logs.retract('arm has no frame', 'warn', ARM)
+
+		logs.add('arm has no frame', 'warn', ARM)
+
+		expect(logs.current[0]).toMatchObject({ message: 'arm has no frame', count: 1 })
+	})
+
 	it('drops every line and row alert on clear', () => {
 		const logs = provideLogs()
 

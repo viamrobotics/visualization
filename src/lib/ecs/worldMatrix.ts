@@ -4,7 +4,7 @@ import { Matrix4 } from 'three'
 import { composeLocalMatrix } from '$lib/math/transform'
 
 import { ChildOf } from './relations'
-import { EditedMatrix, LiveMatrix, Matrix, Name, WorldMatrix } from './traits'
+import { EditedMatrix, LiveMatrix, Matrix, MatrixAutoUpdate, Name, WorldMatrix } from './traits'
 
 /**
  * Compute the entity's local-to-parent transform into `out`.
@@ -73,6 +73,14 @@ const recomputeWorldMatrix = (
 	const cached = cache.get(entity)
 	if (cached) return cached
 
+	// Updates are off, so the entity owns its own `WorldMatrix`. Hand back what
+	// it holds rather than recomposing it or walking its parents.
+	if (entity.get(MatrixAutoUpdate) === false) {
+		const frozen = entity.get(WorldMatrix)
+		if (frozen) cache.set(entity, frozen)
+		return frozen
+	}
+
 	if (inProgress.has(entity)) {
 		console.warn('[worldMatrix] ChildOf cycle detected at entity', entity.get(Name) ?? entity)
 		return undefined
@@ -108,6 +116,9 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
 		if (expanded.has(entity)) return
 		expanded.add(entity)
 		for (const child of world.query(ChildOf(entity))) {
+			// A frozen child can't be moved by its parent, and expanding it would
+			// fire `changed(WorldMatrix)` on a matrix that hasn't moved.
+			if (child.get(MatrixAutoUpdate) === false) continue
 			collect(child)
 		}
 	}
@@ -129,8 +140,8 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
 
 /**
  * Wire up listeners that maintain `WorldMatrix` reactively. Subscribes to
- * add/change/remove on `Matrix`, `EditedMatrix`, `LiveMatrix`, and `ChildOf`;
- * enqueues affected entities and flushes on the next microtask.
+ * add/change/remove on `Matrix`, `EditedMatrix`, `LiveMatrix`, `MatrixAutoUpdate`,
+ * and `ChildOf`; enqueues affected entities and flushes on the next microtask.
  *
  * Returns an unsubscribe function. Plain function (not a rune hook) so tests
  * can drive the lifecycle without mounting Svelte.
@@ -163,6 +174,9 @@ export const installWorldMatrixListeners = (world: World): (() => void) => {
 		world.onAdd(LiveMatrix, enqueue),
 		world.onChange(LiveMatrix, enqueue),
 		world.onRemove(LiveMatrix, enqueue),
+		world.onAdd(MatrixAutoUpdate, enqueue),
+		world.onChange(MatrixAutoUpdate, enqueue),
+		world.onRemove(MatrixAutoUpdate, enqueue),
 		world.onAdd(ChildOf, enqueue),
 		world.onChange(ChildOf, enqueue),
 		world.onRemove(ChildOf, enqueue),
