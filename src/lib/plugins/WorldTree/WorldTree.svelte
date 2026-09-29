@@ -47,11 +47,6 @@
 		<AddObjectMenu />
 	{/snippet}
 
-	<!--
-		The warning is announced from the panel rather than from the Frames row that
-		carries the icon: that row can be collapsed or scrolled out of the virtual
-		list, and a live region only announces while it is mounted.
-	-->
 	<div
 		role="status"
 		class="sr-only"

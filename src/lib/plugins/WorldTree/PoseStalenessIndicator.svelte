@@ -10,11 +10,6 @@
 	const summary = $derived(poseStalenessSummary(health.unhealthy))
 </script>
 
-<!--
-	Opens to the side, not below: the tree is a 240px panel of 32px rows, so a
-	bottom-placed tooltip covers the rows underneath the one it is explaining.
-	Interactive so a resource's own error message can be reached and copied.
--->
 <Tooltip
 	placement="right-start"
 	interactive
@@ -38,10 +33,6 @@
 		<div class="font-public-sans flex flex-col gap-1.5">
 			<p class="font-medium">{summary}</p>
 
-			<!--
-				The failing resources are listed here as well as on their own rows: this
-				folder can be collapsed, and then its row is the only one showing.
-			-->
 			{#if health.unhealthy.length > 0}
 				<ul class="flex flex-col gap-1.5">
 					{#each health.unhealthy as resource (resource.name)}

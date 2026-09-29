@@ -13,10 +13,6 @@
 	let { resource }: Props = $props()
 </script>
 
-<!--
-	Opens to the side, not below, and interactive: same reasoning as
-	`LogStatusIndicator`, which marks the same rows.
--->
 <Tooltip
 	placement="right-start"
 	interactive
