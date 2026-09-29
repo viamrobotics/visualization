@@ -4,6 +4,7 @@
 	interface Props {
 		title?: string
 		isOpen?: boolean
+		exitable?: boolean
 		children: Snippet
 	}
 
@@ -11,6 +12,7 @@
 	let {
 		title = '',
 		isOpen = $bindable(false),
+		exitable = true,
 		children,
 	}: Props & Record<string, unknown> = $props()
 </script>
@@ -20,12 +22,14 @@
 		<h3>{title}</h3>
 	{/if}
 
-	<button
-		aria-label="Close panel"
-		onclick={() => (isOpen = false)}
-	>
-		close
-	</button>
+	{#if exitable}
+		<button
+			aria-label="Close panel"
+			onclick={() => (isOpen = false)}
+		>
+			close
+		</button>
+	{/if}
 
 	{#if isOpen}
 		{@render children()}

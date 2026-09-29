@@ -5,9 +5,7 @@
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 
 	import IKInspectionView from './inspect-ik/IKInspectionView.svelte'
 	import { useIKInspection } from './inspect-ik/useIKInspection.svelte'
@@ -31,9 +29,6 @@
 	const ctx = useMotionPlanReplayer()
 	const ik = useIKInspection()
 	const toast = useToast()
-
-	// Mounted only in replay mode, so entering the mode opens the panel.
-	let isOpen = $state(true)
 
 	// Unmounting means leaving replay mode. Geometry left behind would have no controls to remove it.
 	$effect(() => () => {
@@ -61,7 +56,6 @@
 			}
 
 			ctx.addPlan(result.name, result.content, result.snapshots)
-			isOpen = true
 		} finally {
 			uploadsInFlight -= 1
 		}
@@ -90,25 +84,18 @@
 	}
 </script>
 
-<DashboardPortal>
-	<fieldset>
-		<DashboardButton
-			active={isOpen}
-			icon="play-circle-outline"
-			description="Motion Plan Replayer"
-			onclick={() => (isOpen = !isOpen)}
-		/>
-	</fieldset>
-</DashboardPortal>
-
 <!--
 	One panel for both modes. Inspect-IK takes the replayer's place rather than opening beside it, so
 	the inspected plan's select / delete / scrub controls are out of reach while inspecting — and
 	because a second FloatingPanel instance owns its own zag machine, swapping the body is the only
 	way to keep the window where the user put it.
+
+	Mounted only in replay mode and never closable: the panel holds the only controls for the drawn
+	plan, and leaving replay mode is how the user dismisses it.
 -->
 <FloatingPanel
-	bind:isOpen
+	isOpen
+	exitable={false}
 	title={ik.isActive ? `IK Inspection · ${ik.planName ?? ''}` : 'Motion Plan Replayer'}
 	defaultSize={REPLAYER_SIZE}
 	size={ik.isActive ? INSPECT_SIZE : REPLAYER_SIZE}

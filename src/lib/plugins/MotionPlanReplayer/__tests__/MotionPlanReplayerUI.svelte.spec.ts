@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/svelte'
-import userEvent from '@testing-library/user-event'
 import { type World } from 'koota'
 import { flushSync } from 'svelte'
 import { UuidTool } from 'uuid-tool'
@@ -54,17 +53,14 @@ describe('MotionPlanReplayerUI', () => {
 	it('opens the replayer panel on mount', () => {
 		render(ReplayerUIHarness)
 
-		expect(screen.getByRole('radio', { name: 'Motion Plan Replayer' })).toBeChecked()
 		expect(screen.getByRole('button', { name: 'Upload plan JSON' })).toBeVisible()
 	})
 
-	it('closes the panel from the dashboard button', async () => {
-		const user = userEvent.setup()
+	it('offers no way to close the panel', () => {
 		render(ReplayerUIHarness)
 
-		await user.click(screen.getByRole('radio', { name: 'Motion Plan Replayer' }))
-
-		expect(screen.queryByRole('button', { name: 'Upload plan JSON' })).not.toBeInTheDocument()
+		expect(screen.queryByRole('button', { name: 'Close panel' })).not.toBeInTheDocument()
+		expect(screen.queryByRole('radio', { name: 'Motion Plan Replayer' })).not.toBeInTheDocument()
 	})
 
 	it('renders two plans that share a name as distinct rows', () => {
