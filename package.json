@@ -404,13 +404,13 @@
 			"output": []
 		},
 		"test:rdk-golden": {
-			"command": "cd src/lib/math/rdk-math && go test ./... -count=1",
+			"command": "cd tools/rdk-golden && go test ./... -count=1",
 			"files": [
-				"src/lib/math/rdk-math/**",
-				"!src/lib/math/rdk-math/testdata/**"
+				"tools/rdk-golden/**",
+				"!tools/rdk-golden/*/testdata/**"
 			],
 			"output": [
-				"src/lib/math/rdk-math/testdata/**"
+				"tools/rdk-golden/*/testdata/**"
 			],
 			"clean": true
 		},
@@ -729,8 +729,7 @@
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
-		"!dist/**/*.spec.*",
-		"!dist/**/rdk-math/**"
+		"!dist/**/*.spec.*"
 	],
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",

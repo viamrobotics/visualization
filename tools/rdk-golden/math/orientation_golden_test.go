@@ -12,6 +12,8 @@ import (
 	"go.viam.com/test"
 
 	sm "go.viam.com/rdk/spatialmath"
+
+	"rdk-golden/goldenfile"
 )
 
 // orientationGoldenName is read by src/lib/math/__tests__/orientationJson.spec.ts, which asserts
@@ -70,7 +72,7 @@ func TestOrientationGolden(t *testing.T) {
 		})
 	}
 
-	writeGolden(t, orientationGoldenName, golden)
+	goldenfile.Write(t, orientationGoldenName, golden)
 }
 
 func orientationCases(t *testing.T) []orientationCase {

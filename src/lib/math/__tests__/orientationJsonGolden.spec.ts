@@ -1,8 +1,8 @@
 import { Quaternion } from 'three'
 import { describe, expect, it } from 'vitest'
 
+import goldenFile from '../../../../tools/rdk-golden/math/testdata/orientation_json_golden.json'
 import { quatFromJson, type RawOrientation } from '../orientationJson'
-import goldenFile from '../rdk-math/testdata/orientation_json_golden.json'
 
 interface GoldenQuaternion {
 	w: number

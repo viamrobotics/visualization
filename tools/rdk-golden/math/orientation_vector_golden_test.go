@@ -8,6 +8,8 @@ import (
 	"gonum.org/v1/gonum/num/quat"
 
 	sm "go.viam.com/rdk/spatialmath"
+
+	"rdk-golden/goldenfile"
 )
 
 // orientationVectorGoldenName is read by src/lib/math/__tests__/orientationVectorGolden.spec.ts.
@@ -141,7 +143,7 @@ func TestOrientationVectorGolden(t *testing.T) {
 		})
 	}
 
-	writeGolden(t, orientationVectorGoldenName, golden)
+	goldenfile.Write(t, orientationVectorGoldenName, golden)
 }
 
 // ov45x and its partners are orientation_test.go's testing rotations.
