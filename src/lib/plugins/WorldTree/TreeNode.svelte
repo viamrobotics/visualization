@@ -54,13 +54,17 @@
 	const logStatus = $derived(logs.statusFor(logTarget))
 
 	/**
-	 * The machine's health report for this row's resource. Folders stand for the
-	 * API that fills them rather than for a resource, so one never matches, and
-	 * skipping the lookup keeps a folder from inheriting the report of a resource
-	 * sharing its name.
+	 * The machine's health report for this row's resource. Only a frame or a
+	 * frameless component stands for one. A name is not unique across the world:
+	 * a drawn transform takes its reference frame's name (`$lib/draw.ts`) and a
+	 * folder takes its display name, so looking up every row would badge those
+	 * with another resource's report.
 	 */
 	const health = useResourceHealth()
-	const unhealthy = $derived(node.folder ? undefined : health.statusFor(name.current))
+	const isResourceRow = $derived(
+		node.entity.has(traits.FramesAPI) || node.entity.has(traits.FramelessComponent)
+	)
+	const unhealthy = $derived(isResourceRow ? health.statusFor(name.current) : undefined)
 
 	/**
 	 * Staleness is a property of the poll that fills the Frames folder, not of any
