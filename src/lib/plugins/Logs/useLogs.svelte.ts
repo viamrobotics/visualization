@@ -88,6 +88,12 @@ export const provideLogs = () => {
 	const tallies = new Map<string, { warn: number; error: number }>()
 	let statusVersion = $state(0)
 
+	/**
+	 * Distinct warn and error lines, for the trigger badge. Kept as running totals
+	 * so a repeat, which is most adds at a live pose rate, costs the badge nothing.
+	 */
+	const lineCounts = $state({ warn: 0, error: 0 })
+
 	const intl = new Intl.DateTimeFormat('en-US', {
 		dateStyle: 'short',
 		timeStyle: 'short',
@@ -114,6 +120,8 @@ export const provideLogs = () => {
 	/** Move a line into or out of every row it names. `delta` is `1` on add, `-1` on evict. */
 	const tally = (log: Log, delta: number): void => {
 		if (log.level === 'info') return
+
+		lineCounts[log.level] += delta
 
 		for (const key of tallyKeys(log)) {
 			const current = tallies.get(key) ?? { warn: 0, error: 0 }
@@ -157,29 +165,15 @@ export const provideLogs = () => {
 		return out.toSorted(byFirstAppearance)
 	})
 
-	const errorCount = $derived.by(() => {
-		void version
-		let total = 0
-		for (const log of entries.values()) if (log.level === 'error') total += 1
-		return total
-	})
-
-	const warnCount = $derived.by(() => {
-		void version
-		let total = 0
-		for (const log of entries.values()) if (log.level === 'warn') total += 1
-		return total
-	})
-
 	context = {
 		get current() {
 			return all
 		},
 		get errorCount() {
-			return errorCount
+			return lineCounts.error
 		},
 		get warnCount() {
-			return warnCount
+			return lineCounts.warn
 		},
 		retract(message, level, target = {}) {
 			untrack(() => {
@@ -215,6 +209,8 @@ export const provideLogs = () => {
 
 				entries.clear()
 				tallies.clear()
+				lineCounts.warn = 0
+				lineCounts.error = 0
 				version++
 				statusVersion++
 			})

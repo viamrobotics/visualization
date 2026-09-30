@@ -124,6 +124,29 @@ describe('provideLogs', () => {
 		expect(logs.warnCount).toBe(1)
 	})
 
+	it('takes a retracted line off the trigger badge count', () => {
+		const logs = provideLogs()
+		logs.add('Pose request failed', 'error', ARM)
+		logs.add('Pose is stale', 'warn', ARM)
+
+		logs.retract('Pose request failed', 'error', ARM)
+
+		expect(logs.errorCount).toBe(0)
+		expect(logs.warnCount).toBe(1)
+	})
+
+	it('takes every line of a retracted target off the trigger badge count', () => {
+		const logs = provideLogs()
+		logs.add('Pose request failed', 'error', CAMERA_POINTCLOUDS)
+		logs.add('Pose is stale', 'warn', CAMERA_POINTCLOUDS)
+		logs.add('Unrelated', 'warn', GRIPPER)
+
+		logs.retractTarget(CAMERA_POINTCLOUDS)
+
+		expect(logs.errorCount).toBe(0)
+		expect(logs.warnCount).toBe(1)
+	})
+
 	it('drops the matching line on retract', () => {
 		const logs = provideLogs()
 		logs.add('arm has no frame', 'warn', ARM)
