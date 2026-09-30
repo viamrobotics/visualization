@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte'
 
 	import { provideHierarchy, provideWorldMatrix } from '$lib/ecs'
+	import { provideResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
@@ -43,6 +44,7 @@
 	provideRelationships()
 
 	provideResourceByName(() => partID.current)
+	provideResourceHealth(() => partID.current)
 	provideConfigFrames()
 	provideFrames(() => partID.current)
 	providePoses(() => partID.current)

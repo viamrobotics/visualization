@@ -10,6 +10,7 @@
 	import AppearanceDetails from '$lib/components/overlay/details/AppearanceDetails.svelte'
 	import CountDetails from '$lib/components/overlay/details/CountDetails.svelte'
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
+	import DetailsSections from '$lib/components/overlay/details/DetailsSections.svelte'
 	import DetailsTabs from '$lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '$lib/components/overlay/details/DimensionsDetails.svelte'
 	import EditGeometryDetails from '$lib/components/overlay/details/EditGeometryDetails.svelte'
@@ -19,7 +20,6 @@
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
 	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
-	import { useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
@@ -31,7 +31,6 @@
 	const { entity, ...rest }: Props = $props()
 
 	const environment = useEnvironment()
-	const sections = useDetailsSections()
 	const fragmentInfo = useFragmentInfo()
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
@@ -93,11 +92,10 @@
 
 	<RelationshipDetails {entity} />
 
-	{#each sections?.current ?? [] as section (section)}
-		{#if section.when?.(entity) ?? true}
-			{@render section.snippet({ entity })}
-		{/if}
-	{/each}
+	<DetailsSections
+		{entity}
+		tab="details"
+	/>
 
 	{#if showRelationshipOptions || (showEditFrameOptions && environment.current.isStandalone)}
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
@@ -120,6 +118,11 @@
 
 {#snippet appearanceTab()}
 	<AppearanceDetails {entity} />
+
+	<DetailsSections
+		{entity}
+		tab="appearance"
+	/>
 {/snippet}
 
 <DetailsPanel

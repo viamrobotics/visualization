@@ -59,6 +59,13 @@ export interface Settings {
 
 	openFramePovWidgets: Record<string, string[]>
 
+	/** Whether the sensor-coverage plugin draws camera view frusta into the scene. */
+	enableSensorCoverage: boolean
+	/** Far-plane depth of a coverage frustum, in metres. */
+	sensorCoverageRange: number
+	/** Cameras switched out of the coverage drawing, by resource name. */
+	disabledCoverageCameras: Record<string, boolean>
+
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
 	/** How entity surfaces are shaded. `realistic` is the only mode that casts shadows. */
@@ -144,6 +151,10 @@ const defaults = (): Settings => ({
 	enableLabels: false,
 
 	openFramePovWidgets: {},
+
+	enableSensorCoverage: true,
+	sensorCoverageRange: 2,
+	disabledCoverageCameras: {},
 
 	renderStats: false,
 	renderArmModels: 'colliders+model',

@@ -9,12 +9,16 @@
 
 	import EntityLink from '$lib/components/overlay/EntityLink.svelte'
 	import { traits, useTrait } from '$lib/ecs'
+	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
+	import { usePoses } from '$lib/hooks/usePoses.svelte'
 	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
 	import type { TreeNode } from './buildTree'
 
 	import FolderSettingsButton from './FolderSettingsButton.svelte'
 	import LogStatusIndicator from './LogStatusIndicator.svelte'
+	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
+	import ResourceHealthIndicator from './ResourceHealthIndicator.svelte'
 	import Self from './TreeNode.svelte'
 
 	interface Props {
@@ -48,6 +52,29 @@
 	// repeating message costs the tree nothing. Healthy rows mount no indicator.
 	const logs = useLogs()
 	const logStatus = $derived(logs.statusFor(logTarget))
+
+	/**
+	 * The machine's health report for this row's resource. Only a frame or a
+	 * frameless component stands for one. A name is not unique across the world:
+	 * a drawn transform takes its reference frame's name (`$lib/draw.ts`) and a
+	 * folder takes its display name, so looking up every row would badge those
+	 * with another resource's report.
+	 */
+	const health = useResourceHealth()
+	const isResourceRow = $derived(
+		node.entity.has(traits.FramesAPI) || node.entity.has(traits.FramelessComponent)
+	)
+	const unhealthy = $derived(isResourceRow ? health.statusFor(name.current) : undefined)
+
+	/**
+	 * Staleness is a property of the poll that fills the Frames folder, not of any
+	 * one frame, so it marks that folder's row. Short-circuited on the folder id so
+	 * every other row in the tree takes no dependency on the freshness clock.
+	 */
+	const poses = usePoses()
+	const posesStale = $derived(node.folder?.id === 'frames' && poses.isStale)
+
+	const hasAlert = $derived(logStatus !== undefined || unhealthy !== undefined || posesStale)
 
 	const nodeProps = $derived({ indexPath, node })
 	const nodeState = $derived(api.getNodeState(nodeProps))
@@ -89,12 +116,12 @@
 		reachable however deeply the row is indented. `bg-inherit` picks up whichever
 		row fill is in play (default, hover, selected) to mask the name behind it.
 	-->
-	<div class="sticky right-0 flex items-center gap-1 bg-inherit pr-4 pl-2">
+	<div class="sticky right-0 flex items-center gap-2 bg-inherit pr-4 pl-2">
 		{@render content()}
 	</div>
 {/snippet}
 
-{#snippet logIndicator()}
+{#snippet alertIndicators()}
 	{#if logStatus}
 		<LogStatusIndicator
 			target={logTarget}
@@ -102,10 +129,18 @@
 			status={logStatus}
 		/>
 	{/if}
+
+	{#if unhealthy}
+		<ResourceHealthIndicator resource={unhealthy} />
+	{/if}
+
+	{#if posesStale}
+		<PoseStalenessIndicator />
+	{/if}
 {/snippet}
 
 {#snippet folderActions()}
-	{@render logIndicator()}
+	{@render alertIndicators()}
 
 	{#if node.folder?.refreshRate}
 		<FolderSettingsButton
@@ -116,7 +151,7 @@
 {/snippet}
 
 {#snippet itemActions()}
-	{@render logIndicator()}
+	{@render alertIndicators()}
 
 	{#if loading}
 		<span
@@ -196,7 +231,7 @@
 
 			{#if !node.folder}
 				{@render actionColumn(itemActions)}
-			{:else if node.folder.refreshRate || logStatus}
+			{:else if node.folder.refreshRate || hasAlert}
 				{@render actionColumn(folderActions)}
 			{/if}
 		</div>
@@ -246,9 +281,9 @@
 
 		{#if !node.sceneless}
 			{@render actionColumn(itemActions)}
-		{:else if logStatus}
+		{:else if hasAlert}
 			<!-- No visibility toggle here, but a row reporting a problem still says so. -->
-			{@render actionColumn(logIndicator)}
+			{@render actionColumn(alertIndicators)}
 		{/if}
 	</div>
 {/if}

@@ -46,6 +46,8 @@ export { default as Monitor } from './Monitor/Monitor.svelte'
 
 export { default as MoveFrame } from './MoveFrame/MoveFrame.svelte'
 
+export { default as SensorCoverage } from './SensorCoverage/SensorCoverage.svelte'
+
 export { default as Settings } from './Settings/Settings.svelte'
 
 export { default as SelectionTool } from './Selection/SelectionTool.svelte'

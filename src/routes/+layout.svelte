@@ -22,6 +22,7 @@
 		Monitor,
 		MotionPlanReplayer,
 		MoveFrame,
+		SensorCoverage,
 		Settings,
 		WorldTree,
 		XR,
@@ -95,6 +96,7 @@
 					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
 					<Isolate />
 					<MeasureTool />
+					<SensorCoverage />
 
 					<Monitor />
 					<BuildFrames />

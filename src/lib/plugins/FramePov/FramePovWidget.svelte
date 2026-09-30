@@ -6,7 +6,8 @@
 
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { traits, useQuery } from '$lib/ecs'
+	import { traits } from '$lib/ecs'
+	import { useFrameEntities } from '$lib/hooks/useFrameEntities.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
@@ -30,8 +31,8 @@
 	// camera sees at 1 m. zoom > 1 narrows the frustum, zoom < 1 widens it.
 	const BASE_ORTHO_HEIGHT = 2 * Math.tan((PERSPECTIVE_FOV_DEG * Math.PI) / 360)
 
-	const namedEntities = useQuery(traits.Name)
-	const entity = $derived(namedEntities.current.find((e) => e.get(traits.Name) === frameName))
+	const frameEntities = useFrameEntities()
+	const entity = $derived(frameEntities.current.get(frameName))
 
 	const perspectiveCamera = new PerspectiveCamera(PERSPECTIVE_FOV_DEG, 1, 0.01, 1000)
 	perspectiveCamera.up.set(0, 0, 1)
