@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Badge, Icon } from '@viamrobotics/prime-core'
-	import { PersistedState } from 'runed'
+	import { PersistedState, Throttled } from 'runed'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '$lib/components/overlay/Popover.svelte'
@@ -35,7 +35,13 @@
 		error: true,
 	})
 
-	const visible = $derived(logs.current.filter((log) => levels.current[log.level]))
+	/**
+	 * At a live pose rate every repeating line re-renders its count 30–60 times a
+	 * second. The store stays exact for the tree's alerts; only this list lags.
+	 */
+	const shown = new Throttled(() => logs.current, 250)
+
+	const visible = $derived(shown.current.filter((log) => levels.current[log.level]))
 
 	/**
 	 * One badge, not two stacked in the same corner. Errors outrank warnings, so
@@ -142,7 +148,7 @@
 
 				{#if visible.length === 0}
 					<p class="text-subtle-2 px-3 py-6 text-center text-xs">
-						{#if logs.current.length === 0}
+						{#if shown.current.length === 0}
 							No logs yet.
 						{:else}
 							No logs at the selected levels.

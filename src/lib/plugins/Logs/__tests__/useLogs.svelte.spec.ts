@@ -32,14 +32,26 @@ describe('provideLogs', () => {
 		expect(logs.current).toHaveLength(5)
 	})
 
-	it('orders newest first and lifts a repeating line back to the top', () => {
+	it('orders newest first and keeps a repeating line where it first appeared', () => {
 		const logs = provideLogs()
 
 		logs.add('first')
 		logs.add('second')
 		logs.add('first')
 
-		expect(logs.current.map((log) => log.message)).toEqual(['first', 'second'])
+		expect(logs.current.map((log) => log.message)).toEqual(['second', 'first'])
+	})
+
+	it('keeps evicting by latest repeat, so a line still firing outlives quieter ones', () => {
+		const logs = provideLogs()
+
+		logs.add('repeating')
+		for (let index = 0; index < 199; index += 1) logs.add(`filler ${index}`)
+		logs.add('repeating')
+		logs.add('one more')
+
+		expect(logs.current.map((log) => log.message)).toContain('repeating')
+		expect(logs.current.map((log) => log.message)).not.toContain('filler 0')
 	})
 
 	it('reports the worst level logged against a resource', () => {

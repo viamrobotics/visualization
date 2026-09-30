@@ -92,23 +92,6 @@
 		}
 	})
 
-	const noReferenceFrameWarning = $derived(
-		`${name} named no reference frame, drawing its pointcloud at the world origin`
-	)
-	const warningTarget = $derived({ resource: name, folder: 'pointcloud-objects' })
-
-	/**
-	 * The response's reference frame, warning when it named none. A named frame
-	 * absent from the scene leaves the cloud an `Orphan`, which the world tree's
-	 * missing-parent folder already reports.
-	 */
-	const resolveParentFrame = (referenceFrame: string | undefined): string | undefined => {
-		if (referenceFrame) logs.retract(noReferenceFrameWarning, 'warn', warningTarget)
-		else logs.add(noReferenceFrameWarning, 'warn', warningTarget)
-
-		return referenceFrame
-	}
-
 	const entities = new Map<string, Entity>()
 	let drawnKeys = new Set<string>()
 
@@ -172,7 +155,7 @@
 							return
 						}
 
-						const parentFrame = resolveParentFrame(geometriesInFrame?.referenceFrame)
+						const parentFrame = geometriesInFrame?.referenceFrame
 						const existing = entities.get(pointcloudLabel)
 						const metadata = {
 							colors,

@@ -57,8 +57,13 @@ interface Context {
 	clear(): void
 	/** Worst level currently logged against a row, or `undefined` when it is clean. */
 	statusFor(target: LogTarget): LogStatus | undefined
-	/** That row's lines, newest first. */
+	/** That row's lines, ordered like `current`. */
 	linesFor(target: LogTarget): Log[]
+}
+
+/** Position of a line's first occurrence, which is what the list sorts by. */
+interface Entry extends Log {
+	sequence: number
 }
 
 const MAX_LOGS = 200
@@ -70,8 +75,10 @@ let context = $state<Context | undefined>()
 
 export const provideLogs = () => {
 	// A Map keyed by `dedupKey` holds the logs and a `$state` version counter drives reactivity, so an add costs no array allocation.
-	const entries = new Map<string, Log>()
+	// Map order is recency, for eviction only. See `Entry` for display order.
+	const entries = new Map<string, Entry>()
 	let version = $state(0)
+	let nextSequence = 0
 
 	/**
 	 * Warn and error tallies per tally key, maintained as lines arrive and age out.
@@ -132,16 +139,22 @@ export const provideLogs = () => {
 	}
 
 	/**
-	 * Newest first. Each read hands back fresh objects: the entries themselves are
-	 * plain (mutating one in place would not notify), so a new identity per version
-	 * is what makes a climbing `count` render.
+	 * Latest first appearance first. A repeat updates its line in place rather
+	 * than lifting it, since lines repeating every pose tick would otherwise
+	 * leapfrog each other faster than the list can be read.
+	 */
+	const byFirstAppearance = (a: Entry, b: Entry): number => b.sequence - a.sequence
+
+	/**
+	 * Each read hands back fresh objects: the entries themselves are plain
+	 * (mutating one in place would not notify), so a new identity per version is
+	 * what makes a climbing `count` render.
 	 */
 	const all = $derived.by(() => {
 		void version
-		const out: Log[] = []
+		const out: Entry[] = []
 		for (const log of entries.values()) out.push({ ...log })
-		out.reverse()
-		return out
+		return out.toSorted(byFirstAppearance)
 	})
 
 	const errorCount = $derived.by(() => {
@@ -219,15 +232,14 @@ export const provideLogs = () => {
 		},
 		linesFor(target) {
 			void version
-			const out: Log[] = []
+			const out: Entry[] = []
 			for (const log of entries.values()) {
 				const matches =
 					(target.resource !== undefined && log.resource === target.resource) ||
 					(target.folder !== undefined && log.folder === target.folder)
 				if (matches) out.push({ ...log })
 			}
-			out.reverse()
-			return out
+			return out.toSorted(byFirstAppearance)
 		},
 		add(message, level = 'info', target = {}) {
 			untrack(() => {
@@ -238,12 +250,13 @@ export const provideLogs = () => {
 				if (match) {
 					match.count += 1
 					match.timestamp = timestamp
-					// Re-insert so a line that is still repeating sorts as the newest and
-					// is the last to be evicted, rather than ageing out under its own repeats.
+					// Re-insert so a line that is still repeating is the last to be evicted,
+					// rather than ageing out under its own repeats.
 					entries.delete(key)
 					entries.set(key, match)
 				} else {
-					const log: Log = {
+					const log: Entry = {
+						sequence: nextSequence++,
 						uuid: MathUtils.generateUUID(),
 						message,
 						count: 1,
