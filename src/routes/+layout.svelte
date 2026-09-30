@@ -44,6 +44,7 @@
 	let { children } = $props()
 
 	// The standalone app has no IK solver, so inspection surfaces this as its error state.
+	// TODO: call local rdk inspectIK to provide standalone viz iteration.
 	const resolveIKSolutions = () =>
 		Promise.reject(new Error('IK inspection is not available in the standalone app.'))
 
