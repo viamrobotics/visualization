@@ -145,13 +145,35 @@ describe('buildTree', () => {
 		expect(namesIn(folderNamed(nodes, 'Other'))).toEqual(['custom geometry 1'])
 	})
 
-	it('hides orphans until the resolver places them', () => {
+	it('files an orphan under Missing parent rather than its source folder', () => {
 		world = createWorld()
-		world.spawn(traits.Name('pending'), traits.FramesAPI, traits.Orphan('arm'))
+		world.spawn(traits.Name('cam1 pointcloud'), traits.PointCloudAPI, traits.Orphan('cam1'))
 
 		const { nodes } = buildTree(world, spawnFolderEntities())
 
-		expect(nodes).toEqual([])
+		expect(nodes.map((node) => node.entity.get(traits.Name))).toEqual(['Missing parent'])
+		expect(namesIn(folderNamed(nodes, 'Missing parent'))).toEqual(['cam1 pointcloud'])
+	})
+
+	it('names the parent an orphan is waiting for', () => {
+		world = createWorld()
+		world.spawn(traits.Name('cam1 pointcloud'), traits.PointCloudAPI, traits.Orphan('cam1'))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+
+		expect(folderNamed(nodes, 'Missing parent')?.children?.[0]?.missingParent).toBe('cam1')
+	})
+
+	it('keeps an orphan’s untagged descendants nested under it', () => {
+		world = createWorld()
+		const pending = world.spawn(traits.Name('drawing'), traits.DrawAPI, traits.Orphan('base'))
+		world.spawn(traits.Name('drawing model 1'), relations.ChildOf(pending))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+		const missing = folderNamed(nodes, 'Missing parent')
+
+		expect(namesIn(missing)).toEqual(['drawing'])
+		expect(namesIn(missing?.children?.[0])).toEqual(['drawing model 1'])
 	})
 
 	it('maps each node to its drawn parent, topped by the folder row', () => {

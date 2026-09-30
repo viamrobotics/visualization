@@ -2,4 +2,4 @@
 '@viamrobotics/visualization': patch
 ---
 
-Warn when a pointcloud's camera has no frame, and withdraw the warning once the frame appears.
+Warn on the world tree's Missing parent folder that its objects are positioned relative to the world origin.

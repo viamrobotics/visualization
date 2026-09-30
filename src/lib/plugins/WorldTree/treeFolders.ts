@@ -7,6 +7,7 @@ import { traits } from '$lib/ecs'
 /** Stable key for a folder, independent of its display name. */
 export type TreeFolderId =
 	| 'frames'
+	| 'missing-parent'
 	| 'frameless-components'
 	| 'pointclouds'
 	| 'pointcloud-objects'
@@ -53,5 +54,10 @@ export const treeFolders: TreeFolder[] = [
 	{ id: 'world-state-store', name: 'World state store', sources: [traits.WorldStateStoreAPI] },
 	{ id: 'drawn', name: 'Drawn', sources: [traits.DrawAPI, traits.SnapshotAPI] },
 	{ id: 'imported-files', name: 'Imported files', sources: [traits.DroppedFile] },
+	/**
+	 * No sources because it claims by `Orphan` instead: every entity whose parent is
+	 * not in the scene, whatever produced it, so it never passes for a root.
+	 */
+	{ id: 'missing-parent', name: 'Missing parent', sources: [], collapsed: true },
 	{ id: 'other', name: 'Other', sources: [] },
 ]

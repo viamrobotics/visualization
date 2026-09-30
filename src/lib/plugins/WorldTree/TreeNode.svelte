@@ -17,6 +17,7 @@
 
 	import FolderSettingsButton from './FolderSettingsButton.svelte'
 	import LogStatusIndicator from './LogStatusIndicator.svelte'
+	import MissingParentIndicator from './MissingParentIndicator.svelte'
 	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
 	import ResourceHealthIndicator from './ResourceHealthIndicator.svelte'
 	import Self from './TreeNode.svelte'
@@ -74,7 +75,12 @@
 	const poses = usePoses()
 	const posesStale = $derived(node.folder?.id === 'frames' && poses.isStale)
 
-	const hasAlert = $derived(logStatus !== undefined || unhealthy !== undefined || posesStale)
+	// The folder only exists while it holds an orphan, so its warning is unconditional.
+	const isMissingParentFolder = $derived(node.folder?.id === 'missing-parent')
+
+	const hasAlert = $derived(
+		logStatus !== undefined || unhealthy !== undefined || posesStale || isMissingParentFolder
+	)
 
 	const nodeProps = $derived({ indexPath, node })
 	const nodeState = $derived(api.getNodeState(nodeProps))
@@ -136,6 +142,10 @@
 
 	{#if posesStale}
 		<PoseStalenessIndicator />
+	{/if}
+
+	{#if isMissingParentFolder}
+		<MissingParentIndicator />
 	{/if}
 {/snippet}
 
@@ -226,6 +236,8 @@
 					<span class="text-subtle-2">
 						in <EntityLink entity={node.detachedParent} />
 					</span>
+				{:else if node.missingParent}
+					<span class="text-subtle-2">in {node.missingParent}</span>
 				{/if}
 			</span>
 
@@ -276,6 +288,8 @@
 				<span class="text-subtle-2">
 					in <EntityLink entity={node.detachedParent} />
 				</span>
+			{:else if node.missingParent}
+				<span class="text-subtle-2">in {node.missingParent}</span>
 			{/if}
 		</span>
 

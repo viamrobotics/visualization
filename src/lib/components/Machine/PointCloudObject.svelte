@@ -9,7 +9,6 @@
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { RefetchRates } from '$lib/components/overlay/refetchRates'
 	import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
-	import { FRAME_ENTITY_QUERY } from '$lib/hooks/useFrameEntities.svelte'
 	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -99,33 +98,15 @@
 	const warningTarget = $derived({ resource: name, folder: 'pointcloud-objects' })
 
 	/**
-	 * The response's reference frame while one is in the scene, else undefined to
-	 * park the cloud at the world root. `Orphan` is hidden from the world tree until
-	 * it resolves, so naming a frame absent from the scene would drop the cloud out
-	 * of the tree while it still draws.
-	 *
-	 * Queried straight off the world because this runs from a promise callback,
-	 * where a `$derived` registers no dependency.
+	 * The response's reference frame, warning when it named none. A named frame
+	 * absent from the scene leaves the cloud an `Orphan`, which the world tree's
+	 * missing-parent folder already reports.
 	 */
 	const resolveParentFrame = (referenceFrame: string | undefined): string | undefined => {
-		if (!referenceFrame) {
-			logs.add(noReferenceFrameWarning, 'warn', warningTarget)
-			return undefined
-		}
+		if (referenceFrame) logs.retract(noReferenceFrameWarning, 'warn', warningTarget)
+		else logs.add(noReferenceFrameWarning, 'warn', warningTarget)
 
-		logs.retract(noReferenceFrameWarning, 'warn', warningTarget)
-
-		const hasFrame = world
-			.query(...FRAME_ENTITY_QUERY)
-			.some((frame) => frame.get(traits.Name) === referenceFrame)
-
-		// Frames load after the first response on a cold start, so this is routinely
-		// true when raised and false a moment later.
-		const missingFrameWarning = `${referenceFrame} has no frame, drawing ${name}'s pointcloud at the world origin`
-		if (hasFrame) logs.retract(missingFrameWarning, 'warn', warningTarget)
-		else logs.add(missingFrameWarning, 'warn', warningTarget)
-
-		return hasFrame ? referenceFrame : undefined
+		return referenceFrame
 	}
 
 	const entities = new Map<string, Entity>()

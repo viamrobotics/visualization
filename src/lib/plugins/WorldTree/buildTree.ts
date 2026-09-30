@@ -1,7 +1,5 @@
 import type { Entity, World } from 'koota'
 
-import { Not } from 'koota'
-
 import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
 
 import { relations, traits } from '$lib/ecs'
@@ -33,6 +31,8 @@ export interface TreeNode {
 	sceneless?: boolean
 	/** The `ChildOf` parent, set when it sits in another folder. */
 	detachedParent?: Entity
+	/** The parent name an `Orphan` is waiting for, which has no entity to link. */
+	missingParent?: string
 }
 
 export interface Tree {
@@ -47,8 +47,13 @@ const compareByName = (a: Entity, b: Entity): number =>
 	collator.compare(a.get(traits.Name) ?? '', b.get(traits.Name) ?? '')
 
 const otherFolder = treeFolders.length - 1
+const missingParentFolder = treeFolders.findIndex((folder) => folder.id === 'missing-parent')
 
 const ownFolder = (entity: Entity): number | undefined => {
+	// Checked ahead of the sources, since a frame or a point cloud with no parent
+	// in the scene would otherwise sit among its siblings looking like a root.
+	if (entity.has(traits.Orphan)) return missingParentFolder
+
 	for (const [index, folder] of treeFolders.entries()) {
 		for (const source of folder.sources) {
 			if (entity.has(source)) return index
@@ -60,12 +65,13 @@ const ownFolder = (entity: Entity): number | undefined => {
 
 /**
  * Named entities grouped by source. `folderEntities` supplies one entity per entry
- * in `treeFolders`, in order. Folders that claim nothing are left out. Orphans are
- * hidden until the resolver places them.
+ * in `treeFolders`, in order. Folders that claim nothing are left out. Orphans sit
+ * in the missing-parent folder, with their untagged descendants, until the
+ * resolver places them.
  */
 export const buildTree = (world: World, folderEntities: Entity[]): Tree => {
 	const parents = new Map<string, string>()
-	const entities = world.query(traits.Name, Not(traits.Orphan))
+	const entities = world.query(traits.Name)
 	const rows = new Set<Entity>(entities)
 
 	const folderOf = new Map<Entity, number>()
@@ -153,6 +159,8 @@ export const buildTree = (world: World, folderEntities: Entity[]): Tree => {
 				node.sceneless = sceneless
 				const parent = entity.targetFor(relations.ChildOf)
 				if (parent?.isAlive() && parent.get(traits.Name)) node.detachedParent = parent
+				const missingParent = entity.get(traits.Orphan)
+				if (missingParent) node.missingParent = missingParent
 
 				return node
 			}),

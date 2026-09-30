@@ -8,7 +8,6 @@
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { RefetchRates } from '$lib/components/overlay/refetchRates'
 	import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
-	import { FRAME_ENTITY_QUERY } from '$lib/hooks/useFrameEntities.svelte'
 	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -95,35 +94,6 @@
 		}
 	})
 
-	const noFrameWarning = $derived(
-		`${name} has no frame, drawing its pointcloud at the world origin`
-	)
-
-	/**
-	 * The camera's frame name while one is in the scene, else undefined to park the
-	 * cloud at the world root. `Orphan` is hidden from the world tree until it
-	 * resolves, so naming a frame that will never exist drops the cloud out of the
-	 * tree altogether while it still draws in the scene.
-	 *
-	 * Queried straight off the world because this runs from a promise callback,
-	 * where a `$derived` registers no dependency.
-	 */
-	const resolveParentFrame = (): string | undefined => {
-		const hasCameraFrame = world
-			.query(...FRAME_ENTITY_QUERY)
-			.some((frame) => frame.get(traits.Name) === name)
-
-		if (!hasCameraFrame) {
-			logs.add(noFrameWarning, 'warn', logTarget)
-			return undefined
-		}
-
-		// The frame arrives after the first points on a cold load, so the warning is
-		// routinely true when raised and false a moment later.
-		logs.retract(noFrameWarning, 'warn', logTarget)
-		return name
-	}
-
 	let entity: Entity | undefined
 
 	const destroyEntity = () => {
@@ -163,10 +133,9 @@
 					colors,
 					colorFormat: ColorFormat.RGB,
 				}
-				const parentFrame = resolveParentFrame()
 
 				if (entity) {
-					hierarchy.setParent(entity, parentFrame)
+					hierarchy.setParent(entity, name)
 					const geometry = entity.get(traits.BufferGeometry)
 
 					if (geometry) {
@@ -185,7 +154,7 @@
 				if (boundsTree) attachPointsBvh(geometry, boundsTree)
 
 				entity = world.spawn(
-					...hierarchy.parentTraits(parentFrame),
+					...hierarchy.parentTraits(name),
 					traits.Name(`${name} pointcloud`),
 					traits.BufferGeometry(geometry),
 					traits.Points,
