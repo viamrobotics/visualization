@@ -167,6 +167,8 @@
 		entity = undefined
 	}
 
+	// TODO: this is a bit of a hack, but there is no better solution currently
+	// because pointclouds cannot be returned in world space no are they returned with caputure timestamp
 	$effect(() => {
 		if (query.isFetching) {
 			captureCameraPose()
