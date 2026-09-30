@@ -3,7 +3,6 @@
 
 	import { CameraClient } from '@viamrobotics/sdk'
 	import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
-	import { Matrix4 } from 'three'
 
 	import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
@@ -72,90 +71,57 @@
 		return () => refetchers.delete(registration)
 	})
 
-	$effect(() => {
-		if (query.isFetching) {
-			logs.add(`Fetching pointcloud for ${name}...`, 'info', {
-				resource: name,
-				folder: 'pointclouds',
-			})
-		} else if (query.error) {
-			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', {
-				resource: name,
-				folder: 'pointclouds',
-			})
-		}
-	})
+	const logTarget = $derived({ resource: name, folder: 'pointclouds' })
 
 	/**
-	 * Where the camera was when it captured the points this component is holding.
-	 * Points come back in the camera's frame, so composing them through its live
-	 * pose would drag an already-captured cloud along behind a moving arm and draw
-	 * it somewhere the camera never saw.
-	 *
-	 * Read when the parsed points land, so it trails the true capture by the round
-	 * trip plus the parse. Sampling as the request goes out would be closer, but
-	 * that means hanging the only sample on a transient `isFetching` edge, and it
-	 * never fired.
+	 * A disabled camera has stopped reporting, so it withdraws what it already
+	 * logged rather than leaving its last failure on its tree rows.
 	 */
-	const captureMatrix = new Matrix4()
-	let hasCaptureMatrix = false
+	$effect(() => {
+		if (!enabled) return
+
+		const target = logTarget
+		return () => logs.retractTarget(target)
+	})
+
+	$effect(() => {
+		// A disabled query keeps its last error, which would log again on the way out.
+		if (!enabled) return
+
+		if (query.isFetching) {
+			logs.add(`Fetching pointcloud for ${name}...`, 'info', logTarget)
+		} else if (query.error) {
+			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', logTarget)
+		}
+	})
 
 	const noFrameWarning = $derived(
 		`${name} has no frame, drawing its pointcloud at the world origin`
 	)
-	const warningTarget = $derived({ resource: name, folder: 'pointclouds' })
 
 	/**
 	 * The camera's frame name while one is in the scene, else undefined to park the
 	 * cloud at the world root. `Orphan` is hidden from the world tree until it
 	 * resolves, so naming a frame that will never exist drops the cloud out of the
 	 * tree altogether while it still draws in the scene.
+	 *
+	 * Queried straight off the world because this runs from a promise callback,
+	 * where a `$derived` registers no dependency.
 	 */
-	let parentFrame: string | undefined
-
-	const captureCameraPose = () => {
-		const cameraFrame = world
+	const resolveParentFrame = (): string | undefined => {
+		const hasCameraFrame = world
 			.query(...FRAME_ENTITY_QUERY)
-			.find((frame) => frame.get(traits.Name) === name)
+			.some((frame) => frame.get(traits.Name) === name)
 
-		parentFrame = cameraFrame === undefined ? undefined : name
-
-		const cameraWorldMatrix = cameraFrame?.get(traits.WorldMatrix)
-		if (!cameraWorldMatrix) {
-			// Only while the cloud has never been placed. A camera that drops out of
-			// the frame system later keeps the pose it was last pinned at.
-			if (!hasCaptureMatrix) logs.add(noFrameWarning, 'warn', warningTarget)
-			return
+		if (!hasCameraFrame) {
+			logs.add(noFrameWarning, 'warn', logTarget)
+			return undefined
 		}
 
 		// The frame arrives after the first points on a cold load, so the warning is
 		// routinely true when raised and false a moment later.
-		logs.retract(noFrameWarning, 'warn', warningTarget)
-
-		captureMatrix.copy(cameraWorldMatrix)
-		hasCaptureMatrix = true
-	}
-
-	/**
-	 * Pin the cloud to the captured pose, taking `WorldMatrix` over from the
-	 * world-matrix system. Left composing through the camera when there was no
-	 * pose to sample: following a live camera is wrong, but it beats pinning the
-	 * cloud to the world origin.
-	 */
-	const freezeAtCapture = (target: Entity) => {
-		if (!hasCaptureMatrix) return
-
-		const worldMatrix = target.get(traits.WorldMatrix)
-		if (worldMatrix) {
-			worldMatrix.copy(captureMatrix)
-			target.changed(traits.WorldMatrix)
-		} else {
-			target.add(traits.WorldMatrix(captureMatrix.clone()))
-		}
-
-		if (!target.has(traits.MatrixAutoUpdate)) {
-			target.add(traits.MatrixAutoUpdate(false))
-		}
+		logs.retract(noFrameWarning, 'warn', logTarget)
+		return name
 	}
 
 	let entity: Entity | undefined
@@ -166,14 +132,6 @@
 		}
 		entity = undefined
 	}
-
-	// TODO: this is a bit of a hack, but there is no better solution currently
-	// because pointclouds cannot be returned in world space no are they returned with caputure timestamp
-	$effect(() => {
-		if (query.isFetching) {
-			captureCameraPose()
-		}
-	})
 
 	$effect(() => {
 		const { data } = query
@@ -205,6 +163,7 @@
 					colors,
 					colorFormat: ColorFormat.RGB,
 				}
+				const parentFrame = resolveParentFrame()
 
 				if (entity) {
 					hierarchy.setParent(entity, parentFrame)
@@ -218,7 +177,6 @@
 							total: positions.length / 3,
 							shuffled,
 						})
-						freezeAtCapture(entity)
 						return
 					}
 				}
@@ -235,18 +193,17 @@
 					traits.PointSampling({ total: positions.length / 3, shuffled }),
 					traits.PointCloudAPI
 				)
-
-				freezeAtCapture(entity)
 			})
 			.catch((error) => {
 				if (disposed) {
 					return
 				}
 
-				logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error', {
-					resource: name,
-					folder: 'pointclouds',
-				})
+				logs.add(
+					error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
+					'error',
+					logTarget
+				)
 			})
 
 		return () => {

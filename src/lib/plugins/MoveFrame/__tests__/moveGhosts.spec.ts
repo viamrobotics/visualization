@@ -183,7 +183,7 @@ describe('syncMoveGhosts', () => {
 		expect(ghosts.get(child)?.get(traits.BufferGeometry)).not.toBe(geometry)
 	})
 
-	it('leaves a camera point cloud out, since captured points do not ride the move', () => {
+	it('leaves a camera point cloud out, since a ghost would draw it as a mesh', () => {
 		const camera = spawnFrame(root, 1)
 		const cloud = world.spawn(
 			relations.ChildOf(camera),

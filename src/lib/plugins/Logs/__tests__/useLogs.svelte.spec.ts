@@ -5,6 +5,8 @@ import { provideLogs } from '../useLogs.svelte'
 const ARM = { resource: 'arm' }
 const GRIPPER = { resource: 'gripper' }
 const FRAMES = { folder: 'frames' }
+const POINTCLOUDS = { folder: 'pointclouds' }
+const CAMERA_POINTCLOUDS = { resource: 'camera', folder: 'pointclouds' }
 
 describe('provideLogs', () => {
 	it('collapses a repeated line into one entry with a count', () => {
@@ -147,6 +149,41 @@ describe('provideLogs', () => {
 		logs.add('arm has no frame', 'warn', ARM)
 
 		expect(logs.current[0]).toMatchObject({ message: 'arm has no frame', count: 1 })
+	})
+
+	it('drops every line filed against a target on retractTarget', () => {
+		const logs = provideLogs()
+		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS)
+		logs.add('camera has no frame', 'warn', CAMERA_POINTCLOUDS)
+		logs.add('Fetching pointcloud...', 'info', CAMERA_POINTCLOUDS)
+
+		logs.retractTarget(CAMERA_POINTCLOUDS)
+
+		expect(logs.current).toEqual([])
+	})
+
+	it('clears both row alerts a retracted target raised', () => {
+		const logs = provideLogs()
+		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS)
+
+		logs.retractTarget(CAMERA_POINTCLOUDS)
+
+		expect(logs.statusFor({ resource: 'camera' })).toBeUndefined()
+		expect(logs.statusFor(POINTCLOUDS)).toBeUndefined()
+	})
+
+	it('keeps lines filed against only one row of the retracted target', () => {
+		const logs = provideLogs()
+		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS)
+		logs.add('Camera unreachable', 'error', { resource: 'camera' })
+		logs.add('Pointcloud poll failed', 'warn', POINTCLOUDS)
+
+		logs.retractTarget(CAMERA_POINTCLOUDS)
+
+		expect(logs.current.map((log) => log.message)).toEqual([
+			'Pointcloud poll failed',
+			'Camera unreachable',
+		])
 	})
 
 	it('drops every line and row alert on clear', () => {

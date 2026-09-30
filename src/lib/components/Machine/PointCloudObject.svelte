@@ -93,18 +93,21 @@
 		}
 	})
 
-	/**
-	 * The observer's world pose, or undefined when the response named no reference
-	 * frame or that frame has no pose yet. Queried straight off the world because
-	 * this runs from a promise callback, where a `$derived` registers no dependency
-	 * and would latch whatever the world held the first time.
-	 */
 	const noReferenceFrameWarning = $derived(
 		`${name} named no reference frame, drawing its pointcloud at the world origin`
 	)
 	const warningTarget = $derived({ resource: name, folder: 'pointcloud-objects' })
 
-	const capturePose = (referenceFrame: string | undefined): Matrix4 | undefined => {
+	/**
+	 * The response's reference frame while one is in the scene, else undefined to
+	 * park the cloud at the world root. `Orphan` is hidden from the world tree until
+	 * it resolves, so naming a frame absent from the scene would drop the cloud out
+	 * of the tree while it still draws.
+	 *
+	 * Queried straight off the world because this runs from a promise callback,
+	 * where a `$derived` registers no dependency.
+	 */
+	const resolveParentFrame = (referenceFrame: string | undefined): string | undefined => {
 		if (!referenceFrame) {
 			logs.add(noReferenceFrameWarning, 'warn', warningTarget)
 			return undefined
@@ -112,38 +115,17 @@
 
 		logs.retract(noReferenceFrameWarning, 'warn', warningTarget)
 
-		const pose = world
+		const hasFrame = world
 			.query(...FRAME_ENTITY_QUERY)
-			.find((frame) => frame.get(traits.Name) === referenceFrame)
-			?.get(traits.WorldMatrix)
+			.some((frame) => frame.get(traits.Name) === referenceFrame)
 
 		// Frames load after the first response on a cold start, so this is routinely
 		// true when raised and false a moment later.
 		const missingFrameWarning = `${referenceFrame} has no frame, drawing ${name}'s pointcloud at the world origin`
-		if (pose) logs.retract(missingFrameWarning, 'warn', warningTarget)
+		if (hasFrame) logs.retract(missingFrameWarning, 'warn', warningTarget)
 		else logs.add(missingFrameWarning, 'warn', warningTarget)
 
-		return pose
-	}
-
-	/**
-	 * Hold the cloud at the pose the observer had when it captured. Points come
-	 * back in the observer's frame at one instant, so composing them through its
-	 * live pose would draw an already-captured cloud where it was never seen.
-	 */
-	const pinAtCapture = (target: Entity, pose: Matrix4) => {
-		const worldMatrix = target.get(traits.WorldMatrix)
-
-		if (worldMatrix) {
-			worldMatrix.copy(pose)
-			target.changed(traits.WorldMatrix)
-		} else {
-			target.add(traits.WorldMatrix(pose.clone()))
-		}
-
-		if (!target.has(traits.MatrixAutoUpdate)) {
-			target.add(traits.MatrixAutoUpdate(false))
-		}
+		return hasFrame ? referenceFrame : undefined
 	}
 
 	const entities = new Map<string, Entity>()
@@ -209,12 +191,7 @@
 							return
 						}
 
-						const referenceFrame = geometriesInFrame?.referenceFrame
-						const pose = capturePose(referenceFrame)
-						// `Orphan` is hidden from the world tree until it resolves, so a
-						// reference frame absent from the scene would drop the cloud out of
-						// the tree while it still draws. Park it at the root instead.
-						const parentFrame = pose ? referenceFrame : undefined
+						const parentFrame = resolveParentFrame(geometriesInFrame?.referenceFrame)
 						const existing = entities.get(pointcloudLabel)
 						const metadata = {
 							colors,
@@ -233,7 +210,6 @@
 									total: positions.length / 3,
 									shuffled,
 								})
-								if (pose) pinAtCapture(existing, pose)
 							}
 						} else {
 							const geometry = createBufferGeometry(positions, metadata, bounds)
@@ -248,8 +224,6 @@
 								traits.PointSampling({ total: positions.length / 3, shuffled }),
 								traits.PointCloudObjectAPI
 							)
-
-							if (pose) pinAtCapture(entity, pose)
 
 							entities.set(pointcloudLabel, entity)
 						}

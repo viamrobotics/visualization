@@ -227,10 +227,8 @@ export const syncMoveGhosts = (
 		// with no visible original.
 		if (source.has(traits.InheritedInvisible)) continue
 
-		// A point cloud is a measurement of where surfaces were when the camera
-		// captured them, not a body bolted to the arm, so no rigid delta says
-		// where its points would land. `spawnGhost` copies geometry but not
-		// `Points`, so ghosting one also lands it in the mesh renderer.
+		// `spawnGhost` copies geometry but not `Points`, so a ghosted point cloud
+		// would land in the mesh renderer as a solid mesh.
 		if (source.has(traits.Points)) continue
 
 		const sourceMatrix = source.get(traits.WorldMatrix)

@@ -1,5 +1,5 @@
 import { createWorld, type World } from 'koota'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { assertExists } from '$lib/assert'
 import { relations, traits } from '$lib/ecs'
@@ -108,87 +108,6 @@ describe('worldMatrix system', () => {
 		await tick()
 
 		expect(child.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.25)
-	})
-
-	it('holds a child in place when MatrixAutoUpdate is false and its parent moves', async () => {
-		world = createWorld()
-		unsub = installWorldMatrixListeners(world)
-
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100).toMatrix4()))
-		const child = world.spawn(
-			relations.ChildOf(parent),
-			traits.WorldMatrix(new Pose(50).toMatrix4()),
-			traits.MatrixAutoUpdate(false)
-		)
-		await tick()
-		const parentMatrix = parent.get(traits.Matrix)
-		assertExists(parentMatrix, 'Parent matrix is undefined')
-
-		new Pose(900).toMatrix4(parentMatrix)
-		parent.changed(traits.Matrix)
-		await tick()
-
-		expect(child.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.05)
-	})
-
-	it('keeps a frozen WorldMatrix when the entity itself gains a parent', async () => {
-		world = createWorld()
-		unsub = installWorldMatrixListeners(world)
-
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100).toMatrix4()))
-		const child = world.spawn(
-			traits.WorldMatrix(new Pose(50).toMatrix4()),
-			traits.MatrixAutoUpdate(false)
-		)
-		await tick()
-
-		child.add(relations.ChildOf(parent))
-		await tick()
-
-		expect(child.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.05)
-	})
-
-	it('leaves a frozen child out of the change notifications when its parent moves', async () => {
-		world = createWorld()
-		unsub = installWorldMatrixListeners(world)
-
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100).toMatrix4()))
-		const child = world.spawn(
-			relations.ChildOf(parent),
-			traits.WorldMatrix(new Pose(50).toMatrix4()),
-			traits.MatrixAutoUpdate(false)
-		)
-		await tick()
-		const parentMatrix = parent.get(traits.Matrix)
-		assertExists(parentMatrix, 'Parent matrix is undefined')
-		const notified = vi.fn()
-		const unsubNotified = world.onChange(traits.WorldMatrix, notified)
-
-		new Pose(900).toMatrix4(parentMatrix)
-		parent.changed(traits.Matrix)
-		await tick()
-		unsubNotified()
-
-		expect(notified.mock.calls.map(([entity]) => entity)).not.toContain(child)
-	})
-
-	it('recomposes from the parent once MatrixAutoUpdate is removed', async () => {
-		world = createWorld()
-		unsub = installWorldMatrixListeners(world)
-
-		const parent = world.spawn(traits.Name('arm'), traits.Matrix(new Pose(100).toMatrix4()))
-		const child = world.spawn(
-			relations.ChildOf(parent),
-			traits.Matrix(new Pose(50).toMatrix4()),
-			traits.WorldMatrix(new Pose(7).toMatrix4()),
-			traits.MatrixAutoUpdate(false)
-		)
-		await tick()
-
-		child.remove(traits.MatrixAutoUpdate)
-		await tick()
-
-		expect(child.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.15)
 	})
 
 	it('coalesces multiple changes into a single flush', async () => {

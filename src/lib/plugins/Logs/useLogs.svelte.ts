@@ -43,6 +43,13 @@ interface Context {
 	 */
 	retract(message: string, level: Level, target?: LogTarget): void
 	/**
+	 * Drops every line filed against exactly this target, whatever its message or
+	 * level. For a producer that stops: a camera the user switched off has nothing
+	 * left to report, and its old failures would go on marking its rows. Lines
+	 * naming only one of the target's rows, or another pair, are left alone.
+	 */
+	retractTarget(target: LogTarget): void
+	/**
 	 * Drops every line and the row alerts they raised. Lines are about one machine,
 	 * so switching parts has to evict them rather than report the old part's
 	 * failures against the new part's resources.
@@ -172,6 +179,21 @@ export const provideLogs = () => {
 				version++
 			})
 		},
+		retractTarget(target) {
+			untrack(() => {
+				let retracted = false
+
+				for (const [key, log] of entries) {
+					if (log.resource !== target.resource || log.folder !== target.folder) continue
+
+					entries.delete(key)
+					tally(log, -1)
+					retracted = true
+				}
+
+				if (retracted) version++
+			})
+		},
 		clear() {
 			untrack(() => {
 				// Tallies are derived from `entries`, so an empty log has no alerts left
@@ -265,6 +287,9 @@ const facade: Context = {
 	},
 	retract(message, level, target) {
 		context?.retract(message, level, target)
+	},
+	retractTarget(target) {
+		context?.retractTarget(target)
 	},
 	clear() {
 		context?.clear()
