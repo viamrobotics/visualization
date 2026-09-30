@@ -1,6 +1,8 @@
+import { robotApi } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
 import { buildFrameDescriptors } from '../frameDescriptors'
+import { frameSystemToPlanFrames } from '../frameSystemToPlanFrames'
 import {
 	describableFrameNames,
 	framePosesAgainstGolden,
@@ -9,27 +11,33 @@ import {
 	geometryPosesAgainstGolden,
 } from './__fixtures__/frameSystemGolden'
 
-describe('buildFrameDescriptors, against a frame system RDK marshaled', () => {
+/** The scene as a robot's `FrameSystemConfig` RPC returns it, decoded the way the SDK would. */
+const descriptorsFromParts = (parts: unknown[]) =>
+	buildFrameDescriptors(
+		frameSystemToPlanFrames(parts.map((part) => robotApi.FrameSystemConfig.fromJson(part as never)))
+	)
+
+describe('frameSystemToPlanFrames, against the frame system RDK builds from the same parts', () => {
 	it('reads both scenes the Go generator wrote', () => {
 		expect(frameSystemGoldenCases.length).toBe(2)
 	})
 
 	it.each(frameSystemGoldenCases)(
-		'describes every frame of $name except its models',
-		({ frameSystem }) => {
-			const described = buildFrameDescriptors(frameSystem).map((descriptor) => descriptor.name)
+		'synthesizes every frame of $name that RDK builds, less its models',
+		({ frameSystem, parts }) => {
+			const described = descriptorsFromParts(parts).map((descriptor) => descriptor.name)
 
 			expect(described.toSorted()).toEqual(describableFrameNames(frameSystem).toSorted())
 		}
 	)
 })
 
-describe('buildFrameDescriptors composed to world, against FrameSystem.Transform', () => {
+describe('frameSystemToPlanFrames composed to world, against FrameSystem.Transform', () => {
 	it.each(frameSystemGoldenProbes)(
 		'puts every frame of $name where RDK does at probe $index',
 		(goldenProbe) => {
 			const { actual, expected } = framePosesAgainstGolden(
-				buildFrameDescriptors(goldenProbe.frameSystem),
+				descriptorsFromParts(goldenProbe.parts),
 				goldenProbe
 			)
 
@@ -38,12 +46,12 @@ describe('buildFrameDescriptors composed to world, against FrameSystem.Transform
 	)
 })
 
-describe('buildFrameDescriptors geometry centres, against FrameSystemGeometries', () => {
+describe('frameSystemToPlanFrames geometry centres, against FrameSystemGeometries', () => {
 	it.each(frameSystemGoldenProbes)(
 		'puts every geometry of $name where RDK does at probe $index',
-		({ frameSystem, probe }) => {
+		({ parts, probe }) => {
 			const { names, actual, expected } = geometryPosesAgainstGolden(
-				buildFrameDescriptors(frameSystem),
+				descriptorsFromParts(parts),
 				probe
 			)
 

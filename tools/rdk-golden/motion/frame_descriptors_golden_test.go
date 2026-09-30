@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/geo/r3"
 	"go.viam.com/test"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
@@ -25,11 +26,13 @@ type frameDescriptorsGoldenProbe struct {
 	Geometries map[string]goldenPose `json:"geometries"`
 }
 
-// frameDescriptorsGoldenCase carries the frame system as FrameSystem.MarshalJSON writes it, which is
-// the JSON buildFrameDescriptors reads out of a plan dump.
+// frameDescriptorsGoldenCase carries the scene twice: as FrameSystem.MarshalJSON writes it, the JSON
+// buildFrameDescriptors reads out of a plan dump, and as the FrameSystemConfig protos a robot's
+// FrameSystemConfig RPC returns, the input frameSystemToPlanFrames reads.
 type frameDescriptorsGoldenCase struct {
 	Name        string                        `json:"name"`
 	FrameSystem json.RawMessage               `json:"frameSystem"`
+	Parts       []json.RawMessage             `json:"parts"`
 	Probes      []frameDescriptorsGoldenProbe `json:"probes"`
 }
 
@@ -45,8 +48,10 @@ type sceneCase struct {
 }
 
 // TestFrameDescriptorsGolden is a hand port of: FrameSystem.MarshalJSON, the input
-// buildFrameDescriptors reads, and FrameSystem.Transform plus FrameSystemGeometries, the world
-// poses its descriptors have to compose to.
+// buildFrameDescriptors reads, FrameSystemPart.ToProtobuf, the input frameSystemToPlanFrames reads,
+// and FrameSystem.Transform plus FrameSystemGeometries, the world poses both have to compose to.
+//
+// ToProtobuf is what robot/server builds each entry of the FrameSystemConfig response with.
 //
 // Model frames are recorded like any other, though buildFrameDescriptors emits no descriptor for
 // them. Their pose is only observable in TypeScript through the frames parented to them.
@@ -57,7 +62,8 @@ func TestFrameDescriptorsGolden(t *testing.T) {
 
 	for _, testCase := range sceneCases() {
 		t.Run(testCase.name, func(t *testing.T) {
-			fs, err := referenceframe.NewFrameSystem("golden", testCase.parts(t), nil)
+			parts := testCase.parts(t)
+			fs, err := referenceframe.NewFrameSystem("golden", parts, nil)
 			test.That(t, err, test.ShouldBeNil)
 
 			marshaled, err := json.Marshal(fs)
@@ -80,6 +86,7 @@ func TestFrameDescriptorsGolden(t *testing.T) {
 			golden.Cases = append(golden.Cases, frameDescriptorsGoldenCase{
 				Name:        testCase.name,
 				FrameSystem: marshaled,
+				Parts:       partsJSON(t, parts),
 				Probes:      probes,
 			})
 		})
@@ -119,6 +126,21 @@ func sceneInputs(fs *referenceframe.FrameSystem) []map[string][]float64 {
 		probes = append(probes, inputs)
 	}
 	return probes
+}
+
+func partsJSON(t *testing.T, parts []*referenceframe.FrameSystemPart) []json.RawMessage {
+	t.Helper()
+
+	encoded := make([]json.RawMessage, 0, len(parts))
+	for _, part := range parts {
+		config, err := part.ToProtobuf()
+		test.That(t, err, test.ShouldBeNil)
+
+		raw, err := protojson.Marshal(config)
+		test.That(t, err, test.ShouldBeNil)
+		encoded = append(encoded, raw)
+	}
+	return encoded
 }
 
 func framePoses(
