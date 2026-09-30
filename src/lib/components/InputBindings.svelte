@@ -5,26 +5,108 @@
 	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
 	import { MathUtils, Vector3 } from 'three'
 
+	import { useKeybinding } from '$lib/keybindings'
+
 	interface Props {
 		cameraControls: CameraControlsRef
 	}
 
 	let { cameraControls }: Props = $props()
 
+	const truckLeft = useKeybinding({
+		kind: 'camera',
+		id: 'camera.truckLeft',
+		key: 'a',
+		description: 'Move left',
+		group: 'Camera',
+	})
+
+	const truckRight = useKeybinding({
+		kind: 'camera',
+		id: 'camera.truckRight',
+		key: 'd',
+		description: 'Move right',
+		group: 'Camera',
+	})
+
+	const forward = useKeybinding({
+		kind: 'camera',
+		id: 'camera.forward',
+		key: 'w',
+		description: 'Move forward',
+		group: 'Camera',
+	})
+
+	const backward = useKeybinding({
+		kind: 'camera',
+		id: 'camera.backward',
+		key: 's',
+		description: 'Move backward',
+		group: 'Camera',
+	})
+
+	const dollyIn = useKeybinding({
+		kind: 'camera',
+		id: 'camera.dollyIn',
+		key: 'e',
+		description: 'Move toward the target',
+		group: 'Camera',
+	})
+
+	const dollyOut = useKeybinding({
+		kind: 'camera',
+		id: 'camera.dollyOut',
+		key: 'q',
+		description: 'Move away from the target',
+		group: 'Camera',
+	})
+
+	const rotateLeft = useKeybinding({
+		kind: 'camera',
+		id: 'camera.rotateLeft',
+		key: 'arrowleft',
+		description: 'Orbit left',
+		group: 'Camera',
+	})
+
+	const rotateRight = useKeybinding({
+		kind: 'camera',
+		id: 'camera.rotateRight',
+		key: 'arrowright',
+		description: 'Orbit right',
+		group: 'Camera',
+	})
+
+	const tiltUp = useKeybinding({
+		kind: 'camera',
+		id: 'camera.tiltUp',
+		key: 'arrowup',
+		description: 'Orbit up',
+		group: 'Camera',
+	})
+
+	const tiltDown = useKeybinding({
+		kind: 'camera',
+		id: 'camera.tiltDown',
+		key: 'arrowdown',
+		description: 'Orbit down',
+		group: 'Camera',
+	})
+
 	const keyboard = useKeyboard()
 	const gamepad = useGamepad()
 	const input = useInputMap(
 		({ key, gamepadAxis, gamepadButton }) => ({
-			truckLeft: [key('a'), gamepadAxis('leftStick', 'x', -1)],
-			truckRight: [key('d'), gamepadAxis('leftStick', 'x', 1)],
-			forward: [key('w'), gamepadAxis('leftStick', 'y', -1)],
-			backward: [key('s'), gamepadAxis('leftStick', 'y', 1)],
-			dollyIn: [key('e'), gamepadButton('rightBumper')],
-			dollyOut: [key('q'), gamepadButton('leftBumper')],
-			rotateLeft: [key('arrowleft'), gamepadAxis('rightStick', 'x', -1)],
-			rotateRight: [key('arrowright'), gamepadAxis('rightStick', 'x', 1)],
-			tiltUp: [key('arrowup'), gamepadAxis('rightStick', 'y', 1)],
-			tiltDown: [key('arrowdown'), gamepadAxis('rightStick', 'y', -1)],
+			truckLeft: [key(truckLeft.key), gamepadAxis('leftStick', 'x', -1)],
+			truckRight: [key(truckRight.key), gamepadAxis('leftStick', 'x', 1)],
+			forward: [key(forward.key), gamepadAxis('leftStick', 'y', -1)],
+			backward: [key(backward.key), gamepadAxis('leftStick', 'y', 1)],
+			dollyIn: [key(dollyIn.key), gamepadButton('rightBumper')],
+			dollyOut: [key(dollyOut.key), gamepadButton('leftBumper')],
+			rotateLeft: [key(rotateLeft.key), gamepadAxis('rightStick', 'x', -1)],
+			rotateRight: [key(rotateRight.key), gamepadAxis('rightStick', 'x', 1)],
+			tiltUp: [key(tiltUp.key), gamepadAxis('rightStick', 'y', 1)],
+			tiltDown: [key(tiltDown.key), gamepadAxis('rightStick', 'y', -1)],
 		}),
 		{ keyboard, gamepad }
 	)

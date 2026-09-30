@@ -1,23 +1,20 @@
 <script lang="ts">
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
-	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
+	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
+	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
 
 	import { moveGizmoOptions } from './moveGizmoOptions.svelte'
 
-	// The same keys the build dashboard uses for its gizmo. No collision: these are
-	// registered only while this mounts (move mode), and the build bindings apply
-	// only while build mode is active.
-	useHotkey({
-		key: '1',
-		description: 'Translate',
-		run: () => (moveGizmoOptions.mode = 'translate'),
-	})
-
-	useHotkey({
-		key: '2',
-		description: 'Rotate',
-		run: () => (moveGizmoOptions.mode = 'rotate'),
+	// The move gizmo drags, it does not resize, and there is nothing to fall back to when
+	// it is off, so it offers neither `scale` nor `none`.
+	useTransformGizmo({
+		modes: () => ['translate', 'rotate'],
+		select: (mode) => {
+			if (mode === 'translate' || mode === 'rotate') {
+				moveGizmoOptions.mode = mode
+			}
+		},
 	})
 </script>
 
@@ -27,8 +24,8 @@
 			icon="cursor-move"
 			class="rounded-r-none"
 			active={moveGizmoOptions.mode === 'translate'}
-			description="Translate"
-			hotkey="1"
+			description={TRANSFORM_KEYBINDINGS.translate.description}
+			keybinding={TRANSFORM_KEYBINDINGS.translate}
 			onclick={() => {
 				moveGizmoOptions.mode = 'translate'
 			}}
@@ -37,8 +34,8 @@
 			icon="sync"
 			class="-ml-px rounded-l-none"
 			active={moveGizmoOptions.mode === 'rotate'}
-			description="Rotate"
-			hotkey="2"
+			description={TRANSFORM_KEYBINDINGS.rotate.description}
+			keybinding={TRANSFORM_KEYBINDINGS.rotate}
 			onclick={() => {
 				moveGizmoOptions.mode = 'rotate'
 			}}

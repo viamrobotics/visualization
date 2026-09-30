@@ -4,48 +4,22 @@
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
+	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
 
 	const settings = useSettings()
 	const environment = useEnvironment()
 
 	const isBuildMode = $derived(environment.current.mode === 'build')
 
-	useHotkey({
-		key: '0',
-		description: 'No transform controls',
-		when: () => isBuildMode,
-		run: () => {
-			settings.current.transformMode = 'none'
-		},
-	})
-
-	useHotkey({
-		key: '1',
-		description: 'Translate',
-		when: () => isBuildMode,
-		run: () => {
-			settings.current.transformMode = 'translate'
-		},
-	})
-
-	useHotkey({
-		key: '2',
-		description: 'Rotate',
-		when: () => isBuildMode,
-		run: () => {
-			settings.current.transformMode = 'rotate'
-		},
-	})
-
-	useHotkey({
-		key: '3',
-		description: 'Scale',
-		when: () => isBuildMode,
-		run: () => {
-			settings.current.transformMode = 'scale'
+	// The build gizmo is a build-mode affordance, so it offers nothing outside it. That is
+	// this dashboard's own rule about when it applies, not the shortcut testing the mode.
+	useTransformGizmo({
+		modes: () => (isBuildMode ? ['none', 'translate', 'rotate', 'scale'] : []),
+		select: (mode) => {
+			settings.current.transformMode = mode
 		},
 	})
 </script>
@@ -57,8 +31,8 @@
 				icon="mouse-pointer"
 				class="rounded-r-none"
 				active={settings.current.transformMode === 'none'}
-				description="No transform controls"
-				hotkey="0"
+				description={TRANSFORM_KEYBINDINGS.none.description}
+				keybinding={TRANSFORM_KEYBINDINGS.none}
 				onclick={() => {
 					settings.current.transformMode = 'none'
 				}}
@@ -67,8 +41,8 @@
 				icon="cursor-move"
 				class="-ml-px rounded-none"
 				active={settings.current.transformMode === 'translate'}
-				description="Translate"
-				hotkey="1"
+				description={TRANSFORM_KEYBINDINGS.translate.description}
+				keybinding={TRANSFORM_KEYBINDINGS.translate}
 				onclick={() => {
 					settings.current.transformMode = 'translate'
 				}}
@@ -77,8 +51,8 @@
 				icon="sync"
 				class="-ml-px rounded-none"
 				active={settings.current.transformMode === 'rotate'}
-				description="Rotate"
-				hotkey="2"
+				description={TRANSFORM_KEYBINDINGS.rotate.description}
+				keybinding={TRANSFORM_KEYBINDINGS.rotate}
 				onclick={() => {
 					settings.current.transformMode = 'rotate'
 				}}
@@ -87,8 +61,8 @@
 				icon="resize"
 				class="-ml-px rounded-l-none"
 				active={settings.current.transformMode === 'scale'}
-				description="Scale"
-				hotkey="3"
+				description={TRANSFORM_KEYBINDINGS.scale.description}
+				keybinding={TRANSFORM_KEYBINDINGS.scale}
 				onclick={() => {
 					settings.current.transformMode = 'scale'
 				}}

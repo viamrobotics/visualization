@@ -6,8 +6,8 @@
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import { traits, useQuery } from '$lib/ecs'
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useHotkey } from '$lib/hooks/useHotkeys.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useHotkey } from '$lib/keybindings'
 
 	const { scene } = useThrelte()
 	const settings = useSettings()
@@ -25,15 +25,19 @@
 		focusCameraOnEntities(cameraControls.current, scene, selected.current)
 	}
 
-	useHotkey({
+	const projection = useHotkey({
+		id: 'camera.toggleProjection',
 		key: 'c',
 		description: 'Toggle camera projection',
+		group: 'Camera',
 		run: toggleProjection,
 	})
 
-	useHotkey({
+	const focus = useHotkey({
+		id: 'camera.focusSelection',
 		key: 'f',
 		description: 'Focus object',
+		group: 'Camera',
 		when: () => canFocus,
 		run: focusSelection,
 	})
@@ -46,8 +50,8 @@
 		<Button
 			class="rounded-b-none"
 			icon="image-filter-center-focus"
-			description="Focus object"
-			hotkey="F"
+			description={focus.description}
+			keybinding={focus}
 			disabled={!canFocus}
 			tooltipLocation="left"
 			onclick={focusSelection}
@@ -65,7 +69,7 @@
 			class="-my-0.5 rounded-t-none"
 			icon={isOrthographic ? 'grid-orthographic' : 'grid-perspective'}
 			description={isOrthographic ? 'Switch to perspective view' : 'Switch to orthographic view'}
-			hotkey="C"
+			keybinding={projection}
 			tooltipLocation="left"
 			onclick={toggleProjection}
 		/>
