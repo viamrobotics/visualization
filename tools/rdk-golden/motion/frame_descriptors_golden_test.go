@@ -33,6 +33,7 @@ type frameDescriptorsGoldenCase struct {
 	Name        string                        `json:"name"`
 	FrameSystem json.RawMessage               `json:"frameSystem"`
 	Parts       []json.RawMessage             `json:"parts"`
+	NearPole    bool                          `json:"nearPole"`
 	Probes      []frameDescriptorsGoldenProbe `json:"probes"`
 }
 
@@ -45,6 +46,12 @@ type frameDescriptorsGoldenFile struct {
 type sceneCase struct {
 	name  string
 	parts func(t *testing.T) []*referenceframe.FrameSystemPart
+	// nearPole marks a scene with a link oriented inside the orientation vector's 1e-4 pole radius
+	// without sitting on the pole. RDK's frame system composes quaternions and keeps that tilt
+	// exactly. The TypeScript side stores every pose as a common.v1.Pose orientation vector, the
+	// way RDK's own API reports one, and loses about 1e-6 rad of it, so its suites compare the
+	// scene to a looser tolerance.
+	nearPole bool
 }
 
 // TestFrameDescriptorsGolden is a hand port of: FrameSystem.MarshalJSON, the input
@@ -87,6 +94,7 @@ func TestFrameDescriptorsGolden(t *testing.T) {
 				Name:        testCase.name,
 				FrameSystem: marshaled,
 				Parts:       partsJSON(t, parts),
+				NearPole:    testCase.nearPole,
 				Probes:      probes,
 			})
 		})
@@ -284,6 +292,35 @@ func sceneCases() []sceneCase {
 							nil,
 						),
 						ModelFrame: loadModel(t, "ur5e.json", "ur"),
+					},
+				}
+			},
+		},
+		{
+			// The SO-101 names its joints "1" to "5" and orients every link with euler_angles, which
+			// neither other arm does. Its `kinematics` keeps that encoding through ToProtobuf. The
+			// angles are rounded (3.14159 for π), which leaves `base` and `tool` 2.65e-6 rad off the
+			// -Z pole.
+			name:     "an SO-101 mounted at an angle on a desk, with a camera on its end effector",
+			nearPole: true,
+			parts: func(t *testing.T) []*referenceframe.FrameSystemPart {
+				return []*referenceframe.FrameSystemPart{
+					{
+						FrameConfig: referenceframe.NewLinkInFrame(
+							referenceframe.World,
+							poseAt(250, 120, 740, &spatialmath.OrientationVectorDegrees{OX: 0.2, OZ: 1, Theta: 120}),
+							"so101",
+							nil,
+						),
+						ModelFrame: loadModel(t, "so101.json", "so101"),
+					},
+					{
+						FrameConfig: referenceframe.NewLinkInFrame(
+							"so101",
+							poseAt(15, 0, 30, &spatialmath.OrientationVectorDegrees{OY: -1, Theta: 60}),
+							"wrist-cam",
+							box(t, poseAt(0, 0, 10, nil), r3.Vector{X: 30, Y: 20, Z: 20}, ""),
+						),
 					},
 				}
 			},

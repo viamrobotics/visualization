@@ -18,8 +18,8 @@ const descriptorsFromParts = (parts: unknown[]) =>
 	)
 
 describe('frameSystemToPlanFrames, against the frame system RDK builds from the same parts', () => {
-	it('reads both scenes the Go generator wrote', () => {
-		expect(frameSystemGoldenCases.length).toBe(2)
+	it('reads all 3 scenes the Go generator wrote', () => {
+		expect(frameSystemGoldenCases.length).toBe(3)
 	})
 
 	it.each(frameSystemGoldenCases)(
@@ -49,13 +49,13 @@ describe('frameSystemToPlanFrames composed to world, against FrameSystem.Transfo
 describe('frameSystemToPlanFrames geometry centres, against FrameSystemGeometries', () => {
 	it.each(frameSystemGoldenProbes)(
 		'puts every geometry of $name where RDK does at probe $index',
-		({ parts, probe }) => {
+		(goldenProbe) => {
 			const { names, actual, expected } = geometryPosesAgainstGolden(
-				descriptorsFromParts(parts),
-				probe
+				descriptorsFromParts(goldenProbe.parts),
+				goldenProbe
 			)
 
-			expect(names.toSorted()).toEqual(Object.keys(probe.geometries).toSorted())
+			expect(names.toSorted()).toEqual(Object.keys(goldenProbe.probe.geometries).toSorted())
 			expect(actual).toEqual(expected)
 		}
 	)

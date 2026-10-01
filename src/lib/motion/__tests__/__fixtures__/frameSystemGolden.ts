@@ -29,6 +29,8 @@ export interface FrameSystemGoldenCase {
 	name: string
 	frameSystem: FrameSystemJson
 	parts: unknown[]
+	/** Set on a scene with a link inside the orientation vector's pole radius but not on the pole. */
+	nearPole: boolean
 	probes: GoldenProbe[]
 }
 
@@ -38,9 +40,24 @@ export const frameSystemGoldenProbes = frameSystemGoldenCases.flatMap((goldenCas
 	goldenCase.probes.map((probe, index) => ({ ...goldenCase, probe, index }))
 )
 
-/** Millimetres. The scenes span about 1.5 m, and each side composes a dozen transforms. */
-const MM_PLACES = 6
-const QUATERNION_PLACES = 8
+interface Tolerance {
+	mmPlaces: number
+	quaternionPlaces: number
+}
+
+/** The scenes span about 1.5 m, and each side composes a dozen transforms. */
+const EXACT_TOLERANCE: Tolerance = { mmPlaces: 6, quaternionPlaces: 8 }
+
+/**
+ * A `Pose` stores its orientation as a `common.v1.Pose` orientation vector, which treats a direction
+ * within 1e-4 of a pole as on it and drops its longitude. RDK's frame system composes quaternions
+ * and keeps that tilt, so a near-pole link comes back about 1e-6 rad off, up to 1e-3 mm at the tip.
+ */
+const NEAR_POLE_TOLERANCE: Tolerance = { mmPlaces: 2, quaternionPlaces: 5 }
+
+const toleranceFor = (nearPole: boolean): Tolerance =>
+	nearPole ? NEAR_POLE_TOLERANCE : EXACT_TOLERANCE
+
 const M_TO_MM = 1000
 
 const WORLD = 'world'
@@ -95,7 +112,11 @@ const worldMatrices = (
  * `q` and `-q` are the same rotation, so the quaternion is flipped onto the golden's hemisphere
  * before components are compared.
  */
-const poseAgainstGolden = (matrix: Matrix4, golden: GoldenPose) => {
+const poseAgainstGolden = (
+	matrix: Matrix4,
+	golden: GoldenPose,
+	{ mmPlaces, quaternionPlaces }: Tolerance
+) => {
 	const position = new Vector3()
 	const rotation = new Quaternion()
 	matrix.decompose(position, rotation, new Vector3())
@@ -115,15 +136,15 @@ const poseAgainstGolden = (matrix: Matrix4, golden: GoldenPose) => {
 		},
 		expected: {
 			point: {
-				x: expect.closeTo(golden.point.x, MM_PLACES),
-				y: expect.closeTo(golden.point.y, MM_PLACES),
-				z: expect.closeTo(golden.point.z, MM_PLACES),
+				x: expect.closeTo(golden.point.x, mmPlaces),
+				y: expect.closeTo(golden.point.y, mmPlaces),
+				z: expect.closeTo(golden.point.z, mmPlaces),
 			},
 			quaternion: {
-				w: expect.closeTo(w, QUATERNION_PLACES),
-				x: expect.closeTo(x, QUATERNION_PLACES),
-				y: expect.closeTo(y, QUATERNION_PLACES),
-				z: expect.closeTo(z, QUATERNION_PLACES),
+				w: expect.closeTo(w, quaternionPlaces),
+				x: expect.closeTo(x, quaternionPlaces),
+				y: expect.closeTo(y, quaternionPlaces),
+				z: expect.closeTo(z, quaternionPlaces),
 			},
 		},
 	}
@@ -140,15 +161,23 @@ const actualAndExpected = (rows: PoseRow[]) => ({
 /** Each non-model frame's world pose from `descriptors`, beside where RDK put it. */
 export const framePosesAgainstGolden = (
 	descriptors: FrameDescriptor[],
-	{ frameSystem, probe }: { frameSystem: FrameSystemJson; probe: GoldenProbe }
+	{
+		frameSystem,
+		probe,
+		nearPole,
+	}: Pick<FrameSystemGoldenCase, 'frameSystem' | 'nearPole'> & { probe: GoldenProbe }
 ) => {
 	const models = modelFrameNames(frameSystem)
 	const matrices = worldMatrices(descriptors, probe.inputs)
+	const tolerance = toleranceFor(nearPole)
 
 	return actualAndExpected(
 		Object.entries(probe.frames)
 			.filter(([name]) => !models.has(name))
-			.map(([name, golden]) => [name, poseAgainstGolden(matrices.get(name)!, golden)] as const)
+			.map(
+				([name, golden]) =>
+					[name, poseAgainstGolden(matrices.get(name)!, golden, tolerance)] as const
+			)
 	)
 }
 
@@ -156,15 +185,19 @@ export const framePosesAgainstGolden = (
  * Each geometry's world pose from `descriptors`, beside where RDK put it, plus the names of the
  * frames that carried one. RDK labels a geometry with the frame that owns it.
  */
-export const geometryPosesAgainstGolden = (descriptors: FrameDescriptor[], probe: GoldenProbe) => {
+export const geometryPosesAgainstGolden = (
+	descriptors: FrameDescriptor[],
+	{ probe, nearPole }: Pick<FrameSystemGoldenCase, 'nearPole'> & { probe: GoldenProbe }
+) => {
 	const matrices = worldMatrices(descriptors, probe.inputs)
+	const tolerance = toleranceFor(nearPole)
 	const rows = descriptors.flatMap((descriptor): PoseRow[] => {
 		const golden = probe.geometries[descriptor.name]
 		if (descriptor.kind !== 'static' || !descriptor.geometry || !golden) return []
 
 		const center = new Pose().copy(descriptor.geometry.center).toMatrix4()
 		const world = matrices.get(descriptor.name)!.clone().multiply(center)
-		return [[descriptor.name, poseAgainstGolden(world, golden)]]
+		return [[descriptor.name, poseAgainstGolden(world, golden, tolerance)]]
 	})
 
 	return { names: rows.map(([name]) => name), ...actualAndExpected(rows) }

@@ -10,8 +10,8 @@ import {
 } from './__fixtures__/frameSystemGolden'
 
 describe('buildFrameDescriptors, against a frame system RDK marshaled', () => {
-	it('reads both scenes the Go generator wrote', () => {
-		expect(frameSystemGoldenCases.length).toBe(2)
+	it('reads all 3 scenes the Go generator wrote', () => {
+		expect(frameSystemGoldenCases.length).toBe(3)
 	})
 
 	it.each(frameSystemGoldenCases)(
@@ -41,13 +41,13 @@ describe('buildFrameDescriptors composed to world, against FrameSystem.Transform
 describe('buildFrameDescriptors geometry centres, against FrameSystemGeometries', () => {
 	it.each(frameSystemGoldenProbes)(
 		'puts every geometry of $name where RDK does at probe $index',
-		({ frameSystem, probe }) => {
+		(goldenProbe) => {
 			const { names, actual, expected } = geometryPosesAgainstGolden(
-				buildFrameDescriptors(frameSystem),
-				probe
+				buildFrameDescriptors(goldenProbe.frameSystem),
+				goldenProbe
 			)
 
-			expect(names.toSorted()).toEqual(Object.keys(probe.geometries).toSorted())
+			expect(names.toSorted()).toEqual(Object.keys(goldenProbe.probe.geometries).toSorted())
 			expect(actual).toEqual(expected)
 		}
 	)
