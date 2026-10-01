@@ -23,11 +23,12 @@
 	import { provideDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { provideFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { provideHotkeys } from '$lib/hooks/useHotkeys.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import { provideTransformGizmos } from '$lib/hooks/useTransformGizmos.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { provideKeybindings } from '$lib/keybindings'
 	import { provideFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
 	import { domPortal } from '$lib/portal'
 
@@ -89,7 +90,8 @@
 
 	provideWorld()
 	provideSettingsTabs()
-	provideHotkeys()
+	provideKeybindings()
+	provideTransformGizmos()
 
 	const settings = provideSettings()
 	const environment = provideEnvironment()

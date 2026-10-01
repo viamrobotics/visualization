@@ -22,9 +22,11 @@
 		 * ascending, deduplicated, and within `[0, player.lastStep]`. Omit when every frame is real.
 		 */
 		markers?: number[]
+		/** One step worth landing on exactly, marked on the track and named in the counter while current. */
+		highlight?: { step: number; label: string }
 	}
 
-	const { player, label = 'trajectory', markers, ...rest }: Props = $props()
+	const { player, label = 'trajectory', markers, highlight, ...rest }: Props = $props()
 
 	/**
 	 * The thumb's diameter, handed to the style block as `--thumb-size`. The tick offsets correct for
@@ -55,6 +57,10 @@
 		if (!markers || markers.length >= player.totalSteps) return []
 		return markers.map((frame) => frame / player.lastStep)
 	})
+
+	const highlightFraction = $derived(
+		highlight && player.lastStep > 0 ? highlight.step / player.lastStep : null
+	)
 
 	const currentWaypoint = $derived.by(() => {
 		// Same density rule as the ticks, and for the same reason: when every frame is a waypoint the
@@ -108,6 +114,15 @@
 						></span>
 					{/each}
 				</div>
+			{/if}
+
+			{#if highlightFraction !== null}
+				<span
+					class="tick bg-warning-dark pointer-events-none absolute top-1/2 h-2.5 w-0.5 -translate-y-1/2 rounded-full"
+					style="--tick-fraction: {highlightFraction}"
+					aria-hidden="true"
+					data-testid="highlight-tick"
+				></span>
 			{/if}
 		</div>
 
@@ -185,6 +200,9 @@
 			>
 
 			<span class="text-subtle-1 font-roboto-mono ml-auto whitespace-nowrap tabular-nums">
+				{#if highlight && player.currentStep === highlight.step}
+					<span class="text-warning-dark">{highlight.label}</span>
+				{/if}
 				{player.currentStep + 1} / {player.totalSteps}
 				{#if currentWaypoint}
 					<span class="text-subtle-2">

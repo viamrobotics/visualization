@@ -25,6 +25,10 @@ export interface FramesContext {
 	 * its data, so non-empty does not mean live: `current` may have fallen back to config frames.
 	 */
 	parts: robotApi.FrameSystemConfig[]
+	/** How many frames the machine reported, or `undefined` before it has answered. */
+	readonly machineFrameCount: number | undefined
+	/** True while the first `frameSystemConfig` request is in flight. */
+	readonly isLoadingMachineFrames: boolean
 	/** Components whose frame is a model's mount — the set `usePoses` redirects. */
 	readonly kinematicsComponents: ReadonlySet<string>
 }
@@ -324,6 +328,12 @@ export const provideFrames = (partID: () => string) => {
 		},
 		get parts() {
 			return parts
+		},
+		get machineFrameCount() {
+			return query.data?.length
+		},
+		get isLoadingMachineFrames() {
+			return query.isLoading
 		},
 		get kinematicsComponents() {
 			return kinematicsComponents

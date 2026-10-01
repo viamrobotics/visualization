@@ -17,7 +17,15 @@ export interface TreeFolderRow {
 	refreshRate?: RefreshRateId
 	/** Entities in the folder at any depth, not just the rows directly under it. */
 	itemCount: number
+	/** Shown in place of rows when a pinned folder is empty. See `PinnedFolders`. */
+	placeholder?: string
 }
+
+/**
+ * Folders kept in the tree even when they claim nothing, each mapped to the note
+ * it shows while empty. A folder that is absent here is left out when empty.
+ */
+export type PinnedFolders = ReadonlyMap<TreeFolderId, string | undefined>
 
 export interface TreeNode {
 	entity: Entity
@@ -65,11 +73,14 @@ const ownFolder = (entity: Entity): number | undefined => {
 
 /**
  * Named entities grouped by source. `folderEntities` supplies one entity per entry
- * in `treeFolders`, in order. Folders that claim nothing are left out. Orphans sit
- * in the missing-parent folder, with their untagged descendants, until the
- * resolver places them.
+ * in `treeFolders`, in order. Folders that claim nothing are left out unless they
+ * are in `pinnedFolders`. Orphans sit in the missing-parent folder until the resolver places them.
  */
-export const buildTree = (world: World, folderEntities: Entity[]): Tree => {
+export const buildTree = (
+	world: World,
+	folderEntities: Entity[],
+	pinnedFolders: PinnedFolders = new Map()
+): Tree => {
 	const parents = new Map<string, string>()
 	const entities = world.query(traits.Name)
 	const rows = new Set<Entity>(entities)
@@ -143,15 +154,22 @@ export const buildTree = (world: World, folderEntities: Entity[]): Tree => {
 
 	for (const [index, folder] of folderEntities.entries()) {
 		const roots = folderRoots[index]
-		if (roots.length === 0) continue
+		const { id, collapsed, refreshRate, sceneless } = treeFolders[index]
+		const isEmpty = roots.length === 0
+
+		if (isEmpty && !pinnedFolders.has(id)) continue
 
 		roots.sort(compareByName)
 
-		const { id, collapsed, refreshRate, sceneless } = treeFolders[index]
-
 		nodes.push({
 			entity: folder,
-			folder: { id, collapsed, refreshRate, itemCount: folderCounts[index] },
+			folder: {
+				id,
+				collapsed,
+				refreshRate,
+				itemCount: folderCounts[index],
+				placeholder: isEmpty ? pinnedFolders.get(id) : undefined,
+			},
 			children: roots.map((entity) => {
 				parents.set(`${entity}`, `${folder}`)
 

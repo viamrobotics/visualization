@@ -33,13 +33,6 @@ export interface TreeFolder {
 export const treeFolders: TreeFolder[] = [
 	{ id: 'frames', name: 'Frames', sources: [traits.FramesAPI], refreshRate: 'poses' },
 	{
-		id: 'frameless-components',
-		name: 'Frameless components',
-		sources: [traits.FramelessComponent],
-		collapsed: true,
-		sceneless: true,
-	},
-	{
 		id: 'pointclouds',
 		name: 'Point clouds',
 		sources: [traits.PointCloudAPI],
@@ -52,6 +45,13 @@ export const treeFolders: TreeFolder[] = [
 		refreshRate: 'vision',
 	},
 	{ id: 'world-state-store', name: 'World state store', sources: [traits.WorldStateStoreAPI] },
+	{
+		id: 'frameless-components',
+		name: 'Frameless components',
+		sources: [traits.FramelessComponent],
+		collapsed: true,
+		sceneless: true,
+	},
 	{ id: 'drawn', name: 'Drawn', sources: [traits.DrawAPI, traits.SnapshotAPI] },
 	{ id: 'imported-files', name: 'Imported files', sources: [traits.DroppedFile] },
 	/**

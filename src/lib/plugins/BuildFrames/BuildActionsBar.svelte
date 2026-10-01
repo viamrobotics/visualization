@@ -1,12 +1,14 @@
 <script lang="ts">
-	import { Button, Icon } from '@viamrobotics/prime-core'
+	import { Button } from '@viamrobotics/prime-core'
 	import { Redo2, Undo2 } from 'lucide-svelte'
 
+	import Kbd from '$lib/components/overlay/Kbd.svelte'
 	import OverlayPortal from '$lib/components/overlay/Portals/OverlayPortal.svelte'
 	import { useWorld } from '$lib/ecs'
 	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useHotkey } from '$lib/keybindings'
 
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()
@@ -14,44 +16,45 @@
 
 	const { ...rest } = $props()
 
+	const undoKeybinding = useHotkey({
+		id: 'editing.undo',
+		key: 'z',
+		mod: true,
+		preventDefault: true,
+		description: 'Undo the last frame edit',
+		group: 'Editing',
+		when: () => partConfig.canUndoFrameEdit,
+		run: () => partConfig.undoFrameEdit(),
+	})
+
+	const redoKeybinding = useHotkey({
+		id: 'editing.redo',
+		key: 'z',
+		mod: true,
+		shift: true,
+		preventDefault: true,
+		description: 'Redo the last undone frame edit',
+		group: 'Editing',
+		when: () => partConfig.canRedoFrameEdit,
+		run: () => partConfig.redoFrameEdit(),
+	})
+
+	const saveKeybinding = useHotkey({
+		id: 'editing.save',
+		key: 's',
+		mod: true,
+		preventDefault: true,
+		description: 'Save staged frame edits',
+		group: 'Editing',
+		when: () => environment.current.isStandalone,
+		run: () => partConfig.save(),
+	})
+
 	const discard = () => {
 		partConfig.discardChanges()
 		resetStagedEdits(world)
 	}
-
-	const handleKeydown = (event: KeyboardEvent) => {
-		if (environment.current.mode !== 'build') return
-
-		const modifier = event.metaKey || event.ctrlKey
-		const key = event.key.toLowerCase()
-
-		if (modifier && key === 's' && environment.current.isStandalone) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.save()
-			return
-		}
-
-		const redo = modifier && (key === 'y' || (key === 'z' && event.shiftKey))
-		const undo = modifier && key === 'z' && !event.shiftKey
-
-		if (redo && partConfig.canRedoFrameEdit) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.redoFrameEdit()
-		} else if (undo && partConfig.canUndoFrameEdit) {
-			event.preventDefault()
-			event.stopImmediatePropagation()
-			partConfig.undoFrameEdit()
-		}
-	}
-
-	const isMacDevice = /Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
-	const iconName = isMacDevice ? ('apple-keyboard-command' as const) : ('chevron-up' as const)
-	const iconLabel = isMacDevice ? 'command' : 'control'
 </script>
-
-<svelte:window onkeydowncapture={handleKeydown} />
 
 <OverlayPortal>
 	{#if environment.current.mode === 'build'}
@@ -82,6 +85,7 @@
 						<div class="flex items-center gap-2">
 							<Undo2 size={14} />
 							Undo
+							<Kbd binding={undoKeybinding} />
 						</div>
 					</Button>
 
@@ -93,6 +97,7 @@
 						<div class="flex items-center gap-2">
 							<Redo2 size={14} />
 							Redo
+							<Kbd binding={redoKeybinding} />
 						</div>
 					</Button>
 
@@ -113,16 +118,9 @@
 								partConfig.save()
 							}}
 						>
-							<div class="flex gap-2">
+							<div class="flex items-center gap-2">
 								Save
-								<div class="font-roboto-mono text-disabled flex items-center">
-									<Icon
-										name={iconName}
-										size="xs"
-									/>
-									<span class="sr-only">{iconLabel}</span>
-									<span>S</span>
-								</div>
+								<Kbd binding={saveKeybinding} />
 							</div>
 						</Button>
 					{/if}

@@ -12,6 +12,7 @@
 	import AddObjectMenu from './AddObjectMenu.svelte'
 	import FilterBar from './FilterBar.svelte'
 	import Tree from './Tree.svelte'
+	import { usePinnedFolders } from './usePinnedFolders.svelte'
 	import { useTree } from './useTree.svelte'
 
 	const world = useWorld()
@@ -24,7 +25,8 @@
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
-	const tree = useTree()
+	const pinnedFolders = usePinnedFolders()
+	const tree = useTree(() => pinnedFolders.current)
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,

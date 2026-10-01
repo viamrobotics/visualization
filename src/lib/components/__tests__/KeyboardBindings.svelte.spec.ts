@@ -2,55 +2,134 @@ import { render } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { CameraKeybinding, HotkeyKeybinding } from '$lib/keybindings'
+
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
-import { createHotkeys, HOTKEYS_CONTEXT_KEY } from '$lib/hooks/useHotkeys.svelte'
+import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '$lib/keybindings'
 
 import KeyboardBindings from '../KeyboardBindings.svelte'
 
+const TOGGLE_PROJECTION: HotkeyKeybinding = {
+	id: 'camera.toggleProjection',
+	kind: 'hotkey',
+	key: 'c',
+	description: 'Toggle camera projection',
+	group: 'Camera',
+}
+
+const TOGGLE_VISIBILITY: HotkeyKeybinding = {
+	id: 'view.toggleSelectionVisibility',
+	kind: 'hotkey',
+	key: 'h',
+	description: 'Hide or show the selection',
+	group: 'View',
+}
+
+const SHOW_ALL_HIDDEN: HotkeyKeybinding = {
+	id: 'view.showAllHidden',
+	kind: 'hotkey',
+	key: 'h',
+	shift: true,
+	description: 'Show every hidden object',
+	group: 'View',
+}
+
+const SAVE: HotkeyKeybinding = {
+	id: 'editing.save',
+	kind: 'hotkey',
+	key: 's',
+	mod: true,
+	description: 'Save staged frame edits',
+	group: 'Editing',
+}
+
+const CAMERA_FORWARD: CameraKeybinding = {
+	id: 'camera.forward',
+	kind: 'camera',
+	key: 'w',
+	description: 'Move forward',
+	group: 'Camera',
+}
+
 const renderExecutor = () => {
 	const environment = createEnvironment()
-	const hotkeys = createHotkeys()
+	const keybindings = createKeybindings()
 
 	render(KeyboardBindings, {
 		context: new Map<symbol, unknown>([
 			[ENVIRONMENT_CONTEXT_KEY, environment],
-			[HOTKEYS_CONTEXT_KEY, hotkeys],
+			[KEYBINDINGS_CONTEXT_KEY, keybindings],
 		]),
 	})
 
-	return { environment, hotkeys }
+	return { environment, keybindings }
 }
 
 describe('KeyboardBindings executor', () => {
-	it('runs an applicable binding when its key is pressed', async () => {
+	it('runs an applicable handler when the binding key is pressed', async () => {
 		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		keybindings.register(TOGGLE_PROJECTION, { run })
 		await user.keyboard('c')
 
 		expect(run).toHaveBeenCalledTimes(1)
 	})
 
-	it('matches keys case-insensitively', async () => {
-		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
+	it('matches keys case-insensitively', () => {
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'C', description: 'test', run })
-		await user.keyboard('c')
+		keybindings.register(TOGGLE_PROJECTION, { run })
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'C' }))
 
 		expect(run).toHaveBeenCalledTimes(1)
+	})
+
+	it('ignores a key no binding claims', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(TOGGLE_PROJECTION, { run })
+		await user.keyboard('j')
+
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('never dispatches a camera binding, which InputBindings polls instead', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(CAMERA_FORWARD, { run })
+		await user.keyboard('w')
+
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('dispatches a shifted press to its own binding', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const toggle = vi.fn()
+		const showAll = vi.fn()
+
+		keybindings.register(TOGGLE_VISIBILITY, { run: toggle })
+		keybindings.register(SHOW_ALL_HIDDEN, { run: showAll })
+		await user.keyboard('{Shift>}h{/Shift}')
+
+		expect(showAll).toHaveBeenCalledTimes(1)
+		expect(toggle).not.toHaveBeenCalled()
 	})
 
 	it('consults when() at dispatch time', async () => {
 		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 		let applicable = false
 
-		hotkeys.register({ key: 'c', description: 'test', when: () => applicable, run })
+		keybindings.register(TOGGLE_PROJECTION, { when: () => applicable, run })
 
 		await user.keyboard('c')
 		expect(run).not.toHaveBeenCalled()
@@ -62,12 +141,12 @@ describe('KeyboardBindings executor', () => {
 
 	it('ignores keys typed into an editable element', async () => {
 		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 		const input = document.createElement('input')
 		document.body.append(input)
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		keybindings.register(TOGGLE_PROJECTION, { run })
 		input.focus()
 		await user.keyboard('c')
 
@@ -76,22 +155,59 @@ describe('KeyboardBindings executor', () => {
 		input.remove()
 	})
 
-	it('ignores presses while a modifier is held', async () => {
+	it('ignores a press whose modifier the binding did not declare', async () => {
 		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		keybindings.register(TOGGLE_PROJECTION, { run })
 		await user.keyboard('{Meta>}c{/Meta}')
 
 		expect(run).not.toHaveBeenCalled()
 	})
 
-	it('ignores the repeated events of a held key', () => {
-		const { hotkeys } = renderExecutor()
+	it('dispatches a press whose modifier the binding declared', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		keybindings.register(SAVE, { run })
+		await user.keyboard('{Meta>}s{/Meta}')
+
+		expect(run).toHaveBeenCalledTimes(1)
+	})
+
+	it('runs a modified shortcut even while an input has focus', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+		const input = document.createElement('input')
+		document.body.append(input)
+
+		keybindings.register(SAVE, { run })
+		input.focus()
+		await user.keyboard('{Meta>}s{/Meta}')
+
+		expect(run).toHaveBeenCalledTimes(1)
+		input.remove()
+	})
+
+	it('ignores a press while Option is held, which macOS reports as another character', async () => {
+		const user = userEvent.setup()
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(TOGGLE_PROJECTION, { run })
+		await user.keyboard('{Alt>}c{/Alt}')
+
+		expect(run).not.toHaveBeenCalled()
+	})
+
+	it('ignores the repeated events of a held key', () => {
+		const { keybindings } = renderExecutor()
+		const run = vi.fn()
+
+		keybindings.register(TOGGLE_PROJECTION, { run })
 		// userEvent cannot express auto-repeat, so dispatch the raw event.
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', repeat: true }))
 
@@ -100,29 +216,13 @@ describe('KeyboardBindings executor', () => {
 
 	it('stops dispatching while input bindings are disabled', async () => {
 		const user = userEvent.setup()
-		const { environment, hotkeys } = renderExecutor()
+		const { environment, keybindings } = renderExecutor()
 		const run = vi.fn()
 
-		hotkeys.register({ key: 'c', description: 'test', run })
+		keybindings.register(TOGGLE_PROJECTION, { run })
 		environment.current.inputBindingsEnabled = false
 		await user.keyboard('c')
 
 		expect(run).not.toHaveBeenCalled()
-	})
-
-	it('runs every applicable binding on a shared key and warns about the collision', async () => {
-		const user = userEvent.setup()
-		const { hotkeys } = renderExecutor()
-		const warn = vi.spyOn(console, 'warn')
-		const first = vi.fn()
-		const second = vi.fn()
-
-		hotkeys.register({ key: 'x', description: 'first', run: first })
-		hotkeys.register({ key: 'x', description: 'second', run: second })
-		await user.keyboard('x')
-
-		expect(first).toHaveBeenCalledTimes(1)
-		expect(second).toHaveBeenCalledTimes(1)
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('2 bindings apply to "x"'))
 	})
 })

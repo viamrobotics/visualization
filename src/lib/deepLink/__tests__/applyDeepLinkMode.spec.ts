@@ -17,6 +17,16 @@ describe('applyDeepLinkMode', () => {
 		expect(environment.current.mode).toBe('build')
 	})
 
+	it('assigns replay mode', () => {
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('replay')
+
+		applyDeepLinkMode(['replay'], environment)
+
+		expect(environment.current.mode).toBe('replay')
+	})
+
 	it('resolves once the plugin registers, when applied before registration', () => {
 		const environment = createEnvironment()
 		environment.registerMode('monitor')
