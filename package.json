@@ -14,12 +14,12 @@
 		"go-build": "wireit",
 		"package": "wireit",
 		"svelte-sync": "wireit",
-		"prepare": "pnpm svelte-sync && pnpm build:workers || echo ''",
+		"prepare": "pnpm svelte-sync || echo ''",
 		"prepack": "wireit",
 		"preview": "vite preview",
 		"check": "wireit",
 		"check:e2e": "wireit",
-		"check:watch": "svelte-kit sync && pnpm build:workers && svelte-check --tsconfig ./tsconfig.json --watch",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write . && ./etc/eslint-progress.sh . --fix --concurrency auto",
 		"lint": "wireit",
 		"lint:prettier": "wireit",
@@ -90,8 +90,7 @@
 			],
 			"dependencies": [
 				"proto:gen-ts",
-				"svelte-sync",
-				"build:workers"
+				"svelte-sync"
 			],
 			"packageLocks": [
 				"pnpm-lock.yaml"
@@ -112,14 +111,12 @@
 			}
 		},
 		"build:workers": {
-			"command": "node scripts/build-workers.js",
+			"command": "node scripts/post-process-workers.js",
 			"files": [
-				"scripts/build-workers.js",
+				"scripts/post-process-workers.js",
 				"src/lib/loaders/pcd/worker.ts"
 			],
-			"output": [
-				"src/lib/loaders/pcd/worker.inline.ts"
-			],
+			"output": [],
 			"packageLocks": [
 				"pnpm-lock.yaml"
 			]
@@ -140,7 +137,7 @@
 			]
 		},
 		"package": {
-			"command": "svelte-package && publint",
+			"command": "svelte-package && node scripts/post-process-workers.js && publint",
 			"files": [
 				"src/lib/**",
 				"svelte.config.js",
@@ -152,8 +149,7 @@
 			],
 			"dependencies": [
 				"proto:gen-ts",
-				"svelte-sync",
-				"build:workers"
+				"svelte-sync"
 			],
 			"packageLocks": [
 				"pnpm-lock.yaml"
@@ -196,7 +192,6 @@
 				"test:rdk-golden",
 				"proto:gen-ts",
 				"svelte-sync",
-				"build:workers",
 				"vet",
 				"check:e2e"
 			],

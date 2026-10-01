@@ -51,7 +51,11 @@ export default defineConfig({
 		// its named exports.
 		// The collision tests import rapier3d-compat directly. Discovering it mid-run makes
 		// Vite re-optimize and reload the test worker, which vitest flags as flaky.
-		include: ['@testing-library/svelte > @testing-library/dom', '@dimforge/rapier3d-compat'],
+		include: [
+			'@dimforge/rapier3d-compat',
+			'@testing-library/svelte > @testing-library/dom',
+			'three/examples/jsm/loaders/PCDLoader.js',
+		],
 		exclude: ['@testing-library/svelte'],
 	},
 	build: {
