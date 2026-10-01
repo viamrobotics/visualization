@@ -8,7 +8,13 @@
 	import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { RefetchRates } from '$lib/components/overlay/refetchRates'
-	import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
+	import {
+		hierarchy,
+		setOrAddTrait,
+		traits,
+		TRANSLUCENT_GEOMETRY_OPACITY,
+		useWorld,
+	} from '$lib/ecs'
 	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -181,7 +187,6 @@
 								traits.Name(pointcloudLabel),
 								traits.BufferGeometry(geometry),
 								traits.Points,
-								traits.Opacity(1),
 								traits.PointSampling({ total: positions.length / 3, shuffled }),
 								traits.PointCloudObjectAPI
 							)
@@ -228,6 +233,7 @@
 							traits.Matrix(center.toMatrix4()),
 							traits.Geometry(geometry),
 							traits.Color({ r: 0, g: 1, b: 0 }),
+							traits.Opacity(TRANSLUCENT_GEOMETRY_OPACITY),
 							traits.PointCloudObjectAPI,
 						]
 

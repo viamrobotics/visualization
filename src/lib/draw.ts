@@ -25,7 +25,7 @@ import {
 	isVertexColors,
 	STRIDE,
 } from '$lib/buffer'
-import { hierarchy, relations, setOrAddTrait, traits } from '$lib/ecs'
+import { DEFAULT_OPACITY, hierarchy, relations, setOrAddTrait, traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { Pose } from '$lib/math'
 import { type Metadata, metadataFromStruct } from '$lib/metadata'
@@ -49,7 +49,6 @@ const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255])
 const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139])
 const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51])
 const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255])
-const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 

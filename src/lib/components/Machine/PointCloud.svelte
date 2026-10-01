@@ -148,7 +148,6 @@
 					traits.Name(`${name} pointcloud`),
 					traits.BufferGeometry(geometry),
 					traits.Points,
-					traits.Opacity(1),
 					traits.PointSampling({ total: positions.length / 3, shuffled }),
 					traits.PointCloudAPI
 				)

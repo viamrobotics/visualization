@@ -33,8 +33,8 @@ maps back to the entity.
 	const settings = useSettings()
 
 	/**
-	 * Primitives render transparent by default (see `resolveOpacity`), with
-	 * per-instance alpha in the `w` of the instance color. The base color stays
+	 * The material is always transparent so any primitive can carry its own
+	 * alpha (see `resolveOpacity`), stored in the `w` of the instance color. The base color stays
 	 * white so per-instance colors aren't tinted.
 	 *
 	 * `DoubleSide` is what lets every shape share one batch — an uncapped
