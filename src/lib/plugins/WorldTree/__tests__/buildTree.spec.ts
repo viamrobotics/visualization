@@ -178,4 +178,42 @@ describe('buildTree', () => {
 
 		expect(() => buildTree(world, spawnFolderEntities())).not.toThrow()
 	})
+
+	it('leaves out an empty folder that is not pinned', () => {
+		world = createWorld()
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+
+		expect(folderNamed(nodes, 'Frames')).toBeUndefined()
+	})
+
+	it('keeps an empty pinned folder and carries its placeholder', () => {
+		world = createWorld()
+
+		const { nodes } = buildTree(
+			world,
+			spawnFolderEntities(),
+			new Map([['frames', 'This machine has no frames']])
+		)
+		const frames = folderNamed(nodes, 'Frames')
+
+		expect(frames?.children).toEqual([])
+		expect(frames?.folder?.itemCount).toBe(0)
+		expect(frames?.folder?.placeholder).toBe('This machine has no frames')
+	})
+
+	it('drops the placeholder once a pinned folder has rows', () => {
+		world = createWorld()
+		world.spawn(traits.Name('arm'), traits.FramesAPI)
+
+		const { nodes } = buildTree(
+			world,
+			spawnFolderEntities(),
+			new Map([['frames', 'This machine has no frames']])
+		)
+		const frames = folderNamed(nodes, 'Frames')
+
+		expect(namesIn(frames)).toEqual(['arm'])
+		expect(frames?.folder?.placeholder).toBeUndefined()
+	})
 })

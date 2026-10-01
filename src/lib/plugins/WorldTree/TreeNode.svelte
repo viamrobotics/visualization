@@ -238,7 +238,14 @@
 		<div {...api.getBranchContentProps(nodeProps)}>
 			<div {...api.getBranchIndentGuideProps(nodeProps)}></div>
 
-			{#if children.length > 200}
+			{#if children.length === 0 && node.folder?.placeholder}
+				<p
+					class="folder-placeholder text-disabled"
+					style:--depth={indexPath.length + 1}
+				>
+					{node.folder.placeholder}
+				</p>
+			{:else if children.length > 200}
 				<VirtualList
 					style="height:{Math.min(8, Math.max(children.length, 5)) * 32}px;"
 					items={children}
@@ -296,12 +303,14 @@
 		 */
 		[data-scope='tree-view'][data-part='item'],
 		[data-scope='tree-view'][data-part='branch-control'],
-		[data-scope='tree-view'][data-part='branch-indent-guide'] {
+		[data-scope='tree-view'][data-part='branch-indent-guide'],
+		.folder-placeholder {
 			--padding-inline: 16px;
 		}
 
 		[data-scope='tree-view'][data-part='item'],
-		[data-scope='tree-view'][data-part='branch-control'] {
+		[data-scope='tree-view'][data-part='branch-control'],
+		.folder-placeholder {
 			user-select: none;
 			padding-inline-start: calc(var(--depth) * var(--padding-inline));
 			display: flex;
