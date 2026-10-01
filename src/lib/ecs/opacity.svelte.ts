@@ -3,12 +3,14 @@ import type { Entity } from 'koota'
 import { Opacity, OpacityOverride } from './traits'
 import { useTrait } from './useTrait.svelte'
 
+/** Alpha for an entity carrying neither trait. Anything meant to be translucent writes `Opacity`. */
+export const DEFAULT_OPACITY = 1
+
 /**
- * Alpha for an entity carrying neither trait. Colliders are the only things
- * that reach it — every other spawner writes `Opacity` — and they read as
- * translucent so the CAD model they wrap stays visible through them.
+ * Alpha for geometry that wraps something the user still needs to see, such as
+ * a collider around a CAD model or a box around a segmented object.
  */
-export const DEFAULT_GEOMETRY_OPACITY = 0.5
+export const TRANSLUCENT_GEOMETRY_OPACITY = 0.5
 
 /**
  * The alpha a renderer should draw `entity` at. The user's edit outranks the
@@ -17,7 +19,7 @@ export const DEFAULT_GEOMETRY_OPACITY = 0.5
  * @see useOpacity for the reactive form.
  */
 export const resolveOpacity = (entity: Entity): number =>
-	entity.get(OpacityOverride) ?? entity.get(Opacity) ?? DEFAULT_GEOMETRY_OPACITY
+	entity.get(OpacityOverride) ?? entity.get(Opacity) ?? DEFAULT_OPACITY
 
 /** `resolveOpacity` as a reactive box, for a component rendering one entity. */
 export const useOpacity = (target: () => Entity | undefined): { readonly current: number } => {
@@ -26,7 +28,7 @@ export const useOpacity = (target: () => Entity | undefined): { readonly current
 
 	return {
 		get current() {
-			return override.current ?? source.current ?? DEFAULT_GEOMETRY_OPACITY
+			return override.current ?? source.current ?? DEFAULT_OPACITY
 		},
 	}
 }

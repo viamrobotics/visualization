@@ -1,7 +1,7 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { DEFAULT_GEOMETRY_OPACITY, resolveOpacity } from '../opacity.svelte'
+import { resolveOpacity } from '../opacity.svelte'
 import { Opacity, OpacityOverride } from '../traits'
 
 describe('resolveOpacity', () => {
@@ -11,10 +11,10 @@ describe('resolveOpacity', () => {
 		world?.destroy()
 	})
 
-	it('falls back to the collider default when the entity carries neither trait', () => {
+	it('renders opaque when the entity carries neither trait', () => {
 		world = createWorld()
 
-		expect(resolveOpacity(world.spawn())).toBe(DEFAULT_GEOMETRY_OPACITY)
+		expect(resolveOpacity(world.spawn())).toBe(1)
 	})
 
 	it('reads the source opacity when the user has not overridden it', () => {

@@ -7,7 +7,7 @@ import type { Transform } from '$lib/geometry'
 import type { RawKinematicsModel } from '$lib/kinematicsTransform'
 
 import { resourceNameToColor, subtypeToColor } from '$lib/color'
-import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
+import { hierarchy, setOrAddTrait, traits, TRANSLUCENT_GEOMETRY_OPACITY, useWorld } from '$lib/ecs'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '$lib/kinematicsFrames'
 import { Pose } from '$lib/math'
 import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
@@ -292,7 +292,10 @@ export const provideFrames = (partID: () => string) => {
 				}
 
 				if (frame.physicalObject) {
-					entityTraits.push(traits.Geometry(frame.physicalObject))
+					entityTraits.push(
+						traits.Geometry(frame.physicalObject),
+						traits.Opacity(TRANSLUCENT_GEOMETRY_OPACITY)
+					)
 				}
 
 				const entity = world.spawn(...entityTraits)
