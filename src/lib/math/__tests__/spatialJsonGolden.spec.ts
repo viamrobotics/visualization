@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import goldenFile from '../rdk-math/testdata/geometry_center_golden.json'
+import goldenFile from '../../../../tools/rdk-golden/math/testdata/geometry_center_golden.json'
 import { geometryCenterInFrame, type RawOrientation, type Vec3Json } from '../spatialJson'
 
 interface GoldenPose {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import goldenFile from '../../../../tools/rdk-golden/math/testdata/geometry_infer_golden.json'
 import { inferGeometryType, type RawGeometryJson } from '../geometryJson'
-import goldenFile from '../rdk-math/testdata/geometry_infer_golden.json'
 
 interface GoldenCase {
 	name: string

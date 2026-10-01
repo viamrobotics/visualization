@@ -7,6 +7,8 @@ import (
 	"github.com/golang/geo/r3"
 	sm "go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
+
+	"rdk-golden/goldenfile"
 )
 
 // geometryGoldenName is read by src/lib/math/__tests__/inferGeometry.spec.ts, which asserts that
@@ -71,7 +73,7 @@ func TestGeometryInferGolden(t *testing.T) {
 		})
 	}
 
-	writeGolden(t, geometryGoldenName, golden)
+	goldenfile.Write(t, geometryGoldenName, golden)
 }
 
 // resolveGeometryType reports the type RDK settles a config on, or "" when it builds no geometry.

@@ -8,6 +8,8 @@ import (
 	"go.viam.com/test"
 
 	sm "go.viam.com/rdk/spatialmath"
+
+	"rdk-golden/goldenfile"
 )
 
 // geometryCenterGoldenName is read by src/lib/math/__tests__/spatialJsonGolden.spec.ts.
@@ -102,7 +104,7 @@ func TestGeometryCenterGolden(t *testing.T) {
 		})
 	}
 
-	writeGolden(t, geometryCenterGoldenName, golden)
+	goldenfile.Write(t, geometryCenterGoldenName, golden)
 }
 
 func geometryCenterCases() []geometryCenterCase {
