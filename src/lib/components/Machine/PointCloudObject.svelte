@@ -155,6 +155,7 @@
 							return
 						}
 
+						const parentFrame = geometriesInFrame?.referenceFrame
 						const existing = entities.get(pointcloudLabel)
 						const metadata = {
 							colors,
@@ -162,6 +163,7 @@
 						}
 
 						if (existing) {
+							hierarchy.setParent(existing, parentFrame)
 							const geometry = existing.get(traits.BufferGeometry)
 
 							if (geometry) {
@@ -178,6 +180,7 @@
 							if (boundsTree) attachPointsBvh(geometry, boundsTree)
 
 							const entity = world.spawn(
+								...hierarchy.parentTraits(parentFrame),
 								traits.Name(pointcloudLabel),
 								traits.BufferGeometry(geometry),
 								traits.Points,

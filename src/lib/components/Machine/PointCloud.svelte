@@ -70,17 +70,27 @@
 		return () => refetchers.delete(registration)
 	})
 
+	const logTarget = $derived({ resource: name, folder: 'pointclouds' })
+
+	/**
+	 * A disabled camera has stopped reporting, so it withdraws what it already
+	 * logged rather than leaving its last failure on its tree rows.
+	 */
 	$effect(() => {
+		if (!enabled) return
+
+		const target = logTarget
+		return () => logs.retractTarget(target)
+	})
+
+	$effect(() => {
+		// A disabled query keeps its last error, which would log again on the way out.
+		if (!enabled) return
+
 		if (query.isFetching) {
-			logs.add(`Fetching pointcloud for ${name}...`, 'info', {
-				resource: name,
-				folder: 'pointclouds',
-			})
+			logs.add(`Fetching pointcloud for ${name}...`, 'info', logTarget)
 		} else if (query.error) {
-			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', {
-				resource: name,
-				folder: 'pointclouds',
-			})
+			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', logTarget)
 		}
 	})
 
@@ -158,10 +168,11 @@
 					return
 				}
 
-				logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error', {
-					resource: name,
-					folder: 'pointclouds',
-				})
+				logs.add(
+					error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
+					'error',
+					logTarget
+				)
 			})
 
 		return () => {
