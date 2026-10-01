@@ -1,5 +1,17 @@
 # visualization
 
+## 2.8.0
+
+### Minor Changes
+
+- 5ab1900: APP-18085 Inspect IK solutions in the visualizer
+- 5c56188: Move pose staleness and resource health warnings onto their world tree rows, and match the log warning indicator to them.
+- 5f27520: Add `<SensorCoverage />` plugin drawing each camera's view frustum from its frame.
+
+### Patch Changes
+
+- f654d06: Add a Keybindings tab to settings listing every shortcut.
+
 ## 2.7.0
 
 ### Minor Changes
