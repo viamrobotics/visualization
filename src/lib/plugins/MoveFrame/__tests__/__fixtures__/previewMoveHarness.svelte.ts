@@ -80,6 +80,10 @@ export const createPreviewMoveHarness = (
 		get parts() {
 			return parts
 		},
+		get machineFrameCount() {
+			return parts.length
+		},
+		isLoadingMachineFrames: false,
 		kinematicsComponents: new Set<string>(),
 	}
 

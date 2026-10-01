@@ -41,6 +41,8 @@
 		tree.collection<TreeNodeType>({
 			nodeToValue: (node) => `${node.entity}`,
 			nodeToString: (node) => node.entity.get(traits.Name) ?? '',
+			// Zag reads an empty `children` as a leaf. A pinned folder with no rows is still a folder.
+			nodeToChildrenCount: (node) => (node.folder ? (node.children?.length ?? 0) : undefined),
 			rootNode: {
 				...rootNode,
 				children: filterTree(rootNode.children ?? [], filter, selectedEntities),
