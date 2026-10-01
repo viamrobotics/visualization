@@ -1,5 +1,17 @@
 # visualization
 
+## 2.8.1
+
+### Patch Changes
+
+- bd7c3a0: Keep the world tree's Frames folder visible while connected, and its Point clouds and Point cloud objects folders while the machine has a camera or vision service.
+- 3a9fdc1: Render entities opaque unless they set an opacity, so dropped point clouds no longer start at 0.5.
+- f71b730: List anything whose parent frame is missing in a Missing parent folder of the world tree, instead of hiding it.
+- f71b730: Draw vision service pointclouds in the reference frame their response names, instead of at the world origin.
+- f71b730: Staged moves no longer ghost a camera's pointcloud as a green mesh.
+- f71b730: Keep repeating log lines in place and refresh the logs panel at most four times a second, so it stays readable while poses stream.
+- f71b730: Warn on the world tree's Missing parent folder that its objects are positioned relative to the world origin.
+
 ## 2.8.0
 
 ### Minor Changes
