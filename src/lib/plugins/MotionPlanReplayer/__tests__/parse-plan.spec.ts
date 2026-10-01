@@ -74,6 +74,24 @@ describe('parsePlan', () => {
 		expect(plan.obstaclesInWorldFrame?.frame).toBe('world')
 	})
 
+	// Captures marshal a nil GeometriesInFrame as an explicit null instead of omitting the key.
+	it('treats a null obstacles_in_world_frame as absent', () => {
+		const plan = parsePlan(
+			JSON.stringify({ ...REQUEST_OBJ, obstacles_in_world_frame: null }) +
+				JSON.stringify(RESULT_OBJ)
+		)
+		expect(plan.obstaclesInWorldFrame).toBeUndefined()
+	})
+
+	it('treats null goals and trajectory as absent', () => {
+		const plan = parsePlan(
+			JSON.stringify({ ...REQUEST_OBJ, goals: null }) +
+				JSON.stringify({ ...RESULT_OBJ, trajectory: null })
+		)
+		expect(plan.goals).toEqual([])
+		expect(plan.trajectory).toEqual([])
+	})
+
 	// Must fail here rather than deep inside the geometry decoder, where there is no path to report.
 	it('throws PlanParseError when obstacles_in_world_frame is malformed', () => {
 		expect(() =>

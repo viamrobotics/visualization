@@ -23,6 +23,12 @@
 			border: 'border-info-medium',
 			fill: 'bg-info-light text-info-dark',
 		},
+		replay: {
+			label: 'Replay',
+			idle: 'text-gray-8',
+			border: 'border-info-medium',
+			fill: 'bg-info-light text-info-dark',
+		},
 	} as const satisfies Record<
 		EnvironmentMode,
 		{ label: string; idle: string; border: string; fill: string }
@@ -101,7 +107,9 @@
 				<Icon name="eye-outline" />
 			{:else if mode === 'build'}
 				<Hammer size="16" />
-			{:else}
+			{:else if mode === 'replay'}
+				<Icon name="play-circle-outline" />
+			{:else if mode === 'move'}
 				<Move3d size="16" />
 			{/if}
 
