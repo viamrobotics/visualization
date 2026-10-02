@@ -49,8 +49,6 @@ jobs:
         run: pnpm vite-build
         env:
           VITE_CONFIGS: '{}'
-          WS_PORT: '3000'
-          STATIC_PORT: '5173'
 
       - name: Rebaseline the drawing project
         if: inputs.projects == 'drawing' || inputs.projects == 'both'

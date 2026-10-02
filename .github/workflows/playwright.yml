@@ -46,8 +46,6 @@ jobs:
         run: pnpm vite-build
         env:
           VITE_CONFIGS: '{}'
-          WS_PORT: '3000'
-          STATIC_PORT: '5173'
 
       # No --update-snapshots. A pixel change fails here and gets rebaselined
       # deliberately through update-e2e-baselines.yml.

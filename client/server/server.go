@@ -409,30 +409,25 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 	}).Handler(h2c.NewHandler(mux, &http2.Server{}))
 }
 
+// staticFileHandler serves the adapter-static build. A route like /snapshot/reconcile
+// is prerendered to snapshot/reconcile.html, so the extensionless path is tried with
+// ".html" before falling back to the root index.html.
 func staticFileHandler(buildDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := filepath.Join(buildDir, filepath.Clean("/"+r.URL.Path))
 
-		info, err := os.Stat(path)
-		if err == nil && info.IsDir() {
-			path = filepath.Join(path, "index.html")
-			info, err = os.Stat(path)
-		}
-
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+		for _, candidate := range []string{path, filepath.Join(path, "index.html"), path + ".html"} {
+			info, err := os.Stat(candidate)
+			if err == nil && !info.IsDir() {
+				http.ServeFile(w, r, candidate)
 				return
 			}
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
+			if err != nil && !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		if info.IsDir() {
-			http.ServeFile(w, r, filepath.Join(path, "index.html"))
-			return
-		}
-
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
 	})
 }

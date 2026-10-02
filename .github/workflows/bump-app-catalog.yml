@@ -61,18 +61,18 @@ jobs:
           grep "@viamrobotics/visualization" pnpm-workspace.yaml
 
       # npm can take minutes to serve a version after `changeset publish`
-      # reports success, and this job starts seconds after it.
-      - name: Wait for the version on npm
-        timeout-minutes: 20
-        run: |
-          until npm view "@viamrobotics/visualization@${VERSION}" version 2>/dev/null | grep -qx "${VERSION}"; do
-            echo "Waiting for @viamrobotics/visualization@${VERSION} on npm..."
-            sleep 30
-          done
-
+      # reports success, and this job starts seconds after it. Only that error is
+      # retried, so any other install failure still fails fast.
       - name: pnpm install
         working-directory: app
-        run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false
+        timeout-minutes: 20
+        run: |
+          LOG="$RUNNER_TEMP/pnpm-install.log"
+          until pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false 2>&1 | tee "$LOG"; [ "${PIPESTATUS[0]}" -eq 0 ]; do
+            grep -q ERR_PNPM_NO_MATCHING_VERSION "$LOG" || exit 1
+            echo "@viamrobotics/visualization@${VERSION} is not on npm yet, retrying in 30s..."
+            sleep 30
+          done
 
       - name: Open bump PR
         uses: peter-evans/create-pull-request@v8
