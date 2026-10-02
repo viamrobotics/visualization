@@ -41,7 +41,6 @@ jobs:
         uses: ./.github/actions/setup-e2e
         with:
           go: 'true'
-          bun: 'true'
 
       - name: Build Go binaries
         run: pnpm go-build

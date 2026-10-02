@@ -9,10 +9,6 @@ inputs:
     description: Install Go. Needed by any job that builds the draw server or the scene binary.
     required: false
     default: 'false'
-  bun:
-    description: Install Bun. Needed by any job that serves the production build.
-    required: false
-    default: 'false'
 
 runs:
   using: composite
@@ -26,10 +22,6 @@ runs:
       with:
         node-version: 22
         cache: 'pnpm'
-
-    - name: Setup Bun
-      if: inputs.bun == 'true'
-      uses: oven-sh/setup-bun@v2
 
     - name: Setup Go
       if: inputs.go == 'true'

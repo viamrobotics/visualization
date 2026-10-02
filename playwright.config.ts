@@ -21,12 +21,12 @@ const ROBOT_SPECS = [
 const APP_PORT = 5173
 
 // CI verifies the artifact it would ship, so it serves the static build through
-// the same bun server `make up` uses rather than Vite. Baselines are recorded
+// the same Go draw server `make up` uses rather than Vite. Baselines are recorded
 // against `pnpm dev` and hold either way: the two were measured pixel for pixel
-// identical across the drawing and matrix projects. The build itself is a
-// separate CI step, so its cost shows up on its own line.
+// identical across the drawing and matrix projects. The build and the binary are
+// separate CI steps, so their cost shows up on its own line.
 const APP_SERVER = process.env.CI
-	? `WS_PORT=3000 STATIC_PORT=${APP_PORT} bun run server/server.ts --production`
+	? `.bin/draw-server -production -static-port ${APP_PORT}`
 	: 'pnpm dev'
 
 export default defineConfig({

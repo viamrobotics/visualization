@@ -33,7 +33,6 @@ jobs:
         uses: ./.github/actions/setup-e2e
         with:
           go: 'true'
-          bun: 'true'
 
       # Both binaries the drawing fixtures exec: one draw server per worker, and
       # the scene binary that puts entities on screen.
