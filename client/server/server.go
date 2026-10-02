@@ -84,6 +84,11 @@ type DrawServerConfig struct {
 	// TempDir buffers chunked-entity payloads. Empty means ".tmp" beside go.mod.
 	// Two servers must not share one: NewDrawService empties it at startup.
 	TempDir string
+
+	// ExtraHandlers mounts more Connect services on the RPC server, keyed by the path a generated
+	// New*ServiceHandler returns. Injected by the binary so library callers never link a service's
+	// dependencies, such as the cgo nlopt solver behind MotionPlanService.
+	ExtraHandlers map[string]http.Handler
 }
 
 var (
@@ -164,7 +169,7 @@ func Start(cfg DrawServerConfig) error {
 
 	rpcSrv = &http.Server{
 		Addr:    rpcAddr,
-		Handler: newRPCHandler(svc),
+		Handler: newRPCHandler(svc, cfg.ExtraHandlers),
 	}
 
 	rpcReady := make(chan struct{})
@@ -392,7 +397,7 @@ func isAddrInUse(err error) bool {
 	return false
 }
 
-func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
+func newRPCHandler(svc drawv1connect.DrawServiceHandler, extraHandlers map[string]http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	rpcPath, rpcHandler := drawv1connect.NewDrawServiceHandler(
@@ -400,6 +405,10 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 		connect.WithCompressMinBytes(1024),
 	)
 	mux.Handle(rpcPath, rpcHandler)
+
+	for path, handler := range extraHandlers {
+		mux.Handle(path, handler)
+	}
 
 	return cors.New(cors.Options{
 		AllowedOrigins:      []string{"*"},

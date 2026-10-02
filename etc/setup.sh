@@ -43,13 +43,13 @@ command_exists() {
 version_gte() {
     local current="$1"
     local required="$2"
-    
+
     # Extract major.minor from version strings
     local current_major=$(echo "$current" | cut -d. -f1)
     local current_minor=$(echo "$current" | cut -d. -f2)
     local required_major=$(echo "$required" | cut -d. -f1)
     local required_minor=$(echo "$required" | cut -d. -f2)
-    
+
     if [ "$current_major" -gt "$required_major" ]; then
         return 0
     elif [ "$current_major" -eq "$required_major" ] && [ "$current_minor" -ge "$required_minor" ]; then
@@ -64,17 +64,17 @@ check_and_install_fnm() {
         log_success "fnm is already installed"
         return 0
     fi
-    
+
     log_info "Installing fnm (Fast Node Manager)..."
     curl -fsSL https://fnm.vercel.app/install | bash
-    
+
     # Source fnm for this session
     export FNM_DIR="$HOME/.local/share/fnm"
     if [ -d "$FNM_DIR" ]; then
         export PATH="$FNM_DIR:$PATH"
         eval "$(fnm env)"
     fi
-    
+
     log_success "fnm installed successfully"
 }
 
@@ -85,7 +85,7 @@ check_and_install_node() {
         export PATH="$FNM_DIR:$PATH"
         eval "$(fnm env)" 2>/dev/null || true
     fi
-    
+
     if command_exists node; then
         local current_version=$(node --version | sed 's/v//' | cut -d. -f1)
         if version_gte "$current_version.0" "$REQUIRED_NODE_VERSION.0"; then
@@ -95,12 +95,12 @@ check_and_install_node() {
             log_warning "Node.js v$current_version is below required v$REQUIRED_NODE_VERSION"
         fi
     fi
-    
+
     log_info "Installing Node.js v$REQUIRED_NODE_VERSION via fnm..."
     fnm install $REQUIRED_NODE_VERSION
     fnm use $REQUIRED_NODE_VERSION
     fnm default $REQUIRED_NODE_VERSION
-    
+
     log_success "Node.js v$REQUIRED_NODE_VERSION installed successfully"
 }
 
@@ -109,14 +109,14 @@ check_and_install_pnpm() {
         log_success "pnpm is already installed (version: $(pnpm --version))"
         return 0
     fi
-    
+
     log_info "Installing pnpm..."
     curl -fsSL https://get.pnpm.io/install.sh | sh -
-    
+
     # Source pnpm for this session
     export PNPM_HOME="$HOME/.local/share/pnpm"
     export PATH="$PNPM_HOME:$PATH"
-    
+
     log_success "pnpm installed successfully"
 }
 
@@ -130,12 +130,12 @@ check_and_install_go() {
             log_warning "Go $current_version is below required $REQUIRED_GO_VERSION"
         fi
     fi
-    
+
     log_info "Installing Go $REQUIRED_GO_VERSION..."
-    
+
     local os=$(uname -s | tr '[:upper:]' '[:lower:]')
     local arch=$(uname -m)
-    
+
     # Map architecture names
     case "$arch" in
         x86_64) arch="amd64" ;;
@@ -143,28 +143,73 @@ check_and_install_go() {
         armv6l) arch="armv6l" ;;
         armv7l) arch="armv6l" ;;
     esac
-    
+
     local go_version="1.25.1"
     local go_url="https://go.dev/dl/go${go_version}.${os}-${arch}.tar.gz"
     local tmp_file="/tmp/go${go_version}.tar.gz"
-    
+
     log_info "Downloading Go from $go_url..."
     curl -fsSL "$go_url" -o "$tmp_file"
-    
+
     # Remove old Go installation if it exists
     if [ -d "/usr/local/go" ]; then
         log_info "Removing old Go installation..."
         sudo rm -rf /usr/local/go
     fi
-    
+
     log_info "Extracting Go to /usr/local..."
     sudo tar -C /usr/local -xzf "$tmp_file"
     rm "$tmp_file"
-    
+
     # Add to PATH for this session
     export PATH="/usr/local/go/bin:$PATH"
-    
+
     log_success "Go $go_version installed successfully"
+}
+
+# The draw server's IK inspection links RDK's cgo nlopt solver, which builds against libnlopt
+# found through pkg-config.
+check_and_install_nlopt() {
+    if command_exists pkg-config && pkg-config --exists nlopt; then
+        log_success "nlopt is already installed (version: $(pkg-config --modversion nlopt))"
+        return 0
+    fi
+
+    log_info "Installing nlopt..."
+
+    case "$(uname -s)" in
+        Darwin)
+            if ! command_exists brew; then
+                log_error "Homebrew is required to install nlopt on macOS. Install it from https://brew.sh and re-run setup."
+                exit 1
+            fi
+            brew install nlopt pkg-config
+            ;;
+        Linux)
+            if command_exists apt-get; then
+                sudo apt-get update
+                sudo apt-get install -y libnlopt-dev pkg-config
+            elif command_exists dnf; then
+                sudo dnf install -y NLopt-devel pkgconf-pkg-config
+            elif command_exists pacman; then
+                sudo pacman -S --needed --noconfirm nlopt pkgconf
+            else
+                log_error "No supported package manager found. Install nlopt and pkg-config manually: https://nlopt.readthedocs.io/en/latest/NLopt_Installation/"
+                exit 1
+            fi
+            ;;
+        *)
+            log_error "Unsupported OS for automatic nlopt install. Install nlopt and pkg-config manually: https://nlopt.readthedocs.io/en/latest/NLopt_Installation/"
+            exit 1
+            ;;
+    esac
+
+    if ! pkg-config --exists nlopt; then
+        log_error "nlopt was installed but pkg-config cannot find it. Check PKG_CONFIG_PATH."
+        exit 1
+    fi
+
+    log_success "nlopt installed successfully (version: $(pkg-config --modversion nlopt))"
 }
 
 check_and_install_buf() {
@@ -172,36 +217,36 @@ check_and_install_buf() {
         log_success "buf is already installed (version: $(buf --version))"
         return 0
     fi
-    
+
     log_info "Installing buf..."
     pnpm add -g @bufbuild/buf
-    
+
     # Add to PATH for this session
     export PATH="$HOME/.buf/bin:$PATH"
-    
+
     log_success "buf installed successfully"
 }
 
 install_go_tools() {
     # Ensure Go bin is in PATH
     export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"
-    
+
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
     go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-    
+
     log_success "Go tools installed successfully"
 }
 
 install_node_dependencies() {
     cd "$PROJECT_ROOT"
-    
+
     # Ensure pnpm is in PATH
     if [ -d "$HOME/.local/share/pnpm" ]; then
         export PNPM_HOME="$HOME/.local/share/pnpm"
         export PATH="$PNPM_HOME:$PATH"
     fi
-    
+
     if pnpm install --force; then
         log_success "Node.js dependencies installed successfully"
     else
@@ -236,34 +281,37 @@ print_shell_config() {
 main() {
     # Step 1: Install fnm
     check_and_install_fnm
-    
+
     # Step 2: Install Node.js
     check_and_install_node
-    
+
     # Step 3: Install pnpm
     check_and_install_pnpm
-    
+
     # Step 4: Install Go
     check_and_install_go
-    
-    # Step 5: Install buf
+
+    # Step 5: Install nlopt
+    check_and_install_nlopt
+
+    # Step 6: Install buf
     check_and_install_buf
-    
-    # Step 6: Install Go tools
+
+    # Step 7: Install Go tools
     install_go_tools
-    
-    # Step 7: Install Node.js dependencies
+
+    # Step 8: Install Node.js dependencies
     install_node_dependencies
-    
-    # Step 8: Generate protobuf code
+
+    # Step 9: Generate protobuf code
     pnpm proto
 
-    echo 
+    echo
     echo -e "🎉 ${GREEN}Setup completed successfully!${NC}"
-    
+
     # Print shell configuration
     print_shell_config
-    
+
     echo -e "  1. Follow the shell configuration instructions above"
     echo -e "  2. Run '${YELLOW}pnpm run up${NC}' (or '${YELLOW}make up${NC}') to start the development server"
     echo -e "  3. Visit ${BLUE}http://localhost:5173/${NC} to view the application"
