@@ -23,7 +23,7 @@ You need Go, Node.js 22+, and pnpm. The setup script below installs the missing 
     make setup
     ```
 
-    This installs `fnm`, Node.js 22, `pnpm`, Go, `buf`, the Go protobuf tooling, project dependencies, and generates protobufs.
+    This installs `fnm`, Node.js 22, `pnpm`, Go, nlopt, `buf`, the Go protobuf tooling, project dependencies, and generates protobufs. On macOS, installing nlopt requires [Homebrew](https://brew.sh).
 
     The script prints a shell-config snippet at the end. Add it to `~/.zshrc` or `~/.bashrc` and **restart your terminal** so the new tools are on your `PATH`.
 
@@ -37,11 +37,16 @@ You need Go, Node.js 22+, and pnpm. The setup script below installs the missing 
        fnm install 22 && fnm use 22
        ```
     2. Install [pnpm](https://pnpm.io/installation), [Go](https://go.dev/doc/install), and [buf](https://buf.build/docs/installation).
-    3. Install Go protobuf tooling:
+    3. Install nlopt and `pkg-config`. The draw server's IK inspection builds against nlopt:
+       ```bash
+       brew install nlopt pkg-config                      # macOS
+       sudo apt-get install -y libnlopt-dev pkg-config    # Debian / Ubuntu
+       ```
+    4. Install Go protobuf tooling:
        ```bash
        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
        ```
-    4. Install dependencies and generate protobufs:
+    5. Install dependencies and generate protobufs:
        ```bash
        pnpm install
        pnpm proto
@@ -161,6 +166,10 @@ Both apps render the same draw stream, so you'll see your `client/api` calls ref
 ### `make setup` finished but `make up` says "command not found"
 
 You need to apply the shell-config snippet that `make setup` printed at the end and restart your terminal. The new binaries live under `~/.local/share/fnm` and similar paths that aren't on `PATH` until your shell config sources them.
+
+### `make up` fails with "Package nlopt was not found in the pkg-config search path"
+
+The draw server builds against nlopt, which older setups did not install. Re-run `make setup`, or install nlopt and `pkg-config` with the commands in the manual setup steps.
 
 ### Port `5173` or `3030` is already in use
 

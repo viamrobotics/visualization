@@ -34,8 +34,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/viamrobotics/visualization/draw"
 	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
-	"github.com/viamrobotics/visualization/motionplan"
-	"github.com/viamrobotics/visualization/motionplan/v1/motionplanv1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -86,6 +84,11 @@ type DrawServerConfig struct {
 	// TempDir buffers chunked-entity payloads. Empty means ".tmp" beside go.mod.
 	// Two servers must not share one: NewDrawService empties it at startup.
 	TempDir string
+
+	// ExtraHandlers mounts more Connect services on the RPC server, keyed by the path a generated
+	// New*ServiceHandler returns. Injected by the binary so library callers never link a service's
+	// dependencies, such as the cgo nlopt solver behind MotionPlanService.
+	ExtraHandlers map[string]http.Handler
 }
 
 var (
@@ -166,7 +169,7 @@ func Start(cfg DrawServerConfig) error {
 
 	rpcSrv = &http.Server{
 		Addr:    rpcAddr,
-		Handler: newRPCHandler(svc),
+		Handler: newRPCHandler(svc, cfg.ExtraHandlers),
 	}
 
 	rpcReady := make(chan struct{})
@@ -394,7 +397,7 @@ func isAddrInUse(err error) bool {
 	return false
 }
 
-func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
+func newRPCHandler(svc drawv1connect.DrawServiceHandler, extraHandlers map[string]http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	rpcPath, rpcHandler := drawv1connect.NewDrawServiceHandler(
@@ -403,11 +406,9 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 	)
 	mux.Handle(rpcPath, rpcHandler)
 
-	motionPlanPath, motionPlanHandler := motionplanv1connect.NewMotionPlanServiceHandler(
-		motionplan.NewMotionPlanService(),
-		connect.WithCompressMinBytes(1024),
-	)
-	mux.Handle(motionPlanPath, motionPlanHandler)
+	for path, handler := range extraHandlers {
+		mux.Handle(path, handler)
+	}
 
 	return cors.New(cors.Options{
 		AllowedOrigins:      []string{"*"},

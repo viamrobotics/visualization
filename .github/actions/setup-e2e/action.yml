@@ -6,7 +6,7 @@ description: Toolchains, dependencies, and a cached Playwright browser.
 
 inputs:
   go:
-    description: Install Go. Needed by any job that builds the draw server or the scene binary.
+    description: Install Go and nlopt. Needed by any job that builds the draw server or the scene binary.
     required: false
     default: 'false'
 
@@ -29,6 +29,12 @@ runs:
       with:
         go-version-file: go.mod
         cache: true
+
+    # The draw server's MotionPlanService links RDK's cgo IK solver, which builds against libnlopt.
+    - name: Install nlopt
+      if: inputs.go == 'true'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libnlopt-dev
 
     - name: Set up wireit caching
       if: inputs.go == 'true'
