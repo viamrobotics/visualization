@@ -60,6 +60,16 @@ jobs:
           sed -i "s|\(['\"]\?@viamrobotics/visualization['\"]\?:\s*\).*|\1${VERSION}|" pnpm-workspace.yaml
           grep "@viamrobotics/visualization" pnpm-workspace.yaml
 
+      # npm can take minutes to serve a version after `changeset publish`
+      # reports success, and this job starts seconds after it.
+      - name: Wait for the version on npm
+        timeout-minutes: 20
+        run: |
+          until npm view "@viamrobotics/visualization@${VERSION}" version 2>/dev/null | grep -qx "${VERSION}"; do
+            echo "Waiting for @viamrobotics/visualization@${VERSION} on npm..."
+            sleep 30
+          done
+
       - name: pnpm install
         working-directory: app
         run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false

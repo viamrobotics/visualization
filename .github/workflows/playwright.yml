@@ -24,10 +24,14 @@ jobs:
     timeout-minutes: 30
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
       - name: Setup
         uses: ./.github/actions/setup-e2e
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           go: 'true'
           bun: 'true'
 
@@ -85,10 +89,13 @@ jobs:
     timeout-minutes: 10
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
-      - name: Setup
-        uses: ./.github/actions/setup-e2e
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
 
       - name: Smoke the deploy
         run: pnpm playwright test --config playwright.playground.config.ts --project=playground
