@@ -131,6 +131,7 @@
 				"e2e/fixtures/draw-scenes/**",
 				"client/**",
 				"draw/**",
+				"motionplan/**",
 				"go.mod",
 				"go.sum"
 			],
@@ -434,6 +435,7 @@
 			"command": "PATH=\"$(go env GOPATH)/bin:$PATH\" buf generate --template buf.gen.go.yaml",
 			"files": [
 				"protos/draw/**",
+				"protos/motionplan/**",
 				"protos/vendor/**",
 				"buf.gen.go.yaml",
 				"buf.yaml",
@@ -448,6 +450,7 @@
 			"command": "buf generate --template buf.gen.typescript.yaml",
 			"files": [
 				"protos/draw/**",
+				"protos/motionplan/**",
 				"protos/vendor/**",
 				"buf.gen.typescript.yaml",
 				"buf.yaml",

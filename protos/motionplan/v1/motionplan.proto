@@ -1,0 +1,46 @@
+// Offline RDK forward kinematics and IK inspection for motion-plan JSON.
+syntax = "proto3";
+
+package motionplan.v1;
+
+option go_package = "github.com/viamrobotics/visualization/motionplan/v1;motionplanv1";
+
+// Runs RDK offline against uploaded motion-plan JSON: FK for world-space frames,
+// IK for per-seed solution inspection.
+service MotionPlanService {
+  // Per-seed IK solutions for the request's first goal, scored and constraint-checked.
+  rpc GetIKSolutions(GetIKSolutionsRequest) returns (GetIKSolutionsResponse);
+}
+
+message GetIKSolutionsRequest {
+  reserved 1;
+  bytes plan_content = 2;
+  // Solutions to request per seed; 0 means the server default.
+  int32 num_solutions = 3;
+}
+
+message GetIKSolutionsResponse {
+  repeated IKSeedResult results = 1;
+}
+
+message IKSeedResult {
+  string seed = 1;
+  repeated IKSolution solutions = 2;
+}
+
+message IKSolution {
+  double cost = 1;
+  map<string, JointPositions> configuration = 2;
+  bool configuration_valid = 3;
+  optional string configuration_error = 4;
+  optional bool checkpath_valid = 5;
+  optional string first_error = 6;
+  map<string, JointPositions> last_good_inputs = 7;
+  // Whether first_error was a collision (obstacle or self) rather than another
+  // constraint violation. Set only alongside first_error.
+  optional bool is_obstacle_collision = 8;
+}
+
+message JointPositions {
+  repeated double values = 1;
+}

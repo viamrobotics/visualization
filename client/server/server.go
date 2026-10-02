@@ -34,6 +34,8 @@ import (
 	"github.com/rs/cors"
 	"github.com/viamrobotics/visualization/draw"
 	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
+	"github.com/viamrobotics/visualization/motionplan"
+	"github.com/viamrobotics/visualization/motionplan/v1/motionplanv1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -400,6 +402,12 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 		connect.WithCompressMinBytes(1024),
 	)
 	mux.Handle(rpcPath, rpcHandler)
+
+	motionPlanPath, motionPlanHandler := motionplanv1connect.NewMotionPlanServiceHandler(
+		motionplan.NewMotionPlanService(),
+		connect.WithCompressMinBytes(1024),
+	)
+	mux.Handle(motionPlanPath, motionPlanHandler)
 
 	return cors.New(cors.Options{
 		AllowedOrigins:      []string{"*"},

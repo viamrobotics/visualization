@@ -30,6 +30,7 @@
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
+	import { createIKSolutionsResolver } from './lib/createIKSolutionsResolver'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
@@ -42,11 +43,6 @@
 	const connectionConfig = useActiveConnectionConfig()
 
 	let { children } = $props()
-
-	// The standalone app has no IK solver, so inspection surfaces this as its error state.
-	// TODO: call local rdk inspectIK to provide standalone viz iteration.
-	const resolveIKSolutions = () =>
-		Promise.reject(new Error('IK inspection is not available in the standalone app.'))
 
 	let dialConfigs = $derived.by<Record<string, DialConf>>(() => {
 		if (connectionConfig.current) {
@@ -69,6 +65,10 @@
 	let pluginsEnabled = true
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
+
+	const resolveIKSolutions = createIKSolutionsResolver(
+		() => `http://${backendIP}:${portOverride ?? drawServicePort}`
+	)
 </script>
 
 <ViamProvider
