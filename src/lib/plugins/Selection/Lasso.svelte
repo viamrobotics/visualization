@@ -11,6 +11,7 @@
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	import Debug from './Debug.svelte'
+	import { isSelectionStart } from './isSelectionStart'
 	import * as selectionRelations from './relations'
 	import * as selectionTraits from './traits'
 	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
@@ -38,7 +39,7 @@
 	let drawing = false
 
 	const onpointerdown = (event: PointerEvent) => {
-		if (!selecting && !event.shiftKey) return
+		if (!isSelectionStart(event, selecting)) return
 
 		const { x, y } = raycast(event, camera.current)
 
