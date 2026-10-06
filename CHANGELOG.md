@@ -1,5 +1,11 @@
 # visualization
 
+## 2.8.2
+
+### Patch Changes
+
+- f70abf2: Start lasso and ellipse selections only on the primary button, so right-drag still pans the camera while selecting.
+
 ## 2.8.1
 
 ### Patch Changes
