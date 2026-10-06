@@ -63,6 +63,7 @@ describe('TransformGizmoAnchor', () => {
 		anchor.syncTo(new Matrix4())
 		dragAlongX(0, 0.2)
 		const afterFirst = anchor.position.x
+		// Simulates the $effect.pre in SelectedTransformControls that re-syncs the anchor after onChange updates the WorldMatrix trait.
 		anchor.syncTo(anchor.matrixWorld.clone())
 
 		dragAlongX(0, 0.2)
