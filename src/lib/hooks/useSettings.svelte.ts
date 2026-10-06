@@ -30,7 +30,7 @@ export interface Settings {
 	disabledVisionServices: Record<string, boolean>
 
 	snapping: boolean
-	/** Move snap step, in millimetres like every other length the app shows. */
+	/** Move snap step, in metres. Unlike pose fields, it never reaches a Viam API, so it skips mm. */
 	snapTranslate: number
 	snapRotate: number
 	snapScale: number
@@ -124,7 +124,7 @@ const defaults = (): Settings => ({
 	disabledVisionServices: {},
 
 	snapping: false,
-	snapTranslate: 100,
+	snapTranslate: 0.1,
 	snapRotate: 7.5,
 	snapScale: 0.1,
 	transformMode: 'none',

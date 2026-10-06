@@ -2,9 +2,6 @@ import { MathUtils } from 'three'
 
 import type { Settings } from './useSettings.svelte'
 
-// The settings speak the app's units (mm, degrees), the gizmo the scene's (metres, radians).
-const METRES_PER_MILLIMETRE = 0.001
-
 /** A transform gizmo's snap steps in scene units, `null` for an axis that does not snap. */
 export interface TransformSnaps {
 	translation: number | null
@@ -23,7 +20,7 @@ export const transformSnaps = (
 		settings.snapping && value > 0 ? toSceneUnits(value) : null
 
 	return {
-		translation: step(settings.snapTranslate, (mm) => mm * METRES_PER_MILLIMETRE),
+		translation: step(settings.snapTranslate, (metres) => metres),
 		rotation: step(settings.snapRotate, (degrees) => MathUtils.degToRad(degrees)),
 		scale: step(settings.snapScale, (factor) => factor),
 	}
