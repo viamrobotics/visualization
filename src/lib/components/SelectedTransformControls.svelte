@@ -4,7 +4,7 @@
 	import { T, useThrelte } from '@threlte/core'
 	import { TransformControls } from '@threlte/extras'
 	import { onDestroy } from 'svelte'
-	import { Group, MathUtils, Matrix4 } from 'three'
+	import { MathUtils, Matrix4 } from 'three'
 
 	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
@@ -18,6 +18,7 @@
 	import { Pose } from '$lib/math'
 	import { solveEditedMatrix } from '$lib/math/transform'
 	import { isolateTransformControls } from '$lib/three/renderLayers'
+	import { TransformGizmoAnchor } from '$lib/three/TransformGizmoAnchor'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -55,23 +56,15 @@
 
 	// Non-mesh frames (reference frames, and instanced box/sphere/capsule frames)
 	// render no named scene object, so `getObjectByName` can't locate a gizmo
-	// target. Drive a dedicated anchor Group from the selected entity's
-	// WorldMatrix instead — the same world transform the entity renderers
-	// compose. They mount at the scene root with `matrixAutoUpdate = false`, so
-	// this anchor's world-space transform matches theirs exactly.
-	const anchor = new Group()
-	anchor.matrixAutoUpdate = false
+	// target. Drive a dedicated anchor from the selected entity's WorldMatrix
+	// instead, the same world transform the entity renderers compose.
+	const anchor = new TransformGizmoAnchor()
 
 	$effect.pre(() => {
 		const world = worldMatrix.current
 		if (!world) return
 
-		anchor.matrix.copy(world)
-		// Keep position/quaternion/scale in sync with the matrix so
-		// TransformControls (which reads/writes those fields) sees the entity's
-		// actual transform on drag start.
-		anchor.matrix.decompose(anchor.position, anchor.quaternion, anchor.scale)
-		anchor.updateMatrixWorld()
+		anchor.syncTo(world)
 		invalidate()
 	})
 
