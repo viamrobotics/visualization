@@ -7,13 +7,19 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { createObstacleComponent, nextObstacleName } from '$lib/obstacle'
+	import { nextObstacleName } from '$lib/obstacle'
+
+	import { OBSTACLE_TYPE_OPTIONS, type ObstacleType } from './obstacleTypeOptions'
 
 	interface Props {
 		open: boolean
+		/** Picked in the Add menu before the dialog opens. */
+		type: ObstacleType
 	}
 
-	let { open = $bindable() }: Props = $props()
+	let { open = $bindable(), type }: Props = $props()
+
+	const option = $derived(OBSTACLE_TYPE_OPTIONS[type])
 
 	const world = useWorld()
 	const environment = useEnvironment()
@@ -31,7 +37,10 @@
 	// being rewritten under the user when the config changes while they type.
 	$effect(() => {
 		if (!open) return
-		name = nextObstacleName(untrack(() => takenNames))
+		name = nextObstacleName(
+			untrack(() => takenNames),
+			option.namePrefix
+		)
 	})
 
 	const trimmedName = $derived(name.trim())
@@ -67,7 +76,7 @@
 		// Config-only frames are merged into the scene in build mode. Creating an
 		// obstacle anywhere else would write it to the config and show nothing.
 		environment.current.mode = 'build'
-		partConfig.createComponent(createObstacleComponent(trimmedName))
+		partConfig.createComponent(option.create(trimmedName))
 
 		open = false
 	}
@@ -80,7 +89,7 @@
 <Dialog
 	bind:open
 	role="dialog"
-	title="New obstacle"
+	title={`New ${option.label.toLowerCase()} obstacle`}
 >
 	<div>
 		<label

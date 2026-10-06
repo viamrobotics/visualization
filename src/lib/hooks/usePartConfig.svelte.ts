@@ -17,6 +17,8 @@ import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import { Pose } from '$lib/math'
 import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
 
+import { type PartComponentPatch, patchPartComponent } from './patchPartComponent'
+
 const key = Symbol('part-config-context')
 
 /** The fields of a `components` entry this app reads or writes, not the whole entry. */
@@ -25,6 +27,12 @@ export interface PartComponent {
 	api?: string
 	model?: string
 	frame?: Frame
+	attributes?: Record<string, unknown>
+	/**
+	 * How the visualizer draws and edits the resource. rdk does not read it. An obstacle's editor
+	 * type and Bounds values live here.
+	 */
+	visualizer?: Record<string, unknown>
 }
 
 export interface PartConfig {
@@ -72,6 +80,11 @@ export interface PartConfigContext {
 	createFrame: (componentName: string) => void
 	/** Appends `component` to the part's own components. A name already in the config is left alone. */
 	createComponent: (component: PartComponent) => void
+	/**
+	 * Replaces the fields in `patch` on a part-owned component, as one undo step. A fragment's
+	 * component is left alone.
+	 */
+	updateComponent: (componentName: string, patch: PartComponentPatch) => void
 	save: () => void
 	discardChanges: () => void
 	canUndoFrameEdit: boolean
@@ -457,6 +470,13 @@ export const providePartConfig = (
 		createComponent: (component: PartComponent) => {
 			markHistoryActive()
 			createPartComponent(component)
+		},
+		updateComponent: (componentName: string, patch: PartComponentPatch) => {
+			markHistoryActive()
+			const newConfig = getCurrent()
+			if (patchPartComponent(newConfig, componentName, patch)) {
+				config.set(newConfig)
+			}
 		},
 		save: () => {
 			deactivateHistory()

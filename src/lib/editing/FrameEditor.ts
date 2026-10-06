@@ -2,6 +2,7 @@ import type { Entity } from 'koota'
 
 import type { Frame } from '$lib/frame'
 
+import { defaultFrameGeometry, type EditableFrameGeometry } from '$lib/defaultFrameGeometry'
 import { hierarchy, traits } from '$lib/ecs'
 import { Pose, type PosePatch } from '$lib/math'
 
@@ -14,26 +15,9 @@ export type UpdateFrameFn = (
 
 export type DeleteFrameFn = (componentName: string) => void
 
-export type EditableFrameGeometry = NonNullable<Frame['geometry']>
+export type { EditableFrameGeometry } from '$lib/defaultFrameGeometry'
 type Geometry = EditableFrameGeometry
 type GeometryType = Geometry['type']
-
-const defaultGeometry = (type: GeometryType): Geometry => {
-	switch (type) {
-		case 'box': {
-			return { type: 'box', x: 100, y: 100, z: 100 }
-		}
-		case 'sphere': {
-			return { type: 'sphere', r: 100 }
-		}
-		case 'capsule': {
-			return { type: 'capsule', r: 20, l: 100 }
-		}
-		default: {
-			return { type: 'none' }
-		}
-	}
-}
 
 /**
  * Fill a partial geometry edit (e.g. a slider changing one capsule dimension)
@@ -162,7 +146,7 @@ export class FrameEditor {
 
 	/** Replace the frame's geometry with a default of the given type. */
 	setGeometryType = (entity: Entity, type: GeometryType): void => {
-		this.#writeGeometry(entity, defaultGeometry(type))
+		this.#writeGeometry(entity, defaultFrameGeometry(type))
 	}
 
 	#writeGeometry = (entity: Entity, geometry: Geometry): void => {

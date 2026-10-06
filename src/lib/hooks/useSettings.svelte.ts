@@ -30,6 +30,7 @@ export interface Settings {
 	disabledVisionServices: Record<string, boolean>
 
 	snapping: boolean
+	/** Move snap step, in millimetres like every other length the app shows. */
 	snapTranslate: number
 	snapRotate: number
 	snapScale: number
@@ -123,7 +124,7 @@ const defaults = (): Settings => ({
 	disabledVisionServices: {},
 
 	snapping: false,
-	snapTranslate: 0.1,
+	snapTranslate: 100,
 	snapRotate: 7.5,
 	snapScale: 0.1,
 	transformMode: 'none',

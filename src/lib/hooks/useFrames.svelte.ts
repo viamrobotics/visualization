@@ -7,12 +7,15 @@ import type { Transform } from '$lib/geometry'
 import type { RawKinematicsModel } from '$lib/kinematicsTransform'
 
 import { resourceNameToColor, subtypeToColor } from '$lib/color'
+import { configColorsByFrame } from '$lib/configColors'
 import { hierarchy, setOrAddTrait, traits, TRANSLUCENT_GEOMETRY_OPACITY, useWorld } from '$lib/ecs'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '$lib/kinematicsFrames'
 import { Pose } from '$lib/math'
+import { obstacleShapeEntries } from '$lib/obstacleShapeEntries'
 import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
 import { machineFrameNames } from './machineFrameNames'
+import { mergeObstacleFrames } from './mergeObstacleFrames'
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
@@ -50,6 +53,9 @@ export const provideFrames = (partID: () => string) => {
 	const isBuildMode = $derived(environment.current.mode === 'build')
 
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
+
+	// The same condition under which `frames` below lets config win the merge.
+	const isConfigAuthoritative = $derived(isBuildMode || !isConnected)
 
 	const query = createRobotQuery(client, 'frameSystemConfig', () => ({
 		refetchOnWindowFocus: false,
@@ -101,7 +107,12 @@ export const provideFrames = (partID: () => string) => {
 	 */
 	const ownerComponent = $derived((frameName: string) => {
 		const namespaced = ownerOfInternalFrame(frameName)
-		return namespaced !== undefined && namespaced in kinematicsByComponent ? namespaced : frameName
+		if (namespaced === undefined) {
+			return frameName
+		}
+		const isKinematicsOwner = namespaced in kinematicsByComponent
+		const isConfigObstacleOwner = isConfigAuthoritative && namespaced in configFrames.obstacleFrames
+		return isKinematicsOwner || isConfigObstacleOwner ? namespaced : frameName
 	})
 
 	const frames = $derived.by(() => {
@@ -121,7 +132,7 @@ export const provideFrames = (partID: () => string) => {
 		// embedder never provided a dial config (e.g. the Viam app's
 		// dialConfigsForParts filters to live parts only, so offline parts
 		// never transition through DISCONNECTED).
-		if (isBuildMode || !isConnected) {
+		if (isConfigAuthoritative) {
 			const mergedFrames = { ...frames }
 
 			// Never overwrite a frame the machine already reported. This fragment
@@ -153,7 +164,24 @@ export const provideFrames = (partID: () => string) => {
 		return frames
 	})
 
-	const current = $derived([...Object.values(frames), ...Object.values(kinematicsDerivedFrames)])
+	// Config obstacles replace the links the machine reports for them only while config is authoritative.
+	const sceneDerivedFrames = $derived(
+		isConfigAuthoritative
+			? mergeObstacleFrames(kinematicsDerivedFrames, configFrames.obstacleFrames)
+			: kinematicsDerivedFrames
+	)
+
+	const configObstacleFrameNames = $derived(
+		isConfigAuthoritative
+			? new Set(
+					Object.values(configFrames.obstacleFrames).flatMap((obstacleFrames) =>
+						obstacleFrames.map((obstacleFrame) => obstacleFrame.referenceFrame)
+					)
+				)
+			: new Set<string>()
+	)
+
+	const current = $derived([...Object.values(frames), ...Object.values(sceneDerivedFrames)])
 
 	const askableFrameNames = $derived(
 		machineFrameNames(query.data, Object.keys(kinematicsDerivedFrames))
@@ -174,12 +202,18 @@ export const provideFrames = (partID: () => string) => {
 		return result
 	})
 
+	const shapeEntries = $derived(obstacleShapeEntries(partConfig.current.components))
+	const configColors = $derived(configColorsByFrame(partConfig.current.components))
+
 	$effect(() => {
 		const currentResourcesByName = resourceByName.current
 		const currentPartID = partID()
 		const currentComponentSubtypeByName = componentSubtypeByName
+		const currentShapeEntries = shapeEntries
+		const currentConfigColors = configColors
 		const currentFrames = current
-		const currentDerivedFrames = kinematicsDerivedFrames
+		const currentDerivedFrames = sceneDerivedFrames
+		const currentConfigObstacleFrameNames = configObstacleFrameNames
 		const currentAskableFrameNames = askableFrameNames
 
 		// We only want to update whenever "current" or "resourceByName.current" changes
@@ -201,13 +235,23 @@ export const provideFrames = (partID: () => string) => {
 					? new Pose().copy(frame.physicalObject.center)
 					: undefined
 				// Colors resolve against the owning component so an arm's links keep the
-				// arm's color; a link's own name matches no resource.
+				// arm's color; a link's own name matches no resource. A color saved in the config wins,
+				// the frame's own over its resource's.
 				const owner = ownerComponent(name)
 				const resourceName = currentResourcesByName[owner]
 				const color =
-					resourceNameToColor(resourceName) ?? subtypeToColor(currentComponentSubtypeByName[owner])
+					currentConfigColors.get(name) ??
+					currentConfigColors.get(owner) ??
+					resourceNameToColor(resourceName) ??
+					subtypeToColor(currentComponentSubtypeByName[owner])
 
-				const isConfigOnly = !currentAskableFrameNames.has(name)
+				// A config obstacle is config-only even when the machine knows the name, or pose polling
+				// would overwrite the draft pose with the saved one.
+				const isConfigObstacle = currentConfigObstacleFrameNames.has(name)
+				const isConfigOnly = isConfigObstacle || !currentAskableFrameNames.has(name)
+				const shapeEntry = currentShapeEntries.get(name)
+				const isObstacleShape = shapeEntry !== undefined && !shapeEntry.isComplex
+				const complexShapeIndex = shapeEntry?.isComplex ? shapeEntry.index : undefined
 
 				const existing = entities.get(entityKey)
 
@@ -227,6 +271,21 @@ export const provideFrames = (partID: () => string) => {
 						} else {
 							existing.remove(traits.ConfigOnlyFrame)
 						}
+					}
+
+					if (isObstacleShape !== existing.has(traits.ObstacleShape)) {
+						if (isObstacleShape) {
+							existing.add(traits.ObstacleShape)
+						} else {
+							existing.remove(traits.ObstacleShape)
+						}
+					}
+
+					if (complexShapeIndex === undefined) {
+						if (existing.has(traits.ComplexObstacleShape))
+							existing.remove(traits.ComplexObstacleShape)
+					} else if (existing.get(traits.ComplexObstacleShape)?.index !== complexShapeIndex) {
+						setOrAddTrait(existing, traits.ComplexObstacleShape, { index: complexShapeIndex })
 					}
 
 					if (color) {
@@ -255,6 +314,21 @@ export const provideFrames = (partID: () => string) => {
 						}
 					}
 
+					// A config obstacle has no live source, so a pose edit reaches the entity only through
+					// this write. Elsewhere Matrix is frozen in build mode and LiveMatrix is only set at spawn.
+					if (isConfigObstacle) {
+						for (const trait of [traits.Matrix, traits.LiveMatrix]) {
+							const matrix = existing.get(trait)
+							if (matrix) {
+								const next = pose.toMatrix4()
+								if (!matrix.equals(next)) {
+									matrix.copy(next)
+									existing.changed(trait)
+								}
+							}
+						}
+					}
+
 					if (!existing.has(traits.LiveMatrix)) {
 						existing.add(traits.LiveMatrix(pose.toMatrix4()))
 					}
@@ -273,6 +347,14 @@ export const provideFrames = (partID: () => string) => {
 
 				if (isConfigOnly) {
 					entityTraits.push(traits.ConfigOnlyFrame)
+				}
+
+				if (isObstacleShape) {
+					entityTraits.push(traits.ObstacleShape)
+				}
+
+				if (complexShapeIndex !== undefined) {
+					entityTraits.push(traits.ComplexObstacleShape({ index: complexShapeIndex }))
 				}
 
 				if (name in currentDerivedFrames) {
