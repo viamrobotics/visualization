@@ -6,6 +6,7 @@
 	import { MathUtils, Vector3 } from 'three'
 
 	import { useKeybinding } from '$lib/keybindings'
+	import { isEditableTarget } from '$lib/keybindings/isEditableTarget'
 
 	interface Props {
 		cameraControls: CameraControlsRef
@@ -156,6 +157,11 @@
 
 			// Disallow keyboard navigation while the user holds meta or control.
 			if (keyboard.key('meta').pressed || keyboard.key('control').pressed) {
+				return
+			}
+
+			// The keys are read off `window`, so without this typing `wasd` into any field flies the camera.
+			if (isEditableTarget(document.activeElement)) {
 				return
 			}
 
