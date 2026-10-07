@@ -17,6 +17,10 @@ describe('isEditableTarget', () => {
 		document.body.append(editor)
 
 		expect(isEditableTarget(editor)).toBe(true)
+
+		const child = document.createElement('span')
+		editor.append(child)
+		expect(isEditableTarget(child)).toBe(true)
 	})
 
 	it('does not treat a button as a field', () => {
