@@ -30,6 +30,7 @@ export interface Settings {
 	disabledVisionServices: Record<string, boolean>
 
 	snapping: boolean
+	/** Move snap step, in metres. Unlike pose fields, it never reaches a Viam API, so it skips mm. */
 	snapTranslate: number
 	snapRotate: number
 	snapScale: number

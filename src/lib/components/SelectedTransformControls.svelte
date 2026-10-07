@@ -4,11 +4,12 @@
 	import { T, useThrelte } from '@threlte/core'
 	import { TransformControls } from '@threlte/extras'
 	import { onDestroy } from 'svelte'
-	import { Group, MathUtils, Matrix4 } from 'three'
+	import { Group, Matrix4 } from 'three'
 
 	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
+	import { transformSnaps } from '$lib/hooks/transformSnaps'
 	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
@@ -30,6 +31,7 @@
 	const selected = useQuery(traits.Selected)
 
 	const mode = $derived(settings.current.transformMode)
+	const snaps = $derived(transformSnaps(settings.current))
 	const isBuildMode = $derived(environment.current.mode === 'build')
 	const entity = $derived(selected.current[0])
 	const editable = useTrait(() => entity, traits.Editable)
@@ -344,15 +346,9 @@
 			object={ref}
 			mode={activeMode}
 			space={settings.current.transformSpace}
-			translationSnap={settings.current.snapping && settings.current.snapTranslate > 0
-				? settings.current.snapTranslate
-				: null}
-			rotationSnap={settings.current.snapping && settings.current.snapRotate > 0
-				? MathUtils.degToRad(settings.current.snapRotate)
-				: null}
-			scaleSnap={settings.current.snapping && settings.current.snapScale > 0
-				? settings.current.snapScale
-				: null}
+			translationSnap={snaps.translation}
+			rotationSnap={snaps.rotation}
+			scaleSnap={snaps.scale}
 			showY={!isSphereScale}
 			showZ={!isSphereScale && !isCapsuleScale}
 			onmouseDown={onMouseDown}
