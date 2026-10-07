@@ -6,13 +6,10 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 <script lang="ts">
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useKeybindings } from '$lib/keybindings'
+	import { isEditableTarget } from '$lib/keybindings/isEditableTarget'
 
 	const environment = useEnvironment()
 	const keybindings = useKeybindings()
-
-	const isEditable = (target: EventTarget | null) =>
-		target instanceof HTMLElement &&
-		(target.isContentEditable || target.closest('input, textarea, select') !== null)
 
 	const onkeydown = (event: KeyboardEvent) => {
 		if (!environment.current.inputBindingsEnabled) return
@@ -24,7 +21,7 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 
 		// An unmodified press typed into a field belongs to the field. A modified one does
 		// not, so ⌘S still saves while an input has focus.
-		if (!mod && isEditable(event.target)) return
+		if (!mod && isEditableTarget(event.target)) return
 
 		const matched = keybindings.matching({ key: event.key, shift: event.shiftKey, mod })
 
