@@ -16,12 +16,12 @@ export interface TransformSnaps {
 export const transformSnaps = (
 	settings: Pick<Settings, 'snapping' | 'snapTranslate' | 'snapRotate' | 'snapScale'>
 ): TransformSnaps => {
-	const step = (value: number, toSceneUnits: (value: number) => number) =>
-		settings.snapping && value > 0 ? toSceneUnits(value) : null
+	const snap = (value: number, convert: (v: number) => number = (v) => v) =>
+		settings.snapping && value > 0 ? convert(value) : null
 
 	return {
-		translation: step(settings.snapTranslate, (metres) => metres),
-		rotation: step(settings.snapRotate, (degrees) => MathUtils.degToRad(degrees)),
-		scale: step(settings.snapScale, (factor) => factor),
+		translation: snap(settings.snapTranslate),
+		rotation: snap(settings.snapRotate, MathUtils.degToRad),
+		scale: snap(settings.snapScale),
 	}
 }

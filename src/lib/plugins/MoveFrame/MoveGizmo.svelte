@@ -83,7 +83,7 @@
 		if (dragging) transformControls.setActive(false)
 	})
 
-	const snaps = $derived(transformSnaps(settings.current))
+	const { translation, rotation } = $derived(transformSnaps(settings.current))
 </script>
 
 <T
@@ -96,8 +96,8 @@
 	object={anchor}
 	{mode}
 	{space}
-	translationSnap={snaps.translation}
-	rotationSnap={snaps.rotation}
+	translationSnap={translation}
+	rotationSnap={rotation}
 	onmouseDown={onMouseDown}
 	onobjectChange={onObjectChange}
 	onmouseUp={onMouseUp}
