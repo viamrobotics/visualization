@@ -73,7 +73,9 @@ export default defineConfig({
 		host: true,
 		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
-		cors: true,
+		// Any origin may load dev assets. preflightContinue keeps SvelteKit from warning
+		// that Vite's CORS middleware would swallow OPTIONS requests.
+		cors: { origin: '*', preflightContinue: true },
 		https: https ? {} : undefined,
 
 		fs: {
