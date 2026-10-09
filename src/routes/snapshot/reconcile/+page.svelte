@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { asset } from '$app/paths'
+
 	import { DashboardPortal } from '#lib'
 	import { Snapshot as SnapshotProto } from '#lib/buf/draw/v1/snapshot_pb.js'
 	import Snapshot from '#lib/components/Snapshot.svelte'

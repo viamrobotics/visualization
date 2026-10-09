@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
 	import { asset } from '$app/paths'
+
+	import { onMount } from 'svelte'
+
 	import { Snapshot as SnapshotProto } from '#lib/buf/draw/v1/snapshot_pb.js'
 	import Snapshot from '#lib/components/Snapshot.svelte'
 

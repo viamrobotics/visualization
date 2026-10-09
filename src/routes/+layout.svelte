@@ -3,11 +3,12 @@
 
 	import '../app.css'
 
+	import { page } from '$app/state'
+
 	import type { DialConf } from '@viamrobotics/sdk'
 
 	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
 
-	import { page } from '$app/state'
 	import { Visualizer } from '#lib'
 	import { backendIP, drawServicePort } from '#lib/defines.js'
 	import {
