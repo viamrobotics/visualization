@@ -2,7 +2,7 @@ import { createWorld, type Entity, type World } from 'koota'
 import { BoxGeometry, Matrix4, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { relations, traits } from '$lib/ecs'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import { clearMoveGhosts, createMoveGhosts, rigidMoveDelta, syncMoveGhosts } from '../moveGhosts'
 

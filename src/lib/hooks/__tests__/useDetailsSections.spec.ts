@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { DetailsTabId } from '$lib/hooks/useDetailsSections.svelte'
+import type { DetailsTabId } from '#lib/hooks/useDetailsSections.svelte.js'
 
 import {
 	createDetailsSections,
 	type DetailsSection,
 	sectionsForTab,
-} from '$lib/hooks/useDetailsSections.svelte'
+} from '#lib/hooks/useDetailsSections.svelte.js'
 
 const section = (tab?: DetailsTabId): DetailsSection => ({
 	snippet: (() => undefined) as unknown as DetailsSection['snippet'],

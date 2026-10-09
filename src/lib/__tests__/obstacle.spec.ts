@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createObstacleComponent, nextObstacleName } from '$lib/obstacle'
+import { createObstacleComponent, nextObstacleName } from '#lib/obstacle.js'
 
 describe('nextObstacleName', () => {
 	it('starts at obstacle-1 when the config has no obstacles', () => {

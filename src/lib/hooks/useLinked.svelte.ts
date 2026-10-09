@@ -2,7 +2,7 @@ import type { Entity } from 'koota'
 
 import { getContext, setContext } from 'svelte'
 
-import { relations, traits, useQuery, useWorld } from '$lib/ecs'
+import { relations, traits, useQuery, useWorld } from '#lib/ecs/index.js'
 
 const linkedKey = Symbol('linked-context')
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Switch } from '@viamrobotics/prime-core'
 
-	import RefreshRate from '$lib/components/overlay/RefreshRate.svelte'
-	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
-	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
+	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
+	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
+	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 	const pointcloudObjects = usePointcloudObjects()

@@ -5,10 +5,10 @@
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { OrthographicCamera, Points, PointsMaterial } from 'three'
 
-	import { asColor, isSingleColor } from '$lib/buffer'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { clampPointSize } from '$lib/three/clampPointSize'
+	import { asColor, isSingleColor } from '#lib/buffer.js'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { clampPointSize } from '#lib/three/clampPointSize.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 

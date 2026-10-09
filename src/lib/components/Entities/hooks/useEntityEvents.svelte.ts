@@ -3,9 +3,9 @@ import type { Entity } from 'koota'
 import { type IntersectionEvent, useCursor } from '@threlte/extras'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
-import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'
-import { type HoverInfo, updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { OrientationVector } from '$lib/math/OrientationVector'
+import { setOrAddTrait, traits, useTrait, useWorld } from '#lib/ecs/index.js'
+import { type HoverInfo, updateHoverInfo } from '#lib/HoverUpdater.svelte.js'
+import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 const tempHoverMatrix = new Matrix4()
 const hoverQuat = new Quaternion()

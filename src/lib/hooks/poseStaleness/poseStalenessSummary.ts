@@ -1,4 +1,4 @@
-import type { UnhealthyResource } from '$lib/hooks/resources/unhealthyResources'
+import type { UnhealthyResource } from '#lib/hooks/resources/unhealthyResources.js'
 
 /**
  * One-line explanation of why the scene stopped updating. Names the offending

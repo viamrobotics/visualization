@@ -9,10 +9,10 @@ Renders a Viam Geometry object
 	import { T, useThrelte } from '@threlte/core'
 	import { Group } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { matchModel, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { Pose } from '#lib/math/index.js'
 
 	import { cloneWithOwnMaterials } from './cloneWithOwnMaterials'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'

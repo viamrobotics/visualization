@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { applyDeepLinkMode } from '$lib/deepLink/useDeepLinkMode.svelte'
-import { createEnvironment, ENVIRONMENT_MODE_STORAGE_KEY } from '$lib/hooks/useEnvironment.svelte'
+import { applyDeepLinkMode } from '#lib/deepLink/useDeepLinkMode.svelte.js'
+import {
+	createEnvironment,
+	ENVIRONMENT_MODE_STORAGE_KEY,
+} from '#lib/hooks/useEnvironment.svelte.js'
 
 describe('applyDeepLinkMode', () => {
 	beforeEach(() => {

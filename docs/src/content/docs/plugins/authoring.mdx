@@ -331,7 +331,7 @@ For picking points and objects in the scene, use Threlte's pointer events — th
 	title="In the repo: useMouseRaycaster"
 >
 	Plugins contributed to Viam Visualization have access to the internal `useMouseRaycaster` hook
-	(`$lib/hooks/useMouseRaycaster.svelte`), which wraps a shared, BVH-accelerated raycaster with
+	(`#lib/hooks/useMouseRaycaster.svelte.js`), which wraps a shared, BVH-accelerated raycaster with
 	`onclick` / `onmove` callbacks gated by an `enabled` flag. The built-in
 	[`MeasureTool`](../measure-tool/) plugin uses it. It is not part of the public package, so plugins
 	living in an external app use Threlte's pointer events instead.
@@ -444,7 +444,7 @@ If your plugin needs an extra package, import it normally, declare it a peer dep
     </TabItem>
     <TabItem label="In the repo">
     	Contributing a plugin back means it ships in `@viamrobotics/visualization/plugins` for everyone.
-    	Plugins in the repo import through the `$lib` alias, so they can use internal hooks
+    	Plugins in the repo import through the `#lib` alias, so they can use internal hooks
     	(`useCameraControls`, `useMouseRaycaster`, …) and components that aren't publicly exported.
 
     	<Steps>
@@ -452,7 +452,8 @@ If your plugin needs an extra package, import it normally, declare it a peer dep
     	1. Create a directory under [`src/lib/plugins/`](https://github.com/viamrobotics/visualization/tree/main/src/lib/plugins)
     	   named after the plugin, e.g. `src/lib/plugins/Waypoint/`. Put the root component
     	   (`Waypoint.svelte`), any context hook (`useWaypoints.svelte.ts`), and trait modules there.
-    	   Import shared code via `$lib`, `$lib/ecs`, and `$lib/hooks/*`.
+    	   Import shared code from `#lib/` paths with the file extension, e.g. `#lib/ecs/index.js`
+    	   and `#lib/hooks/useMouseRaycaster.svelte.js`.
 
     	2. Export it from [`src/lib/plugins/index.ts`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/index.ts):
 
@@ -491,4 +492,4 @@ If your plugin needs an extra package, import it normally, declare it a peer dep
 - [ ] Any published API is a `use*` hook backed by a `provide*` context with getters.
 - [ ] Imperative Three.js mutations are followed by `invalidate()`.
 - [ ] Optional dependencies live inside the plugin and are documented with an install line.
-- [ ] External plugins import only from `@viamrobotics/visualization`, `/plugins`, `/lib`, and peer packages — internal `$lib/*` paths are for in-repo plugins only.
+- [ ] External plugins import only from `@viamrobotics/visualization`, `/plugins`, `/lib`, and peer packages — internal `#lib/*` paths are for in-repo plugins only.

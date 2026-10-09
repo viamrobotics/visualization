@@ -2,8 +2,8 @@ import type { Material, MaterialParameters } from 'three'
 
 import { useThrelte } from '@threlte/core'
 
-import { useSettings } from '$lib/hooks/useSettings.svelte'
-import { createSurfaceMaterial } from '$lib/three/surfaceShading'
+import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+import { createSurfaceMaterial } from '#lib/three/surfaceShading.js'
 
 interface Surface {
 	/** Only the material slot is read and replaced, so a `BatchedMesh` qualifies too. */

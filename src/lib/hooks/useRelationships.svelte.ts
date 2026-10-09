@@ -2,10 +2,10 @@ import type { Entity } from 'koota'
 
 import { getContext, setContext } from 'svelte'
 
-import type { Relationship } from '$lib/metadata'
+import type { Relationship } from '#lib/metadata.js'
 
-import { uuidBytesToString } from '$lib/draw'
-import { relations, traits, useQuery } from '$lib/ecs'
+import { uuidBytesToString } from '#lib/draw.js'
+import { relations, traits, useQuery } from '#lib/ecs/index.js'
 
 const RELATIONSHIPS_CONTEXT_KEY = Symbol('relationships')
 

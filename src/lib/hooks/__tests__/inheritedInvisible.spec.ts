@@ -1,7 +1,7 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { relations, traits } from '$lib/ecs'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import { addInheritedInvisibleListeners } from '../useInheritedInvisible.svelte'
 

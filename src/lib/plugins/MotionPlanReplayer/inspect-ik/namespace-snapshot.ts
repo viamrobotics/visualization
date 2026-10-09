@@ -1,5 +1,5 @@
-import { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
 
 import { transformsToSnapshot } from '../plan-to-snapshots'
 

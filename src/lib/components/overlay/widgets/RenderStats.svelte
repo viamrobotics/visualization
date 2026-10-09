@@ -2,8 +2,8 @@
 	import { useStage, useTask, useThrelte } from '@threlte/core'
 	import { Folder, FpsGraph, Monitor, Pane, WaveformMonitor } from 'svelte-tweakpane-ui'
 
-	import { useWorld } from '$lib/ecs'
-	import { createGpuFrameTimer } from '$lib/three/gpuFrameTimer'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { createGpuFrameTimer } from '#lib/three/gpuFrameTimer.js'
 
 	/** Milliseconds between pane updates. Matches three-perf's 10 logs per second. */
 	const PUBLISH_INTERVAL_MS = 100

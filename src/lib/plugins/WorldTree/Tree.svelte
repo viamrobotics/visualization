@@ -4,7 +4,7 @@
 	import { VirtualList } from 'svelte-virtuallists'
 	import { SvelteSet } from 'svelte/reactivity'
 
-	import { traits, useQuery } from '$lib/ecs'
+	import { traits, useQuery } from '#lib/ecs/index.js'
 
 	import type { TreeNode as TreeNodeType } from './buildTree'
 

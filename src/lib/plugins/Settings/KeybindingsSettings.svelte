@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { KeybindingGroup } from '$lib/keybindings'
+	import type { KeybindingGroup } from '#lib/keybindings/index.js'
 
-	import Kbd from '$lib/components/overlay/Kbd.svelte'
-	import { useKeybindings } from '$lib/keybindings'
+	import Kbd from '#lib/components/overlay/Kbd.svelte'
+	import { useKeybindings } from '#lib/keybindings/index.js'
 
 	const GROUP_ORDER: KeybindingGroup[] = ['Camera', 'Transform', 'View', 'Selection', 'Editing']
 

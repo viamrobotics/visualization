@@ -6,8 +6,8 @@
 	import { meshBounds } from '@threlte/extras'
 	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
 
-	import { isVertexColors, STRIDE } from '$lib/buffer'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
+	import { isVertexColors, STRIDE } from '#lib/buffer.js'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import LineDots from './LineDots.svelte'

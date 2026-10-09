@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useTask, useThrelte } from '@threlte/core'
 
-	import { traits, useQuery } from '$lib/ecs'
+	import { traits, useQuery } from '#lib/ecs/index.js'
 
 	import Label from './Label.svelte'
 	import { createLabelLayout } from './labelLayout/createLabelLayout'

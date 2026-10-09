@@ -1,11 +1,14 @@
 import { useThrelte } from '@threlte/core'
 import { onDestroy } from 'svelte'
 
-import type { Transform } from '$lib/buf/common/v1/common_pb'
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import type { Transform } from '#lib/buf/common/v1/common_pb.js'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
 
-import { useWorld } from '$lib/ecs'
-import { createTrajectoryPlayer, type TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+import { useWorld } from '#lib/ecs/index.js'
+import {
+	createTrajectoryPlayer,
+	type TrajectoryPlayer,
+} from '#lib/motion/trajectoryPlayer.svelte.js'
 
 import type { IKStatus } from './parse-ik-solutions'
 

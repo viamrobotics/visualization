@@ -1,8 +1,8 @@
 import { type Entity, type World } from 'koota'
 
-import { setOrAddTrait } from '$lib/ecs/setOrAddTrait'
-import { Name, OpacityOverride, UUID } from '$lib/ecs/traits'
-import { useWorld } from '$lib/ecs/useWorld'
+import { setOrAddTrait } from '#lib/ecs/setOrAddTrait.js'
+import { Name, OpacityOverride, UUID } from '#lib/ecs/traits.js'
+import { useWorld } from '#lib/ecs/useWorld.js'
 
 /**
  * Every key the entity can be recognised by after a respawn. `useFrames` and

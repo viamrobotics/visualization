@@ -2,11 +2,11 @@
 	import { useThrelte } from '@threlte/core'
 	import { PersistedState } from 'runed'
 
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import { useSettingsTabs } from '$lib/components/overlay/Portals/useSettingsTabs.svelte'
-	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import { useSettingsTabs } from '#lib/components/overlay/Portals/useSettingsTabs.svelte.js'
+	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import ControlsSettings from './ControlsSettings.svelte'
 	import DebugSettings from './DebugSettings.svelte'

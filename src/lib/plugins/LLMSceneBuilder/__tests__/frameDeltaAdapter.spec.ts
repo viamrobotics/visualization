@@ -1,12 +1,12 @@
 import { Transform } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import type { PartConfig } from '$lib/hooks/usePartConfig.svelte'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import type { PartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createGeometryFromFrame } from '$lib/geometry'
-import { Pose } from '$lib/math'
+import { createGeometryFromFrame } from '#lib/geometry.js'
+import { Pose } from '#lib/math/index.js'
 
 import {
 	type FrameDelta,

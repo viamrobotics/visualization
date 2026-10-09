@@ -2,11 +2,11 @@ import type { Entity, World } from 'koota'
 
 import { onDestroy } from 'svelte'
 
-import { selectOnly, traits, useWorld } from '$lib/ecs'
-import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
-import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-import { usePartID } from '$lib/hooks/usePartID.svelte'
+import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
+import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+import { useFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
+import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 /**
  * Keeps one `FramelessComponent` entity per name in `names`, so the world tree

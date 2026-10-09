@@ -2,7 +2,7 @@ import type { QueryResult, Trait } from 'koota'
 
 import { getContext, setContext } from 'svelte'
 
-import { useQuery, useWorld } from '$lib/ecs'
+import { useQuery, useWorld } from '#lib/ecs/index.js'
 
 import * as selectionTraits from './traits'
 

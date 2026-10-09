@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Input, Switch } from '@viamrobotics/prime-core'
 
-	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { RENDER_MODES, type RenderMode } from '$lib/three/surfaceShading'
+	import ToggleGroup from '#lib/components/overlay/ToggleGroup.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { RENDER_MODES, type RenderMode } from '#lib/three/surfaceShading.js'
 
 	const settings = useSettings()
 

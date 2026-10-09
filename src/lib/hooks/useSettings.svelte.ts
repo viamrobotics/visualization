@@ -3,7 +3,7 @@ import type { ColorRepresentation } from 'three'
 import { get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
-import type { RenderMode } from '$lib/three/surfaceShading'
+import type { RenderMode } from '#lib/three/surfaceShading.js'
 
 import {
 	migrateStoredSettings,

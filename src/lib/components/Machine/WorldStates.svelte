@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useWorldStates } from '$lib/hooks/useWorldState.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useWorldStates } from '#lib/hooks/useWorldState.svelte.js'
 
 	import WorldState from './WorldState.svelte'
 

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { type Entity, IsExcluded } from 'koota'
 
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { traits, useWorld } from '$lib/ecs'
-	import { poseStalenessSummary } from '$lib/hooks/poseStaleness/poseStalenessSummary'
-	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
-	import { usePoses } from '$lib/hooks/usePoses.svelte'
+	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { poseStalenessSummary } from '#lib/hooks/poseStaleness/poseStalenessSummary.js'
+	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
+	import { usePoses } from '#lib/hooks/usePoses.svelte.js'
 
 	import type { TreeNode } from './buildTree'
 

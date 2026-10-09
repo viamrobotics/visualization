@@ -1,16 +1,16 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { hierarchy, relations } from '$lib/ecs'
+import { hierarchy, relations } from '#lib/ecs/index.js'
 
-vi.mock('$lib/loaders/pcd', () => ({
+vi.mock('#lib/loaders/pcd/index.js', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
-import type { Metadata as MetadataType } from '$lib/metadata'
+import type { Metadata as MetadataType } from '#lib/metadata.js'
 
-import { preAllocateBufferGeometry } from '$lib/attribute'
-import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
+import { preAllocateBufferGeometry } from '#lib/attribute.js'
+import { Geometry, Transform } from '#lib/buf/common/v1/common_pb.js'
 import {
 	Arrows,
 	Drawing,
@@ -19,12 +19,12 @@ import {
 	ModelAsset,
 	Points,
 	Shape,
-} from '$lib/buf/draw/v1/drawing_pb'
-import { ColorFormat, Metadata, Relationship } from '$lib/buf/draw/v1/metadata_pb'
-import { STRIDE } from '$lib/buffer'
-import { createChunkLoader, type EntityChunk } from '$lib/chunking'
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+} from '#lib/buf/draw/v1/drawing_pb.js'
+import { ColorFormat, Metadata, Relationship } from '#lib/buf/draw/v1/metadata_pb.js'
+import { STRIDE } from '#lib/buffer.js'
+import { createChunkLoader, type EntityChunk } from '#lib/chunking.js'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 import { drawDrawing, drawTransform, updateDrawing, updateMetadata, updateTransform } from '../draw'
 
@@ -149,7 +149,7 @@ describe('drawTransform', () => {
 
 	it('adds Color trait for pointcloud with uniform color', async () => {
 		world = createWorld()
-		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		const { parsePcdInWorker } = await import('#lib/loaders/pcd/index.js')
 		const positions = new Float32Array(6)
 		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({
 			id: 0,
@@ -183,7 +183,7 @@ describe('drawTransform', () => {
 
 	it('adds per-vertex colors to BufferGeometry for pointcloud', async () => {
 		world = createWorld()
-		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		const { parsePcdInWorker } = await import('#lib/loaders/pcd/index.js')
 		const positions = new Float32Array(6)
 		const pcdColors = new Uint8Array([255, 0, 0, 0, 255, 0])
 		const metadataColors = new Uint8Array([0, 255, 0, 0, 0, 255])

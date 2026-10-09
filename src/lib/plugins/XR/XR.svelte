@@ -4,10 +4,10 @@
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Quaternion } from 'three'
 
-	import SettingsPortal from '$lib/components/overlay/Portals/SettingsPortal.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import CameraFeed from './CameraFeed.svelte'
 	import DebugPanel from './DebugPanel.svelte'

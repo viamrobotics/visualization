@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 
 	const controls = useCameraControls()
 

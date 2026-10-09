@@ -19,7 +19,7 @@ vi.mock('@threlte/core', () => ({
 // which these isolated component tests do not have. Portal must preserve its children
 // because the shared DetailsPanel renders its whole UI through it.
 vi.mock('@threlte/extras', async () => {
-	const MockPortal = await import('$lib/__tests__/__fixtures__/MockPortal.svelte')
+	const MockPortal = await import('#lib/__tests__/__fixtures__/MockPortal.svelte')
 	return {
 		PortalTarget: vi.fn(),
 		Portal: MockPortal.default,
@@ -27,22 +27,22 @@ vi.mock('@threlte/extras', async () => {
 	}
 })
 
-vi.mock('$lib/hooks/useFrames.svelte', () => ({
+vi.mock('#lib/hooks/useFrames.svelte.js', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false })),
 }))
-vi.mock('$lib/hooks/useConfigFrames.svelte', () => ({
+vi.mock('#lib/hooks/useConfigFrames.svelte.js', () => ({
 	useConfigFrames: vi.fn(() => ({
 		unsetFrames: [],
 		current: {},
 	})),
 }))
-vi.mock('$lib/hooks/useResourceByName.svelte', () => ({
+vi.mock('#lib/hooks/useResourceByName.svelte.js', () => ({
 	useResourceByName: vi.fn(() => ({ current: {} })),
 }))
-vi.mock('$lib/hooks/useFragmentInfo.svelte', () => ({
+vi.mock('#lib/hooks/useFragmentInfo.svelte.js', () => ({
 	useFragmentInfo: vi.fn(() => ({ current: {} })),
 }))
-vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
+vi.mock('#lib/hooks/usePartConfig.svelte.js', () => ({
 	usePartConfig: vi.fn(() => ({
 		current: { components: [] },
 		set: vi.fn(),
@@ -55,6 +55,6 @@ vi.mock('$lib/hooks/usePartConfig.svelte', () => ({
 	},
 }))
 
-vi.mock('$lib/hooks/useLinked.svelte', () => ({
+vi.mock('#lib/hooks/useLinked.svelte.js', () => ({
 	useLinkedEntities: vi.fn(() => ({ current: [] })),
 }))

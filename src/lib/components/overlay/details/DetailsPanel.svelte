@@ -15,11 +15,11 @@
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
-	import { traits, useParentName, useTrait, useWorld } from '$lib/ecs'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
+	import { traits, useParentName, useTrait, useWorld } from '#lib/ecs/index.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { Pose } from '#lib/math/index.js'
 
 	import Tooltip from '../Tooltip.svelte'
 

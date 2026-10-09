@@ -1,7 +1,7 @@
 import { createWorld, type Entity } from 'koota'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { previewName } from '../../previewNames'
 import { GhostOf } from '../../relations'

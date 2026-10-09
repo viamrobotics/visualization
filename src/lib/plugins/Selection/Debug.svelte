@@ -9,7 +9,7 @@ Shows all steps for querying points within a selection
 	import { T } from '@threlte/core'
 	import { Box3, BufferAttribute, BufferGeometry, Vector3 } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	import * as selectionTraits from './traits'
 

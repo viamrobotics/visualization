@@ -4,7 +4,7 @@
 	import { useThrelte } from '@threlte/core'
 	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
 
-	import { setOrAddTrait, traits, useOpacity } from '$lib/ecs'
+	import { setOrAddTrait, traits, useOpacity } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

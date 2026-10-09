@@ -1,7 +1,7 @@
 import { MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
 import { Pose, type PosePatch } from '../pose'
 

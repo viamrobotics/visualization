@@ -1,10 +1,10 @@
 import { Transform } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
-import { createTransformFromFrame } from '$lib/frame'
-import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
+import { createTransformFromFrame } from '#lib/frame.js'
+import { mergedComponentFrames, resolveComponentFrames } from '#lib/resolveComponentFrames.js'
 
 import { useFragmentInfo } from './useFragmentInfo.svelte'
 import { usePartConfig } from './usePartConfig.svelte'

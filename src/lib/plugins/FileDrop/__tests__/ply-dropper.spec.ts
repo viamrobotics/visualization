@@ -3,7 +3,7 @@ import type { BufferGeometry } from 'three'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { FileDropperError, type PlyFileDropSuccess } from '$lib/fileDropper'
+import { FileDropperError, type PlyFileDropSuccess } from '#lib/fileDropper.js'
 
 import { plyDropper } from '../ply-dropper'
 

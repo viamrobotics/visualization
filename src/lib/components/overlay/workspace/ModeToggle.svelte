@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { PortalTarget } from '@threlte/extras'
 
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
 	const environment = useEnvironment()
 

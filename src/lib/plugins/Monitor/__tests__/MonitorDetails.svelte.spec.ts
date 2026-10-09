@@ -4,20 +4,20 @@ import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { DetailsSection } from '$lib/hooks/useDetailsSections.svelte'
+import type { DetailsSection } from '#lib/hooks/useDetailsSections.svelte.js'
 
-import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
+import { createEntityFixture } from '#lib/__tests__/__fixtures__/entity.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import * as useConfigFrames from '#lib/hooks/useConfigFrames.svelte.js'
 import {
 	createDetailsSections,
 	DETAILS_SECTIONS_CONTEXT_KEY,
-} from '$lib/hooks/useDetailsSections.svelte'
-import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
-import * as useFragmentInfo from '$lib/hooks/useFragmentInfo.svelte'
-import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
-import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
-import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
+} from '#lib/hooks/useDetailsSections.svelte.js'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '#lib/hooks/useEnvironment.svelte.js'
+import * as useFragmentInfo from '#lib/hooks/useFragmentInfo.svelte.js'
+import * as useLinkedEntities from '#lib/hooks/useLinked.svelte.js'
+import * as useResourceByName from '#lib/hooks/useResourceByName.svelte.js'
+import { createWeblabs, WEBLABS_CONTEXT_KEY } from '#lib/hooks/useWeblabs.svelte.js'
 
 import MonitorDetails from '../MonitorDetails.svelte'
 

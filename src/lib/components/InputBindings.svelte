@@ -5,7 +5,7 @@
 	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
 	import { MathUtils, Vector3 } from 'three'
 
-	import { useKeybinding } from '$lib/keybindings'
+	import { useKeybinding } from '#lib/keybindings/index.js'
 
 	interface Props {
 		cameraControls: CameraControlsRef

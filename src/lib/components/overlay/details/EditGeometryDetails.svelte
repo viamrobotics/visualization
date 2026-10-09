@@ -10,9 +10,9 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	interface Props {
 		entity: Entity

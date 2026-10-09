@@ -1,4 +1,4 @@
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
 export const resource = {
 	name: 'Test Object',

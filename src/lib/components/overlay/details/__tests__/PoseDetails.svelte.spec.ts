@@ -3,9 +3,9 @@ import { createWorld } from 'koota'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
-import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import { Pose } from '#lib/math/index.js'
 
 import PoseDetails from '../PoseDetails.svelte'
 

@@ -4,7 +4,7 @@
 	import { useThrelte } from '@threlte/core'
 	import { Switch } from '@viamrobotics/prime-core'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

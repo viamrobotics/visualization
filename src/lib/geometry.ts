@@ -7,8 +7,8 @@ import type {
 	Sphere,
 } from '@viamrobotics/sdk'
 
-import { Pose } from '$lib/math'
-import { inferGeometryType } from '$lib/math/geometryJson'
+import { inferGeometryType } from '#lib/math/geometryJson.js'
+import { Pose } from '#lib/math/index.js'
 
 import type { Frame } from './frame'
 

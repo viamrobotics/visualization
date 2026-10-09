@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { FragmentConfig } from '$lib/resolveFragmentImport'
+import type { FragmentConfig } from '#lib/resolveFragmentImport.js'
 
-import { resolveFragmentComponents, withModdedFragmentComponents } from '$lib/fragmentComponents'
+import { resolveFragmentComponents, withModdedFragmentComponents } from '#lib/fragmentComponents.js'
 
 const configs = (entries: Record<string, FragmentConfig>): Map<string, FragmentConfig> =>
 	new Map(Object.entries(entries))

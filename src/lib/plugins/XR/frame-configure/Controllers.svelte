@@ -11,12 +11,12 @@
 	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
 	import { Icon, Locate, Move3d, Plus, Rotate3d, Scale3d } from 'threlte-uikit/lucide'
 
-	import { traits, useQuery, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { OrientationVector } from '$lib/math/OrientationVector'
+	import { traits, useQuery, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 	import { useOrigin } from '../useOrigin.svelte'
 	import WristDisplay from '../WristDisplay.svelte'

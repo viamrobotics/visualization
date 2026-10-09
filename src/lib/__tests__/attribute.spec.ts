@@ -2,8 +2,8 @@ import type { BufferAttribute } from 'three'
 
 import { describe, expect, it } from 'vitest'
 
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-import { STRIDE } from '$lib/buffer'
+import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
+import { STRIDE } from '#lib/buffer.js'
 
 import {
 	createBufferGeometry,

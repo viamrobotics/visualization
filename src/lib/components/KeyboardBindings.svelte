@@ -4,8 +4,8 @@
 Dispatches the shortcuts contributed through `useHotkey`. Features declare bindings where their behavior lives; this component owns the one window listener and the policy deciding when any of them may fire.
 -->
 <script lang="ts">
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useKeybindings } from '$lib/keybindings'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useKeybindings } from '#lib/keybindings/index.js'
 
 	const environment = useEnvironment()
 	const keybindings = useKeybindings()

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { T } from '@threlte/core'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { TRANSFORM_CONTROLS_LAYER } from '$lib/three/renderLayers'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { TRANSFORM_CONTROLS_LAYER } from '#lib/three/renderLayers.js'
 
 	let { children, ...rest } = $props()
 

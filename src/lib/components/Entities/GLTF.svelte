@@ -19,8 +19,8 @@
 	import { type ThrelteGltf, useGltfAnimations } from '@threlte/extras'
 	import { Group, type Object3D } from 'three'
 
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { setModelOpacity } from './setModelOpacity'

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
-import { frameModOperations, replaceFrameMods } from '$lib/frameFragmentMods'
+import { frameModOperations, replaceFrameMods } from '#lib/frameFragmentMods.js'
 
 const frame = (overrides: Partial<Frame> = {}): Frame => ({
 	parent: 'world',

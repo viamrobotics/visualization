@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { flushSync } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 import TrajectoryScrubber from '../TrajectoryScrubber.svelte'
 import ScrubberHarness from './__fixtures__/ScrubberHarness.svelte'

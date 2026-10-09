@@ -6,8 +6,8 @@ import {
 	FileDropperError,
 	type FileDropperParams,
 	parseFailure,
-} from '$lib/fileDropper'
-import { narrowFloat64Attributes } from '$lib/three/narrowFloat64Attributes'
+} from '#lib/fileDropper.js'
+import { narrowFloat64Attributes } from '#lib/three/narrowFloat64Attributes.js'
 
 export const plyDropper: FileDropper = async (params: FileDropperParams) => {
 	const { name, content } = params

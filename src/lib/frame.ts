@@ -4,8 +4,8 @@ import type { Transform } from '@viamrobotics/sdk'
 
 import { UuidTool } from 'uuid-tool'
 
-import { createGeometryFromFrame } from '$lib/geometry'
-import { Pose } from '$lib/math'
+import { createGeometryFromFrame } from '#lib/geometry.js'
+import { Pose } from '#lib/math/index.js'
 
 type FrameGeometryMap = {
 	none: { type: 'none' }

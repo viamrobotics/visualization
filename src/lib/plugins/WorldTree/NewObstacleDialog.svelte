@@ -2,12 +2,12 @@
 	import { Button, Input, InputStates } from '@viamrobotics/prime-core'
 	import { untrack } from 'svelte'
 
-	import Dialog from '$lib/components/overlay/Dialog.svelte'
-	import { selectOnly, traits, useWorld } from '$lib/ecs'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { createObstacleComponent, nextObstacleName } from '$lib/obstacle'
+	import Dialog from '#lib/components/overlay/Dialog.svelte'
+	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { createObstacleComponent, nextObstacleName } from '#lib/obstacle.js'
 
 	interface Props {
 		open: boolean

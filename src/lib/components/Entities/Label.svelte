@@ -6,8 +6,8 @@
 	import { untrack } from 'svelte'
 	import { Group } from 'three'
 
-	import { parseRGB } from '$lib/color'
-	import { traits, useTag, useTrait } from '$lib/ecs'
+	import { parseRGB } from '#lib/color.js'
+	import { traits, useTag, useTrait } from '#lib/ecs/index.js'
 
 	import { labels } from './labelLayout/labelStore.svelte'
 

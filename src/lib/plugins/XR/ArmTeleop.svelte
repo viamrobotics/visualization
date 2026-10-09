@@ -6,8 +6,8 @@
 	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 	import { Quaternion, Vector3 } from 'three'
 
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { OrientationVector } from '$lib/math/OrientationVector'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 	import { calculatePositionTarget, getFrameTransformationQuaternion } from './math'
 	import { xrToast } from './toasts.svelte'

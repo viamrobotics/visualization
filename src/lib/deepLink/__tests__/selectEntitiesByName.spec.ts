@@ -1,7 +1,7 @@
 import { createWorld, IsExcluded, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { selectEntitiesByName } from '../useDeepLinkSelection.svelte'
 

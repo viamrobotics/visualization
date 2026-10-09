@@ -12,7 +12,7 @@
 	import { T } from '@threlte/core'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
 
-	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
+	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '#lib/buffer.js'
 
 	interface Props {
 		colors: Uint8Array

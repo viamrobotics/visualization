@@ -1,7 +1,7 @@
 import { createWorld, type Entity, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { createFramelessComponentEntitiesHarness } from './__fixtures__/framelessComponentEntitiesHarness.svelte'
 

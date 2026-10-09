@@ -1,7 +1,7 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { hierarchy, relations, traits } from '$lib/ecs'
+import { hierarchy, relations, traits } from '#lib/ecs/index.js'
 
 describe('hierarchy.parentTraits', () => {
 	let world: World

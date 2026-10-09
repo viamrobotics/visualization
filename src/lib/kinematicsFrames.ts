@@ -18,16 +18,16 @@
  * for the pose query; see `usePoses`.
  */
 
-import type { Transform } from '$lib/geometry'
-import type { Pose } from '$lib/math'
+import type { Transform } from '#lib/geometry.js'
+import type { Pose } from '#lib/math/index.js'
 
 import {
 	isDHModel,
 	parseKinematicsGeometry,
 	type RawKinematicsLink,
 	type RawKinematicsModel,
-} from '$lib/kinematicsTransform'
-import { poseFromJson } from '$lib/math/spatialJson'
+} from '#lib/kinematicsTransform.js'
+import { poseFromJson } from '#lib/math/spatialJson.js'
 
 /** rdk's name for a component's mount. The bare name resolves to the end effector. */
 export const originFrameName = (componentName: string): string => `${componentName}_origin`

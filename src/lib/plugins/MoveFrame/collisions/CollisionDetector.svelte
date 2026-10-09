@@ -18,8 +18,8 @@ tick, and one detection pass per tick is the useful cadence.
 	import { useRapier } from '@threlte/rapier'
 	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
-	import { traits, useWorld } from '$lib/ecs'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import { clearCollisionColors, createColorStash, syncCollisionColors } from './collisionColors'
 	import { collectMembers } from './collisionMembers'

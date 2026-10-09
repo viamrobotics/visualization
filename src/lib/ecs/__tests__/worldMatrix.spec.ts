@@ -1,10 +1,10 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { assertExists } from '$lib/assert'
-import { relations, traits } from '$lib/ecs'
-import { installWorldMatrixListeners } from '$lib/ecs/worldMatrix'
-import { Pose } from '$lib/math'
+import { assertExists } from '#lib/assert.js'
+import { relations, traits } from '#lib/ecs/index.js'
+import { installWorldMatrixListeners } from '#lib/ecs/worldMatrix.js'
+import { Pose } from '#lib/math/index.js'
 
 describe('worldMatrix system', () => {
 	let world: World

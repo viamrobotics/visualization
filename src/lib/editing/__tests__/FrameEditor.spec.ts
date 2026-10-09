@@ -1,12 +1,12 @@
 import { createWorld, type Entity, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('$lib/loaders/pcd', () => ({
+vi.mock('#lib/loaders/pcd/index.js', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 import { FrameEditor } from '../FrameEditor'
 

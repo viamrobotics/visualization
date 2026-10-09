@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { readDeepLinkParams } from '$lib/deepLink/readDeepLinkParams'
+import { readDeepLinkParams } from '#lib/deepLink/readDeepLinkParams.js'
 
 describe('readDeepLinkParams', () => {
 	it('drops a key with no viz. prefix', () => {

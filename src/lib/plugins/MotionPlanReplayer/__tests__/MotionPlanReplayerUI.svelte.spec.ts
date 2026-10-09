@@ -5,9 +5,9 @@ import { flushSync } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { traits } from '$lib/ecs'
+import { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { traits } from '#lib/ecs/index.js'
 
 import type { MotionPlanReplayerContext } from '../useMotionPlanReplayer.svelte'
 
@@ -15,14 +15,14 @@ import ReplayerUIHarness from './__fixtures__/ReplayerUIHarness.svelte'
 
 // The real panel seeds its position from `useThrelte().dom`, which the global `@threlte/core` mock
 // has no field for, so it throws on mount outside a Canvas.
-vi.mock('$lib/components/overlay/FloatingPanel.svelte', async () => {
+vi.mock('#lib/components/overlay/FloatingPanel.svelte', async () => {
 	const MockFloatingPanel = await import('./__fixtures__/MockFloatingPanel.svelte')
 	return { default: MockFloatingPanel.default }
 })
 
-// The `$lib` barrel re-exports `App.svelte` and pulls the whole Threlte component tree in with it.
+// The `#lib` barrel re-exports `App.svelte` and pulls the whole Threlte component tree in with it.
 // `DashboardPortal` is only a `Portal`, already mocked globally to a passthrough.
-vi.mock('$lib', async () => {
+vi.mock('#lib', async () => {
 	const MockDashboardPortal = await import('./__fixtures__/MockDashboardPortal.svelte')
 	return { DashboardPortal: MockDashboardPortal.default }
 })

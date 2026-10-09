@@ -13,11 +13,11 @@ and one `invalidate()`.
 	import { useThrelte } from '@threlte/core'
 	import { Color, Matrix4 } from 'three'
 
-	import type { ShapeInstanceIds } from '$lib/three/shapeBatches'
+	import type { ShapeInstanceIds } from '#lib/three/shapeBatches.js'
 
-	import { asColor } from '$lib/buffer'
-	import { colors } from '$lib/color'
-	import { resolveOpacity, traits, useWorld } from '$lib/ecs'
+	import { asColor } from '#lib/buffer.js'
+	import { colors } from '#lib/color.js'
+	import { resolveOpacity, traits, useWorld } from '#lib/ecs/index.js'
 
 	import { composeBoxMatrix } from './composeBoxMatrix'
 	import { useShapeBatches } from './useShapeBatches'

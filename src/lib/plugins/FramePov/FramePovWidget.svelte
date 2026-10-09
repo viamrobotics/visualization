@@ -4,12 +4,12 @@
 	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
 	import { Matrix4, OrthographicCamera, PerspectiveCamera } from 'three'
 
-	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { traits } from '$lib/ecs'
-	import { useFrameEntities } from '$lib/hooks/useFrameEntities.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import Button from '#lib/components/overlay/dashboard/Button.svelte'
+	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
+	import { traits } from '#lib/ecs/index.js'
+	import { useFrameEntities } from '#lib/hooks/useFrameEntities.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	interface Props {
 		frameName: string

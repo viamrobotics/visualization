@@ -1,8 +1,8 @@
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import type { FragmentConfig, FragmentImport } from '$lib/resolveFragmentImport'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import type { FragmentConfig, FragmentImport } from '#lib/resolveFragmentImport.js'
 
-import { resolveFragmentImport } from '$lib/resolveFragmentImport'
+import { resolveFragmentImport } from '#lib/resolveFragmentImport.js'
 
 /** One entry of a `fragment_mods` list. */
 export interface FragmentMods {

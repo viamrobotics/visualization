@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
-import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
+import { TRANSFORM_KEYBINDINGS } from '#lib/hooks/transformKeybindings.js'
 
 import Button from '../Button.svelte'
 

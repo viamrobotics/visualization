@@ -3,7 +3,7 @@
 	import { createStreamClient } from '@viamrobotics/svelte-sdk'
 	import { VideoTexture } from 'three'
 
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import BentPlaneGeometry from './BentPlaneGeometry.svelte'
 

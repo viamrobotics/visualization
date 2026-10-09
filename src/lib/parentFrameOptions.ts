@@ -1,4 +1,4 @@
-import type { Transform } from '$lib/geometry'
+import type { Transform } from '#lib/geometry.js'
 
 const WORLD = 'world'
 

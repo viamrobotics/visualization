@@ -79,7 +79,6 @@
 				"src/**",
 				"static/**",
 				"vite.config.ts",
-				"svelte.config.js",
 				"tsconfig.json",
 				"tailwind.config.ts",
 				"package.json"
@@ -144,7 +143,7 @@
 			"command": "svelte-package && publint",
 			"files": [
 				"src/lib/**",
-				"svelte.config.js",
+				"vite.config.ts",
 				"tsconfig.json",
 				"package.json"
 			],
@@ -163,18 +162,17 @@
 		"svelte-sync": {
 			"command": "svelte-kit sync",
 			"files": [
-				"svelte.config.js",
+				"vite.config.ts",
 				"src/**",
+				"static/**",
 				"tsconfig.json"
 			],
 			"output": [
 				".svelte-kit/generated/**",
 				".svelte-kit/types/**",
-				".svelte-kit/ambient.d.ts",
-				".svelte-kit/non-ambient.d.ts",
-				".svelte-kit/env.d.ts",
-				".svelte-kit/tsconfig.json"
+				"node_modules/$app/**"
 			],
+			"allowUsuallyExcludedPaths": true,
 			"packageLocks": [
 				"pnpm-lock.yaml"
 			]
@@ -189,7 +187,7 @@
 			"files": [
 				"src/**",
 				"tsconfig.json",
-				"svelte.config.js",
+				"vite.config.ts",
 				"package.json"
 			],
 			"output": [],
@@ -541,10 +539,11 @@
 		"@houserules/plugin-three": "^0.2.1",
 		"@houserules/plugin-typescript": "^0.1.2",
 		"@playwright/test": "1.55.1",
-		"@sentry/sveltekit": "10.10.0",
-		"@sveltejs/adapter-static": "3.0.9",
-		"@sveltejs/kit": "2.69.1",
-		"@sveltejs/package": "2.5.8",
+		"@sentry/sveltekit": "11.6.0",
+		"@sveltejs/adapter-static": "^4.0.0",
+		"@sveltejs/kit": "^3.0.0",
+		"@sveltejs/load-config": "^0.2.2",
+		"@sveltejs/package": "^3.0.0",
 		"@sveltejs/vite-plugin-svelte": "7.1.2",
 		"@tailwindcss/forms": "0.5.10",
 		"@tailwindcss/oxide": "4.3.1",
@@ -562,8 +561,8 @@
 		"@types/lodash-es": "4.17.12",
 		"@types/node": "^25.6.0",
 		"@types/three": "0.185.4",
-		"@typescript-eslint/eslint-plugin": "8.56.1",
-		"@typescript-eslint/parser": "8.56.1",
+		"@typescript-eslint/eslint-plugin": "8.71.0",
+		"@typescript-eslint/parser": "8.71.0",
 		"@viamrobotics/prime-core": "0.1.23",
 		"@viamrobotics/sdk": "0.75.0",
 		"@viamrobotics/svelte-sdk": "1.5.3",
@@ -596,10 +595,10 @@
 		"prettier": "3.6.2",
 		"prettier-plugin-svelte": "3.4.0",
 		"prettier-plugin-tailwindcss": "0.6.14",
-		"publint": "0.3.12",
+		"publint": "0.3.25",
 		"runed": "0.37.1",
-		"svelte": "5.56.10",
-		"svelte-check": "4.4.5",
+		"svelte": "^5.57.1",
+		"svelte-check": "^4.7.5",
 		"svelte-tweakpane-ui": "1.5.20",
 		"svelte-virtuallists": "1.4.2",
 		"tailwind-merge": "^3.6.0",
@@ -607,8 +606,8 @@
 		"three": "0.185.1",
 		"threlte-uikit": "2.0.1",
 		"type-fest": "^5.0.1",
-		"typescript": "5.9.2",
-		"typescript-eslint": "8.56.1",
+		"typescript": "^6.0.0",
+		"typescript-eslint": "8.71.0",
 		"vite": "8.1.0",
 		"vite-plugin-devtools-json": "1.0.0",
 		"vite-plugin-glsl": "^1.5.5",
@@ -703,7 +702,7 @@
 	},
 	"packageManager": "pnpm@10.18.0",
 	"engines": {
-		"node": ">=22.12.0"
+		"node": ">=22.17.0"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -744,5 +743,9 @@
 		"three-mesh-bvh": "^0.9.14",
 		"uuid-tool": "^2.0.3",
 		"zod": "^4.4.3"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
 	}
 }

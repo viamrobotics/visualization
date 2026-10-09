@@ -4,12 +4,12 @@ import { Struct } from '@viamrobotics/sdk'
 import { createAppQuery } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
-import type { FragmentMods } from '$lib/fragmentComponents'
-import type { Frame } from '$lib/frame'
-import type { FragmentConfig, FragmentImport } from '$lib/resolveFragmentImport'
+import type { FragmentMods } from '#lib/fragmentComponents.js'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentConfig, FragmentImport } from '#lib/resolveFragmentImport.js'
 
-import { resolveFragmentComponents, withModdedFragmentComponents } from '$lib/fragmentComponents'
-import { importsOf } from '$lib/resolveFragmentImport'
+import { resolveFragmentComponents, withModdedFragmentComponents } from '#lib/fragmentComponents.js'
+import { importsOf } from '#lib/resolveFragmentImport.js'
 
 /**
  * What one fragment-provided component is worth knowing about.

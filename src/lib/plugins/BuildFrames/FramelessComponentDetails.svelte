@@ -4,9 +4,9 @@
 	import { Button } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 
-	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
-	import { traits, useTrait } from '$lib/ecs'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity

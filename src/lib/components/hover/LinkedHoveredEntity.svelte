@@ -3,9 +3,9 @@
 
 	import { compileExpression } from 'filtrex'
 
-	import { relations, traits, useTrait } from '$lib/ecs'
-	import { SubEntityLinkType } from '$lib/ecs/relations'
-	import { getLinkedHoverInfo, type HoverInfo } from '$lib/HoverUpdater.svelte'
+	import { relations, traits, useTrait } from '#lib/ecs/index.js'
+	import { SubEntityLinkType } from '#lib/ecs/relations.js'
+	import { getLinkedHoverInfo, type HoverInfo } from '#lib/HoverUpdater.svelte.js'
 
 	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
 

@@ -1,6 +1,6 @@
 import { isArrayBuffer, isString } from 'lodash-es'
 
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
 import {
 	type FileDropper,
 	FileDropperError,
@@ -9,7 +9,7 @@ import {
 	type FileDropperResult,
 	parseFailure,
 	type SnapshotFileDropSuccess,
-} from '$lib/fileDropper'
+} from '#lib/fileDropper.js'
 
 import { Extensions } from './file-names'
 
