@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor } from '../frameDescriptors'
 import type { JointMotion, JointMotions } from '../interpolateTrajectory'

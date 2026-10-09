@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import NewObstacleDialog from './NewObstacleDialog.svelte'
 

@@ -1,7 +1,7 @@
 /**
  * A TypeScript reconstruction of how RDK resolves a flattened frame system into a drawable chain.
  * Each switch mirrors `register.go` and can fall behind. Spatialmath decoding lives in
- * `$lib/math/spatialJson`.
+ * `#lib/math/spatialJson.js`.
  */
 
 import { protoBase64 } from '@bufbuild/protobuf'
@@ -15,8 +15,8 @@ import {
 	RectangularPrism,
 	Sphere,
 	Vector3 as ViamVector3,
-} from '$lib/buf/common/v1/common_pb'
-import { Pose } from '$lib/math'
+} from '#lib/buf/common/v1/common_pb.js'
+import { Pose } from '#lib/math/index.js'
 import {
 	type FramePoseJson,
 	geometryCenterInFrame,
@@ -24,8 +24,8 @@ import {
 	quatFromJson,
 	type RawOrientation,
 	type Vec3Json,
-} from '$lib/math/spatialJson'
-import { meshContentType } from '$lib/mesh'
+} from '#lib/math/spatialJson.js'
+import { meshContentType } from '#lib/mesh.js'
 
 import type { ModelJson } from './jointColumns'
 

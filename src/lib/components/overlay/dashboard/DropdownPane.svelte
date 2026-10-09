@@ -3,7 +3,7 @@
 
 	import { Pane } from 'svelte-tweakpane-ui'
 
-	import Popover from '$lib/components/overlay/Popover.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
 
 	import Button from './Button.svelte'
 

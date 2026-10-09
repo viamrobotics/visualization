@@ -7,9 +7,9 @@ registration order.
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import type { DetailsTabId } from '$lib/hooks/useDetailsSections.svelte'
+	import type { DetailsTabId } from '#lib/hooks/useDetailsSections.svelte.js'
 
-	import { sectionsForTab, useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
+	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
 
 	interface Props {
 		entity: Entity

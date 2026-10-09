@@ -16,11 +16,11 @@ entities sharing a mesh share the upload.
 	import { useThrelte } from '@threlte/core'
 	import { Color, Matrix4 } from 'three'
 
-	import type { ShapeInstanceIds } from '$lib/three/shapeBatches'
+	import type { ShapeInstanceIds } from '#lib/three/shapeBatches.js'
 
-	import { asColor } from '$lib/buffer'
-	import { colors } from '$lib/color'
-	import { traits, useOpacity, useTag, useTrait } from '$lib/ecs'
+	import { asColor } from '#lib/buffer.js'
+	import { colors } from '#lib/color.js'
+	import { traits, useOpacity, useTag, useTrait } from '#lib/ecs/index.js'
 
 	import { composeMeshMatrix } from './composeMeshMatrix'
 	import { useShapeBatches } from './useShapeBatches'

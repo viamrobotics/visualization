@@ -1,12 +1,12 @@
 import { UuidTool } from 'uuid-tool'
 
-import type { FrameDescriptor } from '$lib/motion/frameDescriptors'
-import type { TrajectoryStep } from '$lib/motion/jointPose'
+import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
+import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
-import { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { buildFrameDescriptors } from '$lib/motion/frameDescriptors'
-import { descriptorLocalPose } from '$lib/motion/jointPose'
+import { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
+import { descriptorLocalPose } from '#lib/motion/jointPose.js'
 
 import type { ParsedPlan } from './parse-plan'
 
@@ -45,7 +45,7 @@ export const transformBytesToSnapshots = (transformsPerStep: Uint8Array[][]): Sn
 
 /**
  * The snapshot half of the client-side fallback described in `parse-plan.ts`. Pairs the frame
- * chain from `$lib/motion/frameDescriptors` with the plan's trajectory to produce one
+ * chain from `#lib/motion/frameDescriptors` with the plan's trajectory to produce one
  * `Snapshot` per step.
  *
  * @throws `PlanParseError` for a plan it cannot draw as well as one it cannot read, so a caller

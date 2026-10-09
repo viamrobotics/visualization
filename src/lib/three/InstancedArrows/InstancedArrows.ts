@@ -15,7 +15,7 @@ import {
 	Vector3,
 } from 'three'
 
-import { STRIDE } from '$lib/buffer'
+import { STRIDE } from '#lib/buffer.js'
 
 import { computeBoundingBox } from './box'
 import fragmentShader from './fragment.glsl'

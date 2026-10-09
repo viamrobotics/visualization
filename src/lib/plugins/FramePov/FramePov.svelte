@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import FramePovWidget from './FramePovWidget.svelte'
 

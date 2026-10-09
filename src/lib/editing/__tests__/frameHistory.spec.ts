@@ -1,15 +1,15 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('$lib/loaders/pcd', () => ({
+vi.mock('#lib/loaders/pcd/index.js', () => ({
 	parsePcdInWorker: vi.fn(() => Promise.resolve({ positions: new Float32Array(), colors: null })),
 }))
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { installWorldMatrixListeners } from '$lib/ecs/worldMatrix'
-import { Pose } from '$lib/math'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { installWorldMatrixListeners } from '#lib/ecs/worldMatrix.js'
+import { Pose } from '#lib/math/index.js'
 
 import { applyFrameHistorySnapshotToWorld } from '../frameHistory'
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { useWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { useWeblabs } from '#lib/hooks/useWeblabs.svelte.js'
 
 	interface Props {
 		experiment: string

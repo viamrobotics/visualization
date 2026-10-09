@@ -11,14 +11,14 @@
 	} from '@viamrobotics/sdk'
 	import { createResourceClient } from '@viamrobotics/svelte-sdk'
 
-	import { createChunkLoader } from '$lib/chunking'
-	import { drawTransform, updateMetadata } from '$lib/draw'
-	import { hierarchy, traits, useWorld } from '$lib/ecs'
-	import { isPointCloud } from '$lib/geometry'
-	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
-	import { Pose } from '$lib/math'
-	import { metadataFromStruct } from '$lib/metadata'
-	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+	import { createChunkLoader } from '#lib/chunking.js'
+	import { drawTransform, updateMetadata } from '#lib/draw.js'
+	import { hierarchy, traits, useWorld } from '#lib/ecs/index.js'
+	import { isPointCloud } from '#lib/geometry.js'
+	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
+	import { Pose } from '#lib/math/index.js'
+	import { metadataFromStruct } from '#lib/metadata.js'
+	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import { decodeWorldStateChunk } from './decodeWorldStateChunk'
 

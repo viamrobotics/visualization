@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
-import { createGeometryFromFrame } from '$lib/geometry'
+import { createGeometryFromFrame } from '#lib/geometry.js'
 
 /**
  * Every geometry below is one rdk accepts, so none may throw and each resolves

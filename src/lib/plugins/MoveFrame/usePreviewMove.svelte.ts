@@ -2,21 +2,21 @@ import type { MotionClient } from '@viamrobotics/sdk'
 
 import { untrack } from 'svelte'
 
-import type { FramesContext } from '$lib/hooks/useFrames.svelte'
-import type { Pose } from '$lib/math'
-import type { FrameDescriptor } from '$lib/motion/frameDescriptors'
-import type { JointMotions } from '$lib/motion/interpolateTrajectory'
-import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
+import type { Pose } from '#lib/math/index.js'
+import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
+import type { JointMotions } from '#lib/motion/interpolateTrajectory.js'
+import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-import { useWorld } from '$lib/ecs'
-import { buildFrameDescriptors } from '$lib/motion/frameDescriptors'
-import { frameSystemToPlanFrames } from '$lib/motion/frameSystemToPlanFrames'
+import { useWorld } from '#lib/ecs/index.js'
+import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
+import { frameSystemToPlanFrames } from '#lib/motion/frameSystemToPlanFrames.js'
 import {
 	interpolatedFrames,
 	jointMotionsOf,
 	waypointFrames,
-} from '$lib/motion/interpolateTrajectory'
-import { createTrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+} from '#lib/motion/interpolateTrajectory.js'
+import { createTrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 import type { MoveOptions } from './parseMoveOptions'
 import type { TrajectoryStep } from './planDoCommand'

@@ -1,6 +1,6 @@
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
 
-import { FileDropperError } from '$lib/fileDropper'
+import { FileDropperError } from '#lib/fileDropper.js'
 
 import { parsePlan, PlanParseError } from './parse-plan'
 import { parsedPlanToSnapshots } from './plan-to-snapshots'

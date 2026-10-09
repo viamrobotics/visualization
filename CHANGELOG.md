@@ -225,7 +225,7 @@
 ### Patch Changes
 
 - d6e1289: Migrate workspace panels to popovers
-- 55b7a17: Move the shared plan kinematics into `$lib/motion`
+- 55b7a17: Move the shared plan kinematics into `#lib/motion`
 - c6fe538: Read a plan model's output frame from where RDK writes it
 - 2880ef6: Memory leak fix with ply files
 - 9be560c: Drive mimic joints from the joint they mimic when replaying a plan, and keep the joints declared after one on their own columns

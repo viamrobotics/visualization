@@ -1,12 +1,12 @@
 import type { Entity } from 'koota'
 
-import { traits, useQuery } from '$lib/ecs'
+import { traits, useQuery } from '#lib/ecs/index.js'
 
 /**
  * Identifies a frame entity.
  *
  * A frame's name is not unique in the world on its own: `drawTransform` names each drawn
- * transform after its reference frame (`$lib/draw.ts`), and a configured component with no
+ * transform after its reference frame (`#lib/draw.ts`), and a configured component with no
  * frame gets a `FramelessComponent` entity under its own name. `FramesAPI` narrows the
  * query to actual frames, so dropping it resolves names onto those instead.
  */

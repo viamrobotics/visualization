@@ -2,9 +2,9 @@
 	import { Select, Switch } from '@viamrobotics/prime-core'
 	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
-	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 	const armClient = useArmClient()

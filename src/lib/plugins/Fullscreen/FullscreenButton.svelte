@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Maximize2, Minimize2 } from 'lucide-svelte'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		fullscreen: boolean

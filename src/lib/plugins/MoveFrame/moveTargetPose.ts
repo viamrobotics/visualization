@@ -1,6 +1,6 @@
 import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 const inverseDestination = new Matrix4()
 const localMatrix = new Matrix4()

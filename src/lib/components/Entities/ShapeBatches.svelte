@@ -16,9 +16,9 @@ maps back to the entity.
 	import { T } from '@threlte/core'
 	import { DoubleSide } from 'three'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { createShapeBatches } from '$lib/three/shapeBatches'
-	import { createSurfaceMaterial } from '$lib/three/surfaceShading'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { createShapeBatches } from '#lib/three/shapeBatches.js'
+	import { createSurfaceMaterial } from '#lib/three/surfaceShading.js'
 
 	import { useInstancedEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { useSurfaceMaterials } from './hooks/useSurfaceMaterials.svelte'

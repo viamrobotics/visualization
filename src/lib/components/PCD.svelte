@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { ConfigurableTrait, Entity } from 'koota'
 
-	import type { InteractionLayerValue } from '$lib/ecs/traits'
+	import type { InteractionLayerValue } from '#lib/ecs/traits.js'
 
-	import { createBufferGeometry } from '$lib/attribute'
-	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-	import { traits, useWorld } from '$lib/ecs'
-	import { parsePcdInWorker } from '$lib/loaders/pcd'
-	import { attachPointsBvh } from '$lib/three/pointsBvh'
+	import { createBufferGeometry } from '#lib/attribute.js'
+	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
+	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	interface Props {
 		data: Uint8Array

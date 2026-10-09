@@ -1,10 +1,10 @@
 import type { Entity, World } from 'koota'
 
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import type { Settings } from '$lib/hooks/useSettings.svelte'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import type { Settings } from '#lib/hooks/useSettings.svelte.js'
 
-import { RenderArmModels, type SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
-import { traits } from '$lib/ecs'
+import { RenderArmModels, type SceneMetadata } from '#lib/buf/draw/v1/scene_pb.js'
+import { traits } from '#lib/ecs/index.js'
 
 import type { Relationship } from './metadata'
 

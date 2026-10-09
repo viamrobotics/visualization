@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { Transform } from '$lib/buf/common/v1/common_pb'
+import { Transform } from '#lib/buf/common/v1/common_pb.js'
 
 import { planDropper } from '../plan-dropper'
 import { transformsToSnapshot } from '../plan-to-snapshots'

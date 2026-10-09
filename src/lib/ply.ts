@@ -1,8 +1,8 @@
 import { BufferGeometry } from 'three'
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
 
-import { asExactArrayBuffer } from '$lib/buffer'
-import { narrowFloat64Attributes } from '$lib/three/narrowFloat64Attributes'
+import { asExactArrayBuffer } from '#lib/buffer.js'
+import { narrowFloat64Attributes } from '#lib/three/narrowFloat64Attributes.js'
 
 const plyLoader = new PLYLoader()
 

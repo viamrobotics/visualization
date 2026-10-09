@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { HTML } from '@threlte/extras'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { type HoverInfo } from '$lib/HoverUpdater.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { type HoverInfo } from '#lib/HoverUpdater.svelte.js'
 
 	import { MARKER_SCALE } from './HoveredPointMarker.svelte'
 

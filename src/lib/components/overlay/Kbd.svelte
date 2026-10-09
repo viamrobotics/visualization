@@ -4,9 +4,9 @@
 Renders a keyboard shortcut as one chip per key. Used wherever a shortcut is shown.
 -->
 <script lang="ts">
-	import type { Keybinding } from '$lib/keybindings'
+	import type { Keybinding } from '#lib/keybindings/index.js'
 
-	import { keybindingParts } from '$lib/keybindings'
+	import { keybindingParts } from '#lib/keybindings/index.js'
 
 	interface Props {
 		binding: Keybinding

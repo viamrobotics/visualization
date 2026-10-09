@@ -4,8 +4,8 @@
 	import { T, useThrelte } from '@threlte/core'
 	import { type Entity } from 'koota'
 
-	import { traits, useWorld } from '$lib/ecs'
-	import { BatchedAxesHelpers } from '$lib/three/BatchedAxesHelper'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { BatchedAxesHelpers } from '#lib/three/BatchedAxesHelper.js'
 
 	const { invalidate } = useThrelte()
 	const world = useWorld()

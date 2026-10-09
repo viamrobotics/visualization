@@ -1,9 +1,9 @@
 import { type Entity, trait } from 'koota'
 
-import type { Relationship } from '$lib/metadata'
+import type { Relationship } from '#lib/metadata.js'
 
-import { uuidBytesToString } from '$lib/draw'
-import { relations, traits, useWorld } from '$lib/ecs'
+import { uuidBytesToString } from '#lib/draw.js'
+import { relations, traits, useWorld } from '#lib/ecs/index.js'
 
 interface Link {
 	targetUuid: string

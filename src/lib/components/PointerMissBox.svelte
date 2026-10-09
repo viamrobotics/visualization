@@ -3,9 +3,9 @@
 	import { MeshDiscardMaterial } from '@threlte/extras'
 	import { BackSide, Mesh, Vector3 } from 'three'
 
-	import { traits, useQuery } from '$lib/ecs'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const { camera } = useThrelte()
 	const settings = useSettings()

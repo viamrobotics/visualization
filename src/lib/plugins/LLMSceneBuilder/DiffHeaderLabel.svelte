@@ -3,7 +3,7 @@
 
 	import { useResizeObserver } from 'runed'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		text: string

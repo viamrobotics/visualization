@@ -2,7 +2,7 @@ import { createWorld } from 'koota'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { colliderShapeFor, composeColliderPose } from '../colliderShape'
 

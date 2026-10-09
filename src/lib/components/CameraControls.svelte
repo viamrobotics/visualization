@@ -2,9 +2,9 @@
 	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras'
 	import { MathUtils } from 'three'
 
-	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useCameraControls, useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import InputBindings from './InputBindings.svelte'
 

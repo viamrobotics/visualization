@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createFrame, createTransformFromFrame } from '$lib/frame'
+import { createFrame, createTransformFromFrame } from '#lib/frame.js'
 
 describe('createFrame', () => {
 	it('gives the frame no geometry', () => {

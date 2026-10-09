@@ -1,8 +1,8 @@
 import { type Entity, type World } from 'koota'
 
-import { ChildOf } from '$lib/ecs/relations'
-import { InheritedInvisible, Invisible } from '$lib/ecs/traits'
-import { useWorld } from '$lib/ecs/useWorld'
+import { ChildOf } from '#lib/ecs/relations.js'
+import { InheritedInvisible, Invisible } from '#lib/ecs/traits.js'
+import { useWorld } from '#lib/ecs/useWorld.js'
 
 /**
  * Walks up `ChildOf` and returns true if the entity itself or any

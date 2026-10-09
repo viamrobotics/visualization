@@ -3,7 +3,7 @@ import { createWorld, type Entity } from 'koota'
 import { Matrix4 } from 'three'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { createCollisionWorld } from '../collisionWorld'
 import { ENVIRONMENT_BIT } from '../interactionGroups'

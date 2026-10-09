@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Slider } from 'svelte-tweakpane-ui'
 
-	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
-	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
-	import { TRANSFORM_KEYBINDINGS } from '$lib/hooks/transformKeybindings'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useTransformGizmo } from '$lib/hooks/useTransformGizmos.svelte'
+	import Button from '#lib/components/overlay/dashboard/Button.svelte'
+	import DropdownPane from '#lib/components/overlay/dashboard/DropdownPane.svelte'
+	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
+	import { TRANSFORM_KEYBINDINGS } from '#lib/hooks/transformKeybindings.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { useTransformGizmo } from '#lib/hooks/useTransformGizmos.svelte.js'
 
 	const settings = useSettings()
 	const environment = useEnvironment()

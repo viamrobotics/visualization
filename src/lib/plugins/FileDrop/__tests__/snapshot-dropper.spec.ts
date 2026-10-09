@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { FileDropperError, type SnapshotFileDropSuccess } from '$lib/fileDropper'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { FileDropperError, type SnapshotFileDropSuccess } from '#lib/fileDropper.js'
 
 import { snapshotDropper } from '../snapshot-dropper'
 

@@ -1,12 +1,12 @@
 import { getContext, setContext } from 'svelte'
 
-import type { Frame, FrameEulerDegrees } from '$lib/frame'
+import type { Frame, FrameEulerDegrees } from '#lib/frame.js'
 
-import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
-import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import { useFrames } from '$lib/hooks/useFrames.svelte'
-import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-import { Pose } from '$lib/math'
+import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
+import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+import { Pose } from '#lib/math/index.js'
 
 import {
 	type FrameDelta,

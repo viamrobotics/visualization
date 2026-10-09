@@ -1,11 +1,11 @@
 import { type ConfigurableTrait, type Entity, type World } from 'koota'
 import { Color } from 'three'
 
-import type { FrameDescriptor, JointFrameDescriptor } from '$lib/motion/frameDescriptors'
-import type { TrajectoryStep } from '$lib/motion/jointPose'
+import type { FrameDescriptor, JointFrameDescriptor } from '#lib/motion/frameDescriptors.js'
+import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { descriptorLocalPose } from '$lib/motion/jointPose'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { descriptorLocalPose } from '#lib/motion/jointPose.js'
 
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
 import { previewName } from './previewNames'

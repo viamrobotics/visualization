@@ -8,8 +8,8 @@
 	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
 
 	import { page } from '$app/state'
-	import { Visualizer } from '$lib'
-	import { backendIP, drawServicePort } from '$lib/defines'
+	import { Visualizer } from '#lib'
+	import { backendIP, drawServicePort } from '#lib/defines.js'
 	import {
 		BuildFrames,
 		ControlWidgets,
@@ -26,7 +26,7 @@
 		Settings,
 		WorldTree,
 		XR,
-	} from '$lib/plugins'
+	} from '#lib/plugins/index.js'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'

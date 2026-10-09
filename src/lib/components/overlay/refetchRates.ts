@@ -1,4 +1,4 @@
-import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
+import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
 export const RefetchRates = {
 	OFF: -1,

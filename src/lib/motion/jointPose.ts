@@ -5,7 +5,7 @@
 
 import { Quaternion, Vector3 } from 'three'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { JointFrameDescriptor } from './frameDescriptors'
 

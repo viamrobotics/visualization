@@ -6,18 +6,18 @@
 	import { onDestroy } from 'svelte'
 	import { Group, MathUtils, Matrix4 } from 'three'
 
-	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
-	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
-	import { solveEditedMatrix } from '$lib/math/transform'
-	import { isolateTransformControls } from '$lib/three/renderLayers'
+	import { relations, traits, useQuery, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
+	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
+	import { useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { Pose } from '#lib/math/index.js'
+	import { solveEditedMatrix } from '#lib/math/transform.js'
+	import { isolateTransformControls } from '#lib/three/renderLayers.js'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -263,7 +263,7 @@
 	 * offset (LiveMatrix + Matrix both present), the parent-relative target feeds
 	 * solveEditedMatrix to back out the EditedMatrix satisfying
 	 * live × baseline⁻¹ × edited = local. Without one, `toLocalMatrix` in
-	 * `$lib/ecs/worldMatrix.ts` short-circuits to EditedMatrix, so we write the
+	 * `#lib/ecs/worldMatrix.ts` short-circuits to EditedMatrix, so we write the
 	 * target pose directly.
 	 */
 	const stageFrameTransform = () => {

@@ -3,9 +3,9 @@
 	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
 	import { Icon, Redo2, Undo2 } from 'threlte-uikit/lucide'
 
-	import { useWorld } from '$lib/ecs'
-	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import WristDisplay from './WristDisplay.svelte'
 

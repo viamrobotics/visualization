@@ -2,8 +2,8 @@
 	import { T } from '@threlte/core'
 	import { CanvasTexture, PlaneGeometry } from 'three'
 
-	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { useArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
+	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
+	import { useArmKinematics } from '#lib/hooks/useArmKinematics.svelte.js'
 
 	interface JointLimitsWidgetProps {
 		armName: string

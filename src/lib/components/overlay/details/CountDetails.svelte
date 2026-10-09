@@ -3,7 +3,7 @@
 	import { type Entity } from 'koota'
 	import { BufferAttribute } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

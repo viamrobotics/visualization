@@ -1,4 +1,4 @@
-import type { FileDropperSuccess } from '$lib/fileDropper'
+import type { FileDropperSuccess } from '#lib/fileDropper.js'
 
 import { Extensions, parseFileName, Prefixes, readFile } from './file-names'
 import { pcdDropper } from './pcd-dropper'

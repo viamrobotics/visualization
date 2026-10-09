@@ -4,8 +4,8 @@
 
 	import { useThrelte } from '@threlte/core'
 
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import ResourceTypeBadge from './ResourceTypeBadge.svelte'
 	import { DO_COMMAND_WIDGET_ID } from './resourceWidgetToggles'

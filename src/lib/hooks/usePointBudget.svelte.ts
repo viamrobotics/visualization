@@ -1,7 +1,7 @@
 import { useTask, useThrelte } from '@threlte/core'
 import { type OrthographicCamera, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 
-import { traits, useWorld } from '$lib/ecs'
+import { traits, useWorld } from '#lib/ecs/index.js'
 
 /** Long enough to ride out the gaps in a stuttering drag, short enough to feel immediate. */
 const SETTLE_SECONDS = 0.001

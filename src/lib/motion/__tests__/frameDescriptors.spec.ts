@@ -1,7 +1,7 @@
 import { protoBase64 } from '@bufbuild/protobuf'
 import { describe, expect, it, vi } from 'vitest'
 
-import { parsePlan } from '$lib/plugins/MotionPlanReplayer/parse-plan'
+import { parsePlan } from '#lib/plugins/MotionPlanReplayer/parse-plan.js'
 
 import type { FrameSystemJson } from '../frameDescriptors'
 

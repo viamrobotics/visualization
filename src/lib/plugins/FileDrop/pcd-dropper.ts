@@ -5,8 +5,8 @@ import {
 	FileDropperError,
 	type FileDropperParams,
 	parseFailure,
-} from '$lib/fileDropper'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
+} from '#lib/fileDropper.js'
+import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
 
 export const pcdDropper: FileDropper = async (params: FileDropperParams) => {
 	const { name, content } = params

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Not } from 'koota'
 
-	import ModeTogglePortal from '$lib/components/overlay/Portals/ModeTogglePortal.svelte'
-	import ModeButton from '$lib/components/overlay/workspace/ModeButton.svelte'
-	import { traits, useQuery } from '$lib/ecs'
-	import { useEnvironment, useEnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
-	import { useFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
+	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
+	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 
 	import BuildActionsBar from './BuildActionsBar.svelte'
 	import BuildDetails from './BuildDetails.svelte'

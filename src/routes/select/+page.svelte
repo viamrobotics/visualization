@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { PCD } from '$lib'
-	import { SelectionTool, TopDownLock } from '$lib/plugins'
-	import { createRandomPcdBinary } from '$lib/test/createRandomPcdBinary'
+	import { PCD } from '#lib'
+	import { SelectionTool, TopDownLock } from '#lib/plugins/index.js'
+	import { createRandomPcdBinary } from '#lib/test/createRandomPcdBinary.js'
 
 	import SelectionOverlay from '../lib/components/selectDemoPage/SelectionOverlay.svelte'
 </script>

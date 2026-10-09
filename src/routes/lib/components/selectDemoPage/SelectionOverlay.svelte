@@ -3,11 +3,11 @@
 	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
 
-	import { FloatingPanel } from '$lib'
-	import { traits } from '$lib/ecs'
-	import { useWorld } from '$lib/ecs'
-	import { useSelectionPlugin } from '$lib/plugins'
-	import { PointsCapturedBy, SelectedFrom } from '$lib/plugins/Selection/relations'
+	import { FloatingPanel } from '#lib'
+	import { traits } from '#lib/ecs/index.js'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { useSelectionPlugin } from '#lib/plugins/index.js'
+	import { PointsCapturedBy, SelectedFrom } from '#lib/plugins/Selection/relations.js'
 
 	const { dom } = useThrelte()
 	const world = useWorld()

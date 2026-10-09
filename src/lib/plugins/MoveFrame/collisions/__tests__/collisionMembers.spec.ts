@@ -2,7 +2,7 @@ import { createWorld, type Entity } from 'koota'
 import { Matrix4 } from 'three'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { relations, traits } from '$lib/ecs'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import { previewName } from '../../previewNames'
 import { GhostOf } from '../../relations'

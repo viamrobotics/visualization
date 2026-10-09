@@ -3,7 +3,7 @@ import type { BufferGeometry, Color, Matrix4 } from 'three'
 
 import { getContext, setContext } from 'svelte'
 
-import type { MeshSlot, Shape, ShapeBatches, ShapeInstanceIds } from '$lib/three/shapeBatches'
+import type { MeshSlot, Shape, ShapeBatches, ShapeInstanceIds } from '#lib/three/shapeBatches.js'
 
 const SHAPE_BATCHES_CONTEXT_KEY = Symbol('shape-batches')
 

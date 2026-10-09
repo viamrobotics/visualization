@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import type { ComponentFramesConfig } from '$lib/resolveComponentFrames'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import type { ComponentFramesConfig } from '#lib/resolveComponentFrames.js'
 
-import { resolveComponentFrames } from '$lib/resolveComponentFrames'
+import { resolveComponentFrames } from '#lib/resolveComponentFrames.js'
 
 const FRAGMENT_ID = 'fragment-1'
 

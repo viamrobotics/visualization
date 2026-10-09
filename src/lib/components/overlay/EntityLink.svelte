@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { selectOnly, traits, useTrait, useWorld } from '$lib/ecs'
+	import { selectOnly, traits, useTrait, useWorld } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

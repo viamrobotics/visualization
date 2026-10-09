@@ -5,22 +5,22 @@
 	import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
 	import { Matrix4 } from 'three'
 
-	import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-	import { RefetchRates } from '$lib/components/overlay/refetchRates'
+	import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
+	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
+	import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 	import {
 		hierarchy,
 		setOrAddTrait,
 		traits,
 		TRANSLUCENT_GEOMETRY_OPACITY,
 		useWorld,
-	} from '$lib/ecs'
-	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
-	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
-	import { parsePcdInWorker } from '$lib/loaders/pcd'
-	import { Pose } from '$lib/math'
-	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
-	import { attachPointsBvh } from '$lib/three/pointsBvh'
+	} from '#lib/ecs/index.js'
+	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
+	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
+	import { Pose } from '#lib/math/index.js'
+	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
+	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	interface Props {
 		partID: string

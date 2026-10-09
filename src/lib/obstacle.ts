@@ -1,6 +1,6 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createFrame } from '$lib/frame'
+import { createFrame } from '#lib/frame.js'
 
 /**
  * An obstacle is a component the machine never talks to. Its frame is the whole

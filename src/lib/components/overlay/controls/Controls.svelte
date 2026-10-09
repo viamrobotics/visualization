@@ -2,12 +2,12 @@
 	import { useThrelte } from '@threlte/core'
 	import { PortalTarget } from '@threlte/extras'
 
-	import { focusCameraOnEntities } from '$lib/components/Entities/focusCameraOnEntities'
-	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import { traits, useQuery } from '$lib/ecs'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { useHotkey } from '$lib/keybindings'
+	import { focusCameraOnEntities } from '#lib/components/Entities/focusCameraOnEntities.js'
+	import Button from '#lib/components/overlay/dashboard/Button.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { useHotkey } from '#lib/keybindings/index.js'
 
 	const { scene } = useThrelte()
 	const settings = useSettings()

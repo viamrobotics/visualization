@@ -6,7 +6,7 @@ import {
 } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
-import { STATIC_RESOURCE_QUERY_OPTIONS } from '$lib/staticResourceQuery'
+import { STATIC_RESOURCE_QUERY_OPTIONS } from '#lib/staticResourceQuery.js'
 
 const key = Symbol('arm-kinematics-context')
 

@@ -2,12 +2,12 @@ import type { PartialMessage } from '@bufbuild/protobuf'
 
 import { type JsonValue, Struct } from '@viamrobotics/sdk'
 
-import type { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import type { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 
-import { Geometry, Transform } from '$lib/buf/common/v1/common_pb'
-import { Drawing, Shape } from '$lib/buf/draw/v1/drawing_pb'
-import { Metadata } from '$lib/buf/draw/v1/metadata_pb'
-import { Pose } from '$lib/math'
+import { Geometry, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Drawing, Shape } from '#lib/buf/draw/v1/drawing_pb.js'
+import { Metadata } from '#lib/buf/draw/v1/metadata_pb.js'
+import { Pose } from '#lib/math/index.js'
 
 /** Which `draw.ts` entry point renders a draft: `Transform` or `Drawing`. */
 export type EntityKind = 'transform' | 'drawing'

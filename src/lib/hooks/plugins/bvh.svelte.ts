@@ -12,7 +12,7 @@ import {
 	SAH,
 } from 'three-mesh-bvh'
 
-import { pointsBvhOptions, raycastNearestPointToRay } from '$lib/three/pointsBvh'
+import { pointsBvhOptions, raycastNearestPointToRay } from '#lib/three/pointsBvh.js'
 
 interface Options extends BVHOptions {
 	helper?: boolean

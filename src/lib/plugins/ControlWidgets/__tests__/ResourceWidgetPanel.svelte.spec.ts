@@ -4,13 +4,13 @@ import '@testing-library/jest-dom/vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { usePartID } from '$lib/hooks/usePartID.svelte'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 import ResourceWidgetPanel from '../ResourceWidgetPanel.svelte'
 import { useControlWidgets } from '../useControlWidgets.svelte'
 import DummyWidget from './__fixtures__/DummyWidget.svelte'
 
-vi.mock('$lib/components/overlay/FloatingPanel.svelte', async () => {
+vi.mock('#lib/components/overlay/FloatingPanel.svelte', async () => {
 	const MockFloatingPanel = await import('./__fixtures__/MockFloatingPanel.svelte')
 	return { default: MockFloatingPanel.default }
 })
@@ -19,7 +19,7 @@ vi.mock('@threlte/core', () => ({
 	useThrelte: () => ({ dom: { clientWidth: 1000, clientHeight: 800 } }),
 }))
 
-vi.mock('$lib/hooks/usePartID.svelte', () => ({ usePartID: vi.fn() }))
+vi.mock('#lib/hooks/usePartID.svelte.js', () => ({ usePartID: vi.fn() }))
 vi.mock('../useControlWidgets.svelte', () => ({ useControlWidgets: vi.fn() }))
 
 describe('ResourceWidgetPanel', () => {

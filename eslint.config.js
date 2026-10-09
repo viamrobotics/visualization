@@ -9,7 +9,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
-import svelteConfig from './svelte.config.js'
+import { loadConfig } from '@sveltejs/load-config'
+
+const svelteConfig = (await loadConfig('./', { traverse: false }))?.config
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -159,24 +161,24 @@ export default defineConfig(
 				{
 					paths: [
 						{
-							name: '$lib',
+							name: '#lib',
 							message:
-								"Import the module directly (e.g. '$lib/components/overlay/Portals/DashboardPortal.svelte'). '$lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
+								"Import the module directly (e.g. '#lib/components/overlay/Portals/DashboardPortal.svelte'). '$lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
 						},
 						{
-							name: '$lib/lib',
+							name: '#lib/lib.js',
 							message:
-								"Import the module directly (e.g. '$lib/loaders/pcd'). '$lib/lib' is a published entry point, not for internal use.",
+								"Import the module directly (e.g. '#lib/loaders/pcd'). '$lib/lib' is a published entry point, not for internal use.",
 						},
 						{
-							name: '$lib/plugins',
+							name: '#lib/plugins/index.js',
 							message:
-								"Import the plugin module directly (e.g. '$lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
+								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
 						},
 					],
 					patterns: [
 						{
-							group: ['$lib/index*', '$lib/lib.*', '$lib/plugins/index*'],
+							group: ['#lib/index*', '$lib/lib.*', '$lib/plugins/index*'],
 							message:
 								'Barrel import spelled via its index file. Import the module directly instead.',
 						},

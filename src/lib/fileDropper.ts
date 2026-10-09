@@ -1,7 +1,7 @@
 import type { BufferGeometry } from 'three'
 
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import type { SuccessMessage } from '$lib/loaders/pcd/messages'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import type { SuccessMessage } from '#lib/loaders/pcd/messages.js'
 
 interface FileDropSuccess {
 	success: true

@@ -1,4 +1,4 @@
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 
 const FRAME_PATH_PREFIX = 'frame.'
 

@@ -1,13 +1,13 @@
-import type { Pose } from '$lib/math'
+import type { Pose } from '#lib/math/index.js'
 
-import { type Geometry } from '$lib/geometry'
+import { type Geometry } from '#lib/geometry.js'
 import {
 	type FramePoseJson,
 	geometryCenterInFrame,
 	poseFromJson,
 	type RawOrientation,
 	type Vec3Json,
-} from '$lib/math/spatialJson'
+} from '#lib/math/spatialJson.js'
 
 /**
  * Both are rdk's `spatialmath` JSON shapes, aliased here so a reader of the

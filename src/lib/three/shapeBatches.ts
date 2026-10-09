@@ -12,7 +12,7 @@ import {
 	Vector4,
 } from 'three'
 
-import { darkenColor } from '$lib/color'
+import { darkenColor } from '#lib/color.js'
 
 import { createBatchedGeometryAllocator } from './addBatchedGeometry'
 import { addBatchedInstance } from './addBatchedInstance'

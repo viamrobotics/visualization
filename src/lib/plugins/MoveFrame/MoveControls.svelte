@@ -21,12 +21,12 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import type { Pose } from '$lib/math'
+	import type { Pose } from '#lib/math/index.js'
 
-	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { setOrientationFromEuler } from '$lib/math/transform'
+	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
+	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { setOrientationFromEuler } from '#lib/math/transform.js'
 
 	import Collisions from './collisions/Collisions.svelte'
 	import { defaultMotionService, motionServiceNames } from './moveControls'

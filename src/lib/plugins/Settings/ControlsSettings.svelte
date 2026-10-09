@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Input, Switch } from '@viamrobotics/prime-core'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 

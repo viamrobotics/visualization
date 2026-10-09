@@ -1,8 +1,8 @@
 import type { Trait } from 'koota'
 
-import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
+import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 /** Stable key for a folder, independent of its display name. */
 export type TreeFolderId =

@@ -3,11 +3,11 @@
 
 	import { T, useThrelte } from '@threlte/core'
 
-	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
+	import type { InstancedArrows } from '#lib/three/InstancedArrows/InstancedArrows.js'
 
-	import { useEntityEvents } from '$lib/components/Entities/hooks/useEntityEvents.svelte'
-	import { traits, useTag, useTrait } from '$lib/ecs'
-	import { meshBoundsRaycast, raycast } from '$lib/three/InstancedArrows/raycast'
+	import { useEntityEvents } from '#lib/components/Entities/hooks/useEntityEvents.svelte.js'
+	import { traits, useTag, useTrait } from '#lib/ecs/index.js'
+	import { meshBoundsRaycast, raycast } from '#lib/three/InstancedArrows/raycast.js'
 
 	interface Props {
 		entity: Entity

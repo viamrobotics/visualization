@@ -5,14 +5,14 @@
 	import { BatchedMesh, Box3, Matrix4 } from 'three'
 	import { OBB } from 'three/addons/math/OBB.js'
 
-	import { composeBoxMatrix } from '$lib/components/Entities/composeBoxMatrix'
-	import { composeCapsuleBoundsMatrix } from '$lib/components/Entities/composeCapsuleMatrices'
-	import { composeCylinderBoundsMatrix } from '$lib/components/Entities/composeCylinderMatrix'
-	import { composeMeshBoundsMatrix } from '$lib/components/Entities/composeMeshMatrix'
-	import { composeSphereBoundsMatrix } from '$lib/components/Entities/composeSphereMatrix'
-	import { traits, useQuery } from '$lib/ecs'
-	import { BatchedAxesHelpers } from '$lib/three/BatchedAxesHelper'
-	import { OBBHelper } from '$lib/three/OBBHelper'
+	import { composeBoxMatrix } from '#lib/components/Entities/composeBoxMatrix.js'
+	import { composeCapsuleBoundsMatrix } from '#lib/components/Entities/composeCapsuleMatrices.js'
+	import { composeCylinderBoundsMatrix } from '#lib/components/Entities/composeCylinderMatrix.js'
+	import { composeMeshBoundsMatrix } from '#lib/components/Entities/composeMeshMatrix.js'
+	import { composeSphereBoundsMatrix } from '#lib/components/Entities/composeSphereMatrix.js'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { BatchedAxesHelpers } from '#lib/three/BatchedAxesHelper.js'
+	import { OBBHelper } from '#lib/three/OBBHelper.js'
 
 	const box3 = new Box3()
 	const obb = new OBB()

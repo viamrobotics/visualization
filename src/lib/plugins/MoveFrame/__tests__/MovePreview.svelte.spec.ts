@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 import type { PreviewMove, PreviewStatus } from '../usePreviewMove.svelte'
 

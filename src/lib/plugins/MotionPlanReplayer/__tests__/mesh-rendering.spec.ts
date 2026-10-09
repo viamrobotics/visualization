@@ -1,8 +1,8 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { spawnSnapshotEntities } from '$lib/snapshot'
+import { traits } from '#lib/ecs/index.js'
+import { spawnSnapshotEntities } from '#lib/snapshot.js'
 
 import { parsePlan } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'

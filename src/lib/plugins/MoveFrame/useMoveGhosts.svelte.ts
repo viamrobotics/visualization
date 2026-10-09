@@ -1,7 +1,7 @@
 import type { Entity } from 'koota'
 import type { Matrix4 } from 'three'
 
-import { traits, useWorld } from '$lib/ecs'
+import { traits, useWorld } from '#lib/ecs/index.js'
 
 import { clearMoveGhosts, createMoveGhosts, rigidMoveDelta, syncMoveGhosts } from './moveGhosts'
 

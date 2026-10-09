@@ -1,5 +1,5 @@
-import { Mesh, PointCloud } from '$lib/buf/common/v1/common_pb'
-import { Arrows, Line, Nurbs, Points } from '$lib/buf/draw/v1/drawing_pb'
+import { Mesh, PointCloud } from '#lib/buf/common/v1/common_pb.js'
+import { Arrows, Line, Nurbs, Points } from '#lib/buf/draw/v1/drawing_pb.js'
 
 import type { EntityDraft, EntityKind } from './entityDrafts'
 

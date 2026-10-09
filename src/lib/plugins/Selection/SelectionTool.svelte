@@ -5,12 +5,12 @@
 	import { useThrelte } from '@threlte/core'
 	import { ElementRect } from 'runed'
 
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
-	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
-	import { traits, useWorld } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
+	import ToggleGroup from '#lib/components/overlay/ToggleGroup.svelte'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import Ellipse from './Ellipse.svelte'
 	import Lasso from './Lasso.svelte'

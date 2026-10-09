@@ -1,7 +1,7 @@
 import { render } from '@testing-library/svelte'
 import { describe, it, vi } from 'vitest'
 
-import AxesHelper from '$lib/components/AxesHelper.svelte'
+import AxesHelper from '#lib/components/AxesHelper.svelte'
 
 import MockCanvas from './fixtures/MockCanvas.svelte'
 

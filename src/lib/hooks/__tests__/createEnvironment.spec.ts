@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { createEnvironment, ENVIRONMENT_MODE_STORAGE_KEY } from '$lib/hooks/useEnvironment.svelte'
+import {
+	createEnvironment,
+	ENVIRONMENT_MODE_STORAGE_KEY,
+} from '#lib/hooks/useEnvironment.svelte.js'
 
 describe('createEnvironment mode availability', () => {
 	beforeEach(() => {

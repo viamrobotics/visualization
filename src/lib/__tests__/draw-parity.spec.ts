@@ -4,7 +4,7 @@ import type { BufferGeometry } from 'three'
 import { createWorld } from 'koota'
 import { describe, expect, it, vi } from 'vitest'
 
-import { hierarchy, traits } from '$lib/ecs'
+import { hierarchy, traits } from '#lib/ecs/index.js'
 
 import type { EntityDraft } from './__fixtures__/entityDrafts'
 import type { EntityTypeDescriptor } from './__fixtures__/entityMatrix'
@@ -16,7 +16,7 @@ import { casesFor, ENTITY_TYPES } from './__fixtures__/entityMatrix'
 // Three points rather than none. An empty cloud makes `parseColors` build a
 // colour attribute of itemSize 0, whose count is NaN, which is a shape no real
 // cloud produces and which makes the pcd cases fail for the wrong reason.
-vi.mock('$lib/loaders/pcd', () => ({
+vi.mock('#lib/loaders/pcd/index.js', () => ({
 	parsePcdInWorker: vi.fn(() =>
 		Promise.resolve({
 			positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),

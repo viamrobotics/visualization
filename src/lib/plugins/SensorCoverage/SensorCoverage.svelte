@@ -11,11 +11,11 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import SettingsPortal from '$lib/components/overlay/Portals/SettingsPortal.svelte'
-	import { traits } from '$lib/ecs'
-	import { useDetailsSection } from '$lib/hooks/useDetailsSections.svelte'
-	import { useFrameEntities } from '$lib/hooks/useFrameEntities.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
+	import { traits } from '#lib/ecs/index.js'
+	import { useDetailsSection } from '#lib/hooks/useDetailsSections.svelte.js'
+	import { useFrameEntities } from '#lib/hooks/useFrameEntities.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import CameraFrustum from './CameraFrustum.svelte'
 	import SensorCoverageSettings from './SensorCoverageSettings.svelte'

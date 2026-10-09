@@ -1,7 +1,7 @@
 import { IsExcluded } from 'koota'
 import { createSubscriber } from 'svelte/reactivity'
 
-import { relations, traits, useWorld } from '$lib/ecs'
+import { relations, traits, useWorld } from '#lib/ecs/index.js'
 
 import type { PinnedFolders, Tree, TreeNode } from './buildTree'
 

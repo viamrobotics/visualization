@@ -10,10 +10,10 @@
 
 	import { untrack } from 'svelte'
 
-	import type { FramesContext } from '$lib/hooks/useFrames.svelte'
-	import type { Pose } from '$lib/math'
+	import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
+	import type { Pose } from '#lib/math/index.js'
 
-	import { provideWorld, useWorld } from '$lib/ecs'
+	import { provideWorld, useWorld } from '#lib/ecs/index.js'
 
 	import type { MoveOptions } from '../../parseMoveOptions'
 	import type { PreviewMove } from '../../usePreviewMove.svelte'
