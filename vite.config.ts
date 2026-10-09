@@ -1,4 +1,4 @@
-import { sentrySvelteKit } from '@sentry/sveltekit'
+import { sentrySvelteKit } from '@sentry/sveltekit/vite'
 import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
@@ -22,18 +22,16 @@ export default defineConfig({
 	plugins: [
 		glsl(),
 		sentrySvelteKit({
-			sourceMapsUploadOptions: {
-				org: 'viam',
-				// Sentry project slug, not the package name. It stays until the project is
-				// renamed in Sentry; a mismatch silently breaks symbolication.
-				project: 'motion-tools',
-				// Must match `release` in hooks.client.ts. The default is the git HEAD SHA, which no
-				// event references, so uploaded maps would never be applied to a stack trace.
-				release: { name: version },
-				// Symbolication needs these uploaded, not served. Deletion is not gated on the auth
-				// token, so a build without one still keeps them out of the deployed site.
-				sourcemaps: { filesToDeleteAfterUpload: ['./build/**/*.map'] },
-			},
+			org: 'viam',
+			// Sentry project slug, not the package name. It stays until the project is
+			// renamed in Sentry; a mismatch silently breaks symbolication.
+			project: 'motion-tools',
+			// Must match `release` in hooks.client.ts. The default is the git HEAD SHA, which no
+			// event references, so uploaded maps would never be applied to a stack trace.
+			release: { name: version },
+			// Symbolication needs these uploaded, not served. Deletion is not gated on the auth
+			// token, so a build without one still keeps them out of the deployed site.
+			sourcemaps: { filesToDeleteAfterUpload: ['./build/**/*.map'] },
 		}),
 		devtoolsJson(),
 		...(https ? [mkcert()] : []),
@@ -73,9 +71,7 @@ export default defineConfig({
 		host: true,
 		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
-		// Any origin may load dev assets. preflightContinue keeps SvelteKit from warning
-		// that Vite's CORS middleware would swallow OPTIONS requests.
-		cors: { origin: '*', preflightContinue: true },
+		cors: { origin: '*' },
 		https: https ? {} : undefined,
 
 		fs: {

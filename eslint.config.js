@@ -11,8 +11,13 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
 const loadedSvelteConfig = await loadConfig('./', { traverse: false })
-const svelteConfig = loadedSvelteConfig?.config
+if (loadedSvelteConfig && 'error' in loadedSvelteConfig) {
+	throw new Error(`Could not load the Svelte config from ${loadedSvelteConfig.configFilePath}`, {
+		cause: loadedSvelteConfig.error,
+	})
+}
 
+const svelteConfig = loadedSvelteConfig?.config
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const gitignorePath = path.resolve(__dirname, '.gitignore')
@@ -178,28 +183,23 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{
-					paths: [
-						{
-							name: '#lib',
-							message:
-								"Import the module directly (e.g. '#lib/components/overlay/Portals/DashboardPortal.svelte'). '$lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
-						},
-						{
-							name: '#lib/lib.js',
-							message:
-								"Import the module directly (e.g. '#lib/loaders/pcd'). '$lib/lib' is a published entry point, not for internal use.",
-						},
-						{
-							name: '#lib/plugins/index.js',
-							message:
-								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
-						},
-					],
+					// Regex, since group is gitignore syntax and reads a leading # as a comment. The extension
+					// is open because allowImportingTsExtensions lets a barrel be imported as .ts too.
 					patterns: [
 						{
-							group: ['#lib/index*', '$lib/lib.*', '$lib/plugins/index*'],
+							regex: String.raw`^#lib(/index\.[^/]+)?$`,
 							message:
-								'Barrel import spelled via its index file. Import the module directly instead.',
+								"Import the module directly (e.g. '#lib/components/overlay/Portals/DashboardPortal.svelte'). '#lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
+						},
+						{
+							regex: String.raw`^#lib/lib\.[^/]+$`,
+							message:
+								"Import the module directly (e.g. '#lib/loaders/pcd/index.js'). '#lib/lib.js' is a published entry point, not for internal use.",
+						},
+						{
+							regex: String.raw`^#lib/plugins/index\.[^/]+$`,
+							message:
+								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte.js'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
 						},
 					],
 				},

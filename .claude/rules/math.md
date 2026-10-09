@@ -8,7 +8,7 @@ paths:
 
 # Spatial Math
 
-`src/lib/math/` holds spatial math primitives. `src/lib/motion/` builds on them: joint poses, frame descriptors, plan frames, and trajectory interpolation. Neither imports from `$lib/ecs`, `$lib/components` or a hook. Both are pure computation that the rest of the app composes.
+`src/lib/math/` holds spatial math primitives. `src/lib/motion/` builds on them: joint poses, frame descriptors, plan frames, and trajectory interpolation. Neither imports from `#lib/ecs`, `#lib/components` or a hook. Both are pure computation that the rest of the app composes.
 
 ## Units
 
