@@ -222,6 +222,18 @@ export const ConfigOnlyFrame = trait(() => true)
 export const KinematicLink = trait(() => true)
 
 /**
+ * One shape of a Simple or Bounds obstacle. It belongs to the obstacle rather than standing as a
+ * frame of its own, so picking it in the scene selects the obstacle, the frame that can be moved.
+ */
+export const ObstacleShape = trait(() => true)
+
+/**
+ * One shape of a Complex obstacle, at `index` in its `attributes.geometries`. Picking it selects
+ * the shape itself, and the transform gizmo edits that entry.
+ */
+export const ComplexObstacleShape = trait({ index: 0 })
+
+/**
  * Drawn into the scene through the draw API, rather than sourced from the robot.
  * The distinction drives grouping in the world tree and which entities may be
  * related to one another.
@@ -256,6 +268,13 @@ export const FramelessComponent = trait()
 export const Editable = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
+
+/**
+ * The appearance from a resource's `visualizer` config last written onto this entity, serialized.
+ * A config change is applied once, so an edit made in the scene since then stays until the config
+ * changes again.
+ */
+export const AppliedConfigAppearance = trait({ key: '' })
 
 /**
  * Marker trait for entities that should be rendered in screen space (CSS pixels)

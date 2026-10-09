@@ -12,6 +12,7 @@
 	import FramelessComponentDetails from './FramelessComponentDetails.svelte'
 	import TransformDashboard from './TransformDashboard.svelte'
 	import { useFramelessComponentEntities } from './useFramelessComponentEntities.svelte'
+	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
 
 	const environment = useEnvironment()
 	const selected = useQuery(traits.Selected, Not(traits.FramelessComponent))
@@ -23,6 +24,7 @@
 	useEnvironmentMode('build')
 
 	useFramelessComponentEntities()
+	useObstacleLivePreview()
 </script>
 
 <ModeTogglePortal>

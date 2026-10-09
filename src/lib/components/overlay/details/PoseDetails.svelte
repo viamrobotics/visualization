@@ -36,6 +36,7 @@
 	import { Pose } from '$lib/math'
 
 	import EntityLink from '../EntityLink.svelte'
+	import WorldPoseDetails from './WorldPoseDetails.svelte'
 
 	interface Props {
 		entity: Entity
@@ -167,48 +168,7 @@
 	</div>
 {/snippet}
 
-<div>
-	<strong class="font-semibold">world position</strong>
-	<span class="text-subtle-2">(mm)</span>
-
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.x ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.y ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.z ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
-
-<div>
-	<strong class="font-semibold">world orientation</strong>
-	<span class="text-subtle-2">(deg)</span>
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.oX ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.oY ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.oZ ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">th</span>
-			{(worldPose?.theta ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
+<WorldPoseDetails pose={worldPose} />
 
 <div>
 	<strong class="font-semibold">parent frame</strong>

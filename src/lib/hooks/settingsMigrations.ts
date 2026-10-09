@@ -1,5 +1,7 @@
 import type { Settings } from './useSettings.svelte'
 
+const MILLIMETRES_PER_METRE = 1000
+
 /**
  * A settings record as it comes back out of storage, written by whichever version of
  * the app the user last ran. Its shape is whatever `Settings` was then, so a migration
@@ -18,6 +20,13 @@ const migrations: ((stored: StoredSettings) => void)[] = [
 	// mode, which the settings panel can set back.
 	(stored) => {
 		stored.renderMode = 'realistic'
+	},
+	// The move snap step was stored in scene metres while every length the app shows is in
+	// millimetres. Converting keeps a saved step on the same grid.
+	(stored) => {
+		if (typeof stored.snapTranslate === 'number') {
+			stored.snapTranslate *= MILLIMETRES_PER_METRE
+		}
 	},
 ]
 

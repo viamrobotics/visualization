@@ -84,10 +84,11 @@
 				active={settings.current.snapping}
 				description="Snapping settings"
 			>
+				<!-- Units live in the labels: tweakpane parses typed text as a bare number, so a unit in the value would make every typed edit revert. -->
 				<Slider
-					label="Move"
+					label="Move (mm)"
 					min={0}
-					step={0.01}
+					step={1}
 					value={settings.current.snapTranslate}
 					on:change={(event) => {
 						if (event.detail.origin === 'internal') {
@@ -96,10 +97,9 @@
 					}}
 				/>
 				<Slider
-					label="Rotate"
+					label="Rotate (°)"
 					min={0}
 					step={0.5}
-					format={(value) => `${value}°`}
 					value={settings.current.snapRotate}
 					on:change={(event) => {
 						if (event.detail.origin === 'internal') {
