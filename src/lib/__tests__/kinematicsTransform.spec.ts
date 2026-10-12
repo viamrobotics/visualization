@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { protoBase64 } from '@bufbuild/protobuf'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
 	isDHModel,
@@ -79,6 +80,39 @@ describe('parseKinematicsGeometry', () => {
 
 		it('has no case for shapes the geometry union cannot express', () => {
 			expect(geometry({ type: 'point' }).geometryType.case).toBeUndefined()
+		})
+	})
+
+	/**
+	 * rdk before RSDK-14708 sent `mesh_data` as one number per byte, and after it as base64. A
+	 * machine on either version is live, so both shapes stay readable.
+	 */
+	describe('mesh data', () => {
+		const stl = new TextEncoder().encode('solid t\nendsolid t\n')
+
+		it.each([
+			['a number array, from older rdk', [...stl]],
+			['a base64 string, from rdk after RSDK-14708', protoBase64.enc(stl)],
+		])('reads %s', (_label, mesh_data) => {
+			const parsed = geometry({ type: 'mesh', mesh_content_type: 'stl', mesh_data })
+
+			expect(parsed.geometryType).toEqual({
+				case: 'mesh',
+				value: { contentType: 'stl', mesh: stl },
+			})
+		})
+
+		it.each([
+			['absent', undefined],
+			['an empty array', []],
+			['an empty string', ''],
+		])('drops a mesh whose data is %s, and says so', (_label, mesh_data) => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+			const parsed = geometry({ type: 'mesh', mesh_content_type: 'stl', mesh_data, Label: 'scoop' })
+
+			expect(parsed.geometryType.case).toBeUndefined()
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('"scoop" has no mesh_data'))
 		})
 	})
 
