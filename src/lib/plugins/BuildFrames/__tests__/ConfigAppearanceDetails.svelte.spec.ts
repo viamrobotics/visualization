@@ -67,7 +67,7 @@ describe('ConfigAppearanceDetails', () => {
 
 	it('saves a typed opacity', async () => {
 		const partConfig = mountDetails({ type: 'complex' })
-		const input = screen.getByLabelText('saved opacity').querySelector<HTMLInputElement>('input')!
+		const input = screen.getByLabelText('mutable opacity').querySelector<HTMLInputElement>('input')!
 
 		await userEvent.tripleClick(input)
 		await userEvent.keyboard('0.35{Tab}')
@@ -112,7 +112,7 @@ describe('ConfigAppearanceDetails for a frame inside a resource', () => {
 
 	it('saves a typed opacity under its own id', async () => {
 		const partConfig = mountDetails({ type: 'complex', opacity: 0.5 }, 'post')
-		const input = screen.getByLabelText('saved opacity').querySelector<HTMLInputElement>('input')!
+		const input = screen.getByLabelText('mutable opacity').querySelector<HTMLInputElement>('input')!
 
 		await userEvent.tripleClick(input)
 		await userEvent.keyboard('0.35{Tab}')

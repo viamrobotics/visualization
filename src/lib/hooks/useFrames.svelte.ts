@@ -6,8 +6,8 @@ import { getContext, setContext, untrack } from 'svelte'
 import type { Transform } from '$lib/geometry'
 import type { RawKinematicsModel } from '$lib/kinematicsTransform'
 
+import { appearanceColorsByFrame } from '$lib/appearanceColors'
 import { resourceNameToColor, subtypeToColor } from '$lib/color'
-import { configColorsByFrame } from '$lib/configColors'
 import { hierarchy, setOrAddTrait, traits, TRANSLUCENT_GEOMETRY_OPACITY, useWorld } from '$lib/ecs'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '$lib/kinematicsFrames'
 import { Pose } from '$lib/math'
@@ -19,6 +19,7 @@ import { mergeObstacleFrames } from './mergeObstacleFrames'
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useEnvironment } from './useEnvironment.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
+import { useResourceAppearance } from './useResourceAppearance.svelte'
 import { useResourceByName } from './useResourceByName.svelte'
 
 export interface FramesContext {
@@ -41,6 +42,7 @@ const key = Symbol('frames-context')
 export const provideFrames = (partID: () => string) => {
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
+	const resourceAppearance = useResourceAppearance()
 	const environment = useEnvironment()
 	const world = useWorld()
 	const resourceByName = useResourceByName()
@@ -203,14 +205,14 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	const shapeEntries = $derived(obstacleShapeEntries(partConfig.current.components))
-	const configColors = $derived(configColorsByFrame(partConfig.current.components))
+	const appearanceColors = $derived(appearanceColorsByFrame(resourceAppearance.current))
 
 	$effect(() => {
 		const currentResourcesByName = resourceByName.current
 		const currentPartID = partID()
 		const currentComponentSubtypeByName = componentSubtypeByName
 		const currentShapeEntries = shapeEntries
-		const currentConfigColors = configColors
+		const currentAppearanceColors = appearanceColors
 		const currentFrames = current
 		const currentDerivedFrames = sceneDerivedFrames
 		const currentConfigObstacleFrameNames = configObstacleFrameNames
@@ -235,13 +237,13 @@ export const provideFrames = (partID: () => string) => {
 					? new Pose().copy(frame.physicalObject.center)
 					: undefined
 				// Colors resolve against the owning component so an arm's links keep the
-				// arm's color; a link's own name matches no resource. A color saved in the config wins,
+				// arm's color; a link's own name matches no resource. A color set on the resource wins,
 				// the frame's own over its resource's.
 				const owner = ownerComponent(name)
 				const resourceName = currentResourcesByName[owner]
 				const color =
-					currentConfigColors.get(name) ??
-					currentConfigColors.get(owner) ??
+					currentAppearanceColors.get(name) ??
+					currentAppearanceColors.get(owner) ??
 					resourceNameToColor(resourceName) ??
 					subtypeToColor(currentComponentSubtypeByName[owner])
 

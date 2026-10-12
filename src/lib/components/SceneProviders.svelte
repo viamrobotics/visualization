@@ -6,7 +6,6 @@
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
-	import { provideConfigAppearance } from '$lib/hooks/useConfigAppearance.svelte'
 	import { provideConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { provideTransformControls } from '$lib/hooks/useControls.svelte'
 	import { provideFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
@@ -19,6 +18,7 @@
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { providePoses } from '$lib/hooks/usePoses.svelte'
 	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideResourceAppearance } from '$lib/hooks/useResourceAppearance.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 
@@ -47,8 +47,8 @@
 	provideResourceByName(() => partID.current)
 	provideResourceHealth(() => partID.current)
 	provideConfigFrames()
+	provideResourceAppearance(() => partID.current)
 	provideFrames(() => partID.current)
-	provideConfigAppearance()
 	providePoses(() => partID.current)
 	provide3DModels(() => partID.current)
 	providePointclouds(() => partID.current)

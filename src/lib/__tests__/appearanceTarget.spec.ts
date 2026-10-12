@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { appearanceTargetOf } from '$lib/appearanceTarget'
+import { appearanceKeyOf, appearanceTargetOf } from '$lib/appearanceTarget'
 import { createComplexObstacleComponent } from '$lib/obstacle'
 
 describe('appearanceTargetOf', () => {
@@ -20,5 +20,15 @@ describe('appearanceTargetOf', () => {
 	it('has nowhere to save a frame no part component owns', () => {
 		expect(appearanceTargetOf([cage], 'remote:arm')).toBeUndefined()
 		expect(appearanceTargetOf([cage], 'drawn-box')).toBeUndefined()
+	})
+})
+
+describe('appearanceKeyOf', () => {
+	it('keeps a frame inside a component under that component and its id', () => {
+		expect(appearanceKeyOf('cage:post')).toEqual({ componentName: 'cage', frameId: 'post' })
+	})
+
+	it('keeps any other frame under its own name, with or without a part component', () => {
+		expect(appearanceKeyOf('drawn-box')).toEqual({ componentName: 'drawn-box', frameId: undefined })
 	})
 })

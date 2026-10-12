@@ -15,10 +15,10 @@ interface FrameAppearance {
 }
 
 /**
- * The appearance `entity` takes from its resource's config. A frame inside the resource, such as
- * an arm's link or an obstacle's shape, takes the resource's opacity and axes helper unless it
- * saves its own. Hiding is not inherited as a value: hiding the resource already hides what is
- * inside. Color is not here: `useFrames` resolves it with the resource's default color.
+ * The appearance `entity` takes from its resource. A frame inside the resource, such as an arm's
+ * link or an obstacle's shape, takes the resource's opacity and axes helper unless it sets its
+ * own. Hiding is not inherited as a value: hiding the resource already hides what is inside.
+ * Color is not here: `useFrames` resolves it with the resource's default color.
  */
 const appearanceForFrame = (
 	name: string,
@@ -43,12 +43,14 @@ const parseApplied = (key: string | undefined): FrameAppearance =>
 	key ? (JSON.parse(key) as FrameAppearance) : {}
 
 /**
- * Writes the appearance saved in its resource's config onto a frame entity, once per config
- * change. An edit made in the scene since, such as hiding the frame from the world tree, stays
- * until the config changes again. A key removed from the config puts the frame back to its
- * default.
+ * Writes its resource's appearance onto a frame entity, once per change to that appearance. An
+ * edit made in the scene since, such as hiding the frame from the world tree, stays until the
+ * appearance changes again. A key the appearance drops puts the frame back to its default.
+ *
+ * @param appearanceByComponent What each resource looks like, by component name, such as
+ *   `resolvedAppearanceByComponent` returns.
  */
-export const applyConfigAppearance = (
+export const applyFrameAppearance = (
 	entity: Entity,
 	appearanceByComponent: ReadonlyMap<string, SavedAppearance>
 ): void => {
@@ -57,7 +59,7 @@ export const applyConfigAppearance = (
 
 	const next = appearanceForFrame(name, appearanceByComponent)
 	const key = JSON.stringify(next)
-	const appliedKey = entity.get(traits.AppliedConfigAppearance)?.key
+	const appliedKey = entity.get(traits.AppliedAppearance)?.key
 	if (appliedKey === key) return
 	const previous = parseApplied(appliedKey)
 
@@ -78,5 +80,5 @@ export const applyConfigAppearance = (
 		else entity.add(traits.ShowAxesHelper)
 	}
 
-	setOrAddTrait(entity, traits.AppliedConfigAppearance, { key })
+	setOrAddTrait(entity, traits.AppliedAppearance, { key })
 }

@@ -28,3 +28,23 @@ export const appearanceTargetOf = (
 	const component = components?.find((candidate) => candidate.name === owner)
 	return component ? { component, frameId: frameName.slice(owner.length + 1) } : undefined
 }
+
+/** Where any frame's appearance is kept by name: the component it is or sits inside, and its id there. */
+export interface AppearanceKey {
+	componentName: string
+	/** The id after `<name>:`, or undefined for the component's own frame. */
+	frameId: string | undefined
+}
+
+/**
+ * Where the frame `frameName` keeps an appearance that is not saved: under the component it sits
+ * inside when it is namespaced `<name>:<id>`, such as an obstacle's shape, and under its own name
+ * otherwise. Unlike `appearanceTargetOf`, it needs no part component, so it covers every frame the
+ * machine reports.
+ */
+export const appearanceKeyOf = (frameName: string): AppearanceKey => {
+	const owner = ownerOfInternalFrame(frameName)
+	return owner === undefined
+		? { componentName: frameName, frameId: undefined }
+		: { componentName: owner, frameId: frameName.slice(owner.length + 1) }
+}

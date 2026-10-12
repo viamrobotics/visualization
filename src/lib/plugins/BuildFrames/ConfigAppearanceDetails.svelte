@@ -4,28 +4,19 @@
 A part-owned resource's appearance while building, read from and written to its `visualizer`
 config so the look is saved with the machine. A frame inside the resource, such as an obstacle's
 shape, follows the resource's values and saves only what it changes. In monitor mode the same
-controls edit the scene only, through `AppearanceDetails`.
+controls hold their edits for the session only, through `SessionAppearanceDetails`.
 -->
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Button, Switch } from '@viamrobotics/prime-core'
-	import {
-		Color,
-		type ColorChangeEvent,
-		type ColorValueRgbObject,
-		Slider,
-		type SliderChangeEvent,
-	} from 'svelte-tweakpane-ui'
-	import { Color as ThreeColor } from 'three'
+	import { Button } from '@viamrobotics/prime-core'
 
-	import { colors } from '$lib/color'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
+	import AppearanceFields from '$lib/components/overlay/details/AppearanceFields.svelte'
 	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import {
 		frameAppearanceOf,
 		hasFrameAppearances,
-		type ResourceAppearance,
+		inheritedAppearance,
 		resourceAppearanceOf,
 		type ResourceAppearancePatch,
 		withFrameAppearance,
@@ -49,30 +40,16 @@ controls edit the scene only, through `AppearanceDetails`.
 
 	const { entity, component, frameId }: Props = $props()
 
-	const OPACITY_STEP = 0.01
-	const OPACITY_DECIMALS = 2
-	const AXES_HELPER_DEFAULT = true
-
 	const partConfig = usePartConfig()
 
-	const entityColor = useTrait(() => entity, traits.Color)
-	const entityOpacity = useOpacity(() => entity)
-
-	const own = $derived<ResourceAppearance>(
+	const values = $derived(
 		frameId === undefined ? resourceAppearanceOf(component) : frameAppearanceOf(component, frameId)
 	)
-	const inherited = $derived<ResourceAppearance>(
-		frameId === undefined ? {} : resourceAppearanceOf(component)
+	const fallback = $derived(
+		frameId === undefined ? {} : inheritedAppearance(resourceAppearanceOf(component))
 	)
-	const isOwnSaved = $derived(Object.keys(own).length > 0)
+	const isOwnSaved = $derived(Object.keys(values).length > 0)
 	const hasSavedChildren = $derived(frameId === undefined && hasFrameAppearances(component))
-	const axesHelperDefault = $derived(inherited.show_axes_helper ?? AXES_HELPER_DEFAULT)
-
-	const colorValue = $derived.by<ColorValueRgbObject>(() => {
-		const color = own.color ? new ThreeColor(own.color) : entityColor.current
-		const { r, g, b } = color ?? new ThreeColor(colors.default)
-		return { r, g, b }
-	})
 
 	const write = (visualizer: Record<string, unknown>) => {
 		partConfig.updateComponent(component.name, { visualizer })
@@ -84,21 +61,6 @@ controls edit the scene only, through `AppearanceDetails`.
 				? withResourceAppearance(component, patch)
 				: withFrameAppearance(component, frameId, patch)
 		)
-	}
-
-	const handleColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const { r, g, b } = event.detail.value as ColorValueRgbObject
-		update({ color: `#${new ThreeColor().setRGB(r, g, b).getHexString()}` })
-	}
-
-	const handleOpacityChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		update({ opacity: Number(event.detail.value.toFixed(OPACITY_DECIMALS)) })
-	}
-
-	const handleAxesHelperChange = (isShown: boolean) => {
-		update({ show_axes_helper: isShown === axesHelperDefault ? undefined : isShown })
 	}
 
 	const handleReset = () => {
@@ -119,48 +81,13 @@ controls edit the scene only, through `AppearanceDetails`.
 		{/if}
 	</p>
 
-	<div>
-		<strong class="font-semibold">color</strong>
-		<div aria-label="saved color">
-			<Color
-				value={colorValue}
-				type="float"
-				on:change={handleColorChange}
-			/>
-		</div>
-	</div>
-
-	<div>
-		<strong class="font-semibold">opacity</strong>
-		<div aria-label="saved opacity">
-			<Slider
-				value={own.opacity ?? inherited.opacity ?? entityOpacity.current}
-				min={0}
-				max={1}
-				step={OPACITY_STEP}
-				format={(value) => value.toFixed(OPACITY_DECIMALS)}
-				on:change={handleOpacityChange}
-			/>
-		</div>
-	</div>
-
-	<div class="flex items-center justify-between">
-		<strong class="font-semibold">visible</strong>
-		<Switch
-			aria-label="visible"
-			on={own.invisible !== true}
-			on:change={(event) => update({ invisible: event.detail ? undefined : true })}
-		/>
-	</div>
-
-	<div class="flex items-center justify-between">
-		<strong class="font-semibold">show axes helper</strong>
-		<Switch
-			aria-label="show axes helper"
-			on={own.show_axes_helper ?? axesHelperDefault}
-			on:change={(event) => handleAxesHelperChange(event.detail)}
-		/>
-	</div>
+	<AppearanceFields
+		{entity}
+		{values}
+		{fallback}
+		showsVisibility
+		onchange={update}
+	/>
 
 	{#if isOwnSaved}
 		<Button

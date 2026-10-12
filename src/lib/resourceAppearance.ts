@@ -106,6 +106,39 @@ export const savedAppearanceOf = (component: PartComponent): SavedAppearance => 
 	),
 })
 
+/** No appearance at either level. */
+export const NO_SAVED_APPEARANCE: SavedAppearance = { own: {}, frames: new Map() }
+
+/**
+ * `over` laid on `base` level by level: each key `over` sets wins, and every key it leaves unset
+ * keeps `base`'s value. A frame inside still keeps its own entry, which outranks the component's.
+ */
+export const layeredAppearance = (
+	base: SavedAppearance,
+	over: SavedAppearance
+): SavedAppearance => {
+	const frameIds = new Set([...base.frames.keys(), ...over.frames.keys()])
+	return {
+		own: { ...base.own, ...over.own },
+		frames: new Map(
+			[...frameIds].map((frameId) => [
+				frameId,
+				{ ...base.frames.get(frameId), ...over.frames.get(frameId) },
+			])
+		),
+	}
+}
+
+/**
+ * The part of a component's appearance the frames inside it follow: everything but `invisible`,
+ * since hiding the component already hides what is inside it.
+ */
+export const inheritedAppearance = (appearance: ResourceAppearance): ResourceAppearance => {
+	const inherited = { ...appearance }
+	delete inherited.invisible
+	return inherited
+}
+
 /** Whether any appearance key is saved for the component's own frame. */
 export const hasResourceAppearance = (component: PartComponent): boolean =>
 	Object.keys(resourceAppearanceOf(component)).length > 0

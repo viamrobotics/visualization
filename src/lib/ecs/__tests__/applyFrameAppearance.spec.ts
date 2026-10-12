@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { ResourceAppearance } from '$lib/resourceAppearance'
 
-import { applyConfigAppearance } from '../applyConfigAppearance'
+import { resolvedAppearanceByComponent } from '$lib/resolvedAppearance'
+
+import { applyFrameAppearance } from '../applyFrameAppearance'
 import * as traits from '../traits'
 
 const world = createWorld()
@@ -18,11 +20,11 @@ const spawnFrame = (name: string) =>
 const savedFor = (own: ResourceAppearance, frames: Record<string, ResourceAppearance> = {}) =>
 	new Map([['cage', { own, frames: new Map(Object.entries(frames)) }]])
 
-describe('applyConfigAppearance on a resource frame', () => {
+describe('applyFrameAppearance on a resource frame', () => {
 	it('hides a resource saved as invisible', () => {
 		const cage = spawnFrame('cage')
 
-		applyConfigAppearance(cage, savedFor({ invisible: true }))
+		applyFrameAppearance(cage, savedFor({ invisible: true }))
 
 		expect(cage.has(traits.Invisible)).toBe(true)
 	})
@@ -30,27 +32,27 @@ describe('applyConfigAppearance on a resource frame', () => {
 	it('turns off the axes helper of a resource saved without one', () => {
 		const cage = spawnFrame('cage')
 
-		applyConfigAppearance(cage, savedFor({ show_axes_helper: false }))
+		applyFrameAppearance(cage, savedFor({ show_axes_helper: false }))
 
 		expect(cage.has(traits.ShowAxesHelper)).toBe(false)
 	})
 
 	it('keeps an edit made in the scene while the config is unchanged', () => {
 		const cage = spawnFrame('cage')
-		applyConfigAppearance(cage, savedFor({ invisible: true }))
+		applyFrameAppearance(cage, savedFor({ invisible: true }))
 		cage.remove(traits.Invisible)
 
-		applyConfigAppearance(cage, savedFor({ invisible: true }))
+		applyFrameAppearance(cage, savedFor({ invisible: true }))
 
 		expect(cage.has(traits.Invisible)).toBe(false)
 	})
 
 	it('applies the config again once it changes, field by field', () => {
 		const cage = spawnFrame('cage')
-		applyConfigAppearance(cage, savedFor({ invisible: true }))
+		applyFrameAppearance(cage, savedFor({ invisible: true }))
 		cage.remove(traits.Invisible)
 
-		applyConfigAppearance(cage, savedFor({ invisible: true, opacity: 0.3 }))
+		applyFrameAppearance(cage, savedFor({ invisible: true, opacity: 0.3 }))
 
 		expect(cage.has(traits.Invisible)).toBe(false)
 		expect(cage.get(traits.OpacityOverride)).toBe(0.3)
@@ -58,12 +60,9 @@ describe('applyConfigAppearance on a resource frame', () => {
 
 	it('puts the defaults back when the saved keys are removed', () => {
 		const cage = spawnFrame('cage')
-		applyConfigAppearance(
-			cage,
-			savedFor({ invisible: true, show_axes_helper: false, opacity: 0.2 })
-		)
+		applyFrameAppearance(cage, savedFor({ invisible: true, show_axes_helper: false, opacity: 0.2 }))
 
-		applyConfigAppearance(cage, savedFor({}))
+		applyFrameAppearance(cage, savedFor({}))
 
 		expect(cage.has(traits.Invisible)).toBe(false)
 		expect(cage.has(traits.ShowAxesHelper)).toBe(true)
@@ -73,7 +72,7 @@ describe('applyConfigAppearance on a resource frame', () => {
 	it('touches nothing on a frame whose resource saves no appearance', () => {
 		const arm = world.spawn(traits.Name('arm'), traits.FramesAPI, traits.Invisible)
 
-		applyConfigAppearance(arm, savedFor({ invisible: false }))
+		applyFrameAppearance(arm, savedFor({ invisible: false }))
 
 		expect(arm.has(traits.Invisible)).toBe(true)
 		expect(arm.has(traits.ShowAxesHelper)).toBe(false)
@@ -81,11 +80,11 @@ describe('applyConfigAppearance on a resource frame', () => {
 	})
 })
 
-describe('applyConfigAppearance on a frame inside a resource', () => {
+describe('applyFrameAppearance on a frame inside a resource', () => {
 	it('follows the resource opacity and axes helper', () => {
 		const post = spawnFrame('cage:post')
 
-		applyConfigAppearance(post, savedFor({ opacity: 0.2, show_axes_helper: false }))
+		applyFrameAppearance(post, savedFor({ opacity: 0.2, show_axes_helper: false }))
 
 		expect(post.get(traits.OpacityOverride)).toBe(0.2)
 		expect(post.has(traits.ShowAxesHelper)).toBe(false)
@@ -94,7 +93,7 @@ describe('applyConfigAppearance on a frame inside a resource', () => {
 	it('takes its own saved values over the resource ones', () => {
 		const post = spawnFrame('cage:post')
 
-		applyConfigAppearance(
+		applyFrameAppearance(
 			post,
 			savedFor(
 				{ opacity: 0.2, show_axes_helper: false },
@@ -109,7 +108,7 @@ describe('applyConfigAppearance on a frame inside a resource', () => {
 	it('leaves a sibling that saves nothing on the resource values', () => {
 		const wall = spawnFrame('cage:wall')
 
-		applyConfigAppearance(wall, savedFor({ opacity: 0.2 }, { post: { opacity: 0.9 } }))
+		applyFrameAppearance(wall, savedFor({ opacity: 0.2 }, { post: { opacity: 0.9 } }))
 
 		expect(wall.get(traits.OpacityOverride)).toBe(0.2)
 	})
@@ -117,7 +116,7 @@ describe('applyConfigAppearance on a frame inside a resource', () => {
 	it('is not hidden by the resource being saved as invisible, which hides it through its parent', () => {
 		const post = spawnFrame('cage:post')
 
-		applyConfigAppearance(post, savedFor({ invisible: true }))
+		applyFrameAppearance(post, savedFor({ invisible: true }))
 
 		expect(post.has(traits.Invisible)).toBe(false)
 	})
@@ -125,17 +124,39 @@ describe('applyConfigAppearance on a frame inside a resource', () => {
 	it('hides itself when it saves its own invisible', () => {
 		const post = spawnFrame('cage:post')
 
-		applyConfigAppearance(post, savedFor({}, { post: { invisible: true } }))
+		applyFrameAppearance(post, savedFor({}, { post: { invisible: true } }))
 
 		expect(post.has(traits.Invisible)).toBe(true)
 	})
 
 	it('follows a resource change while it saves nothing of its own', () => {
 		const post = spawnFrame('cage:post')
-		applyConfigAppearance(post, savedFor({ opacity: 0.2 }))
+		applyFrameAppearance(post, savedFor({ opacity: 0.2 }))
 
-		applyConfigAppearance(post, savedFor({ opacity: 0.6 }))
+		applyFrameAppearance(post, savedFor({ opacity: 0.6 }))
 
 		expect(post.get(traits.OpacityOverride)).toBe(0.6)
+	})
+})
+
+describe('applyFrameAppearance with session edits', () => {
+	const bounds = { name: 'bounds-1', visualizer: { type: 'bounds', opacity: 0.5 } }
+	const editedTo = (opacity: number) => new Map([['bounds-1', { opacity }]])
+
+	it("gives every wall its obstacle's session edit while monitoring", () => {
+		const floor = spawnFrame('bounds-1:floor')
+
+		applyFrameAppearance(floor, resolvedAppearanceByComponent([bounds], editedTo(0.2), 'monitor'))
+
+		expect(floor.get(traits.OpacityOverride)).toBe(0.2)
+	})
+
+	it('puts the saved appearance back on entering build mode', () => {
+		const floor = spawnFrame('bounds-1:floor')
+		applyFrameAppearance(floor, resolvedAppearanceByComponent([bounds], editedTo(0.2), 'monitor'))
+
+		applyFrameAppearance(floor, resolvedAppearanceByComponent([bounds], editedTo(0.2), 'build'))
+
+		expect(floor.get(traits.OpacityOverride)).toBe(0.5)
 	})
 })

@@ -6,7 +6,10 @@ import {
 	frameAppearanceOf,
 	hasFrameAppearances,
 	hasResourceAppearance,
+	inheritedAppearance,
+	layeredAppearance,
 	resourceAppearanceOf,
+	savedAppearanceOf,
 	withFrameAppearance,
 	withFrameAppearancesMoved,
 	withoutFrameAppearances,
@@ -174,5 +177,47 @@ describe('withFrameAppearancesMoved', () => {
 		)
 
 		expect(moved.frames).toEqual({ wall: { color: '#00ff00' }, post: { opacity: 0.1 } })
+	})
+})
+
+describe('layeredAppearance', () => {
+	const saved = savedAppearanceOf({
+		name: 'cage',
+		visualizer: {
+			color: '#ff0000',
+			opacity: 0.5,
+			frames: { post: { color: '#00ff00', opacity: 0.9 } },
+		},
+	})
+
+	it('takes each key the top layer sets and keeps the others', () => {
+		const edited = savedAppearanceOf({ name: 'cage', visualizer: { opacity: 0.2 } })
+
+		expect(layeredAppearance(saved, edited).own).toEqual({ color: '#ff0000', opacity: 0.2 })
+	})
+
+	it('lays a frame entry over the same frame entry, key by key', () => {
+		const edited = savedAppearanceOf({
+			name: 'cage',
+			visualizer: { frames: { post: { opacity: 0.1 }, wall: { color: '#0000ff' } } },
+		})
+
+		const layered = layeredAppearance(saved, edited)
+
+		expect(layered.frames.get('post')).toEqual({ color: '#00ff00', opacity: 0.1 })
+		expect(layered.frames.get('wall')).toEqual({ color: '#0000ff' })
+	})
+})
+
+describe('inheritedAppearance', () => {
+	it('passes everything but invisible on to the frames inside', () => {
+		expect(
+			inheritedAppearance({
+				color: '#ff0000',
+				opacity: 0.5,
+				invisible: true,
+				show_axes_helper: false,
+			})
+		).toEqual({ color: '#ff0000', opacity: 0.5, show_axes_helper: false })
 	})
 })

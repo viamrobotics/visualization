@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/svelte'
+import userEvent from '@testing-library/user-event'
 import { createWorld, type Entity } from 'koota'
 import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
@@ -7,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DetailsSection } from '$lib/hooks/useDetailsSections.svelte'
 
 import { createEntityFixture } from '$lib/__tests__/__fixtures__/entity'
+import { traits } from '$lib/ecs'
 import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import * as useConfigFrames from '$lib/hooks/useConfigFrames.svelte'
 import {
@@ -16,6 +18,10 @@ import {
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as useFragmentInfo from '$lib/hooks/useFragmentInfo.svelte'
 import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
+import {
+	RESOURCE_APPEARANCE_CONTEXT_KEY,
+	type ResourceAppearanceContext,
+} from '$lib/hooks/useResourceAppearance.svelte'
 import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
 
@@ -54,6 +60,12 @@ describe('MonitorDetails', () => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 
+		const resourceAppearance: ResourceAppearanceContext = {
+			current: new Map(),
+			session: new Map(),
+			setSession: vi.fn(),
+		}
+
 		render(MonitorDetails, {
 			props: { entity },
 			context: new Map<symbol, unknown>([
@@ -61,6 +73,7 @@ describe('MonitorDetails', () => {
 				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
 				[WORLD_CONTEXT_KEY, world],
 				[DETAILS_SECTIONS_CONTEXT_KEY, sections],
+				[RESOURCE_APPEARANCE_CONTEXT_KEY, resourceAppearance],
 			]),
 		})
 	}
@@ -127,5 +140,27 @@ describe('MonitorDetails', () => {
 		)
 		const localOrientationThText = localOrientationThSpan.nextSibling as HTMLElement
 		expect(localOrientationThText.textContent?.trim()).toBe((0.4).toFixed(2))
+	})
+
+	describe('appearance tab', () => {
+		const openAppearance = async () => {
+			renderPanel()
+			await userEvent.click(screen.getByRole('tab', { name: 'Appearance' }))
+		}
+
+		it('holds a frame edit for the session, so it reaches the frames inside', async () => {
+			entity.add(traits.FramesAPI)
+
+			await openAppearance()
+
+			expect(screen.getByText(/Not saved, and a reload drops these changes/)).toBeInTheDocument()
+		})
+
+		it('edits anything other than a frame on the entity itself', async () => {
+			await openAppearance()
+
+			expect(screen.queryByText(/Not saved/)).not.toBeInTheDocument()
+			expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
+		})
 	})
 })

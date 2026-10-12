@@ -270,11 +270,10 @@ export const Editable = trait(() => true)
 export const ShowAxesHelper = trait(() => true)
 
 /**
- * The appearance from a resource's `visualizer` config last written onto this entity, serialized.
- * A config change is applied once, so an edit made in the scene since then stays until the config
- * changes again.
+ * The resource appearance last written onto this frame entity, serialized. An appearance change is
+ * applied once, so an edit made in the scene since then stays until the appearance changes again.
  */
-export const AppliedConfigAppearance = trait({ key: '' })
+export const AppliedAppearance = trait({ key: '' })
 
 /**
  * Marker trait for entities that should be rendered in screen space (CSS pixels)
