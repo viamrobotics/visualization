@@ -75,6 +75,21 @@ export class ObstaclePreviewController {
 		}
 	}
 
+	/**
+	 * Sends `obstacles` right away to every obstacle whose last sent geometries differ,
+	 * then stops. Ends a preview whose draft was discarded, so it does not stay on the machine.
+	 */
+	restore(obstacles: Record<string, ObstacleGeometryConfig[]>): void {
+		for (const [name, lastReceived] of this.received) {
+			const geometries = obstacles[name]
+			if (geometries !== undefined && !isSameJson(lastReceived, geometries)) {
+				this.send(name, geometries)
+			}
+		}
+
+		this.stop()
+	}
+
 	/** Cancels pending sends and forgets what was sent. */
 	stop(): void {
 		for (const { timer } of this.pending.values()) clearTimeout(timer)

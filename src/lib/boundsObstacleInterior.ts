@@ -7,7 +7,7 @@ import { obstacleEditorHint } from '$lib/obstacleEditorType'
 import { withObstacleHint } from '$lib/obstacleVisualizer'
 
 /** A Bounds hint needs a positive interior, so a resize never goes below this. */
-const MIN_INTERIOR_MM = 1
+export const MIN_INTERIOR_MM = 1
 
 /** A Bounds obstacle's interior size, in mm. */
 export interface BoundsInterior {

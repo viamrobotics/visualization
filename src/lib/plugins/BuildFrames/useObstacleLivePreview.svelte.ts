@@ -5,6 +5,7 @@ import {
 	Struct,
 } from '@viamrobotics/sdk'
 import { createResourceClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
+import { untrack } from 'svelte'
 
 import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 import { useFrames } from '$lib/hooks/useFrames.svelte'
@@ -92,16 +93,18 @@ export const useObstacleLivePreview = () => {
 
 	const controller = new ObstaclePreviewController(send, PREVIEW_DEBOUNCE_MS)
 
-	$effect(() => {
-		if (!isActive) return
+	let wasActive = false
 
-		controller.update(obstacles, partConfig.isDirty)
+	// Restores in the effect body, not a teardown: a teardown reads pre-change values, so it would see the discarded draft.
+	$effect(() => {
+		if (isActive) {
+			wasActive = true
+			controller.update(obstacles, partConfig.isDirty)
+		} else if (wasActive) {
+			wasActive = false
+			untrack(() => controller.restore(obstacles))
+		}
 	})
 
-	// Separate from the update effect so its teardown runs only on deactivation, not on every edit.
-	$effect(() => {
-		if (!isActive) return
-
-		return () => controller.stop()
-	})
+	$effect(() => () => controller.stop())
 }

@@ -8,6 +8,7 @@
 	} from 'svelte-tweakpane-ui'
 
 	import { generateBoundsGeometries } from '$lib/boundsGeometries'
+	import { MIN_INTERIOR_MM } from '$lib/boundsObstacleInterior'
 	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '$lib/obstacleAttributes'
 	import { obstacleEditorHint } from '$lib/obstacleEditorType'
@@ -21,6 +22,9 @@
 	const { component }: Props = $props()
 
 	const partConfig = usePartConfig()
+
+	// The fields clamp to these, so a typed 0 lands on a value the hint accepts instead of being dropped.
+	const MIN_WALL_THICKNESS_MM = 1
 
 	const FACE_LABELS: Record<BoundsFace, string> = {
 		x_max: '+X wall',
@@ -37,6 +41,9 @@
 	})
 
 	const isPositive = (value: number) => Number.isFinite(value) && value > 0
+
+	// rdk rejects an obstacle with no geometries, so the last wall cannot be left out.
+	const includedWallCount = $derived(hint ? BOUNDS_FACES.length - hint.exclude.length : 0)
 
 	const commit = (next: BoundsHint) => {
 		if (
@@ -79,7 +86,7 @@
 			<div aria-label="mutable interior size">
 				<Point
 					value={{ x: hint.x_mm, y: hint.y_mm, z: hint.z_mm }}
-					min={0}
+					min={MIN_INTERIOR_MM}
 					on:change={handleInteriorChange}
 				/>
 			</div>
@@ -92,7 +99,7 @@
 				<Stepper
 					label="t"
 					value={hint.wall_thickness_mm}
-					min={0}
+					min={MIN_WALL_THICKNESS_MM}
 					on:change={handleThicknessChange}
 				/>
 			</div>
@@ -101,11 +108,15 @@
 		<fieldset class="flex flex-col gap-1 border-0 p-0">
 			<legend class="mb-1 p-0 font-semibold">walls</legend>
 			{#each BOUNDS_FACES as face (face)}
+				{@const isIncluded = !hint.exclude.includes(face)}
+				{@const isLastWall = isIncluded && includedWallCount === 1}
 				<label class="text-default flex items-center gap-2">
 					<input
 						type="checkbox"
-						class="focus-visible:outline-gray-6 focus-visible:outline focus-visible:-outline-offset-1"
-						checked={!hint.exclude.includes(face)}
+						class="focus-visible:outline-gray-6 focus-visible:outline focus-visible:-outline-offset-1 disabled:cursor-not-allowed"
+						checked={isIncluded}
+						disabled={isLastWall}
+						title={isLastWall ? 'An obstacle needs at least one wall.' : undefined}
 						onchange={(event) => handleFaceChange(face, event.currentTarget.checked)}
 					/>
 					{FACE_LABELS[face]}

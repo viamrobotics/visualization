@@ -92,7 +92,7 @@ written.
 	/** Writes the shape with `patch` applied when rdk would accept it. Returns whether it wrote. */
 	const commit = (patch: ObstacleGeometryPatch, scope: ObstacleEditScope): boolean => {
 		const next = patchObstacleGeometry(geometries, index, patch)
-		error = obstacleEditError(next, index, scope)
+		error = obstacleEditError(geometries, next, index, scope)
 		if (error) return false
 
 		partConfig.updateComponent(component.name, {

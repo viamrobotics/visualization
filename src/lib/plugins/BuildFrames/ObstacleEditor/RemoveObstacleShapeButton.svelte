@@ -40,7 +40,7 @@ keeps at least one shape.
 		if (isLastShape) return
 
 		const next = removeObstacleGeometry(geometries, index)
-		error = obstacleEditError(next, undefined, 'shape')?.message
+		error = obstacleEditError(geometries, next, undefined, 'shape')?.message
 		if (error) return
 
 		if (obstacle.current) selectOnly(world, obstacle.current)

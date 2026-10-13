@@ -167,7 +167,7 @@ export const provideFrames = (partID: () => string) => {
 	})
 
 	// Config obstacles replace the links the machine reports for them only while config is authoritative.
-	const sceneDerivedFrames = $derived(
+	const internalFrames = $derived(
 		isConfigAuthoritative
 			? mergeObstacleFrames(kinematicsDerivedFrames, configFrames.obstacleFrames)
 			: kinematicsDerivedFrames
@@ -183,7 +183,7 @@ export const provideFrames = (partID: () => string) => {
 			: new Set<string>()
 	)
 
-	const current = $derived([...Object.values(frames), ...Object.values(sceneDerivedFrames)])
+	const current = $derived([...Object.values(frames), ...Object.values(internalFrames)])
 
 	const askableFrameNames = $derived(
 		machineFrameNames(query.data, Object.keys(kinematicsDerivedFrames))
@@ -214,7 +214,7 @@ export const provideFrames = (partID: () => string) => {
 		const currentShapeEntries = shapeEntries
 		const currentAppearanceColors = appearanceColors
 		const currentFrames = current
-		const currentDerivedFrames = sceneDerivedFrames
+		const currentInternalFrames = internalFrames
 		const currentConfigObstacleFrameNames = configObstacleFrameNames
 		const currentAskableFrameNames = askableFrameNames
 
@@ -359,7 +359,7 @@ export const provideFrames = (partID: () => string) => {
 					entityTraits.push(traits.ComplexObstacleShape({ index: complexShapeIndex }))
 				}
 
-				if (name in currentDerivedFrames) {
+				if (name in currentInternalFrames) {
 					entityTraits.push(traits.KinematicLink)
 				} else {
 					// Derived links are synthesized from the model; there is no

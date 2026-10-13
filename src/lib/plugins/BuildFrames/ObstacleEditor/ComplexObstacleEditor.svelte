@@ -60,7 +60,7 @@ reject shows its error and is not written.
 		scope: ObstacleEditScope,
 		move: ShapeIndexMove
 	) => {
-		const issue = obstacleEditError(next, index, scope)
+		const issue = obstacleEditError(geometries, next, index, scope)
 		error = issue && {
 			rowIndex: issue.scope === 'label' ? index : undefined,
 			message: issue.message,

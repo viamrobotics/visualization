@@ -95,20 +95,35 @@ describe('BoundsObstacleEditor', () => {
 		)
 	})
 
-	it('writes nothing for a thickness of 0', async () => {
+	it('clamps a thickness of 0 to 1 mm and writes it', async () => {
 		const partConfig = mountEditor()
-		await vi.waitFor(() =>
-			expect(document.querySelector('[aria-label="mutable wall thickness"] input')).not.toBeNull()
-		)
+		const selector = '[aria-label="mutable wall thickness"] input'
+		await vi.waitFor(() => expect(document.querySelector(selector)).not.toBeNull())
 
-		await userEvent.tripleClick(
-			document.querySelector<HTMLInputElement>('[aria-label="mutable wall thickness"] input')!
-		)
+		await userEvent.tripleClick(document.querySelector<HTMLInputElement>(selector)!)
 		await userEvent.keyboard('0{Tab}')
 
-		await new Promise((resolve) => setTimeout(resolve, 200))
+		const next: BoundsHint = { ...hint, wall_thickness_mm: 1 }
+		await vi.waitFor(() =>
+			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
+				visualizer: next,
+			})
+		)
+	})
+
+	it('keeps the last included wall from being unchecked', async () => {
+		const partConfig = mountEditor({
+			...hint,
+			exclude: ['x_max', 'x_min', 'y_max', 'y_min', 'ceiling'],
+		})
+		const floor = screen.getByLabelText('Floor')
+
+		await userEvent.click(floor)
+
+		expect(floor).toBeDisabled()
+		expect(floor).toBeChecked()
 		expect(partConfig.updateComponent).not.toHaveBeenCalled()
-		expect(partConfig.updateFrame).not.toHaveBeenCalled()
 	})
 
 	it('writes a positive thickness', async () => {

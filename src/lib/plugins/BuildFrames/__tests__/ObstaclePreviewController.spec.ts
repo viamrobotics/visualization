@@ -106,6 +106,39 @@ describe('ObstaclePreviewController', () => {
 		expect(send).not.toHaveBeenCalled()
 	})
 
+	it('sends the saved geometries at once on restore after a previewed draft', () => {
+		controller.update({ wall: box(1) }, false)
+		controller.update({ wall: box(2) }, true)
+		vi.advanceTimersByTime(DELAY_MS)
+		send.mockClear()
+
+		controller.restore({ wall: box(1) })
+
+		expect(send).toHaveBeenCalledExactlyOnceWith('wall', box(1))
+	})
+
+	it('sends nothing on restore when the machine already has the geometries', () => {
+		controller.update({ wall: box(1) }, false)
+		controller.update({ wall: box(2) }, true)
+		vi.advanceTimersByTime(DELAY_MS)
+		send.mockClear()
+
+		controller.restore({ wall: box(2) })
+		vi.advanceTimersByTime(DELAY_MS * 2)
+
+		expect(send).not.toHaveBeenCalled()
+	})
+
+	it('cancels an unsent draft on restore', () => {
+		controller.update({ wall: box(1) }, false)
+		controller.update({ wall: box(2) }, true)
+
+		controller.restore({ wall: box(1) })
+		vi.advanceTimersByTime(DELAY_MS * 2)
+
+		expect(send).not.toHaveBeenCalled()
+	})
+
 	it('treats the first update after stop as a fresh start', () => {
 		controller.update({ wall: box(1) }, false)
 		controller.stop()
