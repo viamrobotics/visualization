@@ -12,12 +12,6 @@
 	import { useMachineConnection } from '../hooks/useMachineConnection.svelte'
 	import Collapsible from './Collapsible.svelte'
 
-	interface Props {
-		isOpen: boolean
-	}
-
-	let { isOpen = $bindable(false) }: Props = $props()
-
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 	const machineConnection = useMachineConnection()
@@ -74,12 +68,7 @@
 <WorkspacePortal>
 	<fieldset>
 		<div class="text-default relative">
-			<Popover
-				placement="bottom-end"
-				onOpenChange={(open) => {
-					isOpen = open
-				}}
-			>
+			<Popover placement="bottom-end">
 				{#snippet trigger(triggerProps, { isOpen: open })}
 					{@const awaitingRetry = machineConnection.isAwaitingRetry}
 					<div class="flex items-center">
@@ -122,7 +111,7 @@
 					</div>
 				{/snippet}
 
-				<div class="font-public-sans flex h-[400px] w-[480px] flex-col">
+				<div class="font-public-sans flex h-100 w-120 flex-col">
 					<div class="flex min-h-0 grow flex-col gap-2 overflow-y-auto p-2">
 						{#each connectionConfigs.current as config, index (config.host)}
 							<form class="flex flex-col gap-2">

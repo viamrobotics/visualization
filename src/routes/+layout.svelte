@@ -60,8 +60,6 @@
 	const partID = $derived(connectionConfig.current?.partId)
 	const dialConfig = $derived(partID ? dialConfigs[partID] : undefined)
 
-	let isMachinesPageOpen = $state(false)
-
 	let pluginsEnabled = true
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
@@ -87,10 +85,7 @@
 			{partID}
 			{dialConfig}
 		>
-			<Visualizer
-				{partID}
-				inputBindingsEnabled={!isMachinesPageOpen}
-			>
+			<Visualizer {partID}>
 				{@render children()}
 
 				{#if pluginsEnabled}
@@ -108,7 +103,7 @@
 
 					<Logs />
 					<ControlWidgets />
-					<Machines bind:isOpen={isMachinesPageOpen} />
+					<Machines />
 					<WorldTree />
 					<Settings />
 					<FileDrop />
