@@ -1,4 +1,5 @@
 export default {
+	ignore: ['src-tauri/**'],
 	compilers: {
 		svelte: (text: string) => {
 			const scripts = [...text.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
