@@ -1,10 +1,4 @@
-interface ConnectionConfig {
-	host: string
-	partId: string
-	apiKeyId: string
-	apiKeyValue: string
-	signalingAddress: string
-}
+import type { ConnectionConfig } from './connectionConfig'
 
 const parseConfigs = () => {
 	const rawRobots = import.meta.env.VITE_CONFIGS
