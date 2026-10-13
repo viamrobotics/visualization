@@ -1,0 +1,150 @@
+name: Tauri release
+
+# Builds the desktop app for every platform and attaches the bundles to an existing
+# `v<version>` GitHub release. main.yml calls it after changesets publishes; the dispatch
+# form rebuilds the assets for a tag without a new npm publish.
+#
+# Asset names follow one pattern the Viam CLI derives from (version, GOOS, GOARCH):
+#   viam-visualizer-<version>-<platform>-<arch><suffix>
+#   platform: darwin | linux | windows      arch: aarch64 | x86_64
+#   suffix:   .dmg, .app.tar.gz (darwin), .AppImage, .deb (linux), .exe, -setup.exe (windows)
+# plus checksums.txt with one `sha256  name` line per asset.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version of @viamrobotics/visualization whose release gets the bundles (e.g. 1.2.3)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach bundles to (e.g. v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ inputs.tag || format('v{0}', inputs.version) }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+            # One leg uploads the Sentry source maps for this release; the rest only delete theirs.
+            sentry: true
+          - runner: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+            plain-binary: true
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Set up wireit caching
+        uses: google/wireit@setup-github-actions-caching/v2
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # tauri build runs `pnpm vite-build` itself through beforeBuildCommand.
+      - name: Build and upload bundles
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ matrix.sentry && secrets.SENTRY_AUTH_TOKEN || '' }}
+        with:
+          tagName: ${{ env.TAG }}
+          releaseDraft: false
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          releaseAssetNamePattern: viam-visualizer-[version]-[platform]-[arch][setup][ext]
+          uploadPlainBinary: ${{ matrix.plain-binary || false }}
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+
+      # The .app directory is what the CLI installs, and tauri-action only uploads files. Tar it
+      # with the same name pattern so the CLI can derive the name.
+      - name: Upload macOS app tarball
+        if: runner.os == 'macOS'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          arch="${{ matrix.target }}"
+          arch="${arch%%-*}"
+          bundle_dir="src-tauri/target/${{ matrix.target }}/release/bundle/macos"
+          asset="viam-visualizer-${version}-darwin-${arch}.app.tar.gz"
+          tar -C "$bundle_dir" -czf "$asset" "Viam Visualizer.app"
+          gh release upload "$TAG" "$asset" --clobber
+
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Write checksums.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir assets && cd assets
+          gh release download "$TAG" --pattern 'viam-visualizer-*'
+          sha256sum viam-visualizer-* > ../checksums.txt
+          cd ..
+          cat checksums.txt
+          gh release upload "$TAG" checksums.txt --clobber
