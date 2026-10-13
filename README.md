@@ -58,6 +58,11 @@ The app connects on boot when started with `--launch-file <path>`. The file is J
 
 `credentials` is alternatively `{ "type": "api-key", "authEntity": "<key id>", "payload": "<key>" }`. A second launch with a new file switches the running window to that machine. On macOS, `open -a <app> <path>` works too, and is the only form that reaches an app already running, since `open` drops `--args` then. With no flag the app behaves like the browser build.
 
+Every GitHub release carries desktop bundles built by `tauri-release.yml`, named `viam-visualizer-<version>-<platform>-<arch><suffix>` with `platform` one of `darwin`, `linux`, `windows` and `arch` one of `aarch64`, `x86_64`. The suffixes are `.dmg` and `.app.tar.gz` on macOS, `.AppImage` and `.deb` on Linux, and `.exe` (portable) and `-setup.exe` (installer) on Windows, plus a `checksums.txt` with one `sha256  name` line per asset.
+
+> [!NOTE]
+> Currently, the macOS bundles are ad-hoc signed, so the first launch needs a right-click Open, or `xattr -d com.apple.quarantine` on the `.app`.
+
 ## Programmatic camera control
 
 The visualizer exposes a `cameraControls` object on `window`. Open the browser console and call methods on it to move the camera or tweak its settings at runtime. Full API: <https://github.com/yomotsu/camera-controls#properties>.
