@@ -75,6 +75,16 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Published version: $VERSION"
 
+  tauri-release:
+    needs: deploy-and-publish
+    if: needs.deploy-and-publish.outputs.published == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/tauri-release.yml
+    with:
+      version: ${{ needs.deploy-and-publish.outputs.version }}
+    secrets: inherit
+
   bump-app-catalog:
     needs: deploy-and-publish
     if: needs.deploy-and-publish.outputs.published == 'true'
