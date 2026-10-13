@@ -1,9 +1,3 @@
-<!--
-@component
-
-The geometry type tabs and dimension controls, driven by a value rather than an
-entity, so any frame-shaped geometry can be edited with them.
--->
 <script lang="ts">
 	import { untrack } from 'svelte'
 	import {

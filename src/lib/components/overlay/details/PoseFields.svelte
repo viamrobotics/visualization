@@ -1,9 +1,3 @@
-<!--
-@component
-
-Local position and orientation controls driven by a value rather than an
-entity, for frames that live in component attributes instead of the scene.
--->
 <script lang="ts">
 	import {
 		Point,

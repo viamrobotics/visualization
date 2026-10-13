@@ -1,10 +1,3 @@
-<!--
-@component
-
-The obstacle editor as a collapsible section of an obstacle component's details,
-open by default. It stands in for the frame geometry editor, whose geometry
-would override the obstacle's own.
--->
 <script lang="ts">
 	import { Expandable, Icon } from '@viamrobotics/prime-core'
 

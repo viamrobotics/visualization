@@ -28,10 +28,6 @@ export interface PartComponent {
 	model?: string
 	frame?: Frame
 	attributes?: Record<string, unknown>
-	/**
-	 * How the visualizer draws and edits the resource. rdk does not read it. An obstacle's editor
-	 * type and Bounds values live here.
-	 */
 	visualizer?: Record<string, unknown>
 }
 

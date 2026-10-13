@@ -1,11 +1,3 @@
-<!--
-@component
-
-A part-owned resource's appearance while building, read from and written to its `visualizer`
-config so the look is saved with the machine. A frame inside the resource, such as an obstacle's
-shape, follows the resource's values and saves only what it changes. In monitor mode the same
-controls hold their edits for the session only, through `SessionAppearanceDetails`.
--->
 <script lang="ts">
 	import type { Entity } from 'koota'
 

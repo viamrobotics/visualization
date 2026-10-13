@@ -1,9 +1,3 @@
-<!--
-@component
-
-Removes a selected Complex obstacle shape and selects its obstacle in its place. An obstacle
-keeps at least one shape.
--->
 <script lang="ts">
 	import type { Entity } from 'koota'
 

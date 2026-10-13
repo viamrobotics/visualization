@@ -1,10 +1,3 @@
-<!--
-@component
-
-A frame's appearance outside build mode, held for the session and never written to the config. It
-follows the same rules as the saved appearance: an edit lays over what the config saves, and a
-frame inside a resource, such as an obstacle's shape, follows the resource unless it sets its own.
--->
 <script lang="ts">
 	import type { Entity } from 'koota'
 

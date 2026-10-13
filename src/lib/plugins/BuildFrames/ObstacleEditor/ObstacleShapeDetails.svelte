@@ -1,9 +1,3 @@
-<!--
-@component
-
-Edits one shape of a Complex obstacle once that shape is selected: its label, its offset from
-the obstacle's frame, and its geometry. An edit rdk would reject shows its error and is not
-written.
 -->
 <script lang="ts">
 	import type { Entity } from 'koota'

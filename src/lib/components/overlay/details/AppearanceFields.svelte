@@ -1,10 +1,3 @@
-<!--
-@component
-
-Appearance controls driven by values rather than by an entity's traits, for an appearance kept
-apart from the scene: saved in a `visualizer` config, or held for the session. A key the values
-leave unset shows its fallback, and choosing the fallback again unsets it.
--->
 <script lang="ts">
 	import type { Entity } from 'koota'
 

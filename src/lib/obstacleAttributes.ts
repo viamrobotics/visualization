@@ -12,11 +12,7 @@ export const OBSTACLE_MODEL = 'rdk:builtin:obstacle'
 /** A geometry shape an obstacle editor can author: a frame geometry other than `none`. */
 export type ObstacleShape = Exclude<Frame['geometry'], undefined | { type: 'none' }>
 
-/**
- * One entry of `attributes.geometries`, the JSON shape of rdk's `spatialmath.GeometryConfig`.
- * Its offset positions it relative to the component's frame. rdk names an unlabeled entry by its
- * position, see {@link obstacleGeometryLabel}.
- */
+/** One entry of `attributes.geometries`, the JSON shape of rdk's `spatialmath.GeometryConfig`. */
 export type ObstacleGeometryConfig = ObstacleShape & {
 	label?: string
 	translation?: Frame['translation']
@@ -29,7 +25,6 @@ export type ObstacleGeometryConfig = ObstacleShape & {
  */
 export type ObstacleEditorHint = { type: 'simple' } | { type: 'complex' } | BoundsHint
 
-/** The walls a Bounds obstacle can have. Each one's id doubles as its geometry label. */
 export const BOUNDS_FACES = ['x_max', 'x_min', 'y_max', 'y_min', 'floor', 'ceiling'] as const
 
 export type BoundsFace = (typeof BOUNDS_FACES)[number]

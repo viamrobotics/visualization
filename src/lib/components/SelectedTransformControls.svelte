@@ -240,7 +240,6 @@
 		})
 	}
 
-	/** Writes a translate/rotate drag of a Complex shape back as that shape's offset. */
 	const stageComplexShapeTransform = () => {
 		const world = worldMatrix.current
 		if (!ref || !world) return

@@ -1,10 +1,3 @@
-<!--
-@component
-
-Lists a Complex obstacle's shapes, to add, rename and remove them. A shape's pose and geometry
-are edited on its own once selected, from its row here or in the scene. An edit rdk would
-reject shows its error and is not written.
--->
 <script lang="ts">
 	import { Button, IconButton, Input } from '@viamrobotics/prime-core'
 

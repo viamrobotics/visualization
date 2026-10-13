@@ -13,15 +13,7 @@ import { usePartConfig } from './usePartConfig.svelte'
 export const RESOURCE_APPEARANCE_CONTEXT_KEY = Symbol('resource-appearance-context')
 
 export interface ResourceAppearanceContext {
-	/**
-	 * How each resource is drawn right now, by component name: what its `visualizer` config saves,
-	 * with this session's edits laid over it outside build mode.
-	 */
 	readonly current: ReadonlyMap<string, SavedAppearance>
-	/**
-	 * This session's appearance edits, by component name, each in the shape of a `visualizer`
-	 * config. They are never written to the config, and a reload drops them.
-	 */
 	readonly session: ReadonlyMap<string, Record<string, unknown>>
 	/** Replaces one resource's session edits. An empty record drops them. */
 	setSession: (componentName: string, visualizer: Record<string, unknown>) => void
