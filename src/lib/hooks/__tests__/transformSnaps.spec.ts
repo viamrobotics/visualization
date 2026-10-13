@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { transformSnaps } from '../transformSnaps'
 
-const snapSettings = { snapping: true, snapTranslate: 100, snapRotate: 90, snapScale: 0.1 }
+const snapSettings = { snapping: true, snapTranslate: 0.25, snapRotate: 90, snapScale: 0.1 }
 
 describe('transformSnaps', () => {
-	it('converts a millimetre move step to the scene metres the gizmo snaps in', () => {
-		expect(transformSnaps(snapSettings).translation).toBeCloseTo(0.1)
+	it('passes a move step through in the metres the gizmo snaps in', () => {
+		expect(transformSnaps(snapSettings).translation).toBe(0.25)
 	})
 
 	it('converts a degree rotate step to radians', () => {

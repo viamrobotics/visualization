@@ -161,9 +161,7 @@
 			}
 
 			// The keys are read off `window`, so without this typing `wasd` into any field flies the camera.
-			if (isEditableTarget(document.activeElement)) {
-				return
-			}
+			if (isEditableTarget(document.activeElement)) return
 
 			const moveSpeed = getMovementScale() * dt
 			const rotateSpeed = 0.1 * MathUtils.DEG2RAD * dt

@@ -4,7 +4,7 @@
 	import { T, useThrelte } from '@threlte/core'
 	import { TransformControls } from '@threlte/extras'
 	import { onDestroy } from 'svelte'
-	import { Matrix4, Vector3 } from 'three'
+	import { Group, Matrix4, Vector3 } from 'three'
 
 	import {
 		boundsHintInterior,
@@ -34,7 +34,6 @@
 		withSimpleObstacleShape,
 	} from '$lib/simpleObstacleShape'
 	import { isolateTransformControls } from '$lib/three/renderLayers'
-	import { TransformGizmoAnchor } from '$lib/three/TransformGizmoAnchor'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -92,8 +91,10 @@
 	// render no named scene object, so `getObjectByName` can't locate a gizmo
 	// target. Drive a dedicated anchor from the selected entity's WorldMatrix
 	// instead, the same world transform the entity renderers compose.
+	// Unlike those renderers, it keeps `matrixAutoUpdate` on: world-space snapping
+	// reads `getWorldPosition()`, so a stale matrix snaps every drag back to its start.
+	const anchor = new Group()
 	const UNIT_SCALE = new Vector3(1, 1, 1)
-	const anchor = new TransformGizmoAnchor()
 	const tempShapeCenter = new Matrix4()
 	const tempShapeWorld = new Matrix4()
 
@@ -101,13 +102,15 @@
 		const world = worldMatrix.current
 		if (!world) return
 
+		let target = world
 		// A Complex shape's frame sits at the obstacle origin, so the gizmo goes to the shape itself.
 		if (shapeOwner && center.current) {
 			new Pose().copy(center.current).toMatrix4(tempShapeCenter)
-			anchor.syncTo(tempShapeWorld.multiplyMatrices(world, tempShapeCenter))
-		} else {
-			anchor.syncTo(world)
+			target = tempShapeWorld.multiplyMatrices(world, tempShapeCenter)
 		}
+
+		target.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		anchor.updateMatrixWorld()
 		invalidate()
 	})
 

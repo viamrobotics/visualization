@@ -86,9 +86,9 @@
 			>
 				<!-- Units live in the labels: tweakpane parses typed text as a bare number, so a unit in the value would make every typed edit revert. -->
 				<Slider
-					label="Move (mm)"
+					label="Move (m)"
 					min={0}
-					step={1}
+					step={0.01}
 					value={settings.current.snapTranslate}
 					on:change={(event) => {
 						if (event.detail.origin === 'internal') {
