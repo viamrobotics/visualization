@@ -57,22 +57,17 @@
 
 	// Non-mesh frames (reference frames, and instanced box/sphere/capsule frames)
 	// render no named scene object, so `getObjectByName` can't locate a gizmo
-	// target. Drive a dedicated anchor Group from the selected entity's
-	// WorldMatrix instead — the same world transform the entity renderers
-	// compose. They mount at the scene root with `matrixAutoUpdate = false`, so
-	// this anchor's world-space transform matches theirs exactly.
+	// target. Drive a dedicated anchor from the selected entity's WorldMatrix
+	// instead, the same world transform the entity renderers compose.
+	// Unlike those renderers, it keeps `matrixAutoUpdate` on: world-space snapping
+	// reads `getWorldPosition()`, so a stale matrix snaps every drag back to its start.
 	const anchor = new Group()
-	anchor.matrixAutoUpdate = false
 
 	$effect.pre(() => {
 		const world = worldMatrix.current
 		if (!world) return
 
-		anchor.matrix.copy(world)
-		// Keep position/quaternion/scale in sync with the matrix so
-		// TransformControls (which reads/writes those fields) sees the entity's
-		// actual transform on drag start.
-		anchor.matrix.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		world.decompose(anchor.position, anchor.quaternion, anchor.scale)
 		anchor.updateMatrixWorld()
 		invalidate()
 	})
