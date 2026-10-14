@@ -1,4 +1,3 @@
--->
 <script lang="ts">
 	import type { Entity } from 'koota'
 
@@ -130,6 +129,7 @@
 	const labelErrorId = `${fieldId}-label-error`
 </script>
 
+-->
 <WorldPoseDetails pose={worldPose} />
 
 <div>
