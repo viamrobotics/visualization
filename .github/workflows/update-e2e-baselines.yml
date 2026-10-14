@@ -45,6 +45,11 @@ jobs:
       - name: Build Go binaries
         run: pnpm go-build
 
+      # The /snapshot/reconcile route fetches these from static/. They are
+      # gitignored and only the Go generator writes them.
+      - name: Generate reconcile fixtures
+        run: go test ./draw -run 'TestGeneratingSnapshots/snapshot_reconcile' -count=1
+
       - name: Build the app
         run: pnpm vite-build
         env:
@@ -72,8 +77,11 @@ jobs:
         if: inputs.projects == 'robot' || inputs.projects == 'both'
         run: ./e2e/setup.sh && pnpm playwright test --project=robot --workers=1 --update-snapshots
 
+      # Runs even when a test fails for a reason other than pixels, so the
+      # baselines that were written still reach review.
       - name: Open or update the baseline PR
         id: baseline-pr
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
