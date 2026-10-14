@@ -5,4 +5,5 @@ export interface ConnectionConfig {
 	apiKeyId: string
 	apiKeyValue: string
 	signalingAddress: string
+	disableSessions?: boolean
 }
