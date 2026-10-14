@@ -18,7 +18,6 @@ const REQUIRED_STRING_FIELDS = [
 	'machineName',
 	'signalingAddress',
 	'serviceHost',
-	'credentials',
 ] as const
 
 interface ConfigCredientials {
@@ -68,24 +67,14 @@ export const launchConfigToDialConf = (config: LaunchConfig): DialWebRTCConf => 
 
 export const parseLaunchConfig = (value: unknown): LaunchConfig => {
 	if (!isRecord(value)) throw new LaunchConfigError()
-	if (value.version !== LAUNCH_CONFIG_VERSION) throw new LaunchConfigVersionError(value.version)
 
-	const config: LaunchConfig = {} as LaunchConfig
-	for (const field of REQUIRED_STRING_FIELDS) {
-		if (!value[field]) throw new LaunchConfigFieldError(field)
-		if (field === 'credentials') {
-			const credentials = parseCredentials(config.credentials)
-			if (config.expiresAt !== undefined && typeof config.expiresAt !== 'string') {
-				throw new LaunchConfigExpiryError()
-			}
+	const config: LaunchConfig = {
+		version: parseVersion(value),
+		credentials: parseCredentials(value.credentials),
+		expiresAt: parseExpiresAt(value.expiresAt),
+	} as LaunchConfig
 
-			config.credentials = credentials
-			continue
-		}
-
-		config[field] = value[field] as string
-	}
-
+	for (const field of REQUIRED_STRING_FIELDS) config[field] = parseField(value, field)
 	return config
 }
 
@@ -93,12 +82,25 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const isCredentials = (value: unknown): value is ConfigCredientials =>
-	isRecord(value) && 'type' in value && 'payload' in value
+	isRecord(value) && 'type' in value
 
 const isAccessToken = (value: ConfigCredientials): value is LaunchAccessToken =>
 	value.type === 'access-token'
 
 const isApiKey = (value: ConfigCredientials): value is LaunchApiKey => value.type === 'api-key'
+
+const parseVersion = (value: Record<string, unknown>): typeof LAUNCH_CONFIG_VERSION => {
+	if (value.version !== LAUNCH_CONFIG_VERSION) throw new LaunchConfigVersionError(value.version)
+	return value.version
+}
+
+const parseField = (value: Record<string, unknown>, field: string): string => {
+	if (!(field in value)) throw new LaunchConfigFieldError(field)
+
+	const result = value[field]
+	if (typeof result !== 'string' || result === '') throw new LaunchConfigFieldError(field)
+	return result
+}
 
 const parseCredentials = (value: unknown): LaunchCredentials => {
 	if (!isCredentials(value)) throw new Error('Launch file field "credentials" is missing')
@@ -110,4 +112,10 @@ const parseCredentials = (value: unknown): LaunchCredentials => {
 	}
 
 	throw new Error(`Launch file credentials type "${String(value.type)}" is not supported`)
+}
+
+const parseExpiresAt = (value: unknown): string | undefined => {
+	if (value === undefined) return undefined
+	if (typeof value !== 'string') throw new LaunchConfigExpiryError()
+	return value
 }

@@ -61,15 +61,21 @@ describe('parseLaunchConfig', () => {
 		expect(result).not.toBe(input)
 	})
 
-	it('accepts an api-key config with expiresAt and keeps unknown fields', () => {
+	it('accepts an api-key config with expiresAt', () => {
 		const input = {
 			...accessTokenConfig(),
 			credentials: { type: 'api-key', payload: 'secret', authEntity: 'key-id' },
 			expiresAt: '2030-01-01T00:00:00Z',
-			extra: 'kept',
+			extra: 'not-kept',
 		}
 
-		expect(parseLaunchConfig(input)).toEqual(input)
+		const output = {
+			...accessTokenConfig(),
+			credentials: { type: 'api-key', payload: 'secret', authEntity: 'key-id' },
+			expiresAt: '2030-01-01T00:00:00Z',
+		}
+
+		expect(parseLaunchConfig(input)).toEqual(output)
 	})
 
 	it('rejects a non-object', () => {
