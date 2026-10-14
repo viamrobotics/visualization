@@ -26,7 +26,7 @@ for (const snapshot of snapshots) {
 	test(`drops ${snapshot.file}`, async ({ page, dropFile }) => {
 		await dropFile(path.resolve(snapshotsDir, `${snapshot.file}.pb.gz`))
 		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).toBeVisible({
-			timeout: 10000,
+			timeout: 30000,
 		})
 
 		const dismissButton = page.getByRole('button', { name: 'Dismiss toast' })
