@@ -41,6 +41,7 @@ export default defineConfig({
 						{ label: 'Running locally', link: '/guides/local-usage/' },
 						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
 						{ label: 'Deep linking', link: '/guides/deep-linking/' },
+						{ label: 'Desktop app', link: '/guides/desktop-app/' },
 						{
 							label: 'Implementing WorldStateStoreService',
 							link: '/guides/worldstatestore/',
