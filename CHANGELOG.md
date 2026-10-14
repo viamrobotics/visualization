@@ -1,5 +1,18 @@
 # visualization
 
+## 2.9.0
+
+### Minor Changes
+
+- bcb61c3: Save a resource's color, opacity, visibility and axes helper to its `visualizer` config from the build Appearance tab, or change them for the session in monitor mode, with the frames inside it, such as obstacle shapes, following those values unless they set their own.
+- bcb61c3: Add obstacles as rdk's `rdk:builtin:obstacle` model in three types (Simple, Bounds, Complex), edit their `geometries` list from the build details card or with the transform gizmo, draw them from the part config while building or offline, and preview unsaved edits on a connected machine.
+
+### Patch Changes
+
+- 761a4de: Fix snapped transform gizmo drags in world space, which only ever moved a frame onto the grid once.
+- 9bed7ae: Label the snap step fields with their units, and keep a typed Rotate step instead of reverting it.
+- 3a5a4f1: Stop the camera's WASD and arrow keys from moving the view while typing in a text field.
+
 ## 2.8.2
 
 ### Patch Changes
