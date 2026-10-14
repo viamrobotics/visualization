@@ -2,8 +2,11 @@ import { Transform } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
 
 import type { Frame } from '$lib/frame'
+import type { Transform as DerivedTransform } from '$lib/geometry'
 
 import { createTransformFromFrame } from '$lib/frame'
+import { isObstacleComponent, obstacleGeometriesOf } from '$lib/obstacleAttributes'
+import { deriveObstacleFrames } from '$lib/obstacleFrames'
 import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
 
 import { useFragmentInfo } from './useFragmentInfo.svelte'
@@ -38,6 +41,12 @@ interface ConfigFramesContext {
 	 * frameless, but its pose has to come from the machine.
 	 */
 	unresolvedFrames: ReadonlySet<string>
+	/**
+	 * The `<name>:<label>` frames each part-owned obstacle component declares in
+	 * `attributes.geometries`, keyed by component. An obstacle with no geometries maps
+	 * to an empty list, which still claims the component from the machine's links.
+	 */
+	obstacleFrames: Record<string, DerivedTransform[]>
 }
 
 const toTransforms = (frames: Map<string, Frame>): Record<string, Transform> => {
@@ -61,6 +70,19 @@ export const provideConfigFrames = () => {
 	const effectiveFrames = $derived(mergedComponentFrames(resolved))
 	const unsetFrames = $derived([...resolved.unsetFrameNames])
 
+	const obstacleFrames = $derived.by(() => {
+		const result: Record<string, DerivedTransform[]> = {}
+		for (const component of partConfig.current.components ?? []) {
+			if (isObstacleComponent(component)) {
+				result[component.name] = deriveObstacleFrames(
+					component.name,
+					obstacleGeometriesOf(component)
+				)
+			}
+		}
+		return result
+	})
+
 	setContext<ConfigFramesContext>(key, {
 		get current() {
 			return frames
@@ -76,6 +98,9 @@ export const provideConfigFrames = () => {
 		},
 		get unresolvedFrames() {
 			return resolved.unresolvedFrameNames
+		},
+		get obstacleFrames() {
+			return obstacleFrames
 		},
 	})
 }

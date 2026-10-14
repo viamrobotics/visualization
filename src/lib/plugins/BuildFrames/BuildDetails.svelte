@@ -6,6 +6,8 @@
 
 	import type { DetailsTab } from '$lib/components/overlay/details/DetailsTabs.svelte'
 
+	import { appearanceTargetOf } from '$lib/appearanceTarget'
+	import { complexShapeOwner } from '$lib/complexShapeOwner'
 	import AddRelationship from '$lib/components/overlay/AddRelationship.svelte'
 	import AppearanceDetails from '$lib/components/overlay/details/AppearanceDetails.svelte'
 	import CountDetails from '$lib/components/overlay/details/CountDetails.svelte'
@@ -23,6 +25,12 @@
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { isObstacleComponent } from '$lib/obstacleAttributes'
+
+	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
+	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
+	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
+	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
@@ -43,6 +51,7 @@
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const editable = useTrait(() => entity, traits.Editable)
 	const customDetails = useTag(() => entity, traits.CustomDetails)
+	const complexShape = useTrait(() => entity, traits.ComplexObstacleShape)
 
 	const isFragmentComponentWithVariables = $derived(
 		name.current !== undefined &&
@@ -57,10 +66,34 @@
 			partConfig.hasEditPermissions &&
 			!isFragmentComponentWithVariables
 	)
+	// A geometry on an obstacle's own frame makes rdk ignore attributes.geometries, so only the pose is editable.
+	const isObstacle = $derived(
+		partConfig.current?.components?.some(
+			(component) => component.name === name.current && isObstacleComponent(component)
+		) ?? false
+	)
 	const showConfigUnavailableWarning = $derived(
 		!!framesAPI.current && !partConfig.hasEditPermissions && partConfig.error !== undefined
 	)
 	const showRelationshipOptions = $derived(!!points.current || !!arrows.current)
+	const showObstacleEditor = $derived(showEditFrameOptions && isObstacle && !!name.current)
+	// An obstacle is a component whose frame carries its geometries, so it always keeps its frame.
+	const showDeleteFrame = $derived(
+		showEditFrameOptions && environment.current.isStandalone && !isObstacle
+	)
+	// A Complex obstacle's shape is edited through its entry in the obstacle's attributes.
+	const shapeOwner = $derived(
+		complexShape.current && partConfig.hasEditPermissions
+			? complexShapeOwner(partConfig.current?.components, name.current)
+			: undefined
+	)
+	const hasActions = $derived(showRelationshipOptions || showDeleteFrame || !!shapeOwner)
+	// A part-owned resource's appearance, and that of the frames inside it, is saved to its config while building.
+	const appearanceTarget = $derived(
+		partConfig.hasEditPermissions && !isFragmentComponentWithVariables
+			? appearanceTargetOf(partConfig.current?.components, name.current)
+			: undefined
+	)
 
 	const tabs = $derived<DetailsTab[]>(
 		customDetails.current
@@ -74,17 +107,27 @@
 
 {#snippet detailsTab()}
 	<div class="flex flex-col gap-2.5 pt-3">
-		{#if !customDetails.current}
-			<PoseDetails
+		{#if shapeOwner && complexShape.current}
+			<ObstacleShapeDetails
 				{entity}
-				editable={showEditFrameOptions}
+				component={shapeOwner}
+				index={complexShape.current.index}
 			/>
-		{/if}
-
-		{#if showEditFrameOptions}
-			<EditGeometryDetails {entity} />
 		{:else}
-			<DimensionsDetails {entity} />
+			{#if !customDetails.current}
+				<PoseDetails
+					{entity}
+					editable={showEditFrameOptions}
+				/>
+			{/if}
+
+			{#if showObstacleEditor && name.current}
+				<ObstacleSection name={name.current} />
+			{:else if showEditFrameOptions && !isObstacle}
+				<EditGeometryDetails {entity} />
+			{:else}
+				<DimensionsDetails {entity} />
+			{/if}
 		{/if}
 
 		<CountDetails {entity} />
@@ -97,7 +140,7 @@
 		tab="details"
 	/>
 
-	{#if showRelationshipOptions || (showEditFrameOptions && environment.current.isStandalone)}
+	{#if hasActions}
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 	{/if}
 
@@ -105,7 +148,7 @@
 		<AddRelationship {entity} />
 	{/if}
 
-	{#if showEditFrameOptions && environment.current.isStandalone}
+	{#if showDeleteFrame}
 		<Button
 			variant="danger"
 			class="mt-2 w-full"
@@ -114,10 +157,26 @@
 			Delete frame
 		</Button>
 	{/if}
+
+	{#if shapeOwner && complexShape.current}
+		<RemoveObstacleShapeButton
+			{entity}
+			component={shapeOwner}
+			index={complexShape.current.index}
+		/>
+	{/if}
 {/snippet}
 
 {#snippet appearanceTab()}
-	<AppearanceDetails {entity} />
+	{#if appearanceTarget}
+		<ConfigAppearanceDetails
+			{entity}
+			component={appearanceTarget.component}
+			frameId={appearanceTarget.frameId}
+		/>
+	{:else}
+		<AppearanceDetails {entity} />
+	{/if}
 
 	<DetailsSections
 		{entity}

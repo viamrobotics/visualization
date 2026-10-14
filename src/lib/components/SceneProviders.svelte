@@ -18,6 +18,7 @@
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { providePoses } from '$lib/hooks/usePoses.svelte'
 	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideResourceAppearance } from '$lib/hooks/useResourceAppearance.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 
@@ -46,6 +47,7 @@
 	provideResourceByName(() => partID.current)
 	provideResourceHealth(() => partID.current)
 	provideConfigFrames()
+	provideResourceAppearance(() => partID.current)
 	provideFrames(() => partID.current)
 	providePoses(() => partID.current)
 	provide3DModels(() => partID.current)

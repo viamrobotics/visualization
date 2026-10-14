@@ -11,6 +11,7 @@ export const createPartConfigFixture = (
 	isDirty: false,
 	hasEditPermissions: true,
 	createComponent: vi.fn(),
+	updateComponent: vi.fn(),
 	createFrame: vi.fn(),
 	deleteFrame: vi.fn(),
 	updateFrame: vi.fn(),

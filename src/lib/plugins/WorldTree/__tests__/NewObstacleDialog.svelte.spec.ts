@@ -9,6 +9,13 @@ import { traits } from '$lib/ecs'
 import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
 import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import {
+	createBoundsObstacleComponent,
+	createComplexObstacleComponent,
+	createObstacleComponent,
+} from '$lib/obstacle'
+
+import type { ObstacleType } from '../obstacleTypeOptions'
 
 import NewObstacleDialog from '../NewObstacleDialog.svelte'
 
@@ -32,12 +39,12 @@ describe('NewObstacleDialog', () => {
 		return createComponent
 	}
 
-	const renderDialog = () => {
+	const renderDialog = (type: ObstacleType = 'simple') => {
 		const environment = createEnvironment()
 		environment.registerMode('build')
 
 		render(NewObstacleDialog, {
-			props: { open: true },
+			props: { open: true, type },
 			context: new Map<symbol, unknown>([
 				[WORLD_CONTEXT_KEY, world],
 				[ENVIRONMENT_CONTEXT_KEY, environment],
@@ -55,14 +62,44 @@ describe('NewObstacleDialog', () => {
 		expect(screen.getByLabelText('Name')).toHaveValue('obstacle-2')
 	})
 
-	it('writes a generic component under the name in the field', async () => {
+	it('names a Bounds obstacle bounds-N', () => {
+		mockPartConfig(['obstacle-1', 'bounds-1'])
+
+		renderDialog('bounds')
+
+		expect(screen.getByLabelText('Name')).toHaveValue('bounds-2')
+	})
+
+	it('writes an obstacle component under the name in the field', async () => {
 		const createComponent = mockPartConfig([])
 		renderDialog()
 
 		await userEvent.click(screen.getByRole('button', { name: 'Create' }))
 
 		expect(createComponent).toHaveBeenCalledWith(
-			expect.objectContaining({ name: 'obstacle-1', api: 'rdk:component:generic' })
+			expect.objectContaining({
+				name: 'obstacle-1',
+				api: 'rdk:component:generic',
+				model: 'rdk:builtin:obstacle',
+			})
+		)
+	})
+
+	it.each([
+		['simple', 'New simple obstacle', createObstacleComponent],
+		['bounds', 'New bounds obstacle', createBoundsObstacleComponent],
+		['complex', 'New complex obstacle', createComplexObstacleComponent],
+	] as const)('creates the %s obstacle the menu picked', async (type, title, create) => {
+		const createComponent = mockPartConfig([])
+		renderDialog(type)
+
+		expect(screen.getByRole('dialog', { name: title })).toBeInTheDocument()
+		expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+
+		await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+		expect(createComponent).toHaveBeenCalledWith(
+			create(type === 'bounds' ? 'bounds-1' : 'obstacle-1')
 		)
 	})
 
