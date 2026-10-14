@@ -19,9 +19,9 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
 
 	import Tooltip from '../Tooltip.svelte'
+	import { composeDisplayedPose } from './composeDisplayedPose'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
@@ -54,26 +54,15 @@
 	const removable = useTrait(() => entity, traits.Removable)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 
-	const localPose = $derived.by<Pose | undefined>(() => {
-		const source = editedMatrix.current ?? matrix.current
-
-		if (source) {
-			return new Pose().setFromMatrix4(source)
-		}
-
-		if (center.current) {
-			return new Pose().copy(center.current)
-		}
-
-		return undefined
-	})
-	const worldPose = $derived.by<Pose | undefined>(() => {
-		if (!worldMatrix.current) return
-
-		return new Pose().setFromMatrix4(worldMatrix.current)
-	})
-
 	const isFrameNode = $derived(!!framesAPI.current)
+	const geometryCenter = $derived(isFrameNode ? undefined : center.current)
+
+	const localPose = $derived(
+		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	)
+	const worldPose = $derived(
+		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
+	)
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
 	const displayType = $derived(isFrameNode ? resourceName?.subtype : '')
 
