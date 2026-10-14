@@ -35,6 +35,13 @@ test.describe('file drop', () => {
 
 		await expect(page.getByText(/files are supported/)).toBeVisible({ timeout: 5000 })
 
+		// The toast dismisses itself after 4s unless hovered, and the full-page screenshot can
+		// outlast that. Dispatched rather than hovered, since the toast is still flying in.
+		await page
+			.getByRole('status', { name: 'Toasts' })
+			.getByRole('listitem')
+			.dispatchEvent('mouseenter')
+
 		await takeScreenshot('FILE_DROP_UNSUPPORTED')
 	})
 })
