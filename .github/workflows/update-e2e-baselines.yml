@@ -87,7 +87,7 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add 'e2e/**/*-snapshots/'
+          git add -- 'e2e/*-snapshots/*'
 
           if git diff --staged --quiet; then
             echo "Baselines already match this run"
