@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -23,13 +22,6 @@ const snapshots: Array<{ name: string; file: string; waitFor?: string[] }> = [
 	},
 ]
 
-test.beforeAll(() => {
-	execSync(
-		'go test -run ^TestGeneratingSnapshots$ github.com/viamrobotics/visualization/draw -count=1',
-		{ encoding: 'utf8' }
-	)
-})
-
 for (const snapshot of snapshots) {
 	test(`drops ${snapshot.file}`, async ({ page, dropFile }) => {
 		await dropFile(path.resolve(snapshotsDir, `${snapshot.file}.pb.gz`))
@@ -39,7 +31,9 @@ for (const snapshot of snapshots) {
 
 		const dismissButton = page.getByRole('button', { name: 'Dismiss toast' })
 		await expect(dismissButton).toBeVisible({ timeout: 10000 })
-		await dismissButton.click()
+		// The toast flies in from below the viewport and on CI can stay unstable for the whole
+		// test timeout, so the click is dispatched. The not.toBeVisible below confirms it.
+		await dismissButton.dispatchEvent('click')
 
 		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).not.toBeVisible()
 

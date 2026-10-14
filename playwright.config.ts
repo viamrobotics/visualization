@@ -88,6 +88,11 @@ export default defineConfig({
 			name: 'drawing',
 			testMatch: [...DRAWING_SPECS],
 			fullyParallel: true,
+			dependencies: ['drawing-setup'],
+		},
+		{
+			name: 'drawing-setup',
+			testMatch: /drawing\.setup\.ts$/,
 		},
 		{
 			// Cells are one or two RPCs and a poll against a page the whole worker
