@@ -35,6 +35,47 @@ describe('PoseDetails', () => {
 		expect(screen.getByLabelText('mutable local orientation')).toBeInTheDocument()
 	})
 
+	it('folds a drawn geometry center into the local and world poses', () => {
+		const identity = new Pose().toMatrix4()
+		const entity = world.spawn(
+			traits.Matrix(identity),
+			traits.WorldMatrix(identity.clone()),
+			traits.Center({ x: 100, y: 200, z: 300, oX: 0, oY: 0, oZ: 1, theta: 0 })
+		)
+		render(PoseDetails, {
+			props: { entity, editable: false },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+
+		expect(
+			screen.getByLabelText('immutable local position x coordinate').parentElement
+		).toHaveTextContent('100.00')
+		expect(screen.getByText('world position').parentElement).toHaveTextContent(
+			'x 100.00 y 200.00 z 300.00'
+		)
+	})
+
+	it('keeps a reference frame pose separate from its geometry center', () => {
+		const identity = new Pose().toMatrix4()
+		const entity = world.spawn(
+			traits.Matrix(identity),
+			traits.WorldMatrix(identity.clone()),
+			traits.Center({ x: 100, y: 200, z: 300, oX: 0, oY: 0, oZ: 1, theta: 0 }),
+			traits.FramesAPI
+		)
+		render(PoseDetails, {
+			props: { entity, editable: false },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+
+		expect(
+			screen.getByLabelText('immutable local position x coordinate').parentElement
+		).toHaveTextContent('0.00')
+		expect(screen.getByText('world position').parentElement).toHaveTextContent(
+			'x 0.00 y 0.00 z 0.00'
+		)
+	})
+
 	it('does not render local position/orientation when entity has no matrix or center', () => {
 		const entity = world.spawn()
 		render(PoseDetails, {
