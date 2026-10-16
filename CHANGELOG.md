@@ -1,5 +1,11 @@
 # visualization
 
+## 2.9.1
+
+### Patch Changes
+
+- 36e855f: Add a Tauri v2 desktop shell with pnpm tauri:dev and pnpm tauri:build
+
 ## 2.9.0
 
 ### Minor Changes
