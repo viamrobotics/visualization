@@ -21,7 +21,8 @@ jobs:
   e2e:
     name: Drawing and matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Tests run on one worker under CI, so a slow runner needs the headroom.
+    timeout-minutes: 45
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout

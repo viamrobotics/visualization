@@ -51,8 +51,9 @@ export default defineConfig({
 	// Measured on an 8-core darwin box: 4 workers cut the drawing project from 451s
 	// to 377s but stretched the mean test from 6.4s to 15.6s, which is what pushed
 	// one snapshot test past its timeout. 2 keeps most of the gain with less
-	// contention. CI runners have 4 vCPUs.
-	workers: process.env.CI ? 4 : 2,
+	// contention. CI runs serially: on its 4 vCPUs, parallel workers pushed drawing
+	// specs past the 10s expect timeout on slower hosts, and nobody waits on the run.
+	workers: process.env.CI ? 1 : 2,
 	retries: process.env.CI ? 2 : 0,
 	reporter: process.env.CI
 		? [
