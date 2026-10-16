@@ -33,9 +33,9 @@
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { useParentFrameOptions } from '$lib/hooks/useParentFrameOptions.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { Pose } from '$lib/math'
 
 	import EntityLink from '../EntityLink.svelte'
+	import { composeDisplayedPose } from './composeDisplayedPose'
 	import WorldPoseDetails from './WorldPoseDetails.svelte'
 
 	interface Props {
@@ -62,18 +62,15 @@
 	const parentEntity = useTarget(() => entity, relations.ChildOf)
 	const parentOptions = useParentFrameOptions(() => name.current)
 
-	const localPose = $derived.by<Pose | undefined>(() => {
-		const source = editedMatrix.current ?? matrix.current
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const geometryCenter = $derived(framesAPI.current ? undefined : center.current)
 
-		if (source) return new Pose().setFromMatrix4(source)
-		if (center.current) return new Pose().copy(center.current)
-		return undefined
-	})
-
-	const worldPose = $derived.by<Pose | undefined>(() => {
-		if (!worldMatrix.current) return
-		return new Pose().setFromMatrix4(worldMatrix.current)
-	})
+	const localPose = $derived(
+		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	)
+	const worldPose = $derived(
+		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
+	)
 
 	const eulerValue = $derived.by<RotationEulerValueObject>(() => {
 		if (!localPose) return { x: 0, y: 0, z: 0 }
