@@ -4,6 +4,7 @@ import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
 
 import {
 	addObstacleGeometry,
+	duplicateObstacleGeometry,
 	patchObstacleGeometry,
 	removeObstacleGeometry,
 } from '$lib/obstacleGeometryList'
@@ -28,6 +29,43 @@ describe('addObstacleGeometry', () => {
 		const result = addObstacleGeometry(input)
 		expect(input).toHaveLength(1)
 		expect(result.geometries).not.toBe(input)
+	})
+})
+
+describe('duplicateObstacleGeometry', () => {
+	it('appends a copy of the entry labeled after it', () => {
+		const source: ObstacleGeometryConfig = { ...box('a'), translation: { x: 1, y: 2, z: 3 } }
+		const result = duplicateObstacleGeometry([source, box('b')], 0)
+		expect(result.label).toBe('a-1')
+		expect(result.geometries).toEqual([source, box('b'), { ...source, label: 'a-1' }])
+	})
+
+	it('names a copy of an unlabeled entry after what rdk calls it', () => {
+		const result = duplicateObstacleGeometry([box('a'), box()], 1)
+		expect(result.label).toBe('geometry_1-1')
+	})
+
+	it('picks the first free number', () => {
+		const result = duplicateObstacleGeometry([box('a'), box('a-1'), box('a-3')], 0)
+		expect(result.label).toBe('a-2')
+	})
+
+	it('writes the label under one spelling', () => {
+		const source = { ...box(), Label: 'a' } as unknown as ObstacleGeometryConfig
+		const result = duplicateObstacleGeometry([source], 0)
+		expect(result.geometries[1]).toEqual({ ...box('a-1') })
+	})
+
+	it('does not mutate its input', () => {
+		const input = [box('a')]
+		const result = duplicateObstacleGeometry(input, 0)
+		expect(input).toHaveLength(1)
+		expect(result.geometries[0]).toBe(input[0])
+	})
+
+	it('returns the same contents and no label for an out-of-range index', () => {
+		const input = [box('a')]
+		expect(duplicateObstacleGeometry(input, 3)).toEqual({ geometries: input, label: undefined })
 	})
 })
 

@@ -17,6 +17,7 @@ import * as useLinkedEntities from '$lib/hooks/useLinked.svelte'
 import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import * as useResourceByName from '$lib/hooks/useResourceByName.svelte'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '$lib/hooks/useWeblabs.svelte'
+import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '$lib/keybindings'
 import { createComplexObstacleComponent, createObstacleComponent } from '$lib/obstacle'
 
 import BuildDetails from '../BuildDetails.svelte'
@@ -85,6 +86,7 @@ describe('BuildDetails', () => {
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, environmentContext],
 				[WORLD_CONTEXT_KEY, world],
+				[KEYBINDINGS_CONTEXT_KEY, createKeybindings()],
 			]),
 		})
 	}
@@ -249,12 +251,13 @@ describe('BuildDetails', () => {
 			expect(screen.queryByLabelText('mutable parent frame')).not.toBeInTheDocument()
 		})
 
-		it('offers Remove shape as its action', () => {
+		it('offers Duplicate shape and Remove shape as its actions', () => {
 			useComplexObstacle()
 
 			renderPanel()
 
 			expect(screen.getByRole('heading', { name: 'Actions' })).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'Duplicate shape' })).toBeInTheDocument()
 			expect(screen.getByRole('button', { name: 'Remove shape' })).toBeInTheDocument()
 		})
 
@@ -264,6 +267,7 @@ describe('BuildDetails', () => {
 			renderPanel()
 
 			expect(screen.queryByLabelText('label')).not.toBeInTheDocument()
+			expect(screen.queryByRole('button', { name: 'Duplicate shape' })).not.toBeInTheDocument()
 			expect(screen.queryByRole('button', { name: 'Remove shape' })).not.toBeInTheDocument()
 		})
 	})

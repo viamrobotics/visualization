@@ -28,6 +28,7 @@
 	import { isObstacleComponent } from '$lib/obstacleAttributes'
 
 	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
+	import DuplicateObstacleShapeButton from './ObstacleEditor/DuplicateObstacleShapeButton.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
 	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
@@ -159,6 +160,10 @@
 	{/if}
 
 	{#if shapeOwner && complexShape.current}
+		<DuplicateObstacleShapeButton
+			component={shapeOwner}
+			index={complexShape.current.index}
+		/>
 		<RemoveObstacleShapeButton
 			{entity}
 			component={shapeOwner}
