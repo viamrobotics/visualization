@@ -3,7 +3,6 @@
 
 	import { T, useThrelte } from '@threlte/core'
 	import { TransformControls } from '@threlte/extras'
-	import { onDestroy } from 'svelte'
 	import { Group, Matrix4, Vector3 } from 'three'
 
 	import {
@@ -13,6 +12,7 @@
 		resizeBoundsObstacle,
 	} from '$lib/boundsObstacleInterior'
 	import { complexShapeOwner } from '$lib/complexShapeOwner'
+	import SnapIndicator from '$lib/components/SnapIndicator.svelte'
 	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { shapeOffsetFromGizmo, withObstacleShapePatch } from '$lib/editing/obstacleShapeGizmo'
@@ -33,6 +33,7 @@
 		simpleObstacleShape,
 		withSimpleObstacleShape,
 	} from '$lib/simpleObstacleShape'
+	import { useObjectSnapDrag } from '$lib/snapping/useObjectSnapDrag.svelte'
 	import { isolateTransformControls } from '$lib/three/renderLayers'
 
 	const { invalidate } = useThrelte()
@@ -46,7 +47,13 @@
 	const selected = useQuery(traits.Selected)
 
 	const mode = $derived(settings.current.transformMode)
-	const snaps = $derived(transformSnaps(settings.current))
+	const objectSnap = useObjectSnapDrag()
+	const snaps = $derived(
+		transformSnaps({
+			...settings.current,
+			snapping: settings.current.snapping !== objectSnap.isInverted,
+		})
+	)
 	const isBuildMode = $derived(environment.current.mode === 'build')
 	const entity = $derived(selected.current[0])
 	const editable = useTrait(() => entity, traits.Editable)
@@ -124,6 +131,11 @@
 
 		return mode
 	})
+	const stagesPosition = $derived(activeMode === 'translate')
+	// Align-to-surface turns the object during a move, so a move writes orientation too.
+	const stagesOrientation = $derived(
+		activeMode === 'rotate' || (activeMode === 'translate' && objectSnap.alignsRotation)
+	)
 	const isSphereScale = $derived(
 		activeMode === 'scale' && (sphere.current !== undefined || obstacleShape?.type === 'sphere')
 	)
@@ -182,7 +194,7 @@
 		frameHistoryEntryOpen = false
 	}
 
-	onDestroy(endFrameHistoryEntry)
+	$effect(() => endFrameHistoryEntry)
 
 	const captureScaleStart = () => {
 		if (!entity || activeMode !== 'scale') {
@@ -247,27 +259,29 @@
 		tempShapeWorld.compose(ref.position, ref.quaternion, UNIT_SCALE)
 		const offset = shapeOffsetFromGizmo(world, tempShapeWorld)
 
-		if (activeMode === 'translate') {
-			patchComplexShape({ translation: { x: offset.x, y: offset.y, z: offset.z } })
-		} else {
-			patchComplexShape({
+		patchComplexShape({
+			...(stagesPosition && { translation: { x: offset.x, y: offset.y, z: offset.z } }),
+			...(stagesOrientation && {
 				orientation: {
 					type: 'ov_degrees',
 					value: { x: offset.oX, y: offset.oY, z: offset.oZ, th: offset.theta },
 				},
-			})
-		}
+			}),
+		})
 	}
 
 	const onMouseDown = () => {
 		captureScaleStart()
 		beginFrameHistoryEntry()
+		if (activeMode === 'translate' && entity && ref) objectSnap.begin(entity, ref)
 
 		transformControls.setActive(true)
 	}
 
 	const onChange = () => {
 		if (!ref || !entity || !activeMode) return
+
+		if (activeMode === 'translate' && controls?.axis) objectSnap.apply(ref, controls.axis)
 
 		if (activeMode === 'translate' || activeMode === 'rotate') {
 			if (shapeOwner) {
@@ -337,6 +351,7 @@
 
 	const onMouseUp = () => {
 		scaleStart = undefined
+		objectSnap.end()
 		transformControls.setActive(false)
 		endFrameHistoryEntry()
 	}
@@ -383,20 +398,15 @@
 		const config = configMatrix.current
 
 		if (!live || !config) {
-			if (activeMode === 'translate') {
-				frameEditor.setPose(entity, {
-					x: refPose.x,
-					y: refPose.y,
-					z: refPose.z,
-				})
-			} else if (activeMode === 'rotate') {
-				frameEditor.setPose(entity, {
+			frameEditor.setPose(entity, {
+				...(stagesPosition && { x: refPose.x, y: refPose.y, z: refPose.z }),
+				...(stagesOrientation && {
 					oX: refPose.oX,
 					oY: refPose.oY,
 					oZ: refPose.oZ,
 					theta: refPose.theta,
-				})
-			}
+				}),
+			})
 			return
 		}
 
@@ -424,11 +434,12 @@
 		tempPose.setFromMatrix4(matrix)
 		refPose.setFromMatrix4(tempRefMatrix)
 
-		if (activeMode === 'translate') {
+		if (stagesPosition) {
 			tempPose.x = refPose.x
 			tempPose.y = refPose.y
 			tempPose.z = refPose.z
-		} else {
+		}
+		if (stagesOrientation) {
 			tempPose.oX = refPose.oX
 			tempPose.oY = refPose.oY
 			tempPose.oZ = refPose.oZ
@@ -461,4 +472,8 @@
 			onmouseUp={onMouseUp}
 		/>
 	{/key}
+
+	{#if objectSnap.indicator}
+		<SnapIndicator indicator={objectSnap.indicator} />
+	{/if}
 {/if}
