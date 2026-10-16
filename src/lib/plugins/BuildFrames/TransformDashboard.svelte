@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Slider } from 'svelte-tweakpane-ui'
+	import { Checkbox, Separator, Slider } from 'svelte-tweakpane-ui'
 
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '$lib/components/overlay/dashboard/DropdownPane.svelte'
@@ -84,9 +84,14 @@
 				active={settings.current.snapping}
 				description="Snapping settings"
 			>
+				<Checkbox
+					label="Increment"
+					bind:value={settings.current.snapIncrement}
+				/>
 				<!-- Units live in the labels: tweakpane parses typed text as a bare number, so a unit in the value would make every typed edit revert. -->
 				<Slider
 					label="Move (m)"
+					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.01}
 					value={settings.current.snapTranslate}
@@ -98,6 +103,7 @@
 				/>
 				<Slider
 					label="Rotate (°)"
+					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.5}
 					value={settings.current.snapRotate}
@@ -109,6 +115,7 @@
 				/>
 				<Slider
 					label="Scale"
+					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.01}
 					value={settings.current.snapScale}
@@ -117,6 +124,21 @@
 							settings.current.snapScale = event.detail.value
 						}
 					}}
+				/>
+				<Separator />
+				<Checkbox
+					label="Objects"
+					bind:value={settings.current.snapObjects}
+				/>
+				<Checkbox
+					label="Ground plane"
+					disabled={!settings.current.snapObjects}
+					bind:value={settings.current.snapGroundPlane}
+				/>
+				<Checkbox
+					label="Align rotation"
+					disabled={!settings.current.snapObjects}
+					bind:value={settings.current.snapAlignRotation}
 				/>
 			</DropdownPane>
 		</fieldset>
