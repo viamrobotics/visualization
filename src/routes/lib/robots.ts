@@ -1,16 +1,8 @@
 import type { DialWebRTCConf } from '@viamrobotics/sdk'
 
-type PlaygroundRobotsConfig = Record<
-	string,
-	{
-		host: string
-		partId: string
-		apiKeyId: string
-		apiKeyValue: string
-		signalingAddress: string
-		disableSessions?: boolean
-	}
->
+import type { ConnectionConfig } from './connectionConfig'
+
+type PlaygroundRobotsConfig = Record<string, ConnectionConfig>
 
 export const getDialConfs = (robots: PlaygroundRobotsConfig): Record<string, DialWebRTCConf> =>
 	Object.fromEntries(Object.values(robots).map((robot) => [robot.partId, getDialConf(robot)]))
