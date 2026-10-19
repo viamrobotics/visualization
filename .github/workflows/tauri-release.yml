@@ -95,17 +95,72 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils libnlopt-dev pkg-config
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install nlopt (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nlopt pkg-config
+
+      # Homebrew's nlopt is arm64 on the macos-latest runner, so the x86_64 leg builds a static
+      # x86_64 copy from source and points the sidecar script at it.
+      - name: Build nlopt for x86_64 (macOS)
+        if: matrix.target == 'x86_64-apple-darwin'
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v2.10.0 https://github.com/stevengj/nlopt "$RUNNER_TEMP/nlopt-src"
+          cd "$RUNNER_TEMP/nlopt-src"
+          cmake -S . -B build \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DNLOPT_PYTHON=OFF -DNLOPT_OCTAVE=OFF -DNLOPT_MATLAB=OFF -DNLOPT_GUILE=OFF \
+            -DNLOPT_SWIG=OFF -DNLOPT_TESTS=OFF \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/nlopt-x86_64"
+          cmake --build build
+          cmake --install build
+          echo "NLOPT_LIBDIR=$RUNNER_TEMP/nlopt-x86_64/lib" >> "$GITHUB_ENV"
+          echo "NLOPT_INCLUDEDIR=$RUNNER_TEMP/nlopt-x86_64/include" >> "$GITHUB_ENV"
+
+      # cgo needs a gcc on Windows, and MSYS2 supplies both it and nlopt. The static link recipe
+      # is unverified on this leg.
+      - name: Install MinGW toolchain and nlopt (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nlopt
+            mingw-w64-x86_64-pkg-config
+
+      - name: Put MinGW on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+          echo "NLOPT_LIBDIR=C:/msys64/mingw64/lib" >> "$GITHUB_ENV"
+          echo "NLOPT_INCLUDEDIR=C:/msys64/mingw64/include" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: pnpm install
 
-      # tauri build runs `pnpm vite-build` itself through beforeBuildCommand.
+      # tauri build runs `pnpm vite-build` and the sidecar build itself through beforeBuildCommand,
+      # so src-tauri/binaries/draw-server-<triple> exists before the bundle step.
       - name: Build and upload bundles
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SENTRY_AUTH_TOKEN: ${{ matrix.sentry && secrets.SENTRY_AUTH_TOKEN || '' }}
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.target }}
+          CGO_ENABLED: 1
+          # The Windows leg falls back to the stub motion planner if nlopt cannot be linked.
+          # GOFLAGS: -tags=nomotionplan
         with:
           tagName: ${{ env.TAG }}
           releaseDraft: false
