@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../build",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm vite-build"
+    "beforeDevCommand": "pnpm build:sidecar && pnpm dev",
+    "beforeBuildCommand": "pnpm tauri:before-build"
   },
   "app": {
     "windows": [
@@ -25,6 +25,7 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": ["binaries/draw-server"],
     "targets": "all",
     "icon": [
       "icons/32x32.png",

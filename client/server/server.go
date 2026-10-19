@@ -157,6 +157,9 @@ func Start(cfg DrawServerConfig) error {
 		return fmt.Errorf("failed to listen on %s: %w", rpcAddr, err)
 	}
 
+	// Port 0 asks the OS for a free port, so the address must come from the listener.
+	address = fmt.Sprintf("localhost:%d", rpcListener.Addr().(*net.TCPAddr).Port)
+
 	tempDir := cfg.TempDir
 	if tempDir == "" {
 		tempDir = resolveTmpDir()

@@ -12,6 +12,8 @@
 		"vite-build": "wireit",
 		"build:workers": "wireit",
 		"go-build": "wireit",
+		"build:sidecar": "wireit",
+		"tauri:before-build": "wireit",
 		"package": "wireit",
 		"svelte-sync": "wireit",
 		"prepare": "pnpm svelte-sync && pnpm build:workers || echo ''",
@@ -140,6 +142,39 @@
 			"output": [
 				".bin/draw-server",
 				".bin/draw-scenes"
+			]
+		},
+		"build:sidecar": {
+			"command": "node scripts/build-sidecar.mjs",
+			"env": {
+				"TAURI_ENV_TARGET_TRIPLE": {
+					"external": true
+				},
+				"NLOPT_LIBDIR": {
+					"external": true
+				},
+				"NLOPT_INCLUDEDIR": {
+					"external": true
+				}
+			},
+			"files": [
+				"scripts/build-sidecar.mjs",
+				"cmd/draw-server/**",
+				"client/**",
+				"draw/**",
+				"motionplan/**",
+				"mutils/**",
+				"go.mod",
+				"go.sum"
+			],
+			"output": [
+				"src-tauri/binaries/**"
+			]
+		},
+		"tauri:before-build": {
+			"dependencies": [
+				"vite-build",
+				"build:sidecar"
 			]
 		},
 		"package": {

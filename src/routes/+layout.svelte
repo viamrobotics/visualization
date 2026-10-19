@@ -37,12 +37,14 @@
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
 	import { resolveConnection } from './lib/resolveConnection'
+	import { useDrawServicePort } from './lib/tauri/useDrawServicePort.svelte'
 	import { useLaunchConfig } from './lib/tauri/useLaunchConfig.svelte'
 
 	provideConnectionConfigs()
 
 	const connectionConfig = useActiveConnectionConfig()
 	const launch = useLaunchConfig()
+	const sidecar = useDrawServicePort()
 
 	let { children } = $props()
 
@@ -63,9 +65,9 @@
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
 
-	const resolveIKSolutions = createIKSolutionsResolver(
-		() => `http://${backendIP}:${portOverride ?? drawServicePort}`
-	)
+	const drawPort = $derived(portOverride ?? sidecar.port ?? drawServicePort)
+
+	const resolveIKSolutions = createIKSolutionsResolver(() => `http://${backendIP}:${drawPort}`)
 </script>
 
 <ViamProvider
@@ -84,7 +86,9 @@
 				{@render children()}
 
 				{#if pluginsEnabled}
-					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
+					{#if sidecar.ready}
+						<DrawService config={{ backendIP, port: drawPort }} />
+					{/if}
 					<Isolate />
 					<MeasureTool />
 					<SensorCoverage />

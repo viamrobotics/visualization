@@ -32,7 +32,9 @@ See [CLAUDE.md](CLAUDE.md) for contributor conventions.
 
 ### Desktop app
 
-The visualizer also builds as a desktop app with [Tauri v2](https://v2.tauri.app/). It wraps the same static build the browser gets and does not bundle the Go draw server, so the draw-service panel reads offline until `make up` starts one. You need the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/) and Rust 1.90 or newer.
+The visualizer also builds as a desktop app with [Tauri v2](https://v2.tauri.app/). It wraps the same static build the browser gets and bundles the Go draw server as a sidecar. A release build starts the sidecar on a free port and stops it when the app quits, so the draw-service panel is live with nothing else running. You need the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/), Rust 1.90 or newer, Go, and nlopt with its static library (`etc/setup.sh` installs it).
+
+A debug build (`pnpm tauri:dev`) does not start the sidecar, because `pnpm dev` already runs a draw server on 3030. Set `VIAM_VISUALIZER_SIDECAR=1` to start it in a debug build anyway. `pnpm build:sidecar` builds the sidecar alone, into `src-tauri/binaries/`, and fails if the binary links any non-system library. A platform where nlopt cannot be linked statically can build with `GOFLAGS=-tags=nomotionplan`, which drops IK inspection from the sidecar.
 
 ```bash
 pnpm tauri:dev     # dev server in a native window, with HMR
