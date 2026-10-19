@@ -28,6 +28,7 @@
 	import { isObstacleComponent } from '$lib/obstacleAttributes'
 
 	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
+	import DuplicateObstacleButton from './ObstacleEditor/DuplicateObstacleButton.svelte'
 	import DuplicateObstacleShapeButton from './ObstacleEditor/DuplicateObstacleShapeButton.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
@@ -68,11 +69,12 @@
 			!isFragmentComponentWithVariables
 	)
 	// A geometry on an obstacle's own frame makes rdk ignore attributes.geometries, so only the pose is editable.
-	const isObstacle = $derived(
-		partConfig.current?.components?.some(
+	const obstacleComponent = $derived(
+		partConfig.current?.components?.find(
 			(component) => component.name === name.current && isObstacleComponent(component)
-		) ?? false
+		)
 	)
+	const isObstacle = $derived(obstacleComponent !== undefined)
 	const showConfigUnavailableWarning = $derived(
 		!!framesAPI.current && !partConfig.hasEditPermissions && partConfig.error !== undefined
 	)
@@ -88,7 +90,9 @@
 			? complexShapeOwner(partConfig.current?.components, name.current)
 			: undefined
 	)
-	const hasActions = $derived(showRelationshipOptions || showDeleteFrame || !!shapeOwner)
+	const hasActions = $derived(
+		showRelationshipOptions || showDeleteFrame || showObstacleEditor || !!shapeOwner
+	)
 	// A part-owned resource's appearance, and that of the frames inside it, is saved to its config while building.
 	const appearanceTarget = $derived(
 		partConfig.hasEditPermissions && !isFragmentComponentWithVariables
@@ -157,6 +161,10 @@
 		>
 			Delete frame
 		</Button>
+	{/if}
+
+	{#if showObstacleEditor && obstacleComponent}
+		<DuplicateObstacleButton component={obstacleComponent} />
 	{/if}
 
 	{#if shapeOwner && complexShape.current}

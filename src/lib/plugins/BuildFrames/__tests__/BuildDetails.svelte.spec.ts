@@ -146,13 +146,22 @@ describe('BuildDetails', () => {
 		expect(screen.queryByRole('heading', { name: 'Actions' })).not.toBeInTheDocument()
 	})
 
-	it('offers no Delete frame, and so no Actions heading, for an obstacle', () => {
+	it('offers Duplicate obstacle in place of Delete frame for an obstacle', () => {
 		useSimpleObstacle()
 
 		renderPanel()
 
+		expect(screen.getByRole('heading', { name: 'Actions' })).toBeInTheDocument()
+		expect(screen.getByRole('button', { name: 'Duplicate obstacle' })).toBeInTheDocument()
 		expect(screen.queryByRole('button', { name: 'Delete frame' })).not.toBeInTheDocument()
-		expect(screen.queryByRole('heading', { name: 'Actions' })).not.toBeInTheDocument()
+	})
+
+	it('offers no Duplicate obstacle for a frame that is not an obstacle', () => {
+		useComponentModel('rdk:builtin:fake')
+
+		renderPanel()
+
+		expect(screen.queryByRole('button', { name: 'Duplicate obstacle' })).not.toBeInTheDocument()
 	})
 
 	it('shows an obstacle section, open by default, in place of the frame geometry editor', () => {
