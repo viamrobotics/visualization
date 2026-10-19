@@ -12,6 +12,9 @@ import { type SnapIndicator } from './snapQuery'
 import { posedTargets, type SnapScene, snapSceneFor } from './snapScene'
 
 const UNIT_SCALE = new Vector3(1, 1, 1)
+// Aligning to a surface the object already sits level on still rounds, by about 1e-16 rad. Below
+// this, nothing visibly turned, so staging orientation would only write noise into the config.
+const MIN_TURN_RADIANS = 1e-9
 
 /** Object snapping for one translate gizmo, from pointer down to pointer up. */
 export interface ObjectSnapDrag {
@@ -19,13 +22,26 @@ export interface ObjectSnapDrag {
 	readonly isInverted: boolean
 	/** Where the current snap landed, for the scene to mark. */
 	readonly indicator: SnapIndicator | undefined
-	/** Whether a translate drag may also turn the object, so staging has to write orientation. */
-	readonly alignsRotation: boolean
+	/**
+	 * Whether this drag has turned the object onto a surface. From then on staging writes
+	 * orientation, including the turn back when the object leaves the surface.
+	 */
+	readonly hasTurned: boolean
+	/** Whether a drag is between `begin` and `end`. */
+	readonly isDragging: boolean
+	/**
+	 * The anchor's orientation at `begin`. The anchor has to keep it for the whole drag, because
+	 * `TransformControls` in local space measures each move against the anchor's current
+	 * orientation but applies it along the one it had at pointer down.
+	 */
+	readonly startOrientation: Quaternion
+	/** The orientation to stage for the current move: the surface's under align, or the start's. */
+	readonly orientation: Quaternion
 	/** Gathers what the drag of `entity` snaps with and against. Call on pointer down. */
 	begin: (entity: Entity, anchor: Object3D) => void
 	/**
 	 * Moves `anchor`, already placed by the gizmo, onto the snap under the cursor. Leaves it where
-	 * it is when nothing is in reach.
+	 * it is when nothing is in reach. Never turns it. A turn lands in `orientation` instead.
 	 *
 	 * @param axis The gizmo handle being dragged, `TransformControls.axis`.
 	 */
@@ -43,10 +59,13 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 	const settings = useSettings()
 
 	let isInverted = $state(false)
+	let isDragging = $state(false)
+	let hasTurned = $state(false)
 	let indicator = $state.raw<SnapIndicator>()
 	let scene: SnapScene | undefined
 
 	const startOrientation = new Quaternion()
+	const orientation = new Quaternion()
 	const cursorPixels = new Vector2()
 	const cursorNdc = new Vector2()
 	const raycaster = new Raycaster()
@@ -87,20 +106,26 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 		get indicator() {
 			return indicator
 		},
-		get alignsRotation() {
-			return settings.current.snapObjects && settings.current.snapAlignRotation
+		get hasTurned() {
+			return hasTurned
 		},
+		get isDragging() {
+			return isDragging
+		},
+		startOrientation,
+		orientation,
 		begin: (entity, anchor) => {
+			isDragging = true
+			hasTurned = false
 			startOrientation.copy(anchor.quaternion)
+			orientation.copy(startOrientation)
 			anchorMatrix.compose(anchor.position, anchor.quaternion, UNIT_SCALE)
 			scene = snapSceneFor(world, entity, anchorMatrix)
 		},
 		apply: (anchor, axis) => {
 			indicator = undefined
+			orientation.copy(startOrientation)
 			if (!scene) return
-
-			// A translate gizmo never turns the anchor, so only an earlier alignment can have.
-			anchor.quaternion.copy(startOrientation)
 
 			if (isSnappingObjects()) {
 				raycaster.setFromCamera(cursorNdc, camera.current)
@@ -119,7 +144,8 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 
 				if (result) {
 					anchor.position.copy(result.position)
-					anchor.quaternion.copy(result.orientation)
+					orientation.copy(result.orientation)
+					if (orientation.angleTo(startOrientation) > MIN_TURN_RADIANS) hasTurned = true
 					indicator = result.indicator
 				}
 			}
@@ -127,6 +153,8 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 			anchor.updateMatrixWorld()
 		},
 		end: () => {
+			isDragging = false
+			hasTurned = false
 			scene = undefined
 			indicator = undefined
 			isInverted = false

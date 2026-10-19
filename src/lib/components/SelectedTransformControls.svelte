@@ -117,6 +117,8 @@
 		}
 
 		target.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		// An aligned move stages a turn, which would otherwise tilt the gizmo mid-drag.
+		if (objectSnap.isDragging) anchor.quaternion.copy(objectSnap.startOrientation)
 		anchor.updateMatrixWorld()
 		invalidate()
 	})
@@ -131,10 +133,14 @@
 
 		return mode
 	})
+	/** The orientation a drag stages: the gizmo's own, or during a move, the snap's. */
+	const stagedOrientation = (gizmo: Group) =>
+		activeMode === 'translate' && objectSnap.isDragging ? objectSnap.orientation : gizmo.quaternion
+
 	const stagesPosition = $derived(activeMode === 'translate')
 	// Align-to-surface turns the object during a move, so a move writes orientation too.
 	const stagesOrientation = $derived(
-		activeMode === 'rotate' || (activeMode === 'translate' && objectSnap.alignsRotation)
+		activeMode === 'rotate' || (activeMode === 'translate' && objectSnap.hasTurned)
 	)
 	const isSphereScale = $derived(
 		activeMode === 'scale' && (sphere.current !== undefined || obstacleShape?.type === 'sphere')
@@ -176,6 +182,7 @@
 		| { type: 'capsule'; r: number; l: number }
 		| undefined
 	let frameHistoryEntryOpen = false
+	let isGizmoDragging = false
 	let controls = $state.raw<ThreeTransformControls>()
 
 	$effect(() => {
@@ -194,7 +201,29 @@
 		frameHistoryEntryOpen = false
 	}
 
-	$effect(() => endFrameHistoryEntry)
+	const releaseGizmo = () => {
+		if (!isGizmoDragging) return
+		isGizmoDragging = false
+		transformControls.setActive(false)
+	}
+
+	// The gizmo can unmount mid-drag, on a mode hotkey or the entity hiding, and then never sees
+	// the pointer up. Close the history entry and release the camera with it, or undo stays blocked
+	// behind the open entry and the camera stays parked.
+	$effect(() => {
+		if (!transforming || !entity) return
+		return () => {
+			endFrameHistoryEntry()
+			releaseGizmo()
+		}
+	})
+
+	// Same unmount, plus a switch out of translate mid-drag. End the snap drag with them, or the
+	// next drag starts from a stale one.
+	$effect(() => {
+		if (!transforming || activeMode !== 'translate' || !entity) return
+		return () => objectSnap.end()
+	})
 
 	const captureScaleStart = () => {
 		if (!entity || activeMode !== 'scale') {
@@ -256,7 +285,7 @@
 		const world = worldMatrix.current
 		if (!ref || !world) return
 
-		tempShapeWorld.compose(ref.position, ref.quaternion, UNIT_SCALE)
+		tempShapeWorld.compose(ref.position, stagedOrientation(ref), UNIT_SCALE)
 		const offset = shapeOffsetFromGizmo(world, tempShapeWorld)
 
 		patchComplexShape({
@@ -275,6 +304,7 @@
 		beginFrameHistoryEntry()
 		if (activeMode === 'translate' && entity && ref) objectSnap.begin(entity, ref)
 
+		isGizmoDragging = true
 		transformControls.setActive(true)
 	}
 
@@ -352,7 +382,7 @@
 	const onMouseUp = () => {
 		scaleStart = undefined
 		objectSnap.end()
-		transformControls.setActive(false)
+		releaseGizmo()
 		endFrameHistoryEntry()
 	}
 
@@ -370,7 +400,7 @@
 	const computeLocalDragTarget = (out: Matrix4) => {
 		if (!ref || !entity) return
 
-		out.makeRotationFromQuaternion(ref.quaternion)
+		out.makeRotationFromQuaternion(stagedOrientation(ref))
 		out.setPosition(ref.position)
 
 		const parentWorld = entity.targetFor(relations.ChildOf)?.get(traits.WorldMatrix)

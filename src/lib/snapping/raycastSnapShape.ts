@@ -58,14 +58,26 @@ const hitBox = (ray: Ray, halfSize: Vector3, hit: LocalHit) => {
 	scratchBox.max.copy(halfSize)
 	if (!ray.intersectBox(scratchBox, candidate) || !recordIfNearer(ray, hit)) return
 
-	// The face is the axis where the hit sits furthest out, relative to the box's size there.
-	const x = Math.abs(candidate.x) / halfSize.x
-	const y = Math.abs(candidate.y) / halfSize.y
-	const z = Math.abs(candidate.z) / halfSize.z
-	if (x >= y && x >= z) hit.normal.set(Math.sign(candidate.x), 0, 0)
-	else if (y >= z) hit.normal.set(0, Math.sign(candidate.y), 0)
-	else hit.normal.set(0, 0, Math.sign(candidate.z))
+	// The face is the axis where the hit sits closest to the box's extent. Gaps, not ratios, so a
+	// box sized 0 on one axis, which the scale gizmo allows, still picks that axis.
+	const gapX = halfSize.x - Math.abs(candidate.x)
+	const gapY = halfSize.y - Math.abs(candidate.y)
+	const gapZ = halfSize.z - Math.abs(candidate.z)
+	if (gapX <= gapY && gapX <= gapZ) {
+		hit.normal.set(faceSign(candidate.x, halfSize.x, ray.direction.x), 0, 0)
+	} else if (gapY <= gapZ) {
+		hit.normal.set(0, faceSign(candidate.y, halfSize.y, ray.direction.y), 0)
+	} else {
+		hit.normal.set(0, 0, faceSign(candidate.z, halfSize.z, ray.direction.z))
+	}
 }
+
+/**
+ * Which way a box face points along one axis. A box flat on that axis has both faces at 0, and a
+ * slanted ray lands a rounding error either side of it, so a flat face points back at the ray.
+ */
+const faceSign = (coordinate: number, halfSize: number, direction: number): number =>
+	halfSize === 0 ? -Math.sign(direction) : Math.sign(coordinate)
 
 /** A sphere centred on the local +Z axis at `centerZ`. */
 const hitSphere = (ray: Ray, centerZ: number, radius: number, hit: LocalHit) => {

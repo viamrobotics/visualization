@@ -27,6 +27,27 @@ describe('raycastSnapShape', () => {
 		expectVector(hit?.normal, new Vector3(0, 0, 1).applyQuaternion(roll))
 	})
 
+	it('faces a flat box back toward the ray', () => {
+		const hit = raycastSnapShape(fromAbove(0.5, 0), box(2, 2, 0), new Matrix4())
+
+		expectVector(hit?.point, new Vector3(0.5, 0, 0))
+		expectVector(hit?.normal, new Vector3(0, 0, 1))
+	})
+
+	it('faces a flat box back toward every slanted ray, not where rounding lands the hit', () => {
+		const slantedRays = Array.from({ length: 200 }, (_, index) => {
+			const angle = (index / 200) * Math.PI * 2
+			const direction = new Vector3(Math.cos(angle) * 0.3, Math.sin(angle) * 0.7, -1).normalize()
+			return new Ray(new Vector3(0.1, -0.2, 0).addScaledVector(direction, -10), direction)
+		})
+
+		const downwardNormals = slantedRays
+			.map((ray) => raycastSnapShape(ray, box(2, 2, 0), new Matrix4())?.normal)
+			.filter((normal) => normal?.z !== 1)
+
+		expect(downwardNormals).toEqual([])
+	})
+
 	it('misses a box the ray passes beside', () => {
 		expect(raycastSnapShape(fromAbove(3, 0), box(2, 2, 2), new Matrix4())).toBeNull()
 	})
