@@ -28,6 +28,8 @@
 	}
 
 	const { workbench, link, select }: Props = $props()
+	const id = $props.id()
+	const trianglesHintId = `${id}-triangles-hint`
 
 	const UP_AXES: UpAxis[] = ['z', 'y', 'x']
 
@@ -61,8 +63,12 @@
 	const axisOptions = $derived(
 		UP_AXES.map((axis) => ({ label: axis.toUpperCase(), value: axis, selected: upAxis === axis }))
 	)
+	// An unset shape builds as a decimated mesh, so the controls show it as one.
+	const collision = $derived(
+		link.collision === CollisionShape.UNSPECIFIED ? CollisionShape.MESH : link.collision
+	)
 	const shapeOptions = $derived(
-		SHAPES.map((shape) => ({ label: SHAPE_LABELS[shape]!, selected: link.collision === shape }))
+		SHAPES.map((shape) => ({ label: SHAPE_LABELS[shape]!, selected: collision === shape }))
 	)
 
 	const setUnit = (label: string | undefined) => {
@@ -86,7 +92,7 @@
 	const setTriangles = (event: Event) => {
 		const input = event.target as HTMLInputElement
 		const value = Number.parseInt(input.value, 10)
-		if (Number.isFinite(value) && value > 0) {
+		if (Number.isFinite(value) && value >= 0) {
 			workbench.updateLink(link.id, { maxTriangles: value })
 		} else {
 			// prime's Input keeps what was typed, so put the stored value back.
@@ -221,17 +227,26 @@
 				/>
 			</div>
 
-			{#if link.collision === CollisionShape.MESH}
-				<label class="text-default flex items-center justify-between gap-2 text-xs">
-					Max triangles
-					<Input
-						type="number"
-						min="1"
-						step="100"
-						value={link.maxTriangles}
-						on:change={setTriangles}
-					/>
-				</label>
+			{#if collision === CollisionShape.MESH}
+				<div class="flex flex-col gap-1">
+					<label class="text-default flex items-center justify-between gap-2 text-xs">
+						Max triangles
+						<Input
+							type="number"
+							min="0"
+							step="100"
+							value={link.maxTriangles}
+							aria-describedby={trianglesHintId}
+							on:change={setTriangles}
+						/>
+					</label>
+					<p
+						id={trianglesHintId}
+						class="text-subtle-2 text-xs"
+					>
+						0 keeps every triangle.
+					</p>
+				</div>
 			{/if}
 		{/if}
 

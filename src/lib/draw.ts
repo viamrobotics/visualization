@@ -168,6 +168,10 @@ export const drawDrawing = (
 	return { entity, relationships: metadata?.relationships }
 }
 
+/**
+ * Applies `transform` to `entity` as its whole state, leaving it as `drawTransform` would spawn it.
+ * A transform with no `physicalObject` turns the entity into a bare frame, dropping its shape.
+ */
 export const updateTransform = (
 	entity: Entity,
 	{ poseInObserverFrame, physicalObject, metadata }: Transform,
@@ -183,14 +187,17 @@ export const updateTransform = (
 
 	hierarchy.setParent(entity, poseInObserverFrame?.referenceFrame)
 
-	if (physicalObject) {
-		traits.updateGeometryTrait(entity, physicalObject)
-		const center = physicalObject.center
-		if (center) {
-			setOrAddTrait(entity, traits.Center, center)
-		} else {
-			entity.remove(traits.Center)
-		}
+	traits.updateGeometryTrait(entity, physicalObject)
+	const center = physicalObject?.center
+	if (center) {
+		setOrAddTrait(entity, traits.Center, center)
+	} else {
+		entity.remove(traits.Center)
+	}
+	if (traits.isShapeGeometry(physicalObject)) {
+		entity.remove(traits.ReferenceFrame)
+	} else {
+		entity.add(traits.ReferenceFrame)
 	}
 
 	const parsedMetadata = metadataFromStruct(metadata?.fields)

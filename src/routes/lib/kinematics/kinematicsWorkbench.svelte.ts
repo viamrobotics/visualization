@@ -1,9 +1,10 @@
 import type { PlainMessage } from '@bufbuild/protobuf'
 import type { Transport } from '@connectrpc/connect'
 
-import { Struct } from '@bufbuild/protobuf'
+import { Struct, Value } from '@bufbuild/protobuf'
 import { Code, ConnectError, createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
+import { Color } from 'three'
 
 import type { ExportKind } from '$lib/buf/kinematics/v1/kinematics_service_pb'
 
@@ -21,6 +22,8 @@ import {
 	Link,
 	type ValidationReport,
 } from '$lib/buf/kinematics/v1/spec_pb'
+import { resourceColors } from '$lib/color'
+import { TRANSLUCENT_GEOMETRY_OPACITY } from '$lib/ecs'
 
 import { carryJointSubtree } from './carryJointSubtree'
 import { commonFolderName } from './commonFolderName'
@@ -206,7 +209,9 @@ export const createKinematicsWorkbench = (
 				transforms: placeholderFrames(spec),
 			})
 		}
-		const current = showCollision ? frames : withoutLinkCollision(linkIds, frames)
+		const current = showCollision
+			? withTranslucentLinkCollision(linkIds, frames)
+			: withoutLinkCollision(linkIds, frames)
 		return new Snapshot({
 			uuid,
 			transforms:
@@ -686,6 +691,44 @@ const withoutLinkCollision = (linkIds: ReadonlySet<string>, frames: Transform[])
 		const stripped = frame.clone()
 		stripped.physicalObject = undefined
 		return stripped
+	})
+}
+
+/** The opacity byte of the translucent colliders the viewer draws for a machine's frames. */
+const COLLISION_OPACITY = new Uint8Array([Math.round(TRANSLUCENT_GEOMETRY_OPACITY * 255)])
+
+const gripperColor = new Color(resourceColors.gripper)
+
+/**
+ * The color the viewer gives a gripper's colliders on a machine, which the exported module is.
+ * Stored as the linear channels `traits.Color` holds, the same values the machine path writes.
+ */
+const COLLISION_COLOR = Uint8Array.from(
+	[gripperColor.r, gripperColor.g, gripperColor.b],
+	(channel) => Math.round(channel * 255)
+)
+
+/**
+ * `frames` with the geometry of the frames named in `linkIds` drawn as the viewer draws a
+ * machine's colliders: translucent, in the gripper color, so the opaque visual meshes inside
+ * stay readable and distinct from them.
+ */
+const withTranslucentLinkCollision = (
+	linkIds: ReadonlySet<string>,
+	frames: Transform[]
+): Transform[] => {
+	return frames.map((frame) => {
+		if (!linkIds.has(frame.referenceFrame) || frame.physicalObject === undefined) return frame
+		const styled = frame.clone()
+		styled.metadata = new Struct({
+			fields: {
+				...frame.metadata?.fields,
+				colors: new Value({ kind: { case: 'stringValue', value: toBase64(COLLISION_COLOR) } }),
+				color_format: new Value({ kind: { case: 'numberValue', value: ColorFormat.RGB } }),
+				opacities: new Value({ kind: { case: 'stringValue', value: toBase64(COLLISION_OPACITY) } }),
+			},
+		})
+		return styled
 	})
 }
 

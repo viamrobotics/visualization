@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { Pose } from '$lib/buf/common/v1/common_pb'
 import {
+	CollisionShape,
 	Link,
 	LinkReport,
 	Primitive,
@@ -22,6 +23,15 @@ const waitForInputs = (label: string) =>
 		).toBeGreaterThan(0)
 	)
 
+const decimatedMesh = () =>
+	new Link({
+		id: arm.id,
+		meshPath: arm.meshPath,
+		parent: 'shoulder',
+		collision: CollisionShape.MESH,
+		maxTriangles: 48,
+	})
+
 const linkAt = (z: number, parent = 'shoulder') =>
 	new Link({
 		id: arm.id,
@@ -38,6 +48,57 @@ describe('<KinematicsLinkDetails>', () => {
 		await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Parent' }), 'elbow')
 
 		expect(workbench.updateLink).toHaveBeenCalledWith('arm', { parent: 'elbow' })
+	})
+
+	it('accepts 0 max triangles, which keeps every triangle', async () => {
+		const workbench = detailsWorkbench()
+		render(KinematicsLinkDetails, { props: { workbench, link: decimatedMesh(), select: vi.fn() } })
+		const input = screen.getByLabelText('Max triangles')
+
+		await userEvent.clear(input)
+		await userEvent.type(input, '0{Tab}')
+
+		expect(workbench.updateLink).toHaveBeenCalledWith('arm', { maxTriangles: 0 })
+	})
+
+	it('puts the stored max triangles back when a negative count is entered', async () => {
+		const workbench = detailsWorkbench()
+		render(KinematicsLinkDetails, { props: { workbench, link: decimatedMesh(), select: vi.fn() } })
+		const input = screen.getByLabelText('Max triangles')
+
+		await userEvent.clear(input)
+		await userEvent.type(input, '-5{Tab}')
+
+		expect(input).toHaveValue(48)
+		expect(workbench.updateLink).not.toHaveBeenCalled()
+	})
+
+	it('describes max triangles with what 0 means', () => {
+		render(KinematicsLinkDetails, {
+			props: { workbench: detailsWorkbench(), link: decimatedMesh(), select: vi.fn() },
+		})
+
+		expect(screen.getByLabelText('Max triangles')).toHaveAccessibleDescription(
+			'0 keeps every triangle.'
+		)
+	})
+
+	describe('with no collision shape set, which builds as a decimated mesh', () => {
+		it('offers max triangles', () => {
+			render(KinematicsLinkDetails, {
+				props: { workbench: detailsWorkbench(), link: arm, select: vi.fn() },
+			})
+
+			expect(screen.getByLabelText('Max triangles')).toBeInTheDocument()
+		})
+
+		it('shows mesh as the selected collision shape', () => {
+			render(KinematicsLinkDetails, {
+				props: { workbench: detailsWorkbench(), link: arm, select: vi.fn() },
+			})
+
+			expect(screen.getByRole('radio', { name: 'mesh' })).toBeChecked()
+		})
 	})
 
 	it('names root as the empty parent', () => {

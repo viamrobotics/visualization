@@ -328,6 +328,15 @@ export const Selected = trait()
 
 export const Removable = trait(() => true)
 
+const SHAPE_GEOMETRY_CASES = new Set(['box', 'capsule', 'sphere', 'cylinder', 'mesh'])
+
+/**
+ * Whether `Geometry` gives `geometry` a shape trait. Anything else, a point cloud or an empty
+ * oneof included, spawns as a bare `ReferenceFrame`.
+ */
+export const isShapeGeometry = (geometry: ViamGeometry | undefined): boolean =>
+	geometry?.geometryType.case !== undefined && SHAPE_GEOMETRY_CASES.has(geometry.geometryType.case)
+
 export const Geometry = (geometry: ViamGeometry) => {
 	if (geometry.geometryType.case === 'box') {
 		return Box(createBox(geometry.geometryType.value))

@@ -453,7 +453,47 @@ describe('updateTransform', () => {
 
 		expect(hierarchy.getParentName(entity)).toBe('base')
 	})
+
+	it('turns the entity into a bare frame when an update carries no geometry', () => {
+		world = createWorld()
+		const { entity } = drawTransform(world, boxTransform(), traits.SnapshotAPI)
+
+		updateTransform(entity, bareTransform())
+
+		expect({
+			box: entity.get(traits.Box),
+			center: entity.get(traits.Center),
+			referenceFrame: entity.has(traits.ReferenceFrame),
+		}).toStrictEqual({ box: undefined, center: undefined, referenceFrame: true })
+	})
+
+	it('gives a bare frame its shape back when an update carries geometry again', () => {
+		world = createWorld()
+		const { entity } = drawTransform(world, bareTransform(), traits.SnapshotAPI)
+
+		updateTransform(entity, boxTransform())
+
+		expect(entity.get(traits.Box)).toStrictEqual({ x: 10, y: 20, z: 30 })
+		expect(entity.get(traits.Center)).toMatchObject({ x: 1, y: 2, z: 3 })
+		expect(entity.has(traits.ReferenceFrame)).toBe(false)
+	})
 })
+
+const bareTransform = () =>
+	new Transform({
+		referenceFrame: 'link',
+		poseInObserverFrame: { referenceFrame: 'world', pose: {} },
+	})
+
+const boxTransform = () =>
+	new Transform({
+		referenceFrame: 'link',
+		poseInObserverFrame: { referenceFrame: 'world', pose: {} },
+		physicalObject: {
+			center: { x: 1, y: 2, z: 3 },
+			geometryType: { case: 'box', value: { dimsMm: { x: 10, y: 20, z: 30 } } },
+		},
+	})
 
 describe('updateDrawing arrows', () => {
 	let world: World

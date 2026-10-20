@@ -184,6 +184,34 @@ describe('createKinematicsWorkbench', () => {
 		expect(workbench.snapshot?.uuid).toEqual(uuid)
 	})
 
+	it('styles link collision as a machine draws a gripper collider and leaves visual meshes unstyled', async () => {
+		build.mockImplementation(
+			() =>
+				new BuildResponse({
+					report: new ValidationReport({ dof: 0 }),
+					frames: [frame('a', true), frame('a visual', true)],
+				})
+		)
+		mount()
+		workbench.addSources([file('a.stl')])
+		await vi.advanceTimersByTimeAsync(100)
+
+		const styles = Object.fromEntries(
+			(workbench.snapshot?.transforms ?? []).map((entry) => [
+				entry.referenceFrame,
+				{
+					colors: entry.metadata?.fields.colors?.kind.value,
+					opacities: entry.metadata?.fields.opacities?.kind.value,
+				},
+			])
+		)
+
+		expect(styles).toEqual({
+			a: { colors: 'AEl6', opacities: 'gA==' },
+			'a visual': { colors: undefined, opacities: undefined },
+		})
+	})
+
 	it('strips link geometry when collision is hidden, without building', async () => {
 		build.mockImplementation(
 			() =>
