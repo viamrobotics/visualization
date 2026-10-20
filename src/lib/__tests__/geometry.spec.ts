@@ -66,6 +66,27 @@ describe('createGeometryFromFrame', () => {
 		})
 	})
 
+	it.each([
+		['sphere', { type: 'sphere', r: 4 }],
+		['capsule', { type: 'capsule', r: 5, l: 60 }],
+	])('preserves a configured %s center pose', (_label, shape) => {
+		const geometry = createGeometryFromFrame(
+			asFrame({
+				...shape,
+				translation: { x: 10, y: 20, z: 30 },
+				orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 45 } },
+			})
+		)
+
+		expect(geometry?.center).toMatchObject({ x: 10, y: 20, z: 30, oZ: 1, theta: 45 })
+	})
+
+	it('centers a geometry with no offset at the frame origin', () => {
+		const geometry = createGeometryFromFrame(asFrame({ type: 'box', x: 1, y: 2, z: 3 }))
+
+		expect(geometry?.center).toMatchObject({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+	})
+
 	describe('shapes the frame editor writes', () => {
 		it.each([
 			[
@@ -121,6 +142,20 @@ describe('createGeometryFromFrame', () => {
 			['only a negative radius is set', { r: -1 }],
 		])('yields no geometry when %s', (_label, geometry) => {
 			expect(createGeometryFromFrame(asFrame(geometry))).toBeUndefined()
+		})
+
+		it('preserves a configured center pose', () => {
+			const geometry = createGeometryFromFrame(
+				asFrame({
+					x: 100,
+					y: 100,
+					z: 100,
+					translation: { x: 250, y: 0, z: 0 },
+					orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 90 } },
+				})
+			)
+
+			expect(geometry?.center).toMatchObject({ x: 250, y: 0, z: 0, oZ: 1, theta: 90 })
 		})
 	})
 

@@ -58,16 +58,17 @@ const createGeometryFromRdkConfig = (raw: Record<string, unknown>): RDKGeometry 
 	const z = (raw.z as number) ?? 0
 	const r = (raw.r as number) ?? 0
 	const l = (raw.l as number) ?? 0
+	const center = new Pose().setFromFrame(raw as Partial<Frame>)
 
 	switch (inferGeometryType(raw)) {
 		case 'box': {
-			return createGeometry({ case: 'box', value: { dimsMm: { x, y, z } } })
+			return createGeometry({ case: 'box', value: { dimsMm: { x, y, z } } }, '', center)
 		}
 		case 'capsule': {
-			return createGeometry({ case: 'capsule', value: { radiusMm: r, lengthMm: l } })
+			return createGeometry({ case: 'capsule', value: { radiusMm: r, lengthMm: l } }, '', center)
 		}
 		case 'sphere': {
-			return createGeometry({ case: 'sphere', value: { radiusMm: r } })
+			return createGeometry({ case: 'sphere', value: { radiusMm: r } }, '', center)
 		}
 		// RDK's own spelling of "no geometry", and what inference returns when no
 		// dimension was set either.
@@ -180,9 +181,10 @@ export const isPointCloud = (
 }
 
 /**
- * Reverse of {@link createGeometryFromFrame}: reads a Transform's geometry back into
- * the frame geometry shape. Anything a frame cannot express, which is every case
- * beyond box, sphere and capsule, resolves to undefined.
+ * Reads a Transform's geometry back into the frame geometry shape: the dimensions of
+ * {@link createGeometryFromFrame}'s output, not its offset. The center is dropped because
+ * the visualizer never writes a geometry offset. Anything a frame cannot express, which is
+ * every case beyond box, sphere and capsule, resolves to undefined.
  */
 export const frameGeometryFromTransform = (transform: Transform): Frame['geometry'] => {
 	const geometryType = transform.physicalObject?.geometryType

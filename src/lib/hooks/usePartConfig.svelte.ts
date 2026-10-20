@@ -40,6 +40,28 @@ export interface PartConfig {
 	}[]
 }
 
+/**
+ * `next` with `current`'s geometry offset filled in wherever `next` sets none. Geometry
+ * editors write dimensions only, so without this a resize moves the shape to the frame origin.
+ */
+const mergeGeometryOffset = (
+	next: NonNullable<Frame['geometry']>,
+	current: Frame['geometry']
+): NonNullable<Frame['geometry']> => {
+	if (next.type === 'none' || !current || current.type === 'none') {
+		return { ...next }
+	}
+
+	const translation = next.translation ?? current.translation
+	const orientation = next.orientation ?? current.orientation
+
+	return {
+		...next,
+		...(translation && { translation }),
+		...(orientation && { orientation }),
+	}
+}
+
 interface LocalPartConfig {
 	readonly isReady: boolean
 	isDirty: boolean
@@ -302,7 +324,9 @@ export const providePartConfig = (
 			resolveComponentFrames(newConfig, fragmentInfo.current)
 		).get(componentName)
 
-		const geometry = frameGeometry ?? effectiveFrame?.geometry
+		const geometry = frameGeometry
+			? mergeGeometryOffset(frameGeometry, effectiveFrame?.geometry)
+			: effectiveFrame?.geometry
 		const nextFrame: Frame = {
 			...effectiveFrame,
 			parent: referenceFrame,
@@ -374,7 +398,7 @@ export const providePartConfig = (
 				if (geometry.type === 'none') {
 					delete component.frame.geometry
 				} else {
-					component.frame.geometry = { ...geometry }
+					component.frame.geometry = mergeGeometryOffset(geometry, component.frame.geometry)
 				}
 			}
 		}
