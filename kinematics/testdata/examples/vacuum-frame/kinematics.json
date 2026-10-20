@@ -1,0 +1,52 @@
+{
+	"name": "vacuum-frame",
+	"links": [
+		{
+			"id": "mount-plate",
+			"mesh_path": "mount-plate.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 10, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_BOX"
+		},
+		{
+			"id": "frame",
+			"mesh_path": "frame.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH"
+		},
+		{
+			"id": "cup-1",
+			"mesh_path": "suction-cup.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "x": 560, "y": 250, "z": 60, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 48
+		},
+		{
+			"id": "cup-2",
+			"mesh_path": "suction-cup.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "x": -560, "y": 250, "z": 60, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 48
+		},
+		{
+			"id": "cup-3",
+			"mesh_path": "suction-cup.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "x": -560, "y": -250, "z": 60, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 48
+		},
+		{
+			"id": "cup-4",
+			"mesh_path": "suction-cup.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "x": 560, "y": -250, "z": 60, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 48
+		}
+	],
+	"tcp_pose": { "z": 110, "o_z": 1 }
+}

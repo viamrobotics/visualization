@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <unit meter="0.001" name="millimeter"/>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_geometries>
+    <geometry id="finger-mesh" name="finger">
+      <mesh>
+        <source id="finger-positions">
+          <float_array id="finger-positions-array" count="24">-20 -70 30 -20 -70 10 0 -70 10 0 -70 30 -20 10 30 0 10 30 0 10 10 -20 10 10</float_array>
+          <technique_common>
+            <accessor source="#finger-positions-array" count="8" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="finger-normals">
+          <float_array id="finger-normals-array" count="3">0 0 1</float_array>
+          <technique_common>
+            <accessor source="#finger-normals-array" count="1" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="finger-vertices">
+          <input semantic="POSITION" source="#finger-positions"/>
+        </vertices>
+        <triangles count="6">
+          <input semantic="VERTEX" source="#finger-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#finger-normals" offset="1"/>
+          <p>0 0 1 0 2 0 0 0 2 0 3 0 4 0 5 0 6 0 4 0 6 0 7 0 0 0 3 0 5 0 0 0 5 0 4 0</p>
+        </triangles>
+        <polylist count="6">
+          <input semantic="VERTEX" source="#finger-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#finger-normals" offset="1"/>
+          <vcount>3 3 3 3 3 3</vcount>
+          <p>1 0 7 0 6 0 1 0 6 0 2 0 0 0 4 0 7 0 0 0 7 0 1 0 3 0 2 0 6 0 3 0 6 0 5 0</p>
+        </polylist>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="scene" name="scene">
+      <node id="parent" name="parent">
+        <translate>10 20 30</translate>
+        <node id="child" name="child">
+          <rotate>1 0 0 90</rotate>
+          <instance_geometry url="#finger-mesh"/>
+        </node>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#scene"/>
+  </scene>
+</COLLADA>

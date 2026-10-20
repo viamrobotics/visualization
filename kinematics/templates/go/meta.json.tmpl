@@ -1,0 +1,22 @@
+{
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "{{.Namespace}}:{{.ModuleName}}",
+  "visibility": "private",
+  "url": "",
+  "description": "Modular gripper component: {{.ModelName}}",
+  "models": [
+    {
+      "api": "rdk:component:gripper",
+      "model": "{{.Namespace}}:{{.ModuleName}}:{{.ModelName}}"
+    }
+  ],
+  "applications": null,
+  "entrypoint": "bin/{{.ModuleName}}",
+  "first_run": "",
+  "build": {
+    "setup": "make setup",
+    "build": "make module.tar.gz",
+    "path": "module.tar.gz",
+    "arch": ["linux/amd64", "linux/arm64", "darwin/arm64"]
+  }
+}

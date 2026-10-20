@@ -1,0 +1,21 @@
+{
+	"name": "fixture-tool",
+	"links": [
+		{
+			"id": "frame",
+			"mesh_path": "cube-300mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 150, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH"
+		},
+		{
+			"id": "cup",
+			"mesh_path": "sphere-100mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 350, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 200
+		}
+	],
+	"tcp_pose": { "z": 400, "o_z": 1 }
+}

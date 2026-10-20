@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <xacro:macro name="gripper" params="prefix parent *origin width:=0.1 limit:=${pi / 4}">
+    <!-- The finger macro arrives with an include inside the body, as Robotiq does. -->
+    <xacro:include filename="$(find lib_pkg)/urdf/finger.xacro"/>
+    <link name="${prefix}palm"/>
+    <joint name="${prefix}palm_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}palm"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+    <xacro:finger prefix="${prefix}" parent="${prefix}palm" offset="${width / 2}" limit="${limit}"/>
+  </xacro:macro>
+</robot>

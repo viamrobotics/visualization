@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="conditionals">
+  <xacro:arg name="with_camera" default="true"/>
+  <xacro:arg name="mount_height" default="0.5"/>
+  <xacro:property name="height" value="$(arg mount_height)"/>
+  <link name="base"/>
+  <xacro:if value="$(arg with_camera)">
+    <link name="camera"/>
+    <joint name="camera_joint" type="fixed">
+      <parent link="base"/>
+      <child link="camera"/>
+      <origin xyz="0 0 ${height}"/>
+    </joint>
+  </xacro:if>
+  <xacro:unless value="$(arg with_camera)">
+    <link name="blind_cap"/>
+  </xacro:unless>
+  <xacro:if value="${height > 1}">
+    <link name="tall"/>
+  </xacro:if>
+</robot>

@@ -2,6 +2,7 @@
 	import { Icon } from '@viamrobotics/prime-core'
 	import { tick } from 'svelte'
 
+	import MenuItem from '$lib/components/overlay/MenuItem.svelte'
 	import Popover from '$lib/components/overlay/Popover.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 
@@ -11,6 +12,7 @@
 		OBSTACLE_TYPE_ORDER,
 		type ObstacleType,
 	} from './obstacleTypeOptions'
+	import WorldTreeAddButton from './WorldTreeAddButton.svelte'
 
 	const partConfig = usePartConfig()
 
@@ -38,9 +40,6 @@
 
 	const headingId = $props.id()
 	const obstacleHeadingId = `${headingId}-obstacle`
-
-	const menuItemClass =
-		'hover:bg-light focus-visible:bg-light active:bg-medium flex w-full cursor-pointer items-start gap-3 px-3 py-1.5 text-left'
 </script>
 
 {#if canEditConfig}
@@ -56,18 +55,11 @@
 		}}
 	>
 		{#snippet trigger(triggerProps, { isOpen })}
-			<button
+			<WorldTreeAddButton
 				{...triggerProps}
-				type="button"
-				aria-label="Add object"
-				class={[
-					'-m-1 grid size-7 cursor-pointer place-content-center transition-colors',
-					isOpen ? 'bg-ghost-light text-gray-7' : 'text-gray-7 hover:bg-ghost-light',
-					'focus-visible:outline-gray-6 focus-visible:outline focus-visible:-outline-offset-1',
-				]}
-			>
-				<Icon name="plus" />
-			</button>
+				label="Add object"
+				{isOpen}
+			/>
 		{/snippet}
 
 		{#snippet children({ close })}
@@ -86,34 +78,14 @@
 
 					<hr class="border-light mt-1.5 mb-1.5 shadow-none" />
 
-					<button
-						bind:this={obstacleItem}
-						type="button"
-						role="menuitem"
-						aria-haspopup="menu"
-						class={menuItemClass}
+					<MenuItem
+						bind:ref={obstacleItem}
+						icon="viam-component"
+						label="Obstacle"
+						description="A generic component with geometry that motion planning avoids"
+						opensSubmenu
 						onclick={() => showScreen('obstacle-types')}
-					>
-						<span
-							class="bg-light text-gray-6 flex size-9 shrink-0 items-center justify-center mix-blend-multiply"
-						>
-							<Icon name="viam-component" />
-						</span>
-
-						<span class="flex min-w-0 flex-1 flex-col gap-0.5">
-							<span class="text-default text-xs font-medium">Obstacle</span>
-							<span class="text-subtle-2 text-xs">
-								A generic component with geometry that motion planning avoids
-							</span>
-						</span>
-
-						<span
-							class="text-subtle-2 self-center"
-							aria-hidden="true"
-						>
-							<Icon name="chevron-right" />
-						</span>
-					</button>
+					/>
 				</div>
 			{:else}
 				<div
@@ -143,22 +115,16 @@
 
 					{#each OBSTACLE_TYPE_ORDER as type, index (type)}
 						{@const option = OBSTACLE_TYPE_OPTIONS[type]}
-						<button
-							bind:this={obstacleTypeItems[index]}
-							type="button"
-							role="menuitem"
-							class={menuItemClass}
+						<MenuItem
+							bind:ref={obstacleTypeItems[index]}
+							label={option.label}
+							description={option.description}
 							onclick={() => {
 								close()
 								obstacleType = type
 								isObstacleDialogOpen = true
 							}}
-						>
-							<span class="flex min-w-0 flex-1 flex-col gap-0.5">
-								<span class="text-default text-xs font-medium">{option.label}</span>
-								<span class="text-subtle-2 text-xs">{option.description}</span>
-							</span>
-						</button>
+						/>
 					{/each}
 				</div>
 			{/if}

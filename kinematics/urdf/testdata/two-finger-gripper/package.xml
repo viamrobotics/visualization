@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>two_finger_gripper_description</name>
+  <version>0.1.0</version>
+  <description>Two-finger gripper fixture mirroring the shape of a Robotiq 2F-85 description.</description>
+  <maintainer email="nobody@example.com">fixture</maintainer>
+  <license>Apache-2.0</license>
+</package>

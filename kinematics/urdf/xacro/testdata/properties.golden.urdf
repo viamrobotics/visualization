@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<robot name="props">
+  <link name="arm_link">
+    <visual>
+      <origin rpy="1.5707963267948966 -0.5235987755982988 0" xyz="0 0 0.2"/>
+      <geometry>
+        <cylinder length="0.4" radius="0.05"/>
+      </geometry>
+    </visual>
+    <note>arm reaches 1.05 m, costs ${5}</note>
+  </link>
+</robot>

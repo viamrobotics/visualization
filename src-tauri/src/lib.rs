@@ -1,5 +1,6 @@
 mod draw_server;
 mod launch_config;
+mod save_file;
 
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
@@ -11,6 +12,7 @@ use launch_config::{LaunchConfigState, load_from_args};
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             if let Some(payload) = load_from_args(&argv) {
                 if let Ok(mut current) = app.state::<LaunchConfigState>().0.lock() {
@@ -24,7 +26,8 @@ pub fn run() {
         }))
         .invoke_handler(tauri::generate_handler![
             launch_config::launch_config,
-            draw_server::draw_service_port
+            draw_server::draw_service_port,
+            save_file::save_file
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

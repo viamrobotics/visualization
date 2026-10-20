@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="macro_block">
+  <xacro:macro name="segment" params="name parent *origin length:=0.25 radius:=${0.5 / 10} color:=gray">
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <cylinder radius="${radius}" length="${length}"/>
+        </geometry>
+        <material name="${color}"/>
+      </visual>
+    </link>
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+  </xacro:macro>
+  <link name="base"/>
+  <xacro:segment name="upper" parent="base">
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </xacro:segment>
+  <xacro:segment name="lower" parent="upper" length="0.5" color="red">
+    <origin xyz="0 0 ${0.25 + 0.1}" rpy="0 ${pi / 2} 0"/>
+  </xacro:segment>
+</robot>

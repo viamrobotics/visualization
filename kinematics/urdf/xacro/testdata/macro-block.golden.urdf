@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<robot name="macro_block">
+  <link name="base"/>
+  <link name="upper">
+    <visual>
+      <geometry>
+        <cylinder length="0.25" radius="0.05"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+  <joint name="upper_joint" type="fixed">
+    <parent link="base"/>
+    <child link="upper"/>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+  </joint>
+  <link name="lower">
+    <visual>
+      <geometry>
+        <cylinder length="0.5" radius="0.05"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+  <joint name="lower_joint" type="fixed">
+    <parent link="upper"/>
+    <child link="lower"/>
+    <origin rpy="0 1.5707963267948966 0" xyz="0 0 0.35"/>
+  </joint>
+</robot>

@@ -1,0 +1,13 @@
+package main
+
+import (
+	"go.viam.com/rdk/components/gripper"
+	"go.viam.com/rdk/module"
+	"go.viam.com/rdk/resource"
+
+	{{.ModulePackage}} "{{.ModuleLower}}"
+)
+
+func main() {
+	module.ModularMain(resource.APIModel{API: gripper.API, Model: {{.ModulePackage}}.Model})
+}

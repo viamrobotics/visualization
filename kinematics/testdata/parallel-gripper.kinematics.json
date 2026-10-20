@@ -1,0 +1,46 @@
+{
+	"name": "parallel-gripper",
+	"links": [
+		{
+			"id": "base",
+			"mesh_path": "cube-300mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 150, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_BOX"
+		},
+		{
+			"id": "left-finger",
+			"mesh_path": "finger-20x20x80mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "y": 50, "z": 340, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_BOX",
+			"parent": "left-slide"
+		},
+		{
+			"id": "right-finger",
+			"mesh_path": "finger-20x20x80mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "y": -50, "z": 340, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_BOX",
+			"parent": "right-slide"
+		}
+	],
+	"joints": [
+		{
+			"id": "left-slide",
+			"type": "JOINT_TYPE_PRISMATIC",
+			"origin": { "y": 50, "z": 300, "o_z": 1 },
+			"axis": { "y": 1 },
+			"lower": 0,
+			"upper": 40
+		},
+		{
+			"id": "right-slide",
+			"type": "JOINT_TYPE_PRISMATIC",
+			"origin": { "y": -50, "z": 300, "o_z": 1 },
+			"axis": { "y": -1 },
+			"mimic": { "joint": "left-slide", "multiplier": 1 }
+		}
+	],
+	"tcp_pose": { "z": 380, "o_z": 1 }
+}

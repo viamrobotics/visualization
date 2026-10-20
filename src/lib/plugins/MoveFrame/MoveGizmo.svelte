@@ -20,9 +20,11 @@
 		space: 'local' | 'world'
 		/** Reports the dragged transform, world space, on every pointer move. */
 		onDrag: (targetWorldMatrix: Matrix4) => void
+		/** Reports the transform the handle was released at, world space. Fires on every release, moved or not. */
+		onRelease?: (targetWorldMatrix: Matrix4) => void
 	}
 
-	const { currentWorldMatrix, targetWorldMatrix, mode, space, onDrag }: Props = $props()
+	const { currentWorldMatrix, targetWorldMatrix, mode, space, onDrag, onRelease }: Props = $props()
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -75,6 +77,7 @@
 	const onMouseUp = () => {
 		dragging = false
 		transformControls.setActive(false)
+		onRelease?.(new Matrix4().compose(anchor.position, anchor.quaternion, UNIT_SCALE))
 	}
 
 	// Unmounting mid-drag (panel closed, tab switched, gizmo handed off) never

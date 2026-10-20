@@ -1,0 +1,48 @@
+# {{.ModuleName}}
+
+A Viam gripper module, `{{.Namespace}}:{{.ModuleName}}:{{.ModelName}}`, whose kinematic model is built from CAD files by the kinematics pipeline. The gripper reports a static model with collision geometry, so motion planning and the 3D scene see its shape and its output frame.
+
+## Iteration loop
+
+1. Edit the CAD file, then export it over the old path under `cad/`.
+2. Run `go generate ./...` (or `make generate`) to rebuild `kinematics/` from `kinematics.json`.
+3. Run `make` to build the module binary.
+4. Reload the module on your machine.
+
+To change link poses, units, or the TCP pose, edit `kinematics.json` and run `go generate ./...` again.
+
+## Validate
+
+Check the generated model the way a robot loads it:
+
+```
+kinematics validate kinematics
+```
+
+Install the `kinematics` CLI with `go install {{.CLIPackage}}@{{.CLIVersion}}`.
+
+## Do not set `frame.geometry`
+
+Do not set `frame.geometry` in this component's config. A zero-DoF model's geometry is replaced by the configured geometry, so the meshes in this module would be ignored.
+
+## Requirements
+
+The robot must run RDK v0.115.0 or later. Static models first load from that version.
+
+## Wiring into an existing module
+
+To use the generated model from another gripper, return it from `Kinematics`:
+
+```go
+func (g *myGripper) Kinematics(ctx context.Context) (referenceframe.Model, error) {
+	return kinematics.Model(g.Name().ShortName())
+}
+```
+
+## Moving parts
+
+The gripper has {{.DoF}} degree(s) of freedom. Inputs are in mm for prismatic joints and radians for revolute joints. `GoToInputs` rejects a value outside its limit and otherwise records it. `Open` drives every input to its maximum and `Grab` to its minimum. Drive your hardware to the target in `moveTo` in `{{.ModelSnake}}.go`.
+
+## Hardware
+
+`IsHoldingSomething`, `IsMoving`, and `Stop` return `errUnimplemented` until you replace them with calls to your hardware.

@@ -30,7 +30,7 @@ func main() {
 		Production:    *production,
 		StaticPort:    *staticPort,
 		TempDir:       *tmpDir,
-		ExtraHandlers: extraHandlers(),
+		ExtraHandlers: allHandlers(),
 	}); err != nil {
 		log.Fatal(err)
 	}

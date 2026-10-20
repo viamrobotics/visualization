@@ -1,0 +1,129 @@
+package {{.ModulePackage}}
+
+import (
+	"context"
+	"math"
+	"testing"
+
+	"go.viam.com/rdk/components/gripper"
+	"go.viam.com/rdk/logging"
+	"go.viam.com/rdk/referenceframe"
+)
+
+const (
+	poseTolerance = 1e-6
+	expectedDoF   = {{.DoF}}
+)
+
+func TestKinematics(t *testing.T) {
+	ctx := context.Background()
+	g, err := New{{.ModelPascal}}(ctx, nil, gripper.Named("test"), &Config{}, logging.NewTestLogger(t))
+	if err != nil {
+		t.Fatalf("construct gripper: %v", err)
+	}
+	t.Cleanup(func() { _ = g.Close(ctx) })
+
+	model, err := g.Kinematics(ctx)
+	if err != nil {
+		t.Fatalf("Kinematics: %v", err)
+	}
+	if got := len(model.DoF()); got != expectedDoF {
+		t.Errorf("DoF = %d, want %d", got, expectedDoF)
+	}
+	current, err := g.CurrentInputs(ctx)
+	if err != nil {
+		t.Fatalf("CurrentInputs: %v", err)
+	}
+	if len(current) != expectedDoF {
+		t.Errorf("CurrentInputs has %d inputs, want %d", len(current), expectedDoF)
+	}
+
+	geometries, err := g.Geometries(ctx, nil)
+	if err != nil {
+		t.Fatalf("Geometries: %v", err)
+	}
+	if len(geometries) == 0 {
+		t.Error("Geometries is empty, want the spec's collision geometry")
+	}
+
+	pose, err := model.Transform(make([]referenceframe.Input, expectedDoF))
+	if err != nil {
+		t.Fatalf("Transform: %v", err)
+	}
+	want := [3]float64{ {{.TCPX}}, {{.TCPY}}, {{.TCPZ}} }
+	got := pose.Point()
+	for axis, name := range []string{"x", "y", "z"} {
+		coordinate := [3]float64{got.X, got.Y, got.Z}[axis]
+		if math.Abs(coordinate-want[axis]) > poseTolerance {
+			t.Errorf("TCP pose %s = %v, want %v", name, coordinate, want[axis])
+		}
+	}
+}
+
+func TestOpenAndGrabDriveInputsToLimits(t *testing.T) {
+	ctx := context.Background()
+	g, err := New{{.ModelPascal}}(ctx, nil, gripper.Named("test"), &Config{}, logging.NewTestLogger(t))
+	if err != nil {
+		t.Fatalf("construct gripper: %v", err)
+	}
+	t.Cleanup(func() { _ = g.Close(ctx) })
+	model, err := g.Kinematics(ctx)
+	if err != nil {
+		t.Fatalf("Kinematics: %v", err)
+	}
+	limits := model.DoF()
+
+	if err := g.Open(ctx, nil); err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	opened, err := g.CurrentInputs(ctx)
+	if err != nil {
+		t.Fatalf("CurrentInputs: %v", err)
+	}
+	for i, limit := range limits {
+		if opened[i] != limit.Max {
+			t.Errorf("after Open, input %d = %v, want %v", i, opened[i], limit.Max)
+		}
+	}
+
+	grabbed, err := g.Grab(ctx, nil)
+	if err != nil {
+		t.Fatalf("Grab: %v", err)
+	}
+	if !grabbed {
+		t.Error("Grab = false, want true")
+	}
+	closed, err := g.CurrentInputs(ctx)
+	if err != nil {
+		t.Fatalf("CurrentInputs: %v", err)
+	}
+	for i, limit := range limits {
+		if closed[i] != limit.Min {
+			t.Errorf("after Grab, input %d = %v, want %v", i, closed[i], limit.Min)
+		}
+	}
+}
+
+func TestGoToInputsRejectsBadInputs(t *testing.T) {
+	ctx := context.Background()
+	g, err := New{{.ModelPascal}}(ctx, nil, gripper.Named("test"), &Config{}, logging.NewTestLogger(t))
+	if err != nil {
+		t.Fatalf("construct gripper: %v", err)
+	}
+	t.Cleanup(func() { _ = g.Close(ctx) })
+	model, err := g.Kinematics(ctx)
+	if err != nil {
+		t.Fatalf("Kinematics: %v", err)
+	}
+
+	if err := g.GoToInputs(ctx, make([]referenceframe.Input, expectedDoF+1)); err == nil {
+		t.Error("GoToInputs with the wrong length succeeded, want an error")
+	}
+	for i, limit := range model.DoF() {
+		target := make([]referenceframe.Input, expectedDoF)
+		target[i] = limit.Max + 1
+		if err := g.GoToInputs(ctx, target); err == nil {
+			t.Errorf("GoToInputs with input %d above its limit succeeded, want an error", i)
+		}
+	}
+}

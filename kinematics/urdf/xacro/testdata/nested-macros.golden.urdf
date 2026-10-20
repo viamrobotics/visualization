@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<robot name="nested">
+  <link name="bar_x_a">
+    <inertial>
+      <mass value="0.6"/>
+      <origin xyz="0.15 0 0"/>
+    </inertial>
+  </link>
+  <link name="bar_x_b">
+    <inertial>
+      <mass value="1.2"/>
+      <origin xyz="0.3 0 0"/>
+    </inertial>
+  </link>
+  <note count="2"/>
+  <link name="bar_solo_a">
+    <inertial>
+      <mass value="3.0"/>
+      <origin xyz="0.75 0 0"/>
+    </inertial>
+  </link>
+  <link name="bar_solo_b">
+    <inertial>
+      <mass value="6.0"/>
+      <origin xyz="1.5 0 0"/>
+    </inertial>
+  </link>
+</robot>

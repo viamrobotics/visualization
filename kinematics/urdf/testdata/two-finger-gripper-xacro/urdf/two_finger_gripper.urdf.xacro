@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="two_finger_gripper">
+  <xacro:include filename="$(find two_finger_gripper_description)/urdf/finger.xacro"/>
+  <xacro:arg name="with_marker" default="true"/>
+
+  <xacro:property name="finger_x" value="0.03"/>
+  <xacro:property name="palm_height" value="0.05"/>
+  <xacro:property name="base_size" value="0.04 0.04 0.02"/>
+
+  <link name="gripper_base">
+    <xacro:small_inertial/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${base_size}"/></geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${base_size}"/></geometry>
+    </collision>
+  </link>
+  <link name="palm">
+    <xacro:small_inertial/>
+    <collision>
+      <geometry>
+        <mesh filename="file://$(find two_finger_gripper_description)/meshes/collision/palm.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <xacro:finger name="left" side="1">
+    <origin xyz="${finger_x} 0 ${palm_height}" rpy="0 0 0"/>
+  </xacro:finger>
+  <xacro:finger name="right" side="-1">
+    <origin xyz="${-finger_x} 0 ${palm_height}" rpy="0 0 0"/>
+  </xacro:finger>
+  <xacro:tip name="left"/>
+  <xacro:tip name="right"/>
+
+  <xacro:if value="$(arg with_marker)">
+    <link name="marker_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://two_finger_gripper_description/meshes/visual/marker.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="marker_joint" type="fixed">
+      <parent link="palm"/>
+      <child link="marker_link"/>
+      <origin xyz="0 0.03 0.02" rpy="0 0 0"/>
+    </joint>
+  </xacro:if>
+  <link name="tool0"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="gripper_base"/>
+    <child link="palm"/>
+    <origin xyz="0 0 0.01" rpy="0 0 0"/>
+  </joint>
+  <joint name="tool_joint" type="fixed">
+    <parent link="palm"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 ${0.3 / 2}" rpy="0 0 0"/>
+  </joint>
+
+  <transmission name="left_finger_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_finger_joint"/>
+  </transmission>
+  <gazebo reference="palm">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+</robot>

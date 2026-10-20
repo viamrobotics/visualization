@@ -1,0 +1,457 @@
+---
+title: Kinematics from 3D models
+description: Turn STL, PLY, OBJ, or COLLADA files exported from CAD into a kinematic model and return it from a Viam module's Kinematics method.
+---
+
+The `kinematics` command turns STL, PLY, OBJ, or COLLADA (`.dae`) files into a kinematic model. It builds a Go package that loads the model. You can return that model from a component's `Kinematics()` method, so the robot reports the real shape of your component to the frame system and to the visualizer.
+
+A model that your module owns is better than a mesh on the component's `frame.geometry` for three reasons.
+
+- `frame.geometry` is static config. Changing the component means editing the machine config by hand.
+- The mesh bloats the config, and every client that fetches the config downloads it.
+- A large mesh in the config slows frame-system calls.
+
+With this pipeline the mesh ships inside the module. The geometry is versioned with the code, and the config stays small.
+
+## Requirements
+
+- Go to run the command and to build the module.
+- A robot running RDK v0.115.0 or later. Models with a TCP need v0.115.0, which is the first release that reads one. Mimic joints need v0.121.0 or later.
+
+A model with no joints is static. Joints are covered in [Add joints](#add-joints).
+
+## Set it up in the app
+
+The desktop app, or a local draw server started with `make up`, has a **Kinematics** page for the first pass on a new model. Open it from the **Kinematics** link in the workspace bar. The page shows only your model, with no machine connected, and it builds through the draw server on every change.
+
+The model shows up in the **World** tree on the left, under **Drawn**. The tree starts with `root` and `tcp`. `root` is your component's frame on the robot, which is where the model mounts on its parent. Its details hold the model name, which defaults to the folder name or the first file's name. Dropping `frame.stl` gives `root`, then `frame` and `tcp`. Under `root` are the links and the joints, and `tcp` holds the TCP. Each link can show a visual child named `<id> visual`. Select anything in the tree, or click it in the scene, to open its details. The details are laid out like a frame's, and poses are relative to the parent.
+
+1. Click **+** in the **World** tree's header and choose **Add files** or **Add folder**, or drop files on the page. Each STL, PLY, OBJ, or DAE becomes a link. STL files must be binary STL, because an ASCII STL fails to load.
+2. Select a link. Set **Mesh units** to the unit your CAD tool exported in. When the built size looks wrong for that unit, the link offers a one-click switch, such as **Switch to mm**.
+3. Set **Up axis** if your CAD tool is Y-up or X-up. Viam frames are Z-up.
+4. Pick **Collision**. A decimated mesh follows the link's shape within **Max triangles**. A box is the cheapest shape for collision checks.
+5. Place the link relative to its **Parent**. Drag the gizmo on the selected link, or edit its **Origin** fields. Both change the same pose. **Translate** and **Rotate** in the dashboard switch the gizmo, and clicking the active one hides it. Turn on **Snapping** to make a drag land on whole steps. A link under `root` sits relative to the component's frame origin.
+6. Select **TCP** and place it. For an end effector, this is the tool center point, the point the planner moves.
+7. Use the **Visual** and **Collision** switches in the dashboard to choose what the scene draws. **Collision** is on by default because it is the geometry that reaches the robot. **Visual** is off by default because it draws the full-detail **Mesh file** of every link. Turn it on to compare the two.
+
+**Export** in the dashboard opens once a build is ready. The menu opens with the **Viam check**, which is passed or failed with reasons. It means the model loads and round-trips the way viam-server reads a module's kinematics. It does not build or run your module. Below the check are the model size, the triangle count of each link, and a comparison with the previous build. A line at the top of the page says when the model has problems.
+
+The menu has two exports.
+
+- **Add to an existing module** downloads the `kinematics/` Go package for a module you already have, with `kinematics.json` and your mesh files.
+- **New module** downloads a full gripper module scaffold. Fill in **Namespace (required)** first. The form labels the resource triplet **Viam model**, so it is not confused with the kinematic model.
+
+Either zip can be added back to the page later. After the first pass, the CLI covers every later change. Each section below works on the files from either download.
+
+## Import from a vendor
+
+When a vendor ships a URDF for their arm or gripper, you do not need to author a spec. Import it and the tool writes the project for you.
+
+### What to hand over
+
+Give the tool one of these.
+
+- A ROS description package folder, the one that holds `package.xml`, the `urdf` folder, and the `meshes` folder. The `urdf` folder can hold `.urdf` or `.xacro` files.
+- A `.urdf` file with its mesh files beside it.
+- A zip of either.
+
+Mesh paths that use `package://`, relative paths, or `file://` are resolved from what you hand over. Meshes can be STL, PLY, OBJ, or DAE. A mesh in any other format stops the import, and the error names the file. STL files must be binary STL, since an ASCII STL fails to load.
+
+A package that ships `.xacro` files instead of a `.urdf` imports the same way, with no ROS install. The tool expands the xacro itself. It reads properties, args at their defaults, macros with default and block parameters, includes through `$(find)`, `xacro:if` and `xacro:unless`, and `${}` math with `pi` and `radians()`.
+
+A feature outside that, such as `xacro.load_yaml`, stops the import. The message names the feature and gives the command that expands the file where ROS is installed. Import the `.urdf` it writes.
+
+```bash
+xacro urdf/robot.urdf.xacro -o robot.urdf
+```
+
+A package can hold more than one robot, such as a gripper in two sizes. The import then lists the top-level xacro files and stops. The app cannot pick one yet, so import it from the command line and pass the file you want by path.
+
+If you design the part yourself, some CAD exporters write URDF packages you can import: [`Rhoban/onshape-to-robot`](https://github.com/Rhoban/onshape-to-robot), [`ros/solidworks_urdf_exporter`](https://github.com/ros/solidworks_urdf_exporter), and [`syuntoku14/fusion2urdf`](https://github.com/syuntoku14/fusion2urdf).
+
+### Import in the app
+
+On the **Kinematics** page, click **+** in the **World** tree's header and choose **Import URDF or ROS package**. You can also drop the folder, the `.urdf`, or the zip on the page.
+
+The tool looks for a TCP in the URDF. It picks a leaf link with no geometry, named `tool0` or ending in `_tcp`, or containing `tcp` or `tool`. When none matches, the page asks **Which link is the TCP?**. Pick one and choose **Use as TCP**.
+
+The **Import summary** then lists how many elements were dropped, how many items were renamed, and how many visual fallbacks were used. Open **Details** to see each one. The project then behaves like a hand-authored one, so you can edit anything.
+
+### What is kept, converted, and dropped
+
+- Collision geometry is preferred over visual geometry. A link with no collision uses its visual mesh instead, which the summary lists as a visual fallback. A link with several collision elements becomes several links.
+- Fixed joints are folded away. The child link's geometry moves to the parent joint, with the offsets composed.
+- Revolute and prismatic joints are kept with their limits, converted to degrees and millimetres.
+- Continuous joints are imported as revolute joints with limits of -360 to 360 degrees.
+- Mimic joints are kept.
+- Box, sphere, and cylinder shapes are kept as primitive links. The link details show them as **Box**, **Sphere**, or **Cylinder** with their dimensions.
+- Inertial data, transmissions, Gazebo extensions, and `ros2_control` blocks are dropped and listed in the summary.
+- Floating and planar joints fail the import and name the joint.
+- A mesh scale of 1, 0.001, or 0.0254 is read as metres, millimetres, or inches. Any other scale fails the import and names the file.
+- A name that clashes with another link or joint, or with a reserved name, gets a suffix and is listed as renamed.
+
+### Import from the command line
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main import -o my-gripper path/to/package
+```
+
+To import one robot from a package that holds several, pass its file instead of the folder, such as `path/to/package/urdf/robot.urdf.xacro`. The package folder above it is still read for `$(find)` and the meshes.
+
+`import` writes `kinematics.json` and the mesh files it uses into `my-gripper`, then prints the report. This is a sample from a gripper package:
+
+```
+URDF: urdf/two_finger_gripper.urdf
+TCP link: tool0
+dropped (7):
+  <inertial> in gripper_base
+  <visual> in gripper_base
+  <inertial> in palm
+  <inertial> in left_finger
+  <inertial> in right_finger
+  <transmission> in left_finger_joint
+  <gazebo> in palm
+visual fallback (1):
+  marker_link
+wrote kinematics.json and 3 mesh files to my-gripper
+```
+
+`-tcp <link>` picks the TCP link when the naming convention finds none. `build` accepts the same vendor paths:
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main build -tcp tool0 -max-triangles 1000 path/to/package
+```
+
+`-max-triangles <n>` caps the collision triangles of every mesh link. Both flags apply to vendor input only, and `build` rejects them on a spec.
+
+There are two sources of truth, and you choose by how you build.
+
+- A vendor build regenerates from the vendor files. The generated loader's `go generate` line points at the vendor path, so a vendor update flows through when you rebuild.
+- An imported project regenerates from `kinematics.json`. Your edits survive, and a vendor update needs a new import. Any edit on the **Kinematics** page also makes the project the source.
+
+### Large collision meshes
+
+Vendor collision meshes are kept as shipped. A link with more than 5,000 collision triangles gets a warning. The **Viam check** still passes. The warning shows in the **Export** menu and in the CLI report under `Warnings:`.
+
+A selected link over the limit offers **Simplify**, and the Export menu offers **Simplify all**. Each sets **Max triangles** to a value under the limit. Simplification only grows the geometry, so a simplified link never misses a collision that the original mesh would catch. Simplifying a large mesh can take a long time.
+
+## Write a spec
+
+The spec is the project, a JSON file named `kinematics.json`. It sits next to the mesh files it references and is the source of truth for every rebuild.
+
+```json
+{
+	"name": "vacuum-frame",
+	"links": [
+		{
+			"id": "frame",
+			"mesh_path": "cube-300mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 150, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH"
+		},
+		{
+			"id": "cup",
+			"mesh_path": "sphere-100mm.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "z": 350, "o_z": 1 },
+			"collision": "COLLISION_SHAPE_MESH",
+			"max_triangles": 200
+		}
+	],
+	"tcp_pose": { "z": 400, "o_z": 1 }
+}
+```
+
+Top-level fields:
+
+| Field        | Meaning                                                                                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | Model name, edited in `root`'s details. RDK prefixes the model's frames with the component name at runtime, so this only names the model in its own file. |
+| `links`      | The bodies of the model. A link with no `parent` hangs off `root`, which is the component's frame origin where the model mounts.                          |
+| `joints`     | The moving connections. See [Add joints](#add-joints).                                                                                                    |
+| `tcp_pose`   | The TCP relative to `root`. For an end effector this is the tool center point. Pose positions are in millimetres, as in Viam APIs.                        |
+| `tcp_parent` | The joint the TCP moves with. Leave it empty to fix the TCP to `root`.                                                                                    |
+
+Fields of each link:
+
+| Field           | Meaning                                                                                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | Unique within the spec. Becomes the link id in Viam.                                                                                                 |
+| `mesh_path`     | Path of the visual mesh file, relative to the spec file. The extension is `.stl`, `.ply`, `.obj`, or `.dae`, in any case.                            |
+| `mesh_unit`     | Unit the file was authored in: `LENGTH_UNIT_METERS`, `LENGTH_UNIT_MILLIMETERS`, or `LENGTH_UNIT_INCHES`. Required.                                   |
+| `origin`        | Places the mesh file's own frame in the assembly frame. It is applied after the mesh is rescaled to metres.                                          |
+| `collision`     | `COLLISION_SHAPE_MESH` keeps the mesh as collision geometry. `COLLISION_SHAPE_BOX` uses the axis-aligned bounding box of the mesh. Defaults to mesh. |
+| `max_triangles` | Triangle budget for `COLLISION_SHAPE_MESH`. `0` keeps every triangle. Values below RDK's decimation floor of 12 are raised to 12.                    |
+| `parent`        | The joint the link moves with. Leave it empty to fix the link to `root`.                                                                             |
+
+`mesh_unit` is required because STL, PLY, and OBJ files carry no unit. CAD tools usually export millimetres, and RDK reads mesh vertices as metres. A missing unit would silently scale the link by a factor of 1000, so the build rejects the spec instead of guessing.
+
+A DAE file declares its own unit in `<unit meter>`. The build applies it first and `mesh_unit` scales on top of it, as a URDF mesh `scale` does in ROS, so a DAE usually takes `LENGTH_UNIT_METERS`. Node transforms in the file are applied too. The `<up_axis>` tag is ignored, as RViz and MoveIt ignore it, because robot meshes are Z up whatever the tag says. A Y-up file needs a rotation in its `origin`, the same as a Y-up STL.
+
+Every pose in the spec is in the assembly frame, which is the model with every joint at zero. The details panel shows the same poses relative to the parent.
+
+## Build and read the report
+
+Run the command from the directory that holds the spec:
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main build kinematics.json
+```
+
+The build writes a `kinematics/` directory with a Go loader for the model. It then loads the model back the way a robot would and prints the Viam check. The report gives the degrees of freedom, the TCP pose at zero joint positions, and one line per link with its collision shape, triangle count, and extent in millimetres. It also gives the model size and a list of failures, which is empty for a valid model. Pass `-json` to get the same report as JSON with snake_case field names.
+
+```
+model: vacuum-frame (9249 bytes)
+dof: 0
+TCP pose: x=0.000 y=0.000 z=400.000 mm, ov=(0.0000, 0.0000, 1.0000) theta=0.000 deg
+link cup              mesh    200 tris  104.1 × 104.1 × 104.1 mm
+link frame            mesh     12 tris  300.0 × 300.0 × 300.0 mm
+ok
+wrote kinematics/kinematics.go
+wrote kinematics/model.json
+```
+
+The decimated cup is slightly larger than 100 mm because decimation is conservative and never cuts into the visual mesh. Check that `dof` is 0 for a static model, the extents match your link, and the report ends with `ok`.
+
+The command uses `@main` instead of `@latest` because the repository's release tags are `v2.x`, but its `go.mod` declares the module without a `/v2` suffix. Go cannot resolve those tags as versions of this path, and `@latest` falls back to `v1.45.1`, which predates `cmd/kinematics`. Use `@main`, or pin a commit that has been pushed.
+
+### Build options
+
+```
+kinematics build [-o dir] [-lang go|none] [-package name] [-json] <spec>
+```
+
+- `-o` sets the output directory.
+- `-lang` is `go` by default. `none` skips the Go loader. See [Use it from another language](#use-it-from-another-language).
+- `-package` names the generated Go package. It defaults to the output directory's base name, lowercased, with characters outside `[a-z0-9_]` and leading digits removed. It falls back to `kinematics`.
+
+## Add joints
+
+A model can carry joints, so a gripper's fingers or a tool's slide move with the joint positions the module reports. Each joint is revolute or prismatic, and each link moves with one joint or stays fixed to `root`. This example is a parallel gripper with one input. The right finger mimics the left.
+
+```json
+{
+	"name": "parallel-gripper",
+	"links": [
+		{
+			"id": "base",
+			"mesh_path": "base.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"collision": "COLLISION_SHAPE_BOX"
+		},
+		{
+			"id": "left-finger",
+			"mesh_path": "finger.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "y": 50, "z": 340, "o_z": 1 },
+			"parent": "left-slide"
+		},
+		{
+			"id": "right-finger",
+			"mesh_path": "finger.stl",
+			"mesh_unit": "LENGTH_UNIT_MILLIMETERS",
+			"origin": { "y": -50, "z": 340, "o_z": 1 },
+			"parent": "right-slide"
+		}
+	],
+	"joints": [
+		{
+			"id": "left-slide",
+			"type": "JOINT_TYPE_PRISMATIC",
+			"origin": { "y": 50, "z": 300, "o_z": 1 },
+			"axis": { "y": 1 },
+			"lower": 0,
+			"upper": 40
+		},
+		{
+			"id": "right-slide",
+			"type": "JOINT_TYPE_PRISMATIC",
+			"origin": { "y": -50, "z": 300, "o_z": 1 },
+			"axis": { "y": -1 },
+			"mimic": { "joint": "left-slide", "multiplier": 1 }
+		}
+	],
+	"tcp_pose": { "z": 380, "o_z": 1 }
+}
+```
+
+Every link `origin`, joint `origin`, and `tcp_pose` is in the assembly frame. That is the frame a CAD tool uses when it exports parts in assembly coordinates, so you place each link once and the compiler works out the parent-relative transforms.
+
+- `type` is `JOINT_TYPE_PRISMATIC` or `JOINT_TYPE_REVOLUTE`. In the app these are **Revolute** and **Prismatic**. `axis` is the direction of motion in the joint frame.
+- `lower` and `upper` are millimetres for a prismatic joint and degrees for a revolute one.
+- `parent` on a joint makes a chain. Leave it empty to mount the joint on `root`.
+- `mimic` makes a joint follow another instead of adding an input. Its value is `multiplier × joint + offset`, and a multiplier of 0 reads as 1.
+- `tcp_parent` names the joint the TCP moves with. Leave it empty to fix the TCP to `root`.
+
+On the **Kinematics** page, **Add joint** in the model's details adds a joint under the model, **Add child joint** in a joint's details builds a chain, and **Add joint for this link** in a link's details puts a new joint at the link and moves the link onto it. Every link and joint has a **Parent** picker, so you can move it to another joint the way you reparent a frame. Moving a joint, with its gizmo or its **Origin** fields, carries every link, joint, and the TCP that rides it. A driven joint's details include a **Position** slider that re-poses the preview. A mimic joint shows **Mimic**, **Multiplier**, and **Offset**.
+
+The module reports joint positions in RDK units, which are millimetres for prismatic joints and radians for revolute ones. In a scaffolded gripper, `GoToInputs` checks each value against the joint limits, `Open` drives every input to its upper limit, and `Grab` drives every input to its lower limit. Replace the marked lines with your hardware calls.
+
+## Use it from an existing Go module
+
+Copy or generate the `kinematics/` directory into your module and import it. The generated `Model` function uses only RDK calls, so your module does not import this repository at runtime.
+
+Build the model once in the constructor and return it from `Kinematics`. A static model has no joints, so `CurrentInputs` returns an empty slice and `GoToInputs` does nothing.
+
+```go
+import (
+	"context"
+
+	"go.viam.com/rdk/referenceframe"
+
+	"example.com/my-module/kinematics"
+)
+
+type myGripper struct {
+	// resource.Named, logger, and other fields omitted
+	model referenceframe.Model
+}
+
+func newMyGripper(name resource.Name /* ... */) (*myGripper, error) {
+	model, err := kinematics.Model(name.ShortName())
+	if err != nil {
+		return nil, err
+	}
+	return &myGripper{model: model}, nil
+}
+
+func (g *myGripper) Kinematics(ctx context.Context) (referenceframe.Model, error) {
+	return g.model, nil
+}
+
+func (g *myGripper) CurrentInputs(ctx context.Context) ([]referenceframe.Input, error) {
+	return []referenceframe.Input{}, nil
+}
+
+func (g *myGripper) GoToInputs(ctx context.Context, inputSteps ...[]referenceframe.Input) error {
+	return nil
+}
+```
+
+Adjust the import path to match your module. The same three methods apply to any component that implements `referenceframe.InputEnabled`.
+
+## Use it from another language
+
+A Python or C++ module does not need the Go loader. Build with `-lang none`:
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main build -lang none kinematics.json
+```
+
+This writes the model file only. See [What the package contains](#what-the-package-contains) for how a non-Go module returns it.
+
+## Start a new module
+
+To start from nothing, scaffold a gripper module around the model:
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main init -namespace <ns> kinematics.json
+```
+
+`-namespace` is required. `-module` and `-model` default to the spec name. The `-model` flag names the Viam model, not the kinematic model, and `-o` defaults to `./<module>`. The command refuses a non-empty target directory unless you pass `-force`. It prints the Viam check and the next steps.
+
+The scaffold has this layout:
+
+```
+go.mod                    requires go.viam.com/rdk at the version of the build that generated it
+meta.json                 one gripper, <namespace>:<module>:<model>
+Makefile                  builds the module binary and module.tar.gz
+README.md                 iteration loop, validate, the frame.geometry warning, RDK floor
+.gitignore
+kinematics.json           the spec, with mesh paths rewritten to cad/<file>
+cad/<mesh files>
+generate.go               //go:generate line that rebuilds the kinematics package
+kinematics/               build output and the generated loader, package kinematics
+<model_snake>.go          gripper that builds the model once and returns it from Kinematics
+<model_snake>_test.go     checks Kinematics() has geometry and the spec's TCP pose
+cmd/module/main.go        module.ModularMain with the gripper's API and model
+```
+
+Then resolve dependencies and build:
+
+```bash
+cd <module>
+go mod tidy
+make
+```
+
+The gripper's `Open`, `Grab`, `IsHoldingSomething`, `Stop`, and `IsMoving` methods are stubs with TODO comments. Fill them in for your hardware.
+
+## Iterate on the design
+
+When the CAD model changes, export it over the same path the spec references, then regenerate:
+
+```bash
+go generate ./...
+make
+```
+
+`go generate` reruns `build` with the version the scaffold was created with and rewrites only the files under `kinematics/`. Rebuild the module, then reload it on the robot with `viam module reload-local` or your usual local module config.
+
+To check a new export by eye first, reopen the project on the **Kinematics** page. Drop a downloaded zip, the module folder (or pick it with **Open folder**), or `kinematics.json` together with its mesh files. The page lists any mesh file it could not find, and you can supply each one.
+
+Select the link and click **Replace file** to swap in the new export. The link keeps its name, mesh units, origin, and collision settings, and its mesh path, so the spec still points where `go generate` expects. Its details then show its triangles and extent before and after the change, and the Export menu compares the build with the previous one. Turn on **Show previous geometry** to overlay the old shape, which makes a CAD export that moved its origin easy to spot. Export **Add to an existing module** again and copy it over the module's files.
+
+## Validate in CI
+
+`kinematics validate` runs the same Viam check as the app, without changing any files. It takes the built `kinematics/` directory, not the spec. Run it in CI so a bad export fails the build:
+
+```bash
+go run github.com/viamrobotics/visualization/cmd/kinematics@main validate kinematics
+```
+
+The full form is `kinematics validate [-name n] [-json] <dir|model.json>`. It also accepts the built model file directly, which is `kinematics/model.json`.
+
+Exit codes:
+
+| Code | Meaning                         |
+| ---- | ------------------------------- |
+| 0    | The model is valid.             |
+| 1    | One or more validation failures |
+| 2    | Usage error or I/O error        |
+
+## Do not also set frame.geometry
+
+Leave `frame.geometry` unset on the component's config. RDK replaces a zero-DoF model's geometry with the configured `frame.geometry`, so setting both discards the meshes from this pipeline and brings back the static-config problems described at the top of this guide.
+
+## What the package contains
+
+This section is a reference. You do not need it to use the app or the commands above.
+
+The build writes two files under `kinematics/`. `kinematics.go` is the Go loader. `model.json` is the model in the form viam-server reads, an SVA kinematics file with the meshes inline. The Go loader returns it for you. A Python or C++ module returns the bytes of `model.json` unchanged from `GetKinematics`, with the format set to `KINEMATICS_FILE_FORMAT_SVA`. Build with `-lang none` to skip the loader. Do not edit `model.json` by hand, because the next build overwrites it.
+
+## Glossary
+
+The app uses the names robotics engineers know from URDF and ROS. The table maps each name to what Viam and URDF call the same thing.
+
+| This tool                             | Viam                                                   | URDF                                                            |
+| ------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| Model (`name`, set in `root`)         | Kinematic model                                        | `robot` name                                                    |
+| `root`                                | The component's frame                                  | Root link, usually `base_link`                                  |
+| Link                                  | Link                                                   | `link`                                                          |
+| Collision, Max triangles              | A link's geometry                                      | `collision`                                                     |
+| Visual, Mesh file                     | None                                                   | `visual`                                                        |
+| Mesh units                            | Metres                                                 | Mesh `scale`                                                    |
+| Origin                                | Link translation and geometry offset                   | `origin` with `xyz` and `rpy`                                   |
+| Joint                                 | Joint                                                  | `joint`                                                         |
+| Revolute, Prismatic                   | `revolute`, `prismatic`                                | Those two, plus `continuous`, `fixed`, `floating`, and `planar` |
+| Axis                                  | `axis`                                                 | `axis`                                                          |
+| Lower, Upper                          | `min`, `max`                                           | `limit` with `lower` and `upper`                                |
+| Mimic, Multiplier, Offset             | `mimic`                                                | `mimic`                                                         |
+| Parent                                | A link's parent is a joint. A joint's parent is a link | `parent` link and `child` link                                  |
+| TCP (`tcp_pose`, `tcp_parent`)        | End effector, tool center point                        | Convention `tool0` or a name ending in `_tcp`                   |
+| Position                              | Input                                                  | Joint position                                                  |
+| Project (`kinematics.json`)           | None                                                   | None                                                            |
+| Viam check                            | None                                                   | None                                                            |
+| Add to an existing module, New module | Module                                                 | None                                                            |
+
+Units differ from URDF. This tool shows millimetres and degrees, always labelled. URDF uses metres and radians.
+
+## Coming from URDF
+
+Three facts matter when you bring a URDF's ideas over.
+
+- Only collision geometry reaches the robot. Viam uses it for both collision checks and display. Visual meshes are a preview aid in this tool. A URDF's visual meshes are dropped on import when a collision exists.
+- The project stores every pose in the assembly frame, which is the model with every joint at zero. The details panel shows poses relative to the parent, as a URDF does.
+- The parent of a link or joint is always a joint or `root`. A URDF alternates link, joint, link. A link whose parent is a joint is that joint's URDF child link, and several links can share one joint.

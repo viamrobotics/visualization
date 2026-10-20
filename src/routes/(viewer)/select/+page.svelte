@@ -3,7 +3,7 @@
 	import { SelectionTool, TopDownLock } from '$lib/plugins'
 	import { createRandomPcdBinary } from '$lib/test/createRandomPcdBinary'
 
-	import SelectionOverlay from '../lib/components/selectDemoPage/SelectionOverlay.svelte'
+	import SelectionOverlay from '../../lib/components/selectDemoPage/SelectionOverlay.svelte'
 </script>
 
 <SelectionTool enabled>

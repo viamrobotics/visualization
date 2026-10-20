@@ -1,0 +1,180 @@
+package {{.ModulePackage}}
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"math"
+	"sync"
+
+	"go.viam.com/rdk/components/gripper"
+	"go.viam.com/rdk/logging"
+	"go.viam.com/rdk/referenceframe"
+	"go.viam.com/rdk/resource"
+	"go.viam.com/rdk/spatialmath"
+
+	"{{.ModuleLower}}/kinematics"
+)
+
+var (
+	// Model is the model triplet this module registers.
+	Model            = resource.NewModel("{{.Namespace}}", "{{.ModuleName}}", "{{.ModelName}}")
+	errUnimplemented = errors.New("unimplemented")
+)
+
+func init() {
+	resource.RegisterComponent(gripper.API, Model,
+		resource.Registration[gripper.Gripper, *Config]{Constructor: newGripper},
+	)
+}
+
+// Config holds the gripper's attributes. Add exported fields with json tags here.
+type Config struct{}
+
+// Validate ensures all parts of the config are valid. It returns required dependencies, optional
+// dependencies, and an error.
+func (cfg *Config) Validate(path string) ([]string, []string, error) {
+	return nil, nil, nil
+}
+
+var _ gripper.Gripper = (*{{.TypeName}})(nil)
+
+type {{.TypeName}} struct {
+	resource.AlwaysRebuild
+
+	name   resource.Name
+	logger logging.Logger
+	cfg    *Config
+	model  referenceframe.Model
+
+	mu     sync.Mutex
+	inputs []referenceframe.Input
+}
+
+func newGripper(ctx context.Context, deps resource.Dependencies, rawConf resource.Config, logger logging.Logger) (gripper.Gripper, error) {
+	conf, err := resource.NativeConfig[*Config](rawConf)
+	if err != nil {
+		return nil, err
+	}
+	return New{{.ModelPascal}}(ctx, deps, rawConf.ResourceName(), conf, logger)
+}
+
+// New{{.ModelPascal}} builds the gripper. It is exported so tests can construct it without a robot.
+func New{{.ModelPascal}}(ctx context.Context, deps resource.Dependencies, name resource.Name, conf *Config, logger logging.Logger) (gripper.Gripper, error) {
+	// Parsing the model is not free, so build it once here and return it from Kinematics.
+	model, err := kinematics.Model(name.ShortName())
+	if err != nil {
+		return nil, err
+	}
+	return &{{.TypeName}}{name: name, logger: logger, cfg: conf, model: model, inputs: restingInputs(model.DoF())}, nil
+}
+
+// restingInputs returns each limit's value nearest zero.
+func restingInputs(limits []referenceframe.Limit) []referenceframe.Input {
+	inputs := make([]referenceframe.Input, len(limits))
+	for i, limit := range limits {
+		inputs[i] = math.Min(math.Max(0, limit.Min), limit.Max)
+	}
+	return inputs
+}
+
+func (g *{{.TypeName}}) Name() resource.Name {
+	return g.name
+}
+
+func (g *{{.TypeName}}) Kinematics(ctx context.Context) (referenceframe.Model, error) {
+	return g.model, nil
+}
+
+func (g *{{.TypeName}}) Geometries(ctx context.Context, extra map[string]interface{}) ([]spatialmath.Geometry, error) {
+	inputs, err := g.CurrentInputs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	inGripperFrame, err := g.model.Geometries(inputs)
+	if err != nil {
+		return nil, err
+	}
+	return inGripperFrame.Geometries(), nil
+}
+
+func (g *{{.TypeName}}) CurrentInputs(ctx context.Context) ([]referenceframe.Input, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return append([]referenceframe.Input{}, g.inputs...), nil
+}
+
+// GoToInputs moves to the last input set it is given. Inputs are in mm for prismatic joints and
+// radians for revolute joints.
+func (g *{{.TypeName}}) GoToInputs(ctx context.Context, inputSteps ...[]referenceframe.Input) error {
+	if len(inputSteps) == 0 {
+		return nil
+	}
+	return g.moveTo(inputSteps[len(inputSteps)-1])
+}
+
+// moveTo validates target against the model's limits and records it as the current inputs.
+func (g *{{.TypeName}}) moveTo(target []referenceframe.Input) error {
+	limits := g.model.DoF()
+	if len(target) != len(limits) {
+		return fmt.Errorf("got %d inputs, want %d", len(target), len(limits))
+	}
+	for i, value := range target {
+		if value < limits[i].Min || value > limits[i].Max {
+			return fmt.Errorf("input %d is %v, outside its limit [%v, %v]", i, value, limits[i].Min, limits[i].Max)
+		}
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	// Drive the hardware to target here, then record it.
+	g.inputs = append([]referenceframe.Input{}, target...)
+	return nil
+}
+
+func (g *{{.TypeName}}) Open(ctx context.Context, extra map[string]interface{}) error {
+	limits := g.model.DoF()
+	target := make([]referenceframe.Input, len(limits))
+	for i, limit := range limits {
+		target[i] = limit.Max
+	}
+	return g.moveTo(target)
+}
+
+func (g *{{.TypeName}}) Grab(ctx context.Context, extra map[string]interface{}) (bool, error) {
+	limits := g.model.DoF()
+	target := make([]referenceframe.Input, len(limits))
+	for i, limit := range limits {
+		target[i] = limit.Min
+	}
+	if err := g.moveTo(target); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (g *{{.TypeName}}) IsHoldingSomething(ctx context.Context, extra map[string]interface{}) (gripper.HoldingStatus, error) {
+	// Replace errUnimplemented with a hardware read of whether the gripper holds something.
+	return gripper.HoldingStatus{}, errUnimplemented
+}
+
+func (g *{{.TypeName}}) IsMoving(ctx context.Context) (bool, error) {
+	// Replace errUnimplemented with a hardware read of whether the gripper is moving.
+	return false, errUnimplemented
+}
+
+func (g *{{.TypeName}}) Stop(ctx context.Context, extra map[string]interface{}) error {
+	// Replace errUnimplemented with the hardware call that stops the gripper.
+	return errUnimplemented
+}
+
+func (g *{{.TypeName}}) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
+	return nil, errUnimplemented
+}
+
+func (g *{{.TypeName}}) Status(ctx context.Context) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
+}
+
+func (g *{{.TypeName}}) Close(ctx context.Context) error {
+	return nil
+}

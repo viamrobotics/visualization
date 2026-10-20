@@ -61,7 +61,9 @@
 		"release": "changeset publish",
 		"docs:dev": "pnpm --dir docs dev",
 		"docs:build": "pnpm --dir docs build",
-		"docs:preview": "pnpm --dir docs preview"
+		"docs:preview": "pnpm --dir docs preview",
+		"test:kinematics": "wireit",
+		"lint:kinematics": "wireit"
 	},
 	"wireit": {
 		"up": {
@@ -136,6 +138,7 @@
 				"client/**",
 				"draw/**",
 				"motionplan/**",
+				"kinematics/**",
 				"go.mod",
 				"go.sum"
 			],
@@ -266,7 +269,8 @@
 				"lint:prettier",
 				"lint:eslint",
 				"lint:draw",
-				"lint:scenes"
+				"lint:scenes",
+				"lint:kinematics"
 			]
 		},
 		"lint:prettier": {
@@ -472,6 +476,7 @@
 			"command": "PATH=\"$(go env GOPATH)/bin:$PATH\" buf generate --template buf.gen.go.yaml",
 			"files": [
 				"protos/draw/**",
+				"protos/kinematics/**",
 				"protos/motionplan/**",
 				"protos/vendor/**",
 				"buf.gen.go.yaml",
@@ -487,6 +492,7 @@
 			"command": "buf generate --template buf.gen.typescript.yaml",
 			"files": [
 				"protos/draw/**",
+				"protos/kinematics/**",
 				"protos/motionplan/**",
 				"protos/vendor/**",
 				"buf.gen.typescript.yaml",
@@ -505,6 +511,7 @@
 			"command": "buf lint",
 			"files": [
 				"protos/draw/**",
+				"protos/kinematics/**",
 				"buf.yaml"
 			],
 			"output": []
@@ -512,7 +519,8 @@
 		"proto:format-check": {
 			"command": "buf format --diff --exit-code",
 			"files": [
-				"protos/draw/**"
+				"protos/draw/**",
+				"protos/kinematics/**"
 			],
 			"output": []
 		},
@@ -550,6 +558,27 @@
 				"draw/**",
 				"go.mod",
 				"go.sum"
+			],
+			"output": []
+		},
+		"test:kinematics": {
+			"command": "go test ./kinematics/... ./cmd/kinematics/... -count=1",
+			"files": [
+				"kinematics/**",
+				"cmd/kinematics/**",
+				"go.mod",
+				"go.sum"
+			],
+			"output": []
+		},
+		"lint:kinematics": {
+			"command": "golangci-lint run --allow-parallel-runners ./kinematics/... ./cmd/kinematics/...",
+			"files": [
+				"kinematics/**",
+				"cmd/kinematics/**",
+				"go.mod",
+				"go.sum",
+				".golangci.yml"
 			],
 			"output": []
 		}

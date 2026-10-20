@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="include_macro">
+  <xacro:include filename="$(find lib_pkg)/urdf/gripper.xacro"/>
+  <link name="world"/>
+  <xacro:gripper prefix="left_" parent="world" width="0.08">
+    <origin xyz="0 0.1 0" rpy="0 0 0"/>
+  </xacro:gripper>
+</robot>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="nested">
+  <xacro:property name="reach" value="0.3"/>
+  <xacro:macro name="bar" params="id size">
+    <link name="bar_${id}">
+      <inertial>
+        <mass value="${size * 2}"/>
+        <origin xyz="${size / 2} 0 0"/>
+      </inertial>
+    </link>
+  </xacro:macro>
+  <xacro:macro name="pair" params="prefix size:=^|${reach}">
+    <xacro:bar id="${prefix}a" size="${size}"/>
+    <xacro:bar id="${prefix}b" size="${size * 2}"/>
+  </xacro:macro>
+  <xacro:macro name="rack" params="count:=2 body">
+    <xacro:pair prefix="${body}_"/>
+    <note count="${count}"/>
+  </xacro:macro>
+  <xacro:rack body="x"/>
+  <xacro:pair prefix="solo_" size="1.5"/>
+</robot>

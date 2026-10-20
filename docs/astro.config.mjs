@@ -42,6 +42,7 @@ export default defineConfig({
 						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
 						{ label: 'Deep linking', link: '/guides/deep-linking/' },
 						{ label: 'Desktop app', link: '/guides/desktop-app/' },
+						{ label: 'Kinematics from 3D models', link: '/guides/kinematics-pipeline/' },
 						{
 							label: 'Implementing WorldStateStoreService',
 							link: '/guides/worldstatestore/',

@@ -1,0 +1,132 @@
+// Compiles kinematics specs for the standalone app's /kinematics route.
+syntax = "proto3";
+
+package kinematics.v1;
+
+import "common/v1/common.proto";
+import "kinematics/v1/spec.proto";
+
+option go_package = "github.com/viamrobotics/visualization/kinematics/v1;kinematicsv1";
+
+// Stateless: every call carries the spec and the mesh files it references.
+service KinematicsService {
+  // Builds and validates a model, and returns it posed at zero inputs for preview.
+  rpc Build(BuildRequest) returns (BuildResponse);
+  // Packages a valid model as a zip, either as a kinematics package or as a full module scaffold.
+  rpc Export(ExportRequest) returns (ExportResponse);
+  // Reads a zip Export wrote, or any zip holding a kinematics.json, back into a spec and its sources.
+  // A zip with no kinematics.json is CodeNotFound, so the caller can try ImportURDF with it.
+  rpc Import(ImportRequest) returns (ImportResponse);
+  // Poses a spec's joint frames at the given inputs, without recompiling or re-sending sources.
+  rpc Pose(PoseRequest) returns (PoseResponse);
+  // Converts a URDF, or a ROS description package holding one, into a spec and its mesh files.
+  rpc ImportURDF(ImportURDFRequest) returns (ImportURDFResponse);
+}
+
+message BuildRequest {
+  KinematicsSpec spec = 1;
+  // Mesh files keyed by the link mesh_path that references them.
+  map<string, bytes> sources = 2;
+  // Also return each link's full-detail visual mesh at its origin. Off by default because CAD meshes
+  // can be large.
+  bool include_visual_meshes = 3;
+  // Pose the returned collision transforms at these inputs, in RDK input units. Any length other than
+  // the model's DoF poses at zero.
+  repeated double inputs = 4;
+}
+
+message BuildResponse {
+  // Validation failures arrive here, not as an RPC error, so the route can show them.
+  ValidationReport report = 1;
+  // The built RDK SVA model.
+  bytes model_json = 2;
+  // The definition as a parent-relative frame tree at the requested inputs: the model at the root,
+  // joints under their parents, links under the joints they ride with their collision geometry, the
+  // TCP, and, when include_visual_meshes is set, each link's full-detail visual mesh as a child named
+  // "<id> visual". Every uuid is stable for its reference frame.
+  repeated viam.common.v1.Transform frames = 5;
+
+  reserved 3, 4;
+  reserved "collision", "source_meshes";
+}
+
+enum ExportKind {
+  EXPORT_KIND_UNSPECIFIED = 0;
+  // `kinematics.json`, its mesh files at their mesh paths, and the `kinematics/` Go package.
+  EXPORT_KIND_PACKAGE = 1;
+  // A full gripper module scaffold under a `<module_name>/` directory.
+  EXPORT_KIND_MODULE = 2;
+}
+
+message ExportRequest {
+  KinematicsSpec spec = 1;
+  // Mesh files keyed by the link mesh_path that references them.
+  map<string, bytes> sources = 2;
+  ExportKind kind = 3;
+  // EXPORT_KIND_MODULE only.
+  string namespace = 4;
+  // EXPORT_KIND_MODULE only. Defaults to the spec name.
+  string module_name = 5;
+  // EXPORT_KIND_MODULE only. Defaults to the spec name.
+  string model_name = 6;
+}
+
+message ExportResponse {
+  bytes zip = 1;
+  // Suggested download name: `<spec name>-kinematics.zip` or `<module name>.zip`.
+  string file_name = 2;
+  ValidationReport report = 3;
+}
+
+message ImportRequest {
+  bytes zip = 1;
+}
+
+message ImportResponse {
+  // The spec as stored, with its mesh paths unchanged.
+  KinematicsSpec spec = 1;
+  // Mesh files keyed by the link mesh_path that references them, read relative to the spec.
+  map<string, bytes> sources = 2;
+  // Mesh paths the spec references that the zip does not hold, sorted.
+  repeated string missing_sources = 3;
+  // The zip directory holding kinematics.json, such as "drywall-gripper", or "" for the zip root.
+  string root = 4;
+}
+
+message PoseRequest {
+  // The spec the frames were built from. Sources are not needed, because parts do not move
+  // relative to the joint they ride.
+  KinematicsSpec spec = 4;
+  // In RDK input units, in ValidationReport.inputs order. The length must equal the model's DoF.
+  repeated double inputs = 3;
+
+  reserved 1, 2;
+  reserved "model_json", "name";
+}
+
+message PoseResponse {
+  // The joint frames of BuildResponse.frames, posed at the request's inputs. Every other frame is
+  // unchanged by inputs.
+  repeated viam.common.v1.Transform frames = 2;
+
+  reserved 1;
+  reserved "collision";
+}
+
+message ImportURDFRequest {
+  // Every uploaded file, keyed by path relative to the upload root. Empty when `zip` is set.
+  map<string, bytes> files = 1;
+  // A zipped package or folder, instead of `files`.
+  bytes zip = 2;
+  // The URDF to read, relative to the upload root. Empty finds the only one.
+  string urdf_path = 3;
+  // The URDF link to place the TCP at. Empty picks one by naming convention.
+  string tcp_link = 4;
+}
+
+message ImportURDFResponse {
+  KinematicsSpec spec = 1;
+  // Mesh files keyed by the link mesh_path that references them.
+  map<string, bytes> sources = 2;
+  ImportReport report = 3;
+}

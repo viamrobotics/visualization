@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<robot name="conditionals">
+  <link name="base"/>
+  <link name="camera"/>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base"/>
+    <child link="camera"/>
+    <origin xyz="0 0 0.5"/>
+  </joint>
+</robot>

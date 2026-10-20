@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<robot name="conditionals">
+  <link name="base"/>
+  <link name="blind_cap"/>
+  <link name="tall"/>
+</robot>

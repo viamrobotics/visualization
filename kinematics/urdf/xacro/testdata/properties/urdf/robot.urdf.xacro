@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="props">
+  <!-- Comments never reach the output. -->
+  <xacro:property name="radius" value="0.05"/>
+  <xacro:property name="length" value="${radius * 8}"/>
+  <xacro:property name="half" value="${length / 2}"/>
+  <xacro:property name="quarter_turn" value="${pi / 2}"/>
+  <xacro:property name="tilt" value="${radians(30)}"/>
+  <xacro:property name="label" value="arm"/>
+  <xacro:property name="late" value="${radius + early}"/>
+  <xacro:property name="early" value="1"/>
+  <link name="${label}_link">
+    <visual>
+      <origin xyz="0 0 ${half}" rpy="${quarter_turn} ${-tilt} 0"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+    </visual>
+    <note>${label} reaches ${late} m, costs $${5}</note>
+  </link>
+</robot>

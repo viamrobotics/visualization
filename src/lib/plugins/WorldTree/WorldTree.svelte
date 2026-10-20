@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte'
+
 	import { type Entity, IsExcluded } from 'koota'
 
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
@@ -14,6 +16,16 @@
 	import Tree from './Tree.svelte'
 	import { usePinnedFolders } from './usePinnedFolders.svelte'
 	import { useTree } from './useTree.svelte'
+
+	interface Props {
+		/**
+		 * Replaces the header's Add object menu, for a page that adds its own kind of thing to the
+		 * scene. Render its trigger with `WorldTreeAddButton` so the header keeps one look.
+		 */
+		addMenu?: Snippet
+	}
+
+	const { addMenu }: Props = $props()
 
 	const world = useWorld()
 
@@ -46,7 +58,11 @@
 	bodyClass="flex flex-col bg-white"
 >
 	{#snippet headerSuffix()}
-		<AddObjectMenu />
+		{#if addMenu}
+			{@render addMenu()}
+		{:else}
+			<AddObjectMenu />
+		{/if}
 	{/snippet}
 
 	<div

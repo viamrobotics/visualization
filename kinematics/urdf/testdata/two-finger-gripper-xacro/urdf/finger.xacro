@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="inertia" value="1e-4"/>
+  <xacro:property name="finger_roll" value="${radians(0)}"/>
+  <xacro:property name="max_angle" value="0.8"/>
+
+  <xacro:macro name="small_inertial" params="mass:=0.1">
+    <inertial><mass value="${mass}"/><inertia ixx="${inertia}" ixy="0" ixz="0" iyy="${inertia}" iyz="0" izz="${inertia}"/></inertial>
+  </xacro:macro>
+
+  <xacro:macro name="finger" params="name side reach:=0.04 *origin">
+    <link name="${name}_finger">
+      <xacro:small_inertial/>
+      <collision>
+        <origin xyz="0 0 ${reach}" rpy="${finger_roll} 0 0"/>
+        <geometry>
+          <mesh filename="$(find two_finger_gripper_description)/meshes/collision/finger.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${name}_finger_joint" type="revolute">
+      <parent link="palm"/>
+      <child link="${name}_finger"/>
+      <xacro:insert_block name="origin"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="0" upper="${max_angle}" effort="10" velocity="1"/>
+      <xacro:if value="${side == -1}">
+        <mimic joint="left_finger_joint" multiplier="${side}" offset="0"/>
+      </xacro:if>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="tip" params="name reach:=0.04">
+    <link name="${name}_tip">
+      <collision>
+        <origin xyz="0 0 ${0.01 / 2}" rpy="0 0 0"/>
+        <geometry><box size="0.02 0.02 0.01"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_tip_joint" type="fixed">
+      <parent link="${name}_finger"/>
+      <child link="${name}_tip"/>
+      <origin xyz="0 0 ${reach * 2}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+</robot>

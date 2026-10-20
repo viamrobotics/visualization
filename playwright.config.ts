@@ -4,6 +4,7 @@ const DRAWING_SPECS = [
 	/deep-link\.test\.ts$/,
 	/draw-client\.test\.ts$/,
 	/file-drop\.test\.ts$/,
+	/kinematics\.test\.ts$/,
 	/snapshot\.test\.ts$/,
 ] as const
 

@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<robot name="two_finger_gripper">
+  <link name="gripper_base">
+    <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.04 0.04 0.02"/></geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.04 0.04 0.02"/></geometry>
+    </collision>
+  </link>
+  <link name="palm">
+    <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    <collision>
+      <geometry>
+        <mesh filename="package://two_finger_gripper_description/meshes/collision/palm.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_finger">
+    <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    <collision>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://two_finger_gripper_description/meshes/collision/finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_finger">
+    <inertial><mass value="0.1"/><inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/></inertial>
+    <collision>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://two_finger_gripper_description/meshes/collision/finger.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_tip">
+    <collision>
+      <origin xyz="0 0 0.005" rpy="0 0 0"/>
+      <geometry><box size="0.02 0.02 0.01"/></geometry>
+    </collision>
+  </link>
+  <link name="right_tip">
+    <collision>
+      <origin xyz="0 0 0.005" rpy="0 0 0"/>
+      <geometry><box size="0.02 0.02 0.01"/></geometry>
+    </collision>
+  </link>
+  <link name="marker_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://two_finger_gripper_description/meshes/visual/marker.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="tool0"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="gripper_base"/>
+    <child link="palm"/>
+    <origin xyz="0 0 0.01" rpy="0 0 0"/>
+  </joint>
+  <joint name="left_finger_joint" type="revolute">
+    <parent link="palm"/>
+    <child link="left_finger"/>
+    <origin xyz="0.03 0 0.05" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="0.8" effort="10" velocity="1"/>
+  </joint>
+  <joint name="right_finger_joint" type="revolute">
+    <parent link="palm"/>
+    <child link="right_finger"/>
+    <origin xyz="-0.03 0 0.05" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="0.8" effort="10" velocity="1"/>
+    <mimic joint="left_finger_joint" multiplier="-1" offset="0"/>
+  </joint>
+  <joint name="left_tip_joint" type="fixed">
+    <parent link="left_finger"/>
+    <child link="left_tip"/>
+    <origin xyz="0 0 0.08" rpy="0 0 0"/>
+  </joint>
+  <joint name="right_tip_joint" type="fixed">
+    <parent link="right_finger"/>
+    <child link="right_tip"/>
+    <origin xyz="0 0 0.08" rpy="0 0 0"/>
+  </joint>
+  <joint name="marker_joint" type="fixed">
+    <parent link="palm"/>
+    <child link="marker_link"/>
+    <origin xyz="0 0.03 0.02" rpy="0 0 0"/>
+  </joint>
+  <joint name="tool_joint" type="fixed">
+    <parent link="palm"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 0.15" rpy="0 0 0"/>
+  </joint>
+
+  <transmission name="left_finger_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_finger_joint"/>
+  </transmission>
+  <gazebo reference="palm">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+</robot>
