@@ -25,14 +25,20 @@
 </script>
 
 <T.Group position={indicator.point.toArray()}>
+	<!-- `HTML` hands its own wrapper only `class` and `style`, so the decorative dot is a child that can carry `aria-hidden`. -->
 	<HTML
 		center
 		zIndexRange={[3, 0]}
-		class={[
-			'pointer-events-none h-3 w-3 rounded-full border-2 border-black/70',
-			indicator.kind === 'surface' && 'bg-black/70',
-		]}
-	/>
+		class="pointer-events-none"
+	>
+		<span
+			aria-hidden="true"
+			class={[
+				'block h-3 w-3 rounded-full border-2 border-black/70',
+				indicator.kind === 'surface' && 'bg-black/70',
+			]}
+		></span>
+	</HTML>
 </T.Group>
 
 {#if normalLine}

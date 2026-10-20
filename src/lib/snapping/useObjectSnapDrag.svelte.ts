@@ -7,14 +7,12 @@ import { useWorld } from '$lib/ecs'
 import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 import { dragConstraintFor } from './dragConstraint'
+import { isVisibleTurn } from './isVisibleTurn'
 import { resolveSnap } from './resolveSnap'
 import { type SnapIndicator } from './snapQuery'
 import { posedTargets, type SnapScene, snapSceneFor } from './snapScene'
 
 const UNIT_SCALE = new Vector3(1, 1, 1)
-// Aligning to a surface the object already sits level on still rounds, by about 1e-16 rad. Below
-// this, nothing visibly turned, so staging orientation would only write noise into the config.
-const MIN_TURN_RADIANS = 1e-9
 
 /** Object snapping for one translate gizmo, from pointer down to pointer up. */
 export interface ObjectSnapDrag {
@@ -145,7 +143,8 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 				if (result) {
 					anchor.position.copy(result.position)
 					orientation.copy(result.orientation)
-					if (orientation.angleTo(startOrientation) > MIN_TURN_RADIANS) hasTurned = true
+					// Staging an unturned orientation would only write rounding noise into the config.
+					if (isVisibleTurn(startOrientation, orientation)) hasTurned = true
 					indicator = result.indicator
 				}
 			}
