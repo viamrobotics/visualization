@@ -29,7 +29,16 @@ export interface Settings {
 	disabledCameras: Record<string, boolean>
 	disabledVisionServices: Record<string, boolean>
 
+	/** The master switch. The four flags below choose what snaps while it is on. */
 	snapping: boolean
+	/** Step moves, turns, and resizes by `snapTranslate`, `snapRotate`, and `snapScale`. */
+	snapIncrement: boolean
+	/** Snap moves to the key points and surfaces of other geometries. */
+	snapObjects: boolean
+	/** Treat the ground, z = 0, as a surface to snap to. Applies with `snapObjects`. */
+	snapGroundPlane: boolean
+	/** Tilt a surface-snapped object so its +Z follows the surface. Applies with `snapObjects`. */
+	snapAlignRotation: boolean
 	/** Move snap step, in metres. Unlike pose fields, it never reaches a Viam API, so it skips mm. */
 	snapTranslate: number
 	snapRotate: number
@@ -124,6 +133,10 @@ const defaults = (): Settings => ({
 	disabledVisionServices: {},
 
 	snapping: false,
+	snapIncrement: true,
+	snapObjects: false,
+	snapGroundPlane: false,
+	snapAlignRotation: false,
 	snapTranslate: 0.1,
 	snapRotate: 7.5,
 	snapScale: 0.1,
