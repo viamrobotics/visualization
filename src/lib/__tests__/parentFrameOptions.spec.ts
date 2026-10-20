@@ -97,8 +97,8 @@ describe('parentFrameOptions', () => {
 	})
 
 	it('prefers the resolved frame over the fragment base parent', () => {
-		// The machine reports gripper under little-arm; the fragment's own frame
-		// still says world. The resolved parent wins, so gripper is a descendant.
+		// The machine reports gripper under little-arm. The fragment's own frame still says
+		// world, and the resolved parent wins, so gripper is a descendant.
 		expect(
 			options({
 				frames: [frame('little-arm'), frame('gripper', 'little-arm')],

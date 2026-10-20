@@ -12,8 +12,8 @@ import (
 	"go.viam.com/test"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 )
 
 func TestNewTransformUpdate(t *testing.T) {

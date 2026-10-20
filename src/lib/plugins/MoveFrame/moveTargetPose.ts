@@ -13,12 +13,12 @@ const scratchScale = new Vector3()
 const M_TO_MM = 1000
 
 /**
- * Express a world-space target transform as a Viam `Pose` — millimetres, with an
- * orientation vector whose `theta` is in degrees — relative to a destination
- * reference frame. This is what `MotionClient.move` expects alongside the
- * destination's name.
+ * Express a world-space target transform as a Viam `Pose`, in millimetres and
+ * with an orientation vector whose `theta` is in degrees, relative to a
+ * destination reference frame. This is what `MotionClient.move` expects
+ * alongside the destination's name.
  *
- * Three.js matrices are metres; `Pose` converts. Omit
+ * Three.js matrices are metres, so `Pose` converts. Omit
  * `destinationWorldMatrix` when the destination is `world`, whose world
  * transform is the identity.
  */

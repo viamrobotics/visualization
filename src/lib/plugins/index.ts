@@ -1,57 +1,63 @@
-// TopDownLock
 export { default as TopDownLock } from './TopDownLock/TopDownLock.svelte'
 
-// ControlWidgets
+export { default as BuildFrames } from './BuildFrames/BuildFrames.svelte'
+
 export { default as ControlWidgets } from './ControlWidgets/ControlWidgets.svelte'
 export { useControlWidgets } from './ControlWidgets/useControlWidgets.svelte'
 
-// Debug
 export { default as Debug } from './Debug/Debug.svelte'
 
-// DrawService
 export { default as DrawService } from './DrawService/DrawService.svelte'
 
-// Focus
-export { default as Focus } from './Focus/Focus.svelte'
+export { default as FileDrop } from './FileDrop/FileDrop.svelte'
 
-// Fullscreen
+export { default as FramePov } from './FramePov/FramePov.svelte'
+
 export { default as Fullscreen } from './Fullscreen/Fullscreen.svelte'
 
-// LLMSceneBuilder
+export { default as Isolate } from './Isolate/Isolate.svelte'
+
 export { default as LLMSceneBuilder } from './LLMSceneBuilder/LLMSceneBuilder.svelte'
 export type { InferCallback, ComponentFrameInfo } from './LLMSceneBuilder/useSceneBuilder.svelte'
 export type { FrameDelta } from './LLMSceneBuilder/frameDeltaAdapter'
 
-// Logs
 export { default as Logs } from './Logs/Logs.svelte'
 export { useLogs } from './Logs/useLogs.svelte'
 
-// MeasureTool
 export { default as MeasureTool } from './MeasureTool/MeasureTool.svelte'
 
-// MotionPlanReplayer
 export { default as MotionPlanReplayer } from './MotionPlanReplayer/MotionPlanReplayer.svelte'
 export { useMotionPlanReplayer } from './MotionPlanReplayer/useMotionPlanReplayer.svelte'
 export type {
 	MotionPlanReplayerContext,
 	PlanEntry,
 } from './MotionPlanReplayer/useMotionPlanReplayer.svelte'
+// `MotionPlanReplayerContext.player` is public, so its type has to be nameable.
+export type { TrajectoryPlayer } from '../motion/trajectoryPlayer.svelte'
 export { transformBytesToSnapshots } from './MotionPlanReplayer/plan-to-snapshots'
 export type { ResolvePlanSnapshots } from './MotionPlanReplayer/plan-dropper'
+export type {
+	InspectIKResult,
+	ResolveIKSolutions,
+} from './MotionPlanReplayer/inspect-ik/inspect-ik-client'
+export type { IKSeedGroup } from './MotionPlanReplayer/inspect-ik/parse-ik-solutions'
+export { ikSeedGroupsFromProto } from './MotionPlanReplayer/inspect-ik/ik-seed-groups-from-proto'
 
-// MoveFrame
+export { default as Monitor } from './Monitor/Monitor.svelte'
+
 export { default as MoveFrame } from './MoveFrame/MoveFrame.svelte'
 
-// Selection
+export { default as SensorCoverage } from './SensorCoverage/SensorCoverage.svelte'
+
+export { default as Settings } from './Settings/Settings.svelte'
+
 export { default as SelectionTool } from './Selection/SelectionTool.svelte'
 export * as selectionTraits from './Selection/traits'
 export * as selectionRelations from './Selection/relations'
 export { useSelectionPlugin } from './Selection/useSelectionPlugin.svelte'
 
-// Skybox
 export { default as Skybox } from './Skybox/Skybox.svelte'
 
-// XR
+export { default as WorldTree } from './WorldTree/WorldTree.svelte'
+
 export { default as XR } from './XR/XR.svelte'
-// Builds snapshots from host-computed `common.v1.Transform` bytes (e.g. RDK FK), for
-// `addPlan(name, content, snapshots)`. Bytes bridge protobuf-es (here) and protobuf-ts (host).

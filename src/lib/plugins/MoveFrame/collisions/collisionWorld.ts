@@ -35,6 +35,9 @@ const sameShape = (a: ColliderShape, b: ColliderShape): boolean => {
 	if (a.kind === 'capsule' && b.kind === 'capsule') {
 		return a.halfHeight === b.halfHeight && a.radius === b.radius
 	}
+	if (a.kind === 'cylinder' && b.kind === 'cylinder') {
+		return a.halfHeight === b.halfHeight && a.radius === b.radius
+	}
 	return false
 }
 
@@ -48,6 +51,9 @@ const describeShape = (rapier: typeof RAPIER, shape: ColliderShape): RAPIER.Coll
 		}
 		case 'capsule': {
 			return rapier.ColliderDesc.capsule(shape.halfHeight, shape.radius)
+		}
+		case 'cylinder': {
+			return rapier.ColliderDesc.cylinder(shape.halfHeight, shape.radius)
 		}
 	}
 }

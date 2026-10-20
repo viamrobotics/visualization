@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/viam-labs/motion-tools/client/server"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // CreateRelationshipOptions configures a CreateRelationship call.
@@ -26,14 +26,14 @@ type CreateRelationshipOptions struct {
 }
 
 // CreateRelationship creates or replaces a directed relationship from
-// options.SourceUUID to options.TargetUUID. If a relationship from the same
-// source to the same target already exists, it is replaced in place;
-// otherwise a new relationship is appended to the source entity's metadata.
+// options.SourceUUID to options.TargetUUID. An existing relationship from
+// the same source to the same target is replaced in place. Otherwise a new
+// relationship is appended to the source entity's metadata.
 //
-// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a wrapped
-// RPC error otherwise — most commonly InvalidArgument when source and target
-// UUIDs are equal or malformed, or NotFound when either entity does not
-// exist.
+// Returns ErrVisualizerNotRunning if no visualizer is reachable, or a
+// wrapped RPC error otherwise. The usual codes are InvalidArgument when the
+// source and target UUIDs are equal or malformed, and NotFound when either
+// entity does not exist.
 func CreateRelationship(options CreateRelationshipOptions) error {
 	client := server.GetClient()
 	if client == nil {

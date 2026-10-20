@@ -13,6 +13,7 @@ import {
 	createBufferGeometry,
 	preAllocateBufferGeometry,
 	updateBufferGeometry,
+	updateBufferGeometryColors,
 	writeBufferGeometryRange,
 } from '$lib/attribute'
 import {
@@ -24,7 +25,7 @@ import {
 	isVertexColors,
 	STRIDE,
 } from '$lib/buffer'
-import { hierarchy, relations, traits } from '$lib/ecs'
+import { DEFAULT_OPACITY, hierarchy, relations, setOrAddTrait, traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { Pose } from '$lib/math'
 import { type Metadata, metadataFromStruct } from '$lib/metadata'
@@ -48,7 +49,6 @@ const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255])
 const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139])
 const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51])
 const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255])
-const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 
@@ -187,7 +187,7 @@ export const updateTransform = (
 		traits.updateGeometryTrait(entity, physicalObject)
 		const center = physicalObject.center
 		if (center) {
-			entity.set(traits.Center, center)
+			setOrAddTrait(entity, traits.Center, center)
 		} else {
 			entity.remove(traits.Center)
 		}
@@ -222,12 +222,18 @@ export const updateMetadata = (
 	if (colors) {
 		if (pointCloud) {
 			updatePointCloudColors(entity, metadata)
+			// A point cloud carries per-vertex colours in its geometry buffer, which
+			// is why `drawTransform` adds no `Colors` trait for one. Duplicating the
+			// array into a trait here is what makes an updated cloud disagree with a
+			// spawned one.
+			if (isSingleColor(colors)) setColorTraits(entity, colors)
+			else entity.remove(traits.Color)
+		} else {
+			setColorTraits(entity, colors)
 		}
-		// Always set color traits so any subsequent async work can read them
-		setColorTraits(entity, colors)
 	}
 
-	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -282,7 +288,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 	const geometryType = physicalObject?.geometryType
 	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
 
-	entity.add(traits.Opacity(opacity))
+	setOrAddTrait(entity, traits.Opacity, opacity)
 
 	switch (geometryType?.case) {
 		case 'arrows': {
@@ -423,6 +429,7 @@ const drawModel = (
 		const subEntityTraits: ConfigurableTrait[] = [
 			traits.Name(`${referenceFrame} model ${i++}`),
 			relations.ChildOf(root),
+			traits.Opacity(asOpacity(metadata?.opacities, DEFAULT_OPACITY)),
 			api,
 		]
 
@@ -502,10 +509,13 @@ const updatePointCloudColors = (entity: Entity, metadata: Metadata): void => {
 	}
 
 	const position = buffer.getAttribute('position')
-	const count = position?.count ?? 0
-	const array = position?.array as Float32Array
-	updateBufferGeometry(buffer, array, {
-		colors: parseColors(metadata.colors, count),
+	if (!position) return
+
+	// Colors only — routing this through `updateBufferGeometry` would reset the
+	// draw range to the buffer's full capacity, exposing the unwritten tail of a
+	// chunked cloud as points at the origin.
+	updateBufferGeometryColors(buffer, {
+		colors: parseColors(metadata.colors, position.count),
 		colorFormat: metadata.colorFormat,
 	})
 }
@@ -527,7 +537,7 @@ const parseColors = (from: Uint8Array | undefined, count: number): Uint8Array =>
 const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
 	const geometryType = physicalObject?.geometryType
 
-	entity.set(traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
 
 	switch (geometryType?.case) {
 		case 'arrows': {
@@ -542,7 +552,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
-			if (center) entity.set(traits.Center, center)
+			if (center) setOrAddTrait(entity, traits.Center, center)
 
 			setColorTraits(entity, metadata?.colors ?? DEFAULT_LINE_COLORS)
 
@@ -560,7 +570,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const positions = asFloat32Array(geometryType.value.positions, inMeters)
 
 			const center = physicalObject?.center
-			if (center) entity.set(traits.Center, center)
+			if (center) setOrAddTrait(entity, traits.Center, center)
 
 			setColorTraits(entity, metadata?.colors ?? DEFAULT_POINTS_COLORS)
 			entity.set(traits.PointSize, geometryType.value.pointSize ?? DEFAULT_POINT_SIZE)
@@ -569,6 +579,7 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			const pointsMetadata: Metadata = {
 				colors: vertexColors,
 				colorFormat: metadata?.colorFormat ?? ColorFormat.UNSPECIFIED,
+				opacities: metadata?.opacities,
 			}
 			const buffer = entity.get(traits.BufferGeometry)
 			if (buffer) {
@@ -614,11 +625,19 @@ const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): voi
 			}
 
 			const center = physicalObject?.center
-			if (center) entity.set(traits.Center, center)
+			if (center) setOrAddTrait(entity, traits.Center, center)
 
 			setColorTraits(entity, metadata?.colors ?? DEFAULT_NURBS_COLORS)
 			entity.set(traits.LineWidth, geometryType.value.lineWidth ?? DEFAULT_LINE_WIDTH)
 			entity.set(traits.LinePositions, points)
+			break
+		}
+
+		default: {
+			// A drawing with no geometry oneof still carries a center and colors.
+			const center = physicalObject?.center
+			if (center) setOrAddTrait(entity, traits.Center, center)
+			if (metadata?.colors) setColorTraits(entity, metadata.colors)
 			break
 		}
 	}

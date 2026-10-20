@@ -7,26 +7,35 @@
 
 	import { ViamAppProvider, ViamProvider } from '@viamrobotics/svelte-sdk'
 
+	import { page } from '$app/state'
 	import { Visualizer } from '$lib'
-	import { backendIP, websocketPort } from '$lib/defines'
+	import { backendIP, drawServicePort } from '$lib/defines'
 	import {
+		BuildFrames,
 		ControlWidgets,
 		DrawService,
-		Focus,
+		FileDrop,
+		FramePov,
+		Isolate,
 		Logs,
 		MeasureTool,
+		Monitor,
 		MotionPlanReplayer,
 		MoveFrame,
+		SensorCoverage,
+		Settings,
+		WorldTree,
 		XR,
 	} from '$lib/plugins'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
-	import StandaloneLLMWrapper from './lib/components/StandaloneLLMWrapper.svelte'
+	import { createIKSolutionsResolver } from './lib/createIKSolutionsResolver'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
+	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
 	import { getDialConfs } from './lib/robots'
 
 	provideConnectionConfigs()
@@ -51,17 +60,17 @@
 	const partID = $derived(connectionConfig.current?.partId)
 	const dialConfig = $derived(partID ? dialConfigs[partID] : undefined)
 
-	let isMachinesPageOpen = $state(false)
+	let pluginsEnabled = true
+
+	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
+
+	const resolveIKSolutions = createIKSolutionsResolver(
+		() => `http://${backendIP}:${portOverride ?? drawServicePort}`
+	)
 </script>
 
 <ViamProvider
-	config={{
-		defaultOptions: {
-			queries: {
-				staleTime: Infinity,
-			},
-		},
-	}}
+	options={{ resetQueriesOnDisconnect: false }}
 	{dialConfigs}
 >
 	<ViamAppProvider
@@ -76,24 +85,30 @@
 			{partID}
 			{dialConfig}
 		>
-			<Visualizer
-				{partID}
-				inputBindingsEnabled={!isMachinesPageOpen}
-			>
+			<Visualizer {partID}>
 				{@render children()}
 
-				<DrawService config={{ backendIP, websocketPort }} />
-				<Focus />
-				<MeasureTool />
-				<MoveFrame />
-				<StandaloneLLMWrapper />
-				<MotionPlanReplayer />
+				{#if pluginsEnabled}
+					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
+					<Isolate />
+					<MeasureTool />
+					<SensorCoverage />
 
-				<XR />
+					<Monitor />
+					<BuildFrames />
+					<MoveFrame />
+					<MotionPlanReplayer {resolveIKSolutions} />
 
-				<Logs />
-				<ControlWidgets />
-				<Machines bind:isOpen={isMachinesPageOpen} />
+					<XR />
+
+					<Logs />
+					<ControlWidgets />
+					<Machines />
+					<WorldTree />
+					<Settings />
+					<FileDrop />
+					<FramePov />
+				{/if}
 			</Visualizer>
 		</MachineConnectionProvider>
 	</ViamAppProvider>

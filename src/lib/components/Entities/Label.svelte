@@ -6,6 +6,7 @@
 	import { untrack } from 'svelte'
 	import { Group } from 'three'
 
+	import { parseRGB } from '$lib/color'
 	import { traits, useTag, useTrait } from '$lib/ecs'
 
 	import { labels } from './labelLayout/labelStore.svelte'
@@ -22,6 +23,10 @@
 	const name = useTrait(() => entity, traits.Name)
 	const color = useTrait(() => entity, traits.Color)
 	const selected = useTag(() => entity, traits.Selected)
+
+	// Through `setRGB`, the same call the mesh renderers use, so the accent
+	// matches the shape's rendered color rather than its raw trait floats.
+	const accent = $derived(color.current ? parseRGB(color.current).getStyle() : undefined)
 
 	let element = $state.raw<HTMLElement>()
 
@@ -68,19 +73,17 @@
 			<line class="stroke-gray-9 stroke-1" />
 		</svg>
 		<div
-			class="dot border-gray-9 pointer-events-none absolute -top-1 -left-0 z-1 h-2 w-2 -translate-1/2 rounded-full border"
+			class="dot border-gray-9 pointer-events-none absolute -top-1 left-0 z-1 h-2 w-2 -translate-1/2 rounded-full border"
 		></div>
 		<button
 			class={[
-				'border-gray-9 text absolute z-2 border px-2 py-1 text-xs text-nowrap',
+				'border-gray-9 text absolute z-2 border border-l-4 px-2 py-1 text-xs text-nowrap',
 				{
 					'bg-gray-9 text-white': selected.current,
 					'bg-white': !selected.current,
 				},
 			]}
-			style={color.current
-				? `border-color-left: rgb(${color.current.r}, ${color.current.g}, ${color.current.b})`
-				: undefined}
+			style={accent ? `border-left-color: ${accent}` : undefined}
 			onclick={() => {
 				entity.add(traits.Selected)
 			}}

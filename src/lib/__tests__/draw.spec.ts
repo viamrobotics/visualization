@@ -72,7 +72,7 @@ describe('drawTransform', () => {
 
 		expect(entity.get(traits.Name)).toBe('box-frame')
 		expect(hierarchy.getParentName(entity)).toBe('arm')
-		// Pose translation is in mm; matrix translation is in m (× 0.001).
+		// Pose translation is in mm. Matrix translation is in m, so the factor is 0.001.
 		const matrix = entity.get(traits.Matrix)
 		expect(matrix?.elements[12]).toBeCloseTo(0.1)
 		expect(matrix?.elements[13]).toBeCloseTo(0.2)
@@ -151,7 +151,14 @@ describe('drawTransform', () => {
 		world = createWorld()
 		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
 		const positions = new Float32Array(6)
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: undefined })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({
+			id: 0,
+			positions,
+			colors: undefined,
+			bounds: undefined,
+			boundsTree: undefined,
+			shuffled: 0,
+		})
 
 		const pointCloud = new Uint8Array(0)
 		const metadataColors = new Uint8Array([0, 255, 0])
@@ -180,7 +187,14 @@ describe('drawTransform', () => {
 		const positions = new Float32Array(6)
 		const pcdColors = new Uint8Array([255, 0, 0, 0, 255, 0])
 		const metadataColors = new Uint8Array([0, 255, 0, 0, 0, 255])
-		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({ id: 0, positions, colors: pcdColors })
+		vi.mocked(parsePcdInWorker).mockResolvedValueOnce({
+			id: 0,
+			positions,
+			colors: pcdColors,
+			bounds: undefined,
+			boundsTree: undefined,
+			shuffled: 0,
+		})
 
 		const pointCloud = new Uint8Array(0)
 		const base64Colors = btoa(String.fromCharCode(...metadataColors))
@@ -459,7 +473,7 @@ describe('updateDrawing arrows', () => {
 	it('keeps arrow poses in raw millimeters on update (mm->m conversion happens downstream, not twice)', () => {
 		world = createWorld()
 
-		// The ADD path stores poses verbatim in mm; the shader/raycast/hover scale by 0.001.
+		// The ADD path stores poses verbatim in mm. The shader, raycast and hover scale by 0.001.
 		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
 		expect(entity.get(traits.Positions)?.[0]).toBe(100)
 

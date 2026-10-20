@@ -48,8 +48,7 @@ export interface ComponentFrameInfo {
 	frame: {
 		parent: Frame['parent']
 		translation: Frame['translation']
-		// Not Frame['orientation'] — stored frames use OV/quaternion; the callback passes
-		// the LLM-friendly Euler-degrees projection of that orientation. Exported explicit type.
+		/** Euler degrees, not `Frame['orientation']`. Stored frames use OV or quaternion, and the callback receives the Euler-degrees projection of that orientation. */
 		orientation: FrameEulerDegrees
 		geometry?: Frame['geometry']
 	}

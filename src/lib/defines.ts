@@ -5,4 +5,6 @@
  * due to them not being replaced when shipped to NPM.
  */
 export const backendIP = BACKEND_IP
-export const websocketPort = WS_PORT
+
+/** Port of the Go Connect-RPC draw server. */
+export const drawServicePort = DRAW_SERVICE_PORT

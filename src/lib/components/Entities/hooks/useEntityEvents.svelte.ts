@@ -3,9 +3,10 @@ import type { Entity } from 'koota'
 import { type IntersectionEvent, useCursor } from '@threlte/extras'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
-import { traits, useTrait, useWorld } from '$lib/ecs'
+import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'
+import { clickSelectionTarget } from '$lib/ecs/clickSelectionTarget'
 import { type HoverInfo, updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { OrientationVector } from '$lib/three/OrientationVector'
+import { OrientationVector } from '$lib/math/OrientationVector'
 
 const tempHoverMatrix = new Matrix4()
 const hoverQuat = new Quaternion()
@@ -54,12 +55,13 @@ const createEntityEvents = (
 			} else {
 				composed.copy(tempHoverMatrix)
 			}
-			currentEntity.add(
-				traits.InstancedMatrix({
-					matrix: composed,
-					index: hoverInfo.index,
-				})
-			)
+			// An instanced renderer can drop `Hovered` without dropping
+			// `InstancedMatrix` (see the invisibility handling in `writeAppearance`),
+			// so this has to overwrite a leftover matrix rather than skip it.
+			setOrAddTrait(currentEntity, traits.InstancedMatrix, {
+				matrix: composed,
+				index: hoverInfo.index,
+			})
 		}
 		currentEntity.add(traits.Hovered)
 	}
@@ -142,8 +144,10 @@ const createEntityEvents = (
 			return
 		}
 
-		const currentEntity = entityForEvent(event)
-		if (!currentEntity) return
+		const hitEntity = entityForEvent(event)
+		if (!hitEntity) return
+
+		const currentEntity = clickSelectionTarget(hitEntity)
 
 		if (event.nativeEvent.shiftKey) {
 			if (currentEntity.has(traits.Selected)) {
@@ -162,8 +166,10 @@ const createEntityEvents = (
 			}
 		}
 
-		if (event.instanceId || event.batchId) {
-			currentEntity.add(traits.InstanceId(event.instanceId ?? event.batchId))
+		// `!== undefined`, because instance 0 is a valid hit
+		const instanceId = event.instanceId ?? event.batchId
+		if (instanceId !== undefined && currentEntity === hitEntity) {
+			setOrAddTrait(currentEntity, traits.InstanceId, instanceId)
 		}
 	}
 
@@ -181,9 +187,9 @@ const createEntityEvents = (
  * targets the closed-over entity.
  *
  * Layers invisibility on top of the shared handlers: enter/move/down/click are
- * suppressed while the entity is invisible (raycasting still hits the visible
- * leaf mesh of Frame/Geometry/GLTF, so the scene's visibility filter can't
- * block them — added in #577, migrated to InheritedInvisible in #710).
+ * suppressed while the entity is invisible, because raycasting still hits the
+ * visible leaf mesh of `Mesh.svelte`, `GeometryModel.svelte`, or `GLTF.svelte`
+ * and the scene visibility filter cannot block them.
  * `onpointerleave` is intentionally left active. The effect tears down a stale
  * Hovered/InstancedMatrix for an entity that turns invisible while hovered,
  * since the guarded handlers can no longer fire to clean it up.

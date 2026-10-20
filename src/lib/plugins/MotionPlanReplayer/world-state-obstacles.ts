@@ -1,10 +1,3 @@
-/**
- * Obstacles outside `frame_system`. RDK writes them under two keys that decode differently (see
- * `parse-plan.ts`), so each arrives on its own field and gets its own decoder here. Draw contract
- * matches `draw/geometries_in_frame.go` `ToTransforms` — namespaced label, parented to the observed
- * frame. WorldState `obstacles` and `transforms` are the same thing in different shapes, so both draw.
- */
-
 import type { JsonValue, PartialMessage } from '@bufbuild/protobuf'
 
 import { UuidTool } from 'uuid-tool'
@@ -17,10 +10,9 @@ import {
 	WorldState,
 } from '$lib/buf/common/v1/common_pb'
 import { Pose } from '$lib/math'
+import { parseGeometry } from '$lib/motion/frameDescriptors'
 
 import type { ObstaclesInWorldFrame, ParsedPlan } from './parse-plan'
-
-import { parseGeometry } from './build-frame-descriptors'
 
 // Prefix avoids colliding with frame names that share an obstacle label (pirouette: pallet).
 const namespaced = (label: string, fallback: string): string => `obstacle:${label || fallback}`
@@ -102,6 +94,13 @@ const fromWorldState = (payload: unknown): Transform[] => {
 	return [...fromObstacles, ...fromTransforms]
 }
 
+/**
+ * Obstacles outside `frame_system`. RDK writes them under two keys that decode differently (see
+ * `parse-plan.ts`), so each arrives on its own field and gets its own decoder here. Draw contract
+ * matches `draw/geometries_in_frame.go`'s `ToTransforms`: namespaced label, parented to the
+ * observed frame. WorldState `obstacles` and `transforms` are the same thing in different shapes,
+ * so both draw.
+ */
 export const worldStateObstacleTransforms = (plan: ParsedPlan): Transform[] => [
 	...fromWorldState(plan.worldState),
 	...fromObstaclesInWorldFrame(plan.obstaclesInWorldFrame),

@@ -74,6 +74,24 @@ describe('parsePlan', () => {
 		expect(plan.obstaclesInWorldFrame?.frame).toBe('world')
 	})
 
+	// Captures marshal a nil GeometriesInFrame as an explicit null instead of omitting the key.
+	it('treats a null obstacles_in_world_frame as absent', () => {
+		const plan = parsePlan(
+			JSON.stringify({ ...REQUEST_OBJ, obstacles_in_world_frame: null }) +
+				JSON.stringify(RESULT_OBJ)
+		)
+		expect(plan.obstaclesInWorldFrame).toBeUndefined()
+	})
+
+	it('treats null goals and trajectory as absent', () => {
+		const plan = parsePlan(
+			JSON.stringify({ ...REQUEST_OBJ, goals: null }) +
+				JSON.stringify({ ...RESULT_OBJ, trajectory: null })
+		)
+		expect(plan.goals).toEqual([])
+		expect(plan.trajectory).toEqual([])
+	})
+
 	// Must fail here rather than deep inside the geometry decoder, where there is no path to report.
 	it('throws PlanParseError when obstacles_in_world_frame is malformed', () => {
 		expect(() =>
@@ -112,22 +130,18 @@ describe('parsePlan with a captured plan', () => {
 		const step = plan.trajectory[0]!
 		const moving = Object.entries(step).filter(([, joints]) => joints.length > 0)
 
-		// Only the two arms actually articulate; the other 36 frames ride along
-		// with an empty array, which is the shape the descriptor builder relies on.
+		// Only the two arms articulate. The other 36 frames ride along with an empty array, which is the shape the descriptor builder relies on.
 		expect(Object.keys(step)).toHaveLength(38)
 		expect(moving.map(([name]) => name)).toEqual(['left-arm', 'right-arm'])
 		expect(step['left-arm']).toHaveLength(6)
 	})
 
 	it('ignores the planner keys the replayer does not read', () => {
-		// world_state, constraints, planner_options, start_state and path are all
-		// present in the capture; parsing must not reject them.
+		// The capture also carries world_state, constraints, planner_options, start_state and path. Parsing must not reject them.
 		expect(plan.frames['obstacle-table']).toBeDefined()
 	})
 
-	// Skipping is warn-only, so the warning is the contract. A geometry that stops parsing would
-	// otherwise just vanish from the scene — the failure this whole capture-as-oracle setup exists
-	// to catch.
+	// Skipping a geometry is warn-only, so the warning is the contract. A geometry that stops parsing would otherwise vanish from the scene.
 	it('builds every geometry in the capture without skipping one', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 

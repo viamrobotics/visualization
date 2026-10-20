@@ -1,16 +1,22 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte'
 	import type { BufferAttribute } from 'three'
 
 	import { T } from '@threlte/core'
 	import { PlaneGeometry, Vector2 } from 'three'
 
-	export let args: [
-		radius: number,
-		width?: number | undefined,
-		height?: number | undefined,
-		widthSegments?: number | undefined,
-		heightSegments?: number | undefined,
-	]
+	interface Props {
+		args: [
+			radius: number,
+			width?: number | undefined,
+			height?: number | undefined,
+			widthSegments?: number | undefined,
+			heightSegments?: number | undefined,
+		]
+		children?: Snippet
+	}
+
+	const { args, children }: Props = $props()
 
 	class BentPlaneGeometry extends PlaneGeometry {
 		constructor(radius: number, ...args: ConstructorParameters<typeof PlaneGeometry>) {
@@ -49,5 +55,5 @@
 	is={BentPlaneGeometry}
 	{args}
 >
-	<slot />
+	{@render children?.()}
 </T>

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import { DashboardPortal } from '$lib'
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
+	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	import DiffHeaderLabel from './DiffHeaderLabel.svelte'
@@ -40,7 +40,6 @@
 		resizable
 	>
 		<div class="flex h-full min-h-0 min-w-0 flex-col gap-3 p-3 text-xs">
-			<!-- prompt input -->
 			<div class="flex min-w-0 gap-2">
 				<textarea
 					class="min-w-0 flex-1 resize-none rounded border border-gray-300 p-2 text-xs focus:ring-1 focus:ring-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
@@ -69,12 +68,10 @@
 				</button>
 			</div>
 
-			<!-- loading -->
 			{#if sceneBuilder.uiState === 'loading'}
 				<p class="text-gray-5 text-center">Thinking…</p>
 			{/if}
 
-			<!-- diff ready -->
 			{#if sceneBuilder.uiState === 'diff'}
 				<div class="flex min-h-0 flex-1 flex-col gap-3">
 					{#if sceneBuilder.diffGroups.length > 0}
@@ -166,7 +163,6 @@
 				</div>
 			{/if}
 
-			<!-- error -->
 			{#if sceneBuilder.uiState === 'error'}
 				<div class="border-danger-medium bg-danger-light flex flex-col gap-2 rounded border p-2.5">
 					<div class="text-danger-dark flex items-center gap-1.5 font-medium">

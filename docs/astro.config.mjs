@@ -11,8 +11,8 @@ export default defineConfig({
 	site,
 	base,
 	// astro 6.4.x stopped applying GFM to .mdx by default, which flattened every
-	// pipe table into a paragraph. Declaring the plugin explicitly restores it
-	// (the MDX integration extends markdown config) and is version-independent.
+	// pipe table into a paragraph. Declaring the plugin explicitly restores it and
+	// does not depend on the astro version.
 	markdown: {
 		remarkPlugins: [remarkGfm],
 	},
@@ -40,6 +40,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Running locally', link: '/guides/local-usage/' },
 						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
+						{ label: 'Deep linking', link: '/guides/deep-linking/' },
 						{
 							label: 'Implementing WorldStateStoreService',
 							link: '/guides/worldstatestore/',
@@ -51,17 +52,24 @@ export default defineConfig({
 					items: [
 						{ label: 'Authoring plugins', link: '/plugins/authoring/' },
 						{ label: 'Plugin dependencies', link: '/plugins/dependencies/' },
+						{ label: '<BuildFrames />', link: '/plugins/build-frames/' },
 						{ label: '<ControlWidgets />', link: '/plugins/control-widgets/' },
 						{ label: '<Debug />', link: '/plugins/debug/' },
 						{ label: '<DrawService />', link: '/plugins/draw-service/' },
+						{ label: '<FileDrop />', link: '/plugins/file-drop/' },
 						{ label: '<Focus />', link: '/plugins/focus/' },
+						{ label: '<FramePov />', link: '/plugins/frame-pov/' },
 						{ label: '<Fullscreen />', link: '/plugins/fullscreen/' },
 						{ label: '<Logs />', link: '/plugins/logs/' },
 						{ label: '<MeasureTool />', link: '/plugins/measure-tool/' },
+						{ label: '<Monitor />', link: '/plugins/monitor/' },
 						{ label: '<MotionPlanReplayer />', link: '/plugins/motion-plan-replayer/' },
 						{ label: '<SelectionTool />', link: '/plugins/selection/' },
+						{ label: '<SensorCoverage />', link: '/plugins/sensor-coverage/' },
+						{ label: '<Settings />', link: '/plugins/settings/' },
 						{ label: '<Skybox />', link: '/plugins/skybox/' },
 						{ label: '<TopDownLock />', link: '/plugins/top-down-lock/' },
+						{ label: '<WorldTree />', link: '/plugins/world-tree/' },
 						{ label: '<XR />', link: '/plugins/xr/' },
 						{ label: '<LLMSceneBuilder />', link: '/plugins/llm-scene-builder/' },
 					],
@@ -83,7 +91,6 @@ export default defineConfig({
 						{
 							label: 'v1 → v2',
 							link: '/migration/v1-to-v2/',
-							badge: { text: 'preview', variant: 'success' },
 						},
 					],
 				},

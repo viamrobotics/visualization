@@ -3,9 +3,11 @@ import type { Entity } from 'koota'
 import { onDestroy } from 'svelte'
 
 import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
 
-import { traits, useWorld } from '$lib/ecs'
+import { setOrAddTrait, traits, useWorld } from '$lib/ecs'
 import { useRelationships } from '$lib/hooks/useRelationships.svelte'
+import { createTrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
 import { reconcileSnapshotEntities, type SnapshotEntity } from '$lib/snapshot'
 
 import { parsePlan, PlanParseError } from './parse-plan'
@@ -15,21 +17,6 @@ import * as planRelations from './relations'
 const PLAN_COLOR = { r: 0, g: 0.47, b: 1 }
 const PLAN_OPACITY = 0.6
 
-// koota's `set` writes the trait's store slot but will not add an absent trait — the entity's
-// mask is untouched, so `has` stays false and nothing querying the trait ever sees the value.
-// Plan transforms carry no color metadata, so `Color` is always absent on spawn; `Opacity` only
-// happens to be present because `drawTransform` adds it unconditionally. Guard both rather than
-// depend on that.
-const setOrAddColor = (entity: Entity, value: typeof PLAN_COLOR) => {
-	if (entity.has(traits.Color)) entity.set(traits.Color, value)
-	else entity.add(traits.Color(value))
-}
-
-const setOrAddOpacity = (entity: Entity, value: number) => {
-	if (entity.has(traits.Opacity)) entity.set(traits.Opacity, value)
-	else entity.add(traits.Opacity(value))
-}
-
 export interface PlanEntry {
 	name: string
 	content: string
@@ -37,6 +24,8 @@ export interface PlanEntry {
 
 // Only primitives here — proto objects (Snapshot[]) live outside $state to avoid Svelte 5 deep proxy
 interface PlanState {
+	/** Survives the reindexing `removePlan` does to `plans`, which a position does not. */
+	id: number
 	name: string
 	content: string
 	status: 'idle' | 'ready' | 'error' | 'no-trajectory'
@@ -49,6 +38,8 @@ export interface MotionPlanReplayerContext {
 	readonly activePlanIndex: number | null
 	readonly currentStep: number
 	readonly totalSteps: number
+	/** Playback state, shared with `TrajectoryScrubber`. */
+	readonly player: TrajectoryPlayer
 	addPlan: (name: string, content: string, precomputedSnapshots?: Snapshot[]) => void
 	removePlan: (index: number) => void
 	selectPlan: (index: number) => void
@@ -64,11 +55,14 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 	const world = useWorld()
 	const relationships = useRelationships()
 
-	// Proto objects stored here — never inside $state to avoid Svelte 5 deep proxy
+	// Keyed by `PlanState.id`, not by position in `plans`.
 	const snapshotStore = new Map<number, Snapshot[]>()
+
+	let nextPlanId = 0
 
 	let plans = $state<PlanState[]>(
 		(initialPlans ?? []).map((e) => ({
+			id: nextPlanId++,
 			name: e.name,
 			content: e.content,
 			status: 'idle' as const,
@@ -77,7 +71,6 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 		}))
 	)
 	let activePlanIndex = $state<number | null>(null)
-	let currentStep = $state(0)
 	let entityMap = $state.raw(new Map<string, SnapshotEntity>())
 	let planEntity: Entity | undefined
 
@@ -85,27 +78,44 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 		activePlanIndex === null ? 0 : (plans[activePlanIndex]?.stepCount ?? 0)
 	)
 
+	const player = createTrajectoryPlayer({
+		totalSteps: () => totalSteps,
+		onStep: (step) => {
+			if (activePlanIndex === null) return false
+			const active = plans[activePlanIndex]
+			const snapshots = active && snapshotStore.get(active.id)
+			if (!snapshots || snapshots.length === 0) return false
+			return applyStep(snapshots, step)
+		},
+	})
+
 	const clearActivePlan = () => {
 		if (planEntity && world.has(planEntity)) planEntity.destroy()
 		planEntity = undefined
 		entityMap = new Map()
-		currentStep = 0
+		player.reset()
 		activePlanIndex = null
 	}
 
-	const applyStep = (snapshots: Snapshot[], step: number) => {
-		const snap = snapshots[step]!
+	/** Reports whether the step was drawn; see `TrajectoryPlayerOptions.onStep`. */
+	const applyStep = (snapshots: Snapshot[], step: number): boolean => {
+		// The player clamps against `stepCount`, written from this same array, so a miss means the two
+		// came apart. Reconciling `undefined` would throw out of whatever input handler got here.
+		const snap = snapshots[step]
+		if (!snap) return false
 
-		// Capture user-adjusted display config before reconcile. reconcile → updateMetadata
-		// resets Opacity to default and removes Invisible/ShowAxesHelper every step, which would
-		// wipe edits made via the Details panel / tree as you scrub. Color survives reconcile
-		// untouched, so it only needs to not be re-forced (see the spawned block below).
-		// Iterate the PartOfPlan relation (not entityMap) so child sub-entities are covered too.
-		const preserved = new Map<Entity, { opacity: number; invisible: boolean; showAxes: boolean }>()
+		// reconcile resets Opacity and removes Invisible/ShowAxesHelper every step, so capture
+		// PLAN_OPACITY and the ghost's visibility first. Iterate PartOfPlan so sub-entities are
+		// covered too. The user's own opacity edit needs no capture: it lives in
+		// `OpacityOverride`, which no reconciler writes.
+		const preserved = new Map<
+			Entity,
+			{ opacity: number | undefined; invisible: boolean; showAxes: boolean }
+		>()
 		if (planEntity) {
 			for (const entity of world.query(planRelations.PartOfPlan(planEntity))) {
 				preserved.set(entity, {
-					opacity: entity.get(traits.Opacity) ?? 1,
+					opacity: entity.get(traits.Opacity),
 					invisible: entity.has(traits.Invisible),
 					showAxes: entity.has(traits.ShowAxesHelper),
 				})
@@ -114,10 +124,8 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 
 		const result = reconcileSnapshotEntities(world, snap, entityMap)
 
-		// One spawned entry per snapshot message. Plans emit transforms only, and a
-		// transform spawns exactly one childless entity — so tagging the spawned set
-		// tags every entity the plan owns. Model drawings (the one case that spawns
-		// ChildOf sub-entities, for GLTF assets) would need those tagged too.
+		// Plans emit transforms only, and a transform spawns exactly one childless entity, so
+		// tagging the spawned set tags every entity the plan owns.
 		for (const spawned of result.spawned) {
 			relationships.apply(spawned.entity, spawned.relationships)
 			const uuid = spawned.entity.get(traits.UUID)
@@ -126,14 +134,14 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 
 			// Defaults land on first appearance only. Re-forcing them every step is what wiped
 			// the user's Details-panel edits.
-			if (!spawned.entity.has(traits.ReferenceFrame)) setOrAddColor(spawned.entity, PLAN_COLOR)
-			setOrAddOpacity(spawned.entity, PLAN_OPACITY)
+			if (!spawned.entity.has(traits.ReferenceFrame))
+				setOrAddTrait(spawned.entity, traits.Color, PLAN_COLOR)
+			setOrAddTrait(spawned.entity, traits.Opacity, PLAN_OPACITY)
 		}
 
-		// Restore captured config onto entities that survived this step.
 		for (const [entity, prev] of preserved) {
 			if (!entity.isAlive()) continue
-			setOrAddOpacity(entity, prev.opacity)
+			if (prev.opacity !== undefined) setOrAddTrait(entity, traits.Opacity, prev.opacity)
 			if (prev.invisible) entity.add(traits.Invisible)
 			else entity.remove(traits.Invisible)
 			if (prev.showAxes) entity.add(traits.ShowAxesHelper)
@@ -141,24 +149,25 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 		}
 
 		entityMap = result.current
-		currentStep = step
+		return true
 	}
 
-	const setStep = (step: number) => {
-		if (activePlanIndex === null) return
-		const snapshots = snapshotStore.get(activePlanIndex)
-		if (!snapshots || snapshots.length === 0) return
-		applyStep(snapshots, Math.max(0, Math.min(snapshots.length - 1, step)))
-	}
+	/**
+	 * For callers that scrub without a scrubber. Clamps, and also pauses: scrubbing by hand while
+	 * playback runs would fight it for the next frame.
+	 */
+	const setStep = (step: number) => player.seek(step)
 
 	const loadPlan = (index: number): void => {
 		const planState = plans[index]
 		if (!planState) return
 
-		const stored = snapshotStore.get(index)
+		const stored = snapshotStore.get(planState.id)
 		if (stored) {
 			activePlanIndex = index
-			currentStep = 0
+			// Rewind without notifying: step 0 is rendered directly below, and letting the player call
+			// back into `onStep` here would apply it twice.
+			player.reset()
 			if (!planEntity) planEntity = world.spawn(traits.Name(planState.name))
 			applyStep(stored, 0)
 			return
@@ -172,15 +181,17 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 				activePlanIndex = index
 				return
 			}
-			snapshotStore.set(index, snapshots)
+			snapshotStore.set(planState.id, snapshots)
 			plans[index] = { ...planState, status: 'ready', stepCount: snapshots.length, error: null }
 			activePlanIndex = index
-			currentStep = 0
+			player.reset()
 			if (!planEntity) planEntity = world.spawn(traits.Name(planState.name))
 			applyStep(snapshots, 0)
 		} catch (error) {
 			const msg = error instanceof PlanParseError ? error.message : 'Failed to parse plan.'
-			console.warn('[MotionPlanReplayer] loadPlan error:', msg)
+			// The error rather than the message: a `PlanParseError` carries what actually failed as
+			// `cause`, which the string drops.
+			console.warn('[MotionPlanReplayer] loadPlan error:', error)
 			plans[index] = { ...planState, status: 'error', error: msg }
 		}
 	}
@@ -191,13 +202,15 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 	}
 
 	const addPlan = (name: string, content: string, precomputedSnapshots?: Snapshot[]) => {
+		const id = nextPlanId++
 		const index = plans.length
 		if (precomputedSnapshots && precomputedSnapshots.length > 0) {
-			snapshotStore.set(index, precomputedSnapshots)
+			snapshotStore.set(id, precomputedSnapshots)
 		}
 		plans = [
 			...plans,
 			{
+				id,
 				name,
 				content,
 				status: precomputedSnapshots && precomputedSnapshots.length > 0 ? 'ready' : 'idle',
@@ -209,8 +222,11 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 	}
 
 	const removePlan = (index: number) => {
+		const removed = plans[index]
+		if (!removed) return
+
 		if (activePlanIndex === index) clearActivePlan()
-		snapshotStore.delete(index)
+		snapshotStore.delete(removed.id)
 		plans = plans.filter((_, i) => i !== index)
 		if (activePlanIndex !== null && activePlanIndex > index) {
 			activePlanIndex = activePlanIndex - 1
@@ -225,10 +241,13 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 			return activePlanIndex
 		},
 		get currentStep() {
-			return currentStep
+			return player.currentStep
 		},
 		get totalSteps() {
 			return totalSteps
+		},
+		get player() {
+			return player
 		},
 		addPlan,
 		removePlan,

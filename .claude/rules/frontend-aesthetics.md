@@ -12,7 +12,7 @@ Viam already made the distinctive choices: the fonts, the palette, the component
 
 **Source of truth: https://design.viam.com**, implemented as Viam's prime config — `@viamrobotics/tailwind-config` (tokens/utilities) and `@viamrobotics/tweakpane-config` (tweakpane theme). The design system's own words: "consistency across applications"; "use PRIME elements over native when possible, and extend or modify PRIME as necessary"; colors "match one-to-one with our tailwind config." `viam-context.md` already covers _how/when_ to WebFetch design.viam.com and the Viam repos. Follow it; don't re-verify what it covers.
 
-This rule is about **visual craft + design-system fidelity**. Svelte code conventions (runes, `class={[...]}` array syntax, ARIA/semantics, Svelte MCP) live in `svelte.md`; on-demand rendering / `invalidate()` lives in `three.md`. Cross-reference them; don't duplicate.
+This rule is about **visual craft + design-system fidelity**. Svelte code conventions (runes, `class={[...]}` array syntax, Svelte MCP) live in `svelte.md`; on-demand rendering / `invalidate()` lives in `threlte-scene.md`; generic token/scale/contrast mechanics live in the kit's `design.md` (query actual values with `design.mjs`). Cross-reference them; don't duplicate.
 
 ## Components first
 
@@ -45,7 +45,7 @@ The config ships the distinctive choices. Apply the family for the role:
 
 - `font-space-grotesk` — display / headings.
 - `font-public-sans` — body / UI text.
-- `font-roboto-mono` — numeric & data (poses, coordinates, IDs, tables; cf. `.motion-tools-table` in `app.css`).
+- `font-roboto-mono` — numeric & data (poses, coordinates, IDs, tables; cf. `.visualization-table` in `app.css`).
 
 `app.css` sets `body { font-family: system-ui }` globally. The prime fonts are **not** inherited everywhere, so set the family explicitly where it matters. Build hierarchy with weight/size/color tokens, not invented type scales.
 
@@ -61,17 +61,18 @@ A control isn't done until every state is handled — missing states is the #1 s
 
 - **hover / focus-visible / active / disabled** on every interactive element.
 - **loading** and **empty** states for any async or list/data view (placeholder/skeleton, not a blank box).
-- Disabled should read as disabled (`text-disabled`, reduced affordance). Prefer `aria-disabled` over `disabled` when it must stay focusable (see `svelte.md`).
+- Disabled should read as disabled (`text-disabled`, reduced affordance). Prefer `aria-disabled` over `disabled` when it must stay focusable (see Accessibility below).
 - Lean on prime components for correct states instead of re-deriving them.
 
 ## Motion
 
-Restrained and purposeful — a 3D tool, not a landing page. CSS-only transitions on hover/focus/expand. Prefer the config's `animate-wiggle` (nudge/error) and `animate-blink` (attention) over bespoke keyframes. Respect `prefers-reduced-motion`. (Three.js: after scene/material mutations call `invalidate()` — see `three.md`; never drive animation from `$effect`.)
+Restrained and purposeful — a 3D tool, not a landing page. CSS-only transitions on hover/focus/expand. Prefer the config's `animate-wiggle` (nudge/error) and `animate-blink` (attention) over bespoke keyframes. Respect `prefers-reduced-motion`. (Three.js: after scene/material mutations call `invalidate()` — see `threlte-scene.md`; never drive animation from `$effect`.)
 
-## Accessibility (visual)
+## Accessibility
 
-ARIA/roles/labels are in `svelte.md`; here, the visual side:
-
+- Use semantic elements and correct ARIA roles; label all interactive elements.
+- Hide decorative icons with `aria-hidden="true"`.
+- Use `aria-disabled` instead of `disabled` when the element must remain focusable.
 - Contrast: pair `text-*` tokens with appropriate surfaces (don't put `text-subtle-2` on `bg-medium`).
 - Keep a visible `focus-visible` ring; never remove focus outlines without a replacement.
 - Hit targets large enough to use comfortably.

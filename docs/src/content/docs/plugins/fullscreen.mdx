@@ -1,6 +1,6 @@
 ---
 title: <Fullscreen />
-description: Add a button that expands a motion-tools visualizer to cover the viewport.
+description: Add a button that expands a Viam visualizer to cover the viewport.
 ---
 
 `<Fullscreen />` adds a button to the top right of the visualizer that expands it to cover the browser viewport, above the host page's own content. Clicking the button again returns the visualizer to its normal layout. While fullscreen, the host page's scroll is locked so only the visualizer receives it.
@@ -13,8 +13,8 @@ Mount `<Fullscreen />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { Fullscreen } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Fullscreen } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-96 w-full">

@@ -24,7 +24,7 @@ export const createArrowGeometry = (): BufferGeometry => {
 	const radialSegments = 3
 	const headGeo = new ConeGeometry(headWidth * 0.5, headLength, radialSegments, 1, false)
 
-	// Place its center at y = shaftLength + headLength/2 so tip lands at y = shaftLength + headLength
+	// Center the cone at y = tailLength + headLength/2 so the tip lands at y = ARROW_LENGTH.
 	headGeo.translate(0, tailLength + headLength * 0.5, 0)
 
 	const merged = mergeGeometries([tailGeometry, headGeo], true)

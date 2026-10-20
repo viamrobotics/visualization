@@ -7,9 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/viam-labs/motion-tools/client/server"
+	"github.com/viamrobotics/visualization/client/server"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // RemoveEntity removes a single drawn entity by UUID.

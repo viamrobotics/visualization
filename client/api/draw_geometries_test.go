@@ -1,140 +1,182 @@
 package api
 
 import (
-	"math"
 	"testing"
-	"time"
 
-	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
-	"go.viam.com/rdk/pointcloud"
+	"github.com/viamrobotics/visualization/draw"
 	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/test"
 )
 
-func TestDrawGeometries(t *testing.T) {
-	startTestServer(t)
-
-	t.Run("DrawGeometries", func(t *testing.T) {
-		box, err := spatialmath.NewBox(
-			spatialmath.NewPose(
-				r3.Vector{X: 1001, Y: 1, Z: 1},
-				&spatialmath.OrientationVectorDegrees{Theta: 45, OX: 0, OY: 0, OZ: 1},
-			),
-			r3.Vector{X: 101, Y: 100, Z: 200},
-			"DrawGeometries Box",
-		)
-		test.That(t, err, test.ShouldBeNil)
-
-		sphere, err := spatialmath.NewSphere(
-			spatialmath.NewPose(
-				r3.Vector{X: 1501, Y: 0, Z: 0},
-				&spatialmath.OrientationVectorDegrees{Theta: 0, OX: 0, OY: 0, OZ: 1},
-			),
-			100,
-			"DrawGeometries Sphere",
-		)
-		test.That(t, err, test.ShouldBeNil)
-
-		capsule, err := spatialmath.NewCapsule(
-			spatialmath.NewPose(
-				r3.Vector{X: 2002, Y: 3, Z: 200},
-				&spatialmath.OrientationVectorDegrees{Theta: 90, OX: 1, OY: 0, OZ: 1},
-			),
-			102,
-			300,
-			"DrawGeometries Capsule",
-		)
-		test.That(t, err, test.ShouldBeNil)
-
-		mesh, err := spatialmath.NewMeshFromPLYFile("../data/lod_500.ply")
-		test.That(t, err, test.ShouldBeNil)
-
-		meshInWorld := mesh.Transform(spatialmath.NewPose(
-			r3.Vector{X: 2800, Y: 10, Z: -200},
-			&spatialmath.OrientationVectorDegrees{Theta: 180, OX: 0, OY: 0, OZ: 1},
-		)).(*spatialmath.Mesh)
-		meshInWorld.SetLabel("DrawGeometries Mesh")
-
-		pc, err := pointcloud.NewFromFile("../data/Zaghetto.pcd", pointcloud.BasicType)
-		test.That(t, err, test.ShouldBeNil)
-		octree, err := pointcloud.ToBasicOctree(pc, 0)
-		test.That(t, err, test.ShouldBeNil)
-		octree.SetLabel("DrawGeometries PointCloud")
-
-		geometries := []spatialmath.Geometry{box, sphere, capsule, meshInWorld, octree}
-		geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
-
-		colors := []draw.Color{
-			draw.ColorFromHex("#EF9A9A"),
-			draw.ColorFromHex("#EF5350"),
-			draw.ColorFromHex("#F44336"),
-			draw.ColorFromName("lime"),
-			draw.ColorFromName("red"),
-		}
-
-		uuids, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
-			Geometries:           geometriesInFrame,
-			Colors:               colors,
-			DownscalingThreshold: 25,
-		})
-		test.That(t, err, test.ShouldBeNil)
-		test.That(t, len(uuids), test.ShouldEqual, 5)
-	})
+func testGeometriesInFrame(t *testing.T, parent string, labels ...string) *referenceframe.GeometriesInFrame {
+	t.Helper()
+	geometries := make([]spatialmath.Geometry, 0, len(labels))
+	for _, label := range labels {
+		geometries = append(geometries, testBox(t, label))
+	}
+	return referenceframe.NewGeometriesInFrame(parent, geometries)
 }
 
-func TestDrawGeometriesUpdating(t *testing.T) {
-	startTestServer(t)
+// The batch goes out as one AddEntities call, not one AddEntity per geometry. A
+// frame system with a couple hundred geometries would otherwise cost a couple
+// hundred round trips per redraw.
+func TestDrawGeometriesInFrameBatchesIntoOneCall(t *testing.T) {
+	fake := startFake(t)
 
-	t.Run("DrawGeometriesUpdating", func(t *testing.T) {
-		for i := 0; i < 100; i++ {
-			box1, err := spatialmath.NewBox(
-				spatialmath.NewPose(
-					r3.Vector{X: math.Sin(float64(i)/16.) * 500, Y: math.Cos(float64(i)/16.) * 500, Z: 1},
-					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
-				),
-				r3.Vector{X: 101, Y: 100, Z: 200},
-				"DrawGeometries box1 updating",
-			)
-			test.That(t, err, test.ShouldBeNil)
+	uuids, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+		Geometries: testGeometriesInFrame(t, "world", "a", "b", "c"),
+	})
+	test.That(t, err, test.ShouldBeNil)
 
-			box2, err := spatialmath.NewBox(
-				spatialmath.NewPose(
-					r3.Vector{X: math.Sin(float64(i+120)/16.) * 500, Y: math.Cos(float64(i+120)/16.) * 500, Z: 1},
-					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
-				),
-				r3.Vector{X: 101, Y: 100, Z: 200},
-				"DrawGeometries box2 updating",
-			)
-			test.That(t, err, test.ShouldBeNil)
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	test.That(t, fake.addEntities, test.ShouldHaveLength, 1)
+	test.That(t, fake.addEntity, test.ShouldBeEmpty)
+	test.That(t, fake.addEntities[0].GetEntities(), test.ShouldHaveLength, 3)
+	test.That(t, uuids, test.ShouldHaveLength, 3)
+}
 
-			box3, err := spatialmath.NewBox(
-				spatialmath.NewPose(
-					r3.Vector{X: math.Sin(float64(i+240)/16.) * 500, Y: math.Cos(float64(i+240)/16.) * 500, Z: 1},
-					&spatialmath.OrientationVectorDegrees{Theta: float64(i) / 2, OX: 0, OY: 0, OZ: 0},
-				),
-				r3.Vector{X: 101, Y: 100, Z: 200},
-				"DrawGeometries box3 updating",
-			)
-			test.That(t, err, test.ShouldBeNil)
+func TestDrawGeometriesInFrameSendsTransforms(t *testing.T) {
+	fake := startFake(t)
 
-			geometries := []spatialmath.Geometry{box1, box2, box3}
-			geometriesInFrame := referenceframe.NewGeometriesInFrame("world", geometries)
-			colors := []draw.Color{
-				draw.ColorFromHex("#EF9A9A"),
-				draw.ColorFromHex("#EF5350"),
-				draw.ColorFromHex("#F44336"),
-			}
+	_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+		Geometries: testGeometriesInFrame(t, "arm-1", "link"),
+	})
+	test.That(t, err, test.ShouldBeNil)
 
-			uuids, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
-				ID:         "test",
-				Geometries: geometriesInFrame,
-				Colors:     colors,
+	entity := fake.addEntities[0].GetEntities()[0]
+	test.That(t, entity.GetTransform(), test.ShouldNotBeNil)
+	test.That(t, entity.GetDrawing(), test.ShouldBeNil)
+}
+
+// ToTransforms is called with no options, so its parent falls back to "world"
+// and the frame the caller put the geometries in is discarded. There is also no
+// Parent field on the options struct, unlike every other Draw* call, so a batch
+// cannot be attached to a frame at all. Geometries whose poses are not already
+// world-resolved render in the wrong place.
+func TestDrawGeometriesInFrameIgnoresTheFrameAndAlwaysUsesWorld(t *testing.T) {
+	fake := startFake(t)
+
+	_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+		Geometries: testGeometriesInFrame(t, "arm-1", "link"),
+	})
+	test.That(t, err, test.ShouldBeNil)
+
+	observer := fake.addEntities[0].
+		GetEntities()[0].
+		GetTransform().
+		GetPoseInObserverFrame().
+		GetReferenceFrame()
+	test.That(t, observer, test.ShouldEqual, "world")
+}
+
+// A consequence of the above: the same labels under two different frames collide
+// on identity, because the derived id is "label:world" either way.
+func TestDrawGeometriesInFrameCollidesAcrossFrames(t *testing.T) {
+	uuidFor := func(t *testing.T, parent string) []byte {
+		t.Helper()
+		fake := startFake(t)
+		_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+			Geometries: testGeometriesInFrame(t, parent, "shared"),
+		})
+		test.That(t, err, test.ShouldBeNil)
+		return fake.addEntities[0].GetEntities()[0].GetTransform().GetUuid()
+	}
+
+	var underArm, underGripper []byte
+	t.Run("arm-1", func(t *testing.T) { underArm = uuidFor(t, "arm-1") })
+	t.Run("gripper", func(t *testing.T) { underGripper = uuidFor(t, "gripper") })
+
+	// Same uuid despite different frames. ID is the only way to separate them.
+	test.That(t, underArm, test.ShouldResemble, underGripper)
+}
+
+// Identity is derived from "ID:label:parent", so a distinct ID keeps two batches
+// that share labels and a parent from colliding.
+func TestDrawGeometriesInFrameIDNamespacesTheBatch(t *testing.T) {
+	uuidsFor := func(t *testing.T, id string) []byte {
+		t.Helper()
+		fake := startFake(t)
+		_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+			ID:         id,
+			Geometries: testGeometriesInFrame(t, "world", "shared-label"),
+		})
+		test.That(t, err, test.ShouldBeNil)
+		return fake.addEntities[0].GetEntities()[0].GetTransform().GetUuid()
+	}
+
+	var noID, withID, otherID []byte
+	t.Run("no id", func(t *testing.T) { noID = uuidsFor(t, "") })
+	t.Run("robot-a", func(t *testing.T) { withID = uuidsFor(t, "robot-a") })
+	t.Run("robot-b", func(t *testing.T) { otherID = uuidsFor(t, "robot-b") })
+
+	test.That(t, withID, test.ShouldNotResemble, noID)
+	test.That(t, withID, test.ShouldNotResemble, otherID)
+}
+
+func TestDrawGeometriesInFrameRepeatedCallsUpsert(t *testing.T) {
+	fake := startFake(t)
+	geometries := testGeometriesInFrame(t, "world", "stable")
+
+	_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{Geometries: geometries})
+	test.That(t, err, test.ShouldBeNil)
+	_, err = DrawGeometriesInFrame(DrawGeometriesInFrameOptions{Geometries: geometries})
+	test.That(t, err, test.ShouldBeNil)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	first := fake.addEntities[0].GetEntities()[0].GetTransform().GetUuid()
+	second := fake.addEntities[1].GetEntities()[0].GetTransform().GetUuid()
+	test.That(t, first, test.ShouldResemble, second)
+}
+
+// Empty Colors is not "no color": the batch defaults to red.
+func TestDrawGeometriesInFrameColorBranches(t *testing.T) {
+	red := draw.ColorFromRGB(255, 0, 0)
+	green := draw.ColorFromRGB(0, 255, 0)
+
+	for _, tc := range []struct {
+		name   string
+		colors []draw.Color
+	}{
+		{name: "empty defaults to red", colors: nil},
+		{name: "one color is shared", colors: []draw.Color{red}},
+		{name: "one color per geometry", colors: []draw.Color{red, green, red}},
+		{name: "a shorter palette cycles", colors: []draw.Color{red, green}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := startFake(t)
+
+			_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+				Geometries: testGeometriesInFrame(t, "world", "a", "b", "c"),
+				Colors:     tc.colors,
 			})
 			test.That(t, err, test.ShouldBeNil)
-			test.That(t, len(uuids), test.ShouldEqual, 3)
-			time.Sleep(16 * time.Millisecond)
-		}
+
+			test.That(t, fake.addEntities[0].GetEntities(), test.ShouldHaveLength, 3)
+		})
+	}
+}
+
+func TestDrawGeometriesInFrameRequiresAVisualizer(t *testing.T) {
+	requireNoServer(t)
+
+	_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+		Geometries: testGeometriesInFrame(t, "world", "a"),
 	})
+
+	test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
+}
+
+func TestDrawGeometriesInFrameWrapsRPCFailures(t *testing.T) {
+	fake := startFake(t)
+	fake.errs["AddEntities"] = errRPCBoom
+
+	_, err := DrawGeometriesInFrame(DrawGeometriesInFrameOptions{
+		Geometries: testGeometriesInFrame(t, "world", "a"),
+	})
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntities RPC failed")
 }

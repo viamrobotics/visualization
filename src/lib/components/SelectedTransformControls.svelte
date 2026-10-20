@@ -3,35 +3,60 @@
 
 	import { T, useThrelte } from '@threlte/core'
 	import { TransformControls } from '@threlte/extras'
-	import { onDestroy } from 'svelte'
-	import { Group, MathUtils, Matrix4 } from 'three'
+	import { Group, Matrix4, Vector3 } from 'three'
 
+	import {
+		boundsHintInterior,
+		type BoundsInterior,
+		boundsObstacleNamed,
+		resizeBoundsObstacle,
+	} from '$lib/boundsObstacleInterior'
+	import { complexShapeOwner } from '$lib/complexShapeOwner'
+	import SnapIndicator from '$lib/components/SnapIndicator.svelte'
 	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { useBuildModeSync } from '$lib/hooks/useBuildModeSync.svelte'
+	import { shapeOffsetFromGizmo, withObstacleShapePatch } from '$lib/editing/obstacleShapeGizmo'
+	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
+	import { transformSnaps } from '$lib/hooks/transformSnaps'
+	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { Pose } from '$lib/math'
+	import { solveEditedMatrix } from '$lib/math/transform'
+	import { type ObstacleShape } from '$lib/obstacleAttributes'
+	import { type ObstacleGeometryPatch } from '$lib/obstacleGeometryList'
+	import {
+		simpleObstacleNamed,
+		simpleObstacleShape,
+		withSimpleObstacleShape,
+	} from '$lib/simpleObstacleShape'
+	import { useObjectSnapDrag } from '$lib/snapping/useObjectSnapDrag.svelte'
 	import { isolateTransformControls } from '$lib/three/renderLayers'
-	import { solveEditedMatrix } from '$lib/transform'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
 	const environment = useEnvironment()
-	const buildModeSync = useBuildModeSync()
 	const fragmentInfo = useFragmentInfo()
+	const configFrames = useConfigFrames()
 	const transformControls = useTransformControls()
 	const partConfig = usePartConfig()
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 	const selected = useQuery(traits.Selected)
 
 	const mode = $derived(settings.current.transformMode)
+	const objectSnap = useObjectSnapDrag()
+	const snaps = $derived(
+		transformSnaps({
+			...settings.current,
+			snapping: settings.current.snapping !== objectSnap.isInverted,
+		})
+	)
 	const isBuildMode = $derived(environment.current.mode === 'build')
 	const entity = $derived(selected.current[0])
-	const transformable = useTrait(() => entity, traits.Transformable)
+	const editable = useTrait(() => entity, traits.Editable)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 	const configMatrix = useTrait(() => entity, traits.Matrix)
 	const liveMatrix = useTrait(() => entity, traits.LiveMatrix)
@@ -41,31 +66,59 @@
 	const capsule = useTrait(() => entity, traits.Capsule)
 	const name = useTrait(() => entity, traits.Name)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const center = useTrait(() => entity, traits.Center)
+	const complexShape = useTrait(() => entity, traits.ComplexObstacleShape)
+	// A Complex obstacle's shape is edited through its entry in the obstacle's attributes.
+	const shapeOwner = $derived(
+		complexShape.current
+			? complexShapeOwner(partConfig.current.components, name.current)
+			: undefined
+	)
+	// A Simple obstacle's own frame has no geometry, so the scale gizmo resizes its one shape.
+	const simpleObstacle = $derived(simpleObstacleNamed(partConfig.current.components, name.current))
+	const obstacleShape = $derived(simpleObstacle ? simpleObstacleShape(simpleObstacle) : undefined)
+	// A Bounds obstacle's frame has no geometry either, so the scale gizmo resizes its interior.
+	const boundsObstacle = $derived(boundsObstacleNamed(partConfig.current.components, name.current))
 	const hasScalableGeometry = $derived(
-		box.current !== undefined || sphere.current !== undefined || capsule.current !== undefined
+		box.current !== undefined ||
+			sphere.current !== undefined ||
+			capsule.current !== undefined ||
+			obstacleShape !== undefined ||
+			boundsObstacle !== undefined
 	)
 	const isFragmentComponentWithVariables = $derived(
-		name.current && Object.keys(fragmentInfo.current?.[name.current]?.variables ?? {}).length > 0
+		name.current !== undefined &&
+			isFrameVariableLocked(
+				fragmentInfo.current?.[name.current],
+				configFrames.effectiveFrames.get(name.current)
+			)
 	)
 
 	// Non-mesh frames (reference frames, and instanced box/sphere/capsule frames)
 	// render no named scene object, so `getObjectByName` can't locate a gizmo
-	// target. Drive a dedicated anchor Group from the selected entity's
-	// WorldMatrix instead — the same world transform the entity renderers
-	// compose. They mount at the scene root with `matrixAutoUpdate = false`, so
-	// this anchor's world-space transform matches theirs exactly.
+	// target. Drive a dedicated anchor from the selected entity's WorldMatrix
+	// instead, the same world transform the entity renderers compose.
+	// Unlike those renderers, it keeps `matrixAutoUpdate` on: world-space snapping
+	// reads `getWorldPosition()`, so a stale matrix snaps every drag back to its start.
 	const anchor = new Group()
-	anchor.matrixAutoUpdate = false
+	const UNIT_SCALE = new Vector3(1, 1, 1)
+	const tempShapeCenter = new Matrix4()
+	const tempShapeWorld = new Matrix4()
 
 	$effect.pre(() => {
 		const world = worldMatrix.current
 		if (!world) return
 
-		anchor.matrix.copy(world)
-		// Keep position/quaternion/scale in sync with the matrix so
-		// TransformControls (which reads/writes those fields) sees the entity's
-		// actual transform on drag start.
-		anchor.matrix.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		let target = world
+		// A Complex shape's frame sits at the obstacle origin, so the gizmo goes to the shape itself.
+		if (shapeOwner && center.current) {
+			new Pose().copy(center.current).toMatrix4(tempShapeCenter)
+			target = tempShapeWorld.multiplyMatrices(world, tempShapeCenter)
+		}
+
+		target.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		// An aligned move stages a turn, which would otherwise tilt the gizmo mid-drag.
+		if (objectSnap.isDragging) anchor.quaternion.copy(objectSnap.startOrientation)
 		anchor.updateMatrixWorld()
 		invalidate()
 	})
@@ -73,15 +126,28 @@
 	const ref = $derived(worldMatrix.current ? anchor : undefined)
 
 	const activeMode = $derived.by<'translate' | 'rotate' | 'scale' | undefined>(() => {
-		if (mode === 'none' || !transformable.current) return
+		if (mode === 'none' || !(editable.current || shapeOwner)) return
 
 		// Scale only does anything for primitive geometries the gizmo can size.
 		if (mode === 'scale' && !hasScalableGeometry) return
 
 		return mode
 	})
-	const isSphereScale = $derived(activeMode === 'scale' && sphere.current !== undefined)
-	const isCapsuleScale = $derived(activeMode === 'scale' && capsule.current !== undefined)
+	/** The orientation a drag stages: the gizmo's own, or during a move, the snap's. */
+	const stagedOrientation = (gizmo: Group) =>
+		activeMode === 'translate' && objectSnap.isDragging ? objectSnap.orientation : gizmo.quaternion
+
+	const stagesPosition = $derived(activeMode === 'translate')
+	// Align-to-surface turns the object during a move, so a move writes orientation too.
+	const stagesOrientation = $derived(
+		activeMode === 'rotate' || (activeMode === 'translate' && objectSnap.hasTurned)
+	)
+	const isSphereScale = $derived(
+		activeMode === 'scale' && (sphere.current !== undefined || obstacleShape?.type === 'sphere')
+	)
+	const isCapsuleScale = $derived(
+		activeMode === 'scale' && (capsule.current !== undefined || obstacleShape?.type === 'capsule')
+	)
 
 	/**
 	 * A frame drag is only ever staged through the part config, so without edit
@@ -96,7 +162,6 @@
 
 	const transforming = $derived(
 		isBuildMode &&
-			!buildModeSync.syncing &&
 			ref &&
 			entity &&
 			activeMode &&
@@ -117,6 +182,7 @@
 		| { type: 'capsule'; r: number; l: number }
 		| undefined
 	let frameHistoryEntryOpen = false
+	let isGizmoDragging = false
 	let controls = $state.raw<ThreeTransformControls>()
 
 	$effect(() => {
@@ -135,11 +201,43 @@
 		frameHistoryEntryOpen = false
 	}
 
-	onDestroy(endFrameHistoryEntry)
+	const releaseGizmo = () => {
+		if (!isGizmoDragging) return
+		isGizmoDragging = false
+		transformControls.setActive(false)
+	}
+
+	// The gizmo can unmount mid-drag, on a mode hotkey or the entity hiding, and then never sees
+	// the pointer up. Close the history entry and release the camera with it, or undo stays blocked
+	// behind the open entry and the camera stays parked.
+	$effect(() => {
+		if (!transforming || !entity) return
+		return () => {
+			endFrameHistoryEntry()
+			releaseGizmo()
+		}
+	})
+
+	// Same unmount, plus a switch out of translate mid-drag. End the snap drag with them, or the
+	// next drag starts from a stale one.
+	$effect(() => {
+		if (!transforming || activeMode !== 'translate' || !entity) return
+		return () => objectSnap.end()
+	})
 
 	const captureScaleStart = () => {
 		if (!entity || activeMode !== 'scale') {
 			scaleStart = undefined
+			return
+		}
+
+		if (obstacleShape) {
+			scaleStart = { ...obstacleShape }
+			return
+		}
+
+		if (boundsObstacle) {
+			scaleStart = { type: 'box', ...boundsHintInterior(boundsObstacle.hint) }
 			return
 		}
 
@@ -164,18 +262,61 @@
 		scaleStart = undefined
 	}
 
+	const resizeSimpleObstacle = (obstacle: PartComponent, shape: ObstacleShape) => {
+		partConfig.updateComponent(obstacle.name, {
+			attributes: withSimpleObstacleShape(obstacle, shape),
+		})
+	}
+
+	const resizeBounds = (interior: BoundsInterior) => {
+		if (!boundsObstacle) return
+		const { component, hint } = boundsObstacle
+		partConfig.updateComponent(component.name, resizeBoundsObstacle(component, hint, interior))
+	}
+
+	const patchComplexShape = (patch: ObstacleGeometryPatch) => {
+		if (!shapeOwner || !complexShape.current) return
+		partConfig.updateComponent(shapeOwner.name, {
+			attributes: withObstacleShapePatch(shapeOwner, complexShape.current.index, patch),
+		})
+	}
+
+	const stageComplexShapeTransform = () => {
+		const world = worldMatrix.current
+		if (!ref || !world) return
+
+		tempShapeWorld.compose(ref.position, stagedOrientation(ref), UNIT_SCALE)
+		const offset = shapeOffsetFromGizmo(world, tempShapeWorld)
+
+		patchComplexShape({
+			...(stagesPosition && { translation: { x: offset.x, y: offset.y, z: offset.z } }),
+			...(stagesOrientation && {
+				orientation: {
+					type: 'ov_degrees',
+					value: { x: offset.oX, y: offset.oY, z: offset.oZ, th: offset.theta },
+				},
+			}),
+		})
+	}
+
 	const onMouseDown = () => {
 		captureScaleStart()
 		beginFrameHistoryEntry()
+		if (activeMode === 'translate' && entity && ref) objectSnap.begin(entity, ref)
 
+		isGizmoDragging = true
 		transformControls.setActive(true)
 	}
 
 	const onChange = () => {
 		if (!ref || !entity || !activeMode) return
 
+		if (activeMode === 'translate' && controls?.axis) objectSnap.apply(ref, controls.axis)
+
 		if (activeMode === 'translate' || activeMode === 'rotate') {
-			if (isFrameEntity) {
+			if (shapeOwner) {
+				stageComplexShapeTransform()
+			} else if (isFrameEntity) {
 				stageFrameTransform()
 			} else {
 				stageLocalTransform()
@@ -196,14 +337,24 @@
 					y: Math.max(0, scaleStart.y * ref.scale.y),
 					z: Math.max(0, scaleStart.z * ref.scale.z),
 				}
-				if (isFrameEntity) {
+				if (simpleObstacle) {
+					resizeSimpleObstacle(simpleObstacle, { type: 'box', ...next })
+				} else if (boundsObstacle) {
+					resizeBounds(next)
+				} else if (shapeOwner) {
+					patchComplexShape({ type: 'box', ...next })
+				} else if (isFrameEntity) {
 					frameEditor.setGeometry(entity, { type: 'box', ...next })
 				} else {
 					entity.set(traits.Box, next)
 				}
 			} else if (scaleStart?.type === 'sphere') {
 				const next = { r: Math.max(0, scaleStart.r * ref.scale.x) }
-				if (isFrameEntity) {
+				if (simpleObstacle) {
+					resizeSimpleObstacle(simpleObstacle, { type: 'sphere', ...next })
+				} else if (shapeOwner) {
+					patchComplexShape({ type: 'sphere', ...next })
+				} else if (isFrameEntity) {
 					frameEditor.setGeometry(entity, { type: 'sphere', ...next })
 				} else {
 					entity.set(traits.Sphere, next)
@@ -213,7 +364,11 @@
 					r: Math.max(0, scaleStart.r * ref.scale.x),
 					l: Math.max(0, scaleStart.l * ref.scale.y),
 				}
-				if (isFrameEntity) {
+				if (simpleObstacle) {
+					resizeSimpleObstacle(simpleObstacle, { type: 'capsule', ...next })
+				} else if (shapeOwner) {
+					patchComplexShape({ type: 'capsule', ...next })
+				} else if (isFrameEntity) {
 					frameEditor.setGeometry(entity, { type: 'capsule', ...next })
 				} else {
 					entity.set(traits.Capsule, next)
@@ -226,7 +381,8 @@
 
 	const onMouseUp = () => {
 		scaleStart = undefined
-		transformControls.setActive(false)
+		objectSnap.end()
+		releaseGizmo()
 		endFrameHistoryEntry()
 	}
 
@@ -244,7 +400,7 @@
 	const computeLocalDragTarget = (out: Matrix4) => {
 		if (!ref || !entity) return
 
-		out.makeRotationFromQuaternion(ref.quaternion)
+		out.makeRotationFromQuaternion(stagedOrientation(ref))
 		out.setPosition(ref.position)
 
 		const parentWorld = entity.targetFor(relations.ChildOf)?.get(traits.WorldMatrix)
@@ -258,8 +414,9 @@
 	 * Applies a translate/rotate drag for a frame system entity. With a kinematic
 	 * offset (LiveMatrix + Matrix both present), the parent-relative target feeds
 	 * solveEditedMatrix to back out the EditedMatrix satisfying
-	 * live × baseline⁻¹ × edited = local. Without one, Frame.svelte's blend
-	 * short-circuits to EditedMatrix, so we write the target pose directly.
+	 * live × baseline⁻¹ × edited = local. Without one, `toLocalMatrix` in
+	 * `$lib/ecs/worldMatrix.ts` short-circuits to EditedMatrix, so we write the
+	 * target pose directly.
 	 */
 	const stageFrameTransform = () => {
 		if (!ref || !entity) return
@@ -271,20 +428,15 @@
 		const config = configMatrix.current
 
 		if (!live || !config) {
-			if (activeMode === 'translate') {
-				frameEditor.setPose(entity, {
-					x: refPose.x,
-					y: refPose.y,
-					z: refPose.z,
-				})
-			} else if (activeMode === 'rotate') {
-				frameEditor.setPose(entity, {
+			frameEditor.setPose(entity, {
+				...(stagesPosition && { x: refPose.x, y: refPose.y, z: refPose.z }),
+				...(stagesOrientation && {
 					oX: refPose.oX,
 					oY: refPose.oY,
 					oZ: refPose.oZ,
 					theta: refPose.theta,
-				})
-			}
+				}),
+			})
 			return
 		}
 
@@ -309,15 +461,15 @@
 
 		computeLocalDragTarget(tempRefMatrix)
 
-		// update only the dragged component
 		tempPose.setFromMatrix4(matrix)
 		refPose.setFromMatrix4(tempRefMatrix)
 
-		if (activeMode === 'translate') {
+		if (stagesPosition) {
 			tempPose.x = refPose.x
 			tempPose.y = refPose.y
 			tempPose.z = refPose.z
-		} else {
+		}
+		if (stagesOrientation) {
 			tempPose.oX = refPose.oX
 			tempPose.oY = refPose.oY
 			tempPose.oZ = refPose.oZ
@@ -340,15 +492,9 @@
 			object={ref}
 			mode={activeMode}
 			space={settings.current.transformSpace}
-			translationSnap={settings.current.snapping && settings.current.snapTranslate > 0
-				? settings.current.snapTranslate
-				: null}
-			rotationSnap={settings.current.snapping && settings.current.snapRotate > 0
-				? MathUtils.degToRad(settings.current.snapRotate)
-				: null}
-			scaleSnap={settings.current.snapping && settings.current.snapScale > 0
-				? settings.current.snapScale
-				: null}
+			translationSnap={snaps.translation}
+			rotationSnap={snaps.rotation}
+			scaleSnap={snaps.scale}
 			showY={!isSphereScale}
 			showZ={!isSphereScale && !isCapsuleScale}
 			onmouseDown={onMouseDown}
@@ -356,4 +502,8 @@
 			onmouseUp={onMouseUp}
 		/>
 	{/key}
+
+	{#if objectSnap.indicator}
+		<SnapIndicator indicator={objectSnap.indicator} />
+	{/if}
 {/if}

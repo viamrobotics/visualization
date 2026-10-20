@@ -4,7 +4,7 @@
 >
 	import { Euler, MathUtils, Quaternion } from 'three'
 
-	import { OrientationVector } from '$lib/three/OrientationVector'
+	import { OrientationVector } from '$lib/math/OrientationVector'
 
 	const quaternionUtil = new Quaternion()
 	const ovUtil = new OrientationVector()
@@ -29,11 +29,14 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import { traits, useParentName, useTrait } from '$lib/ecs'
+	import { relations, traits, useParentName, useTarget, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { useParentFrameOptions } from '$lib/hooks/useParentFrameOptions.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { Pose } from '$lib/math'
+
+	import EntityLink from '../EntityLink.svelte'
+	import { composeDisplayedPose } from './composeDisplayedPose'
+	import WorldPoseDetails from './WorldPoseDetails.svelte'
 
 	interface Props {
 		entity: Entity
@@ -54,20 +57,20 @@
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
 	const center = useTrait(() => entity, traits.Center)
 	const parent = useParentName(() => entity)
+	// Undefined at the world root, and while an `Orphan` waits for its frame to
+	// appear — in both cases there is nothing to select, so no link is offered.
+	const parentEntity = useTarget(() => entity, relations.ChildOf)
 	const parentOptions = useParentFrameOptions(() => name.current)
 
-	const localPose = $derived.by<Pose | undefined>(() => {
-		const source = editedMatrix.current ?? matrix.current
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const geometryCenter = $derived(framesAPI.current ? undefined : center.current)
 
-		if (source) return new Pose().setFromMatrix4(source)
-		if (center.current) return new Pose().copy(center.current)
-		return undefined
-	})
-
-	const worldPose = $derived.by<Pose | undefined>(() => {
-		if (!worldMatrix.current) return
-		return new Pose().setFromMatrix4(worldMatrix.current)
-	})
+	const localPose = $derived(
+		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	)
+	const worldPose = $derived(
+		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
+	)
 
 	const eulerValue = $derived.by<RotationEulerValueObject>(() => {
 		if (!localPose) return { x: 0, y: 0, z: 0 }
@@ -81,13 +84,11 @@
 	})
 
 	/**
-	 * The `<List>`'s bound value must be one of its options, or the underlying
-	 * native <select> has no matching <option>, snaps to selectedIndex -1, and
-	 * renders blank. `useParentFrameOptions` enumerates every frame the app knows
-	 * about, but `parent.current` can still name one it doesn't — an unresolved
-	 * orphan, or simply frames not having loaded yet. Always include the current
-	 * parent so the field shows it rather than going blank. It's cycle-safe: the
-	 * current parent is neither self nor a descendant.
+	 * The `<List>`'s bound value must be one of its options, or the native select
+	 * snaps to selectedIndex -1 and renders blank. `useParentFrameOptions` can lag
+	 * `parent.current`, such as an unresolved orphan or frames that have not loaded
+	 * yet. Always include the current parent so the field shows it. That is
+	 * cycle-safe, since the current parent is neither self nor a descendant.
 	 */
 	const parentFrameOptions = $derived.by(() => {
 		const value = parent.current ?? 'world'
@@ -164,52 +165,16 @@
 	</div>
 {/snippet}
 
-<div>
-	<strong class="font-semibold">world position</strong>
-	<span class="text-subtle-2">(mm)</span>
-
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.x ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.y ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.z ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
-
-<div>
-	<strong class="font-semibold">world orientation</strong>
-	<span class="text-subtle-2">(deg)</span>
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.oX ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.oY ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.oZ ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">th</span>
-			{(worldPose?.theta ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
+<WorldPoseDetails pose={worldPose} />
 
 <div>
 	<strong class="font-semibold">parent frame</strong>
 	{#if editable}
+		{#if parentEntity.current}
+			<span class="text-subtle-2">
+				— <EntityLink entity={parentEntity.current} />
+			</span>
+		{/if}
 		<!--
 			Remount on entity change. svelte-tweakpane-ui's List runs
 			`listBlade.value = value` on the still-mounted blade before its
@@ -230,10 +195,14 @@
 		{/key}
 	{:else}
 		<div class="mt-0.5 flex gap-3">
-			{@render ImmutableField({
-				ariaLabel: 'parent frame name',
-				value: parent.current ?? 'world',
-			})}
+			{#if parentEntity.current}
+				<EntityLink entity={parentEntity.current} />
+			{:else}
+				{@render ImmutableField({
+					ariaLabel: 'parent frame name',
+					value: parent.current ?? 'world',
+				})}
+			{/if}
 		</div>
 	{/if}
 </div>

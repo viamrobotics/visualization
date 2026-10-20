@@ -1,9 +1,9 @@
 import type { Entity } from 'koota'
-import type { Group } from 'three'
+import type { Group, Object3D } from 'three'
 
 import { isInstanceOf } from '@threlte/core'
-import { ArmClient } from '@viamrobotics/sdk'
-import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+import { type ArmClient, MachineConnectionEvent } from '@viamrobotics/sdk'
+import { useConnectionStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
@@ -19,11 +19,19 @@ gltfLoader.setDRACOLoader(dracoLoader)
 
 const key = Symbol('3d-models-context')
 
-interface Context {
-	current: Record<string, Record<string, Group>>
-}
-
 type Models = Record<string, Record<string, Group>>
+
+/** The GLB buffers `get3DModels` returns, keyed by kinematics link id. */
+type ArmMeshes = Awaited<ReturnType<ArmClient['get3DModels']>>
+
+interface Context {
+	current: Models
+	readonly arms: string[]
+	/** Whether an arm's models are worth fetching at all. */
+	readonly shouldRender: boolean
+	/** Hands one arm's fetched meshes to the shared parse queue. */
+	parseArm: (armName: string, meshes: ArmMeshes) => void
+}
 
 /**
  * Resolves the loaded 3D model for a geometry entity's `Name`, formatted
@@ -39,6 +47,22 @@ export const matchModel = (name: string | undefined, models: Models): Group | un
 	return models[componentName]?.[id]
 }
 
+const applyModelAppearance = (object: Object3D) => {
+	if (!isInstanceOf(object, 'Mesh')) return
+
+	// Set on the loaded model rather than each clone: `GeometryModel` clones per
+	// frame, and `clone()` carries these flags across.
+	object.castShadow = true
+	object.receiveShadow = true
+
+	const { material } = object
+
+	if (isInstanceOf(material, 'MeshStandardMaterial')) {
+		material.roughness = 0.3
+		material.metalness = 0.1
+	}
+}
+
 const syncColliderHidden = (entity: Entity, models: Models, hideColliders: boolean) => {
 	const shouldHide = hideColliders && matchModel(entity.get(traits.Name), models) !== undefined
 	if (shouldHide === entity.has(traits.ColliderHidden)) return
@@ -52,92 +76,182 @@ const syncColliderHidden = (entity: Entity, models: Models, hideColliders: boole
 export const provide3DModels = (partID: () => string) => {
 	const settings = useSettings()
 	const world = useWorld()
-	let current = $state.raw<Record<string, Record<string, Group>>>({})
+	const connectionStatus = useConnectionStatus(partID)
 
-	const arms = useResourceNames(partID, 'arm')
-	const armClients = $derived(
-		arms.current.map((arm) => createResourceClient(ArmClient, partID, () => arm.name))
-	)
-	const clients = $derived(
-		armClients.filter((client) => {
-			return arms.current.some((arm) => arm.name === client.current?.name)
-		})
+	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
+	const shouldRenderModels = $derived(
+		settings.isLoaded && settings.current.renderArmModels.includes('model')
 	)
 
-	const fetch3DModels = async () => {
-		const next: Record<string, Record<string, Group>> = {}
-		for (const client of clients) {
-			if (!client.current) continue
-			try {
-				const geometries = await client.current.getGeometries()
-				if (geometries.length === 0) {
-					continue
-				}
-				const geometryLabel = geometries[0].label
-				const prefix = geometryLabel.split(':')[0]
-				const models = await client.current.get3DModels()
-				if (!(prefix in next)) {
-					next[prefix] = {}
-				}
-				for (const [id, model] of Object.entries(models)) {
-					const arrayBuffer = model.mesh.buffer.slice(
-						model.mesh.byteOffset,
-						model.mesh.byteOffset + model.mesh.byteLength
-					)
-					const gltfModel = await gltfLoader.parseAsync(arrayBuffer as ArrayBuffer, '')
-					next[prefix][id] = gltfModel.scene
+	const armStatuses = useResourceStatuses(partID, 'arm')
 
-					gltfModel.scene.traverse((object) => {
-						if (isInstanceOf(object, 'Mesh')) {
-							const { material } = object
+	const arms = $derived(
+		armStatuses.current
+			.map((status) => status.name?.name)
+			.filter((name): name is string => name !== undefined)
+	)
 
-							if (isInstanceOf(material, 'MeshStandardMaterial')) {
-								material.roughness = 0.3
-								material.metalness = 0.1
-							}
-						}
-					})
-				}
-			} catch (error) {
-				// some arms may not implement this api yet
-				console.warn(`${client.current.name} returned an error: ${error} when getting 3D models`)
-			}
-		}
-		current = next
+	/**
+	 * Parsed models are owned here rather than derived from the queries. A
+	 * disconnect re-keys every resource query onto an empty one, and mirroring
+	 * that into the scene is what dropped the arms back to their primitive
+	 * colliders. An entry leaves only when its arm leaves the machine's config.
+	 */
+	const parsedModels: Models = {}
+	// The buffer each parsed model came from, keyed `<arm>:<id>`. A reconnect
+	// replays the same cached buffers, and re-parsing them would rebuild every
+	// model's GPU resources for nothing.
+	const parsedSources = new Map<string, Uint8Array>()
+
+	let current = $state.raw<Models>({})
+
+	const publish = () => {
+		current = { ...parsedModels }
 	}
 
-	$effect(() => {
-		const shouldFetchModels =
-			settings.isLoaded && settings.current.renderArmModels.includes('model')
+	const forgetArm = (armName: string) => {
+		delete parsedModels[armName]
 
-		if (shouldFetchModels) {
-			fetch3DModels()
+		for (const cacheKey of parsedSources.keys()) {
+			if (cacheKey.startsWith(`${armName}:`)) {
+				parsedSources.delete(cacheKey)
+			}
 		}
+	}
+
+	/** @returns Whether anything new was parsed. */
+	const parseArmMeshes = async (armName: string, meshes: ArmMeshes) => {
+		let didParse = false
+
+		for (const [id, mesh] of Object.entries(meshes)) {
+			const source = mesh.mesh
+			const cacheKey = `${armName}:${id}`
+
+			if (parsedSources.get(cacheKey) === source) continue
+
+			try {
+				const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength)
+				const gltf = await gltfLoader.parseAsync(buffer as ArrayBuffer, '')
+				gltf.scene.traverse(applyModelAppearance)
+
+				parsedModels[armName] ??= {}
+				parsedModels[armName][id] = gltf.scene
+				parsedSources.set(cacheKey, source)
+				didParse = true
+			} catch (error) {
+				console.warn(`[3d-models] ${cacheKey} failed to parse:`, error)
+			}
+		}
+
+		return didParse
+	}
+
+	// Sequential: parsing a GLB is CPU-bound, and racing every arm at once stalls
+	// the frame loop. Each arm queues onto the chain rather than parsing directly.
+	let parseQueue = Promise.resolve()
+
+	const parseArm = (armName: string, meshes: ArmMeshes) => {
+		parseQueue = parseQueue.then(async () => {
+			if (await parseArmMeshes(armName, meshes)) {
+				publish()
+			}
+		})
+	}
+
+	// Declared before the effects that fill the cache so a part switch clears it
+	// first: sibling effects re-run in creation order.
+	$effect(() => {
+		partID()
+
+		return () => {
+			for (const armName of Object.keys(parsedModels)) {
+				forgetArm(armName)
+			}
+			current = {}
+		}
+	})
+
+	/**
+	 * Drops an arm's models once it leaves the machine's config. Gated on a live
+	 * connection, because a disconnect empties the resource list too, and reading
+	 * that as "the arm is gone" is the wipe this hook exists to avoid.
+	 */
+	$effect(() => {
+		if (!isConnected) return
+
+		const configured = new Set(arms)
+		const stale = Object.keys(parsedModels).filter((armName) => !configured.has(armName))
+
+		if (stale.length === 0) return
+
+		for (const armName of stale) {
+			forgetArm(armName)
+		}
+
+		publish()
 	})
 
 	/**
 	 * Colliders are hidden only in the `'model'`-only mode — `'colliders+model'`
 	 * intentionally shows both. Reacts to `current` (models finishing loading)
-	 * and the setting; the `onAdd` listener covers geometry entities that stream
-	 * in while neither has changed.
+	 * and the setting; the `onAdd` listener covers frames that stream in while
+	 * neither has changed.
+	 *
+	 * A collider named `<component>:<id>` is a kinematics link frame — the
+	 * geometry that used to arrive from `getGeometries` now comes from the frame
+	 * system, so `FramesAPI` is the only owner left.
 	 */
 	$effect(() => {
 		const models = current
 		const hideColliders = settings.current.renderArmModels === 'model'
 
-		for (const entity of world.query(traits.GeometriesAPI)) {
+		for (const entity of world.query(traits.FramesAPI)) {
 			syncColliderHidden(entity, models, hideColliders)
 		}
 
-		return world.onAdd(traits.GeometriesAPI, (entity) => {
+		return world.onAdd(traits.FramesAPI, (entity) => {
 			syncColliderHidden(entity, models, hideColliders)
 		})
+	})
+
+	/**
+	 * A model whose key matches no frame renders nothing, and silently: it is the
+	 * same outcome as an arm that ships no models at all. The two are worth
+	 * telling apart, because a mismatch means the model keys and the kinematics
+	 * link ids have drifted — `get3DModels` keys by bare link id, and frames are
+	 * named `<component>:<id>` from the same ids.
+	 */
+	$effect(() => {
+		const loaded = Object.entries(current).flatMap(([component, parts]) =>
+			Object.keys(parts).map((id) => `${component}:${id}`)
+		)
+		if (loaded.length === 0) return
+
+		const frameNames = new Set(
+			world
+				.query(traits.FramesAPI)
+				.map((entity) => entity.get(traits.Name))
+				.filter((name): name is string => name !== undefined)
+		)
+		const unmatched = loaded.filter((name) => !frameNames.has(name))
+		if (unmatched.length === 0) return
+
+		console.warn(
+			`[3d-models] ${unmatched.length} of ${loaded.length} models match no frame: ${unmatched.join(', ')}`
+		)
 	})
 
 	setContext<Context>(key, {
 		get current() {
 			return current
 		},
+		get arms() {
+			return arms
+		},
+		get shouldRender() {
+			return shouldRenderModels
+		},
+		parseArm,
 	})
 }
 

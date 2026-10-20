@@ -1,4 +1,4 @@
-# gomarkdoc configuration for motion-tools
+# gomarkdoc configuration for Viam Visualization
 # See https://github.com/princjef/gomarkdoc for more options
 
 # Output is set per-target by the Makefile (writes into docs/src/content/docs/api/).

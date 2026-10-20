@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResourceName } from '@viamrobotics/sdk'
 
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
 	import { subtypeToColor } from '$lib/color'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -10,7 +10,7 @@
 	import { resourceWidgetToggles } from './resourceWidgetToggles'
 
 	const partID = usePartID()
-	const resources = useResourceNames(() => partID.current)
+	const statuses = useResourceStatuses(() => partID.current)
 
 	const formatSubtype = (subtype: string) =>
 		subtype
@@ -20,7 +20,8 @@
 
 	const groups = $derived.by(() => {
 		const bySubtype = new Map<string, ResourceName[]>()
-		for (const resource of resources.current) {
+		for (const { name: resource } of statuses.current) {
+			if (!resource) continue
 			if (resourceWidgetToggles(resource).length === 0) continue
 			const list = bySubtype.get(resource.subtype) ?? []
 			list.push(resource)

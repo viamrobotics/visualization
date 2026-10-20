@@ -13,7 +13,7 @@
 		/**
 		 * Euler rotation `[x, y, z]` in radians. Default aligns the
 		 * equirectangular image's vertical axis (+Y) with this scene's vertical
-		 * axis (+Z); the Z component then acts as yaw around world +Z.
+		 * axis (+Z). The Z component then acts as yaw around world +Z.
 		 */
 		rotation?: [x: number, y: number, z: number]
 		/**

@@ -1,6 +1,6 @@
 ---
 title: <MeasureTool />
-description: Measure straight-line distance between two points inside a motion-tools visualizer.
+description: Measure straight-line distance between two points inside a Viam visualizer.
 ---
 
 `<MeasureTool />` adds a ruler button to the visualizer dashboard. When active, clicking two points in the scene draws a line between them and displays the distance in meters. A settings popover lets you constrain measurement to any combination of the X, Y, and Z axes — useful for measuring along a single axis without snapping perfectly to it.
@@ -11,8 +11,8 @@ Mount `<MeasureTool />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { MeasureTool } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { MeasureTool } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">

@@ -1,38 +1,40 @@
+<!--
+@component
+
+Dispatches the shortcuts contributed through `useHotkey`. Features declare bindings where their behavior lives; this component owns the one window listener and the policy deciding when any of them may fire.
+-->
 <script lang="ts">
-	import { PressedKeys } from 'runed'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { useKeybindings } from '$lib/keybindings'
+	import { isEditableTarget } from '$lib/keybindings/isEditableTarget'
 
-	import { traits, useQuery } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	const environment = useEnvironment()
+	const keybindings = useKeybindings()
 
-	const selected = useQuery(traits.Selected)
+	const onkeydown = (event: KeyboardEvent) => {
+		if (!environment.current.inputBindingsEnabled) return
+		// Repeats would re-fire a toggle while the key is held. Option is never part of a
+		// shortcut, because macOS rewrites the character it reports.
+		if (event.repeat || event.altKey) return
 
-	const settings = useSettings()
-	const keys = new PressedKeys()
+		const mod = event.metaKey || event.ctrlKey
 
-	keys.onKeys('c', () => {
-		settings.current.cameraMode =
-			settings.current.cameraMode === 'perspective' ? 'orthographic' : 'perspective'
-	})
+		// An unmodified press typed into a field belongs to the field. A modified one does
+		// not, so ⌘S still saves while an input has focus.
+		if (!mod && isEditableTarget(event.target)) return
 
-	keys.onKeys('1', () => {
-		settings.current.transformMode = 'translate'
-	})
+		const matched = keybindings.matching({ key: event.key, shift: event.shiftKey, mod })
 
-	keys.onKeys('2', () => {
-		settings.current.transformMode = 'rotate'
-	})
+		for (const { binding, handler } of matched) {
+			if (!(handler.when?.() ?? true)) continue
 
-	keys.onKeys('3', () => {
-		settings.current.transformMode = 'scale'
-	})
-
-	keys.onKeys('h', () => {
-		for (const entity of selected.current) {
-			if (entity?.has(traits.Invisible)) {
-				entity.remove(traits.Invisible)
-			} else {
-				entity?.add(traits.Invisible)
+			if (binding.preventDefault) {
+				event.preventDefault()
 			}
+
+			handler.run()
 		}
-	})
+	}
 </script>
+
+<svelte:window onkeydowncapture={onkeydown} />

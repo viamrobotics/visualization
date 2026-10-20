@@ -57,5 +57,31 @@ func TestProtos(t *testing.T) {
 		test.That(t, proto.GetCapsule(), test.ShouldNotBeNil)
 		test.That(t, proto.GetCapsule().GetRadiusMm(), test.ShouldAlmostEqual, 100, 0.001)
 		test.That(t, proto.GetCapsule().GetLengthMm(), test.ShouldAlmostEqual, 300, 0.001)
+
+		// A Cylinder has no wire representation (its ToProtobuf panics); it must be
+		// lowered to a mesh rather than crash. This covers both solid and open cylinders.
+		cyl, err := spatialmath.NewCylinder(spatialmath.NewZeroPose(), 100, 300, "cyl")
+		test.That(t, err, test.ShouldBeNil)
+		proto = geometryToProtobuf(cyl)
+		test.That(t, proto, test.ShouldNotBeNil)
+		test.That(t, proto.GetMesh(), test.ShouldNotBeNil)
+
+		openCyl, err := spatialmath.NewCylinderWithCapped(spatialmath.NewZeroPose(), 100, 300, false, "open")
+		test.That(t, err, test.ShouldBeNil)
+		proto = geometryToProtobuf(openCyl)
+		test.That(t, proto, test.ShouldNotBeNil)
+		test.That(t, proto.GetMesh(), test.ShouldNotBeNil)
+	})
+
+	t.Run("newDrawnGeometryLowersCylinder", func(t *testing.T) {
+		cyl, err := spatialmath.NewCylinderWithCapped(spatialmath.NewZeroPose(), 100, 300, false, "open")
+		test.That(t, err, test.ShouldBeNil)
+		// Must not panic on the internal ToProtobuf pointcloud probe, and must store a
+		// renderable (mesh) geometry rather than the raw cylinder.
+		dg, err := NewDrawnGeometry(cyl)
+		test.That(t, err, test.ShouldBeNil)
+		_, isCylinder := dg.Geometry.(*spatialmath.Cylinder)
+		test.That(t, isCylinder, test.ShouldBeFalse)
+		test.That(t, geometryToProtobuf(dg.Geometry).GetMesh(), test.ShouldNotBeNil)
 	})
 }

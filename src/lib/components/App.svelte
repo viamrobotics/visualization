@@ -5,36 +5,36 @@
 
 	import { Canvas } from '@threlte/core'
 	import { PortalTarget } from '@threlte/extras'
-	import { useXR } from '@threlte/xr'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
+	import { AgXToneMapping, NoToneMapping } from 'three'
 
 	import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
 	import Controls from '$lib/components/overlay/controls/Controls.svelte'
 	import Dashboard from '$lib/components/overlay/dashboard/Dashboard.svelte'
-	import Details from '$lib/components/overlay/Details.svelte'
-	import TreeContainer from '$lib/components/overlay/left-pane/TreeContainer.svelte'
-	import Settings from '$lib/components/overlay/settings/Settings.svelte'
 	import Workspace from '$lib/components/overlay/workspace/Workspace.svelte'
-	import { provideWorld, traits, useQuery } from '$lib/ecs'
+	import { provideDeepLink } from '$lib/deepLink/useDeepLink.svelte'
+	import { useDeepLinkMode } from '$lib/deepLink/useDeepLinkMode.svelte'
+	import { useDeepLinkSelection } from '$lib/deepLink/useDeepLinkSelection.svelte'
+	import { provideWorld } from '$lib/ecs'
 	import { type CameraPose, provideCameraControls } from '$lib/hooks/useControls.svelte'
+	import { provideDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { provideFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import { provideTransformGizmos } from '$lib/hooks/useTransformGizmos.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { provideKeybindings } from '$lib/keybindings'
 	import { provideFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
 	import { domPortal } from '$lib/portal'
 
-	import FileDrop from './FileDrop/FileDrop.svelte'
 	import HoveredEntities from './hover/HoveredEntities.svelte'
-	import AddFrames from './overlay/AddFrames.svelte'
-	import LiveUpdatesBanner from './overlay/LiveUpdatesBanner.svelte'
 	import { provideSettingsTabs } from './overlay/Portals/useSettingsTabs.svelte'
-	import FramePov from './overlay/widgets/FramePov.svelte'
+	import RenderStats from './overlay/widgets/RenderStats.svelte'
 	import Scene from './Scene.svelte'
 	import SceneProviders from './SceneProviders.svelte'
 
@@ -81,27 +81,26 @@
 		details,
 	}: Props = $props()
 
-	/**
-	 * Apply the Viam tweakpane theme to `<html>` here in setup, before any child
-	 * is created. This must not be deferred to `onMount`: a parent's `onMount`
-	 * runs only after all of its children have mounted, and each child `<Pane>`
-	 * builds its underlying Tweakpane instance during its own setup. So by the
-	 * time App's `onMount` fired the panes already existed and could paint with
-	 * Tweakpane's default dark theme before the theme variables reached `<html>`.
-	 * Running in setup guarantees the variables are set before any pane is built.
-	 * `setGlobalDefaultTheme` no-ops when there is no document (prerender).
-	 */
+	// In setup, not `onMount`: children build their Tweakpane instances during
+	// their own setup, so by App's `onMount` the panes already painted dark.
+	// Reset first because the theme call removes any variable it already matches,
+	// so a repeat call (second instance, remount, HMR) would wipe the theme.
+	ThemeUtils.setGlobalDefaultTheme(undefined)
 	ThemeUtils.setGlobalDefaultTheme(primeTheme)
 
 	provideWorld()
 	provideSettingsTabs()
+	provideKeybindings()
+	provideTransformGizmos()
 
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 	const fullscreen = provideFullscreen()
 
-	const currentFramePovWidgets = $derived(settings.current.openFramePovWidgets[partID] || [])
-	const { isPresenting } = useXR()
+	// After the world and the environment, since the consumers write to them.
+	provideDeepLink()
+	useDeepLinkMode()
+	useDeepLinkSelection()
 
 	provideCameraControls(() => cameraPose)
 	createPartIDContext(() => partID)
@@ -113,7 +112,8 @@
 
 	provideFragmentInfo(
 		() => partID,
-		() => componentNameToFragmentInfo
+		() => componentNameToFragmentInfo,
+		() => localConfigProps?.current
 	)
 
 	providePartConfig(
@@ -126,7 +126,26 @@
 		environment.current.isStandalone = !localConfigProps
 	})
 
-	const selected = useQuery(traits.Selected)
+	/**
+	 * Only realistic mode wants a filmic curve. In the other two a color is data — a
+	 * collider's color says what it is — and AgX, which Threlte applies by default,
+	 * desaturates and lifts whatever it is handed. Rendering those modes with the
+	 * curve off puts their colors on screen as written, and matches the grid, whose
+	 * raw `ShaderMaterial` is never tone mapped in any mode.
+	 */
+	const toneMapping = $derived(
+		settings.current.renderMode === 'realistic' ? AgXToneMapping : NoToneMapping
+	)
+
+	const detailsSections = provideDetailsSections()
+
+	// The host's `details` snippet is just another section. Registered in an
+	// effect so a swapped prop re-registers; sections can't hold an undefined
+	// snippet, and no card can render before this first runs.
+	$effect(() => {
+		if (details === undefined) return
+		return detailsSections.register({ snippet: details })
+	})
 </script>
 
 <div
@@ -136,45 +155,28 @@
 	]}
 	bind:this={root}
 >
-	<Canvas renderMode="on-demand">
+	<Canvas
+		renderMode="on-demand"
+		{toneMapping}
+	>
 		<SceneProviders>
 			<Scene>
 				{@render appChildren?.()}
 			</Scene>
 
-			{#if settings.current.renderSubEntityHoverDetail}
-				<HoveredEntities />
-			{/if}
+			<HoveredEntities />
 
 			<!-- Overlays that need Threlte context -->
 			<div {@attach domPortal(root)}>
-				<FileDrop />
 				<Dashboard />
 				<Workspace />
 				<Controls />
 
-				{#each selected.current as entity, index (entity)}
-					<Details
-						{entity}
-						{details}
-						style="transform: translate(0, {fullscreen.baseOffset + index * 40}px)"
-					/>
-				{/each}
-
-				<LiveUpdatesBanner />
-
-				<TreeContainer />
-
-				{#if !$isPresenting}
-					{#each currentFramePovWidgets as povFrameName (povFrameName)}
-						<FramePov frameName={povFrameName} />
-					{/each}
-				{/if}
-
 				<PortalTarget id="dom" />
 
-				<Settings />
-				<AddFrames />
+				{#if settings.current.renderStats}
+					<RenderStats />
+				{/if}
 			</div>
 		</SceneProviders>
 	</Canvas>

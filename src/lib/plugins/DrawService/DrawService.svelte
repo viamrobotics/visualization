@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { provideDrawAPI } from './useDrawAPI.svelte'
 	import {
 		type DrawConnectionConfig,
 		provideDrawConnectionConfig,
@@ -13,6 +12,5 @@
 	let { config }: Props = $props()
 
 	provideDrawConnectionConfig(() => config)
-	provideDrawAPI()
 	provideDrawService()
 </script>

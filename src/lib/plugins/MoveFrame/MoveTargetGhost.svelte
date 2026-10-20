@@ -74,7 +74,6 @@
 			dashArray={0.05}
 			dashRatio={0.4}
 			transparent
-			opacity={0.7}
 		/>
 	</T.Mesh>
 {/if}

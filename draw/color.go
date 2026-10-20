@@ -39,7 +39,6 @@ var (
 	DefaultPointColor = NewColor(WithName("gray"))
 )
 
-// colorConfig is a configuration for a color
 type colorConfig struct {
 	r uint8
 	g uint8
@@ -47,9 +46,7 @@ type colorConfig struct {
 	a uint8
 }
 
-// newColorConfig creates a new color configuration
-//
-// Returns the color configuration
+// newColorConfig returns a colorConfig with zeroed RGB channels and alpha set to DefaultOpacity.
 func newColorConfig() *colorConfig {
 	return &colorConfig{
 		r: 0,

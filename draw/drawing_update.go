@@ -5,7 +5,7 @@ import (
 
 	"go.viam.com/rdk/spatialmath"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // DrawingUpdate describes a partial update to a stored drawing.
@@ -15,7 +15,7 @@ import (
 // whole shape.
 //
 // reference_frame is deliberately absent, as is the shape itself. A drawing's frame is its
-// identity and the shape type is fixed; to change either, remove the entity and draw it again.
+// identity and the shape type is fixed. To change either, remove the entity and draw it again.
 type DrawingUpdate struct {
 	// Pose is the new pose. Nil leaves the pose untouched.
 	Pose spatialmath.Pose
@@ -23,7 +23,7 @@ type DrawingUpdate struct {
 	// already is, so moving something does not silently pull it to the world frame.
 	Parent string
 	// Shape is the new shape. Nil leaves the shape untouched. The shape type must match the
-	// stored one; the service rejects a change from, say, points to arrows. This is the
+	// stored one, and the service rejects a change from, say, points to arrows. This is the
 	// counterpart to TransformUpdate.Geometry: the same idea, a different proto type.
 	//
 	// Gotcha: colors and opacities live in metadata, not in the shape, and the service does not
@@ -31,13 +31,13 @@ type DrawingUpdate struct {
 	// stored per-element colors describing the old count. Elements past the end of the color
 	// buffer render black, and colors past the end of the elements go unused. Not resending a
 	// large per-vertex color buffer just to move some elements is the point of a partial update,
-	// so this is left to the caller; the service logs a warning when the counts disagree.
+	// so this is left to the caller. The service logs a warning when the counts disagree.
 	Shape *Shape
 	// Metadata is the new display metadata (colors, opacity, visibility). Nil leaves it
 	// untouched, and setting it replaces the stored metadata wholesale.
 	//
 	// A drawing's metadata is a typed message, so individual attributes can also be updated on
-	// their own; see ShowAxesHelper and Invisible. A transform cannot do this, because its
+	// their own. See ShowAxesHelper and Invisible. A transform cannot do this, because its
 	// metadata is an untyped struct.
 	Metadata *Metadata
 	// ShowAxesHelper toggles the drawing's axes helper on its own, leaving the rest of the

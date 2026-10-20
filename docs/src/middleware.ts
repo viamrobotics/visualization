@@ -3,23 +3,12 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// In dev, Starlight's `[...slug]` catch-all matches playground URLs and 404s
-// before Vite's static-file middleware gets a chance to resolve them. Read the
-// matching files ourselves so the SvelteKit app build under `public/playground/`
-// is served at the bare URLs.
-//
-// Production is unaffected — GitHub Pages serves the static files directly,
-// without Astro routing involved.
-//
-// Each HTML must be served at exactly one canonical URL: SvelteKit emits
-// relative asset paths (e.g. `./_app/...`) which only resolve correctly when
-// the document URL ends at the right "directory" — `/playground/` for
-// index.html, `/playground/snapshot` (no trailing slash) for snapshot.html.
-// Off-canonical forms get redirected so stale links keep working.
 const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const playgroundDir = path.join(projectRoot, 'public', 'playground')
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
+// SvelteKit emits relative asset paths, so each HTML resolves only at one URL:
+// /playground/ for index.html and /playground/snapshot for snapshot.html.
 const playgroundPaths = {
 	[`${base}/playground/`]: 'index.html',
 	[`${base}/playground/snapshot`]: 'snapshot.html',
@@ -30,6 +19,13 @@ const playgroundRedirects = {
 	[`${base}/playground/snapshot/`]: `${base}/playground/snapshot`,
 }
 
+/**
+ * Serves the SvelteKit playground build from public/playground during dev.
+ *
+ * Starlight's catch-all route matches these URLs and 404s before Vite's static
+ * middleware sees them. Production is unaffected, because GitHub Pages serves the
+ * files directly.
+ */
 export const onRequest = defineMiddleware(async (context, next) => {
 	const redirectTo = playgroundRedirects[context.url.pathname]
 	if (redirectTo) {

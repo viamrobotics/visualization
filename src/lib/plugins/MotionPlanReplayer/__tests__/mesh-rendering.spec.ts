@@ -8,11 +8,6 @@ import { parsePlan } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'
 import saladPlan from './__fixtures__/salad-plan.json?raw'
 
-/**
- * The other specs stop at the protobuf. `parsePlyInput` returns an empty BufferGeometry
- * rather than throwing, so only running the rest of the chain catches a bad decode — it
- * would otherwise render as nothing and pass every proto-level assertion.
- */
 describe('mesh geometry reaches the renderer', () => {
 	let world: World
 	afterEach(() => world?.destroy())

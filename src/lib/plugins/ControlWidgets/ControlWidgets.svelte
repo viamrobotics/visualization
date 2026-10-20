@@ -1,45 +1,38 @@
 <script lang="ts">
-	import { useXR } from '@threlte/xr'
-	import { PersistedState } from 'runed'
-
-	import { WorkspacePortal } from '$lib'
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
+	import Popover from '$lib/components/overlay/Popover.svelte'
+	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 
 	import ResourceWidgetList from './ResourceWidgetList.svelte'
 	import ResourceWidgetPanel from './ResourceWidgetPanel.svelte'
 	import { useResourceWidgets } from './useResourceWidgets.svelte'
 
-	const isOpen = new PersistedState('control-widgets-is-open', false)
-	const { isPresenting } = useXR()
+	const environment = useEnvironment()
 	const resolved = useResourceWidgets()
 </script>
 
 <WorkspacePortal>
 	<fieldset>
-		<DashboardButton
-			active={isOpen.current}
-			icon="joystick"
-			description="Control widgets"
-			onclick={() => {
-				isOpen.current = !isOpen.current
-			}}
-		/>
+		<Popover placement="bottom-end">
+			{#snippet trigger(triggerProps, { isOpen })}
+				<DashboardButton
+					{...triggerProps}
+					active={isOpen}
+					icon="joystick"
+					description="Control widgets"
+				/>
+			{/snippet}
+
+			<div class="font-public-sans max-h-[480px] w-80 overflow-y-auto overscroll-contain p-2">
+				<ResourceWidgetList />
+			</div>
+		</Popover>
 	</fieldset>
 </WorkspacePortal>
 
-<FloatingPanel
-	title="Control widgets"
-	bind:isOpen={isOpen.current}
-	defaultSize={{ width: 320, height: 480 }}
-	resizable
-	bodyClass="overflow-y-auto overscroll-contain bg-white p-2"
->
-	<ResourceWidgetList />
-</FloatingPanel>
-
 <!-- Registry widget panels render only outside XR. -->
-{#if !$isPresenting}
+{#if !environment.current.isImmersive}
 	{#each resolved.current as widget, stackIndex (widget.key)}
 		<ResourceWidgetPanel
 			resource={widget.resource}

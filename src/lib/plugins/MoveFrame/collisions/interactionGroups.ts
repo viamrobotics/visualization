@@ -7,11 +7,11 @@
  * other's filter. That test runs in the broad phase, so an excluded pair costs
  * nothing — it never reaches narrow phase at all.
  *
- * The scene is partitioned so nothing tests against its own group. An arm's
- * link colliders overlap at every joint by design, and the environment is full
- * of scenery resting on scenery; reporting either would bury real hits under
- * permanent noise. Each arm takes its own bit, everything unowned shares the
- * environment bit, and every group filters itself out.
+ * The scene is partitioned so nothing tests against its own group. An arm's link
+ * colliders overlap at every joint by design, and the environment is full of scenery
+ * resting on scenery. Reporting either would bury real hits under permanent noise. Each
+ * arm takes its own bit, everything unowned shares the environment bit, and every group
+ * filters itself out.
  *
  * What survives is exactly the interesting set: an arm against the environment,
  * and an arm against a different arm.
@@ -25,7 +25,7 @@
 /** Colliders with no owning arm: static obstacles, world-state geometry, dropped files. */
 export const ENVIRONMENT_BIT = 0
 
-/** Rapier gives 16 membership bits; bit 0 is the environment, so 15 arms fit. */
+/** Rapier gives 16 membership bits. Bit 0 is the environment, so 15 arms fit. */
 const MAX_BIT = 15
 
 const ALL_BITS = 0xff_ff
@@ -64,12 +64,12 @@ export const assignArmBits = (armNames: readonly string[]): Map<string, number> 
  * Every group tests against every group but its own. For an arm that means it
  * sees the environment and other arms, never its own links.
  *
- * The environment is no exception, and that is the whole point. A real scene is
- * full of furniture resting on furniture — a fixture bolted to a table, a table
- * on the floor, a conveyor on its stand — all of it touching by design and none
- * of it a collision anyone wants reported. Left in, those pairs swamp the list
- * and paint half the scene red. Filtering them at the broad phase costs nothing
- * and leaves only the pairs that involve something that moves.
+ * The environment is no exception, and that is the whole point. A real scene is full of
+ * furniture resting on furniture, such as a fixture bolted to a table, a table on the
+ * floor, or a conveyor on its stand. All of it touches by design and none of it is a
+ * collision anyone wants reported. Left in, those pairs swamp the list and paint half
+ * the scene red. Filtering them at the broad phase costs nothing and leaves only the
+ * pairs that involve something that moves.
  *
  * The trade is that two static obstacles overlapping is no longer surfaced.
  * That is a world-state modelling error rather than a motion hazard, and this

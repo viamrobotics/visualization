@@ -19,11 +19,14 @@ export const STRIDE = {
  * Creates a Float32Array view over a Uint8Array without copying data.
  * Falls back to a copy if the buffer is not 4-byte aligned (rare with protobuf).
  *
- * An optional `transform` applies a per-element function during conversion.
+ * An optional `transform` applies a per-element function during conversion. That
+ * path always copies: `bytes` is usually a view over the wire buffer of a
+ * protobuf message the query cache still owns, and transforming in place would
+ * corrupt it — a second read would apply the conversion twice.
  *
  * @param bytes - The raw bytes from a protobuf bytes field
  * @param transform - Optional function applied to every float element
- * @returns A Float32Array view or copy of the data
+ * @returns A Float32Array view of the data, or a copy when transformed
  *
  * @example
  * ```ts
@@ -41,10 +44,13 @@ export const asFloat32Array = (
 
 	if (bytes.byteOffset % 4 === 0 && bytes.byteLength % 4 === 0) {
 		const view = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4)
-		if (transform) {
-			for (let i = 0; i < view.length; i++) view[i] = transform(view[i])
+		if (!transform) {
+			return view
 		}
-		return view
+
+		const transformed = new Float32Array(view.length)
+		for (let i = 0; i < view.length; i++) transformed[i] = transform(view[i])
+		return transformed
 	}
 
 	const aligned = new Float32Array(bytes.byteLength / 4)
@@ -60,6 +66,27 @@ export const asFloat32Array = (
 	}
 	return aligned
 }
+
+/**
+ * An ArrayBuffer holding exactly `bytes` and nothing else.
+ *
+ * A protobuf-decoded `bytes` field is usually a subarray view over the whole
+ * wire buffer, so a loader handed `.buffer` would read from the start of the
+ * response instead of the start of the payload. Copies only when the view is
+ * narrower than its buffer, so a standalone array passes through untouched.
+ *
+ * @param bytes - The raw bytes from a protobuf bytes field
+ * @returns An ArrayBuffer whose full extent is the payload
+ *
+ * @example
+ * ```ts
+ * plyLoader.parse(asExactArrayBuffer(geometry.mesh))
+ * ```
+ */
+export const asExactArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
+	bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
+		? (bytes.buffer as ArrayBuffer)
+		: (new Uint8Array(bytes).buffer as ArrayBuffer)
 
 /**
  * Sets a Three.js Color from 3 bytes of a uint8 RGB color array starting at `offset`.

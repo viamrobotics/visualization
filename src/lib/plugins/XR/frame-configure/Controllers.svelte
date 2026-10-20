@@ -5,7 +5,7 @@
 	import { T, useTask, useThrelte } from '@threlte/core'
 	import { Controller, useController, useHeadset } from '@threlte/xr'
 	import { onDestroy } from 'svelte'
-	import { MathUtils, Vector3 } from 'three'
+	import { Group, MathUtils, Vector3 } from 'three'
 	import { TransformControls } from 'three/addons/controls/TransformControls.js'
 	import { Text } from 'threlte-uikit'
 	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
@@ -16,7 +16,7 @@
 	import { useTransformControls } from '$lib/hooks/useControls.svelte'
 	import { useFramelessComponents } from '$lib/hooks/useFramelessComponents.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { OrientationVector } from '$lib/three/OrientationVector'
+	import { OrientationVector } from '$lib/math/OrientationVector'
 
 	import { useOrigin } from '../useOrigin.svelte'
 	import WristDisplay from '../WristDisplay.svelte'
@@ -29,7 +29,7 @@
 	type CapsuleBase = { type: 'capsule'; r: number; l: number }
 	type GeometryBase = BoxBase | SphereBase | CapsuleBase
 
-	const { camera, renderer, scene } = useThrelte()
+	const { camera, renderer } = useThrelte()
 
 	const partConfig = usePartConfig()
 	const transformControls = useTransformControls()
@@ -41,8 +41,9 @@
 	const selected = useQuery(traits.Selected)
 
 	const selectedEntity = $derived(selected.current[0])
-	const selectedObject3d = $derived(scene.getObjectByName(`${selectedEntity}`))
+	const worldMatrix = useTrait(() => selectedEntity, traits.WorldMatrix)
 	const framesAPI = useTrait(() => selectedEntity, traits.FramesAPI)
+	const editable = useTrait(() => selectedEntity, traits.Editable)
 
 	const resetForward = new Vector3()
 	const resetHead = new Vector3()
@@ -54,8 +55,8 @@
 		} else {
 			resetForward.normalize()
 		}
-		// headset.position/quaternion live in the composed XR reference space;
-		// convert into zUp before writing to origin.
+		// headset.position/quaternion live in the composed XR reference space.
+		// Convert into zUp before writing to origin.
 		origin.toZUpPos(resetHead, headset.position)
 		origin.toZUpDir(resetForward)
 		origin.set([resetHead.x + resetForward.x, resetHead.y + resetForward.y, 0], 0)
@@ -88,7 +89,7 @@
 	let addingFrame = $state(false)
 
 	// Snapshot of the geometry dims at drag start. Used in scale mode to compute
-	// `newDims = base * absoluteScaleFactor` each frame; cleared on drag end.
+	// `newDims = base * absoluteScaleFactor` each frame, and cleared on drag end.
 	let geometryBase: GeometryBase | undefined
 	let frameHistoryEntryOpen = false
 
@@ -124,8 +125,8 @@
 
 	// Constrain which axes the gizmo exposes while in scale mode:
 	//   box: all three (width/height/depth)
-	//   capsule: X (radius) + Z (length); hide Y since capsules are radially symmetric
-	//   sphere: X only; a single handle drives the radius
+	//   capsule: X (radius) and Z (length), hiding Y since capsules are radially symmetric
+	//   sphere: X only, a single handle drives the radius
 	// Translate/rotate always show all three.
 	$effect(() => {
 		if (mode !== 'scale') {
@@ -161,19 +162,29 @@
 		}
 	})
 
-	// selectedObject3d resolves to the named Mesh from Mesh.svelte; the Group that
-	// carries the frame's pose is its parent (set up in Frame.svelte).
+	// No frame kind carries a named scene object to attach a gizmo to. See
+	// `SelectedTransformControls.svelte` for why this anchor stands in for one.
+	const anchor = new Group()
+	anchor.matrixAutoUpdate = false
+
 	$effect(() => {
-		if (!framesAPI.current || !partConfig.hasEditPermissions) {
+		const world = worldMatrix.current
+		if (!world) return
+
+		anchor.matrix.copy(world)
+		anchor.matrix.decompose(anchor.position, anchor.quaternion, anchor.scale)
+		anchor.updateMatrixWorld()
+	})
+
+	$effect(() => {
+		if (!framesAPI.current || !editable.current || !partConfig.hasEditPermissions) {
 			controls.detach()
 			attached = false
 			return
 		}
 
-		const target = selectedObject3d?.parent
-
-		if (target && target !== scene) {
-			controls.attach(target)
+		if (worldMatrix.current) {
+			controls.attach(anchor)
 			attached = true
 		} else {
 			controls.detach()
@@ -261,7 +272,7 @@
 		if (!selectedEntity || !target) return
 
 		if (mode === 'translate') {
-			// three.js scene is in meters; frame config stores mm.
+			// three.js scene is in meters. Frame config stores mm.
 			frameEditor.setPose(selectedEntity, {
 				x: target.position.x * 1000,
 				y: target.position.y * 1000,
@@ -315,6 +326,8 @@
 
 <Controller left />
 <Controller right />
+
+<T is={anchor} />
 
 <T
 	is={helper}

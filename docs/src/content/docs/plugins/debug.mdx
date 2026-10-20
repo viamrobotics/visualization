@@ -1,11 +1,11 @@
 ---
 title: <Debug />
-description: Mount the TanStack Query devtools panel inside a motion-tools visualizer.
+description: Mount the TanStack Query devtools panel inside a Viam visualizer.
 ---
 
-`<Debug />` surfaces the [TanStack Query devtools](https://tanstack.com/query/latest/docs/framework/svelte/devtools) panel — inspect the query cache, view in-flight mutations, and refetch manually — for any motion-tools instance. Motion-tools issues its Viam RPC calls through `@viamrobotics/svelte-sdk` (built on TanStack Query), so the devtools attaches to the `QueryClient` your `<ViamAppProvider>` already sets up. No extra wiring required.
+`<Debug />` surfaces the [TanStack Query devtools](https://tanstack.com/query/latest/docs/framework/svelte/devtools) panel — inspect the query cache, view in-flight mutations, and refetch manually — for any visualizer instance. The visualizer issues its Viam RPC calls through `@viamrobotics/svelte-sdk` (built on TanStack Query), so the devtools attaches to the `QueryClient` your `<ViamAppProvider>` already sets up. No extra wiring required.
 
-The devtools package is an **optional peer dependency** — it isn't bundled with motion-tools, so consumers that don't mount `<Debug />` pay nothing for it.
+The devtools package is an **optional peer dependency** — it isn't bundled with Viam Visualization, so consumers that don't mount `<Debug />` pay nothing for it.
 
 ## Install
 
@@ -19,8 +19,8 @@ Mount `<Debug />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { Debug } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Debug } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">

@@ -66,7 +66,6 @@ describe('runWithReconnect', () => {
 		await advance(0)
 		await loop
 
-		// First attempt is immediate; then 1s, 2s, 4s, 4s (capped).
 		expect(delays.gaps().slice(1, 5)).toEqual([1000, 2000, 4000, 4000])
 	})
 
@@ -80,7 +79,6 @@ describe('runWithReconnect', () => {
 			onBeforeAttempt: delays.record,
 			run: async (_signal, onData) => {
 				attempts += 1
-				// Fail twice to grow the backoff, then succeed once, then fail again.
 				if (attempts === 3) onData()
 				throw new Error('dropped')
 			},
@@ -93,14 +91,9 @@ describe('runWithReconnect', () => {
 		await advance(0)
 		await loop
 
-		// Attempts 1 and 2 fail outright, so the wait grows 1s then 2s. Attempt 3 receives data
-		// before the connection drops, which resets the backoff: the next wait is 1s again
-		// rather than the 4s it had climbed to.
 		expect(delays.gaps().slice(1, 5)).toEqual([1000, 2000, 1000, 2000])
 	})
 
-	// The server ends the stream with ResourceExhausted when a subscriber falls too far behind.
-	// That is a request to resync, so the client should reconnect at once and take the replay.
 	it('reconnects immediately when the server asks for a resync', async () => {
 		const controller = new AbortController()
 		const delays = attemptDelays()

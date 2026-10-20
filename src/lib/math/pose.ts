@@ -4,7 +4,8 @@ import { Euler, MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
 
 import type { Frame } from '../frame'
 
-import { OrientationVector } from '../three/OrientationVector'
+import { quatFromJson } from './orientationJson'
+import { OrientationVector } from './OrientationVector'
 
 const ov = new OrientationVector()
 const quaternion = new Quaternion()
@@ -122,25 +123,22 @@ export class Pose implements ViamPose {
 	}
 
 	setFromFrame(frame: Partial<Frame>) {
-		if (frame.orientation?.type === 'quaternion') {
-			quaternion.copy(frame.orientation.value)
-			ov.setFromQuaternion(quaternion)
-		} else if (frame.orientation?.type === 'euler_angles') {
-			euler.set(
-				frame.orientation.value.roll,
-				frame.orientation.value.pitch,
-				frame.orientation.value.yaw,
-				'ZYX'
-			)
-			quaternion.setFromEuler(euler)
-			ov.setFromQuaternion(quaternion)
-		} else if (frame.orientation?.type === 'ov_radians') {
-			ov.copy(frame.orientation.value)
-		} else if (frame.orientation) {
-			const th = MathUtils.degToRad(frame.orientation?.value.th ?? 0)
-			ov.set(frame.orientation?.value.x, frame.orientation?.value.y, frame.orientation?.value.z, th)
-		} else {
+		const orientation = frame.orientation
+
+		// Stored configs can contain the orientation discriminator without its
+		// value (for example after a partial frame edit is discarded). Treat that
+		// wire-level default the same as an omitted orientation.
+		if (!orientation?.value) {
 			ov.set(0, 0, 1, 0)
+		} else if (orientation.type === 'ov_degrees' || orientation.type === 'ov_radians') {
+			// Read across directly: a quaternion round trip is exact for the rotation
+			// but not the tuple, and `th: 180` returning as `-180` would change what
+			// the config round-trips.
+			const { x, y, z, th } = orientation.value
+			ov.set(x, y, z, orientation.type === 'ov_radians' ? th : MathUtils.degToRad(th ?? 0))
+		} else {
+			quatFromJson(orientation, quaternion)
+			ov.setFromQuaternion(quaternion)
 		}
 
 		// Frame translations come from the machine config, already in millimetres.

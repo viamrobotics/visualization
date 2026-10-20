@@ -58,7 +58,7 @@ describe('reconcileSnapshotEntities', () => {
 		const initial = reconcileSnapshotEntities(world, first, new Map())
 		const initialEntity = initial.current.get(UUID_A)?.entity
 		expect(initialEntity).toBeDefined()
-		// Pose translation is in mm; matrix translation is in m (× 0.001).
+		// Pose translation is in mm. Matrix translation is in m, so the factor is 0.001.
 		expect(initialEntity?.get(traits.Matrix)?.elements[12]).toBeCloseTo(0.001)
 
 		const second = new Snapshot({ transforms: [transformWith(UUID_A, { x: 5 })] })

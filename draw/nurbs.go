@@ -35,16 +35,15 @@ type Nurbs struct {
 	// Defaults to 1.0 for each control point (uniform weighting).
 	Weights []float64
 
-	// Colors specifies the rendering colors for the curve. Currently the visualizer
-	// only honors a single shared color; per-control-point colors are accepted by
-	// NewNurbs but not yet rendered as a gradient.
+	// Colors specifies the rendering colors for the curve. Currently the visualizer only
+	// honors a single shared color. Per-control-point colors are accepted by NewNurbs but
+	// not yet rendered as a gradient.
 	Colors []Color
 
 	// LineWidth specifies the thickness of the line segments in millimeters (default: 5mm).
 	LineWidth float32
 }
 
-// drawNurbsConfig is a configuration for drawing a NURBS curve
 type drawNurbsConfig struct {
 	degree    int32
 	weights   []float64
@@ -52,9 +51,6 @@ type drawNurbsConfig struct {
 	drawColorsConfig
 }
 
-// newDrawNurbsConfig creates a new draw NURBS curve configuration
-//
-// Returns the draw NURBS curve configuration
 func newDrawNurbsConfig() *drawNurbsConfig {
 	return &drawNurbsConfig{
 		degree:           DefaultNurbsDegree,
@@ -88,12 +84,11 @@ func WithNurbsWeights(weights []float64) DrawNurbsOption {
 	}
 }
 
-// WithNurbsColors sets the curve's color. defaultColor is required and serves as the
-// curve color when used alone; the variadic perPointColors are appended and stored
-// for forward compatibility with per-control-point coloring. Currently only the
-// first color is rendered; pass len(controlPoints) values total if you want to
-// satisfy the per-control-point validation in NewNurbs. Defaults to DefaultNurbsColor
-// (cyan).
+// WithNurbsColors sets the curve's color. defaultColor is required and serves as the curve
+// color when used alone. The variadic perPointColors are appended and stored for forward
+// compatibility with per-control-point coloring. Only the first color is rendered today.
+// Pass len(controlPoints) values total to satisfy the per-control-point validation in
+// NewNurbs. Defaults to DefaultNurbsColor (cyan).
 func WithNurbsColors(defaultColor Color, perPointColors ...Color) DrawNurbsOption {
 	colors := []Color{defaultColor}
 	colors = append(colors, perPointColors...)
@@ -131,7 +126,6 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...Draw
 		return nil, fmt.Errorf("degree must be greater than 0, got %d", config.degree)
 	}
 
-	// Default weights to 1.0 for each control point if not provided
 	weights := config.weights
 	if len(weights) == 0 {
 		weights = make([]float64, len(controlPoints))
@@ -160,9 +154,9 @@ func NewNurbs(controlPoints []spatialmath.Pose, knots []float64, options ...Draw
 	}, nil
 }
 
-// Draw wraps the Nurbs in a Drawing identified by name. The DrawableOptions control
-// placement (parent frame, pose, center), identity (UUID), and visibility — see
-// DrawableOption for the full set.
+// Draw wraps the Nurbs in a Drawing identified by name. The DrawableOptions control placement
+// (parent frame, pose, center), identity (UUID), and visibility. See DrawableOption for the
+// full set.
 func (nurbs Nurbs) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithNurbs(nurbs))

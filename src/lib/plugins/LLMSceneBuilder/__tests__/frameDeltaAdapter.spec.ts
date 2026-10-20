@@ -168,8 +168,7 @@ describe('validateProposedFrameDeltas', () => {
 			pitchedConfig
 		)
 
-		// Yaw on identity: Z stays along Z (oY=0); yaw on a pre-pitched frame: the pitch-tilted Z
-		// axis rotates into the Y direction under 90° yaw, so oY=-0.5
+		// Yaw on identity leaves Z along Z, so oY=0. On a pre-pitched frame the tilted Z axis rotates into Y under 90 degrees of yaw, so oY=-0.5.
 		expect(fromIdentity[0].pose.oY).toBeCloseTo(0)
 		expect(fromPitched[0].pose.oY).toBeCloseTo(-0.5)
 	})

@@ -31,7 +31,6 @@
 	const colors = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)
 	const positions = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)
 
-	// Assign colors per vertex
 	$effect.pre(() => {
 		for (let i = 0, l = axesColors.length; i < l; i += 1) {
 			const axis = axesColors[i]

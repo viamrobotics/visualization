@@ -12,10 +12,10 @@ import (
 // in a DrawnFrames.Colors map (red).
 var DefaultFrameColor = NewColor(WithName("red"))
 
-// DrawnFrames is a collection of reference frames rendered as transforms in the
-// visualizer. A frame with no geometry renders as a bare coordinate-axes helper at
-// the frame's pose; a frame with geometry renders one transform per geometry, with
-// the geometry labels prefixed by "frameName:".
+// DrawnFrames is a collection of reference frames rendered as transforms in the visualizer. A
+// frame with no geometry renders as a bare coordinate-axes helper at the frame's pose. A
+// frame with geometry renders one transform per geometry, with the geometry labels prefixed
+// by "frameName:".
 type DrawnFrames struct {
 	// ID is an optional identity prefix included in each emitted transform's
 	// UUID derivation. When non-empty, identities are derived from
@@ -59,16 +59,14 @@ func NewDrawnFrames(frames []referenceframe.Frame, options ...DrawFramesOption) 
 	return &DrawnFrames{Frames: frames, Colors: config.colors}
 }
 
-// ToTransforms returns a flat slice of transforms covering every frame in the
-// collection. A frame with no geometry contributes a single bare-axes transform
-// named after the frame; a frame with geometry contributes one transform per
-// geometry, each labelled "frameName:geoLabel". Each transform's identity is
-// derived from "frameName:parent" (or "label:parent" for the inner geometry
-// transforms), with DrawnFrames.ID prepended when non-empty. The supplied
-// DrawableOptions configure the parent frame and root pose used as the basis
-// for every emitted transform; per-call UUID overrides on the options have no
-// effect. Returns an error if any frame's transform or geometry resolution
-// fails.
+// ToTransforms returns a flat slice of transforms covering every frame in the collection. A
+// frame with no geometry contributes a single bare-axes transform named after the frame. A
+// frame with geometry contributes one transform per geometry, each labelled
+// "frameName:geoLabel". Each transform's identity is derived from "frameName:parent" (or
+// "label:parent" for the inner geometry transforms), with DrawnFrames.ID prepended when
+// non-empty. The supplied DrawableOptions configure the parent frame and root pose used as the
+// basis for every emitted transform, and per-call UUID overrides on the options have no
+// effect. Returns an error if any frame's transform or geometry resolution fails.
 func (drawnFrames *DrawnFrames) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent

@@ -1,6 +1,6 @@
 ---
 title: Embedding <Visualizer />
-description: Mount the motion-tools visualizer inside your own Svelte app and render snapshots inline.
+description: Mount the Viam visualizer inside your own Svelte app and render snapshots inline.
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components'
@@ -16,10 +16,12 @@ A Svelte 5 / SvelteKit (or Astro+Svelte, Vite+Svelte, etc.) project. The package
 ### Install
 
 ```bash
-pnpm add @viamrobotics/motion-tools
+pnpm add @viamrobotics/visualization
 ```
 
-The package declares a long list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project — install whatever it asks for.
+The package declares a list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project — install whatever it asks for.
+
+Peers that only a plugin needs are marked optional, so you install them only if you mount that plugin: `@dimforge/rapier3d-compat` and `@threlte/rapier` for `MoveFrame`, `@zag-js/tree-view` and `svelte-virtuallists` for [`<WorldTree />`](../../plugins/world-tree/), `@zag-js/tabs` for [`<Settings />`](../../plugins/settings/), `@threlte/xr` for [`<XR />`](../../plugins/xr/), `earcut` for [`<SelectionTool />`](../../plugins/selection/), and the Connect RPC client for [`<DrawService />`](../../plugins/draw-service/).
 
 <Aside
 	type="tip"
@@ -28,6 +30,30 @@ The package declares a long list of `peerDependencies` (Svelte, Threlte, Three.j
 	If you don't want to chase peer warnings one at a time, set `auto-install-peers=true` in your
 	`.npmrc`, or pass `--strict-peer-dependencies=false` on install.
 </Aside>
+
+### Configure your bundler
+
+The visualizer's scene imports two things a stock Vite config won't handle: an HDR
+environment map and GLSL shader sources. Both need a line in your config, or the build fails
+parsing them as JavaScript (`Unexpected identifier 'highp'` is the shader one).
+
+```ts
+// vite.config.ts
+import glsl from 'vite-plugin-glsl'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+	assetsInclude: ['**/*.hdr'],
+	plugins: [glsl()],
+	resolve: {
+		// three is a peer of both your app and the visualizer; resolve it from one place
+		// so a second copy can't slip in. Two three instances break `instanceof`.
+		dedupe: ['three'],
+	},
+})
+```
+
+`vite-plugin-glsl` is a build-time dependency of your app — install it alongside the package.
 
 ### Disable SSR for the page
 
@@ -40,7 +66,7 @@ export const ssr = false
 
 <Aside
 	type="tip"
-	title="Auto-install peers"
+	title="Astro"
 >
 	In Astro, add `client:only="svelte"` to the component tag instead.
 </Aside>
@@ -51,7 +77,7 @@ export const ssr = false
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
+	import { Visualizer } from '@viamrobotics/visualization'
 </script>
 
 <div class="h-screen w-screen">
@@ -59,15 +85,95 @@ export const ssr = false
 </div>
 ```
 
-That's enough to get an empty scene with the camera, grid, and overlay UI. From there, you can:
+That's enough to get an empty scene: the camera and its controls, the grid, the entity
+renderer, and the portal targets plugins render into. From there, you can:
 
 - **Pass `partID`** to bind it to a specific Viam machine part.
 - **Pass `cameraPose`** to set an initial camera position and look-at target.
 - **Provide a `children` snippet** to render your own Threlte primitives or the `<Snapshot />` component inside the scene.
 
+## What's in the box, and what isn't
+
+`<Visualizer />` is the scene, not the app. It renders:
+
+- the `<Canvas>`, in `renderMode="on-demand"`
+- the camera, camera controls, and the reset / orthographic buttons
+- the grid, lighting, and environment
+- the entity renderer — everything spawned into the ECS world, including `<PCD />`
+- selection and hover affordances
+- the portal targets that plugins render their UI into
+
+Everything else is a plugin you opt into — including the workspace modes: with no mode plugin mounted the mode is `none` and the visualizer is a bare renderer, with no toggle, no details cards, and no live-query pausing. The visualizer's own chrome ships as six plugins:
+
+| Plugin                                           | Adds                                            |
+| ------------------------------------------------ | ----------------------------------------------- |
+| [`<Monitor />`](../../plugins/monitor/)          | Monitor mode: the mode button and details cards |
+| [`<WorldTree />`](../../plugins/world-tree/)     | The scene hierarchy panel                       |
+| [`<Settings />`](../../plugins/settings/)        | The settings cog and its tabbed popover         |
+| [`<BuildFrames />`](../../plugins/build-frames/) | Build mode: gizmos, snapping, frame editing     |
+| [`<FileDrop />`](../../plugins/file-drop/)       | Drag-and-drop loading of snapshots, PCD and PLY |
+| [`<FramePov />`](../../plugins/frame-pov/)       | Per-frame point-of-view panels                  |
+
+To reproduce the standalone app, mount all six plus the feature plugins you want, keeping
+`Monitor` before `BuildFrames` before `MoveFrame` — mode plugins' mount order sets both the
+toggle's button order and the fallback priority. To embed a focused viewer, mount none of them —
+or just the one or two that earn their space.
+
+<Aside
+	type="caution"
+	title="Chrome that reaches past the visualizer"
+>
+	FileDrop listens for drags on the window, so it intercepts drops meant for the host app — leave it
+	out of embedded viewers. Keyboard shortcuts are also window-level, but only the bindings your
+	mounted features contribute exist at all (a bare visualizer binds just `c` and `h`); pass
+	`inputBindingsEnabled={false}` to silence keyboard input entirely.
+</Aside>
+
+## A focused point-cloud viewer
+
+The smallest useful embed: a scene, a point cloud you already have the bytes for, and a ruler.
+`<PCD />` parses in a worker and spawns an entity the visualizer's renderer picks up, so nothing
+else is needed — no `partID`, and no network calls of its own.
+
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
+	import { PCD, Visualizer } from '@viamrobotics/visualization'
+	import { MeasureTool } from '@viamrobotics/visualization/plugins'
+
+	interface Props {
+		data: Uint8Array
+	}
+
+	let { data }: Props = $props()
+</script>
+
+<div class="h-120 w-full">
+	<Visualizer>
+		<PCD {data} />
+		<MeasureTool />
+	</Visualizer>
+</div>
+```
+
+Rebinding `data` reparses and respawns the entity, so this works for a polling feed as well as a
+one-shot capture.
+
+<Aside
+	type="note"
+	title="Point size lives in settings"
+>
+	Point size comes from `useSettings().current.pointSize` (in metres), which the [Settings
+	plugin](../../plugins/settings/) normally edits. To expose one control without the whole popover,
+	write that field from your own plugin — and call `invalidate()` from `useThrelte()` afterward,
+	because the canvas only repaints on demand and the settings popover is what usually triggers it.
+	See [Authoring plugins](../../plugins/authoring/).
+</Aside>
+
+## Passing props and children
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
 </script>
 
 <div class="h-screen w-screen">
@@ -95,8 +201,8 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
     ```svelte
     <script lang="ts">
       import { onMount } from 'svelte'
-      import { Visualizer } from '@viamrobotics/motion-tools'
-      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+      import { Visualizer } from '@viamrobotics/visualization'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/visualization/lib'
 
       let snapshot = $state<SnapshotProto | undefined>()
 
@@ -123,8 +229,8 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
     ```svelte
     <script lang="ts">
       import { onMount } from 'svelte'
-      import { Visualizer } from '@viamrobotics/motion-tools'
-      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+      import { Visualizer } from '@viamrobotics/visualization'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/visualization/lib'
 
       let snapshot = $state<SnapshotProto | undefined>()
 
@@ -150,15 +256,15 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
 
     ```svelte
     <script lang="ts">
-      import { MotVisualizerionTools } from '@viamrobotics/motion-tools'
-      import { Snapshot, SnapshotProto } from '@viamrobotics/motion-tools/lib'
+      import { Visualizer } from '@viamrobotics/visualization'
+      import { Snapshot, SnapshotProto } from '@viamrobotics/visualization/lib'
       import sceneJson from './scene.snapshot.json?raw'
 
       const snapshot = SnapshotProto.fromJsonString(sceneJson)
     </script>
 
     <div class="h-screen w-screen">
-      <MotionVisualizerTools>
+      <Visualizer>
         <Snapshot {snapshot} />
       </Visualizer>
     </div>
@@ -169,7 +275,7 @@ Use the `<Snapshot />` component as a child of `<Visualizer />`:
 
 You can re-bind a different snapshot at any time — `<Snapshot />` watches the prop and respawns the scene entities when the value changes.
 
-The <a href={`${import.meta.env.BASE_URL}playground/snapshot`}>playground</a> renders this snapshot by default. To experiment with it, download <a href={`${import.meta.env.BASE_URL}playground/visualization_snapshot.json`}><code>visualization_snapshot.json</code></a>, edit a few values, and drag the modified file onto the playground — the scene re-renders with your changes. The drop zone accepts `.json`, `.pb`, and `.pb.gz` snapshot files, but they must be named with a `visualization_snapshot` prefix (see [src/lib/components/FileDrop/file-names.ts](https://github.com/viamrobotics/visualization/blob/main/src/lib/components/FileDrop/file-names.ts)) for the loader to recognize them.
+The <a href={`${import.meta.env.BASE_URL}playground/snapshot`}>playground</a> renders this snapshot by default. To experiment with it, download <a href={`${import.meta.env.BASE_URL}playground/visualization_snapshot.json`}><code>visualization_snapshot.json</code></a>, edit a few values, and drag the modified file onto the playground — the scene re-renders with your changes. The drop zone accepts `.json`, `.pb`, and `.pb.gz` snapshot files, but they must be named with a `visualization_snapshot` prefix (see [src/lib/plugins/FileDrop/file-names.ts](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/FileDrop/file-names.ts)) for the loader to recognize them.
 
 ## Producing snapshots
 
@@ -184,7 +290,7 @@ import (
     "os"
 
     "github.com/golang/geo/r3"
-    "github.com/viam-labs/motion-tools/draw"
+    "github.com/viamrobotics/visualization/draw"
     "go.viam.com/rdk/spatialmath"
 )
 
@@ -223,7 +329,7 @@ A few components are exported via the `/lib` subpath and work without a `<Visual
 ```svelte
 <script lang="ts">
 	import { Canvas } from '@threlte/core'
-	import { AxesHelper } from '@viamrobotics/motion-tools/lib'
+	import { AxesHelper } from '@viamrobotics/visualization/lib'
 </script>
 
 <Canvas>

@@ -1,6 +1,6 @@
 import { createWorld, type Entity, type World } from 'koota'
 import { BoxGeometry, Matrix4, Vector3 } from 'three'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '$lib/ecs'
 
@@ -55,6 +55,25 @@ describe('syncMoveGhosts', () => {
 		ghosts = createMoveGhosts()
 	})
 
+	afterEach(() => world?.destroy())
+
+	it('ghosts the dragged frame itself, so its own geometry previews', () => {
+		root.add(traits.Box({ x: 100, y: 100, z: 100 }))
+
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		expect(position(ghosts.get(root)!)).toEqual(new Vector3(1, 0, 0))
+		expect(ghosts.get(root)?.get(traits.Box)).toEqual({ x: 100, y: 100, z: 100 })
+	})
+
+	// `MoveTargetGhost` already draws a triad on the staged pose, so a second one
+	// would sit exactly on top of it.
+	it('leaves a dragged frame with no geometry to MoveTargetGhost', () => {
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		expect(ghostEntities()).toHaveLength(0)
+	})
+
 	it('ghosts each descendant at its own transform plus the delta', () => {
 		const child = spawnFrame(root, 1)
 		const grandchild = spawnFrame(child, 2)
@@ -90,13 +109,12 @@ describe('syncMoveGhosts', () => {
 		expect(ghosts.get(child)?.has(traits.ShowAxesHelper)).toBe(true)
 	})
 
-	it('leaves the dragged frame and its own link geometries behind', () => {
-		// A link of the moved frame: a child without `FramesAPI`.
-		world.spawn(
-			relations.ChildOf(root),
-			traits.Box({ x: 1, y: 1, z: 1 }),
-			traits.WorldMatrix(new Matrix4())
-		)
+	// IK re-solves the dragged frame's own chain, and the entity sits at the
+	// component's mount while the gizmo drags its end effector. Neither lands
+	// where the drag delta would put it.
+	it('leaves the dragged frame and its own kinematic links behind', () => {
+		root.add(traits.Box({ x: 100, y: 100, z: 100 }))
+		spawnFrame(root, 1, traits.KinematicLink)
 
 		syncMoveGhosts(world, root, delta, ghosts)
 
@@ -105,11 +123,7 @@ describe('syncMoveGhosts', () => {
 
 	it('ghosts the links of an attached component, which do ride along', () => {
 		const gripper = spawnFrame(root, 1)
-		const link = world.spawn(
-			relations.ChildOf(gripper),
-			traits.Box({ x: 1, y: 1, z: 1 }),
-			traits.WorldMatrix(new Matrix4())
-		)
+		const link = spawnFrame(gripper, 1, traits.KinematicLink)
 
 		syncMoveGhosts(world, root, delta, ghosts)
 
@@ -167,6 +181,21 @@ describe('syncMoveGhosts', () => {
 		// `Mesh.svelte` disposes the geometry it renders, so a shared instance
 		// would die with the ghost.
 		expect(ghosts.get(child)?.get(traits.BufferGeometry)).not.toBe(geometry)
+	})
+
+	it('leaves a camera point cloud out, since a ghost would draw it as a mesh', () => {
+		const camera = spawnFrame(root, 1)
+		const cloud = world.spawn(
+			relations.ChildOf(camera),
+			traits.Points,
+			traits.BufferGeometry(new BoxGeometry(1, 1, 1)),
+			traits.WorldMatrix(new Matrix4())
+		)
+
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		expect(ghosts.get(cloud)).toBeUndefined()
+		expect(ghostEntities()).toHaveLength(1)
 	})
 
 	/**

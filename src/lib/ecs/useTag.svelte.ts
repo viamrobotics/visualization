@@ -24,14 +24,10 @@ export function useTag(
 
 		const world = isWorld(t) ? t : contextWorld
 
-		// ???
 		// eslint-disable-next-line prefer-const
 		let entity: Entity
 
-		/**
-		 * Subscribe before reading worldEntity: world.onAdd triggers lazy
-		 * registration so worldEntity is guaranteed to exist after this.
-		 */
+		// Subscribe before reading worldEntity: world.onAdd triggers the lazy registration that creates it.
 		const onAddUnsub = world.onAdd(tag, (e) => {
 			if (e === entity) value = true
 		})

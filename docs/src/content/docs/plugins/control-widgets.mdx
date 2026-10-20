@@ -1,6 +1,6 @@
 ---
 title: <ControlWidgets />
-description: Drive a connected machine's resources from inside a motion-tools visualizer.
+description: Drive a connected machine's resources from inside a Viam visualizer.
 ---
 
 `<ControlWidgets />` adds a **Control widgets** button and floating panel that lists the connected machine's resources and lets you open interactive controls for them — the resource widgets from `@viamrobotics/test-widgets` used to exercise component and service APIs (jog a motor, move an arm, view a camera, and so on). Each widget you open becomes its own resizable panel.
@@ -15,8 +15,8 @@ Mount `<ControlWidgets />` inside `<Visualizer />`. It needs a connected machine
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { ControlWidgets } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { ControlWidgets } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">
@@ -33,7 +33,7 @@ Click the **Control widgets** button in the toolbar to open the panel, then togg
 For advanced use — reflecting state in your own UI or opening widgets programmatically — the `useControlWidgets` hook exposes the plugin's per-part store:
 
 ```ts
-import { useControlWidgets } from '@viamrobotics/motion-tools/plugins'
+import { useControlWidgets } from '@viamrobotics/visualization/plugins'
 
 const widgets = useControlWidgets()
 ```
@@ -50,6 +50,6 @@ The store is backed by local storage, so it works whether or not the panel is mo
 
 ## Dependencies
 
-- **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are required peers of `@viamrobotics/motion-tools`, so they're already installed alongside it. The plugin also uses `@threlte/xr` to detect an active immersive session.
+- **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are required peers of `@viamrobotics/visualization`, so they're already installed alongside it. The plugin also uses `@threlte/xr` to detect an active immersive session.
 - **Plugins:** none required — though its registry panels hide themselves while an immersive `<XR />` session is active (see [Plugin dependencies](../dependencies/)).
 - **Runtime:** a live machine connection. Resources are resolved per part, so the plugin must be mounted within the visualizer's scene, and the list stays empty until a machine is connected. Registry widget panels are automatically hidden while an immersive XR session is active.

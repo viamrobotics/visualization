@@ -1,10 +1,9 @@
 import { Quaternion, Vector3 } from 'three'
 
 export function getFrameTransformationQuaternion(): Quaternion {
-	// MATCHING DART IMPLEMENTATION EXACTLY:
+	// Matches the Dart implementation's frame transform.
 	// 1: Rotate -90° around Z-axis
 	const rotZ = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2)
-	// 2: Rotate 90° around X-axis
 	const rotX = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
 
 	// Combine: Apply rotX first, then rotZ
@@ -12,7 +11,9 @@ export function getFrameTransformationQuaternion(): Quaternion {
 }
 
 /**
- * Calculates the delta position in Robot Frame
+ * The arm target position in the robot frame, in millimetres. The controller's movement
+ * since the reference pose is rotated into the robot frame, scaled, and added to the
+ * robot's reference position.
  */
 export function calculatePositionTarget(
 	currentControllerPos: Vector3,
@@ -21,13 +22,10 @@ export function calculatePositionTarget(
 	qTransform: Quaternion,
 	scaleFactor: number
 ) {
-	// 1. Get delta in XR space (Meters)
 	const deltaXR = currentControllerPos.clone().sub(referenceControllerPos)
 
-	// 2. Convert to Robot Frame
 	const deltaRobot = deltaXR.clone().applyQuaternion(qTransform)
 
-	// 3. Scale (Meters -> Millimeters) and Apply
 	const scaleMM = scaleFactor * 1000
 
 	return {

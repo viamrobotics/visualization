@@ -1,13 +1,10 @@
-/**
- * Entry point of the client-side plan fallback. The replayer reaches this file only when the host's
- * `resolvePlanSnapshots` returns undefined — the standalone dev tool, or app when server FK failed.
- * Together with `build-frame-descriptors.ts` and `plan-to-snapshots.ts` it reconstructs RDK's frame
- * system from RDK's JSON output rather than sharing code with it, so coverage is partial by
- * construction and falls behind as RDK gains frame, orientation, and geometry types.
- */
-
 import { z } from 'zod'
 
+/**
+ * Duplicates `frameDescriptors.ts`'s `RawFrame` rather than importing it: this file decodes
+ * untrusted JSON, that one reads a trusted shape. Narrow this and `buildFrameDescriptors` stops
+ * compiling.
+ */
 const RawFrameSchema = z.object({
 	frame_type: z.string(),
 	frame: z.unknown(),
@@ -31,22 +28,26 @@ const ObstaclesInWorldFrameSchema = z.object({
 	geometries: z.array(z.unknown()).default([]),
 })
 
+// `nullish`, not `optional`: these are nil-able Go values, and the captures marshal nil as an
+// explicit `null` rather than omitting the key. `optional` alone rejects null.
 const PlanChunkSchema = z.object({
 	frame_system: FrameSystemSchema.optional(),
-	goals: z.array(z.unknown()).optional(),
-	trajectory: z.array(z.record(z.string(), z.array(z.number()))).optional(),
+	goals: z.array(z.unknown()).nullish(),
+	trajectory: z.array(z.record(z.string(), z.array(z.number()))).nullish(),
 	// Opaque by contrast: protobuf-es decodes this one, so zod here would re-copy a proto shape.
 	world_state: z.unknown().optional(),
-	obstacles_in_world_frame: ObstaclesInWorldFrameSchema.optional(),
+	obstacles_in_world_frame: ObstaclesInWorldFrameSchema.nullish().transform(
+		(obstacles) => obstacles ?? undefined
+	),
 })
 
 export type ObstaclesInWorldFrame = z.infer<typeof ObstaclesInWorldFrameSchema>
 
-export type RawFrame = z.infer<typeof RawFrameSchema>
+type RawFrame = z.infer<typeof RawFrameSchema>
 
 export class PlanParseError extends Error {
-	constructor(message: string) {
-		super(message)
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options)
 		this.name = 'PlanParseError'
 	}
 }
@@ -93,7 +94,7 @@ const readJSONObject = (text: string, start: number): { raw: string; end: number
 	return null
 }
 
-const splitJsonObjects = (content: string): string[] => {
+export const splitJsonObjects = (content: string): string[] => {
 	const chunks: string[] = []
 	let index = 0
 	for (let i = 0; i < 8; i++) {
@@ -158,6 +159,14 @@ const PlanSchema = z
 
 export type ParsedPlan = z.infer<typeof PlanSchema>
 
+/**
+ * Parses RDK's JSON plan output into a `ParsedPlan`, reconstructing the frame system from that
+ * JSON rather than sharing code with RDK. Runs only when the host's `resolvePlanSnapshots`
+ * returns `undefined`, so coverage is partial by construction and falls behind as RDK gains
+ * frame, orientation, and geometry types.
+ *
+ * @throws `PlanParseError` when the content does not match the expected shape.
+ */
 export const parsePlan = (content: string): ParsedPlan => {
 	const result = PlanSchema.safeParse(content)
 	if (result.success) return result.data

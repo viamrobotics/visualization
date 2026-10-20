@@ -19,10 +19,23 @@ func poseInFrameToProtobuf(pose spatialmath.Pose, parent string) *commonv1.PoseI
 	}
 }
 
+// renderableGeometry lowers geometry types that have no wire representation into ones that do.
+// A spatialmath.Cylinder has no cylinder message in the commonv1.Geometry oneof, so its
+// ToProtobuf panics by design and callers are expected to intercept it upstream; we tessellate
+// it to a mesh, which the renderer already draws as a model. This also covers open cylinders,
+// which are the same type. All other geometries are returned unchanged.
+func renderableGeometry(geometry spatialmath.Geometry) spatialmath.Geometry {
+	if cyl, ok := geometry.(*spatialmath.Cylinder); ok {
+		return cyl.ToMesh()
+	}
+	return geometry
+}
+
 // geometryToProtobuf converts a spatialmath.Geometry to its Protocol Buffer representation (commonv1.Geometry).
-// Handles sphere, box, and capsule geometry types.
+// It re-tags the geometry_type oneof for spheres, boxes, and capsules. Other geometry types are returned as
+// ToProtobuf produced them.
 func geometryToProtobuf(geometry spatialmath.Geometry) *commonv1.Geometry {
-	geometryProto := geometry.ToProtobuf()
+	geometryProto := renderableGeometry(geometry).ToProtobuf()
 	sphere := geometryProto.GetSphere()
 	if sphere != nil {
 		geometryProto.GeometryType = &commonv1.Geometry_Sphere{

@@ -7,9 +7,9 @@ import (
 	"connectrpc.com/connect"
 	commonv1 "go.viam.com/api/common/v1"
 
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // addTransforms sends every transform to the visualizer in a single AddEntities call and

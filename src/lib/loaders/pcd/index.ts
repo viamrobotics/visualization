@@ -1,5 +1,6 @@
 import type { Message, SuccessMessage } from './messages'
 
+import { DEFAULT_SHUFFLE_DEPTH } from './messages'
 import { workerCode } from './worker.inline'
 
 const blob = new Blob([workerCode], { type: 'text/javascript' })
@@ -33,12 +34,19 @@ worker.addEventListener('message', (event: MessageEvent<Message>) => {
 	}
 })
 
-export const parsePcdInWorker = (data: Uint8Array): Promise<SuccessMessage> => {
+/**
+ * `shuffleDepth` is how many points the caller could ever draw decimated. Randomizing beyond it
+ * is wasted work, and on a large cloud that waste is measured in hundreds of milliseconds.
+ */
+export const parsePcdInWorker = (
+	data: Uint8Array,
+	shuffleDepth: number = DEFAULT_SHUFFLE_DEPTH
+): Promise<SuccessMessage> => {
 	return new Promise((resolve, reject) => {
 		const id = ++requestId
 		pending.set(id, { resolve, reject })
 
 		const copy = new Uint8Array(data)
-		worker.postMessage({ id, data: copy }, [copy.buffer])
+		worker.postMessage({ id, data: copy, shuffleDepth }, [copy.buffer])
 	})
 }

@@ -89,7 +89,6 @@ func TestNewDrawnPointCloud(t *testing.T) {
 		test.That(t, err, test.ShouldBeNil)
 		test.That(t, drawnPC, test.ShouldNotBeNil)
 		test.That(t, len(drawnPC.Colors), test.ShouldEqual, 5)
-		// Verify the palette repeats correctly
 		test.That(t, drawnPC.Colors[0], test.ShouldResemble, palette[0])
 		test.That(t, drawnPC.Colors[1], test.ShouldResemble, palette[1])
 		test.That(t, drawnPC.Colors[2], test.ShouldResemble, palette[0])

@@ -1,12 +1,11 @@
-import type { Transform } from '@viamrobotics/sdk'
-
 import type { Frame, FrameGeometry } from '$lib/frame'
+import type { Transform } from '$lib/geometry'
 import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import type { PartConfig } from '$lib/hooks/usePartConfig.svelte'
 
 import { frameGeometryFromTransform } from '$lib/geometry'
 import { Pose } from '$lib/math'
-import { setOrientationFromEuler } from '$lib/transform'
+import { setOrientationFromEuler } from '$lib/math/transform'
 
 /**
  * Resolves current frames for fragment-defined components from live framesystem
@@ -66,11 +65,7 @@ export interface FrameDelta {
 	componentName: string
 	translation?: { x?: number; y?: number; z?: number }
 	orientation?: { roll?: number; pitch?: number; yaw?: number }
-	// Like translation/orientation, only the changed fields are sent (all in mm).
-	// Omit `type` to resize the current shape (unspecified dims fall back to the
-	// current geometry); include `type` only to change the shape, in which case
-	// send that type's dims (box → x/y/z, sphere → r, capsule → r/l). `type: 'none'`
-	// removes the component's geometry.
+	/** Only the changed fields are sent, all in mm. Omit `type` to resize the current shape, and unspecified dims fall back to the current geometry. Include `type` only to change the shape, then send that type's dims (box x/y/z, sphere r, capsule r/l). `type: 'none'` removes the geometry. */
 	geometry?: {
 		type?: FrameGeometry
 		x?: number

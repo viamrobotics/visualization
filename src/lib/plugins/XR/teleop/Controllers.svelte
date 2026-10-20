@@ -7,16 +7,13 @@
 
 	const settings = useSettings()
 
-	// Get controller config from settings
 	const config = $derived(settings.current.xrController)
 
-	// Left controller configuration
 	const leftArmName = $derived(config.left.armName)
 	const leftGripperName = $derived(config.left.gripperName)
 	const leftScaleFactor = $derived(config.left.scaleFactor)
 	const leftRotationEnabled = $derived(config.left.rotationEnabled)
 
-	// Right controller configuration
 	const rightArmName = $derived(config.right.armName)
 	const rightGripperName = $derived(config.right.gripperName)
 	const rightScaleFactor = $derived(config.right.scaleFactor)
@@ -26,7 +23,6 @@
 <Controller left />
 <Controller right />
 
-<!-- Left Controller Arm Teleop -->
 {#if leftArmName}
 	{#key `${leftArmName}-${leftGripperName}-${leftScaleFactor}-${leftRotationEnabled}`}
 		<ArmTeleop
@@ -39,7 +35,6 @@
 	{/key}
 {/if}
 
-<!-- Right Controller Arm Teleop -->
 {#if rightArmName}
 	{#key `${rightArmName}-${rightGripperName}-${rightScaleFactor}-${rightRotationEnabled}`}
 		<ArmTeleop

@@ -3,14 +3,14 @@ package draw
 import (
 	"sync"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // maxPendingEntityChanges bounds how far behind a single stream subscriber may fall.
 //
 // The entity stream is purely incremental, so a dropped event corrupts the consumer
 // permanently: a lost REMOVED leaves a ghost the server will never mention again, and a lost
-// ADDED leaves a hole. Rather than drop, changes queue without limit up to this cap; a
+// ADDED leaves a hole. Rather than drop, changes queue without limit up to this cap. A
 // subscriber that exceeds it is disconnected so it reconnects and receives a fresh replay of
 // the whole scene. The cap is a runaway backstop, not a normal operating point — clearing and
 // redrawing a large scene is a few hundred events.
@@ -19,7 +19,7 @@ const maxPendingEntityChanges = 20_000
 // entitySubscriber is one StreamEntityChanges consumer's mailbox.
 //
 // Publishing (push) happens on the RPC goroutine that mutated the store while it holds
-// DrawService.mu; draining (take) happens on the stream goroutine and takes no service lock.
+// DrawService.mu. Draining (take) happens on the stream goroutine and takes no service lock.
 // push never blocks, so a stalled consumer cannot stall the store.
 type entitySubscriber struct {
 	mu       sync.Mutex
@@ -71,8 +71,8 @@ func (sub *entitySubscriber) push(msg *drawv1.StreamEntityChangesResponse) {
 	sub.signal()
 }
 
-// take removes and returns everything queued so far. It never blocks; an empty slice means the
-// consumer should wait on notify.
+// take removes and returns everything queued so far. It never blocks, and an empty slice means
+// the consumer should wait on notify.
 func (sub *entitySubscriber) take() (msgs []*drawv1.StreamEntityChangesResponse, overflow, closed bool) {
 	sub.mu.Lock()
 	defer sub.mu.Unlock()

@@ -14,7 +14,7 @@
 ## Quick start
 
 ```bash
-make setup     # one-time: install Node 22, pnpm, bun, Go, buf, project deps
+make setup     # one-time: install Node 22, pnpm, Go, buf, project deps
 make up        # http://localhost:5173
 ```
 
@@ -29,6 +29,17 @@ pnpm dev
 ```
 
 See [CLAUDE.md](CLAUDE.md) for contributor conventions.
+
+### Desktop app
+
+The visualizer also builds as a desktop app with [Tauri v2](https://v2.tauri.app/). It wraps the same static build the browser gets and does not bundle the Go draw server, so the draw-service panel reads offline until `make up` starts one. You need the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/) and Rust 1.90 or newer.
+
+```bash
+pnpm tauri:dev     # dev server in a native window, with HMR
+pnpm tauri:build   # .app and .dmg under src-tauri/target/release/bundle/
+```
+
+The bundle version follows `version` in `package.json`.
 
 ## Programmatic camera control
 

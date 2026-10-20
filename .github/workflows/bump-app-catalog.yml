@@ -4,13 +4,13 @@ on:
   workflow_call:
     inputs:
       version:
-        description: Version of @viamrobotics/motion-tools to bump to (e.g. 1.2.3)
+        description: Version of @viamrobotics/visualization to bump to (e.g. 1.2.3)
         required: true
         type: string
   workflow_dispatch:
     inputs:
       version:
-        description: Version of @viamrobotics/motion-tools to bump to (e.g. 1.2.3)
+        description: Version of @viamrobotics/visualization to bump to (e.g. 1.2.3)
         required: true
         type: string
 
@@ -54,31 +54,41 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: app/pnpm-lock.yaml
 
-      - name: Bump @viamrobotics/motion-tools in pnpm-workspace.yaml
+      - name: Bump @viamrobotics/visualization in pnpm-workspace.yaml
         working-directory: app
         run: |
-          sed -i "s|\(['\"]\?@viamrobotics/motion-tools['\"]\?:\s*\).*|\1${VERSION}|" pnpm-workspace.yaml
-          grep "@viamrobotics/motion-tools" pnpm-workspace.yaml
+          sed -i "s|\(['\"]\?@viamrobotics/visualization['\"]\?:\s*\).*|\1${VERSION}|" pnpm-workspace.yaml
+          grep "@viamrobotics/visualization" pnpm-workspace.yaml
 
+      # npm can take minutes to serve a version after `changeset publish`
+      # reports success, and this job starts seconds after it. Only that error is
+      # retried, so any other install failure still fails fast.
       - name: pnpm install
         working-directory: app
-        run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false
+        timeout-minutes: 20
+        run: |
+          LOG="$RUNNER_TEMP/pnpm-install.log"
+          until pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false 2>&1 | tee "$LOG"; [ "${PIPESTATUS[0]}" -eq 0 ]; do
+            grep -q ERR_PNPM_NO_MATCHING_VERSION "$LOG" || exit 1
+            echo "@viamrobotics/visualization@${VERSION} is not on npm yet, retrying in 30s..."
+            sleep 30
+          done
 
       - name: Open bump PR
         uses: peter-evans/create-pull-request@v8
         with:
           path: app
           token: ${{ steps.app-token.outputs.token }}
-          branch: bump/motion-tools-${{ env.VERSION }}
+          branch: bump/visualization-${{ env.VERSION }}
           delete-branch: true
           base: main
-          commit-message: 'chore: bump motion-tools to ${{ env.VERSION }}'
-          title: 'chore: bump motion-tools to ${{ env.VERSION }}'
+          commit-message: 'chore: bump visualization to ${{ env.VERSION }}'
+          title: 'chore: bump visualization to ${{ env.VERSION }}'
           labels: |
             Deploy
             run-e2e-tests
           body: |
-            Automated bump of `@viamrobotics/motion-tools` to `${{ env.VERSION }}` following a release in [viamrobotics/motion-tools](https://github.com/viamrobotics/motion-tools/releases/tag/v${{ env.VERSION }}).
+            Automated bump of `@viamrobotics/visualization` to `${{ env.VERSION }}` following a release in [viamrobotics/visualization](https://github.com/viamrobotics/visualization/releases/tag/v${{ env.VERSION }}).
 
             Triggered by: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -102,7 +112,7 @@ jobs:
             --repo "$REPO" \
             --title "Failed to bump app catalog to ${VERSION}" \
             --body "$(cat <<EOF
-          @viamrobotics/team-viz — the automated bump of \`@viamrobotics/motion-tools\` to \`${VERSION}\` in [viamrobotics/app](https://github.com/viamrobotics/app) failed.
+          @viamrobotics/team-viz — the automated bump of \`@viamrobotics/visualization\` to \`${VERSION}\` in [viamrobotics/app](https://github.com/viamrobotics/app) failed.
 
           - **Failed run:** ${RUN_URL}
           - **Version:** \`${VERSION}\`
@@ -111,6 +121,6 @@ jobs:
 
           ---
 
-          @claude — please investigate the failed run above (use \`gh run view <run-id> --log-failed\` to fetch the failing logs). If the cause is a regression in this repo (\`motion-tools\`) introduced in version \`${VERSION}\`, open a PR with the fix and a changeset. If the cause appears to be in the consumer (\`viamrobotics/app\`), post a comment here with your diagnosis tagging @viamrobotics/team-viz instead of opening a PR.
+          @claude — please investigate the failed run above (use \`gh run view <run-id> --log-failed\` to fetch the failing logs). If the cause is a regression in this repo (\`visualization\`) introduced in version \`${VERSION}\`, open a PR with the fix and a changeset. If the cause appears to be in the consumer (\`viamrobotics/app\`), post a comment here with your diagnosis tagging @viamrobotics/team-viz instead of opening a PR.
           EOF
           )"

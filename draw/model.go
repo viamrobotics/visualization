@@ -27,16 +27,12 @@ type Model struct {
 	AnimationName string
 }
 
-// drawModelConfig is a configuration for drawing a model
 type drawModelConfig struct {
 	assets        []*ModelAsset
 	scale         r3.Vector
 	animationName string
 }
 
-// newDrawModelConfig creates a new draw model configuration
-//
-// Returns the draw model configuration
 func newDrawModelConfig() *drawModelConfig {
 	return &drawModelConfig{
 		assets:        []*ModelAsset{},
@@ -99,9 +95,9 @@ func NewModel(options ...DrawModelOption) (*Model, error) {
 	}, nil
 }
 
-// Draw wraps the Model in a Drawing identified by name. The DrawableOptions control
-// placement (parent frame, pose, center), identity (UUID), and visibility — see
-// DrawableOption for the full set.
+// Draw wraps the Model in a Drawing identified by name. The DrawableOptions control placement
+// (parent frame, pose, center), identity (UUID), and visibility. See DrawableOption for the
+// full set.
 func (model Model) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithModel(model))

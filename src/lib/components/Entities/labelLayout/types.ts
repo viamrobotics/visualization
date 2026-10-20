@@ -43,13 +43,15 @@ export interface LabelNode {
 	/** FNV hash of `id`, used for deterministic tie-breaks and per-node slot phase. */
 	idHash: number
 
-	// Anchor = projected dot center (viewport px), refreshed each solve.
+	/** Anchor x, the projected dot center (viewport px), refreshed each solve. */
 	ax: number
+	/** Anchor y, the projected dot center (viewport px), refreshed each solve. */
 	ay: number
 	dotR: number
 
-	// Box full size (viewport px), refreshed each solve.
+	/** Box full width (viewport px), refreshed each solve. */
 	w: number
+	/** Box full height (viewport px), refreshed each solve. */
 	h: number
 
 	/** Per-island CSS scale (screenPx / localPx). */
@@ -70,11 +72,13 @@ export interface LabelNode {
 	/** Slot committed by the previous solve, for stickiness. */
 	prevSlotIndex: number
 
-	// Animated box center (what writeBack consumes; seeds the next solve).
+	/** Animated box center x. `writeBack` consumes it and the next solve seeds from it. */
 	cx: number
+	/** Animated box center y. `writeBack` consumes it and the next solve seeds from it. */
 	cy: number
-	// Target box center for the current solve.
+	/** Target box center x for the current solve. */
 	tx: number
+	/** Target box center y for the current solve. */
 	ty: number
 	settled: boolean
 

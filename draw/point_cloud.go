@@ -21,14 +21,14 @@ type DrawnPointCloud struct {
 }
 
 // DrawnPointCloudConfig is the resolved option state used internally by
-// NewDrawnPointCloud. Most callers do not construct it directly; build a
+// NewDrawnPointCloud. Most callers do not construct it directly. Build a
 // DrawnPointCloud by passing DrawPointCloudOption values to NewDrawnPointCloud
 // instead.
 type DrawnPointCloudConfig struct {
 	drawColorsConfig
 
-	// downscalingThreshold is the minimum spacing (in millimeters) between retained
-	// points; 0 disables downscaling.
+	// downscalingThreshold is the minimum spacing (in millimeters) between retained points,
+	// where 0 disables downscaling.
 	downscalingThreshold float64
 }
 
@@ -75,9 +75,9 @@ func WithPointCloudDownscaling(threshold float64) DrawPointCloudOption {
 }
 
 // NewDrawnPointCloud returns a DrawnPointCloud wrapping the given cloud. A positive
-// WithPointCloudDownscaling threshold downsamples the cloud before storage; a
-// threshold of 0 stores the input unchanged. Returns an error if the threshold is
-// negative or if downscaling fails.
+// WithPointCloudDownscaling threshold downsamples the cloud before storage. A threshold of
+// 0 stores the input unchanged. Returns an error if the threshold is negative or if
+// downscaling fails.
 func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCloudOption) (*DrawnPointCloud, error) {
 	config := newDrawPointCloudConfig()
 	for _, option := range options {
@@ -99,10 +99,10 @@ func NewDrawnPointCloud(pointCloud pointcloud.PointCloud, options ...DrawPointCl
 	return &DrawnPointCloud{PointCloud: downscaled, Colors: config.colors}, nil
 }
 
-// Draw wraps the DrawnPointCloud in a Transform identified by name. The point cloud
-// is converted to a basic octree before serialization. The DrawableOptions control
-// placement (parent frame, pose, center), identity (UUID), and visibility — see
-// DrawableOption for the full set. Returns an error if octree conversion fails.
+// Draw wraps the DrawnPointCloud in a Transform identified by name. The point cloud is
+// converted to a basic octree before serialization. The DrawableOptions control placement
+// (parent frame, pose, center), identity (UUID), and visibility. See DrawableOption for the
+// full set. Returns an error if octree conversion fails.
 func (drawnPointCloud *DrawnPointCloud) Draw(name string, options ...DrawableOption) (*commonv1.Transform, error) {
 	config := NewDrawConfig(name, options...)
 

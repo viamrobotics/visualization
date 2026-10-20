@@ -10,7 +10,6 @@ import ResourceWidgetPanel from '../ResourceWidgetPanel.svelte'
 import { useControlWidgets } from '../useControlWidgets.svelte'
 import DummyWidget from './__fixtures__/DummyWidget.svelte'
 
-// Render children without Threlte context.
 vi.mock('$lib/components/overlay/FloatingPanel.svelte', async () => {
 	const MockFloatingPanel = await import('./__fixtures__/MockFloatingPanel.svelte')
 	return { default: MockFloatingPanel.default }

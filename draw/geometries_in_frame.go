@@ -19,7 +19,7 @@ type DrawnGeometriesInFrame struct {
 	// ID does not affect visible labels.
 	ID string
 	// Name is an optional prefix applied to each emitted transform's label. When
-	// non-empty, each transform is labelled "Name:geometryLabel"; when empty, the
+	// non-empty, each transform is labelled "Name:geometryLabel". When empty, the
 	// raw geometry label is used.
 	Name string
 	// Parent is the parent reference frame the geometries are expressed in.
@@ -32,12 +32,11 @@ type DrawnGeometriesInFrame struct {
 type drawnGeometriesInFrameConfig struct {
 	drawColorsConfig
 
-	// The threshold in millimeters for downscaling, defaults to 0.
-	// Currently only supported for point clouds.
+	// downscalingThreshold is the minimum distance in millimeters between kept points.
+	// Defaults to 0, which disables downscaling. Only point-cloud geometries honor it.
 	downscalingThreshold float64
 }
 
-// newDrawnGeometriesInFrameConfig creates a new draw geometries in frame configuration
 func newDrawnGeometriesInFrameConfig() *drawnGeometriesInFrameConfig {
 	return &drawnGeometriesInFrameConfig{
 		drawColorsConfig:     newDrawColorsConfig(),
@@ -98,13 +97,11 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 
 	drawnGeometries := make([]*DrawnGeometry, len(geometries))
 	for i, geometry := range geometries {
-		// Use single color for all geometries, or per-geometry color
 		colorIndex := 0
 		if len(config.colors) > 1 {
 			colorIndex = i
 		}
 
-		// Apply downscaling threshold if configured
 		var drawnGeometry *DrawnGeometry
 		var err error
 		if config.downscalingThreshold > 0 {
@@ -122,14 +119,13 @@ func NewDrawnGeometriesInFrame(geometriesInFrame *referenceframe.GeometriesInFra
 	return &DrawnGeometriesInFrame{Parent: geometriesInFrame.Parent(), DrawnGeometries: drawnGeometries}, nil
 }
 
-// ToTransforms returns one transform per geometry in the collection. Each
-// transform's label is the geometry label, optionally prefixed with the
-// receiver's Name field — see DrawnGeometriesInFrame.Name for the prefixing
-// rules. Each transform's identity is derived from "label:parent", or
-// "ID:label:parent" when DrawnGeometriesInFrame.ID is non-empty. The supplied
-// DrawableOptions configure the parent frame and pose used as the basis for
-// every emitted transform; per-call UUID overrides on the options have no
-// effect. Returns an error if any geometry's transform construction fails.
+// ToTransforms returns one transform per geometry in the collection. Each transform's label
+// is the geometry label, optionally prefixed with the receiver's Name field — see
+// DrawnGeometriesInFrame.Name for the prefixing rules. Each transform's identity is derived
+// from "label:parent", or "ID:label:parent" when DrawnGeometriesInFrame.ID is non-empty. The
+// supplied DrawableOptions configure the parent frame and pose used as the basis for every
+// emitted transform, and per-call UUID overrides on the options have no effect. Returns an
+// error if any geometry's transform construction fails.
 func (drawnGeometriesInFrame *DrawnGeometriesInFrame) ToTransforms(options ...DrawableOption) ([]*commonv1.Transform, error) {
 	config := NewDrawConfig("", options...)
 	parent := config.Parent

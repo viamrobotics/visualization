@@ -1,0 +1,64 @@
+name: Setup E2E
+description: Toolchains, dependencies, and a cached Playwright browser.
+
+# Checkout is the caller's job. A local action loads from the workspace, so the
+# repo has to be checked out before this file can be found.
+
+inputs:
+  go:
+    description: Install Go and nlopt. Needed by any job that builds the draw server or the scene binary.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        run_install: false
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: 'pnpm'
+
+    - name: Setup Go
+      if: inputs.go == 'true'
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    # The draw server's MotionPlanService links RDK's cgo IK solver, which builds against libnlopt.
+    - name: Install nlopt
+      if: inputs.go == 'true'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libnlopt-dev
+
+    - name: Set up wireit caching
+      if: inputs.go == 'true'
+      uses: google/wireit@setup-github-actions-caching/v2
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install
+
+    # Keyed on the resolved Playwright version so a bump invalidates the cache
+    # rather than silently pairing new library code with an old browser build.
+    - name: Get Playwright version
+      id: playwright-version
+      shell: bash
+      run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm playwright install chromium --with-deps

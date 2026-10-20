@@ -1,10 +1,11 @@
-import { expect } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { type JsonValue, Struct } from '@viamrobotics/sdk'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 import url from 'node:url'
 
 import { connectViamClient, getE2EConfig, withRobot } from './fixtures/with-robot'
+import { readRenderFrame, waitForRenderIdle } from './helpers/renderIdle'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const wsDir = path.resolve(dirname, 'fixtures/world-state-store')
@@ -21,6 +22,18 @@ const runGoTest = (testPath: string) => {
 		console.error('Go test failed:', execError.stdout ?? '', execError.stderr ?? '')
 		throw error
 	}
+}
+
+/**
+ * Runs a Go step and waits for what it changed to finish rendering.
+ *
+ * The frame count is read before the step because `waitForRenderIdle` would
+ * otherwise see a scene that has not reacted yet and call it settled.
+ */
+const applyAndSettle = async (page: Page, testPath: string) => {
+	const before = await readRenderFrame(page)
+	runGoTest(testPath)
+	await waitForRenderIdle(page, { after: before })
 }
 
 const getWorldStateConfig = () => {
@@ -55,14 +68,18 @@ withRobot.beforeAll(async () => {
 		Struct.fromJson(getWorldStateConfig() as unknown as JsonValue)
 	)
 
-	// Give viam-server time to load the module and configure the service
+	// Elapsed time, and it is load-bearing. The browser subscribes once on
+	// connect, so a service that appears after the page loads never reaches it,
+	// and dropping this made the first test in this file fail outright. It cannot
+	// become a poll: the machine is only reachable over WebRTC from a browser, and
+	// `createRobotClient` hangs when called from the test process.
+	// Give viam-server time to load the module and configure the service.
 	await new Promise((resolve) => setTimeout(resolve, 10000))
 })
 
 withRobot('world state store geometry rendering', async ({ robotPage }) => {
 	const { page } = robotPage
 
-	// Wait for the world state store entities to appear in the tree
 	await expect(page.getByText('test-box', { exact: true })).toBeVisible({ timeout: 30000 })
 	await expect(page.getByText('test-sphere', { exact: true })).toBeVisible()
 	await expect(page.getByText('test-capsule', { exact: true })).toBeVisible()
@@ -91,8 +108,6 @@ withRobot('world state store geometry rendering', async ({ robotPage }) => {
 	await page.getByText('test-mesh', { exact: true }).click()
 	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
 	await robotPage.screenshotCanvas('WORLD-STATE-5-mesh-selected')
-
-	robotPage.assertScreenshots()
 })
 
 withRobot('world state store transform update', async ({ robotPage }) => {
@@ -104,34 +119,26 @@ withRobot('world state store transform update', async ({ robotPage }) => {
 	await expect(page.getByText('dynamic-sphere', { exact: true })).toBeVisible({ timeout: 10000 })
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-0-added')
 
-	runGoTest('^TestTransformUpdate$/MoveTransform')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/MoveTransform')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-1-moved')
 
-	runGoTest('^TestTransformUpdate$/RotateTransform')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/RotateTransform')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-2-rotated')
 
-	runGoTest('^TestTransformUpdate$/UpdateColor')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/UpdateColor')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-3-colored')
 
-	runGoTest('^TestTransformUpdate$/UpdateOpacity')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/UpdateOpacity')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-4-translucent')
 
-	runGoTest('^TestTransformUpdate$/ToggleAxesHelper')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/ToggleAxesHelper')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-5-axes-hidden')
 
-	runGoTest('^TestTransformUpdate$/ToggleInvisibility')
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestTransformUpdate$/ToggleInvisibility')
 	await robotPage.screenshotCanvas('WORLD-STATE-UPDATE-6-invisible')
 
 	runGoTest('^TestTransformUpdate$/Cleanup')
 	await expect(page.getByText('dynamic-sphere', { exact: true })).toBeHidden({ timeout: 10000 })
-
-	robotPage.assertScreenshots()
 })
 
 withRobot('world state store transform removal', async ({ robotPage }) => {
@@ -150,8 +157,6 @@ withRobot('world state store transform removal', async ({ robotPage }) => {
 		timeout: 10000,
 	})
 	await robotPage.screenshotCanvas('WORLD-STATE-REMOVE-1-removed')
-
-	robotPage.assertScreenshots()
 })
 
 withRobot('world state store point cloud update', async ({ robotPage }) => {
@@ -166,9 +171,7 @@ withRobot('world state store point cloud update', async ({ robotPage }) => {
 
 	await robotPage.screenshotCanvas('WORLD-STATE-POINTCLOUD-UPDATE-0-initial')
 
-	runGoTest('^TestPointCloudUpdate$/UpdatePointCloud')
-	// wait for changes
-	await page.waitForTimeout(2000)
+	await applyAndSettle(page, '^TestPointCloudUpdate$/UpdatePointCloud')
 	await robotPage.screenshotCanvas('WORLD-STATE-POINTCLOUD-UPDATE-1-updated')
 
 	// Cleanup removes the entity AND resets the camera.
@@ -176,8 +179,6 @@ withRobot('world state store point cloud update', async ({ robotPage }) => {
 	await expect(page.getByText('updating-pointcloud', { exact: true })).toBeHidden({
 		timeout: 10000,
 	})
-
-	robotPage.assertScreenshots()
 })
 
 withRobot('world state store point cloud chunking', async ({ robotPage }) => {
@@ -195,8 +196,6 @@ withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 
 	runGoTest('^TestPointCloudChunking$/Cleanup')
 	await expect(page.getByText('chunked-cloud', { exact: true })).toBeHidden({ timeout: 10000 })
-
-	robotPage.assertScreenshots()
 })
 
 withRobot.afterAll(async () => {

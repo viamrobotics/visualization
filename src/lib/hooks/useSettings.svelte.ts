@@ -3,11 +3,22 @@ import type { ColorRepresentation } from 'three'
 import { get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
+import type { RenderMode } from '$lib/three/surfaceShading'
+
+import {
+	migrateStoredSettings,
+	SETTINGS_MIGRATION_COUNT,
+	type StoredSettings,
+} from './settingsMigrations'
+
 const key = Symbol('dashboard-context')
 
 export interface Settings {
 	anthropicKey: string
 	cameraMode: 'orthographic' | 'perspective'
+	cameraSmoothTime: number
+	cameraDraggingSmoothTime: number
+	enableDollyToCursor: boolean
 	interactionMode: 'navigate' | 'measure' | 'select' | 'gizmo' | 'move'
 	refreshRates: {
 		poses: number
@@ -18,43 +29,58 @@ export interface Settings {
 	disabledCameras: Record<string, boolean>
 	disabledVisionServices: Record<string, boolean>
 
-	// Transform controls
+	/** The master switch. The four flags below choose what snaps while it is on. */
 	snapping: boolean
+	/** Step moves, turns, and resizes by `snapTranslate`, `snapRotate`, and `snapScale`. */
+	snapIncrement: boolean
+	/** Snap moves to the key points and surfaces of other geometries. */
+	snapObjects: boolean
+	/** Treat the ground, z = 0, as a surface to snap to. Applies with `snapObjects`. */
+	snapGroundPlane: boolean
+	/** Tilt a surface-snapped object so its +Z follows the surface. Applies with `snapObjects`. */
+	snapAlignRotation: boolean
+	/** Move snap step, in metres. Unlike pose fields, it never reaches a Viam API, so it skips mm. */
 	snapTranslate: number
 	snapRotate: number
 	snapScale: number
 	transformMode: 'none' | 'translate' | 'rotate' | 'scale'
 	transformSpace: 'local' | 'world'
 
-	// Grid
 	grid: boolean
 	gridCellSize: number
 	gridSectionSize: number
 	gridFadeDistance: number
 
-	// Points
 	pointSize: number
 	pointColor: ColorRepresentation
+	/** Max points drawn across all clouds while the camera moves. 0 draws every point. */
+	pointBudget: number
+	/** Ceiling on a point's on-screen diameter, in CSS pixels. */
+	maxPointSize: number
 
-	// Lines
 	lineWidth: number
 	lineDotSize: number
 
-	// Measurement
 	enableMeasureAxisX: boolean
 	enableMeasureAxisY: boolean
 	enableMeasureAxisZ: boolean
 
 	enableLabels: boolean
 
-	// Frame POV widgets
 	openFramePovWidgets: Record<string, string[]>
+
+	/** Whether the sensor-coverage plugin draws camera view frusta into the scene. */
+	enableSensorCoverage: boolean
+	/** Far-plane depth of a coverage frustum, in metres. */
+	sensorCoverageRange: number
+	/** Cameras switched out of the coverage drawing, by resource name. */
+	disabledCoverageCameras: Record<string, boolean>
 
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
-	renderSubEntityHoverDetail: boolean
+	/** How entity surfaces are shaded. `realistic` is the only mode that casts shadows. */
+	renderMode: RenderMode
 
-	// Webxr
 	enableXR: boolean
 	xrMode: 'frame-configure' | 'arm-teleop'
 	xrCameras: string[]
@@ -86,20 +112,31 @@ export const RefreshRates = {
 	vision: 'vision',
 } as const
 
+export type RefreshRateId = keyof Settings['refreshRates']
+
+const DEFAULT_REFRESH_RATES: Settings['refreshRates'] = {
+	poses: 1000,
+	pointclouds: 5000,
+	vision: 1000,
+}
+
 const defaults = (): Settings => ({
 	anthropicKey: '',
 	cameraMode: 'perspective',
+	cameraSmoothTime: 0.05,
+	cameraDraggingSmoothTime: 0.05,
+	enableDollyToCursor: false,
 
-	refreshRates: {
-		poses: 1000,
-		pointclouds: 5000,
-		vision: 1000,
-	},
+	refreshRates: { ...DEFAULT_REFRESH_RATES },
 
 	disabledCameras: {},
 	disabledVisionServices: {},
 
 	snapping: false,
+	snapIncrement: true,
+	snapObjects: false,
+	snapGroundPlane: false,
+	snapAlignRotation: false,
 	snapTranslate: 0.1,
 	snapRotate: 7.5,
 	snapScale: 0.1,
@@ -113,6 +150,8 @@ const defaults = (): Settings => ({
 
 	pointSize: 0.01,
 	pointColor: '#333333',
+	pointBudget: 800_000,
+	maxPointSize: 32,
 
 	lineWidth: 0.005,
 	lineDotSize: 0.005,
@@ -127,9 +166,13 @@ const defaults = (): Settings => ({
 
 	openFramePovWidgets: {},
 
+	enableSensorCoverage: true,
+	sensorCoverageRange: 2,
+	disabledCoverageCameras: {},
+
 	renderStats: false,
 	renderArmModels: 'colliders+model',
-	renderSubEntityHoverDetail: false,
+	renderMode: 'realistic',
 
 	enableXR: false,
 	xrMode: 'frame-configure',
@@ -150,19 +193,31 @@ export const provideSettings = () => {
 	let isLoaded = $state(false)
 	let settings = $state<Settings>(defaults())
 
-	get('motion-tools-settings')
-		.then((response: Settings) => {
+	// Key kept as `motion-tools-settings` after the rename to visualization; renaming it
+	// would silently discard every existing user's saved settings.
+	get<StoredSettings>('motion-tools-settings')
+		.then((response) => {
 			if (response) {
-				settings = { ...settings, ...response }
+				settings = { ...settings, ...migrateStoredSettings(response) }
 			}
 		})
 		.finally(() => {
 			isLoaded = true
 		})
 
+	// A record is stamped with the migration count on the way out, so the next load
+	// runs only what it has not seen. A user with no stored record never runs one,
+	// because `defaults()` is already current.
 	$effect(() => {
 		if (isLoaded) {
-			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
+			set(
+				'motion-tools-settings',
+				$state.snapshot({
+					...settings,
+					interactionMode: 'navigate',
+					migrationsApplied: SETTINGS_MIGRATION_COUNT,
+				})
+			)
 		}
 	})
 

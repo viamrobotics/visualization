@@ -125,7 +125,6 @@ describe('mergeEvent', () => {
 		expect(frameOf(pending.events.get('a'))).toBe('back')
 	})
 
-	// Cross-entity ordering has to survive coalescing so parents stay ahead of children.
 	it('preserves first-mention order when an earlier uuid is updated again', () => {
 		const pending = emptyPendingChanges()
 		mergeEvent(pending, event('a', EntityChangeType.ADDED))
@@ -156,8 +155,6 @@ describe('mergeClear', () => {
 		expect(pending.clearedScope).toBe(EntityScope.ALL)
 	})
 
-	// Two scoped clears in one frame both happened. Letting the second replace the first would
-	// reconcile only the second scope at flush, stranding the first scope's entities as ghosts.
 	it('widens to ALL when two different scopes are cleared in one frame', () => {
 		const pending = emptyPendingChanges()
 		mergeClear(pending, EntityScope.TRANSFORMS)
@@ -174,7 +171,6 @@ describe('mergeClear', () => {
 		expect(pending.clearedScope).toBe(EntityScope.DRAWINGS)
 	})
 
-	// A clear only supersedes the buffered events it actually covers.
 	it('keeps a buffered event of a kind the clear does not cover', () => {
 		const pending = emptyPendingChanges()
 		mergeEvent(pending, event('t', EntityChangeType.ADDED))
@@ -194,8 +190,6 @@ describe('mergeClear', () => {
 })
 
 describe('survivingUUIDs', () => {
-	// This is what turns a clear-then-redraw into an in-place reconcile: entities that come back
-	// in the same frame are never destroyed, so nothing churns.
 	it('returns uuids re-added after a clear, excluding removals', () => {
 		const pending = emptyPendingChanges()
 		mergeClear(pending, EntityScope.ALL)

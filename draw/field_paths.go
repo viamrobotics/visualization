@@ -19,7 +19,7 @@ const (
 	// changes it is rejected. Remove the entity and add a new one instead.
 	TransformPathReferenceFrame = "reference_frame"
 	// TransformPathPose is the pose of the transform in its observer frame, together with the
-	// name of that frame. Selecting it replaces both; to move an entity without reparenting it,
+	// name of that frame. Selecting it replaces both. To move an entity without reparenting it,
 	// select TransformPathPoseValue instead.
 	TransformPathPose = "pose_in_observer_frame"
 	// TransformPathPoseValue is just the pose, leaving the observer frame untouched.
@@ -28,8 +28,8 @@ const (
 	TransformPathPoseParent = TransformPathPose + ".reference_frame"
 	// TransformPathGeometry is the transform's geometry. The geometry type is immutable.
 	TransformPathGeometry = "physical_object"
-	// TransformPathUUID is the transform's identity. Updating it is not meaningful; the UUID to
-	// update is carried by the request, not the entity.
+	// TransformPathUUID is the transform's identity. Updating it is not meaningful, because the
+	// UUID to update is carried by the request, not the entity.
 	TransformPathUUID = "uuid"
 	// TransformPathMetadata is the transform's display metadata (color, opacity, relationships).
 	TransformPathMetadata = "metadata"
@@ -51,7 +51,7 @@ const (
 	// DrawingPathUUID is the drawing's identity.
 	DrawingPathUUID = "uuid"
 	// DrawingPathMetadata is the drawing's display metadata (name, color, opacity,
-	// relationships). Selecting it replaces the metadata wholesale; select one of the nested
+	// relationships). Selecting it replaces the metadata wholesale. Select one of the nested
 	// paths below to change a single attribute.
 	DrawingPathMetadata = "metadata"
 	// DrawingPathMetadataColors is the packed color buffer.

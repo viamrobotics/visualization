@@ -2,12 +2,10 @@ import { ResourceName } from '@viamrobotics/sdk'
 import twColors from 'tailwindcss/colors'
 import { Color, type ColorRepresentation, type RGB } from 'three'
 
-// Step 3: linear sRGB → sRGB
 const linearToSrgb = (x: number) => {
 	return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055
 }
 
-// Step 4: sRGB → hex
 const toHex = (x: number) => {
 	const hex = Math.round(x * 255)
 		.toString(16)
@@ -26,14 +24,11 @@ const oklchToHex = (raw: string) => {
 	const c = Number.parseFloat(match[2])
 	const h = Number.parseFloat(match[3])
 
-	// Convert h from degrees to radians
 	const hRad = (h * Math.PI) / 180
 
-	// Step 1: OKLCH → OKLab
 	const aa = c * Math.cos(hRad)
 	const bb = c * Math.sin(hRad)
 
-	// Step 2: OKLab → linear sRGB
 	const l_ = l + 0.3963377774 * aa + 0.2158037573 * bb
 	const m_ = l - 0.1055613458 * aa - 0.0638541728 * bb
 	const s_ = l - 0.0894841775 * aa - 1.291485548 * bb
@@ -56,10 +51,9 @@ const oklchToHex = (raw: string) => {
 const original = new Color()
 const hsl = { h: 0, s: 0, l: 0 }
 /**
- * Darkens a THREE.Color by a given percentage while preserving hue.
- * @param color The original THREE.Color instance.
- * @param percent The percentage to darken (0-100).
- * @returns A new THREE.Color instance with the darkened color.
+ * Darkens a color by a percentage of its HSL lightness, preserving hue and saturation.
+ *
+ * @param percent 0 to 100.
  */
 export const darkenColor = (value: ColorRepresentation, percent: number): Color => {
 	original.set(value)
@@ -161,14 +155,6 @@ export const parseRGB = (color: unknown, defaultColor: RGB = { r: 0, g: 0, b: 0 
 		color.g > 1 ? color.g / 255 : color.g,
 		color.b > 1 ? color.b / 255 : color.b
 	)
-}
-
-export const parseOpacity = (opacity: unknown, defaultOpacity: number = 1): number => {
-	if (typeof opacity !== 'number') {
-		return defaultOpacity
-	}
-
-	return opacity > 1 ? opacity / 100 : opacity
 }
 
 const isColor = (color: unknown): color is Color => {

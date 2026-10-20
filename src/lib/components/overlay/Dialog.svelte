@@ -13,15 +13,27 @@
 		children?: Snippet
 		/** Action buttons (e.g. Cancel / Discard). Receives a `close` callback. */
 		actions?: Snippet<[{ close: () => void }]>
+		/**
+		 * `alertdialog` for a confirmation, which demands an explicit response.
+		 * `dialog` for one the user fills in, where the alert semantics would have a
+		 * screen reader read the whole form as an interruption.
+		 */
+		role?: 'alertdialog' | 'dialog'
 	}
 
-	let { open = $bindable(false), title, description, children, actions }: Props = $props()
+	let {
+		open = $bindable(false),
+		title,
+		description,
+		children,
+		actions,
+		role = 'alertdialog',
+	}: Props = $props()
 
 	const id = $props.id()
 	const service = useMachine(dialog.machine, () => ({
 		id,
-		// Confirmations require an explicit response, so treat it as an alert dialog.
-		role: 'alertdialog' as const,
+		role,
 		open,
 		onOpenChange: (details: { open: boolean }) => {
 			open = details.open
@@ -36,11 +48,11 @@
 	<div use:portal>
 		<div
 			{...api.getBackdropProps()}
-			class="bg-gray-9/40 z-max fixed inset-0"
+			class="bg-gray-9/40 fixed inset-0 z-7"
 		></div>
 		<div
 			{...api.getPositionerProps()}
-			class="z-max fixed inset-0 flex items-center justify-center p-4"
+			class="fixed inset-0 z-7 flex items-center justify-center p-4"
 		>
 			<div
 				{...api.getContentProps()}

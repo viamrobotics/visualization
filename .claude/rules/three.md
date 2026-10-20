@@ -1,99 +1,126 @@
 ---
 paths:
-  - 'src/lib/three/**'
+  - '**/three/**'
+  - '**/*.three.ts'
+  - '**/*.glsl'
+  - '**/*.wgsl'
 ---
 
 # Three.js Extension Patterns
 
-Files in `src/lib/three/` are **pure Three.js** — no Threlte, no Svelte. They extend Three.js classes or create reusable geometry/material utilities that Threlte components consume via `T is={obj}`.
+A repo's Three.js layer is **pure Three.js**: no framework bindings, no Svelte, no React. It
+extends Three.js classes or builds reusable geometry and material utilities. Framework
+components consume what it exports, never rebuild it declaratively.
+
+## Check the upstream docs before writing an unfamiliar API
+
+Three.js and its framework bindings publish their documentation in `llms.txt` form. The
+URLs are in `../reference/three-upstream-docs.md`. Fetch the relevant one rather than recalling a
+signature, since much of the Three.js material on the web predates the current API.
 
 ## Extend Three.js classes directly
 
-Subclass the closest Three.js type rather than wrapping it. The result can be passed directly to `T is={obj}` in a Svelte component:
+Subclass the closest Three.js type instead of wrapping it, so the result hands straight to a
+renderer or framework binding:
 
 ```typescript
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 
 export class OBBHelper extends LineSegments2 {
-  update(obb: OBB) { ... }
+  update(obb: OBB) {
+    // ...
+  }
 }
 ```
 
 ## Pre-allocate temporaries at module scope
 
-Avoid allocating `Vector3`, `Color`, `Matrix4`, etc. inside hot-path methods. Allocate once at module scope and reuse:
+Never allocate `Vector3`, `Color`, `Matrix4`, or similar inside a hot-path method. Allocate once
+at module scope and reuse:
 
 ```typescript
-// module scope
-const _axis = new Vector3()
-const _object3d = new Object3D()
-const _col = new Color()
+const _axis = new Vector3();
+const _object3d = new Object3D();
 
 export class BatchedArrow {
-	updateArrow(id: number, origin: Vector3, direction: Vector3) {
-		_object3d.position.copy(origin)
-		_axis.set(direction.z, 0, -direction.x).normalize()
-		// ...
-	}
+  updateArrow(id: number, origin: Vector3, direction: Vector3) {
+    _object3d.position.copy(origin);
+    _axis.set(direction.z, 0, -direction.x).normalize();
+    // ...
+  }
 }
 ```
 
-## BatchedMesh / instancing for many objects
+## BatchedMesh or instancing for many objects
 
-Use `BatchedMesh` (multiple geometries, many instances) or `InstancedMesh` (one geometry, many instances) instead of individual meshes when rendering dozens or more of the same object. Use a free-list pool to reuse instance slots without resizing:
+Past a few dozen copies of the same object, use `BatchedMesh` (many geometries, many instances)
+or `InstancedMesh` (one geometry, many instances) instead of individual meshes. A free list
+reuses instance slots without resizing:
 
 ```typescript
 class BatchedArrow {
-	_pool: number[] = []
+  private pool: number[] = [];
 
-	addArrow() {
-		const id = this._pool.pop() ?? this.mesh.addInstance(this._geometryId)
-		// ...
-		return id
-	}
+  addArrow() {
+    const id = this.pool.pop() ?? this.mesh.addInstance(this.geometryId);
+    // ...
+    return id;
+  }
 
-	removeArrow(id: number) {
-		this.mesh.setVisibleAt(id, false)
-		this._pool.push(id)
-	}
+  removeArrow(id: number) {
+    this.mesh.setVisibleAt(id, false);
+    this.pool.push(id);
+  }
 }
 ```
 
 ## Custom BufferGeometry
 
-Set typed array attributes directly — don't use `geometry.vertices` (legacy):
+Set typed-array attributes directly. The legacy `geometry.vertices` API is gone.
 
 ```typescript
-import { BufferAttribute, BufferGeometry } from 'three'
+import { BufferAttribute, BufferGeometry } from 'three';
 
-const geometry = new BufferGeometry()
-geometry.setAttribute('position', new BufferAttribute(new Float32Array([...]), 3))
-geometry.setIndex([...])
+const geometry = new BufferGeometry();
+geometry.setAttribute('position', new BufferAttribute(new Float32Array([]), 3));
+geometry.setIndex([]);
 ```
 
-For instanced data use `InstancedBufferAttribute` with `DynamicDrawUsage` when the data changes per frame.
+For instanced data that changes per frame, use `InstancedBufferAttribute` with
+`DynamicDrawUsage`.
 
 ## Custom shaders
 
-Import GLSL as strings via Vite's raw import (already configured). Use `RawShaderMaterial` for full control, `ShaderMaterial` to inherit Three.js uniforms:
+Import GLSL as strings through a bundler raw import. Pick the material base by how much control
+you need: `RawShaderMaterial` for full control, `ShaderMaterial` to inherit Three.js uniforms.
 
 ```typescript
-import fragmentShader from './fragment.glsl'
-import vertexShader from './vertex.glsl'
+import fragmentShader from './fragment.glsl';
+import vertexShader from './vertex.glsl';
 
-const material = new RawShaderMaterial({ vertexShader, fragmentShader })
+const material = new RawShaderMaterial({ vertexShader, fragmentShader });
 ```
 
-Keep vertex and fragment shaders in sibling `.glsl` files named `vertex.glsl` / `fragment.glsl`.
+Keep the pair in sibling `vertex.glsl` and `fragment.glsl` files.
 
 ## Custom raycasting
 
-Override `raycast` on a `Mesh` or `Object3D` subclass when the default sphere/box test is wrong for your geometry:
+Override `raycast` on a `Mesh` or `Object3D` subclass when the default sphere or box test is
+wrong for the geometry. Push hits to `intersects`, or return early to opt out.
 
-```typescript
-raycast(raycaster: Raycaster, intersects: Intersection[]) {
-  // custom AABB or OBB test
-}
-```
+## Dispose GPU resources
 
-Return early without pushing to `intersects` to opt out entirely.
+Geometries, materials, and textures are disposable GPU resources. `Object3D` is cheap. Call
+`.dispose()` on each once nothing references it, since garbage collection never frees the GPU.
+
+Decide early which layer owns disposal. An unclear owner is how a scene ends in gradual
+slowdown and eventual context loss.
+
+## Render on demand
+
+Render only when the scene changes, not every frame, for a viewer or configurator that is not
+continuously animating. This is the largest performance win available here.
+
+## Also installed in this repo
+
+- **Diagnosing a broken render:** `../reference/three-debugging.md`

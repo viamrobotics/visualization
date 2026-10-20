@@ -3,7 +3,7 @@ package main_test
 import (
 	"testing"
 
-	"github.com/viam-labs/motion-tools/client/server"
+	"github.com/viamrobotics/visualization/client/server"
 )
 
 func TestDrawServer_Smoke(t *testing.T) {

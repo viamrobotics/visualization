@@ -5,7 +5,7 @@
 
 	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { MotionClient } from '@viamrobotics/sdk'
-	import { createResourceClient, useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { PersistedState } from 'runed'
 	import {
 		List,
@@ -24,21 +24,25 @@
 	import type { Pose } from '$lib/math'
 
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
+	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { setOrientationFromEuler } from '$lib/transform'
+	import { setOrientationFromEuler } from '$lib/math/transform'
 
 	import Collisions from './collisions/Collisions.svelte'
 	import { defaultMotionService, motionServiceNames } from './moveControls'
+	import { moveExecutionOwner } from './moveExecutionOwner.svelte'
 	import MoveGizmo from './MoveGizmo.svelte'
 	import { moveGizmoOptions } from './moveGizmoOptions.svelte'
 	import { moveGizmoOwner } from './moveGizmoOwner.svelte'
 	import MoveJsonField from './MoveJsonField.svelte'
+	import MovePreview from './MovePreview.svelte'
 	import MoveTargetGhost from './MoveTargetGhost.svelte'
 	import { fromDestinationPose, moveDelta, toDestinationPose } from './moveTargetPose'
 	import { parseMoveOptions } from './parseMoveOptions'
+	import { executeCommand } from './planDoCommand'
 	import { useMovedFrameMatrix } from './useMovedFrameMatrix.svelte'
 	import { useMoveGhosts } from './useMoveGhosts.svelte'
+	import { usePreviewMove } from './usePreviewMove.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		/** The selected frame this panel is the details for. */
@@ -51,12 +55,16 @@
 	/** The gizmo is dragged in world space, so the goal is committed against it. */
 	const WORLD_FRAME = 'world'
 
+	const frames = useFrames()
 	const partID = usePartID()
-	const settings = useSettings()
 	const toast = useToast()
-	const motionResources = useResourceNames(() => partID.current, 'motion')
+	const motionResources = useResourceStatuses(() => partID.current, 'motion')
 
-	const motionServices = $derived(motionServiceNames(motionResources.current))
+	const motionServices = $derived(
+		motionServiceNames(
+			motionResources.current.map((resource) => resource.name).filter((name) => name !== undefined)
+		)
+	)
 	const defaultService = $derived(defaultMotionService(motionServices))
 
 	let selectedService = $state<string>()
@@ -69,7 +77,9 @@
 	)
 
 	// Hand-written JSON is expensive to retype, and the panel unmounts with the
-	// selection, so keep each frame's fields across mounts and reloads.
+	// selection, so keep each frame's fields across mounts and reloads. The
+	// `motion-tools:` prefix predates the rename to visualization and is kept so
+	// existing users don't lose saved input.
 	const worldStateJson = $derived(
 		new PersistedState(`motion-tools:move-world-state:${partID.current}:${frameName}`, '')
 	)
@@ -77,7 +87,19 @@
 		new PersistedState(`motion-tools:move-constraints:${partID.current}:${frameName}`, '')
 	)
 
-	let executing = $state(false)
+	/** This panel's own move is running, so it shows progress rather than disabling outright. */
+	const executing = $derived(moveExecutionOwner.movingFrame === frameName)
+
+	/** Another panel is already driving the machine; see `moveExecutionOwner` for why that matters. */
+	const otherPanelMoving = $derived(
+		moveExecutionOwner.movingFrame !== undefined && moveExecutionOwner.movingFrame !== frameName
+	)
+
+	/**
+	 * A resource *name* is not a client: names come from cache, while `createResourceClient` yields
+	 * `undefined` until the connection is `CONNECTED`, so `service` can be set when `motion` is not.
+	 */
+	const canCommand = $derived(motion.current !== undefined && service !== undefined)
 
 	/**
 	 * The staged goal in world space, or `undefined` while the gizmo still tracks
@@ -104,25 +126,7 @@
 		return () => moveGizmoOwner.disarm(frameName)
 	})
 
-	// While this panel owns the gizmo, put the scene into `gizmo` mode so a drag
-	// can't fall through to the scene and change the selection. Restore `navigate`
-	// after.
 	const armed = $derived(moveGizmoOwner.armedFrame === frameName)
-	$effect(() => {
-		if (armed) {
-			settings.current.interactionMode = 'gizmo'
-			return () => {
-				// Only hand the scene back if the gizmo wasn't taken over by another
-				// panel — otherwise this teardown would re-enable picking underneath a
-				// gizmo that is still live.
-				const owner = moveGizmoOwner.armedFrame
-				const handedOff = owner !== undefined && owner !== frameName
-				if (!handedOff && settings.current.interactionMode === 'gizmo') {
-					settings.current.interactionMode = 'navigate'
-				}
-			}
-		}
-	})
 
 	/** Another open panel took the gizmo out from under this one. */
 	const preempted = $derived(!armed)
@@ -196,19 +200,75 @@
 		stagePose(pose)
 	}
 
+	const preview = usePreviewMove({
+		frames,
+		client: () => motion.current,
+		service: () => service,
+		frameName: () => frameName,
+		destination: () => (targetPose ? { referenceFrame: WORLD_FRAME, pose: targetPose } : undefined),
+		moveOptions: () => parseMoveOptions(worldStateJson.current, constraintsJson.current),
+		invalidateOn: () => [
+			targetWorldMatrix,
+			worldStateJson.current,
+			constraintsJson.current,
+			service,
+			// `useFrames` refetches on every config revision, and kinematics that changed underneath a
+			// drawn plan put the twins somewhere the machine never was.
+			frames.parts,
+		],
+	})
+
 	/** Drop the staged goal so the gizmo snaps back to wherever the frame is now. */
-	const resetTarget = () => (targetWorldMatrix = undefined)
+	const resetTarget = () => {
+		targetWorldMatrix = undefined
+		preview.clear()
+	}
 
 	const handleServiceChange = (event: ListChangeEvent) => {
 		if (event.detail.origin !== 'internal') return
 		selectedService = event.detail.value as string
 	}
 
+	/**
+	 * Runs the trajectory the preview drew, exactly as drawn. `execute` does not replan, which is
+	 * the point: the preview is what is being approved.
+	 */
+	const executePreviewedMove = async () => {
+		const client = motion.current
+		if (!client || preview.status !== 'ready') return
+		if (!moveExecutionOwner.claim(frameName)) return
+
+		try {
+			// `execute` answers `{execute: true}` or errors; there is no partial-success reply to read.
+			await client.doCommand(executeCommand(preview.trajectory))
+			toast({
+				message: `Moved "${frameName}" along the previewed plan.`,
+				variant: ToastVariant.Success,
+			})
+			resetTarget()
+		} catch (error) {
+			toast({
+				message:
+					error instanceof Error ? error.message : `Failed to execute the plan for "${frameName}".`,
+				variant: ToastVariant.Danger,
+			})
+			// A failed `execute` is not a move that never happened: RDK batches the waypoints to the
+			// component, which can stop anywhere along them, so the plan no longer starts where the
+			// machine is.
+			preview.clear()
+		} finally {
+			moveExecutionOwner.release(frameName)
+		}
+	}
+
 	const executeMove = async () => {
 		const client = motion.current
 		if (!client || !targetPose || !service || !staged) return
+		if (!moveExecutionOwner.claim(frameName)) return
 
-		executing = true
+		// Clearing before rather than after also cancels a plan still in flight, which would otherwise
+		// land and describe a configuration the machine has already left.
+		preview.clear()
 		try {
 			const { worldState, constraints } = parseMoveOptions(
 				worldStateJson.current,
@@ -233,7 +293,7 @@
 				variant: ToastVariant.Danger,
 			})
 		} finally {
-			executing = false
+			moveExecutionOwner.release(frameName)
 		}
 	}
 </script>
@@ -321,14 +381,41 @@
 
 	<Collisions />
 
-	<div class="flex items-center gap-2">
+	<MovePreview
+		{preview}
+		{frameName}
+		disabled={!staged || executing || otherPanelMoving || !canCommand}
+	/>
+
+	<div class="flex flex-wrap items-center gap-2">
+		<!--
+			Mounted even with no plan, disabled, rather than appearing when one arrives. A button that
+			materialises under the cursor moves its neighbours, and a keyboard user focused on it loses
+			focus to `<body>` when the preview clears.
+		-->
 		<Button
-			variant="success"
-			disabled={!staged || executing || !service}
+			variant={preview.status === 'ready' ? 'success' : 'outline-success'}
+			disabled={preview.status !== 'ready' || executing || otherPanelMoving || !canCommand}
 			progress={executing ? 'indeterminate' : undefined}
+			title="Run the trajectory shown above, without planning again"
+			onclick={executePreviewedMove}
+		>
+			Execute plan
+		</Button>
+
+		<!--
+			`Move` rather than a label that changes with the preview: this calls the motion service's
+			`Move`, which plans server-side and never sees the plan on screen. Naming it for replanning
+			implied a second UI plan that does not exist.
+		-->
+		<Button
+			variant={preview.status === 'ready' ? 'outline-success' : 'success'}
+			disabled={!staged || executing || otherPanelMoving || !canCommand}
+			progress={executing ? 'indeterminate' : undefined}
+			title="Ask the motion service to plan and move, ignoring the plan shown above"
 			onclick={executeMove}
 		>
-			Execute move
+			Move
 		</Button>
 		<Button
 			variant="ghost"

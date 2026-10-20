@@ -1,6 +1,6 @@
-# Motion Tools Draw API - Protocol Buffers
+# Viam Visualization Draw API - Protocol Buffers
 
-This directory contains the Protocol Buffer (protobuf) definitions for the Motion Tools Draw API v1.
+This directory contains the Protocol Buffer (protobuf) definitions for the Viam Visualization Draw API v1.
 
 ## Overview
 

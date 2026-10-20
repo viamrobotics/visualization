@@ -1,0 +1,41 @@
+---
+title: <WorldTree />
+description: The scene hierarchy panel — browse every entity in the visualizer and drive the selection from it.
+---
+
+`<WorldTree />` adds the **World** panel: a tree of every entity in the scene, rooted at `world`. Expanding a node walks the frame hierarchy, and selecting nodes drives `traits.Selected`, so the details cards and any selection-aware plugin follow along. The panel header carries a staleness indicator that warns when poses have stopped updating.
+
+The panel is a `FloatingPanel` — draggable and resizable, opening at the top-left — and it cannot be closed, so mount it only when you want the hierarchy permanently on screen.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { WorldTree } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<WorldTree />
+	</Visualizer>
+</div>
+```
+
+## Selection
+
+The tree is a multi-select control: it adds `traits.Selected` to the entities you pick and removes it from the ones you deselect. Because the selection lives in the ECS world rather than in the panel, clicking an entity in the scene updates the tree and vice versa.
+
+To read the selection yourself, query it like any other trait:
+
+```svelte
+<script lang="ts">
+	import { traits, useQuery } from '@viamrobotics/visualization'
+
+	const selected = useQuery(traits.Selected)
+</script>
+```
+
+## When to leave it out
+
+The tree earns its space when a scene has a frame system worth navigating. For a single-purpose viewer — one point cloud, one mesh — it is a 240×400 panel over a scene with nothing to browse. Leave it unmounted and the space goes back to the scene.

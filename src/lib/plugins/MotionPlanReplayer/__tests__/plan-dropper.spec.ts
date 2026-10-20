@@ -22,6 +22,26 @@ const REQUEST_OBJ = {
 }
 const RESULT_OBJ = { trajectory: [{ 'left-arm': [0.5] }] }
 const VALID_PLAN = JSON.stringify(REQUEST_OBJ) + JSON.stringify(RESULT_OBJ)
+const ZERO_AXIS_PLAN =
+	JSON.stringify({
+		frame_system: {
+			frames: {
+				'left-arm': {
+					frame_type: 'model',
+					frame: { name: 'left-arm', model: { joints: [{ id: 'waist' }] } },
+				},
+				'left-arm:waist': {
+					frame_type: 'named',
+					frame: {
+						inner_frame: { frame_type: 'rotational', frame: { axis: { X: 0, Y: 0, Z: 0 } } },
+					},
+				},
+			},
+			parents: { 'left-arm:waist': 'world' },
+		},
+		goals: [],
+		start_state: {},
+	}) + JSON.stringify(RESULT_OBJ)
 
 const serverSnapshots = () => [
 	transformsToSnapshot([new Transform({ referenceFrame: 'server-frame' })]),
@@ -36,6 +56,16 @@ describe('planDropper', () => {
 	it('parses on the client when no resolver is supplied', async () => {
 		const result = await planDropper({ name: 'plan.json', content: VALID_PLAN })
 		expect(result.success).toBe(true)
+	})
+
+	it('names the file and the reason when a frame cannot be drawn', async () => {
+		const result = await planDropper({ name: 'plan.json', content: ZERO_AXIS_PLAN })
+
+		expect(result.success).toBe(false)
+		if (result.success) return
+		expect(result.error.message).toBe(
+			'"plan.json" could not be read: joint "left-arm:waist" has a zero-length axis'
+		)
 	})
 
 	it('uses resolver-returned snapshots without parsing on the client', async () => {

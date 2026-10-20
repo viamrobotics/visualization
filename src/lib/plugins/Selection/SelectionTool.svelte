@@ -5,9 +5,9 @@
 	import { useThrelte } from '@threlte/core'
 	import { ElementRect } from 'runed'
 
-	import { DashboardPortal } from '$lib'
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '$lib/components/overlay/Popover.svelte'
+	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 	import ToggleGroup from '$lib/components/overlay/ToggleGroup.svelte'
 	import { traits, useWorld } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -102,7 +102,7 @@
 					/>
 				{/snippet}
 
-				<div class="border-medium m-2 border bg-white p-2 text-xs">
+				<div class="font-public-sans text-default p-2 text-xs">
 					<div class="flex items-center gap-2">
 						Selection type
 						<ToggleGroup

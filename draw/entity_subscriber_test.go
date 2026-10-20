@@ -8,7 +8,7 @@ import (
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/test"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 func changeFor(name string, changeType drawv1.EntityChangeType) *drawv1.StreamEntityChangesResponse {

@@ -1,15 +1,14 @@
+/**
+ * Transforms the gltf and glb files in static/models into Threlte components and
+ * moves them into src/lib/components/models.
+ *
+ * Usage: node scripts/model-pipeline.js
+ */
 import { execSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { exit } from 'node:process'
 
-/**
- * This script is used to transform gltf and glb files into Threlte components.
- * It uses the `@threlte/gltf` package to do so.
- * It works in two steps:
- * 1. Transform the gltf/glb files located in the sourceDir directory
- * 2. Move the Threlte components to the targetDir directory
- */
 const configuration = {
 	sourceDir: path.resolve(path.join('static', 'models')),
 	targetDir: path.resolve(path.join('src', 'lib', 'components', 'models')),
@@ -37,10 +36,8 @@ const configuration = {
 	},
 }
 
-// if the target directory doesn't exist, create it
 mkdirSync(configuration.targetDir, { recursive: true })
 
-// throw error if source directory doesn't exist
 if (!existsSync(configuration.sourceDir)) {
 	throw new Error(`Source directory ${configuration.sourceDir} doesn't exist.`)
 }
@@ -79,10 +76,8 @@ if (filteredGltfFiles.length === 0) {
 }
 
 for (const file of filteredGltfFiles) {
-	// run the gltf transform command on every file
 	const path = path.join(configuration.sourceDir, file)
 
-	// parse the configuration
 	const args = []
 	if (configuration.root) args.push(`--root ${configuration.root}`)
 	if (configuration.types) args.push('--types')
@@ -107,7 +102,6 @@ for (const file of filteredGltfFiles) {
 	}
 	const formattedArgs = args.join(' ')
 
-	// run the command
 	const cmd = `npx @threlte/gltf@latest ${path} ${formattedArgs}`
 	try {
 		execSync(cmd, {
@@ -118,20 +112,15 @@ for (const file of filteredGltfFiles) {
 	}
 }
 
-// read dir again, but search for .svelte files only.
 const svelteFiles = readdirSync(configuration.sourceDir).filter((file) => file.endsWith('.svelte'))
 
 for (const file of svelteFiles) {
-	// now move every file to /src/components/models
 	const path = path.join(configuration.sourceDir, file)
 	const newPath = path.join(configuration.targetDir, file)
 	copyFile: try {
-		// Sanity check, we checked earlier if the file exists. Still, the CLI takes
-		// a while, so who knows what happens in the meantime.
-		if (
-			!configuration.overwrite && // check if file already exists
-			existsSync(newPath)
-		) {
+		// The CLI runs between the read of the directory and this copy, so the
+		// destination is re-checked here.
+		if (!configuration.overwrite && existsSync(newPath)) {
 			console.error(`File ${newPath} already exists, skipping.`)
 			break copyFile
 		}
@@ -140,7 +129,6 @@ for (const file of svelteFiles) {
 		console.error(`Error copying file: ${error}`)
 	}
 
-	// remove the file from /static/models
 	try {
 		unlinkSync(path)
 	} catch (error) {

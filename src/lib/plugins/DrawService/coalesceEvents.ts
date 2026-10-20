@@ -21,7 +21,7 @@ export interface StreamEvent {
  * draining, which would otherwise grow an unbounded list.
  */
 export interface PendingChanges {
-	/** Set when a bulk removal arrived; every entity in this scope was cleared. */
+	/** Set when a bulk removal arrived. Every entity in this scope was cleared. */
 	clearedScope?: EntityScope
 	/** Latest state per entity UUID, in first-mention order. */
 	events: Map<string, StreamEvent>
@@ -64,8 +64,8 @@ export const mergeEvent = (pending: PendingChanges, event: StreamEvent): void =>
 		return
 	}
 
-	// Two partial updates merge into one carrying both masks; anything else replaces outright,
-	// and a full state supersedes whatever partial mask was pending.
+	// Two partial updates merge into one carrying both masks. Anything else replaces outright, and a
+	// full state supersedes whatever partial mask was pending.
 	if (
 		event.changeType === EntityChangeType.UPDATED &&
 		existing.changeType === EntityChangeType.UPDATED
@@ -131,8 +131,8 @@ const clearCovers = (scope: EntityScope, event: StreamEvent): boolean => {
  * A clear followed by re-adds is how a redraw loop refreshes a scene. Destroying those entities
  * and respawning them in the same frame would churn every Three.js object for nothing, and a
  * respawned entity renders one frame at the wrong world transform because its parent link has
- * not resolved yet. Reconciling instead — destroy only what did not come back — keeps the
- * scene stable.
+ * not resolved yet. Reconciling instead, destroying only what did not come back, keeps the scene
+ * stable.
  */
 export const survivingUUIDs = (pending: PendingChanges): Set<string> => {
 	const surviving = new Set<string>()

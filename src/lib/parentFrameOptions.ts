@@ -1,4 +1,4 @@
-import type { Transform } from '@viamrobotics/sdk'
+import type { Transform } from '$lib/geometry'
 
 const WORLD = 'world'
 
@@ -82,8 +82,8 @@ export const parentFrameOptions = ({
 	}
 
 	for (const { name, parent } of fragmentComponents) {
-		// A frame the machine (or a `$set` mod) already reported is the resolved
-		// one; the fragment's base parent may be stale against it.
+		// A frame the machine or a `$set` mod already reported is the resolved one. The
+		// fragment's base parent may be stale against it.
 		if (framed.has(name)) continue
 
 		link(name, parent)

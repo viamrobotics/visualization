@@ -1,6 +1,6 @@
 ---
 title: <MotionPlanReplayer />
-description: Upload a motion plan JSON and step through its trajectory in 3D inside a motion-tools visualizer.
+description: Upload a motion plan JSON and step through its trajectory in 3D inside a Viam visualizer.
 ---
 
 `<MotionPlanReplayer />` adds a floating panel to the visualizer for replaying motion plans. Drop in a motion plan JSON (the request/result payload emitted by RDK's motion service) and the plugin parses it client-side into per-step snapshots, then renders the frame system — arm links, joints, and obstacles — in 3D. A scrubber lets you play, pause, and step through the trajectory.
@@ -11,8 +11,8 @@ Mount `<MotionPlanReplayer />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { MotionPlanReplayer } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { MotionPlanReplayer } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">
@@ -80,7 +80,7 @@ reach context via `useMotionPlanReplayer()`. Pass `replayer` through the
 ```svelte
 <!-- PlanDatabasePicker.svelte — your component, your data fetching -->
 <script lang="ts">
-	import type { MotionPlanReplayerContext } from '@viamrobotics/motion-tools/plugins'
+	import type { MotionPlanReplayerContext } from '@viamrobotics/visualization/plugins'
 
 	interface Props {
 		replayer: MotionPlanReplayerContext
@@ -114,7 +114,7 @@ then build snapshots with the exported `transformBytesToSnapshots` helper and ha
 to `addPlan`:
 
 ```ts
-import { transformBytesToSnapshots } from '@viamrobotics/motion-tools/plugins'
+import { transformBytesToSnapshots } from '@viamrobotics/visualization/plugins'
 
 // transformsPerStep: Uint8Array[][] — one Uint8Array per transform, one array per step
 replayer.addPlan('from-server', '', transformBytesToSnapshots(transformsPerStep))

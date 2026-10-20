@@ -1,5 +1,4 @@
-// Package mutils contains utilities for motion tools.
-// This will be moved into `draw` in v2
+// Package mutils contains utilities for the Viam visualizer.
 package mutils
 
 import (
@@ -15,12 +14,10 @@ func GetInputs(ctx context.Context, fs *referenceframe.FrameSystem, myRobot robo
 	input := referenceframe.NewZeroInputs(fs)
 
 	for name, original := range input {
-		// skip frames with no input
 		if len(original) == 0 {
 			continue
 		}
 
-		// add component to map
 		components := robot.AllResourcesByName(myRobot, name)
 		if len(components) != 1 {
 			return nil, fmt.Errorf("wrong # of components for %s : %d", name, len(components))
@@ -31,7 +28,6 @@ func GetInputs(ctx context.Context, fs *referenceframe.FrameSystem, myRobot robo
 			return nil, framesystem.NotInputEnabledError(components[0])
 		}
 
-		// add input to map
 		pos, err := inputEnabled.CurrentInputs(ctx)
 		if err != nil {
 			return nil, err

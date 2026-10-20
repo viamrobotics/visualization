@@ -16,7 +16,7 @@ tick, and one detection pass per tick is the useful cadence.
 	import type { Entity } from 'koota'
 
 	import { useRapier } from '@threlte/rapier'
-	import { useResourceNames } from '@viamrobotics/svelte-sdk'
+	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
 	import { traits, useWorld } from '$lib/ecs'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -30,12 +30,16 @@ tick, and one detection pass per tick is the useful cadence.
 
 	const world = useWorld()
 	const partID = usePartID()
-	const arms = useResourceNames(() => partID.current, 'arm')
+	const arms = useResourceStatuses(() => partID.current, 'arm')
 
 	/** Undefined without an ancestor `<World>`, in which case there is nothing to do. */
 	const physics = useRapier()
 
-	const armBits = $derived(assignArmBits(arms.current.map((arm) => arm.name)))
+	const armBits = $derived(
+		assignArmBits(
+			arms.current.map((arm) => arm.name?.name).filter((name): name is string => name !== undefined)
+		)
+	)
 
 	$effect(() => {
 		if (!physics) return
@@ -73,9 +77,9 @@ tick, and one detection pass per tick is the useful cadence.
 
 		schedule()
 
-		// `WorldMatrix` covers every source of movement — kinematics, staged edits,
-		// ghosts riding a drag — and its add/remove cover geometry streaming in and
-		// out. Colour writes don't touch it, so this can't feed itself.
+		// `WorldMatrix` covers every source of movement: kinematics, staged edits, and ghosts
+		// riding a drag. Its add and remove cover geometry streaming in and out. Colour writes
+		// don't touch it, so this can't feed itself.
 		const unsubscribes = [
 			world.onAdd(traits.WorldMatrix, schedule),
 			world.onChange(traits.WorldMatrix, schedule),

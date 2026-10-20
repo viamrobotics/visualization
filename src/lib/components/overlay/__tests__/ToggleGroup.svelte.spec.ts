@@ -85,7 +85,6 @@ describe('<ToggleGroup>', () => {
 		expect(a).toHaveAttribute('aria-pressed', 'true')
 		expect(b).toHaveAttribute('aria-pressed', 'false')
 
-		// add B
 		await user.click(b)
 		expect(onSelect).toHaveBeenLastCalledWith(['A', 'B'])
 	})

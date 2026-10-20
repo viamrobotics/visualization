@@ -1,9 +1,17 @@
+import { MathUtils, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import { parsePlan } from '../parse-plan'
+import type { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
+
+import { OrientationVector } from '$lib/math/OrientationVector'
+
+import { parsePlan, PlanParseError } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'
 import gantryPlan from './__fixtures__/gantry-plan.json?raw'
 import pirouettePlan from './__fixtures__/pirouette-plan.json?raw'
+import gripperModel from './__fixtures__/rdk-mimic-gripper-model.json'
+import serialModel from './__fixtures__/rdk-mimic-serial-model.json'
+import { rdkModelPlan } from './__fixtures__/rdk-model-plan'
 import saladPlan from './__fixtures__/salad-plan.json?raw'
 
 // arm chain: waist (joint, Z-axis) → base (link, z=100mm, capsule geometry)
@@ -63,7 +71,6 @@ describe('parsedPlanToSnapshots', () => {
 
 	it('joint and link both appear as transforms', () => {
 		const snapshots = snapshotsFromContent(CONTENT)
-		// waist (joint) and base (link) each emit a transform
 		expect(snapshots[0]!.transforms).toHaveLength(2)
 		const names = snapshots[0]!.transforms.map((t) => t.referenceFrame)
 		expect(names).toContain('arm:waist')
@@ -77,7 +84,6 @@ describe('parsedPlanToSnapshots', () => {
 		const base0 = snapshots[0]!.transforms.find((t) => t.referenceFrame === 'arm:base')!
 		const base1 = snapshots[1]!.transforms.find((t) => t.referenceFrame === 'arm:base')!
 
-		// joint theta changes: step 0 → 0°, step 1 → 90°
 		expect(waist0.poseInObserverFrame!.pose!.theta).toBeCloseTo(0, 1)
 		expect(waist1.poseInObserverFrame!.pose!.theta).toBeCloseTo(90, 1)
 
@@ -125,8 +131,6 @@ describe('parsedPlanToSnapshots', () => {
 	})
 })
 
-// The arm holds [0,0,0,0,0,0] across both steps, so the prismatic joint is the plan's only motion —
-// a regression renders this capture entirely still.
 describe('parsedPlanToSnapshots with a translational joint', () => {
 	const snapshots = parsedPlanToSnapshots(parsePlan(gantryPlan))
 	const jointAt = (step: number) =>
@@ -201,5 +205,154 @@ describe('parsedPlanToSnapshots with mesh geometry present', () => {
 	it('still carries geometry for frames the builder understands', () => {
 		const withGeometry = snapshots[0]!.transforms.filter((t) => t.physicalObject !== undefined)
 		expect(withGeometry.length).toBeGreaterThan(0)
+	})
+})
+
+/**
+ * Transforms carry a pose in their parent's frame, so a claim about where a frame ends up is a claim
+ * about the whole chain.
+ */
+const worldPointOf = (transforms: Transform[], frame: string): Vector3 => {
+	const byName = new Map(transforms.map((t) => [t.referenceFrame, t]))
+
+	// Without this, an unknown name walks zero links and composes to the origin, so a test asserting a
+	// frame is at zero would pass for a frame that is not in the scene.
+	if (!byName.has(frame)) {
+		throw new Error(`no transform named "${frame}" in [${[...byName.keys()].join(', ')}]`)
+	}
+
+	const chain: PoseInFrame[] = []
+	for (let name = frame; byName.has(name); ) {
+		const parented = byName.get(name)!.poseInObserverFrame!
+		chain.unshift(parented)
+		name = parented.referenceFrame
+	}
+
+	const point = new Vector3()
+	const rotation = new Quaternion()
+	const local = new Quaternion()
+	const ov = new OrientationVector()
+
+	for (const { pose } of chain) {
+		point.add(new Vector3(pose!.x, pose!.y, pose!.z).applyQuaternion(rotation))
+		ov.set(pose!.oX, pose!.oY, pose!.oZ, MathUtils.degToRad(pose!.theta))
+		rotation.multiply(ov.toQuaternion(local))
+	}
+
+	return point
+}
+
+/**
+ * The tip points are the ones `TestMimicGripperModel` and `TestMimicSerialModel` assert. The finger
+ * assertions are ours: RDK checks those by geometry center, 15 mm below these origins, on the same y.
+ */
+describe('parsedPlanToSnapshots with a model whose joints mimic', () => {
+	describe("the gripper's two fingers off one column", () => {
+		const [snapshot] = parsedPlanToSnapshots(
+			rdkModelPlan(gripperModel, [{ test_mimic_gripper: [25] }])
+		)
+		const point = (frame: string) =>
+			worldPointOf(snapshot!.transforms, `test_mimic_gripper:${frame}`)
+
+		it('opens them symmetrically about the axis they share', () => {
+			expect(point('left_finger').y).toBeCloseTo(25, 6)
+			expect(point('right_finger').y).toBeCloseTo(-25, 6)
+		})
+
+		it('leaves the tcp where a static link belongs, clear of the joints', () => {
+			expect(point('tcp').toArray()).toEqual([0, 0, 30])
+		})
+	})
+
+	// joint3 mimics joint1 at -1, so at +90° the tip folds back to (200, 0, 100) rather than
+	// continuing round to (300, 0, 0).
+	describe("the serial arm's third joint driven from its first", () => {
+		const steps = [{ test_mimic_serial: [0, 0] }, { test_mimic_serial: [Math.PI / 2, 0] }]
+		const snapshots = parsedPlanToSnapshots(rdkModelPlan(serialModel, steps))
+		const tipAt = (step: number) =>
+			worldPointOf(snapshots[step]!.transforms, 'test_mimic_serial:link3')
+
+		it('stacks the three links when every joint is at zero', () => {
+			expect(tipAt(0).toArray()).toEqual([0, 0, 300])
+		})
+
+		it('folds the mimic back through the angle its source turned', () => {
+			const tip = tipAt(1)
+			expect(tip.x).toBeCloseTo(200, 6)
+			expect(tip.y).toBeCloseTo(0, 6)
+			expect(tip.z).toBeCloseTo(100, 6)
+		})
+	})
+
+	/**
+	 * Derived, not upstream: `test_mimic_serial` with one field changed. Both RDK fixtures set
+	 * `"offset": 0`, so every other test here passes whether the offset is dropped, negated, or folded
+	 * in.
+	 */
+	describe('a mimic that applies an offset as well as a multiplier', () => {
+		const offsetSerial = {
+			...serialModel,
+			joints: serialModel.joints.map((joint) =>
+				joint.id === 'joint3'
+					? { ...joint, mimic: { joint: 'joint1', multiplier: -1, offset: Math.PI / 2 } }
+					: joint
+			),
+		}
+
+		// Dropping the offset leaves the tip at (0, 0, 300). Negating it gives (-100, 0, 200).
+		it("turns the joint by its source's value plus the offset", () => {
+			const [snapshot] = parsedPlanToSnapshots(
+				rdkModelPlan(offsetSerial, [{ test_mimic_serial: [0, 0] }])
+			)
+			const tip = worldPointOf(snapshot!.transforms, 'test_mimic_serial:link3')
+
+			expect(tip.x).toBeCloseTo(100, 6)
+			expect(tip.y).toBeCloseTo(0, 6)
+			expect(tip.z).toBeCloseTo(200, 6)
+		})
+	})
+})
+
+describe('parsedPlanToSnapshots given a frame it cannot draw', () => {
+	const content =
+		JSON.stringify({
+			frame_system: {
+				frames: {
+					arm: {
+						frame_type: 'model',
+						frame: { name: 'arm', model: { joints: [{ id: 'waist' }] } },
+					},
+					'arm:waist': {
+						frame_type: 'named',
+						frame: {
+							inner_frame: { frame_type: 'rotational', frame: { axis: { X: 0, Y: 0, Z: 0 } } },
+						},
+					},
+				},
+				parents: { 'arm:waist': 'world' },
+			},
+			goals: [],
+			start_state: {},
+		}) + JSON.stringify(RESULT)
+
+	it('raises a PlanParseError, the one type both callers present to the user', () => {
+		expect(() => snapshotsFromContent(content)).toThrow(PlanParseError)
+	})
+
+	it('names the offending joint rather than reporting a generic failure', () => {
+		expect(() => snapshotsFromContent(content)).toThrow(/arm:waist/)
+	})
+
+	it('keeps the underlying error as the cause', () => {
+		let caught: unknown
+		try {
+			snapshotsFromContent(content)
+		} catch (error) {
+			caught = error
+		}
+
+		expect((caught as PlanParseError).cause).toMatchObject({
+			message: 'joint "arm:waist" has a zero-length axis',
+		})
 	})
 })

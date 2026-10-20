@@ -1,6 +1,6 @@
 ---
 title: <TopDownLock />
-description: Lock a motion-tools visualizer's camera to a fixed top-down view.
+description: Lock a Viam visualizer's camera to a fixed top-down view.
 ---
 
 `<TopDownLock />` pins the camera to a straight overhead (bird's-eye) view for as long as it is mounted. It forces the polar angle to `0` and clamps the min and max polar angle so the view can't be tilted — panning and zooming still work. Unmounting the plugin restores the previous tilt limits.
@@ -13,8 +13,8 @@ Mount `<TopDownLock />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { TopDownLock } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { TopDownLock } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">

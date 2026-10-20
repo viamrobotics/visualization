@@ -5,60 +5,110 @@ paths:
   - '**/*.svelte.js'
 ---
 
-# Svelte 5
+# Svelte 5 Best Practices
 
-We use Svelte 5 runes throughout — no Svelte 4 syntax. See the [Svelte 5 docs](https://svelte.dev/docs/svelte).
+Svelte 5 with runes throughout. No Svelte 4 syntax: never `export let`, never a `$:`
+reactive statement, never `on:click` or another `on:`-prefixed directive. See the
+[Svelte 5 docs](https://svelte.dev/docs/svelte) and the
+[Runes Guide](https://svelte.dev/docs/svelte/what-are-runes).
 
-**Component conventions:** typed `Props` interface (extend the relevant HTML attributes type when wrapping a native element); `$props()` with defaults and rest spread passed to the element; `$derived` for computed values; `{@render children?.()}` for composition. Never use `<slot>` — always snippets.
+## Svelte MCP Server
 
-Use `$state.raw` for values without deep reactivity (large arrays replaced wholesale, Three.js class instances). Use `untrack(() => value)` to read reactive state without registering a dependency.
+When the `svelte-mcp` module is installed, a Svelte MCP server is available. Use it instead
+of recalling API details:
 
-**Never use `$effect` to derive state** — use `$derived`. `$effect` is for side effects only (DOM mutations, subscriptions).
+- `svelte-autofixer`: **required** on any Svelte code you write, before handing it over.
+  Re-run until it reports no issues.
+- `list-sections`, then `get-documentation`: when a Svelte or SvelteKit API is uncertain.
+  Fetch only the sections whose `use_cases` match the task.
 
-## State Management with Koota ECS
+## Component Structure
 
-This project uses [Koota](https://github.com/pmndrs/koota) (Entity Component System) for shared scene state — not Svelte stores or TanStack Query.
+```svelte
+<script lang="ts">
+import type { HTMLButtonAttributes } from 'svelte/elements';
 
-- **Traits** are defined in `src/lib/ecs/traits.ts`. Marker traits return `() => true`; data traits return a default value factory.
-- **World** is injected via Svelte context: call `provideWorld()` at the root, `useWorld()` to consume.
-- **Reactive queries** via `useQuery` from `$lib/ecs`: `const meshEntities = useQuery(traits.Mesh)`
-- **Trait access** on a specific entity via `useTrait` from `$lib/ecs`: `const pose = useTrait(entity, traits.Pose)`
-- **Relations** (`ChildOf`, `SubEntityLink`) are in `src/lib/ecs/relations.ts`.
+interface Props extends HTMLButtonAttributes {
+  /** Visual variant */
+  variant?: 'primary' | 'secondary' | 'danger';
+}
 
-Default to local component state (`$state`, `$derived`) for UI-only values. Use Koota ECS for shared scene/entity data. Use Svelte context for shared service/config objects.
+const {
+  variant = 'primary',
+  disabled = false,
+  children,
+  ...restProps
+}: Props = $props();
+const classes = $derived(['btn', `btn-${variant}`, disabled && 'btn-disabled']);
+</script>
+
+<button
+  {...restProps}
+  aria-disabled={disabled || undefined}
+  class={classes}
+>
+  {@render children?.()}
+</button>
+```
+
+- Typed `Props` interface, extending the relevant HTML attributes type when wrapping a
+  native element.
+- `$props()` with defaults and a rest spread onto the element.
+- `$derived` for computed values. **Never derive state in an `$effect`.** `$effect` is for
+  side effects only: DOM mutations, subscriptions.
+- `{@render children?.()}` for composition. Never `<slot>`, always snippets.
+- `$state.raw` for values that need no deep reactivity, such as a large array or buffer
+  replaced wholesale, or a class instance the framework should not proxy. `untrack(() =>
+value)` to read reactive state without taking a dependency.
+- `$bindable()` on a prop the parent binds to with `bind:`. Default it, and document why the
+  binding exists if the reason is not obvious from the prop name.
+- Never touch `window` or `document` at module scope. That code runs on the server too,
+  where those globals do not exist.
 
 ## Context Providers
 
-Use `.svelte.ts` files with `getContext`/`setContext` for reactive shared state:
+Reactive shared state lives in `.svelte.ts` files using `getContext` and `setContext`.
+**ALWAYS** use `Symbol` keys. Never declare `$state` at module scope here: on the server it
+is one instance shared across every request and user, so create it inside `provide*`
+instead.
 
-- Always use `Symbol()` keys — prevents accidental collisions
-- Return objects with **getters**, not plain properties, to preserve reactivity across context boundaries
-- Naming: `provide*` to inject into context, `use*` to consume
+```typescript
+// theme-context.svelte.ts
+import { getContext, setContext } from 'svelte';
 
-## 3D Rendering with Threlte
+const key = Symbol('theme');
 
-This project renders a 3D scene using [Threlte](https://threlte.xyz/llms-full.txt) (Svelte bindings for Three.js). All 3D components live inside a Threlte `<Canvas>` context. Custom Three.js extensions live in `src/lib/three/` and are mounted with `<T is={obj} />`.
+interface ThemeContext {
+  readonly current: 'light' | 'dark';
+  toggle: () => void;
+}
 
-**Rendering is on-demand, not continuous.** Call `invalidate()` (from `useThrelte()`) after mutating scene objects to trigger a re-render. Use `useTask` for continuous per-frame updates — never `$effect`, which does not participate in Threlte's task scheduler.
+export const provideTheme = () => {
+  let theme = $state<'light' | 'dark'>('light');
+  const context: ThemeContext = {
+    get current() {
+      return theme;
+    },
+    toggle: () => {
+      theme = theme === 'light' ? 'dark' : 'light';
+    },
+  };
+  setContext(key, context);
+  return context;
+};
 
-**`$effect.pre`** — runs before the DOM updates (and before child effects in the same flush).  
-**`$effect`** —runs after the DOM updates.
+export const useTheme = (): ThemeContext => getContext(key);
+```
 
-The right question to ask for when to use `$effect` vs `$effect.pre` is "does anything downstream in the same flush need to read this before render/DOM-commit?" If yes,`.pre`; if it's a pure side-effect with nothing observing the result inside the same flush, plain $effect is correct.
-
-**`dispose={false}`** — pass when you manage the Three.js object's lifecycle yourself (pooled or shared instances).
-
-**BVH / raycasting** — opt out objects that don't need hit-testing: `bvh={{ enabled: false }}` or `raycast={() => null}` for display-only geometry.
-
-## Accessibility
-
-- Use semantic elements and correct ARIA roles; label all interactive elements.
-- Hide decorative icons with `aria-hidden="true"`.
-- Use `aria-disabled` instead of `disabled` when the element must remain focusable.
+- `.svelte.ts` for any file using runes outside a `.svelte` component.
+- `Symbol()` keys prevent collisions.
+- Return **getters**, not plain properties, to preserve reactivity.
+- Name `provide*` to inject, `use*` or `create*` to consume.
 
 ## Styling
 
-Use array/object syntax for conditional classes:
+Array and object syntax for conditional classes, which is Svelte's own idiom rather than a
+string template:
 
 ```svelte
 <button class={[
@@ -68,18 +118,50 @@ Use array/object syntax for conditional classes:
 ]}>
 ```
 
-## Svelte MCP Server
+## ESLint Configuration
 
-Use the Svelte MCP server for authoritative Svelte 5 / SvelteKit docs and validation. Delegate to the `svelte-file-editor` agent when creating or editing `.svelte`, `.svelte.ts`, or `.svelte.js` files — it handles MCP calls efficiently.
+- **Enable `svelte/valid-compile`.** `eslint-plugin-svelte`'s recommended config leaves it
+  off. Turning it on fails the lint on any warning the Svelte compiler emits: an unused
+  CSS selector, a duplicate `style:` directive, a store used outside a component, and
+  more, not only the `a11y_` warnings `accessibility-svelte.md` already covers.
+- **Enable `svelte/no-unused-svelte-ignore`.** It is already part of the recommended
+  config, but state it explicitly if this repo builds its ESLint config from `svelte/base`
+  instead. It flags a `<!-- svelte-ignore some_warning -->` comment whose warning the
+  compiler no longer produces, so a stale suppression fails the lint instead of sitting
+  unnoticed on markup that has since been fixed.
 
-- `list-sections` — call FIRST on any Svelte/SvelteKit question to discover relevant docs (returns titles, use_cases, paths).
-- `get-documentation` — fetch every section whose `use_cases` matches the task. Batch multiple sections in one call.
-- `svelte-autofixer` — run on any Svelte code you write before handing it to the user. Keep iterating until it returns no issues or suggestions.
-- `playground-link` — only offer after code is complete AND the user confirms. NEVER call it for code written to files in the project.
+```js
+// eslint.config.js
+import svelte from 'eslint-plugin-svelte';
 
-## Verify Your Work
-
+export default [
+  ...svelte.configs.recommended,
+  {
+    files: ['**/*.svelte'],
+    rules: {
+      'svelte/valid-compile': 'error',
+      'svelte/no-unused-svelte-ignore': 'error',
+    },
+  },
+];
 ```
-pnpm check    # svelte-check + go vet
-pnpm lint     # prettier + eslint + golangci-lint
-```
+
+## Checked mechanically
+
+`.claude/scripts/svelte-lint.mjs`, where installed, flags a bare `<slot>` element and, when
+this repo's ESLint config imports `eslint-plugin-svelte`, an `svelte/valid-compile` or
+`svelte/no-unused-svelte-ignore` rule that is not enabled. Run it with
+`node .claude/scripts/svelte-lint.mjs <files>`. It has never run against a real corpus, only
+paired fixtures, so treat a finding as a starting point and report a false positive rather than
+working around it.
+
+## Where other rules apply
+
+- Type-system decisions, such as `interface` versus `type` and never `any`: see
+  `typescript.md` if that rule is installed.
+- Whether a comment should exist, and what form it takes: see `code-comments.md` if that
+  rule is installed.
+- Naming, function size, and dead code: see `code-cleanliness.md` if that rule is installed.
+- How a sentence in a comment or doc reads: see `prose-voice.md` if that rule is installed.
+- ARIA, semantics, and the `a11y_` compiler warnings: see `accessibility-svelte.md` if that
+  rule is installed.

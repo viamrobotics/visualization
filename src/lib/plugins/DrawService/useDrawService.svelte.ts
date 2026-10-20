@@ -1,4 +1,4 @@
-import { type Client, createClient } from '@connectrpc/connect'
+import { type Client, ConnectError, createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { useThrelte } from '@threlte/core'
 import { type Entity } from 'koota'
@@ -21,6 +21,7 @@ import {
 } from '$lib/draw'
 import { hierarchy, traits, useWorld } from '$lib/ecs'
 import { useCameraControls } from '$lib/hooks/useControls.svelte'
+import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
 import {
 	clearsDrawings,
@@ -35,7 +36,10 @@ import {
 } from './coalesceEvents'
 import { runWithReconnect } from './reconnect'
 import { createServerRelationships } from './serverRelationships'
-import { useDrawConnectionConfig } from './useDrawConnectionConfig.svelte'
+import {
+	DEFAULT_DRAW_SERVICE_PORT,
+	useDrawConnectionConfig,
+} from './useDrawConnectionConfig.svelte'
 
 const DRAW_SERVICE_KEY = Symbol('draw-service-context')
 const FLOAT32_SIZE = 4
@@ -59,13 +63,25 @@ export function provideDrawService() {
 	const drawConnectionConfig = useDrawConnectionConfig()
 	const serverRelationships = createServerRelationships()
 
-	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)
+	const logs = useLogs()
 
-	const url = $derived(
-		drawConnectionConfig.current?.backendIP
-			? `http://${drawConnectionConfig.current.backendIP}:3030`
-			: undefined
-	)
+	// Everything this service reports lands in the world tree's Drawn folder, which
+	// is the only row standing for the draw server's connection.
+	const log = (message: string, level?: 'info' | 'warn' | 'error') => {
+		logs.add(message, level, { folder: 'drawn' })
+	}
+
+	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)
+	// The stream retries on a backoff, so a server that is simply down would otherwise emit one
+	// "unreachable" line per attempt forever. Report it once per outage instead.
+	let reportedUnreachable = false
+
+	const url = $derived.by(() => {
+		const config = drawConnectionConfig.current
+		if (!config?.backendIP) return undefined
+
+		return `http://${config.backendIP}:${config.port ?? DEFAULT_DRAW_SERVICE_PORT}`
+	})
 
 	const transformEntities = new Map<string, Entity>()
 	const drawingEntities = new Map<string, Entity>()
@@ -101,7 +117,7 @@ export function provideDrawService() {
 	}
 
 	const spawnTransform = (transform: Transform, uuid: string) => {
-		const spawned = drawTransform(world, transform, traits.DrawServiceAPI)
+		const spawned = drawTransform(world, transform, traits.DrawAPI)
 		serverRelationships.apply(spawned.entity, uuid, spawned.relationships)
 		transformEntities.set(uuid, spawned.entity)
 	}
@@ -222,7 +238,7 @@ export function provideDrawService() {
 	}
 
 	const spawnDrawing = (drawing: Drawing, uuid: string) => {
-		const spawned = drawDrawing(world, drawing, traits.DrawServiceAPI)
+		const spawned = drawDrawing(world, drawing, traits.DrawAPI)
 		serverRelationships.apply(spawned.entity, uuid, spawned.relationships)
 		drawingEntities.set(uuid, spawned.entity)
 
@@ -243,7 +259,7 @@ export function provideDrawService() {
 		}
 	}
 
-	/** ADDED and UPDATED are both upserts; see processTransformEvent. */
+	/** ADDED and UPDATED are both upserts. See `processTransformEvent`. */
 	const processDrawingEvent = (drawing: Drawing, changeType: EntityChangeType, uuid: string) => {
 		if (changeType === EntityChangeType.REMOVED) {
 			serverRelationships.forget(uuid)
@@ -268,7 +284,7 @@ export function provideDrawService() {
 
 			const isModel = drawing.physicalObject?.geometryType?.case === 'model'
 			const result = isModel
-				? updateModel(world, existing, drawing, traits.DrawServiceAPI)
+				? updateModel(world, existing, drawing, traits.DrawAPI)
 				: updateDrawing(world, existing, drawing)
 			serverRelationships.apply(result.entity, uuid, result.relationships)
 			drawingEntities.set(uuid, result.entity)
@@ -359,13 +375,22 @@ export function provideDrawService() {
 		invalidate()
 	}
 
+	/** Every streamed message reports connectivity, so only log the edge into `connected`. */
+	const markConnected = () => {
+		if (connectionStatus === ConnectionStatus.CONNECTED) return
+
+		connectionStatus = ConnectionStatus.CONNECTED
+		reportedUnreachable = false
+		log(`Connected to draw server at ${url}`)
+	}
+
 	const streamEntityChanges = async (
 		client: Client<typeof DrawService>,
 		signal: AbortSignal,
 		onData: () => void
 	) => {
 		for await (const response of client.streamEntityChanges({}, { signal })) {
-			connectionStatus = ConnectionStatus.CONNECTED
+			markConnected()
 			onData()
 
 			if (response.clearedScope !== EntityScope.UNSPECIFIED) {
@@ -438,7 +463,18 @@ export function provideDrawService() {
 				return streamEntityChanges(client, signal, onData)
 			},
 			onStatus: () => {
+				const wasConnected = connectionStatus === ConnectionStatus.CONNECTED
 				connectionStatus = ConnectionStatus.DISCONNECTED
+
+				if (wasConnected) {
+					log('Disconnected from draw server, reconnecting...', 'warn')
+				} else if (!reportedUnreachable) {
+					reportedUnreachable = true
+					log(`Could not reach draw server at ${url}, retrying...`, 'warn')
+				}
+			},
+			onError: (error) => {
+				log(`Draw server error: ${ConnectError.from(error).message}`, 'error')
 			},
 		})
 

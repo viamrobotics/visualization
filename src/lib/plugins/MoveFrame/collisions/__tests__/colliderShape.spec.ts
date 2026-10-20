@@ -1,6 +1,6 @@
 import { createWorld } from 'koota'
 import { Matrix4, Quaternion, Vector3 } from 'three'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { traits } from '$lib/ecs'
 
@@ -10,6 +10,10 @@ let world: ReturnType<typeof createWorld>
 
 beforeEach(() => {
 	world = createWorld()
+})
+
+afterEach(() => {
+	world.destroy()
 })
 
 describe('colliderShapeFor', () => {
@@ -42,10 +46,32 @@ describe('colliderShapeFor', () => {
 		expect(colliderShapeFor(entity)).toEqual({ kind: 'ball', radius: 0.05 })
 	})
 
+	it("halves the cylinder's full length, unlike a capsule's tip-to-tip length", () => {
+		const entity = world.spawn(traits.Cylinder({ l: 300, r: 50, capped: true }))
+
+		expect(colliderShapeFor(entity)).toEqual({
+			kind: 'cylinder',
+			halfHeight: expect.closeTo(0.15),
+			radius: expect.closeTo(0.05),
+		})
+	})
+
+	it('collides an open cylinder as a solid one', () => {
+		const entity = world.spawn(traits.Cylinder({ l: 300, r: 50, capped: false }))
+
+		expect(colliderShapeFor(entity)).toEqual({
+			kind: 'cylinder',
+			halfHeight: expect.closeTo(0.15),
+			radius: expect.closeTo(0.05),
+		})
+	})
+
 	it.each([
 		['box with a zero extent', traits.Box({ x: 0, y: 100, z: 100 })],
 		['sphere with no radius', traits.Sphere({ r: 0 })],
 		['capsule with no radius', traits.Capsule({ l: 100, r: 0 })],
+		['cylinder with no radius', traits.Cylinder({ l: 100, r: 0, capped: true })],
+		['cylinder with no length', traits.Cylinder({ l: 0, r: 50, capped: true })],
 	])('skips a %s', (_label, trait) => {
 		expect(colliderShapeFor(world.spawn(trait))).toBeUndefined()
 	})
@@ -99,7 +125,26 @@ describe('composeColliderPose', () => {
 		expect(up.z).toBeCloseTo(1)
 	})
 
-	it('leaves non-capsule shapes unrotated', () => {
+	it("rotates a cylinder from Rapier's Y axis onto the scene's Z", () => {
+		const entity = world.spawn(
+			traits.Cylinder({ l: 300, r: 50, capped: true }),
+			traits.WorldMatrix(new Matrix4())
+		)
+
+		composeColliderPose(
+			entity,
+			{ kind: 'cylinder', halfHeight: 0.15, radius: 0.05 },
+			position,
+			quaternion
+		)
+
+		const up = new Vector3(0, 1, 0).applyQuaternion(quaternion)
+		expect(up.x).toBeCloseTo(0)
+		expect(up.y).toBeCloseTo(0)
+		expect(up.z).toBeCloseTo(1)
+	})
+
+	it('leaves a shape with no axis convention unrotated', () => {
 		const entity = world.spawn(
 			traits.Sphere({ r: 100 }),
 			traits.WorldMatrix(new Matrix4().makeTranslation(0, 0, 1))

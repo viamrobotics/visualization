@@ -2,7 +2,7 @@
 	module
 	lang="ts"
 >
-	import { Box3, MathUtils } from 'three'
+	import { MathUtils } from 'three'
 </script>
 
 <script lang="ts">
@@ -10,36 +10,36 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 
 	import { draggable } from '@neodrag/svelte'
-	import { useThrelte } from '@threlte/core'
-	import { Portal, PortalTarget } from '@threlte/extras'
-	import { Icon, Tooltip } from '@viamrobotics/prime-core'
+	import { Portal } from '@threlte/extras'
+	import { Icon } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
-	import { expandBoxByEntity } from '$lib/components/Entities/expandBoxByEntity'
 	import { traits, useParentName, useTrait, useWorld } from '$lib/ecs'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
+
+	import Tooltip from '../Tooltip.svelte'
+	import { composeDisplayedPose } from './composeDisplayedPose'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
 		/** The mode's details, rendered under the shared header. */
 		children: Snippet
+		/**
+		 * Header actions that read a scene object: view from it, copy its pose.
+		 * Turn off for a row that only exists in the config.
+		 */
+		sceneActions?: boolean
 	}
 
-	const { entity, children, ...rest }: Props = $props()
+	const { entity, children, sceneActions = true, ...rest }: Props = $props()
 
 	const world = useWorld()
-	const { scene } = useThrelte()
-	const controls = useCameraControls()
 	const resourceByName = useResourceByName()
 	const partID = usePartID()
 	const settings = useSettings()
-
-	const object3d = $derived(scene.getObjectByName(entity as unknown as string))
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useParentName(() => entity)
@@ -50,51 +50,27 @@
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
+	const cylinder = useTrait(() => entity, traits.Cylinder)
 	const removable = useTrait(() => entity, traits.Removable)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
-	const geometriesAPI = useTrait(() => entity, traits.GeometriesAPI)
-
-	// Fit-to-view needs world bounds. `object3d` alone is undefined for instanced
-	// primitives and geometry-less frames, so resolve bounds via the shared
-	// helper (traits / named object / WorldMatrix) and only offer the button when
-	// something is resolvable.
-	const focusBox = new Box3()
-	const focusable = $derived(
-		object3d !== undefined ||
-			box.current !== undefined ||
-			sphere.current !== undefined ||
-			capsule.current !== undefined ||
-			worldMatrix.current !== undefined
-	)
-
-	const localPose = $derived.by<Pose | undefined>(() => {
-		const source = editedMatrix.current ?? matrix.current
-
-		if (source) {
-			return new Pose().setFromMatrix4(source)
-		}
-
-		if (center.current) {
-			return new Pose().copy(center.current)
-		}
-
-		return undefined
-	})
-	const worldPose = $derived.by<Pose | undefined>(() => {
-		if (!worldMatrix.current) return
-
-		return new Pose().setFromMatrix4(worldMatrix.current)
-	})
 
 	const isFrameNode = $derived(!!framesAPI.current)
-	const isGeometry = $derived(!!geometriesAPI.current)
+	const geometryCenter = $derived(isFrameNode ? undefined : center.current)
+
+	const localPose = $derived(
+		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	)
+	const worldPose = $derived(
+		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
+	)
 	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
-	const displayType = $derived(isFrameNode ? resourceName?.subtype : isGeometry ? 'geometry' : '')
+	const displayType = $derived(isFrameNode ? resourceName?.subtype : '')
 
 	const geometryType = $derived.by(() => {
 		if (box.current) return 'box'
 		if (sphere.current) return 'sphere'
 		if (capsule.current) return 'capsule'
+		if (cylinder.current) return 'cylinder'
 		return 'none'
 	})
 
@@ -130,7 +106,7 @@
 				},
 				geometry: {
 					type: geometryType,
-					value: box.current ?? capsule.current ?? sphere.current,
+					value: box.current ?? capsule.current ?? cylinder.current ?? sphere.current,
 				},
 				parentFrame: parent.current ?? 'world',
 			},
@@ -162,123 +138,83 @@ just the inputs) raises it via `focus-within:z-5`. -->
 			bind:this={dragElement}
 		>
 			<div class="flex w-[90%] items-center gap-1">
-				<PortalTarget id="details-header-icon" />
 				<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
 				<span class="text-subtle-2">{displayType}</span>
 			</div>
 
-			{#if focusable}
-				<Tooltip
-					let:tooltipID
-					location="bottom"
-				>
-					<button
-						class="text-subtle-2"
-						aria-describedby={tooltipID}
-						onclick={() => {
-							const padding = 0.4
+			{#if name.current && sceneActions}
+				<Tooltip placement="bottom">
+					{#snippet children(tooltipID)}
+						<button
+							class="text-subtle-2"
+							aria-describedby={tooltipID}
+							aria-label="Open view from this frame"
+							onclick={() => {
+								const frameName = name.current
+								if (!frameName) return
+								const list = settings.current.openFramePovWidgets[partID.current] ?? []
+								if (list.includes(frameName)) return
+								settings.current.openFramePovWidgets = {
+									...settings.current.openFramePovWidgets,
+									[partID.current]: [...list, frameName],
+								}
+							}}
+						>
+							<Icon name="camera-outline" />
+						</button>
+					{/snippet}
 
-							const currentControls = controls.current
-
-							if (!currentControls || !('fitToBox' in currentControls)) return
-
-							focusBox.makeEmpty()
-							expandBoxByEntity(focusBox, entity, scene)
-							if (focusBox.isEmpty()) return
-
-							const { azimuthAngle, polarAngle } = currentControls
-
-							currentControls.fitToBox(focusBox, true, {
-								paddingTop: padding,
-								paddingBottom: padding,
-								paddingLeft: padding,
-								paddingRight: padding,
-							})
-
-							// Preserve previous rotation
-							currentControls.rotateAzimuthTo(azimuthAngle, true)
-							currentControls.rotatePolarTo(polarAngle, true)
-						}}
-					>
-						<Icon name="image-filter-center-focus" />
-					</button>
-					<p slot="description">Zoom to object</p>
+					{#snippet content()}View from this frame{/snippet}
 				</Tooltip>
 			{/if}
-
-			{#if name.current}
-				<Tooltip
-					let:tooltipID
-					location="bottom"
-				>
-					<button
-						class="text-subtle-2"
-						aria-describedby={tooltipID}
-						aria-label="Open view from this frame"
-						onclick={() => {
-							const frameName = name.current
-							if (!frameName) return
-							const list = settings.current.openFramePovWidgets[partID.current] ?? []
-							if (list.includes(frameName)) return
-							settings.current.openFramePovWidgets = {
-								...settings.current.openFramePovWidgets,
-								[partID.current]: [...list, frameName],
-							}
-						}}
-					>
-						<Icon name="camera-outline" />
-					</button>
-					<p slot="description">View from this frame</p>
-				</Tooltip>
-			{/if}
-
-			<PortalTarget id="details-header-actions" />
 
 			{#if removable.current}
-				<Tooltip
-					let:tooltipID
-					location="bottom"
-				>
-					<button
-						class="text-subtle-2"
-						aria-describedby={tooltipID}
-						onclick={() => {
-							if (world.has(entity)) {
-								entity.destroy()
-							}
-						}}
-					>
-						<Icon name="trash-can-outline" />
-					</button>
-					<p slot="description">Remove from scene</p>
+				<Tooltip placement="bottom">
+					{#snippet children(tooltipID)}
+						<button
+							class="text-subtle-2"
+							aria-describedby={tooltipID}
+							onclick={() => {
+								if (world.has(entity)) {
+									entity.destroy()
+								}
+							}}
+						>
+							<Icon name="trash-can-outline" />
+						</button>
+					{/snippet}
+
+					{#snippet content()}Remove from scene{/snippet}
 				</Tooltip>
 			{/if}
 
-			<Tooltip
-				let:tooltipID
-				location="bottom"
-			>
-				<button
-					class="text-subtle-2"
-					aria-describedby={tooltipID}
-					onclick={async () => {
-						try {
-							await navigator.clipboard.writeText(getCopyClipboardText())
-						} catch {
-							// clipboard unavailable (non-secure context or permission denied)
-						}
-						copied = true
-						setTimeout(() => (copied = false), 1000)
-					}}
-				>
-					{#if copied}
-						<Check size={14} />
-					{:else}
-						<Copy size={14} />
-					{/if}
-				</button>
-				<p slot="description">Copy details to clipboard</p>
-			</Tooltip>
+			{#if sceneActions}
+				<Tooltip placement="bottom">
+					{#snippet children(tooltipID)}
+						<button
+							class="text-subtle-2"
+							aria-describedby={tooltipID}
+							onclick={async () => {
+								try {
+									await navigator.clipboard.writeText(getCopyClipboardText())
+								} catch {
+									// clipboard unavailable (non-secure context or permission denied)
+								}
+								copied = true
+								setTimeout(() => (copied = false), 1000)
+							}}
+						>
+							{#if copied}
+								<Check size={14} />
+							{:else}
+								<Copy size={14} />
+							{/if}
+						</button>
+					{/snippet}
+
+					{#snippet content()}Copy details to clipboard{/snippet}
+				</Tooltip>
+			{/if}
 		</div>
 
 		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>

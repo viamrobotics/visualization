@@ -1,0 +1,35 @@
+---
+title: <FileDrop />
+description: Load snapshots, PCD, and PLY files into the scene by dropping them on the visualizer.
+---
+
+`<FileDrop />` makes the visualizer a drop target. Drag a file anywhere over the page and it is parsed and spawned into the scene:
+
+| Dropped file             | Result                                                        |
+| ------------------------ | ------------------------------------------------------------- |
+| `.json`, `.pb`, `.pb.gz` | A snapshot — spawns its transforms, drawings, and camera pose |
+| `.pcd`                   | A point cloud entity                                          |
+| `.ply`                   | A mesh entity                                                 |
+
+Snapshot files must be named with a `visualization_snapshot` prefix to be recognized; see [`file-names.ts`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/FileDrop/file-names.ts). Point clouds and meshes spawn with `traits.Removable`, so they can be deleted from the scene again; a dropped snapshot replaces the camera pose if it carries one.
+
+Successes and failures are reported through the visualizer's toast container.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { FileDrop } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<FileDrop />
+	</Visualizer>
+</div>
+```
+
+## Embedding caveat
+
+The drop target is a full-viewport overlay and the drag listeners are on `window`, not on the visualizer element. In a page where the visualizer is one panel among many, mounting this plugin means the whole page swallows drag-and-drop — including drops the host app wanted to handle itself. Leave it out of embedded viewers unless dropping files into the scene is a feature you want everywhere on the page.

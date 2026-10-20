@@ -25,15 +25,11 @@ type Points struct {
 	Colors []Color
 }
 
-// drawPointsConfig is a configuration for drawing a set of points
 type drawPointsConfig struct {
 	pointSize float32
 	drawColorsConfig
 }
 
-// newDrawPointsConfig creates a new draw points configuration
-//
-// Returns the draw points configuration
 func newDrawPointsConfig() *drawPointsConfig {
 	return &drawPointsConfig{
 		pointSize:        DefaultPointSize,
@@ -100,9 +96,9 @@ func NewPoints(positions []r3.Vector, options ...DrawPointsOption) (*Points, err
 	}, nil
 }
 
-// Draw wraps the Points in a Drawing identified by name. The DrawableOptions
-// control placement (parent frame, pose, center), identity (UUID), and visibility —
-// see DrawableOption for the full set.
+// Draw wraps the Points in a Drawing identified by name. The DrawableOptions control
+// placement (parent frame, pose, center), identity (UUID), and visibility. See
+// DrawableOption for the full set.
 func (points Points) Draw(name string, options ...DrawableOption) *Drawing {
 	config := NewDrawConfig(name, options...)
 	shape := NewShape(config.Center, config.Name, WithPoints(points))

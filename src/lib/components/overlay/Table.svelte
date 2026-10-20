@@ -8,6 +8,6 @@
 	const { children }: Props = $props()
 </script>
 
-<table class="motion-tools-table">
+<table class="visualization-table">
 	{@render children?.()}
 </table>

@@ -6,16 +6,14 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/client/server"
-	"github.com/viam-labs/motion-tools/draw"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	"github.com/viamrobotics/visualization/client/server"
+	"github.com/viamrobotics/visualization/draw"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 // DrawLineOptions configures a DrawLine call.
 type DrawLineOptions struct {
-	// ID is a stable identifier for the entity. When set, calling DrawLine
-	// again with the same ID updates the existing entity in place; when empty,
-	// each call creates a new entity with a freshly generated UUID.
+	// ID is a stable identifier for the entity. When set, calling DrawLine again with the same ID updates the existing entity in place. When empty, each call creates a new entity with a freshly generated UUID.
 	ID string
 	// Name labels the entity in the visualizer. Must be ASCII printable and at
 	// most 100 characters.
@@ -26,15 +24,9 @@ type DrawLineOptions struct {
 	// Positions defines the polyline vertices in order. Must contain at least
 	// two positions.
 	Positions []r3.Vector
-	// Colors controls how line segments are colored. With no colors, segments
-	// use draw.DefaultLineColor (blue). Pass one color to share it across all
-	// segments; pass exactly len(Positions) colors for per-vertex colors; pass
-	// any other count to cycle through the slice as a palette.
+	// Colors controls how line segments are colored. With no colors, segments use draw.DefaultLineColor (blue). Pass one color to share it across all segments. Pass exactly len(Positions) colors for per-vertex colors. Pass any other count to cycle through the slice as a palette.
 	Colors []draw.Color
-	// DotColors controls how the vertex dots are colored, following the same
-	// count rules as Colors. When DotColors is empty, the dots fall back to
-	// Colors (so dots and segments share their palette by default); if both
-	// are empty, dots use draw.DefaultLineDotColor (dark blue).
+	// DotColors controls how the vertex dots are colored, following the same count rules as Colors. When DotColors is empty, the dots fall back to Colors, so dots and segments share their palette by default. When both are empty, dots use draw.DefaultLineDotColor (dark blue).
 	DotColors []draw.Color
 	// LineWidth is the rendered thickness of segments in millimeters. 0 (the
 	// default) uses draw.DefaultLineWidth (5mm).
@@ -47,15 +39,9 @@ type DrawLineOptions struct {
 	Attrs *Attrs
 }
 
-// DrawLine sends a polyline to the visualizer as a drawing. Passing an ID that
-// already exists updates the previously drawn entity in place; otherwise a new
-// entity is created. Returns the UUID assigned by the server.
+// DrawLine sends a polyline to the visualizer as a drawing. Passing an ID that already exists updates the previously drawn entity in place. Otherwise a new entity is created. Returns the UUID assigned by the server.
 //
-// Returns an error when Name is not ASCII printable or exceeds 100 characters,
-// ErrVisualizerNotRunning if no visualizer is reachable, the underlying
-// validation error if the line cannot be constructed (see draw.NewLine — fewer
-// than two positions, mismatched color count, etc.), or a wrapped RPC error if
-// the AddEntity call fails.
+// Returns an error when Name is not ASCII printable or exceeds 100 characters, ErrVisualizerNotRunning if no visualizer is reachable, the underlying validation error if the line cannot be constructed (see draw.NewLine, which rejects fewer than two positions and a mismatched color count), or a wrapped RPC error if the AddEntity call fails.
 func DrawLine(options DrawLineOptions) ([]byte, error) {
 	if err := isASCIIPrintable(options.Name); err != nil {
 		return nil, err

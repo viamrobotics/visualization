@@ -12,6 +12,7 @@
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
+	const cylinder = useTrait(() => entity, traits.Cylinder)
 </script>
 
 {#snippet ImmutableField({
@@ -71,6 +72,25 @@
 				label: 'l',
 				ariaLabel: 'capsule dimensions length value input',
 				value: capsule.current.l,
+			})}
+		</div>
+	</div>
+{:else if cylinder.current}
+	<div>
+		<strong class="font-semibold">dimensions</strong>
+		<span class="text-subtle-2"
+			>({cylinder.current.capped ? 'cylinder' : 'open cylinder'}) (mm)</span
+		>
+		<div class="mt-0.5 flex items-center gap-2">
+			{@render ImmutableField({
+				label: 'r',
+				ariaLabel: 'cylinder dimensions radius value input',
+				value: cylinder.current.r,
+			})}
+			{@render ImmutableField({
+				label: 'l',
+				ariaLabel: 'cylinder dimensions length value input',
+				value: cylinder.current.l,
 			})}
 		</div>
 	</div>

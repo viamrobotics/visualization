@@ -14,8 +14,8 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 	commonv1 "go.viam.com/api/common/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -87,13 +87,13 @@ func (entity *chunkedEntity) close() {
 	entity.opacities.close()
 }
 
-// DrawService is the in-memory backing store and Connect-RPC handler for the draw
-// service. It keeps every transform and drawing keyed by UUID, persists scene
-// metadata, and fans out add/update/remove events to streaming subscribers.
+// DrawService is the in-memory backing store and Connect-RPC handler for the draw service. It
+// keeps every transform and drawing keyed by UUID, persists scene metadata, and fans out
+// add/update/remove events to streaming subscribers.
 //
-// Chunked drawings (point clouds and similar large entities) are accumulated to
-// disk under a configurable temp directory and served on demand via
-// GetEntityChunk; the rest of the state lives entirely in memory.
+// Chunked drawings (point clouds and similar large entities) are accumulated to disk under a
+// configurable temp directory and served on demand via GetEntityChunk. The rest of the state
+// lives entirely in memory.
 //
 // All public methods are safe for concurrent use.
 type DrawService struct {
@@ -153,11 +153,11 @@ func cleanTempDir(dir string) {
 // notifyEntityChange publishes a change to every entity subscriber. A nil msg is ignored.
 //
 // Callers hold svc.mu. That is safe because push only takes the subscriber's own lock and a
-// non-blocking channel send, so it cannot block on a stalled consumer; the lock order is always
-// svc.mu then sub.mu, and svc.mu is never held across a stream.Send.
+// non-blocking channel send, so it cannot block on a stalled consumer. The lock order is
+// always svc.mu then sub.mu, and svc.mu is never held across a stream.Send.
 //
-// Invariant: the entity carried by msg must not be mutated afterwards. The message is queued by
-// pointer and may be marshalled on another goroutine at any later time. To change a stored
+// Invariant: the entity carried by msg must not be mutated afterwards. The message is queued
+// by pointer and may be marshalled on another goroutine at any later time. To change a stored
 // entity, clone it, mutate the clone, and replace the stored pointer — see
 // withEntityMetadataRelationships.
 func (svc *DrawService) notifyEntityChange(msg *drawv1.StreamEntityChangesResponse) {
@@ -216,16 +216,16 @@ func (svc *DrawService) removeSceneSub(id uint64) {
 	}
 }
 
-// AddEntity stores a transform or drawing and returns the assigned UUID. If the
-// incoming entity carries a valid Uuid, that ID is used (replacing any existing
-// entity with the same ID — i.e. upsert); otherwise a fresh UUID is generated.
+// AddEntity stores a transform or drawing and returns the assigned UUID. If the incoming
+// entity carries a valid Uuid, that ID is used, replacing any existing entity with the same
+// ID — an upsert. Otherwise a fresh UUID is generated.
 //
-// Drawings whose metadata.chunks field is set are registered as chunked entities:
-// the first call captures the template and the initial chunk, and subsequent
-// chunks must be delivered via UpdateEntity.
+// Drawings whose metadata.chunks field is set are registered as chunked entities: the first
+// call captures the template and the initial chunk, and subsequent chunks must be delivered
+// via UpdateEntity.
 //
-// Returns InvalidArgument if the entity, transform, or drawing field is missing,
-// and Internal if a chunked entity cannot be initialized on disk.
+// Returns InvalidArgument if the entity, transform, or drawing field is missing, and Internal
+// if a chunked entity cannot be initialized on disk.
 func (svc *DrawService) AddEntity(
 	_ context.Context,
 	req *connect.Request[drawv1.AddEntityRequest],
@@ -432,15 +432,13 @@ func addedOrUpdated(exists bool) drawv1.EntityChangeType {
 	return drawv1.EntityChangeType_ENTITY_CHANGE_TYPE_ADDED
 }
 
-// UpdateEntity replaces or partially updates an existing entity identified by
-// UUID. When updated_fields is non-empty, only the listed proto field paths are
-// merged into the stored entity; otherwise the incoming entity replaces the
-// stored one wholesale. The kind of the incoming entity must match the kind of
-// the stored entity (transform vs. drawing).
+// UpdateEntity replaces or partially updates an existing entity identified by UUID. When
+// updated_fields is non-empty, only the listed proto field paths are merged into the stored
+// entity. Otherwise the incoming entity replaces the stored one wholesale. The kind of the
+// incoming entity must match the kind of the stored entity (transform vs. drawing).
 //
-// For chunked drawings, UpdateEntity is also the channel for delivering
-// subsequent chunks: each call appends positions, colors, and opacities to the
-// on-disk buffer for the entity.
+// For chunked drawings, UpdateEntity is also the channel for delivering subsequent chunks:
+// each call appends positions, colors, and opacities to the on-disk buffer for the entity.
 //
 // Returns InvalidArgument for missing or malformed inputs, NotFound when no
 // entity has the given UUID, and Internal if a chunk cannot be persisted.
@@ -519,6 +517,7 @@ func (svc *DrawService) UpdateEntity(
 		// truth, and the patch is invisible to GetEntityChunk. Masks that only touch metadata or
 		// the pose are unaffected. Until this is settled, partial element updates on a chunked
 		// entity are undefined; redraw the entity instead.
+		// Redraw the entity instead.
 		if entity, ok := svc.chunked[id]; ok && len(req.Msg.GetUpdatedFields().GetPaths()) == 0 {
 			if err := svc.accumulateChunk(entity, e.Drawing); err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("accumulate chunk: %w", err))
@@ -546,10 +545,11 @@ func (svc *DrawService) UpdateEntity(
 
 // syncChunkedTemplate applies a partial update to a chunked entity's replay template.
 //
-// A chunked drawing is replayed to new subscribers from its template rather than from the stored
-// entity, because the payload has to be rebuilt from the on-disk buffer. Updating only the stored
-// entity would therefore be invisible to anyone connecting later: they would receive the pose and
-// metadata the entity was created with, and nothing would ever correct it.
+// A chunked drawing is replayed to new subscribers from its template rather than from the
+// stored entity, because the payload has to be rebuilt from the on-disk buffer. Updating only
+// the stored entity would therefore be invisible to anyone connecting later: they would
+// receive the pose and metadata the entity was created with, and nothing would ever correct
+// it.
 //
 // Shape masks are skipped. A chunked entity's elements live in the buffer, not in the template's
 // physical_object, so there is nothing meaningful to sync; see the TODO in UpdateEntity.
@@ -684,7 +684,7 @@ func validateTransformUpdate(existing, incoming *commonv1.Transform, mask interf
 	return nil
 }
 
-// validateDrawingUpdate mirrors validateTransformUpdate; see that function for why the mask
+// validateDrawingUpdate mirrors validateTransformUpdate. See that function for why the mask
 // gates each check.
 func validateDrawingUpdate(existing, incoming *drawv1.Drawing, mask interface{ GetPaths() []string }) error {
 	if maskSelects(mask, "reference_frame") && incoming.GetReferenceFrame() != existing.GetReferenceFrame() {
@@ -922,15 +922,15 @@ func entityChangeMsg(e storedEntity) *drawv1.StreamEntityChangesResponse {
 	return msg
 }
 
-// CreateRelationship creates or replaces a relationship from the source entity
-// to the target named in the relationship. Relationships are stored in the
-// source entity's metadata; an existing relationship with the same target_uuid
-// is replaced in place rather than duplicated. The change is published to entity
-// subscribers as an UPDATED event on the source.
+// CreateRelationship creates or replaces a relationship from the source entity to the target
+// named in the relationship. Relationships are stored in the source entity's metadata, and an
+// existing relationship with the same target_uuid is replaced in place rather than
+// duplicated. The change is published to entity subscribers as an UPDATED event on the
+// source.
 //
-// Returns InvalidArgument for missing source_uuid, relationship, or
-// target_uuid, when source and target UUIDs are equal, or when a UUID byte
-// slice cannot be parsed; NotFound when either entity does not exist.
+// Returns InvalidArgument for missing source_uuid, relationship, or target_uuid, when source
+// and target UUIDs are equal, or when a UUID byte slice cannot be parsed. Returns NotFound
+// when either entity does not exist.
 func (svc *DrawService) CreateRelationship(
 	_ context.Context,
 	req *connect.Request[drawv1.CreateRelationshipRequest],
@@ -1116,17 +1116,15 @@ func (svc *DrawService) RemoveEntity(
 	return connect.NewResponse(&drawv1.RemoveEntityResponse{}), nil
 }
 
-// GetEntityChunk returns a single chunk of accumulated data from a chunked
-// entity, starting at the requested element index. The call blocks until enough
-// data has been accumulated to satisfy the request or the entity is marked
-// complete; passing a context with a deadline is the recommended way to bound
-// the wait. The Done flag in the response is set when the returned chunk
-// finishes the entity.
+// GetEntityChunk returns a single chunk of accumulated data from a chunked entity, starting
+// at the requested element index. The call blocks until enough data has been accumulated to
+// satisfy the request or the entity is marked complete. Passing a context with a deadline is
+// the recommended way to bound the wait. The Done flag in the response is set when the
+// returned chunk finishes the entity.
 //
-// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no
-// chunked entity has the given UUID, Canceled if the context is cancelled
-// before the chunk becomes available, and Internal if the chunk cannot be
-// rebuilt from the on-disk buffer.
+// Returns InvalidArgument for a missing or unparseable UUID, NotFound when no chunked entity
+// has the given UUID, Canceled if the context is cancelled before the chunk becomes
+// available, and Internal if the chunk cannot be rebuilt from the on-disk buffer.
 func (svc *DrawService) GetEntityChunk(
 	ctx context.Context,
 	req *connect.Request[drawv1.GetEntityChunkRequest],
@@ -1195,13 +1193,12 @@ func (svc *DrawService) GetEntityChunk(
 	}), nil
 }
 
-// StreamEntityChanges streams ADDED, UPDATED, and REMOVED events for every
-// transform and drawing in the scene. On connect, the current world state is
-// replayed as a series of ADDED events so new subscribers see existing entities
-// before live updates begin. The stream ends when the request context is
-// cancelled. Changes queue per subscriber and are never dropped; a subscriber
-// that falls further behind than maxPendingEntityChanges has its stream closed
-// with ResourceExhausted so it can reconnect and take a fresh replay.
+// StreamEntityChanges streams ADDED, UPDATED, and REMOVED events for every transform and
+// drawing in the scene. On connect, the current world state is replayed as a series of
+// ADDED events so new subscribers see existing entities before live updates begin. The
+// stream ends when the request context is cancelled. Changes queue per subscriber and are
+// never dropped. A subscriber that falls further behind than maxPendingEntityChanges has its
+// stream closed with ResourceExhausted so it can reconnect and take a fresh replay.
 func (svc *DrawService) StreamEntityChanges(
 	ctx context.Context,
 	_ *connect.Request[drawv1.StreamEntityChangesRequest],
@@ -1316,10 +1313,10 @@ func (entity *chunkedEntity) buildChunkDrawing(start uint32) (*drawv1.Drawing, u
 	setShapeData(drawing, chunkData)
 
 	if len(chunkColors) > 0 || len(chunkOpacities) > 0 {
-		// Override only the packed buffers, keeping the rest of the template's metadata. Replacing
-		// it wholesale would drop the chunks descriptor, which is how a client recognizes a
-		// chunked entity and knows to keep pulling; a subscriber replayed without it would render
-		// the first chunk and stop.
+		// Override only the packed buffers, keeping the rest of the template's metadata.
+		// Replacing it wholesale would drop the chunks descriptor, which is how a client
+		// recognizes a chunked entity and knows to keep pulling. A subscriber replayed
+		// without it would render the first chunk and stop.
 		if drawing.Metadata == nil {
 			drawing.Metadata = &drawv1.Metadata{}
 		}

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 )
 
 // UpdateTransformOptions configures an UpdateTransform call.
@@ -13,7 +13,7 @@ type UpdateTransformOptions struct {
 }
 
 // UpdateTransform changes some of a stored transform's fields, leaving the rest alone.
-// Shorthand for UpdateEntity with a draw.TransformUpdate; see UpdateEntity for details.
+// Shorthand for UpdateEntity with a draw.TransformUpdate. See UpdateEntity for details.
 func UpdateTransform(options UpdateTransformOptions) error {
 	return UpdateEntity(UpdateEntityOptions{UUID: options.UUID, Update: options.Update})
 }
@@ -27,7 +27,7 @@ type UpdateDrawingOptions struct {
 }
 
 // UpdateDrawing changes some of a stored drawing's fields, leaving the rest alone.
-// Shorthand for UpdateEntity with a draw.DrawingUpdate; see UpdateEntity for details.
+// Shorthand for UpdateEntity with a draw.DrawingUpdate. See UpdateEntity for details.
 func UpdateDrawing(options UpdateDrawingOptions) error {
 	return UpdateEntity(UpdateEntityOptions{UUID: options.UUID, Update: options.Update})
 }

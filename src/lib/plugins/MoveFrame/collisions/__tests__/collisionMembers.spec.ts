@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '$lib/ecs'
 
+import { previewName } from '../../previewNames'
 import { GhostOf } from '../../relations'
+import { PreviewGhost } from '../../traits'
 import { armBitFor, collectMembers, isGhost } from '../collisionMembers'
 import { ENVIRONMENT_BIT } from '../interactionGroups'
 
@@ -75,6 +77,32 @@ describe('isGhost', () => {
 
 		expect(isGhost(ghost)).toBe(true)
 		expect(isGhost(source)).toBe(false)
+	})
+})
+
+describe('a preview twin', () => {
+	it('reads as a ghost, so a pair it hits is a warning about a move', () => {
+		const twin = world.spawn(traits.Name(previewName('arm:link')), PreviewGhost)
+
+		expect(isGhost(twin)).toBe(true)
+	})
+
+	/**
+	 * A twin sits under the live frame its plan hangs off, so the ordinary parent walk reaches the
+	 * arm without the twin needing a `GhostOf` back-reference.
+	 */
+	it('takes its arm bit from the live frame the chain hangs off', () => {
+		const arm = spawnFrame('arm')
+		const anchor = spawnFrame('arm:base', arm)
+		const twin = world.spawn(
+			relations.ChildOf(anchor),
+			traits.Name(previewName('arm:link')),
+			PreviewGhost,
+			traits.Box({ x: 100, y: 100, z: 100 }),
+			traits.WorldMatrix(new Matrix4())
+		)
+
+		expect(bitOf(twin, collectMembers(world, armBits))).toBe(1)
 	})
 })
 

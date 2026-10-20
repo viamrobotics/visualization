@@ -3,25 +3,25 @@ import * as Sentry from '@sentry/sveltekit'
 
 import { version } from '../package.json'
 
+// Tauri injects this global into every webview it hosts, so its presence marks the desktop app.
+const runtime = '__TAURI_INTERNALS__' in window ? 'tauri' : 'browser'
+
 if (import.meta.env.PROD) {
 	Sentry.init({
 		release: version,
+		initialScope: { tags: { runtime } },
 		dsn: 'https://221c5ddd7e532dad95be66b8b6fabf2d@o1356192.ingest.us.sentry.io/4509599892897792',
 
 		tracesSampleRate: 1,
 
-		// This sets the sample rate to be 10%. You may want this to be 100% while
-		// in development and sample at a lower rate in production
 		replaysSessionSampleRate: 0.1,
 
 		// If the entire session is not sampled, use the below sample rate to sample
 		// sessions when an error occurs.
 		replaysOnErrorSampleRate: 1,
 
-		// If you don't want to use Session Replay, just remove the line below:
 		integrations: [replayIntegration()],
 	})
 }
 
-// If you have a custom error handler, pass it to `handleErrorWithSentry`
 export const handleError = handleErrorWithSentry()

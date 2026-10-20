@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang/geo/r3"
 	"github.com/google/uuid"
-	"github.com/viam-labs/motion-tools/draw"
+	"github.com/viamrobotics/visualization/draw"
 	commonpb "go.viam.com/api/common/v1"
 	pb "go.viam.com/api/service/worldstatestore/v1"
 	"go.viam.com/rdk/logging"
@@ -665,7 +665,6 @@ func (s *TestStore) populateTestData() error {
 		return err
 	}
 
-	// Blue box — far right
 	box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 300, Y: 300, Z: 300}, "test-box")
 	if err != nil {
 		return err
@@ -683,7 +682,6 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(boxTransform)
 
-	// Green sphere — far left
 	sphere, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), 200, "test-sphere")
 	if err != nil {
 		return err
@@ -701,7 +699,6 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(sphereTransform)
 
-	// Purple capsule — far forward
 	capsule, err := spatialmath.NewCapsule(spatialmath.NewZeroPose(), 75, 400, "test-capsule")
 	if err != nil {
 		return err
@@ -719,7 +716,6 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(capsuleTransform)
 
-	// Point cloud from simple.pcd — below
 	pcdFile, err := os.Open(filepath.Join(fixtures, "simple.pcd"))
 	if err != nil {
 		return fmt.Errorf("failed to open simple.pcd: %w", err)
@@ -743,7 +739,6 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(pcTransform)
 
-	// Mesh from lod_100.ply — above
 	plyData, err := os.ReadFile(filepath.Join(fixtures, "lod_100.ply"))
 	if err != nil {
 		return fmt.Errorf("failed to read lod_100.ply: %w", err)
@@ -772,7 +767,6 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(meshTransform)
 
-	// Axes helper — behind and below
 	axesSphere, err := spatialmath.NewSphere(spatialmath.NewZeroPose(), 30, "test-axes-helper")
 	if err != nil {
 		return err

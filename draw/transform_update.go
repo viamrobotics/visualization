@@ -6,7 +6,7 @@ import (
 	commonv1 "go.viam.com/api/common/v1"
 	"go.viam.com/rdk/spatialmath"
 
-	drawv1 "github.com/viam-labs/motion-tools/draw/v1"
+	drawv1 "github.com/viamrobotics/visualization/draw/v1"
 )
 
 var (
@@ -26,12 +26,12 @@ type EntityUpdate interface {
 // TransformUpdate describes a partial update to a stored transform.
 //
 // Presence is the signal: a nil field is left untouched on the stored entity. This is what the
-// update RPC's field mask expresses, and building the mask from these fields means callers
-// never write proto field-path strings themselves — a misspelled path is a mask that quietly
-// updates nothing.
+// update RPC's field mask expresses. Building the mask from these fields means callers never
+// write proto field-path strings themselves. A misspelled path is a mask that quietly updates
+// nothing.
 //
 // reference_frame is deliberately absent. A transform's own frame name is its identity and the
-// service rejects changing it; remove the entity and add a new one instead.
+// service rejects changing it. Remove the entity and add a new one instead.
 type TransformUpdate struct {
 	// Pose is the new pose. Nil leaves the pose untouched.
 	Pose spatialmath.Pose
@@ -39,7 +39,7 @@ type TransformUpdate struct {
 	// wherever it already is, so moving something does not silently pull it to the world frame.
 	Parent string
 	// Geometry is the new geometry. Nil leaves the geometry untouched. The geometry type must
-	// match the stored one; the service rejects a change from, say, box to sphere.
+	// match the stored one. The service rejects a change from, say, box to sphere.
 	Geometry spatialmath.Geometry
 	// Metadata is the new display metadata (color, opacity, visibility). Nil leaves it
 	// untouched. Note this replaces the stored metadata wholesale rather than merging.

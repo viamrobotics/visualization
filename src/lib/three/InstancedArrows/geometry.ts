@@ -1,8 +1,7 @@
 import { BufferAttribute, BufferGeometry, InstancedBufferGeometry } from 'three'
 
+/** A triangular prism aligned to +Y, base at y=0 and top at y=1. No caps, 6 vertices, 6 side triangles. */
 export const createShaftGeometry = () => {
-	// Triangular prism aligned to +Y, base at y=0, top at y=1.
-	// No caps, 6 verts, 6 side triangles.
 	const positions = new Float32Array([
 		// bottom (y=0)
 		1, 0, 0,
@@ -33,9 +32,8 @@ export const createShaftGeometry = () => {
 	return geometry
 }
 
+/** A triangular pyramid aligned to +Y, base at y=0 and tip at y=1. 4 vertices, 3 side triangles. */
 export const createHeadGeometry = () => {
-	// Triangular pyramid aligned to +Y, base at y=0, tip at y=1.
-	// 4 verts, 3 side triangles.
 	const positions = new Float32Array([
 		// base (y=0)
 		1, 0, 0,

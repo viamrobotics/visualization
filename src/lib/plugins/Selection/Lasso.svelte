@@ -11,6 +11,7 @@
 	import { useCameraControls } from '$lib/hooks/useControls.svelte'
 
 	import Debug from './Debug.svelte'
+	import { isSelectionStart } from './isSelectionStart'
 	import * as selectionRelations from './relations'
 	import * as selectionTraits from './traits'
 	import { getTriangleBoxesFromIndices, getTriangleFromIndex, raycast } from './utils'
@@ -38,7 +39,7 @@
 	let drawing = false
 
 	const onpointerdown = (event: PointerEvent) => {
-		if (!selecting && !event.shiftKey) return
+		if (!isSelectionStart(event, selecting)) return
 
 		const { x, y } = raycast(event, camera.current)
 
@@ -125,7 +126,6 @@
 			controls.current.enabled = true
 		}
 
-		// Close the loop
 		const nextPositions = new Float32Array(positions.length + 3)
 		nextPositions.set(positions)
 		nextPositions[positions.length] = startX
@@ -191,7 +191,8 @@
 						}
 					}
 				},
-				// intersectsPoint is not yet in typedef, this can be removed when it is added
+				// `ShapecastCallbacks` has no `intersectsPoint`. `PointsBVH.shapecast` declares one,
+				// but it takes a point index rather than the `Vector3` the runtime passes here.
 			} as ShapecastCallbacks)
 		}
 
@@ -247,7 +248,6 @@
 
 	const lassos = useQuery(selectionTraits.Lasso)
 
-	// On unmount, destroy all lasso related entities
 	$effect(() => {
 		return () => {
 			for (const entity of world.query(selectionTraits.SelectionEnclosedPoints)) {

@@ -1,6 +1,6 @@
 ---
 title: <Logs />
-description: Collect and display info, warning, and error messages inside a motion-tools visualizer.
+description: Collect and display info, warning, and error messages inside a Viam visualizer.
 ---
 
 `<Logs />` adds a logs button to the workspace toolbar and a floating, filterable log panel. Code elsewhere — other plugins or your own app — pushes messages through the `useLogs` hook; the button badges unread warning and error counts, and the panel lists entries newest-first with per-level (**info** / **warn** / **error**) toggles.
@@ -13,8 +13,8 @@ Mount `<Logs />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { Logs } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Logs } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">
@@ -30,7 +30,7 @@ Use `useLogs` from anywhere inside `<Visualizer />` to append a message. The lev
 
 ```svelte
 <script lang="ts">
-	import { useLogs } from '@viamrobotics/motion-tools/plugins'
+	import { useLogs } from '@viamrobotics/visualization/plugins'
 
 	const logs = useLogs()
 
@@ -48,7 +48,7 @@ The same hook exposes the current entries and per-level slices for building your
 
 ```svelte
 <script lang="ts">
-	import { useLogs } from '@viamrobotics/motion-tools/plugins'
+	import { useLogs } from '@viamrobotics/visualization/plugins'
 
 	const logs = useLogs()
 </script>

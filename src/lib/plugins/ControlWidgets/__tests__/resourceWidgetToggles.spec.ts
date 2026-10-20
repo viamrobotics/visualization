@@ -21,8 +21,6 @@ vi.mock('@viamrobotics/test-widgets/registry', () => ({
 	widgetForResource: vi.fn(),
 }))
 
-// Mock the registry filter, but keep the real (pure) triplet helpers so the motion
-// bail-out is exercised against the authoritative `rdk:service:motion` key.
 vi.mock('@viamrobotics/test-widgets', () => ({
 	showResourceWidget: vi.fn(),
 	supportsDoCommand: vi.fn(),
@@ -40,7 +38,6 @@ beforeEach(() => {
 	vi.mocked(apiWidgetsForResource).mockReturnValue([])
 	vi.mocked(widgetForResource).mockReturnValue(undefined)
 	vi.mocked(showResourceWidget).mockReturnValue(true)
-	// Default off so the base-toggle cases below stay focused; the DoCommand suite opts in.
 	vi.mocked(supportsDoCommand).mockReturnValue(false)
 })
 
@@ -147,7 +144,6 @@ describe('resourceWidgetToggles — DoCommand', () => {
 	})
 
 	it('offers DoCommand for the motion service alongside its Move control', () => {
-		// The registry hides motion, but the plugin re-surfaces it, so DoCommand rides along.
 		vi.mocked(widgetForResource).mockReturnValue(widget)
 		vi.mocked(showResourceWidget).mockReturnValue(false)
 

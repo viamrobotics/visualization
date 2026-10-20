@@ -28,7 +28,6 @@ export function computeBoundingBox(this: InstancedArrows, geometry: BufferGeomet
 		const oy = src[i + 1] * poseScale
 		const oz = src[i + 2] * poseScale
 
-		// normalize direction
 		let dx = src[i + 3]
 		let dy = src[i + 4]
 		let dz = src[i + 5]
@@ -44,7 +43,6 @@ export function computeBoundingBox(this: InstancedArrows, geometry: BufferGeomet
 			dz = 0
 		}
 
-		// segment endpoints
 		let ax: number, ay: number, az: number
 		let bx: number, by: number, bz: number
 
@@ -66,7 +64,6 @@ export function computeBoundingBox(this: InstancedArrows, geometry: BufferGeomet
 			bz = oz + dz * this.arrowLength
 		}
 
-		// expand with both endpoints
 		if (ax < minX) minX = ax
 		if (ay < minY) minY = ay
 		if (az < minZ) minZ = az

@@ -1,13 +1,25 @@
 <script lang="ts">
 	import { HTML } from '@threlte/extras'
 
+	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { type HoverInfo } from '$lib/HoverUpdater.svelte'
+
+	import { MARKER_SCALE } from './HoveredPointMarker.svelte'
 
 	interface Props {
 		hoverInfo: HoverInfo
 	}
 
 	let { hoverInfo }: Props = $props()
+
+	const settings = useSettings()
+
+	/**
+	 * Clears the marker sitting on the same point. The marker is drawn with size attenuation, so
+	 * its on-screen radius tracks camera distance but can never exceed half its clamp. Clearing
+	 * that worst case floats the tooltip a little high when zoomed out and never overlaps.
+	 */
+	const clearance = $derived((settings.current.maxPointSize * MARKER_SCALE) / 2 + 4)
 </script>
 
 {#if hoverInfo}
@@ -18,9 +30,9 @@
 		center
 	>
 		<div
-			class="border-medium pointer-events-none relative -translate-y-1/2 border bg-white px-3 py-2.5 text-xs shadow-md"
+			class="border-medium pointer-events-none relative border bg-white px-3 py-2.5 text-xs shadow-md"
+			style:transform="translateY(calc(-50% - {clearance}px))"
 		>
-			<!-- Arrow -->
 			<div
 				class="border-medium absolute -bottom-[5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 border-r border-b bg-white"
 			></div>

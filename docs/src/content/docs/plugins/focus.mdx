@@ -1,6 +1,6 @@
 ---
 title: <Focus />
-description: Isolate the current selection in a motion-tools visualizer and frame the camera on it.
+description: Isolate the current selection in a Viam visualizer and frame the camera on it.
 ---
 
 `<Focus />` adds a **Focus selection** toggle to the dashboard (hotkey `/`). Entering focus mode hides everything except the selected entities — keeping their ancestors and geometry visible — and reframes the camera to fit them, with a trackball orbit gizmo for inspecting the selection from any angle. Exiting restores every hidden entity and returns the camera to where it was.
@@ -13,8 +13,8 @@ Mount `<Focus />` anywhere inside `<Visualizer />`:
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { Focus } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Focus } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">

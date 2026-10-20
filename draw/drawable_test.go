@@ -49,9 +49,7 @@ func TestNewDrawConfig(t *testing.T) {
 		config1 := NewDrawConfig("my-name", WithID("some-stable-id"))
 		config2 := NewDrawConfig("my-name", WithID("some-stable-id"))
 		config3 := NewDrawConfig("my-name", WithID("different-id"))
-		// Same ID produces same UUID
 		test.That(t, config1.UUID, test.ShouldResemble, config2.UUID)
-		// Different IDs produce different UUIDs
 		test.That(t, config1.UUID, test.ShouldNotResemble, config3.UUID)
 	})
 

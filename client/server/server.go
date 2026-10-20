@@ -25,14 +25,15 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
 
 	"connectrpc.com/connect"
 	"github.com/rs/cors"
-	"github.com/viam-labs/motion-tools/draw"
-	"github.com/viam-labs/motion-tools/draw/v1/drawv1connect"
+	"github.com/viamrobotics/visualization/draw"
+	"github.com/viamrobotics/visualization/draw/v1/drawv1connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -51,6 +52,21 @@ var ErrAttached = errors.New("draw server is attached to an external server; not
 // attaches to a server listening on this port.
 const DefaultPort = 3030
 
+// DrawServicePortEnv overrides DefaultPort for the lazy attach in GetClient. It
+// is the same variable `make up` uses to move the server, so a producer picks up
+// a relocated visualizer without calling Start().
+const DrawServicePortEnv = "DRAW_SERVICE_PORT"
+
+// defaultPort returns the port GetClient probes, honoring DrawServicePortEnv.
+// An unset or unparseable value falls back to DefaultPort.
+func defaultPort() int {
+	port, err := strconv.Atoi(os.Getenv(DrawServicePortEnv))
+	if err != nil || port <= 0 || port > 65535 {
+		return DefaultPort
+	}
+	return port
+}
+
 var buildDir = "build"
 
 // DrawServerConfig holds the configuration for the draw server.
@@ -64,6 +80,15 @@ type DrawServerConfig struct {
 
 	// StaticPort is the port for the static file server (Production mode only).
 	StaticPort int
+
+	// TempDir buffers chunked-entity payloads. Empty means ".tmp" beside go.mod.
+	// Two servers must not share one: NewDrawService empties it at startup.
+	TempDir string
+
+	// ExtraHandlers mounts more Connect services on the RPC server, keyed by the path a generated
+	// New*ServiceHandler returns. Injected by the binary so library callers never link a service's
+	// dependencies, such as the cgo nlopt solver behind MotionPlanService.
+	ExtraHandlers map[string]http.Handler
 }
 
 var (
@@ -109,15 +134,14 @@ func Start(cfg DrawServerConfig) error {
 		return nil
 	}
 
-	svc := draw.NewDrawService(resolveTmpDir())
 	rpcAddr := fmt.Sprintf(":%d", cfg.Port)
 	address = fmt.Sprintf("localhost:%d", cfg.Port)
 
 	rpcListener, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
 		if isAddrInUse(err) {
-			// A server is already listening on this port (e.g. started by `make up`).
-			// Attach a client to it rather than failing — the test suite uses this path.
+			// A server is already listening on this port, for example one started by `make up`.
+			// Attach a client to it rather than failing. The test suite uses this path.
 			recorder = NewRecordingInterceptor()
 			httpClient = newHTTPClient()
 			drawClient = drawv1connect.NewDrawServiceClient(
@@ -133,9 +157,19 @@ func Start(cfg DrawServerConfig) error {
 		return fmt.Errorf("failed to listen on %s: %w", rpcAddr, err)
 	}
 
+	tempDir := cfg.TempDir
+	if tempDir == "" {
+		tempDir = resolveTmpDir()
+	}
+
+	// Built only after the listen succeeds. NewDrawService empties its temp dir,
+	// so constructing one on the attach path would delete the chunk files the
+	// server already listening on this port is serving.
+	svc := draw.NewDrawService(tempDir)
+
 	rpcSrv = &http.Server{
 		Addr:    rpcAddr,
-		Handler: newRPCHandler(svc),
+		Handler: newRPCHandler(svc, cfg.ExtraHandlers),
 	}
 
 	rpcReady := make(chan struct{})
@@ -199,7 +233,7 @@ func Start(cfg DrawServerConfig) error {
 // When the singleton is only attached to an external server (because Start
 // found the port already in use, or GetClient lazily attached on
 // DefaultPort), Stop clears the local client state but returns ErrAttached
-// without shutting anything down — the process does not own that server.
+// without shutting anything down, because the process does not own that server.
 func Stop() error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -261,12 +295,13 @@ func Stop() error {
 // GetClient returns the singleton Connect-RPC DrawService client.
 //
 // If Start has not been called, GetClient attempts to attach to a draw server
-// listening on localhost:DefaultPort (the port started by `make up`). This
-// lets callers use the client/api package without any server-lifecycle
-// boilerplate when the visualizer is already running locally.
+// listening on localhost:DefaultPort, or on DrawServicePortEnv when that is
+// set (both are what `make up` uses). This lets callers use the client/api
+// package without any server-lifecycle boilerplate when the visualizer is
+// already running locally.
 //
-// Returns nil if Start was not called and no server is listening on the
-// default port; callers should surface that as "visualizer not running".
+// Returns nil if Start was not called and no server is listening on that port;
+// callers should surface that as "visualizer not running".
 func GetClient() drawv1connect.DrawServiceClient {
 	mu.Lock()
 	defer mu.Unlock()
@@ -278,10 +313,10 @@ func GetClient() drawv1connect.DrawServiceClient {
 	return drawClient
 }
 
-// attachDefaultLocked probes DefaultPort and attaches a client to an existing
-// server if one is running. Callers must hold mu.
+// attachDefaultLocked probes the default port and attaches a client to an
+// existing server if one is running. Callers must hold mu.
 func attachDefaultLocked() {
-	addr := fmt.Sprintf("localhost:%d", DefaultPort)
+	addr := fmt.Sprintf("localhost:%d", defaultPort())
 
 	conn, err := net.DialTimeout("tcp", addr, 250*time.Millisecond)
 	if err != nil {
@@ -362,7 +397,7 @@ func isAddrInUse(err error) bool {
 	return false
 }
 
-func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
+func newRPCHandler(svc drawv1connect.DrawServiceHandler, extraHandlers map[string]http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	rpcPath, rpcHandler := drawv1connect.NewDrawServiceHandler(
@@ -370,6 +405,10 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 		connect.WithCompressMinBytes(1024),
 	)
 	mux.Handle(rpcPath, rpcHandler)
+
+	for path, handler := range extraHandlers {
+		mux.Handle(path, handler)
+	}
 
 	return cors.New(cors.Options{
 		AllowedOrigins:      []string{"*"},
@@ -379,30 +418,25 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 	}).Handler(h2c.NewHandler(mux, &http2.Server{}))
 }
 
+// staticFileHandler serves the adapter-static build. A route like /snapshot/reconcile
+// is prerendered to snapshot/reconcile.html, so the extensionless path is tried with
+// ".html" before falling back to the root index.html.
 func staticFileHandler(buildDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := filepath.Join(buildDir, filepath.Clean("/"+r.URL.Path))
 
-		info, err := os.Stat(path)
-		if err == nil && info.IsDir() {
-			path = filepath.Join(path, "index.html")
-			info, err = os.Stat(path)
-		}
-
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+		for _, candidate := range []string{path, filepath.Join(path, "index.html"), path + ".html"} {
+			info, err := os.Stat(candidate)
+			if err == nil && !info.IsDir() {
+				http.ServeFile(w, r, candidate)
 				return
 			}
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
+			if err != nil && !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		if info.IsDir() {
-			http.ServeFile(w, r, filepath.Join(path, "index.html"))
-			return
-		}
-
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
 	})
 }

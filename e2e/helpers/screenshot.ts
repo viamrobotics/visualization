@@ -33,23 +33,15 @@ const withOverlaysHidden = async <T>(page: Page, fn: () => Promise<T>): Promise<
 	}
 }
 
-export const screenshotCanvas = async (page: Page, name: string): Promise<string> => {
-	return withOverlaysHidden(page, async () => {
-		try {
-			await expect(page.locator('canvas').first()).toHaveScreenshot(`${name}.png`, {
-				threshold: 0.1,
-			})
-			return ''
-		} catch (error) {
-			console.warn(error)
-			return `${name}.png`
-		}
+/**
+ * Soft so a multi-step test keeps going and reports every mismatch at once.
+ * Playwright still fails the test, and unlike collecting names by hand it
+ * keeps the diff, actual, and expected attachments.
+ */
+export const screenshotCanvas = (page: Page, name: string): Promise<void> =>
+	withOverlaysHidden(page, async () => {
+		await expect.soft(page.locator('canvas').first()).toHaveScreenshot(`${name}.png`)
 	})
-}
-
-export const captureCanvas = async (page: Page): Promise<Buffer> => {
-	return withOverlaysHidden(page, () => page.locator('canvas').first().screenshot())
-}
 
 export const waitForCanvasToChange = async (
 	page: Page,

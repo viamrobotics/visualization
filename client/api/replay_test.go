@@ -2,83 +2,208 @@ package api
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/golang/geo/r3"
-	"github.com/viam-labs/motion-tools/draw"
-	"go.viam.com/rdk/spatialmath"
+	"go.viam.com/rdk/referenceframe"
 	"go.viam.com/test"
 )
 
-// replayTestFile is a shared path used for the record→playback sub-tests.
-const replayTestFile = "/tmp/replay_e2e_test.recording"
+func recordingPath(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(t.TempDir(), "session.rec")
+}
 
-func TestReplay(t *testing.T) {
-	startTestServer(t)
+// Recording is wired through the same interceptor the attach path installs, so a
+// record and replay round trip runs entirely against the fake.
+func TestRecordAndReplayRoundTrip(t *testing.T) {
+	fake := startFake(t)
+	path := recordingPath(t)
 
-	t.Run("ReplayRecord", func(t *testing.T) {
-		err := Record(replayTestFile)
-		test.That(t, err, test.ShouldBeNil)
+	test.That(t, Record(path), test.ShouldBeNil)
+	_, err := DrawLine(DrawLineOptions{Name: "recorded", Positions: twoPointLine})
+	test.That(t, err, test.ShouldBeNil)
+	StopRecord()
 
-		// Animate a rising ball (30 frames, z=0 → 1450mm).
-		for i := 0; i < 30; i++ {
-			height := float64(i) * 50.0
+	contents, err := os.ReadFile(path)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, contents, test.ShouldNotBeEmpty)
 
-			sphere, err := spatialmath.NewSphere(
-				spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: height}),
-				200.0,
-				"bouncing_ball",
-			)
-			test.That(t, err, test.ShouldBeNil)
+	before := fake.addEntityCount()
+	test.That(t, Replay(path, 1), test.ShouldBeNil)
+	test.That(t, fake.addEntityCount(), test.ShouldBeGreaterThan, before)
+}
 
-			uuid, err := DrawGeometry(DrawGeometryOptions{
-				ID:       "ball",
-				Geometry: sphere,
-				Color:    draw.ColorFromName("orange"),
-			})
-			test.That(t, err, test.ShouldBeNil)
-			test.That(t, uuid, test.ShouldNotBeNil)
+// Record clears the scene first so the file describes a session that starts
+// empty.
+func TestRecordClearsTheSceneFirst(t *testing.T) {
+	fake := startFake(t)
 
-			time.Sleep(16 * time.Millisecond)
-		}
+	test.That(t, Record(recordingPath(t)), test.ShouldBeNil)
+	StopRecord()
 
-		StopRecord()
+	test.That(t, fake.removeAll, test.ShouldHaveLength, 1)
+}
+
+// The RemoveAll comes before the recorder lookup, so no visualizer surfaces as a
+// clear failure wrapping ErrVisualizerNotRunning rather than the bare error.
+func TestRecordWithoutAVisualizer(t *testing.T) {
+	requireNoServer(t)
+
+	err := Record(recordingPath(t))
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "failed to clear scene before recording")
+	test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
+}
+
+func TestRecordReportsAnUnwritableFile(t *testing.T) {
+	startFake(t)
+
+	err := Record(filepath.Join(t.TempDir(), "no-such-dir", "session.rec"))
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "failed to start recording")
+}
+
+func TestStopRecordIsANoOpWhenNothingIsRecording(t *testing.T) {
+	startFake(t)
+
+	// Twice, to prove the second call is not an error or a panic either.
+	StopRecord()
+	StopRecord()
+}
+
+func TestStopRecordWithoutAVisualizerIsANoOp(t *testing.T) {
+	requireNoServer(t)
+
+	StopRecord()
+}
+
+func TestReplayClearsTheSceneFirst(t *testing.T) {
+	fake := startFake(t)
+	path := recordingPath(t)
+	test.That(t, os.WriteFile(path, nil, 0o600), test.ShouldBeNil)
+
+	test.That(t, Replay(path, 1), test.ShouldBeNil)
+
+	test.That(t, fake.removeAll, test.ShouldHaveLength, 1)
+}
+
+func TestReplayRejections(t *testing.T) {
+	t.Run("no visualizer is reported through the clear", func(t *testing.T) {
+		requireNoServer(t)
+
+		err := Replay(recordingPath(t), 1)
+
+		test.That(t, err, test.ShouldWrap, ErrVisualizerNotRunning)
 	})
 
-	t.Run("ReplayPlayback", func(t *testing.T) {
-		err := Replay(replayTestFile, 10.0)
-		test.That(t, err, test.ShouldBeNil)
+	t.Run("a missing file is reported as an open failure", func(t *testing.T) {
+		startFake(t)
 
-		os.Remove(replayTestFile)
+		err := Replay(filepath.Join(t.TempDir(), "absent.rec"), 1)
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "failed to open recording file")
 	})
 
-	t.Run("ReplayHelper", func(t *testing.T) {
-		tmpfile, err := os.CreateTemp("", "replay_helper_*.recording")
-		test.That(t, err, test.ShouldBeNil)
-		defer os.Remove(tmpfile.Name())
-		tmpfile.Close()
+	t.Run("a malformed sleep line is reported", func(t *testing.T) {
+		startFake(t)
+		path := recordingPath(t)
+		test.That(t, os.WriteFile(path, []byte("sleep: not-a-number\n"), 0o600), test.ShouldBeNil)
 
-		err = Record(tmpfile.Name())
-		test.That(t, err, test.ShouldBeNil)
+		err := Replay(path, 1)
 
-		sphere, err := spatialmath.NewSphere(
-			spatialmath.NewPoseFromPoint(r3.Vector{X: 0, Y: 0, Z: 500}),
-			100.0,
-			"helper_ball",
-		)
-		test.That(t, err, test.ShouldBeNil)
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "failed to parse sleep duration")
+	})
 
-		_, err = DrawGeometry(DrawGeometryOptions{
-			ID:       "helper",
-			Geometry: sphere,
-			Color:    draw.ColorFromName("green"),
+	t.Run("a non-hex payload is reported", func(t *testing.T) {
+		startFake(t)
+		path := recordingPath(t)
+		body := "/draw.v1.DrawService/AddEntity\nnot-hex\n"
+		test.That(t, os.WriteFile(path, []byte(body), 0o600), test.ShouldBeNil)
+
+		err := Replay(path, 1)
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "failed to decode payload")
+	})
+
+	t.Run("a procedure line with no payload ends the replay", func(t *testing.T) {
+		startFake(t)
+		path := recordingPath(t)
+		body := "/draw.v1.DrawService/AddEntity\n"
+		test.That(t, os.WriteFile(path, []byte(body), 0o600), test.ShouldBeNil)
+
+		err := Replay(path, 1)
+
+		test.That(t, err, test.ShouldNotBeNil)
+	})
+
+	t.Run("an unknown procedure is named in the error", func(t *testing.T) {
+		startFake(t)
+		path := recordingPath(t)
+		body := "/draw.v1.DrawService/NotAThing\n00\n"
+		test.That(t, os.WriteFile(path, []byte(body), 0o600), test.ShouldBeNil)
+
+		err := Replay(path, 1)
+
+		test.That(t, err, test.ShouldNotBeNil)
+		test.That(t, err.Error(), test.ShouldContainSubstring, "unknown procedure")
+	})
+}
+
+// The recorder captures every unary RPC, but replayCall's switch has no
+// AddEntities arm. So any session that drew a frame system, a world state, a
+// robot, or a batch of geometries records fine and then fails to replay.
+//
+// This pins the gap rather than endorsing it. Add the AddEntities case and this
+// test fails, at which point it should assert a successful replay.
+func TestReplayCannotHandleRecordedBatchCalls(t *testing.T) {
+	startFake(t)
+	path := recordingPath(t)
+
+	test.That(t, Record(path), test.ShouldBeNil)
+	_, err := DrawFrames(DrawFramesOptions{
+		Frames: []referenceframe.Frame{testAxesFrame(t, "recorded-frame")},
+	})
+	test.That(t, err, test.ShouldBeNil)
+	StopRecord()
+
+	err = Replay(path, 1)
+
+	test.That(t, err, test.ShouldNotBeNil)
+	test.That(t, err.Error(), test.ShouldContainSubstring, "unknown procedure")
+	test.That(t, err.Error(), test.ShouldContainSubstring, "AddEntities")
+}
+
+// Playback speed only scales sleeps, so a file with no sleep lines replays the
+// same at any speed.
+func TestReplaySpeedDoesNotChangeTheCalls(t *testing.T) {
+	countFor := func(t *testing.T, speed float64) int {
+		t.Helper()
+		fake := startFake(t)
+		path := recordingPath(t)
+
+		test.That(t, Record(path), test.ShouldBeNil)
+		_, err := DrawPoints(DrawPointsOptions{
+			Name:      "speed",
+			Positions: []r3.Vector{{X: 1}},
 		})
 		test.That(t, err, test.ShouldBeNil)
-
 		StopRecord()
 
-		err = Replay(tmpfile.Name(), 1.0)
-		test.That(t, err, test.ShouldBeNil)
-	})
+		before := fake.addEntityCount()
+		test.That(t, Replay(path, speed), test.ShouldBeNil)
+		return fake.addEntityCount() - before
+	}
+
+	var atOne, atTen int
+	t.Run("real time", func(t *testing.T) { atOne = countFor(t, 1) })
+	t.Run("ten times", func(t *testing.T) { atTen = countFor(t, 10) })
+
+	test.That(t, atOne, test.ShouldEqual, atTen)
 }

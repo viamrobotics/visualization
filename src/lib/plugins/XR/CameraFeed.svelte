@@ -34,14 +34,16 @@
 	let ready = $state(false)
 	let texture = $state<VideoTexture | null>(null)
 
-	// ===== LATENCY PROFILING =====
 	interface LatencyMetrics {
 		streamConnectTime?: number
 		videoReadyTime?: number
 		firstFrameTime?: number
-		captureToPresent?: number // Camera capture → browser decode (from metadata)
-		presentToRender?: number // Browser decode → Three.js texture update
-		totalLatency?: number // End-to-end
+		/** Camera capture to browser decode, from the frame metadata. */
+		captureToPresent?: number
+		/** Browser decode to Three.js texture update. */
+		presentToRender?: number
+		/** End-to-end capture to render. */
+		totalLatency?: number
 		fps?: number
 	}
 	let metrics = $state<LatencyMetrics>({})
@@ -55,9 +57,8 @@
 	video.muted = true
 	video.playsInline = true
 
-	// Low-latency settings for teleoperation
 	// @ts-expect-error - latencyHint is not in standard types but supported by browsers
-	video.latencyHint = 0 // Minimize latency
+	video.latencyHint = 0
 	video.disableRemotePlayback = true
 
 	$effect.pre(() => {
@@ -69,7 +70,6 @@
 			return
 		}
 
-		// PROFILING: Stream connected
 		const streamConnectTime = performance.now()
 		if (enableProfiling) {
 			metrics.streamConnectTime = streamConnectTime
@@ -77,7 +77,6 @@
 
 		video.srcObject = mediaStream
 
-		// Wait for video to be ready before creating texture
 		const onReady = () => {
 			const videoReadyTime = performance.now()
 			aspect = video.videoWidth / video.videoHeight
@@ -87,11 +86,9 @@
 				texture = new VideoTexture(video)
 			}
 
-			// Force play to ensure stream is active
 			video.play().catch((error) => console.warn('Video play failed:', error))
 			ready = true
 
-			// PROFILING: Video ready
 			if (enableProfiling) {
 				metrics.videoReadyTime = videoReadyTime
 				const setupLatency = videoReadyTime - streamConnectTime
@@ -100,7 +97,6 @@
 				)
 			}
 
-			// Start frame-by-frame profiling using requestVideoFrameCallback
 			startFrameProfiling()
 		}
 
@@ -116,7 +112,6 @@
 			video.addEventListener('loadedmetadata', onMetadata, { once: true })
 		}
 
-		// Cleanup when component unmounts
 		return () => {
 			ready = false
 			video.pause()
@@ -128,14 +123,12 @@
 		}
 	})
 
-	// Frame-by-frame profiling using requestVideoFrameCallback
 	function startFrameProfiling() {
 		if (!enableProfiling) {
-			// If profiling disabled, use simple useTask approach
 			return
 		}
 
-		stopFrameProfiling() // Clear any existing callback
+		stopFrameProfiling()
 
 		const updateFrame = (now: number, metadata: VideoFrameCallbackMetadata) => {
 			if (!texture || !ready) {
@@ -145,10 +138,8 @@
 
 			frameCount++
 
-			// Update texture
 			texture.needsUpdate = true
 
-			// Calculate latency metrics from metadata
 			if (metadata) {
 				// All times in metadata are in microseconds, need to convert to ms
 				// 'now' parameter is DOMHighResTimeStamp in milliseconds
@@ -158,11 +149,9 @@
 				// The times might be in different epochs, so we can only reliably calculate
 				// the difference between capture and presentation
 				if (captureTime && presentationTime) {
-					// Encoding + Network + Decoding time
 					const captureToPresentMs = (presentationTime - captureTime) / 1000
 					metrics.captureToPresent = captureToPresentMs
 
-					// Time since video element presented the frame to when we render it
 					// This should be very small (< 16ms ideally)
 					const presentMsRelative = presentationTime / 1000
 					const timeSincePresentation = now - presentMsRelative
@@ -179,16 +168,14 @@
 				}
 			}
 
-			// Calculate FPS
 			if (lastFrameTime > 0) {
 				const frameDelta = now - lastFrameTime
 				fpsFrames.push(1000 / frameDelta)
-				if (fpsFrames.length > 30) fpsFrames.shift() // Keep last 30 frames
+				if (fpsFrames.length > 30) fpsFrames.shift()
 				metrics.fps = fpsFrames.reduce((a, b) => a + b, 0) / fpsFrames.length
 			}
 			lastFrameTime = now
 
-			// Log key metrics every 60 frames
 			if (enableProfiling && frameCount % 60 === 0) {
 				const latency = metrics.totalLatency ? `${metrics.totalLatency.toFixed(1)}ms` : 'N/A'
 				const fps = metrics.fps ? `${metrics.fps.toFixed(1)}fps` : 'N/A'
@@ -196,11 +183,9 @@
 				console.log(`[🎥 ${resourceName}] ${resolution} @ ${fps} | Latency: ${latency}`)
 			}
 
-			// Schedule next frame
 			videoFrameCallbackId = video.requestVideoFrameCallback(updateFrame)
 		}
 
-		// Start the callback loop
 		videoFrameCallbackId = video.requestVideoFrameCallback(updateFrame)
 	}
 
@@ -211,7 +196,6 @@
 		}
 	}
 
-	// Fallback: If profiling is disabled, use simple useTask
 	useTask(() => {
 		if (!enableProfiling && texture && ready) {
 			texture.needsUpdate = true

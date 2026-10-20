@@ -1,6 +1,6 @@
 ---
 title: <SelectionTool />
-description: Lasso- or ellipse-pick points and geometries inside a motion-tools visualizer.
+description: Lasso- or ellipse-pick points and geometries inside a Viam visualizer.
 ---
 
 `<SelectionTool />` adds a selection mode to the visualizer — a dashboard toggle plus an on-canvas lasso or ellipse tool that captures the points and geometries inside the drawn region. Selected entities are exposed via the `useSelectionPlugin` hook so you can react to them from your own UI.
@@ -19,8 +19,8 @@ pnpm add earcut
 
 ```svelte
 <script lang="ts">
-	import { Visualizer } from '@viamrobotics/motion-tools'
-	import { SelectionTool } from '@viamrobotics/motion-tools/plugins'
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { SelectionTool } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">
@@ -46,7 +46,7 @@ Use `useSelectionPlugin` to read the current set of selected entities from anywh
 
 ```svelte
 <script lang="ts">
-	import { useSelectionPlugin } from '@viamrobotics/motion-tools/plugins'
+	import { useSelectionPlugin } from '@viamrobotics/visualization/plugins'
 
 	const selection = useSelectionPlugin()
 </script>
@@ -62,5 +62,5 @@ The hook also exposes `clearSelections()` to remove all selection-marker entitie
 For lower-level access to selection state (e.g. querying which points fall inside a selected region), the plugin exports its Koota traits under the `selectionTraits` namespace:
 
 ```ts
-import { selectionTraits } from '@viamrobotics/motion-tools/plugins'
+import { selectionTraits } from '@viamrobotics/visualization/plugins'
 ```

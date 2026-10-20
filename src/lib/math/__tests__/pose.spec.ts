@@ -363,7 +363,7 @@ describe('setFromFrame', () => {
 	})
 
 	it('composes euler angles in ZYX order', () => {
-		// RDK uses the z-y′-x″ sequence; `build-frame-descriptors.ts` decodes to match.
+		// RDK uses the z-y′-x″ sequence; `motion/frameDescriptors.ts` decodes to match.
 		const pose = new Pose().setFromFrame({
 			orientation: {
 				type: 'euler_angles',
@@ -398,6 +398,60 @@ describe('setFromFrame', () => {
 		})
 
 		expect(fields(pose)).toEqual({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+	})
+
+	it('falls back to the identity orientation when its value is omitted', () => {
+		const pose = new Pose(1, 2, 3, 1, 0, 0, 44).setFromFrame({
+			orientation: { type: 'ov_degrees' },
+		} as Partial<Frame>)
+
+		expect(fields(pose)).toEqual({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+	})
+
+	/**
+	 * Both spell the same valid config: RDK marshals `{ W, X, Y, Z }`, the editor
+	 * writes `{ w, x, y, z }`, and Go's unmarshal accepts either.
+	 */
+	it.each([
+		['lowercase', { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 }],
+		['capitalised', { X: Math.SQRT1_2, Y: 0, Z: 0, W: Math.SQRT1_2 }],
+	])('reads a %s quaternion', (_label, value) => {
+		const orientation = { type: 'quaternion', value } as Frame['orientation']
+		const pose = new Pose().setFromFrame({ orientation })
+
+		expect(pose.isFinite()).toBe(true)
+		expect(pose.toQuaternion().angleTo(quarterTurnAboutX)).toBeCloseTo(0, 6)
+	})
+
+	/**
+	 * `R4AA` tags its fields `th/x/y/z`, the names both orientation-vector
+	 * encodings use, so a misread yields a plausible wrong rotation. Hence
+	 * asserting the rotation, not the fields.
+	 */
+	it('reads axis_angles as an axis-angle in radians', () => {
+		const pose = new Pose().setFromFrame({
+			orientation: { type: 'axis_angles', value: { x: 1, y: 0, z: 0, th: Math.PI / 2 } },
+		})
+
+		expect(pose.toQuaternion().angleTo(quarterTurnAboutX)).toBeCloseTo(0, 6)
+	})
+
+	/** RDK normalizes the axis inside `R4AA.ToQuat`, so an unscaled one is the same rotation. */
+	it('normalizes an axis_angles axis', () => {
+		const pose = new Pose().setFromFrame({
+			orientation: { type: 'axis_angles', value: { x: 5, y: 0, z: 0, th: Math.PI / 2 } },
+		})
+
+		expect(pose.toQuaternion().angleTo(quarterTurnAboutX)).toBeCloseTo(0, 6)
+	})
+
+	/** A quaternion round trip is exact for the rotation but not for the tuple. */
+	it('keeps ov_degrees theta at 180 rather than -180', () => {
+		const pose = new Pose().setFromFrame({
+			orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 180 } },
+		})
+
+		expect(pose.theta).toBe(180)
 	})
 
 	it('agrees across orientation representations of the same rotation', () => {

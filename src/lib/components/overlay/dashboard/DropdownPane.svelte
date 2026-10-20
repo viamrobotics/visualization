@@ -29,12 +29,15 @@
 		/>
 	{/snippet}
 
-	<Pane
-		position="inline"
-		{title}
-		expanded
-		userExpandable={false}
-	>
-		{@render children()}
-	</Pane>
+	<div class="flex min-w-48 flex-col">
+		<h3 class="border-medium font-public-sans text-gray-7 truncate border-b p-2 text-xs">
+			{title}
+		</h3>
+
+		<div class="px-1">
+			<Pane position="inline">
+				{@render children()}
+			</Pane>
+		</div>
+	</div>
 </Popover>

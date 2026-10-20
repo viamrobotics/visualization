@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { WorkspacePortal } from '$lib'
+	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
 
 	import FullscreenButton from './FullscreenButton.svelte'
 	import { useFullscreen } from './useFullscreen.svelte'

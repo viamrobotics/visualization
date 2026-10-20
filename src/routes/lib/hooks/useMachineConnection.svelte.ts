@@ -53,9 +53,8 @@ export const provideMachineConnection = (
 			return
 		}
 		attempts += 1
-		// Status updates flow back through useRobotConnection's listener; if the
-		// dial fails the status returns to DISCONNECTED and the watcher below
-		// schedules the next retry.
+		// Status updates flow back through useRobotConnection's listener. A failed dial
+		// returns the status to DISCONNECTED, and the watcher below schedules the retry.
 		void robotConnection.connect(config)
 	}
 

@@ -9,7 +9,7 @@
 
 	const { camera, invalidate, size } = useThrelte()
 
-	const entities = useQuery(traits.Name)
+	const entities = useQuery(traits.Name, traits.WorldMatrix)
 
 	const layout = createLabelLayout({ camera, size, invalidate, labels })
 

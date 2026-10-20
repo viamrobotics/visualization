@@ -8,9 +8,9 @@ import { Pose } from '$lib/math'
 const MM_TO_M = 0.001
 
 /**
- * Rapier's capsule runs along Y; this scene renders capsules along Z (see
- * `composeCapsuleMatrices`). Colliders take this as a local correction so the
- * two agree.
+ * Rapier's capsule and cylinder both run along Y. This scene renders both along
+ * Z (see `composeCapsuleMatrices` and `composeCylinderMatrix`). Colliders take
+ * this as a local correction so the two agree.
  */
 const Y_TO_Z = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
 
@@ -28,18 +28,19 @@ export type ColliderShape =
 	| { kind: 'cuboid'; hx: number; hy: number; hz: number }
 	| { kind: 'ball'; radius: number }
 	| { kind: 'capsule'; halfHeight: number; radius: number }
+	| { kind: 'cylinder'; halfHeight: number; radius: number }
 
 /**
  * The collider shape for an entity, or `undefined` when it carries no
  * collidable primitive.
  *
- * Only `Box`, `Capsule` and `Sphere` participate — Viam's collider primitives.
- * Meshes and point clouds are deliberately excluded: Rapier's trimesh-vs-trimesh
- * case produces no contacts, so including them would look supported while
- * silently reporting nothing.
+ * Only `Box`, `Capsule`, `Cylinder` and `Sphere` participate — Viam's collider
+ * primitives. Meshes and point clouds are deliberately excluded: Rapier's
+ * trimesh-vs-trimesh case produces no contacts, so including them would look
+ * supported while silently reporting nothing.
  *
- * Degenerate geometry returns `undefined`; Rapier rejects zero-extent shapes,
- * and a collider with no size can't collide with anything anyway.
+ * Degenerate geometry returns `undefined`. Rapier rejects zero-extent shapes, and a
+ * collider with no size can't collide with anything anyway.
  */
 export const colliderShapeFor = (entity: Entity): ColliderShape | undefined => {
 	const box = entity.get(traits.Box)
@@ -71,12 +72,24 @@ export const colliderShapeFor = (entity: Entity): ColliderShape | undefined => {
 		return { kind: 'capsule', halfHeight: midsection / 2, radius }
 	}
 
+	const cylinder = entity.get(traits.Cylinder)
+	if (cylinder) {
+		if (cylinder.r <= 0 || cylinder.l <= 0) return undefined
+		// `capped` is a render distinction only. An open tube sweeps the same wall
+		// as a solid cylinder, and rdk collides both as the same lowered mesh.
+		return {
+			kind: 'cylinder',
+			halfHeight: (cylinder.l * MM_TO_M) / 2,
+			radius: cylinder.r * MM_TO_M,
+		}
+	}
+
 	return undefined
 }
 
 /**
- * Write an entity's collider pose — `WorldMatrix × Center` — into `position`
- * and `quaternion`, applying the capsule axis correction when needed.
+ * Write an entity's collider pose, `WorldMatrix × Center`, into `position` and `quaternion`,
+ * applying the Y-to-Z axis correction when the shape needs it.
  *
  * Returns `false` and leaves both untouched when the entity has no
  * `WorldMatrix`. Any scale on the world matrix is discarded: collider extents
@@ -100,7 +113,7 @@ export const composeColliderPose = (
 
 	poseMatrix.decompose(position, quaternion, scratchScale)
 
-	if (shape.kind === 'capsule') {
+	if (shape.kind === 'capsule' || shape.kind === 'cylinder') {
 		quaternion.multiply(Y_TO_Z)
 	}
 

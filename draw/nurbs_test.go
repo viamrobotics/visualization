@@ -9,7 +9,7 @@ import (
 	"go.viam.com/test"
 )
 
-// 3 control points, degree 3 → knots length = 3 + 3 + 1 = 7
+// nurbsControlPoints holds 3 control points. At degree 3 the knot vector must have length 3 + 3 + 1 = 7.
 var nurbsControlPoints = []spatialmath.Pose{
 	spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
 	spatialmath.NewPose(r3.Vector{X: 1, Y: 0, Z: 0}, &spatialmath.OrientationVectorDegrees{OX: 0, OY: 0, OZ: 1, Theta: 0}),
@@ -18,7 +18,7 @@ var nurbsControlPoints = []spatialmath.Pose{
 
 var nurbsKnotsDefault = []float64{0, 0, 0, 0, 1, 1, 1} // degree 3, 3 control points
 
-// degree 1, 3 control points → knots length = 3 + 1 + 1 = 5
+// nurbsKnotsDegree1 is the knot vector for degree 1 over 3 control points, length 3 + 1 + 1 = 5.
 var nurbsKnotsDegree1 = []float64{0, 0, 0, 0, 0}
 
 func TestNewNurbs(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNurbs_Draw(t *testing.T) {
 		test.That(t, *protoNurbs.Degree, test.ShouldEqual, int32(3))
 		// red (255, 0, 0) packed as [r, g, b]
 		test.That(t, proto.Metadata.Colors, test.ShouldResemble, []byte{0xff, 0x00, 0x00})
-		// default alpha (255) — single uniform byte
+		// default alpha (255), a single uniform byte
 		test.That(t, proto.Metadata.Opacities, test.ShouldResemble, []byte{0xff})
 	})
 }

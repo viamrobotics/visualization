@@ -1,0 +1,31 @@
+---
+title: <Monitor />
+description: Monitor mode — watch live machine data, with read-only details cards for the selection.
+---
+
+`<Monitor />` contributes **monitor mode**: the mode for watching live machine data. Mounting it adds the **Monitor** button to the workspace mode toggle and a read-only details card for each selected entity — pose, dimensions, count, color, opacity, and relationships.
+
+Monitor is not special. Like `build` ([`<BuildFrames />`](../build-frames/)) and `move` (`MoveFrame`), it exists only while its plugin is mounted, declared through the same [`useEnvironmentMode`](../authoring/#contributing-a-workspace-mode) hook. Mount order is priority order — mount `<Monitor />` first so it is the leftmost toggle button and the fallback when a persisted mode is unreachable. With no mode plugins mounted at all the mode is `none`, and the visualizer is a bare renderer: no toggle, no mode UI — the right shape for rendering a snapshot or a single point cloud.
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Monitor } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer partID="my-part-id">
+		<Monitor />
+	</Visualizer>
+</div>
+```
+
+## Details cards
+
+While monitor mode is active, each selected entity gets a details card. Cards render every contributed details section with their entity, so both plugins (via `useDetailsSection`) and the embedding app (via the `details` snippet on `<Visualizer />`) can extend them — see [Adding overlay UI](../authoring/#adding-overlay-ui).
+
+## Runtime requirements
+
+- A live machine connection fills the cards with live poses; without one they describe whatever is in the scene (a snapshot, dropped files).

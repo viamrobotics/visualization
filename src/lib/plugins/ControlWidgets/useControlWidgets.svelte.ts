@@ -1,5 +1,8 @@
 import { PersistedState } from 'runed'
 
+// Keys kept as `motion-tools:` after the rename to visualization; renaming them would
+// silently discard every existing user's open widgets and their positions.
+
 const open = new PersistedState<Record<string, OpenResourceWidget[]>>(
 	'motion-tools:control-widgets',
 	{}
