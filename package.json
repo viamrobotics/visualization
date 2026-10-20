@@ -5,7 +5,7 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
-		"dev": "concurrently \"vite dev\" \"go run cmd/draw-server/main.go -port ${DRAW_SERVICE_PORT:-3030}\"",
+		"dev": "concurrently \"vite dev\" \"go run ./cmd/draw-server -port ${DRAW_SERVICE_PORT:-3030}\"",
 		"dev:https": "vite dev -- --https",
 		"up": "wireit",
 		"build": "wireit",
