@@ -52,8 +52,8 @@ const vectorOf = ({ th, x, y, z }: GoldenVector) => new OrientationVector(x, y, 
 const componentsOf = (q: Quaternion): GoldenQuaternion => ({ w: q.w, x: q.x, y: q.y, z: q.z })
 
 describe('OrientationVector.toQuaternion, against the quaternions RDK derived', () => {
-	it('reads all 20 vector cases the Go generator wrote', () => {
-		expect(fromVectorCases.length).toBe(20)
+	it('reads all 23 vector cases the Go generator wrote', () => {
+		expect(fromVectorCases.length).toBe(23)
 	})
 
 	it.each(fromVectorCases)(
@@ -67,8 +67,8 @@ describe('OrientationVector.toQuaternion, against the quaternions RDK derived', 
 })
 
 describe('OrientationVector.setFromQuaternion, against the vectors RDK read out of a quaternion', () => {
-	it('reads all 13 quaternion cases the Go generator wrote', () => {
-		expect(fromQuaternionCases.length).toBe(13)
+	it('reads all 16 quaternion cases the Go generator wrote', () => {
+		expect(fromQuaternionCases.length).toBe(16)
 	})
 
 	it.each(fromQuaternionCases)(
