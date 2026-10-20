@@ -31,6 +31,35 @@ describe('pointSnap', () => {
 		expect(result?.indicator).toEqual({ kind: 'point', point: new Vector3(4, 1, 2) })
 	})
 
+	it('skips a key point hidden behind the surface under the cursor', () => {
+		const lid = { shape: box(4, 4, 1), matrix: placed(5, 0, 3) }
+		const result = pointSnap(
+			topDownQuery({ x: 4, y: 1 }, { position: new Vector3(), targets: [target, lid] })
+		)
+
+		expect(result).toBeNull()
+	})
+
+	it('skips a key point below the ground when the ground plane is on', () => {
+		const buried = { shape: box(2, 2, 2), matrix: placed(5, 0, -2) }
+		const result = pointSnap(
+			topDownQuery(
+				{ x: 4, y: 1 },
+				{ position: new Vector3(), targets: [buried], groundPlane: true }
+			)
+		)
+
+		expect(result).toBeNull()
+	})
+
+	it('still snaps to a corner of the box whose surface its own sight line grazes', () => {
+		const result = pointSnap(
+			topDownQuery({ x: 6, y: -1 }, { position: new Vector3(), targets: [target] })
+		)
+
+		expect(result?.indicator).toEqual({ kind: 'point', point: new Vector3(6, -1, 2) })
+	})
+
 	it('sets cubes flush side by side when edge midpoints meet', () => {
 		const result = pointSnap(
 			topDownQuery(

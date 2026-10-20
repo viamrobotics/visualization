@@ -39,6 +39,8 @@ export interface SnapQuery {
 	 * camera.
 	 */
 	toScreen: (point: Vector3, out: Vector2) => boolean
+	/** Sets `out` to the camera's ray through the pixel `point` projects to. */
+	rayThrough: (point: Vector3, out: Ray) => Ray
 	groundPlane: boolean
 	alignRotation: boolean
 }

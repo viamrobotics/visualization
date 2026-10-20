@@ -15,9 +15,12 @@ export const box = (x: number, y: number, z: number): SnapShape => ({
 export const placed = (x: number, y: number, z: number, orientation = new Quaternion()) =>
 	new Matrix4().compose(new Vector3(x, y, z), orientation, new Vector3(1, 1, 1))
 
+/** The camera height the top-down view looks down from. */
+const CAMERA_Z = 10
+
 /**
- * A query seen from straight above: the ray drops from the cursor, and a world point lands at
- * its x and y scaled to pixels.
+ * A query seen from straight above: rays drop from `CAMERA_Z`, and a world point lands at its x
+ * and y scaled to pixels.
  */
 export const topDownQuery = (
 	cursor: { x: number; y: number },
@@ -28,12 +31,14 @@ export const topDownQuery = (
 	dragged: [],
 	targets: [],
 	constraint: { kind: 'free' },
-	ray: new Ray(new Vector3(cursor.x, cursor.y, 10), new Vector3(0, 0, -1)),
+	ray: new Ray(new Vector3(cursor.x, cursor.y, CAMERA_Z), new Vector3(0, 0, -1)),
 	cursor: new Vector2(cursor.x, cursor.y).multiplyScalar(PIXELS_PER_METRE),
 	toScreen: (point, out) => {
 		out.set(point.x, point.y).multiplyScalar(PIXELS_PER_METRE)
 		return true
 	},
+	rayThrough: (point, out) =>
+		out.set(new Vector3(point.x, point.y, CAMERA_Z), new Vector3(0, 0, -1)),
 	groundPlane: false,
 	alignRotation: false,
 	...overrides,

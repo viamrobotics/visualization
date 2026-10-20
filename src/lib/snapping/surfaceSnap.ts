@@ -1,10 +1,10 @@
-import { Matrix4, Plane, Quaternion, Vector3 } from 'three'
+import { Matrix4, Quaternion, Vector3 } from 'three'
 
 import type { SnapQuery, SnapResult } from './snapQuery'
 
 import { alignUpToNormal } from './alignUpToNormal'
 import { constrainDelta } from './dragConstraint'
-import { raycastSnapShape, type SnapHit } from './raycastSnapShape'
+import { nearestSurfaceHit } from './nearestSurfaceHit'
 import { supportDistance } from './supportDistance'
 
 // Below this, the constraint leaves almost none of the surface normal to move along, so reaching
@@ -12,32 +12,9 @@ import { supportDistance } from './supportDistance'
 const MIN_NORMAL_ALIGNMENT = 0.1
 
 const UNIT_SCALE = new Vector3(1, 1, 1)
-const GROUND_PLANE = new Plane(new Vector3(0, 0, 1), 0)
 const geometryMatrix = new Matrix4()
 const geometryOrigin = new Vector3()
 const downward = new Vector3()
-
-const groundHit = (query: SnapQuery): SnapHit | null => {
-	// Only from above. Seen from below, the ground is not a surface anything rests on.
-	if (query.ray.direction.z >= 0) return null
-
-	const point = query.ray.intersectPlane(GROUND_PLANE, new Vector3())
-	if (!point) return null
-
-	return { point, normal: new Vector3(0, 0, 1), distance: point.distanceTo(query.ray.origin) }
-}
-
-/** The nearest surface under the cursor, including the ground when it is enabled. */
-const nearestHit = (query: SnapQuery): SnapHit | null => {
-	let nearest = query.groundPlane ? groundHit(query) : null
-
-	for (const target of query.targets) {
-		const hit = raycastSnapShape(query.ray, target.shape, target.matrix)
-		if (hit && (!nearest || hit.distance < nearest.distance)) nearest = hit
-	}
-
-	return nearest
-}
 
 /** How far the dragged geometries reach from the anchor in `direction`, taken together. */
 const reachFromAnchor = (query: SnapQuery, orientation: Quaternion, direction: Vector3): number => {
@@ -63,7 +40,7 @@ const reachFromAnchor = (query: SnapQuery, orientation: Quaternion, direction: V
 export const surfaceSnap = (query: SnapQuery): SnapResult | null => {
 	if (query.dragged.length === 0) return null
 
-	const hit = nearestHit(query)
+	const hit = nearestSurfaceHit(query.ray, query.targets, query.groundPlane)
 	if (!hit) return null
 
 	const orientation = query.alignRotation

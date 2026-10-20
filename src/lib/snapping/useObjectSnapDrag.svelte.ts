@@ -1,7 +1,7 @@
 import type { Entity } from 'koota'
 
 import { useThrelte } from '@threlte/core'
-import { Matrix4, type Object3D, Quaternion, Raycaster, Vector2, Vector3 } from 'three'
+import { Matrix4, type Object3D, Quaternion, type Ray, Raycaster, Vector2, Vector3 } from 'three'
 
 import { useWorld } from '$lib/ecs'
 import { useSettings } from '$lib/hooks/useSettings.svelte'
@@ -67,7 +67,9 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 	const cursorPixels = new Vector2()
 	const cursorNdc = new Vector2()
 	const raycaster = new Raycaster()
+	const sightRaycaster = new Raycaster()
 	const projected = new Vector3()
+	const projectedNdc = new Vector2()
 	const anchorMatrix = new Matrix4()
 
 	const isSnappingObjects = () =>
@@ -95,6 +97,14 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 		const { clientWidth, clientHeight } = renderer.domElement
 		out.set(((projected.x + 1) / 2) * clientWidth, ((1 - projected.y) / 2) * clientHeight)
 		return true
+	}
+
+	// Through the point's pixel rather than from the camera's position, so an orthographic camera,
+	// whose rays are parallel, gets the right sight line too.
+	const rayThrough = (point: Vector3, out: Ray): Ray => {
+		projected.copy(point).project(camera.current)
+		sightRaycaster.setFromCamera(projectedNdc.set(projected.x, projected.y), camera.current)
+		return out.copy(sightRaycaster.ray)
 	}
 
 	return {
@@ -136,6 +146,7 @@ export const useObjectSnapDrag = (): ObjectSnapDrag => {
 					ray: raycaster.ray,
 					cursor: cursorPixels,
 					toScreen,
+					rayThrough,
 					groundPlane: settings.current.snapGroundPlane,
 					alignRotation: settings.current.snapAlignRotation,
 				})
