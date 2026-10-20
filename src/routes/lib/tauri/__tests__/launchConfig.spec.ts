@@ -1,10 +1,12 @@
+import type { Credentials } from '@viamrobotics/sdk'
+
 import { describe, expect, it } from 'vitest'
 
-import type { LaunchConfig, LaunchCredentials } from '../launchConfig'
+import type { LaunchConfig } from '../launchConfig'
 
 import { launchConfigToDialConf, parseLaunchConfig } from '../launchConfig'
 
-const buildConfig = (credentials: LaunchCredentials): LaunchConfig => ({
+const buildConfig = (credentials: Credentials): LaunchConfig => ({
 	version: 1,
 	host: 'part.local.viam.cloud',
 	partId: 'part-1',
@@ -28,7 +30,7 @@ const accessTokenConfig = () => ({
 
 describe('launchConfigToDialConf', () => {
 	it('maps an access-token config with sessions disabled', () => {
-		const credentials: LaunchCredentials = { type: 'access-token', payload: 'tok' }
+		const credentials: Credentials = { type: 'access-token', payload: 'tok' }
 
 		expect(launchConfigToDialConf(buildConfig(credentials))).toEqual({
 			host: 'part.local.viam.cloud',
@@ -39,7 +41,7 @@ describe('launchConfigToDialConf', () => {
 	})
 
 	it('maps an api-key config with sessions disabled', () => {
-		const credentials: LaunchCredentials = {
+		const credentials: Credentials = {
 			type: 'api-key',
 			payload: 'secret',
 			authEntity: 'key-id',
@@ -120,6 +122,15 @@ describe('parseLaunchConfig', () => {
 			parseLaunchConfig({
 				...accessTokenConfig(),
 				credentials: { type: 'api-key', authEntity: 'id' },
+			})
+		).toThrow('payload')
+	})
+
+	it('rejects a non-string credential payload', () => {
+		expect(() =>
+			parseLaunchConfig({
+				...accessTokenConfig(),
+				credentials: { type: 'access-token', payload: 5 },
 			})
 		).toThrow('payload')
 	})

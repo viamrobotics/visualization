@@ -74,3 +74,4 @@ e2e/.env.e2e
 # Tauri
 src-tauri/target
 src-tauri/gen
+src-tauri/binaries/
