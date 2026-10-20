@@ -24,7 +24,7 @@ __snapshots__
 coverage
 dist
 .bin
-draw-server
+/draw-server
 /examples
 docs/public/playground
 docs/src/content/docs/api/*.md
