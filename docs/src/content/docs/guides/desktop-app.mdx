@@ -1,0 +1,43 @@
+---
+title: Desktop app
+description: Open the visualizer for one of your machines from the Viam CLI, with no setup beyond viam login.
+---
+
+The visualizer ships as a desktop app for macOS, Linux and Windows. The Viam CLI installs it for you and opens it connected to a machine part, using the login the CLI already holds. There is no machine picker and no API key to paste.
+
+## Open a machine
+
+Log in once, then name the part:
+
+```bash
+viam login
+viam machines part visualize --part <part-id>
+```
+
+The first run downloads the app for your platform into `~/.viam/visualizer/` and verifies it against the release checksums. Later runs reuse it. The command stays in the foreground while the window is open, and Ctrl+C closes the app.
+
+`--part` takes a part id or name. Add `--machine`, `--location` or `--organization` when the name is not unique across your account.
+
+## Update
+
+```bash
+viam machines part visualize --part <part-id> --update
+```
+
+This checks the latest release and installs it before launching. Without `--update`, the CLI checks at most once an hour and prints a hint when a newer version exists.
+
+To run a specific release, pass `--app-version`:
+
+```bash
+viam machines part visualize --part <part-id> --app-version 2.8.2
+```
+
+## Use your own build
+
+Point the CLI at an app you built or downloaded yourself with `--app-path`, or set `VIAM_VISUALIZER_PATH`. Either one wins over the cache. On macOS the path can be the `.app` bundle or the binary inside it.
+
+Releases are on the [GitHub releases page](https://github.com/viamrobotics/visualization/releases). The macOS bundles are not notarized, so macOS blocks a downloaded bundle on first launch. Allow it under System Settings → Privacy & Security → Open Anyway. The CLI's own download is not affected.
+
+## What the app connects to
+
+The app connects to the part's cloud address through WebRTC, the same way the browser version does. The Go draw server is not bundled, so the draw-service panel reads offline until you run one yourself. See [Running locally](/guides/local-usage/).
