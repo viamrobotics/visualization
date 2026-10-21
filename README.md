@@ -61,7 +61,7 @@ The app connects on boot when started with `--launch-file <path>`. The file is J
 Every GitHub release carries desktop bundles built by `tauri-release.yml`, named `viam-visualizer-<version>-<platform>-<arch><suffix>` with `platform` one of `darwin`, `linux`, `windows` and `arch` one of `aarch64`, `x86_64`. The suffixes are `.dmg` and `.app.tar.gz` on macOS, `.AppImage` and `.deb` on Linux, and `.exe` (portable) and `-setup.exe` (installer) on Windows, plus a `checksums.txt` with one `sha256  name` line per asset.
 
 > [!NOTE]
-> Currently, the macOS bundles are ad-hoc signed, so the first launch needs a right-click Open, or `xattr -d com.apple.quarantine` on the `.app`.
+> Currently, the macOS bundles are ad-hoc signed and not notarized. A downloaded bundle is blocked on first launch. Allow it under System Settings → Privacy & Security → Open Anyway, or run `xattr -d com.apple.quarantine` on the `.app`.
 
 ## Programmatic camera control
 
