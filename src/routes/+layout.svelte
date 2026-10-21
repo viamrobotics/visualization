@@ -36,29 +36,27 @@
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
-	import { getDialConfs } from './lib/robots'
+	import { resolveConnection } from './lib/resolveConnection'
+	import { useLaunchConfig } from './lib/tauri/useLaunchConfig.svelte'
 
 	provideConnectionConfigs()
 
 	const connectionConfig = useActiveConnectionConfig()
+	const launch = useLaunchConfig()
 
 	let { children } = $props()
 
-	let dialConfigs = $derived.by<Record<string, DialConf>>(() => {
-		if (connectionConfig.current) {
-			const robot = {
-				...$state.snapshot(connectionConfig.current),
-				disableSessions: true,
-			}
+	const resolved = $derived(
+		launch.ready
+			? resolveConnection(launch.current, $state.snapshot(connectionConfig.current))
+			: undefined
+	)
 
-			return { ...getDialConfs({ robot }) }
-		}
-
-		return {}
-	})
-
-	const partID = $derived(connectionConfig.current?.partId)
-	const dialConfig = $derived(partID ? dialConfigs[partID] : undefined)
+	const dialConfigs = $derived<Record<string, DialConf>>(
+		resolved ? { [resolved.partId]: resolved.dialConf } : {}
+	)
+	const partID = $derived(resolved?.partId)
+	const dialConfig = $derived(resolved?.dialConf)
 
 	let pluginsEnabled = true
 
@@ -74,12 +72,8 @@
 	{dialConfigs}
 >
 	<ViamAppProvider
-		serviceHost="https://app.viam.com"
-		credentials={{
-			type: 'api-key',
-			payload: connectionConfig.current?.apiKeyValue ?? '',
-			authEntity: connectionConfig.current?.apiKeyId ?? '',
-		}}
+		serviceHost={launch.current?.serviceHost ?? 'https://app.viam.com'}
+		credentials={resolved?.appCredentials ?? { type: 'api-key', payload: '', authEntity: '' }}
 	>
 		<MachineConnectionProvider
 			{partID}
@@ -103,7 +97,7 @@
 
 					<Logs />
 					<ControlWidgets />
-					<Machines />
+					<Machines {launch} />
 					<WorldTree />
 					<Settings />
 					<FileDrop />

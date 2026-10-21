@@ -41,6 +41,23 @@ pnpm tauri:build   # .app and .dmg under src-tauri/target/release/bundle/
 
 The bundle version follows `version` in `package.json`.
 
+The app connects on boot when started with `--launch-file <path>`. The file is JSON, version 1, written by the Viam CLI with `0600` permissions. The app deletes it after reading, unless it is not JSON or has no `version` key:
+
+```json
+{
+	"version": 1,
+	"host": "<part fqdn>",
+	"partId": "<part id>",
+	"partName": "<part name>",
+	"machineName": "<machine name>",
+	"signalingAddress": "https://app.viam.com:443",
+	"serviceHost": "https://app.viam.com",
+	"credentials": { "type": "access-token", "payload": "<jwt>" }
+}
+```
+
+`credentials` is alternatively `{ "type": "api-key", "authEntity": "<key id>", "payload": "<key>" }`. A second launch with a new file switches the running window to that machine. On macOS, `open -a <app> <path>` works too, and is the only form that reaches an app already running, since `open` drops `--args` then. With no flag the app behaves like the browser build.
+
 ## Programmatic camera control
 
 The visualizer exposes a `cameraControls` object on `window`. Open the browser console and call methods on it to move the camera or tweak its settings at runtime. Full API: <https://github.com/yomotsu/camera-controls#properties>.
