@@ -12,7 +12,6 @@
 
 	import { WorkspacePortal } from '$lib'
 	import Popover from '$lib/components/overlay/Popover.svelte'
-	import { useLogs } from '$lib/plugins'
 
 	import type { LaunchConfigState } from '../tauri/useLaunchConfig.svelte'
 
@@ -24,16 +23,14 @@
 	import Collapsible from './Collapsible.svelte'
 
 	interface Props {
-		isOpen: boolean
 		launch: LaunchConfigState
 	}
 
-	let { isOpen = $bindable(false), launch }: Props = $props()
+	const { launch }: Props = $props()
 
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 	const machineConnection = useMachineConnection()
-	const logs = useLogs()
 
 	const connected = $derived(
 		machineConnection.connectionStatus === MachineConnectionEvent.CONNECTED
@@ -62,15 +59,6 @@
 				return 'connect'
 			}
 		}
-	})
-
-	let lastLoggedLaunchError: string | undefined
-	$effect(() => {
-		const message = launch.error
-		if (!message || message === lastLoggedLaunchError) return
-
-		lastLoggedLaunchError = message
-		logs.add(`Launch file: ${message}`, 'error')
 	})
 
 	const onpaste = (event: ClipboardEvent) => {

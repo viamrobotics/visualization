@@ -5,8 +5,10 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
+use tauri::{AppHandle, Emitter, Manager};
 
 const LAUNCH_FILE_FLAG: &str = "--launch-file";
+const LAUNCH_CONFIG_EVENT: &str = "launch-config-changed";
 const SUPPORTED_VERSION: u64 = 1;
 
 /// Returns the path given as `--launch-file <path>` or `--launch-file=path`.
@@ -24,21 +26,27 @@ pub fn find_launch_file(args: &[String]) -> Option<PathBuf> {
     None
 }
 
-/// Reads the launch file, deletes it whether or not parsing succeeds, then parses it.
+/// Reads and parses the launch file. Deletes it once it parses as a JSON object with a
+/// `version` key, supported or not, so the token does not outlive the read. Anything else
+/// stays on disk, since the path may name a file that was never a launch file.
 /// Errors name the path and never include the file contents.
 pub fn read_and_remove(path: &Path) -> Result<Value, String> {
     let display = path.display();
     let contents = fs::read_to_string(path)
         .map_err(|err| format!("Cannot read launch file {display}: {err}"))?;
+    let value: Value = serde_json::from_str(&contents)
+        .map_err(|_| format!("Cannot parse launch file {display} as JSON"))?;
+    let version = match value.as_object().and_then(|object| object.get("version")) {
+        Some(version) => version.as_u64(),
+        None => return Err(format!("{display} is not a launch file, it has no version")),
+    };
     if let Err(err) = fs::remove_file(path) {
         eprintln!("Could not remove launch file {display}: {err}");
     }
-    let value: Value = serde_json::from_str(&contents)
-        .map_err(|_| format!("Cannot parse launch file {display} as JSON"))?;
-    match value.get("version").and_then(Value::as_u64) {
+    match version {
         Some(SUPPORTED_VERSION) => Ok(value),
         Some(version) => Err(format!(
-            "Launch file version {version} is not supported, expected {SUPPORTED_VERSION}"
+            "Launch file {display} version {version} is not supported, expected {SUPPORTED_VERSION}"
         )),
         None => Err(format!(
             "Launch file {display} has no integer version, expected {SUPPORTED_VERSION}"
@@ -76,14 +84,28 @@ pub fn launch_config(state: tauri::State<'_, LaunchConfigState>) -> Option<Launc
     state.0.lock().ok().and_then(|payload| payload.clone())
 }
 
-/// Loads the launch file named in `args`, if any. Failures are logged to stderr and returned.
-pub fn load_from_args(args: &[String]) -> Option<LaunchConfigPayload> {
-    let path = find_launch_file(args)?;
-    let result = read_and_remove(&path);
+/// Loads the launch file named in `args`, if any. A relative path resolves against `cwd`,
+/// the directory the launch ran from, which differs from this process's on a relaunch.
+pub fn load_from_args(args: &[String], cwd: &Path) -> Option<LaunchConfigPayload> {
+    let path = cwd.join(find_launch_file(args)?);
+    Some(load_from_path(&path))
+}
+
+/// Loads the launch file at `path`. Failures are logged to stderr and returned.
+pub fn load_from_path(path: &Path) -> LaunchConfigPayload {
+    let result = read_and_remove(path);
     if let Err(error) = &result {
         eprintln!("{error}");
     }
-    Some(result.into())
+    result.into()
+}
+
+/// Stores `payload` as the current launch config and tells the window it changed.
+pub fn replace(app: &AppHandle, payload: LaunchConfigPayload) {
+    if let Ok(mut current) = app.state::<LaunchConfigState>().0.lock() {
+        *current = Some(payload.clone());
+    }
+    let _ = app.emit(LAUNCH_CONFIG_EVENT, payload);
 }
 
 #[cfg(test)]
@@ -133,18 +155,54 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_version_errors_and_removes_file() {
+    fn unsupported_version_errors_with_path_and_removes_file() {
         let path = temp_file(r#"{"version":2}"#);
         let error = read_and_remove(&path).unwrap_err();
-        assert!(error.contains('2'), "{error}");
+        assert!(error.contains("version 2"), "{error}");
+        assert!(error.contains(&path.display().to_string()), "{error}");
         assert!(!path.exists());
     }
 
     #[test]
-    fn invalid_json_errors_and_removes_file() {
-        let path = temp_file("not json");
+    fn non_integer_version_errors_and_removes_file() {
+        let path = temp_file(r#"{"version":"1"}"#);
         assert!(read_and_remove(&path).is_err());
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn invalid_json_errors_and_keeps_file() {
+        let path = temp_file("not json");
+        assert!(read_and_remove(&path).is_err());
+        assert!(path.exists());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn json_without_version_errors_and_keeps_file() {
+        let path = temp_file(r#"{"host":"h"}"#);
+        let error = read_and_remove(&path).unwrap_err();
+        assert!(error.contains("not a launch file"), "{error}");
+        assert!(path.exists());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn relative_path_resolves_against_cwd() {
+        let path = temp_file(r#"{"version":1}"#);
+        let name = path.file_name().unwrap().to_str().unwrap();
+        let cwd = path.parent().unwrap();
+        let payload = load_from_args(&strings(&["app", "--launch-file", name]), cwd).unwrap();
+        assert!(payload.config.is_some(), "{:?}", payload.error);
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn absolute_path_ignores_cwd() {
+        let path = temp_file(r#"{"version":1}"#);
+        let args = strings(&["app", "--launch-file", path.to_str().unwrap()]);
+        let payload = load_from_args(&args, Path::new("/does-not-exist")).unwrap();
+        assert!(payload.config.is_some(), "{:?}", payload.error);
     }
 
     #[test]

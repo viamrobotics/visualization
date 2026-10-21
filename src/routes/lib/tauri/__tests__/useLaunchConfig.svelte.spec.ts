@@ -14,6 +14,11 @@ vi.mock('@tauri-apps/api/event', () => ({
 	listen: vi.fn(),
 }))
 
+const addLog = vi.fn()
+vi.mock('$lib/plugins/Logs/useLogs.svelte', () => ({
+	useLogs: () => ({ add: addLog }),
+}))
+
 const validConfig = (partId: string) => ({
 	version: 1,
 	host: 'part.local.viam.cloud',
@@ -41,6 +46,7 @@ const mountHook = (): LaunchConfigState => {
 describe('useLaunchConfig', () => {
 	beforeEach(() => {
 		emit = undefined
+		addLog.mockReset()
 		vi.mocked(invoke).mockReset()
 		vi.mocked(isTauri).mockReset()
 		unlisten.mockReset()
@@ -87,6 +93,70 @@ describe('useLaunchConfig', () => {
 		await vi.waitFor(() => expect(state.ready).toBe(true))
 		expect(state.error).toBe('file unreadable')
 		expect(state.current).toBeUndefined()
+		expect(addLog).toHaveBeenCalledWith('Launch file: file unreadable', 'error')
+	})
+
+	it('asks for the config only once listening', async () => {
+		vi.mocked(isTauri).mockReturnValue(true)
+		let resolveListen: (() => void) | undefined
+		vi.mocked(listen).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveListen = () => resolve(unlisten)
+				})
+		)
+		vi.mocked(invoke).mockResolvedValue(null)
+
+		const state = mountHook()
+		await vi.waitFor(() => expect(resolveListen).toBeDefined())
+		expect(invoke).not.toHaveBeenCalled()
+
+		resolveListen?.()
+		await vi.waitFor(() => expect(state.ready).toBe(true))
+		expect(invoke).toHaveBeenCalledOnce()
+	})
+
+	it('keeps an event that lands before the invoke answer', async () => {
+		vi.mocked(isTauri).mockReturnValue(true)
+		let resolveInvoke: ((payload: unknown) => void) | undefined
+		vi.mocked(invoke).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveInvoke = resolve
+				})
+		)
+
+		const state = mountHook()
+		await vi.waitFor(() => expect(resolveInvoke).toBeDefined())
+
+		emit?.({ config: validConfig('newer'), error: null })
+		resolveInvoke?.({ config: validConfig('older'), error: null })
+
+		await vi.waitFor(() => expect(state.ready).toBe(true))
+		expect(state.current?.partId).toBe('newer')
+	})
+
+	it('ignores an invoke answer that arrives after teardown', async () => {
+		vi.mocked(isTauri).mockReturnValue(true)
+		let resolveInvoke: ((payload: unknown) => void) | undefined
+		vi.mocked(invoke).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveInvoke = resolve
+				})
+		)
+
+		const state = mountHook()
+		await vi.waitFor(() => expect(resolveInvoke).toBeDefined())
+
+		cleanup?.()
+		cleanup = undefined
+		resolveInvoke?.({ config: validConfig('late'), error: null })
+		await Promise.resolve()
+		await Promise.resolve()
+
+		expect(state.current).toBeUndefined()
+		expect(state.ready).toBe(false)
 	})
 
 	it('turns a rejected invoke into an error and still becomes ready', async () => {

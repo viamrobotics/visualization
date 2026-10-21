@@ -58,7 +58,6 @@
 	const partID = $derived(resolved?.partId)
 	const dialConfig = $derived(resolved?.dialConf)
 
-	let isMachinesPageOpen = $state(false)
 	let pluginsEnabled = true
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
@@ -98,10 +97,7 @@
 
 					<Logs />
 					<ControlWidgets />
-					<Machines
-						bind:isOpen={isMachinesPageOpen}
-						{launch}
-					/>
+					<Machines {launch} />
 					<WorldTree />
 					<Settings />
 					<FileDrop />

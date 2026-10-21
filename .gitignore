@@ -19,7 +19,7 @@ static/test-fixtures
 .svelte-kit
 .astro
 build
-src/lib/**/__tests__/__screenshots__
+src/**/__tests__/__screenshots__
 __snapshots__
 coverage
 dist
@@ -74,4 +74,3 @@ e2e/.env.e2e
 # Tauri
 src-tauri/target
 src-tauri/gen
-src-tauri/binaries/

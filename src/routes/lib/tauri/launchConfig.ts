@@ -1,13 +1,6 @@
 import type { Credentials, DialWebRTCConf } from '@viamrobotics/sdk'
 
-import {
-	LaunchConfigError,
-	LaunchConfigExpiryError,
-	LaunchConfigFieldError,
-	LaunchConfigVersionError,
-} from './configErrors'
-
-export const LAUNCH_CONFIG_VERSION = 1
+const LAUNCH_CONFIG_VERSION = 1
 export const LAUNCH_CONFIG_COMMAND = 'launch_config'
 export const LAUNCH_CONFIG_EVENT = 'launch-config-changed'
 
@@ -45,7 +38,7 @@ export const launchConfigToDialConf = (config: LaunchConfig): DialWebRTCConf => 
 }
 
 export const parseLaunchConfig = (value: unknown): LaunchConfig => {
-	if (!isRecord(value)) throw new LaunchConfigError()
+	if (!isRecord(value)) throw new Error('Launch file is not an object')
 
 	const config: LaunchConfig = {
 		version: parseVersion(value),
@@ -61,15 +54,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const parseVersion = (value: Record<string, unknown>): typeof LAUNCH_CONFIG_VERSION => {
-	if (value.version !== LAUNCH_CONFIG_VERSION) throw new LaunchConfigVersionError(value.version)
+	if (value.version !== LAUNCH_CONFIG_VERSION) {
+		throw new Error(
+			`Launch file version ${String(value.version)} is not supported, expected ${LAUNCH_CONFIG_VERSION}`
+		)
+	}
 	return value.version
 }
 
 const parseField = (value: Record<string, unknown>, field: string): string => {
-	if (!(field in value)) throw new LaunchConfigFieldError(field)
-
 	const result = value[field]
-	if (typeof result !== 'string' || result === '') throw new LaunchConfigFieldError(field)
+	if (!isNonEmptyString(result)) throw new Error(`Launch file field "${field}" is missing`)
 	return result
 }
 
@@ -99,6 +94,6 @@ const parseCredentials = (value: unknown): Credentials => {
 
 const parseExpiresAt = (value: unknown): string | undefined => {
 	if (value === undefined) return undefined
-	if (typeof value !== 'string') throw new LaunchConfigExpiryError()
+	if (typeof value !== 'string') throw new Error('Launch file field "expiresAt" must be a string')
 	return value
 }

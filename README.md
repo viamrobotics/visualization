@@ -41,7 +41,7 @@ pnpm tauri:build   # .app and .dmg under src-tauri/target/release/bundle/
 
 The bundle version follows `version` in `package.json`.
 
-The app connects on boot when started with `--launch-file <path>`. The file is JSON, version 1, written by the Viam CLI with `0600` permissions, and the app deletes it after reading:
+The app connects on boot when started with `--launch-file <path>`. The file is JSON, version 1, written by the Viam CLI with `0600` permissions. The app deletes it after reading, unless it is not JSON or has no `version` key:
 
 ```json
 {
@@ -56,7 +56,7 @@ The app connects on boot when started with `--launch-file <path>`. The file is J
 }
 ```
 
-`credentials` is alternatively `{ "type": "api-key", "authEntity": "<key id>", "payload": "<key>" }`. A second launch with a new file switches the running window to that machine. With no flag the app behaves like the browser build.
+`credentials` is alternatively `{ "type": "api-key", "authEntity": "<key id>", "payload": "<key>" }`. A second launch with a new file switches the running window to that machine. On macOS, `open -a <app> <path>` works too, and is the only form that reaches an app already running, since `open` drops `--args` then. With no flag the app behaves like the browser build.
 
 ## Programmatic camera control
 
