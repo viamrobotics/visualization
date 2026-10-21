@@ -16,6 +16,7 @@
 	import DetailsTabs from '$lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '$lib/components/overlay/details/DimensionsDetails.svelte'
 	import EditGeometryDetails from '$lib/components/overlay/details/EditGeometryDetails.svelte'
+	import GeometryOffsetDetails from '$lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '$lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
 	import { traits, useTag, useTrait } from '$lib/ecs'
@@ -128,6 +129,8 @@
 			{:else}
 				<DimensionsDetails {entity} />
 			{/if}
+
+			<GeometryOffsetDetails {entity} />
 		{/if}
 
 		<CountDetails {entity} />

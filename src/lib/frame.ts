@@ -7,15 +7,6 @@ import { UuidTool } from 'uuid-tool'
 import { createGeometryFromFrame } from '$lib/geometry'
 import { Pose } from '$lib/math'
 
-type FrameGeometryMap = {
-	none: { type: 'none' }
-	box: { type: 'box'; x: number; y: number; z: number }
-	sphere: { type: 'sphere'; r: number }
-	capsule: { type: 'capsule'; r: number; l: number }
-}
-
-export type FrameGeometry = keyof FrameGeometryMap
-
 type FrameOrientationMap = {
 	quaternion: { type: 'quaternion'; value: { x: number; y: number; z: number; w: number } }
 	euler_angles: { type: 'euler_angles'; value: { roll: number; pitch: number; yaw: number } }
@@ -26,6 +17,21 @@ type FrameOrientationMap = {
 }
 
 export type FrameOrientation = keyof FrameOrientationMap
+type FrameOrientationValue = FrameOrientationMap[FrameOrientation]
+
+type FrameGeometryPose = {
+	translation?: { x: number; y: number; z: number }
+	orientation?: FrameOrientationValue
+}
+
+type FrameGeometryMap = {
+	none: { type: 'none' }
+	box: { type: 'box'; x: number; y: number; z: number } & FrameGeometryPose
+	sphere: { type: 'sphere'; r: number } & FrameGeometryPose
+	capsule: { type: 'capsule'; r: number; l: number } & FrameGeometryPose
+}
+
+export type FrameGeometry = keyof FrameGeometryMap
 
 export type FrameEulerDegrees = FrameOrientationMap['euler_angles']['value']
 
