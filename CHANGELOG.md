@@ -1,5 +1,11 @@
 # visualization
 
+## 2.10.0
+
+### Minor Changes
+
+- 1d71218: Add object snapping to build-mode moves: key points, surfaces, ground plane, and surface alignment.
+
 ## 2.9.1
 
 ### Patch Changes
