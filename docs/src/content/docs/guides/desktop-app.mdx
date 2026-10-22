@@ -36,8 +36,8 @@ viam machines part visualize --part <part-id> --app-version 2.8.2
 
 Point the CLI at an app you built or downloaded yourself with `--app-path`, or set `VIAM_VISUALIZER_PATH`. Either one wins over the cache. On macOS the path can be the `.app` bundle or the binary inside it.
 
-Releases are on the [GitHub releases page](https://github.com/viamrobotics/visualization/releases). The macOS bundles are not notarized, so a bundle opened from Finder needs a right-click Open the first time. The CLI's own download is not affected.
+Releases are on the [GitHub releases page](https://github.com/viamrobotics/visualization/releases). The macOS bundles are not notarized, so macOS blocks a downloaded bundle on first launch. Allow it under System Settings → Privacy & Security → Open Anyway. The CLI's own download is not affected.
 
 ## What the app connects to
 
-The app connects to the part's cloud address through WebRTC, the same way the browser version does. The Go draw server is not bundled, so the draw-service panel reads offline until you run one locally with `make up`.
+The app connects to the part's cloud address through WebRTC, the same way the browser version does. The Go draw server is not bundled, so the draw-service panel reads offline until you run one yourself. See [Running locally](/guides/local-usage/).

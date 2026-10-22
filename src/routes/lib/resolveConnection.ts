@@ -1,14 +1,15 @@
-import type { AccessToken, Credential, DialWebRTCConf } from '@viamrobotics/sdk'
+import type { Credentials, DialWebRTCConf } from '@viamrobotics/sdk'
 
 import type { ConnectionConfig } from './connectionConfig'
 import type { LaunchConfig } from './tauri/launchConfig'
 
+import { getApiKeyCredential, getDialConf } from './robots'
 import { launchConfigToDialConf } from './tauri/launchConfig'
 
 export interface ResolvedConnection {
 	partId: string
 	dialConf: DialWebRTCConf
-	appCredentials: Credential | AccessToken
+	appCredentials: Credentials
 	launched: boolean
 }
 
@@ -28,21 +29,8 @@ export const resolveConnection = (
 	if (!active) return undefined
 	return {
 		partId: active.partId,
-		dialConf: {
-			host: active.host,
-			credentials: {
-				type: 'api-key',
-				payload: active.apiKeyValue,
-				authEntity: active.apiKeyId,
-			},
-			signalingAddress: active.signalingAddress,
-			disableSessions: true,
-		},
-		appCredentials: {
-			type: 'api-key',
-			payload: active.apiKeyValue,
-			authEntity: active.apiKeyId,
-		},
+		dialConf: getDialConf({ ...active, disableSessions: true }),
+		appCredentials: getApiKeyCredential(active),
 		launched: false,
 	}
 }

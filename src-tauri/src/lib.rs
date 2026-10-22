@@ -1,22 +1,19 @@
 mod draw_server;
 mod launch_config;
 
-use std::sync::Mutex;
-use tauri::{Emitter, Manager};
+use std::{path::Path, sync::Mutex};
+use tauri::{AppHandle, Manager, RunEvent};
 
 use draw_server::DrawServerState;
 use launch_config::{LaunchConfigState, load_from_args};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let app = tauri::Builder::default()
+    tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            if let Some(payload) = load_from_args(&argv) {
-                if let Ok(mut current) = app.state::<LaunchConfigState>().0.lock() {
-                    *current = Some(payload.clone());
-                }
-                let _ = app.emit("launch-config-changed", payload);
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            if let Some(payload) = load_from_args(&argv, Path::new(&cwd)) {
+                launch_config::replace(app, payload);
             }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_focus();
@@ -35,7 +32,8 @@ pub fn run() {
                 )?;
             }
             let args: Vec<String> = std::env::args().collect();
-            app.manage(LaunchConfigState(Mutex::new(load_from_args(&args))));
+            let cwd = std::env::current_dir().unwrap_or_default();
+            app.manage(LaunchConfigState(Mutex::new(load_from_args(&args, &cwd))));
             app.manage(DrawServerState::default());
             // Debug runs already get a server from `pnpm dev`; opt in to test the sidecar.
             if !cfg!(debug_assertions) || std::env::var_os("VIAM_VISUALIZER_SIDECAR").is_some() {
@@ -51,15 +49,27 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while building tauri application");
+        .expect("error while building tauri application")
+        .run(handle_run_event);
+}
 
-    // Tauri does not reap sidecars, so kill on both exit events.
-    app.run(|app, event| {
-        if matches!(
-            event,
-            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
-        ) {
-            draw_server::kill(&app.state());
+fn handle_run_event(app: &AppHandle, event: RunEvent) {
+    match event {
+        // Tauri does not reap sidecars, so kill on both exit events.
+        RunEvent::ExitRequested { .. } | RunEvent::Exit => {
+            draw_server::kill(&app.state::<DrawServerState>());
         }
-    });
+        #[cfg(target_os = "macos")]
+        RunEvent::Opened { urls } => open_launch_file(app, &urls),
+        _ => {}
+    }
+}
+
+/// `open -a <app> <file>` hands macOS apps the file as an open event, not argv, and a
+/// relaunch through `open` drops `--args` entirely. Treat an opened file as a launch file.
+#[cfg(target_os = "macos")]
+fn open_launch_file(app: &AppHandle, urls: &[tauri::Url]) {
+    if let Some(path) = urls.iter().rev().find_map(|url| url.to_file_path().ok()) {
+        launch_config::replace(app, launch_config::load_from_path(&path));
+    }
 }

@@ -10,14 +10,17 @@ export interface TransformSnaps {
 }
 
 /**
- * The snap steps to hand a Three.js transform gizmo. Snapping off, or a step of 0,
- * leaves that axis free.
+ * The snap steps to hand a Three.js transform gizmo. Snapping off, increment snapping off, or a
+ * step of 0 leaves that axis free.
  */
 export const transformSnaps = (
-	settings: Pick<Settings, 'snapping' | 'snapTranslate' | 'snapRotate' | 'snapScale'>
+	settings: Pick<
+		Settings,
+		'snapping' | 'snapIncrement' | 'snapTranslate' | 'snapRotate' | 'snapScale'
+	>
 ): TransformSnaps => {
 	const snap = (value: number, convert: (v: number) => number = (v) => v) =>
-		settings.snapping && value > 0 ? convert(value) : null
+		settings.snapping && settings.snapIncrement && value > 0 ? convert(value) : null
 
 	return {
 		translation: snap(settings.snapTranslate),

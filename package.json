@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/visualization",
-	"version": "2.9.1",
+	"version": "2.10.0",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -648,7 +648,7 @@
 		"type-fest": "^5.0.1",
 		"typescript": "5.9.2",
 		"typescript-eslint": "8.56.1",
-		"vite": "8.1.0",
+		"vite": "8.1.6",
 		"vite-plugin-devtools-json": "1.0.0",
 		"vite-plugin-glsl": "^1.5.5",
 		"vite-plugin-mkcert": "1.17.9",
