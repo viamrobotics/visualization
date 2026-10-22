@@ -45,7 +45,6 @@ export default defineConfig(
 			'.claude/settings.ci.json',
 			'**/.claude/skills/**',
 			'**/.claude/templates/**',
-			'src-tauri/**',
 		],
 	},
 

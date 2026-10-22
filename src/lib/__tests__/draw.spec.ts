@@ -453,7 +453,46 @@ describe('updateTransform', () => {
 
 		expect(hierarchy.getParentName(entity)).toBe('base')
 	})
+
+	it("keeps a cloud's metadata color over its own colors once the redraw's parse lands", async () => {
+		world = createWorld()
+		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		vi.mocked(parsePcdInWorker).mockImplementation(parsedWithNativeColors)
+		const { entity } = drawTransform(world, pointCloudTransform([255, 0, 0]), traits.SnapshotAPI)
+		await vi.waitFor(() => expect(entity.has(traits.BufferGeometry)).toBe(true))
+
+		updateTransform(entity, pointCloudTransform([0, 255, 255]))
+		await new Promise((resolve) => setTimeout(resolve))
+
+		const color = entity.get(traits.BufferGeometry)?.getAttribute('color')
+		expect([...(color?.array ?? [])]).toStrictEqual([0, 255, 255, 0, 255, 255])
+	})
 })
+
+/** A two-point parse result carrying the cloud's own dark blue colors, as a colored PCD has. */
+const parsedWithNativeColors = () =>
+	Promise.resolve({
+		id: 0,
+		positions: new Float32Array(6),
+		colors: new Uint8Array([0, 0, 50, 0, 0, 97]),
+		bounds: undefined,
+		boundsTree: undefined,
+		shuffled: 0,
+	})
+
+/** Builds a point cloud transform under a stable name, carrying a single color. */
+const pointCloudTransform = (colors: number[]) =>
+	new Transform({
+		referenceFrame: 'recolored-cloud',
+		physicalObject: new Geometry({
+			geometryType: { case: 'pointcloud', value: { pointCloud: new Uint8Array(0) } },
+		}),
+		metadata: {
+			fields: {
+				colors: { kind: { case: 'stringValue', value: btoa(String.fromCharCode(...colors)) } },
+			},
+		},
+	})
 
 describe('updateDrawing arrows', () => {
 	let world: World

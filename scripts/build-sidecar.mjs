@@ -1,23 +1,29 @@
 /**
- * Builds the draw-server Go binary as a Tauri sidecar with nlopt linked statically.
+ * Builds the draw-server Go binary for the desktop app, with nlopt linked statically, into
+ * dist-sidecar/draw-server (draw-server.exe on Windows).
  *
  * Usage: node scripts/build-sidecar.mjs
- * Env: TAURI_ENV_TARGET_TRIPLE, NLOPT_LIBDIR, NLOPT_INCLUDEDIR (all optional).
- * Exit 1 on an unknown triple, a missing libnlopt.a, a failed build, or a dynamic link.
+ * Env: GOOS and GOARCH pick the target, defaulting to the host. NLOPT_LIBDIR and NLOPT_INCLUDEDIR
+ * override pkg-config. All optional.
+ * Exit 1 on an unsupported target, a missing libnlopt.a, a failed build, or a dynamic link.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-const TARGETS = {
-	'aarch64-apple-darwin': { goos: 'darwin', goarch: 'arm64' },
-	'x86_64-apple-darwin': { goos: 'darwin', goarch: 'amd64' },
-	'x86_64-unknown-linux-gnu': { goos: 'linux', goarch: 'amd64' },
-	'aarch64-unknown-linux-gnu': { goos: 'linux', goarch: 'arm64' },
-	'x86_64-pc-windows-msvc': { goos: 'windows', goarch: 'amd64' },
-	'x86_64-pc-windows-gnu': { goos: 'windows', goarch: 'amd64' },
-}
+const OUTPUT_DIR = 'dist-sidecar'
+
+const SUPPORTED_TARGETS = new Set([
+	'darwin/amd64',
+	'darwin/arm64',
+	'linux/amd64',
+	'linux/arm64',
+	'windows/amd64',
+])
+
+const NODE_TO_GO_OS = { darwin: 'darwin', linux: 'linux', win32: 'windows' }
+const NODE_TO_GO_ARCH = { arm64: 'arm64', x64: 'amd64' }
 
 const SYSTEM_LIBRARY_PREFIXES = ['/usr/lib/', '/System/']
 const LINUX_ALLOWED_LIBRARIES = [
@@ -40,13 +46,11 @@ const fail = (message) => {
 
 const run = (command, args) => execFileSync(command, args, { encoding: 'utf8' }).trim()
 
-const resolveTriple = () => {
-	if (process.env.TAURI_ENV_TARGET_TRIPLE) return process.env.TAURI_ENV_TARGET_TRIPLE
-	const hostLine = run('rustc', ['-vV'])
-		.split('\n')
-		.find((line) => line.startsWith('host:'))
-	if (!hostLine) fail('rustc -vV printed no host line')
-	return hostLine.slice('host:'.length).trim()
+const resolveTarget = () => {
+	const goos = process.env.GOOS || NODE_TO_GO_OS[process.platform]
+	const goarch = process.env.GOARCH || NODE_TO_GO_ARCH[process.arch]
+	if (!SUPPORTED_TARGETS.has(`${goos}/${goarch}`)) fail(`unsupported target ${goos}/${goarch}`)
+	return { goos, goarch }
 }
 
 const resolveNlopt = () => {
@@ -123,17 +127,9 @@ const verifyLink = (goos, output) => {
 	console.log(report)
 }
 
-const triple = resolveTriple()
-const target = TARGETS[triple]
-if (!target) fail(`unknown target triple ${triple}`)
-
-const { goos, goarch } = target
-const output = path.join(
-	'src-tauri',
-	'binaries',
-	`draw-server-${triple}${goos === 'windows' ? '.exe' : ''}`
-)
-mkdirSync('src-tauri/binaries', { recursive: true })
+const { goos, goarch } = resolveTarget()
+const output = path.join(OUTPUT_DIR, `draw-server${goos === 'windows' ? '.exe' : ''}`)
+mkdirSync(OUTPUT_DIR, { recursive: true })
 
 const buildEnv = { ...process.env, GOOS: goos, GOARCH: goarch, CGO_ENABLED: '1' }
 if (goos === 'darwin' && goarch === 'amd64' && process.arch === 'arm64') buildEnv.CC = 'clang'

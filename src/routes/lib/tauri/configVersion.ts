@@ -1,1 +1,0 @@
-export const LAUNCH_CONFIG_VERSION = 1

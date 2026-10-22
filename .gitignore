@@ -71,7 +71,6 @@ e2e/.env.e2e
 
 # IDE
 .cursor
-# Tauri
-src-tauri/target
-src-tauri/gen
-src-tauri/binaries
+# Electron
+dist-electron
+dist-sidecar

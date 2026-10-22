@@ -31,9 +31,6 @@ src/lib/motion/__tests__/__fixtures__/plan-linear-constrained.json
 # IDE
 .cursor
 
-# Tauri. rustfmt owns the Rust files and the Tauri CLI rewrites its own config.
-src-tauri
-
 # houserules:prettierignore start
 # Installed by houserules and tracked by content hash. Formatting these rewrites
 # bytes houserules owns, which makes `npx houserules update` skip them as your edits.
