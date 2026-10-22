@@ -1,16 +1,21 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { DesktopBridge } from '../desktopBridge'
 import type { DrawServicePortState } from '../useDrawServicePort.svelte'
 
 import { useDrawServicePort } from '../useDrawServicePort.svelte'
 
-vi.mock('@tauri-apps/api/core', () => ({
-	invoke: vi.fn(),
-	isTauri: vi.fn(),
-}))
+const drawServicePort = vi.fn<DesktopBridge['drawServicePort']>()
 
 let cleanup: (() => void) | undefined
+
+const installBridge = () => {
+	window.viamDesktop = {
+		drawServicePort,
+		launchConfig: vi.fn(),
+		onLaunchConfigChanged: vi.fn(),
+	} satisfies DesktopBridge
+}
 
 const mountHook = (): DrawServicePortState => {
 	let state: DrawServicePortState | undefined
@@ -22,29 +27,23 @@ const mountHook = (): DrawServicePortState => {
 }
 
 describe('useDrawServicePort', () => {
-	beforeEach(() => {
-		vi.mocked(invoke).mockReset()
-		vi.mocked(isTauri).mockReset()
-	})
-
 	afterEach(() => {
 		cleanup?.()
 		cleanup = undefined
+		delete window.viamDesktop
 	})
 
-	it('is ready immediately outside Tauri without invoking', () => {
-		vi.mocked(isTauri).mockReturnValue(false)
-
+	it('is ready immediately outside the desktop shell without asking', () => {
 		const state = mountHook()
 
 		expect(state.ready).toBe(true)
 		expect(state.port).toBeUndefined()
-		expect(invoke).not.toHaveBeenCalled()
+		expect(drawServicePort).not.toHaveBeenCalled()
 	})
 
-	it('exposes the sidecar port as a string in Tauri', async () => {
-		vi.mocked(isTauri).mockReturnValue(true)
-		vi.mocked(invoke).mockResolvedValue(43_123)
+	it('exposes the bundled server port as a string', async () => {
+		installBridge()
+		drawServicePort.mockResolvedValue(43_123)
 
 		const state = mountHook()
 		expect(state.ready).toBe(false)
@@ -53,9 +52,9 @@ describe('useDrawServicePort', () => {
 		expect(state.port).toBe('43123')
 	})
 
-	it('leaves the port undefined when no sidecar was spawned', async () => {
-		vi.mocked(isTauri).mockReturnValue(true)
-		vi.mocked(invoke).mockResolvedValue(null)
+	it('leaves the port undefined when the shell started no server', async () => {
+		installBridge()
+		drawServicePort.mockResolvedValue(null)
 
 		const state = mountHook()
 
@@ -63,9 +62,9 @@ describe('useDrawServicePort', () => {
 		expect(state.port).toBeUndefined()
 	})
 
-	it('warns and still becomes ready when invoke rejects', async () => {
-		vi.mocked(isTauri).mockReturnValue(true)
-		vi.mocked(invoke).mockRejectedValue(new Error('ipc down'))
+	it('warns and still becomes ready when the ask fails', async () => {
+		installBridge()
+		drawServicePort.mockRejectedValue(new Error('ipc down'))
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
 		const state = mountHook()
@@ -73,6 +72,5 @@ describe('useDrawServicePort', () => {
 		await vi.waitFor(() => expect(state.ready).toBe(true))
 		expect(state.port).toBeUndefined()
 		expect(warn).toHaveBeenCalledOnce()
-		warn.mockClear()
 	})
 })

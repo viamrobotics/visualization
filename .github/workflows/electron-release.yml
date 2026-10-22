@@ -1,4 +1,4 @@
-name: Tauri release
+name: Electron release
 
 # Builds the desktop app for every platform and attaches the bundles to an existing
 # `v<version>` GitHub release. main.yml calls it after changesets publishes; the dispatch
@@ -37,28 +37,31 @@ jobs:
       matrix:
         include:
           - runner: macos-latest
-            target: aarch64-apple-darwin
             platform: darwin
             arch: aarch64
-            bundles: app,dmg
+            goos: darwin
+            goarch: arm64
+            builder-flags: --mac --arm64
             # One leg uploads the Sentry source maps for this release; the rest only delete theirs.
             sentry: true
           - runner: macos-latest
-            target: x86_64-apple-darwin
             platform: darwin
             arch: x86_64
-            bundles: app,dmg
+            goos: darwin
+            goarch: amd64
+            builder-flags: --mac --x64
           - runner: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
             platform: linux
             arch: x86_64
-            bundles: appimage,deb
+            goos: linux
+            goarch: amd64
+            builder-flags: --linux --x64
           - runner: windows-latest
-            target: x86_64-pc-windows-msvc
             platform: windows
             arch: x86_64
-            bundles: nsis
-            plain-binary: true
+            goos: windows
+            goarch: amd64
+            builder-flags: --win --x64
 
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -89,21 +92,11 @@ jobs:
           version: '1.69.0'
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Cache Rust build
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
-
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils libnlopt-dev pkg-config
+          sudo apt-get install -y build-essential libnlopt-dev pkg-config
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -118,7 +111,7 @@ jobs:
       # Homebrew's nlopt is arm64 on the macos-latest runner, so the x86_64 leg builds a static
       # x86_64 copy from source and points the sidecar script at it.
       - name: Build nlopt for x86_64 (macOS)
-        if: matrix.target == 'x86_64-apple-darwin'
+        if: matrix.platform == 'darwin' && matrix.arch == 'x86_64'
         run: |
           set -euo pipefail
           git clone --depth 1 --branch v2.10.0 https://github.com/stevengj/nlopt "$RUNNER_TEMP/nlopt-src"
@@ -158,47 +151,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Build only. With no tagName, tauri-action uploads nothing, because its [arch] rewrites the
-      # triple per platform (x64 on macOS and Windows, amd64 on Linux). The next step names assets.
-      # tauri build runs `pnpm vite-build` and the sidecar build itself through beforeBuildCommand,
-      # so src-tauri/binaries/draw-server-<triple> exists before the bundle step.
-      - name: Build bundles
-        id: tauri
-        uses: tauri-apps/tauri-action@v0
+      - name: Build renderer
         env:
           SENTRY_AUTH_TOKEN: ${{ matrix.sentry && secrets.SENTRY_AUTH_TOKEN || '' }}
-          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.target }}
+        run: pnpm vite-build
+
+      - name: Build main process
+        run: pnpm build:electron
+
+      - name: Build draw server sidecar
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
           # The Windows leg falls back to the stub motion planner if nlopt cannot be linked.
           # GOFLAGS: -tags=nomotionplan
-        with:
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
-          uploadPlainBinary: ${{ matrix.plain-binary || false }}
+        run: pnpm build:sidecar
 
+      # --publish never: this workflow uploads the renamed assets itself, below.
+      - name: Package
+        run: pnpm exec electron-builder ${{ matrix.builder-flags }} --publish never
+
+      # electron-builder names arches x64/arm64 (and amd64 for .deb), so this maps its output onto
+      # the asset names the CLI derives.
       - name: Name bundles for the release
         shell: node {0}
         env:
-          ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
-          VERSION: ${{ steps.tauri.outputs.appVersion }}
           PLATFORM: ${{ matrix.platform }}
           ARCH: ${{ matrix.arch }}
         run: |
           const fs = require('node:fs')
-          const { ARTIFACT_PATHS, VERSION, PLATFORM, ARCH } = process.env
-          // Longest first, so a setup installer is not taken for a plain .exe.
-          const SUFFIXES = ['.app.tar.gz', '-setup.exe', '.exe', '.dmg', '.AppImage', '.deb']
+          const path = require('node:path')
+          const { PLATFORM, ARCH } = process.env
+          const { version } = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+          // [electron-builder ending, asset suffix], longest first so a setup installer is not taken for a plain .exe.
+          const SUFFIXES = [
+            ['-setup.exe', '-setup.exe'],
+            ['.exe', '.exe'],
+            ['.tar.gz', '.app.tar.gz'],
+            ['.dmg', '.dmg'],
+            ['.AppImage', '.AppImage'],
+            ['.deb', '.deb'],
+          ]
           const names = new Set()
           fs.mkdirSync('release-assets')
-          for (const artifact of JSON.parse(ARTIFACT_PATHS)) {
-            // tauri-action reports the .app directory, then tars it beside itself.
-            const file = artifact.endsWith('.app') ? `${artifact}.tar.gz` : artifact
-            const suffix = SUFFIXES.find((candidate) => file.endsWith(candidate))
-            if (!suffix) continue
-            const name = `viam-visualizer-${VERSION}-${PLATFORM}-${ARCH}${suffix}`
+          for (const entry of fs.readdirSync('dist-desktop', { withFileTypes: true })) {
+            if (!entry.isFile()) continue
+            const match = SUFFIXES.find(([ending]) => entry.name.endsWith(ending))
+            if (!match) continue
+            const name = `viam-visualizer-${version}-${PLATFORM}-${ARCH}${match[1]}`
             if (names.has(name)) throw new Error(`Two artifacts map to ${name}`)
             names.add(name)
-            fs.copyFileSync(file, `release-assets/${name}`)
-            console.log(`${file} -> ${name}`)
+            fs.copyFileSync(path.join('dist-desktop', entry.name), path.join('release-assets', name))
+            console.log(`${entry.name} -> ${name}`)
           }
           if (names.size === 0) throw new Error('No release artifacts found')
 

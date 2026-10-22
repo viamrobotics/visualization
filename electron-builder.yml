@@ -1,0 +1,59 @@
+# Packages the Electron desktop app. package.json is the published npm library, so the app's own
+# settings live here instead of in its `build` field.
+#
+# Inputs, built first: build/ (pnpm vite-build), dist-electron/ (pnpm build:electron), and
+# dist-sidecar/ (pnpm build:sidecar). The release workflow renames the artifacts to the names the
+# Viam CLI downloads, see .github/workflows/electron-release.yml.
+
+appId: com.viam.visualizer
+productName: Viam Visualizer
+
+directories:
+  # electron-builder defaults this to build/, which is SvelteKit's output here.
+  buildResources: electron/resources
+  output: dist-desktop
+
+# Main and preload are bundled by esbuild and the renderer is a static build, so the app needs
+# none of the library's node_modules.
+files:
+  - dist-electron/**
+  - build/**
+  - '!node_modules/**'
+extraMetadata:
+  main: dist-electron/main.mjs
+
+# electron/bundledDrawServer.ts looks for the sidecar at process.resourcesPath/draw-server[.exe].
+extraResources:
+  - from: dist-sidecar
+    to: .
+    filter:
+      - draw-server
+      - draw-server.exe
+
+artifactName: viam-visualizer-${version}-${os}-${arch}.${ext}
+
+mac:
+  target:
+    - dmg
+    - tar.gz
+  category: public.app-category.developer-tools
+  # Ad-hoc signed, with no Developer ID. Hardened runtime would reject Electron's pre-signed
+  # frameworks under an ad-hoc identity, and it only matters for notarization.
+  identity: '-'
+  hardenedRuntime: false
+
+linux:
+  target:
+    - AppImage
+    - deb
+  executableName: viam-visualizer
+  category: Development
+  maintainer: Viam <support@viam.com>
+
+win:
+  target:
+    - nsis
+    - portable
+
+nsis:
+  artifactName: viam-visualizer-${version}-${os}-${arch}-setup.${ext}

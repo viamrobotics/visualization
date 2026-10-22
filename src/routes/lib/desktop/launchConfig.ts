@@ -1,8 +1,6 @@
 import type { Credentials, DialWebRTCConf } from '@viamrobotics/sdk'
 
 const LAUNCH_CONFIG_VERSION = 1
-export const LAUNCH_CONFIG_COMMAND = 'launch_config'
-export const LAUNCH_CONFIG_EVENT = 'launch-config-changed'
 
 const REQUIRED_STRING_FIELDS = [
 	'host',
@@ -23,6 +21,10 @@ export interface LaunchConfig
 	expiresAt?: string
 }
 
+/**
+ * What the desktop shell reports for a launch file. Exactly one field is set. `config` is the raw
+ * JSON, still unvalidated beyond its version, so {@link parseLaunchConfig} runs on it here.
+ */
 export interface LaunchConfigPayload {
 	config: unknown | null
 	error: string | null

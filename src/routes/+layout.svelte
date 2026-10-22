@@ -31,14 +31,14 @@
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
 	import { createIKSolutionsResolver } from './lib/createIKSolutionsResolver'
+	import { useDrawServicePort } from './lib/desktop/useDrawServicePort.svelte'
+	import { useLaunchConfig } from './lib/desktop/useLaunchConfig.svelte'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
 	import { resolveConnection } from './lib/resolveConnection'
-	import { useDrawServicePort } from './lib/tauri/useDrawServicePort.svelte'
-	import { useLaunchConfig } from './lib/tauri/useLaunchConfig.svelte'
 
 	provideConnectionConfigs()
 

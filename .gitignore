@@ -74,3 +74,4 @@ e2e/.env.e2e
 # Electron
 dist-electron
 dist-sidecar
+dist-desktop

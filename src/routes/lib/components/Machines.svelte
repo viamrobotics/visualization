@@ -13,7 +13,7 @@
 	import { WorkspacePortal } from '$lib'
 	import Popover from '$lib/components/overlay/Popover.svelte'
 
-	import type { LaunchConfigState } from '../tauri/useLaunchConfig.svelte'
+	import type { LaunchConfigState } from '../desktop/useLaunchConfig.svelte'
 
 	import {
 		useActiveConnectionConfig,

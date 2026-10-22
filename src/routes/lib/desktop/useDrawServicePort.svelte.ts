@@ -1,6 +1,4 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
-
-import { DRAW_SERVICE_PORT_COMMAND, type DrawServicePortPayload } from './drawServicePort'
+import { getDesktopBridge } from './desktopBridge'
 
 export interface DrawServicePortState {
 	readonly ready: boolean
@@ -8,22 +6,23 @@ export interface DrawServicePortState {
 }
 
 export const useDrawServicePort = (): DrawServicePortState => {
-	let ready = $state(false)
+	const bridge = getDesktopBridge()
+
+	let ready = $state(!bridge)
 	let port = $state<string | undefined>(undefined)
 
-	if (isTauri()) {
-		invoke<DrawServicePortPayload>(DRAW_SERVICE_PORT_COMMAND)
+	if (bridge) {
+		bridge
+			.drawServicePort()
 			.then((payload) => {
 				port = payload === null ? undefined : String(payload)
 			})
 			.catch((error: unknown) => {
-				console.warn('Failed to read the draw server port from Tauri', error)
+				console.warn('Failed to read the draw server port from the desktop shell', error)
 			})
 			.finally(() => {
 				ready = true
 			})
-	} else {
-		ready = true
 	}
 
 	return {

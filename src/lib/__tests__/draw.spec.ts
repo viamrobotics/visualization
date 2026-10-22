@@ -467,6 +467,20 @@ describe('updateTransform', () => {
 		const color = entity.get(traits.BufferGeometry)?.getAttribute('color')
 		expect([...(color?.array ?? [])]).toStrictEqual([0, 255, 255, 0, 255, 255])
 	})
+
+	it("keeps a cloud's own colors when the redraw carries no metadata colors", async () => {
+		world = createWorld()
+		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		vi.mocked(parsePcdInWorker).mockImplementation(parsedWithNativeColors)
+		const { entity } = drawTransform(world, pointCloudTransform([255, 0, 0]), traits.SnapshotAPI)
+		await vi.waitFor(() => expect(entity.has(traits.BufferGeometry)).toBe(true))
+
+		updateTransform(entity, pointCloudTransform([]))
+		await new Promise((resolve) => setTimeout(resolve))
+
+		const color = entity.get(traits.BufferGeometry)?.getAttribute('color')
+		expect([...(color?.array ?? [])]).toStrictEqual([0, 0, 50, 0, 0, 97])
+	})
 })
 
 /** A two-point parse result carrying the cloud's own dark blue colors, as a colored PCD has. */

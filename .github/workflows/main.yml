@@ -75,12 +75,12 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Published version: $VERSION"
 
-  tauri-release:
+  desktop-release:
     needs: deploy-and-publish
     if: needs.deploy-and-publish.outputs.published == 'true'
     permissions:
       contents: write
-    uses: ./.github/workflows/tauri-release.yml
+    uses: ./.github/workflows/electron-release.yml
     with:
       version: ${{ needs.deploy-and-publish.outputs.version }}
     secrets: inherit

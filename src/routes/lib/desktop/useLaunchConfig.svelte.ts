@@ -1,15 +1,7 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
-
 import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
-import {
-	LAUNCH_CONFIG_COMMAND,
-	LAUNCH_CONFIG_EVENT,
-	type LaunchConfig,
-	type LaunchConfigPayload,
-	parseLaunchConfig,
-} from './launchConfig'
+import { getDesktopBridge } from './desktopBridge'
+import { type LaunchConfig, type LaunchConfigPayload, parseLaunchConfig } from './launchConfig'
 
 export interface LaunchConfigState {
 	readonly ready: boolean
@@ -18,7 +10,9 @@ export interface LaunchConfigState {
 }
 
 export const useLaunchConfig = (): LaunchConfigState => {
-	let ready = $state(!isTauri())
+	const bridge = getDesktopBridge()
+
+	let ready = $state(!bridge)
 	let current = $state.raw<LaunchConfig | undefined>(undefined)
 	let error = $state<string | undefined>(undefined)
 
@@ -49,20 +43,20 @@ export const useLaunchConfig = (): LaunchConfigState => {
 		}
 	}
 
-	if (isTauri()) {
+	if (bridge) {
 		$effect(() => {
 			let isCancelled = false
 			let hasEvent = false
 
-			const unlistening = listen<LaunchConfigPayload>(LAUNCH_CONFIG_EVENT, (event) => {
+			// Subscribe before asking, so a relaunch between the two is not missed. An event that
+			// lands before the answer is newer than it.
+			const unsubscribe = bridge.onLaunchConfigChanged((payload) => {
 				hasEvent = true
-				apply(event.payload)
+				apply(payload)
 			})
 
-			// Ask only once listening, so a relaunch between the two is not missed. An event that
-			// lands before the answer is newer than it.
-			unlistening
-				.then(() => invoke<LaunchConfigPayload | null>(LAUNCH_CONFIG_COMMAND))
+			bridge
+				.launchConfig()
 				.then((payload) => {
 					if (!isCancelled && !hasEvent) apply(payload)
 				})
@@ -75,7 +69,7 @@ export const useLaunchConfig = (): LaunchConfigState => {
 
 			return () => {
 				isCancelled = true
-				unlistening.then((unlisten) => unlisten())
+				unsubscribe()
 			}
 		})
 	}
