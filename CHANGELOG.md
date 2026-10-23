@@ -1,5 +1,11 @@
 # visualization
 
+## 2.11.1
+
+### Patch Changes
+
+- 6b48826: Fix the desktop app's Linux and Windows release builds, with IK inspection unavailable on Windows.
+
 ## 2.11.0
 
 ### Minor Changes
