@@ -1,10 +1,10 @@
 import type { Credentials, DialWebRTCConf } from '@viamrobotics/sdk'
 
 import type { ConnectionConfig } from './connectionConfig'
-import type { LaunchConfig } from './tauri/launchConfig'
+import type { LaunchConfig } from './desktop/launchConfig'
 
+import { launchConfigToDialConf } from './desktop/launchConfig'
 import { getApiKeyCredential, getDialConf } from './robots'
-import { launchConfigToDialConf } from './tauri/launchConfig'
 
 export interface ResolvedConnection {
 	partId: string

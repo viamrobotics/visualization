@@ -75,14 +75,31 @@ export default defineConfig({
 	},
 
 	test: {
-		browser: {
-			enabled: true,
-			headless: true,
-			provider: playwright(),
-			instances: [{ browser: 'chromium' }],
-		},
 		clearMocks: true,
-		include: ['src/**/*.{test,spec}.{js,ts}'],
-		setupFiles: ['./vitest-setup-client.ts'],
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'browser',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+					},
+					include: ['src/**/*.{test,spec}.{js,ts}'],
+					setupFiles: ['./vitest-setup-client.ts'],
+				},
+			},
+			{
+				// The Electron main process runs on Node, not in a page, so it gets no browser or SvelteKit plugins.
+				test: {
+					name: 'electron',
+					clearMocks: true,
+					environment: 'node',
+					include: ['electron/**/*.{test,spec}.ts'],
+				},
+			},
+		],
 	},
 })

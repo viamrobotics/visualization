@@ -24,7 +24,7 @@ __snapshots__
 coverage
 dist
 .bin
-draw-server
+/draw-server
 /examples
 docs/public/playground
 docs/src/content/docs/api/*.md
@@ -71,6 +71,7 @@ e2e/.env.e2e
 
 # IDE
 .cursor
-# Tauri
-src-tauri/target
-src-tauri/gen
+# Electron
+dist-electron
+dist-sidecar
+dist-desktop

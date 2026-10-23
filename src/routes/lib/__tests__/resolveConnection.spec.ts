@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ConnectionConfig } from '../connectionConfig'
-import type { LaunchConfig } from '../tauri/launchConfig'
+import type { LaunchConfig } from '../desktop/launchConfig'
 
 import { resolveConnection } from '../resolveConnection'
 

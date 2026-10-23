@@ -1,0 +1,222 @@
+name: Electron release
+
+# Builds the desktop app for every platform and attaches the bundles to an existing
+# `v<version>` GitHub release. main.yml calls it after changesets publishes; the dispatch
+# form rebuilds the assets for a tag without a new npm publish.
+#
+# Asset names follow one pattern the Viam CLI derives from (version, GOOS, GOARCH):
+#   viam-visualizer-<version>-<platform>-<arch><suffix>
+#   platform: darwin | linux | windows      arch: aarch64 | x86_64
+#   suffix:   .dmg, .app.tar.gz (darwin), .AppImage, .deb (linux), .exe, -setup.exe (windows)
+# plus checksums.txt with one `sha256  name` line per asset.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version of @viamrobotics/visualization whose release gets the bundles (e.g. 1.2.3)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach bundles to (e.g. v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ inputs.tag || format('v{0}', inputs.version) }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            platform: darwin
+            arch: aarch64
+            goos: darwin
+            goarch: arm64
+            builder-flags: --mac --arm64
+            # One leg uploads the Sentry source maps for this release; the rest only delete theirs.
+            sentry: true
+          - runner: macos-latest
+            platform: darwin
+            arch: x86_64
+            goos: darwin
+            goarch: amd64
+            builder-flags: --mac --x64
+          - runner: ubuntu-22.04
+            platform: linux
+            arch: x86_64
+            goos: linux
+            goarch: amd64
+            builder-flags: --linux --x64
+          - runner: windows-latest
+            platform: windows
+            arch: x86_64
+            goos: windows
+            goarch: amd64
+            builder-flags: --win --x64
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Set up wireit caching
+        uses: google/wireit@setup-github-actions-caching/v2
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only pkg-config and a compiler: the distro nlopt packages are shared-only, and their
+      # libraries would compete with the static build below.
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config
+
+      - name: Install pkg-config (macOS)
+        if: runner.os == 'macOS'
+        run: brew install pkg-config
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # The Intel mac leg cross-builds on the arm64 runner, so nlopt is built for its arch.
+      - name: Build static nlopt
+        if: runner.os != 'Windows'
+        uses: ./.github/actions/static-nlopt
+        with:
+          osx-architecture: ${{ matrix.platform == 'darwin' && (matrix.arch == 'aarch64' && 'arm64' || 'x86_64') || '' }}
+
+      # cgo needs a gcc on Windows, and MSYS2 supplies both it and nlopt. The static link recipe
+      # is unverified on this leg.
+      - name: Install MinGW toolchain and nlopt (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nlopt
+            mingw-w64-x86_64-pkg-config
+
+      - name: Put MinGW on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+          echo "NLOPT_LIBDIR=C:/msys64/mingw64/lib" >> "$GITHUB_ENV"
+          echo "NLOPT_INCLUDEDIR=C:/msys64/mingw64/include" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build renderer
+        env:
+          SENTRY_AUTH_TOKEN: ${{ matrix.sentry && secrets.SENTRY_AUTH_TOKEN || '' }}
+        run: pnpm vite-build
+
+      - name: Build main process
+        run: pnpm build:electron
+
+      - name: Build draw server sidecar
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+          # The Windows leg falls back to the stub motion planner if nlopt cannot be linked.
+          # GOFLAGS: -tags=nomotionplan
+        run: pnpm build:sidecar
+
+      # --publish never: this workflow uploads the renamed assets itself, below.
+      - name: Package
+        run: pnpm exec electron-builder ${{ matrix.builder-flags }} --publish never
+
+      # electron-builder names arches x64/arm64 (and amd64 for .deb), so this maps its output onto
+      # the asset names the CLI derives.
+      - name: Name bundles for the release
+        shell: node {0}
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const { PLATFORM, ARCH } = process.env
+          const { version } = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+          // [electron-builder ending, asset suffix], longest first so a setup installer is not taken for a plain .exe.
+          const SUFFIXES = [
+            ['-setup.exe', '-setup.exe'],
+            ['.exe', '.exe'],
+            ['.tar.gz', '.app.tar.gz'],
+            ['.dmg', '.dmg'],
+            ['.AppImage', '.AppImage'],
+            ['.deb', '.deb'],
+          ]
+          const names = new Set()
+          fs.mkdirSync('release-assets')
+          for (const entry of fs.readdirSync('dist-desktop', { withFileTypes: true })) {
+            if (!entry.isFile()) continue
+            const match = SUFFIXES.find(([ending]) => entry.name.endsWith(ending))
+            if (!match) continue
+            const name = `viam-visualizer-${version}-${PLATFORM}-${ARCH}${match[1]}`
+            if (names.has(name)) throw new Error(`Two artifacts map to ${name}`)
+            names.add(name)
+            fs.copyFileSync(path.join('dist-desktop', entry.name), path.join('release-assets', name))
+            console.log(`${entry.name} -> ${name}`)
+          }
+          if (names.size === 0) throw new Error('No release artifacts found')
+
+      - name: Upload bundles
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" release-assets/* --clobber
+
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Write checksums.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir assets && cd assets
+          gh release download "$TAG" --pattern 'viam-visualizer-*'
+          sha256sum viam-visualizer-* > ../checksums.txt
+          cd ..
+          cat checksums.txt
+          gh release upload "$TAG" checksums.txt --clobber
