@@ -1,5 +1,17 @@
 # visualization
 
+## 2.11.0
+
+### Minor Changes
+
+- 538fdf7: Connect on boot from a CLI launch file in the desktop app
+- 5198bfd: Bundle the Go draw server with the desktop app as a sidecar
+
+### Patch Changes
+
+- 48d75ce: Draw frame geometries at their configured translation and orientation instead of the frame origin, and show that offset read-only in the details panel.
+- 5198bfd: Keep a redrawn point cloud's colors instead of reverting to the file's own colors.
+
 ## 2.10.0
 
 ### Minor Changes
