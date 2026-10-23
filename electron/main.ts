@@ -124,17 +124,25 @@ const startFirstInstance = (launchFile: string | undefined) => {
 		drawServer?.stop()
 	})
 
-	void app.whenReady().then(() => {
-		// macOS takes the Dock icon from the app, not the window.
-		if (unpackagedDockIcon) app.dock?.setIcon(unpackagedDockIcon)
-		if (shouldStartDrawServer()) {
-			drawServerStartup = startBundledDrawServer()
-			void drawServerStartup.then((server) => {
-				drawServer = server
-			})
-		}
-		return createWindow()
-	})
+	void app
+		.whenReady()
+		.then(() => {
+			// macOS takes the Dock icon from the app, not the window.
+			if (unpackagedDockIcon) app.dock?.setIcon(unpackagedDockIcon)
+			if (shouldStartDrawServer()) {
+				drawServerStartup = startBundledDrawServer()
+				void drawServerStartup.then((server) => {
+					drawServer = server
+				})
+			}
+			return createWindow()
+		})
+		// A window that failed to load is blank and gives no sign why. Exiting non-zero tells the
+		// CLI's foreground launch that the app did not start, instead of leaving it waiting.
+		.catch((error: unknown) => {
+			console.error('Failed to open the window:', error)
+			app.exit(1)
+		})
 }
 
 // The second instance only resolves its path. The running instance reads and deletes the file.

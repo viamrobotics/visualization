@@ -63,8 +63,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install nlopt
-        run: brew install nlopt pkg-config
+      # Only pkg-config: Homebrew's nlopt is shared-only, and its dylib would compete with the
+      # static build below.
+      - name: Install pkg-config
+        run: brew install pkg-config
+
+      - name: Build static nlopt
+        uses: ./.github/actions/static-nlopt
 
       - name: Install dependencies
         run: pnpm install

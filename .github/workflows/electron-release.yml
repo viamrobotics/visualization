@@ -92,11 +92,17 @@ jobs:
           version: '1.69.0'
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Only pkg-config and a compiler: the distro nlopt packages are shared-only, and their
+      # libraries would compete with the static build below.
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libnlopt-dev pkg-config
+          sudo apt-get install -y build-essential cmake pkg-config
+
+      - name: Install pkg-config (macOS)
+        if: runner.os == 'macOS'
+        run: brew install pkg-config
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -104,28 +110,12 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install nlopt (macOS)
-        if: runner.os == 'macOS'
-        run: brew install nlopt pkg-config
-
-      # Homebrew's nlopt is arm64 on the macos-latest runner, so the x86_64 leg builds a static
-      # x86_64 copy from source and points the sidecar script at it.
-      - name: Build nlopt for x86_64 (macOS)
-        if: matrix.platform == 'darwin' && matrix.arch == 'x86_64'
-        run: |
-          set -euo pipefail
-          git clone --depth 1 --branch v2.10.0 https://github.com/stevengj/nlopt "$RUNNER_TEMP/nlopt-src"
-          cd "$RUNNER_TEMP/nlopt-src"
-          cmake -S . -B build \
-            -DCMAKE_OSX_ARCHITECTURES=x86_64 \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DNLOPT_PYTHON=OFF -DNLOPT_OCTAVE=OFF -DNLOPT_MATLAB=OFF -DNLOPT_GUILE=OFF \
-            -DNLOPT_SWIG=OFF -DNLOPT_TESTS=OFF \
-            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/nlopt-x86_64"
-          cmake --build build
-          cmake --install build
-          echo "NLOPT_LIBDIR=$RUNNER_TEMP/nlopt-x86_64/lib" >> "$GITHUB_ENV"
-          echo "NLOPT_INCLUDEDIR=$RUNNER_TEMP/nlopt-x86_64/include" >> "$GITHUB_ENV"
+      # The Intel mac leg cross-builds on the arm64 runner, so nlopt is built for its arch.
+      - name: Build static nlopt
+        if: runner.os != 'Windows'
+        uses: ./.github/actions/static-nlopt
+        with:
+          osx-architecture: ${{ matrix.platform == 'darwin' && (matrix.arch == 'aarch64' && 'arm64' || 'x86_64') || '' }}
 
       # cgo needs a gcc on Windows, and MSYS2 supplies both it and nlopt. The static link recipe
       # is unverified on this leg.

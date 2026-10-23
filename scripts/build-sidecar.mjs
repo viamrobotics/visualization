@@ -4,7 +4,8 @@
  *
  * Usage: node scripts/build-sidecar.mjs
  * Env: GOOS and GOARCH pick the target, defaulting to the host. NLOPT_LIBDIR and NLOPT_INCLUDEDIR
- * override pkg-config. All optional.
+ * point at a static nlopt. Without them, a host build uses .bin/nlopt-static (built by
+ * etc/setup.sh) if present, then pkg-config. All optional.
  * Exit 1 on an unsupported target, a missing libnlopt.a, a failed build, or a dynamic link.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
@@ -13,6 +14,9 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 const OUTPUT_DIR = 'dist-sidecar'
+
+// etc/setup.sh builds this for the host, since the system nlopt packages ship shared libraries only.
+const LOCAL_STATIC_NLOPT = path.resolve('.bin', 'nlopt-static')
 
 const SUPPORTED_TARGETS = new Set([
 	'darwin/amd64',
@@ -53,14 +57,38 @@ const resolveTarget = () => {
 	return { goos, goarch }
 }
 
-const resolveNlopt = () => {
-	const libdir = process.env.NLOPT_LIBDIR || run('pkg-config', ['--variable=libdir', 'nlopt'])
-	const includedir =
-		process.env.NLOPT_INCLUDEDIR || run('pkg-config', ['--variable=includedir', 'nlopt'])
-	const archive = path.join(libdir, 'libnlopt.a')
-	if (!existsSync(archive)) {
+const pkgConfigVariable = (name) => {
+	try {
+		return run('pkg-config', [`--variable=${name}`, 'nlopt'])
+	} catch {
+		return undefined
+	}
+}
+
+const isHostTarget = (goos, goarch) =>
+	goos === NODE_TO_GO_OS[process.platform] && goarch === NODE_TO_GO_ARCH[process.arch]
+
+/** Where nlopt's static library and headers are: env, then the local copy for a host build, then pkg-config. */
+const resolveNloptDirs = (goos, goarch) => {
+	if (process.env.NLOPT_LIBDIR && process.env.NLOPT_INCLUDEDIR) {
+		return { libdir: process.env.NLOPT_LIBDIR, includedir: process.env.NLOPT_INCLUDEDIR }
+	}
+	const localLibdir = path.join(LOCAL_STATIC_NLOPT, 'lib')
+	if (isHostTarget(goos, goarch) && existsSync(path.join(localLibdir, 'libnlopt.a'))) {
+		return { libdir: localLibdir, includedir: path.join(LOCAL_STATIC_NLOPT, 'include') }
+	}
+	return {
+		libdir: process.env.NLOPT_LIBDIR || pkgConfigVariable('libdir'),
+		includedir: process.env.NLOPT_INCLUDEDIR || pkgConfigVariable('includedir'),
+	}
+}
+
+const resolveNlopt = (goos, goarch) => {
+	const { libdir, includedir } = resolveNloptDirs(goos, goarch)
+	const archive = libdir && path.join(libdir, 'libnlopt.a')
+	if (!archive || !includedir || !existsSync(archive)) {
 		fail(
-			`${archive} is missing. Install nlopt with a static library (brew install nlopt on macOS, libnlopt-dev on Debian).`
+			`no static nlopt found${archive ? ` (${archive} is missing)` : ''}. Run etc/setup.sh, or scripts/build-static-nlopt.sh ${LOCAL_STATIC_NLOPT}.`
 		)
 	}
 	return { archive, includedir }
@@ -70,6 +98,8 @@ const resolveNlopt = () => {
  * Isolates the static archive in a directory of its own with a private pkg-config file.
  * go-nlopt resolves nlopt through pkg-config, and a dylib sitting beside libnlopt.a
  * would win the link, so the archive must be the only thing in the search path.
+ *
+ * @returns The staged library directory and the directory holding nlopt.pc.
  */
 const stageStaticNlopt = (stagingDir, { archive, includedir }, goos) => {
 	const libDir = path.join(stagingDir, 'lib')
@@ -89,7 +119,7 @@ const stageStaticNlopt = (stagingDir, { archive, includedir }, goos) => {
 			'',
 		].join('\n')
 	)
-	return pkgConfigDir
+	return { libDir, pkgConfigDir }
 }
 
 // -s -w drop the symbol table and DWARF, about a third of the binary. Panics still name functions.
@@ -142,9 +172,16 @@ if (goos === 'windows') {
 } else {
 	const stagingDir = mkdtempSync(path.join(tmpdir(), 'draw-server-nlopt-'))
 	try {
-		const pkgConfigDir = stageStaticNlopt(stagingDir, resolveNlopt(), goos)
-		// An inherited CGO_LDFLAGS=-L/opt/homebrew/lib would precede our -L and pull the dylib back in.
-		goBuild(output, { ...buildEnv, CGO_LDFLAGS: '', PKG_CONFIG_PATH: pkgConfigDir })
+		const { libDir, pkgConfigDir } = stageStaticNlopt(stagingDir, resolveNlopt(goos, goarch), goos)
+		// An inherited -L/opt/homebrew/lib would precede ours and pull the dylib back in. An empty
+		// CGO_LDFLAGS falls back to `go env` config, so it is set to our directory instead, and
+		// LIBRARY_PATH is cleared because the C linker searches it too.
+		goBuild(output, {
+			...buildEnv,
+			CGO_LDFLAGS: `-L${libDir}`,
+			LIBRARY_PATH: '',
+			PKG_CONFIG_PATH: pkgConfigDir,
+		})
 	} finally {
 		rmSync(stagingDir, { recursive: true, force: true })
 	}
