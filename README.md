@@ -34,7 +34,7 @@ See [CLAUDE.md](CLAUDE.md) for contributor conventions.
 
 The visualizer also builds as a desktop app with [Electron](https://www.electronjs.org/). It wraps the same static build the browser gets and bundles the Go draw server as a sidecar. A packaged app starts the sidecar on a free port and stops it when the app quits, so the draw-service panel is live with nothing else running. You need Go and nlopt with its static library (`etc/setup.sh` installs it). Electron itself comes from `pnpm install`.
 
-An unpackaged run does not start the sidecar, because `pnpm dev` already runs a draw server on 3030. Set `VIAM_VISUALIZER_SIDECAR=1` to start it anyway, after `pnpm build:sidecar`. That builds the sidecar alone, into `dist-sidecar/`, and fails if the binary links any non-system library. A platform where nlopt cannot be linked statically can build with `GOFLAGS=-tags=nomotionplan`, which drops IK inspection from the sidecar.
+An unpackaged run does not start the sidecar, because `pnpm dev` already runs a draw server on 3030. Set `VIAM_VISUALIZER_SIDECAR=1` to start it anyway, after `pnpm build:sidecar`. That builds the sidecar alone, into `dist-sidecar/`, and fails if the binary links any non-system library. A platform where nlopt cannot be linked statically can build with `GOFLAGS=-tags=nomotionplan`, which drops IK inspection from the sidecar. Windows always builds that way, because RDK's nlopt solver does not support Windows, so the Windows desktop app has no IK inspection.
 
 ```bash
 pnpm electron:dev     # dev server in a desktop window, with HMR

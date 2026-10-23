@@ -1,6 +1,7 @@
 /**
  * Builds the draw-server Go binary for the desktop app, with nlopt linked statically, into
- * dist-sidecar/draw-server (draw-server.exe on Windows).
+ * dist-sidecar/draw-server. On Windows it builds dist-sidecar/draw-server.exe without cgo or IK
+ * inspection (the nomotionplan tag), since RDK's nlopt solver does not support Windows.
  *
  * Usage: node scripts/build-sidecar.mjs
  * Env: GOOS and GOARCH pick the target, defaulting to the host. NLOPT_LIBDIR and NLOPT_INCLUDEDIR
@@ -114,7 +115,9 @@ const stageStaticNlopt = (stagingDir, { archive, includedir }, goos) => {
 			'Name: nlopt',
 			'Description: nlopt, statically linked',
 			'Version: 0',
-			`Libs: -L${libDir} -lnlopt ${cxxRuntime}`,
+			// -lm follows -lnlopt because GNU ld resolves static archives left to right. go-nlopt's own
+			// -lm comes first on the link line, too early to satisfy libnlopt.a on Linux.
+			`Libs: -L${libDir} -lnlopt -lm ${cxxRuntime}`,
 			`Cflags: -I${includedir}`,
 			'',
 		].join('\n')
@@ -125,11 +128,9 @@ const stageStaticNlopt = (stagingDir, { archive, includedir }, goos) => {
 // -s -w drop the symbol table and DWARF, about a third of the binary. Panics still name functions.
 const STRIP_FLAGS = ['-trimpath', '-ldflags=-s -w']
 
-const goBuild = (output, env) => {
-	const result = spawnSync('go', ['build', ...STRIP_FLAGS, '-o', output, './cmd/draw-server'], {
-		env,
-		stdio: 'inherit',
-	})
+const goBuild = (output, env, extraArgs) => {
+	const args = ['build', ...STRIP_FLAGS, ...extraArgs, '-o', output, './cmd/draw-server']
+	const result = spawnSync('go', args, { env, stdio: 'inherit' })
 	if (result.status !== 0) fail(`go build failed with status ${result.status}`)
 }
 
@@ -168,7 +169,9 @@ const buildEnv = { ...process.env, GOOS: goos, GOARCH: goarch, CGO_ENABLED: '1' 
 if (goos === 'darwin' && goarch === 'amd64' && process.arch === 'arm64') buildEnv.CC = 'clang'
 
 if (goos === 'windows') {
-	goBuild(output, buildEnv)
+	// RDK's nlopt IK solver excludes Windows (go.viam.com/rdk motionplan/ik/nlopt.go is !windows), so
+	// the Windows sidecar drops IK inspection. Nothing else needs cgo, so no C toolchain either.
+	goBuild(output, { ...buildEnv, CGO_ENABLED: '0' }, ['-tags=nomotionplan'])
 } else {
 	const stagingDir = mkdtempSync(path.join(tmpdir(), 'draw-server-nlopt-'))
 	try {
@@ -176,12 +179,11 @@ if (goos === 'windows') {
 		// An inherited -L/opt/homebrew/lib would precede ours and pull the dylib back in. An empty
 		// CGO_LDFLAGS falls back to `go env` config, so it is set to our directory instead, and
 		// LIBRARY_PATH is cleared because the C linker searches it too.
-		goBuild(output, {
-			...buildEnv,
-			CGO_LDFLAGS: `-L${libDir}`,
-			LIBRARY_PATH: '',
-			PKG_CONFIG_PATH: pkgConfigDir,
-		})
+		goBuild(
+			output,
+			{ ...buildEnv, CGO_LDFLAGS: `-L${libDir}`, LIBRARY_PATH: '', PKG_CONFIG_PATH: pkgConfigDir },
+			[]
+		)
 	} finally {
 		rmSync(stagingDir, { recursive: true, force: true })
 	}
