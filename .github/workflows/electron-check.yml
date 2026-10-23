@@ -92,4 +92,4 @@ jobs:
           test -n "$app"
           test -x "$app/Contents/MacOS/Viam Visualizer"
           test -x "$app/Contents/Resources/draw-server"
-          npx --yes @electron/asar list "$app/Contents/Resources/app.asar" | grep -qx '/dist-electron/main.mjs'
+          pnpm dlx @electron/asar list "$app/Contents/Resources/app.asar" | grep -qx '/dist-electron/main.mjs'

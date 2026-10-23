@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { LaunchConfigPayload } from '../src/routes/lib/desktop/launchConfig'
 import type { DrawServer } from './drawServer'
 
+import { version } from '../package.json'
 import { shouldStartDrawServer, startBundledDrawServer } from './bundledDrawServer'
 import {
 	DRAW_SERVICE_PORT_CHANNEL,
@@ -14,9 +15,23 @@ import {
 import { readLaunchFile, resolveLaunchFile } from './launchFile'
 import { launchFileFromSecondInstance, type SecondInstanceData } from './secondInstanceData'
 
+// Matches productName in electron-builder.yml.
+const PRODUCT_NAME = 'Viam Visualizer'
+
 // Unpackaged, Electron names the app and its userData directory after the npm library's
 // package.json. Matching productName keeps dev and packaged runs on the same userData.
-app.setName('Viam Visualizer')
+app.setName(PRODUCT_NAME)
+
+// Unpackaged, the About panel otherwise shows the stock Electron binary's name, version, and
+// copyright. The version is bundled from package.json, because app.getVersion() falls back to
+// Electron's own version when the app is not packaged. The same string goes in both fields, which
+// macOS shows as one "Version" instead of a version and a build.
+app.setAboutPanelOptions({
+	applicationName: PRODUCT_NAME,
+	applicationVersion: version,
+	copyright: 'Copyright © 2024 Viam, Inc.',
+	version,
+})
 
 // Set by `pnpm electron:dev`. Unset, the window loads the static build in build/.
 const devServerUrl = process.env.VIAM_VISUALIZER_DEV_URL
@@ -59,7 +74,7 @@ const createWindow = async () => {
 	mainWindow = new BrowserWindow({
 		height: 800,
 		icon: unpackagedIcon,
-		title: 'Viam Visualizer',
+		title: PRODUCT_NAME,
 		webPreferences: {
 			contextIsolation: true,
 			nodeIntegration: false,
@@ -98,8 +113,8 @@ const startFirstInstance = (launchFile: string | undefined) => {
 		replaceLaunchConfig(readLaunchFile(file))
 	})
 
-	// Matches the Tauri shell: closing the window quits on every platform, which is what the CLI's
-	// foreground launch expects.
+	// Closing the window quits on every platform, macOS included, because the CLI's foreground
+	// launch waits for the process to exit.
 	app.on('window-all-closed', () => {
 		app.quit()
 	})

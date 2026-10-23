@@ -32,16 +32,17 @@ See [CLAUDE.md](CLAUDE.md) for contributor conventions.
 
 ### Desktop app
 
-The visualizer also builds as a desktop app with [Tauri v2](https://v2.tauri.app/). It wraps the same static build the browser gets and bundles the Go draw server as a sidecar. A release build starts the sidecar on a free port and stops it when the app quits, so the draw-service panel is live with nothing else running. You need the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/), Rust 1.90 or newer, Go, and nlopt with its static library (`etc/setup.sh` installs it).
+The visualizer also builds as a desktop app with [Electron](https://www.electronjs.org/). It wraps the same static build the browser gets and bundles the Go draw server as a sidecar. A packaged app starts the sidecar on a free port and stops it when the app quits, so the draw-service panel is live with nothing else running. You need Go and nlopt with its static library (`etc/setup.sh` installs it). Electron itself comes from `pnpm install`.
 
-A debug build (`pnpm tauri:dev`) does not start the sidecar, because `pnpm dev` already runs a draw server on 3030. Set `VIAM_VISUALIZER_SIDECAR=1` to start it in a debug build anyway. `pnpm build:sidecar` builds the sidecar alone, into `src-tauri/binaries/`, and fails if the binary links any non-system library. A platform where nlopt cannot be linked statically can build with `GOFLAGS=-tags=nomotionplan`, which drops IK inspection from the sidecar.
+An unpackaged run does not start the sidecar, because `pnpm dev` already runs a draw server on 3030. Set `VIAM_VISUALIZER_SIDECAR=1` to start it anyway, after `pnpm build:sidecar`. That builds the sidecar alone, into `dist-sidecar/`, and fails if the binary links any non-system library. A platform where nlopt cannot be linked statically can build with `GOFLAGS=-tags=nomotionplan`, which drops IK inspection from the sidecar.
 
 ```bash
-pnpm tauri:dev     # dev server in a native window, with HMR
-pnpm tauri:build   # .app and .dmg under src-tauri/target/release/bundle/
+pnpm electron:dev     # dev server in a desktop window, with HMR
+pnpm electron:start   # the static build in a desktop window
+pnpm electron:build   # packaged app for this platform under dist-desktop/
 ```
 
-The bundle version follows `version` in `package.json`.
+The main process and preload live in `electron/`, and packaging is configured in `electron-builder.yml`. The app version follows `version` in `package.json`. An unpackaged run on macOS still shows "Electron" as its Dock name, because that comes from the stock Electron binary. A packaged app shows "Viam Visualizer".
 
 The app connects on boot when started with `--launch-file <path>`. The file is JSON, version 1, written by the Viam CLI with `0600` permissions. The app deletes it after reading, unless it is not JSON or has no `version` key:
 
@@ -60,7 +61,7 @@ The app connects on boot when started with `--launch-file <path>`. The file is J
 
 `credentials` is alternatively `{ "type": "api-key", "authEntity": "<key id>", "payload": "<key>" }`. A second launch with a new file switches the running window to that machine. On macOS, `open -a <app> <path>` works too, and is the only form that reaches an app already running, since `open` drops `--args` then. With no flag the app behaves like the browser build.
 
-Every GitHub release carries desktop bundles built by `tauri-release.yml`, named `viam-visualizer-<version>-<platform>-<arch><suffix>` with `platform` one of `darwin`, `linux`, `windows` and `arch` one of `aarch64`, `x86_64`. The suffixes are `.dmg` and `.app.tar.gz` on macOS, `.AppImage` and `.deb` on Linux, and `.exe` (portable) and `-setup.exe` (installer) on Windows, plus a `checksums.txt` with one `sha256  name` line per asset.
+Every GitHub release carries desktop bundles built by `electron-release.yml`, named `viam-visualizer-<version>-<platform>-<arch><suffix>` with `platform` one of `darwin`, `linux`, `windows` and `arch` one of `aarch64`, `x86_64`. The suffixes are `.dmg` and `.app.tar.gz` on macOS, `.AppImage` and `.deb` on Linux, and `.exe` (portable) and `-setup.exe` (installer) on Windows, plus a `checksums.txt` with one `sha256  name` line per asset. The macOS `.app.tar.gz` unpacks to `Viam Visualizer.app`, with the executable at `Contents/MacOS/Viam Visualizer`.
 
 > [!NOTE]
 > Currently, the macOS bundles are ad-hoc signed and not notarized. A downloaded bundle is blocked on first launch. Allow it under System Settings → Privacy & Security → Open Anyway, or run `xattr -d com.apple.quarantine` on the `.app`.

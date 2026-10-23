@@ -92,8 +92,11 @@ const stageStaticNlopt = (stagingDir, { archive, includedir }, goos) => {
 	return pkgConfigDir
 }
 
+// -s -w drop the symbol table and DWARF, about a third of the binary. Panics still name functions.
+const STRIP_FLAGS = ['-trimpath', '-ldflags=-s -w']
+
 const goBuild = (output, env) => {
-	const result = spawnSync('go', ['build', '-o', output, './cmd/draw-server'], {
+	const result = spawnSync('go', ['build', ...STRIP_FLAGS, '-o', output, './cmd/draw-server'], {
 		env,
 		stdio: 'inherit',
 	})

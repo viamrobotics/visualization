@@ -7,6 +7,9 @@
 
 appId: com.viam.visualizer
 productName: Viam Visualizer
+# Shown in the macOS About panel and the Windows file properties. electron/main.ts sets the same
+# line for unpackaged runs.
+copyright: Copyright © 2024 Viam, Inc.
 
 directories:
   # electron-builder defaults this to build/, which is SvelteKit's output here.
@@ -19,6 +22,10 @@ files:
   - dist-electron/**
   - build/**
   - '!node_modules/**'
+  # Gitignored local files that static/ copies into build/. CI never has them, so excluding them
+  # keeps a local package the same as a release one. The video alone is 2.8 GB.
+  - '!build/Big_Buck_Bunny_4K.webm'
+  - '!build/test-fixtures/**'
 extraMetadata:
   main: dist-electron/main.mjs
 
@@ -48,7 +55,7 @@ linux:
     - deb
   executableName: viam-visualizer
   category: Development
-  maintainer: Viam <support@viam.com>
+  maintainer: Viam <contact@viam.com>
 
 win:
   target:
