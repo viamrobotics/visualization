@@ -1,5 +1,11 @@
 # visualization
 
+## 2.11.2
+
+### Patch Changes
+
+- 1204769: Fix the desktop app's Linux release build.
+
 ## 2.11.1
 
 ### Patch Changes
