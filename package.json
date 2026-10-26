@@ -606,7 +606,7 @@
 		"@houserules/plugin-three": "^0.2.1",
 		"@houserules/plugin-typescript": "^0.1.2",
 		"@playwright/test": "1.55.1",
-		"@sentry/sveltekit": "10.10.0",
+		"@sentry/sveltekit": "10.76.2",
 		"@sveltejs/adapter-static": "4.0.0",
 		"@sveltejs/kit": "3.0.0",
 		"@sveltejs/package": "3.0.1",
