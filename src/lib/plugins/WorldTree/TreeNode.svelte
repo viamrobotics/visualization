@@ -152,9 +152,9 @@
 {#snippet folderActions()}
 	{@render alertIndicators()}
 
-	{#if node.folder?.refreshRate}
+	{#if node.folder?.settings}
 		<FolderSettingsButton
-			id={node.folder.refreshRate}
+			id={node.folder.settings}
 			label={name.current ?? ''}
 		/>
 	{/if}
@@ -243,7 +243,7 @@
 
 			{#if !node.folder}
 				{@render actionColumn(itemActions)}
-			{:else if node.folder.refreshRate || hasAlert}
+			{:else if node.folder.settings || hasAlert}
 				{@render actionColumn(folderActions)}
 			{/if}
 		</div>

@@ -3,6 +3,7 @@ import type { Trait } from 'koota'
 import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
 
 import { traits } from '$lib/ecs'
+import { Collision } from '$lib/plugins/Collisions/traits'
 
 /** Stable key for a folder, independent of its display name. */
 export type TreeFolderId =
@@ -12,9 +13,13 @@ export type TreeFolderId =
 	| 'pointclouds'
 	| 'pointcloud-objects'
 	| 'world-state-store'
+	| 'collisions'
 	| 'drawn'
 	| 'imported-files'
 	| 'other'
+
+/** The settings a folder row opens: a polling group's, or the collision detector's. */
+export type FolderSettingsId = RefreshRateId | 'collisions'
 
 export interface TreeFolder {
 	/** What a log line names when it is about this folder's API rather than one resource. */
@@ -25,24 +30,31 @@ export interface TreeFolder {
 	collapsed?: boolean
 	/** Rows here have no scene object, so they get no visibility toggle. */
 	sceneless?: boolean
-	/** Poll that fills the folder, which puts refresh controls on its row. */
-	refreshRate?: RefreshRateId
+	/** What fills the folder, which puts its settings on the folder's row. */
+	settings?: FolderSettingsId
 }
 
 /** Display order. The last entry has no sources and claims whatever the others don't. */
 export const treeFolders: TreeFolder[] = [
-	{ id: 'frames', name: 'Frames', sources: [traits.FramesAPI], refreshRate: 'poses' },
+	{ id: 'frames', name: 'Frames', sources: [traits.FramesAPI], settings: 'poses' },
+	{
+		id: 'collisions',
+		name: 'Collisions',
+		sources: [Collision],
+		sceneless: true,
+		settings: 'collisions',
+	},
 	{
 		id: 'pointclouds',
 		name: 'Point clouds',
 		sources: [traits.PointCloudAPI],
-		refreshRate: 'pointclouds',
+		settings: 'pointclouds',
 	},
 	{
 		id: 'pointcloud-objects',
 		name: 'Point cloud objects',
 		sources: [traits.PointCloudObjectAPI],
-		refreshRate: 'vision',
+		settings: 'vision',
 	},
 	{ id: 'world-state-store', name: 'World state store', sources: [traits.WorldStateStoreAPI] },
 	{

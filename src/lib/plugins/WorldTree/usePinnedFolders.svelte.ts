@@ -5,6 +5,8 @@ import { useFrames } from '$lib/hooks/useFrames.svelte'
 import { usePartID } from '$lib/hooks/usePartID.svelte'
 import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
+import { useSettings } from '$lib/hooks/useSettings.svelte'
+import { collisionReports } from '$lib/plugins/Collisions/collisionStore.svelte'
 
 import type { PinnedFolders } from './buildTree'
 import type { TreeFolderId } from './treeFolders'
@@ -15,7 +17,9 @@ import type { TreeFolderId } from './treeFolders'
  * with no frames reads as that instead of as frames that failed to load.
  * Point clouds stays while the machine has a camera, and point cloud objects
  * while it has a vision service. Neither checks `getProperties`, since some
- * cameras report no point cloud support and serve one anyway.
+ * cameras report no point cloud support and serve one anyway. Collisions stays
+ * while the collisions plugin is mounted, connected or not, since drawn and
+ * dropped geometry collides too.
  */
 export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 	const partID = usePartID()
@@ -23,6 +27,7 @@ export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 	const frames = useFrames()
 	const pointclouds = usePointClouds()
 	const pointcloudObjects = usePointcloudObjects()
+	const settings = useSettings()
 
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
 
@@ -34,6 +39,13 @@ export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 
 	const current = $derived.by<PinnedFolders>(() => {
 		const pinned = new Map<TreeFolderId, string | undefined>()
+
+		if (collisionReports.isAvailable) {
+			pinned.set(
+				'collisions',
+				settings.current.enableCollisions ? 'Nothing intersecting' : 'Collision detection is off'
+			)
+		}
 
 		if (!isConnected) return pinned
 

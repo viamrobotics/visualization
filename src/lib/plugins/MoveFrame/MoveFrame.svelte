@@ -1,20 +1,19 @@
 <script lang="ts">
-	import type { Entity } from 'koota'
-
-	import { World } from '@threlte/rapier'
+	import { type Entity, Not } from 'koota'
 
 	import ModeTogglePortal from '$lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '$lib/components/overlay/workspace/ModeButton.svelte'
 	import { traits, useQuery } from '$lib/ecs'
 	import { useEnvironment, useEnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
+	import { Collision } from '$lib/plugins/Collisions/traits'
 	import MonitorDetails from '$lib/plugins/Monitor/MonitorDetails.svelte'
 
-	import CollisionDetector from './collisions/CollisionDetector.svelte'
 	import MoveControls from './MoveControls.svelte'
 	import MoveDashboard from './MoveDashboard.svelte'
 
 	const environment = useEnvironment()
-	const selected = useQuery(traits.Selected)
+	// A collision pair's panel belongs to the `Collisions` plugin, in every mode.
+	const selected = useQuery(traits.Selected, Not(Collision))
 
 	useEnvironmentMode('move')
 
@@ -48,8 +47,6 @@
 		selected.current.map((entity) => ({ entity, frameName: movableFrameName(entity) }))
 	)
 
-	const hasMovableFrame = $derived(panels.some((panel) => panel.frameName !== undefined))
-
 	const isMoveMode = $derived(environment.current.mode === 'move')
 </script>
 
@@ -80,10 +77,4 @@
 			/>
 		{/if}
 	{/each}
-
-	{#if hasMovableFrame}
-		<World autoStart={false}>
-			<CollisionDetector />
-		</World>
-	{/if}
 {/if}

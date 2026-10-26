@@ -12,10 +12,21 @@ export interface CollisionMember {
 	bit: number
 }
 
+/** A point in world space, in metres. */
+export interface WorldPoint {
+	x: number
+	y: number
+	z: number
+}
+
 /** Two entities whose colliders overlap. Order within a pair is not meaningful. */
 export interface CollisionPair {
 	a: Entity
 	b: Entity
+	/** How far the two shapes interpenetrate, in metres. Zero when they only touch. */
+	depth: number
+	/** Midway between the deepest points of the two shapes, in world metres. */
+	point: WorldPoint
 }
 
 interface Tracked {
@@ -55,6 +66,30 @@ const describeShape = (rapier: typeof RAPIER, shape: ColliderShape): RAPIER.Coll
 		case 'cylinder': {
 			return rapier.ColliderDesc.cylinder(shape.halfHeight, shape.radius)
 		}
+	}
+}
+
+/**
+ * Depth and location of the overlap between two intersecting colliders.
+ *
+ * Sensors never generate contacts, so this runs Rapier's shape-level contact query instead. A
+ * zero prediction distance only answers for shapes that overlap, which every intersecting pair does.
+ */
+const measureContact = (
+	first: RAPIER.Collider,
+	second: RAPIER.Collider
+): Pick<CollisionPair, 'depth' | 'point'> => {
+	const contact = first.contactCollider(second, 0)
+	if (!contact) return { depth: 0, point: first.translation() }
+
+	const { point1, point2, distance } = contact
+	return {
+		depth: Math.max(0, -distance),
+		point: {
+			x: (point1.x + point2.x) / 2,
+			y: (point1.y + point2.y) / 2,
+			z: (point1.z + point2.z) / 2,
+		},
 	}
 }
 
@@ -143,12 +178,17 @@ export const createCollisionWorld = (rapier: typeof RAPIER, world: RAPIER.World)
 		},
 
 		/**
-		 * Step the pipeline and read back every overlapping pair.
+		 * Step the pipeline and read back every pair overlapping by more than `toleranceM`, with
+		 * how deep it goes.
+		 *
+		 * The tolerance makes this deliberately more lenient than RDK's planner, which counts
+		 * touching as a collision. Obstacles are routinely authored flush against each other, and
+		 * listing every one of those contacts would bury the overlaps that matter.
 		 *
 		 * Each pair is reported once: the walk visits every collider, and a pair is
 		 * recorded only from the side holding the lower handle.
 		 */
-		detect(): CollisionPair[] {
+		detect(toleranceM: number): CollisionPair[] {
 			world.step()
 
 			const pairs: CollisionPair[] = []
@@ -157,7 +197,9 @@ export const createCollisionWorld = (rapier: typeof RAPIER, world: RAPIER.World)
 					if (other.handle < entry.collider.handle) return
 					const b = entityByHandle.get(other.handle)
 					if (b === undefined || b === entity) return
-					pairs.push({ a: entity, b })
+					const contact = measureContact(entry.collider, other)
+					if (contact.depth <= toleranceM) return
+					pairs.push({ a: entity, b, ...contact })
 				})
 			}
 			return pairs

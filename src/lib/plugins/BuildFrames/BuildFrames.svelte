@@ -5,6 +5,7 @@
 	import ModeButton from '$lib/components/overlay/workspace/ModeButton.svelte'
 	import { traits, useQuery } from '$lib/ecs'
 	import { useEnvironment, useEnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
+	import { Collision } from '$lib/plugins/Collisions/traits'
 	import { useFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
 
 	import BuildActionsBar from './BuildActionsBar.svelte'
@@ -15,7 +16,8 @@
 	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
 
 	const environment = useEnvironment()
-	const selected = useQuery(traits.Selected, Not(traits.FramelessComponent))
+	// A collision pair's panel belongs to the `Collisions` plugin, in every mode.
+	const selected = useQuery(traits.Selected, Not(traits.FramelessComponent), Not(Collision))
 	const selectedFrameless = useQuery(traits.Selected, traits.FramelessComponent)
 	const fullscreen = useFullscreen()
 

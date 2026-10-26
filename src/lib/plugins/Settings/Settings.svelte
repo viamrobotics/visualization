@@ -8,6 +8,7 @@
 	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
+	import CollisionsSettings from './CollisionsSettings.svelte'
 	import ControlsSettings from './ControlsSettings.svelte'
 	import DebugSettings from './DebugSettings.svelte'
 	import FramesSettings from './FramesSettings.svelte'
@@ -23,6 +24,7 @@
 		{ label: 'Frames', component: FramesSettings },
 		{ label: 'Pointclouds', component: PointcloudSettings },
 		{ label: 'Vision', component: VisionSettings },
+		{ label: 'Collisions', component: CollisionsSettings },
 		{ label: 'Controls', component: ControlsSettings },
 		{ label: 'Keybindings', component: KeybindingsSettings },
 		{ label: 'Debug', component: DebugSettings },

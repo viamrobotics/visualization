@@ -1,10 +1,8 @@
 import type { Entity, World } from 'koota'
 
-import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
-
 import { relations, traits } from '$lib/ecs'
 
-import type { TreeFolderId } from './treeFolders'
+import type { FolderSettingsId, TreeFolderId } from './treeFolders'
 
 import { treeFolders } from './treeFolders'
 
@@ -13,8 +11,8 @@ export interface TreeFolderRow {
 	id: TreeFolderId
 	/** Starts closed. See `TreeFolder.collapsed`. */
 	collapsed?: boolean
-	/** Poll that fills the folder. See `TreeFolder.refreshRate`. */
-	refreshRate?: RefreshRateId
+	/** Settings on the folder's row. See `TreeFolder.settings`. */
+	settings?: FolderSettingsId
 	/** Entities in the folder at any depth, not just the rows directly under it. */
 	itemCount: number
 	/** Shown in place of rows when a pinned folder is empty. See `PinnedFolders`. */
@@ -154,7 +152,7 @@ export const buildTree = (
 
 	for (const [index, folder] of folderEntities.entries()) {
 		const roots = folderRoots[index]
-		const { id, collapsed, refreshRate, sceneless } = treeFolders[index]
+		const { id, collapsed, settings, sceneless } = treeFolders[index]
 		const isEmpty = roots.length === 0
 
 		if (isEmpty && !pinnedFolders.has(id)) continue
@@ -166,7 +164,7 @@ export const buildTree = (
 			folder: {
 				id,
 				collapsed,
-				refreshRate,
+				settings,
 				itemCount: folderCounts[index],
 				placeholder: isEmpty ? pinnedFolders.get(id) : undefined,
 			},

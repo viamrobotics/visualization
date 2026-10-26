@@ -12,6 +12,7 @@
 	import { backendIP, drawServicePort } from '$lib/defines'
 	import {
 		BuildFrames,
+		Collisions,
 		ControlWidgets,
 		DrawService,
 		FileDrop,
@@ -96,6 +97,7 @@
 					<BuildFrames />
 					<MoveFrame />
 					<MotionPlanReplayer {resolveIKSolutions} />
+					<Collisions />
 
 					<XR />
 

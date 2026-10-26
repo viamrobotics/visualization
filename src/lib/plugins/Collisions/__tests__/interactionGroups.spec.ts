@@ -69,8 +69,8 @@ describe('groupsForBit', () => {
 		expect(interacts(armTwo, environment)).toBe(true)
 	})
 
-	it('never tests the environment against itself, so scenery resting on scenery stays quiet', () => {
-		expect(interacts(environment, environment)).toBe(false)
+	it('tests the environment against itself, since a component off any arm lands there', () => {
+		expect(interacts(environment, environment)).toBe(true)
 	})
 
 	it('lumps arms sharing the overflow bit together, under-reporting rather than lying', () => {

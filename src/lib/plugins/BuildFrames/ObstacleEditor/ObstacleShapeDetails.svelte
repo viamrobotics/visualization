@@ -129,7 +129,6 @@
 	const labelErrorId = `${fieldId}-label-error`
 </script>
 
--->
 <WorldPoseDetails pose={worldPose} />
 
 <div>

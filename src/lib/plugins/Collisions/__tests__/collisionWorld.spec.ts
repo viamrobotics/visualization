@@ -23,6 +23,10 @@ const OTHER_ARM_BIT = 2
 /** A 200mm cube — half-extents of 0.1m, so two overlap below 0.2m apart. */
 const CUBE_MM = 200
 
+const NO_TOLERANCE_M = 0
+/** The settings default, 0.01mm. */
+const DEFAULT_TOLERANCE_M = 0.000_01
+
 let world: ReturnType<typeof createWorld>
 let physics: RAPIER.World
 let collisions: ReturnType<typeof createCollisionWorld>
@@ -53,9 +57,54 @@ describe('createCollisionWorld', () => {
 			{ entity: obstacle, bit: ENVIRONMENT_BIT },
 		])
 
-		const pairs = collisions.detect()
+		const pairs = collisions.detect(NO_TOLERANCE_M)
 		expect(pairs).toHaveLength(1)
 		expect(new Set([pairs[0]?.a, pairs[0]?.b])).toEqual(new Set([arm, obstacle]))
+	})
+
+	it('measures how far two overlapping colliders interpenetrate', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ARM_BIT },
+			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
+		])
+
+		expect(collisions.detect(NO_TOLERANCE_M)[0]?.depth).toBeCloseTo(0.05)
+	})
+
+	it('places the contact point midway through the overlap', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ARM_BIT },
+			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
+		])
+
+		expect(collisions.detect(NO_TOLERANCE_M)[0]?.point.x).toBeCloseTo(0.075)
+	})
+
+	it('leaves out two colliders that only touch, face to face', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ARM_BIT },
+			{ entity: spawnCube(0.2), bit: ENVIRONMENT_BIT },
+		])
+
+		expect(collisions.detect(DEFAULT_TOLERANCE_M)).toHaveLength(0)
+	})
+
+	it('leaves out an overlap no deeper than the tolerance', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ARM_BIT },
+			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
+		])
+
+		expect(collisions.detect(0.06)).toHaveLength(0)
+	})
+
+	it('reports an overlap deeper than the tolerance', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ARM_BIT },
+			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
+		])
+
+		expect(collisions.detect(0.04)).toHaveLength(1)
 	})
 
 	it('reports a pair once, not once per side', () => {
@@ -64,7 +113,7 @@ describe('createCollisionWorld', () => {
 			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
 		])
 
-		expect(collisions.detect()).toHaveLength(1)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 	})
 
 	it('ignores overlapping colliders that share an arm bit', () => {
@@ -73,7 +122,7 @@ describe('createCollisionWorld', () => {
 			{ entity: spawnCube(0.15), bit: ARM_BIT },
 		])
 
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(0)
 	})
 
 	it('still checks one arm against another', () => {
@@ -82,18 +131,16 @@ describe('createCollisionWorld', () => {
 			{ entity: spawnCube(0.15), bit: OTHER_ARM_BIT },
 		])
 
-		expect(collisions.detect()).toHaveLength(1)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 	})
 
-	it('ignores scenery touching scenery, however much of it a scene has', () => {
-		// The failure this guards: a big cell is full of fixtures bolted to tables
-		// and tables standing on floors, all overlapping by design. Reporting those
-		// buries the one pair that matters and paints most of the scene red.
-		collisions.sync(
-			[0, 0.15, 0.3, 0.45].map((x) => ({ entity: spawnCube(x), bit: ENVIRONMENT_BIT }))
-		)
+	it('detects two overlapping environment colliders, such as a free-standing gripper in a table', () => {
+		collisions.sync([
+			{ entity: spawnCube(0), bit: ENVIRONMENT_BIT },
+			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
+		])
 
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 	})
 
 	it('leaves separated colliders alone', () => {
@@ -102,7 +149,7 @@ describe('createCollisionWorld', () => {
 			{ entity: spawnCube(0.5), bit: ENVIRONMENT_BIT },
 		])
 
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(0)
 	})
 
 	it('follows colliders as they move, in both directions', () => {
@@ -114,15 +161,15 @@ describe('createCollisionWorld', () => {
 		]
 
 		collisions.sync(members)
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(0)
 
 		moveTo(moving, 0.15)
 		collisions.sync(members)
-		expect(collisions.detect()).toHaveLength(1)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 
 		moveTo(moving, 0.5)
 		collisions.sync(members)
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(0)
 	})
 
 	it('drops colliders for entities that leave the member set', () => {
@@ -133,10 +180,10 @@ describe('createCollisionWorld', () => {
 			{ entity: arm, bit: ARM_BIT },
 			{ entity: obstacle, bit: ENVIRONMENT_BIT },
 		])
-		expect(collisions.detect()).toHaveLength(1)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 
 		collisions.sync([{ entity: arm, bit: ARM_BIT }])
-		expect(collisions.detect()).toHaveLength(0)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(0)
 	})
 
 	it('detects a capsule overlapping along Z, the axis the scene draws it on', () => {
@@ -156,7 +203,7 @@ describe('createCollisionWorld', () => {
 			{ entity: cube, bit: ENVIRONMENT_BIT },
 		])
 
-		expect(collisions.detect()).toHaveLength(1)
+		expect(collisions.detect(NO_TOLERANCE_M)).toHaveLength(1)
 	})
 
 	it('leaves the borrowed world intact on dispose', () => {

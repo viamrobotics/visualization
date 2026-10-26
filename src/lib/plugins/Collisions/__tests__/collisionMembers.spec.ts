@@ -3,10 +3,10 @@ import { Matrix4 } from 'three'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '$lib/ecs'
+import { previewName } from '$lib/plugins/MoveFrame/previewNames'
+import { GhostOf } from '$lib/plugins/MoveFrame/relations'
+import { PreviewGhost } from '$lib/plugins/MoveFrame/traits'
 
-import { previewName } from '../../previewNames'
-import { GhostOf } from '../../relations'
-import { PreviewGhost } from '../../traits'
 import { armBitFor, collectMembers, isGhost } from '../collisionMembers'
 import { ENVIRONMENT_BIT } from '../interactionGroups'
 

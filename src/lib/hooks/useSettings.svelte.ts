@@ -67,6 +67,11 @@ export interface Settings {
 
 	enableLabels: boolean
 
+	/** Whether the collisions plugin detects intersecting geometry, paints it red, and lists the pairs. */
+	enableCollisions: boolean
+	/** Overlaps no deeper than this are surfaces touching, not a collision worth reporting. In mm. */
+	collisionToleranceMM: number
+
 	openFramePovWidgets: Record<string, string[]>
 
 	/** Whether the sensor-coverage plugin draws camera view frusta into the scene. */
@@ -163,6 +168,9 @@ const defaults = (): Settings => ({
 	enableMeasureAxisZ: true,
 
 	enableLabels: false,
+
+	enableCollisions: true,
+	collisionToleranceMM: 0.01,
 
 	openFramePovWidgets: {},
 

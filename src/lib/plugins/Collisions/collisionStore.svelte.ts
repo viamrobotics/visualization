@@ -1,15 +1,9 @@
-/** One intersecting pair, resolved to display names when it was detected. */
-export interface CollisionReport {
-	a: string
-	b: string
-	/**
-	 * True when either side is a ghost of a staged move — the pair describes
-	 * where the move would end up rather than where the scene is now.
-	 */
-	staged: boolean
-}
+import { untrack } from 'svelte'
+
+import type { CollisionReport } from './collisionReport'
 
 let reports = $state.raw<CollisionReport[]>([])
+let pluginCount = $state(0)
 
 /**
  * The collisions the detector last found, shared across every open move panel.
@@ -24,6 +18,16 @@ let reports = $state.raw<CollisionReport[]>([])
 export const collisionReports = {
 	get current() {
 		return reports
+	},
+	/** Whether a `Collisions` plugin is mounted. Without one nothing ever fills this store. */
+	get isAvailable() {
+		return pluginCount > 0
+	},
+	/** Marks a `Collisions` plugin as mounted until the returned release is called. */
+	register(): () => void {
+		// Called from an effect. Reading the count there would make the effect depend on it and re-run on its own write.
+		untrack(() => (pluginCount += 1))
+		return () => untrack(() => (pluginCount -= 1))
 	},
 	set(next: CollisionReport[]) {
 		reports = next

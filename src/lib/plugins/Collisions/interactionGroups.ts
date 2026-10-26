@@ -7,14 +7,13 @@
  * other's filter. That test runs in the broad phase, so an excluded pair costs
  * nothing — it never reaches narrow phase at all.
  *
- * The scene is partitioned so nothing tests against its own group. An arm's link
- * colliders overlap at every joint by design, and the environment is full of scenery
- * resting on scenery. Reporting either would bury real hits under permanent noise. Each
- * arm takes its own bit, everything unowned shares the environment bit, and every group
- * filters itself out.
+ * Each arm takes its own bit and filters it out, because its link colliders overlap at
+ * every joint by design and reporting those would bury real hits under permanent noise.
+ * Everything unowned shares the environment bit, which tests against everything,
+ * itself included.
  *
- * What survives is exactly the interesting set: an arm against the environment,
- * and an arm against a different arm.
+ * What survives is an arm against the environment, an arm against a different arm, and
+ * the environment against itself.
  *
  * The consequence is deliberate: one arm folding into itself is never reported.
  * Self-collision is the motion service's job — it plans against the arm's own
@@ -61,21 +60,18 @@ export const assignArmBits = (armNames: readonly string[]): Map<string, number> 
  * The interaction groups for a collider owned by the arm holding `bit`, or by
  * the environment when `bit` is `ENVIRONMENT_BIT`.
  *
- * Every group tests against every group but its own. For an arm that means it
- * sees the environment and other arms, never its own links.
+ * An arm tests against every group but its own, so it sees the environment and other
+ * arms, never its own links.
  *
- * The environment is no exception, and that is the whole point. A real scene is full of
- * furniture resting on furniture, such as a fixture bolted to a table, a table on the
- * floor, or a conveyor on its stand. All of it touches by design and none of it is a
- * collision anyone wants reported. Left in, those pairs swamp the list and paint half
- * the scene red. Filtering them at the broad phase costs nothing and leaves only the
- * pairs that involve something that moves.
- *
- * The trade is that two static obstacles overlapping is no longer surfaced.
- * That is a world-state modelling error rather than a motion hazard, and this
- * panel is about whether a move is safe.
+ * The environment tests against itself as well. A component that is not mounted on an
+ * arm, such as a free-standing gripper, lands in the environment, and filtering the
+ * environment out would never check it against the table it moves over. Scenery resting
+ * on scenery overlaps by about nothing, and the detector's touching tolerance drops that.
+ * The trade is that shapes modelled to overlap, such as a table's legs sunk into its top,
+ * are reported.
  */
 export const groupsForBit = (bit: number): number => {
 	const membership = 1 << bit
-	return interactionGroups(membership, ALL_BITS & ~membership)
+	const filter = bit === ENVIRONMENT_BIT ? ALL_BITS : ALL_BITS & ~membership
+	return interactionGroups(membership, filter)
 }

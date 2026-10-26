@@ -28,7 +28,7 @@
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { setOrientationFromEuler } from '$lib/math/transform'
 
-	import Collisions from './collisions/Collisions.svelte'
+	import MoveCollisions from './MoveCollisions.svelte'
 	import { defaultMotionService, motionServiceNames } from './moveControls'
 	import { moveExecutionOwner } from './moveExecutionOwner.svelte'
 	import MoveGizmo from './MoveGizmo.svelte'
@@ -379,7 +379,7 @@
 		/>
 	</div>
 
-	<Collisions />
+	<MoveCollisions />
 
 	<MovePreview
 		{preview}

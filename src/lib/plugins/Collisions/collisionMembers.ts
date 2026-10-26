@@ -1,11 +1,11 @@
 import type { Entity, World } from 'koota'
 
 import { hierarchy, traits } from '$lib/ecs'
+import { GhostOf } from '$lib/plugins/MoveFrame/relations'
+import { PreviewGhost } from '$lib/plugins/MoveFrame/traits'
 
 import type { CollisionMember } from './collisionWorld'
 
-import { GhostOf } from '../relations'
-import { PreviewGhost } from '../traits'
 import { ENVIRONMENT_BIT } from './interactionGroups'
 
 /** Cycle guard for the parent walk, mirroring `recomputeWorldMatrix`. */

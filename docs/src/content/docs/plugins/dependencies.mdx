@@ -14,7 +14,7 @@ Most plugins need nothing beyond `@viamrobotics/visualization`. Several use **op
 | `<SelectionTool />` | `earcut`                                      |
 | `<DrawService />`   | `@connectrpc/connect @connectrpc/connect-web` |
 | `<Debug />`         | `@tanstack/svelte-query-devtools`             |
-| `<MoveFrame />`     | `@dimforge/rapier3d-compat @threlte/rapier`   |
+| `<Collisions />`    | `@dimforge/rapier3d-compat @threlte/rapier`   |
 | `<Settings />`      | `@zag-js/tabs`                                |
 | `<WorldTree />`     | `@zag-js/tree-view svelte-virtuallists`       |
 | `<XR />`            | `@threlte/xr`                                 |
@@ -36,6 +36,8 @@ No plugin imports another as a hard requirement, but several pairs coordinate at
 | `<DrawService />`         | `<Logs />`       | Connection status and errors are written to the Logs panel. Without Logs, they're dropped silently.       |
 | mode plugins              | each other       | Buttons portal into the mode toggle in mount order, which is also fallback priority. Mount Monitor first. |
 | `<FramePov />`            | `<XR />`         | POV panels hide while an immersive session owns the canvas.                                               |
+| `<MoveFrame />`           | `<Collisions />` | The move panel lists the pairs Collisions detects. Without Collisions, it reads that detection is off.    |
+| `<WorldTree />`           | `<Collisions />` | Detected pairs are listed in a Collisions folder, which only appears while Collisions is mounted.         |
 | any `SettingsPortal` user | `<Settings />`   | The contributed tab is registered either way, but only renders when Settings is mounted.                  |
 
 ```text
@@ -43,6 +45,8 @@ ControlWidgets ──► XR         panels hide during an immersive session
 DrawService ──► Logs          draw-server diagnostics, if Logs is mounted
 Monitor ──► BuildFrames ──► MoveFrame   mount order is button order and priority
 FramePov ──► XR               POV panels hide during an immersive session
+MoveFrame ──► Collisions      collision readout in the move panel
+WorldTree ──► Collisions      Collisions folder in the tree
 SettingsPortal ──► Settings   contributed tabs need a popover to live in
 ```
 

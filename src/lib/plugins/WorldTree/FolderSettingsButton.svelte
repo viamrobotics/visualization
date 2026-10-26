@@ -3,22 +3,24 @@
 
 	import { MoreHorizontal } from 'lucide-svelte'
 
-	import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
-
 	import Popover from '$lib/components/overlay/Popover.svelte'
+	import CollisionsSettings from '$lib/plugins/Settings/CollisionsSettings.svelte'
 	import FramesSettings from '$lib/plugins/Settings/FramesSettings.svelte'
 	import PointcloudSettings from '$lib/plugins/Settings/PointcloudSettings.svelte'
 	import VisionSettings from '$lib/plugins/Settings/VisionSettings.svelte'
 
-	/** The settings tab that owns each polling group, so a folder opens its own. */
-	const SETTINGS_PANELS: Record<RefreshRateId, Component> = {
+	import type { FolderSettingsId } from './treeFolders'
+
+	/** The settings tab that owns each group, so a folder opens its own. */
+	const SETTINGS_PANELS: Record<FolderSettingsId, Component> = {
 		poses: FramesSettings,
 		pointclouds: PointcloudSettings,
 		vision: VisionSettings,
+		collisions: CollisionsSettings,
 	}
 
 	interface Props {
-		id: RefreshRateId
+		id: FolderSettingsId
 		/** Folder name, so the trigger names the group it opens. */
 		label: string
 	}
