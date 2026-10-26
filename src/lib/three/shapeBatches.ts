@@ -16,6 +16,7 @@ import { darkenColor } from '$lib/color'
 
 import { createBatchedGeometryAllocator } from './addBatchedGeometry'
 import { addBatchedInstance } from './addBatchedInstance'
+import { sortFacesDrawOrder } from './sortFacesDrawOrder'
 import { toFacesBatchLayout } from './toFacesBatchLayout'
 
 const UNIT_BOX = new BoxGeometry(1, 1, 1)
@@ -123,8 +124,8 @@ export interface ShapeBatches {
  * single object. Two batches would each sort as though they sat at the world
  * origin, and no material setting would let their instances interleave — which
  * is why a batched primitive could erase or draw over a separate mesh depending
- * on the angle. Inside one batch `sortObjects` orders every instance by its own
- * distance, every frame, from any angle.
+ * on the angle. Inside one batch `sortFacesDrawOrder` orders every instance each
+ * frame: opaque ones in a fixed order, translucent ones by their own distance.
  *
  * `facesMaterial` has to be `DoubleSide`. It is what lets one batch hold shapes
  * that cannot cull back faces, such as an uncapped cylinder, and it matches what
@@ -147,6 +148,7 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 	)
 	faces.castShadow = true
 	faces.receiveShadow = true
+	faces.setCustomSort(sortFacesDrawOrder)
 
 	/**
 	 * `perObjectFrustumCulled` (on by default) does the culling, per instance and
