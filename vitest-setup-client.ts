@@ -13,6 +13,7 @@ vi.mock('@threlte/core', () => ({
 		invalidate: vi.fn(),
 	})),
 	isInstanceOf: vi.fn(() => false),
+	T: vi.fn(),
 }))
 
 // @threlte/extras components call into Threlte context that needs a <Canvas> parent,
@@ -24,6 +25,7 @@ vi.mock('@threlte/extras', async () => {
 		PortalTarget: vi.fn(),
 		Portal: MockPortal.default,
 		HTML: vi.fn(),
+		View: vi.fn(),
 	}
 })
 

@@ -27,6 +27,7 @@
 	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { isObstacleComponent } from '$lib/obstacleAttributes'
+	import FramePovTab from '$lib/plugins/FramePov/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
@@ -102,6 +103,9 @@
 			: [
 					{ id: 'details', label: 'Details', content: detailsTab },
 					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
+					...(framesAPI.current && name.current !== undefined
+						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
+						: []),
 				]
 	)
 </script>
@@ -187,28 +191,41 @@
 	/>
 {/snippet}
 
+{#snippet povTab()}
+	{#if name.current !== undefined}
+		<FramePovTab
+			{entity}
+			frameName={name.current}
+		/>
+	{/if}
+{/snippet}
+
 <DetailsPanel
 	{entity}
 	{...rest}
 >
-	{#if isFragmentComponentWithVariables}
-		<p
-			class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
-			data-testid="fragment-variables-warning"
-			role="status"
-		>
-			This component is from a fragment with variables, editing frames in 3D scene is disabled
-		</p>
-	{/if}
+	{#if isFragmentComponentWithVariables || showConfigUnavailableWarning}
+		<div class="bg-extralight px-2">
+			{#if isFragmentComponentWithVariables}
+				<p
+					class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
+					data-testid="fragment-variables-warning"
+					role="status"
+				>
+					This component is from a fragment with variables, editing frames in 3D scene is disabled
+				</p>
+			{/if}
 
-	{#if showConfigUnavailableWarning}
-		<div
-			class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
-			data-testid="config-unavailable-warning"
-			role="status"
-		>
-			<p>Frame editing is disabled — this machine's configuration could not be read.</p>
-			<p class="mt-1 wrap-break-word text-yellow-800">{partConfig.error}</p>
+			{#if showConfigUnavailableWarning}
+				<div
+					class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
+					data-testid="config-unavailable-warning"
+					role="status"
+				>
+					<p>Frame editing is disabled — this machine's configuration could not be read.</p>
+					<p class="mt-1 wrap-break-word text-yellow-800">{partConfig.error}</p>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
