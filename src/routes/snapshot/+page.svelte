@@ -8,7 +8,7 @@
 	let snapshot = $state.raw<SnapshotProto | undefined>(undefined)
 
 	onMount(async () => {
-		const response = await fetch(asset('/visualization_snapshot.json'))
+		const response = await fetch(asset('visualization_snapshot.json'))
 		if (!response.ok) return
 
 		snapshot = SnapshotProto.fromJsonString(await response.text())

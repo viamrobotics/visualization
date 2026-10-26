@@ -1,5 +1,7 @@
 import { sentrySvelteKit } from '@sentry/sveltekit'
+import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { playwright } from '@vitest/browser-playwright'
@@ -14,6 +16,10 @@ import { version } from './package.json'
 dns.setDefaultResultOrder('verbatim')
 
 const https = process.argv.includes('--https')
+
+// SvelteKit requires no trailing slash. The pr-preview workflow sets this to
+// /visualization/pr-preview/pr-<N> so the static build resolves assets under that subpath.
+const basePath = (process.env.BASE_PATH ?? '') as '' | `/${string}`
 
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
@@ -36,7 +42,17 @@ export default defineConfig({
 		devtoolsJson(),
 		...(https ? [mkcert()] : []),
 		tailwindcss(),
-		sveltekit(),
+		sveltekit({
+			adapter: adapter(),
+			// Kit 3 no longer creates the `$lib` alias. This keeps the existing imports working.
+			alias: {
+				$lib: 'src/lib',
+			},
+			paths: {
+				base: basePath,
+			},
+			preprocess: vitePreprocess(),
+		}),
 		svelteTesting({ resolveBrowser: false }),
 	],
 

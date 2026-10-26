@@ -1,5 +1,6 @@
 import { includeIgnoreFile } from '@eslint/compat'
 import js from '@eslint/js'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import perfectionist from 'eslint-plugin-perfectionist'
 import svelte from 'eslint-plugin-svelte'
 import unicorn from 'eslint-plugin-unicorn'
@@ -9,7 +10,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
-import svelteConfig from './svelte.config.js'
+const svelteConfig = {
+	preprocess: vitePreprocess(),
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { AssetPath } from '$app/types'
+
 	import { asset } from '$app/paths'
 	import { DashboardPortal } from '$lib'
 	import { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
@@ -13,9 +15,10 @@
 	let active = $state<Version | undefined>(undefined)
 
 	const load = async (version: Version) => {
-		const response = await fetch(
-			asset(`/test-fixtures/visualization_snapshot_reconcile_${version}.json`)
-		)
+		// These files are generated into gitignored static/test-fixtures, so they are absent
+		// from the AssetPath union produced by `svelte-kit sync`.
+		const fixture = `test-fixtures/visualization_snapshot_reconcile_${version}.json` as AssetPath
+		const response = await fetch(asset(fixture))
 		if (!response.ok) return
 		snapshot = SnapshotProto.fromJsonString(await response.text())
 		active = version
