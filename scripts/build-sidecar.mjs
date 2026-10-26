@@ -143,8 +143,11 @@ const findDynamicLibraries = (goos, output) => {
 		return { report: libraryLines.join('\n'), offenders }
 	}
 	const lines = run('ldd', [output]).split('\n')
+	// ldd names most libraries bare (`libm.so.6 => ...`) but the loader by path
+	// (`/lib64/ld-linux-x86-64.so.2`), so match on the first token's file name.
+	const libraryName = (line) => path.basename(line.trim().split(/\s+/)[0] ?? '')
 	const offenders = lines.filter(
-		(line) => !LINUX_ALLOWED_LIBRARIES.some((name) => line.trim().startsWith(name))
+		(line) => !LINUX_ALLOWED_LIBRARIES.some((name) => libraryName(line).startsWith(name))
 	)
 	return { report: lines.join('\n'), offenders }
 }
