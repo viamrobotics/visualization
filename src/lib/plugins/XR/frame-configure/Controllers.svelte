@@ -7,9 +7,6 @@
 	import { onDestroy } from 'svelte'
 	import { Group, MathUtils, Vector3 } from 'three'
 	import { TransformControls } from 'three/addons/controls/TransformControls.js'
-	import { Text } from 'threlte-uikit'
-	import { Button, ButtonIcon, ButtonLabel, Panel } from 'threlte-uikit/horizon'
-	import { Icon, Locate, Move3d, Plus, Rotate3d, Scale3d } from 'threlte-uikit/lucide'
 
 	import { traits, useQuery, useTrait } from '$lib/ecs'
 	import { FrameEditor } from '$lib/editing/FrameEditor'
@@ -18,6 +15,14 @@
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { OrientationVector } from '$lib/math/OrientationVector'
 
+	import CanvasPanel from '../panels/CanvasPanel.svelte'
+	import {
+		panelColumn,
+		panelIconButton,
+		panelLabelButton,
+		panelRow,
+		panelText,
+	} from '../panels/panelNode'
 	import { useOrigin } from '../useOrigin.svelte'
 	import WristDisplay from '../WristDisplay.svelte'
 
@@ -316,6 +321,48 @@
 		}
 	})
 
+	const modeVariant = (buttonMode: Mode) => (mode === buttonMode ? 'primary' : 'tertiary')
+
+	const toolbar = $derived(
+		panelRow(
+			[
+				panelIconButton('locate', resetOrigin),
+				panelIconButton('plus', () => (addingFrame = !addingFrame), {
+					variant: addingFrame ? 'primary' : 'tertiary',
+				}),
+				...(attached
+					? [
+							panelIconButton('move-3d', () => (mode = 'translate'), {
+								variant: modeVariant('translate'),
+							}),
+							panelIconButton('rotate-3d', () => (mode = 'rotate'), {
+								variant: modeVariant('rotate'),
+							}),
+							panelIconButton('scale-3d', () => (mode = 'scale'), {
+								variant: modeVariant('scale'),
+								disabled: !hasGeometry,
+							}),
+						]
+					: []),
+			],
+			{ padding: 8, gap: 8, background: '#111', radius: 16 }
+		)
+	)
+
+	const framePicker = $derived(
+		panelColumn(
+			framelessComponents.current.length > 0
+				? framelessComponents.current.map((component) =>
+						panelLabelButton(component, () => {
+							partConfig.createFrame(component)
+							addingFrame = false
+						})
+					)
+				: [panelText('No components without frames')],
+			{ padding: 12, gap: 6, background: '#111', radius: 16, minWidth: 320 }
+		)
+	)
+
 	onDestroy(() => {
 		endFrameHistoryEntry()
 		transformControls.setActive(false)
@@ -337,106 +384,12 @@
 
 {#if partConfig.hasEditPermissions}
 	<WristDisplay position={[0, 0.005, 0.04]}>
-		<Panel
-			flexDirection="row"
-			padding={8}
-			gap={8}
-			backgroundColor="#111"
-			borderRadius={16}
-		>
-			<Button
-				icon
-				size="sm"
-				variant="tertiary"
-				onclick={resetOrigin}
-			>
-				<ButtonIcon>
-					<Icon is={Locate} />
-				</ButtonIcon>
-			</Button>
-			<Button
-				icon
-				size="sm"
-				variant={addingFrame ? 'primary' : 'tertiary'}
-				onclick={() => (addingFrame = !addingFrame)}
-			>
-				<ButtonIcon>
-					<Icon is={Plus} />
-				</ButtonIcon>
-			</Button>
-			{#if attached}
-				<Button
-					icon
-					size="sm"
-					variant={mode === 'translate' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'translate')}
-				>
-					<ButtonIcon>
-						<Icon is={Move3d} />
-					</ButtonIcon>
-				</Button>
-				<Button
-					icon
-					size="sm"
-					variant={mode === 'rotate' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'rotate')}
-				>
-					<ButtonIcon>
-						<Icon is={Rotate3d} />
-					</ButtonIcon>
-				</Button>
-				<Button
-					icon
-					size="sm"
-					disabled={!hasGeometry}
-					variant={mode === 'scale' ? 'primary' : 'tertiary'}
-					onclick={() => (mode = 'scale')}
-				>
-					<ButtonIcon>
-						<Icon is={Scale3d} />
-					</ButtonIcon>
-				</Button>
-			{/if}
-		</Panel>
+		<CanvasPanel root={toolbar} />
 	</WristDisplay>
 
 	{#if addingFrame}
 		<WristDisplay position={[0, 0.005, 0.14]}>
-			<Panel
-				flexDirection="column"
-				padding={12}
-				gap={6}
-				backgroundColor="#111"
-				borderRadius={16}
-				minWidth={320}
-			>
-				{#if framelessComponents.current.length > 0}
-					{#each framelessComponents.current as component (component)}
-						<Button
-							size="sm"
-							variant="tertiary"
-							onclick={() => {
-								partConfig.createFrame(component)
-								addingFrame = false
-							}}
-						>
-							<ButtonLabel>
-								<Text
-									text={component}
-									fontSize={14}
-									color="#ffffff"
-								/>
-							</ButtonLabel>
-						</Button>
-					{/each}
-				{:else}
-					<Text
-						text="No components without frames"
-						fontSize={14}
-						color="#ffffff"
-					/>
-				{/if}
-			</Panel>
+			<CanvasPanel root={framePicker} />
 		</WristDisplay>
 	{/if}
 {/if}

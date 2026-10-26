@@ -174,7 +174,7 @@
 
 				<PortalTarget id="dom" />
 
-				{#if settings.current.renderStats}
+				{#if settings.current.renderStats && !environment.current.isImmersive}
 					<RenderStats />
 				{/if}
 			</div>
