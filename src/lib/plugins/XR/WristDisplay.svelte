@@ -5,14 +5,13 @@
 	import { useController, useHandJoint } from '@threlte/xr'
 	import { fromStore } from 'svelte/store'
 	import { Group, type Vector3Tuple } from 'three'
-	import { provideDefaultProperties } from 'threlte-uikit'
 
 	interface Props {
 		/** Offset from the wrist in the wrist-local frame, meters. */
 		position?: Vector3Tuple
 		/**
-		 * Rotation in the wrist-local frame. The default orients uikit content
-		 * (panels face their own +Z) onto the dorsal side of the wrist, so the
+		 * Rotation in the wrist-local frame. The default orients panels (which
+		 * face their own +Z) onto the dorsal side of the wrist, so the
 		 * user sees it when turning their palm down, like a smartwatch.
 		 */
 		rotation?: Vector3Tuple
@@ -28,13 +27,6 @@
 		scale = 0.03,
 		children,
 	}: Props = $props()
-
-	// Draw uikit content on top of the scene (real-world depth, selection OBB,
-	// etc.), matching the old HUD behavior.
-	provideDefaultProperties(() => ({
-		depthTest: false,
-		renderOrder: 999,
-	}))
 
 	const leftController = fromStore(useController('left'))
 	const leftWrist = fromStore(useHandJoint('left', 'wrist'))
