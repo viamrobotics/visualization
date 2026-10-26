@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { T } from '@threlte/core'
 	import { createStreamClient } from '@viamrobotics/svelte-sdk'
 	import { VideoTexture } from 'three'
 
@@ -195,12 +195,6 @@
 			videoFrameCallbackId = null
 		}
 	}
-
-	useTask(() => {
-		if (!enableProfiling && texture && ready) {
-			texture.needsUpdate = true
-		}
-	})
 </script>
 
 {#if ready && texture}

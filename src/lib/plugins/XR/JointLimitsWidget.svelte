@@ -57,8 +57,7 @@
 		})
 	})
 
-	// Canvas setup — use 2x resolution for sharper XR text
-	const RESOLUTION_SCALE = 4
+	const RESOLUTION_SCALE = 1
 	const CANVAS_WIDTH = 800 * RESOLUTION_SCALE
 	const HEADER_HEIGHT = 80 * RESOLUTION_SCALE
 	const ROW_HEIGHT = 120 * RESOLUTION_SCALE
@@ -173,10 +172,20 @@
 		}
 	}
 
+	let drawnKey = ''
+
 	$effect(() => {
 		if (canvas && jointData && jointData.length > 0) {
 			const ctx = canvas.getContext('2d')
 			if (!ctx) return
+
+			const rows = jointData.map(
+				(joint) =>
+					`${joint.jointId}:${joint.currentPosition.toFixed(1)}:${joint.percentage.toFixed(1)}`
+			)
+			const key = `${armName}|${canvas.height}|${rows.join(',')}`
+			if (key === drawnKey) return
+			drawnKey = key
 
 			ctx.clearRect(0, 0, canvas.width, canvas.height)
 
