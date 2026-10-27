@@ -227,8 +227,9 @@ withRobot('create and delete frame', async ({ browser }) => {
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
 
-	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
-	await page.getByText('base-1', { exact: true }).click()
+	const treeView = page.getByLabel('Tree View')
+	await expect(treeView.getByText('base-1', { exact: true })).toBeVisible()
+	await treeView.getByText('base-1', { exact: true }).click()
 	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
 	page.getByText('Delete frame', { exact: true }).click()
 

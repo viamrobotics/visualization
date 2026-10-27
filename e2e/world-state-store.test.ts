@@ -11,10 +11,17 @@ const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const wsDir = path.resolve(dirname, 'fixtures/world-state-store')
 
 const runGoTest = (testPath: string) => {
+	const { host, apiKeyId, apiKey } = getE2EConfig()
 	try {
 		const output = execSync(`go test -run ${testPath} . -count=1 -v -timeout=60s 2>&1`, {
 			encoding: 'utf8',
 			cwd: wsDir,
+			env: {
+				...process.env,
+				VIAM_E2E_HOST: host,
+				VIAM_E2E_API_KEY_ID: apiKeyId,
+				VIAM_E2E_API_KEY: apiKey,
+			},
 		})
 		console.log(output)
 	} catch (error: unknown) {
