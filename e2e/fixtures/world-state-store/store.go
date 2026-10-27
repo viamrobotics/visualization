@@ -650,17 +650,17 @@ func formatUUIDKey(raw []byte) (string, error) {
 	return u.String(), nil
 }
 
-// fixturesDir returns the path to the e2e/fixtures directory relative to the binary location.
-func fixturesDir() (string, error) {
+// dataDir returns the path to the client/data directory relative to the binary location.
+func dataDir() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("could not determine executable path: %w", err)
 	}
-	return filepath.Join(filepath.Dir(exe), "..", "fixtures"), nil
+	return filepath.Join(filepath.Dir(exe), "..", "..", "client", "data"), nil
 }
 
 func (s *TestStore) populateTestData() error {
-	fixtures, err := fixturesDir()
+	data, err := dataDir()
 	if err != nil {
 		return err
 	}
@@ -716,7 +716,7 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(capsuleTransform)
 
-	pcdFile, err := os.Open(filepath.Join(fixtures, "simple.pcd"))
+	pcdFile, err := os.Open(filepath.Join(data, "simple.pcd"))
 	if err != nil {
 		return fmt.Errorf("failed to open simple.pcd: %w", err)
 	}
@@ -739,7 +739,7 @@ func (s *TestStore) populateTestData() error {
 	}
 	s.addTransform(pcTransform)
 
-	plyData, err := os.ReadFile(filepath.Join(fixtures, "lod_100.ply"))
+	plyData, err := os.ReadFile(filepath.Join(data, "lod_100.ply"))
 	if err != nil {
 		return fmt.Errorf("failed to read lod_100.ply: %w", err)
 	}

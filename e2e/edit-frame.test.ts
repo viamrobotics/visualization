@@ -214,8 +214,9 @@ withRobot('create and delete frame', async ({ browser }) => {
 	})
 
 	await enterBuildMode(page)
-	await expect(page.getByLabel('Add frames', { exact: true })).toBeVisible()
-	page.getByLabel('Add frames', { exact: true }).click()
+	await expect(page.getByText('Frameless components')).toBeVisible()
+	await page.getByText('Frameless components').click()
+	await page.getByText('no-frame', { exact: true }).click()
 
 	await expect(page.getByRole('button', { name: 'Add frame', exact: true })).toBeVisible()
 	page.getByRole('button', { name: 'Add frame', exact: true }).click()
