@@ -43,6 +43,8 @@ const defaults = {
 }
 
 const MINIMUM_ARROW_LENGTH = 1e-6
+const COLORS_RGBA = 4
+const OPAQUE = 255
 const MILLIMETERS_TO_METERS = 0.001
 
 /** Past this, the direction is too close to +Z for Z to serve as the basis helper axis. */
@@ -133,7 +135,7 @@ const createMaterial = (options: {
 	material.positionNode = arrowPosition(options.uniforms, options.isHead)
 	material.colorNode =
 		options.uniformColor ??
-		(sRGBTransferEOTF(attribute<'vec3'>('instanceColor', 'vec3')) as Node<'vec3'>)
+		(sRGBTransferEOTF(attribute<'vec4'>('instanceColor', 'vec4').rgb) as Node<'vec3'>)
 	return material
 }
 
@@ -186,8 +188,13 @@ export class InstancedArrows extends Group {
 		}
 
 		if (!options.uniformColor) {
-			const colors = new Uint8Array(this.count * STRIDE.COLORS_RGB)
-			const instanceColor = new InstancedBufferAttribute(colors, STRIDE.COLORS_RGB, true)
+			// RGBA, not RGB: three's WebGPU backend re-pads a 3-byte attribute element by element
+			// on every upload, which at a million arrows costs seconds.
+			const colors = new Uint8Array(this.count * COLORS_RGBA)
+			for (let alpha = COLORS_RGBA - 1; alpha < colors.length; alpha += COLORS_RGBA) {
+				colors[alpha] = OPAQUE
+			}
+			const instanceColor = new InstancedBufferAttribute(colors, COLORS_RGBA, true)
 			instanceColor.setUsage(DynamicDrawUsage)
 
 			this.attributes.instanceColor = instanceColor
@@ -235,7 +242,20 @@ export class InstancedArrows extends Group {
 
 		if (arrows.colors && this.attributes.instanceColor) {
 			const colors = this.attributes.instanceColor.array
-			colors.set(arrows.colors.subarray(0, colors.length))
+			const source = arrows.colors
+			const count = Math.min(
+				Math.floor(source.length / STRIDE.COLORS_RGB),
+				colors.length / COLORS_RGBA
+			)
+
+			for (let index = 0; index < count; index += 1) {
+				const from = index * STRIDE.COLORS_RGB
+				const to = index * COLORS_RGBA
+				colors[to] = source[from]
+				colors[to + 1] = source[from + 1]
+				colors[to + 2] = source[from + 2]
+			}
+
 			this.attributes.instanceColor.needsUpdate = true
 		}
 	}
