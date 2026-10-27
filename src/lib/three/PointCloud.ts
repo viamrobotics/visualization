@@ -14,13 +14,19 @@ import { PointsNodeMaterial } from 'three/webgpu'
 
 import { pickNearestToRay } from './pointsBvh'
 
+const RGB_ITEM_SIZE = 3
 const RGBA_ITEM_SIZE = 4
+const OPAQUE_BYTE = 255
 const INSTANCE_POSITION = 'instancePosition'
 const INSTANCE_COLOR = 'instanceColor'
 
 interface InstancedCopy {
 	source: BufferAttribute
+	/** The array `source` held when the copy was made, to detect it being reallocated. */
+	sourceArray: BufferAttribute['array']
 	instanced: InstancedBufferAttribute
+	/** Whether `instanced` holds RGBA padded from 3-byte RGB rather than sharing `sourceArray`. */
+	isPadded: boolean
 	version: number
 }
 
@@ -50,13 +56,75 @@ const createQuadGeometry = (): InstancedBufferGeometry => {
 }
 
 /**
- * Mirrors a cloud attribute as a per-instance attribute over the same array. Nothing renders
- * the cloud geometry itself, so the copy is the only GPU buffer the points occupy.
+ * WebGPU vertex strides are multiples of 4 bytes, so three pads 3-byte colors on every upload,
+ * with a `subarray` per point. That costs seconds per refresh of a 1M-point cloud, so
+ * `PointCloud` pads them itself.
+ */
+const isThreeByteColor = (
+	source: BufferAttribute
+): source is BufferAttribute & { array: Uint8Array } =>
+	source.itemSize === RGB_ITEM_SIZE && source.array instanceof Uint8Array
+
+/** Copies RGB into the first three bytes of each RGBA texel in `[startPoint, endPoint)`. */
+const copyRgbIntoRgba = (
+	rgb: Uint8Array,
+	rgba: Uint8Array,
+	startPoint: number,
+	endPoint: number
+): void => {
+	for (let point = startPoint; point < endPoint; point++) {
+		const from = point * RGB_ITEM_SIZE
+		const to = point * RGBA_ITEM_SIZE
+		rgba[to] = rgb[from]
+		rgba[to + 1] = rgb[from + 1]
+		rgba[to + 2] = rgb[from + 2]
+	}
+}
+
+/**
+ * Mirrors a cloud attribute as a per-instance attribute. Nothing renders the cloud geometry
+ * itself, so the copy is the only GPU buffer the points occupy. It shares the source array,
+ * except for 3-byte colors, which it pads to opaque RGBA.
  */
 const createInstancedCopy = (source: BufferAttribute): InstancedCopy => {
-	const instanced = new InstancedBufferAttribute(source.array, source.itemSize, source.normalized)
+	const isPadded = isThreeByteColor(source)
+	let instanced: InstancedBufferAttribute
+
+	if (isPadded) {
+		const rgba = new Uint8Array(source.count * RGBA_ITEM_SIZE).fill(OPAQUE_BYTE)
+		copyRgbIntoRgba(source.array, rgba, 0, source.count)
+		instanced = new InstancedBufferAttribute(rgba, RGBA_ITEM_SIZE, true)
+	} else {
+		instanced = new InstancedBufferAttribute(source.array, source.itemSize, source.normalized)
+	}
+
 	instanced.setUsage(DynamicDrawUsage)
-	return { source, instanced, version: source.version }
+	return { source, sourceArray: source.array, instanced, isPadded, version: source.version }
+}
+
+/** Whether `copy` no longer mirrors `source`, because either was added, removed, or reallocated. */
+const isCopyStale = (copy: InstancedCopy | undefined, source: BufferAttribute | undefined) =>
+	copy?.source !== source || copy?.sourceArray !== source?.array
+
+/** Forwards a padded copy's pending writes, converting its ranges from RGB to RGBA. */
+const syncPaddedCopy = (copy: InstancedCopy): void => {
+	const rgb = copy.source.array as Uint8Array
+	const rgba = copy.instanced.array as Uint8Array
+
+	if (copy.source.updateRanges.length === 0) {
+		copyRgbIntoRgba(rgb, rgba, 0, copy.source.count)
+		return
+	}
+
+	for (const { start, count } of copy.source.updateRanges) {
+		const startPoint = Math.floor(start / RGB_ITEM_SIZE)
+		const endPoint = Math.ceil((start + count) / RGB_ITEM_SIZE)
+		copyRgbIntoRgba(rgb, rgba, startPoint, endPoint)
+		copy.instanced.addUpdateRange(
+			startPoint * RGBA_ITEM_SIZE,
+			(endPoint - startPoint) * RGBA_ITEM_SIZE
+		)
+	}
 }
 
 /** Forwards writes made to the cloud attribute, as partial uploads where it recorded ranges. */
@@ -67,8 +135,12 @@ const syncInstancedCopy = (copy: InstancedCopy): void => {
 		return
 	}
 
-	for (const { start, count } of source.updateRanges) {
-		instanced.addUpdateRange(start, count)
+	if (copy.isPadded) {
+		syncPaddedCopy(copy)
+	} else {
+		for (const { start, count } of source.updateRanges) {
+			instanced.addUpdateRange(start, count)
+		}
 	}
 
 	source.clearUpdateRanges()
@@ -134,18 +206,9 @@ export class PointCloud extends Sprite {
 
 	/**
 	 * Swaps in a replacement cloud while keeping the material, so its shader is not rebuilt.
-	 * The quad geometry is replaced too, since disposing it is what frees the old copies' GPU
-	 * buffers. The caller still owns and disposes the previous cloud.
+	 * The caller still owns and disposes the previous cloud.
 	 */
 	set cloud(cloud: BufferGeometry) {
-		if (cloud === this.currentCloud) {
-			return
-		}
-
-		this.geometry.dispose()
-		this.geometry = createQuadGeometry()
-		this.positionCopy = undefined
-		this.colorCopy = undefined
 		this.currentCloud = cloud
 		this.update()
 	}
@@ -155,8 +218,12 @@ export class PointCloud extends Sprite {
 	 * pending writes, and draws only the cloud's draw range. Runs before every render.
 	 */
 	update(): void {
-		this.bindPosition()
-		this.bindColor()
+		const position = this.cloud.getAttribute('position') as BufferAttribute | undefined
+		const color = this.cloud.getAttribute('color') as BufferAttribute | undefined
+
+		if (isCopyStale(this.positionCopy, position) || isCopyStale(this.colorCopy, color)) {
+			this.rebuildCopies(position, color)
+		}
 
 		if (this.positionCopy) syncInstancedCopy(this.positionCopy)
 		if (this.colorCopy) syncInstancedCopy(this.colorCopy)
@@ -195,54 +262,43 @@ export class PointCloud extends Sprite {
 		this.material.dispose()
 	}
 
-	private bindPosition(): void {
-		const source = this.cloud.getAttribute('position') as BufferAttribute | undefined
+	/**
+	 * Recreates both copies on a fresh quad geometry. Three frees an attribute's GPU buffer only
+	 * when its geometry is disposed, so replacing a copy in place would leak the old one.
+	 */
+	private rebuildCopies(
+		position: BufferAttribute | undefined,
+		color: BufferAttribute | undefined
+	): void {
+		this.geometry.dispose()
+		this.geometry = createQuadGeometry()
 
-		if (
-			source === this.positionCopy?.source &&
-			source?.array === this.positionCopy?.instanced.array
-		) {
-			return
-		}
-
-		this.positionCopy = source ? createInstancedCopy(source) : undefined
+		this.positionCopy = position ? createInstancedCopy(position) : undefined
+		this.colorCopy = color ? createInstancedCopy(color) : undefined
 
 		if (this.positionCopy) {
 			this.geometry.setAttribute(INSTANCE_POSITION, this.positionCopy.instanced)
-		} else {
-			this.geometry.deleteAttribute(INSTANCE_POSITION)
 		}
-	}
-
-	private bindColor(): void {
-		const source = this.cloud.getAttribute('color') as BufferAttribute | undefined
-
-		if (source === this.colorCopy?.source && source?.array === this.colorCopy?.instanced.array) {
-			return
-		}
-
-		this.colorCopy = source ? createInstancedCopy(source) : undefined
 
 		if (this.colorCopy) {
 			this.geometry.setAttribute(INSTANCE_COLOR, this.colorCopy.instanced)
-		} else {
-			this.geometry.deleteAttribute(INSTANCE_COLOR)
 		}
 
-		// Tracked apart from `colorCopy`, which a cloud swap clears without changing the node.
-		if (source?.itemSize !== this.colorItemSize) {
-			this.colorItemSize = source?.itemSize
-			this.material.colorNode = this.colorNodeFor(source)
+		// Padded RGB and RGBA both read as `vec4`, so swapping between them keeps the shader.
+		const colorItemSize = this.colorCopy?.instanced.itemSize
+		if (colorItemSize !== this.colorItemSize) {
+			this.colorItemSize = colorItemSize
+			this.material.colorNode = this.colorNodeFor(colorItemSize)
 			this.material.needsUpdate = true
 		}
 	}
 
-	private colorNodeFor(source: BufferAttribute | undefined) {
-		if (!source) {
+	private colorNodeFor(itemSize: number | undefined) {
+		if (itemSize === undefined) {
 			return null
 		}
 
-		return source.itemSize === RGBA_ITEM_SIZE
+		return itemSize === RGBA_ITEM_SIZE
 			? attribute<'vec4'>(INSTANCE_COLOR, 'vec4')
 			: vec4(attribute<'vec3'>(INSTANCE_COLOR, 'vec3'), 1)
 	}
