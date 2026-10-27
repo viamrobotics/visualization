@@ -73,7 +73,6 @@ the reason the matrix is copied rather than decomposed into props.
 {#if worldMatrix.current}
 	<T
 		is={lines}
-		name={entity}
 		userData.name={name.current}
 		dispose={false}
 		raycast={() => null}

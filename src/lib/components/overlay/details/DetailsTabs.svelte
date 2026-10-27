@@ -9,12 +9,15 @@
 		id: string
 		label: string
 		content: Snippet
+		/** Leaves the panel unpainted so a `<View>` behind it shows through. */
+		transparent?: boolean
 	}
 </script>
 
 <script lang="ts">
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tabs from '@zag-js/tabs'
+	import { PersistedState } from 'runed'
 
 	interface Props {
 		/** Rendered left to right. The first one is selected until the user picks another. */
@@ -25,17 +28,19 @@
 
 	const id = $props.id()
 
-	let selection = $state.raw<string>()
+	const selection = new PersistedState<string | undefined>('details-active-tab', undefined)
 
 	// Callers drop a tab when the entity has nothing to put in it, so a stale
 	// selection has to fall back rather than leave every panel hidden.
-	const value = $derived(items.some((item) => item.id === selection) ? selection : items[0]?.id)
+	const value = $derived(
+		items.some((item) => item.id === selection.current) ? selection.current : items[0]?.id
+	)
 
 	const service = useMachine(tabs.machine, () => ({
 		id,
 		value,
 		onValueChange: (details: tabs.ValueChangeDetails) => {
-			selection = details.value
+			selection.current = details.value
 		},
 	}))
 
@@ -47,7 +52,7 @@
 	{#if items.length > 1}
 		<div
 			{...api.getListProps()}
-			class="border-medium -mx-2 flex gap-4 border-b px-2"
+			class="border-medium bg-extralight flex gap-4 border-b px-2"
 		>
 			{#each items as item (item.id)}
 				<button
@@ -67,7 +72,10 @@
 	{/if}
 
 	{#each items as item (item.id)}
-		<div {...api.getContentProps({ value: item.id })}>
+		<div
+			{...api.getContentProps({ value: item.id })}
+			class={[!item.transparent && 'bg-extralight px-2 pb-2']}
+		>
 			{@render item.content()}
 		</div>
 	{/each}

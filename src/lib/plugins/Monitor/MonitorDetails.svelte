@@ -16,6 +16,7 @@
 	import PoseDetails from '$lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
 	import { traits, useTag, useTrait } from '$lib/ecs'
+	import FramePovTab from '$lib/plugins/FramePov/FramePovTab.svelte'
 
 	import SessionAppearanceDetails from './SessionAppearanceDetails.svelte'
 
@@ -40,6 +41,9 @@
 			: [
 					{ id: 'details', label: 'Details', content: detailsTab },
 					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
+					...(framesAPI.current && name.current !== undefined
+						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
+						: []),
 				]
 	)
 </script>
@@ -83,6 +87,15 @@
 		{entity}
 		tab="appearance"
 	/>
+{/snippet}
+
+{#snippet povTab()}
+	{#if name.current !== undefined}
+		<FramePovTab
+			{entity}
+			frameName={name.current}
+		/>
+	{/if}
 {/snippet}
 
 <DetailsPanel

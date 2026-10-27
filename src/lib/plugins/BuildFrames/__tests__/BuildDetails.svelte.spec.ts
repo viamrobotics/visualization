@@ -28,6 +28,7 @@ describe('BuildDetails', () => {
 
 	beforeEach(() => {
 		world.reset()
+		localStorage.removeItem('details-active-tab')
 
 		entity = createEntityFixture(world)
 		entity.add(traits.FramesAPI)
