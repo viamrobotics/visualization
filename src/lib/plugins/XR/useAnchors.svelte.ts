@@ -1,4 +1,4 @@
-import { useTask, useThrelte } from '@threlte/core'
+import { useTask, useThrelte } from '@threlte/core/webgpu'
 import { useXR } from '@threlte/xr'
 import { getContext, setContext } from 'svelte'
 import { fromStore } from 'svelte/store'

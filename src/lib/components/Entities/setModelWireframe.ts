@@ -1,6 +1,6 @@
 import type { Material, Object3D } from 'three'
 
-import { isInstanceOf } from '@threlte/core'
+import { isInstanceOf } from '@threlte/core/webgpu'
 
 interface WireframeMaterial extends Material {
 	wireframe: boolean

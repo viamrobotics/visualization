@@ -10,7 +10,7 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 
 	import { draggable } from '@neodrag/svelte'
-	import { Portal } from '@threlte/extras'
+	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'

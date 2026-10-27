@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { CanvasTexture, PlaneGeometry } from 'three'
 
 	import { useArmClient } from '$lib/hooks/useArmClient.svelte'

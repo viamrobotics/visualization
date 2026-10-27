@@ -12,7 +12,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useTask, useThrelte } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
 	import {
 		BufferAttribute,
 		BufferGeometry,

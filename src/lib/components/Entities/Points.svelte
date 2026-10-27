@@ -2,7 +2,7 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { T, useTask, useThrelte } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
 	import { OrthographicCamera, Points, PointsMaterial } from 'three'
 
 	import { asColor, isSingleColor } from '$lib/buffer'

@@ -6,7 +6,7 @@ Shows all steps for querying points within a selection
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { Box3, BufferAttribute, BufferGeometry, Vector3 } from 'three'
 
 	import { traits, useTrait } from '$lib/ecs'

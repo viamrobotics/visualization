@@ -13,7 +13,7 @@ maps back to the entity.
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { DoubleSide } from 'three'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'

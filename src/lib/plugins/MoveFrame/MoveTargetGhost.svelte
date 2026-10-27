@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { LineBasicMaterial } from 'three'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
+	import { T, useThrelte } from '@threlte/core/webgpu'
+	import { MeshLineGeometry, MeshLineMaterial } from '@threlte/extras/webgpu'
 	import { Group, Matrix4, Vector3 } from 'three'
 
 	import { MOVE_GHOST_COLOR } from './moveGhostColor'

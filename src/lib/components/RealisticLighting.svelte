@@ -11,7 +11,7 @@ light itself forces covers the switch.
 <script lang="ts">
 	import type { DirectionalLight, Vector3Tuple } from 'three'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 
 	const { invalidate, scene } = useThrelte()
 

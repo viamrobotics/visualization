@@ -1,4 +1,4 @@
-import { injectPlugin, isInstanceOf } from '@threlte/core'
+import { injectPlugin, isInstanceOf } from '@threlte/core/webgpu'
 import { BatchedMesh, Mesh, Points, type Raycaster } from 'three'
 import {
 	acceleratedRaycast,

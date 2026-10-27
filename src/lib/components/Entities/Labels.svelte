@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useTask, useThrelte } from '@threlte/core'
+	import { useTask, useThrelte } from '@threlte/core/webgpu'
 
 	import { traits, useQuery } from '$lib/ecs'
 

@@ -16,6 +16,7 @@ import { darkenColor } from '$lib/color'
 
 import { createBatchedGeometryAllocator } from './addBatchedGeometry'
 import { addBatchedInstance } from './addBatchedInstance'
+import { setBatchedColorAt } from './setBatchedColorAt'
 import { toFacesBatchLayout } from './toFacesBatchLayout'
 
 const UNIT_BOX = new BoxGeometry(1, 1, 1)
@@ -216,11 +217,11 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 		},
 
 		setAppearance: (ids, color, opacity, visible) => {
-			faces.setColorAt(ids.face, faceColor.set(color.r, color.g, color.b, opacity))
+			setBatchedColorAt(faces, ids.face, faceColor.set(color.r, color.g, color.b, opacity))
 			faces.setVisibleAt(ids.face, visible)
 
 			const outline = darkenColor(color, EDGE_DARKEN)
-			edges.setColorAt(ids.edge, edgeColor.set(outline.r, outline.g, outline.b, opacity))
+			setBatchedColorAt(edges, ids.edge, edgeColor.set(outline.r, outline.g, outline.b, opacity))
 			edges.setVisibleAt(ids.edge, visible)
 		},
 

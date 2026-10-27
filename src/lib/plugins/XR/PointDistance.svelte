@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
-	import { Billboard, Text } from '@threlte/extras'
+	import { T, useTask } from '@threlte/core/webgpu'
+	import { Billboard, Text } from '@threlte/extras/webgpu'
 	import { Mesh, Vector3 } from 'three'
 
 	const mesh1 = new Mesh()

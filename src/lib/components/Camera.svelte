@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { TRANSFORM_CONTROLS_LAYER } from '$lib/three/renderLayers'

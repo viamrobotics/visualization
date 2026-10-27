@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte'
 	import type { ClassValue, HTMLAttributes } from 'svelte/elements'
 
-	import { Portal } from '@threlte/extras'
+	import { Portal } from '@threlte/extras/webgpu'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tooltip from '@zag-js/tooltip'
 

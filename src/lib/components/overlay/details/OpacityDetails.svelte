@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
 
 	import { setOrAddTrait, traits, useOpacity } from '$lib/ecs'

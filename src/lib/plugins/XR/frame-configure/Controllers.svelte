@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { IntersectionEvent } from '@threlte/extras'
+	import type { IntersectionEvent } from '@threlte/extras/webgpu'
 	import type { XRTargetRaySpace } from 'three'
 
-	import { T, useTask, useThrelte } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
 	import { Controller, useController, useHeadset } from '@threlte/xr'
 	import { onDestroy } from 'svelte'
 	import { Group, MathUtils, Vector3 } from 'three'

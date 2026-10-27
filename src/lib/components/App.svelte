@@ -3,8 +3,8 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { Canvas } from '@threlte/core'
-	import { PortalTarget } from '@threlte/extras'
+	import { Canvas } from '@threlte/core/webgpu'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
@@ -130,8 +130,8 @@
 	 * Only realistic mode wants a filmic curve. In the other two a color is data — a
 	 * collider's color says what it is — and AgX, which Threlte applies by default,
 	 * desaturates and lifts whatever it is handed. Rendering those modes with the
-	 * curve off puts their colors on screen as written, and matches the grid, whose
-	 * raw `ShaderMaterial` is never tone mapped in any mode.
+	 * curve off puts their colors on screen as written, and matches the grid, which
+	 * opts out of tone mapping in every mode.
 	 */
 	const toneMapping = $derived(
 		settings.current.renderMode === 'realistic' ? AgXToneMapping : NoToneMapping

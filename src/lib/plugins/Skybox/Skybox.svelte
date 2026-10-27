@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { EquirectangularReflectionMapping, type Texture, TextureLoader } from 'three'
 	import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js'
 

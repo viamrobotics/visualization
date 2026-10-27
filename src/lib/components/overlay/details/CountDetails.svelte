@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { isInstanceOf, useThrelte } from '@threlte/core'
+	import { isInstanceOf, useThrelte } from '@threlte/core/webgpu'
 	import { type Entity } from 'koota'
 	import { BufferAttribute } from 'three'
 

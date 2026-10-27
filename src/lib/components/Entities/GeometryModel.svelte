@@ -6,7 +6,7 @@ Renders a Viam Geometry object
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { Group } from 'three'
 
 	import { traits, useTrait } from '$lib/ecs'

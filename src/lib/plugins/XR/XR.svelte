@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { useXR, XR, XRButton } from '@threlte/xr'
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Quaternion } from 'three'
@@ -84,9 +84,8 @@
 		}
 
 		if (!baseRefSpace) {
-			const current = renderer.xr.getReferenceSpace()
-			if (!current) return
-			baseRefSpace = current
+			baseRefSpace = renderer.xr.getReferenceSpace() ?? undefined
+			if (!baseRefSpace) return
 		}
 
 		const [ox, oy, oz] = origin.position

@@ -1,5 +1,5 @@
 <script>
-	import { PortalTarget } from '@threlte/extras'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 
 	let { ...rest } = $props()
 </script>

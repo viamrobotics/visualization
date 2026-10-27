@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useTask, useThrelte } from '@threlte/core'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
 	import { BatchedMesh, Box3, Matrix4 } from 'three'
 	import { OBB } from 'three/addons/math/OBB.js'
 
