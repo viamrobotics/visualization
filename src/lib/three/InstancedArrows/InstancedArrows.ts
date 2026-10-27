@@ -11,16 +11,29 @@ import {
 	InterleavedBufferAttribute,
 	Material,
 	Mesh,
-	RawShaderMaterial,
 	Vector3,
 } from 'three'
+import {
+	abs,
+	attribute,
+	cross,
+	Fn,
+	length,
+	max as maxNode,
+	min as minNode,
+	normalize,
+	positionGeometry,
+	select,
+	sRGBTransferEOTF,
+	uniform,
+	vec3,
+} from 'three/tsl'
+import { MeshBasicNodeMaterial, type Node, type UniformNode } from 'three/webgpu'
 
 import { STRIDE } from '$lib/buffer'
 
 import { computeBoundingBox } from './box'
-import fragmentShader from './fragment.glsl'
 import { createHeadGeometry, createShaftGeometry, toInstanced } from './geometry'
-import vertexShader from './vertex.glsl'
 
 const defaults = {
 	LENGTH: 0.1,
@@ -29,32 +42,99 @@ const defaults = {
 	SHAFT_RADIUS: 0.001,
 }
 
+const MINIMUM_ARROW_LENGTH = 1e-6
+const MILLIMETERS_TO_METERS = 0.001
+
+/** Past this, the direction is too close to +Z for Z to serve as the basis helper axis. */
+const NEARLY_PARALLEL_TO_Z = 0.999
+
 const origin = new Vector3()
 const direction = new Vector3()
 const min = new Vector3()
 const max = new Vector3()
 
-const createMaterial = (options: { isHead: boolean; useColorAttribute: boolean }) => {
-	return new RawShaderMaterial({
-		vertexShader,
-		fragmentShader,
-		uniforms: {
-			headAtOrigin: { value: 1 },
-			shaftRadius: { value: defaults.SHAFT_RADIUS },
-			headLength: { value: defaults.HEAD_LENGTH },
-			headWidth: { value: defaults.HEAD_WIDTH },
-			arrowLength: { value: defaults.LENGTH },
-			minimumArrowLength: { value: 1e-6 },
-			uniformColor: { value: new Color() },
-		},
-		defines: {
-			...(options.isHead ? { IS_HEAD: 1 } : {}),
-			...(options.useColorAttribute ? { USE_COLOR_ATTRIBUTE: 1 } : {}),
-		},
-		side: FrontSide,
-		depthTest: true,
-		depthWrite: true,
-	})
+const createUniforms = (options: {
+	arrowLength: number
+	shaftRadius: number
+	headLength: number
+	headWidth: number
+}) => ({
+	/** 1 puts the head tip at the pose origin, 0 puts the base there. */
+	headAtOrigin: uniform(1),
+	arrowLength: uniform(options.arrowLength),
+	shaftRadius: uniform(options.shaftRadius),
+	headLength: uniform(options.headLength),
+	headWidth: uniform(options.headWidth),
+})
+
+type ArrowUniforms = ReturnType<typeof createUniforms>
+
+/**
+ * Places a unit shaft or cone vertex along its instance's pose. `instanceOrigin` is in
+ * millimetres, and `instanceDirection` only orients: every arrow is `arrowLength` long.
+ */
+const arrowPosition = (uniforms: ArrowUniforms, isHead: boolean) =>
+	Fn(() => {
+		const arrowLength = maxNode(uniforms.arrowLength, MINIMUM_ARROW_LENGTH)
+
+		const instanceDirection = attribute<'vec3'>('instanceDirection', 'vec3')
+		const magnitude = length(instanceDirection)
+		const basisY = select(magnitude.greaterThan(0), instanceDirection.div(magnitude), vec3(0, 1, 0))
+		const helperAxis = select(
+			abs(basisY.z).lessThan(NEARLY_PARALLEL_TO_Z),
+			vec3(0, 0, 1),
+			vec3(1, 0, 0)
+		)
+		const basisX = normalize(cross(helperAxis, basisY))
+		const basisZ = cross(basisY, basisX)
+
+		const poseOrigin = attribute<'vec3'>('instanceOrigin', 'vec3').mul(MILLIMETERS_TO_METERS)
+		const effectiveOrigin = select(
+			uniforms.headAtOrigin.greaterThan(0.5),
+			poseOrigin.sub(basisY.mul(arrowLength)),
+			poseOrigin
+		)
+
+		const headLength = minNode(uniforms.headLength, arrowLength)
+		const shaftLength = maxNode(arrowLength.sub(headLength), 0)
+
+		const scaled = isHead
+			? vec3(
+					positionGeometry.x.mul(uniforms.headWidth),
+					positionGeometry.y.mul(headLength),
+					positionGeometry.z.mul(uniforms.headWidth)
+				)
+			: select(
+					shaftLength.greaterThan(0),
+					vec3(
+						positionGeometry.x.mul(uniforms.shaftRadius),
+						positionGeometry.y.mul(shaftLength),
+						positionGeometry.z.mul(uniforms.shaftRadius)
+					),
+					vec3(0, 0, 0)
+				)
+
+		const start = isHead ? effectiveOrigin.add(basisY.mul(shaftLength)) : effectiveOrigin
+
+		return start.add(basisX.mul(scaled.x)).add(basisY.mul(scaled.y)).add(basisZ.mul(scaled.z))
+	})()
+
+/**
+ * Per-arrow colors arrive as sRGB bytes, so they are decoded to linear for the output pass to
+ * encode again. A uniform color is already linear, since `Color.set` converts it.
+ */
+const createMaterial = (options: {
+	isHead: boolean
+	uniforms: ArrowUniforms
+	uniformColor: UniformNode<'color', Color> | undefined
+}) => {
+	const material = new MeshBasicNodeMaterial({ side: FrontSide, depthTest: true, depthWrite: true })
+	material.toneMapped = false
+	material.positionNode = arrowPosition(options.uniforms, options.isHead)
+	material.colorNode =
+		options.uniformColor ??
+		(sRGBTransferEOTF(attribute<'vec3'>('instanceColor', 'vec3')) as Node<'vec3'>)
+	return material
 }
 
 export class InstancedArrows extends Group {
@@ -119,25 +199,11 @@ export class InstancedArrows extends Group {
 		const headGeometry = toInstanced(createHeadGeometry(), this.count, this.attributes)
 		headGeometry.computeBoundingBox = computeBoundingBox.bind(this, headGeometry)
 
-		const shaftMaterial = createMaterial({
-			isHead: false,
-			useColorAttribute: !options.uniformColor,
-		})
-		const headMaterial = createMaterial({
-			isHead: true,
-			useColorAttribute: !options.uniformColor,
-		})
+		const uniforms = createUniforms(this)
+		const uniformColor = options.uniformColor ? uniform(new Color(options.uniformColor)) : undefined
 
-		for (const { uniforms } of [shaftMaterial, headMaterial]) {
-			uniforms.shaftRadius.value = this.shaftRadius
-			uniforms.headLength.value = this.headLength
-			uniforms.headWidth.value = this.headWidth
-			uniforms.arrowLength.value = this.arrowLength
-
-			if (options.uniformColor) {
-				uniforms.uniformColor.value.set(options.uniformColor)
-			}
-		}
+		const shaftMaterial = createMaterial({ isHead: false, uniforms, uniformColor })
+		const headMaterial = createMaterial({ isHead: true, uniforms, uniformColor })
 
 		this.shaftMesh = new Mesh(shaftGeometry, shaftMaterial)
 		this.headMesh = new Mesh(headGeometry, headMaterial)

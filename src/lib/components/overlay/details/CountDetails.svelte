@@ -4,6 +4,7 @@
 	import { BufferAttribute } from 'three'
 
 	import { traits, useTrait } from '$lib/ecs'
+	import { PointCloud } from '$lib/three/PointCloud'
 
 	interface Props {
 		entity: Entity
@@ -14,6 +15,12 @@
 	const { scene } = useThrelte()
 
 	const object3d = $derived(scene.getObjectByName(entity as unknown as string))
+
+	const cloudGeometry = $derived.by(() => {
+		if (object3d instanceof PointCloud) return object3d.cloud
+		if (isInstanceOf(object3d, 'Points')) return object3d.geometry
+		return undefined
+	})
 
 	const points = useTrait(() => entity, traits.Points)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
@@ -46,11 +53,11 @@
 	</div>
 {/snippet}
 
-{#if isInstanceOf(object3d, 'Points')}
+{#if cloudGeometry}
 	{@render Count({
 		label: 'points',
 		ariaLabel: 'points count',
-		value: format((object3d.geometry.getAttribute('position') as BufferAttribute).array.length / 3),
+		value: format((cloudGeometry.getAttribute('position') as BufferAttribute).array.length / 3),
 	})}
 {/if}
 

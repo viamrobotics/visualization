@@ -680,7 +680,6 @@
 		"typescript-eslint": "8.56.1",
 		"vite": "8.1.6",
 		"vite-plugin-devtools-json": "1.0.0",
-		"vite-plugin-glsl": "^1.5.5",
 		"vite-plugin-mkcert": "1.17.9",
 		"vitest": "4.1.11",
 		"wait-on": "9.5.1",

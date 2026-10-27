@@ -13,17 +13,11 @@
 	import type { Entity } from 'koota'
 
 	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
-	import {
-		BufferAttribute,
-		BufferGeometry,
-		type OrthographicCamera,
-		Points,
-		PointsMaterial,
-	} from 'three'
+	import { BufferAttribute, BufferGeometry, type OrthographicCamera } from 'three'
 
 	import { traits, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { clampPointSize } from '$lib/three/clampPointSize'
+	import { PointCloud } from '$lib/three/PointCloud'
 
 	interface Props {
 		entity: Entity
@@ -31,7 +25,7 @@
 
 	let { entity }: Props = $props()
 
-	const { camera, invalidate, renderer } = useThrelte()
+	const { camera, invalidate } = useThrelte()
 	const settings = useSettings()
 
 	const instanced = useTrait(() => entity, traits.InstancedMatrix)
@@ -39,42 +33,48 @@
 
 	// Mirrors `Entities/Points.svelte`, so the marker tracks whatever size the cloud is drawn at.
 	const pointSize = $derived(
-		(entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize) *
-			MARKER_SCALE
+		(entityPointSize.current
+			? entityPointSize.current * 0.001
+			: Number(settings.current.pointSize)) * MARKER_SCALE
 	)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
 	const geometry = new BufferGeometry()
 	geometry.setAttribute('position', new BufferAttribute(new Float32Array(3), 3))
 
-	const material = new PointsMaterial({
-		// `power-wire`
-		color: 0xff_00_47,
-		depthTest: false,
-		depthWrite: false,
-	})
-	material.toneMapped = false
-
-	const maxPointSize = { value: 0 }
-	clampPointSize(material, maxPointSize)
-
-	const marker = new Points(geometry, material)
+	const marker = new PointCloud(geometry)
 	marker.matrixAutoUpdate = false
 	marker.renderOrder = 999
+
+	const { material } = marker
+	// `power-wire`
+	material.color.set(0xff_00_47)
+	material.depthTest = false
+	material.depthWrite = false
+	material.toneMapped = false
+
+	$effect(() => {
+		return () => geometry.dispose()
+	})
 
 	// Orthographic size is driven per frame by the task below, which reads a zoom that isn't
 	// reactive. Writing it here too would clobber that between frames.
 	$effect(() => {
 		if (!orthographic) {
-			material.size = pointSize
+			marker.size.value = pointSize
 			invalidate()
 		}
 	})
 
 	$effect(() => {
+		marker.isPerspective.value = orthographic ? 0 : 1
+		invalidate()
+	})
+
+	$effect(() => {
 		// Scaled by the same factor as the size, so the marker stays larger than the cloud even
 		// where the cloud is already pinned to the clamp.
-		maxPointSize.value = settings.current.maxPointSize * MARKER_SCALE * renderer.getPixelRatio()
+		marker.maxSize.value = Number(settings.current.maxPointSize) * MARKER_SCALE
 		invalidate()
 	})
 
@@ -89,7 +89,7 @@
 
 	useTask(
 		() => {
-			material.size = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
+			marker.size.value = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
 		},
 		{
 			running: () => orthographic,

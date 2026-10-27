@@ -5,7 +5,6 @@ import { svelteTesting } from '@testing-library/svelte/vite'
 import { playwright } from '@vitest/browser-playwright'
 import dns from 'node:dns'
 import devtoolsJson from 'vite-plugin-devtools-json'
-import glsl from 'vite-plugin-glsl'
 import mkcert from 'vite-plugin-mkcert'
 import { defineConfig } from 'vitest/config'
 
@@ -18,7 +17,6 @@ const https = process.argv.includes('--https')
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
 	plugins: [
-		glsl(),
 		sentrySvelteKit({
 			sourceMapsUploadOptions: {
 				org: 'viam',

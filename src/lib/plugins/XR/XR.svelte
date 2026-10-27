@@ -169,6 +169,7 @@
 	<XRButton
 		mode="immersive-ar"
 		sessionInit={{
+			requiredFeatures: ['webgpu'],
 			optionalFeatures: [
 				'local-floor',
 				'bounded-floor',
