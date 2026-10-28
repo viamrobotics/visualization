@@ -2,8 +2,8 @@
 	import type { Snippet } from 'svelte'
 	import type { ClassValue } from 'svelte/elements'
 
-	import { useThrelte } from '@threlte/core'
-	import { Portal } from '@threlte/extras'
+	import { useThrelte } from '@threlte/core/webgpu'
+	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'

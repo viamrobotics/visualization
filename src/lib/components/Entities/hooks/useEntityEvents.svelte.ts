@@ -1,6 +1,6 @@
 import type { Entity } from 'koota'
 
-import { type IntersectionEvent, useCursor } from '@threlte/extras'
+import { type IntersectionEvent, useCursor } from '@threlte/extras/webgpu'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
 import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'

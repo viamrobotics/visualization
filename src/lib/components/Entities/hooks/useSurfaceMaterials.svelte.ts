@@ -1,6 +1,6 @@
 import type { Material, MaterialParameters } from 'three'
 
-import { useThrelte } from '@threlte/core'
+import { useThrelte } from '@threlte/core/webgpu'
 
 import { useSettings } from '$lib/hooks/useSettings.svelte'
 import { createSurfaceMaterial } from '$lib/three/surfaceShading'

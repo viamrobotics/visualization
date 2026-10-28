@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { useController, useHandJoint } from '@threlte/xr'
 	import { fromStore } from 'svelte/store'
 	import { Group, type Vector3Tuple } from 'three'

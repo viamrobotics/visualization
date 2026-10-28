@@ -6,8 +6,8 @@ import AxesHelper from '$lib/components/AxesHelper.svelte'
 import MockCanvas from './fixtures/MockCanvas.svelte'
 
 // TODO: move this to use @threlte/test instead of mocking once it is fixed for this use case
-vi.mock('@threlte/core', async () => {
-	const actual = await vi.importActual('@threlte/core')
+vi.mock('@threlte/core/webgpu', async () => {
+	const actual = await vi.importActual('@threlte/core/webgpu')
 	return {
 		...actual,
 		currentWritable: vi.fn(() => ({

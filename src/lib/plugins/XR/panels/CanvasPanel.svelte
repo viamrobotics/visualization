@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Vector2 } from 'three'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 
 	import type { PanelNode } from './panelNode'
 

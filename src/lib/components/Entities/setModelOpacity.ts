@@ -1,6 +1,6 @@
 import type { Object3D } from 'three'
 
-import { isInstanceOf } from '@threlte/core'
+import { isInstanceOf } from '@threlte/core/webgpu'
 
 /**
  * Fades every mesh under `object`, wireframe included.

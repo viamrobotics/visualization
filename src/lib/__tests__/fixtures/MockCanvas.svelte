@@ -1,5 +1,5 @@
 <script>
-	import { Canvas } from '@threlte/core'
+	import { Canvas } from '@threlte/core/webgpu'
 	let { child, ...rest } = $props()
 
 	const Component = $derived(child)

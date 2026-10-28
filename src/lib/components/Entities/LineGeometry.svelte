@@ -1,5 +1,5 @@
 <script>
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { untrack } from 'svelte'
 	import { LineGeometry } from 'three/examples/jsm/Addons.js'
 

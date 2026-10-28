@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
 
-vi.mock('@threlte/core', () => ({
+vi.mock('@threlte/core/webgpu', () => ({
 	useTask: vi.fn(() => ({ start: vi.fn(), stop: vi.fn() })),
 	useThrelte: vi.fn(() => ({
 		scene: {
@@ -19,7 +19,7 @@ vi.mock('@threlte/core', () => ({
 // @threlte/extras components call into Threlte context that needs a <Canvas> parent,
 // which these isolated component tests do not have. Portal must preserve its children
 // because the shared DetailsPanel renders its whole UI through it.
-vi.mock('@threlte/extras', async () => {
+vi.mock('@threlte/extras/webgpu', async () => {
 	const MockPortal = await import('$lib/__tests__/__fixtures__/MockPortal.svelte')
 	return {
 		PortalTarget: vi.fn(),

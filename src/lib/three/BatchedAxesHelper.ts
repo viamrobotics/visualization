@@ -7,9 +7,10 @@ import {
 	Quaternion,
 	Vector3,
 } from 'three'
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js'
+import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js'
+import { all, attribute, equal, not } from 'three/tsl'
+import { Line2NodeMaterial } from 'three/webgpu'
 
 type BatchedAxesHelpersOptions = {
 	capacity?: number
@@ -39,33 +40,13 @@ const yColor = new Color()
 const zColor = new Color()
 
 /**
- * Sends a zero-length segment to `(2, 2, 2)` in clip space, outside the [-1, 1]
- * volume, so the whole instance is rejected before rasterization. Every vertex
- * of the instance lands there, so the primitive is clipped rather than
- * interpolated against the frustum.
- */
-export const rejectCollapsedSegments = (vertexShader: string): string =>
-	vertexShader.replace(
-		'void main() {',
-		'void main() {\n\tif ( instanceStart == instanceEnd ) { gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 ); return; }'
-	)
-
-/**
  * A hidden or freed slot is collapsed to a zero-length segment (see
  * `writeAxesPositions`), but `LineSegments2` draws a round cap for one, leaving
- * a dot of `linewidth` pixels behind wherever the helper used to be. Reject
- * those instances in the vertex shader instead.
- *
- * `customProgramCacheKey` has to move with `onBeforeCompile`. Without it three
- * may hand this material a program compiled for an unpatched `LineMaterial`,
- * and the scene draws lines with one of those too.
+ * a dot of `linewidth` pixels behind wherever the helper used to be. Discard
+ * the fragments of those instances instead.
  */
-const hideCollapsedHelpers = (material: LineMaterial): void => {
-	material.onBeforeCompile = (parameters) => {
-		parameters.vertexShader = rejectCollapsedSegments(parameters.vertexShader)
-	}
-
-	material.customProgramCacheKey = () => 'batched-axes-helpers'
+const hideCollapsedHelpers = (material: Line2NodeMaterial): void => {
+	material.maskNode = not(all(equal(attribute('instanceStart'), attribute('instanceEnd'))))
 }
 
 export class BatchedAxesHelpers extends LineSegments2 {
@@ -98,7 +79,7 @@ export class BatchedAxesHelpers extends LineSegments2 {
 		geometry.setColors(colors)
 		geometry.instanceCount = 0
 
-		const material = new LineMaterial({
+		const material = new Line2NodeMaterial({
 			linewidth: options.linewidth ?? 2,
 			worldUnits: options.worldUnits ?? false,
 			vertexColors: true,

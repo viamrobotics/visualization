@@ -1,6 +1,6 @@
 import type { Entity } from 'koota'
 
-import { useThrelte } from '@threlte/core'
+import { useThrelte } from '@threlte/core/webgpu'
 import { Matrix4, type Object3D, Quaternion, type Ray, Raycaster, Vector2, Vector3 } from 'three'
 
 import { useWorld } from '$lib/ecs'

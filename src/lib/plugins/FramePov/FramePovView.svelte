@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { T, useTask, useThrelte } from '@threlte/core'
-	import { View } from '@threlte/extras'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
+	import { View } from '@threlte/extras/webgpu'
 	import { type Entity } from 'koota'
 	import { Matrix4, PerspectiveCamera } from 'three'
 

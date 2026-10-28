@@ -328,7 +328,7 @@ A few components are exported via the `/lib` subpath and work without a `<Visual
 
 ```svelte
 <script lang="ts">
-	import { Canvas } from '@threlte/core'
+	import { Canvas } from '@threlte/core/webgpu'
 	import { AxesHelper } from '@viamrobotics/visualization/lib'
 </script>
 
@@ -336,5 +336,7 @@ A few components are exported via the `/lib` subpath and work without a `<Visual
 	<AxesHelper />
 </Canvas>
 ```
+
+The standalone components use node materials, so they render only inside a `WebGPURenderer`. Use the `Canvas` from `@threlte/core/webgpu`, not the one from `@threlte/core`.
 
 `<Snapshot />` is also exported from `/lib`, but unlike `<AxesHelper />` it requires the context that `<Visualizer />` provides — use it as a child of `<Visualizer />`, not standalone.

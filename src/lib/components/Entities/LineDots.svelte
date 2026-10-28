@@ -9,10 +9,11 @@
 </script>
 
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
 
 	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
+	import { setBatchedColorAt } from '$lib/three/setBatchedColorAt'
 
 	interface Props {
 		colors: Uint8Array
@@ -56,7 +57,7 @@
 
 			if (isPerDot) {
 				asColor(colors, threeColor, dotIndex * STRIDE.COLORS_RGB)
-				mesh.setColorAt(instance, threeColor)
+				setBatchedColorAt(mesh, instance, threeColor)
 			}
 		}
 

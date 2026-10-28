@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { Environment, Grid, interactivity, PortalTarget } from '@threlte/extras'
-	import { ShaderMaterial } from 'three'
+	import { T, useThrelte } from '@threlte/core/webgpu'
+	import { Environment, Grid, interactivity, PortalTarget } from '@threlte/extras/webgpu'
+	import { NodeMaterial } from 'three/webgpu'
 
 	import Camera from '$lib/components/Camera.svelte'
 	import Entities from '$lib/components/Entities/Entities.svelte'
@@ -100,18 +100,19 @@
 {#if !environment.current.isImmersive && settings.current.grid}
 	<Grid
 		oncreate={(ref) => {
-			const material = ref.material as ShaderMaterial
+			const material = ref.material as NodeMaterial
 			material.depthWrite = false
+			material.toneMapped = false
 		}}
 		raycast={() => null}
 		bvh={{ enabled: false }}
 		plane="xy"
 		sectionColor="#333"
 		infiniteGrid
-		cellSize={settings.current.gridCellSize}
-		sectionSize={settings.current.gridSectionSize}
+		cellSize={Number(settings.current.gridCellSize)}
+		sectionSize={Number(settings.current.gridSectionSize)}
 		fadeOrigin={[0, 0, 0]}
-		fadeDistance={settings.current.gridFadeDistance}
+		fadeDistance={Number(settings.current.gridFadeDistance)}
 	/>
 {/if}
 

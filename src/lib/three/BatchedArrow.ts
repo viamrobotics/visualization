@@ -3,6 +3,8 @@ import type { OBB } from 'three/addons/math/OBB.js'
 import { BatchedMesh, Box3, Color, MeshBasicMaterial, Object3D, Vector3 } from 'three'
 
 import { createArrowGeometry } from './arrow'
+import { setBatchedColorAt } from './setBatchedColorAt'
+import { setBatchedInstanceCount } from './setBatchedInstanceCount'
 
 const black = new Color('black')
 const axis = new Vector3()
@@ -35,7 +37,7 @@ export class BatchedArrow {
 	addArrow(direction: Vector3, origin: Vector3, color = black) {
 		if (this.mesh.instanceCount >= this._max) {
 			this._max += 20_000
-			this.mesh.setInstanceCount(this._max)
+			setBatchedInstanceCount(this.mesh, this._max)
 		}
 
 		const instanceId = this._pool.pop() ?? this.mesh.addInstance(this._geometryId)
@@ -82,7 +84,7 @@ export class BatchedArrow {
 
 		if (color) {
 			col.set(color)
-			this.mesh.setColorAt(instanceId, col)
+			setBatchedColorAt(this.mesh, instanceId, col)
 		}
 
 		this.mesh.setVisibleAt(instanceId, true)

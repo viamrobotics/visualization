@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
 
