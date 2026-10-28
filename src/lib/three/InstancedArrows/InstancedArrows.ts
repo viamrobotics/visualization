@@ -131,7 +131,6 @@ const createMaterial = (options: {
 	uniformColor: UniformNode<'color', Color> | undefined
 }) => {
 	const material = new MeshBasicNodeMaterial({ side: FrontSide, depthTest: true, depthWrite: true })
-	material.toneMapped = false
 	material.positionNode = arrowPosition(options.uniforms, options.isHead)
 	material.colorNode =
 		options.uniformColor ??

@@ -102,7 +102,6 @@
 		oncreate={(ref) => {
 			const material = ref.material as NodeMaterial
 			material.depthWrite = false
-			material.toneMapped = false
 		}}
 		raycast={() => null}
 		bvh={{ enabled: false }}

@@ -56,7 +56,6 @@ describe('PointCloud', () => {
 
 	it('caps an attenuated point at maxSize', async () => {
 		const pointCloud = new PointCloud(cloudOf([0, 0, 0]))
-		pointCloud.material.toneMapped = false
 		pointCloud.size.value = 1
 		pointCloud.maxSize.value = 4
 
@@ -68,7 +67,6 @@ describe('PointCloud', () => {
 	it('reads normalized Uint8 colors as 0 to 1', async () => {
 		const colors = { array: new Uint8Array([128, 0, 0]), itemSize: 3 }
 		const pointCloud = new PointCloud(cloudOf([0, 0, 0], colors))
-		pointCloud.material.toneMapped = false
 		pointCloud.size.value = 1
 		pointCloud.maxSize.value = 4
 

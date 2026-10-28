@@ -65,7 +65,6 @@
 		if (!pointCloud) return
 
 		pointCloud.matrixAutoUpdate = false
-		pointCloud.material.toneMapped = false
 	})
 
 	// Orthographic size is driven per frame by the task below, which reads a zoom that isn't

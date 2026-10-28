@@ -51,7 +51,6 @@
 	material.color.set(0xff_00_47)
 	material.depthTest = false
 	material.depthWrite = false
-	material.toneMapped = false
 
 	$effect(() => {
 		return () => geometry.dispose()

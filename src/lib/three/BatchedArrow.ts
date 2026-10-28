@@ -23,7 +23,7 @@ export class BatchedArrow {
 	_max = 20_000
 
 	constructor() {
-		const material = new MeshBasicMaterial({ color: 0xffffff, toneMapped: false })
+		const material = new MeshBasicMaterial({ color: 0xffffff })
 		const geometry = createArrowGeometry()
 		const vertexCount = geometry.getAttribute('position').count
 		const indexCount = geometry.index?.count ?? vertexCount

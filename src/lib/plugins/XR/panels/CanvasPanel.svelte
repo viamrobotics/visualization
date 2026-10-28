@@ -106,6 +106,5 @@
 		transparent
 		depthTest={!overlay}
 		depthWrite={!overlay}
-		toneMapped={false}
 	/>
 </T.Mesh>
