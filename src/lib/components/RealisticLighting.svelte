@@ -61,8 +61,8 @@ light itself forces covers the switch.
 	/**
 	 * Carries the fill an `AmbientLight` used to. Ambient adds the same term to every
 	 * surface whichever way it faces, which flattens the shaping the environment map
-	 * is already there to provide, so the rig leans on the map alone. Held to the same
-	 * brightness budget as the directional light.
+	 * is already there to provide, so the rig leans on the map alone and turns it up
+	 * past the default to cover what ambient was contributing.
 	 */
 	const ENVIRONMENT_INTENSITY = 1.25
 
