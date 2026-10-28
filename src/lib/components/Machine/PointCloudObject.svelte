@@ -236,7 +236,7 @@
 							traits.Matrix(center.toMatrix4()),
 							traits.Geometry(geometry),
 							traits.Color({ r: 0, g: 1, b: 0 }),
-							traits.Opacity(TRANSLUCENT_GEOMETRY_OPACITY),
+							traits.Opacity(TRANSLUCENT_GEOMETRY_OPACITY / 2),
 							traits.PointCloudObjectAPI,
 						]
 

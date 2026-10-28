@@ -9,6 +9,7 @@
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
 	import { NeutralToneMapping } from 'three'
+	import { WebGPURenderer } from 'three/webgpu'
 
 	import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
@@ -147,6 +148,13 @@
 	<Canvas
 		renderMode="on-demand"
 		toneMapping={NeutralToneMapping}
+		createRenderer={(canvas) =>
+			new WebGPURenderer({
+				canvas,
+				antialias: true,
+				// Keeps depth precision near-uniform, so nearby surfaces don't z-fight when zoomed out.
+				reversedDepthBuffer: true,
+			})}
 	>
 		<SceneProviders>
 			<Scene>

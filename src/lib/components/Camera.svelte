@@ -13,7 +13,7 @@
 {#if mode === 'perspective'}
 	<T.PerspectiveCamera
 		makeDefault
-		near={0.001}
+		near={0.01}
 		up={[0, 0, 1]}
 		oncreate={(ref) => {
 			ref.layers.enable(TRANSFORM_CONTROLS_LAYER)

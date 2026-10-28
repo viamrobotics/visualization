@@ -4,12 +4,10 @@ import {
 	DynamicDrawUsage,
 	InterleavedBufferAttribute,
 	Matrix4,
-	Quaternion,
 	Vector3,
 } from 'three'
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js'
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js'
-import { all, attribute, equal, not } from 'three/tsl'
 import { Line2NodeMaterial } from 'three/webgpu'
 
 type BatchedAxesHelpersOptions = {
@@ -30,54 +28,41 @@ type BatchedAxesHelpersOptions = {
 const SEGMENTS_PER_AXES = 3
 const FLOATS_PER_SEGMENT = 6
 const FLOATS_PER_AXES = SEGMENTS_PER_AXES * FLOATS_PER_SEGMENT
+const FREED = -1
 
 const matrix4 = new Matrix4()
-const scale3 = new Vector3()
 const start = new Vector3()
 const end = new Vector3()
-const xColor = new Color()
-const yColor = new Color()
-const zColor = new Color()
 
 /**
- * A hidden or freed slot is collapsed to a zero-length segment (see
- * `writeAxesPositions`), but `LineSegments2` draws a round cap for one, leaving
- * a dot of `linewidth` pixels behind wherever the helper used to be. Discard
- * the fragments of those instances instead.
+ * Draws many axes helpers as one `LineSegments2`.
+ *
+ * Callers hold a stable handle per helper, while the helper's segments move
+ * between buffer slots. Visible helpers stay packed in `[0, visibleCount)` and
+ * hidden ones in `[visibleCount, liveCount)`, so only visible helpers are drawn.
  */
-const hideCollapsedHelpers = (material: Line2NodeMaterial): void => {
-	material.maskNode = not(all(equal(attribute('instanceStart'), attribute('instanceEnd'))))
-}
-
 export class BatchedAxesHelpers extends LineSegments2 {
-	capacity: number
+	private capacity: number
+	private axisLength: number
+	private colors: [Color, Color, Color]
 
-	/** High-water mark: slots in [0, size) have been allocated; some may be free holes. Drives instanceCount. */
-	size = 0
+	private visibleCount = 0
+	private liveCount = 0
 
-	/** Number of live helpers (size minus freed holes). */
-	count = 0
-
-	axisLength: number
-
+	/** Segment positions, by slot. */
 	private positions: Float32Array
-	private colors: Float32Array
+
+	/** Per-helper state, by handle, so a slot swap only moves positions. */
 	private matrices: Float32Array
 	private lengths: Float32Array
 	private visibles: Uint8Array
-	private freeIndices: number[] = []
+
+	private handleToSlot: Int32Array
+	private slotToHandle: Int32Array
+	private freeHandles: number[] = []
 
 	constructor(options: BatchedAxesHelpersOptions = {}) {
-		const capacity = options.capacity ?? 128
-		const axisLength = options.axisLength ?? 0.1
-
-		const positions = new Float32Array(capacity * FLOATS_PER_AXES)
-		const colors = new Float32Array(capacity * FLOATS_PER_AXES)
-
-		const geometry = new LineSegmentsGeometry()
-		geometry.setPositions(positions)
-		geometry.setColors(colors)
-		geometry.instanceCount = 0
+		const capacity = Math.max(1, options.capacity ?? 128)
 
 		const material = new Line2NodeMaterial({
 			linewidth: options.linewidth ?? 2,
@@ -88,295 +73,188 @@ export class BatchedAxesHelpers extends LineSegments2 {
 			transparent: options.transparent ?? false,
 		})
 
-		hideCollapsedHelpers(material)
-
-		super(geometry, material)
-
-		this.visibles = new Uint8Array(capacity)
-		this.visibles.fill(1)
+		super(new LineSegmentsGeometry(), material)
 
 		this.capacity = capacity
-		this.axisLength = axisLength
+		this.axisLength = options.axisLength ?? 0.1
+		this.colors = [
+			new Color(options.xColor ?? 0xff0000),
+			new Color(options.yColor ?? 0x00ff00),
+			new Color(options.zColor ?? 0x0000ff),
+		]
 
-		this.positions = positions
-		this.colors = colors
+		this.positions = new Float32Array(capacity * FLOATS_PER_AXES)
 		this.matrices = new Float32Array(capacity * 16)
 		this.lengths = new Float32Array(capacity)
+		this.visibles = new Uint8Array(capacity)
+		this.handleToSlot = new Int32Array(capacity).fill(FREED)
+		this.slotToHandle = new Int32Array(capacity).fill(FREED)
 
 		this.frustumCulled = options.frustumCulled ?? false
 
-		this.setDefaultColors(
-			options.xColor ?? 0xff0000,
-			options.yColor ?? 0x00ff00,
-			options.zColor ?? 0x0000ff
-		)
-
-		this.markDynamic()
+		this.rebuildGeometry()
 	}
 
 	addHelper(matrix?: Matrix4, length = this.axisLength): number {
-		// Reuse a freed slot when available so existing indices stay stable.
-		let index = this.freeIndices.pop()
-
-		if (index === undefined) {
-			if (this.size >= this.capacity) {
-				this.resize(Math.max(1, this.capacity * 2))
-			}
-			index = this.size++
+		if (this.liveCount === this.capacity) {
+			this.grow()
 		}
 
-		this.count++
-		this.lengths[index] = length
-		this.visibles[index] = 1
+		// With no freed handles, every handle below liveCount is live.
+		const handle = this.freeHandles.pop() ?? this.liveCount
+		const slot = this.liveCount++
 
-		if (matrix) {
-			this.setMatrixAt(index, matrix)
-		} else {
-			this.setMatrixAt(index, matrix4.identity())
-		}
+		this.handleToSlot[handle] = slot
+		this.slotToHandle[slot] = handle
+		this.lengths[handle] = length
+		this.visibles[handle] = 0
 
-		this.geometry.instanceCount = this.size * SEGMENTS_PER_AXES
+		this.setMatrixAt(handle, matrix ?? matrix4.identity())
+		this.setVisibleAt(handle, true)
 
-		return index
+		return handle
 	}
 
-	removeHelper(index: number): void {
-		this.assertIndex(index)
+	removeHelper(handle: number): void {
+		this.assertHandle(handle)
 
-		// Vacate the slot in place and return it to the free list. Indices never
-		// move, so indices held elsewhere (e.g. an entity->index map) stay valid.
-		this.visibles[index] = 0
-		this.writeAxesPositions(index)
-		this.freeIndices.push(index)
-		this.count--
+		this.setVisibleAt(handle, false)
 
+		this.swapSlots(this.handleToSlot[handle], this.liveCount - 1)
+		this.liveCount--
+
+		this.slotToHandle[this.liveCount] = FREED
+		this.handleToSlot[handle] = FREED
+		this.freeHandles.push(handle)
+	}
+
+	setMatrixAt(handle: number, matrix: Matrix4): void {
+		this.assertHandle(handle)
+
+		matrix.toArray(this.matrices, handle * 16)
+
+		// Hidden helpers are written too, so showing one only has to swap it in.
+		this.writeAxesPositions(handle)
 		this.markPositionsDirty()
 	}
 
-	clear(): this {
-		this.size = 0
-		this.count = 0
-		this.freeIndices.length = 0
-		this.geometry.instanceCount = 0
-		return this
-	}
+	setVisibleAt(handle: number, visible: boolean): void {
+		this.assertHandle(handle)
 
-	resize(newCapacity: number): void {
-		if (newCapacity === this.capacity) return
+		const next = visible ? 1 : 0
+		if (this.visibles[handle] === next) return
 
-		const oldCapacity = this.capacity
-		const nextSize = Math.min(this.size, newCapacity)
+		this.visibles[handle] = next
 
-		const nextPositions = new Float32Array(newCapacity * FLOATS_PER_AXES)
-		const nextColors = new Float32Array(newCapacity * FLOATS_PER_AXES)
-		const nextMatrices = new Float32Array(newCapacity * 16)
-		const nextLengths = new Float32Array(newCapacity)
-		const nextVisibles = new Uint8Array(newCapacity)
-		nextVisibles.fill(1)
-
-		nextPositions.set(this.positions.subarray(0, nextSize * FLOATS_PER_AXES))
-		nextColors.set(this.colors.subarray(0, nextSize * FLOATS_PER_AXES))
-		nextMatrices.set(this.matrices.subarray(0, nextSize * 16))
-		nextLengths.set(this.lengths.subarray(0, nextSize))
-		nextVisibles.set(this.visibles.subarray(0, nextSize))
-
-		this.positions = nextPositions
-		this.colors = nextColors
-		this.matrices = nextMatrices
-		this.lengths = nextLengths
-		this.visibles = nextVisibles
-		this.capacity = newCapacity
-		this.size = nextSize
-
-		if (newCapacity < oldCapacity) {
-			this.freeIndices = this.freeIndices.filter((freeIndex) => freeIndex < nextSize)
+		if (visible) {
+			this.swapSlots(this.handleToSlot[handle], this.visibleCount)
+			this.visibleCount++
+		} else {
+			this.swapSlots(this.handleToSlot[handle], this.visibleCount - 1)
+			this.visibleCount--
 		}
 
-		const oldGeometry = this.geometry
+		this.geometry.instanceCount = this.visibleCount * SEGMENTS_PER_AXES
+		this.markPositionsDirty()
+	}
+
+	private swapSlots(a: number, b: number): void {
+		if (a === b) return
+
+		const positions = this.positions
+		const offsetA = a * FLOATS_PER_AXES
+		const offsetB = b * FLOATS_PER_AXES
+
+		for (let i = 0; i < FLOATS_PER_AXES; i++) {
+			const value = positions[offsetA + i]
+			positions[offsetA + i] = positions[offsetB + i]
+			positions[offsetB + i] = value
+		}
+
+		const handleA = this.slotToHandle[a]
+		const handleB = this.slotToHandle[b]
+
+		this.slotToHandle[a] = handleB
+		this.slotToHandle[b] = handleA
+		this.handleToSlot[handleA] = b
+		this.handleToSlot[handleB] = a
+	}
+
+	/** Doubles every buffer, keeping slots and handles where they are. */
+	private grow(): void {
+		const capacity = this.capacity * 2
+
+		const positions = new Float32Array(capacity * FLOATS_PER_AXES)
+		const matrices = new Float32Array(capacity * 16)
+		const lengths = new Float32Array(capacity)
+		const visibles = new Uint8Array(capacity)
+		const handleToSlot = new Int32Array(capacity).fill(FREED)
+		const slotToHandle = new Int32Array(capacity).fill(FREED)
+
+		positions.set(this.positions)
+		matrices.set(this.matrices)
+		lengths.set(this.lengths)
+		visibles.set(this.visibles)
+		handleToSlot.set(this.handleToSlot)
+		slotToHandle.set(this.slotToHandle)
+
+		this.capacity = capacity
+		this.positions = positions
+		this.matrices = matrices
+		this.lengths = lengths
+		this.visibles = visibles
+		this.handleToSlot = handleToSlot
+		this.slotToHandle = slotToHandle
+
+		this.rebuildGeometry()
+	}
+
+	/** Builds a geometry over the current buffers, which `LineSegmentsGeometry` can't resize in place. */
+	private rebuildGeometry(): void {
+		const colors = new Float32Array(this.capacity * FLOATS_PER_AXES)
+
+		for (let offset = 0; offset < colors.length; offset += FLOATS_PER_SEGMENT) {
+			const color = this.colors[(offset / FLOATS_PER_SEGMENT) % SEGMENTS_PER_AXES]
+			color.toArray(colors, offset)
+			color.toArray(colors, offset + 3)
+		}
 
 		const geometry = new LineSegmentsGeometry()
 		geometry.setPositions(this.positions)
-		geometry.setColors(this.colors)
-		geometry.instanceCount = this.size * SEGMENTS_PER_AXES
+		geometry.setColors(colors)
+		geometry.instanceCount = this.visibleCount * SEGMENTS_PER_AXES
 
+		const instanceStart = geometry.attributes.instanceStart as InterleavedBufferAttribute
+		instanceStart.data.setUsage(DynamicDrawUsage)
+
+		const oldGeometry = this.geometry
 		this.geometry = geometry
 		oldGeometry.dispose()
-
-		this.markDynamic()
-
-		// Preserve default color initialization for newly available slots.
-		for (let i = oldCapacity; i < newCapacity; i++) {
-			this.setColorsAt(i, xColor, yColor, zColor)
-		}
 	}
 
-	setMatrixAt(index: number, matrix: Matrix4): void {
-		this.assertCapacityIndex(index)
+	private writeAxesPositions(handle: number): void {
+		matrix4.fromArray(this.matrices, handle * 16)
 
-		matrix.toArray(this.matrices, index * 16)
-		this.writeAxesPositions(index)
-		this.markPositionsDirty()
-	}
-
-	getMatrixAt(index: number, target = new Matrix4()): Matrix4 {
-		this.assertIndex(index)
-		return target.fromArray(this.matrices, index * 16)
-	}
-
-	setTransformAt(
-		index: number,
-		position: Vector3,
-		quaternion: Quaternion,
-		scale: Vector3 | number = 1
-	): void {
-		this.assertCapacityIndex(index)
-
-		if (typeof scale === 'number') {
-			scale3.setScalar(scale)
-		} else {
-			scale3.copy(scale)
-		}
-
-		matrix4.compose(position, quaternion, scale3)
-		this.setMatrixAt(index, matrix4)
-	}
-
-	setLengthAt(index: number, length: number): void {
-		this.assertCapacityIndex(index)
-
-		this.lengths[index] = length
-		this.writeAxesPositions(index)
-		this.markPositionsDirty()
-	}
-
-	getLengthAt(index: number): number {
-		this.assertIndex(index)
-		return this.lengths[index]
-	}
-
-	setColorsAt(
-		index: number,
-		x: ColorRepresentation,
-		y: ColorRepresentation,
-		z: ColorRepresentation
-	): void {
-		this.assertCapacityIndex(index)
-
-		xColor.set(x)
-		yColor.set(y)
-		zColor.set(z)
-
-		let offset = index * FLOATS_PER_AXES
-
-		this.writeSegmentColor(offset, xColor)
-		offset += FLOATS_PER_SEGMENT
-
-		this.writeSegmentColor(offset, yColor)
-		offset += FLOATS_PER_SEGMENT
-
-		this.writeSegmentColor(offset, zColor)
-
-		this.markColorsDirty()
-	}
-
-	setDefaultColors(x: ColorRepresentation, y: ColorRepresentation, z: ColorRepresentation): void {
-		xColor.set(x)
-		yColor.set(y)
-		zColor.set(z)
-
-		for (let i = 0; i < this.capacity; i++) {
-			this.setColorsAt(i, xColor, yColor, zColor)
-		}
-	}
-
-	setLinewidth(linewidth: number): void {
-		this.material.linewidth = linewidth
-	}
-
-	setVisibleAt(index: number, visible: boolean): void {
-		this.assertCapacityIndex(index)
-
-		const next = visible ? 1 : 0
-		if (this.visibles[index] === next) return
-
-		this.visibles[index] = next
-		this.writeAxesPositions(index)
-		this.markPositionsDirty()
-	}
-
-	getVisibleAt(index: number): boolean {
-		this.assertIndex(index)
-		return this.visibles[index] === 1
-	}
-
-	private writeAxesPositions(index: number): void {
-		matrix4.fromArray(this.matrices, index * 16)
-
-		let offset = index * FLOATS_PER_AXES
-
-		if (!this.visibles[index]) {
-			start.set(0, 0, 0).applyMatrix4(matrix4)
-
-			// X collapsed
-			this.writeSegmentPosition(offset, start, start)
-			offset += FLOATS_PER_SEGMENT
-
-			// Y collapsed
-			this.writeSegmentPosition(offset, start, start)
-			offset += FLOATS_PER_SEGMENT
-
-			// Z collapsed
-			this.writeSegmentPosition(offset, start, start)
-
-			return
-		}
-
-		const length = this.lengths[index] || this.axisLength
+		const length = this.lengths[handle]
+		let offset = this.handleToSlot[handle] * FLOATS_PER_AXES
 
 		start.set(0, 0, 0).applyMatrix4(matrix4)
+
 		end.set(length, 0, 0).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)
 		offset += FLOATS_PER_SEGMENT
 
-		start.set(0, 0, 0).applyMatrix4(matrix4)
 		end.set(0, length, 0).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)
 		offset += FLOATS_PER_SEGMENT
 
-		start.set(0, 0, 0).applyMatrix4(matrix4)
 		end.set(0, 0, length).applyMatrix4(matrix4)
 		this.writeSegmentPosition(offset, start, end)
 	}
 
 	private writeSegmentPosition(offset: number, start: Vector3, end: Vector3): void {
-		this.positions[offset + 0] = start.x
-		this.positions[offset + 1] = start.y
-		this.positions[offset + 2] = start.z
-
-		this.positions[offset + 3] = end.x
-		this.positions[offset + 4] = end.y
-		this.positions[offset + 5] = end.z
-	}
-
-	private writeSegmentColor(offset: number, color: Color): void {
-		this.colors[offset + 0] = color.r
-		this.colors[offset + 1] = color.g
-		this.colors[offset + 2] = color.b
-
-		this.colors[offset + 3] = color.r
-		this.colors[offset + 4] = color.g
-		this.colors[offset + 5] = color.b
-	}
-
-	private markDynamic(): void {
-		const instanceStart = this.geometry.attributes.instanceStart as InterleavedBufferAttribute
-
-		const instanceColorStart = this.geometry.attributes.instanceColorStart as
-			| InterleavedBufferAttribute
-			| undefined
-
-		instanceStart.data.setUsage(DynamicDrawUsage)
-		instanceColorStart?.data.setUsage(DynamicDrawUsage)
+		start.toArray(this.positions, offset)
+		end.toArray(this.positions, offset + 3)
 	}
 
 	private markPositionsDirty(): void {
@@ -386,24 +264,9 @@ export class BatchedAxesHelpers extends LineSegments2 {
 		instanceStart.needsUpdate = true
 	}
 
-	private markColorsDirty(): void {
-		const instanceColorStart = this.geometry.attributes.instanceColorStart as
-			| InterleavedBufferAttribute
-			| undefined
-
-		// instanceColorStart and instanceColorEnd share the same interleaved buffer.
-		if (instanceColorStart) instanceColorStart.needsUpdate = true
-	}
-
-	private assertIndex(index: number): void {
-		if (index < 0 || index >= this.size) {
-			throw new RangeError(`Axes helper index ${index} is outside size ${this.size}.`)
-		}
-	}
-
-	private assertCapacityIndex(index: number): void {
-		if (index < 0 || index >= this.capacity) {
-			throw new RangeError(`Axes helper index ${index} is outside capacity ${this.capacity}.`)
+	private assertHandle(handle: number): void {
+		if (handle < 0 || handle >= this.capacity || this.handleToSlot[handle] === FREED) {
+			throw new RangeError(`Axes helper handle ${handle} is not live.`)
 		}
 	}
 }
