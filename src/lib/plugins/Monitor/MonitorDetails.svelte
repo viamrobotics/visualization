@@ -16,6 +16,9 @@
 	import PoseDetails from '$lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
 	import { traits, useTag, useTrait } from '$lib/ecs'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import ResourceTestTab from '$lib/plugins/ControlWidgets/ResourceTestTab.svelte'
+	import { resourceWidgetToggles } from '$lib/plugins/ControlWidgets/resourceWidgetToggles'
 	import FramePovTab from '$lib/plugins/FramePov/FramePovTab.svelte'
 
 	import SessionAppearanceDetails from './SessionAppearanceDetails.svelte'
@@ -29,6 +32,12 @@
 	const customDetails = useTag(() => entity, traits.CustomDetails)
 	const name = useTrait(() => entity, traits.Name)
 	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const resourceByName = useResourceByName()
+
+	const resource = $derived(name.current ? resourceByName.current[name.current] : undefined)
+	const testableResource = $derived(
+		resource && resourceWidgetToggles(resource).length > 0 ? resource : undefined
+	)
 
 	// A frame's edits follow the same rules as a saved appearance, so they reach the frames inside it.
 	const appearanceKey = $derived(
@@ -44,6 +53,7 @@
 					...(framesAPI.current && name.current !== undefined
 						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
 						: []),
+					...(testableResource ? [{ id: 'test', label: 'Test', content: testTab }] : []),
 				]
 	)
 </script>
@@ -95,6 +105,12 @@
 			{entity}
 			frameName={name.current}
 		/>
+	{/if}
+{/snippet}
+
+{#snippet testTab()}
+	{#if testableResource}
+		<ResourceTestTab resource={testableResource} />
 	{/if}
 {/snippet}
 
