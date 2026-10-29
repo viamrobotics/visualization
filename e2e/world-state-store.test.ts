@@ -5,7 +5,7 @@ import path from 'node:path'
 import url from 'node:url'
 
 import { connectViamClient, getE2EConfig, withRobot } from './fixtures/with-robot'
-import { readRenderFrame, waitForRenderIdle } from './helpers/renderIdle'
+import { waitForCanvasToChange, waitForCanvasToSettle } from './helpers/screenshot'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const wsDir = path.resolve(dirname, 'fixtures/world-state-store')
@@ -34,13 +34,19 @@ const runGoTest = (testPath: string) => {
 /**
  * Runs a Go step and waits for what it changed to finish rendering.
  *
- * The frame count is read before the step because `waitForRenderIdle` would
- * otherwise see a scene that has not reacted yet and call it settled.
+ * The canvas has to change before it is allowed to settle, because the scene
+ * before the step is settled too and would pass for the result.
+ *
+ * @throws if the step leaves the canvas unchanged.
  */
 const applyAndSettle = async (page: Page, testPath: string) => {
-	const before = await readRenderFrame(page)
+	const before = await waitForCanvasToSettle(page)
 	runGoTest(testPath)
-	await waitForRenderIdle(page, { after: before })
+	const changed = await waitForCanvasToChange(page, before)
+	if (changed === null) {
+		throw new Error(`${testPath} never changed the canvas.`)
+	}
+	await waitForCanvasToSettle(page)
 }
 
 const getWorldStateConfig = () => {
