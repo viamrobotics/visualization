@@ -1,21 +1,25 @@
 import {
-	BatchedMesh,
 	BoxGeometry,
 	type BufferGeometry,
 	type Color,
 	CylinderGeometry,
 	EdgesGeometry,
-	LineBasicMaterial,
 	type Material,
-	type Matrix4,
+	type MaterialParameters,
+	Matrix4,
+	type Object3D,
 	SphereGeometry,
 	Vector4,
 } from 'three'
 
 import { darkenColor } from '$lib/color'
 
-import { createBatchedGeometryAllocator } from './addBatchedGeometry'
-import { addBatchedInstance } from './addBatchedInstance'
+import {
+	createShapePass,
+	type GeometryPair,
+	type ShapePass,
+	type ShapePassName,
+} from './createShapePass'
 import { setBatchedColorAt } from './setBatchedColorAt'
 import { toFacesBatchLayout } from './toFacesBatchLayout'
 
@@ -64,8 +68,7 @@ const EDGE_GEOMETRIES: Record<Shape, BufferGeometry> = {
 
 const SHAPES = Object.keys(FACE_GEOMETRIES) as Shape[]
 
-/** `addBatchedInstance` doubles past this, so it only sets how many arrive free. */
-const INITIAL_INSTANCE_CAPACITY = 256
+const PASS_NAMES: readonly ShapePassName[] = ['opaque', 'translucent']
 
 /** How much darker an outline is than the face it wraps, in percent. */
 const EDGE_DARKEN = 10
@@ -76,28 +79,38 @@ const sumIndices = (geometries: BufferGeometry[]): number =>
 const sumVertices = (geometries: BufferGeometry[]): number =>
 	geometries.reduce((total, geometry) => total + geometry.getAttribute('position').count, 0)
 
-/** One primitive's slots. Faces and edges have independent free lists. */
-export interface ShapeInstanceIds {
-	readonly face: number
-	readonly edge: number
-}
+const movedMatrix = new Matrix4()
+const faceColor = new Vector4()
+const edgeColor = new Vector4()
 
 /**
- * A mesh uploaded into the batches, shared by every entity drawing it. Field
- * names differ from `ShapeInstanceIds` on purpose: these index the geometry
- * buffer, not the instance list, and mixing the two is silent.
+ * A geometry uploaded into both passes, shared by every instance drawing it. Field
+ * names differ from `ShapeInstanceIds` on purpose: these index the geometry buffers,
+ * not the instance lists, and mixing the two is silent.
  */
-export interface MeshSlot {
-	readonly faceGeometry: number
-	readonly edgeGeometry: number
+export type MeshSlot = Readonly<Record<ShapePassName, GeometryPair>>
+
+/**
+ * One shape's handle. The batches own every field and rewrite them when opacity moves
+ * the shape between passes, so a caller keeps the same handle for the shape's lifetime
+ * and never writes to it.
+ */
+export interface ShapeInstanceIds {
+	pass: ShapePassName
+	face: number
+	edge: number
+	geometry: MeshSlot
 }
 
+/** The scene objects one pass draws with. */
+export type ShapePassMeshes = Pick<ShapePass, 'faces' | 'edges' | 'faceParameters'>
+
 export interface ShapeBatches {
-	/** Pointer-interaction surface. A hit reports its instance as `batchId`. */
-	readonly faces: BatchedMesh
-	readonly edges: BatchedMesh
+	readonly opaque: ShapePassMeshes
+	readonly translucent: ShapePassMeshes
 	add: (shape: Shape) => ShapeInstanceIds
 	setMatrix: (ids: ShapeInstanceIds, matrix: Matrix4) => void
+	/** Also moves the shape to the pass its opacity belongs in. */
 	setAppearance: (ids: ShapeInstanceIds, color: Color, opacity: number, visible: boolean) => void
 	/** Repoints existing slots at a different shape, keeping their instance ids. */
 	setShape: (ids: ShapeInstanceIds, shape: Shape) => void
@@ -105,118 +118,119 @@ export interface ShapeBatches {
 
 	/**
 	 * Uploads an arbitrary mesh and its outline, so entities that are not one of
-	 * the unit primitives can draw from the same batches and take part in the
-	 * same per-instance sort. Registering the same geometry again returns the
-	 * slot already uploaded.
+	 * the unit primitives can draw from the same batches. Registering the same
+	 * geometry again returns the slot already uploaded.
 	 */
 	registerMesh: (geometry: BufferGeometry) => MeshSlot
-	/** Drops one registration. The geometry leaves the buffer once none are left. */
+	/** Drops one registration. The geometry leaves the buffers once none are left. */
 	releaseMesh: (geometry: BufferGeometry) => void
 	addMesh: (slot: MeshSlot) => ShapeInstanceIds
+
+	/** The live shape behind a pointer hit, given the faces batch hit and its `batchId`. */
+	instanceAt: (mesh: Object3D, batchId: number) => ShapeInstanceIds | undefined
 }
 
 /**
- * Builds the two batches every renderer draws into: one for faces, one for the
- * outlines that wrap them.
+ * Builds the batches every primitive renderer draws into: an opaque pass and a
+ * translucent pass, each with a faces batch and the outlines that wrap it.
  *
- * Everything transparent shares one faces batch, because three sorts transparent
- * objects against each other by their `matrixWorld` position and a batch is a
- * single object. Two batches would each sort as though they sat at the world
- * origin, and no material setting would let their instances interleave — which
- * is why a batched primitive could erase or draw over a separate mesh depending
- * on the angle. Inside one batch `sortObjects` orders every instance by its own
- * distance, every frame, from any angle.
+ * Opaque shapes draw in three's opaque pass and rely on the depth buffer. Every
+ * translucent shape shares one faces batch, because three sorts transparent objects
+ * against each other by their `matrixWorld` position and a batch is a single object.
+ * Two translucent batches would each sort as though they sat at the world origin, and
+ * no material setting would let their instances interleave. Inside one batch
+ * `sortObjects` orders every instance by its own distance, every frame.
  *
- * `facesMaterial` has to be `DoubleSide`. It is what lets one batch hold shapes
- * that cannot cull back faces, such as an uncapped cylinder, and it matches what
- * a translucent shell should look like: light crosses the near wall and the far
- * one.
+ * Every geometry is uploaded into both passes, so a shape whose opacity crosses 1 can
+ * move between them without a fresh upload.
+ *
+ * @param createFacesMaterial Builds a face material from the pass's options. Each pass
+ * calls it once, with options that must survive any later rebuild of the material.
  */
-export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
+export const createShapeBatches = (
+	createFacesMaterial: (parameters: MaterialParameters) => Material
+): ShapeBatches => {
 	const faceGeometries = SHAPES.map((shape) => FACE_GEOMETRIES[shape])
 	const edgeGeometries = SHAPES.map((shape) => EDGE_GEOMETRIES[shape])
 
-	const initialFaceVertices = sumVertices(faceGeometries)
-	const initialFaceIndices = sumIndices(faceGeometries)
-	const initialEdgeVertices = sumVertices(edgeGeometries)
+	const capacity = {
+		faceVertices: sumVertices(faceGeometries),
+		faceIndices: sumIndices(faceGeometries),
+		edgeVertices: sumVertices(edgeGeometries),
+	}
 
-	const faces = new BatchedMesh(
-		INITIAL_INSTANCE_CAPACITY,
-		initialFaceVertices,
-		initialFaceIndices,
-		facesMaterial
-	)
-	faces.castShadow = true
-	faces.receiveShadow = true
+	const passes: Record<ShapePassName, ShapePass> = {
+		opaque: createShapePass('opaque', createFacesMaterial, capacity),
+		translucent: createShapePass('translucent', createFacesMaterial, capacity),
+	}
 
-	/**
-	 * `perObjectFrustumCulled` (on by default) does the culling, per instance and
-	 * per frame. Whole-object culling has to stay off: three derives
-	 * `boundingSphere` on the first frustum test, while the batch is still empty,
-	 * and no mutator invalidates it, so the object would never draw again.
-	 */
-	faces.frustumCulled = false
+	/** Live handles per pass, indexed by face instance id, so a pointer hit resolves to its shape. */
+	const handlesByPass: Record<ShapePassName, (ShapeInstanceIds | undefined)[]> = {
+		opaque: [],
+		translucent: [],
+	}
 
-	/**
-	 * An outline fades with the face it wraps, so it carries the same
-	 * per-instance alpha. That alpha only blends on a transparent material —
-	 * unconditional here, matching the faces material, so edges and faces stay in
-	 * one pass instead of being ordered against each other.
-	 */
-	const edges = new BatchedMesh(
-		INITIAL_INSTANCE_CAPACITY,
-		initialEdgeVertices,
-		0,
-		new LineBasicMaterial({ transparent: true })
-	)
-	edges.frustumCulled = false
+	const allocate = (faceGeometry: BufferGeometry, edgeGeometry: BufferGeometry): MeshSlot => ({
+		opaque: passes.opaque.allocate(faceGeometry, edgeGeometry),
+		translucent: passes.translucent.allocate(faceGeometry, edgeGeometry),
+	})
 
-	/** Outlines track the faces they wrap, so a second depth sort each frame buys nothing. */
-	edges.sortObjects = false
-
-	/**
-	 * `BatchedMesh` extends `Mesh`, so on its own it would draw the edge geometry
-	 * as triangles. Re-tagging the object makes the renderer emit `gl.LINES`: the
-	 * draw mode comes from `isLine` / `isLineSegments`, and the multi-draw branch
-	 * that follows it keys off `isBatchedMesh` independently.
-	 */
-	Object.assign(edges, { isMesh: false, isLine: true, isLineSegments: true })
-
-	const allocateFaceGeometry = createBatchedGeometryAllocator(
-		faces,
-		initialFaceVertices,
-		initialFaceIndices
-	)
-	const allocateEdgeGeometry = createBatchedGeometryAllocator(edges, initialEdgeVertices, 0)
-
-	const faceGeometryIds = {} as Record<Shape, number>
-	const edgeGeometryIds = {} as Record<Shape, number>
+	const shapeSlots = {} as Record<Shape, MeshSlot>
 	for (const shape of SHAPES) {
-		faceGeometryIds[shape] = allocateFaceGeometry(FACE_GEOMETRIES[shape])
-		edgeGeometryIds[shape] = allocateEdgeGeometry(EDGE_GEOMETRIES[shape])
+		shapeSlots[shape] = allocate(FACE_GEOMETRIES[shape], EDGE_GEOMETRIES[shape])
 	}
 
 	/** Registered meshes, keyed by source geometry so repeats share one upload. */
 	const meshSlots = new Map<BufferGeometry, { slot: MeshSlot; users: number }>()
 
-	const faceColor = new Vector4()
-	const edgeColor = new Vector4()
+	const place = (handle: ShapeInstanceIds, pass: ShapePassName) => {
+		const instance = passes[pass].addInstance(handle.geometry[pass])
+		handle.pass = pass
+		handle.face = instance.face
+		handle.edge = instance.edge
+		handlesByPass[pass][instance.face] = handle
+	}
+
+	const remove = (handle: ShapeInstanceIds) => {
+		passes[handle.pass].deleteInstance(handle)
+		handlesByPass[handle.pass][handle.face] = undefined
+	}
+
+	const addInstance = (geometry: MeshSlot): ShapeInstanceIds => {
+		const handle: ShapeInstanceIds = { pass: 'opaque', face: -1, edge: -1, geometry }
+		place(handle, 'opaque')
+		return handle
+	}
+
+	/** Color and visibility are not carried, because `setAppearance` writes both right after. */
+	const moveToPass = (handle: ShapeInstanceIds, pass: ShapePassName) => {
+		passes[handle.pass].faces.getMatrixAt(handle.face, movedMatrix)
+		remove(handle)
+		place(handle, pass)
+		passes[pass].faces.setMatrixAt(handle.face, movedMatrix)
+		passes[pass].edges.setMatrixAt(handle.edge, movedMatrix)
+	}
 
 	return {
-		faces,
-		edges,
+		opaque: passes.opaque,
+		translucent: passes.translucent,
 
-		add: (shape) => ({
-			face: addBatchedInstance(faces, faceGeometryIds[shape]),
-			edge: addBatchedInstance(edges, edgeGeometryIds[shape]),
-		}),
+		add: (shape) => addInstance(shapeSlots[shape]),
 
 		setMatrix: (ids, matrix) => {
+			const { faces, edges } = passes[ids.pass]
 			faces.setMatrixAt(ids.face, matrix)
 			edges.setMatrixAt(ids.edge, matrix)
 		},
 
 		setAppearance: (ids, color, opacity, visible) => {
+			const pass = opacity < 1 ? 'translucent' : 'opaque'
+			if (pass !== ids.pass) {
+				moveToPass(ids, pass)
+			}
+
+			const { faces, edges } = passes[pass]
+
 			setBatchedColorAt(faces, ids.face, faceColor.set(color.r, color.g, color.b, opacity))
 			faces.setVisibleAt(ids.face, visible)
 
@@ -226,14 +240,15 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 		},
 
 		setShape: (ids, shape) => {
-			faces.setGeometryIdAt(ids.face, faceGeometryIds[shape])
-			edges.setGeometryIdAt(ids.edge, edgeGeometryIds[shape])
+			ids.geometry = shapeSlots[shape]
+
+			const { faces, edges } = passes[ids.pass]
+			const geometry = ids.geometry[ids.pass]
+			faces.setGeometryIdAt(ids.face, geometry.faceGeometry)
+			edges.setGeometryIdAt(ids.edge, geometry.edgeGeometry)
 		},
 
-		release: (ids) => {
-			faces.deleteInstance(ids.face)
-			edges.deleteInstance(ids.edge)
-		},
+		release: remove,
 
 		registerMesh: (geometry) => {
 			const registered = meshSlots.get(geometry)
@@ -250,10 +265,7 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 			// batch's bounding sphere with it.
 			const edgeGeometry = new EdgesGeometry(faceGeometry, 0)
 
-			const slot = {
-				faceGeometry: allocateFaceGeometry(faceGeometry),
-				edgeGeometry: allocateEdgeGeometry(edgeGeometry),
-			}
+			const slot = allocate(faceGeometry, edgeGeometry)
 
 			// Both were copied into the batch buffers, so the staging copies are done.
 			faceGeometry.dispose()
@@ -271,13 +283,16 @@ export const createShapeBatches = (facesMaterial: Material): ShapeBatches => {
 			if (registered.users > 0) return
 
 			meshSlots.delete(geometry)
-			faces.deleteGeometry(registered.slot.faceGeometry)
-			edges.deleteGeometry(registered.slot.edgeGeometry)
+			for (const pass of PASS_NAMES) {
+				passes[pass].deleteGeometry(registered.slot[pass])
+			}
 		},
 
-		addMesh: (slot) => ({
-			face: addBatchedInstance(faces, slot.faceGeometry),
-			edge: addBatchedInstance(edges, slot.edgeGeometry),
-		}),
+		addMesh: addInstance,
+
+		instanceAt: (mesh, batchId) => {
+			const pass = PASS_NAMES.find((name) => passes[name].faces === mesh)
+			return pass === undefined ? undefined : handlesByPass[pass][batchId]
+		},
 	}
 }

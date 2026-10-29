@@ -2,17 +2,20 @@ import {
 	BoxGeometry,
 	BufferAttribute,
 	BufferGeometry,
+	Color,
 	InterleavedBuffer,
 	InterleavedBufferAttribute,
+	Matrix4,
 	MeshBasicMaterial,
 	SphereGeometry,
+	Vector4,
 } from 'three'
 import { describe, expect, it } from 'vitest'
 
 import { createShapeBatches } from '../shapeBatches'
 import { toFacesBatchLayout } from '../toFacesBatchLayout'
 
-const createBatches = () => createShapeBatches(new MeshBasicMaterial())
+const createBatches = () => createShapeBatches((parameters) => new MeshBasicMaterial(parameters))
 
 const createLargeGeometry = (triangles: number): BufferGeometry => {
 	const geometry = new BufferGeometry()
@@ -115,7 +118,7 @@ describe('toFacesBatchLayout, converging what a batch would reject or misread', 
 		geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2, 0, 2, 999]), 1))
 
 		batches.registerMesh(geometry)
-		const positions = batches.edges.geometry.getAttribute('position').array
+		const positions = batches.opaque.edges.geometry.getAttribute('position').array
 
 		expect(positions.some((value) => Number.isNaN(value))).toBe(false)
 	})
@@ -228,8 +231,8 @@ describe('registerMesh', () => {
 
 		const ids = batches.addMesh(slot)
 
-		expect(batches.faces.getGeometryIdAt(ids.face)).toBe(slot.faceGeometry)
-		expect(batches.edges.getGeometryIdAt(ids.edge)).toBe(slot.edgeGeometry)
+		expect(batches.opaque.faces.getGeometryIdAt(ids.face)).toBe(slot.opaque.faceGeometry)
+		expect(batches.opaque.edges.getGeometryIdAt(ids.edge)).toBe(slot.opaque.edgeGeometry)
 	})
 
 	it('shares one upload between entities drawing the same geometry', () => {
@@ -245,7 +248,7 @@ describe('registerMesh', () => {
 		const first = batches.registerMesh(new SphereGeometry(1, 8, 6))
 		const second = batches.registerMesh(new BoxGeometry(2, 2, 2))
 
-		expect(second.faceGeometry).not.toBe(first.faceGeometry)
+		expect(second.opaque.faceGeometry).not.toBe(first.opaque.faceGeometry)
 	})
 
 	it('grows the vertex buffer for a mesh larger than everything allocated so far', () => {
@@ -253,7 +256,9 @@ describe('registerMesh', () => {
 
 		const slot = batches.registerMesh(createLargeGeometry(20_000))
 
-		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(60_000)
+		expect(batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)?.vertexCount).toBe(
+			60_000
+		)
 	})
 
 	it('grows the index buffer alongside it', () => {
@@ -261,7 +266,9 @@ describe('registerMesh', () => {
 
 		const slot = batches.registerMesh(createLargeGeometry(20_000))
 
-		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.indexCount).toBe(60_000)
+		expect(batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)?.indexCount).toBe(
+			60_000
+		)
 	})
 })
 
@@ -274,7 +281,7 @@ describe('releaseMesh', () => {
 		batches.registerMesh(geometry)
 		batches.releaseMesh(geometry)
 
-		expect(() => batches.faces.getGeometryRangeAt(slot.faceGeometry)).not.toThrow()
+		expect(() => batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)).not.toThrow()
 	})
 
 	it('frees the upload once the last entity drops it', () => {
@@ -284,7 +291,7 @@ describe('releaseMesh', () => {
 		const slot = batches.registerMesh(geometry)
 		batches.releaseMesh(geometry)
 
-		expect(() => batches.faces.getGeometryRangeAt(slot.faceGeometry)).toThrow()
+		expect(() => batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)).toThrow()
 	})
 
 	it('re-registering after a release uploads the geometry again', () => {
@@ -297,7 +304,9 @@ describe('releaseMesh', () => {
 		const slot = batches.registerMesh(geometry)
 
 		// `deleteGeometry` recycles ids, so the slot number alone proves nothing.
-		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(vertexCount)
+		expect(batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)?.vertexCount).toBe(
+			vertexCount
+		)
 	})
 
 	it('ignores a geometry that was never registered', () => {
@@ -330,7 +339,7 @@ describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh
 
 		swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), new BoxGeometry(2, 2, 2))
 
-		expect(batches.faces.instanceCount).toBe(2)
+		expect(batches.opaque.faces.instanceCount).toBe(2)
 	})
 
 	it('leaves one outline instance per entity too', () => {
@@ -338,7 +347,7 @@ describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh
 
 		swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), new BoxGeometry(2, 2, 2))
 
-		expect(batches.edges.instanceCount).toBe(2)
+		expect(batches.opaque.edges.instanceCount).toBe(2)
 	})
 
 	it('points the new instance at the new geometry', () => {
@@ -347,7 +356,9 @@ describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh
 
 		const ids = swapOneOfTwoSharers(batches, new SphereGeometry(1, 8, 6), replacement)
 
-		const range = batches.faces.getGeometryRangeAt(batches.faces.getGeometryIdAt(ids.face))
+		const range = batches.opaque.faces.getGeometryRangeAt(
+			batches.opaque.faces.getGeometryIdAt(ids.face)
+		)
 		expect(range?.vertexCount).toBe(replacement.getAttribute('position').count)
 	})
 
@@ -358,8 +369,144 @@ describe('swapping an entity geometry, the sequence `Mesh.svelte` runs on a mesh
 		swapOneOfTwoSharers(batches, shared, new BoxGeometry(2, 2, 2))
 
 		const slot = batches.registerMesh(shared)
-		expect(batches.faces.getGeometryRangeAt(slot.faceGeometry)?.vertexCount).toBe(
+		expect(batches.opaque.faces.getGeometryRangeAt(slot.opaque.faceGeometry)?.vertexCount).toBe(
 			shared.getAttribute('position').count
 		)
+	})
+})
+
+describe('setAppearance, moving a shape between the opaque and translucent passes', () => {
+	const placedBox = () => {
+		const batches = createBatches()
+		const ids = batches.add('box')
+		batches.setMatrix(ids, new Matrix4().makeTranslation(1, 2, 3))
+		batches.setAppearance(ids, new Color('red'), 1, true)
+		return { batches, ids }
+	}
+
+	const fadeTo = (opacity: number) => {
+		const placed = placedBox()
+		placed.batches.setAppearance(placed.ids, new Color('red'), opacity, true)
+		return placed
+	}
+
+	it('puts an opaque shape in the opaque pass', () => {
+		const { ids } = placedBox()
+
+		expect(ids.pass).toBe('opaque')
+	})
+
+	it('moves the face out of the opaque pass once opacity drops below 1', () => {
+		const { batches } = fadeTo(0.5)
+
+		expect(batches.opaque.faces.instanceCount).toBe(0)
+		expect(batches.translucent.faces.instanceCount).toBe(1)
+	})
+
+	it('moves the outline with its face', () => {
+		const { batches } = fadeTo(0.5)
+
+		expect(batches.opaque.edges.instanceCount).toBe(0)
+		expect(batches.translucent.edges.instanceCount).toBe(1)
+	})
+
+	it('keeps the face where it was placed', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		const position = batches.translucent.faces.getMatrixAt(ids.face, new Matrix4())
+		expect(position.elements.slice(12, 15)).toEqual([1, 2, 3])
+	})
+
+	it('keeps the outline where it was placed', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		const position = batches.translucent.edges.getMatrixAt(ids.edge, new Matrix4())
+		expect(position.elements.slice(12, 15)).toEqual([1, 2, 3])
+	})
+
+	it('keeps drawing the same geometry in the new pass', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		const range = batches.translucent.faces.getGeometryRangeAt(
+			batches.translucent.faces.getGeometryIdAt(ids.face)
+		)
+		expect(range?.vertexCount).toBe(24)
+	})
+
+	it('writes the color and opacity into the new pass', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		const color = batches.translucent.faces.getColorAt(ids.face, new Vector4())
+		expect(color.toArray()).toEqual([1, 0, 0, 0.5])
+	})
+
+	it('moves the shape back to the opaque pass at full opacity', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		batches.setAppearance(ids, new Color('red'), 1, true)
+
+		expect(ids.pass).toBe('opaque')
+		expect(batches.translucent.faces.instanceCount).toBe(0)
+	})
+
+	it('resolves a pointer hit on the new pass to the same handle', () => {
+		const { batches, ids } = fadeTo(0.5)
+
+		expect(batches.instanceAt(batches.translucent.faces, ids.face)).toBe(ids)
+	})
+
+	it('stops resolving a pointer hit on the slot it left', () => {
+		const { batches, ids } = placedBox()
+		const vacated = ids.face
+
+		batches.setAppearance(ids, new Color('red'), 0.5, true)
+
+		expect(batches.instanceAt(batches.opaque.faces, vacated)).toBeUndefined()
+	})
+})
+
+describe('instanceAt', () => {
+	it('tells apart two shapes holding the same instance id in different passes', () => {
+		const batches = createBatches()
+		const solid = batches.add('box')
+		const glass = batches.add('sphere')
+		batches.setAppearance(glass, new Color('white'), 0.5, true)
+
+		expect([solid.face, glass.face]).toEqual([0, 0])
+		expect(batches.instanceAt(batches.opaque.faces, 0)).toBe(solid)
+		expect(batches.instanceAt(batches.translucent.faces, 0)).toBe(glass)
+	})
+
+	it('resolves nothing for an object that is not a faces batch', () => {
+		const batches = createBatches()
+		batches.add('box')
+
+		expect(batches.instanceAt(batches.opaque.edges, 0)).toBeUndefined()
+	})
+})
+
+describe('createShapeBatches, pass draw order', () => {
+	it('creates opaque outlines after their faces, so an outline wins the depth tie with its own face', () => {
+		const batches = createBatches()
+
+		expect(batches.opaque.edges.id).toBeGreaterThan(batches.opaque.faces.id)
+	})
+
+	it('creates translucent outlines before their faces, so a translucent face in front blends over them', () => {
+		const batches = createBatches()
+
+		expect(batches.translucent.edges.id).toBeLessThan(batches.translucent.faces.id)
+	})
+
+	it('draws opaque faces in instance order, so an exact depth tie resolves the same from every camera angle', () => {
+		const batches = createBatches()
+
+		expect(batches.opaque.faces.sortObjects).toBe(false)
+	})
+
+	it('sorts translucent outlines back to front, so overlapping ones blend in order', () => {
+		const batches = createBatches()
+
+		expect(batches.translucent.edges.sortObjects).toBe(true)
 	})
 })
