@@ -1,5 +1,22 @@
 # visualization
 
+## 3.0.0
+
+### Major Changes
+
+- 51adfb0: Renders the scene with three's WebGPU renderer, falling back to WebGL2 where WebGPU is unavailable.
+
+### Minor Changes
+
+- 5ea72a2: Monitor details panel adds a Test tab with the selected resource's control widgets.
+
+### Patch Changes
+
+- 269af0a: XR wrist panels render as canvas textures instead of threlte-uikit.
+- b8cb4d3: Camera selection outlines and zoom-to-fit no longer include the sensor coverage frustum.
+- 0c7bdf3: The default point size setting is now shown and entered in millimeters.
+- f40ee28: Hidden and removed axes helpers are no longer drawn.
+
 ## 2.11.2
 
 ### Patch Changes

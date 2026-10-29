@@ -33,18 +33,15 @@ Peers that only a plugin needs are marked optional, so you install them only if 
 
 ### Configure your bundler
 
-The visualizer's scene imports two things a stock Vite config won't handle: an HDR
-environment map and GLSL shader sources. Both need a line in your config, or the build fails
-parsing them as JavaScript (`Unexpected identifier 'highp'` is the shader one).
+The visualizer's scene imports an HDR environment map, which a stock Vite config won't handle.
+Add it to `assetsInclude`, or the build fails parsing it as JavaScript.
 
 ```ts
 // vite.config.ts
-import glsl from 'vite-plugin-glsl'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
-	plugins: [glsl()],
 	resolve: {
 		// three is a peer of both your app and the visualizer; resolve it from one place
 		// so a second copy can't slip in. Two three instances break `instanceof`.
@@ -53,11 +50,9 @@ export default defineConfig({
 })
 ```
 
-`vite-plugin-glsl` is a build-time dependency of your app — install it alongside the package.
-
 ### Disable SSR for the page
 
-Threlte renders WebGL, which needs the browser. Disable SSR on any page that mounts `<Visualizer />`. In SvelteKit:
+The visualizer renders with WebGPU (falling back to WebGL2), which needs the browser. Disable SSR on any page that mounts `<Visualizer />`. In SvelteKit:
 
 ```ts
 // src/routes/visualizer/+page.ts
