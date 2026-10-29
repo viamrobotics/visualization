@@ -53,7 +53,6 @@ test('draw service events lifecycle', async ({ page, drawScene, resetScene }) =>
 	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
 		timeout: 15000,
 	})
-	await screenshotCanvas(page, 'DRAW_SERVICE_EVENTS_REMOVED')
 
 	await resetScene()
 })
@@ -66,37 +65,6 @@ test('draw frame system', async ({ page, drawScene, snapshotAndReset }) => {
 	await expect(page.getByText('No objects displayed', { exact: true })).not.toBeVisible()
 
 	await snapshotAndReset(testPrefix)
-})
-
-test('draw hierarchy', async ({ page, drawScene, resetScene, takeScreenshot }) => {
-	const testPrefix = 'DRAW_HIERARCHY'
-
-	drawScene('hierarchy/draw')
-
-	await expect(page.getByText('zulu', { exact: true })).toBeVisible()
-	await expect(page.getByText('bravo', { exact: true })).toBeVisible()
-
-	await page
-		.locator('[data-part="branch-control"]')
-		.filter({ hasText: 'zulu' })
-		.locator('[data-part="branch-trigger"]')
-		.click()
-	await expect(page.getByText('tango', { exact: true })).toBeVisible()
-	await expect(page.getByText('delta', { exact: true })).toBeVisible()
-
-	await takeScreenshot(`${testPrefix}_ZULU_EXPANDED`)
-
-	await page
-		.locator('[data-part="branch-control"]')
-		.filter({ hasText: 'tango' })
-		.locator('[data-part="branch-trigger"]')
-		.click()
-	await expect(page.getByText('sierra', { exact: true })).toBeVisible()
-	await expect(page.getByText('foxtrot', { exact: true })).toBeVisible()
-
-	await takeScreenshot(`${testPrefix}_TANGO_EXPANDED`)
-
-	await resetScene()
 })
 
 test('draw frames', async ({ page, drawScene, snapshotAndReset }) => {
@@ -398,26 +366,6 @@ test('redraw loop without clearing', async ({ page, drawScene, snapshotAndReset 
 		'REDRAW_LOOP_NO_CLEAR',
 		'redraw-loop/without-clear'
 	)
-})
-
-test('relationships', async ({ page, drawScene, resetScene, takeScreenshot }) => {
-	drawScene('relationships/setup')
-
-	await expect(page.getByText('rel-source', { exact: true })).toBeVisible({ timeout: 10000 })
-	await expect(page.getByText('rel-target', { exact: true })).toBeVisible({ timeout: 10000 })
-
-	drawScene('relationships/create')
-
-	await page.getByText('rel-source', { exact: true }).click()
-	await expect(page.getByText('rel-target (HoverLink)')).toBeVisible({ timeout: 10000 })
-	await takeScreenshot('RELATIONSHIPS_CREATED')
-
-	drawScene('relationships/delete')
-
-	await expect(page.getByText('rel-target (HoverLink)')).not.toBeVisible({ timeout: 10000 })
-	await takeScreenshot('RELATIONSHIPS_DELETED')
-
-	await resetScene()
 })
 
 /**

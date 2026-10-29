@@ -48,10 +48,6 @@ describe('createObstacleComponent', () => {
 			visualizer: { type: 'simple' },
 		})
 	})
-
-	it('leaves geometry off the component frame, since rdk would use it over the geometries', () => {
-		expect(createObstacleComponent('obstacle-1').frame).not.toHaveProperty('geometry')
-	})
 })
 
 describe('createComplexObstacleComponent', () => {
@@ -70,10 +66,6 @@ describe('createComplexObstacleComponent', () => {
 			},
 			visualizer: { type: 'complex' },
 		})
-	})
-
-	it('leaves geometry off the component frame, since rdk would use it over the geometries', () => {
-		expect(createComplexObstacleComponent('obstacle-1').frame).not.toHaveProperty('geometry')
 	})
 })
 

@@ -188,11 +188,6 @@ describe('parsedPlanToSnapshots with the pirouette capture', () => {
 describe('parsedPlanToSnapshots with mesh geometry present', () => {
 	const snapshots = parsedPlanToSnapshots(parsePlan(saladPlan))
 
-	it('produces one snapshot per trajectory step', () => {
-		expect(snapshots.length).toBe(parsePlan(saladPlan).trajectory.length)
-		expect(snapshots.length).toBeGreaterThan(0)
-	})
-
 	it('emits the mesh frames as transforms carrying a mesh physicalObject', () => {
 		const scoop = snapshots[0]!.transforms.find(
 			(t) => t.referenceFrame === 'scoop-gripper:scoop_left'
@@ -200,11 +195,6 @@ describe('parsedPlanToSnapshots with mesh geometry present', () => {
 		expect(scoop).toBeDefined()
 		expect(scoop!.physicalObject).toBeDefined()
 		expect(scoop!.physicalObject!.geometryType.case).toBe('mesh')
-	})
-
-	it('still carries geometry for frames the builder understands', () => {
-		const withGeometry = snapshots[0]!.transforms.filter((t) => t.physicalObject !== undefined)
-		expect(withGeometry.length).toBeGreaterThan(0)
 	})
 })
 

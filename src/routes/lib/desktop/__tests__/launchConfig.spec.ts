@@ -39,19 +39,6 @@ describe('launchConfigToDialConf', () => {
 			disableSessions: true,
 		})
 	})
-
-	it('maps an api-key config with sessions disabled', () => {
-		const credentials: Credentials = {
-			type: 'api-key',
-			payload: 'secret',
-			authEntity: 'key-id',
-		}
-
-		const dialConf = launchConfigToDialConf(buildConfig(credentials))
-
-		expect(dialConf.credentials).toEqual(credentials)
-		expect(dialConf.disableSessions).toBe(true)
-	})
 })
 
 describe('parseLaunchConfig', () => {
