@@ -804,6 +804,9 @@
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
 	],
+	"sideEffects": [
+		"**/*.css"
+	],
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
