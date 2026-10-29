@@ -17,6 +17,7 @@
 	const box3 = new Box3()
 	const obb = new OBB()
 	const matrix4 = new Matrix4()
+	const previousHelperMatrix = new Matrix4()
 
 	const { scene, invalidate } = useThrelte()
 	const selected = useQuery(traits.Selected)
@@ -39,25 +40,39 @@
 	})
 	selectedAxes.renderOrder = 999
 
-	const axesInstances = new Map<Entity, number>()
+	const axesInstances = new Map<Entity, { instance: number; world: Matrix4 }>()
 
-	const showAxes = (entity: Entity, world: Matrix4) => {
-		const instance = axesInstances.get(entity)
+	/** Helpers that have been drawn at least once, so a fresh one always renders. */
+	const drawnHelpers = new WeakSet<OBBHelper>()
 
-		if (instance === undefined) {
-			axesInstances.set(entity, selectedAxes.addHelper(world))
-		} else {
-			selectedAxes.setMatrixAt(instance, world)
+	/** Shows or moves the entity's selected axes, returning whether anything changed. */
+	const showAxes = (entity: Entity, world: Matrix4): boolean => {
+		const shown = axesInstances.get(entity)
+
+		if (shown === undefined) {
+			axesInstances.set(entity, {
+				instance: selectedAxes.addHelper(world),
+				world: world.clone(),
+			})
+			return true
 		}
+
+		if (shown.world.equals(world)) return false
+
+		shown.world.copy(world)
+		selectedAxes.setMatrixAt(shown.instance, world)
+		return true
 	}
 
-	const hideAxes = (entity: Entity) => {
-		const instance = axesInstances.get(entity)
+	/** Removes the entity's selected axes, returning whether any were shown. */
+	const hideAxes = (entity: Entity): boolean => {
+		const shown = axesInstances.get(entity)
 
-		if (instance !== undefined) {
-			selectedAxes.removeHelper(instance)
-			axesInstances.delete(entity)
-		}
+		if (shown === undefined) return false
+
+		selectedAxes.removeHelper(shown.instance)
+		axesInstances.delete(entity)
+		return true
 	}
 
 	/**
@@ -100,32 +115,52 @@
 		return true
 	}
 
+	/**
+	 * Re-measures the entity's outline and axes, returning whether either moved.
+	 * Bounds can change outside the ECS, such as a model's meshes, so this runs
+	 * every frame and the caller renders only on a change.
+	 */
+	const updateSelection = (entity: Entity, obbHelper: OBBHelper): boolean => {
+		previousHelperMatrix.copy(obbHelper.matrix)
+		const wasVisible = obbHelper.visible
+
+		const hasBounds = setHelperBounds(entity, obbHelper)
+		obbHelper.visible = hasBounds
+
+		const isFirstDraw = !drawnHelpers.has(obbHelper)
+		drawnHelpers.add(obbHelper)
+
+		const outlineChanged =
+			isFirstDraw || wasVisible !== hasBounds || !obbHelper.matrix.equals(previousHelperMatrix)
+
+		const world = hasBounds ? undefined : entity.get(traits.WorldMatrix)
+		const axesChanged = world ? showAxes(entity, world) : hideAxes(entity)
+
+		return outlineChanged || axesChanged
+	}
+
 	$effect(() => {
 		const stillSelected = new Set<Entity>(selected.current)
 
+		let hidAny = false
 		for (const entity of axesInstances.keys()) {
 			if (!stillSelected.has(entity)) {
-				hideAxes(entity)
+				hidAny = hideAxes(entity) || hidAny
 			}
 		}
+
+		// The task stops once nothing is selected, so it can't render this removal itself.
+		if (hidAny) invalidate()
 	})
 
 	useTask(
 		() => {
+			let changed = false
 			for (const [entity, obbHelper] of obbHelpers) {
-				const hasBounds = setHelperBounds(entity, obbHelper)
-				obbHelper.visible = hasBounds
-
-				const world = hasBounds ? undefined : entity.get(traits.WorldMatrix)
-
-				if (world) {
-					showAxes(entity, world)
-				} else {
-					hideAxes(entity)
-				}
+				changed = updateSelection(entity, obbHelper) || changed
 			}
 
-			invalidate()
+			if (changed) invalidate()
 		},
 		{
 			running: () => selected.current.length > 0,
