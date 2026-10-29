@@ -183,5 +183,19 @@ describe('worldMatrix system', () => {
 
 			expect(changes.count).toBe(0)
 		})
+
+		it('notifies a child when its parent moves', async () => {
+			world = createWorld()
+			unsub = installWorldMatrixListeners(world)
+			const parent = world.spawn(traits.LiveMatrix(new Pose(100).toMatrix4()))
+			const child = world.spawn(relations.ChildOf(parent), traits.Matrix(new Pose(50).toMatrix4()))
+			await tick()
+			const changes = countWorldMatrixChanges(child)
+
+			writeLivePose(parent, new Pose(200))
+			await tick()
+
+			expect(changes.count).toBe(1)
+		})
 	})
 })
