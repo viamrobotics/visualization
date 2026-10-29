@@ -70,8 +70,11 @@ const SHAPES = Object.keys(FACE_GEOMETRIES) as Shape[]
 
 const PASS_NAMES: readonly ShapePassName[] = ['opaque', 'translucent']
 
-/** How much darker an outline is than the face it wraps, in percent. */
-const EDGE_DARKEN = 10
+/**
+ * How much darker an outline is than the face it wraps, in percent. A translucent
+ * outline draws under both walls of its shell, so it needs more contrast to show.
+ */
+const EDGE_DARKEN: Record<ShapePassName, number> = { opaque: 10, translucent: 25 }
 
 const sumIndices = (geometries: BufferGeometry[]): number =>
 	geometries.reduce((total, geometry) => total + (geometry.getIndex()?.count ?? 0), 0)
@@ -234,7 +237,7 @@ export const createShapeBatches = (
 			setBatchedColorAt(faces, ids.face, faceColor.set(color.r, color.g, color.b, opacity))
 			faces.setVisibleAt(ids.face, visible)
 
-			const outline = darkenColor(color, EDGE_DARKEN)
+			const outline = darkenColor(color, EDGE_DARKEN[pass])
 			setBatchedColorAt(edges, ids.edge, edgeColor.set(outline.r, outline.g, outline.b, opacity))
 			edges.setVisibleAt(ids.edge, visible)
 		},
