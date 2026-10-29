@@ -6,6 +6,8 @@ import { composeLocalMatrix } from '$lib/math/transform'
 import { ChildOf } from './relations'
 import { EditedMatrix, LiveMatrix, Matrix, Name, WorldMatrix } from './traits'
 
+const previousWorldMatrix = new Matrix4()
+
 /**
  * Compute the entity's local-to-parent transform into `out`.
  *
@@ -61,12 +63,16 @@ const toLocalMatrix = (entity: Entity, out: Matrix4): boolean => {
  * parent rather than recursing forever. `resolveOrphans` already prevents
  * the only known way to introduce a `ChildOf` cycle; this is here so a
  * future bug downgrades to a soft visual glitch instead of a hard crash.
+ *
+ * Adds the entity to `moved` when its world matrix is new or differs from
+ * the value it held before this flush.
  */
 const recomputeWorldMatrix = (
 	world: World,
 	entity: Entity,
 	cache: Map<Entity, Matrix4>,
-	inProgress: Set<Entity>
+	inProgress: Set<Entity>,
+	moved: Set<Entity>
 ): Matrix4 | undefined => {
 	if (!entity.isAlive()) return undefined
 
@@ -79,18 +85,25 @@ const recomputeWorldMatrix = (
 	}
 	inProgress.add(entity)
 
+	// Resolved before the snapshot below, since the recursion reuses `previousWorldMatrix`.
+	const parent = entity.targetFor(ChildOf)
+	const parentWorld =
+		parent && parent.isAlive()
+			? recomputeWorldMatrix(world, parent, cache, inProgress, moved)
+			: undefined
+
 	// Reuse the entity's existing `WorldMatrix` storage when present so a
 	// flush doesn't allocate a throwaway matrix per entity. First-time
 	// entities get a fresh `Matrix4` that's added as the trait below.
-	const out = entity.get(WorldMatrix) ?? new Matrix4()
+	const existing = entity.get(WorldMatrix)
+	if (existing) previousWorldMatrix.copy(existing)
+
+	const out = existing ?? new Matrix4()
 	const hasLocal = toLocalMatrix(entity, out)
 	if (!hasLocal) out.identity()
+	if (parentWorld) out.premultiply(parentWorld)
 
-	const parent = entity.targetFor(ChildOf)
-	if (parent && parent.isAlive()) {
-		const parentWorld = recomputeWorldMatrix(world, parent, cache, inProgress)
-		if (parentWorld) out.premultiply(parentWorld)
-	}
+	if (!existing || !out.equals(previousWorldMatrix)) moved.add(entity)
 
 	inProgress.delete(entity)
 	cache.set(entity, out)
@@ -102,6 +115,7 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
 
 	const cache = new Map<Entity, Matrix4>()
 	const inProgress = new Set<Entity>()
+	const moved = new Set<Entity>()
 	const expanded = new Set<Entity>()
 
 	const collect = (entity: Entity) => {
@@ -117,8 +131,8 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
 
 	for (const entity of expanded) {
 		if (!entity.isAlive()) continue
-		const worldMat = recomputeWorldMatrix(world, entity, cache, inProgress)
-		if (!worldMat) continue
+		const worldMat = recomputeWorldMatrix(world, entity, cache, inProgress, moved)
+		if (!worldMat || !moved.has(entity)) continue
 		if (entity.has(WorldMatrix)) {
 			entity.changed(WorldMatrix)
 		} else {
@@ -131,6 +145,9 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
  * Wire up listeners that maintain `WorldMatrix` reactively. Subscribes to
  * add/change/remove on `Matrix`, `EditedMatrix`, `LiveMatrix`, and `ChildOf`;
  * enqueues affected entities and flushes on the next microtask.
+ *
+ * `WorldMatrix` change events fire only for entities whose world matrix
+ * actually moved, so a poll that resends an identical pose renders nothing.
  *
  * Returns an unsubscribe function. Plain function (not a rune hook) so tests
  * can drive the lifecycle without mounting Svelte.
