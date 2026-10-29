@@ -164,9 +164,7 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 
 	// Reload reset the workspace toggle to Monitor, so re-enter Build first.
 	await enterBuildMode(page)
-	await expect
-		.poll(() => readInputValues(page, 'mutable local position'))
-		.toEqual(editedPosition)
+	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
 
 	const parentSelect = page.getByLabel('mutable parent frame').locator('select')
 	await expect(parentSelect).toBeAttached()
@@ -393,9 +391,7 @@ withRobot('fragment edit frame', async ({ browser }) => {
 		timeout: 15_000,
 	})
 	await openFragmentFrame()
-	await expect
-		.poll(() => readInputValues(page, 'mutable local position'))
-		.toEqual(editedPosition)
+	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
 	await expect.poll(() => readInputValues(page, 'mutable geometry')).toEqual(editedGeometry)
 })
 
