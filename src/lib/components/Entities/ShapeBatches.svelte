@@ -3,10 +3,11 @@
 
 Mounts the batches every primitive renderer draws into, and provides them to its
 children. `Boxes`, `Capsules`, `Cylinders`, and `Spheres` allocate instances
-rather than owning meshes, so one depth sort covers every transparent primitive
-in the scene.
+rather than owning meshes. Opaque shapes share one batch in the opaque pass, and
+translucent ones share another, so one depth sort covers every translucent
+primitive in the scene.
 
-The faces batch is the pointer-interaction surface: it raycasts per instance
+The faces batches are the pointer-interaction surface: each raycasts per instance
 (skipping invisible ones) and stamps `batchId` on each hit, which `entityAt`
 maps back to the entity.
 -->
@@ -14,7 +15,6 @@ maps back to the entity.
 	import type { Snippet } from 'svelte'
 
 	import { T } from '@threlte/core/webgpu'
-	import { DoubleSide } from 'three'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { createShapeBatches } from '$lib/three/shapeBatches'
@@ -32,45 +32,38 @@ maps back to the entity.
 
 	const settings = useSettings()
 
-	/**
-	 * The material is always transparent so any primitive can carry its own
-	 * alpha (see `resolveOpacity`), stored in the `w` of the instance color. The base color stays
-	 * white so per-instance colors aren't tinted.
-	 *
-	 * `DoubleSide` is what lets every shape share one batch — an uncapped
-	 * cylinder has no cap to hide its far wall — and it is what a translucent
-	 * shell should look like, with light crossing the near wall and the far one.
-	 */
-	const faceParameters = { side: DoubleSide, transparent: true, vertexColors: true }
-
-	const batches = createShapeBatches(
-		createSurfaceMaterial(settings.current.renderMode, faceParameters)
+	const batches = createShapeBatches((parameters) =>
+		createSurfaceMaterial(settings.current.renderMode, parameters)
 	)
+
+	const passes = [batches.opaque, batches.translucent]
 
 	const shapes = provideShapeBatches(batches)
 
-	useSurfaceMaterials([{ mesh: batches.faces, parameters: faceParameters }])
+	useSurfaceMaterials(passes.map((pass) => ({ mesh: pass.faces, parameters: pass.faceParameters })))
 
 	const events = useInstancedEntityEvents((event) =>
-		event.batchId === undefined ? undefined : shapes.entityAt(event.batchId)
+		event.batchId === undefined ? undefined : shapes.entityAt(event.object, event.batchId)
 	)
 </script>
 
 <!--
-`bvh={{ enabled: false }}` on both: the plugin would replace `raycast` with
+`bvh={{ enabled: false }}` on every batch: the plugin would replace `raycast` with
 three-mesh-bvh's, and `BatchedMesh`'s own per-instance raycast is what stamps
 `batchId`.
 -->
-<T
-	is={batches.faces}
-	bvh={{ enabled: false }}
-	{...events}
-/>
+{#each passes as pass (pass.faces.id)}
+	<T
+		is={pass.faces}
+		bvh={{ enabled: false }}
+		{...events}
+	/>
 
-<T
-	is={batches.edges}
-	bvh={{ enabled: false }}
-	raycast={() => null}
-/>
+	<T
+		is={pass.edges}
+		bvh={{ enabled: false }}
+		raycast={() => null}
+	/>
+{/each}
 
 {@render children()}
