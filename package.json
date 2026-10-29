@@ -1,6 +1,6 @@
 {
 	"name": "@viamrobotics/visualization",
-	"version": "2.11.2",
+	"version": "3.0.0",
 	"description": "Motion visualization with Viam",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -803,6 +803,9 @@
 		"dist",
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
+	],
+	"sideEffects": [
+		"**/*.css"
 	],
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",
