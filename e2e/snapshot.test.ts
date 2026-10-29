@@ -47,7 +47,7 @@ for (const snapshot of snapshots) {
 	})
 }
 
-test('drops visualization_snapshot_metadata', async ({ page, dropFile, takeScreenshot }) => {
+test('drops visualization_snapshot_metadata', async ({ page, dropFile }) => {
 	const filename = 'visualization_snapshot_metadata.pb.gz'
 
 	await dropFile(path.resolve(snapshotsDir, filename))
