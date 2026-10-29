@@ -1,4 +1,4 @@
-import { createWorld, type World } from 'koota'
+import { createWorld, type Entity, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { assertExists } from '$lib/assert'
@@ -126,5 +126,62 @@ describe('worldMatrix system', () => {
 		await tick()
 
 		expect(entity.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.003)
+	})
+
+	describe('change notification', () => {
+		const writeLivePose = (entity: Entity, pose: Pose) => {
+			const live = entity.get(traits.LiveMatrix)
+			assertExists(live, 'Live matrix is undefined')
+			pose.toMatrix4(live)
+			entity.changed(traits.LiveMatrix)
+		}
+
+		const countWorldMatrixChanges = (target: Entity) => {
+			const counter = { count: 0 }
+			world.onChange(traits.WorldMatrix, (entity) => {
+				if (entity === target) counter.count++
+			})
+			return counter
+		}
+
+		it('stays silent when a poll resends an identical pose', async () => {
+			world = createWorld()
+			unsub = installWorldMatrixListeners(world)
+			const entity = world.spawn(traits.LiveMatrix(new Pose(100).toMatrix4()))
+			await tick()
+			const changes = countWorldMatrixChanges(entity)
+
+			writeLivePose(entity, new Pose(100))
+			await tick()
+
+			expect(changes.count).toBe(0)
+		})
+
+		it('notifies once when the pose moves', async () => {
+			world = createWorld()
+			unsub = installWorldMatrixListeners(world)
+			const entity = world.spawn(traits.LiveMatrix(new Pose(100).toMatrix4()))
+			await tick()
+			const changes = countWorldMatrixChanges(entity)
+
+			writeLivePose(entity, new Pose(200))
+			await tick()
+
+			expect(changes.count).toBe(1)
+		})
+
+		it('leaves a child unnotified when its parent resends an identical pose', async () => {
+			world = createWorld()
+			unsub = installWorldMatrixListeners(world)
+			const parent = world.spawn(traits.LiveMatrix(new Pose(100).toMatrix4()))
+			const child = world.spawn(relations.ChildOf(parent), traits.Matrix(new Pose(50).toMatrix4()))
+			await tick()
+			const changes = countWorldMatrixChanges(child)
+
+			writeLivePose(parent, new Pose(100))
+			await tick()
+
+			expect(changes.count).toBe(0)
+		})
 	})
 })
