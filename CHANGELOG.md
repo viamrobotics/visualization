@@ -1,5 +1,14 @@
 # visualization
 
+## 3.0.1
+
+### Patch Changes
+
+- 09ae907: Fix camera-dependent draw order between overlapping shapes and their outlines.
+- 5a73d68: Stop continuously re-rendering the scene while an entity is selected.
+- 1b9fa63: Declare `sideEffects` so bundlers drop the modules a consumer doesn't use. Importing `SnapshotProto` from `@viamrobotics/visualization/lib` no longer pulls three.js into the importing chunk.
+- 4dca97e: Stop re-rendering the scene when polled poses haven't changed.
+
 ## 3.0.0
 
 ### Major Changes
