@@ -9,6 +9,7 @@ import type { Frame } from '$lib/frame'
 import type { FragmentConfig, FragmentImport } from '$lib/resolveFragmentImport'
 
 import { resolveFragmentComponents, withModdedFragmentComponents } from '$lib/fragmentComponents'
+import { hasViamAppClient } from '$lib/hooks/hasViamAppClient'
 import { importsOf } from '$lib/resolveFragmentImport'
 
 /**
@@ -66,7 +67,7 @@ interface FragmentInfoContext {
 /**
  * Single source of truth for which components a fragment provides.
  *
- * Two sources, one contract. An embedded host already resolved this to render
+ * Two sources, one contract, and an empty map when neither exists. An embedded host already resolved this to render
  * its config editor and passes it as a prop, including the unsaved fragment
  * changes no query can see. Standalone derives it from `getRobotPart` and
  * `listMachineFragments`. Mode is fixed for the session (the prop is either
@@ -87,7 +88,11 @@ export const provideFragmentInfo = (
 	embeddedPartConfig: () => Struct | undefined
 ) => {
 	const embedded = $derived(embeddedMap())
-	const standalone = $derived(embedded ? undefined : useStandaloneFragmentInfo(partID))
+	// With no ViamAppProvider there is nothing to ask, so no component reports a fragment.
+	const hasAppClient = hasViamAppClient()
+	const standalone = $derived(
+		embedded || !hasAppClient ? undefined : useStandaloneFragmentInfo(partID)
+	)
 
 	const partConfigJSON = $derived(
 		embedded ? structToJson(embeddedPartConfig()) : standalone?.partConfigJSON
