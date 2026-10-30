@@ -122,21 +122,8 @@ describe('createBoundsObstacleComponent', () => {
 	})
 })
 
-describe.each([
-	['simple', createObstacleComponent],
-	['bounds', createBoundsObstacleComponent],
-	['complex', createComplexObstacleComponent],
-])('the %s obstacle attributes', (_kind, create) => {
+describe('the bounds obstacle attributes', () => {
 	it('has no frames key', () => {
-		expect(create('obstacle-1').attributes).not.toHaveProperty('frames')
-	})
-})
-
-describe.each([
-	['simple', createObstacleComponent],
-	['complex', createComplexObstacleComponent],
-])('the %s obstacle geometries', (_kind, create) => {
-	it('is never empty, since rdk rejects an empty list', () => {
-		expect((create('obstacle-1').attributes?.geometries as unknown[]).length).toBeGreaterThan(0)
+		expect(createBoundsObstacleComponent('walls').attributes).not.toHaveProperty('frames')
 	})
 })

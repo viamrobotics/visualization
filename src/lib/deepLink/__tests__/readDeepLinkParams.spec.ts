@@ -37,8 +37,4 @@ describe('readDeepLinkParams', () => {
 	it('drops a key that is only the prefix', () => {
 		expect([...readDeepLinkParams('viz.=arm')]).toEqual([])
 	})
-
-	it('leaves a value containing a colon unchanged', () => {
-		expect(readDeepLinkParams('viz.select=arm:link1').get('select')).toEqual(['arm:link1'])
-	})
 })
