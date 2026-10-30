@@ -10,6 +10,7 @@
 		WorldStateStoreClient,
 	} from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
+	import { untrack } from 'svelte'
 
 	import { createChunkLoader } from '$lib/chunking'
 	import { drawTransform, updateMetadata } from '$lib/draw'
@@ -50,25 +51,35 @@
 		() => name
 	)
 
-	let initialGeneration = ''
+	// The last generation the status reported. Empty until the first status arrives.
+	let lastGeneration = ''
+	// Set when the stream ended without being aborted, which only happens when its instance closed.
+	let streamClosed = false
+	// Counts confirmed rebuilds. The stream effect reads it, so a rebuild reopens the stream.
+	let rebuilds = $state(0)
+	// The `rebuilds` value the last snapshot ran against, to tell a rebuild from a reconnect.
+	let syncedRebuilds = 0
 
-	/**
-	 * The store instance the stream follows. `generation` is empty until the first
-	 * machine status arrives, and that first value names the instance already being
-	 * read, so only a later change counts as a rebuild.
-	 */
-	const storeInstance = $derived.by(() => {
-		if (initialGeneration === '') initialGeneration = generation.current
-		return generation.current === initialGeneration ? '' : generation.current
+	// Detects a rebuild as an event, which no derived can express: a change between two
+	// reported generations. A status that drops out and returns to the same value is not one.
+	$effect.pre(() => {
+		const current = generation.current
+		if (current === '') return
+
+		// The first status names the instance already being read, unless that instance closed first.
+		const isRebuild = lastGeneration === '' ? streamClosed : current !== lastGeneration
+		lastGeneration = current
+
+		if (isRebuild) untrack(() => rebuilds++)
 	})
 
 	/** Every field a snapshot transform carries, for re-applying it to an entity already drawn. */
 	const SNAPSHOT_FIELDS = ['poseInObserverFrame', 'physicalObject', 'metadata']
-	// A drawn cloud holds every chunk the loader pulled, but a snapshot carries only the
-	// first. Re-applying its geometry or colors would cut the cloud back to that chunk.
-	const SNAPSHOT_POINT_CLOUD_FIELDS = ['poseInObserverFrame']
 
 	const entities = new Map<string, Entity>()
+	// What each drawn entity's geometry is, by uuid. A rebuilt instance holding a different kind
+	// under the same uuid is respawned, since an update cannot remove geometry.
+	const geometryKinds = new Map<string, string | undefined>()
 	// UUIDs the stream has removed; guards against an in-flight snapshot or a
 	// self-heal fetch re-creating an entity the server has already deleted.
 	const removedUUIDs = new Set<string>()
@@ -76,8 +87,8 @@
 	const pendingSpawns = new Set<string>()
 	// Bumped per snapshot, so a self-heal fetch begun before one cannot respawn what it settled.
 	let syncEpoch = 0
-	// UUIDs the stream changed while a snapshot was in flight. The stream is newer, so the snapshot skips them.
-	let touchedDuringSync: Set<string> | undefined
+	// True while a snapshot is in flight. Stream events wait, then replay on top of it in order.
+	let isSyncing = false
 
 	const chunkLoader = createChunkLoader({
 		world,
@@ -107,6 +118,7 @@
 
 		const spawned = drawTransform(world, transform, traits.WorldStateStoreAPI, { removable: false })
 		entities.set(transform.uuidString, spawned.entity)
+		geometryKinds.set(transform.uuidString, transform.physicalObject?.geometryType?.case)
 		relationships.apply(spawned.entity, spawned.relationships)
 
 		const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
@@ -118,6 +130,8 @@
 
 	const destroyEntity = (uuid: string) => {
 		removedUUIDs.add(uuid)
+		chunkLoader.stop(uuid)
+		geometryKinds.delete(uuid)
 
 		const entity = entities.get(uuid)
 
@@ -187,6 +201,7 @@
 				hierarchy.setParent(entity, transform.poseInObserverFrame?.referenceFrame)
 			} else if (path.startsWith('physicalObject') && transform.physicalObject) {
 				traits.updateGeometryTrait(entity, transform.physicalObject)
+				geometryKinds.set(transform.uuidString, transform.physicalObject.geometryType?.case)
 			} else if (path.startsWith('metadata')) {
 				metadataDirty = true
 			}
@@ -206,58 +221,86 @@
 	let pendingEvents: TransformEvent[] = []
 
 	/**
+	 * Draws one transform from a snapshot of a rebuilt store. An entity an update
+	 * cannot bring in line is respawned. Anything else updates in place, so it keeps
+	 * its identity and stays selected.
+	 */
+	const applySnapshotTransform = (transform: TransformWithUUID) => {
+		const uuid = transform.uuidString
+		const entity = entities.get(uuid)
+
+		if (!entity) {
+			spawnEntity(transform)
+			return
+		}
+
+		// A drawn cloud holds chunks pulled from the old instance, and only a respawn
+		// restarts the loader. An update never renames, and cannot remove geometry.
+		const mustRespawn =
+			isPointCloud(transform.physicalObject?.geometryType) ||
+			geometryKinds.get(uuid) !== transform.physicalObject?.geometryType?.case ||
+			entity.get(traits.Name) !== transform.referenceFrame
+
+		if (!mustRespawn) {
+			updateEntity(transform, SNAPSHOT_FIELDS)
+			return
+		}
+
+		destroyEntity(uuid)
+		removedUUIDs.delete(uuid)
+		spawnEntity(transform)
+	}
+
+	/**
 	 * Brings the scene in line with what the store holds now, each time a stream
 	 * opens. The stream reports only changes made after it opens, so whatever the
 	 * store gained or lost while none was open (a reconnect, a rebuild) shows up
-	 * only in this snapshot.
+	 * only in this snapshot. Stream events wait until it is drawn, then replay on
+	 * top of it in order, so every field ends at its newest value.
 	 *
 	 * Direct calls rather than queries. Nothing reads this result again, so the
 	 * cache buys nothing, and building one query per uuid meant rebuilding every
 	 * observer each time the uuid list changed identity.
+	 *
+	 * @param isRebuild Whether the store was replaced since the last snapshot. A
+	 *   reconnect reaches the same instance, so only the uuids it gained are fetched.
 	 */
-	const syncSnapshot = async (signal: AbortSignal) => {
+	const syncSnapshot = async (signal: AbortSignal, isRebuild: boolean) => {
 		const activeClient = client.current
 		if (!activeClient) return
 
-		// The snapshot below is the truth. Only a removal the new stream reports
-		// while it is in flight should keep a listed uuid out.
-		syncEpoch++
+		// The snapshot below is the truth, and the replayed stream events after it.
+		const epoch = ++syncEpoch
 		removedUUIDs.clear()
-		const touched = new Set<string>()
-		touchedDuringSync = touched
+		isSyncing = true
 
 		try {
 			const uuids = await activeClient.listUUIDs(undefined, { signal })
 			if (signal.aborted) return
 
-			// Settled, not all: one unreadable transform drops itself rather than the
-			// whole snapshot, which is what a query per uuid gave us.
-			const transforms = await Promise.allSettled(
-				uuids.map((uuid) => activeClient.getTransform(uuid, undefined, { signal }))
-			)
-			if (signal.aborted) return
-
-			// Diffed against `uuids`, not the transforms that loaded, so an unreadable
+			// Diffed against `uuids`, not the transforms that load, so an unreadable
 			// transform keeps its entity instead of looking deleted.
 			const snapshotUUIDs = new Set(uuids)
 			for (const uuid of entities.keys()) {
-				if (!snapshotUUIDs.has(uuid) && !touched.has(uuid)) destroyEntity(uuid)
+				if (!snapshotUUIDs.has(uuid)) destroyEntity(uuid)
 			}
 
-			for (const transform of transforms) {
-				if (transform.status !== 'fulfilled' || touched.has(transform.value.uuidString)) continue
+			const toFetch = isRebuild ? uuids : uuids.filter((uuid) => !entities.has(uuid))
 
-				if (entities.has(transform.value.uuidString)) {
-					const isCloud = isPointCloud(transform.value.physicalObject?.geometryType)
-					updateEntity(transform.value, isCloud ? SNAPSHOT_POINT_CLOUD_FIELDS : SNAPSHOT_FIELDS)
-				} else {
-					spawnEntity(transform.value)
-				}
+			// Settled, not all: one unreadable transform drops itself rather than the
+			// whole snapshot, which is what a query per uuid gave us.
+			const transforms = await Promise.allSettled(
+				toFetch.map((uuid) => activeClient.getTransform(uuid, undefined, { signal }))
+			)
+			if (signal.aborted) return
+
+			for (const transform of transforms) {
+				if (transform.status === 'fulfilled') applySnapshotTransform(transform.value)
 			}
 
 			const failed = transforms.filter((transform) => transform.status === 'rejected').length
 			if (failed > 0) {
-				logs.add(`World state store: ${failed} of ${uuids.length} transforms failed`, 'error', {
+				logs.add(`World state store: ${failed} of ${toFetch.length} transforms failed`, 'error', {
 					folder: 'world-state-store',
 				})
 			}
@@ -271,14 +314,16 @@
 			})
 			console.error('World state seed failed:', error)
 		} finally {
-			if (touchedDuringSync === touched) touchedDuringSync = undefined
+			// An aborted snapshot settles after the next one started, which owns the flag by then.
+			if (epoch === syncEpoch) {
+				isSyncing = false
+				if (pendingEvents.length > 0) scheduleFlush()
+			}
 		}
 	}
 
 	const applyEvents = (events: TransformEvent[]) => {
 		for (const event of events) {
-			touchedDuringSync?.add(event.transform.uuidString)
-
 			if (event.changeType === TransformChangeType.ADDED) {
 				removedUUIDs.delete(event.transform.uuidString)
 				spawnEntity(event.transform)
@@ -295,7 +340,7 @@
 	}
 
 	const scheduleFlush = () => {
-		if (flushScheduled) return
+		if (flushScheduled || isSyncing) return
 		flushScheduled = true
 
 		rafId = requestAnimationFrame(() => {
@@ -325,6 +370,8 @@
 				pendingEvents.push(event as TransformEvent)
 				scheduleFlush()
 			}
+
+			if (!signal.aborted) streamClosed = true
 		} catch (error) {
 			if (!signal.aborted) {
 				logs.add('World state store: transform stream failed', 'error', {
@@ -338,15 +385,18 @@
 	$effect(() => {
 		if (!client.current || !generation.canQuery) return
 
-		// Read for the dependency. A rebuilt store closes the old stream, and this reopens one.
-		void storeInstance
+		// A rebuilt store closes the old stream, and this reopens one against the new instance.
+		const isRebuild = rebuilds !== syncedRebuilds
+		syncedRebuilds = rebuilds
+		streamClosed = false
 
 		const controller = new AbortController()
 
 		// The entities survived the disconnect, so any pull that ran out of client
-		// mid-stream still owes its point cloud the rest of its chunks.
-		chunkLoader.resume()
-		void syncSnapshot(controller.signal)
+		// mid-stream still owes its point cloud the rest of its chunks. A rebuild
+		// respawns every cloud instead, since the new instance's chunks may differ.
+		if (!isRebuild) chunkLoader.resume()
+		void syncSnapshot(controller.signal, isRebuild)
 		void consumeChanges(controller.signal)
 
 		return () => {

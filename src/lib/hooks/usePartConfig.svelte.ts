@@ -67,6 +67,8 @@ interface LocalPartConfig {
 	readonly isReady: boolean
 	isDirty: boolean
 	hasEditPermissions: boolean
+	/** See `PartConfigContext.hasConfigSource`. */
+	readonly hasConfigSource: boolean
 	current: Struct
 	/**
 	 * Why the config is unavailable, when it is. Stays undefined while the config
@@ -126,7 +128,6 @@ export const providePartConfig = (
 ) => {
 	const props = $derived(params())
 	const hasAppClient = hasViamAppClient()
-	const hasConfigSource = $derived(props !== undefined || hasAppClient)
 	const config = $derived.by(() => {
 		if (props) return useEmbeddedPartConfig(props)
 		if (hasAppClient) return useStandalonePartConfig(partID)
@@ -464,7 +465,7 @@ export const providePartConfig = (
 			return config.hasEditPermissions
 		},
 		get hasConfigSource() {
-			return hasConfigSource
+			return config.hasConfigSource
 		},
 		get error() {
 			return config.error
@@ -562,6 +563,7 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 	return {
 		isReady: true,
 		hasEditPermissions: true,
+		hasConfigSource: true,
 		get isDirty() {
 			return props.isDirty
 		},
@@ -587,6 +589,7 @@ const useDetachedPartConfig = (): LocalPartConfig => {
 		isReady: true,
 		isDirty: false,
 		hasEditPermissions: false,
+		hasConfigSource: false,
 		current: new Struct(),
 		set: () => {},
 	}
@@ -651,6 +654,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 	const updateRobotPartMutation = createAppMutation('updateRobotPart')
 
 	return {
+		hasConfigSource: true,
 		get isReady() {
 			return (
 				partID() !== '' &&
