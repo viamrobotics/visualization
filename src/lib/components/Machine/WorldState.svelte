@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
+	import { Code, ConnectError } from '@connectrpc/connect'
 	import { useThrelte } from '@threlte/core/webgpu'
 	import {
 		Struct,
@@ -11,10 +12,12 @@
 	} from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
 	import { untrack } from 'svelte'
+	import { Matrix4 } from 'three'
 
 	import { createChunkLoader } from '$lib/chunking'
 	import { drawTransform, updateMetadata } from '$lib/draw'
 	import { hierarchy, traits, useWorld } from '$lib/ecs'
+	import { ChildOf } from '$lib/ecs/relations'
 	import { isPointCloud } from '$lib/geometry'
 	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
 	import { Pose } from '$lib/math'
@@ -53,37 +56,46 @@
 
 	// The last generation the status reported. Empty until the first status arrives.
 	let lastGeneration = ''
-	// Set when the stream ended without being aborted: its instance closed, or the server ended it.
-	let streamClosed = false
-	// Counts confirmed rebuilds. The stream effect reads it, so a rebuild reopens the stream.
+	// Counts rebuilds, confirmed or possible. The stream effect reads it, so each one reopens the stream.
 	let rebuilds = $state(0)
-	// Counts streams that ended cleanly with no rebuild behind them. The stream effect reads it too.
-	let reopens = $state(0)
 	// The `rebuilds` value the last snapshot ran against, to tell a rebuild from a reconnect.
 	let syncedRebuilds = 0
+	// Streams that ended in a row without delivering an event or staying open long, which sets the
+	// next reopen's delay.
+	let reopenAttempts = 0
 
 	// Detects a rebuild as an event, which no derived can express: a change between two
-	// reported generations. A status that drops out and returns to the same value is not one.
+	// reported generations. The first status names the instance already being read, and a
+	// status that drops out and returns to the same value is not a rebuild either.
 	$effect.pre(() => {
 		const current = generation.current
 		if (current === '') return
 
-		// The first status names the instance already being read, unless that instance closed first.
-		const isRebuild = lastGeneration === '' ? streamClosed : current !== lastGeneration
+		const isRebuild = lastGeneration !== '' && current !== lastGeneration
 		lastGeneration = current
-		streamClosed = false
 
 		if (isRebuild) untrack(() => rebuilds++)
 	})
 
-	/** Every field a snapshot transform carries, for re-applying it to an entity already drawn. */
-	const SNAPSHOT_FIELDS = ['poseInObserverFrame', 'physicalObject', 'metadata']
-	/** How long a snapshot request may take. Stream events wait on the snapshot, so one hung request would freeze the scene. */
+	/** How long each snapshot request may take. Stream events wait on the snapshot, so one hung request would freeze the scene. */
 	const SNAPSHOT_TIMEOUT_MS = 10_000
-	/** How long to wait before reopening a stream the server ended, so one that keeps ending cannot spin. */
-	const REOPEN_DELAY_MS = 1000
+	/** How long a stream has to stay open to count as healthy, which resets the reopen backoff. */
+	const STREAM_HEALTHY_MS = 30_000
+	/**
+	 * The first reopen's delay after a stream ends. Longer than svelte-sdk's 1s status poll,
+	 * so a real rebuild's generation change usually reopens the stream first.
+	 */
+	const REOPEN_BASE_DELAY_MS = 2000
+	/** The longest a reopen waits, for a server or proxy that keeps ending streams. */
+	const REOPEN_MAX_DELAY_MS = 30_000
 
 	const entities = new Map<string, Entity>()
+	// The metadata a snapshot last applied to each drawn uuid, serialized, so a snapshot repeating
+	// it changes nothing. Only snapshots fill it: a stream update clears its entry instead, since
+	// serializing on the hot path is too costly for metadata carrying per-point colors.
+	const metadataFingerprints = new Map<string, string>()
+	// Reused for comparing a snapshot pose against the drawn one.
+	const nextMatrix = new Matrix4()
 	// The geometry kind the store sent for each drawn uuid. The traits cannot say: a cloud reads
 	// as a bare frame until its worker parse lands. A changed kind means a respawn.
 	const geometryKinds = new Map<string, string | undefined>()
@@ -109,7 +121,8 @@
 					command: 'get_entity_chunk',
 					uuid,
 					start,
-				})
+				}),
+				{ signal }
 			)
 
 			if (signal.aborted) return null
@@ -139,6 +152,7 @@
 		removedUUIDs.add(uuid)
 		chunkLoader.stop(uuid)
 		geometryKinds.delete(uuid)
+		metadataFingerprints.delete(uuid)
 
 		const entity = entities.get(uuid)
 
@@ -170,7 +184,8 @@
 			})
 			console.error('World state self-heal failed for', uuid, error)
 		} finally {
-			pendingSpawns.delete(uuid)
+			// A snapshot since then cleared the set, and the uuid may belong to a newer fetch now.
+			if (epoch === syncEpoch) pendingSpawns.delete(uuid)
 		}
 	}
 
@@ -180,6 +195,23 @@
 	const snakeToCamel = (path: string): string =>
 		path.replaceAll(/_([a-z])/g, (_, char: string) => char.toUpperCase())
 
+	const metadataFingerprint = (transform: TransformWithUUID) =>
+		JSON.stringify(transform.metadata ?? null)
+
+	/** Moves an entity to a transform's pose, marking it changed only if the pose differs. */
+	const applyPose = (entity: Entity, transform: TransformWithUUID) => {
+		new Pose().copy(transform.poseInObserverFrame?.pose).toMatrix4(nextMatrix)
+		const matrix = entity.get(traits.Matrix)
+		if (!matrix) {
+			entity.add(traits.Matrix(nextMatrix.clone()))
+		} else if (!matrix.equals(nextMatrix)) {
+			matrix.copy(nextMatrix)
+			entity.changed(traits.Matrix)
+		}
+		hierarchy.setParent(entity, transform.poseInObserverFrame?.referenceFrame)
+	}
+
+	/** Applies the fields a stream update names in `changes`. */
 	const updateEntity = (transform: TransformWithUUID, changes: (string | number)[]) => {
 		const entity = entities.get(transform.uuidString)
 
@@ -196,16 +228,7 @@
 			const path = snakeToCamel(rawPath)
 
 			if (path.startsWith('poseInObserverFrame')) {
-				const matrix = entity.get(traits.Matrix)
-				if (matrix) {
-					new Pose().copy(transform.poseInObserverFrame?.pose).toMatrix4(matrix)
-					entity.changed(traits.Matrix)
-				} else {
-					entity.add(
-						traits.Matrix(new Pose().copy(transform.poseInObserverFrame?.pose).toMatrix4())
-					)
-				}
-				hierarchy.setParent(entity, transform.poseInObserverFrame?.referenceFrame)
+				applyPose(entity, transform)
 			} else if (path.startsWith('physicalObject') && transform.physicalObject) {
 				traits.updateGeometryTrait(entity, transform.physicalObject)
 				geometryKinds.set(transform.uuidString, transform.physicalObject.geometryType?.case)
@@ -215,12 +238,38 @@
 		}
 
 		if (metadataDirty) {
+			metadataFingerprints.delete(transform.uuidString)
 			const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
 			updateMetadata(entity, parsedMetadata, {
 				pointCloud: isPointCloud(transform.physicalObject?.geometryType),
 			})
 			relationships.apply(entity, parsedMetadata.relationships)
 		}
+	}
+
+	/**
+	 * Brings a drawn entity in line with a snapshot transform, touching only what
+	 * differs, so a snapshot repeating the scene marks nothing changed. The geometry
+	 * kind and name already match, or `mustRespawn` would have said so.
+	 */
+	const refreshEntity = (entity: Entity, transform: TransformWithUUID) => {
+		applyPose(entity, transform)
+
+		// Compares before writing: primitives by size, meshes by bytes.
+		if (transform.physicalObject) traits.updateGeometryTrait(entity, transform.physicalObject)
+
+		const parsedMetadata = metadataFromStruct(transform.metadata?.fields)
+		const fingerprint = metadataFingerprint(transform)
+		if (metadataFingerprints.get(transform.uuidString) !== fingerprint) {
+			metadataFingerprints.set(transform.uuidString, fingerprint)
+			updateMetadata(entity, parsedMetadata, {
+				pointCloud: isPointCloud(transform.physicalObject?.geometryType),
+			})
+		}
+
+		// Always, since a target respawned in the same snapshot needs its link restored.
+		// Applying links that already exist changes nothing.
+		relationships.apply(entity, parsedMetadata.relationships)
 	}
 
 	let flushScheduled = false
@@ -244,29 +293,44 @@
 	 *
 	 * Respawns are destroyed before anything spawns, and updates run last. A link to
 	 * a respawned target then waits in the relationship registry and lands on the new
-	 * entity, instead of being kept on the old one and dropped with it.
+	 * entity, instead of being kept on the old one and dropped with it. A respawned
+	 * entity's children are re-orphaned by its name, since the hierarchy does not
+	 * reattach the children of a destroyed parent on its own.
 	 */
 	const applySnapshot = (transforms: TransformWithUUID[]) => {
 		const spawns: TransformWithUUID[] = []
-		const updates: TransformWithUUID[] = []
+		const refreshes: Array<{ entity: Entity; transform: TransformWithUUID }> = []
+		const orphanedChildren: Array<{ child: Entity; parentName: string | undefined }> = []
 
 		for (const transform of transforms) {
 			const entity = entities.get(transform.uuidString)
 
 			if (entity && !mustRespawn(entity, transform)) {
-				updates.push(transform)
+				refreshes.push({ entity, transform })
 				continue
 			}
 
 			if (entity) {
+				const parentName = entity.get(traits.Name)
+				for (const child of world.query(ChildOf(entity)))
+					orphanedChildren.push({ child, parentName })
+
 				destroyEntity(transform.uuidString)
 				removedUUIDs.delete(transform.uuidString)
 			}
 			spawns.push(transform)
 		}
 
-		for (const transform of spawns) spawnEntity(transform)
-		for (const transform of updates) updateEntity(transform, SNAPSHOT_FIELDS)
+		for (const transform of spawns) {
+			spawnEntity(transform)
+			metadataFingerprints.set(transform.uuidString, metadataFingerprint(transform))
+		}
+
+		for (const { child, parentName } of orphanedChildren) {
+			if (child.isAlive()) hierarchy.setParent(child, parentName)
+		}
+
+		for (const { entity, transform } of refreshes) refreshEntity(entity, transform)
 	}
 
 	/** Which uuids a snapshot fetches in full. */
@@ -283,7 +347,8 @@
 	 * opens. The stream reports only changes made after it opens, so whatever the
 	 * store gained or lost while none was open (a reconnect, a rebuild) shows up
 	 * only in this snapshot. Stream events wait until it is drawn, then replay on
-	 * top of it in order, so every field ends at its newest value.
+	 * top of it in order, so a later change wins. `updateMetadata` never clears a
+	 * field the store dropped, such as colors, so that one can outlive its removal.
 	 *
 	 * The stream is opened first, but the server gives no sign that it has
 	 * subscribed, so a change landing between the two can still be missed until
@@ -303,12 +368,24 @@
 		// The snapshot below is the truth, and the replayed stream events after it.
 		const epoch = ++syncEpoch
 		removedUUIDs.clear()
+		// Fetches started before this snapshot are discarded on landing, so none of them is pending.
+		pendingSpawns.clear()
 		isSyncing = true
 
-		const signal = AbortSignal.any([streamSignal, AbortSignal.timeout(SNAPSHOT_TIMEOUT_MS)])
+		// Up front, not after the snapshot loads: a snapshot that fails would leave old-instance
+		// pulls writing the new instance's chunks into old buffers, or parked to resume at old offsets.
+		if (isRebuild) {
+			for (const [uuid, kind] of geometryKinds) {
+				if (kind === 'pointcloud') chunkLoader.stop(uuid)
+			}
+		}
+
+		// Per request, so a large store on a slow link is not cut off partway every time.
+		const requestSignal = () =>
+			AbortSignal.any([streamSignal, AbortSignal.timeout(SNAPSHOT_TIMEOUT_MS)])
 
 		try {
-			const uuids = await activeClient.listUUIDs(undefined, { signal })
+			const uuids = await activeClient.listUUIDs(undefined, { signal: requestSignal() })
 			if (streamSignal.aborted) return
 
 			// Diffed against `uuids`, not the transforms that load, so an unreadable
@@ -323,7 +400,9 @@
 			// Settled, not all: one unreadable transform drops itself rather than the
 			// whole snapshot, which is what a query per uuid gave us.
 			const transforms = await Promise.allSettled(
-				toFetch.map((uuid) => activeClient.getTransform(uuid, undefined, { signal }))
+				toFetch.map((uuid) =>
+					activeClient.getTransform(uuid, undefined, { signal: requestSignal() })
+				)
 			)
 			if (streamSignal.aborted) return
 
@@ -332,14 +411,6 @@
 					transform.status === 'fulfilled' ? [transform.value] : []
 				)
 			)
-
-			// A cloud that failed to load keeps chunks pulled from the old instance. Its parked
-			// pull would resume against the new one at the old offset.
-			if (isRebuild) {
-				for (const [index, uuid] of toFetch.entries()) {
-					if (transforms[index]?.status === 'rejected') chunkLoader.stop(uuid)
-				}
-			}
 
 			const failed = transforms.filter((transform) => transform.status === 'rejected').length
 			if (failed > 0) {
@@ -405,30 +476,47 @@
 		const activeClient = client.current
 		if (!activeClient) return
 
+		const openedAt = Date.now()
+		let isUnsupported = false
+
 		try {
 			for await (const event of activeClient.streamTransformChanges(undefined, { signal })) {
 				if (signal.aborted) break
 				if (!event.transform) continue
 
+				reopenAttempts = 0
 				pendingEvents.push(event as TransformEvent)
 				scheduleFlush()
 			}
-
-			if (signal.aborted) return
-
-			// A closed instance shows up as a new generation soon, which reopens the stream
-			// as a rebuild. Until then, or if the server ended it on its own, reopen it here.
-			streamClosed = true
-			const timer = setTimeout(() => reopens++, REOPEN_DELAY_MS)
-			signal.addEventListener('abort', () => clearTimeout(timer))
 		} catch (error) {
 			if (!signal.aborted) {
-				logs.add('World state store: transform stream failed', 'error', {
-					folder: 'world-state-store',
-				})
+				isUnsupported = ConnectError.from(error).code === Code.Unimplemented
+				const message = isUnsupported
+					? 'World state store: this store does not stream changes, so the scene will not update live'
+					: 'World state store: transform stream failed'
+				logs.add(message, 'error', { folder: 'world-state-store' })
 				console.error('World state transform stream error:', error)
 			}
 		}
+
+		if (signal.aborted || isUnsupported) return
+
+		if (Date.now() - openedAt >= STREAM_HEALTHY_MS) reopenAttempts = 0
+		scheduleReopen(signal)
+	}
+
+	/**
+	 * Reopens a stream that ended on its own, cleanly or not, as a rebuild. Its end
+	 * cannot say whether the instance changed, and only the rebuild path is safe if it
+	 * did: it respawns every cloud instead of resuming pulls at the old instance's offsets.
+	 * A generation change or reconnect before the delay aborts `signal`, which cancels this.
+	 */
+	const scheduleReopen = (signal: AbortSignal) => {
+		const delay = Math.min(REOPEN_BASE_DELAY_MS * 2 ** reopenAttempts, REOPEN_MAX_DELAY_MS)
+		reopenAttempts++
+
+		const timer = setTimeout(() => rebuilds++, delay)
+		signal.addEventListener('abort', () => clearTimeout(timer))
 	}
 
 	$effect(() => {
@@ -437,8 +525,6 @@
 		// A rebuilt store closes the old stream, and this reopens one against the new instance.
 		const isRebuild = rebuilds !== syncedRebuilds
 		syncedRebuilds = rebuilds
-		// Read for the dependency. A stream the server ended reopens as a reconnect.
-		void reopens
 
 		const controller = new AbortController()
 

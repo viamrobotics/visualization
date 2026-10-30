@@ -1,10 +1,11 @@
 import type { World } from 'koota'
 
+import { Code, ConnectError } from '@connectrpc/connect'
 import { render } from '@testing-library/svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { SubEntityLink } from '$lib/ecs/relations'
+import { hierarchy, traits } from '$lib/ecs'
+import { ChildOf, SubEntityLink } from '$lib/ecs/relations'
 
 import {
 	BOX,
@@ -160,6 +161,22 @@ describe('WorldState, when the store is rebuilt', () => {
 		expect(isLinked(world, 'frame-a', 'cloud-b')).toBe(true)
 	})
 
+	it('reattaches a child from another source to a cloud it respawns', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedPointCloud('cloud-a', 3)])
+		const world = await mountStore(['cloud-a'])
+		const tool = world.spawn(traits.Name('tool'))
+		hierarchy.setParent(tool, 'cloud-a')
+		await expect.poll(() => tool.targetFor(ChildOf)).toBe(drawnEntity(world, 'cloud-a'))
+		const before = drawnEntity(world, 'cloud-a')
+		store.hold([storedPointCloud('cloud-a', 5)])
+
+		store.rebuild()
+		await expect.poll(() => drawnEntity(world, 'cloud-a')).not.toBe(before)
+
+		await expect.poll(() => tool.targetFor(ChildOf)).toBe(drawnEntity(world, 'cloud-a'))
+	})
+
 	it('renames an entity the new instance holds under a new name', async () => {
 		const store = createFakeWorldStateStore()
 		store.hold([storedTransform('uuid-1', { name: 'frame-a' })])
@@ -214,17 +231,54 @@ describe('WorldState, when the store is rebuilt', () => {
 
 		expect(drawnX(world, 'frame-a')).toBeCloseTo(0.1)
 	})
+})
 
-	it('is detected from a closed stream when it happens before the first machine status', async () => {
-		const store = createFakeWorldStateStore('')
-		store.hold([storedTransform('frame-a'), storedTransform('frame-b')])
-		const world = await mountStore(['frame-a', 'frame-b'])
+describe('WorldState, when its stream ends on its own', () => {
+	const REOPEN_WAIT = { timeout: 4000 }
+
+	it('reopens it and draws what changed meanwhile', async () => {
+		const store = createFakeWorldStateStore()
 		store.hold([storedTransform('frame-a')])
+		const world = await mountStore(['frame-a'])
+		store.hold([storedTransform('frame-a'), storedTransform('frame-b')])
+
 		await store.closeStream()
 
-		store.reportGeneration('1')
+		await expect.poll(() => drawnNames(world), REOPEN_WAIT).toEqual(['frame-a', 'frame-b'])
+	})
 
-		await expect.poll(() => drawnNames(world)).toEqual(['frame-a'])
+	it('stops reopening it when the store does not implement streaming', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedTransform('frame-a')])
+		await mountStore(['frame-a'])
+
+		await store.failStream(new ConnectError('not implemented', Code.Unimplemented))
+		await new Promise((resolve) => setTimeout(resolve, 3000))
+
+		expect(store.snapshotsTaken()).toBe(1)
+	})
+
+	it('reopens it after an error too', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedTransform('frame-a')])
+		const world = await mountStore(['frame-a'])
+		store.hold([storedTransform('frame-a'), storedTransform('frame-b')])
+
+		await store.failStream()
+
+		await expect.poll(() => drawnNames(world), REOPEN_WAIT).toEqual(['frame-a', 'frame-b'])
+	})
+
+	it('reloads a cloud, since no generation has said whether the instance changed', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedPointCloud('cloud-a', 3)])
+		const world = await mountStore(['cloud-a'])
+		await expect.poll(() => drawnPointCount(world, 'cloud-a')).toBe(3)
+		store.hold([storedPointCloud('cloud-a', 5)])
+
+		await store.closeStream()
+
+		await expect.poll(() => drawnPointCount(world, 'cloud-a'), REOPEN_WAIT).toBe(5)
 	})
 })
 
@@ -257,15 +311,19 @@ describe('WorldState, when the store is not rebuilt', () => {
 		await expect.poll(() => drawnX(world, 'frame-a')).toBeCloseTo(0.1)
 	})
 
-	it('reopens a stream the server ended, and draws what changed meanwhile', async () => {
+	it('marks nothing changed when the reconnect snapshot matches the scene', async () => {
 		const store = createFakeWorldStateStore()
-		store.hold([storedTransform('frame-a')])
+		store.hold([storedTransform('frame-a', { xMillimeters: 100 })])
 		const world = await mountStore(['frame-a'])
-		store.hold([storedTransform('frame-a'), storedTransform('frame-b')])
+		const matrixChanges = vi.fn()
+		const unsubscribe = world.onChange(traits.Matrix, matrixChanges)
 
-		await store.closeStream()
+		store.reconnect()
+		await expect.poll(() => store.snapshotsTaken()).toBe(2)
+		await settleSnapshot()
+		unsubscribe()
 
-		await expect.poll(() => drawnNames(world), { timeout: 3000 }).toEqual(['frame-a', 'frame-b'])
+		expect(matrixChanges).not.toHaveBeenCalled()
 	})
 
 	it('lists the store once when the first machine status arrives after mount', async () => {

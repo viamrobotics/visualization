@@ -137,7 +137,11 @@ export const createChunkLoader = ({
 		stop(uuid: string) {
 			active.get(uuid)?.abort()
 			active.delete(uuid)
+
+			// A running pull clears its progress on the way out. A parked one has no way out.
+			const parked = suspended.get(uuid)
 			suspended.delete(uuid)
+			if (parked && world.has(parked.entity)) parked.entity.remove(traits.ChunkProgress)
 		},
 
 		dispose() {

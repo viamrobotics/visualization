@@ -121,7 +121,7 @@ export const createFakeWorldStateStore = (initialGeneration = '1') => {
 	let fetched: string[] = []
 	let transformGate: Promise<void> | undefined
 	let drained = Promise.withResolvers<void>()
-	const closeStreams = new Set<() => void>()
+	const openStreams = new Set<{ close: () => void; fail: (error: Error) => void }>()
 
 	const createClient = () => ({
 		listUUIDs: async () => {
@@ -154,9 +154,9 @@ export const createFakeWorldStateStore = (initialGeneration = '1') => {
 			yield* events
 			// The consumer asks for the next event only after taking the last one.
 			drained.resolve()
-			await new Promise<void>((resolve) => {
+			await new Promise<void>((resolve, reject) => {
 				signal.addEventListener('abort', () => resolve())
-				closeStreams.add(resolve)
+				openStreams.add({ close: resolve, fail: reject })
 			})
 		},
 	})
@@ -176,9 +176,11 @@ export const createFakeWorldStateStore = (initialGeneration = '1') => {
 	})
 
 	const closeOpenStreams = () => {
-		for (const close of closeStreams) close()
-		closeStreams.clear()
+		for (const { close } of openStreams) close()
+		openStreams.clear()
 	}
+
+	const letStreamEndLand = () => new Promise((resolve) => setTimeout(resolve))
 
 	return {
 		/** Sets what the store holds, and what the next stream it opens reports. */
@@ -193,10 +195,16 @@ export const createFakeWorldStateStore = (initialGeneration = '1') => {
 			generation = String(Number(generation || '1') + 1)
 			flushSync()
 		},
-		/** Closes the open stream the way a closed instance does, and lets the scene see it end. */
+		/** Ends the open stream cleanly, as a closed instance or the server can, with no new status. */
 		closeStream: async () => {
 			closeOpenStreams()
-			await new Promise((resolve) => setTimeout(resolve))
+			await letStreamEndLand()
+		},
+		/** Ends the open stream with `error`, as a server can when its instance closes. */
+		failStream: async (error = new Error('resource closed')) => {
+			for (const { fail } of openStreams) fail(error)
+			openStreams.clear()
+			await letStreamEndLand()
 		},
 		/** Sets what the machine status reports, as it would on its own poll. */
 		reportGeneration: (value: string) => {
