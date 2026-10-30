@@ -1,7 +1,7 @@
 import type { JsonValue } from '@viamrobotics/sdk'
 
 import { Struct } from '@viamrobotics/sdk'
-import { createAppMutation, createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
+import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { StateHistory } from 'runed'
 import { getContext, setContext, untrack } from 'svelte'
 
@@ -13,6 +13,7 @@ import {
 } from '$lib/editing/frameHistory'
 import { createFrame, type Frame } from '$lib/frame'
 import { frameModOperations, replaceFrameMods } from '$lib/frameFragmentMods'
+import { hasViamAppClient } from '$lib/hooks/hasViamAppClient'
 import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import { Pose } from '$lib/math'
 import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
@@ -124,9 +125,7 @@ export const providePartConfig = (
 	params: () => AppEmbeddedPartConfigProps | undefined
 ) => {
 	const props = $derived(params())
-	// Absent when the host mounts no ViamAppProvider. A context cannot appear
-	// later, so reading it once at setup is enough.
-	const hasAppClient = useViamClient() !== undefined
+	const hasAppClient = hasViamAppClient()
 	const hasConfigSource = $derived(props !== undefined || hasAppClient)
 	const config = $derived.by(() => {
 		if (props) return useEmbeddedPartConfig(props)

@@ -8,6 +8,7 @@ import { traits } from '$lib/ecs'
 import {
 	createFakeWorldStateStore,
 	removal,
+	storedPointCloud,
 	storedTransform,
 } from './__fixtures__/fakeWorldStateStore.svelte'
 import WorldStateHost from './__fixtures__/WorldStateHost.svelte'
@@ -23,11 +24,14 @@ const drawnNames = (world: World) =>
 		.map((entity) => entity.get(traits.Name))
 		.toSorted()
 
+const drawnEntity = (world: World, name: string) =>
+	world.query(traits.WorldStateStoreAPI).find((entity) => entity.get(traits.Name) === name)
+
 const drawnX = (world: World, name: string) =>
-	world
-		.query(traits.WorldStateStoreAPI)
-		.find((entity) => entity.get(traits.Name) === name)
-		?.get(traits.Matrix)?.elements[12]
+	drawnEntity(world, name)?.get(traits.Matrix)?.elements[12]
+
+const drawnPointCount = (world: World, name: string) =>
+	drawnEntity(world, name)?.get(traits.BufferGeometry)?.getAttribute('position')?.count
 
 const mountStore = async (expectedNames: string[]) => {
 	let world: World | undefined
@@ -68,5 +72,32 @@ describe('WorldState', () => {
 		store.rebuild()
 
 		await expect.poll(() => drawnX(world, 'frame-a')).toBeCloseTo(0.1)
+	})
+
+	it('keeps a drawn point cloud whole when the rebuilt store sends only its first chunk', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedPointCloud('cloud-a', 3)])
+		const world = await mountStore(['cloud-a'])
+		await expect.poll(() => drawnPointCount(world, 'cloud-a')).toBe(3)
+		store.hold([storedPointCloud('cloud-a', 1), storedPointCloud('cloud-b', 1)])
+
+		store.rebuild()
+
+		await expect
+			.poll(() => drawnPointCount(world, 'cloud-b'), {
+				message: 'cloud-b parses after any re-parse of cloud-a, since one worker answers in order',
+			})
+			.toBe(1)
+		expect(drawnPointCount(world, 'cloud-a')).toBe(3)
+	})
+
+	it('lists the store once when the first machine status arrives after mount', async () => {
+		const store = createFakeWorldStateStore('')
+		store.hold([storedTransform('frame-a')])
+		await mountStore(['frame-a'])
+
+		store.reportFirstStatus()
+
+		expect(store.snapshotsTaken()).toBe(1)
 	})
 })

@@ -50,8 +50,23 @@
 		() => name
 	)
 
-	/** Every transform the store holds, as its full set of changed field paths. */
-	const ALL_TRANSFORM_FIELDS = ['poseInObserverFrame', 'physicalObject', 'metadata']
+	let initialGeneration = ''
+
+	/**
+	 * The store instance the stream follows. `generation` is empty until the first
+	 * machine status arrives, and that first value names the instance already being
+	 * read, so only a later change counts as a rebuild.
+	 */
+	const storeInstance = $derived.by(() => {
+		if (initialGeneration === '') initialGeneration = generation.current
+		return generation.current === initialGeneration ? '' : generation.current
+	})
+
+	/** Every field a snapshot transform carries, for re-applying it to an entity already drawn. */
+	const SNAPSHOT_FIELDS = ['poseInObserverFrame', 'physicalObject', 'metadata']
+	// A drawn cloud holds every chunk the loader pulled, but a snapshot carries only the
+	// first. Re-applying its geometry or colors would cut the cloud back to that chunk.
+	const SNAPSHOT_POINT_CLOUD_FIELDS = ['poseInObserverFrame']
 
 	const entities = new Map<string, Entity>()
 	// UUIDs the stream has removed; guards against an in-flight snapshot or a
@@ -59,6 +74,10 @@
 	const removedUUIDs = new Set<string>()
 	// UUIDs with an in-flight self-heal `getTransform`, to dedupe concurrent fetches.
 	const pendingSpawns = new Set<string>()
+	// Bumped per snapshot, so a self-heal fetch begun before one cannot respawn what it settled.
+	let syncEpoch = 0
+	// UUIDs the stream changed while a snapshot was in flight. The stream is newer, so the snapshot skips them.
+	let touchedDuringSync: Set<string> | undefined
 
 	const chunkLoader = createChunkLoader({
 		world,
@@ -117,9 +136,10 @@
 		if (entities.has(uuid) || removedUUIDs.has(uuid) || pendingSpawns.has(uuid)) return
 
 		pendingSpawns.add(uuid)
+		const epoch = syncEpoch
 		try {
 			const transform = await client.current?.getTransform(uuid)
-			if (transform && !removedUUIDs.has(uuid)) {
+			if (transform && epoch === syncEpoch && !removedUUIDs.has(uuid)) {
 				spawnEntity(transform)
 				invalidate()
 			}
@@ -201,7 +221,10 @@
 
 		// The snapshot below is the truth. Only a removal the new stream reports
 		// while it is in flight should keep a listed uuid out.
+		syncEpoch++
 		removedUUIDs.clear()
+		const touched = new Set<string>()
+		touchedDuringSync = touched
 
 		try {
 			const uuids = await activeClient.listUUIDs(undefined, { signal })
@@ -218,14 +241,15 @@
 			// transform keeps its entity instead of looking deleted.
 			const snapshotUUIDs = new Set(uuids)
 			for (const uuid of entities.keys()) {
-				if (!snapshotUUIDs.has(uuid)) destroyEntity(uuid)
+				if (!snapshotUUIDs.has(uuid) && !touched.has(uuid)) destroyEntity(uuid)
 			}
 
 			for (const transform of transforms) {
-				if (transform.status !== 'fulfilled') continue
+				if (transform.status !== 'fulfilled' || touched.has(transform.value.uuidString)) continue
 
 				if (entities.has(transform.value.uuidString)) {
-					updateEntity(transform.value, ALL_TRANSFORM_FIELDS)
+					const isCloud = isPointCloud(transform.value.physicalObject?.geometryType)
+					updateEntity(transform.value, isCloud ? SNAPSHOT_POINT_CLOUD_FIELDS : SNAPSHOT_FIELDS)
 				} else {
 					spawnEntity(transform.value)
 				}
@@ -246,11 +270,15 @@
 				folder: 'world-state-store',
 			})
 			console.error('World state seed failed:', error)
+		} finally {
+			if (touchedDuringSync === touched) touchedDuringSync = undefined
 		}
 	}
 
 	const applyEvents = (events: TransformEvent[]) => {
 		for (const event of events) {
+			touchedDuringSync?.add(event.transform.uuidString)
+
 			if (event.changeType === TransformChangeType.ADDED) {
 				removedUUIDs.delete(event.transform.uuidString)
 				spawnEntity(event.transform)
@@ -311,7 +339,7 @@
 		if (!client.current || !generation.canQuery) return
 
 		// Read for the dependency. A rebuilt store closes the old stream, and this reopens one.
-		void generation.current
+		void storeInstance
 
 		const controller = new AbortController()
 
@@ -323,6 +351,12 @@
 
 		return () => {
 			controller.abort()
+
+			// What the old stream buffered describes the instance being left. The next snapshot covers it.
+			if (rafId) cancelAnimationFrame(rafId)
+			rafId = 0
+			flushScheduled = false
+			pendingEvents = []
 		}
 	})
 

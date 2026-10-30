@@ -1,7 +1,7 @@
 import type { JsonObject } from '@bufbuild/protobuf'
 
 import { Struct } from '@viamrobotics/sdk'
-import { createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
+import { createAppQuery } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 import type { FragmentMods } from '$lib/fragmentComponents'
@@ -9,6 +9,7 @@ import type { Frame } from '$lib/frame'
 import type { FragmentConfig, FragmentImport } from '$lib/resolveFragmentImport'
 
 import { resolveFragmentComponents, withModdedFragmentComponents } from '$lib/fragmentComponents'
+import { hasViamAppClient } from '$lib/hooks/hasViamAppClient'
 import { importsOf } from '$lib/resolveFragmentImport'
 
 /**
@@ -88,7 +89,7 @@ export const provideFragmentInfo = (
 ) => {
 	const embedded = $derived(embeddedMap())
 	// With no ViamAppProvider there is nothing to ask, so no component reports a fragment.
-	const hasAppClient = useViamClient() !== undefined
+	const hasAppClient = hasViamAppClient()
 	const standalone = $derived(
 		embedded || !hasAppClient ? undefined : useStandaloneFragmentInfo(partID)
 	)
