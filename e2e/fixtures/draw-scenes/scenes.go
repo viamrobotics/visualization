@@ -52,5 +52,4 @@ var scenes = map[string]scene{
 
 	"relationships/setup":  relationshipsSetup,
 	"relationships/create": relationshipsCreate,
-	"relationships/delete": relationshipsDelete,
 }

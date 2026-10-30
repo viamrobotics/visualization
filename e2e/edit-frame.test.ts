@@ -258,9 +258,12 @@ withRobot('create and delete frame', async ({ browser }) => {
 	page.getByText('Delete frame', { exact: true }).click()
 
 	await expectHasEdits(page)
+	await expect(page.getByText('Delete frame', { exact: true })).toBeHidden()
+
 	await page.getByText('Discard', { exact: true }).click()
 	await expectNoEdits(page)
-	expect(await readSavedFrame('base-1')).toMatchObject({ parent: 'world' })
+	await treeView.getByText('base-1', { exact: true }).first().click()
+	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
 })
 
 const fragmentConfig = {

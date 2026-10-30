@@ -3,6 +3,7 @@ import { Points } from '../src/lib/buf/draw/v1/drawing_pb'
 import { type DrawScene, type DrawSceneAsync, expect, type Page, test } from './fixtures/drawing'
 import { readCameraPose } from './helpers/cameraPose'
 import { screenshotCanvas, waitForCanvasToSettle } from './helpers/screenshot'
+import { readEntityState, readSceneNames } from './matrix/entityState'
 
 // The draw server outlives each page and replays every entity to a reconnecting
 // client. A test that dies before its reset would otherwise strand entities into
@@ -40,13 +41,23 @@ test('draw service events lifecycle', async ({ page, drawScene, resetScene }) =>
 
 	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
 	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
-	await screenshotCanvas(page, 'DRAW_SERVICE_EVENTS_ADDED')
+	await expect
+		.poll(() => readEntityState(page, 'lifecycle-box'))
+		.toMatchObject({ center: { x: 0, y: 0, z: 300 }, color: { r: 1, g: 0, b: 0 } })
+	await expect
+		.poll(() => readEntityState(page, 'lifecycle-line'))
+		.toMatchObject({ color: { r: 1, g: 1, b: 0 } })
 
+	// The same IDs again at a new height and color, so both entities update in place.
 	drawScene('lifecycle/update')
 
-	await expect(page.getByText('lifecycle-box')).toBeVisible({ timeout: 10000 })
-	await expect(page.getByText('lifecycle-line')).toBeVisible({ timeout: 10000 })
-	await screenshotCanvas(page, 'DRAW_SERVICE_EVENTS_UPDATED')
+	await expect
+		.poll(() => readEntityState(page, 'lifecycle-box'))
+		.toMatchObject({ center: { x: 0, y: 0, z: 600 }, color: { r: 0, g: 0.501961, b: 0 } })
+	await expect
+		.poll(() => readEntityState(page, 'lifecycle-line'))
+		.toMatchObject({ color: { r: 0, g: 1, b: 1 } })
+	expect(await readSceneNames(page)).toEqual(['lifecycle-box', 'lifecycle-line'])
 
 	drawScene('lifecycle/remove-all')
 
@@ -323,49 +334,69 @@ test('replay', async ({ page, drawScene, resetScene }) => {
 interface RedrawRun {
 	page: Page
 	drawScene: DrawScene
-	snapshotAndReset: (testPrefix: string) => Promise<void>
+	resetScene: () => Promise<void>
 }
 
-const runRedrawLoop = async (
-	{ page, drawScene, snapshotAndReset }: RedrawRun,
-	testPrefix: string,
-	sceneName: string
-) => {
+const REDRAW_GRID_COLUMNS = 6
+const REDRAW_GRID_SPACING_MM = 150
+
+// red, orange, yellow, green, blue, magenta as SVG keywords, over 255.
+const REDRAW_PALETTE = [
+	{ r: 1, g: 0, b: 0 },
+	{ r: 1, g: 0.647059, b: 0 },
+	{ r: 1, g: 1, b: 0 },
+	{ r: 0, g: 0.501961, b: 0 },
+	{ r: 0, g: 0, b: 1 },
+	{ r: 1, g: 0, b: 1 },
+]
+
+const REDRAW_GRID = Array.from({ length: 24 }, (_, index) => ({
+	name: `redraw-box-${String(index).padStart(2, '0')}`,
+	color: REDRAW_PALETTE[index % REDRAW_GRID_COLUMNS],
+	center: {
+		x: (index % REDRAW_GRID_COLUMNS) * REDRAW_GRID_SPACING_MM,
+		y: Math.floor(index / REDRAW_GRID_COLUMNS) * REDRAW_GRID_SPACING_MM,
+		z: 0,
+	},
+}))
+
+const readRedrawGrid = (page: Page) =>
+	Promise.all(
+		REDRAW_GRID.map(async ({ name }) => {
+			const { color, center } = await readEntityState(page, name)
+			return { name, color, center }
+		})
+	)
+
+const runRedrawLoop = async ({ page, drawScene, resetScene }: RedrawRun, sceneName: string) => {
 	drawScene(sceneName)
 
 	await expect(page.getByText('redraw-box-00', { exact: true })).toBeVisible({ timeout: 10000 })
 
-	// The tree is virtualized, so counting rows proves nothing. The canvas is the
-	// assertion: the boxes are a 6x4 grid in a fixed palette, so a lost change reads
-	// as a hole and a misapplied one as a wrong-colored cell.
-	await waitForCanvasToSettle(page)
-	await snapshotAndReset(testPrefix)
+	// The tree is virtualized, so its rows prove nothing. A lost change leaves a name missing from
+	// the scene, a doubled one repeats it, and a misapplied one puts the wrong color in a cell.
+	await expect.poll(() => readSceneNames(page)).toEqual(REDRAW_GRID.map(({ name }) => name))
+	await expect.poll(() => readRedrawGrid(page)).toEqual(REDRAW_GRID)
+
+	await resetScene()
 }
 
 /**
  * The reported failure: a producer clearing the scene and redrawing it every tick.
  *
- * Both tests below draw the identical grid and must produce the identical image. The first clears
+ * Both tests below draw the identical grid and must produce the identical scene. The first clears
  * before each redraw, the second does not, and the point is that the visualizer converges to the
  * same scene either way. Before this fix the clearing variant lost entities: a removal and the
  * re-add that followed it could land in the same animation frame, where the re-add was discarded.
  */
-test('redraw loop clearing and redrawing', async ({ page, drawScene, snapshotAndReset }) => {
-	await runRedrawLoop(
-		{ page, drawScene, snapshotAndReset },
-		'REDRAW_LOOP_WITH_CLEAR',
-		'redraw-loop/with-clear'
-	)
+test('redraw loop clearing and redrawing', async ({ page, drawScene, resetScene }) => {
+	await runRedrawLoop({ page, drawScene, resetScene }, 'redraw-loop/with-clear')
 })
 
 // The pattern we recommend instead: identities are deterministic, so redrawing upserts in place
 // and the service never publishes a removal at all.
-test('redraw loop without clearing', async ({ page, drawScene, snapshotAndReset }) => {
-	await runRedrawLoop(
-		{ page, drawScene, snapshotAndReset },
-		'REDRAW_LOOP_NO_CLEAR',
-		'redraw-loop/without-clear'
-	)
+test('redraw loop without clearing', async ({ page, drawScene, resetScene }) => {
+	await runRedrawLoop({ page, drawScene, resetScene }, 'redraw-loop/without-clear')
 })
 
 /**

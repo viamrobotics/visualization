@@ -40,11 +40,6 @@ jobs:
       - name: Build Go binaries
         run: pnpm go-build
 
-      # The /snapshot/reconcile route fetches these from static/. They are
-      # gitignored and only the Go generator writes them.
-      - name: Generate reconcile fixtures
-        run: go test ./draw -run 'TestGeneratingSnapshots/snapshot_reconcile' -count=1
-
       # VITE_CONFIGS is a build-time define. Left unset it only warns, but an
       # empty object is what `pnpm dev` passes, and matching it keeps the app
       # from dialing a machine if a config ever reaches this runner.
