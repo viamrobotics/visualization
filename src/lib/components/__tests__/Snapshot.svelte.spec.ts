@@ -9,7 +9,7 @@ vi.mock('$lib/hooks/useControls.svelte', () => ({
 	useCameraControls: vi.fn(() => ({ setPose: vi.fn(), setZoom: vi.fn() })),
 }))
 
-import { Transform, Vector3 } from '$lib/buf/common/v1/common_pb'
+import { Pose, PoseInFrame, Transform, Vector3 } from '$lib/buf/common/v1/common_pb'
 import { Drawing, Line, Shape } from '$lib/buf/draw/v1/drawing_pb'
 import { Metadata, Relationship } from '$lib/buf/draw/v1/metadata_pb'
 import { SceneCamera, SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
@@ -25,12 +25,23 @@ const SCENE_ONE = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 const SCENE_TWO = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
 const ENTITY_UUID = '11111111-1111-1111-1111-111111111111'
 const LINK_SOURCE_UUID = '22222222-2222-2222-2222-222222222222'
+const SPHERE_UUID = '33333333-3333-3333-3333-333333333333'
+const ADDED_UUID = '44444444-4444-4444-4444-444444444444'
 
-const boxTransform = () =>
-	new Transform({ referenceFrame: 'box', uuid: uuidStringToBytes(ENTITY_UUID) })
+const transformAt = (name: string, uuid: string, zMm: number) =>
+	new Transform({
+		referenceFrame: name,
+		uuid: uuidStringToBytes(uuid),
+		poseInObserverFrame: new PoseInFrame({
+			referenceFrame: 'world',
+			pose: new Pose({ z: zMm, oZ: 1 }),
+		}),
+	})
 
-const snapshotOfOneTransform = (sceneUuid: string) =>
-	new SnapshotProto({ uuid: uuidStringToBytes(sceneUuid), transforms: [boxTransform()] })
+const boxAt = (zMm: number) => transformAt('box', ENTITY_UUID, zMm)
+
+const snapshotOf = (sceneUuid: string, transforms: Transform[]) =>
+	new SnapshotProto({ uuid: uuidStringToBytes(sceneUuid), transforms })
 
 const lineHoverLinkedToBox = () =>
 	new Drawing({
@@ -67,19 +78,44 @@ describe('Snapshot', () => {
 		})
 
 	it('updates an entity in place when the next load carries the same snapshot uuid', async () => {
-		const { rerender } = mountSnapshot(snapshotOfOneTransform(SCENE_ONE))
+		const { rerender } = mountSnapshot(snapshotOf(SCENE_ONE, [boxAt(0)]))
 		const first = entityWithUuid(world, ENTITY_UUID)
 
-		await rerender({ snapshot: snapshotOfOneTransform(SCENE_ONE) })
+		await rerender({ snapshot: snapshotOf(SCENE_ONE, [boxAt(500)]) })
 
 		expect(entityWithUuid(world, ENTITY_UUID)).toBe(first)
+		expect(first!.get(traits.Matrix)!.elements[14]).toBeCloseTo(0.5)
+	})
+
+	it('removes an entity the next same-uuid load omits, and keeps the rest', async () => {
+		const sphere = transformAt('sphere', SPHERE_UUID, 0)
+		const { rerender } = mountSnapshot(snapshotOf(SCENE_ONE, [boxAt(0), sphere]))
+		const box = entityWithUuid(world, ENTITY_UUID)
+		const removed = entityWithUuid(world, SPHERE_UUID)
+
+		await rerender({ snapshot: snapshotOf(SCENE_ONE, [boxAt(0)]) })
+
+		expect(removed && world.has(removed)).toBe(false)
+		expect(entityWithUuid(world, ENTITY_UUID)).toBe(box)
+	})
+
+	it('adds an entity the next same-uuid load introduces, and keeps the rest', async () => {
+		const { rerender } = mountSnapshot(snapshotOf(SCENE_ONE, [boxAt(0)]))
+		const box = entityWithUuid(world, ENTITY_UUID)
+
+		await rerender({
+			snapshot: snapshotOf(SCENE_ONE, [boxAt(0), transformAt('added', ADDED_UUID, 0)]),
+		})
+
+		expect(entityWithUuid(world, ADDED_UUID)?.get(traits.Name)).toBe('added')
+		expect(entityWithUuid(world, ENTITY_UUID)).toBe(box)
 	})
 
 	it('replaces every entity when the snapshot uuid changes, even where entity UUIDs repeat', async () => {
-		const { rerender } = mountSnapshot(snapshotOfOneTransform(SCENE_ONE))
+		const { rerender } = mountSnapshot(snapshotOf(SCENE_ONE, [boxAt(0)]))
 		const first = entityWithUuid(world, ENTITY_UUID)
 
-		await rerender({ snapshot: snapshotOfOneTransform(SCENE_TWO) })
+		await rerender({ snapshot: snapshotOf(SCENE_TWO, [boxAt(0)]) })
 
 		expect(first && world.has(first)).toBe(false)
 		expect(world.query(traits.UUID).map((entity) => entity.get(traits.UUID))).toEqual([ENTITY_UUID])
@@ -89,7 +125,7 @@ describe('Snapshot', () => {
 		mountSnapshot(
 			new SnapshotProto({
 				uuid: uuidStringToBytes(SCENE_ONE),
-				transforms: [boxTransform()],
+				transforms: [boxAt(0)],
 				drawings: [lineHoverLinkedToBox()],
 			})
 		)
