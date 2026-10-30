@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import goldenFile from '../../../../tools/rdk-golden/math/testdata/orientation_json_golden.json'
 import { quatFromJson, type RawOrientation } from '../orientationJson'
-
-interface GoldenQuaternion {
-	w: number
-	x: number
-	y: number
-	z: number
-}
+import { expectSameRotation, type GoldenQuaternion } from './__fixtures__/expectSameRotation'
 
 interface GoldenCase {
 	name: string
@@ -19,20 +13,6 @@ interface GoldenCase {
 
 const goldenCases = goldenFile.cases as GoldenCase[]
 const goldenByName = new Map(goldenCases.map((goldenCase) => [goldenCase.name, goldenCase]))
-
-/** `quatCompare` in RDK's own spatialmath/quat_test.go holds two quaternions equal to 1e-8. */
-const QUATERNION_PLACES = 8
-
-/** `q` and `-q` are the same rotation, so the expected quaternion is compared in whichever sign sits nearer `actual`. */
-export const expectSameRotation = (actual: Quaternion, expected: GoldenQuaternion) => {
-	const q = new Quaternion(expected.x, expected.y, expected.z, expected.w)
-	const sign = actual.dot(q) < 0 ? -1 : 1
-
-	expect(actual.x).toBeCloseTo(sign * q.x, QUATERNION_PLACES)
-	expect(actual.y).toBeCloseTo(sign * q.y, QUATERNION_PLACES)
-	expect(actual.z).toBeCloseTo(sign * q.z, QUATERNION_PLACES)
-	expect(actual.w).toBeCloseTo(sign * q.w, QUATERNION_PLACES)
-}
 
 const readQuaternion = (orientation: RawOrientation) => {
 	const out = new Quaternion()

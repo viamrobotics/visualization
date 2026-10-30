@@ -26,7 +26,6 @@ var scenes = map[string]scene{
 	"lifecycle/update":     lifecycleUpdate,
 	"lifecycle/remove-all": lifecycleRemoveAll,
 
-	"hierarchy/draw":    hierarchyDraw,
 	"frames/draw":       framesDraw,
 	"frame-system/draw": frameSystemDraw,
 	"geometries/draw":   geometriesDraw,

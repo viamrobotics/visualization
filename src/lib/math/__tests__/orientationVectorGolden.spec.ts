@@ -3,14 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import goldenFile from '../../../../tools/rdk-golden/math/testdata/orientation_vector_golden.json'
 import { OrientationVector } from '../OrientationVector'
-import { expectSameRotation } from './orientationJsonGolden.spec'
-
-interface GoldenQuaternion {
-	w: number
-	x: number
-	y: number
-	z: number
-}
+import { expectSameRotation, type GoldenQuaternion } from './__fixtures__/expectSameRotation'
 
 interface GoldenVector {
 	th: number

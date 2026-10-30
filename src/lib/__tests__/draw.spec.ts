@@ -657,7 +657,7 @@ describe('drawDrawing with metadata relationships', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('stores relationships in metadata for drawings', () => {
+	it('returns the relationships carried in the drawing metadata', () => {
 		world = createWorld()
 		const targetUuid = fakeUuidBytes(10)
 		const drawing = new Drawing({
@@ -674,9 +674,9 @@ describe('drawDrawing with metadata relationships', () => {
 			}),
 		})
 
-		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const { relationships } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: undefined }])
 	})
 })
 
@@ -725,9 +725,9 @@ describe('drawTransform with struct relationships', () => {
 			},
 		})
 
-		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
+		const { relationships } = drawTransform(world, transform, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: 'index * 2' }])
 	})
 })
 
