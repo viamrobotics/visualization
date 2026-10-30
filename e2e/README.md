@@ -35,7 +35,7 @@ having it: the e2e drives the public API through a script, not through a test ha
 .bin/draw-scenes -list
 
 # draw one against a running visualizer
-.bin/draw-scenes -port 3030 hierarchy/draw
+.bin/draw-scenes -port 3030 frames/draw
 ```
 
 It replaced `go test -run` invocations, which cost about 1.9s each in package loading and

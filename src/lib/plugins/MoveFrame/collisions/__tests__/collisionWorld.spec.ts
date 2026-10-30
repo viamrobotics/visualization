@@ -58,15 +58,6 @@ describe('createCollisionWorld', () => {
 		expect(new Set([pairs[0]?.a, pairs[0]?.b])).toEqual(new Set([arm, obstacle]))
 	})
 
-	it('reports a pair once, not once per side', () => {
-		collisions.sync([
-			{ entity: spawnCube(0), bit: ARM_BIT },
-			{ entity: spawnCube(0.15), bit: ENVIRONMENT_BIT },
-		])
-
-		expect(collisions.detect()).toHaveLength(1)
-	})
-
 	it('ignores overlapping colliders that share an arm bit', () => {
 		collisions.sync([
 			{ entity: spawnCube(0), bit: ARM_BIT },

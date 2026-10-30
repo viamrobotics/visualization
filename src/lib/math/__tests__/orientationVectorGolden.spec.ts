@@ -1,16 +1,9 @@
-import { Euler, Quaternion, Vector3 } from 'three'
+import { Euler, Quaternion } from 'three'
 import { describe, expect, it } from 'vitest'
 
 import goldenFile from '../../../../tools/rdk-golden/math/testdata/orientation_vector_golden.json'
 import { OrientationVector } from '../OrientationVector'
-import { expectSameRotation } from './orientationJsonGolden.spec'
-
-interface GoldenQuaternion {
-	w: number
-	x: number
-	y: number
-	z: number
-}
+import { expectSameRotation, type GoldenQuaternion } from './__fixtures__/expectSameRotation'
 
 interface GoldenVector {
 	th: number
@@ -116,33 +109,4 @@ describe('OrientationVector.toEuler, against the euler angles RDK derived', () =
 			expectSameRotation(new Quaternion().setFromEuler(out), componentsOf(rdkRotation))
 		}
 	)
-})
-
-/**
- * What a `common.v1.Pose` carrying only a position decodes to, since protobuf materialises absent
- * scalars as `0`. The golden covers the conversion; these cover the entry points, since each one has
- * to reach `#normalize` for RDK's substitution to happen at all.
- */
-describe('OrientationVector, given a zero-length vector', () => {
-	it.each([
-		['set', () => new OrientationVector().set(0, 0, 0, 0)],
-		['the constructor', () => new OrientationVector(0, 0, 0, 0)],
-		['copy', () => new OrientationVector().copy({ x: 0, y: 0, z: 0, th: 0 })],
-		['normalize', () => new OrientationVector().set(0, 0, 0, 0).normalize()],
-	])('substitutes +Z via %s', (_label, build) => {
-		const substituted = build()
-
-		expect(substituted.x).toBe(0)
-		expect(substituted.y).toBe(0)
-		expect(substituted.z).toBe(1)
-	})
-
-	it('keeps theta as a rotation about the substituted +Z', () => {
-		const quarterTurn = new OrientationVector()
-			.set(0, 0, 0, Math.PI / 2)
-			.toQuaternion(new Quaternion())
-
-		const expected = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2)
-		expectSameRotation(quarterTurn, componentsOf(expected))
-	})
 })

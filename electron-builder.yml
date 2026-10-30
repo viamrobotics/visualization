@@ -25,7 +25,6 @@ files:
   # Gitignored local files that static/ copies into build/. CI never has them, so excluding them
   # keeps a local package the same as a release one. The video alone is 2.8 GB.
   - '!build/Big_Buck_Bunny_4K.webm'
-  - '!build/test-fixtures/**'
 extraMetadata:
   main: dist-electron/main.mjs
 

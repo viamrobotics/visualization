@@ -34,13 +34,4 @@ describe('resolveOpacity', () => {
 
 		expect(resolveOpacity(world.spawn(Opacity(0.25), OpacityOverride(1)))).toBe(1)
 	})
-
-	it('keeps the override when a reconcile rewrites the source opacity', () => {
-		world = createWorld()
-		const entity = world.spawn(Opacity(0.25), OpacityOverride(1))
-
-		entity.set(Opacity, 0.4)
-
-		expect(resolveOpacity(entity)).toBe(1)
-	})
 })

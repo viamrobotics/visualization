@@ -67,13 +67,3 @@ func relationshipsCreate(sceneEnv) error {
 	}
 	return nil
 }
-
-func relationshipsDelete(sceneEnv) error {
-	if err := api.DeleteRelationship(api.DeleteRelationshipOptions{
-		SourceUUID: entityUUIDFromID(relationshipSourceID),
-		TargetUUID: entityUUIDFromID(relationshipTargetID),
-	}); err != nil {
-		return fmt.Errorf("deleting the relationship: %w", err)
-	}
-	return nil
-}
