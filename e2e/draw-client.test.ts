@@ -33,6 +33,9 @@ const runChunkedTest = async (
 
 	await expect(page.getByRole('progressbar')).toHaveCount(0, { timeout: 120_000 })
 
+	// The progress bar clears when the last chunk arrives, which can be before 2.5M points
+	// finish uploading. Screenshotting then captures a partly drawn cloud.
+	await waitForCanvasToSettle(page, { timeoutMs: 30_000 })
 	await snapshotAndReset(testPrefix)
 }
 
