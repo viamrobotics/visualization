@@ -5,7 +5,6 @@ import path from 'node:path'
 import url from 'node:url'
 
 import { connectViamClient, getE2EConfig, withRobot } from './fixtures/with-robot'
-import { waitForCanvasToChange, waitForCanvasToSettle } from './helpers/screenshot'
 import { type ExpectedEntityState, readEntityState } from './matrix/entityState'
 
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
@@ -35,28 +34,17 @@ const runGoTest = (testPath: string) => {
 const expectEntityState = (page: Page, name: string, expected: ExpectedEntityState) =>
 	expect.poll(() => readEntityState(page, name), { timeout: 10_000 }).toMatchObject(expected)
 
+/** Clicks a tree row and waits for that entity to be the one selected and shown in the details panel. */
+const selectInTree = async (page: Page, name: string) => {
+	await page.getByText(name, { exact: true }).click()
+	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
+	await expectEntityState(page, name, { selected: true })
+}
+
 /** The third column of a local matrix: where the entity's z axis points in its parent frame. */
 const readLocalZAxis = async (page: Page, name: string) => {
 	const { localMatrix } = await readEntityState(page, name)
 	return localMatrix?.slice(8, 11)
-}
-
-/**
- * Runs a Go step and waits for what it changed to finish rendering.
- *
- * The canvas has to change before it is allowed to settle, because the scene
- * before the step is settled too and would pass for the result.
- *
- * @throws if the step leaves the canvas unchanged.
- */
-const applyAndSettle = async (page: Page, testPath: string) => {
-	const before = await waitForCanvasToSettle(page)
-	runGoTest(testPath)
-	const changed = await waitForCanvasToChange(page, before)
-	if (changed === null) {
-		throw new Error(`${testPath} never changed the canvas.`)
-	}
-	await waitForCanvasToSettle(page)
 }
 
 const getWorldStateConfig = () => {
@@ -112,25 +100,12 @@ withRobot('world state store geometry rendering', async ({ robotPage }) => {
 
 	await robotPage.screenshotCanvas('WORLD-STATE-0-transforms-loaded')
 
-	await page.getByText('test-box', { exact: true }).click()
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await robotPage.screenshotCanvas('WORLD-STATE-1-box-selected')
-
-	await page.getByText('test-sphere', { exact: true }).click()
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await robotPage.screenshotCanvas('WORLD-STATE-2-sphere-selected')
-
-	await page.getByText('test-capsule', { exact: true }).click()
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await robotPage.screenshotCanvas('WORLD-STATE-3-capsule-selected')
-
-	await page.getByText('test-pointcloud', { exact: true }).click()
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await robotPage.screenshotCanvas('WORLD-STATE-4-pointcloud-selected')
-
-	await page.getByText('test-mesh', { exact: true }).click()
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await robotPage.screenshotCanvas('WORLD-STATE-5-mesh-selected')
+	await selectInTree(page, 'test-box')
+	await selectInTree(page, 'test-sphere')
+	await expectEntityState(page, 'test-box', { selected: false })
+	await selectInTree(page, 'test-capsule')
+	await selectInTree(page, 'test-pointcloud')
+	await selectInTree(page, 'test-mesh')
 })
 
 withRobot('world state store transform update', async ({ robotPage }) => {
@@ -198,10 +173,18 @@ withRobot('world state store point cloud update', async ({ robotPage }) => {
 		timeout: 10000,
 	})
 
-	await robotPage.screenshotCanvas('WORLD-STATE-POINTCLOUD-UPDATE-0-initial')
+	// One 10x10 grid in turquoise, rgb(72, 209, 204) over 255.
+	await expectEntityState(page, 'updating-pointcloud', {
+		pointCount: 100,
+		color: { r: 0.282353, g: 0.819608, b: 0.8 },
+	})
 
-	await applyAndSettle(page, '^TestPointCloudUpdate$/UpdatePointCloud')
-	await robotPage.screenshotCanvas('WORLD-STATE-POINTCLOUD-UPDATE-1-updated')
+	// A second grid stacked on the first, and the whole cloud recolored magenta.
+	runGoTest('^TestPointCloudUpdate$/UpdatePointCloud')
+	await expectEntityState(page, 'updating-pointcloud', {
+		pointCount: 200,
+		color: { r: 1, g: 0, b: 1 },
+	})
 
 	// Cleanup removes the entity AND resets the camera.
 	runGoTest('^TestPointCloudUpdate$/Cleanup')
