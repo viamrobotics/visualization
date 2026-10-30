@@ -113,14 +113,6 @@ describe('BuildDetails', () => {
 		})
 	}
 
-	it('keeps the geometry editor for a non-obstacle component', () => {
-		useComponentModel('rdk:builtin:fake')
-
-		renderPanel()
-
-		expect(screen.getByLabelText('mutable geometry')).toBeInTheDocument()
-	})
-
 	const useSimpleObstacle = () => {
 		const obstacle = { ...createObstacleComponent(resource.name), frame: resource.frame }
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(

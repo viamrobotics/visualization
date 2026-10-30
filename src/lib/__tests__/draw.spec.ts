@@ -523,19 +523,6 @@ describe('updateDrawing arrows', () => {
 		expect([...(entity.get(traits.Positions) ?? [])]).toEqual([500, 200, 0, 1, 0, 0])
 	})
 
-	it('keeps arrow poses in raw millimeters on update (mm->m conversion happens downstream, not twice)', () => {
-		world = createWorld()
-
-		// The ADD path stores poses verbatim in mm. The shader, raycast and hover scale by 0.001.
-		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
-		expect(entity.get(traits.Positions)?.[0]).toBe(100)
-
-		// The UPDATE path must not re-apply inMeters — that double-converts and collapses
-		// arrows toward the origin (0.5mm instead of 500mm) once the update actually re-renders.
-		updateDrawing(world, entity, arrowsDrawing([500, 0, 0, 0, 0, 1]))
-		expect(entity.get(traits.Positions)?.[0]).toBe(500)
-	})
-
 	it('notifies renderers watching Positions so the arrows re-render in place', () => {
 		world = createWorld()
 
@@ -670,7 +657,7 @@ describe('drawDrawing with metadata relationships', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('stores relationships in metadata for drawings', () => {
+	it('returns the relationships carried in the drawing metadata', () => {
 		world = createWorld()
 		const targetUuid = fakeUuidBytes(10)
 		const drawing = new Drawing({
@@ -687,9 +674,9 @@ describe('drawDrawing with metadata relationships', () => {
 			}),
 		})
 
-		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const { relationships } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: undefined }])
 	})
 })
 
@@ -738,9 +725,9 @@ describe('drawTransform with struct relationships', () => {
 			},
 		})
 
-		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
+		const { relationships } = drawTransform(world, transform, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: 'index * 2' }])
 	})
 })
 

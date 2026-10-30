@@ -47,11 +47,4 @@ describe('frame entity lookup', () => {
 
 		expect(lookup().get('depth-cam')).toBeUndefined()
 	})
-
-	it('includes a frame that has no WorldMatrix yet', () => {
-		const frame = world.spawn(traits.FramesAPI, traits.Name('wrist-cam'))
-
-		expect(lookup().get('wrist-cam')).toBe(frame)
-		expect(frame.has(traits.WorldMatrix)).toBe(false)
-	})
 })

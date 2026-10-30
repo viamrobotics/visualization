@@ -40,11 +40,28 @@ const expectHasEdits = (page: Page) =>
 const expectNoEdits = (page: Page) =>
 	expect(page.getByLabel('Save')).toHaveAttribute('aria-disabled', 'true')
 
+// Tweakpane formats what it displays, so compare against values read back from the
+// same inputs rather than against typed literals.
+const readInputValues = (page: Page, groupLabel: string) =>
+	page
+		.getByLabel(groupLabel)
+		.locator('input')
+		.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value))
+
 const fragmentIdsToDelete: string[] = []
 
 let viamClient: ViamClient
 let orgViamClient: ViamClient
 let config: E2ETestConfig
+
+/** The frame the cloud holds for a component, which is what Save is supposed to have written. */
+const readSavedFrame = async (componentName: string) => {
+	const { configJson } = await viamClient.appClient.getRobotPart(config.partId)
+	const saved = JSON.parse(configJson) as {
+		components?: { name: string; frame?: Record<string, unknown> }[]
+	}
+	return saved.components?.find((component) => component.name === componentName)?.frame
+}
 
 withRobot.beforeAll(async () => {
 	config = getE2EConfig()
@@ -92,7 +109,6 @@ withRobot.beforeAll(async () => {
 })
 
 withRobot('basic edit frame', async ({ robotPage }) => {
-	const testPrefix = 'BASIC_EDIT_FRAME'
 	await applyMachineConfig(viamClient, config.partId, config.machineName, basicEditFrameConfig)
 	const { page } = robotPage
 
@@ -122,11 +138,16 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	await fillFrameInputs(page, 'mutable geometry', ['400', '500', '600'])
 
 	await expectHasEdits(page)
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-0-edited.png`, { fullPage: true })
+	const editedPosition = await readInputValues(page, 'mutable local position')
 
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, { fullPage: true })
+	await expect
+		.poll(() => readSavedFrame('base-1'))
+		.toMatchObject({
+			translation: { x: 100, y: 200, z: 300 },
+			geometry: { type: 'box', x: 400, y: 500, z: 600 },
+		})
 
 	page.on('console', (message) => {
 		console.log(`[${message.type()}] ${message.text()}`)
@@ -140,19 +161,20 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	await expect(page.getByText('base-1', { exact: true })).toBeVisible()
 	await page.getByText('base-1', { exact: true }).click()
 	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-2-reloaded.png`, { fullPage: true })
 
 	// Reload reset the workspace toggle to Monitor, so re-enter Build first.
 	await enterBuildMode(page)
-	await expect(page.getByLabel('mutable parent frame')).toBeAttached()
-	await page.getByLabel('mutable parent frame').locator('select').selectOption('parent')
+	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
 
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-3-parented.png`, { fullPage: true })
+	const parentSelect = page.getByLabel('mutable parent frame').locator('select')
+	await expect(parentSelect).toBeAttached()
+	await parentSelect.selectOption('parent')
+	await expect(parentSelect).toHaveValue('parent')
 
 	await expectHasEdits(page)
 	await page.getByText('Discard', { exact: true }).click()
 	await expectNoEdits(page)
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-4-discarded.png`, { fullPage: true })
+	await expect(parentSelect).toHaveValue('world')
 
 	await expect(page.getByText('None', { exact: true }).first()).toBeVisible()
 	await page.getByText('None', { exact: true }).first().click()
@@ -163,7 +185,9 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	await expectHasEdits(page)
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-5-restored.png`, { fullPage: true })
+	await expect
+		.poll(() => readSavedFrame('base-1'))
+		.toMatchObject({ parent: 'world', translation: { x: 0, y: 0, z: 0 } })
 })
 
 const createDeleteFrameConfig = {
@@ -192,7 +216,6 @@ const createDeleteFrameConfig = {
 }
 
 withRobot('create and delete frame', async ({ browser }) => {
-	const testPrefix = 'CREATE_DELETE'
 	await applyMachineConfig(viamClient, config.partId, config.machineName, createDeleteFrameConfig)
 	const context = await browser.newContext()
 	const page = await context.newPage()
@@ -221,11 +244,12 @@ withRobot('create and delete frame', async ({ browser }) => {
 	await expect(page.getByRole('button', { name: 'Add frame', exact: true })).toBeVisible()
 	page.getByRole('button', { name: 'Add frame', exact: true }).click()
 
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-0-added.png`, { fullPage: true })
-
 	await expectHasEdits(page)
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
+	await expect
+		.poll(() => readSavedFrame('no-frame'))
+		.toMatchObject({ parent: 'world', translation: { x: 0, y: 0, z: 0 } })
 
 	const treeView = page.getByLabel('Tree View')
 	await expect(treeView.getByText('base-1', { exact: true })).toBeVisible()
@@ -233,12 +257,13 @@ withRobot('create and delete frame', async ({ browser }) => {
 	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
 	page.getByText('Delete frame', { exact: true }).click()
 
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-1-deleted.png`, { fullPage: true })
-
 	await expectHasEdits(page)
+	await expect(page.getByText('Delete frame', { exact: true })).toBeHidden()
+
 	await page.getByText('Discard', { exact: true }).click()
 	await expectNoEdits(page)
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-2-discarded.png`, { fullPage: true })
+	await treeView.getByText('base-1', { exact: true }).first().click()
+	await expect(page.getByText('Delete frame', { exact: true })).toBeVisible()
 })
 
 const fragmentConfig = {
@@ -301,7 +326,6 @@ const fragmentUsingConfig = (fragmentId: string) => {
 }
 
 withRobot('fragment edit frame', async ({ browser }) => {
-	const testPrefix = 'FRAGMENT_EDIT_FRAME'
 	const resp = await orgViamClient.appClient.createFragment(
 		config.orgId,
 		'TEMP_FRAGMENT',
@@ -339,12 +363,13 @@ withRobot('fragment edit frame', async ({ browser }) => {
 
 	await expect(page.getByText('frag-base-1', { exact: true })).toBeVisible({ timeout: 15_000 })
 
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-0-setup.png`, { fullPage: true })
+	const openFragmentFrame = async () => {
+		await enterBuildMode(page)
+		await page.getByText('frag-base-1', { exact: true }).click()
+		await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
+	}
 
-	await enterBuildMode(page)
-	await page.getByText('frag-base-1', { exact: true }).click()
-
-	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
+	await openFragmentFrame()
 
 	await expect(page.getByText('Sphere', { exact: true })).toBeVisible()
 	await page.getByText('Sphere', { exact: true }).click()
@@ -356,10 +381,21 @@ withRobot('fragment edit frame', async ({ browser }) => {
 	await fillFrameInputs(page, 'mutable geometry', ['400'])
 
 	await expectHasEdits(page)
+	const editedPosition = await readInputValues(page, 'mutable local position')
+	const editedGeometry = await readInputValues(page, 'mutable geometry')
+
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
 
-	await expect.soft(page).toHaveScreenshot(`${testPrefix}-1-saved.png`, { fullPage: true })
+	// Fragment edits save as fragment_mods, so the reloaded frame proves the mods resolve back
+	// to the edited values rather than only that something was written.
+	await page.reload({ waitUntil: 'domcontentloaded' })
+	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
+		timeout: 15_000,
+	})
+	await openFragmentFrame()
+	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
+	await expect.poll(() => readInputValues(page, 'mutable geometry')).toEqual(editedGeometry)
 })
 
 withRobot.afterAll(async () => {

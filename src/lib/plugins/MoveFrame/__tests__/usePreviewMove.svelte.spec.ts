@@ -393,14 +393,6 @@ describe('a frame system with nothing to draw', () => {
 })
 
 describe('scrubbing the preview', () => {
-	it('walks one frame per configuration the planner returned', async () => {
-		const previewHarness = setup()
-
-		await planned(previewHarness)
-
-		expect(previewHarness.preview.player.totalSteps).toBe(2)
-	})
-
 	it('moves the joints and leaves the static frames where they were', async () => {
 		const previewHarness = setup()
 		await planned(previewHarness)

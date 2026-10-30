@@ -7,6 +7,10 @@ import {
 	getE2EConfig,
 	withRobot,
 } from './fixtures/with-robot'
+import { readEntityState } from './matrix/entityState'
+
+/** The last link in the UR5e chain, so every joint the move turns carries it. */
+const END_EFFECTOR = 'arm-1:ee_link'
 
 const armConfig = {
 	components: [
@@ -55,7 +59,6 @@ withRobot.beforeAll(async () => {
 
 withRobot('arm', async ({ robotPage }) => {
 	const { page } = robotPage
-	const testPrefix = 'ARM'
 
 	await page
 		.locator('[data-part="branch-control"]')
@@ -73,7 +76,10 @@ withRobot('arm', async ({ robotPage }) => {
 
 	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
 
-	await robotPage.screenshotCanvas(`${testPrefix}-0-loaded`)
+	await expect
+		.poll(() => readEntityState(page, END_EFFECTOR))
+		.toMatchObject({ worldPosition: expect.any(Array) })
+	const { worldPosition: loadedPosition } = await readEntityState(page, END_EFFECTOR)
 
 	const { host, apiKeyId, apiKey } = getE2EConfig()
 	execSync('go run e2e/fixtures/go-scripts/main.go moveArmJointPositions', {
@@ -86,7 +92,10 @@ withRobot('arm', async ({ robotPage }) => {
 		},
 	})
 
-	await robotPage.screenshotCanvas(`${testPrefix}-1-moved`)
+	// The pose streams in from the live arm, so the end effector moving is the proof it arrived.
+	await expect
+		.poll(() => readEntityState(page, END_EFFECTOR), { timeout: 15_000 })
+		.not.toMatchObject({ worldPosition: loadedPosition })
 })
 
 withRobot.afterAll(async () => {

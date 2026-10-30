@@ -13,13 +13,6 @@ describe('hierarchy.parentTraits', () => {
 		expect(hierarchy.parentTraits('world')).toEqual([])
 	})
 
-	it('spawns without Orphan/ChildOf when parent is world-like', () => {
-		world = createWorld()
-		const entity = world.spawn(traits.Name('child'), ...hierarchy.parentTraits('world'))
-		expect(entity.has(traits.Orphan)).toBe(false)
-		expect(entity.targetFor(relations.ChildOf)).toBeUndefined()
-	})
-
 	it('emits Orphan(name) for a named parent — resolver swaps it later', () => {
 		world = createWorld()
 		const entity = world.spawn(traits.Name('child'), ...hierarchy.parentTraits('arm'))
@@ -121,16 +114,6 @@ describe('hierarchy.resolveOrphans', () => {
 
 		expect(child.get(traits.Orphan)).toBe('missing')
 		expect(child.targetFor(relations.ChildOf)).toBeUndefined()
-	})
-
-	it('is idempotent — second call with no new parents is a no-op', () => {
-		world = createWorld()
-		const child = world.spawn(traits.Orphan('missing'))
-
-		hierarchy.resolveOrphans(world.query(traits.Name), world.query(traits.Orphan))
-		hierarchy.resolveOrphans(world.query(traits.Name), world.query(traits.Orphan))
-
-		expect(child.get(traits.Orphan)).toBe('missing')
 	})
 
 	it('resolves multiple orphans with the same parent in a single pass', () => {

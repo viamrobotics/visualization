@@ -45,11 +45,6 @@ jobs:
       - name: Build Go binaries
         run: pnpm go-build
 
-      # The /snapshot/reconcile route fetches these from static/. They are
-      # gitignored and only the Go generator writes them.
-      - name: Generate reconcile fixtures
-        run: go test ./draw -run 'TestGeneratingSnapshots/snapshot_reconcile' -count=1
-
       - name: Build the app
         run: pnpm vite-build
         env:

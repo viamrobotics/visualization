@@ -45,7 +45,6 @@ export interface RobotTestPage {
 	page: Page
 	config: E2ETestConfig
 	viamClient: ViamClient
-	takeScreenshot: (testPrefix: string) => Promise<void>
 	screenshotCanvas: (testPrefix: string) => Promise<void>
 }
 
@@ -201,16 +200,12 @@ export const withRobot = base.extend<{ robotPage: RobotTestPage }>({
 
 		const client = await connectViamClient()
 
-		const takeScreenshot = (testPrefix: string) =>
-			expect.soft(page).toHaveScreenshot(`${testPrefix}.png`, { fullPage: true })
-
 		const takeCanvasScreenshot = (testPrefix: string) => screenshotCanvas(page, testPrefix)
 
 		await use({
 			page,
 			config,
 			viamClient: client,
-			takeScreenshot,
 			screenshotCanvas: takeCanvasScreenshot,
 		})
 
