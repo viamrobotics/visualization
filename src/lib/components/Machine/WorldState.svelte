@@ -9,7 +9,7 @@
 		type TransformWithUUID,
 		WorldStateStoreClient,
 	} from '@viamrobotics/sdk'
-	import { createResourceClient } from '@viamrobotics/svelte-sdk'
+	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
 
 	import { createChunkLoader } from '$lib/chunking'
 	import { drawTransform, updateMetadata } from '$lib/draw'
@@ -44,8 +44,17 @@
 		() => name
 	)
 
+	// Changes when the store is rebuilt under the same name, which leaves `client.current` as it was.
+	const generation = useResourceGeneration(
+		() => partID,
+		() => name
+	)
+
+	/** Every transform the store holds, as its full set of changed field paths. */
+	const ALL_TRANSFORM_FIELDS = ['poseInObserverFrame', 'physicalObject', 'metadata']
+
 	const entities = new Map<string, Entity>()
-	// UUIDs the stream has removed; guards against a stale initial snapshot or a
+	// UUIDs the stream has removed; guards against an in-flight snapshot or a
 	// self-heal fetch re-creating an entity the server has already deleted.
 	const removedUUIDs = new Set<string>()
 	// UUIDs with an in-flight self-heal `getTransform`, to dedupe concurrent fetches.
@@ -172,22 +181,27 @@
 		}
 	}
 
-	let seeded = false
 	let flushScheduled = false
 	let rafId = 0
 	let pendingEvents: TransformEvent[] = []
 
 	/**
-	 * Draws what the store already holds, once, so the scene is populated before
-	 * the stream starts reporting changes.
+	 * Brings the scene in line with what the store holds now, each time a stream
+	 * opens. The stream reports only changes made after it opens, so whatever the
+	 * store gained or lost while none was open (a reconnect, a rebuild) shows up
+	 * only in this snapshot.
 	 *
 	 * Direct calls rather than queries. Nothing reads this result again, so the
 	 * cache buys nothing, and building one query per uuid meant rebuilding every
 	 * observer each time the uuid list changed identity.
 	 */
-	const seedEntities = async (signal: AbortSignal) => {
+	const syncSnapshot = async (signal: AbortSignal) => {
 		const activeClient = client.current
-		if (!activeClient || seeded) return
+		if (!activeClient) return
+
+		// The snapshot below is the truth. Only a removal the new stream reports
+		// while it is in flight should keep a listed uuid out.
+		removedUUIDs.clear()
 
 		try {
 			const uuids = await activeClient.listUUIDs(undefined, { signal })
@@ -200,13 +214,22 @@
 			)
 			if (signal.aborted) return
 
-			for (const transform of transforms) {
-				if (transform.status === 'fulfilled') spawnEntity(transform.value)
+			// Diffed against `uuids`, not the transforms that loaded, so an unreadable
+			// transform keeps its entity instead of looking deleted.
+			const snapshotUUIDs = new Set(uuids)
+			for (const uuid of entities.keys()) {
+				if (!snapshotUUIDs.has(uuid)) destroyEntity(uuid)
 			}
 
-			// Set last, so a throw above leaves the snapshot undrawn and the next
-			// connection tries again instead of skipping the seed forever.
-			seeded = true
+			for (const transform of transforms) {
+				if (transform.status !== 'fulfilled') continue
+
+				if (entities.has(transform.value.uuidString)) {
+					updateEntity(transform.value, ALL_TRANSFORM_FIELDS)
+				} else {
+					spawnEntity(transform.value)
+				}
+			}
 
 			const failed = transforms.filter((transform) => transform.status === 'rejected').length
 			if (failed > 0) {
@@ -285,14 +308,17 @@
 	}
 
 	$effect(() => {
-		if (!client.current) return
+		if (!client.current || !generation.canQuery) return
+
+		// Read for the dependency. A rebuilt store closes the old stream, and this reopens one.
+		void generation.current
 
 		const controller = new AbortController()
 
 		// The entities survived the disconnect, so any pull that ran out of client
 		// mid-stream still owes its point cloud the rest of its chunks.
 		chunkLoader.resume()
-		void seedEntities(controller.signal)
+		void syncSnapshot(controller.signal)
 		void consumeChanges(controller.signal)
 
 		return () => {

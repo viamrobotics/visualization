@@ -1,7 +1,7 @@
 import type { JsonValue } from '@viamrobotics/sdk'
 
 import { Struct } from '@viamrobotics/sdk'
-import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
+import { createAppMutation, createAppQuery, useViamClient } from '@viamrobotics/svelte-sdk'
 import { StateHistory } from 'runed'
 import { getContext, setContext, untrack } from 'svelte'
 
@@ -85,6 +85,12 @@ export interface PartConfigContext {
 	readonly isReady: boolean
 	isDirty: boolean
 	hasEditPermissions: boolean
+	/**
+	 * Whether anything can load and save this part's config: the host's
+	 * `localConfigProps`, or the app client. False when the Visualizer is embedded
+	 * with only a machine connection, where config editing has nowhere to go.
+	 */
+	readonly hasConfigSource: boolean
 	/** Why the config is unavailable — see `LocalPartConfig.error`. */
 	error?: string
 
@@ -118,7 +124,15 @@ export const providePartConfig = (
 	params: () => AppEmbeddedPartConfigProps | undefined
 ) => {
 	const props = $derived(params())
-	const config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
+	// Absent when the host mounts no ViamAppProvider. A context cannot appear
+	// later, so reading it once at setup is enough.
+	const hasAppClient = useViamClient() !== undefined
+	const hasConfigSource = $derived(props !== undefined || hasAppClient)
+	const config = $derived.by(() => {
+		if (props) return useEmbeddedPartConfig(props)
+		if (hasAppClient) return useStandalonePartConfig(partID)
+		return useDetachedPartConfig()
+	})
 	const fragmentInfo = useFragmentInfo()
 	const world = useWorld()
 
@@ -450,6 +464,9 @@ export const providePartConfig = (
 		get hasEditPermissions() {
 			return config.hasEditPermissions
 		},
+		get hasConfigSource() {
+			return hasConfigSource
+		},
 		get error() {
 			return config.error
 		},
@@ -558,6 +575,21 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 			const struct = Struct.fromJson(config as unknown as JsonValue)
 			return props.setLocalPartConfig(struct)
 		},
+	}
+}
+
+/**
+ * The config of a Visualizer embedded with only a machine connection. Nothing can
+ * load or save the part's stored config, so it reads as empty and never editable.
+ * The scene still draws from the machine's frame system.
+ */
+const useDetachedPartConfig = (): LocalPartConfig => {
+	return {
+		isReady: true,
+		isDirty: false,
+		hasEditPermissions: false,
+		current: new Struct(),
+		set: () => {},
 	}
 }
 
