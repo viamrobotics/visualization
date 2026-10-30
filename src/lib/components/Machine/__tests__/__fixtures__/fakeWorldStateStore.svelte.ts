@@ -8,27 +8,45 @@ import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelt
 import { flushSync } from 'svelte'
 import { vi } from 'vitest'
 
+import { uuidStringToBytes } from '$lib/draw'
+import { SubEntityLinkType } from '$lib/ecs/relations'
+
 interface StoredTransformOptions {
 	/** Defaults to the uuid. */
 	name?: string
 	xMillimeters?: number
 	/** A `physicalObject.geometryType`. Omit for a pose-only frame. */
 	geometryType?: unknown
+	/** A uuid this transform holds a relationship to. Both must be real uuids. */
+	linkTo?: string
 }
+
+const UUID_PATTERN = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
+
+const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
 
 /** A transform under `uuid`, `xMillimeters` along x from the world origin. */
 export const storedTransform = (
 	uuid: string,
-	{ name = uuid, xMillimeters = 0, geometryType }: StoredTransformOptions = {}
+	{ name = uuid, xMillimeters = 0, geometryType, linkTo }: StoredTransformOptions = {}
 ) =>
 	({
 		uuidString: uuid,
+		// Only a real uuid gets bytes, which is what gives its entity a `UUID` trait.
+		...(UUID_PATTERN.test(uuid) && { uuid: uuidStringToBytes(uuid) }),
 		referenceFrame: name,
 		poseInObserverFrame: {
 			referenceFrame: 'world',
 			pose: { x: xMillimeters, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 },
 		},
 		...(geometryType !== undefined && { physicalObject: { geometryType } }),
+		...(linkTo !== undefined && {
+			metadata: Struct.fromJson({
+				relationships: [
+					{ target_uuid: toBase64(uuidStringToBytes(linkTo)), type: SubEntityLinkType.HoverLink },
+				],
+			}),
+		}),
 	}) as unknown as TransformWithUUID
 
 export const BOX = { case: 'box', value: { dimsMm: { x: 10, y: 10, z: 10 } } }
@@ -52,8 +70,9 @@ const asciiPcd = (points: number) => {
 }
 
 /** A point cloud under `uuid` whose inline PCD holds `points` points. */
-export const storedPointCloud = (uuid: string, points: number) =>
+export const storedPointCloud = (uuid: string, points: number, name = uuid) =>
 	storedTransform(uuid, {
+		name,
 		geometryType: { case: 'pointcloud', value: { pointCloud: asciiPcd(points) } },
 	})
 
@@ -68,10 +87,8 @@ export const storedChunkedCloud = (uuid: string, firstChunkPoints: number, total
 	}),
 })
 
-const base64Positions = (points: number) => {
-	const bytes = new Uint8Array(new Float32Array(points * 3).buffer)
-	return btoa(String.fromCharCode(...bytes))
-}
+const base64Positions = (points: number) =>
+	toBase64(new Uint8Array(new Float32Array(points * 3).buffer))
 
 /** A change event that removes the transform `uuid`. */
 export const removal = (uuid: string) =>

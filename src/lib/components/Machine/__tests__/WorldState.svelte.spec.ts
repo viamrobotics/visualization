@@ -1,9 +1,10 @@
 import type { World } from 'koota'
 
 import { render } from '@testing-library/svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { traits } from '$lib/ecs'
+import { SubEntityLink } from '$lib/ecs/relations'
 
 import {
 	BOX,
@@ -37,15 +38,38 @@ const drawnX = (world: World, name: string) =>
 const drawnPointCount = (world: World, name: string) =>
 	drawnEntity(world, name)?.get(traits.BufferGeometry)?.getAttribute('position')?.count
 
+const isLinked = (world: World, from: string, to: string) => {
+	const target = drawnEntity(world, to)
+	return target !== undefined && (drawnEntity(world, from)?.has(SubEntityLink(target)) ?? false)
+}
+
+const FRAME_UUID = '00000000-0000-4000-8000-00000000000a'
+const CLOUD_UUID = '00000000-0000-4000-8000-00000000000b'
+
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
 
 const settleSnapshot = () => new Promise((resolve) => setTimeout(resolve))
 
+const mounted: Array<{ world: World; unmount: () => void }> = []
+
+/**
+ * Koota hands out 16 world ids and then throws `Too many worlds created`, and unmounting the
+ * host does not release one. The host unmounts first, so its teardown runs against a live world.
+ */
+afterEach(() => {
+	for (const { world, unmount } of mounted.splice(0)) {
+		unmount()
+		world.destroy()
+	}
+})
+
 const mountStore = async (expectedNames: string[]) => {
 	let world: World | undefined
-	render(WorldStateHost, { onReady: (ready: World) => (world = ready) })
+	const { unmount } = render(WorldStateHost, { onReady: (ready: World) => (world = ready) })
+	if (!world) throw new Error('WorldStateHost never called onReady')
+	mounted.push({ world, unmount })
 	await expect.poll(() => drawnNames(world!)).toEqual(expectedNames)
-	return world!
+	return world
 }
 
 describe('WorldState, when the store is rebuilt', () => {
@@ -119,6 +143,23 @@ describe('WorldState, when the store is rebuilt', () => {
 		await expect.poll(() => drawnPointCount(world, 'cloud-a')).toBe(6)
 	})
 
+	it('keeps a link to a cloud it respawns', async () => {
+		const store = createFakeWorldStateStore()
+		const holdings = () => [
+			storedTransform(FRAME_UUID, { name: 'frame-a', linkTo: CLOUD_UUID }),
+			storedPointCloud(CLOUD_UUID, 3, 'cloud-b'),
+		]
+		store.hold(holdings())
+		const world = await mountStore(['cloud-b', 'frame-a'])
+		await expect.poll(() => isLinked(world, 'frame-a', 'cloud-b')).toBe(true)
+		store.hold(holdings())
+
+		store.rebuild()
+		await settleSnapshot()
+
+		expect(isLinked(world, 'frame-a', 'cloud-b')).toBe(true)
+	})
+
 	it('renames an entity the new instance holds under a new name', async () => {
 		const store = createFakeWorldStateStore()
 		store.hold([storedTransform('uuid-1', { name: 'frame-a' })])
@@ -188,7 +229,7 @@ describe('WorldState, when the store is rebuilt', () => {
 })
 
 describe('WorldState, when the store is not rebuilt', () => {
-	it('fetches only the transforms it has not drawn on a reconnect', async () => {
+	it('fetches every transform but its drawn clouds on a reconnect', async () => {
 		const store = createFakeWorldStateStore()
 		store.hold([storedPointCloud('cloud-a', 3), storedTransform('frame-b')])
 		const world = await mountStore(['cloud-a', 'frame-b'])
@@ -202,7 +243,29 @@ describe('WorldState, when the store is not rebuilt', () => {
 		store.reconnect()
 		await expect.poll(() => drawnNames(world)).toEqual(['cloud-a', 'frame-b', 'frame-c'])
 
-		expect(store.fetchedUUIDs()).toEqual(['frame-c'])
+		expect(store.fetchedUUIDs()).toEqual(['frame-b', 'frame-c'])
+	})
+
+	it('moves a frame that moved while the connection was down', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedTransform('frame-a')])
+		const world = await mountStore(['frame-a'])
+		store.hold([storedTransform('frame-a', { xMillimeters: 100 })])
+
+		store.reconnect()
+
+		await expect.poll(() => drawnX(world, 'frame-a')).toBeCloseTo(0.1)
+	})
+
+	it('reopens a stream the server ended, and draws what changed meanwhile', async () => {
+		const store = createFakeWorldStateStore()
+		store.hold([storedTransform('frame-a')])
+		const world = await mountStore(['frame-a'])
+		store.hold([storedTransform('frame-a'), storedTransform('frame-b')])
+
+		await store.closeStream()
+
+		await expect.poll(() => drawnNames(world), { timeout: 3000 }).toEqual(['frame-a', 'frame-b'])
 	})
 
 	it('lists the store once when the first machine status arrives after mount', async () => {
