@@ -17,8 +17,17 @@ describe('canSelfUpdate', () => {
 		expect(canSelfUpdate({ env, isPackaged: true, platform: 'linux' })).toBe(true)
 	})
 
-	it('skips a Linux .deb install', () => {
+	it('updates a Linux .deb install', () => {
+		expect(
+			canSelfUpdate({ env: {}, isPackaged: true, packageType: 'deb', platform: 'linux' })
+		).toBe(true)
+	})
+
+	it('skips a Linux install that is neither an AppImage nor a .deb', () => {
 		expect(canSelfUpdate({ env: {}, isPackaged: true, platform: 'linux' })).toBe(false)
+		expect(
+			canSelfUpdate({ env: {}, isPackaged: true, packageType: 'rpm', platform: 'linux' })
+		).toBe(false)
 	})
 
 	it('skips macOS, which needs a Developer ID signature to update', () => {
