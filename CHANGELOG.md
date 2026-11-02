@@ -1,5 +1,16 @@
 # visualization
 
+## 3.1.0
+
+### Minor Changes
+
+- 2f15445: The Visualizer no longer requires a `ViamAppProvider`.
+
+### Patch Changes
+
+- 2f15445: World state store entities stay in sync after the store is reconfigured or the connection drops.
+- 2f15445: Peer `@viamrobotics/svelte-sdk` is now `>=1.4.0`.
+
 ## 3.0.2
 
 ### Patch Changes
