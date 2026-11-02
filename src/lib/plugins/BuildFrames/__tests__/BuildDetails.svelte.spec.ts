@@ -65,6 +65,7 @@ describe('BuildDetails', () => {
 			createComponent: vi.fn(),
 			updateComponent: vi.fn(),
 			hasEditPermissions: true,
+			hasConfigSource: true,
 			canUndoFrameEdit: false,
 			canRedoFrameEdit: false,
 			undoFrameEdit: vi.fn(),
