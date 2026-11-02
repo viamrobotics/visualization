@@ -696,7 +696,7 @@
 		"@threlte/rapier": ">=3",
 		"@threlte/xr": ">=1",
 		"@viamrobotics/prime-core": ">=0.1",
-		"@viamrobotics/svelte-sdk": ">=0.1",
+		"@viamrobotics/svelte-sdk": ">=1.4.0",
 		"@viamrobotics/test-widgets": ">=0.15.0",
 		"@zag-js/dialog": ">=1",
 		"@zag-js/floating-panel": ">=1",

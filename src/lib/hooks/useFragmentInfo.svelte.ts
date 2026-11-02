@@ -67,9 +67,9 @@ interface FragmentInfoContext {
 /**
  * Single source of truth for which components a fragment provides.
  *
- * Two sources, one contract, and an empty map when neither exists. An embedded host already resolved this to render
- * its config editor and passes it as a prop, including the unsaved fragment
- * changes no query can see. Standalone derives it from `getRobotPart` and
+ * Two sources, one contract, and an empty map when neither exists. An embedded
+ * host already resolved this to render its config editor and passes it as a
+ * prop, including the unsaved fragment changes no query can see. Standalone derives it from `getRobotPart` and
  * `listMachineFragments`. Mode is fixed for the session (the prop is either
  * always defined or always undefined), mirroring `providePartConfig`.
  *
