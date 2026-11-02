@@ -1,5 +1,11 @@
 # visualization
 
+## 3.0.2
+
+### Patch Changes
+
+- 22af98a: Turn off Multipath TCP in the draw server, which Go enables by default on Linux listeners and which carries the published exploit for CVE-2026-98432.
+
 ## 3.0.1
 
 ### Patch Changes
