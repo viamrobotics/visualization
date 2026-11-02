@@ -2,6 +2,8 @@ module github.com/viamrobotics/visualization
 
 go 1.25.10
 
+godebug multipathtcp=0
+
 require (
 	connectrpc.com/connect v1.20.0
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
