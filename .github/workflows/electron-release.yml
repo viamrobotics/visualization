@@ -161,6 +161,7 @@ jobs:
             ['.deb', '.deb'],
           ]
           const names = new Set()
+          const renamed = new Map()
           fs.mkdirSync('release-assets')
           for (const entry of fs.readdirSync('dist-desktop', { withFileTypes: true })) {
             if (!entry.isFile()) continue
@@ -169,10 +170,27 @@ jobs:
             const name = `viam-visualizer-${version}-${PLATFORM}-${ARCH}${match[1]}`
             if (names.has(name)) throw new Error(`Two artifacts map to ${name}`)
             names.add(name)
+            renamed.set(entry.name, name)
             fs.copyFileSync(path.join('dist-desktop', entry.name), path.join('release-assets', name))
             console.log(`${entry.name} -> ${name}`)
           }
           if (names.size === 0) throw new Error('No release artifacts found')
+          // electron-updater reads latest.yml (Windows) and latest-linux.yml from the release and fetches
+          // the files they name, so those names follow the rename and the files' blockmaps go up too.
+          const longestFirst = [...renamed].sort(([a], [b]) => b.length - a.length)
+          for (const metadata of ['latest.yml', 'latest-linux.yml']) {
+            const source = path.join('dist-desktop', metadata)
+            if (!fs.existsSync(source)) continue
+            let text = fs.readFileSync(source, 'utf8')
+            for (const [from, to] of longestFirst) {
+              if (!text.includes(from)) continue
+              text = text.replaceAll(from, to)
+              const blockmap = path.join('dist-desktop', `${from}.blockmap`)
+              if (fs.existsSync(blockmap)) fs.copyFileSync(blockmap, path.join('release-assets', `${to}.blockmap`))
+            }
+            fs.writeFileSync(path.join('release-assets', metadata), text)
+            console.log(`${metadata} rewritten for the release names`)
+          }
 
       - name: Upload bundles
         shell: bash

@@ -22,6 +22,11 @@ const shared = {
 await Promise.all([
 	build({
 		...shared,
+		// Bundled CommonJS dependencies such as electron-updater call require(), which an ES module
+		// lacks. Without it, esbuild's shim throws `Dynamic require of "fs"` at startup.
+		banner: {
+			js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+		},
 		entryPoints: ['electron/main.ts'],
 		format: 'esm',
 		outfile: 'dist-electron/main.mjs',
