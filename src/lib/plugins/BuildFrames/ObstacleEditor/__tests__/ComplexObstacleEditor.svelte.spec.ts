@@ -11,6 +11,7 @@ import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
 import { createObstacleComponent } from '$lib/obstacle'
 import { type ObstacleGeometryConfig } from '$lib/obstacleAttributes'
 
+import ComplexObstacleEditor from '../ComplexObstacleEditor.svelte'
 import ObstacleEditor from '../ObstacleEditor.svelte'
 
 const offset = { translation: { x: 5, y: 6, z: 7 } }
@@ -138,6 +139,45 @@ describe('ComplexObstacleEditor', () => {
 		const written = attributes!.geometries as ObstacleGeometryConfig[]
 		expect(written).toHaveLength(4)
 		expect(written[3]).toMatchObject({ label: 'shape-1', type: 'box' })
+	})
+
+	it('duplicates the shape in the row under a numbered label', async () => {
+		const partConfig = mountEditor()
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate a' }))
+
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: {
+				extra: 'kept',
+				geometries: [...defaultGeometries(), { ...defaultGeometries()[0], label: 'a-1' }],
+			},
+			visualizer: { type: 'complex' },
+		})
+	})
+
+	it('focuses the label of the duplicate once its row renders, ready to rename', async () => {
+		const component = createObstacleComponent('obstacle-1')
+		component.attributes = { geometries: defaultGeometries() }
+		component.visualizer = { type: 'complex' }
+		const partConfig = createPartConfigFixture({ current: { components: [component] } })
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(partConfig)
+		const { rerender } = render(ComplexObstacleEditor, {
+			props: { component },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate geometry_2' }))
+		expect(screen.getByLabelText('Shape 3 label')).not.toHaveFocus()
+
+		const { attributes } = vi.mocked(partConfig.updateComponent).mock.lastCall![1]
+		await rerender({ component: { ...component, attributes } })
+
+		const input = screen.getByLabelText<HTMLInputElement>('Shape 4 label')
+		expect(input).toHaveValue('geometry_2-1')
+		expect(input).toHaveFocus()
+		expect(input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0)).toBe(
+			'geometry_2-1'
+		)
 	})
 
 	it('removes the shape in the row', async () => {
