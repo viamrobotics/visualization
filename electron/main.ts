@@ -6,6 +6,7 @@ import type { LaunchConfigPayload } from '../src/routes/lib/desktop/launchConfig
 import type { DrawServer } from './drawServer'
 
 import { version } from '../package.json'
+import { startAutoUpdate } from './autoUpdate'
 import { shouldStartDrawServer, startBundledDrawServer } from './bundledDrawServer'
 import {
 	DRAW_SERVICE_PORT_CHANNEL,
@@ -135,6 +136,7 @@ const startFirstInstance = (launchFile: string | undefined) => {
 					drawServer = server
 				})
 			}
+			startAutoUpdate()
 			return createWindow()
 		})
 		// A window that failed to load is blank and gives no sign why. Exiting non-zero tells the

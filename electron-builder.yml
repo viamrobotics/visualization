@@ -38,6 +38,13 @@ extraResources:
 
 artifactName: viam-visualizer-${version}-${os}-${arch}.${ext}
 
+# electron-updater reads this feed (packaged as app-update.yml). electron-builder writes the
+# latest*.yml files beside the bundles, and the release workflow uploads them.
+publish:
+  provider: github
+  owner: viamrobotics
+  repo: visualization
+
 mac:
   target:
     - dmg
