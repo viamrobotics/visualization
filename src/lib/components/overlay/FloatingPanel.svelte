@@ -64,9 +64,10 @@
 		id,
 		defaultSize,
 		size: currentSize,
+		// Clamped at 0: a panel larger than the canvas would center above it, out of reach of its drag header.
 		defaultPosition: defaultPosition ?? {
-			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
-			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
+			x: Math.max(0, dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft),
+			y: Math.max(0, dom.clientHeight / 2 - defaultSize.height / 2 + dom.clientTop),
 		},
 		resizable,
 		allowOverflow: false,
