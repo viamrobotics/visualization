@@ -142,37 +142,10 @@ jobs:
       # electron-builder names arches x64/arm64 (and amd64 for .deb), so this maps its output onto
       # the asset names the CLI derives.
       - name: Name bundles for the release
-        shell: node {0}
         env:
           PLATFORM: ${{ matrix.platform }}
           ARCH: ${{ matrix.arch }}
-        run: |
-          const fs = require('node:fs')
-          const path = require('node:path')
-          const { PLATFORM, ARCH } = process.env
-          const { version } = JSON.parse(fs.readFileSync('package.json', 'utf8'))
-          // [electron-builder ending, asset suffix], longest first so a setup installer is not taken for a plain .exe.
-          const SUFFIXES = [
-            ['-setup.exe', '-setup.exe'],
-            ['.exe', '.exe'],
-            ['.tar.gz', '.app.tar.gz'],
-            ['.dmg', '.dmg'],
-            ['.AppImage', '.AppImage'],
-            ['.deb', '.deb'],
-          ]
-          const names = new Set()
-          fs.mkdirSync('release-assets')
-          for (const entry of fs.readdirSync('dist-desktop', { withFileTypes: true })) {
-            if (!entry.isFile()) continue
-            const match = SUFFIXES.find(([ending]) => entry.name.endsWith(ending))
-            if (!match) continue
-            const name = `viam-visualizer-${version}-${PLATFORM}-${ARCH}${match[1]}`
-            if (names.has(name)) throw new Error(`Two artifacts map to ${name}`)
-            names.add(name)
-            fs.copyFileSync(path.join('dist-desktop', entry.name), path.join('release-assets', name))
-            console.log(`${entry.name} -> ${name}`)
-          }
-          if (names.size === 0) throw new Error('No release artifacts found')
+        run: node scripts/name-release-bundles.mjs
 
       - name: Upload bundles
         shell: bash
