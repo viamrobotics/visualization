@@ -652,6 +652,7 @@
 		"electron": "45.2.1",
 		"electron-builder": "26.15.3",
 		"electron-serve": "3.0.1",
+		"electron-updater": "6.8.11",
 		"esbuild": "^0.28.1",
 		"eslint": "10.0.2",
 		"eslint-config-prettier": "10.1.8",

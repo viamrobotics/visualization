@@ -63,6 +63,8 @@ The app connects on boot when started with `--launch-file <path>`. The file is J
 
 Every GitHub release carries desktop bundles built by `electron-release.yml`, named `viam-visualizer-<version>-<platform>-<arch><suffix>` with `platform` one of `darwin`, `linux`, `windows` and `arch` one of `aarch64`, `x86_64`. The suffixes are `.dmg` and `.app.tar.gz` on macOS, `.AppImage` and `.deb` on Linux, and `.exe` (portable) and `-setup.exe` (installer) on Windows, plus a `checksums.txt` with one `sha256  name` line per asset. The macOS `.app.tar.gz` unpacks to `Viam Visualizer.app`, with the executable at `Contents/MacOS/Viam Visualizer`.
 
+The Windows installer build, the Linux AppImage, and the `.deb` update themselves: on launch they check the latest release's `latest.yml` or `latest-linux.yml`, download a newer version in the background, and install it when the app quits. Installing a `.deb` update asks for an administrator password. The portable `.exe` and macOS do not update themselves, and setting `VIAM_VISUALIZER_NO_AUTO_UPDATE` turns updates off.
+
 > [!NOTE]
 > Currently, the macOS bundles are ad-hoc signed and not notarized. A downloaded bundle is blocked on first launch. Allow it under System Settings → Privacy & Security → Open Anyway, or run `xattr -d com.apple.quarantine` on the `.app`.
 
