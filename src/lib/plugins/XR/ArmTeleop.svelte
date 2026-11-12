@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { T, useTask } from '@threlte/core/webgpu'
 	import { useController, useXR, type XRController } from '@threlte/xr'
 	import { ArmClient, GripperClient } from '@viamrobotics/sdk'
 	import * as VIAM from '@viamrobotics/sdk'

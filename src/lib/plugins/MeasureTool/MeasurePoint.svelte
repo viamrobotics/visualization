@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Group, Vector3Tuple } from 'three'
 
-	import { T, type Props as ThrelteProps } from '@threlte/core'
-	import { HTML } from '@threlte/extras'
+	import { T, type Props as ThrelteProps } from '@threlte/core/webgpu'
+	import { HTML } from '@threlte/extras/webgpu'
 
 	interface Props extends ThrelteProps<typeof Group> {
 		position: Vector3Tuple

@@ -1,5 +1,85 @@
 # visualization
 
+## 3.1.0
+
+### Minor Changes
+
+- 2f15445: The Visualizer no longer requires a `ViamAppProvider`.
+
+### Patch Changes
+
+- 2f15445: World state store entities stay in sync after the store is reconfigured or the connection drops.
+- 2f15445: Peer `@viamrobotics/svelte-sdk` is now `>=1.4.0`.
+
+## 3.0.2
+
+### Patch Changes
+
+- 22af98a: Turn off Multipath TCP in the draw server, which Go enables by default on Linux listeners and which carries the published exploit for CVE-2026-98432.
+
+## 3.0.1
+
+### Patch Changes
+
+- 09ae907: Fix camera-dependent draw order between overlapping shapes and their outlines.
+- 5a73d68: Stop continuously re-rendering the scene while an entity is selected.
+- 1b9fa63: Declare `sideEffects` so bundlers drop the modules a consumer doesn't use. Importing `SnapshotProto` from `@viamrobotics/visualization/lib` no longer pulls three.js into the importing chunk.
+- 4dca97e: Stop re-rendering the scene when polled poses haven't changed.
+
+## 3.0.0
+
+### Major Changes
+
+- 51adfb0: Renders the scene with three's WebGPU renderer, falling back to WebGL2 where WebGPU is unavailable.
+
+### Minor Changes
+
+- 5ea72a2: Monitor details panel adds a Test tab with the selected resource's control widgets.
+
+### Patch Changes
+
+- 269af0a: XR wrist panels render as canvas textures instead of threlte-uikit.
+- b8cb4d3: Camera selection outlines and zoom-to-fit no longer include the sensor coverage frustum.
+- 0c7bdf3: The default point size setting is now shown and entered in millimeters.
+- f40ee28: Hidden and removed axes helpers are no longer drawn.
+
+## 2.11.2
+
+### Patch Changes
+
+- 1204769: Fix the desktop app's Linux release build.
+
+## 2.11.1
+
+### Patch Changes
+
+- 6b48826: Fix the desktop app's Linux and Windows release builds, with IK inspection unavailable on Windows.
+
+## 2.11.0
+
+### Minor Changes
+
+- 538fdf7: Connect on boot from a CLI launch file in the desktop app
+- 5198bfd: Bundle the Go draw server with the desktop app as a sidecar
+
+### Patch Changes
+
+- 48d75ce: Draw frame geometries at their configured translation and orientation instead of the frame origin, and show that offset read-only in the details panel.
+- 5198bfd: Keep a redrawn point cloud's colors instead of reverting to the file's own colors.
+
+## 2.10.0
+
+### Minor Changes
+
+- 1d71218: Add object snapping to build-mode moves: key points, surfaces, ground plane, and surface alignment.
+
+## 2.9.1
+
+### Patch Changes
+
+- 36e855f: Add a Tauri v2 desktop shell with pnpm tauri:dev and pnpm tauri:build
+- 85071c2: Fix orientations near the ±Z pole to match rdk v1.12, which misaligned arm links on calibrated models.
+
 ## 2.9.0
 
 ### Minor Changes

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useTask } from '@threlte/core'
+	import { T, useTask } from '@threlte/core/webgpu'
 	import { useController, type XRController } from '@threlte/xr'
 	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { CanvasTexture, Mesh, PlaneGeometry, Raycaster } from 'three'

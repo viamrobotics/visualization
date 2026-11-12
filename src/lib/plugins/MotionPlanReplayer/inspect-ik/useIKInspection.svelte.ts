@@ -1,4 +1,4 @@
-import { useThrelte } from '@threlte/core'
+import { useThrelte } from '@threlte/core/webgpu'
 import { onDestroy } from 'svelte'
 
 import type { Transform } from '$lib/buf/common/v1/common_pb'

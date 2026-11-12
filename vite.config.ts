@@ -5,7 +5,6 @@ import { svelteTesting } from '@testing-library/svelte/vite'
 import { playwright } from '@vitest/browser-playwright'
 import dns from 'node:dns'
 import devtoolsJson from 'vite-plugin-devtools-json'
-import glsl from 'vite-plugin-glsl'
 import mkcert from 'vite-plugin-mkcert'
 import { defineConfig } from 'vitest/config'
 
@@ -18,7 +17,6 @@ const https = process.argv.includes('--https')
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
 	plugins: [
-		glsl(),
 		sentrySvelteKit({
 			sourceMapsUploadOptions: {
 				org: 'viam',
@@ -75,14 +73,31 @@ export default defineConfig({
 	},
 
 	test: {
-		browser: {
-			enabled: true,
-			headless: true,
-			provider: playwright(),
-			instances: [{ browser: 'chromium' }],
-		},
 		clearMocks: true,
-		include: ['src/**/*.{test,spec}.{js,ts}'],
-		setupFiles: ['./vitest-setup-client.ts'],
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'browser',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+					},
+					include: ['src/**/*.{test,spec}.{js,ts}'],
+					setupFiles: ['./vitest-setup-client.ts'],
+				},
+			},
+			{
+				// The Electron main process runs on Node, not in a page, so it gets no browser or SvelteKit plugins.
+				test: {
+					name: 'electron',
+					clearMocks: true,
+					environment: 'node',
+					include: ['electron/**/*.{test,spec}.ts'],
+				},
+			},
+		],
 	},
 })

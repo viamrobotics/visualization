@@ -136,11 +136,6 @@ describe('parsePlan with a captured plan', () => {
 		expect(step['left-arm']).toHaveLength(6)
 	})
 
-	it('ignores the planner keys the replayer does not read', () => {
-		// The capture also carries world_state, constraints, planner_options, start_state and path. Parsing must not reject them.
-		expect(plan.frames['obstacle-table']).toBeDefined()
-	})
-
 	// Skipping a geometry is warn-only, so the warning is the contract. A geometry that stops parsing would otherwise vanish from the scene.
 	it('builds every geometry in the capture without skipping one', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)

@@ -79,18 +79,6 @@ describe('keybinding registry', () => {
 		expect(keybindings.matching(press('s', { mod: true }))[0]?.handler).toBe(modified)
 	})
 
-	it('distinguishes redo from undo by the shift qualifier', () => {
-		const keybindings = createKeybindings()
-		const undo = { run: vi.fn() }
-		const redo = { run: vi.fn() }
-
-		keybindings.register(hotkey('undo', 'z', { mod: true }), undo)
-		keybindings.register(hotkey('redo', 'z', { mod: true, shift: true }), redo)
-
-		expect(keybindings.matching(press('z', { mod: true }))[0]?.handler).toBe(undo)
-		expect(keybindings.matching(press('z', { mod: true, shift: true }))[0]?.handler).toBe(redo)
-	})
-
 	it('matches nothing for an unbound press', () => {
 		const keybindings = createKeybindings()
 

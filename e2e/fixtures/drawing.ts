@@ -50,8 +50,7 @@ const waitForListening = async (port: number, timeoutMs = 15_000): Promise<void>
  * A relative URL, so a baseURL carrying a path resolves against it instead of
  * jumping to the host root. `drawPort` points the app at this worker's server.
  */
-const sceneUrl = (port: number, routePath = ''): string =>
-	`${routePath ? `/${routePath}` : ''}?drawPort=${port}`
+const sceneUrl = (port: number): string => `?drawPort=${port}`
 
 const sceneArgs = (name: string, port: number): string[] => [
 	'-port',
@@ -76,10 +75,8 @@ interface DrawingFixtures {
 	dropFile: (file: DroppedFile) => Promise<void>
 	drawScene: DrawScene
 	drawSceneAsync: DrawSceneAsync
-	gotoScene: (routePath: string) => Promise<void>
 	resetScene: () => Promise<void>
 	snapshotAndReset: (testPrefix: string) => Promise<void>
-	takeScreenshot: (testPrefix: string) => Promise<void>
 }
 
 interface DrawingWorkerFixtures {
@@ -168,13 +165,6 @@ export const test = base.extend<DrawingFixtures, DrawingWorkerFixtures>({
 		await use(page)
 	},
 
-	gotoScene: async ({ page, drawServer }, use) => {
-		await use(async (routePath: string) => {
-			await page.goto(sceneUrl(drawServer.port, routePath))
-			await page.waitForLoadState('load')
-		})
-	},
-
 	drawClient: async ({ drawServer }, use) => {
 		await use(createDrawClient(drawServer.port))
 	},
@@ -203,12 +193,6 @@ export const test = base.extend<DrawingFixtures, DrawingWorkerFixtures>({
 			await screenshotCanvas(page, testPrefix)
 			await resetScene(drawClient, page)
 		})
-	},
-
-	takeScreenshot: async ({ page }, use) => {
-		await use((testPrefix: string) =>
-			expect.soft(page).toHaveScreenshot(`${testPrefix}.png`, { fullPage: true })
-		)
 	},
 
 	dropFile: async ({ page }, use) => {

@@ -3,6 +3,7 @@
 
 	import { traits, useQuery } from '$lib/ecs'
 	import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import Arrows from './Arrows/ArrowGroups.svelte'
@@ -26,6 +27,7 @@
 	const gltfs = useQuery(traits.GLTF)
 
 	const settings = useSettings()
+	const environment = useEnvironment()
 	const models = use3DModels()
 
 	const enableLabels = $derived(settings.current.enableLabels)
@@ -74,6 +76,6 @@
 	{/each}
 </ShapeBatches>
 
-{#if enableLabels}
+{#if enableLabels && !environment.current.isImmersive}
 	<Labels />
 {/if}

@@ -94,6 +94,24 @@ describe('buildTree', () => {
 		expect(namesIn(frames?.children?.[0])).toEqual(['arm:upper'])
 	})
 
+	it('sorts siblings by name at every depth, whatever order they spawned in', () => {
+		world = createWorld()
+		const zulu = world.spawn(traits.Name('zulu'), traits.DrawAPI)
+		world.spawn(traits.Name('bravo'), traits.DrawAPI)
+		const tango = world.spawn(traits.Name('tango'), traits.DrawAPI, relations.ChildOf(zulu))
+		world.spawn(traits.Name('delta'), traits.DrawAPI, relations.ChildOf(zulu))
+		world.spawn(traits.Name('sierra'), traits.DrawAPI, relations.ChildOf(tango))
+		world.spawn(traits.Name('foxtrot'), traits.DrawAPI, relations.ChildOf(tango))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+		const drawn = folderNamed(nodes, 'Drawn')
+		const zuluNode = drawn?.children?.[1]
+
+		expect(namesIn(drawn)).toEqual(['bravo', 'zulu'])
+		expect(namesIn(zuluNode)).toEqual(['delta', 'tango'])
+		expect(namesIn(zuluNode?.children?.[1])).toEqual(['foxtrot', 'sierra'])
+	})
+
 	it('lifts a cross-folder child to its own folder and records the parent name', () => {
 		world = createWorld()
 		const cam = world.spawn(traits.Name('cam1'), traits.FramesAPI)

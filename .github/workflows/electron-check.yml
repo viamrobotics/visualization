@@ -1,0 +1,100 @@
+name: Electron check
+
+# Packages the desktop app unpacked on macOS and runs the main-process specs, so an Electron,
+# packaging, or sidecar break fails the PR. The release matrix lives in electron-release.yml and
+# runs only on a release.
+
+on:
+  pull_request:
+    paths:
+      - 'electron/**'
+      - 'electron-builder.yml'
+      - 'scripts/build-electron.mjs'
+      - 'scripts/build-sidecar.mjs'
+      - 'tsconfig.electron.json'
+      - 'src/routes/lib/desktop/**'
+      - 'cmd/**'
+      - 'client/**'
+      - 'draw/**'
+      - 'motionplan/**'
+      - 'mutils/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/electron-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    if: ${{ !startsWith(github.event.pull_request.title, 'Version Packages') }}
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Set up wireit caching
+        uses: google/wireit@setup-github-actions-caching/v2
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Only pkg-config: Homebrew's nlopt is shared-only, and its dylib would compete with the
+      # static build below.
+      - name: Install pkg-config
+        run: brew install pkg-config
+
+      - name: Build static nlopt
+        uses: ./.github/actions/static-nlopt
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Typecheck main process
+        run: pnpm check:electron
+
+      - name: Main process specs
+        run: pnpm vitest run --project electron
+
+      - name: Build renderer, main process, and sidecar
+        run: |
+          pnpm vite-build
+          pnpm build:electron
+          pnpm build:sidecar
+
+      - name: Package unpacked app
+        run: pnpm exec electron-builder --mac --dir --publish never
+
+      # Fails the check if the sidecar or the app's entry point did not make it into the bundle.
+      - name: Verify bundle contents
+        run: |
+          set -euo pipefail
+          app=$(find dist-desktop -maxdepth 2 -name 'Viam Visualizer.app' -type d | head -n 1)
+          test -n "$app"
+          test -x "$app/Contents/MacOS/Viam Visualizer"
+          test -x "$app/Contents/Resources/draw-server"
+          pnpm dlx @electron/asar list "$app/Contents/Resources/app.asar" | grep -qx '/dist-electron/main.mjs'

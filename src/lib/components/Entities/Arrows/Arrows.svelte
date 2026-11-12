@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 
 	import type { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
 

@@ -1,6 +1,6 @@
 import { type Client, ConnectError, createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { useThrelte } from '@threlte/core'
+import { useThrelte } from '@threlte/core/webgpu'
 import { type Entity } from 'koota'
 import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'

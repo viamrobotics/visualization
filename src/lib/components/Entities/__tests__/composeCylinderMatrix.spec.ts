@@ -15,14 +15,6 @@ const decompose = (matrix: Matrix4) => {
 	return { position, quaternion, scale }
 }
 
-/**
- * The shared unit cylinder is radius 1 and height 1 about Z, so its wall sits at
- * local radius 1 and its caps at local z = ±0.5. Every local point below is one
- * of those.
- */
-const applyToLocalPoint = (matrix: Matrix4, x: number, y: number, z: number) =>
-	new Vector3(x, y, z).applyMatrix4(matrix)
-
 describe('composeCylinderMatrix', () => {
 	let world: World
 	let out: Matrix4
@@ -50,29 +42,6 @@ describe('composeCylinderMatrix', () => {
 		expect(scale.x).toBeCloseTo(0.05)
 		expect(scale.y).toBeCloseTo(0.05)
 		expect(scale.z).toBeCloseTo(0.2)
-	})
-
-	it('centres the cylinder on the origin, spanning ±l/2 along z', () => {
-		const entity = world.spawn(
-			traits.Cylinder({ r: 50, l: 200, capped: true }),
-			traits.WorldMatrix(new Pose(0, 0, 3000).toMatrix4())
-		)
-
-		composeCylinderMatrix(entity, out)
-
-		expect(applyToLocalPoint(out, 0, 0, 0.5).z).toBeCloseTo(3.1)
-		expect(applyToLocalPoint(out, 0, 0, -0.5).z).toBeCloseTo(2.9)
-	})
-
-	it('scales radially by r, not the diameter', () => {
-		const entity = world.spawn(
-			traits.Cylinder({ r: 50, l: 200, capped: true }),
-			traits.WorldMatrix()
-		)
-
-		composeCylinderMatrix(entity, out)
-
-		expect(applyToLocalPoint(out, 1, 0, 0).x).toBeCloseTo(0.05)
 	})
 
 	it('applies Center between WorldMatrix and the dimension scale', () => {

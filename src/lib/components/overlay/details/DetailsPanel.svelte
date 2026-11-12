@@ -10,25 +10,24 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 
 	import { draggable } from '@neodrag/svelte'
-	import { Portal } from '@threlte/extras'
+	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
 	import { traits, useParentName, useTrait, useWorld } from '$lib/ecs'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import Tooltip from '../Tooltip.svelte'
 	import { composeDisplayedPose } from './composeDisplayedPose'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
-		/** The mode's details, rendered under the shared header. */
+		/** The mode's details, rendered under the shared header. They paint their own background. */
 		children: Snippet
 		/**
-		 * Header actions that read a scene object: view from it, copy its pose.
+		 * Header actions that read a scene object: copy its pose.
 		 * Turn off for a row that only exists in the config.
 		 */
 		sceneActions?: boolean
@@ -38,8 +37,7 @@
 
 	const world = useWorld()
 	const resourceByName = useResourceByName()
-	const partID = usePartID()
-	const settings = useSettings()
+	const environment = useEnvironment()
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useParentName(() => entity)
@@ -116,109 +114,85 @@
 	}
 </script>
 
-<Portal id="dom">
-	<!-- tabindex makes the whole panel focusable so a click anywhere in it (not
+{#if !environment.current.isImmersive}
+	<Portal id="dom">
+		<!-- tabindex makes the whole panel focusable so a click anywhere in it (not
 just the inputs) raises it via `focus-within:z-5`. -->
-	<div
-		id="details-panel"
-		class="border-medium bg-extralight absolute top-10 right-0 z-4 m-2 w-70 border p-2 text-xs focus-within:z-5"
-		role="region"
-		aria-label="Details panel"
-		tabindex="-1"
-		onkeydown={stopKeyboardPropagation}
-		onkeyup={stopKeyboardPropagation}
-		use:draggable={{
-			bounds: 'body',
-			handle: dragElement,
-		}}
-		{...rest}
-	>
 		<div
-			class="flex cursor-move items-center justify-between gap-2 pb-2"
-			bind:this={dragElement}
+			id="details-panel"
+			class="border-medium absolute top-10 right-0 z-4 m-2 w-70 border text-xs focus-within:z-5"
+			role="region"
+			aria-label="Details panel"
+			tabindex="-1"
+			onkeydown={stopKeyboardPropagation}
+			onkeyup={stopKeyboardPropagation}
+			use:draggable={{
+				bounds: 'body',
+				handle: dragElement,
+			}}
+			{...rest}
 		>
-			<div class="flex w-[90%] items-center gap-1">
-				<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
-				<span class="text-subtle-2">{displayType}</span>
+			<div
+				class="bg-extralight flex cursor-move items-center justify-between gap-2 p-2"
+				bind:this={dragElement}
+			>
+				<div class="flex w-[90%] items-center gap-1">
+					<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
+					<span class="text-subtle-2">{displayType}</span>
+				</div>
+
+				{#if removable.current}
+					<Tooltip placement="bottom">
+						{#snippet children(tooltipID)}
+							<button
+								class="text-subtle-2"
+								aria-describedby={tooltipID}
+								onclick={() => {
+									if (world.has(entity)) {
+										entity.destroy()
+									}
+								}}
+							>
+								<Icon name="trash-can-outline" />
+							</button>
+						{/snippet}
+
+						{#snippet content()}Remove from scene{/snippet}
+					</Tooltip>
+				{/if}
+
+				{#if sceneActions}
+					<Tooltip placement="bottom">
+						{#snippet children(tooltipID)}
+							<button
+								class="text-subtle-2"
+								aria-describedby={tooltipID}
+								onclick={async () => {
+									try {
+										await navigator.clipboard.writeText(getCopyClipboardText())
+									} catch {
+										// clipboard unavailable (non-secure context or permission denied)
+									}
+									copied = true
+									setTimeout(() => (copied = false), 1000)
+								}}
+							>
+								{#if copied}
+									<Check size={14} />
+								{:else}
+									<Copy size={14} />
+								{/if}
+							</button>
+						{/snippet}
+
+						{#snippet content()}Copy details to clipboard{/snippet}
+					</Tooltip>
+				{/if}
 			</div>
 
-			{#if name.current && sceneActions}
-				<Tooltip placement="bottom">
-					{#snippet children(tooltipID)}
-						<button
-							class="text-subtle-2"
-							aria-describedby={tooltipID}
-							aria-label="Open view from this frame"
-							onclick={() => {
-								const frameName = name.current
-								if (!frameName) return
-								const list = settings.current.openFramePovWidgets[partID.current] ?? []
-								if (list.includes(frameName)) return
-								settings.current.openFramePovWidgets = {
-									...settings.current.openFramePovWidgets,
-									[partID.current]: [...list, frameName],
-								}
-							}}
-						>
-							<Icon name="camera-outline" />
-						</button>
-					{/snippet}
+			<div class="border-medium border-b"></div>
 
-					{#snippet content()}View from this frame{/snippet}
-				</Tooltip>
-			{/if}
-
-			{#if removable.current}
-				<Tooltip placement="bottom">
-					{#snippet children(tooltipID)}
-						<button
-							class="text-subtle-2"
-							aria-describedby={tooltipID}
-							onclick={() => {
-								if (world.has(entity)) {
-									entity.destroy()
-								}
-							}}
-						>
-							<Icon name="trash-can-outline" />
-						</button>
-					{/snippet}
-
-					{#snippet content()}Remove from scene{/snippet}
-				</Tooltip>
-			{/if}
-
-			{#if sceneActions}
-				<Tooltip placement="bottom">
-					{#snippet children(tooltipID)}
-						<button
-							class="text-subtle-2"
-							aria-describedby={tooltipID}
-							onclick={async () => {
-								try {
-									await navigator.clipboard.writeText(getCopyClipboardText())
-								} catch {
-									// clipboard unavailable (non-secure context or permission denied)
-								}
-								copied = true
-								setTimeout(() => (copied = false), 1000)
-							}}
-						>
-							{#if copied}
-								<Check size={14} />
-							{:else}
-								<Copy size={14} />
-							{/if}
-						</button>
-					{/snippet}
-
-					{#snippet content()}Copy details to clipboard{/snippet}
-				</Tooltip>
-			{/if}
+			{@render children()}
 		</div>
-
-		<div class="border-medium -mx-2 w-[100%+0.5rem] border-b"></div>
-
-		{@render children()}
-	</div>
-</Portal>
+	</Portal>
+{/if}

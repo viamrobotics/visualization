@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { PersistedState } from 'runed'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'

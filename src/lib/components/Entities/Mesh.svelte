@@ -13,7 +13,7 @@ entities sharing a mesh share the upload.
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { Color, Matrix4 } from 'three'
 
 	import type { ShapeInstanceIds } from '$lib/three/shapeBatches'

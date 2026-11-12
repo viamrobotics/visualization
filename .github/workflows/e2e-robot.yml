@@ -47,6 +47,16 @@ jobs:
       - name: Run e2e setup
         run: ./e2e/setup.sh
 
+      # Under CI, playwright.config.ts serves the static build through the Go
+      # draw server instead of `pnpm dev`, so both have to exist before the run.
+      - name: Build the draw server
+        run: pnpm go-build
+
+      - name: Build the app
+        run: pnpm vite-build
+        env:
+          VITE_CONFIGS: '{}'
+
       # --workers=1 because all four specs push conflicting configs at the one
       # machine the setup project provisioned.
       - name: Run robot tests

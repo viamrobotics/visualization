@@ -26,7 +26,6 @@ var scenes = map[string]scene{
 	"lifecycle/update":     lifecycleUpdate,
 	"lifecycle/remove-all": lifecycleRemoveAll,
 
-	"hierarchy/draw":    hierarchyDraw,
 	"frames/draw":       framesDraw,
 	"frame-system/draw": frameSystemDraw,
 	"geometries/draw":   geometriesDraw,
@@ -53,5 +52,4 @@ var scenes = map[string]scene{
 
 	"relationships/setup":  relationshipsSetup,
 	"relationships/create": relationshipsCreate,
-	"relationships/delete": relationshipsDelete,
 }

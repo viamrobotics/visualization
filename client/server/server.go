@@ -157,6 +157,9 @@ func Start(cfg DrawServerConfig) error {
 		return fmt.Errorf("failed to listen on %s: %w", rpcAddr, err)
 	}
 
+	// Port 0 asks the OS for a free port, so the address must come from the listener.
+	address = fmt.Sprintf("localhost:%d", rpcListener.Addr().(*net.TCPAddr).Port)
+
 	tempDir := cfg.TempDir
 	if tempDir == "" {
 		tempDir = resolveTmpDir()
@@ -418,8 +421,8 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler, extraHandlers map[strin
 	}).Handler(h2c.NewHandler(mux, &http2.Server{}))
 }
 
-// staticFileHandler serves the adapter-static build. A route like /snapshot/reconcile
-// is prerendered to snapshot/reconcile.html, so the extensionless path is tried with
+// staticFileHandler serves the adapter-static build. A nested route like /a/b is
+// prerendered to a/b.html, so the extensionless path is tried with
 // ".html" before falling back to the root index.html.
 func staticFileHandler(buildDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -431,23 +431,25 @@
 	{entity}
 	{...rest}
 >
-	<h3 class="text-subtle-2 pt-3 pb-2">Move</h3>
+	<div class="bg-extralight px-2 pb-2">
+		<h3 class="text-subtle-2 pt-3 pb-2">Move</h3>
 
-	<div class="flex flex-col gap-3">
-		{#if service}
-			<div>
-				<strong class="font-semibold">motion service</strong>
-				<List
-					options={motionServices}
-					value={service}
-					on:change={handleServiceChange}
-				/>
-			</div>
-		{:else}
-			<p class="text-subtle-2">No motion service available.</p>
-		{/if}
+		<div class="flex flex-col gap-3">
+			{#if service}
+				<div>
+					<strong class="font-semibold">motion service</strong>
+					<List
+						options={motionServices}
+						value={service}
+						on:change={handleServiceChange}
+					/>
+				</div>
+			{:else}
+				<p class="text-subtle-2">No motion service available.</p>
+			{/if}
 
-		{@render moveControls()}
+			{@render moveControls()}
+		</div>
 	</div>
 </DetailsPanel>
 

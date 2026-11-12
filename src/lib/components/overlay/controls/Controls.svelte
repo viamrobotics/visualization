@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core'
-	import { PortalTarget } from '@threlte/extras'
+	import { useThrelte } from '@threlte/core/webgpu'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 
 	import { focusCameraOnEntities } from '$lib/components/Entities/focusCameraOnEntities'
 	import Button from '$lib/components/overlay/dashboard/Button.svelte'

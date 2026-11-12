@@ -3,7 +3,6 @@ playwright-report
 node_modules
 
 static/Big_Buck_Bunny_4K.webm
-static/test-fixtures
 
 # Temp files (disk-backed chunk storage)
 .tmp
@@ -19,12 +18,12 @@ static/test-fixtures
 .svelte-kit
 .astro
 build
-src/lib/**/__tests__/__screenshots__
+src/**/__tests__/__screenshots__
 __snapshots__
 coverage
 dist
 .bin
-draw-server
+/draw-server
 /examples
 docs/public/playground
 docs/src/content/docs/api/*.md
@@ -71,6 +70,7 @@ e2e/.env.e2e
 
 # IDE
 .cursor
-# Tauri
-src-tauri/target
-src-tauri/gen
+# Electron
+dist-electron
+dist-sidecar
+dist-desktop

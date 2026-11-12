@@ -2,6 +2,8 @@ module github.com/viamrobotics/visualization
 
 go 1.25.10
 
+godebug multipathtcp=0
+
 require (
 	connectrpc.com/connect v1.20.0
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
@@ -78,7 +80,7 @@ require (
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-gl/mathgl v1.0.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-nlopt/nlopt v0.0.0-20230219125344-443d3362dcb5 // indirect

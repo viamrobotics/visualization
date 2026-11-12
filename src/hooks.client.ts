@@ -3,8 +3,8 @@ import * as Sentry from '@sentry/sveltekit'
 
 import { version } from '../package.json'
 
-// Tauri injects this global into every webview it hosts, so its presence marks the desktop app.
-const runtime = '__TAURI_INTERNALS__' in window ? 'tauri' : 'browser'
+// The Electron preload exposes this global, so its presence marks the desktop app.
+const runtime = 'viamDesktop' in window ? 'electron' : 'browser'
 
 if (import.meta.env.PROD) {
 	Sentry.init({

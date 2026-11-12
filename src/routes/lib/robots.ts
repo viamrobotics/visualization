@@ -1,29 +1,16 @@
-import type { DialWebRTCConf } from '@viamrobotics/sdk'
+import type { Credential, DialWebRTCConf } from '@viamrobotics/sdk'
 
-type PlaygroundRobotsConfig = Record<
-	string,
-	{
-		host: string
-		partId: string
-		apiKeyId: string
-		apiKeyValue: string
-		signalingAddress: string
-		disableSessions?: boolean
-	}
->
+import type { ConnectionConfig } from './connectionConfig'
 
-export const getDialConfs = (robots: PlaygroundRobotsConfig): Record<string, DialWebRTCConf> =>
-	Object.fromEntries(Object.values(robots).map((robot) => [robot.partId, getDialConf(robot)]))
+export const getApiKeyCredential = (config: ConnectionConfig): Credential => ({
+	type: 'api-key',
+	payload: config.apiKeyValue,
+	authEntity: config.apiKeyId,
+})
 
-const getDialConf = (robot: PlaygroundRobotsConfig[string]): DialWebRTCConf => {
-	return {
-		host: robot.host,
-		credentials: {
-			type: 'api-key',
-			payload: robot.apiKeyValue,
-			authEntity: robot.apiKeyId,
-		},
-		signalingAddress: robot.signalingAddress,
-		disableSessions: Boolean(robot.disableSessions),
-	}
-}
+export const getDialConf = (config: ConnectionConfig): DialWebRTCConf => ({
+	host: config.host,
+	credentials: getApiKeyCredential(config),
+	signalingAddress: config.signalingAddress,
+	disableSessions: Boolean(config.disableSessions),
+})

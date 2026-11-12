@@ -10,10 +10,10 @@ the reason the matrix is copied rather than decomposed into props.
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-	import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js'
+	import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js'
+	import { Line2NodeMaterial } from 'three/webgpu'
 
 	import { traits, useTrait } from '$lib/ecs'
 
@@ -43,7 +43,7 @@ the reason the matrix is copied rather than decomposed into props.
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 
 	const geometry = new LineSegmentsGeometry()
-	const material = new LineMaterial({
+	const material = new Line2NodeMaterial({
 		linewidth: LINE_WIDTH,
 		opacity: OPACITY,
 		transparent: true,
@@ -73,7 +73,6 @@ the reason the matrix is copied rather than decomposed into props.
 {#if worldMatrix.current}
 	<T
 		is={lines}
-		name={entity}
 		userData.name={name.current}
 		dispose={false}
 		raycast={() => null}

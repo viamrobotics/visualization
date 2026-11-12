@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useStage, useTask, useThrelte } from '@threlte/core'
+	import { useStage, useTask, useThrelte } from '@threlte/core/webgpu'
 	import { Folder, FpsGraph, Monitor, Pane, WaveformMonitor } from 'svelte-tweakpane-ui'
 
 	import { useWorld } from '$lib/ecs'
@@ -86,7 +86,6 @@
 	let endFpsSample = $state.raw<() => void>()
 
 	let frameStart = 0
-	let passStart = 0
 	let cpuTotal = 0
 	let frames = 0
 	let periodTotal = 0
@@ -144,11 +143,11 @@
 		const { render } = renderer.info
 
 		frameStats = {
-			calls: render.calls,
+			calls: render.drawCalls,
 			cpu: cpuTotal / frames,
 			gpu: gpuTimer?.elapsedMs ?? 0,
 			lines: render.lines,
-			passes: render.frame - passStart,
+			passes: render.frameCalls,
 			points: render.points,
 			triangles: render.triangles,
 		}
@@ -159,7 +158,7 @@
 	}
 
 	const publishLiveStats = (now: number): void => {
-		const { memory, programs } = renderer.info
+		const { memory } = renderer.info
 		const cutoff = now - LONG_FRAME_WINDOW_MS
 
 		longFrameLog = longFrameLog.filter((frame) => frame.end >= cutoff)
@@ -179,7 +178,7 @@
 			heapMb: readHeapMb(),
 			longestFrame: longest.duration,
 			longFrames: longFrameLog.length,
-			programs: programs?.length ?? 0,
+			programs: memory.programs,
 			source: longest.source,
 			textures: memory.textures,
 		}
@@ -200,7 +199,6 @@
 			}
 
 			frameStart = now
-			passStart = renderer.info.render.frame
 			beginFpsSample?.()
 		},
 		{
@@ -209,8 +207,6 @@
 			stage: useStage('render-stats-begin', { before: mainStage }),
 		}
 	)
-
-	useTask(() => gpuTimer?.begin(), { autoInvalidate: false, before: autoRenderTask })
 
 	// Ordered after the render task, so it only runs on frames that rendered. FPS
 	// and the timings therefore describe rendered frames, not animation frames,

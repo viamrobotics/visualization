@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
-	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras'
+	import { T } from '@threlte/core/webgpu'
+	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras/webgpu'
 	import { untrack } from 'svelte'
 	import { Element } from 'svelte-tweakpane-ui'
 	import { type Intersection, Vector3 } from 'three'

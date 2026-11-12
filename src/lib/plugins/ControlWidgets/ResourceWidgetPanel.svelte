@@ -2,7 +2,7 @@
 	import type { ResourceName } from '@viamrobotics/sdk'
 	import type { ResourceAPIWidget } from '@viamrobotics/test-widgets'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'

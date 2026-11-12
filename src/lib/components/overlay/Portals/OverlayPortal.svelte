@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Portal } from '@threlte/extras'
+	import { Portal } from '@threlte/extras/webgpu'
 
 	interface Props {
 		children: Snippet

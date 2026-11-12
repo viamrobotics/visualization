@@ -297,7 +297,9 @@ export const provideFrames = (partID: () => string) => {
 						}
 					}
 
-					if (center && !center.equals(existing.get(traits.Center))) {
+					if (!center) {
+						if (existing.has(traits.Center)) existing.remove(traits.Center)
+					} else if (!center.equals(existing.get(traits.Center))) {
 						setOrAddTrait(existing, traits.Center, center)
 					}
 

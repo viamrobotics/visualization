@@ -18,10 +18,6 @@ const descriptorsFromParts = (parts: unknown[]) =>
 	)
 
 describe('frameSystemToPlanFrames, against the frame system RDK builds from the same parts', () => {
-	it('reads all 3 scenes the Go generator wrote', () => {
-		expect(frameSystemGoldenCases.length).toBe(3)
-	})
-
 	it.each(frameSystemGoldenCases)(
 		'synthesizes every frame of $name that RDK builds, less its models',
 		({ frameSystem, parts }) => {

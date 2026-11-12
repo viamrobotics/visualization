@@ -2,7 +2,7 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { ElementRect } from 'runed'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'

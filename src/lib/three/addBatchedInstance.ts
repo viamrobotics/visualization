@@ -1,5 +1,7 @@
 import type { BatchedMesh } from 'three'
 
+import { setBatchedInstanceCount } from './setBatchedInstanceCount'
+
 /**
  * Allocates an instance slot, doubling the batch's capacity when it is full.
  *
@@ -12,7 +14,7 @@ export const addBatchedInstance = (mesh: BatchedMesh, geometryId: number): numbe
 	// `instanceCount` counts live slots, not the high-water mark, so it reaches
 	// `maxInstanceCount` exactly when the free list is empty and `addInstance` throws.
 	if (mesh.instanceCount >= mesh.maxInstanceCount) {
-		mesh.setInstanceCount(mesh.maxInstanceCount * 2)
+		setBatchedInstanceCount(mesh, mesh.maxInstanceCount * 2)
 	}
 
 	return mesh.addInstance(geometryId)

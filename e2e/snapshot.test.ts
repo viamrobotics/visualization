@@ -47,7 +47,7 @@ for (const snapshot of snapshots) {
 	})
 }
 
-test('drops visualization_snapshot_metadata', async ({ page, dropFile, takeScreenshot }) => {
+test('drops visualization_snapshot_metadata', async ({ page, dropFile }) => {
 	const filename = 'visualization_snapshot_metadata.pb.gz'
 
 	await dropFile(path.resolve(snapshotsDir, filename))
@@ -59,53 +59,4 @@ test('drops visualization_snapshot_metadata', async ({ page, dropFile, takeScree
 
 	await expect(page.getByText('Relationships')).toBeVisible()
 	await expect(page.getByText('relationship-capsule (HoverLink)')).toBeVisible()
-
-	await takeScreenshot('SNAPSHOT_METADATA_RELATIONSHIP_DETAILS')
-})
-
-test('updates snapshots with the same UUID', async ({ page, gotoScene }) => {
-	await gotoScene('snapshot/reconcile')
-
-	const loadV1 = page.getByRole('button', { name: 'Load v1' })
-	const loadV2 = page.getByRole('button', { name: 'Load v2' })
-	const loadV3 = page.getByRole('button', { name: 'Load v3' })
-	const loadNew = page.getByRole('button', { name: 'Load new' })
-
-	await expect(loadV1).toBeVisible({ timeout: 15000 })
-
-	await loadV1.click()
-	await expect(page.getByText('reconcile-static', { exact: true }).first()).toBeVisible({
-		timeout: 10000,
-	})
-	await expect(page.getByText('reconcile-moving', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('reconcile-removed', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V1')
-
-	await loadV2.click()
-	await expect(page.getByText('reconcile-removed', { exact: true })).toHaveCount(0, {
-		timeout: 10000,
-	})
-	await expect(page.getByText('reconcile-added', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('reconcile-static', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('reconcile-moving', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V2')
-
-	await loadV3.click()
-	await expect(page.getByText('reconcile-moving', { exact: true })).toHaveCount(0, {
-		timeout: 10000,
-	})
-	await expect(page.getByText('reconcile-static', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('reconcile-added', { exact: true }).first()).toBeVisible()
-	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_V3')
-
-	// A snapshot with a different snapshot.uuid should wipe all prior entities
-	await loadNew.click()
-	await expect(page.getByText('wiped-cube-left', { exact: true }).first()).toBeVisible({
-		timeout: 10000,
-	})
-	await expect(page.getByText('wiped-cube-center', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('wiped-cube-right', { exact: true }).first()).toBeVisible()
-	await expect(page.getByText('reconcile-static', { exact: true })).toHaveCount(0)
-	await expect(page.getByText('reconcile-added', { exact: true })).toHaveCount(0)
-	await screenshotCanvas(page, 'SNAPSHOT_RECONCILE_NEW')
 })

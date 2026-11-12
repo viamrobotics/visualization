@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
 

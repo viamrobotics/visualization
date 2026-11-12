@@ -2,9 +2,10 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { meshBounds } from '@threlte/extras'
-	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
+	import { T, useThrelte } from '@threlte/core/webgpu'
+	import { meshBounds } from '@threlte/extras/webgpu'
+	import { Line2 } from 'three/addons/lines/webgpu/Line2.js'
+	import { Line2NodeMaterial } from 'three/webgpu'
 
 	import { isVertexColors, STRIDE } from '$lib/buffer'
 	import { traits, useOpacity, useTrait } from '$lib/ecs'
@@ -84,7 +85,7 @@
 		colors={lineColors}
 	/>
 	<T
-		is={LineMaterial}
+		is={Line2NodeMaterial}
 		color={hasVertexColors ? [1, 1, 1] : lineColor}
 		vertexColors={hasVertexColors}
 		transparent={currentOpacity < 1}

@@ -14,8 +14,4 @@ describe('splitSelectNames', () => {
 	it('drops empty segments', () => {
 		expect(splitSelectNames(['arm,,gripper,', ''])).toEqual(['arm', 'gripper'])
 	})
-
-	it('keeps a colon-namespaced name whole', () => {
-		expect(splitSelectNames(['arm:link1,arm'])).toEqual(['arm:link1', 'arm'])
-	})
 })

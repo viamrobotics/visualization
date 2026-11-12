@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { CameraControlsRef } from '@threlte/extras'
+	import type { CameraControlsRef } from '@threlte/extras/webgpu'
 
-	import { isInstanceOf, useTask } from '@threlte/core'
-	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras'
+	import { isInstanceOf, useTask } from '@threlte/core/webgpu'
+	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras/webgpu'
 	import { MathUtils, Vector3 } from 'three'
 
 	import { useKeybinding } from '$lib/keybindings'

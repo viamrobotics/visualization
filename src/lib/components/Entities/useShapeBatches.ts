@@ -1,5 +1,5 @@
 import type { Entity } from 'koota'
-import type { BufferGeometry, Color, Matrix4 } from 'three'
+import type { BufferGeometry, Color, Matrix4, Object3D } from 'three'
 
 import { getContext, setContext } from 'svelte'
 
@@ -24,24 +24,25 @@ export interface EntityShapeBatches {
 	releaseMesh: (geometry: BufferGeometry) => void
 	addMesh: (entity: Entity, slot: MeshSlot) => ShapeInstanceIds
 
-	/** The entity a pointer hit landed on, given the hit's `batchId`. */
-	entityAt: (faceId: number) => Entity | undefined
+	/** The entity a pointer hit landed on, given the faces batch hit and its `batchId`. */
+	entityAt: (mesh: Object3D, batchId: number) => Entity | undefined
 }
 
 export const provideShapeBatches = (batches: ShapeBatches): EntityShapeBatches => {
-	const entityByFaceId = new Map<number, Entity>()
+	// Keyed by handle, not face id: ids repeat across passes and change when opacity moves a shape.
+	const entityByHandle = new Map<ShapeInstanceIds, Entity>()
 
 	const context: EntityShapeBatches = {
 		add: (entity, shape) => {
 			const ids = batches.add(shape)
-			entityByFaceId.set(ids.face, entity)
+			entityByHandle.set(ids, entity)
 			return ids
 		},
 		setMatrix: batches.setMatrix,
 		setAppearance: batches.setAppearance,
 		setShape: batches.setShape,
 		release: (ids) => {
-			entityByFaceId.delete(ids.face)
+			entityByHandle.delete(ids)
 			batches.release(ids)
 		},
 
@@ -49,11 +50,14 @@ export const provideShapeBatches = (batches: ShapeBatches): EntityShapeBatches =
 		releaseMesh: batches.releaseMesh,
 		addMesh: (entity, slot) => {
 			const ids = batches.addMesh(slot)
-			entityByFaceId.set(ids.face, entity)
+			entityByHandle.set(ids, entity)
 			return ids
 		},
 
-		entityAt: (faceId) => entityByFaceId.get(faceId),
+		entityAt: (mesh, batchId) => {
+			const ids = batches.instanceAt(mesh, batchId)
+			return ids === undefined ? undefined : entityByHandle.get(ids)
+		},
 	}
 
 	setContext(SHAPE_BATCHES_CONTEXT_KEY, context)

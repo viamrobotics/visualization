@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { Color, type ColorChangeEvent, type ColorValueRgbObject } from 'svelte-tweakpane-ui'
 
 	import { traits, useTrait } from '$lib/ecs'

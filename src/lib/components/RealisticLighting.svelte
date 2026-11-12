@@ -11,7 +11,7 @@ light itself forces covers the switch.
 <script lang="ts">
 	import type { DirectionalLight, Vector3Tuple } from 'three'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 
 	const { invalidate, scene } = useThrelte()
 
@@ -50,15 +50,21 @@ light itself forces covers the switch.
 	const NORMAL_BIAS_TEXELS = 2
 	const SHADOW_TEXEL_SIZE = (2 * SHADOW_EXTENT) / SHADOW_MAP_SIZE
 
-	const DIRECTIONAL_INTENSITY = 1.5
+	/**
+	 * Neutral tone mapping passes values below about 0.76 through unchanged and
+	 * squeezes everything above toward white. Keeping a sun-facing surface near that
+	 * knee lets it read as its own color, the way CAD viewers show parts, instead of
+	 * washing out alongside every other lit face.
+	 */
+	const DIRECTIONAL_INTENSITY = 1
 
 	/**
 	 * Carries the fill an `AmbientLight` used to. Ambient adds the same term to every
 	 * surface whichever way it faces, which flattens the shaping the environment map
 	 * is already there to provide, so the rig leans on the map alone and turns it up
-	 * to cover what ambient was contributing.
+	 * past the default to cover what ambient was contributing.
 	 */
-	const ENVIRONMENT_INTENSITY = 1.5
+	const ENVIRONMENT_INTENSITY = 1.25
 
 	const configureShadow = ({ shadow }: DirectionalLight) => {
 		shadow.mapSize.setScalar(SHADOW_MAP_SIZE)

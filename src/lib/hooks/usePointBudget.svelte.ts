@@ -1,4 +1,4 @@
-import { useTask, useThrelte } from '@threlte/core'
+import { useTask, useThrelte } from '@threlte/core/webgpu'
 import { type OrthographicCamera, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 
 import { traits, useWorld } from '$lib/ecs'

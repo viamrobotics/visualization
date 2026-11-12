@@ -153,11 +153,28 @@ var (
 	q45x       = quat.Number{Real: math.Cos(math.Pi / 8), Imag: math.Sin(math.Pi / 8)}
 )
 
-// poleRadiusVector is TestOrientationVectorPoleRadius's value, the only one in RDK's suite that sits
-// inside orientationVectorPoleRadius of a pole while still carrying a longitude. It is what makes
-// the `1 - |z| > EPSILON` guard in the port's toQuaternion falsifiable.
+// poleRadiusVector is TestOrientationVectorPoleRadius's value, which sits inside
+// orientationVectorPoleRadius of a pole while still carrying a longitude. Since rdk#6630 that
+// longitude both tilts the vector and shifts theta, so dropping it is falsifiable here.
 func poleRadiusVector() *sm.OrientationVector {
 	return ov(90.2029644505*math.Pi/180, 0.0050164674, 0.0079070413, 0.9999561559)
+}
+
+// ur20UpperArmVector is a UR20's upper_arm_link pose in its shoulder_link, as a machine reported it.
+// Calibrated UR models stack near-parallel joints, so their link-to-link poses sit inside the pole radius.
+func ur20UpperArmVector() *sm.OrientationVector {
+	return ov(-108.79060721785683*math.Pi/180, -0.0013887496528351834, 0.00047251491064207585, 0.9999989240514509)
+}
+
+// ur20ForearmVector is the same machine's forearm_link pose in its upper_arm_link.
+func ur20ForearmVector() *sm.OrientationVector {
+	return ov(-64.83545731335221*math.Pi/180, 0.0007329661345321388, 0.0003443538100672928, 0.9999996720904959)
+}
+
+// southPoleRadiusVector mirrors the north-pole cases below -Z, where rdk adds the longitude to theta
+// instead of subtracting it.
+func southPoleRadiusVector() *sm.OrientationVector {
+	return ov(1, 0.003, -0.004, -math.Sqrt(1-0.003*0.003-0.004*0.004))
 }
 
 func fromVectorCases() []fromVectorCase {
@@ -171,8 +188,26 @@ func fromVectorCases() []fromVectorCase {
 		{
 			name:          "inside the pole radius with a longitude, from TestOrientationVectorPoleRadius",
 			input:         poleRadiusVector(),
-			expectedQuat:  quatOf(0.70584550898089, 0.003316602089147981, 0.003304874125080605, 0.7083503338102608),
-			expectedEuler: eulerOf(0.009364171617153033, -3.317127606305826e-05, 1.5743385694087264),
+			expectedQuat:  quatOf(0.70584550898089, -0.0010138888433254124, 0.00457100337056847, 0.7083503338102609),
+			expectedEuler: eulerOf(0.0050446241395586885, 0.007889303242108046, 1.5743586241508256),
+		},
+		{
+			name:          "inside the north pole radius, a UR20 upper arm in its shoulder",
+			input:         ur20UpperArmVector(),
+			expectedQuat:  quatOf(0.5821894594263212, 0.0004270170433806911, -0.0005963478170048587, -0.8130528244576818),
+			expectedEuler: eulerOf(0.0014669347233686738, 2.2780081505277245e-16, -1.89875429119551),
+		},
+		{
+			name:          "inside the north pole radius, a UR20 forearm in its upper arm",
+			input:         ur20ForearmVector(),
+			expectedQuat:  quatOf(0.8441620185179808, -0.00034181242700261896, 0.0002170691521135112, -0.5360879802205005),
+			expectedEuler: eulerOf(-0.0008098265518321487, 5.3907377538327856e-17, -1.1315922021542326),
+		},
+		{
+			name:          "inside the south pole radius with a longitude",
+			input:         southPoleRadiusVector(),
+			expectedQuat:  quatOf(0.002275232030194584, 0.47942404038768993, 0.877579819423441, -0.001036030053491365),
+			expectedEuler: eulerOf(3.1412294453346825, 0.004986811525711155, 2.14159174796235),
 		},
 
 		{
@@ -357,6 +392,22 @@ func fromQuaternionCases() []fromQuaternionCase {
 			name:     "at an odd angle, from TestQuatConversion",
 			input:    quat.Number{Real: 0.5, Imag: -0.5, Jmag: -0.5, Kmag: -0.5},
 			expected: vectorOf(-3.141592653589793, 0, 1, 0),
+		},
+
+		{
+			name:     "inside the north pole radius with a longitude, from TestOrientationVectorPoleRadius",
+			input:    quat.Number{Real: 0.70584550898089, Imag: -0.0010138888433254124, Jmag: 0.00457100337056847, Kmag: 0.7083503338102609},
+			expected: vectorOf(1.5743387247206224, 0.00501646740007242, 0.00790704130011415, 0.9999561559151995),
+		},
+		{
+			name:     "inside the north pole radius, a UR20 upper arm in its shoulder",
+			input:    quat.Number{Real: 0.5821894594263212, Imag: 0.0004270170433806911, Jmag: -0.0005963478170048587, Kmag: -0.8130528244576818},
+			expected: vectorOf(-1.8987542911955098, -0.0013887496528487296, 0.00047251491064668533, 0.9999989240514517),
+		},
+		{
+			name:     "inside the south pole radius with a longitude",
+			input:    quat.Number{Real: 0.002275232030194584, Imag: 0.47942404038768993, Jmag: 0.877579819423441, Kmag: -0.001036030053491365},
+			expected: vectorOf(1, 0.0029999999999933747, -0.003999999999991169, -0.9999874999218736),
 		},
 	}
 }

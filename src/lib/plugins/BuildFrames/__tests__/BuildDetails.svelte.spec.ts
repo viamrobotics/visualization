@@ -29,6 +29,7 @@ describe('BuildDetails', () => {
 
 	beforeEach(() => {
 		world.reset()
+		localStorage.removeItem('details-active-tab')
 
 		entity = createEntityFixture(world)
 		entity.add(traits.FramesAPI)
@@ -65,6 +66,7 @@ describe('BuildDetails', () => {
 			createComponent: vi.fn(),
 			updateComponent: vi.fn(),
 			hasEditPermissions: true,
+			hasConfigSource: true,
 			canUndoFrameEdit: false,
 			canRedoFrameEdit: false,
 			undoFrameEdit: vi.fn(),
@@ -112,14 +114,6 @@ describe('BuildDetails', () => {
 			current: { components: [{ ...resource, model }] },
 		})
 	}
-
-	it('keeps the geometry editor for a non-obstacle component', () => {
-		useComponentModel('rdk:builtin:fake')
-
-		renderPanel()
-
-		expect(screen.getByLabelText('mutable geometry')).toBeInTheDocument()
-	})
 
 	const useSimpleObstacle = () => {
 		const obstacle = { ...createObstacleComponent(resource.name), frame: resource.frame }

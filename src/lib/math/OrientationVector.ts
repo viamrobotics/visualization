@@ -23,6 +23,17 @@ const vecH = new Vector3()
 type OrientationVectorLike = OrientationVector | { x: number; y: number; z: number; th: number }
 
 /**
+ * Whether a vector, once normalized, lies within `EPSILON` of ±Z. Inside this radius rdk measures
+ * theta as if the longitude were zero, so encoder and decoder must make the same call.
+ */
+const isInPoleRadius = (x: number, y: number, z: number): boolean =>
+	1 - Math.abs(z / Math.hypot(x, y, z)) <= EPSILON
+
+/** `Math.remainder` from Go: the signed remainder whose magnitude is at most half the divisor. */
+const remainder = (dividend: number, divisor: number): number =>
+	dividend - divisor * Math.round(dividend / divisor)
+
+/**
  * Viam’s orientation vector is a method for describing the orientation of an object in 3D space.
  * It is part of a Pose which also includes the position in 3D space.
  *
@@ -226,8 +237,22 @@ export class OrientationVector {
 
 		let th = 0
 
-		// EPSILON is not an angle here, but it is a convenient small number for testing how close the vector points to the pole.
-		if (1 - Math.abs(newZ.z) > EPSILON) {
+		if (isInPoleRadius(newZ.x, newZ.y, newZ.z)) {
+			// Pointing along Z: theta comes from the local-x, global-z, origin plane instead.
+			th = newZ.z < 0 ? -Math.atan2(newX.y, newX.x) : -Math.atan2(newX.y, -newX.x)
+
+			// That is only exact on the pole itself. Off it, solve q = Rz(lon) Ry(lat) Rz(theta ∓ lon) exactly, as
+			// toQuaternion decodes it, keeping the choice between -π and π made above. Mirrors rdk#6630.
+			const lon = Math.atan2(newZ.y, newZ.x)
+			const lat = Math.acos(MathUtils.clamp(newZ.z, -1, 1))
+			const inverseLonLat = quatD
+				.set(0, 0, Math.sin(lon / 2), Math.cos(lon / 2))
+				.multiply(quatE.set(0, Math.sin(lat / 2), 0, Math.cos(lat / 2)))
+				.conjugate()
+			const twist = inverseLonLat.multiply(quaternion)
+			const twistTheta = 2 * Math.atan2(twist.z, twist.w) + (newZ.z > 0 ? lon : -lon)
+			th += remainder(twistTheta - th, 2 * Math.PI)
+		} else {
 			const newZimag = vecA.set(newZ.x, newZ.y, newZ.z)
 			const newXimag = vecB.set(newX.x, newX.y, newX.z)
 			const zImagAxis = vecC.set(zAxis.x, zAxis.y, zAxis.z)
@@ -254,11 +279,6 @@ export class OrientationVector {
 			} else {
 				th = 0
 			}
-		} else if (newZ.z < 0) {
-			// Pointing straight along Z: theta comes from the local-x, global-z, origin plane instead.
-			th = -Math.atan2(newX.y, newX.x)
-		} else {
-			th = -Math.atan2(newX.y, -newX.x)
 		}
 
 		this.set(newZ.x, newZ.y, newZ.z, th)
@@ -270,13 +290,21 @@ export class OrientationVector {
 
 	toQuaternion(dest: Quaternion): Quaternion {
 		const lat = Math.acos(this.z)
-		const lon = 1 - Math.abs(this.z) > EPSILON ? Math.atan2(this.y, this.x) : 0
+		const lon = Math.atan2(this.y, this.x)
+
+		// Near a pole theta is measured as if lon were 0 (see setFromQuaternion). Rz(lon) Ry(lat) Rz(theta ∓ lon)
+		// keeps that meaning while still pointing along x/y. Mirrors rdk#6630.
+		let th = this.th
+		if (isInPoleRadius(this.x, this.y, this.z)) {
+			th += this.z > 0 ? -lon : lon
+		}
+
 		const s0 = Math.sin(lon / 2)
 		const c0 = Math.cos(lon / 2)
 		const s1 = Math.sin(lat / 2)
 		const c1 = Math.cos(lat / 2)
-		const s2 = Math.sin(this.th / 2)
-		const c2 = Math.cos(this.th / 2)
+		const s2 = Math.sin(th / 2)
+		const c2 = Math.cos(th / 2)
 
 		return dest.set(
 			c0 * s1 * s2 - s0 * s1 * c2,

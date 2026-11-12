@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import { transformSnaps } from '../transformSnaps'
 
-const snapSettings = { snapping: true, snapTranslate: 0.25, snapRotate: 90, snapScale: 0.1 }
+const snapSettings = {
+	snapping: true,
+	snapIncrement: true,
+	snapTranslate: 0.25,
+	snapRotate: 90,
+	snapScale: 0.1,
+}
 
 describe('transformSnaps', () => {
 	it('passes a move step through in the metres the gizmo snaps in', () => {
@@ -19,6 +25,14 @@ describe('transformSnaps', () => {
 
 	it('snaps nothing while snapping is off', () => {
 		expect(transformSnaps({ ...snapSettings, snapping: false })).toEqual({
+			translation: null,
+			rotation: null,
+			scale: null,
+		})
+	})
+
+	it('snaps nothing while increment snapping is off', () => {
+		expect(transformSnaps({ ...snapSettings, snapIncrement: false })).toEqual({
 			translation: null,
 			rotation: null,
 			scale: null,

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
-	import { HTML } from '@threlte/extras'
+	import { useThrelte } from '@threlte/core/webgpu'
+	import { HTML } from '@threlte/extras/webgpu'
 	import { untrack } from 'svelte'
 	import { Group } from 'three'
 

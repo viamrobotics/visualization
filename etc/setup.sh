@@ -212,6 +212,45 @@ check_and_install_nlopt() {
     log_success "nlopt installed successfully (version: $(pkg-config --modversion nlopt))"
 }
 
+# The desktop app's sidecar links nlopt statically, and the system packages above ship shared
+# libraries only. scripts/build-sidecar.mjs finds this copy in .bin/nlopt-static.
+build_static_nlopt() {
+    local prefix="$PROJECT_ROOT/.bin/nlopt-static"
+    if [ -f "$prefix/lib/libnlopt.a" ]; then
+        log_success "Static nlopt is already built ($prefix)"
+        return 0
+    fi
+
+    if ! command_exists cmake; then
+        log_info "Installing cmake..."
+        case "$(uname -s)" in
+            Darwin)
+                brew install cmake
+                ;;
+            Linux)
+                if command_exists apt-get; then
+                    sudo apt-get install -y cmake
+                elif command_exists dnf; then
+                    sudo dnf install -y cmake
+                elif command_exists pacman; then
+                    sudo pacman -S --needed --noconfirm cmake
+                else
+                    log_error "No supported package manager found. Install cmake manually and re-run setup."
+                    exit 1
+                fi
+                ;;
+            *)
+                log_error "Unsupported OS for automatic cmake install. Install cmake manually and re-run setup."
+                exit 1
+                ;;
+        esac
+    fi
+
+    log_info "Building static nlopt for the desktop sidecar..."
+    "$PROJECT_ROOT/scripts/build-static-nlopt.sh" "$prefix"
+    log_success "Static nlopt built ($prefix)"
+}
+
 check_and_install_buf() {
     if command_exists buf; then
         log_success "buf is already installed (version: $(buf --version))"
@@ -291,8 +330,9 @@ main() {
     # Step 4: Install Go
     check_and_install_go
 
-    # Step 5: Install nlopt
+    # Step 5: Install nlopt, plus a static copy for the desktop sidecar
     check_and_install_nlopt
+    build_static_nlopt
 
     # Step 6: Install buf
     check_and_install_buf

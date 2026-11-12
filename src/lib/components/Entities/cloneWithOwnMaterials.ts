@@ -1,6 +1,6 @@
 import type { Object3D } from 'three'
 
-import { isInstanceOf } from '@threlte/core'
+import { isInstanceOf } from '@threlte/core/webgpu'
 
 /**
  * Clones `source` and gives the copy its own materials.

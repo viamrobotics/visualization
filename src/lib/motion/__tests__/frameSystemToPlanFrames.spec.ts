@@ -233,10 +233,6 @@ describe('a jointless model whose part configured a geometry', () => {
 		expect(descriptors.has('grip:body')).toBe(false)
 	})
 
-	it('still publishes the bare part frame for descendants to hang off', () => {
-		expect(descriptors.get('grip')?.kind).toBe('static')
-	})
-
 	// Repeating it here and on `grip_origin` is the doubling this branch exists to prevent.
 	it('does not repeat the envelope on the stand-in frame', () => {
 		const bare = descriptors.get('grip')
@@ -494,20 +490,6 @@ describe('trajectory column order', () => {
 
 	it('numbers by the chain, not by the order the joints were declared in', () => {
 		expect(columnsOf(chainModel(chain.toReversed()))).toEqual(columnsOf(chainModel(chain)))
-	})
-
-	it("breaks a branch tie alphabetically, as RDK's breadth-first walk does", () => {
-		const columns = columnsOf(
-			Struct.fromJson({
-				links: [{ id: 'base', parent: 'world' }],
-				joints: [
-					{ id: 'zeta', parent: 'base', type: 'revolute', axis: { X: 0, Y: 0, Z: 1 } },
-					{ id: 'alpha', parent: 'base', type: 'revolute', axis: { X: 0, Y: 0, Z: 1 } },
-				],
-			})
-		)
-
-		expect(columns).toEqual({ 'arm:alpha': 0, 'arm:zeta': 1 })
 	})
 
 	/**

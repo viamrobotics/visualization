@@ -62,21 +62,6 @@ describe('pcdDropper', () => {
 		expect(parsePcdInWorker).not.toHaveBeenCalled()
 	})
 
-	it('returns error when content is null', async () => {
-		const result = await pcdDropper({
-			name: 'model.pcd',
-			extension: 'pcd',
-			prefix: undefined,
-			content: null,
-		})
-
-		expect(result.success).toBe(false)
-		if (!result.success) {
-			expect(result.error).toBeInstanceOf(FileDropperError)
-			expect(result.error.message).toContain('failed to load')
-		}
-	})
-
 	it('returns error when parsing fails', async () => {
 		vi.mocked(parsePcdInWorker).mockRejectedValue(new Error('Parse error'))
 

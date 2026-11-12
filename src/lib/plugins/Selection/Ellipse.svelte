@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ShapecastCallbacks } from 'three-mesh-bvh'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import earcut from 'earcut'
 	import { type Entity, Not } from 'koota'
 	import { Box3, Triangle, Vector3 } from 'three'

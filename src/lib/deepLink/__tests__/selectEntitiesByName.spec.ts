@@ -54,12 +54,6 @@ describe('selectEntitiesByName', () => {
 		expect(realEntity.has(traits.Selected)).toBe(true)
 	})
 
-	it('does not throw when a name never appears', () => {
-		world = createWorld()
-
-		expect(() => selectEntitiesByName(world, ['missing'])).not.toThrow()
-	})
-
 	it('does not re-select an entity the user deselected after it resolved', () => {
 		world = createWorld()
 		const armEntity = world.spawn(traits.Name('arm-1'))

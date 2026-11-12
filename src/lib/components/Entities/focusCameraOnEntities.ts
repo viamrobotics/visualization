@@ -1,4 +1,4 @@
-import type { CameraControlsRef } from '@threlte/extras'
+import type { CameraControlsRef } from '@threlte/extras/webgpu'
 import type { Entity } from 'koota'
 import type { Object3D } from 'three'
 

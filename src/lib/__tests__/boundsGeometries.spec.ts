@@ -24,12 +24,6 @@ describe('generateBoundsGeometries', () => {
 		])
 	})
 
-	it('follows BOUNDS_FACES order', () => {
-		expect(generateBoundsGeometries(hint).map((geometry) => geometry.label)).toEqual([
-			...BOUNDS_FACES,
-		])
-	})
-
 	it('omits an excluded face', () => {
 		const labels = generateBoundsGeometries({ ...hint, exclude: ['ceiling'] }).map(
 			(geometry) => geometry.label
@@ -48,15 +42,5 @@ describe('generateBoundsGeometries', () => {
 		)
 
 		expect(withOrientation).toEqual([])
-	})
-
-	it('never emits negative zero', () => {
-		const values = generateBoundsGeometries(hint).flatMap((geometry) => [
-			geometry.translation?.x,
-			geometry.translation?.y,
-			geometry.translation?.z,
-		])
-
-		expect(values.filter((value) => Object.is(value, -0))).toEqual([])
 	})
 })

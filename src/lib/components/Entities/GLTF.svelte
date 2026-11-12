@@ -15,8 +15,8 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { T, type Props as ThrelteProps, useThrelte } from '@threlte/core'
-	import { type ThrelteGltf, useGltfAnimations } from '@threlte/extras'
+	import { T, type Props as ThrelteProps, useThrelte } from '@threlte/core/webgpu'
+	import { type ThrelteGltf, useGltfAnimations } from '@threlte/extras/webgpu'
 	import { Group, type Object3D } from 'three'
 
 	import { traits, useOpacity, useTrait } from '$lib/ecs'

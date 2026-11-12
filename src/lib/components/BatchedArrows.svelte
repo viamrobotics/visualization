@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { Color, Quaternion, Vector3 } from 'three'
 
 	import { traits, useWorld } from '$lib/ecs'

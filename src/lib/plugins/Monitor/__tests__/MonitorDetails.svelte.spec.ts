@@ -34,6 +34,7 @@ describe('MonitorDetails', () => {
 
 	beforeEach(() => {
 		world.reset()
+		localStorage.removeItem('details-active-tab')
 
 		entity = createEntityFixture(world)
 

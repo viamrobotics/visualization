@@ -55,7 +55,7 @@ Start with the simplest possible plugin: a component that drops an object into t
 ```svelte
 <!-- Waypoint.svelte -->
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 
 	interface Props {
 		position?: [x: number, y: number, z: number]
@@ -91,7 +91,7 @@ That's a complete, working plugin. Now give it a control. Because the button liv
 ```svelte
 <!-- Waypoint.svelte -->
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { IconButton } from '@viamrobotics/prime-core'
 
 	import { DashboardPortal } from '@viamrobotics/visualization'
@@ -127,9 +127,10 @@ The rest of this guide is the toolkit for going further.
 
 Anything you can render with [Threlte](https://threlte.xyz/) works inside a plugin, because your children already live in the `<Canvas>`:
 
-- **3D objects** — `<T>` and `<T.Mesh>` from `@threlte/core`, or higher-level helpers from `@threlte/extras`. [`<Skybox />`](../skybox/) is a pure-scene plugin: it loads a texture and renders a single `<T>`.
-- **In-scene DOM labels** — `<HTML>` from `@threlte/extras` anchors HTML to a world position. [`<MeasureTool />`](../measure-tool/) uses it to float a distance readout at the midpoint of a measurement.
-- **Per-frame work** — `useTask(() => { … })` from `@threlte/core` runs a callback in Threlte's render loop; use it instead of `$effect` for anything animated.
+- **3D objects** — `<T>` and `<T.Mesh>` from `@threlte/core/webgpu`, or higher-level helpers from `@threlte/extras/webgpu`. [`<Skybox />`](../skybox/) is a pure-scene plugin: it loads a texture and renders a single `<T>`.
+- **Materials** — the scene renders with three's `WebGPURenderer`, so a custom material must be a node material built with TSL. `ShaderMaterial`, `RawShaderMaterial`, and `onBeforeCompile` don't render.
+- **In-scene DOM labels** — `<HTML>` from `@threlte/extras/webgpu` anchors HTML to a world position. [`<MeasureTool />`](../measure-tool/) uses it to float a distance readout at the midpoint of a measurement.
+- **Per-frame work** — `useTask(() => { … })` from `@threlte/core/webgpu` runs a callback in Threlte's render loop; use it instead of `$effect` for anything animated.
 - **Performance** — opt display-only geometry out of hit-testing with `raycast={() => null}` or `bvh={{ enabled: false }}`.
 
 After any _imperative_ Three.js mutation, call `invalidate()` from `useThrelte()` so the on-demand renderer repaints.
@@ -437,7 +438,7 @@ If your plugin needs an extra package, import it normally, declare it a peer dep
     	```
 
     	Import scene/ECS/portal helpers from the package root (`@viamrobotics/visualization`), Threlte
-    	primitives from `@threlte/core` / `@threlte/extras`, and `trait` / `relation` from `koota`. To
+    	primitives from `@threlte/core/webgpu` / `@threlte/extras/webgpu`, and `trait` / `relation` from `koota`. To
     	share a plugin across projects, extract it to your own package with `@viamrobotics/visualization`
     	as a peer dependency — it stays a plain Svelte component.
 

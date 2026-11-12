@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { HTML } from '@threlte/extras'
+	import { HTML } from '@threlte/extras/webgpu'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { type HoverInfo } from '$lib/HoverUpdater.svelte'

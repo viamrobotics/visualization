@@ -183,8 +183,16 @@ export const updateTransform = (
 
 	hierarchy.setParent(entity, poseInObserverFrame?.referenceFrame)
 
+	const parsedMetadata = metadataFromStruct(metadata?.fields)
+
 	if (physicalObject) {
-		traits.updateGeometryTrait(entity, physicalObject)
+		const { colors } = parsedMetadata
+		if (isPointCloud(physicalObject.geometryType) && colors && colors.length > 0) {
+			reparsePointCloud(entity, physicalObject.geometryType.value.pointCloud, colors)
+		} else {
+			traits.updateGeometryTrait(entity, physicalObject)
+		}
+
 		const center = physicalObject.center
 		if (center) {
 			setOrAddTrait(entity, traits.Center, center)
@@ -193,7 +201,6 @@ export const updateTransform = (
 		}
 	}
 
-	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	updateMetadata(entity, parsedMetadata, {
 		pointCloud: isPointCloud(physicalObject?.geometryType),
 	})
@@ -499,6 +506,23 @@ const parsePointCloud = (
 		entity.add(traits.BufferGeometry(geometry))
 		entity.add(traits.Points)
 	})
+}
+
+/**
+ * Re-parses a redrawn point cloud. Its metadata colors override the cloud's own per-point colors,
+ * as they do in `parsePointCloud` at spawn.
+ */
+const reparsePointCloud = (entity: Entity, pointCloud: Uint8Array, colors: Uint8Array): void => {
+	parsePcdInWorker(new Uint8Array(pointCloud))
+		.then((parsed) => {
+			if (!entity.isAlive()) return
+
+			const numPoints = parsed.positions.length / STRIDE.POSITIONS
+			traits.applyParsedPointCloud(entity, parsed, parseColors(colors, numPoints))
+		})
+		.catch((error) => {
+			console.error('Failed to update pointcloud buffer geometry:', error)
+		})
 }
 
 const updatePointCloudColors = (entity: Entity, metadata: Metadata): void => {

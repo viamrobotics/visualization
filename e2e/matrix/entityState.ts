@@ -37,6 +37,9 @@ export interface EntityState {
 	invisible: boolean
 	inheritedInvisible: boolean
 	axesHelper: boolean
+	selected: boolean
+	/** Vertices in the entity's `BufferGeometry`: one per point for a point cloud. */
+	pointCount?: number
 	pointSize?: number
 	lineWidth?: number
 	dotSize?: number
@@ -121,6 +124,7 @@ export const readEntityState = (page: Page, name: string): Promise<EntityState> 
 			invisible: false,
 			inheritedInvisible: false,
 			axesHelper: false,
+			selected: false,
 		}
 		if (!match || entityId === undefined) return empty
 
@@ -155,6 +159,9 @@ export const readEntityState = (page: Page, name: string): Promise<EntityState> 
 		const color = match.get(traits.Color) as { r: number; g: number; b: number } | undefined
 		const opacity = match.get(traits.Opacity) as number | undefined
 		const localMatrix = match.get(traits.Matrix) as { elements: number[] } | undefined
+		const geometry = match.get(traits.BufferGeometry) as
+			| { getAttribute: (name: string) => { count: number } | undefined }
+			| undefined
 
 		return {
 			present: true,
@@ -170,6 +177,8 @@ export const readEntityState = (page: Page, name: string): Promise<EntityState> 
 			invisible: match.has(traits.Invisible),
 			inheritedInvisible: match.has(traits.InheritedInvisible),
 			axesHelper: match.has(traits.ShowAxesHelper),
+			selected: match.has(traits.Selected),
+			pointCount: geometry?.getAttribute('position')?.count,
 			pointSize: match.get(traits.PointSize) as number | undefined,
 			lineWidth: match.get(traits.LineWidth) as number | undefined,
 			dotSize: match.get(traits.DotSize) as number | undefined,

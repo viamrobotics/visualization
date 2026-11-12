@@ -14,7 +14,7 @@ describe('InstancedArrows.update', () => {
 
 		arrows.update({ poses: TWO_ARROWS, colors: new Uint8Array([1, 2, 3, 4, 5, 6]) })
 
-		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 4, 5, 6])
+		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 255, 4, 5, 6, 255])
 	})
 
 	// The draw service accepts any colors buffer, so a caller can send more colors
@@ -26,7 +26,7 @@ describe('InstancedArrows.update', () => {
 		expect(() =>
 			arrows.update({ poses: TWO_ARROWS, colors: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) })
 		).not.toThrow()
-		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 4, 5, 6])
+		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 255, 4, 5, 6, 255])
 	})
 
 	it('leaves arrows past the end of a short colors buffer untouched', () => {
@@ -34,7 +34,7 @@ describe('InstancedArrows.update', () => {
 
 		arrows.update({ poses: TWO_ARROWS, colors: new Uint8Array([1, 2, 3]) })
 
-		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 0, 0, 0])
+		expect(instanceColors(arrows)).toStrictEqual([1, 2, 3, 255, 0, 0, 0, 255])
 	})
 
 	it('drops poses past the last arrow instead of throwing', () => {

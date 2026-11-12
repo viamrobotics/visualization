@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PortalTarget } from '@threlte/extras'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 
 	import ModeToggle from './ModeToggle.svelte'
 

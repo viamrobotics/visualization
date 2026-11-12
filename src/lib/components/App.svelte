@@ -3,12 +3,13 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { Canvas } from '@threlte/core'
-	import { PortalTarget } from '@threlte/extras'
+	import { Canvas } from '@threlte/core/webgpu'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
-	import { AgXToneMapping, NoToneMapping } from 'three'
+	import { NeutralToneMapping } from 'three'
+	import { WebGPURenderer } from 'three/webgpu'
 
 	import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
@@ -126,17 +127,6 @@
 		environment.current.isStandalone = !localConfigProps
 	})
 
-	/**
-	 * Only realistic mode wants a filmic curve. In the other two a color is data — a
-	 * collider's color says what it is — and AgX, which Threlte applies by default,
-	 * desaturates and lifts whatever it is handed. Rendering those modes with the
-	 * curve off puts their colors on screen as written, and matches the grid, whose
-	 * raw `ShaderMaterial` is never tone mapped in any mode.
-	 */
-	const toneMapping = $derived(
-		settings.current.renderMode === 'realistic' ? AgXToneMapping : NoToneMapping
-	)
-
 	const detailsSections = provideDetailsSections()
 
 	// The host's `details` snippet is just another section. Registered in an
@@ -157,7 +147,14 @@
 >
 	<Canvas
 		renderMode="on-demand"
-		{toneMapping}
+		toneMapping={NeutralToneMapping}
+		createRenderer={(canvas) =>
+			new WebGPURenderer({
+				canvas,
+				antialias: true,
+				// Keeps depth precision near-uniform, so nearby surfaces don't z-fight when zoomed out.
+				reversedDepthBuffer: true,
+			})}
 	>
 		<SceneProviders>
 			<Scene>
@@ -174,7 +171,7 @@
 
 				<PortalTarget id="dom" />
 
-				{#if settings.current.renderStats}
+				{#if settings.current.renderStats && !environment.current.isImmersive}
 					<RenderStats />
 				{/if}
 			</div>

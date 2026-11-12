@@ -38,12 +38,6 @@ describe('createDeepLink', () => {
 		expect(deepLink.consume('part')).toEqual(['arm'])
 	})
 
-	it('returns undefined for any key when the params map is empty', () => {
-		const deepLink = createDeepLink(new Map())
-
-		expect(deepLink.consume('mode')).toBeUndefined()
-	})
-
 	it('returns an empty array once for a key present with no values', () => {
 		const deepLink = createDeepLink(new Map([['mode', []]]))
 

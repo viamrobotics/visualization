@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte'
 	import type { BufferAttribute } from 'three'
 
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 	import { PlaneGeometry, Vector2 } from 'three'
 
 	interface Props {

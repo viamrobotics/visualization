@@ -12,6 +12,13 @@
 	const { disabledCameras } = $derived(settings.current)
 
 	const colorHex = $derived(`#${new Color(settings.current.pointColor).getHexString()}`)
+
+	const MILLIMETERS_PER_METER = 1000
+	const POINT_SIZE_DECIMALS = 3
+
+	const pointSizeMillimeters = $derived(
+		Number((settings.current.pointSize * MILLIMETERS_PER_METER).toFixed(POINT_SIZE_DECIMALS))
+	)
 </script>
 
 <div class="flex flex-col gap-1 text-xs">
@@ -24,11 +31,19 @@
 	/>
 
 	<label class="flex items-center justify-between gap-2">
-		Default point size
+		Default point size (mm)
 
 		<div class="w-20">
 			<Input
-				bind:value={settings.current.pointSize}
+				type="number"
+				min={0}
+				value={pointSizeMillimeters}
+				on:input={(event) => {
+					const millimeters = (event.target as HTMLInputElement).valueAsNumber
+					if (Number.isFinite(millimeters) && millimeters >= 0) {
+						settings.current.pointSize = millimeters / MILLIMETERS_PER_METER
+					}
+				}}
 				on:keydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>

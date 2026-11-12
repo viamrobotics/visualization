@@ -1,4 +1,4 @@
-import type { CameraControlsRef } from '@threlte/extras'
+import type { CameraControlsRef } from '@threlte/extras/webgpu'
 import type { Vector3Tuple } from 'three'
 
 import { getContext, setContext } from 'svelte'
