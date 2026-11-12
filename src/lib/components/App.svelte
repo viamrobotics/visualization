@@ -140,7 +140,7 @@
 
 <div
 	class={[
-		'h-full w-full overflow-hidden bg-white',
+		'h-full w-full overflow-clip bg-white',
 		fullscreen.active ? 'z-max fixed inset-0' : 'relative',
 	]}
 	bind:this={root}
