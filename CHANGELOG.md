@@ -1,5 +1,16 @@
 # visualization
 
+## 3.2.0
+
+### Minor Changes
+
+- b874b56: Update the desktop app in the background on Windows (installer build) and Linux (AppImage and .deb), installing the new version when the app quits.
+
+### Patch Changes
+
+- 742b32e: Keep floating panels inside the scene when the host app renders chrome above it.
+- 6c9f81d: Update the desktop app to Electron 45.2.1, which carries Chromium security fixes.
+
 ## 3.1.0
 
 ### Minor Changes
