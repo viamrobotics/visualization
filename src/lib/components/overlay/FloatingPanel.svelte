@@ -9,6 +9,8 @@
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import { untrack } from 'svelte'
 
+	import { clampPanelPosition } from '$lib/components/overlay/clampPanelPosition'
+
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
@@ -60,23 +62,50 @@
 		if (size) currentSize = size
 	})
 
+	// Mirrors the machine's size while it is uncontrolled. Reading it from `api` instead would make
+	// the clamped position depend on the machine that consumes it.
+	let uncontrolledSize = $state(untrack(() => defaultSize))
+	const panelSize = $derived(currentSize ?? uncontrolledSize)
+
+	const measureScene = () => ({ width: dom.clientWidth, height: dom.clientHeight })
+	let sceneSize = $state(measureScene())
+	$effect(() => {
+		const observer = new ResizeObserver(() => (sceneSize = measureScene()))
+		observer.observe(dom)
+		return () => observer.disconnect()
+	})
+
+	const initialPosition = untrack(
+		() =>
+			defaultPosition ?? {
+				x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
+				y: dom.clientHeight / 2 - defaultSize.height / 2 + dom.clientTop,
+			}
+	)
+
+	let requestedPosition = $state(initialPosition)
+	const position = $derived(clampPanelPosition(requestedPosition, panelSize, sceneSize))
+
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
 		size: currentSize,
-		defaultPosition: defaultPosition ?? {
-			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
-			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
-		},
+		defaultPosition: initialPosition,
+		position,
 		resizable,
 		allowOverflow: false,
 		strategy: 'absolute' as const,
 		persistRect,
 		open: isOpen,
 		...props,
+		onPositionChange: (details: floatingPanel.PositionChangeDetails) => {
+			requestedPosition = details.position
+			props.onPositionChange?.({ position })
+		},
 		onSizeChange: (details: floatingPanel.SizeChangeDetails) => {
 			// Controlled panels have to adopt the drag's own result, or a resize snaps straight back.
 			if (currentSize) currentSize = details.size
+			uncontrolledSize = details.size
 			props.onSizeChange?.(details)
 		},
 	}))
