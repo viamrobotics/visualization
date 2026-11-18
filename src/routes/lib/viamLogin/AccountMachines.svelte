@@ -1,0 +1,376 @@
+<script lang="ts">
+	import {
+		Banner,
+		BannerVariant,
+		Button,
+		Icon,
+		Input,
+		Progress,
+		Select,
+	} from '@viamrobotics/prime-core'
+	import { appApi } from '@viamrobotics/sdk'
+	import { PersistedState } from 'runed'
+	import { type Snippet, untrack } from 'svelte'
+	import { VirtualList } from 'svelte-virtuallists'
+
+	import { useActiveConnectionConfig } from '../hooks/useConnectionConfigs.svelte'
+	import { machineListItemHeight, toMachineListItems } from './machineListItems'
+	import { MACHINE_SORT_LABELS, type MachineSortKey, toMachineRows } from './machineRows'
+	import OrgMenu from './OrgMenu.svelte'
+	import { useAccountMachines } from './useAccountMachines.svelte'
+	import { useAccountPart } from './useAccountPart.svelte'
+	import UserMenu from './UserMenu.svelte'
+	import { useViamSession } from './useViamSession.svelte'
+
+	interface Props {
+		/** A CLI launch file overrides any pick, so the list is shown but cannot be used. */
+		isLaunched: boolean
+	}
+
+	const { isLaunched }: Props = $props()
+
+	const COUNTDOWN_TICK_MS = 1000
+
+	const session = useViamSession()
+	const accountPart = useAccountPart()
+	const activeConfig = useActiveConnectionConfig()
+
+	const machines = useAccountMachines()
+
+	// The popover mounts this panel each time it opens. Cached results show while this refetch runs.
+	$effect(() => {
+		untrack(machines.refetch)
+	})
+
+	let filter = $state('')
+	let pickingPartId = $state<string>()
+	let pickError = $state<string>()
+	let now = $state(Date.now())
+
+	const sortKey = new PersistedState<MachineSortKey>('viam-account-machine-sort', 'status')
+
+	const rows = $derived(toMachineRows(machines.locations, filter, sortKey.current))
+	const items = $derived(toMachineListItems(rows))
+	// The list's full height. Flex shrinks it to the space left in the popover, where it scrolls.
+	const contentHeight = $derived(items.reduce((sum, item) => sum + machineListItemHeight(item), 0))
+
+	const error = $derived(pickError ?? session.error ?? machines.error)
+
+	$effect(() => {
+		if (session.state.status !== 'awaiting-approval') return
+		const ticker = setInterval(() => {
+			now = Date.now()
+		}, COUNTDOWN_TICK_MS)
+		return () => clearInterval(ticker)
+	})
+
+	const formatCountdown = (expiresAt: number) => {
+		const seconds = Math.max(0, Math.round((expiresAt - now) / 1000))
+		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+	}
+
+	const formatLastOnline = (secondsSinceOnline: bigint) => {
+		const seconds = Number(secondsSinceOnline)
+		if (seconds < 60) return 'just now'
+		if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+		if (seconds < 86_400) return `${Math.floor(seconds / 3600)}h ago`
+		return `${Math.floor(seconds / 86_400)}d ago`
+	}
+
+	const pick = async (machine: appApi.MachineSummary, part: appApi.PartSummary) => {
+		if (accountPart.current?.partId === part.partId) {
+			accountPart.set(null)
+			return
+		}
+
+		pickingPartId = part.partId
+		pickError = undefined
+		try {
+			const host = await machines.resolveHost(part.partId)
+			accountPart.set({
+				partId: part.partId,
+				partName: part.partName,
+				machineName: machine.machineName,
+				host,
+			})
+			activeConfig.set(undefined)
+		} catch (resolveError) {
+			pickError = `Could not connect to ${machine.machineName}: ${(resolveError as Error).message}`
+		} finally {
+			pickingPartId = undefined
+		}
+	}
+
+	const logout = () => {
+		accountPart.set(null)
+		session.logout()
+	}
+</script>
+
+<!-- Icons and colors follow app.viam.com's machines page, except offline stays grey. -->
+{#snippet partStatus(part: appApi.PartSummary)}
+	<span class="flex shrink-0 items-center gap-1 text-xs">
+		{#if pickingPartId === part.partId}
+			<Progress
+				variant="dots"
+				size="small"
+			/>
+		{/if}
+		{#if part.onlineState === appApi.OnlineState.ONLINE}
+			<Icon
+				name="broadcast"
+				cx="text-success-dark"
+			/>
+			<span class="text-success-dark">Online</span>
+		{:else if part.onlineState === appApi.OnlineState.AWAITING_SETUP}
+			<Icon
+				name="selection-ellipse"
+				cx="text-info-dark"
+			/>
+			<span class="text-info-dark">Awaiting setup</span>
+		{:else}
+			<Icon
+				name="broadcast-off"
+				cx="text-gray-6"
+			/>
+			<span class="text-subtle-2">Offline · {formatLastOnline(part.secondsSinceOnline)}</span>
+		{/if}
+	</span>
+{/snippet}
+
+{#snippet machineName(name: string, locationName: string, isPicked: boolean)}
+	<span class="flex min-w-0 flex-col">
+		<span class={['truncate text-sm leading-5', isPicked && 'text-heading font-medium']}
+			>{name}</span
+		>
+		<span class="text-subtle-2 truncate text-xs leading-4">{locationName}</span>
+	</span>
+{/snippet}
+
+{#snippet pickButton(
+	machine: appApi.MachineSummary,
+	part: appApi.PartSummary,
+	heightClass: string,
+	label: Snippet<[boolean]>
+)}
+	{@const isPicked = accountPart.current?.partId === part.partId}
+	<button
+		type="button"
+		aria-pressed={isPicked}
+		aria-disabled={isLaunched || undefined}
+		class={[
+			'border-light flex w-full items-center justify-between gap-2 border-b px-4 text-left',
+			'focus-visible:outline-gray-9 focus-visible:outline-2 focus-visible:-outline-offset-2',
+			heightClass,
+			isLaunched
+				? 'text-disabled cursor-not-allowed'
+				: 'text-subtle-1 hover:text-default transition-colors duration-200',
+			// Matches a selected WorldTree row.
+			isPicked ? 'bg-medium text-default' : !isLaunched && 'hover:bg-light',
+		]}
+		onclick={() => {
+			if (!isLaunched) void pick(machine, part)
+		}}
+	>
+		{@render label(isPicked)}
+		{@render partStatus(part)}
+	</button>
+{/snippet}
+
+<section
+	aria-label="Viam account"
+	class={[
+		'font-public-sans flex flex-col gap-2 *:shrink-0',
+		session.state.status === 'active' ? 'min-h-0 flex-1' : 'shrink-0',
+	]}
+>
+	{#if error}
+		<div role="alert">
+			<Banner
+				variant={BannerVariant.Danger}
+				size="sm"
+			>
+				{#snippet titleContent()}
+					{error}
+				{/snippet}
+			</Banner>
+		</div>
+	{/if}
+
+	{#if session.state.status === 'restoring'}
+		<div class="text-subtle-1 flex items-center gap-2 p-2 text-xs">
+			<Progress
+				variant="dots"
+				size="small"
+			/>
+			Restoring your Viam session
+		</div>
+	{:else if session.state.status === 'logged-out'}
+		<div class="border-medium flex items-center justify-between gap-4 rounded border p-3">
+			<div class="flex flex-col gap-0.5 text-xs">
+				<span class="text-heading font-medium">Connect with your Viam account</span>
+				<span class="text-subtle-1">Pick any machine in your organizations.</span>
+			</div>
+			<Button
+				variant="dark"
+				onclick={() => void session.login()}
+			>
+				Log in with Viam
+			</Button>
+		</div>
+	{:else if session.state.status === 'awaiting-approval'}
+		{@const { pending } = session.state}
+		<div class="border-medium flex flex-col gap-3 rounded border p-3 text-xs">
+			<span class="text-heading font-medium">Finish logging in in your browser</span>
+			<div class="flex items-center justify-between">
+				<span class="text-default">Confirm this code matches</span>
+				<span class="font-roboto-mono text-heading text-sm tracking-widest">{pending.userCode}</span
+				>
+			</div>
+			<div class="text-subtle-1 flex items-center gap-2">
+				<Progress
+					variant="dots"
+					size="small"
+				/>
+				<span>Waiting for approval, expires in {formatCountdown(pending.expiresAt)}</span>
+			</div>
+			<div class="flex justify-between">
+				<Button
+					variant="ghost"
+					onclick={() => window.open(pending.verificationUri, '_blank', 'noopener')}
+				>
+					Reopen login page
+				</Button>
+				<Button onclick={session.cancelLogin}>Cancel</Button>
+			</div>
+		</div>
+	{:else}
+		{@const { session: activeSession } = session.state}
+		<div class="flex items-center justify-between gap-2">
+			<OrgMenu
+				organizations={machines.organizations}
+				currentId={machines.organizationId}
+				onChange={(id) => {
+					machines.organizationId = id
+				}}
+			/>
+			<UserMenu
+				displayName={activeSession.displayName}
+				email={activeSession.email}
+				onSignOut={logout}
+			/>
+		</div>
+
+		<div class="flex items-center gap-2">
+			<div class="relative grow">
+				<Icon
+					name="magnify"
+					cx="text-gray-6 absolute top-1/2 left-2 z-10 -translate-y-1/2"
+				/>
+				<Input
+					aria-label="Search machines, parts, and locations"
+					placeholder="Start typing to search…"
+					cx="pl-7"
+					value={filter}
+					on:input={(event) => {
+						filter = (event.target as HTMLInputElement).value
+					}}
+				/>
+			</div>
+			<label
+				for="viam-account-machine-sort"
+				class="text-subtle-1 shrink-0 text-xs">Sort by</label
+			>
+			<div class="w-28 shrink-0">
+				<Select
+					id="viam-account-machine-sort"
+					value={sortKey.current}
+					onchange={(event: Event) => {
+						if (event.target instanceof HTMLSelectElement)
+							sortKey.current = event.target.value as MachineSortKey
+					}}
+				>
+					{#each Object.entries(MACHINE_SORT_LABELS) as [key, label] (key)}
+						<option value={key}>{label}</option>
+					{/each}
+				</Select>
+			</div>
+		</div>
+
+		{#if isLaunched}
+			<p class="text-subtle-2 text-xs">A Viam CLI launch is active, so picking a machine is off.</p>
+		{/if}
+
+		<div class="border-light flex min-h-0 shrink! flex-col border">
+			<div
+				class="border-light bg-light text-subtle-1 flex shrink-0 items-center justify-between border-b px-4 py-1.5 text-xs"
+			>
+				<span class="flex items-center gap-1">
+					<Icon
+						name="multiplication-box"
+						cx="text-gray-6"
+					/>
+					Machine
+				</span>
+				<span class="flex items-center gap-1">
+					<Icon
+						name="broadcast"
+						cx="text-gray-6"
+					/>
+					Status
+				</span>
+			</div>
+
+			{#if machines.isLoading && machines.locations.length === 0}
+				<div class="text-subtle-1 flex items-center gap-2 px-4 py-3 text-xs">
+					<Progress
+						variant="dots"
+						size="small"
+					/>
+					Loading machines
+				</div>
+			{:else if items.length === 0}
+				<p class="text-subtle-1 px-4 py-3 text-center text-xs">
+					{filter ? 'No results found' : 'This organization has no machines.'}
+				</p>
+			{:else}
+				<VirtualList
+					{items}
+					class="min-h-0"
+					style="height: {contentHeight}px"
+					sizingCalculator={(index) => machineListItemHeight(items[index])}
+				>
+					{#snippet vl_slot({ item })}
+						{#if item.kind === 'machine'}
+							{#snippet label(isPicked: boolean)}
+								{@render machineName(item.row.machine.machineName, item.row.locationName, isPicked)}
+							{/snippet}
+							{@render pickButton(item.row.machine, item.part, 'h-11', label)}
+						{:else if item.kind === 'machine-heading'}
+							<div class="border-light text-subtle-1 flex h-11 items-center border-b px-4">
+								{@render machineName(item.row.machine.machineName, item.row.locationName, false)}
+							</div>
+						{:else}
+							{#snippet label(isPicked: boolean)}
+								<span
+									class="border-light ml-1 flex h-full min-w-0 items-center gap-1.5 self-stretch border-l pl-3"
+								>
+									<span class={['truncate text-sm', isPicked && 'text-heading font-medium']}
+										>{item.part.partName}</span
+									>
+									{#if item.part.isMainPart}
+										<span
+											class="border-light bg-light text-subtle-1 rounded border px-1.5 py-0.5 font-mono text-[11px] tracking-wider uppercase"
+											>Main</span
+										>
+									{/if}
+								</span>
+							{/snippet}
+							{@render pickButton(item.row.machine, item.part, 'h-8', label)}
+						{/if}
+					{/snippet}
+				</VirtualList>
+			{/if}
+		</div>
+	{/if}
+</section>

@@ -138,6 +138,7 @@
 				"client/**",
 				"draw/**",
 				"motionplan/**",
+				"viamlogin/**",
 				"go.mod",
 				"go.sum"
 			],
@@ -169,6 +170,7 @@
 				"draw/**",
 				"motionplan/**",
 				"mutils/**",
+				"viamlogin/**",
 				"go.mod",
 				"go.sum"
 			],
@@ -501,6 +503,7 @@
 			"files": [
 				"protos/draw/**",
 				"protos/motionplan/**",
+				"protos/viamlogin/**",
 				"protos/vendor/**",
 				"buf.gen.go.yaml",
 				"buf.yaml",
@@ -516,6 +519,7 @@
 			"files": [
 				"protos/draw/**",
 				"protos/motionplan/**",
+				"protos/viamlogin/**",
 				"protos/vendor/**",
 				"buf.gen.typescript.yaml",
 				"buf.yaml",
@@ -533,6 +537,7 @@
 			"command": "buf lint",
 			"files": [
 				"protos/draw/**",
+				"protos/viamlogin/**",
 				"buf.yaml"
 			],
 			"output": []
@@ -540,7 +545,8 @@
 		"proto:format-check": {
 			"command": "buf format --diff --exit-code",
 			"files": [
-				"protos/draw/**"
+				"protos/draw/**",
+				"protos/viamlogin/**"
 			],
 			"output": []
 		},
