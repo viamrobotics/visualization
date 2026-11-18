@@ -4,9 +4,9 @@
 		BannerVariant,
 		Button,
 		Icon,
+		type IconName,
 		Input,
 		Progress,
-		Select,
 	} from '@viamrobotics/prime-core'
 	import { appApi } from '@viamrobotics/sdk'
 	import { PersistedState } from 'runed'
@@ -15,7 +15,12 @@
 
 	import { useActiveConnectionConfig } from '../hooks/useConnectionConfigs.svelte'
 	import { machineListItemHeight, toMachineListItems } from './machineListItems'
-	import { MACHINE_SORT_LABELS, type MachineSortKey, toMachineRows } from './machineRows'
+	import {
+		type MachineSort,
+		type MachineSortProperty,
+		nextMachineSort,
+		toMachineRows,
+	} from './machineRows'
 	import OrgMenu from './OrgMenu.svelte'
 	import { useAccountMachines } from './useAccountMachines.svelte'
 	import { useAccountPart } from './useAccountPart.svelte'
@@ -47,9 +52,12 @@
 	let pickError = $state<string>()
 	let now = $state(Date.now())
 
-	const sortKey = new PersistedState<MachineSortKey>('viam-account-machine-sort', 'status')
+	const sort = new PersistedState<MachineSort>('viam-account-machine-order', {
+		property: 'status',
+		direction: 'ascending',
+	})
 
-	const rows = $derived(toMachineRows(machines.locations, filter, sortKey.current))
+	const rows = $derived(toMachineRows(machines.locations, filter, sort.current))
 	const items = $derived(toMachineListItems(rows))
 	// The list's full height. Flex shrinks it to the space left in the popover, where it scrolls.
 	const contentHeight = $derived(items.reduce((sum, item) => sum + machineListItemHeight(item), 0))
@@ -99,11 +107,6 @@
 		} finally {
 			pickingPartId = undefined
 		}
-	}
-
-	const logout = () => {
-		accountPart.set(null)
-		session.logout()
 	}
 </script>
 
@@ -177,6 +180,34 @@
 	</button>
 {/snippet}
 
+<!-- Clicking a header sorts by it and clicking again flips direction, as on app.viam.com. -->
+{#snippet sortHeader(property: MachineSortProperty, label: string, icon: IconName)}
+	{@const isActive = sort.current.property === property}
+	{@const isDescending = isActive && sort.current.direction === 'descending'}
+	<button
+		type="button"
+		aria-label="{label}, sort {isActive && !isDescending ? 'descending' : 'ascending'}"
+		class="group hover:text-default focus-visible:outline-gray-9 flex items-center gap-1 px-4 py-1.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
+		onclick={() => {
+			sort.current = nextMachineSort(sort.current, property)
+		}}
+	>
+		<Icon
+			name={icon}
+			cx="text-gray-6 shrink-0"
+		/>
+		{label}
+		<Icon
+			name="chevron-down"
+			cx={[
+				'text-gray-6 transition-transform',
+				!isActive && 'invisible group-hover:visible',
+				isDescending && 'rotate-180',
+			]}
+		/>
+	</button>
+{/snippet}
+
 <section
 	aria-label="Viam account"
 	class={[
@@ -244,6 +275,17 @@
 				<Button onclick={session.cancelLogin}>Cancel</Button>
 			</div>
 		</div>
+	{:else if session.state.status === 'expired'}
+		<div class="border-medium flex items-center justify-between gap-4 rounded border p-3 text-xs">
+			<div class="text-subtle-1 flex items-center gap-2">
+				<Progress
+					variant="dots"
+					size="small"
+				/>
+				Reconnecting to your Viam account
+			</div>
+			<Button onclick={session.logout}>Sign out</Button>
+		</div>
 	{:else}
 		{@const { session: activeSession } = session.state}
 		<div class="flex items-center justify-between gap-2">
@@ -257,7 +299,7 @@
 			<UserMenu
 				displayName={activeSession.displayName}
 				email={activeSession.email}
-				onSignOut={logout}
+				onSignOut={session.logout}
 			/>
 		</div>
 
@@ -277,24 +319,6 @@
 					}}
 				/>
 			</div>
-			<label
-				for="viam-account-machine-sort"
-				class="text-subtle-1 shrink-0 text-xs">Sort by</label
-			>
-			<div class="w-28 shrink-0">
-				<Select
-					id="viam-account-machine-sort"
-					value={sortKey.current}
-					onchange={(event: Event) => {
-						if (event.target instanceof HTMLSelectElement)
-							sortKey.current = event.target.value as MachineSortKey
-					}}
-				>
-					{#each Object.entries(MACHINE_SORT_LABELS) as [key, label] (key)}
-						<option value={key}>{label}</option>
-					{/each}
-				</Select>
-			</div>
 		</div>
 
 		{#if isLaunched}
@@ -303,22 +327,10 @@
 
 		<div class="border-light flex min-h-0 shrink! flex-col border">
 			<div
-				class="border-light bg-light text-subtle-1 flex shrink-0 items-center justify-between border-b px-4 py-1.5 text-xs"
+				class="border-light bg-light text-subtle-1 flex shrink-0 items-center justify-between border-b text-xs"
 			>
-				<span class="flex items-center gap-1">
-					<Icon
-						name="multiplication-box"
-						cx="text-gray-6"
-					/>
-					Machine
-				</span>
-				<span class="flex items-center gap-1">
-					<Icon
-						name="broadcast"
-						cx="text-gray-6"
-					/>
-					Status
-				</span>
+				{@render sortHeader('name', 'Machine', 'multiplication-box')}
+				{@render sortHeader('status', 'Status', 'broadcast')}
 			</div>
 
 			{#if machines.isLoading && machines.locations.length === 0}

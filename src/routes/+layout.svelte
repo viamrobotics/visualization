@@ -60,8 +60,11 @@
 	const drawPort = $derived(portOverride ?? sidecar.port ?? drawServicePort)
 	const drawServerUrl = $derived(`http://${backendIP}:${drawPort}`)
 
-	const viamSession = provideViamSession(() => (sidecar.ready ? drawServerUrl : undefined))
 	const accountPart = provideAccountPart()
+	const viamSession = provideViamSession(
+		() => (sidecar.ready ? drawServerUrl : undefined),
+		() => accountPart.set(null)
+	)
 	provideAccountMachines(() =>
 		viamSession.state.status === 'active' ? viamSession.state.session.accessToken : undefined
 	)

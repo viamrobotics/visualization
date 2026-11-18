@@ -1,7 +1,7 @@
 import { appApi } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
-import { toMachineRows } from '../machineRows'
+import { type MachineSort, nextMachineSort, toMachineRows } from '../machineRows'
 
 const machine = (machineName: string, onlineStates: appApi.OnlineState[]) =>
 	new appApi.MachineSummary({
@@ -30,23 +30,54 @@ const locations = [
 	}),
 ]
 
-const names = (sortKey: Parameters<typeof toMachineRows>[2], query = '') =>
-	toMachineRows(locations, query, sortKey).map((row) => row.machine.machineName)
+const names = (sort: MachineSort, query = '') =>
+	toMachineRows(locations, query, sort).map((row) => row.machine.machineName)
 
 describe('toMachineRows', () => {
 	it('sorts online machines first by status, counting a machine with any online part', () => {
-		expect(names('status')).toEqual(['alpha', 'gamma', 'beta', 'zeta'])
+		expect(names({ property: 'status', direction: 'ascending' })).toEqual([
+			'alpha',
+			'gamma',
+			'beta',
+			'zeta',
+		])
 	})
 
-	it('sorts by name across locations', () => {
-		expect(names('name')).toEqual(['alpha', 'beta', 'gamma', 'zeta'])
+	it('puts offline machines first when status is descending, still in name order', () => {
+		expect(names({ property: 'status', direction: 'descending' })).toEqual([
+			'beta',
+			'zeta',
+			'alpha',
+			'gamma',
+		])
 	})
 
-	it('sorts by location, then online first within a location', () => {
-		expect(names('location')).toEqual(['gamma', 'beta', 'alpha', 'zeta'])
+	it('sorts by name across locations, in either direction', () => {
+		expect(names({ property: 'name', direction: 'descending' })).toEqual([
+			'zeta',
+			'gamma',
+			'beta',
+			'alpha',
+		])
 	})
 
 	it('filters on the location name as well as machine names', () => {
-		expect(names('name', 'lab')).toEqual(['beta', 'gamma'])
+		expect(names({ property: 'name', direction: 'ascending' }, 'lab')).toEqual(['beta', 'gamma'])
+	})
+})
+
+describe('nextMachineSort', () => {
+	it('flips the direction when the active column is clicked again', () => {
+		expect(nextMachineSort({ property: 'name', direction: 'ascending' }, 'name')).toEqual({
+			property: 'name',
+			direction: 'descending',
+		})
+	})
+
+	it('starts a newly clicked column ascending', () => {
+		expect(nextMachineSort({ property: 'name', direction: 'descending' }, 'status')).toEqual({
+			property: 'status',
+			direction: 'ascending',
+		})
 	})
 })

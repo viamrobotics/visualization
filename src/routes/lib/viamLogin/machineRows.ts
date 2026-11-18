@@ -7,12 +7,13 @@ export interface MachineRow {
 	isOnline: boolean
 }
 
-export type MachineSortKey = 'status' | 'name' | 'location'
+export type MachineSortProperty = 'name' | 'status'
+export type SortDirection = 'ascending' | 'descending'
 
-export const MACHINE_SORT_LABELS: Record<MachineSortKey, string> = {
-	status: 'Status',
-	name: 'Name',
-	location: 'Location',
+/** Which column the list is sorted by. Ascending status puts online machines first. */
+export interface MachineSort {
+	property: MachineSortProperty
+	direction: SortDirection
 }
 
 const byName = (a: MachineRow, b: MachineRow) =>
@@ -20,13 +21,26 @@ const byName = (a: MachineRow, b: MachineRow) =>
 
 const byStatus = (a: MachineRow, b: MachineRow) => Number(b.isOnline) - Number(a.isOnline)
 
-const byLocation = (a: MachineRow, b: MachineRow) => a.locationName.localeCompare(b.locationName)
-
-const COMPARATORS: Record<MachineSortKey, (a: MachineRow, b: MachineRow) => number> = {
-	status: (a, b) => byStatus(a, b) || byName(a, b),
+const PRIMARY_COMPARATORS: Record<MachineSortProperty, (a: MachineRow, b: MachineRow) => number> = {
 	name: byName,
-	location: (a, b) => byLocation(a, b) || byStatus(a, b) || byName(a, b),
+	status: byStatus,
 }
+
+const compareRows = ({ property, direction }: MachineSort) => {
+	const sign = direction === 'ascending' ? 1 : -1
+	// Ties within a status group stay in name order whichever way the status column points.
+	return (a: MachineRow, b: MachineRow) =>
+		sign * PRIMARY_COMPARATORS[property](a, b) || byName(a, b)
+}
+
+/**
+ * The sort after clicking a column header, as on app.viam.com: the active column flips direction,
+ * and a new column starts ascending.
+ */
+export const nextMachineSort = (sort: MachineSort, property: MachineSortProperty): MachineSort =>
+	sort.property === property
+		? { property, direction: sort.direction === 'ascending' ? 'descending' : 'ascending' }
+		: { property, direction: 'ascending' }
 
 const matchesQuery = (row: MachineRow, query: string) =>
 	row.machine.machineName.toLowerCase().includes(query) ||
@@ -40,7 +54,7 @@ const matchesQuery = (row: MachineRow, query: string) =>
 export const toMachineRows = (
 	locations: appApi.LocationSummary[],
 	query: string,
-	sortKey: MachineSortKey
+	sort: MachineSort
 ): MachineRow[] => {
 	const normalizedQuery = query.trim().toLowerCase()
 	return locations
@@ -54,5 +68,5 @@ export const toMachineRows = (
 			}))
 		)
 		.filter((row) => !normalizedQuery || matchesQuery(row, normalizedQuery))
-		.toSorted(COMPARATORS[sortKey])
+		.toSorted(compareRows(sort))
 }

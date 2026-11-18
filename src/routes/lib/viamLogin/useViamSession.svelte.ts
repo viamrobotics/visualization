@@ -14,6 +14,10 @@ const REFRESH_LEAD_MS = 60_000
 const REFRESH_RETRY_MS = 30_000
 // RFC 8628 section 3.5: each slow_down response adds 5 seconds to the polling interval.
 const SLOW_DOWN_STEP_MS = 5000
+// RFC 8628 section 3.2: poll every 5 seconds when the server names no interval.
+const DEFAULT_POLL_INTERVAL_SECONDS = 5
+// Keeps a short-lived or lifetime-less token from refreshing in a tight loop.
+const MIN_REFRESH_DELAY_MS = 5000
 
 /** A logged-in session as kept in IndexedDB, beside the manual connection configs. */
 export interface ViamSession {
@@ -38,6 +42,8 @@ export type ViamSessionState =
 	| { status: 'logged-out' }
 	| { status: 'awaiting-approval'; pending: PendingLogin }
 	| { status: 'active'; session: ViamSession }
+	/** The token lapsed while refresh kept failing, such as with the draw server down. Retries go on. */
+	| { status: 'expired'; session: ViamSession }
 
 interface Context {
 	readonly state: ViamSessionState
@@ -86,8 +92,13 @@ const describeLoginError = (error: unknown): string => {
  *
  * @param getBaseUrl The draw server URL, or undefined until the desktop sidecar reports its
  *   port. Restoring a saved session waits for it.
+ * @param onSessionEnd Runs whenever the app ends up logged out with no session, whether by sign
+ *   out, revocation, or a restore that found nothing usable. Clears state tied to the account.
  */
-export const provideViamSession = (getBaseUrl: () => string | undefined): Context => {
+export const provideViamSession = (
+	getBaseUrl: () => string | undefined,
+	onSessionEnd: () => void
+): Context => {
 	let state = $state<ViamSessionState>({ status: 'restoring' })
 	let error = $state<string>()
 
@@ -112,6 +123,7 @@ export const provideViamSession = (getBaseUrl: () => string | undefined): Contex
 		void del(STORAGE_KEY)
 		state = { status: 'logged-out' }
 		error = message
+		onSessionEnd()
 	}
 
 	const activate = (session: ViamSession) => {
@@ -123,7 +135,7 @@ export const provideViamSession = (getBaseUrl: () => string | undefined): Contex
 
 	const scheduleRefresh = (session: ViamSession, delayMs: number) => {
 		clearRefresh()
-		refreshTimer = setTimeout(() => void refresh(session), Math.max(0, delayMs))
+		refreshTimer = setTimeout(() => void refresh(session), Math.max(MIN_REFRESH_DELAY_MS, delayMs))
 	}
 
 	const refresh = async (session: ViamSession) => {
@@ -138,15 +150,19 @@ export const provideViamSession = (getBaseUrl: () => string | undefined): Contex
 				endSession('Your Viam session expired. Log in again.')
 				return
 			}
-			// Keep the session. Its token may still have a minute left, and the next try may succeed.
-			if (state.status === 'restoring') state = { status: 'active', session }
+			// Keep the session and retry. Its token stays in use only while it has time left.
+			if (session.expiresAt <= Date.now()) {
+				state = { status: 'expired', session }
+			} else if (state.status === 'restoring') {
+				state = { status: 'active', session }
+			}
 			error = `Could not refresh the Viam session: ${ConnectError.from(refreshError).rawMessage}`
 			scheduleRefresh(session, REFRESH_RETRY_MS)
 		}
 	}
 
 	const pollUntilApproved = async (id: number, deviceCode: string, intervalSeconds: number) => {
-		let intervalMs = intervalSeconds * 1000
+		let intervalMs = (intervalSeconds > 0 ? intervalSeconds : DEFAULT_POLL_INTERVAL_SECONDS) * 1000
 		for (;;) {
 			await new Promise((resolve) => setTimeout(resolve, intervalMs))
 			if (id !== generation) return
@@ -198,18 +214,24 @@ export const provideViamSession = (getBaseUrl: () => string | undefined): Contex
 		if (isRestoreStarted || !getBaseUrl()) return
 		isRestoreStarted = true
 
-		void get(STORAGE_KEY).then((stored: unknown) => {
-			if (state.status !== 'restoring') return
-			if (!isViamSession(stored)) {
-				state = { status: 'logged-out' }
-				return
-			}
-			if (stored.expiresAt - REFRESH_LEAD_MS > Date.now()) {
-				activate(stored)
-				return
-			}
-			void refresh(stored)
-		})
+		get(STORAGE_KEY)
+			.then((stored: unknown) => {
+				if (state.status !== 'restoring') return
+				if (!isViamSession(stored)) {
+					endSession()
+					return
+				}
+				if (stored.expiresAt - REFRESH_LEAD_MS > Date.now()) {
+					activate(stored)
+					return
+				}
+				void refresh(stored)
+			})
+			.catch((storageError: Error) => {
+				if (state.status === 'restoring') {
+					endSession(`Could not read the saved Viam session: ${storageError.message}`)
+				}
+			})
 	})
 
 	$effect(() => {

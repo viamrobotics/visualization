@@ -43,6 +43,7 @@ export const provideAccountMachines = (getAccessToken: () => string | undefined)
 			client = undefined
 			organizations = []
 			locations = []
+			error = undefined
 			return
 		}
 
@@ -58,6 +59,7 @@ export const provideAccountMachines = (getAccessToken: () => string | undefined)
 
 				client = nextClient
 				organizations = nextOrganizations
+				error = undefined
 				if (!nextOrganizations.some(({ id }) => id === organizationId.current)) {
 					organizationId.current = nextOrganizations[0]?.id ?? ''
 				}
@@ -95,6 +97,8 @@ export const provideAccountMachines = (getAccessToken: () => string | undefined)
 
 		return () => {
 			isCancelled = true
+			// A cancelled fetch never reaches finally's reset, and nothing may rerun to clear it.
+			isLoading = false
 		}
 	})
 

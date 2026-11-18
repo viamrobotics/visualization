@@ -90,7 +90,7 @@ const createWindow = async () => {
 	// Links such as the Viam login page belong in the user's browser, where their session already
 	// lives, not in a bare Electron window. Other schemes could launch arbitrary local handlers.
 	mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-		const { protocol } = new URL(url)
+		const protocol = URL.parse(url)?.protocol
 		if (protocol === 'https:' || protocol === 'http:') void shell.openExternal(url)
 		return { action: 'deny' }
 	})
