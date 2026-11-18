@@ -35,7 +35,7 @@ importers:
         version: 4.18.1
       three-mesh-bvh:
         specifier: ^0.9.14
-        version: 0.9.14(three@0.186.1)
+        version: 0.9.14(three@0.187.0)
       uuid-tool:
         specifier: ^2.0.3
         version: 2.0.3
@@ -149,17 +149,17 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@threlte/core':
-        specifier: 8.6.1
-        version: 8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+        specifier: 8.7.0
+        version: 8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       '@threlte/extras':
-        specifier: 9.22.4
-        version: 9.22.4(@types/three@0.186.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+        specifier: 9.23.1
+        version: 9.23.1(@types/three@0.187.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       '@threlte/rapier':
         specifier: 3.5.1
-        version: 3.5.1(@dimforge/rapier3d-compat@0.21.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+        version: 3.5.1(@dimforge/rapier3d-compat@0.21.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       '@threlte/xr':
         specifier: 1.6.1
-        version: 1.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+        version: 1.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       '@types/d3-force':
         specifier: ^3.0.10
         version: 3.0.10
@@ -173,8 +173,8 @@ importers:
         specifier: ^25.6.0
         version: 25.6.0
       '@types/three':
-        specifier: 0.186.0
-        version: 0.186.0
+        specifier: 0.187.0
+        version: 0.187.0
       '@typescript-eslint/eslint-plugin':
         specifier: 8.56.1
         version: 8.56.1(@typescript-eslint/parser@8.56.1(eslint@10.0.2(jiti@2.7.0))(typescript@5.9.2))(eslint@10.0.2(jiti@2.7.0))(typescript@5.9.2)
@@ -195,7 +195,7 @@ importers:
         version: 1.2.0(tailwindcss@4.3.1)
       '@viamrobotics/test-widgets':
         specifier: 0.15.0
-        version: 0.15.0(be4db65d2020101ff5ee2f03dc04fb4f)
+        version: 0.15.0(cc5dac6be94eb6b145125bce51738a18)
       '@viamrobotics/tweakpane-config':
         specifier: 0.1.1
         version: 0.1.1(svelte-tweakpane-ui@1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))
@@ -234,7 +234,7 @@ importers:
         version: 1.22.1
       camera-controls:
         specifier: 3.1.2
-        version: 3.1.2(three@0.186.1)
+        version: 3.1.2(three@0.187.0)
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -314,8 +314,8 @@ importers:
         specifier: 4.3.1
         version: 4.3.1
       three:
-        specifier: 0.186.1
-        version: 0.186.1
+        specifier: 0.187.0
+        version: 0.187.0
       type-fest:
         specifier: ^5.0.1
         version: 5.2.0
@@ -2117,14 +2117,14 @@ packages:
     peerDependencies:
       three: '>=0.170.0'
 
-  '@threlte/core@8.6.1':
-    resolution: {integrity: sha512-8wge5mfgXS5pPxiZLpk007Rw5VpDCOlpc9kdNpAOgXW4gjuBqDhnkUPGsdbzikddqF+61S7T6v6O+j6mtZhB2g==}
+  '@threlte/core@8.7.0':
+    resolution: {integrity: sha512-8WbRlCy33soqiVwIQZZvPAtzWR6Y2i7AwOTpDIcFcsX/Ph0GWIIjsDxg4qcX0gbRp6ym76i1+CBU4dd0gA1g5Q==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.172'
 
-  '@threlte/extras@9.22.4':
-    resolution: {integrity: sha512-LvfPJ2M7Bg8tVOYYA49ipdfGacIUDs+/A4q75tJBTfrgI6aIATMQHVDmKBt6eIQFXfuUDGOkiE7WC5A453CfHg==}
+  '@threlte/extras@9.23.1':
+    resolution: {integrity: sha512-6G3RXUTiQD3uT5YfHs7vN2r3cjP3y9vtl9m6/wucPrcuyq5QsTIpYUiE8NL+/M+ystAAByu12ntAwy9uJ5MGzg==}
     peerDependencies:
       svelte: '>=5'
       three: '>=0.172'
@@ -2244,8 +2244,8 @@ packages:
   '@types/tedious@4.0.14':
     resolution: {integrity: sha512-KHPsfX/FoVbUGbyYvk1q9MMQHLPeRZhRJZdO45Q4YjvFkv4hMNghCWTvy7rdKessBsmtz4euWCWAB6/tVpI1Iw==}
 
-  '@types/three@0.186.0':
-    resolution: {integrity: sha512-mxYSBpDC+D0pLfSP6sW4WZTcT+nrtmZcimMqnVmy36Hte3XpeYSrvgg4TRdaM1GemGog1AWzI5qL2VoIfMXbJQ==}
+  '@types/three@0.187.0':
+    resolution: {integrity: sha512-v+vKNarUtk4n2QRZ4+CN5ygMM0ARUjXjIQl0R/unMUfmStFeVqGbgqarbrpoGTXRZoulSH16ePrVJVxPJEbMUA==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -4957,8 +4957,8 @@ packages:
     peerDependencies:
       three: '>=0.170'
 
-  three@0.186.1:
-    resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
+  three@0.187.0:
+    resolution: {integrity: sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==}
 
   threlte-uikit@2.0.1:
     resolution: {integrity: sha512-tYMKOviOsS7D9PPZPJkIN2XhdspRdPJM/SaPWQnV7awlplbwYiXrajNS/SxxKwy5u+EB4BuDu7+KanWs64ufYA==}
@@ -6831,25 +6831,25 @@ snapshots:
 
   '@pmndrs/msdfonts@1.0.78': {}
 
-  '@pmndrs/uikit-default@1.0.78(three@0.186.1)':
+  '@pmndrs/uikit-default@1.0.78(three@0.187.0)':
     dependencies:
-      '@pmndrs/uikit': 1.0.78(three@0.186.1)
-      '@pmndrs/uikit-lucide': 1.0.78(three@0.186.1)
+      '@pmndrs/uikit': 1.0.78(three@0.187.0)
+      '@pmndrs/uikit-lucide': 1.0.78(three@0.187.0)
       zod: 4.6.7
     transitivePeerDependencies:
       - three
 
-  '@pmndrs/uikit-horizon@1.0.78(three@0.186.1)':
+  '@pmndrs/uikit-horizon@1.0.78(three@0.187.0)':
     dependencies:
-      '@pmndrs/uikit': 1.0.78(three@0.186.1)
-      '@pmndrs/uikit-lucide': 1.0.78(three@0.186.1)
+      '@pmndrs/uikit': 1.0.78(three@0.187.0)
+      '@pmndrs/uikit-lucide': 1.0.78(three@0.187.0)
       zod: 4.6.7
     transitivePeerDependencies:
       - three
 
-  '@pmndrs/uikit-lucide@1.0.78(three@0.186.1)':
+  '@pmndrs/uikit-lucide@1.0.78(three@0.187.0)':
     dependencies:
-      '@pmndrs/uikit': 1.0.78(three@0.186.1)
+      '@pmndrs/uikit': 1.0.78(three@0.187.0)
     transitivePeerDependencies:
       - three
 
@@ -6857,13 +6857,13 @@ snapshots:
     dependencies:
       '@preact/signals-core': 1.14.5
 
-  '@pmndrs/uikit@1.0.78(three@0.186.1)':
+  '@pmndrs/uikit@1.0.78(three@0.187.0)':
     dependencies:
       '@pmndrs/msdfonts': 1.0.78
       '@pmndrs/uikit-pub-sub': 1.0.78
       '@preact/signals-core': 1.14.5
       '@zappar/msdf-generator': 1.2.4
-      three: 0.186.1
+      three: 0.187.0
       yoga-layout: 3.2.1
       zod: 4.6.7
 
@@ -7310,44 +7310,44 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@threejs-kit/instanced-sprite-mesh@2.5.1(@types/three@0.186.0)(three@0.186.1)':
+  '@threejs-kit/instanced-sprite-mesh@2.5.1(@types/three@0.187.0)(three@0.187.0)':
     dependencies:
       diet-sprite: 0.0.1
       earcut: 2.2.4
-      maath: 0.10.8(@types/three@0.186.0)(three@0.186.1)
-      three: 0.186.1
-      three-instanced-uniforms-mesh: 0.52.4(three@0.186.1)
-      troika-three-utils: 0.52.4(three@0.186.1)
+      maath: 0.10.8(@types/three@0.187.0)(three@0.187.0)
+      three: 0.187.0
+      three-instanced-uniforms-mesh: 0.52.4(three@0.187.0)
+      troika-three-utils: 0.52.4(three@0.187.0)
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/core@8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)':
+  '@threlte/core@8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)':
     dependencies:
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
-      three: 0.186.1
+      three: 0.187.0
 
-  '@threlte/extras@9.22.4(@types/three@0.186.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)':
+  '@threlte/extras@9.23.1(@types/three@0.187.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)':
     dependencies:
-      '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.186.0)(three@0.186.1)
-      camera-controls: 3.1.2(three@0.186.1)
+      '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.187.0)(three@0.187.0)
+      camera-controls: 3.1.2(three@0.187.0)
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
-      three: 0.186.1
-      three-mesh-bvh: 0.9.14(three@0.186.1)
-      three-perf: 1.0.11(three@0.186.1)
-      troika-three-text: 0.52.4(three@0.186.1)
+      three: 0.187.0
+      three-mesh-bvh: 0.9.14(three@0.187.0)
+      three-perf: 1.0.11(three@0.187.0)
+      troika-three-text: 0.52.4(three@0.187.0)
     transitivePeerDependencies:
       - '@types/three'
 
-  '@threlte/rapier@3.5.1(@dimforge/rapier3d-compat@0.21.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)':
+  '@threlte/rapier@3.5.1(@dimforge/rapier3d-compat@0.21.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)':
     dependencies:
       '@dimforge/rapier3d-compat': 0.21.0
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
-      three: 0.186.1
+      three: 0.187.0
 
-  '@threlte/xr@1.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)':
+  '@threlte/xr@1.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)':
     dependencies:
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
-      three: 0.186.1
+      three: 0.187.0
 
   '@tweakpane/core@2.0.5': {}
 
@@ -7457,7 +7457,7 @@ snapshots:
     dependencies:
       '@types/node': 25.6.0
 
-  '@types/three@0.186.0':
+  '@types/three@0.187.0':
     dependencies:
       '@dimforge/rapier3d-compat': 0.12.0
       '@tweenjs/tween.js': 23.1.3
@@ -7616,11 +7616,11 @@ snapshots:
       '@fontsource-variable/space-grotesk': 5.3.0
       tailwindcss: 4.3.1
 
-  '@viamrobotics/test-widgets@0.15.0(be4db65d2020101ff5ee2f03dc04fb4f)':
+  '@viamrobotics/test-widgets@0.15.0(cc5dac6be94eb6b145125bce51738a18)':
     dependencies:
       '@sentry/svelte': 10.10.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))
-      '@threlte/core': 8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
-      '@threlte/extras': 9.22.4(@types/three@0.186.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+      '@threlte/core': 8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
+      '@threlte/extras': 9.23.1(@types/three@0.187.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       '@viamrobotics/prime-core': 0.1.23(@internationalized/date@3.12.2)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(tailwindcss@4.3.1)
       '@viamrobotics/sdk': 0.79.0
       '@viamrobotics/svelte-sdk': 1.5.3(@sveltejs/kit@2.69.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.10(@typescript-eslint/types@8.56.1))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(typescript@5.9.2)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(@viamrobotics/sdk@0.79.0)(svelte@5.56.10(@typescript-eslint/types@8.56.1))(zod@4.4.3)
@@ -7629,8 +7629,8 @@ snapshots:
       runed: 0.37.1(@sveltejs/kit@2.69.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.10(@typescript-eslint/types@8.56.1))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(typescript@5.9.2)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(zod@4.4.3)
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
       svelte-tweakpane-ui: 1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1))
-      three: 0.186.1
-      threlte-uikit: 2.0.1(@threlte/core@8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+      three: 0.187.0
+      threlte-uikit: 2.0.1(@threlte/core@8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
 
   '@viamrobotics/tweakpane-config@0.1.1(svelte-tweakpane-ui@1.5.20(svelte@5.56.10(@typescript-eslint/types@8.56.1)))(svelte@5.56.10(@typescript-eslint/types@8.56.1))':
     dependencies:
@@ -8241,9 +8241,9 @@ snapshots:
       es-errors: 1.3.0
       function-bind: 1.1.2
 
-  camera-controls@3.1.2(three@0.186.1):
+  camera-controls@3.1.2(three@0.187.0):
     dependencies:
-      three: 0.186.1
+      three: 0.187.0
 
   caniuse-lite@1.0.30001754: {}
 
@@ -9534,10 +9534,10 @@ snapshots:
 
   lz-string@1.5.0: {}
 
-  maath@0.10.8(@types/three@0.186.0)(three@0.186.1):
+  maath@0.10.8(@types/three@0.187.0)(three@0.187.0):
     dependencies:
-      '@types/three': 0.186.0
-      three: 0.186.1
+      '@types/three': 0.187.0
+      three: 0.187.0
 
   magic-string@0.30.21:
     dependencies:
@@ -10379,33 +10379,33 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  three-instanced-uniforms-mesh@0.52.4(three@0.186.1):
+  three-instanced-uniforms-mesh@0.52.4(three@0.187.0):
     dependencies:
-      three: 0.186.1
-      troika-three-utils: 0.52.4(three@0.186.1)
+      three: 0.187.0
+      troika-three-utils: 0.52.4(three@0.187.0)
 
-  three-mesh-bvh@0.9.14(three@0.186.1):
+  three-mesh-bvh@0.9.14(three@0.187.0):
     dependencies:
-      three: 0.186.1
+      three: 0.187.0
 
-  three-perf@1.0.11(three@0.186.1):
+  three-perf@1.0.11(three@0.187.0):
     dependencies:
-      three: 0.186.1
-      troika-three-text: 0.52.4(three@0.186.1)
+      three: 0.187.0
+      troika-three-text: 0.52.4(three@0.187.0)
       tweakpane: 3.1.10
 
-  three@0.186.1: {}
+  three@0.187.0: {}
 
-  threlte-uikit@2.0.1(@threlte/core@8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1):
+  threlte-uikit@2.0.1(@threlte/core@8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0))(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0):
     dependencies:
-      '@pmndrs/uikit': 1.0.78(three@0.186.1)
-      '@pmndrs/uikit-default': 1.0.78(three@0.186.1)
-      '@pmndrs/uikit-horizon': 1.0.78(three@0.186.1)
-      '@pmndrs/uikit-lucide': 1.0.78(three@0.186.1)
+      '@pmndrs/uikit': 1.0.78(three@0.187.0)
+      '@pmndrs/uikit-default': 1.0.78(three@0.187.0)
+      '@pmndrs/uikit-horizon': 1.0.78(three@0.187.0)
+      '@pmndrs/uikit-lucide': 1.0.78(three@0.187.0)
       '@preact/signals-core': 1.14.5
-      '@threlte/core': 8.6.1(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.186.1)
+      '@threlte/core': 8.7.0(svelte@5.56.10(@typescript-eslint/types@8.56.1))(three@0.187.0)
       svelte: 5.56.10(@typescript-eslint/types@8.56.1)
-      three: 0.186.1
+      three: 0.187.0
 
   tiny-async-pool@1.3.0:
     dependencies:
@@ -10469,17 +10469,17 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  troika-three-text@0.52.4(three@0.186.1):
+  troika-three-text@0.52.4(three@0.187.0):
     dependencies:
       bidi-js: 1.0.3
-      three: 0.186.1
-      troika-three-utils: 0.52.4(three@0.186.1)
+      three: 0.187.0
+      troika-three-utils: 0.52.4(three@0.187.0)
       troika-worker-utils: 0.52.0
       webgl-sdf-generator: 1.1.1
 
-  troika-three-utils@0.52.4(three@0.186.1):
+  troika-three-utils@0.52.4(three@0.187.0):
     dependencies:
-      three: 0.186.1
+      three: 0.187.0
 
   troika-worker-utils@0.52.0: {}
 

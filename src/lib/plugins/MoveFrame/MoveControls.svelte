@@ -21,9 +21,12 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
+	import type { DetailsTab } from '$lib/components/overlay/details/DetailsTabs.svelte'
 	import type { Pose } from '$lib/math'
 
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
+	import DetailsTabs from '$lib/components/overlay/details/DetailsTabs.svelte'
+	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { useFrames } from '$lib/hooks/useFrames.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { setOrientationFromEuler } from '$lib/math/transform'
@@ -40,6 +43,7 @@
 	import { fromDestinationPose, moveDelta, toDestinationPose } from './moveTargetPose'
 	import { parseMoveOptions } from './parseMoveOptions'
 	import { executeCommand } from './planDoCommand'
+	import SavePoseButton from './savedPoses/SavePoseButton.svelte'
 	import { useMovedFrameMatrix } from './useMovedFrameMatrix.svelte'
 	import { useMoveGhosts } from './useMoveGhosts.svelte'
 	import { usePreviewMove } from './usePreviewMove.svelte'
@@ -55,7 +59,11 @@
 	/** The gizmo is dragged in world space, so the goal is committed against it. */
 	const WORLD_FRAME = 'world'
 
+	const id = $props.id()
+	const targetHeadingId = `${id}-target`
+
 	const frames = useFrames()
+	const armClient = useArmClient()
 	const partID = usePartID()
 	const toast = useToast()
 	const motionResources = useResourceStatuses(() => partID.current, 'motion')
@@ -218,6 +226,20 @@
 		],
 	})
 
+	/**
+	 * Two ways to the same staged target, one action each: `Move` plans and runs server-side, and
+	 * Preview draws a trajectory before running exactly that.
+	 */
+	const tabs = $derived<DetailsTab[]>([
+		{ id: 'move', label: 'Move', content: moveTab },
+		{
+			id: 'preview',
+			label: 'Preview',
+			content: previewTab,
+			indicatorLabel: preview.status === 'ready' ? 'preview ready' : undefined,
+		},
+	])
+
 	/** Drop the staged goal so the gizmo snaps back to wherever the frame is now. */
 	const resetTarget = () => {
 		targetWorldMatrix = undefined
@@ -298,7 +320,20 @@
 	}
 </script>
 
-{#snippet moveControls()}
+{#snippet travel()}
+	<div>
+		<strong class="font-semibold">travel</strong>
+		<div class="mt-0.5">
+			{num(delta?.distance, 1)} mm · {num(delta?.angle, 1)}°
+		</div>
+	</div>
+{/snippet}
+
+{#snippet moveTab()}
+	<div class="flex flex-col gap-4 pt-3">{@render moveTabContent()}</div>
+{/snippet}
+
+{#snippet moveTabContent()}
 	{#if preempted}
 		<div class="border-light flex items-center justify-between gap-2 border px-2 py-1.5">
 			<p class="text-subtle-1">Another move panel has the gizmo.</p>
@@ -311,7 +346,27 @@
 		</div>
 	{/if}
 
-	<div class="flex flex-col gap-2">
+	<section
+		class="flex flex-col gap-2"
+		aria-labelledby={targetHeadingId}
+	>
+		<div class="flex items-center justify-between">
+			<h4
+				id={targetHeadingId}
+				class="text-subtle-2"
+			>
+				Target
+			</h4>
+			<Button
+				variant="ghost"
+				disabled={!staged || executing}
+				title="Put the target back where the frame is"
+				onclick={resetTarget}
+			>
+				Reset
+			</Button>
+		</div>
+
 		{#if targetPose}
 			<div>
 				<strong class="font-semibold">world position</strong>
@@ -358,72 +413,62 @@
 			<p class="text-subtle-2">Resolving the frame's pose…</p>
 		{/if}
 
-		<div>
-			<strong class="font-semibold">travel</strong>
-			<div class="mt-0.5">
-				{num(delta?.distance, 1)} mm · {num(delta?.angle, 1)}°
-			</div>
-		</div>
-	</div>
-
-	<div class="flex flex-col gap-1">
-		<MoveJsonField
-			label="World state"
-			value={worldStateJson.current}
-			onChange={(next) => (worldStateJson.current = next)}
-		/>
-		<MoveJsonField
-			label="Constraints"
-			value={constraintsJson.current}
-			onChange={(next) => (constraintsJson.current = next)}
-		/>
-	</div>
+		{@render travel()}
+	</section>
 
 	<Collisions />
 
-	<MovePreview
-		{preview}
-		{frameName}
-		disabled={!staged || executing || otherPanelMoving || !canCommand}
-	/>
-
-	<div class="flex flex-wrap items-center gap-2">
+	<!--
+		Last and apart, because Move drives hardware. Save current pose sits at the far end, so it
+		does not read as saving the staged target Move is about to go to. Both stay mounted when
+		disabled, so nothing shifts under the cursor or drops keyboard focus.
+	-->
+	<div class="border-light flex items-center justify-between gap-2 border-t pt-3">
 		<!--
-			Mounted even with no plan, disabled, rather than appearing when one arrives. A button that
-			materialises under the cursor moves its neighbours, and a keyboard user focused on it loses
-			focus to `<body>` when the preview clears.
+			`Move` rather than a label naming a plan: this calls the motion service's `Move`, which plans
+			server-side and never sees a plan on screen.
 		-->
 		<Button
-			variant={preview.status === 'ready' ? 'success' : 'outline-success'}
-			disabled={preview.status !== 'ready' || executing || otherPanelMoving || !canCommand}
-			progress={executing ? 'indeterminate' : undefined}
-			title="Run the trajectory shown above, without planning again"
-			onclick={executePreviewedMove}
-		>
-			Execute plan
-		</Button>
-
-		<!--
-			`Move` rather than a label that changes with the preview: this calls the motion service's
-			`Move`, which plans server-side and never sees the plan on screen. Naming it for replanning
-			implied a second UI plan that does not exist.
-		-->
-		<Button
-			variant={preview.status === 'ready' ? 'outline-success' : 'success'}
+			variant="success"
 			disabled={!staged || executing || otherPanelMoving || !canCommand}
 			progress={executing ? 'indeterminate' : undefined}
-			title="Ask the motion service to plan and move, ignoring the plan shown above"
+			title="Ask the motion service to plan and move"
 			onclick={executeMove}
 		>
 			Move
 		</Button>
-		<Button
-			variant="ghost"
-			disabled={!staged || executing}
-			onclick={resetTarget}
-		>
-			Reset
-		</Button>
+		{#if armClient.names.includes(frameName)}
+			<SavePoseButton
+				arm={frameName}
+				hasStagedMove={staged}
+			/>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet previewTab()}
+	<div class="flex flex-col gap-4 pt-3">
+		{@render travel()}
+
+		<MovePreview
+			{preview}
+			{frameName}
+			disabled={!staged || executing || otherPanelMoving || !canCommand}
+		/>
+
+		<Collisions />
+
+		<div class="border-light border-t pt-3">
+			<Button
+				variant="success"
+				disabled={preview.status !== 'ready' || executing || otherPanelMoving || !canCommand}
+				progress={executing ? 'indeterminate' : undefined}
+				title="Run the trajectory shown above, without planning again"
+				onclick={executePreviewedMove}
+			>
+				Execute plan
+			</Button>
+		</div>
 	</div>
 {/snippet}
 
@@ -431,10 +476,8 @@
 	{entity}
 	{...rest}
 >
-	<div class="bg-extralight px-2 pb-2">
-		<h3 class="text-subtle-2 pt-3 pb-2">Move</h3>
-
-		<div class="flex flex-col gap-3">
+	<div class="bg-extralight px-2 pt-3 pb-2">
+		<div class="flex flex-col gap-4">
 			{#if service}
 				<div>
 					<strong class="font-semibold">motion service</strong>
@@ -448,9 +491,26 @@
 				<p class="text-subtle-2">No motion service available.</p>
 			{/if}
 
-			{@render moveControls()}
+			<!-- Options for the motion service, so both tabs send them. -->
+			<div class="flex flex-col gap-1">
+				<MoveJsonField
+					label="World state"
+					value={worldStateJson.current}
+					onChange={(next) => (worldStateJson.current = next)}
+				/>
+				<MoveJsonField
+					label="Constraints"
+					value={constraintsJson.current}
+					onChange={(next) => (constraintsJson.current = next)}
+				/>
+			</div>
 		</div>
 	</div>
+
+	<DetailsTabs
+		items={tabs}
+		storageKey={`motion-tools:move-tab:${partID.current}:${frameName}`}
+	/>
 </DetailsPanel>
 
 {#if showGizmo && currentWorldMatrix.current}

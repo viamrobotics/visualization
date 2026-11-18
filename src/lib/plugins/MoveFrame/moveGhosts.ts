@@ -163,6 +163,9 @@ const spawnGhost = (world: World, source: Entity): Entity => {
 	const center = source.get(traits.Center)
 	if (center) shape.push(traits.Center(center))
 
+	const sourceName = source.get(traits.Name)
+	if (sourceName) shape.push(traits.GhostModelKey(sourceName))
+
 	return world.spawn(
 		GhostOf(source),
 		traits.NonSelectable,

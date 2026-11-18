@@ -3,6 +3,7 @@ import { BoxGeometry, Matrix4, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '$lib/ecs'
+import { modelKey } from '$lib/hooks/use3DModels.svelte'
 
 import { clearMoveGhosts, createMoveGhosts, rigidMoveDelta, syncMoveGhosts } from '../moveGhosts'
 
@@ -95,6 +96,14 @@ describe('syncMoveGhosts', () => {
 		expect(ghost.get(traits.Center)?.x).toBe(5)
 		expect(ghost.get(traits.Opacity)).toBe(0.5)
 		expect(ghost.has(traits.NonSelectable)).toBe(true)
+	})
+
+	it('looks up the 3D model of the link it copies', () => {
+		const child = spawnFrame(root, 1, traits.Name('arm:upper_arm_link'))
+
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		expect(modelKey(ghosts.get(child)!)).toBe('arm:upper_arm_link')
 	})
 
 	it('ghosts a frame with no geometry as an axes triad', () => {

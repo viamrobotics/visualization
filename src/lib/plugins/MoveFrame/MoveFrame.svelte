@@ -12,6 +12,8 @@
 	import CollisionDetector from './collisions/CollisionDetector.svelte'
 	import MoveControls from './MoveControls.svelte'
 	import MoveDashboard from './MoveDashboard.svelte'
+	import SavedPoseControls from './savedPoses/SavedPoseControls.svelte'
+	import SavedPoses from './savedPoses/SavedPoses.svelte'
 
 	const environment = useEnvironment()
 	const selected = useQuery(traits.Selected)
@@ -42,7 +44,8 @@
 	 * Move mode swaps the details panel for a move panel per selected frame, so the
 	 * selection drives the panels the way it drives details in the other modes. A
 	 * selection it has no move panel for — a point cloud, a drawing, an obstacle —
-	 * keeps its read-only details instead of losing its panel entirely.
+	 * keeps its read-only details instead of losing its panel entirely. A saved pose
+	 * gets its own panel, since moving to it is the one thing to do with one.
 	 */
 	const panels = $derived(
 		selected.current.map((entity) => ({ entity, frameName: movableFrameName(entity) }))
@@ -63,11 +66,17 @@
 
 {#if isMoveMode}
 	<MoveDashboard />
+	<SavedPoses />
 
 	{#each panels as { entity, frameName }, index (entity)}
 		{@const style = `transform: translate(0, ${index * 40}px)`}
 
-		{#if frameName === undefined}
+		{#if entity.has(traits.SavedPose)}
+			<SavedPoseControls
+				{entity}
+				{style}
+			/>
+		{:else if frameName === undefined}
 			<MonitorDetails
 				{entity}
 				{style}

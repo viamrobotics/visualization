@@ -2,7 +2,7 @@ import type { ResourceName } from '@viamrobotics/sdk'
 import type { Entity } from 'koota'
 
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte'
 import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -60,6 +60,9 @@ vi.mock('@viamrobotics/svelte-sdk', () => ({
 	createRobotQuery: vi.fn(() => ({ data: undefined })),
 }))
 vi.mock('$lib/hooks/usePartID.svelte', () => ({ usePartID: vi.fn() }))
+vi.mock('$lib/hooks/useArmClient.svelte', () => ({
+	useArmClient: () => ({ names: [], currentPositions: {} }),
+}))
 
 const service = (name: string) =>
 	({
@@ -75,6 +78,8 @@ describe('MoveControls', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		moved.matrix = undefined
+		// The panel remembers its tab in storage, so one test's tab choice would open the next on it.
+		localStorage.clear()
 
 		vi.mocked(usePartID).mockReturnValue({ current: partID } as never)
 		// A service name comes from cache, but commanding needs a connected client. The panel gates on
@@ -106,21 +111,31 @@ describe('MoveControls', () => {
 		expect(screen.getByRole('combobox')).toHaveValue('planner')
 	})
 
-	it('offers the preview action alongside the move it previews', () => {
+	it('opens on the Move tab, with Move and without the preview', () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		expect(screen.getByRole('button', { name: /preview move/i })).toBeInTheDocument()
 		expect(screen.getByRole('button', { name: 'Move' })).toBeInTheDocument()
+		expect(screen.queryByRole('button', { name: /preview move/i })).not.toBeInTheDocument()
 	})
 
-	it('mounts the plan action disabled rather than hiding it until a plan exists', () => {
+	it('offers the preview on the Preview tab', async () => {
 		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
-
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		expect(screen.getByRole('button', { name: 'Execute plan' })).toHaveAttribute(
+		await fireEvent.click(screen.getByRole('tab', { name: 'Preview' }))
+
+		expect(await screen.findByRole('button', { name: /preview move/i })).toBeInTheDocument()
+	})
+
+	it('mounts the plan action disabled rather than hiding it until a plan exists', async () => {
+		vi.mocked(useResourceStatuses).mockReturnValue({ current: [service('builtin')] } as never)
+		render(MoveControls, { props: { entity, frameName: 'arm' } })
+
+		await fireEvent.click(screen.getByRole('tab', { name: 'Preview' }))
+
+		expect(await screen.findByRole('button', { name: 'Execute plan' })).toHaveAttribute(
 			'aria-disabled',
 			'true'
 		)
@@ -187,6 +202,6 @@ describe('MoveControls', () => {
 		})
 		expect(screen.getByRole('button', { name: 'Move' })).not.toHaveAttribute('aria-disabled')
 		// 400 mm of travel along x, no rotation.
-		expect(screen.getByText(/400\.0 mm · 0\.0°/)).toBeInTheDocument()
+		expect(within(screen.getByRole('tabpanel')).getByText(/400\.0 mm · 0\.0°/)).toBeInTheDocument()
 	})
 })
