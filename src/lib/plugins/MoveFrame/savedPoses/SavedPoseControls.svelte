@@ -35,6 +35,9 @@ drives its arm there through the saver's "go to" switch position.
 
 	const NO_SERVICE_LABEL = 'choose a service'
 
+	const id = $props.id()
+	const motionLabelId = `${id}-motion`
+
 	const partID = usePartID()
 	const partConfig = usePartConfig()
 	const toast = useToast()
@@ -57,7 +60,9 @@ drives its arm there through the saver's "go to" switch position.
 
 	const motionServices = $derived(
 		motionServiceNames(
-			motionResources.current.map((resource) => resource.name).filter((name) => name !== undefined)
+			motionResources.current
+				.map((resource) => resource.name)
+				.filter((resourceName) => resourceName !== undefined)
 		)
 	)
 
@@ -102,7 +107,9 @@ drives its arm there through the saver's "go to" switch position.
 		const next = event.detail.value as string
 		if (next === '' || next === motion) return
 
-		const component = partConfig.current.components.find(({ name }) => name === saverName)
+		const component = partConfig.current.components.find(
+			(candidate) => candidate.name === saverName
+		)
 		if (!component) return
 
 		partConfig.updateComponent(saverName, {
@@ -160,8 +167,14 @@ drives its arm there through the saver's "go to" switch position.
 				<dd>{target ?? 'nothing yet'}</dd>
 			</dl>
 
-			<div>
-				<strong class="font-semibold">motion service</strong>
+			<div
+				role="group"
+				aria-labelledby={motionLabelId}
+			>
+				<strong
+					id={motionLabelId}
+					class="font-semibold">motion service</strong
+				>
 				<List
 					options={motionOptions}
 					value={motion}

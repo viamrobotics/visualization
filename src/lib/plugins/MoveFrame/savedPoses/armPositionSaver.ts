@@ -15,7 +15,7 @@ export const VMODUTILS_MODULE: PartModule = {
 }
 
 /** A saver as the visualizer reads it. See `traits.SavedPose` for the units. */
-export interface ArmPositionSaver {
+interface ArmPositionSaver {
 	name: string
 	arm: string
 	/** The motion service that plans moves around obstacles, or `''` for a direct joint move. */
@@ -46,16 +46,16 @@ const parsePose = (point: unknown, orientation: unknown): Pose | undefined => {
 	const x = finiteNumber(point['X']) ?? 0
 	const y = finiteNumber(point['Y']) ?? 0
 	const z = finiteNumber(point['Z']) ?? 0
-	const ov = isRecord(orientation) ? orientation : {}
+	const orientationRecord = isRecord(orientation) ? orientation : {}
 
 	return new Pose(
 		x,
 		y,
 		z,
-		finiteNumber(ov['x']),
-		finiteNumber(ov['y']),
-		finiteNumber(ov['z']),
-		finiteNumber(ov['th']) ?? 0
+		finiteNumber(orientationRecord['x']),
+		finiteNumber(orientationRecord['y']),
+		finiteNumber(orientationRecord['z']),
+		finiteNumber(orientationRecord['th']) ?? 0
 	)
 }
 

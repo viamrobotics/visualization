@@ -59,7 +59,7 @@ adds the vmodutils module when the machine has nothing to load that model from.
 			motionServiceNames(
 				motionResources.current
 					.map((resource) => resource.name)
-					.filter((name) => name !== undefined)
+					.filter((resourceName) => resourceName !== undefined)
 			)
 		)
 	)
@@ -75,7 +75,7 @@ adds the vmodutils module when the machine has nothing to load that model from.
 	})
 
 	const takenNames = $derived([
-		...(partConfig.current.components ?? []).map(({ name }) => name),
+		...(partConfig.current.components ?? []).map((component) => component.name),
 		...Object.keys(fragmentInfo.current ?? {}),
 	])
 

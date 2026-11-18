@@ -26,7 +26,14 @@ the triad of where the end of the arm would be.
 
 	const { entity }: Props = $props()
 
+	/** Metres. Matches the triad `MoveTargetGhost` draws at a staged goal. */
 	const AXES_LENGTH = 0.08
+	const AXES_OPACITY = 0.9
+	/** Metres. A dot at the origin, so the pose reads even where the axes are edge-on. */
+	const ORIGIN_RADIUS = 0.008
+	const ORIGIN_OPACITY = 0.5
+	/** After the scene, so the marker draws over whatever stands in front of it. */
+	const OVERLAY_RENDER_ORDER = 1
 
 	const world = useWorld()
 	const frames = useFrames()
@@ -63,7 +70,7 @@ the triad of where the end of the arm would be.
 	const seeThrough = (material: LineBasicMaterial) => {
 		material.depthTest = false
 		material.transparent = true
-		material.opacity = 0.9
+		material.opacity = AXES_OPACITY
 	}
 </script>
 
@@ -73,20 +80,20 @@ the triad of where the end of the arm would be.
 			args={[AXES_LENGTH]}
 			raycast={() => null}
 			bvh={{ enabled: false }}
-			renderOrder={1}
+			renderOrder={OVERLAY_RENDER_ORDER}
 			oncreate={(ref) => seeThrough(ref.material as LineBasicMaterial)}
 		/>
 		<T.Mesh
 			raycast={() => null}
 			bvh={{ enabled: false }}
-			renderOrder={1}
+			renderOrder={OVERLAY_RENDER_ORDER}
 		>
-			<T.SphereGeometry args={[0.008]} />
+			<T.SphereGeometry args={[ORIGIN_RADIUS]} />
 			<T.MeshBasicMaterial
 				color={MOVE_GHOST_COLOR}
 				depthTest={false}
 				transparent
-				opacity={0.5}
+				opacity={ORIGIN_OPACITY}
 			/>
 		</T.Mesh>
 	</T>
