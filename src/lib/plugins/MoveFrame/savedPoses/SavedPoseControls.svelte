@@ -15,7 +15,8 @@ drives its arm there through the saver's "go to" switch position.
 
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
 	import Dialog from '$lib/components/overlay/Dialog.svelte'
-	import { traits, useTrait } from '$lib/ecs'
+	import EntityLink from '$lib/components/overlay/EntityLink.svelte'
+	import { traits, useQuery, useTrait } from '$lib/ecs'
 	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
@@ -52,6 +53,12 @@ drives its arm there through the saver's "go to" switch position.
 	const saverName = $derived(name.current ?? '')
 	const arm = $derived(savedPose.current?.arm ?? '')
 	const motion = $derived(savedPose.current?.motion ?? '')
+
+	// Reading `Name` untracked is safe: a renamed frame is respawned, which changes the query.
+	const frameEntities = useQuery(traits.FramesAPI)
+	const armEntity = $derived(
+		frameEntities.current.find((frameEntity) => frameEntity.get(traits.Name) === arm)
+	)
 
 	const saver = createResourceClient(
 		SwitchClient,
@@ -170,7 +177,13 @@ drives its arm there through the saver's "go to" switch position.
 		<div class="flex flex-col gap-3">
 			<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
 				<dt class="text-subtle-2">arm</dt>
-				<dd class="font-roboto-mono">{arm}</dd>
+				<dd class="font-roboto-mono">
+					{#if armEntity}
+						<EntityLink entity={armEntity} />
+					{:else}
+						{arm}
+					{/if}
+				</dd>
 				<dt class="text-subtle-2">saved</dt>
 				<dd>{target ?? 'nothing yet'}</dd>
 			</dl>
