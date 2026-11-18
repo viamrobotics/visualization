@@ -33,7 +33,8 @@ drives its arm there through the saver's "go to" switch position.
 	/** `arm-position-saver`'s "go to" position. Index 0 is idle and 1 saves. */
 	const GO_TO_POSITION = 2
 
-	const NO_SERVICE_LABEL = 'choose a service'
+	const CHOOSE_SERVICE_LABEL = 'choose a service'
+	const DIRECT_MOVE_LABEL = 'none (direct joint move)'
 
 	const id = $props.id()
 	const motionLabelId = `${id}-motion`
@@ -75,7 +76,8 @@ drives its arm there through the saver's "go to" switch position.
 			motion === '' || motionServices.includes(motion)
 				? motionServices
 				: [motion, ...motionServices]
-		const options: Record<string, string> = motion === '' ? { [NO_SERVICE_LABEL]: '' } : {}
+		const emptyLabel = motionServices.length === 0 ? DIRECT_MOVE_LABEL : CHOOSE_SERVICE_LABEL
+		const options: Record<string, string> = motion === '' ? { [emptyLabel]: '' } : {}
 		for (const service of names) options[service] = service
 		return options
 	})
@@ -92,7 +94,13 @@ drives its arm there through the saver's "go to" switch position.
 
 	const disabledReason = $derived.by(() => {
 		if (target === undefined) return `${saverName} has no pose saved yet.`
-		if (motion === '') return 'Choose a motion service to plan the move.'
+		// With no `motion`, the module moves saved joints directly but has no way to reach an end pose.
+		// Where a service exists, picking one first keeps the move planned around obstacles.
+		if (motion === '' && target === 'end pose') {
+			return 'Choose a motion service to plan a move to an end pose.'
+		}
+		if (motion === '' && motionServices.length > 0)
+			return 'Choose a motion service to plan the move.'
 		if (resourceByName.current[saverName] === undefined) return `${saverName} is not running yet.`
 		if (health.statusFor(saverName)) return `${saverName} is not healthy.`
 		if (isMoving) return `Moving "${arm}".`

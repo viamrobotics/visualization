@@ -60,6 +60,11 @@ vi.mock('@viamrobotics/svelte-sdk', () => ({
 	createRobotQuery: vi.fn(() => ({ data: undefined })),
 }))
 vi.mock('$lib/hooks/usePartID.svelte', () => ({ usePartID: vi.fn() }))
+vi.mock('$lib/hooks/use3DModels.svelte', () => ({
+	use3DModels: () => ({ current: {}, arms: [], shouldRender: false, parseArm: vi.fn() }),
+	matchModel: () => undefined,
+	modelKey: () => undefined,
+}))
 vi.mock('$lib/hooks/useArmClient.svelte', () => ({
 	useArmClient: () => ({ names: [], currentPositions: {} }),
 }))

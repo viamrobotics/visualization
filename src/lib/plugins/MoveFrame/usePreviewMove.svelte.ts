@@ -9,6 +9,7 @@ import type { JointMotions } from '$lib/motion/interpolateTrajectory'
 import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
 
 import { useWorld } from '$lib/ecs'
+import { matchModel, modelKey, use3DModels } from '$lib/hooks/use3DModels.svelte'
 import { buildFrameDescriptors } from '$lib/motion/frameDescriptors'
 import { frameSystemToPlanFrames } from '$lib/motion/frameSystemToPlanFrames'
 import {
@@ -145,6 +146,11 @@ export const usePreviewMove = ({
 	// Outside `$state`: koota entities and Three.js matrices want no deep proxy. `const` because
 	// `spawnPreviewGhosts` fills it in place, keeping it the only handle teardown has across an await.
 	const ghosts: PreviewGhosts = createPreviewGhosts()
+
+	const models = use3DModels()
+	const drawsAnyModel = () =>
+		models.shouldRender &&
+		ghosts.entities.some((entity) => matchModel(modelKey(entity), models.current) !== undefined)
 	// Held alongside the twins rather than derived where it is used: `set detail` reframes the same
 	// plan without a descriptor in scope, and it needs the same answer this request built.
 	let jointMotions: JointMotions = new Map()
@@ -275,8 +281,9 @@ export const usePreviewMove = ({
 			spawnPreviewGhosts(world, descriptors, result.trajectory, ghosts)
 
 			// Joints and geometry-less mounts make up most of a chain, so counting entities here would
-			// arm the panel over a preview with nothing on screen.
-			if (ghosts.drawn === 0) {
+			// arm the panel over a preview with nothing on screen. A twin with no collider still draws
+			// when its link has a 3D model on screen.
+			if (ghosts.drawn === 0 && !drawsAnyModel()) {
 				fail('No geometry in the frame system to draw this plan with.')
 				return
 			}

@@ -112,21 +112,26 @@ adds the vmodutils module when the machine has nothing to load that model from.
 	})
 
 	/**
-	 * Whether the running machine already serves the saver model, from any module. A module
-	 * from a fragment is not in the part's own `modules`, so the config alone cannot say.
+	 * Whether the running machine already serves the saver model, from any module, or `undefined`
+	 * when the machine cannot be asked. A module from a fragment is not in the part's own
+	 * `modules`, so the config alone cannot say.
 	 */
-	const isSaverModelLoaded = async (): Promise<boolean> => {
+	const isSaverModelLoaded = async (): Promise<boolean | undefined> => {
 		const client = robotClient.current
-		if (!client) return false
+		if (!client) return undefined
 
 		try {
 			const models = await client.getModelsFromModules()
 			return models.some(({ model }) => model === ARM_POSITION_SAVER_MODEL)
 		} catch {
-			// Unanswered means unknown. `createComponent` still skips a module the part already lists.
-			return false
+			return undefined
 		}
 	}
+
+	const isModuleInPartConfig = () =>
+		(partConfig.current.modules ?? []).some(
+			({ module_id }) => module_id === VMODUTILS_MODULE.module_id
+		)
 
 	const save = async () => {
 		if (saving || nameError !== undefined || disabledReason !== undefined) return
@@ -147,12 +152,26 @@ adds the vmodutils module when the machine has nothing to load that model from.
 		const isLoaded = await isSaverModelLoaded()
 		saving = false
 
+		// The dialog may have closed, or the name been taken, while the machine was answering.
+		if (!open) return
+		if (takenNames.includes(saverName)) return
+
+		// Unknown is not "absent": a fragment may already load the module, and a second entry beside
+		// it would fight its pinned version.
+		if (isLoaded === undefined && !isModuleInPartConfig()) {
+			toast({
+				message: 'Cannot check which modules the machine runs. Reconnect and try again.',
+				variant: ToastVariant.Danger,
+			})
+			return
+		}
+
 		pendingName = saverName
 		partConfig.createComponent(
 			createArmPositionSaver(saverName, arm, joints, defaultService),
-			isLoaded ? undefined : VMODUTILS_MODULE
+			isLoaded === false ? VMODUTILS_MODULE : undefined
 		)
-		partConfig.save()
+		if (partConfig.canSave) partConfig.save()
 
 		open = false
 		toast({
