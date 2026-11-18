@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T } from '@threlte/core'
+	import { T } from '@threlte/core/webgpu'
 
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 	import { TRANSFORM_CONTROLS_LAYER } from '$lib/three/renderLayers'
@@ -13,7 +13,7 @@
 {#if mode === 'perspective'}
 	<T.PerspectiveCamera
 		makeDefault
-		near={0.001}
+		near={0.01}
 		up={[0, 0, 1]}
 		oncreate={(ref) => {
 			ref.layers.enable(TRANSFORM_CONTROLS_LAYER)

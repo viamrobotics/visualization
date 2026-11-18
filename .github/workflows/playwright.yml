@@ -21,15 +21,19 @@ jobs:
   e2e:
     name: Drawing and matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Tests run on one worker under CI, so a slow runner needs the headroom.
+    timeout-minutes: 45
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
       - name: Setup
         uses: ./.github/actions/setup-e2e
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           go: 'true'
-          bun: 'true'
 
       # Both binaries the drawing fixtures exec: one draw server per worker, and
       # the scene binary that puts entities on screen.
@@ -43,8 +47,6 @@ jobs:
         run: pnpm vite-build
         env:
           VITE_CONFIGS: '{}'
-          WS_PORT: '3000'
-          STATIC_PORT: '5173'
 
       # No --update-snapshots. A pixel change fails here and gets rebaselined
       # deliberately through update-e2e-baselines.yml.
@@ -85,10 +87,13 @@ jobs:
     timeout-minutes: 10
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
-      - name: Setup
-        uses: ./.github/actions/setup-e2e
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
 
       - name: Smoke the deploy
         run: pnpm playwright test --config playwright.playground.config.ts --project=playground

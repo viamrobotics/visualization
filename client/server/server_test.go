@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
+
+	"go.viam.com/test"
 
 	"github.com/viamrobotics/visualization/client/server"
 )
@@ -77,4 +80,20 @@ func TestProductionMode_StaticServerOnSeparatePort(t *testing.T) {
 		t.Fatalf("static port not reachable: %v", err)
 	}
 	resp.Body.Close()
+}
+
+func TestStart_PortZeroReportsBoundAddress(t *testing.T) {
+	_ = server.Stop() // ensure clean state
+	if err := server.Start(server.DrawServerConfig{Port: 0}); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	t.Cleanup(func() { _ = server.Stop() })
+
+	address := server.GetAddress()
+	test.That(t, address, test.ShouldNotEndWith, ":0")
+	_, portText, err := net.SplitHostPort(address)
+	test.That(t, err, test.ShouldBeNil)
+	port, err := strconv.Atoi(portText)
+	test.That(t, err, test.ShouldBeNil)
+	test.That(t, port, test.ShouldBeGreaterThan, 0)
 }

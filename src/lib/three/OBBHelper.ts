@@ -10,9 +10,9 @@ import {
 	Quaternion,
 	Vector3,
 } from 'three'
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
+import { LineSegments2 } from 'three/examples/jsm/lines/webgpu/LineSegments2.js'
+import { Line2NodeMaterial } from 'three/webgpu'
 
 const box = new Box3()
 const childBox = new Box3()
@@ -63,7 +63,7 @@ export class OBBHelper extends LineSegments2 {
 		edges.dispose()
 		boxGeometry.dispose()
 
-		const material = new LineMaterial({
+		const material = new Line2NodeMaterial({
 			color,
 			linewidth,
 			depthTest: false,

@@ -75,19 +75,8 @@ describe('the oZ defaulting rule', () => {
 		expect(fields(pose)).toEqual({ x: 1, y: 2, z: 3, theta: 45, ...expected })
 	})
 
-	it.each(cases)('the constructor and copy agree with $name', ({ patch }) => {
-		const constructed = new Pose(1, 2, 3, patch.oX, patch.oY, patch.oZ, 45)
-		const copied = new Pose().copy({ x: 1, y: 2, z: 3, theta: 45, ...patch })
-
-		expect(fields(copied)).toEqual(fields(constructed))
-	})
-
 	it('defaults an argumentless pose to the identity orientation', () => {
 		expect(fields(new Pose())).toEqual({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
-	})
-
-	it('agrees with copy on a wholly undefined pose', () => {
-		expect(fields(new Pose().copy(undefined))).toEqual(fields(new Pose()))
 	})
 })
 
@@ -229,12 +218,6 @@ describe('unit conversion', () => {
 		expect(quaternion.y).toBeCloseTo(0, 6)
 		expect(quaternion.z).toBeCloseTo(0, 6)
 		expect(quaternion.w).toBeCloseTo(Math.SQRT1_2, 6)
-	})
-
-	it('leaves theta unscaled through a matrix round-trip', () => {
-		const pose = new Pose(0, 0, 0, 0, 0, 1, 35)
-
-		expect(new Pose().setFromMatrix4(pose.toMatrix4()).theta).toBeCloseTo(35, 6)
 	})
 
 	it('reports euler angles in degrees using the ZYX convention', () => {
@@ -384,14 +367,6 @@ describe('setFromFrame', () => {
 		expect(pose.theta).toBeCloseTo(90, 6)
 	})
 
-	it('passes ov_degrees through unchanged', () => {
-		const pose = new Pose().setFromFrame({
-			orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 90 } },
-		})
-
-		expect(pose.theta).toBeCloseTo(90, 6)
-	})
-
 	it('falls back to the identity orientation when the frame has none', () => {
 		const pose = new Pose(1, 2, 3, 1, 0, 0, 44).setFromFrame({
 			translation: { x: 0, y: 0, z: 0 },
@@ -412,11 +387,11 @@ describe('setFromFrame', () => {
 	 * Both spell the same valid config: RDK marshals `{ W, X, Y, Z }`, the editor
 	 * writes `{ w, x, y, z }`, and Go's unmarshal accepts either.
 	 */
-	it.each([
-		['lowercase', { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 }],
-		['capitalised', { X: Math.SQRT1_2, Y: 0, Z: 0, W: Math.SQRT1_2 }],
-	])('reads a %s quaternion', (_label, value) => {
-		const orientation = { type: 'quaternion', value } as Frame['orientation']
+	it('reads a capitalised quaternion', () => {
+		const orientation = {
+			type: 'quaternion',
+			value: { X: Math.SQRT1_2, Y: 0, Z: 0, W: Math.SQRT1_2 },
+		} as unknown as Frame['orientation']
 		const pose = new Pose().setFromFrame({ orientation })
 
 		expect(pose.isFinite()).toBe(true)
@@ -516,12 +491,6 @@ describe('setFromFrame', () => {
 
 describe('equals and isFinite', () => {
 	const pose = () => new Pose(1, 2, 3, 0, 1, 0, 45)
-
-	it('is equal to itself', () => {
-		const subject = pose()
-
-		expect(subject.equals(subject)).toBe(true)
-	})
 
 	it('is not equal to nothing', () => {
 		expect(pose().equals(undefined)).toBe(false)

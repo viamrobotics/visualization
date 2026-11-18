@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PortalTarget } from '@threlte/extras'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 

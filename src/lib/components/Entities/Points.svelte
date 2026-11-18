@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
-	import type { Snippet } from 'svelte'
 
-	import { T, useTask, useThrelte } from '@threlte/core'
-	import { OrthographicCamera, Points, PointsMaterial } from 'three'
+	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
+	import { type Snippet, untrack } from 'svelte'
+	import { OrthographicCamera } from 'three'
 
 	import { asColor, isSingleColor } from '$lib/buffer'
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { clampPointSize } from '$lib/three/clampPointSize'
+	import { PointCloud } from '$lib/three/PointCloud'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 
@@ -19,7 +19,7 @@
 
 	let { entity, children }: Props = $props()
 
-	const { camera, invalidate, renderer } = useThrelte()
+	const { camera, invalidate } = useThrelte()
 	const settings = useSettings()
 
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
@@ -27,40 +27,74 @@
 	const entityColor = useTrait(() => entity, traits.Color)
 	const colors = useTrait(() => entity, traits.Colors)
 	const entityPointSize = useTrait(() => entity, traits.PointSize)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const opacity = useOpacity(() => entity)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
 	const materialProps = useTrait(() => entity, traits.Material)
 
 	const pointSize = $derived(
-		entityPointSize.current ? entityPointSize.current * 0.001 : settings.current.pointSize
+		entityPointSize.current ? entityPointSize.current * 0.001 : Number(settings.current.pointSize)
 	)
 	const orthographic = $derived(settings.current.cameraMode === 'orthographic')
 
-	const points = new Points()
-	points.matrixAutoUpdate = false
-	const material = points.material as PointsMaterial
-	material.toneMapped = false
+	const hasGeometry = $derived(geometry.current !== undefined)
 
-	const maxPointSize = { value: 0 }
-	clampPointSize(material, maxPointSize)
+	// Depends on `hasGeometry` alone, so a streamed cloud whose point count changed is swapped
+	// into the same instance below rather than rebuilding the material's shader.
+	const pointCloud = $derived.by(() => {
+		if (!hasGeometry) return undefined
+		const cloud = untrack(() => geometry.current)
+		return cloud ? new PointCloud(cloud) : undefined
+	})
+
+	$effect(() => {
+		if (pointCloud && geometry.current) {
+			pointCloud.cloud = geometry.current
+			invalidate()
+		}
+	})
+
+	// The cloud geometry used to be a `<T>`, which Threlte disposed on unmount. `PointCloud`
+	// keeps it off the scene graph, so dispose it here instead.
+	$effect(() => {
+		const cloud = geometry.current
+		return () => cloud?.dispose()
+	})
+
+	$effect(() => {
+		if (!pointCloud) return
+
+		pointCloud.matrixAutoUpdate = false
+	})
 
 	// Orthographic size is driven per frame by the task below, which reads a zoom that isn't
 	// reactive. Writing it here too would clobber that between frames.
 	$effect(() => {
-		if (!orthographic) {
-			material.size = pointSize
+		if (pointCloud && !orthographic) {
+			pointCloud.size.value = pointSize
 			invalidate()
 		}
 	})
 
 	$effect(() => {
-		// gl_PointSize is in framebuffer pixels; the setting is in CSS pixels.
-		maxPointSize.value = settings.current.maxPointSize * renderer.getPixelRatio()
+		if (!pointCloud) return
+
+		pointCloud.isPerspective.value = orthographic ? 0 : 1
 		invalidate()
 	})
 
 	$effect(() => {
+		if (!pointCloud) return
+
+		pointCloud.maxSize.value = Number(settings.current.maxPointSize)
+		invalidate()
+	})
+
+	$effect(() => {
+		if (!pointCloud) return
+
+		const { material } = pointCloud
+
 		if (geometry.current?.getAttribute('color')) {
 			material.color.set(0xffffff)
 		} else if (entityColor.current) {
@@ -76,46 +110,65 @@
 	})
 
 	/**
-	 * Points transparency is very costly for the GPU, so we turn it on conservatively.
-	 * Uniform opacity (entity trait) and per-vertex RGBA alpha are both considered here
-	 * to avoid the two sources conflicting with each other.
+	 * Whether the cloud is drawn at less than full alpha, from either source.
+	 * Both are considered here so the two cannot conflict.
 	 */
-	$effect(() => {
+	const isFaded = $derived.by(() => {
+		if (opacity.current < 1) return true
+
 		const vertexColors = geometry.current?.getAttribute('color')
 		const positions = geometry.current?.getAttribute('position')
+		if (!vertexColors || !positions) return false
 
-		material.vertexColors = vertexColors !== undefined
+		if (positions.array.length / vertexColors.array.length !== 0.75) return false
 
-		const hasUniformOpacity = opacity.current !== undefined && opacity.current < 1
-		material.opacity = hasUniformOpacity ? opacity.current! : 1
-
-		let hasVertexAlpha = false
-		if (vertexColors && positions) {
-			const hasAlphaChannel = positions.array.length / vertexColors.array.length === 0.75
-			if (hasAlphaChannel) {
-				for (let i = 3, l = vertexColors.array.length; i < l; i += 4) {
-					if (vertexColors.array[i] < 1) {
-						hasVertexAlpha = true
-						break
-					}
-				}
-			}
+		for (let index = 3, length = vertexColors.array.length; index < length; index += 4) {
+			if (vertexColors.array[index] < 1) return true
 		}
 
-		material.transparent = hasUniformOpacity || hasVertexAlpha
+		return false
+	})
+
+	$effect(() => {
+		if (!pointCloud) return
+
+		const { material } = pointCloud
+
+		material.opacity = opacity.current
+
+		/**
+		 * A faded cloud fades through MSAA coverage rather than blending, so it
+		 * stays in the opaque pass and the depth buffer orders it.
+		 *
+		 * Blending would put it in the transparent pass, where three sorts each
+		 * object by its `matrixWorld` position. A cloud sits at its own origin
+		 * while its points are spread across the scene, and the geometry it
+		 * intersects is one `BatchedMesh` with the same problem, so the two cannot
+		 * be ordered against each other: the cloud either hides behind geometry it
+		 * is in front of, or paints over geometry it is behind. Coverage sidesteps
+		 * the sort entirely. It costs smooth alpha, roughly one step per MSAA
+		 * sample, which on points reads as the cloud thinning out.
+		 */
+		material.alphaToCoverage = isFaded
+
 		invalidate()
 	})
 
 	$effect(() => {
+		if (!pointCloud) return
+
+		const { material } = pointCloud
+
 		material.depthTest = materialProps.current?.depthTest ?? true
 		material.depthWrite = materialProps.current?.depthWrite ?? true
+
 		invalidate()
 	})
 
 	$effect(() => {
-		if (worldMatrix.current) {
-			points.matrix.copy(worldMatrix.current)
-			points.updateMatrixWorld()
+		if (pointCloud && worldMatrix.current) {
+			pointCloud.matrix.copy(worldMatrix.current)
+			pointCloud.updateMatrixWorld()
 			invalidate()
 		}
 	})
@@ -124,9 +177,11 @@
 
 	useTask(
 		() => {
+			if (!pointCloud) return
+
 			// If using an orthographic camera, points need to be
 			// resized to half zoom to take up the same screen space.
-			material.size = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
+			pointCloud.size.value = pointSize * ((camera.current as OrthographicCamera).zoom / 2)
 		},
 		{
 			running: () => orthographic,
@@ -135,17 +190,14 @@
 	)
 </script>
 
-{#if geometry.current}
+{#if pointCloud}
 	<T
-		is={points}
+		is={pointCloud}
 		name={entity}
 		visible={invisible.current !== true}
-		renderOrder={renderOrder.current}
+		renderOrder={renderOrder.current ?? 0}
 		{...events}
 	>
-		<T is={geometry.current} />
-		<T is={material} />
-
 		{@render children?.()}
 	</T>
 {/if}

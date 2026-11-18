@@ -124,7 +124,19 @@ export const Instances = trait({
 
 export const RenderOrder = trait(() => 0)
 
+/**
+ * Alpha the entity's source asked for — server metadata, or whatever the
+ * spawner chose. Reconcilers rewrite it on every tick, so nothing a user does
+ * belongs here. See `OpacityOverride`.
+ */
 export const Opacity = trait(() => 1)
+
+/**
+ * Alpha the user picked in the details panel. Absent until they touch the
+ * slider, and no reconciler may write it, which is what makes the edit survive
+ * the next sync. `resolveOpacity` ranks it above `Opacity`.
+ */
+export const OpacityOverride = trait(() => 1)
 
 /**
  * The color of an object
@@ -196,10 +208,30 @@ export const GLTF = trait(() => ({
 export const FramesAPI = trait(() => true)
 
 /**
+ * A frame the part config declares that the machine's frame system does not
+ * have, because the edit adding it is still unsaved. `getPose` cannot resolve a
+ * frame the machine never built, so pose polling excludes these with
+ * `Not(ConfigOnlyFrame)` and the scene draws them from their config pose.
+ */
+export const ConfigOnlyFrame = trait(() => true)
+
+/**
  * A link inside a component's kinematic model. IK re-solves its pose, so it is
  * neither rigid with its parent nor drivable by the motion service.
  */
 export const KinematicLink = trait(() => true)
+
+/**
+ * One shape of a Simple or Bounds obstacle. It belongs to the obstacle rather than standing as a
+ * frame of its own, so picking it in the scene selects the obstacle, the frame that can be moved.
+ */
+export const ObstacleShape = trait(() => true)
+
+/**
+ * One shape of a Complex obstacle, at `index` in its `attributes.geometries`. Picking it selects
+ * the shape itself, and the transform gizmo edits that entry.
+ */
+export const ComplexObstacleShape = trait({ index: 0 })
 
 /**
  * Drawn into the scene through the draw API, rather than sourced from the robot.
@@ -236,6 +268,12 @@ export const FramelessComponent = trait()
 export const Editable = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
+
+/**
+ * The resource appearance last written onto this frame entity, serialized. An appearance change is
+ * applied once, so an edit made in the scene since then stays until the appearance changes again.
+ */
+export const AppliedAppearance = trait({ key: '' })
 
 /**
  * Marker trait for entities that should be rendered in screen space (CSS pixels)
@@ -385,73 +423,93 @@ export const writeMatrix = (entity: Entity, patch: PosePatch) => {
 	entity.changed(Matrix)
 }
 
+type ParsedPointCloud = Awaited<ReturnType<typeof parsePcdInWorker>>
+
+/**
+ * Writes a parsed point cloud into the entity's geometry, reallocating its attributes when the
+ * point count changed.
+ *
+ * @param colors Per-point RGB colors to write. Undefined leaves the cloud without vertex colors.
+ */
+export const applyParsedPointCloud = (
+	entity: Entity,
+	parsed: ParsedPointCloud,
+	colors: Uint8Array | undefined
+): void => {
+	setOrAddTrait(entity, PointSampling, {
+		total: parsed.positions.length / 3,
+		shuffled: parsed.shuffled,
+	})
+
+	const buffer = entity.get(BufferGeometry)
+	if (buffer) {
+		// Attributes must be reallocated when the point count changes, and an
+		// entity can hold an attribute-less geometry: `parseMeshInput` returns
+		// one for empty or truncated bytes.
+		const oldCount = buffer.getAttribute('position')?.count ?? 0
+		const newCount = parsed.positions.length / 3
+		if (oldCount === newCount) {
+			updateBufferGeometry(
+				buffer,
+				parsed.positions,
+				{ colors, colorFormat: ColorFormat.RGB },
+				parsed.bounds
+			)
+			// Replaces the tree built for the points this update just overwrote.
+			if (parsed.boundsTree) attachPointsBvh(buffer, parsed.boundsTree)
+		} else {
+			const fresh = createBufferGeometry(
+				parsed.positions,
+				{ colors, colorFormat: ColorFormat.RGB },
+				parsed.bounds
+			)
+			if (parsed.boundsTree) attachPointsBvh(fresh, parsed.boundsTree)
+			buffer.dispose()
+			entity.set(BufferGeometry, fresh)
+		}
+
+		return
+	}
+
+	entity.remove(Box, Capsule, Cylinder, Sphere)
+	const geometry = createBufferGeometry(
+		parsed.positions,
+		{ colors, colorFormat: ColorFormat.RGB },
+		parsed.bounds
+	)
+	if (parsed.boundsTree) attachPointsBvh(geometry, parsed.boundsTree)
+	entity.add(BufferGeometry(geometry))
+	if (!entity.has(Points)) entity.add(Points)
+}
+
+/**
+ * The parsed cloud's own colors. A cloud already drawn that parsed without any falls back to
+ * per-point colors rebuilt from its single `Color` trait.
+ */
+const parsedOrTraitColors = (entity: Entity, parsed: ParsedPointCloud): Uint8Array | undefined => {
+	if (parsed.colors !== undefined || !entity.has(BufferGeometry)) return parsed.colors
+
+	const color = entity.get(Color)
+	if (!color) return undefined
+
+	const count = parsed.positions.length / 3
+	const colors = new Uint8Array(count * 3)
+	const r = Math.round(color.r * 255)
+	const g = Math.round(color.g * 255)
+	const b = Math.round(color.b * 255)
+	for (let i = 0; i < count; i++) {
+		colors[i * 3] = r
+		colors[i * 3 + 1] = g
+		colors[i * 3 + 2] = b
+	}
+	return colors
+}
+
 const updatePointCloud = (entity: Entity, pointCloud: Uint8Array): void => {
 	parsePcdInWorker(new Uint8Array(pointCloud))
 		.then((parsed) => {
 			if (!entity.isAlive()) return
-
-			setOrAddTrait(entity, PointSampling, {
-				total: parsed.positions.length / 3,
-				shuffled: parsed.shuffled,
-			})
-
-			const buffer = entity.get(BufferGeometry)
-			let colors = parsed.colors
-			if (buffer) {
-				// Rebuild per-point colors from the single Color trait when the parsed cloud has none.
-				if (parsed.colors === undefined) {
-					const color = entity.get(Color)
-					if (color) {
-						const newCount = parsed.positions.length / 3
-						colors = new Uint8Array(newCount * 3)
-						const r = Math.round(color.r * 255)
-						const g = Math.round(color.g * 255)
-						const b = Math.round(color.b * 255)
-						for (let i = 0; i < newCount; i++) {
-							colors[i * 3] = r
-							colors[i * 3 + 1] = g
-							colors[i * 3 + 2] = b
-						}
-					}
-				}
-
-				// Attributes must be reallocated when the point count changes, and an
-				// entity can hold an attribute-less geometry: `parseMeshInput` returns
-				// one for empty or truncated bytes.
-				const oldCount = buffer.getAttribute('position')?.count ?? 0
-				const newCount = parsed.positions.length / 3
-				if (oldCount === newCount) {
-					updateBufferGeometry(
-						buffer,
-						parsed.positions,
-						{ colors, colorFormat: ColorFormat.RGB },
-						parsed.bounds
-					)
-					// Replaces the tree built for the points this update just overwrote.
-					if (parsed.boundsTree) attachPointsBvh(buffer, parsed.boundsTree)
-				} else {
-					const fresh = createBufferGeometry(
-						parsed.positions,
-						{ colors, colorFormat: ColorFormat.RGB },
-						parsed.bounds
-					)
-					if (parsed.boundsTree) attachPointsBvh(fresh, parsed.boundsTree)
-					buffer.dispose()
-					entity.set(BufferGeometry, fresh)
-				}
-
-				return
-			}
-
-			entity.remove(Box, Capsule, Cylinder, Sphere)
-			const geometry = createBufferGeometry(
-				parsed.positions,
-				{ colors: parsed.colors, colorFormat: ColorFormat.RGB },
-				parsed.bounds
-			)
-			if (parsed.boundsTree) attachPointsBvh(geometry, parsed.boundsTree)
-			entity.add(BufferGeometry(geometry))
-			if (!entity.has(Points)) entity.add(Points)
+			applyParsedPointCloud(entity, parsed, parsedOrTraitColors(entity, parsed))
 		})
 		.catch((error) => {
 			console.error('Failed to update pointcloud buffer geometry:', error)

@@ -1,4 +1,4 @@
-import { useThrelte } from '@threlte/core'
+import { useThrelte } from '@threlte/core/webgpu'
 import { EventDispatcher, type Intersection, Raycaster, Vector2 } from 'three'
 
 const pointerDown = new Vector2()

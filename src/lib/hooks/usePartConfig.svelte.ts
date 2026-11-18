@@ -12,13 +12,28 @@ import {
 	serializePartConfig,
 } from '$lib/editing/frameHistory'
 import { createFrame, type Frame } from '$lib/frame'
+import { frameModOperations, replaceFrameMods } from '$lib/frameFragmentMods'
+import { hasViamAppClient } from '$lib/hooks/hasViamAppClient'
 import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 import { Pose } from '$lib/math'
+import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
+
+import { type PartComponentPatch, patchPartComponent } from './patchPartComponent'
 
 const key = Symbol('part-config-context')
 
+/** The fields of a `components` entry this app reads or writes, not the whole entry. */
+export interface PartComponent {
+	name: string
+	api?: string
+	model?: string
+	frame?: Frame
+	attributes?: Record<string, unknown>
+	visualizer?: Record<string, unknown>
+}
+
 export interface PartConfig {
-	components: { name: string; api?: string; frame?: Frame }[]
+	components: PartComponent[]
 	fragment_mods?: {
 		fragment_id: string
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,10 +41,34 @@ export interface PartConfig {
 	}[]
 }
 
+/**
+ * `next` with `current`'s geometry offset filled in wherever `next` sets none. Geometry
+ * editors write dimensions only, so without this a resize moves the shape to the frame origin.
+ */
+const mergeGeometryOffset = (
+	next: NonNullable<Frame['geometry']>,
+	current: Frame['geometry']
+): NonNullable<Frame['geometry']> => {
+	if (next.type === 'none' || !current || current.type === 'none') {
+		return { ...next }
+	}
+
+	const translation = next.translation ?? current.translation
+	const orientation = next.orientation ?? current.orientation
+
+	return {
+		...next,
+		...(translation && { translation }),
+		...(orientation && { orientation }),
+	}
+}
+
 interface LocalPartConfig {
 	readonly isReady: boolean
 	isDirty: boolean
 	hasEditPermissions: boolean
+	/** See `PartConfigContext.hasConfigSource`. */
+	readonly hasConfigSource: boolean
 	current: Struct
 	/**
 	 * Why the config is unavailable, when it is. Stays undefined while the config
@@ -43,12 +82,18 @@ interface LocalPartConfig {
 	discardChanges?: () => void
 }
 
-interface PartConfigContext {
+export interface PartConfigContext {
 	current: PartConfig
 	/** Whether the initial config snapshot for the selected part has settled. */
 	readonly isReady: boolean
 	isDirty: boolean
 	hasEditPermissions: boolean
+	/**
+	 * Whether anything can load and save this part's config: the host's
+	 * `localConfigProps`, or the app client. False when the Visualizer is embedded
+	 * with only a machine connection, where config editing has nowhere to go.
+	 */
+	readonly hasConfigSource: boolean
 	/** Why the config is unavailable — see `LocalPartConfig.error`. */
 	error?: string
 
@@ -60,6 +105,13 @@ interface PartConfigContext {
 	) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
+	/** Appends `component` to the part's own components. A name already in the config is left alone. */
+	createComponent: (component: PartComponent) => void
+	/**
+	 * Replaces the fields in `patch` on a part-owned component, as one undo step. A fragment's
+	 * component is left alone.
+	 */
+	updateComponent: (componentName: string, patch: PartComponentPatch) => void
 	save: () => void
 	discardChanges: () => void
 	canUndoFrameEdit: boolean
@@ -75,7 +127,12 @@ export const providePartConfig = (
 	params: () => AppEmbeddedPartConfigProps | undefined
 ) => {
 	const props = $derived(params())
-	const config = $derived(props ? useEmbeddedPartConfig(props) : useStandalonePartConfig(partID))
+	const hasAppClient = hasViamAppClient()
+	const config = $derived.by(() => {
+		if (props) return useEmbeddedPartConfig(props)
+		if (hasAppClient) return useStandalonePartConfig(partID)
+		return useDetachedPartConfig()
+	})
 	const fragmentInfo = useFragmentInfo()
 	const world = useWorld()
 
@@ -233,6 +290,18 @@ export const providePartConfig = (
 		config.set(newConfig)
 	}
 
+	const createPartComponent = (component: PartComponent) => {
+		const newConfig = getCurrent()
+		const components = newConfig.components ?? []
+
+		if (components.some(({ name }) => name === component.name)) {
+			return
+		}
+
+		newConfig.components = [...components, component]
+		config.set(newConfig)
+	}
+
 	const createPartFrame = (componentName: string) => {
 		const newConfig = getCurrent()
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
@@ -263,47 +332,45 @@ export const providePartConfig = (
 			newConfig.fragment_mods.push(fragmentMod)
 		}
 
-		const modSetPath = `components.${componentName}.frame`
-		const frame = {
-			['$set']: {
-				[modSetPath]: {
-					translation: {
-						x: framePosition.x,
-						y: framePosition.y,
-						z: framePosition.z,
-					},
-					parent: referenceFrame,
-					orientation: {
-						type: 'ov_degrees',
-						value: {
-							x: framePosition.oX,
-							y: framePosition.oY,
-							z: framePosition.oZ,
-							th: framePosition.theta,
-						},
-					},
-					geometry:
-						frameGeometry && frameGeometry.type !== 'none' ? { ...frameGeometry } : undefined,
+		// The pose the user started this edit from, so an unspecified geometry
+		// keeps whatever the frame already resolved to rather than vanishing.
+		const effectiveFrame = mergedComponentFrames(
+			resolveComponentFrames(newConfig, fragmentInfo.current)
+		).get(componentName)
+
+		const geometry = frameGeometry
+			? mergeGeometryOffset(frameGeometry, effectiveFrame?.geometry)
+			: effectiveFrame?.geometry
+		const nextFrame: Frame = {
+			...effectiveFrame,
+			parent: referenceFrame,
+			translation: {
+				x: framePosition.x,
+				y: framePosition.y,
+				z: framePosition.z,
+			},
+			orientation: {
+				type: 'ov_degrees',
+				value: {
+					x: framePosition.oX,
+					y: framePosition.oY,
+					z: framePosition.oZ,
+					th: framePosition.theta,
 				},
 			},
 		}
-		if (frameGeometry === undefined || frameGeometry.type === 'none') {
-			delete frame['$set'][modSetPath].geometry
+
+		if (geometry && geometry.type !== 'none') {
+			nextFrame.geometry = { ...geometry }
+		} else {
+			delete nextFrame.geometry
 		}
 
-		const existingFrameIndex = fragmentMod.mods.findLastIndex(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(mod: any) => mod?.['$set']?.[modSetPath] !== undefined
+		fragmentMod.mods = replaceFrameMods(
+			fragmentMod.mods as Record<string, unknown>[],
+			componentName,
+			frameModOperations(componentName, fragmentInfo.current[componentName]?.frame, nextFrame)
 		)
-		if (existingFrameIndex === -1) {
-			fragmentMod.mods.push(frame)
-		} else {
-			const existingGeometry = fragmentMod.mods[existingFrameIndex]['$set']?.[modSetPath].geometry
-			if (existingGeometry && !frameGeometry) {
-				frame['$set'][modSetPath].geometry = existingGeometry
-			}
-			fragmentMod.mods[existingFrameIndex] = frame
-		}
 
 		config.set(newConfig)
 	}
@@ -345,7 +412,7 @@ export const providePartConfig = (
 				if (geometry.type === 'none') {
 					delete component.frame.geometry
 				} else {
-					component.frame.geometry = { ...geometry }
+					component.frame.geometry = mergeGeometryOffset(geometry, component.frame.geometry)
 				}
 			}
 		}
@@ -367,8 +434,7 @@ export const providePartConfig = (
 		const newConfig = getCurrent()
 		newConfig.fragment_mods ??= []
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		let fragmentMod = newConfig.fragment_mods.find((mod: any) => mod.fragment_id === fragmentId)
+		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
 		if (fragmentMod === undefined) {
 			fragmentMod = {
 				fragment_id: fragmentId,
@@ -377,12 +443,11 @@ export const providePartConfig = (
 			newConfig.fragment_mods.push(fragmentMod)
 		}
 
-		const modUnSetPath = `components.${componentName}.frame`
-		fragmentMod.mods.push({
-			['$unset']: {
-				[modUnSetPath]: '',
-			},
-		})
+		fragmentMod.mods = replaceFrameMods(
+			fragmentMod.mods as Record<string, unknown>[],
+			componentName,
+			[{ ['$unset']: { [`components.${componentName}.frame`]: '' } }]
+		)
 		config.set(newConfig)
 	}
 
@@ -398,6 +463,9 @@ export const providePartConfig = (
 		},
 		get hasEditPermissions() {
 			return config.hasEditPermissions
+		},
+		get hasConfigSource() {
+			return config.hasConfigSource
 		},
 		get error() {
 			return config.error
@@ -434,6 +502,17 @@ export const providePartConfig = (
 				createPartFrame(componentName)
 			} else {
 				createFragmentFrame(fragmentId, componentName)
+			}
+		},
+		createComponent: (component: PartComponent) => {
+			markHistoryActive()
+			createPartComponent(component)
+		},
+		updateComponent: (componentName: string, patch: PartComponentPatch) => {
+			markHistoryActive()
+			const newConfig = getCurrent()
+			if (patchPartComponent(newConfig, componentName, patch)) {
+				config.set(newConfig)
 			}
 		},
 		save: () => {
@@ -484,6 +563,7 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 	return {
 		isReady: true,
 		hasEditPermissions: true,
+		hasConfigSource: true,
 		get isDirty() {
 			return props.isDirty
 		},
@@ -496,6 +576,22 @@ const useEmbeddedPartConfig = (props: AppEmbeddedPartConfigProps): LocalPartConf
 			const struct = Struct.fromJson(config as unknown as JsonValue)
 			return props.setLocalPartConfig(struct)
 		},
+	}
+}
+
+/**
+ * The config of a Visualizer embedded with only a machine connection. Nothing can
+ * load or save the part's stored config, so it reads as empty and never editable.
+ * The scene still draws from the machine's frame system.
+ */
+const useDetachedPartConfig = (): LocalPartConfig => {
+	return {
+		isReady: true,
+		isDirty: false,
+		hasEditPermissions: false,
+		hasConfigSource: false,
+		current: new Struct(),
+		set: () => {},
 	}
 }
 
@@ -558,6 +654,7 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 	const updateRobotPartMutation = createAppMutation('updateRobotPart')
 
 	return {
+		hasConfigSource: true,
 		get isReady() {
 			return (
 				partID() !== '' &&

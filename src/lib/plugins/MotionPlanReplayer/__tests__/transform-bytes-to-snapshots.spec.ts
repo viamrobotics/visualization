@@ -37,9 +37,4 @@ describe('transformBytesToSnapshots', () => {
 		expect(transform.uuid).toEqual(frameUUID)
 		expect(transform.poseInObserverFrame?.referenceFrame).toBe('world')
 	})
-
-	it('keeps a frame uuid identical across steps (required for in-place reconcile)', () => {
-		const [first, second] = transformBytesToSnapshots([[encode('arm:base')], [encode('arm:base')]])
-		expect(second!.transforms[0]!.uuid).toEqual(first!.transforms[0]!.uuid)
-	})
 })

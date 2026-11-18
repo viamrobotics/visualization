@@ -4,6 +4,9 @@
 	import { Icon, type IconName } from '@viamrobotics/prime-core'
 	import { Hammer, Joystick, MousePointer2, Move3d, Ruler, Shapes } from 'lucide-svelte'
 
+	import type { Keybinding } from '$lib/keybindings'
+
+	import Kbd from '../Kbd.svelte'
 	import Tooltip from '../Tooltip.svelte'
 
 	interface Props extends HTMLButtonAttributes {
@@ -11,7 +14,7 @@
 		iconCx?: string
 		active?: boolean
 		description: string
-		hotkey?: string
+		keybinding?: Keybinding
 		class?: ClassValue | null | undefined
 		tooltipLocation?: 'bottom' | 'right' | 'left' | 'top'
 		disableTooltip?: boolean
@@ -23,7 +26,7 @@
 		iconCx,
 		active = false,
 		description,
-		hotkey = '',
+		keybinding,
 		class: className = '',
 		tooltipLocation,
 		disableTooltip = false,
@@ -76,6 +79,10 @@
 	{/snippet}
 
 	{#snippet content()}
-		{description} <span class="text-gray-5 pl-1">{hotkey}</span>
+		{description}
+
+		{#if keybinding}
+			<span class="pl-1"><Kbd binding={keybinding} /></span>
+		{/if}
 	{/snippet}
 </Tooltip>

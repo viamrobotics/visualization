@@ -5,6 +5,12 @@ import { getContext, setContext } from 'svelte'
 
 import type { RenderMode } from '$lib/three/surfaceShading'
 
+import {
+	migrateStoredSettings,
+	SETTINGS_MIGRATION_COUNT,
+	type StoredSettings,
+} from './settingsMigrations'
+
 const key = Symbol('dashboard-context')
 
 export interface Settings {
@@ -23,7 +29,17 @@ export interface Settings {
 	disabledCameras: Record<string, boolean>
 	disabledVisionServices: Record<string, boolean>
 
+	/** The master switch. The four flags below choose what snaps while it is on. */
 	snapping: boolean
+	/** Step moves, turns, and resizes by `snapTranslate`, `snapRotate`, and `snapScale`. */
+	snapIncrement: boolean
+	/** Snap moves to the key points and surfaces of other geometries. */
+	snapObjects: boolean
+	/** Treat the ground, z = 0, as a surface to snap to. Applies with `snapObjects`. */
+	snapGroundPlane: boolean
+	/** Tilt a surface-snapped object so its +Z follows the surface. Applies with `snapObjects`. */
+	snapAlignRotation: boolean
+	/** Move snap step, in metres. Unlike pose fields, it never reaches a Viam API, so it skips mm. */
 	snapTranslate: number
 	snapRotate: number
 	snapScale: number
@@ -52,6 +68,13 @@ export interface Settings {
 	enableLabels: boolean
 
 	openFramePovWidgets: Record<string, string[]>
+
+	/** Whether the sensor-coverage plugin draws camera view frusta into the scene. */
+	enableSensorCoverage: boolean
+	/** Far-plane depth of a coverage frustum, in metres. */
+	sensorCoverageRange: number
+	/** Cameras switched out of the coverage drawing, by resource name. */
+	disabledCoverageCameras: Record<string, boolean>
 
 	renderStats: boolean
 	renderArmModels: 'colliders' | 'colliders+model' | 'model'
@@ -110,6 +133,10 @@ const defaults = (): Settings => ({
 	disabledVisionServices: {},
 
 	snapping: false,
+	snapIncrement: true,
+	snapObjects: false,
+	snapGroundPlane: false,
+	snapAlignRotation: false,
 	snapTranslate: 0.1,
 	snapRotate: 7.5,
 	snapScale: 0.1,
@@ -139,9 +166,13 @@ const defaults = (): Settings => ({
 
 	openFramePovWidgets: {},
 
+	enableSensorCoverage: true,
+	sensorCoverageRange: 2,
+	disabledCoverageCameras: {},
+
 	renderStats: false,
 	renderArmModels: 'colliders+model',
-	renderMode: 'toon',
+	renderMode: 'realistic',
 
 	enableXR: false,
 	xrMode: 'frame-configure',
@@ -164,19 +195,29 @@ export const provideSettings = () => {
 
 	// Key kept as `motion-tools-settings` after the rename to visualization; renaming it
 	// would silently discard every existing user's saved settings.
-	get('motion-tools-settings')
-		.then((response: Settings) => {
+	get<StoredSettings>('motion-tools-settings')
+		.then((response) => {
 			if (response) {
-				settings = { ...settings, ...response }
+				settings = { ...settings, ...migrateStoredSettings(response) }
 			}
 		})
 		.finally(() => {
 			isLoaded = true
 		})
 
+	// A record is stamped with the migration count on the way out, so the next load
+	// runs only what it has not seen. A user with no stored record never runs one,
+	// because `defaults()` is already current.
 	$effect(() => {
 		if (isLoaded) {
-			set('motion-tools-settings', $state.snapshot({ ...settings, interactionMode: 'navigate' }))
+			set(
+				'motion-tools-settings',
+				$state.snapshot({
+					...settings,
+					interactionMode: 'navigate',
+					migrationsApplied: SETTINGS_MIGRATION_COUNT,
+				})
+			)
 		}
 	})
 

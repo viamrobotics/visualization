@@ -1,27 +1,18 @@
 name: Setup E2E
-description: Checkout, toolchains, dependencies, and a cached Playwright browser.
+description: Toolchains, dependencies, and a cached Playwright browser.
+
+# Checkout is the caller's job. A local action loads from the workspace, so the
+# repo has to be checked out before this file can be found.
 
 inputs:
-  ref:
-    description: Commit to check out. Defaults to the triggering ref.
-    required: false
-    default: ''
   go:
-    description: Install Go. Needed by any job that builds the draw server or the scene binary.
-    required: false
-    default: 'false'
-  bun:
-    description: Install Bun. Needed by any job that serves the production build.
+    description: Install Go and nlopt. Needed by any job that builds the draw server or the scene binary.
     required: false
     default: 'false'
 
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v6
-      with:
-        ref: ${{ inputs.ref }}
-
     - uses: pnpm/action-setup@v6
       with:
         run_install: false
@@ -32,16 +23,18 @@ runs:
         node-version: 22
         cache: 'pnpm'
 
-    - name: Setup Bun
-      if: inputs.bun == 'true'
-      uses: oven-sh/setup-bun@v2
-
     - name: Setup Go
       if: inputs.go == 'true'
       uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
         cache: true
+
+    # The draw server's MotionPlanService links RDK's cgo IK solver, which builds against libnlopt.
+    - name: Install nlopt
+      if: inputs.go == 'true'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libnlopt-dev
 
     - name: Set up wireit caching
       if: inputs.go == 'true'

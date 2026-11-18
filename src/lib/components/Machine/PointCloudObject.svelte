@@ -8,7 +8,13 @@
 	import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
 	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
 	import { RefetchRates } from '$lib/components/overlay/refetchRates'
-	import { hierarchy, setOrAddTrait, traits, useWorld } from '$lib/ecs'
+	import {
+		hierarchy,
+		setOrAddTrait,
+		traits,
+		TRANSLUCENT_GEOMETRY_OPACITY,
+		useWorld,
+	} from '$lib/ecs'
 	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
 	import { parsePcdInWorker } from '$lib/loaders/pcd'
@@ -155,6 +161,7 @@
 							return
 						}
 
+						const parentFrame = geometriesInFrame?.referenceFrame
 						const existing = entities.get(pointcloudLabel)
 						const metadata = {
 							colors,
@@ -162,6 +169,7 @@
 						}
 
 						if (existing) {
+							hierarchy.setParent(existing, parentFrame)
 							const geometry = existing.get(traits.BufferGeometry)
 
 							if (geometry) {
@@ -178,6 +186,7 @@
 							if (boundsTree) attachPointsBvh(geometry, boundsTree)
 
 							const entity = world.spawn(
+								...hierarchy.parentTraits(parentFrame),
 								traits.Name(pointcloudLabel),
 								traits.BufferGeometry(geometry),
 								traits.Points,
@@ -226,8 +235,8 @@
 							...hierarchy.parentTraits(geometriesInFrame.referenceFrame),
 							traits.Matrix(center.toMatrix4()),
 							traits.Geometry(geometry),
-							traits.Opacity(0.2),
 							traits.Color({ r: 0, g: 1, b: 0 }),
+							traits.Opacity(TRANSLUCENT_GEOMETRY_OPACITY / 2),
 							traits.PointCloudObjectAPI,
 						]
 

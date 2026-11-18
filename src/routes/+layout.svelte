@@ -22,6 +22,7 @@
 		Monitor,
 		MotionPlanReplayer,
 		MoveFrame,
+		SensorCoverage,
 		Settings,
 		WorldTree,
 		XR,
@@ -29,40 +30,43 @@
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
 	import Machines from './lib/components/Machines.svelte'
+	import { createIKSolutionsResolver } from './lib/createIKSolutionsResolver'
+	import { useDrawServicePort } from './lib/desktop/useDrawServicePort.svelte'
+	import { useLaunchConfig } from './lib/desktop/useLaunchConfig.svelte'
 	import {
 		provideConnectionConfigs,
 		useActiveConnectionConfig,
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
-	import { getDialConfs } from './lib/robots'
+	import { resolveConnection } from './lib/resolveConnection'
 
 	provideConnectionConfigs()
 
 	const connectionConfig = useActiveConnectionConfig()
+	const launch = useLaunchConfig()
+	const sidecar = useDrawServicePort()
 
 	let { children } = $props()
 
-	let dialConfigs = $derived.by<Record<string, DialConf>>(() => {
-		if (connectionConfig.current) {
-			const robot = {
-				...$state.snapshot(connectionConfig.current),
-				disableSessions: true,
-			}
+	const resolved = $derived(
+		launch.ready
+			? resolveConnection(launch.current, $state.snapshot(connectionConfig.current))
+			: undefined
+	)
 
-			return { ...getDialConfs({ robot }) }
-		}
-
-		return {}
-	})
-
-	const partID = $derived(connectionConfig.current?.partId)
-	const dialConfig = $derived(partID ? dialConfigs[partID] : undefined)
-
-	let isMachinesPageOpen = $state(false)
+	const dialConfigs = $derived<Record<string, DialConf>>(
+		resolved ? { [resolved.partId]: resolved.dialConf } : {}
+	)
+	const partID = $derived(resolved?.partId)
+	const dialConfig = $derived(resolved?.dialConf)
 
 	let pluginsEnabled = true
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
+
+	const drawPort = $derived(portOverride ?? sidecar.port ?? drawServicePort)
+
+	const resolveIKSolutions = createIKSolutionsResolver(() => `http://${backendIP}:${drawPort}`)
 </script>
 
 <ViamProvider
@@ -70,38 +74,34 @@
 	{dialConfigs}
 >
 	<ViamAppProvider
-		serviceHost="https://app.viam.com"
-		credentials={{
-			type: 'api-key',
-			payload: connectionConfig.current?.apiKeyValue ?? '',
-			authEntity: connectionConfig.current?.apiKeyId ?? '',
-		}}
+		serviceHost={launch.current?.serviceHost ?? 'https://app.viam.com'}
+		credentials={resolved?.appCredentials ?? { type: 'api-key', payload: '', authEntity: '' }}
 	>
 		<MachineConnectionProvider
 			{partID}
 			{dialConfig}
 		>
-			<Visualizer
-				{partID}
-				inputBindingsEnabled={!isMachinesPageOpen}
-			>
+			<Visualizer {partID}>
 				{@render children()}
 
 				{#if pluginsEnabled}
-					<DrawService config={{ backendIP, port: portOverride ?? drawServicePort }} />
+					{#if sidecar.ready}
+						<DrawService config={{ backendIP, port: drawPort }} />
+					{/if}
 					<Isolate />
 					<MeasureTool />
+					<SensorCoverage />
 
 					<Monitor />
 					<BuildFrames />
 					<MoveFrame />
-					<MotionPlanReplayer />
+					<MotionPlanReplayer {resolveIKSolutions} />
 
 					<XR />
 
 					<Logs />
 					<ControlWidgets />
-					<Machines bind:isOpen={isMachinesPageOpen} />
+					<Machines {launch} />
 					<WorldTree />
 					<Settings />
 					<FileDrop />

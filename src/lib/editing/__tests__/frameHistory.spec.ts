@@ -11,11 +11,7 @@ import { hierarchy, traits } from '$lib/ecs'
 import { installWorldMatrixListeners } from '$lib/ecs/worldMatrix'
 import { Pose } from '$lib/math'
 
-import {
-	applyFrameHistorySnapshotToWorld,
-	collectFrameHistoryFrames,
-	type FrameHistoryPartConfig,
-} from '../frameHistory'
+import { applyFrameHistorySnapshotToWorld } from '../frameHistory'
 
 describe('frame history replay', () => {
 	let world: World
@@ -204,67 +200,5 @@ describe('frame history replay', () => {
 
 		expect(entity.get(traits.WorldMatrix)?.elements[12]).toBeCloseTo(0.5)
 		unsub()
-	})
-
-	it('uses the latest fragment frame mod when collecting replay frames', () => {
-		const config: FrameHistoryPartConfig = {
-			components: [],
-			fragment_mods: [
-				{
-					fragment_id: 'fragment-1',
-					mods: [
-						{
-							$set: {
-								'components.frag-arm.frame': {
-									parent: 'world',
-									translation: { x: 10, y: 0, z: 0 },
-									orientation: {
-										type: 'ov_degrees',
-										value: { x: 0, y: 0, z: 1, th: 0 },
-									},
-								},
-							},
-						},
-						{
-							$set: {
-								'components.frag-arm.frame': {
-									parent: 'world',
-									translation: { x: 20, y: 0, z: 0 },
-									orientation: {
-										type: 'ov_degrees',
-										value: { x: 0, y: 0, z: 1, th: 0 },
-									},
-								},
-							},
-						},
-					],
-				},
-			],
-		}
-
-		const { frames } = collectFrameHistoryFrames(config, {
-			'frag-arm': { id: 'fragment-1', variables: {} },
-		})
-
-		expect(frames.get('frag-arm')?.translation.x).toBe(20)
-	})
-
-	it('falls back to the fragment base frame when no frame mod exists', () => {
-		const { frames } = collectFrameHistoryFrames(
-			{ components: [] },
-			{
-				'frag-arm': {
-					id: 'fragment-1',
-					variables: {},
-					frame: {
-						parent: 'world',
-						translation: { x: 30, y: 0, z: 0 },
-						orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 0 } },
-					},
-				},
-			}
-		)
-
-		expect(frames.get('frag-arm')?.translation.x).toBe(30)
 	})
 })

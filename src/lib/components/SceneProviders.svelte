@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte'
 
 	import { provideHierarchy, provideWorldMatrix } from '$lib/ecs'
+	import { provideResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
 	import { provide3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { provideArmClient } from '$lib/hooks/useArmClient.svelte'
 	import { provideArmKinematics } from '$lib/hooks/useArmKinematics.svelte'
@@ -11,11 +12,13 @@
 	import { provideFrames } from '$lib/hooks/useFrames.svelte'
 	import { provideInheritedInvisible } from '$lib/hooks/useInheritedInvisible.svelte'
 	import { provideLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { provideOpacityOverrides } from '$lib/hooks/useOpacityOverrides.svelte'
 	import { usePartID } from '$lib/hooks/usePartID.svelte'
 	import { providePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
 	import { providePointclouds } from '$lib/hooks/usePointclouds.svelte'
 	import { providePoses } from '$lib/hooks/usePoses.svelte'
 	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideResourceAppearance } from '$lib/hooks/useResourceAppearance.svelte'
 	import { provideResourceByName } from '$lib/hooks/useResourceByName.svelte'
 	import { provideWorldStates } from '$lib/hooks/useWorldState.svelte'
 
@@ -37,11 +40,14 @@
 	provideHierarchy()
 	provideWorldMatrix()
 	provideInheritedInvisible()
+	provideOpacityOverrides()
 
 	provideRelationships()
 
 	provideResourceByName(() => partID.current)
+	provideResourceHealth(() => partID.current)
 	provideConfigFrames()
+	provideResourceAppearance(() => partID.current)
 	provideFrames(() => partID.current)
 	providePoses(() => partID.current)
 	provide3DModels(() => partID.current)

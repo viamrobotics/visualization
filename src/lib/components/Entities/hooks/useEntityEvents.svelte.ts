@@ -1,9 +1,10 @@
 import type { Entity } from 'koota'
 
-import { type IntersectionEvent, useCursor } from '@threlte/extras'
+import { type IntersectionEvent, useCursor } from '@threlte/extras/webgpu'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
 import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'
+import { clickSelectionTarget } from '$lib/ecs/clickSelectionTarget'
 import { type HoverInfo, updateHoverInfo } from '$lib/HoverUpdater.svelte'
 import { OrientationVector } from '$lib/math/OrientationVector'
 
@@ -143,8 +144,10 @@ const createEntityEvents = (
 			return
 		}
 
-		const currentEntity = entityForEvent(event)
-		if (!currentEntity) return
+		const hitEntity = entityForEvent(event)
+		if (!hitEntity) return
+
+		const currentEntity = clickSelectionTarget(hitEntity)
 
 		if (event.nativeEvent.shiftKey) {
 			if (currentEntity.has(traits.Selected)) {
@@ -165,7 +168,7 @@ const createEntityEvents = (
 
 		// `!== undefined`, because instance 0 is a valid hit
 		const instanceId = event.instanceId ?? event.batchId
-		if (instanceId !== undefined) {
+		if (instanceId !== undefined && currentEntity === hitEntity) {
 			setOrAddTrait(currentEntity, traits.InstanceId, instanceId)
 		}
 	}

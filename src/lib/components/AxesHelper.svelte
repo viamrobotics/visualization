@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { T, type Props as ThrelteProps } from '@threlte/core'
+	import { T, type Props as ThrelteProps } from '@threlte/core/webgpu'
 	import { Color } from 'three'
-	import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 	import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
-	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
+	import { Line2 } from 'three/examples/jsm/lines/webgpu/Line2.js'
+	import { Line2NodeMaterial } from 'three/webgpu'
 
 	interface Props extends ThrelteProps<Line2> {
 		length?: number
@@ -25,7 +25,7 @@
 	const VERTEX_COMPONENTS = 3
 
 	const line = new Line2()
-	const material = new LineMaterial()
+	const material = new Line2NodeMaterial()
 	const geometry = new LineGeometry()
 	const color = new Color()
 	const colors = new Float32Array(TOTAL_VERTICES * VERTEX_COMPONENTS)

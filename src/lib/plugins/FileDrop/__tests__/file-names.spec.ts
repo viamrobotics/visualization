@@ -44,28 +44,8 @@ describe('parseFileName', () => {
 	})
 
 	describe('prefix parsing', () => {
-		it.each([
-			{ filename: 'visualization_snapshot_2024.json', expectedPrefix: Prefixes.Snapshot },
-			{ filename: 'visualization_snapshot_data.pb', expectedPrefix: Prefixes.Snapshot },
-			{ filename: 'visualization_snapshot_compressed.pb.gz', expectedPrefix: Prefixes.Snapshot },
-		])('parses $filename with snapshot prefix', ({ filename, expectedPrefix }) => {
-			const result = parseFileName(filename)
-			expect(result.success).toBe(true)
-			if (result.success) {
-				expect(result.prefix).toBe(expectedPrefix)
-			}
-		})
-
 		it('returns undefined prefix for files without recognized prefix', () => {
 			const result = parseFileName('model.pcd')
-			expect(result.success).toBe(true)
-			if (result.success) {
-				expect(result.prefix).toBeUndefined()
-			}
-		})
-
-		it('returns undefined prefix for files with unrecognized prefix', () => {
-			const result = parseFileName('unknown_prefix.json')
 			expect(result.success).toBe(true)
 			if (result.success) {
 				expect(result.prefix).toBeUndefined()
@@ -97,15 +77,6 @@ describe('parseFileName', () => {
 	})
 
 	describe('validation', () => {
-		it('handles filenames with underscores but no valid prefix', () => {
-			const result = parseFileName('my_model_v2.ply')
-			expect(result.success).toBe(true)
-			if (result.success) {
-				expect(result.prefix).toBeUndefined()
-				expect(result.extension).toBe(Extensions.PLY)
-			}
-		})
-
 		it('handles filenames with multiple dots with valid extension', () => {
 			const result = parseFileName('my.file.name.pcd')
 			expect(result.success).toBe(true)

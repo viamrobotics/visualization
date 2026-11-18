@@ -1,4 +1,4 @@
-import type { InteractivityProps } from '@threlte/extras'
+import type { InteractivityProps } from '@threlte/extras/webgpu'
 import type { BVHProps } from 'three-mesh-bvh'
 
 declare global {

@@ -101,6 +101,12 @@ export function raycastNearestPointToRay(
 	acceleratedRaycast.call(this, raycaster, candidates)
 	raycaster.firstHitOnly = firstHitOnly
 
+	const nearest = pickNearestToRay(candidates)
+	if (nearest) intersects.push(nearest)
+}
+
+/** The candidate with the smallest `distanceToRay`, ties broken by `distance`. */
+export const pickNearestToRay = (candidates: Intersection[]): Intersection | undefined => {
 	let nearest: Intersection | undefined
 	for (const candidate of candidates) {
 		if (
@@ -112,5 +118,5 @@ export function raycastNearestPointToRay(
 		}
 	}
 
-	if (nearest) intersects.push(nearest)
+	return nearest
 }

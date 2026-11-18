@@ -8,7 +8,7 @@ The suite is split into Playwright projects so that a run only pays for what it 
 
 | Project          | Specs                                                      | Needs a Viam machine |
 | ---------------- | ---------------------------------------------------------- | -------------------- |
-| `drawing`        | `draw-client`, `file-drop`, `snapshot`                     | no                   |
+| `drawing`        | `deep-link`, `draw-client`, `file-drop`, `snapshot`        | no                   |
 | `matrix`         | everything under `e2e/matrix/`                             | no                   |
 | `robot`          | `arm`, `edit-frame`, `obstacle-store`, `world-state-store` | yes                  |
 | `robot-setup`    | `robot.setup.ts`                                           | provisions it        |
@@ -35,7 +35,7 @@ having it: the e2e drives the public API through a script, not through a test ha
 .bin/draw-scenes -list
 
 # draw one against a running visualizer
-.bin/draw-scenes -port 3030 hierarchy/draw
+.bin/draw-scenes -port 3030 frames/draw
 ```
 
 It replaced `go test -run` invocations, which cost about 1.9s each in package loading and

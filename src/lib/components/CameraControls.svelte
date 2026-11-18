@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras'
+	import { CameraControls, type CameraControlsRef, Gizmo } from '@threlte/extras/webgpu'
 	import { MathUtils } from 'three'
 
 	import { useCameraControls, useTransformControls } from '$lib/hooks/useControls.svelte'

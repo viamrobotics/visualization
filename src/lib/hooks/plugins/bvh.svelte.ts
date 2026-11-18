@@ -1,4 +1,4 @@
-import { injectPlugin, isInstanceOf } from '@threlte/core'
+import { injectPlugin, isInstanceOf } from '@threlte/core/webgpu'
 import { BatchedMesh, Mesh, Points, type Raycaster } from 'three'
 import {
 	acceleratedRaycast,
@@ -12,6 +12,7 @@ import {
 	SAH,
 } from 'three-mesh-bvh'
 
+import { PointCloud } from '$lib/three/PointCloud'
 import { pointsBvhOptions, raycastNearestPointToRay } from '$lib/three/pointsBvh'
 
 interface Options extends BVHOptions {
@@ -47,17 +48,14 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 			if (computed) return
 			if (opts.enabled === false) return
 
-			/**
-			 * `InstancedMesh2` brings its own per-instance BVH raycast (and a
-			 * real `bvh` field, so it can't even take a `bvh` opt-out prop —
-			 * Threlte would assign the prop onto the object and clobber it).
-			 * Patching it with three-mesh-bvh's `acceleratedRaycast` would
-			 * test only the unit geometry, so skip it entirely.
-			 */
-			if ((ref as { isInstancedMesh2?: boolean }).isInstancedMesh2) return
-
 			// Some PCDs parse without a position attribute, and the BVH build reads it.
-			if (isInstanceOf(ref, 'Points') && ref.geometry?.attributes.position) {
+			if (ref instanceof PointCloud && ref.cloud.attributes.position) {
+				ref.cloud.computeBoundsTree = computeBoundsTree
+				ref.cloud.disposeBoundsTree = disposeBoundsTree
+				if (!ref.cloud.boundsTree) {
+					computeBoundsTree.call(ref.cloud, { type: PointsBVH, ...opts, ...pointsBvhOptions })
+				}
+			} else if (isInstanceOf(ref, 'Points') && ref.geometry?.attributes.position) {
 				ref.geometry.computeBoundsTree = computeBoundsTree
 				ref.geometry.disposeBoundsTree = disposeBoundsTree
 				ref.raycast = raycastNearestPointToRay
@@ -82,7 +80,9 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 			}
 
 			if (opts.helper) {
-				helper = new BVHHelper(ref)
+				helper = new BVHHelper(
+					ref instanceof PointCloud && ref.cloud.boundsTree ? ref.cloud.boundsTree : ref
+				)
 				ref.add(helper)
 			}
 			computed = true
@@ -92,7 +92,9 @@ export const bvh = (raycaster: Raycaster, options?: () => Options) => {
 			const { ref } = args
 			return () => {
 				if (!computed) return
-				if (isInstanceOf(ref, 'Points')) {
+				if (ref instanceof PointCloud) {
+					ref.cloud.disposeBoundsTree?.()
+				} else if (isInstanceOf(ref, 'Points')) {
 					ref.geometry.disposeBoundsTree?.()
 					ref.raycast = Points.prototype.raycast
 				} else if (isInstanceOf(ref, 'BatchedMesh')) {

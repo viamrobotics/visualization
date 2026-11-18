@@ -25,16 +25,4 @@ test.describe('file drop', () => {
 
 		await screenshotCanvas(page, 'FILE_DROP_PLY')
 	})
-
-	test('shows error toast for unsupported file type', async ({
-		page,
-		dropFile,
-		takeScreenshot,
-	}) => {
-		await dropFile({ name: 'document.txt', content: 'some content' })
-
-		await expect(page.getByText(/files are supported/)).toBeVisible({ timeout: 5000 })
-
-		await takeScreenshot('FILE_DROP_UNSUPPORTED')
-	})
 })

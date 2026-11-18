@@ -2,12 +2,13 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { T, useThrelte } from '@threlte/core'
-	import { meshBounds } from '@threlte/extras'
-	import { Line2, LineMaterial } from 'three/examples/jsm/Addons.js'
+	import { T, useThrelte } from '@threlte/core/webgpu'
+	import { meshBounds } from '@threlte/extras/webgpu'
+	import { Line2 } from 'three/addons/lines/webgpu/Line2.js'
+	import { Line2NodeMaterial } from 'three/webgpu'
 
 	import { isVertexColors, STRIDE } from '$lib/buffer'
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useOpacity, useTrait } from '$lib/ecs'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import LineDots from './LineDots.svelte'
@@ -31,7 +32,7 @@
 	const lineWidth = useTrait(() => entity, traits.LineWidth)
 	const materialProps = useTrait(() => entity, traits.Material)
 	const renderOrder = useTrait(() => entity, traits.RenderOrder)
-	const opacity = useTrait(() => entity, traits.Opacity)
+	const opacity = useOpacity(() => entity)
 	const screenSpace = useTrait(() => entity, traits.ScreenSpace)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
 
@@ -56,7 +57,7 @@
 		return rgb
 	})
 
-	const currentOpacity = $derived(opacity.current ?? 0.7)
+	const currentOpacity = $derived(opacity.current)
 
 	const mesh = new Line2()
 	mesh.matrixAutoUpdate = false
@@ -75,7 +76,7 @@
 	name={entity}
 	userData.name={name}
 	raycast={meshBounds}
-	renderOrder={renderOrder.current}
+	renderOrder={renderOrder.current ?? 0}
 	visible={invisible.current !== true}
 	{...events}
 >
@@ -84,7 +85,7 @@
 		colors={lineColors}
 	/>
 	<T
-		is={LineMaterial}
+		is={Line2NodeMaterial}
 		color={hasVertexColors ? [1, 1, 1] : lineColor}
 		vertexColors={hasVertexColors}
 		transparent={currentOpacity < 1}

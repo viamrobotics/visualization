@@ -236,6 +236,36 @@ describe('TrajectoryScrubber', () => {
 		})
 	})
 
+	describe('highlight', () => {
+		const LAST_GOOD = { step: 5, label: 'last good' }
+
+		it('marks the highlighted step by where it falls in the trajectory', () => {
+			render(TrajectoryScrubber, { player: stubPlayer(ELEVEN_FRAMES), highlight: LAST_GOOD })
+
+			const tick = screen.getByTestId('highlight-tick')
+
+			expect(Number(tick.style.getPropertyValue('--tick-fraction'))).toBe(0.5)
+		})
+
+		it('names the step in the counter while the player sits on it', () => {
+			render(TrajectoryScrubber, {
+				player: stubPlayer({ ...ELEVEN_FRAMES, currentStep: 5 }),
+				highlight: LAST_GOOD,
+			})
+
+			expect(screen.getByText('last good')).toBeInTheDocument()
+		})
+
+		it('leaves the name out on any other step', () => {
+			render(TrajectoryScrubber, {
+				player: stubPlayer({ ...ELEVEN_FRAMES, currentStep: 4 }),
+				highlight: LAST_GOOD,
+			})
+
+			expect(screen.queryByText('last good')).not.toBeInTheDocument()
+		})
+	})
+
 	describe('when it goes away', () => {
 		it('stops the timer rather than merely asking the player to pause', async () => {
 			vi.useFakeTimers()

@@ -1,29 +1,17 @@
 <script lang="ts">
-	import { Text } from 'threlte-uikit'
-	import { Panel } from 'threlte-uikit/horizon'
-
 	import { xrDebug } from './debug.svelte'
+	import CanvasPanel from './panels/CanvasPanel.svelte'
+	import { panelColumn, panelText } from './panels/panelNode'
 	import WristDisplay from './WristDisplay.svelte'
 
-	const messages = $derived(xrDebug.messages)
+	const root = $derived(
+		panelColumn(
+			xrDebug.messages.map((message) => panelText(message)),
+			{ padding: 12, gap: 4, background: '#0a0a0a', radius: 8, minWidth: 400, minHeight: 40 }
+		)
+	)
 </script>
 
 <WristDisplay position={[0, 0.005, 0.2]}>
-	<Panel
-		flexDirection="column"
-		padding={12}
-		gap={4}
-		backgroundColor="#0a0a0a"
-		borderRadius={8}
-		minWidth={400}
-		minHeight={40}
-	>
-		{#each messages as message, i (i)}
-			<Text
-				text={message}
-				fontSize={14}
-				color="#ffffff"
-			/>
-		{/each}
-	</Panel>
+	<CanvasPanel {root} />
 </WristDisplay>

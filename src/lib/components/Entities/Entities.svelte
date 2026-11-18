@@ -3,6 +3,7 @@
 
 	import { traits, useQuery } from '$lib/ecs'
 	import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
 	import Arrows from './Arrows/ArrowGroups.svelte'
@@ -16,6 +17,7 @@
 	import Line from './Line.svelte'
 	import Mesh from './Mesh.svelte'
 	import Points from './Points.svelte'
+	import ShapeBatches from './ShapeBatches.svelte'
 	import Spheres from './Spheres.svelte'
 
 	const frameEntities = useQuery(traits.FramesAPI)
@@ -25,6 +27,7 @@
 	const gltfs = useQuery(traits.GLTF)
 
 	const settings = useSettings()
+	const environment = useEnvironment()
 	const models = use3DModels()
 
 	const enableLabels = $derived(settings.current.enableLabels)
@@ -47,10 +50,6 @@
 	<GeometryModel {entity} />
 {/each}
 
-{#each meshEntities.current as entity (entity)}
-	<Mesh {entity} />
-{/each}
-
 {#each points.current as entity (entity)}
 	<Points {entity} />
 {/each}
@@ -66,11 +65,17 @@
 <Arrows />
 <AxesHelpers />
 
-<Capsules />
-<Cylinders />
-<Spheres />
-<Boxes />
+<ShapeBatches>
+	<Capsules />
+	<Cylinders />
+	<Spheres />
+	<Boxes />
 
-{#if enableLabels}
+	{#each meshEntities.current as entity (entity)}
+		<Mesh {entity} />
+	{/each}
+</ShapeBatches>
+
+{#if enableLabels && !environment.current.isImmersive}
 	<Labels />
 {/if}

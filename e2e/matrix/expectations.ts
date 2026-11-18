@@ -23,19 +23,22 @@ import { PARENT_POSE } from './drafts'
 /**
  * Types a per-entity renderer mounts an `Object3D` for, which is what makes an
  * `object3d.visible` assertion meaningful. Frames render through the shared
- * axes batch, models mount their `Object3D` on a child entity, and the
- * instanced types have none at all.
+ * axes batch, models mount their `Object3D` on a child entity, and the batched
+ * types have none at all.
  */
-const HAS_OBJECT3D = new Set(['mesh', 'points', 'pcd', 'line', 'nurbs', 'arrows'])
+const HAS_OBJECT3D = new Set(['points', 'pcd', 'line', 'nurbs', 'arrows'])
 
 /**
  * Types that mount no `Object3D` to inspect but still put pixels on the canvas,
- * so a visibility case can be proved against the empty-scene frame instead. The
- * instanced shapes are the whole set: every other pixel-drawing type is in
+ * so a visibility case is proved against the empty-scene frame instead. The
+ * batched types are the whole set: every other pixel-drawing type is in
  * `HAS_OBJECT3D`, and the types that draw nothing are recorded in
  * `entity-appearance.test.ts`.
+ *
+ * `mesh` joined them when parsed geometries moved into the shared batch, which
+ * carries visibility per instance rather than on an object of its own.
  */
-const CANVAS_PROOF_TYPES = new Set(['box', 'sphere', 'capsule'])
+const CANVAS_PROOF_TYPES = new Set(['box', 'sphere', 'capsule', 'mesh'])
 
 export interface CellExpectation {
 	/** Trait state the cell must converge to, matched with `toMatchObject`. */

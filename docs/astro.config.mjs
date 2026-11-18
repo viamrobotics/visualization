@@ -40,6 +40,8 @@ export default defineConfig({
 					items: [
 						{ label: 'Running locally', link: '/guides/local-usage/' },
 						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
+						{ label: 'Deep linking', link: '/guides/deep-linking/' },
+						{ label: 'Desktop app', link: '/guides/desktop-app/' },
 						{
 							label: 'Implementing WorldStateStoreService',
 							link: '/guides/worldstatestore/',
@@ -64,6 +66,7 @@ export default defineConfig({
 						{ label: '<Monitor />', link: '/plugins/monitor/' },
 						{ label: '<MotionPlanReplayer />', link: '/plugins/motion-plan-replayer/' },
 						{ label: '<SelectionTool />', link: '/plugins/selection/' },
+						{ label: '<SensorCoverage />', link: '/plugins/sensor-coverage/' },
 						{ label: '<Settings />', link: '/plugins/settings/' },
 						{ label: '<Skybox />', link: '/plugins/skybox/' },
 						{ label: '<TopDownLock />', link: '/plugins/top-down-lock/' },

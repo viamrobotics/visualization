@@ -36,10 +36,18 @@ export type {
 export type { TrajectoryPlayer } from '../motion/trajectoryPlayer.svelte'
 export { transformBytesToSnapshots } from './MotionPlanReplayer/plan-to-snapshots'
 export type { ResolvePlanSnapshots } from './MotionPlanReplayer/plan-dropper'
+export type {
+	InspectIKResult,
+	ResolveIKSolutions,
+} from './MotionPlanReplayer/inspect-ik/inspect-ik-client'
+export type { IKSeedGroup } from './MotionPlanReplayer/inspect-ik/parse-ik-solutions'
+export { ikSeedGroupsFromProto } from './MotionPlanReplayer/inspect-ik/ik-seed-groups-from-proto'
 
 export { default as Monitor } from './Monitor/Monitor.svelte'
 
 export { default as MoveFrame } from './MoveFrame/MoveFrame.svelte'
+
+export { default as SensorCoverage } from './SensorCoverage/SensorCoverage.svelte'
 
 export { default as Settings } from './Settings/Settings.svelte'
 

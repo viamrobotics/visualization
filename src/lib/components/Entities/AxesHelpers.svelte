@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Matrix4 } from 'three'
 
-	import { T, useThrelte } from '@threlte/core'
+	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { type Entity } from 'koota'
 
 	import { traits, useWorld } from '$lib/ecs'

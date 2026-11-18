@@ -7,10 +7,11 @@ export const ENVIRONMENT_CONTEXT_KEY = Symbol('environment')
 /**
  * What the app is being used for right now. Every mode is contributed by a
  * plugin — `monitor` by `Monitor`, `build` by `BuildFrames`, `move` by
- * `MoveFrame` — and each owns its own details panel and scene affordances.
+ * `MoveFrame`, `replay` by `MotionPlanReplayer` — and each owns its own
+ * details panel and scene affordances.
  * With no mode plugins mounted the mode is `none`: a bare renderer.
  */
-export type EnvironmentMode = 'monitor' | 'build' | 'move'
+export type EnvironmentMode = 'monitor' | 'build' | 'move' | 'replay'
 
 interface Environment {
 	/** The active mode. `none` when nothing reachable is contributed. */
@@ -24,7 +25,7 @@ interface Environment {
 	isImmersive: boolean
 }
 
-interface Context {
+export interface EnvironmentContext {
 	current: Environment
 	/**
 	 * Declares `mode` reachable for as long as the caller is mounted, and returns
@@ -45,11 +46,12 @@ interface Context {
  */
 export const ENVIRONMENT_MODE_STORAGE_KEY = 'motion-tools:environment-mode'
 
-const modes = new Set(['monitor', 'build', 'move'])
+const modes = new Set(['monitor', 'build', 'move', 'replay'])
 
-const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)
+/** Whether `value` names one of the closed set of modes. */
+export const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)
 
-export const createEnvironment = (): Context => {
+export const createEnvironment = (): EnvironmentContext => {
 	const stored = new PersistedState<EnvironmentMode | 'none'>(
 		ENVIRONMENT_MODE_STORAGE_KEY,
 		'monitor'
@@ -76,7 +78,7 @@ export const createEnvironment = (): Context => {
 		isImmersive: false,
 	})
 
-	const context: Context = {
+	const context: EnvironmentContext = {
 		get current() {
 			return environment
 		},
@@ -106,12 +108,12 @@ export const createEnvironment = (): Context => {
 
 export const provideEnvironment = () => {
 	const context = createEnvironment()
-	setContext<Context>(ENVIRONMENT_CONTEXT_KEY, context)
+	setContext<EnvironmentContext>(ENVIRONMENT_CONTEXT_KEY, context)
 	return context
 }
 
 export const useEnvironment = () => {
-	return getContext<Context>(ENVIRONMENT_CONTEXT_KEY)
+	return getContext<EnvironmentContext>(ENVIRONMENT_CONTEXT_KEY)
 }
 
 /**

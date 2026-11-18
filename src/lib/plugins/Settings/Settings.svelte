@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import { PersistedState } from 'runed'
 
 	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
@@ -11,6 +11,7 @@
 	import ControlsSettings from './ControlsSettings.svelte'
 	import DebugSettings from './DebugSettings.svelte'
 	import FramesSettings from './FramesSettings.svelte'
+	import KeybindingsSettings from './KeybindingsSettings.svelte'
 	import PointcloudSettings from './PointcloudSettings.svelte'
 	import SceneSettings from './SceneSettings.svelte'
 	import Tabs from './Tabs.svelte'
@@ -19,10 +20,11 @@
 
 	const BUILT_IN_TABS = [
 		{ label: 'Scene', component: SceneSettings },
-		{ label: 'Controls', component: ControlsSettings },
 		{ label: 'Frames', component: FramesSettings },
 		{ label: 'Pointclouds', component: PointcloudSettings },
 		{ label: 'Vision', component: VisionSettings },
+		{ label: 'Controls', component: ControlsSettings },
+		{ label: 'Keybindings', component: KeybindingsSettings },
 		{ label: 'Debug', component: DebugSettings },
 		{ label: 'Weblabs', component: WeblabSettings },
 	]

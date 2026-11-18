@@ -59,6 +59,21 @@ export type InferCallback = (
 	components: ComponentFrameInfo[]
 ) => Promise<{ updates: FrameDelta[]; explanation?: string; refusal?: string }>
 
+/**
+ * The geometry without its hand-authored offset. The scene builder never writes an offset,
+ * so it is not shown one to reason about or echo back.
+ */
+const withoutGeometryOffset = (geometry: Frame['geometry']): Frame['geometry'] => {
+	if (!geometry || geometry.type === 'none') {
+		return geometry
+	}
+
+	const shape = { ...geometry }
+	delete shape.translation
+	delete shape.orientation
+	return shape
+}
+
 export const provideSceneBuilder = (onInfer: InferCallback): void => {
 	const partConfig = usePartConfig()
 	const fragmentInfo = useFragmentInfo()
@@ -212,7 +227,7 @@ export const provideSceneBuilder = (onInfer: InferCallback): void => {
 							parent: frame!.parent,
 							translation: frame!.translation,
 							orientation,
-							geometry: frame!.geometry,
+							geometry: withoutGeometryOffset(frame!.geometry),
 						},
 					}
 				})
@@ -230,7 +245,7 @@ export const provideSceneBuilder = (onInfer: InferCallback): void => {
 							parent: current.frame!.parent,
 							translation: current.frame!.translation,
 							orientation,
-							geometry: current.frame!.geometry,
+							geometry: withoutGeometryOffset(current.frame!.geometry),
 						},
 					}
 				})

@@ -25,7 +25,7 @@ import {
 	isVertexColors,
 	STRIDE,
 } from '$lib/buffer'
-import { hierarchy, relations, setOrAddTrait, traits } from '$lib/ecs'
+import { DEFAULT_OPACITY, hierarchy, relations, setOrAddTrait, traits } from '$lib/ecs'
 import { parsePcdInWorker } from '$lib/loaders/pcd'
 import { Pose } from '$lib/math'
 import { type Metadata, metadataFromStruct } from '$lib/metadata'
@@ -49,7 +49,6 @@ const DEFAULT_LINE_COLORS = new Uint8Array([0, 128, 255])
 const DEFAULT_LINE_DOT_COLORS = new Uint8Array([0, 0, 139])
 const DEFAULT_POINTS_COLORS = new Uint8Array([51, 51, 51])
 const DEFAULT_NURBS_COLORS = new Uint8Array([0, 255, 255])
-const DEFAULT_OPACITY = 1
 
 export type Transform = TransformWithUUID | TransformProto
 
@@ -184,8 +183,16 @@ export const updateTransform = (
 
 	hierarchy.setParent(entity, poseInObserverFrame?.referenceFrame)
 
+	const parsedMetadata = metadataFromStruct(metadata?.fields)
+
 	if (physicalObject) {
-		traits.updateGeometryTrait(entity, physicalObject)
+		const { colors } = parsedMetadata
+		if (isPointCloud(physicalObject.geometryType) && colors && colors.length > 0) {
+			reparsePointCloud(entity, physicalObject.geometryType.value.pointCloud, colors)
+		} else {
+			traits.updateGeometryTrait(entity, physicalObject)
+		}
+
 		const center = physicalObject.center
 		if (center) {
 			setOrAddTrait(entity, traits.Center, center)
@@ -194,7 +201,6 @@ export const updateTransform = (
 		}
 	}
 
-	const parsedMetadata = metadataFromStruct(metadata?.fields)
 	updateMetadata(entity, parsedMetadata, {
 		pointCloud: isPointCloud(physicalObject?.geometryType),
 	})
@@ -234,7 +240,7 @@ export const updateMetadata = (
 		}
 	}
 
-	entity.set(traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(opacities, DEFAULT_OPACITY))
 }
 
 export const updateDrawing = (
@@ -289,7 +295,7 @@ const applyShape = (entity: Entity, { physicalObject, metadata }: Drawing): void
 	const geometryType = physicalObject?.geometryType
 	const opacity = asOpacity(opacities, DEFAULT_OPACITY)
 
-	entity.add(traits.Opacity(opacity))
+	setOrAddTrait(entity, traits.Opacity, opacity)
 
 	switch (geometryType?.case) {
 		case 'arrows': {
@@ -430,6 +436,7 @@ const drawModel = (
 		const subEntityTraits: ConfigurableTrait[] = [
 			traits.Name(`${referenceFrame} model ${i++}`),
 			relations.ChildOf(root),
+			traits.Opacity(asOpacity(metadata?.opacities, DEFAULT_OPACITY)),
 			api,
 		]
 
@@ -501,6 +508,23 @@ const parsePointCloud = (
 	})
 }
 
+/**
+ * Re-parses a redrawn point cloud. Its metadata colors override the cloud's own per-point colors,
+ * as they do in `parsePointCloud` at spawn.
+ */
+const reparsePointCloud = (entity: Entity, pointCloud: Uint8Array, colors: Uint8Array): void => {
+	parsePcdInWorker(new Uint8Array(pointCloud))
+		.then((parsed) => {
+			if (!entity.isAlive()) return
+
+			const numPoints = parsed.positions.length / STRIDE.POSITIONS
+			traits.applyParsedPointCloud(entity, parsed, parseColors(colors, numPoints))
+		})
+		.catch((error) => {
+			console.error('Failed to update pointcloud buffer geometry:', error)
+		})
+}
+
 const updatePointCloudColors = (entity: Entity, metadata: Metadata): void => {
 	const buffer = entity.get(traits.BufferGeometry)
 	if (!buffer) {
@@ -537,7 +561,7 @@ const parseColors = (from: Uint8Array | undefined, count: number): Uint8Array =>
 const updateShape = (entity: Entity, { physicalObject, metadata }: Drawing): void => {
 	const geometryType = physicalObject?.geometryType
 
-	entity.set(traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
+	setOrAddTrait(entity, traits.Opacity, asOpacity(metadata?.opacities, DEFAULT_OPACITY))
 
 	switch (geometryType?.case) {
 		case 'arrows': {

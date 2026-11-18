@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 const DRAWING_SPECS = [
+	/deep-link\.test\.ts$/,
 	/draw-client\.test\.ts$/,
 	/file-drop\.test\.ts$/,
 	/snapshot\.test\.ts$/,
@@ -20,12 +21,12 @@ const ROBOT_SPECS = [
 const APP_PORT = 5173
 
 // CI verifies the artifact it would ship, so it serves the static build through
-// the same bun server `make up` uses rather than Vite. Baselines are recorded
+// the same Go draw server `make up` uses rather than Vite. Baselines are recorded
 // against `pnpm dev` and hold either way: the two were measured pixel for pixel
-// identical across the drawing and matrix projects. The build itself is a
-// separate CI step, so its cost shows up on its own line.
+// identical across the drawing and matrix projects. The build and the binary are
+// separate CI steps, so their cost shows up on its own line.
 const APP_SERVER = process.env.CI
-	? `WS_PORT=3000 STATIC_PORT=${APP_PORT} bun run server/server.ts --production`
+	? `.bin/draw-server -production -static-port ${APP_PORT}`
 	: 'pnpm dev'
 
 export default defineConfig({
@@ -50,8 +51,9 @@ export default defineConfig({
 	// Measured on an 8-core darwin box: 4 workers cut the drawing project from 451s
 	// to 377s but stretched the mean test from 6.4s to 15.6s, which is what pushed
 	// one snapshot test past its timeout. 2 keeps most of the gain with less
-	// contention. CI runners have 4 vCPUs.
-	workers: process.env.CI ? 4 : 2,
+	// contention. CI runs serially: on its 4 vCPUs, parallel workers pushed drawing
+	// specs past the 10s expect timeout on slower hosts, and nobody waits on the run.
+	workers: process.env.CI ? 1 : 2,
 	retries: process.env.CI ? 2 : 0,
 	reporter: process.env.CI
 		? [
@@ -87,6 +89,11 @@ export default defineConfig({
 			name: 'drawing',
 			testMatch: [...DRAWING_SPECS],
 			fullyParallel: true,
+			dependencies: ['drawing-setup'],
+		},
+		{
+			name: 'drawing-setup',
+			testMatch: /drawing\.setup\.ts$/,
 		},
 		{
 			// Cells are one or two RPCs and a poll against a page the whole worker

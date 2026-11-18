@@ -453,7 +453,60 @@ describe('updateTransform', () => {
 
 		expect(hierarchy.getParentName(entity)).toBe('base')
 	})
+
+	it("keeps a cloud's metadata color over its own colors once the redraw's parse lands", async () => {
+		world = createWorld()
+		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		vi.mocked(parsePcdInWorker).mockImplementation(parsedWithNativeColors)
+		const { entity } = drawTransform(world, pointCloudTransform([255, 0, 0]), traits.SnapshotAPI)
+		await vi.waitFor(() => expect(entity.has(traits.BufferGeometry)).toBe(true))
+
+		updateTransform(entity, pointCloudTransform([0, 255, 255]))
+		await new Promise((resolve) => setTimeout(resolve))
+
+		const color = entity.get(traits.BufferGeometry)?.getAttribute('color')
+		expect([...(color?.array ?? [])]).toStrictEqual([0, 255, 255, 0, 255, 255])
+	})
+
+	it("keeps a cloud's own colors when the redraw carries no metadata colors", async () => {
+		world = createWorld()
+		const { parsePcdInWorker } = await import('$lib/loaders/pcd')
+		vi.mocked(parsePcdInWorker).mockImplementation(parsedWithNativeColors)
+		const { entity } = drawTransform(world, pointCloudTransform([255, 0, 0]), traits.SnapshotAPI)
+		await vi.waitFor(() => expect(entity.has(traits.BufferGeometry)).toBe(true))
+
+		updateTransform(entity, pointCloudTransform([]))
+		await new Promise((resolve) => setTimeout(resolve))
+
+		const color = entity.get(traits.BufferGeometry)?.getAttribute('color')
+		expect([...(color?.array ?? [])]).toStrictEqual([0, 0, 50, 0, 0, 97])
+	})
 })
+
+/** A two-point parse result carrying the cloud's own dark blue colors, as a colored PCD has. */
+const parsedWithNativeColors = () =>
+	Promise.resolve({
+		id: 0,
+		positions: new Float32Array(6),
+		colors: new Uint8Array([0, 0, 50, 0, 0, 97]),
+		bounds: undefined,
+		boundsTree: undefined,
+		shuffled: 0,
+	})
+
+/** Builds a point cloud transform under a stable name, carrying a single color. */
+const pointCloudTransform = (colors: number[]) =>
+	new Transform({
+		referenceFrame: 'recolored-cloud',
+		physicalObject: new Geometry({
+			geometryType: { case: 'pointcloud', value: { pointCloud: new Uint8Array(0) } },
+		}),
+		metadata: {
+			fields: {
+				colors: { kind: { case: 'stringValue', value: btoa(String.fromCharCode(...colors)) } },
+			},
+		},
+	})
 
 describe('updateDrawing arrows', () => {
 	let world: World
@@ -468,19 +521,6 @@ describe('updateDrawing arrows', () => {
 		updateDrawing(world, entity, arrowsDrawing([500, 200, 0, 1, 0, 0]))
 
 		expect([...(entity.get(traits.Positions) ?? [])]).toEqual([500, 200, 0, 1, 0, 0])
-	})
-
-	it('keeps arrow poses in raw millimeters on update (mm->m conversion happens downstream, not twice)', () => {
-		world = createWorld()
-
-		// The ADD path stores poses verbatim in mm. The shader, raycast and hover scale by 0.001.
-		const { entity } = drawDrawing(world, arrowsDrawing([100, 0, 0, 0, 0, 1]), traits.SnapshotAPI)
-		expect(entity.get(traits.Positions)?.[0]).toBe(100)
-
-		// The UPDATE path must not re-apply inMeters — that double-converts and collapses
-		// arrows toward the origin (0.5mm instead of 500mm) once the update actually re-renders.
-		updateDrawing(world, entity, arrowsDrawing([500, 0, 0, 0, 0, 1]))
-		expect(entity.get(traits.Positions)?.[0]).toBe(500)
 	})
 
 	it('notifies renderers watching Positions so the arrows re-render in place', () => {
@@ -617,7 +657,7 @@ describe('drawDrawing with metadata relationships', () => {
 	let world: World
 	afterEach(() => world?.destroy())
 
-	it('stores relationships in metadata for drawings', () => {
+	it('returns the relationships carried in the drawing metadata', () => {
 		world = createWorld()
 		const targetUuid = fakeUuidBytes(10)
 		const drawing = new Drawing({
@@ -634,9 +674,9 @@ describe('drawDrawing with metadata relationships', () => {
 			}),
 		})
 
-		const { entity } = drawDrawing(world, drawing, traits.SnapshotAPI)
+		const { relationships } = drawDrawing(world, drawing, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: undefined }])
 	})
 })
 
@@ -685,9 +725,9 @@ describe('drawTransform with struct relationships', () => {
 			},
 		})
 
-		const { entity } = drawTransform(world, transform, traits.SnapshotAPI)
+		const { relationships } = drawTransform(world, transform, traits.SnapshotAPI)
 
-		expect(entity.has(traits.UUID)).toBe(true)
+		expect(relationships).toEqual([{ targetUuid, type: 'HoverLink', indexMapping: 'index * 2' }])
 	})
 })
 

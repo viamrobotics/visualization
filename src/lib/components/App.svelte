@@ -3,27 +3,33 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { Canvas } from '@threlte/core'
-	import { PortalTarget } from '@threlte/extras'
+	import { Canvas } from '@threlte/core/webgpu'
+	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
+	import { NeutralToneMapping } from 'three'
+	import { WebGPURenderer } from 'three/webgpu'
 
 	import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
 
 	import Controls from '$lib/components/overlay/controls/Controls.svelte'
 	import Dashboard from '$lib/components/overlay/dashboard/Dashboard.svelte'
 	import Workspace from '$lib/components/overlay/workspace/Workspace.svelte'
+	import { provideDeepLink } from '$lib/deepLink/useDeepLink.svelte'
+	import { useDeepLinkMode } from '$lib/deepLink/useDeepLinkMode.svelte'
+	import { useDeepLinkSelection } from '$lib/deepLink/useDeepLinkSelection.svelte'
 	import { provideWorld } from '$lib/ecs'
 	import { type CameraPose, provideCameraControls } from '$lib/hooks/useControls.svelte'
 	import { provideDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
 	import { provideEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { provideFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { provideHotkeys } from '$lib/hooks/useHotkeys.svelte'
 	import { providePartConfig } from '$lib/hooks/usePartConfig.svelte'
 	import { createPartIDContext } from '$lib/hooks/usePartID.svelte'
 	import { provideSettings } from '$lib/hooks/useSettings.svelte'
+	import { provideTransformGizmos } from '$lib/hooks/useTransformGizmos.svelte'
 	import { provideWeblabs } from '$lib/hooks/useWeblabs.svelte'
+	import { provideKeybindings } from '$lib/keybindings'
 	import { provideFullscreen } from '$lib/plugins/Fullscreen/useFullscreen.svelte'
 	import { domPortal } from '$lib/portal'
 
@@ -85,11 +91,17 @@
 
 	provideWorld()
 	provideSettingsTabs()
-	provideHotkeys()
+	provideKeybindings()
+	provideTransformGizmos()
 
 	const settings = provideSettings()
 	const environment = provideEnvironment()
 	const fullscreen = provideFullscreen()
+
+	// After the world and the environment, since the consumers write to them.
+	provideDeepLink()
+	useDeepLinkMode()
+	useDeepLinkSelection()
 
 	provideCameraControls(() => cameraPose)
 	createPartIDContext(() => partID)
@@ -101,7 +113,8 @@
 
 	provideFragmentInfo(
 		() => partID,
-		() => componentNameToFragmentInfo
+		() => componentNameToFragmentInfo,
+		() => localConfigProps?.current
 	)
 
 	providePartConfig(
@@ -127,12 +140,22 @@
 
 <div
 	class={[
-		'h-full w-full overflow-hidden bg-white',
+		'h-full w-full overflow-clip bg-white',
 		fullscreen.active ? 'z-max fixed inset-0' : 'relative',
 	]}
 	bind:this={root}
 >
-	<Canvas renderMode="on-demand">
+	<Canvas
+		renderMode="on-demand"
+		toneMapping={NeutralToneMapping}
+		createRenderer={(canvas) =>
+			new WebGPURenderer({
+				canvas,
+				antialias: true,
+				// Keeps depth precision near-uniform, so nearby surfaces don't z-fight when zoomed out.
+				reversedDepthBuffer: true,
+			})}
+	>
 		<SceneProviders>
 			<Scene>
 				{@render appChildren?.()}
@@ -148,7 +171,7 @@
 
 				<PortalTarget id="dom" />
 
-				{#if settings.current.renderStats}
+				{#if settings.current.renderStats && !environment.current.isImmersive}
 					<RenderStats />
 				{/if}
 			</div>

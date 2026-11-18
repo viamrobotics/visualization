@@ -15,7 +15,7 @@ vi.mock('$lib/components/overlay/FloatingPanel.svelte', async () => {
 	return { default: MockFloatingPanel.default }
 })
 
-vi.mock('@threlte/core', () => ({
+vi.mock('@threlte/core/webgpu', () => ({
 	useThrelte: () => ({ dom: { clientWidth: 1000, clientHeight: 800 } }),
 }))
 

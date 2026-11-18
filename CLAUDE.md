@@ -47,6 +47,7 @@ Detailed guidance lives in `.claude/rules/`. Path-scoped rules load when Claude 
 | ------------------------ | -------------------------------------------------- |
 | `koota-ecs.md`           | editing `.svelte`, `.svelte.ts`, or `src/lib/ecs/` |
 | `threlte-scene.md`       | editing `.svelte`, `.svelte.ts`                    |
+| `svelte-lifecycle.md`    | editing `.svelte`                                  |
 | `frontend-aesthetics.md` | editing `.svelte` or `.css`                        |
 | `math.md`                | editing files under `src/lib/math/`                |
 | `go.md`                  | editing `.go`                                      |

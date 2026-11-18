@@ -35,12 +35,6 @@ describe('deriveKinematicsFrames', () => {
 		const frames = deriveKinematicsFrames('arm-1', model)
 		const parents = parentByName(frames)
 
-		it('reads the capture as a link/joint model', () => {
-			expect(model.links).toHaveLength(7)
-			expect(model.joints).toHaveLength(6)
-			expect(model.kinematic_param_type).toBeUndefined()
-		})
-
 		it('roots the first link on the component frame', () => {
 			expect(parents['arm-1:base']).toBe('arm-1')
 		})

@@ -1,4 +1,4 @@
-import type { IntersectionEvent } from '@threlte/extras'
+import type { IntersectionEvent } from '@threlte/extras/webgpu'
 import type { Entity } from 'koota'
 
 import { Vector3 } from 'three'

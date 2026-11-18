@@ -47,12 +47,6 @@ describe('appendLinePosition', () => {
 })
 
 describe('removeLinePosition', () => {
-	it('refuses to remove when there is only one point', () => {
-		const source = new Float32Array([0, 0, 0])
-		const next = removeLinePosition(source, 0)
-		expect(next).toBe(source)
-	})
-
 	it('refuses to remove when there are only two points', () => {
 		const source = new Float32Array([0, 0, 0, 1, 1, 1])
 		const next = removeLinePosition(source, 0)

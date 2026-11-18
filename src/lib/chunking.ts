@@ -41,16 +41,18 @@ export const createChunkLoader = ({
 	fetchChunk,
 	colorFormat = ColorFormat.RGB,
 }: ChunkLoaderOptions) => {
-	const active = new Set<string>()
+	// Each running pull, by uuid, with the controller that stops only it.
+	const active = new Map<string, AbortController>()
 	// Pulls that stopped before their last chunk, by the offset they reached.
 	const suspended = new Map<string, { entity: Entity; total: number; start: number }>()
 	const controller = new AbortController()
 
 	const pull = async (uuid: string, entity: Entity, total: number, firstChunkEnd: number) => {
 		if (active.has(uuid)) return
-		active.add(uuid)
+		const pullController = new AbortController()
+		active.set(uuid, pullController)
 
-		const { signal } = controller
+		const signal = AbortSignal.any([controller.signal, pullController.signal])
 		let nextStart = firstChunkEnd
 		let isSuspended = false
 
@@ -95,7 +97,8 @@ export const createChunkLoader = ({
 				console.error(`Chunk pull failed for entity ${uuid}:`, error)
 			}
 		} finally {
-			active.delete(uuid)
+			// A stopped pull's uuid may already belong to a newer pull.
+			if (active.get(uuid) === pullController) active.delete(uuid)
 			// A suspended pull keeps its progress, which `resume` reports against.
 			if (!isSuspended && world.has(entity)) {
 				entity.remove(traits.ChunkProgress)
@@ -125,6 +128,20 @@ export const createChunkLoader = ({
 				if (!world.has(entity)) continue
 				void pull(uuid, entity, total, start)
 			}
+		},
+
+		/**
+		 * Abandons the pull for `uuid`, running or suspended. Call when its entity is
+		 * destroyed, so a later `start` under the same uuid pulls for the new entity.
+		 */
+		stop(uuid: string) {
+			active.get(uuid)?.abort()
+			active.delete(uuid)
+
+			// A running pull clears its progress on the way out. A parked one has no way out.
+			const parked = suspended.get(uuid)
+			suspended.delete(uuid)
+			if (parked && world.has(parked.entity)) parked.entity.remove(traits.ChunkProgress)
 		},
 
 		dispose() {

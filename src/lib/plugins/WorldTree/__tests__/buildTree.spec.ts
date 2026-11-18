@@ -94,6 +94,24 @@ describe('buildTree', () => {
 		expect(namesIn(frames?.children?.[0])).toEqual(['arm:upper'])
 	})
 
+	it('sorts siblings by name at every depth, whatever order they spawned in', () => {
+		world = createWorld()
+		const zulu = world.spawn(traits.Name('zulu'), traits.DrawAPI)
+		world.spawn(traits.Name('bravo'), traits.DrawAPI)
+		const tango = world.spawn(traits.Name('tango'), traits.DrawAPI, relations.ChildOf(zulu))
+		world.spawn(traits.Name('delta'), traits.DrawAPI, relations.ChildOf(zulu))
+		world.spawn(traits.Name('sierra'), traits.DrawAPI, relations.ChildOf(tango))
+		world.spawn(traits.Name('foxtrot'), traits.DrawAPI, relations.ChildOf(tango))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+		const drawn = folderNamed(nodes, 'Drawn')
+		const zuluNode = drawn?.children?.[1]
+
+		expect(namesIn(drawn)).toEqual(['bravo', 'zulu'])
+		expect(namesIn(zuluNode)).toEqual(['delta', 'tango'])
+		expect(namesIn(zuluNode?.children?.[1])).toEqual(['foxtrot', 'sierra'])
+	})
+
 	it('lifts a cross-folder child to its own folder and records the parent name', () => {
 		world = createWorld()
 		const cam = world.spawn(traits.Name('cam1'), traits.FramesAPI)
@@ -145,13 +163,35 @@ describe('buildTree', () => {
 		expect(namesIn(folderNamed(nodes, 'Other'))).toEqual(['custom geometry 1'])
 	})
 
-	it('hides orphans until the resolver places them', () => {
+	it('files an orphan under Missing parent rather than its source folder', () => {
 		world = createWorld()
-		world.spawn(traits.Name('pending'), traits.FramesAPI, traits.Orphan('arm'))
+		world.spawn(traits.Name('cam1 pointcloud'), traits.PointCloudAPI, traits.Orphan('cam1'))
 
 		const { nodes } = buildTree(world, spawnFolderEntities())
 
-		expect(nodes).toEqual([])
+		expect(nodes.map((node) => node.entity.get(traits.Name))).toEqual(['Missing parent'])
+		expect(namesIn(folderNamed(nodes, 'Missing parent'))).toEqual(['cam1 pointcloud'])
+	})
+
+	it('names the parent an orphan is waiting for', () => {
+		world = createWorld()
+		world.spawn(traits.Name('cam1 pointcloud'), traits.PointCloudAPI, traits.Orphan('cam1'))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+
+		expect(folderNamed(nodes, 'Missing parent')?.children?.[0]?.missingParent).toBe('cam1')
+	})
+
+	it('keeps an orphan’s untagged descendants nested under it', () => {
+		world = createWorld()
+		const pending = world.spawn(traits.Name('drawing'), traits.DrawAPI, traits.Orphan('base'))
+		world.spawn(traits.Name('drawing model 1'), relations.ChildOf(pending))
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+		const missing = folderNamed(nodes, 'Missing parent')
+
+		expect(namesIn(missing)).toEqual(['drawing'])
+		expect(namesIn(missing?.children?.[0])).toEqual(['drawing model 1'])
 	})
 
 	it('maps each node to its drawn parent, topped by the folder row', () => {
@@ -177,5 +217,43 @@ describe('buildTree', () => {
 		a.add(relations.ChildOf(b))
 
 		expect(() => buildTree(world, spawnFolderEntities())).not.toThrow()
+	})
+
+	it('leaves out an empty folder that is not pinned', () => {
+		world = createWorld()
+
+		const { nodes } = buildTree(world, spawnFolderEntities())
+
+		expect(folderNamed(nodes, 'Frames')).toBeUndefined()
+	})
+
+	it('keeps an empty pinned folder and carries its placeholder', () => {
+		world = createWorld()
+
+		const { nodes } = buildTree(
+			world,
+			spawnFolderEntities(),
+			new Map([['frames', 'This machine has no frames']])
+		)
+		const frames = folderNamed(nodes, 'Frames')
+
+		expect(frames?.children).toEqual([])
+		expect(frames?.folder?.itemCount).toBe(0)
+		expect(frames?.folder?.placeholder).toBe('This machine has no frames')
+	})
+
+	it('drops the placeholder once a pinned folder has rows', () => {
+		world = createWorld()
+		world.spawn(traits.Name('arm'), traits.FramesAPI)
+
+		const { nodes } = buildTree(
+			world,
+			spawnFolderEntities(),
+			new Map([['frames', 'This machine has no frames']])
+		)
+		const frames = folderNamed(nodes, 'Frames')
+
+		expect(namesIn(frames)).toEqual(['arm'])
+		expect(frames?.folder?.placeholder).toBeUndefined()
 	})
 })

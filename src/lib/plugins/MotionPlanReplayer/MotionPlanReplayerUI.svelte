@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Icon, ToastVariant, Tooltip, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
 
+	import IKInspectionView from './inspect-ik/IKInspectionView.svelte'
+	import { useIKInspection } from './inspect-ik/useIKInspection.svelte'
 	import { planDropper, type ResolvePlanSnapshots } from './plan-dropper'
 	import { useMotionPlanReplayer } from './useMotionPlanReplayer.svelte'
 
@@ -21,10 +21,21 @@
 
 	const truncate = (s: string, max = 40): string => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
 
+	// Module-stable objects: FloatingPanel re-applies `size` whenever the reference changes, so a
+	// fresh literal per render would undo the user's manual resizes.
+	const REPLAYER_SIZE = { width: 320, height: 260 }
+	const INSPECT_SIZE = { width: 380, height: 520 }
+
 	const ctx = useMotionPlanReplayer()
+	const ik = useIKInspection()
 	const toast = useToast()
 
-	let isOpen = $state(false)
+	// Unmounting means leaving replay mode. Geometry left behind would have no controls to remove it.
+	$effect(() => () => {
+		ctx.clearActivePlan()
+		ik.exit()
+	})
+
 	let fileInput: HTMLInputElement | undefined = $state()
 	// resolvePlanSnapshots may round-trip to a server, so uploads are no longer instant.
 	let uploadsInFlight = $state(0)
@@ -45,7 +56,6 @@
 			}
 
 			ctx.addPlan(result.name, result.content, result.snapshots)
-			isOpen = true
 		} finally {
 			uploadsInFlight -= 1
 		}
@@ -74,95 +84,127 @@
 	}
 </script>
 
-<DashboardPortal>
-	<fieldset>
-		<DashboardButton
-			active={isOpen}
-			icon="play-circle-outline"
-			description="Motion Plan Replayer"
-			onclick={() => (isOpen = !isOpen)}
-		/>
-	</fieldset>
-</DashboardPortal>
+<!--
+	One panel for both modes. Inspect-IK takes the replayer's place rather than opening beside it, so
+	the inspected plan's select / delete / scrub controls are out of reach while inspecting — and
+	because a second FloatingPanel instance owns its own zag machine, swapping the body is the only
+	way to keep the window where the user put it.
 
+	Mounted only in replay mode and never closable: the panel holds the only controls for the drawn
+	plan, and leaving replay mode is how the user dismisses it.
+-->
 <FloatingPanel
-	bind:isOpen
-	title="Motion Plan Replayer"
-	defaultSize={{ width: 320, height: 260 }}
+	isOpen
+	exitable={false}
+	title={ik.isActive ? `IK Inspection · ${ik.planName ?? ''}` : 'Motion Plan Replayer'}
+	defaultSize={REPLAYER_SIZE}
+	size={ik.isActive ? INSPECT_SIZE : REPLAYER_SIZE}
+	minSize={{ width: 300, height: 240 }}
+	resizable
 >
-	<div class="flex h-full flex-col gap-1 p-2 text-xs">
-		{#if ctx.plans.length === 0}
-			<div class="text-subtle-1 flex grow items-center justify-center text-center">
-				Use the button below to upload a plan JSON file
-			</div>
-		{/if}
+	{#if ik.isActive}
+		<IKInspectionView />
+	{:else}
+		<div class="flex h-full flex-col gap-1 p-2 text-xs">
+			{#if ctx.plans.length === 0}
+				<div class="text-subtle-1 flex grow items-center justify-center text-center">
+					Use the button below to upload a plan JSON file
+				</div>
+			{/if}
 
-		<!-- Keyed by id: only the upload path rejects a duplicate name, and a repeated key throws
-		`each_key_duplicate` in production builds as well as dev. -->
-		{#each ctx.plans as plan, i (plan.id)}
-			{@const isActive = ctx.activePlanIndex === i}
-			<div
-				class={[
-					'flex cursor-pointer items-center gap-1 rounded px-2 py-1',
-					isActive ? 'bg-light font-medium' : 'hover:bg-ghost-light',
-				]}
-				role="button"
-				tabindex="0"
-				onclick={() => (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
-				onkeydown={(e) =>
-					e.key === 'Enter' && (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
-			>
-				<span class="text-subtle-1 mr-1 shrink-0">
-					{#if isActive}
-						<Eye size={14} />
-					{:else}
-						<EyeOff size={14} />
-					{/if}
-				</span>
-				<span class="grow truncate">{plan.name}</span>
+			{#each ctx.plans as plan, i (plan.id)}
+				{@const isActive = ctx.activePlanIndex === i}
+				<div
+					class={[
+						'group flex cursor-pointer items-center gap-1 rounded px-2 py-1',
+						isActive ? 'bg-light font-medium' : 'hover:bg-ghost-light',
+					]}
+					role="button"
+					tabindex="0"
+					onclick={() => (isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
+					onkeydown={(e) =>
+						e.target === e.currentTarget &&
+						e.key === 'Enter' &&
+						(isActive ? ctx.clearActivePlan() : ctx.selectPlan(i))}
+				>
+					<span class="text-subtle-1 mr-1 shrink-0">
+						{#if isActive}
+							<Eye size={14} />
+						{:else}
+							<EyeOff size={14} />
+						{/if}
+					</span>
+					<span class="grow truncate">{plan.name}</span>
+					<Tooltip
+						let:tooltipID
+						location="bottom"
+					>
+						<button
+							type="button"
+							class="border-success-medium text-success-dark hover:bg-success-light active:bg-success-light focus-visible:ring-success-dark ml-1 rounded border p-0.5 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
+							aria-label={`Inspect IK for ${plan.name}`}
+							aria-describedby={tooltipID}
+							aria-disabled={ik.status === 'loading'}
+							onclick={(e) => {
+								e.stopPropagation()
+								if (ik.status === 'loading') return
+								// Inspect mode takes the panel over, leaving no control for a replayed plan's
+								// geometry — so it goes rather than lingering unreachable in the scene.
+								ctx.clearActivePlan()
+								void ik.inspect(plan.name, plan.content)
+							}}
+						>
+							<Icon
+								name="bug-outline"
+								size="sm"
+								aria-hidden="true"
+							/>
+						</button>
+						<p slot="description">Inspect IK plans</p>
+					</Tooltip>
 
+					<button
+						type="button"
+						class="text-subtle-1 hover:text-danger-dark ml-1 rounded px-1"
+						onclick={(e) => {
+							e.stopPropagation()
+							ctx.removePlan(i)
+						}}
+						aria-label="Remove plan"
+						title="Remove plan">×</button
+					>
+				</div>
+
+				{#if plan.status === 'error'}
+					<div class="text-danger-dark pl-5 text-[10px]">{plan.error}</div>
+				{/if}
+				{#if plan.status === 'no-trajectory'}
+					<div class="text-warning-dark pl-5 text-[10px]">No trajectory — nothing to replay</div>
+				{/if}
+			{/each}
+
+			<div class="mt-auto flex flex-col gap-2 pt-1">
+				<TrajectoryScrubber
+					player={ctx.player}
+					label="motion plan"
+				/>
+				{@render children?.()}
+				<input
+					bind:this={fileInput}
+					type="file"
+					accept=".json"
+					class="hidden"
+					onchange={onFileChange}
+				/>
 				<button
 					type="button"
-					class="text-subtle-1 ml-1 rounded px-1 hover:text-red-500"
-					onclick={(e) => {
-						e.stopPropagation()
-						ctx.removePlan(i)
-					}}
-					aria-label="Remove plan"
-					title="Remove plan">×</button
+					class="border-light text-subtle-1 hover:bg-light w-full rounded border px-2 py-1 aria-disabled:opacity-50"
+					aria-disabled={uploadsInFlight > 0}
+					onclick={() => uploadsInFlight === 0 && fileInput?.click()}
 				>
+					{uploadsInFlight > 0 ? 'Uploading…' : 'Upload plan JSON'}
+				</button>
 			</div>
-
-			{#if plan.status === 'error'}
-				<div class="pl-5 text-[10px] text-red-600">{plan.error}</div>
-			{/if}
-			{#if plan.status === 'no-trajectory'}
-				<div class="pl-5 text-[10px] text-yellow-600">No trajectory — nothing to replay</div>
-			{/if}
-		{/each}
-
-		<div class="mt-auto flex flex-col gap-2 pt-1">
-			<TrajectoryScrubber
-				player={ctx.player}
-				label="motion plan"
-			/>
-
-			{@render children?.()}
-			<input
-				bind:this={fileInput}
-				type="file"
-				accept=".json"
-				class="hidden"
-				onchange={onFileChange}
-			/>
-			<button
-				type="button"
-				class="border-light text-subtle-1 hover:bg-light w-full rounded border px-2 py-1 aria-disabled:opacity-50"
-				aria-disabled={uploadsInFlight > 0}
-				onclick={() => uploadsInFlight === 0 && fileInput?.click()}
-			>
-				{uploadsInFlight > 0 ? 'Uploading…' : 'Upload plan JSON'}
-			</button>
 		</div>
-	</div>
+	{/if}
 </FloatingPanel>

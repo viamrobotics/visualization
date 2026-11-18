@@ -3,16 +3,25 @@
 
 	import { type Entity } from 'koota'
 
-	import AxesHelperDetails from '$lib/components/overlay/details/AxesHelperDetails.svelte'
-	import ColorDetails from '$lib/components/overlay/details/ColorDetails.svelte'
+	import type { DetailsTab } from '$lib/components/overlay/details/DetailsTabs.svelte'
+
+	import { appearanceKeyOf } from '$lib/appearanceTarget'
+	import AppearanceDetails from '$lib/components/overlay/details/AppearanceDetails.svelte'
 	import CountDetails from '$lib/components/overlay/details/CountDetails.svelte'
 	import DetailsPanel from '$lib/components/overlay/details/DetailsPanel.svelte'
+	import DetailsSections from '$lib/components/overlay/details/DetailsSections.svelte'
+	import DetailsTabs from '$lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '$lib/components/overlay/details/DimensionsDetails.svelte'
-	import OpacityDetails from '$lib/components/overlay/details/OpacityDetails.svelte'
+	import GeometryOffsetDetails from '$lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '$lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '$lib/components/overlay/details/RelationshipDetails.svelte'
-	import { traits, useTag } from '$lib/ecs'
-	import { useDetailsSections } from '$lib/hooks/useDetailsSections.svelte'
+	import { traits, useTag, useTrait } from '$lib/ecs'
+	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import ResourceTestTab from '$lib/plugins/ControlWidgets/ResourceTestTab.svelte'
+	import { resourceWidgetToggles } from '$lib/plugins/ControlWidgets/resourceWidgetToggles'
+	import FramePovTab from '$lib/plugins/FramePov/FramePovTab.svelte'
+
+	import SessionAppearanceDetails from './SessionAppearanceDetails.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
@@ -20,22 +29,37 @@
 
 	const { entity, ...rest }: Props = $props()
 
-	const sections = useDetailsSections()
 	const customDetails = useTag(() => entity, traits.CustomDetails)
+	const name = useTrait(() => entity, traits.Name)
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const resourceByName = useResourceByName()
+
+	const resource = $derived(name.current ? resourceByName.current[name.current] : undefined)
+	const testableResource = $derived(
+		resource && resourceWidgetToggles(resource).length > 0 ? resource : undefined
+	)
+
+	// A frame's edits follow the same rules as a saved appearance, so they reach the frames inside it.
+	const appearanceKey = $derived(
+		framesAPI.current && name.current !== undefined ? appearanceKeyOf(name.current) : undefined
+	)
+
+	const tabs = $derived<DetailsTab[]>(
+		customDetails.current
+			? [{ id: 'details', label: 'Details', content: detailsTab }]
+			: [
+					{ id: 'details', label: 'Details', content: detailsTab },
+					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
+					...(framesAPI.current && name.current !== undefined
+						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
+						: []),
+					...(testableResource ? [{ id: 'test', label: 'Test', content: testTab }] : []),
+				]
+	)
 </script>
 
-<DetailsPanel
-	{entity}
-	{...rest}
->
-	<h3
-		class="text-subtle-2 pt-3 pb-2"
-		data-testid="details-header"
-	>
-		Details
-	</h3>
-
-	<div class="flex flex-col gap-2.5">
+{#snippet detailsTab()}
+	<div class="flex flex-col gap-2.5 pt-3">
 		{#if !customDetails.current}
 			<PoseDetails
 				{entity}
@@ -45,20 +69,54 @@
 
 		<DimensionsDetails {entity} />
 
-		<CountDetails {entity} />
+		<GeometryOffsetDetails {entity} />
 
-		{#if !customDetails.current}
-			<ColorDetails {entity} />
-			<OpacityDetails {entity} />
-			<AxesHelperDetails {entity} />
-		{/if}
+		<CountDetails {entity} />
 	</div>
 
 	<RelationshipDetails {entity} />
 
-	{#each sections?.current ?? [] as section (section)}
-		{#if section.when?.(entity) ?? true}
-			{@render section.snippet({ entity })}
-		{/if}
-	{/each}
+	<DetailsSections
+		{entity}
+		tab="details"
+	/>
+{/snippet}
+
+{#snippet appearanceTab()}
+	{#if appearanceKey}
+		<SessionAppearanceDetails
+			{entity}
+			componentName={appearanceKey.componentName}
+			frameId={appearanceKey.frameId}
+		/>
+	{:else}
+		<AppearanceDetails {entity} />
+	{/if}
+
+	<DetailsSections
+		{entity}
+		tab="appearance"
+	/>
+{/snippet}
+
+{#snippet povTab()}
+	{#if name.current !== undefined}
+		<FramePovTab
+			{entity}
+			frameName={name.current}
+		/>
+	{/if}
+{/snippet}
+
+{#snippet testTab()}
+	{#if testableResource}
+		<ResourceTestTab resource={testableResource} />
+	{/if}
+{/snippet}
+
+<DetailsPanel
+	{entity}
+	{...rest}
+>
+	<DetailsTabs items={tabs} />
 </DetailsPanel>

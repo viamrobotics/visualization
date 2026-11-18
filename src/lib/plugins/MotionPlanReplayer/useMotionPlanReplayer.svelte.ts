@@ -104,13 +104,18 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 		const snap = snapshots[step]
 		if (!snap) return false
 
-		// reconcile resets Opacity and removes Invisible/ShowAxesHelper every step, so capture the
-		// user's display edits first. Iterate PartOfPlan so sub-entities are covered too.
-		const preserved = new Map<Entity, { opacity: number; invisible: boolean; showAxes: boolean }>()
+		// reconcile resets Opacity and removes Invisible/ShowAxesHelper every step, so capture
+		// PLAN_OPACITY and the ghost's visibility first. Iterate PartOfPlan so sub-entities are
+		// covered too. The user's own opacity edit needs no capture: it lives in
+		// `OpacityOverride`, which no reconciler writes.
+		const preserved = new Map<
+			Entity,
+			{ opacity: number | undefined; invisible: boolean; showAxes: boolean }
+		>()
 		if (planEntity) {
 			for (const entity of world.query(planRelations.PartOfPlan(planEntity))) {
 				preserved.set(entity, {
-					opacity: entity.get(traits.Opacity) ?? 1,
+					opacity: entity.get(traits.Opacity),
 					invisible: entity.has(traits.Invisible),
 					showAxes: entity.has(traits.ShowAxesHelper),
 				})
@@ -136,7 +141,7 @@ export const provideMotionPlanReplayer = (initialPlans?: PlanEntry[]) => {
 
 		for (const [entity, prev] of preserved) {
 			if (!entity.isAlive()) continue
-			setOrAddTrait(entity, traits.Opacity, prev.opacity)
+			if (prev.opacity !== undefined) setOrAddTrait(entity, traits.Opacity, prev.opacity)
 			if (prev.invisible) entity.add(traits.Invisible)
 			else entity.remove(traits.Invisible)
 			if (prev.showAxes) entity.add(traits.ShowAxesHelper)

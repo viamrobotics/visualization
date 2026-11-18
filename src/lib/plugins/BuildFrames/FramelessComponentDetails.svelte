@@ -24,15 +24,17 @@
 	sceneActions={false}
 	{...rest}
 >
-	<p class="text-subtle-1 pt-3 pb-2">This component has no frame, so it isn't in the scene.</p>
+	<div class="bg-extralight px-2 pb-2">
+		<p class="text-subtle-1 pt-3 pb-2">This component has no frame, so it isn't in the scene.</p>
 
-	<Button
-		icon="plus"
-		class="w-full"
-		onclick={() => {
-			if (name.current) partConfig.createFrame(name.current)
-		}}
-	>
-		Add frame
-	</Button>
+		<Button
+			icon="plus"
+			class="w-full"
+			onclick={() => {
+				if (name.current) partConfig.createFrame(name.current)
+			}}
+		>
+			Add frame
+		</Button>
+	</div>
 </DetailsPanel>

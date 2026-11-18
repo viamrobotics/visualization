@@ -1,0 +1,26 @@
+name: Static nlopt
+description: >-
+  Builds nlopt as a static library with scripts/build-static-nlopt.sh and points
+  scripts/build-sidecar.mjs at it through NLOPT_LIBDIR and NLOPT_INCLUDEDIR. Homebrew's and Ubuntu's
+  nlopt ship shared libraries only, and the sidecar links nlopt statically so the packaged app
+  needs nothing installed.
+
+inputs:
+  osx-architecture:
+    description: CMAKE_OSX_ARCHITECTURES on macOS (arm64 or x86_64), for cross-building. Leave empty elsewhere.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Build static nlopt
+      shell: bash
+      env:
+        OSX_ARCHITECTURE: ${{ inputs.osx-architecture }}
+      run: |
+        set -euo pipefail
+        install_dir="$RUNNER_TEMP/nlopt-static"
+        "$GITHUB_WORKSPACE/scripts/build-static-nlopt.sh" "$install_dir" "$OSX_ARCHITECTURE"
+        echo "NLOPT_LIBDIR=$install_dir/lib" >> "$GITHUB_ENV"
+        echo "NLOPT_INCLUDEDIR=$install_dir/include" >> "$GITHUB_ENV"

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { T, useThrelte } from '@threlte/core'
-	import { MeshDiscardMaterial } from '@threlte/extras'
+	import { T, useThrelte } from '@threlte/core/webgpu'
+	import { MeshDiscardMaterial } from '@threlte/extras/webgpu'
 	import { BackSide, Mesh, Vector3 } from 'three'
 
 	import { traits, useQuery } from '$lib/ecs'

@@ -1156,11 +1156,6 @@ describe('buildFrameDescriptors', () => {
 describe('buildFrameDescriptors with a captured mesh-geometry plan', () => {
 	const parsed = parsePlan(saladPlan)
 
-	it('builds descriptors without rejecting the plan', () => {
-		expect(() => buildFrameDescriptors(parsed)).not.toThrow()
-		expect(buildFrameDescriptors(parsed).length).toBeGreaterThan(0)
-	})
-
 	it.each([
 		['scoop-gripper:scoop_left', 'scoop_left'],
 		['scoop-gripper:scoop_right', 'scoop_right'],

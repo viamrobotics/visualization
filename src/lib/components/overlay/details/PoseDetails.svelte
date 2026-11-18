@@ -14,7 +14,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { useThrelte } from '@threlte/core'
+	import { useThrelte } from '@threlte/core/webgpu'
 	import {
 		List,
 		type ListChangeEvent,
@@ -33,9 +33,10 @@
 	import { FrameEditor } from '$lib/editing/FrameEditor'
 	import { useParentFrameOptions } from '$lib/hooks/useParentFrameOptions.svelte'
 	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { Pose } from '$lib/math'
 
 	import EntityLink from '../EntityLink.svelte'
+	import { composeDisplayedPose } from './composeDisplayedPose'
+	import WorldPoseDetails from './WorldPoseDetails.svelte'
 
 	interface Props {
 		entity: Entity
@@ -61,18 +62,15 @@
 	const parentEntity = useTarget(() => entity, relations.ChildOf)
 	const parentOptions = useParentFrameOptions(() => name.current)
 
-	const localPose = $derived.by<Pose | undefined>(() => {
-		const source = editedMatrix.current ?? matrix.current
+	const framesAPI = useTrait(() => entity, traits.FramesAPI)
+	const geometryCenter = $derived(framesAPI.current ? undefined : center.current)
 
-		if (source) return new Pose().setFromMatrix4(source)
-		if (center.current) return new Pose().copy(center.current)
-		return undefined
-	})
-
-	const worldPose = $derived.by<Pose | undefined>(() => {
-		if (!worldMatrix.current) return
-		return new Pose().setFromMatrix4(worldMatrix.current)
-	})
+	const localPose = $derived(
+		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	)
+	const worldPose = $derived(
+		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
+	)
 
 	const eulerValue = $derived.by<RotationEulerValueObject>(() => {
 		if (!localPose) return { x: 0, y: 0, z: 0 }
@@ -167,48 +165,7 @@
 	</div>
 {/snippet}
 
-<div>
-	<strong class="font-semibold">world position</strong>
-	<span class="text-subtle-2">(mm)</span>
-
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.x ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.y ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.z ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
-
-<div>
-	<strong class="font-semibold">world orientation</strong>
-	<span class="text-subtle-2">(deg)</span>
-	<div class="flex gap-3">
-		<div>
-			<span class="text-subtle-2">x</span>
-			{(worldPose?.oX ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">y</span>
-			{(worldPose?.oY ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">z</span>
-			{(worldPose?.oZ ?? 0).toFixed(2)}
-		</div>
-		<div>
-			<span class="text-subtle-2">th</span>
-			{(worldPose?.theta ?? 0).toFixed(2)}
-		</div>
-	</div>
-</div>
+<WorldPoseDetails pose={worldPose} />
 
 <div>
 	<strong class="font-semibold">parent frame</strong>

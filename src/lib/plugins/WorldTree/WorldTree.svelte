@@ -3,19 +3,32 @@
 
 	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
 	import { traits, useWorld } from '$lib/ecs'
+	import { poseStalenessSummary } from '$lib/hooks/poseStaleness/poseStalenessSummary'
+	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
+	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import { usePoses } from '$lib/hooks/usePoses.svelte'
 
 	import type { TreeNode } from './buildTree'
 
+	import AddObjectMenu from './AddObjectMenu.svelte'
 	import FilterBar from './FilterBar.svelte'
-	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
 	import Tree from './Tree.svelte'
+	import { usePinnedFolders } from './usePinnedFolders.svelte'
 	import { useTree } from './useTree.svelte'
 
 	const world = useWorld()
+	const environment = useEnvironment()
+
+	const health = useResourceHealth()
+	const poses = usePoses()
+	const stalenessAnnouncement = $derived(
+		poses.isStale ? poseStalenessSummary(health.unhealthy) : ''
+	)
 
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
-	const tree = useTree()
+	const pinnedFolders = usePinnedFolders()
+	const tree = useTree(() => pinnedFolders.current)
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
@@ -35,33 +48,42 @@
 	bodyClass="flex flex-col bg-white"
 >
 	{#snippet headerSuffix()}
-		<PoseStalenessIndicator />
+		<AddObjectMenu />
 	{/snippet}
+
+	<div
+		role="status"
+		class="sr-only"
+	>
+		{stalenessAnnouncement}
+	</div>
 
 	<FilterBar bind:value={filter} />
 
 	<!-- The tree owns the scroll port, so it needs a fixed track to scroll inside. -->
 	<div class="min-h-0 flex-1">
-		<Tree
-			{rootNode}
-			{filter}
-			parents={tree.parents}
-			onSelectionChange={(event) => {
-				const next = new Set(event.selectedValue.map(Number))
+		{#if !environment.current.isImmersive}
+			<Tree
+				{rootNode}
+				{filter}
+				parents={tree.parents}
+				onSelectionChange={(event) => {
+					const next = new Set(event.selectedValue.map(Number))
 
-				for (const entity of world.query(traits.Selected)) {
-					if (!next.has(entity as number)) entity.remove(traits.Selected)
-				}
+					for (const entity of world.query(traits.Selected)) {
+						if (!next.has(entity as number)) entity.remove(traits.Selected)
+					}
 
-				for (const id of next) {
-					const entity = id as Entity
-					// Folder rows and the `World` root are `IsExcluded`, so they never come
-					// back out of the `Selected` query — selecting one would clear the
-					// user's real selection on the next round trip.
-					if (entity.has(IsExcluded)) continue
-					if (!entity.has(traits.Selected)) entity.add(traits.Selected)
-				}
-			}}
-		/>
+					for (const id of next) {
+						const entity = id as Entity
+						// Folder rows and the `World` root are `IsExcluded`, so they never come
+						// back out of the `Selected` query — selecting one would clear the
+						// user's real selection on the next round trip.
+						if (entity.has(IsExcluded)) continue
+						if (!entity.has(traits.Selected)) entity.add(traits.Selected)
+					}
+				}}
+			/>
+		{/if}
 	</div>
 </FloatingPanel>

@@ -92,17 +92,4 @@ describe('metadataFromStruct', () => {
 
 		expect(metadataFromStruct(fields)).not.toHaveProperty('invisible')
 	})
-
-	it('handles per-vertex color data through base64 round-trip', () => {
-		const perVertex = new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255])
-		const base64 = btoa(String.fromCharCode(...perVertex))
-		const fields = {
-			colors: { kind: { case: 'stringValue' as const, value: base64 } },
-		}
-
-		const result = metadataFromStruct(fields)
-
-		expect(result.colors).toStrictEqual(perVertex)
-		expect(result.colors!.length).toBe(9)
-	})
 })

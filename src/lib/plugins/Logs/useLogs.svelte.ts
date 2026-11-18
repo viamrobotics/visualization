@@ -34,6 +34,22 @@ interface Context {
 	warnCount: number
 	add(message: string, level?: Level, target?: LogTarget): void
 	/**
+	 * Drops one line, matched the same way `add` collapses repeats. For a warning
+	 * that describes a state rather than an event: once the condition stops
+	 * holding, a line nothing can withdraw goes on reporting a failure that has
+	 * already been fixed.
+	 *
+	 * Silent when no line matches, so a caller can retract unconditionally.
+	 */
+	retract(message: string, level: Level, target?: LogTarget): void
+	/**
+	 * Drops every line filed against exactly this target, whatever its message or
+	 * level. For a producer that stops: a camera the user switched off has nothing
+	 * left to report, and its old failures would go on marking its rows. Lines
+	 * naming only one of the target's rows, or another pair, are left alone.
+	 */
+	retractTarget(target: LogTarget): void
+	/**
 	 * Drops every line and the row alerts they raised. Lines are about one machine,
 	 * so switching parts has to evict them rather than report the old part's
 	 * failures against the new part's resources.
@@ -41,8 +57,13 @@ interface Context {
 	clear(): void
 	/** Worst level currently logged against a row, or `undefined` when it is clean. */
 	statusFor(target: LogTarget): LogStatus | undefined
-	/** That row's lines, newest first. */
+	/** That row's lines, ordered like `current`. */
 	linesFor(target: LogTarget): Log[]
+}
+
+/** Position of a line's first occurrence, which is what the list sorts by. */
+interface Entry extends Log {
+	sequence: number
 }
 
 const MAX_LOGS = 200
@@ -54,8 +75,10 @@ let context = $state<Context | undefined>()
 
 export const provideLogs = () => {
 	// A Map keyed by `dedupKey` holds the logs and a `$state` version counter drives reactivity, so an add costs no array allocation.
-	const entries = new Map<string, Log>()
+	// Map order is recency, for eviction only. See `Entry` for display order.
+	const entries = new Map<string, Entry>()
 	let version = $state(0)
+	let nextSequence = 0
 
 	/**
 	 * Warn and error tallies per tally key, maintained as lines arrive and age out.
@@ -64,6 +87,12 @@ export const provideLogs = () => {
 	 */
 	const tallies = new Map<string, { warn: number; error: number }>()
 	let statusVersion = $state(0)
+
+	/**
+	 * Distinct warn and error lines, for the trigger badge. Kept as running totals
+	 * so a repeat, which is most adds at a live pose rate, costs the badge nothing.
+	 */
+	const lineCounts = $state({ warn: 0, error: 0 })
 
 	const intl = new Intl.DateTimeFormat('en-US', {
 		dateStyle: 'short',
@@ -92,6 +121,8 @@ export const provideLogs = () => {
 	const tally = (log: Log, delta: number): void => {
 		if (log.level === 'info') return
 
+		lineCounts[log.level] += delta
+
 		for (const key of tallyKeys(log)) {
 			const current = tallies.get(key) ?? { warn: 0, error: 0 }
 			const before = worst(current)
@@ -116,30 +147,22 @@ export const provideLogs = () => {
 	}
 
 	/**
-	 * Newest first. Each read hands back fresh objects: the entries themselves are
-	 * plain (mutating one in place would not notify), so a new identity per version
-	 * is what makes a climbing `count` render.
+	 * Latest first appearance first. A repeat updates its line in place rather
+	 * than lifting it, since lines repeating every pose tick would otherwise
+	 * leapfrog each other faster than the list can be read.
+	 */
+	const byFirstAppearance = (a: Entry, b: Entry): number => b.sequence - a.sequence
+
+	/**
+	 * Each read hands back fresh objects: the entries themselves are plain
+	 * (mutating one in place would not notify), so a new identity per version is
+	 * what makes a climbing `count` render.
 	 */
 	const all = $derived.by(() => {
 		void version
-		const out: Log[] = []
+		const out: Entry[] = []
 		for (const log of entries.values()) out.push({ ...log })
-		out.reverse()
-		return out
-	})
-
-	const errorCount = $derived.by(() => {
-		void version
-		let total = 0
-		for (const log of entries.values()) if (log.level === 'error') total += 1
-		return total
-	})
-
-	const warnCount = $derived.by(() => {
-		void version
-		let total = 0
-		for (const log of entries.values()) if (log.level === 'warn') total += 1
-		return total
+		return out.toSorted(byFirstAppearance)
 	})
 
 	context = {
@@ -147,10 +170,36 @@ export const provideLogs = () => {
 			return all
 		},
 		get errorCount() {
-			return errorCount
+			return lineCounts.error
 		},
 		get warnCount() {
-			return warnCount
+			return lineCounts.warn
+		},
+		retract(message, level, target = {}) {
+			untrack(() => {
+				const key = dedupKey(level, target, message)
+				const match = entries.get(key)
+				if (!match) return
+
+				entries.delete(key)
+				tally(match, -1)
+				version++
+			})
+		},
+		retractTarget(target) {
+			untrack(() => {
+				let retracted = false
+
+				for (const [key, log] of entries) {
+					if (log.resource !== target.resource || log.folder !== target.folder) continue
+
+					entries.delete(key)
+					tally(log, -1)
+					retracted = true
+				}
+
+				if (retracted) version++
+			})
 		},
 		clear() {
 			untrack(() => {
@@ -160,6 +209,8 @@ export const provideLogs = () => {
 
 				entries.clear()
 				tallies.clear()
+				lineCounts.warn = 0
+				lineCounts.error = 0
 				version++
 				statusVersion++
 			})
@@ -177,15 +228,14 @@ export const provideLogs = () => {
 		},
 		linesFor(target) {
 			void version
-			const out: Log[] = []
+			const out: Entry[] = []
 			for (const log of entries.values()) {
 				const matches =
 					(target.resource !== undefined && log.resource === target.resource) ||
 					(target.folder !== undefined && log.folder === target.folder)
 				if (matches) out.push({ ...log })
 			}
-			out.reverse()
-			return out
+			return out.toSorted(byFirstAppearance)
 		},
 		add(message, level = 'info', target = {}) {
 			untrack(() => {
@@ -196,12 +246,13 @@ export const provideLogs = () => {
 				if (match) {
 					match.count += 1
 					match.timestamp = timestamp
-					// Re-insert so a line that is still repeating sorts as the newest and
-					// is the last to be evicted, rather than ageing out under its own repeats.
+					// Re-insert so a line that is still repeating is the last to be evicted,
+					// rather than ageing out under its own repeats.
 					entries.delete(key)
 					entries.set(key, match)
 				} else {
-					const log: Log = {
+					const log: Entry = {
+						sequence: nextSequence++,
 						uuid: MathUtils.generateUUID(),
 						message,
 						count: 1,
@@ -242,6 +293,12 @@ const facade: Context = {
 	},
 	add(message, level, target) {
 		context?.add(message, level, target)
+	},
+	retract(message, level, target) {
+		context?.retract(message, level, target)
+	},
+	retractTarget(target) {
+		context?.retractTarget(target)
 	},
 	clear() {
 		context?.clear()

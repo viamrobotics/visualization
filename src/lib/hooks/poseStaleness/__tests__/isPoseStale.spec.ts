@@ -10,6 +10,7 @@ const freshness = (overrides: Partial<Parameters<typeof isPoseStale>[0]> = {}) =
 	now: START,
 	lastPoseAt: START,
 	pollingStartedAt: START,
+	framesJoinedAt: 0,
 	interval: INTERVAL,
 	...overrides,
 })
@@ -44,6 +45,18 @@ describe('isPoseStale', () => {
 	it('gives a part that has never answered a full window to do so', () => {
 		expect(isPoseStale(freshness({ now: START + GAP, lastPoseAt: 0 }))).toBe(false)
 		expect(isPoseStale(freshness({ now: START + GAP + 1, lastPoseAt: 0 }))).toBe(true)
+	})
+
+	it('gives a frame that joined long after polling started a full window', () => {
+		const joined = START + 60_000
+
+		expect(isPoseStale(freshness({ now: joined + GAP, framesJoinedAt: joined }))).toBe(false)
+	})
+
+	it('reports a frame that joined and then never answered', () => {
+		const joined = START + 60_000
+
+		expect(isPoseStale(freshness({ now: joined + GAP + 1, framesJoinedAt: joined }))).toBe(true)
 	})
 
 	it('ignores a cached pose predating the switch back to a part', () => {

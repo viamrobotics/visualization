@@ -5,38 +5,36 @@ Dispatches the shortcuts contributed through `useHotkey`. Features declare bindi
 -->
 <script lang="ts">
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useHotkeys } from '$lib/hooks/useHotkeys.svelte'
+	import { useKeybindings } from '$lib/keybindings'
+	import { isEditableTarget } from '$lib/keybindings/isEditableTarget'
 
 	const environment = useEnvironment()
-	const hotkeys = useHotkeys()
-
-	const isEditable = (target: EventTarget | null) =>
-		target instanceof HTMLElement &&
-		(target.isContentEditable || target.closest('input, textarea, select') !== null)
+	const keybindings = useKeybindings()
 
 	const onkeydown = (event: KeyboardEvent) => {
 		if (!environment.current.inputBindingsEnabled) return
-		// Modified presses belong to the browser (cmd+c) or to handlers with their
-		// own modifier semantics; repeats would re-fire toggles while a key is held.
-		if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
-		if (isEditable(event.target)) return
+		// Repeats would re-fire a toggle while the key is held. Option is never part of a
+		// shortcut, because macOS rewrites the character it reports.
+		if (event.repeat || event.altKey) return
 
-		const bindings = hotkeys.bindings.get(event.key.toLowerCase())
-		if (bindings === undefined) return
+		const mod = event.metaKey || event.ctrlKey
 
-		const applicable = [...bindings].filter((binding) => binding.when?.() ?? true)
+		// An unmodified press typed into a field belongs to the field. A modified one does
+		// not, so ⌘S still saves while an input has focus.
+		if (!mod && isEditableTarget(event.target)) return
 
-		if (import.meta.env.DEV && applicable.length > 1) {
-			console.warn(
-				`[KeyboardBindings] ${applicable.length} bindings apply to "${event.key}": ` +
-					applicable.map((binding) => binding.description).join(', ')
-			)
-		}
+		const matched = keybindings.matching({ key: event.key, shift: event.shiftKey, mod })
 
-		for (const binding of applicable) {
-			binding.run()
+		for (const { binding, handler } of matched) {
+			if (!(handler.when?.() ?? true)) continue
+
+			if (binding.preventDefault) {
+				event.preventDefault()
+			}
+
+			handler.run()
 		}
 	}
 </script>
 
-<svelte:window {onkeydown} />
+<svelte:window onkeydowncapture={onkeydown} />

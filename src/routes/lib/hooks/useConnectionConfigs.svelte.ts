@@ -3,15 +3,9 @@ import { isEqual } from 'lodash-es'
 import { PersistedState } from 'runed'
 import { getContext, setContext } from 'svelte'
 
-import { envConfigs } from '../configs'
+import type { ConnectionConfig } from '../connectionConfig'
 
-interface ConnectionConfig {
-	host: string
-	partId: string
-	apiKeyId: string
-	apiKeyValue: string
-	signalingAddress: string
-}
+import { envConfigs } from '../configs'
 
 const key = Symbol('connection-config-context')
 const activeConfig = new PersistedState<number>('active-connection-config', 0)

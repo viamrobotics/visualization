@@ -1,5 +1,6 @@
 import { getContext, setContext } from 'svelte'
 
+import { useConfigFrames } from './useConfigFrames.svelte'
 import { useFragmentInfo } from './useFragmentInfo.svelte'
 import { useFrames } from './useFrames.svelte'
 import { usePartConfig } from './usePartConfig.svelte'
@@ -12,20 +13,27 @@ const key = Symbol('frameless-components-context')
 
 export const provideFramelessComponents = () => {
 	const partConfig = usePartConfig()
+	const configFrames = useConfigFrames()
 	const fragmentInfo = useFragmentInfo()
 	const frames = useFrames()
 
 	const current = $derived.by(() => {
 		const { components } = partConfig.current
-		const partComponentsWIthNoFrame =
+		const partComponentsWithNoFrame =
 			components
 				?.filter((component) => component.frame === undefined)
 				.map((component) => component.name) ?? []
 
-		const fragmentComponentsWithNoFrame = new Set(partComponentsWIthNoFrame)
+		const fragmentComponentsWithNoFrame = new Set(partComponentsWithNoFrame)
 
 		for (const fragmentComponentName of Object.keys(fragmentInfo.current)) {
 			if (frames.current.some((frame) => frame.referenceFrame === fragmentComponentName)) {
+				continue
+			}
+
+			// The frame exists, we just can't place it. Offering to create one would
+			// write a second frame over the one the fragment already gives it.
+			if (configFrames.unresolvedFrames.has(fragmentComponentName)) {
 				continue
 			}
 

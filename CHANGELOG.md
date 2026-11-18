@@ -1,5 +1,185 @@
 # visualization
 
+## 3.2.0
+
+### Minor Changes
+
+- b874b56: Update the desktop app in the background on Windows (installer build) and Linux (AppImage and .deb), installing the new version when the app quits.
+
+### Patch Changes
+
+- 742b32e: Keep floating panels inside the scene when the host app renders chrome above it.
+- 6c9f81d: Update the desktop app to Electron 45.2.1, which carries Chromium security fixes.
+
+## 3.1.0
+
+### Minor Changes
+
+- 2f15445: The Visualizer no longer requires a `ViamAppProvider`.
+
+### Patch Changes
+
+- 2f15445: World state store entities stay in sync after the store is reconfigured or the connection drops.
+- 2f15445: Peer `@viamrobotics/svelte-sdk` is now `>=1.4.0`.
+
+## 3.0.2
+
+### Patch Changes
+
+- 22af98a: Turn off Multipath TCP in the draw server, which Go enables by default on Linux listeners and which carries the published exploit for CVE-2026-98432.
+
+## 3.0.1
+
+### Patch Changes
+
+- 09ae907: Fix camera-dependent draw order between overlapping shapes and their outlines.
+- 5a73d68: Stop continuously re-rendering the scene while an entity is selected.
+- 1b9fa63: Declare `sideEffects` so bundlers drop the modules a consumer doesn't use. Importing `SnapshotProto` from `@viamrobotics/visualization/lib` no longer pulls three.js into the importing chunk.
+- 4dca97e: Stop re-rendering the scene when polled poses haven't changed.
+
+## 3.0.0
+
+### Major Changes
+
+- 51adfb0: Renders the scene with three's WebGPU renderer, falling back to WebGL2 where WebGPU is unavailable.
+
+### Minor Changes
+
+- 5ea72a2: Monitor details panel adds a Test tab with the selected resource's control widgets.
+
+### Patch Changes
+
+- 269af0a: XR wrist panels render as canvas textures instead of threlte-uikit.
+- b8cb4d3: Camera selection outlines and zoom-to-fit no longer include the sensor coverage frustum.
+- 0c7bdf3: The default point size setting is now shown and entered in millimeters.
+- f40ee28: Hidden and removed axes helpers are no longer drawn.
+
+## 2.11.2
+
+### Patch Changes
+
+- 1204769: Fix the desktop app's Linux release build.
+
+## 2.11.1
+
+### Patch Changes
+
+- 6b48826: Fix the desktop app's Linux and Windows release builds, with IK inspection unavailable on Windows.
+
+## 2.11.0
+
+### Minor Changes
+
+- 538fdf7: Connect on boot from a CLI launch file in the desktop app
+- 5198bfd: Bundle the Go draw server with the desktop app as a sidecar
+
+### Patch Changes
+
+- 48d75ce: Draw frame geometries at their configured translation and orientation instead of the frame origin, and show that offset read-only in the details panel.
+- 5198bfd: Keep a redrawn point cloud's colors instead of reverting to the file's own colors.
+
+## 2.10.0
+
+### Minor Changes
+
+- 1d71218: Add object snapping to build-mode moves: key points, surfaces, ground plane, and surface alignment.
+
+## 2.9.1
+
+### Patch Changes
+
+- 36e855f: Add a Tauri v2 desktop shell with pnpm tauri:dev and pnpm tauri:build
+- 85071c2: Fix orientations near the ±Z pole to match rdk v1.12, which misaligned arm links on calibrated models.
+
+## 2.9.0
+
+### Minor Changes
+
+- bcb61c3: Save a resource's color, opacity, visibility and axes helper to its `visualizer` config from the build Appearance tab, or change them for the session in monitor mode, with the frames inside it, such as obstacle shapes, following those values unless they set their own.
+- bcb61c3: Add obstacles as rdk's `rdk:builtin:obstacle` model in three types (Simple, Bounds, Complex), edit their `geometries` list from the build details card or with the transform gizmo, draw them from the part config while building or offline, and preview unsaved edits on a connected machine.
+
+### Patch Changes
+
+- 761a4de: Fix snapped transform gizmo drags in world space, which only ever moved a frame onto the grid once.
+- 9bed7ae: Label the snap step fields with their units, and keep a typed Rotate step instead of reverting it.
+- 3a5a4f1: Stop the camera's WASD and arrow keys from moving the view while typing in a text field.
+
+## 2.8.2
+
+### Patch Changes
+
+- f70abf2: Start lasso and ellipse selections only on the primary button, so right-drag still pans the camera while selecting.
+
+## 2.8.1
+
+### Patch Changes
+
+- bd7c3a0: Keep the world tree's Frames folder visible while connected, and its Point clouds and Point cloud objects folders while the machine has a camera or vision service.
+- 3a9fdc1: Render entities opaque unless they set an opacity, so dropped point clouds no longer start at 0.5.
+- f71b730: List anything whose parent frame is missing in a Missing parent folder of the world tree, instead of hiding it.
+- f71b730: Draw vision service pointclouds in the reference frame their response names, instead of at the world origin.
+- f71b730: Staged moves no longer ghost a camera's pointcloud as a green mesh.
+- f71b730: Keep repeating log lines in place and refresh the logs panel at most four times a second, so it stays readable while poses stream.
+- f71b730: Warn on the world tree's Missing parent folder that its objects are positioned relative to the world origin.
+
+## 2.8.0
+
+### Minor Changes
+
+- 5ab1900: APP-18085 Inspect IK solutions in the visualizer
+- 5c56188: Move pose staleness and resource health warnings onto their world tree rows, and match the log warning indicator to them.
+- 5f27520: Add `<SensorCoverage />` plugin drawing each camera's view frustum from its frame.
+
+### Patch Changes
+
+- f654d06: Add a Keybindings tab to settings listing every shortcut.
+
+## 2.7.0
+
+### Minor Changes
+
+- c592002: Require three 0.181 or newer as a peer dependency
+- 7dd5b19: Details panel splits into Details and Appearance tabs.
+
+### Patch Changes
+
+- c592002: Draw every batchable transparent surface through one BatchedMesh so primitives and parsed meshes sort against each other by depth
+
+## 2.6.1
+
+### Patch Changes
+
+- 923367b: Toon and wireframe render modes draw colors without tone mapping.
+- 3509c21: Opacity edits apply to every object type and survive a scene sync.
+- 923367b: Realistic shading is now the render mode for every user, lit by an off-axis key light.
+
+## 2.6.0
+
+### Minor Changes
+
+- 3118e9c: Add obstacles to the scene from a new plus menu in the World panel header.
+
+### Patch Changes
+
+- 6f6f115: Bump `@viamrobotics/test-widgets` to 0.15.0
+- daf1bbf: Apply every `fragment_mods` entry sharing a fragment id, so a part that imports one fragment twice no longer loses the second import's overrides.
+- daf1bbf: Allow editing a fragment component's frame unless a fragment variable actually supplies one of its fields, rather than whenever the fragment declares any variable.
+- daf1bbf: Resolve fragment-provided frames the way the server does, so build mode draws them instead of filing their components under "Frameless components".
+- daf1bbf: Write a frame edit on a fragment component as only the fields that changed, so a field the fragment binds to a variable keeps its binding.
+
+## 2.5.1
+
+### Patch Changes
+
+- fd6d243: Adding a frame in build mode no longer reports the scene's poses as stale.
+- 97bacc6: Hold indexed point clouds at full detail under the point budget. Draw range addresses the index when a geometry has one, and three-mesh-bvh reorders that index spatially for picking, so decimating it drew a contiguous chunk of the cloud instead of the uniform sample `shuffled` describes — whole regions of a scan vanished while the camera moved and returned when it settled. Only clouds that opt into selection picking are indexed, so this was invisible until a scene both exceeded the budget and enabled the selection tool.
+
+## 2.5.0
+
+### Minor Changes
+
+- 9c2b451: Open the visualizer from viz.mode and viz.select query parameters, with a useDeepLinkParam hook for plugins to claim their own
+
 ## 2.4.0
 
 ### Minor Changes

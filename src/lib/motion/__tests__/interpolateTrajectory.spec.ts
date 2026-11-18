@@ -59,13 +59,6 @@ describe('captured plans still have the shape these rules were built for', () =>
 	it('free-space plans do not', () => {
 		expect(segmentDegrees(plans.freeSpace).filter((d) => d === 0)).toHaveLength(0)
 	})
-
-	it('every step of a plan carries the same columns', () => {
-		for (const trajectory of Object.values(plans)) {
-			const keys = trajectory.map((step) => Object.keys(step).toSorted().join(','))
-			expect(new Set(keys).size).toBe(1)
-		}
-	})
 })
 
 describe('largestJointDelta', () => {

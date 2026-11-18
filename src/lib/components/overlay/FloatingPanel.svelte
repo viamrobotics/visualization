@@ -2,15 +2,20 @@
 	import type { Snippet } from 'svelte'
 	import type { ClassValue } from 'svelte/elements'
 
-	import { useThrelte } from '@threlte/core'
-	import { Portal } from '@threlte/extras'
+	import { useThrelte } from '@threlte/core/webgpu'
+	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon } from '@viamrobotics/prime-core'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
+	import { untrack } from 'svelte'
+
+	import { clampPanelPosition } from '$lib/components/overlay/clampPanelPosition'
 
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
+		/** Pass a stable object reference: the size is re-applied whenever it changes, discarding a manual resize.*/
+		size?: { width: number; height: number }
 		minSize?: { width: number; height: number }
 		defaultPosition?: { x: number; y: number }
 		exitable?: boolean
@@ -30,6 +35,7 @@
 	let {
 		title = '',
 		defaultSize = { width: 700, height: 500 },
+		size,
 		defaultPosition,
 		exitable = true,
 		resizable = false,
@@ -45,19 +51,63 @@
 	const { dom } = useThrelte()
 
 	const id = $props.id()
+
+	// Stays undefined unless the caller opted in, which leaves the machine uncontrolled and every
+	// other panel behaving exactly as before.
+	let currentSize = $state(untrack(() => size))
+
+	// Not derived state: `size` is a push from the caller and a resize drag is a push from the
+	// machine, so whichever moved last wins — an assignment, not a computation.
+	$effect(() => {
+		if (size) currentSize = size
+	})
+
+	// Mirrors the machine's size while it is uncontrolled. Reading it from `api` instead would make
+	// the clamped position depend on the machine that consumes it.
+	let uncontrolledSize = $state(untrack(() => defaultSize))
+	const panelSize = $derived(currentSize ?? uncontrolledSize)
+
+	const measureScene = () => ({ width: dom.clientWidth, height: dom.clientHeight })
+	let sceneSize = $state(measureScene())
+	$effect(() => {
+		const observer = new ResizeObserver(() => (sceneSize = measureScene()))
+		observer.observe(dom)
+		return () => observer.disconnect()
+	})
+
+	const initialPosition = untrack(
+		() =>
+			defaultPosition ?? {
+				x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
+				y: dom.clientHeight / 2 - defaultSize.height / 2 + dom.clientTop,
+			}
+	)
+
+	let requestedPosition = $state(initialPosition)
+	const position = $derived(clampPanelPosition(requestedPosition, panelSize, sceneSize))
+
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
-		defaultPosition: defaultPosition ?? {
-			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
-			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
-		},
+		size: currentSize,
+		defaultPosition: initialPosition,
+		position,
 		resizable,
 		allowOverflow: false,
 		strategy: 'absolute' as const,
 		persistRect,
 		open: isOpen,
 		...props,
+		onPositionChange: (details: floatingPanel.PositionChangeDetails) => {
+			requestedPosition = details.position
+			props.onPositionChange?.({ position })
+		},
+		onSizeChange: (details: floatingPanel.SizeChangeDetails) => {
+			// Controlled panels have to adopt the drag's own result, or a resize snaps straight back.
+			if (currentSize) currentSize = details.size
+			uncontrolledSize = details.size
+			props.onSizeChange?.(details)
+		},
 	}))
 
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
@@ -72,8 +122,15 @@
 			{...api.getContentProps()}
 			class="border-medium flex flex-col border dark:text-black"
 		>
+			<!--
+				zag maximizes the panel on a double click of its header, with no prop to
+				turn it off. Dropped: a double click here is usually a fast second click
+				on a header control, and the panel that swallows the viewport offers
+				nothing to undo it with.
+			-->
 			<div
 				{...api.getDragTriggerProps()}
+				ondblclick={null}
 				class="sticky shrink-0"
 			>
 				<div

@@ -34,11 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Setup
         uses: ./.github/actions/setup-e2e
         with:
           go: 'true'
-          bun: 'true'
 
       - name: Build Go binaries
         run: pnpm go-build
@@ -47,8 +49,6 @@ jobs:
         run: pnpm vite-build
         env:
           VITE_CONFIGS: '{}'
-          WS_PORT: '3000'
-          STATIC_PORT: '5173'
 
       - name: Rebaseline the drawing project
         if: inputs.projects == 'drawing' || inputs.projects == 'both'
@@ -72,14 +72,17 @@ jobs:
         if: inputs.projects == 'robot' || inputs.projects == 'both'
         run: ./e2e/setup.sh && pnpm playwright test --project=robot --workers=1 --update-snapshots
 
+      # Runs even when a test fails for a reason other than pixels, so the
+      # baselines that were written still reach review.
       - name: Open or update the baseline PR
         id: baseline-pr
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add 'e2e/**/*-snapshots/'
+          git add -- 'e2e/*-snapshots/*'
 
           if git diff --staged --quiet; then
             echo "Baselines already match this run"

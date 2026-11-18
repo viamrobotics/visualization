@@ -1,7 +1,7 @@
 import type { Entity } from 'koota'
 import type { Group, Object3D } from 'three'
 
-import { isInstanceOf } from '@threlte/core'
+import { isInstanceOf } from '@threlte/core/webgpu'
 import { type ArmClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'

@@ -84,6 +84,11 @@ type DrawServerConfig struct {
 	// TempDir buffers chunked-entity payloads. Empty means ".tmp" beside go.mod.
 	// Two servers must not share one: NewDrawService empties it at startup.
 	TempDir string
+
+	// ExtraHandlers mounts more Connect services on the RPC server, keyed by the path a generated
+	// New*ServiceHandler returns. Injected by the binary so library callers never link a service's
+	// dependencies, such as the cgo nlopt solver behind MotionPlanService.
+	ExtraHandlers map[string]http.Handler
 }
 
 var (
@@ -152,6 +157,9 @@ func Start(cfg DrawServerConfig) error {
 		return fmt.Errorf("failed to listen on %s: %w", rpcAddr, err)
 	}
 
+	// Port 0 asks the OS for a free port, so the address must come from the listener.
+	address = fmt.Sprintf("localhost:%d", rpcListener.Addr().(*net.TCPAddr).Port)
+
 	tempDir := cfg.TempDir
 	if tempDir == "" {
 		tempDir = resolveTmpDir()
@@ -164,7 +172,7 @@ func Start(cfg DrawServerConfig) error {
 
 	rpcSrv = &http.Server{
 		Addr:    rpcAddr,
-		Handler: newRPCHandler(svc),
+		Handler: newRPCHandler(svc, cfg.ExtraHandlers),
 	}
 
 	rpcReady := make(chan struct{})
@@ -392,7 +400,7 @@ func isAddrInUse(err error) bool {
 	return false
 }
 
-func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
+func newRPCHandler(svc drawv1connect.DrawServiceHandler, extraHandlers map[string]http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	rpcPath, rpcHandler := drawv1connect.NewDrawServiceHandler(
@@ -400,6 +408,10 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 		connect.WithCompressMinBytes(1024),
 	)
 	mux.Handle(rpcPath, rpcHandler)
+
+	for path, handler := range extraHandlers {
+		mux.Handle(path, handler)
+	}
 
 	return cors.New(cors.Options{
 		AllowedOrigins:      []string{"*"},
@@ -409,30 +421,25 @@ func newRPCHandler(svc drawv1connect.DrawServiceHandler) http.Handler {
 	}).Handler(h2c.NewHandler(mux, &http2.Server{}))
 }
 
+// staticFileHandler serves the adapter-static build. A nested route like /a/b is
+// prerendered to a/b.html, so the extensionless path is tried with
+// ".html" before falling back to the root index.html.
 func staticFileHandler(buildDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := filepath.Join(buildDir, filepath.Clean("/"+r.URL.Path))
 
-		info, err := os.Stat(path)
-		if err == nil && info.IsDir() {
-			path = filepath.Join(path, "index.html")
-			info, err = os.Stat(path)
-		}
-
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+		for _, candidate := range []string{path, filepath.Join(path, "index.html"), path + ".html"} {
+			info, err := os.Stat(candidate)
+			if err == nil && !info.IsDir() {
+				http.ServeFile(w, r, candidate)
 				return
 			}
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
+			if err != nil && !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR) {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		if info.IsDir() {
-			http.ServeFile(w, r, filepath.Join(path, "index.html"))
-			return
-		}
-
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
 	})
 }

@@ -227,6 +227,10 @@ export const syncMoveGhosts = (
 		// with no visible original.
 		if (source.has(traits.InheritedInvisible)) continue
 
+		// `spawnGhost` copies geometry but not `Points`, so a ghosted point cloud
+		// would land in the mesh renderer as a solid mesh.
+		if (source.has(traits.Points)) continue
+
 		const sourceMatrix = source.get(traits.WorldMatrix)
 		if (!sourceMatrix) continue
 
