@@ -636,7 +636,7 @@
 		"@typescript-eslint/eslint-plugin": "8.56.1",
 		"@typescript-eslint/parser": "8.56.1",
 		"@viamrobotics/prime-core": "0.1.23",
-		"@viamrobotics/sdk": "0.75.0",
+		"@viamrobotics/sdk": "0.79.0",
 		"@viamrobotics/svelte-sdk": "1.5.3",
 		"@viamrobotics/tailwind-config": "1.2.0",
 		"@viamrobotics/test-widgets": "0.15.0",

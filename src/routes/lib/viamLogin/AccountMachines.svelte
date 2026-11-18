@@ -22,8 +22,10 @@
 		toMachineRows,
 	} from './machineRows'
 	import OrgMenu from './OrgMenu.svelte'
+	import Star from './Star.svelte'
 	import { useAccountMachines } from './useAccountMachines.svelte'
 	import { useAccountPart } from './useAccountPart.svelte'
+	import { useFavoriteMachines } from './useFavoriteMachines.svelte'
 	import UserMenu from './UserMenu.svelte'
 	import { useViamSession } from './useViamSession.svelte'
 
@@ -41,10 +43,14 @@
 	const activeConfig = useActiveConnectionConfig()
 
 	const machines = useAccountMachines()
+	const favorites = useFavoriteMachines()
 
 	// The popover mounts this panel each time it opens. Cached results show while this refetch runs.
 	$effect(() => {
-		untrack(machines.refetch)
+		untrack(() => {
+			machines.refetch()
+			favorites.refetch()
+		})
 	})
 
 	let filter = $state('')
@@ -57,12 +63,19 @@
 		direction: 'ascending',
 	})
 
-	const rows = $derived(toMachineRows(machines.locations, filter, sort.current))
+	const rows = $derived(
+		toMachineRows(
+			machines.locations,
+			filter,
+			sort.current,
+			favorites.isFavoritesFirst ? favorites.ids : null
+		)
+	)
 	const items = $derived(toMachineListItems(rows))
 	// The list's full height. Flex shrinks it to the space left in the popover, where it scrolls.
 	const contentHeight = $derived(items.reduce((sum, item) => sum + machineListItemHeight(item), 0))
 
-	const error = $derived(pickError ?? session.error ?? machines.error)
+	const error = $derived(pickError ?? session.error ?? machines.error ?? favorites.error)
 
 	$effect(() => {
 		if (session.state.status !== 'awaiting-approval') return
@@ -154,30 +167,75 @@
 	machine: appApi.MachineSummary,
 	part: appApi.PartSummary,
 	heightClass: string,
+	isMachineLine: boolean,
 	label: Snippet<[boolean]>
 )}
 	{@const isPicked = accountPart.current?.partId === part.partId}
-	<button
-		type="button"
-		aria-pressed={isPicked}
-		aria-disabled={isLaunched || undefined}
+	{#snippet button()}
+		<button
+			type="button"
+			aria-pressed={isPicked}
+			aria-disabled={isLaunched || undefined}
+			class={[
+				'flex h-full min-w-0 flex-1 items-center justify-between gap-2 pr-4 pl-2 text-left',
+				'focus-visible:outline-gray-9 focus-visible:outline-2 focus-visible:-outline-offset-2',
+				isLaunched
+					? 'text-disabled cursor-not-allowed'
+					: 'text-subtle-1 hover:text-default transition-colors duration-200',
+				isPicked && 'text-default',
+			]}
+			onclick={() => {
+				if (!isLaunched) void pick(machine, part)
+			}}
+		>
+			{@render label(isPicked)}
+			{@render partStatus(part)}
+		</button>
+	{/snippet}
+	{@render listRow(heightClass, isMachineLine ? machine : undefined, isPicked, button)}
+{/snippet}
+
+<!--
+	One line of the list: a favorite star cell, then the content. The row carries the fill so the
+	star cell highlights with the rest of a picked row.
+-->
+{#snippet listRow(
+	heightClass: string,
+	favoriteMachine: appApi.MachineSummary | undefined,
+	isPicked: boolean,
+	content: Snippet
+)}
+	<div
 		class={[
-			'border-light flex w-full items-center justify-between gap-2 border-b px-4 text-left',
-			'focus-visible:outline-gray-9 focus-visible:outline-2 focus-visible:-outline-offset-2',
+			'border-light flex items-center border-b',
 			heightClass,
-			isLaunched
-				? 'text-disabled cursor-not-allowed'
-				: 'text-subtle-1 hover:text-default transition-colors duration-200',
 			// Matches a selected WorldTree row.
-			isPicked ? 'bg-medium text-default' : !isLaunched && 'hover:bg-light',
+			isPicked ? 'bg-medium' : !isLaunched && 'hover:bg-light',
 		]}
-		onclick={() => {
-			if (!isLaunched) void pick(machine, part)
-		}}
 	>
-		{@render label(isPicked)}
-		{@render partStatus(part)}
-	</button>
+		<span class="flex w-8 shrink-0 justify-end">
+			{#if favoriteMachine}
+				{@const isFavorite = favorites.ids.has(favoriteMachine.machineId)}
+				{@const favoriteLabel = isFavorite
+					? `Remove ${favoriteMachine.machineName} from favorites`
+					: `Add ${favoriteMachine.machineName} to favorites`}
+				<button
+					type="button"
+					aria-label={favoriteLabel}
+					aria-pressed={isFavorite}
+					title={favoriteLabel}
+					class={[
+						'focus-visible:outline-gray-9 inline-flex rounded focus-visible:outline-2',
+						isFavorite ? 'text-warning-bright' : 'text-gray-6 hover:text-gray-8',
+					]}
+					onclick={() => void favorites.setFavorite(favoriteMachine.machineId, !isFavorite)}
+				>
+					<Star isFilled={isFavorite} />
+				</button>
+			{/if}
+		</span>
+		{@render content()}
+	</div>
 {/snippet}
 
 <!-- Clicking a header sorts by it and clicking again flips direction, as on app.viam.com. -->
@@ -187,7 +245,7 @@
 	<button
 		type="button"
 		aria-label="{label}, sort {isActive && !isDescending ? 'descending' : 'ascending'}"
-		class="group hover:text-default focus-visible:outline-gray-9 flex items-center gap-1 px-4 py-1.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
+		class="group hover:text-default focus-visible:outline-gray-9 flex items-center gap-1 py-1.5 pr-4 pl-2 focus-visible:outline-2 focus-visible:-outline-offset-2"
 		onclick={() => {
 			sort.current = nextMachineSort(sort.current, property)
 		}}
@@ -329,7 +387,23 @@
 			<div
 				class="border-light bg-light text-subtle-1 flex shrink-0 items-center justify-between border-b text-xs"
 			>
-				{@render sortHeader('name', 'Machine', 'multiplication-box')}
+				<span class="flex flex-1 items-center">
+					<span class="flex w-8 shrink-0 justify-end">
+						<button
+							type="button"
+							aria-label="Show favorites first"
+							aria-pressed={favorites.isFavoritesFirst}
+							title="Show favorites first"
+							class="text-gray-6 hover:text-gray-8 focus-visible:outline-gray-9 inline-flex rounded focus-visible:outline-2"
+							onclick={() => {
+								favorites.isFavoritesFirst = !favorites.isFavoritesFirst
+							}}
+						>
+							<Star isFilled={favorites.isFavoritesFirst} />
+						</button>
+					</span>
+					{@render sortHeader('name', 'Machine', 'multiplication-box')}
+				</span>
 				{@render sortHeader('status', 'Status', 'broadcast')}
 			</div>
 
@@ -357,11 +431,14 @@
 							{#snippet label(isPicked: boolean)}
 								{@render machineName(item.row.machine.machineName, item.row.locationName, isPicked)}
 							{/snippet}
-							{@render pickButton(item.row.machine, item.part, 'h-11', label)}
+							{@render pickButton(item.row.machine, item.part, 'h-11', true, label)}
 						{:else if item.kind === 'machine-heading'}
-							<div class="border-light text-subtle-1 flex h-11 items-center border-b px-4">
-								{@render machineName(item.row.machine.machineName, item.row.locationName, false)}
-							</div>
+							{#snippet heading()}
+								<div class="text-subtle-1 flex min-w-0 flex-1 items-center pr-4 pl-2">
+									{@render machineName(item.row.machine.machineName, item.row.locationName, false)}
+								</div>
+							{/snippet}
+							{@render listRow('h-11', item.row.machine, false, heading)}
 						{:else}
 							{#snippet label(isPicked: boolean)}
 								<span
@@ -378,7 +455,7 @@
 									{/if}
 								</span>
 							{/snippet}
-							{@render pickButton(item.row.machine, item.part, 'h-8', label)}
+							{@render pickButton(item.row.machine, item.part, 'h-8', false, label)}
 						{/if}
 					{/snippet}
 				</VirtualList>

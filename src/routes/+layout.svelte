@@ -43,6 +43,7 @@
 	import { type AccountConnection, resolveConnection } from './lib/resolveConnection'
 	import { provideAccountMachines } from './lib/viamLogin/useAccountMachines.svelte'
 	import { provideAccountPart } from './lib/viamLogin/useAccountPart.svelte'
+	import { provideFavoriteMachines } from './lib/viamLogin/useFavoriteMachines.svelte'
 	import { provideViamSession } from './lib/viamLogin/useViamSession.svelte'
 
 	provideConnectionConfigs()
@@ -65,9 +66,10 @@
 		() => (sidecar.ready ? drawServerUrl : undefined),
 		() => accountPart.set(null)
 	)
-	provideAccountMachines(() =>
+	const getAccountAccessToken = () =>
 		viamSession.state.status === 'active' ? viamSession.state.session.accessToken : undefined
-	)
+	provideAccountMachines(getAccountAccessToken)
+	provideFavoriteMachines(getAccountAccessToken)
 
 	const accountConnection = $derived.by<AccountConnection | undefined>(() => {
 		const part = accountPart.current

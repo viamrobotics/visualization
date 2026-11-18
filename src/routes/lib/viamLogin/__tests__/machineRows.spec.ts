@@ -30,8 +30,8 @@ const locations = [
 	}),
 ]
 
-const names = (sort: MachineSort, query = '') =>
-	toMachineRows(locations, query, sort).map((row) => row.machine.machineName)
+const names = (sort: MachineSort, query = '', favoritesFirst: ReadonlySet<string> | null = null) =>
+	toMachineRows(locations, query, sort, favoritesFirst).map((row) => row.machine.machineName)
 
 describe('toMachineRows', () => {
 	it('sorts online machines first by status, counting a machine with any online part', () => {
@@ -63,6 +63,12 @@ describe('toMachineRows', () => {
 
 	it('filters on the location name as well as machine names', () => {
 		expect(names({ property: 'name', direction: 'ascending' }, 'lab')).toEqual(['beta', 'gamma'])
+	})
+
+	it('lifts favorites above the rest, keeping the column sort within each group', () => {
+		expect(
+			names({ property: 'name', direction: 'ascending' }, '', new Set(['zeta', 'beta']))
+		).toEqual(['beta', 'zeta', 'alpha', 'gamma'])
 	})
 })
 

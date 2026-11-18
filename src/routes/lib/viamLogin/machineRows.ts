@@ -50,12 +50,18 @@ const matchesQuery = (row: MachineRow, query: string) =>
 /**
  * Flattens location summaries into one machine list, filtered by a case-insensitive query on
  * machine, part, or location name. A machine counts as online when any of its parts is.
+ *
+ * @param favoritesFirst Starred machine ids to lift above the rest, each group keeping the column
+ *   sort. Null leaves favorites in place.
  */
 export const toMachineRows = (
 	locations: appApi.LocationSummary[],
 	query: string,
-	sort: MachineSort
+	sort: MachineSort,
+	favoritesFirst: ReadonlySet<string> | null
 ): MachineRow[] => {
+	const compare = compareRows(sort)
+	const isFavorite = (row: MachineRow) => favoritesFirst?.has(row.machine.machineId) ?? false
 	const normalizedQuery = query.trim().toLowerCase()
 	return locations
 		.flatMap((location) =>
@@ -68,5 +74,5 @@ export const toMachineRows = (
 			}))
 		)
 		.filter((row) => !normalizedQuery || matchesQuery(row, normalizedQuery))
-		.toSorted(compareRows(sort))
+		.toSorted((a, b) => Number(isFavorite(b)) - Number(isFavorite(a)) || compare(a, b))
 }
