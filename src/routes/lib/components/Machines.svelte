@@ -20,6 +20,9 @@
 		useConnectionConfigs,
 	} from '../hooks/useConnectionConfigs.svelte'
 	import { useMachineConnection } from '../hooks/useMachineConnection.svelte'
+	import AccountMachines from '../viamLogin/AccountMachines.svelte'
+	import { useAccountPart } from '../viamLogin/useAccountPart.svelte'
+	import { useViamSession } from '../viamLogin/useViamSession.svelte'
 	import Collapsible from './Collapsible.svelte'
 
 	interface Props {
@@ -31,6 +34,11 @@
 	const connectionConfigs = useConnectionConfigs()
 	const activeConfig = useActiveConnectionConfig()
 	const machineConnection = useMachineConnection()
+	const viamSession = useViamSession()
+	const accountPart = useAccountPart()
+
+	// Expanded by default only while logged out. Toggling overrides it until the session changes.
+	let isManualOpen = $derived(viamSession.state.status !== 'active')
 
 	const connected = $derived(
 		machineConnection.connectionStatus === MachineConnectionEvent.CONNECTED
@@ -128,10 +136,17 @@
 					</div>
 				{/snippet}
 
-				<div class="font-public-sans flex h-100 w-120 flex-col">
-					<div class="flex min-h-0 grow flex-col gap-2 overflow-y-auto p-2">
+				<div class="font-public-sans flex h-112 w-120 flex-col">
+					<!--
+						Not a scroller itself. The account machine list and the manual configs each fill the
+						space left and scroll on their own, so no scroll area ever nests inside another.
+					-->
+					<div class="flex min-h-0 grow flex-col gap-2 p-2">
 						{#if launch.error}
-							<div role="alert">
+							<div
+								role="alert"
+								class="shrink-0"
+							>
 								<Banner
 									variant={BannerVariant.Danger}
 									size="sm"
@@ -144,7 +159,7 @@
 						{/if}
 
 						{#if launch.current}
-							<div class="border-medium flex flex-col gap-1 rounded border p-2 text-xs">
+							<div class="border-medium flex shrink-0 flex-col gap-1 rounded border p-2 text-xs">
 								<span class="text-heading font-medium">{launch.current.machineName}</span>
 								<span class="text-default">{launch.current.partName}</span>
 								<span class="text-subtle-1 font-roboto-mono">{launch.current.host}</span>
@@ -152,132 +167,158 @@
 							</div>
 						{/if}
 
-						{#each connectionConfigs.current as config, index (config.host)}
-							<form class="flex flex-col gap-2">
-								<div class="flex justify-between gap-2">
-									<Switch
-										disabled={!!launch.current}
-										on={!launch.current && activeConfig.current?.partId === config.partId}
-										on:change={(event) => {
-											activeConfig.set(event.detail ? index : undefined)
-										}}
-									/>
+						<AccountMachines isLaunched={!!launch.current} />
 
-									<Input
-										class="input w-full grow text-xs"
-										placeholder="Host"
-										value={config.host}
-										on:change={(event) => {
-											connectionConfigs.current[index].host = (
-												event.target as HTMLInputElement
-											).value
-										}}
-									/>
-
-									{#if !connectionConfigs.isEnvConfig(config)}
-										<Button
-											onclick={() => {
-												connectionConfigs.remove(index)
-											}}
-										>
-											Delete
-										</Button>
-									{/if}
-
-									<IconButton
-										icon="content-copy"
-										label="Copy config"
-										onclick={() => {
-											const data = connectionConfigs.current[index]
-											navigator.clipboard.writeText(JSON.stringify(data))
-										}}
-									/>
-								</div>
-
-								<Collapsible>
-									<div class="grid grid-cols-3 items-center gap-2 pt-2">
-										<label
-											for="{config.host}-partId"
-											class="text-xs">Part ID</label
-										>
-										<div class="col-span-2">
-											<Input
-												id="{config.host}-partId"
-												placeholder="Part ID"
-												value={config.partId}
-												on:change={(event) => {
-													connectionConfigs.current[index].partId = (
-														event.target as HTMLInputElement
-													).value
-												}}
-											/>
-										</div>
-
-										<label
-											for="{config.host}-apiKeyId"
-											class="text-xs">API key ID</label
-										>
-										<div class="col-span-2">
-											<Input
-												id="{config.host}-apiKeyId"
-												placeholder="API key ID"
-												value={config.apiKeyId}
-												on:change={(event) => {
-													connectionConfigs.current[index].apiKeyId = (
-														event.target as HTMLInputElement
-													).value
-												}}
-											/>
-										</div>
-
-										<label
-											for="{config.host}-apiKeyValue"
-											class="text-xs">API key value</label
-										>
-										<div class="col-span-2">
-											<Input
-												id="{config.host}-apiKeyValue"
-												placeholder="API key value"
-												value={config.apiKeyValue}
-												on:change={(event) => {
-													connectionConfigs.current[index].apiKeyValue = (
-														event.target as HTMLInputElement
-													).value
-												}}
-											/>
-										</div>
-
-										<label
-											for="{config.host}-address"
-											class="text-xs">Signaling address</label
-										>
-										<div class="col-span-2">
-											<Input
-												id="{config.host}-address"
-												placeholder="Signaling address"
-												value={config.signalingAddress}
-												on:change={(event) => {
-													connectionConfigs.current[index].signalingAddress = (
-														event.target as HTMLInputElement
-													).value
-												}}
-											/>
-										</div>
-									</div>
-								</Collapsible>
-							</form>
-
-							<div class="mt-2 mb-2 w-full border-b border-gray-300"></div>
-						{/each}
-					</div>
-
-					<div class="border-medium flex w-full shrink-0 justify-center border-t bg-white p-2">
-						<Button
-							icon="plus"
-							onclick={() => connectionConfigs.add()}
+						<details
+							class={[
+								'group border-medium border-t pt-2',
+								isManualOpen ? 'min-h-0 flex-1 overflow-y-auto' : 'shrink-0',
+							]}
+							open={isManualOpen}
+							ontoggle={(event) => {
+								isManualOpen = event.currentTarget.open
+							}}
 						>
-							Add config
-						</Button>
+							<summary
+								class="text-subtle-1 hover:text-default flex cursor-pointer items-center gap-1 rounded px-1 py-1 text-xs focus-visible:outline-2"
+							>
+								<Icon
+									name="chevron-right"
+									cx="group-open:rotate-90"
+									aria-hidden="true"
+								/>
+								Manual configs ({connectionConfigs.current.length})
+							</summary>
+							<div class="flex flex-col gap-2 pt-2">
+								{#each connectionConfigs.current as config, index (config.host)}
+									<form class="flex flex-col gap-2">
+										<div class="flex justify-between gap-2">
+											<Switch
+												disabled={!!launch.current}
+												on={!launch.current && activeConfig.current?.partId === config.partId}
+												on:change={(event) => {
+													activeConfig.set(event.detail ? index : undefined)
+													if (event.detail) accountPart.set(null)
+												}}
+											/>
+
+											<Input
+												class="input w-full grow text-xs"
+												placeholder="Host"
+												value={config.host}
+												on:change={(event) => {
+													connectionConfigs.current[index].host = (
+														event.target as HTMLInputElement
+													).value
+												}}
+											/>
+
+											{#if !connectionConfigs.isEnvConfig(config)}
+												<Button
+													onclick={() => {
+														connectionConfigs.remove(index)
+													}}
+												>
+													Delete
+												</Button>
+											{/if}
+
+											<IconButton
+												icon="content-copy"
+												label="Copy config"
+												onclick={() => {
+													const data = connectionConfigs.current[index]
+													navigator.clipboard.writeText(JSON.stringify(data))
+												}}
+											/>
+										</div>
+
+										<Collapsible>
+											<div class="grid grid-cols-3 items-center gap-2 pt-2">
+												<label
+													for="{config.host}-partId"
+													class="text-xs">Part ID</label
+												>
+												<div class="col-span-2">
+													<Input
+														id="{config.host}-partId"
+														placeholder="Part ID"
+														value={config.partId}
+														on:change={(event) => {
+															connectionConfigs.current[index].partId = (
+																event.target as HTMLInputElement
+															).value
+														}}
+													/>
+												</div>
+
+												<label
+													for="{config.host}-apiKeyId"
+													class="text-xs">API key ID</label
+												>
+												<div class="col-span-2">
+													<Input
+														id="{config.host}-apiKeyId"
+														placeholder="API key ID"
+														value={config.apiKeyId}
+														on:change={(event) => {
+															connectionConfigs.current[index].apiKeyId = (
+																event.target as HTMLInputElement
+															).value
+														}}
+													/>
+												</div>
+
+												<label
+													for="{config.host}-apiKeyValue"
+													class="text-xs">API key value</label
+												>
+												<div class="col-span-2">
+													<Input
+														id="{config.host}-apiKeyValue"
+														placeholder="API key value"
+														value={config.apiKeyValue}
+														on:change={(event) => {
+															connectionConfigs.current[index].apiKeyValue = (
+																event.target as HTMLInputElement
+															).value
+														}}
+													/>
+												</div>
+
+												<label
+													for="{config.host}-address"
+													class="text-xs">Signaling address</label
+												>
+												<div class="col-span-2">
+													<Input
+														id="{config.host}-address"
+														placeholder="Signaling address"
+														value={config.signalingAddress}
+														on:change={(event) => {
+															connectionConfigs.current[index].signalingAddress = (
+																event.target as HTMLInputElement
+															).value
+														}}
+													/>
+												</div>
+											</div>
+										</Collapsible>
+									</form>
+
+									<div class="mt-2 mb-2 w-full border-b border-gray-300"></div>
+								{/each}
+
+								<div class="flex justify-center">
+									<Button
+										icon="plus"
+										onclick={() => connectionConfigs.add()}
+									>
+										Add config
+									</Button>
+								</div>
+							</div>
+						</details>
 					</div>
 				</div>
 			</Popover>

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ConnectionConfig } from '../connectionConfig'
 import type { LaunchConfig } from '../desktop/launchConfig'
 
-import { resolveConnection } from '../resolveConnection'
+import { type AccountConnection, resolveConnection } from '../resolveConnection'
 
 const launch: LaunchConfig = {
 	version: 1,
@@ -24,9 +24,33 @@ const active: ConnectionConfig = {
 	signalingAddress: 'https://signal.example:443',
 }
 
+const account: AccountConnection = {
+	part: {
+		partId: 'account-part',
+		partName: 'main',
+		machineName: 'rover',
+		host: 'rover-main.abc.viam.cloud',
+	},
+	accessToken: 'account-token',
+}
+
 describe('resolveConnection', () => {
-	it('prefers the launch config over the active config', () => {
-		const resolved = resolveConnection(launch, active)
+	it('prefers the account part over the active config', () => {
+		expect(resolveConnection(undefined, account, active)).toEqual({
+			partId: 'account-part',
+			dialConf: {
+				host: 'rover-main.abc.viam.cloud',
+				credentials: { type: 'access-token', payload: 'account-token' },
+				signalingAddress: 'https://app.viam.com:443',
+				disableSessions: true,
+			},
+			appCredentials: { type: 'access-token', payload: 'account-token' },
+			launched: false,
+		})
+	})
+
+	it('prefers the launch config over the account part and active config', () => {
+		const resolved = resolveConnection(launch, account, active)
 
 		expect(resolved).toEqual({
 			partId: 'launch-part',
@@ -42,7 +66,7 @@ describe('resolveConnection', () => {
 	})
 
 	it('maps the active config to api-key credentials', () => {
-		expect(resolveConnection(undefined, active)).toEqual({
+		expect(resolveConnection(undefined, undefined, active)).toEqual({
 			partId: 'active-part',
 			dialConf: {
 				host: 'active.local.viam.cloud',
@@ -56,6 +80,6 @@ describe('resolveConnection', () => {
 	})
 
 	it('returns undefined when nothing is set', () => {
-		expect(resolveConnection(undefined, undefined)).toBeUndefined()
+		expect(resolveConnection(undefined, undefined, undefined)).toBeUndefined()
 	})
 })

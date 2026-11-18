@@ -1,0 +1,70 @@
+// Viam account login for the local visualizer, through the OAuth device-code flow.
+syntax = "proto3";
+
+package viamlogin.v1;
+
+option go_package = "github.com/viamrobotics/visualization/viamlogin/v1;viamloginv1";
+
+// Proxies the OAuth device-code flow to Viam's auth server, which rejects requests that carry a
+// browser Origin. Stateless: the caller holds every code and token, so nothing is kept here.
+service ViamLoginService {
+  // Starts a device-code login. The user approves it at the returned verification URL.
+  rpc StartLogin(StartLoginRequest) returns (StartLoginResponse);
+  // Checks once whether the user has approved the login yet.
+  rpc PollLogin(PollLoginRequest) returns (PollLoginResponse);
+  // Exchanges a refresh token for a new session.
+  rpc RefreshLogin(RefreshLoginRequest) returns (RefreshLoginResponse);
+}
+
+message StartLoginRequest {}
+
+message StartLoginResponse {
+  // Secret the caller passes to PollLogin. Never shown to the user.
+  string device_code = 1;
+  // Short code the user checks against the one shown at the verification URL.
+  string user_code = 2;
+  // Verification URL with the user code already filled in.
+  string verification_uri_complete = 3;
+  int32 expires_in_seconds = 4;
+  // Minimum wait between PollLogin calls.
+  int32 interval_seconds = 5;
+}
+
+message PollLoginRequest {
+  string device_code = 1;
+}
+
+enum LoginStatus {
+  LOGIN_STATUS_UNSPECIFIED = 0;
+  // The user has not approved yet. Poll again after the interval.
+  LOGIN_STATUS_PENDING = 1;
+  // Polling too often. Add 5 seconds to the interval, per RFC 8628.
+  LOGIN_STATUS_SLOW_DOWN = 2;
+  // The user approved. The session is set.
+  LOGIN_STATUS_APPROVED = 3;
+}
+
+message PollLoginResponse {
+  LoginStatus status = 1;
+  // Set only when status is LOGIN_STATUS_APPROVED.
+  Session session = 2;
+}
+
+message RefreshLoginRequest {
+  string refresh_token = 1;
+}
+
+message RefreshLoginResponse {
+  Session session = 1;
+}
+
+message Session {
+  string access_token = 1;
+  string refresh_token = 2;
+  int32 expires_in_seconds = 3;
+  // Read from the ID token's claims. Empty when the token has no email claim.
+  string email = 4;
+  // Given and family name from the ID token, else its preferred_username, else its name, matching
+  // app.viam.com. Empty when the token has none of them.
+  string display_name = 5;
+}

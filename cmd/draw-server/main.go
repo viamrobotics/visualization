@@ -12,6 +12,8 @@ import (
 	"syscall"
 
 	"github.com/viamrobotics/visualization/client/server"
+	"github.com/viamrobotics/visualization/viamlogin"
+	"github.com/viamrobotics/visualization/viamlogin/v1/viamloginv1connect"
 )
 
 // listeningPrefix starts the first stdout line. Supervisors parse the port that follows the URL.
@@ -25,12 +27,18 @@ func main() {
 	exitOnStdinClose := flag.Bool("exit-on-stdin-close", false, "shut down when stdin reaches EOF, for use as a sidecar whose parent may die without signalling")
 	flag.Parse()
 
+	handlers := extraHandlers()
+	loginPath, loginHandler := viamloginv1connect.NewViamLoginServiceHandler(
+		viamlogin.NewService(viamlogin.DefaultAuthDomain),
+	)
+	handlers[loginPath] = loginHandler
+
 	if err := server.Start(server.DrawServerConfig{
 		Port:          *port,
 		Production:    *production,
 		StaticPort:    *staticPort,
 		TempDir:       *tmpDir,
-		ExtraHandlers: extraHandlers(),
+		ExtraHandlers: handlers,
 	}); err != nil {
 		log.Fatal(err)
 	}
