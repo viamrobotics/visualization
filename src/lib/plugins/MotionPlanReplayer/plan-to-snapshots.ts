@@ -23,7 +23,7 @@ const descriptorToTransform = (
 			referenceFrame: descriptor.parent,
 			pose: descriptorLocalPose(descriptor, stepInputs),
 		}),
-		physicalObject: descriptor.kind === 'static' ? (descriptor.geometry ?? undefined) : undefined,
+		physicalObject: descriptor.geometry ?? undefined,
 		uuid: descriptor.uuid,
 	})
 

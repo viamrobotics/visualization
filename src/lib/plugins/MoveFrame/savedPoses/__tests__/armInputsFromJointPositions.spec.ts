@@ -12,6 +12,7 @@ const joint = (
 	parent: 'arm:base',
 	axis: { X: 0, Y: 0, Z: 1 },
 	componentName: 'arm',
+	geometry: null,
 	uuid: new Uint8Array(16) as Uint8Array<ArrayBuffer>,
 	...overrides,
 })

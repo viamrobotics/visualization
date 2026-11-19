@@ -36,6 +36,7 @@ const jointOf = (
 	axis,
 	componentName: 'arm',
 	jointIndex: 0,
+	geometry: null,
 	uuid: new Uint8Array(16) as Uint8Array<ArrayBuffer>,
 })
 

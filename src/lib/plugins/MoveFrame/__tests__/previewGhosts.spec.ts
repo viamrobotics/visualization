@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { FrameDescriptor } from '$lib/motion/frameDescriptors'
 
+import { Geometry, RectangularPrism, Vector3 as Vector3d } from '$lib/buf/common/v1/common_pb'
 import { traits } from '$lib/ecs'
 import { modelKey } from '$lib/hooks/use3DModels.svelte'
 import { Pose } from '$lib/math'
@@ -22,6 +23,7 @@ const arm: FrameDescriptor[] = [
 		axis: { X: 0, Y: 0, Z: 1 },
 		componentName: 'arm',
 		jointIndex: 0,
+		geometry: null,
 		uuid: uuid(),
 	},
 	{
@@ -30,6 +32,26 @@ const arm: FrameDescriptor[] = [
 		parent: 'arm:shoulder',
 		localPose: new Pose(100, 0, 0),
 		geometry: null,
+		uuid: uuid(),
+	},
+]
+
+/** One prismatic joint along +x that carries its own box collider. */
+const rail: FrameDescriptor[] = [
+	{
+		kind: 'joint',
+		motion: 'translational',
+		name: 'rail:slide',
+		parent: 'world',
+		axis: { X: 1, Y: 0, Z: 0 },
+		componentName: 'rail',
+		jointIndex: 0,
+		geometry: new Geometry({
+			geometryType: {
+				case: 'box',
+				value: new RectangularPrism({ dimsMm: new Vector3d({ x: 80, y: 30, z: 20 }) }),
+			},
+		}),
 		uuid: uuid(),
 	},
 ]
@@ -60,5 +82,15 @@ describe('spawnSavedPoseGhosts', () => {
 
 		const link = twinNamed(world, 'saved-pose:arm-pose-1:arm:upper_arm_link')
 		expect(modelKey(link!)).toBe('arm:upper_arm_link')
+	})
+
+	it('draws the collider a prismatic joint carries', () => {
+		const ghosts = createPreviewGhosts()
+
+		spawnSavedPoseGhosts(world, rail, 'rail-pose-1', 'rail', [40], ghosts)
+
+		const slide = twinNamed(world, 'saved-pose:rail-pose-1:rail:slide')
+		expect(slide!.get(traits.Box)).toEqual({ x: 80, y: 30, z: 20 })
+		expect(ghosts.drawn).toBe(1)
 	})
 })
