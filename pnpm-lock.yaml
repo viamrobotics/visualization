@@ -83,32 +83,32 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@houserules/cli':
-        specifier: ^0.4.1
-        version: 0.4.1
+        specifier: ^0.14.0
+        version: 0.14.0
       '@houserules/plugin-accessibility':
-        specifier: ^0.1.3
-        version: 0.1.3(@houserules/api@0.3.2)
+        specifier: ^0.2.2
+        version: 0.2.2(@houserules/api@0.7.3)
       '@houserules/plugin-changesets':
-        specifier: ^0.2.2
-        version: 0.2.2(@houserules/api@0.3.2)
+        specifier: ^0.4.0
+        version: 0.4.0(@houserules/api@0.7.3)
       '@houserules/plugin-design':
-        specifier: ^0.2.2
-        version: 0.2.2(@houserules/api@0.3.2)
+        specifier: ^0.4.3
+        version: 0.4.3(@houserules/api@0.7.3)
       '@houserules/plugin-prose':
-        specifier: ^0.1.4
-        version: 0.1.4(@houserules/api@0.3.2)
+        specifier: ^0.2.3
+        version: 0.2.3(@houserules/api@0.7.3)
       '@houserules/plugin-svelte':
-        specifier: ^0.1.2
-        version: 0.1.2(@houserules/api@0.3.2)
+        specifier: ^0.2.1
+        version: 0.2.1(@houserules/api@0.7.3)
       '@houserules/plugin-testing':
-        specifier: ^0.2.1
-        version: 0.2.1(@houserules/api@0.3.2)
+        specifier: ^0.3.4
+        version: 0.3.4(@houserules/api@0.7.3)
       '@houserules/plugin-three':
-        specifier: ^0.2.1
-        version: 0.2.1(@houserules/api@0.3.2)
+        specifier: ^0.2.2
+        version: 0.2.2(@houserules/api@0.7.3)
       '@houserules/plugin-typescript':
-        specifier: ^0.1.2
-        version: 0.1.2(@houserules/api@0.3.2)
+        specifier: ^0.1.3
+        version: 0.1.3(@houserules/api@0.7.3)
       '@playwright/test':
         specifier: 1.55.1
         version: 1.55.1
@@ -566,12 +566,12 @@ packages:
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
 
-  '@clack/core@1.4.3':
-    resolution: {integrity: sha512-/kr3UWNtdJfxZtPgDqUOmG2pvwlmcLGheex5yiZKdwbzZJxhV+HMNR9QNmyY5cGwTNV6LrR7Jtp+KjhUAP1qBQ==}
+  '@clack/core@1.6.0':
+    resolution: {integrity: sha512-4GZynIB2IIe431odxesswvWTCP6orvqd6e2b07b3VFWBQRqUqIHc/EPIZwFoKS692QBp+ooPuXKaJV8g4kXuYA==}
     engines: {node: '>= 20.12.0'}
 
-  '@clack/prompts@1.7.0':
-    resolution: {integrity: sha512-y7/yvZ2TPAnR9+jnc00klvNNLkJiXFFrQA/hlLCcxA9a2A4zQIOimyFQ9XfwYKiGD1fb5GY8vbKIIgO8d5Tb2A==}
+  '@clack/prompts@1.9.0':
+    resolution: {integrity: sha512-tEj8X2No2A1c9NDnZECxiiJ8TP3vmFlN9tLlLeSaMqVW4tUmVG2R4qpv/eP4zymWxnymYLkLcIYVV0VcWj3RCQ==}
     engines: {node: '>= 20.12.0'}
 
   '@codemirror/autocomplete@6.20.3':
@@ -1122,63 +1122,63 @@ packages:
   '@hapi/topo@6.0.2':
     resolution: {integrity: sha512-KR3rD5inZbGMrHmgPxsJ9dbi6zEK+C3ZwUwTa+eMwWLz7oijWUTWD2pMSNNYJAU6Qq+65NkxXjqHr/7LM2Xkqg==}
 
-  '@houserules/api@0.3.2':
-    resolution: {integrity: sha512-GH+nx51QNBLGJe7Ig6dAQST0q2LRATTrCNqkTwEFoIH21SwRnqS8taQSl3kTowtL9S+JXC3kgwvwh/IZjNCrzw==}
+  '@houserules/api@0.7.3':
+    resolution: {integrity: sha512-m+epQ73Jkgi8jHQ4pKS0eYRGDjhemLBxSjmJOjDDLDK0PDeKIKvM+Q9A9/1rEnNIx9fvETy97kGRcseQwsuZ5Q==}
     engines: {node: '>=22'}
 
-  '@houserules/cli@0.4.1':
-    resolution: {integrity: sha512-ij+S4yK8yTnkBPbgWM4bDGNmjBOSFRs3+wweeNqQQ4K2FvFNS1W1kFuQewWn9HwsvVo2uz/DTnBjNIRKxG89Dw==}
+  '@houserules/cli@0.14.0':
+    resolution: {integrity: sha512-RtPG5+RQdt0xGO5w0So+e+b8qolsZpChiZONBHoB3dVOcjHgV5nENsLv/HGHSv+vVdyA1P8OjHXI3HIeSamzTQ==}
     engines: {node: '>=22'}
     hasBin: true
 
-  '@houserules/payload@0.2.2':
-    resolution: {integrity: sha512-t/0hKmoExR7WolGLE17urZauqIT3b34LbzkWOCNooiPH65d27J1/QGpf0wU74jpbHJc41LbaceUvjm6AavHDxQ==}
+  '@houserules/payload@0.5.0':
+    resolution: {integrity: sha512-z5ZFwdPELnHRnCYnIYm8ma8e2e5ObS4ccxgmJaRcPwlWr90pAxrcYi9GloogbnxP7irgQjVkf2edYapXEozxnQ==}
     engines: {node: '>=22'}
 
-  '@houserules/plugin-accessibility@0.1.3':
-    resolution: {integrity: sha512-bQe03a5HdkPLIIG2omDiUukrtR0bznmuvliidTy9SRMitvf78/+ylamg1HRqCDVnIvq2uH9Q0iqLmEtalE2Zeg==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      '@houserules/api': '>=0.0.0 <1.0.0'
-
-  '@houserules/plugin-changesets@0.2.2':
-    resolution: {integrity: sha512-b1k4hPNNGMn31z4PbHNelxYg+4ZUJmLYbrBncGDtVOT414YmB469U3DzIqucbH52OjBoG3M3/ysqD2rFH0QVXA==}
+  '@houserules/plugin-accessibility@0.2.2':
+    resolution: {integrity: sha512-VwMBEpwBhdm6RQXMQaAmLTL7ar+doXgFAaHyp1ssUqR4gKuIiFIyrPeAq/5Sqr96aPbFjmk6QBC5J0eravOY4A==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-design@0.2.2':
-    resolution: {integrity: sha512-cyWKT5f6MxRk/QizN1QpxoEXsoiczU8vgE0lEJvdKZzv4158HzVonXIhBjq8ik6uFjEwwGxhHKr5D9L7NNBOFA==}
+  '@houserules/plugin-changesets@0.4.0':
+    resolution: {integrity: sha512-0xoOWOy7ap5eui9TfUp6cv0W4d+kMXNNpR6LiurNF3o2RbwUviasGnhiQK2HN74I+ZUygLoFBBqLvIsIkWz5aw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-prose@0.1.4':
-    resolution: {integrity: sha512-ru+/3kSu8DwlvSkdT67DVIdBHYKeiOEBlWts81UPw0lyNJH2XwfiE/HXXHD2SzNDcZCr5m6MCsio3rb7y+YGYQ==}
+  '@houserules/plugin-design@0.4.3':
+    resolution: {integrity: sha512-Kvhgl8Zaaz4nLqgOOfGMM/XOlhBw8wFETMI6Cc9WI66AfqB5Ioicz+pqzapm7G68IA0e/geSKQZ/9Q0zG/4Iow==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-svelte@0.1.2':
-    resolution: {integrity: sha512-x2kE5X3jZhFX3OpGPzzaGL2yefCaZHv9RvSKAKiQ3PTBQyinNakqRdnF4himq/W5tqvE+2T4hqPjMyWcMbbPYA==}
+  '@houserules/plugin-prose@0.2.3':
+    resolution: {integrity: sha512-Hi2xw4kwTcNI1JXHA8peSzMaYlrHFbAp61mYjtoYMEjRZMhyMMz5Cn5Id/a1qEE3XJbbkt0mZwF/EXHZouWHug==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-testing@0.2.1':
-    resolution: {integrity: sha512-IvmcJ+qHBKTWLGun2FV03+6heSPt1AOH2Zjn2iDYbNUulH5bTSkZwoU2UH3mNjxfn+slgjWgNqyQagdXtnPLgQ==}
+  '@houserules/plugin-svelte@0.2.1':
+    resolution: {integrity: sha512-cOs2A9WGmJ8ZVFChsgiHXyf8Be7X6rWNnut7kFgMDSvR1Vqp5BY56BDM8wUci+WXf6ZwRHMlKSfo0S5kxvg8LA==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-three@0.2.1':
-    resolution: {integrity: sha512-nidpahtj3QWUySHWZqSmBowwOEdGp9Lc3qVcoFQrDnp5PHUFuTwWYnlYYWdObPRLAvBhCkFtUF+t0MHi3JpXIw==}
+  '@houserules/plugin-testing@0.3.4':
+    resolution: {integrity: sha512-MgQ7juW4sIZUBTGj1SpopEdkLU6qyITeBsV2S66oAaRYNnPJ54SJFT5DBM+lXN8PlLarDTZL3gDmcbJw01QzXw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-typescript@0.1.2':
-    resolution: {integrity: sha512-xiyYqAxRexh9YoJceaDEv2/PizW/eg3lzlpy/xlx2k/2NsfYgDHm+6GOfY57JbHloDGruYuK7PWfYOKsPBfNBg==}
+  '@houserules/plugin-three@0.2.2':
+    resolution: {integrity: sha512-visFMtx2kJpt8prb4NG0Ugaql3LTkezEzQUFTHioqeJkJ12UGqy3BqNh9hN4XlRppN+BrJao0977Asy+NIU1KQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@houserules/api': '>=0.0.0 <1.0.0'
+
+  '@houserules/plugin-typescript@0.1.3':
+    resolution: {integrity: sha512-MuuRGqcCRDWF4VkY6wApd3EokAAVZ5RHM6WfK8ZCt63Zsak/6MlfzQzRXWtxQZygxDai52K73Bp95nsmA9g5kw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
@@ -2867,8 +2867,8 @@ packages:
   comlink@4.4.2:
     resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
-  commander@15.0.0:
-    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+  commander@15.1.0:
+    resolution: {integrity: sha512-cgnQ88TRrWcC7pVq46RzJVRMktu3W2RcbnoidnfBsl1bmDCBwJS/udcIZpKoCrbAYYaCqsz1yZCVIgbIaU3ddQ==}
     engines: {node: '>=22.12.0'}
 
   commander@5.1.0:
@@ -4722,6 +4722,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   serialize-error@7.0.1:
     resolution: {integrity: sha512-8I8TjW5KMOKsZQTvoxjuSIa7foAwPWGOts+6o7sgjz41/qMD9VQHEDxi6PBvK2l0MXUmqZyNpUK+T2tQaaElvw==}
     engines: {node: '>=10'}
@@ -4762,8 +4767,9 @@ packages:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
-  sisteransi@1.0.5:
-    resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+  sisteransi@2.0.0:
+    resolution: {integrity: sha512-2WCqLdt12eN6ehLI50S2/ZxoowXU3DD1KVPRyVP0WEsFahrGZZmCdq1K59qjJljMRIDTwx1D9YaRK+hDneBUMg==}
+    engines: {node: '>=20'}
 
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
@@ -5074,9 +5080,9 @@ packages:
     resolution: {integrity: sha512-xxCJm+Bckc6kQBknN7i9fnP/xobQRsRQxR01CztFkp/h++yfVxUUcmMgfR2HttJx/dpWjS9ubVuyspJv24Q9DA==}
     engines: {node: '>=20'}
 
-  type-fest@5.8.0:
-    resolution: {integrity: sha512-YGYEVz3Fm5iy/AybuA0oyNFq7H4CgQNfRp/qfe8nurE1kuCeNm3/vfm9X4Mtl+qLyaKJUh5xrFZwogr41SMjYA==}
-    engines: {node: '>=20'}
+  type-fest@6.0.3:
+    resolution: {integrity: sha512-MOJXegkac3h+sWdVb6VY/ACclsa71z3BprNpedGV8ljIzYCo+LRWgyIkWhidKNoiNJOb6kUds1pNCyzQ2p6hJQ==}
+    engines: {node: '>=22'}
 
   typescript-eslint@8.56.1:
     resolution: {integrity: sha512-U4lM6pjmBX7J5wk4szltF7I1cGBHXZopnAXCMXb3+fZ3B/0Z3hq3wS/CCUB2NZBNAExK92mCU2tEohWuwVMsDQ==}
@@ -5618,7 +5624,7 @@ snapshots:
       outdent: 0.5.0
       prettier: 2.8.8
       resolve-from: 5.0.0
-      semver: 7.7.3
+      semver: 7.8.5
 
   '@changesets/assemble-release-plan@6.0.9':
     dependencies:
@@ -5627,7 +5633,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
-      semver: 7.7.3
+      semver: 7.8.5
 
   '@changesets/changelog-git@0.2.1':
     dependencies:
@@ -5685,7 +5691,7 @@ snapshots:
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
       picocolors: 1.1.1
-      semver: 7.7.3
+      semver: 7.8.5
 
   '@changesets/get-release-plan@4.0.13':
     dependencies:
@@ -5748,17 +5754,18 @@ snapshots:
       human-id: 4.1.2
       prettier: 2.8.8
 
-  '@clack/core@1.4.3':
+  '@clack/core@1.6.0':
     dependencies:
-      fast-wrap-ansi: 0.2.2
-      sisteransi: 1.0.5
-
-  '@clack/prompts@1.7.0':
-    dependencies:
-      '@clack/core': 1.4.3
       fast-string-width: 3.0.2
       fast-wrap-ansi: 0.2.2
-      sisteransi: 1.0.5
+      sisteransi: 2.0.0
+
+  '@clack/prompts@1.9.0':
+    dependencies:
+      '@clack/core': 1.6.0
+      fast-string-width: 3.0.2
+      fast-wrap-ansi: 0.2.2
+      sisteransi: 2.0.0
 
   '@codemirror/autocomplete@6.20.3':
     dependencies:
@@ -6235,56 +6242,56 @@ snapshots:
     dependencies:
       '@hapi/hoek': 11.0.7
 
-  '@houserules/api@0.3.2':
+  '@houserules/api@0.7.3':
     dependencies:
-      '@houserules/payload': 0.2.2
-      type-fest: 5.8.0
-      zod: 4.4.3
+      '@houserules/payload': 0.5.0
+      type-fest: 6.0.3
+      zod: 4.6.7
 
-  '@houserules/cli@0.4.1':
+  '@houserules/cli@0.14.0':
     dependencies:
-      '@clack/prompts': 1.7.0
-      '@houserules/api': 0.3.2
-      '@houserules/payload': 0.2.2
-      commander: 15.0.0
+      '@clack/prompts': 1.9.0
+      '@houserules/api': 0.7.3
+      '@houserules/payload': 0.5.0
+      commander: 15.1.0
       dequal: 2.0.3
       diff: 9.0.0
       picocolors: 1.1.1
-      semver: 7.8.5
+      semver: 7.8.6
 
-  '@houserules/payload@0.2.2': {}
+  '@houserules/payload@0.5.0': {}
 
-  '@houserules/plugin-accessibility@0.1.3(@houserules/api@0.3.2)':
+  '@houserules/plugin-accessibility@0.2.2(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-changesets@0.2.2(@houserules/api@0.3.2)':
+  '@houserules/plugin-changesets@0.4.0(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-design@0.2.2(@houserules/api@0.3.2)':
+  '@houserules/plugin-design@0.4.3(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-prose@0.1.4(@houserules/api@0.3.2)':
+  '@houserules/plugin-prose@0.2.3(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-svelte@0.1.2(@houserules/api@0.3.2)':
+  '@houserules/plugin-svelte@0.2.1(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-testing@0.2.1(@houserules/api@0.3.2)':
+  '@houserules/plugin-testing@0.3.4(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-three@0.2.1(@houserules/api@0.3.2)':
+  '@houserules/plugin-three@0.2.2(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
-  '@houserules/plugin-typescript@0.1.2(@houserules/api@0.3.2)':
+  '@houserules/plugin-typescript@0.1.3(@houserules/api@0.7.3)':
     dependencies:
-      '@houserules/api': 0.3.2
+      '@houserules/api': 0.7.3
 
   '@humanfs/core@0.19.1': {}
 
@@ -7521,7 +7528,7 @@ snapshots:
       '@typescript-eslint/visitor-keys': 8.56.1
       debug: 4.4.3
       minimatch: 10.2.5
-      semver: 7.7.3
+      semver: 7.8.5
       tinyglobby: 0.2.17
       ts-api-utils: 2.4.0(typescript@5.9.2)
       typescript: 5.9.2
@@ -8318,7 +8325,7 @@ snapshots:
 
   comlink@4.4.2: {}
 
-  commander@15.0.0: {}
+  commander@15.1.0: {}
 
   commander@5.1.0: {}
 
@@ -10126,6 +10133,8 @@ snapshots:
 
   semver@7.8.5: {}
 
+  semver@7.8.6: {}
+
   serialize-error@7.0.1:
     dependencies:
       type-fest: 0.13.1
@@ -10159,7 +10168,7 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  sisteransi@1.0.5: {}
+  sisteransi@2.0.0: {}
 
   slash@3.0.0: {}
 
@@ -10490,7 +10499,7 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
-  type-fest@5.8.0:
+  type-fest@6.0.3:
     dependencies:
       tagged-tag: 1.0.0
 

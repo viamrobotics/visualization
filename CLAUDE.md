@@ -13,7 +13,7 @@
 | Package manager | pnpm                                                          |
 | Dev server      | Go (`cmd/draw-server`), Vite for HMR                          |
 | Go              | 1.25                                                          |
-| Testing         | Vitest + Playwright (TS); `go.viam.com/test` (Go)             |
+| Testing         | Vitest + Playwright (TS), `go.viam.com/test` (Go)             |
 
 ## Commands
 
@@ -30,7 +30,7 @@ pnpm e2e           # Playwright drawing suite
 pnpm e2e:robot     # Playwright robot suite (provisions a cloud machine)
 ```
 
-## Generated code — never hand-edit
+## Never hand-edit generated code
 
 - Any files included in `.gitignore` should not be edited
 - Edit `.proto` files in `protos/`, then run `pnpm proto`.
@@ -41,27 +41,14 @@ Organize code by feature with **one focused unit per file**. File names should d
 
 ## Topic-specific rules
 
-Detailed guidance lives in `.claude/rules/`. Path-scoped rules load when Claude reads matching files; rules without `paths` load every session. Kit-managed rules (svelte, three, typescript, testing, code-comments, prose-voice, design, …) are installed and documented by houserules — see the houserules block below. The repo-owned rules:
-
-| Rule                     | Loads when                                         |
-| ------------------------ | -------------------------------------------------- |
-| `koota-ecs.md`           | editing `.svelte`, `.svelte.ts`, or `src/lib/ecs/` |
-| `threlte-scene.md`       | editing `.svelte`, `.svelte.ts`                    |
-| `svelte-lifecycle.md`    | editing `.svelte`                                  |
-| `frontend-aesthetics.md` | editing `.svelte` or `.css`                        |
-| `math.md`                | editing files under `src/lib/math/`                |
-| `go.md`                  | editing `.go`                                      |
-| `testing-go.md`          | editing Go test files (`*_test.go`)                |
-| `testing-frontend.md`    | editing frontend test files (`src/**/*.spec.ts`)   |
-| `viam-context.md`        | every session (no path scope)                      |
+`.claude/rules/` loads by each file's `paths:` frontmatter. Repo-owned: `koota-ecs`, `threlte-scene`, `svelte-lifecycle`, `frontend-aesthetics`, `math`, `go`, `testing-go`, `testing-frontend`, `viam-context`. The rest are houserules-managed: edit their `paths:`, never their bodies.
 
 <!-- houserules:claude-md start -->
 
 ### houserules sections
 
-This block is maintained by `npx houserules update`. Content outside the markers is yours
-and never touched. Templates for a fuller CLAUDE.md skeleton and for guardrail rules live
-in `.claude/templates/`.
+Maintained by `npx houserules update`. Text outside the markers is yours and never touched.
+Fuller templates live in `.claude/templates/`.
 
 ### Skill triggers
 
@@ -69,47 +56,51 @@ in `.claude/templates/`.
   the commit**.
 - Too big to hold in one plan: scaffold with `/plan-project`, then execute each phase with
   `/orchestrate`.
+- Building UI, an artifact, or a deck? Take colors, type, and spacing from
+  `.claude/design/tokens.json`, never a palette of your own.
 
 ### Conventions
 
 - **The user always handles `git commit` / `push` / PR-create.** Describe what is ready and stop.
-  (Enforced by `.claude/scripts/guard-bash.mjs`.)
 - **Edit from the file's current bytes.** Re-read before editing when your view of it is
-  second-hand (an earlier snapshot, a build or lint error, another tool's output) or the user may
-  have it open. A tool's report and the file on disk can disagree within seconds.
+  second-hand (a snapshot, a lint error, another tool's output) or the user may have it open.
 - **Do not rewrite what is not yours to change.** When the user presents a file as their own
   finished work, or has it open mid-edit, surface the problem and let them decide.
+- **Watch for the missing `[houserules]` SessionStart banner.** Without it, the session started
+  below the repo root and the installed hooks, including the Bash guard, are not active. Tell
+  the user to relaunch Claude Code from the repo root.
 
 ### Cost & verification discipline
 
-- Stage-sized work (≤ a handful of files): implement directly in-context, with no implementation
-  subagents. Reserve subagents for genuinely parallel or unbounded work (wide sweeps, migrations).
-- Exception, a planned phase under `/orchestrate`: dispatch one scoped `task-worker` per slice
-  and review the returned reports. Never pull a worker’s diff into the main context.
+- Implement stage-sized work (a handful of files) in-context, with no implementation subagents.
+  Reserve subagents for parallel or unbounded work (wide sweeps, migrations).
+- Exception, a planned phase under `/orchestrate`: dispatch as that skill says. Never pull a
+  worker’s diff into the main context.
 - Verify with static gates (tests, typecheck, lint) plus a short falsifiable acceptance checklist
   for the user. No browser/screenshot verification unless explicitly asked.
-- Run those gates in order: format first, since it rewrites in place and settles the mechanical
-  noise, then lint with autofix so only real problems are left, then typecheck and test. Scope
-  each command to the packages you changed. This order is for work you do yourself.
-  When subagents are editing in parallel, the fixer runs once after they report, never inside
-  one of them, since it rewrites files their siblings still have open.
+- Run them in order, scoped to the packages you changed: format first, then lint with autofix,
+  then typecheck and test, so only real problems are left.
 - **"Done" means every check passed, not that the edits were made.** Report a check that failed
-  or never ran, with its output. Never claim success over one you did not see pass.
-  The recorded evasions, and what each one actually means:
-  | Excuse | Reality |
-  | --- | --- |
-  | "The edits are in, so it is done" | Done is the checks passing, with output you read. |
-  | "I know this fact from memory" | State it only after running the command that could falsify it. |
-  | "It passed earlier" | A stale or cached pass is not this change's pass. Re-run on current bytes. |
-  | "The subagent reported success" | The tree is the evidence. Check it before believing the report. |
+  or never ran, with its output. The recorded evasions, and what each one means:
+  - "The edits are in, so it is done": done is the checks passing, with output you read.
+  - "I know this fact from memory": state it only after running the command that could falsify it.
+  - "It passed earlier": a stale or cached pass is not this change's pass. Re-run on current bytes.
+  - "The subagent reported success": the tree is the evidence, not the report.
+- When the user is blocked on each turn, a cheap reversible action is itself the check. Run it
+  and let its result falsify, with at most one cheaper check first.
 - Derive empirical constants by parsing the artifact itself, not screenshot-and-iterate loops.
+- A subagent runs a command expected to outlast the default Bash timeout with
+  `run_in_background: true`, ends its turn without reporting, and reports when the completion
+  notification re-invokes it, reading the output file it names. A foreground call blocks the
+  subagent until Claude Code moves it to the background anyway, so starting it there saves the
+  blocked minutes and lets the subagent end its turn.
 - On AskUserQuestion timeout, stop and re-ask later. Never carry tentative selections forward.
 - Read the repo's own docs + targeted greps before fanning out Explore/Plan agents.
 
 ### Tool-use efficiency
 
-- `grep -n` to locate, then `Read` with `offset`/`limit`. Never read big files whole.
-- Never `git stash` to baseline-check. Use `git diff --name-only` / `git show HEAD:<path>`.
+- `grep -n` to locate, then `Read` with `offset`/`limit`. Grep output is location data, not
+  content: never judge text against a grep listing of it.
 - Pipe long command output through `grep`, and batch related greps into one call.
 
 <!-- houserules:claude-md end -->

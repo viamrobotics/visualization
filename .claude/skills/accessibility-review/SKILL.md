@@ -8,7 +8,7 @@ Review the accessibility of a working-tree change. Arguments (optional file filt
 
 1. **Resolve the changed markup files.** Diff against the merge-base:
    ```
-   git diff --name-only "$(git merge-base HEAD origin/main)"...HEAD
+   git diff --name-only --diff-filter=d "$(git merge-base HEAD origin/main)"...HEAD
    ```
    Filter to `.html`, `.jsx`, `.tsx`, `.svelte`, `.vue`, `.astro`. If none changed, say so and
    stop. There is nothing to review.
@@ -56,6 +56,11 @@ For a large diff, run this review through the `accessibility-reviewer` agent ins
 in this context. Hand it the changed files and let it do the diffing, routing, and
 criterion reading. Only the diff and the criteria stay in the subagent. The main context
 gets back a verdict, not a transcript.
+
+If the subagent reports that it stalled, or hands back only an interim report, re-dispatch
+it once with the same brief. On a second stall, run
+`node .claude/scripts/wcag.mjs applies <files>` in this context. Report the
+criteria-reading tier as not run, and name the files it would have covered.
 
 ## Findings
 
