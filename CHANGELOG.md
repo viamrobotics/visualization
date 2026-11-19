@@ -1,5 +1,17 @@
 # visualization
 
+## 3.3.0
+
+### Minor Changes
+
+- e6f371c: Add Viam account login for picking machines in the local visualizer.
+
+### Patch Changes
+
+- 663a672: The move panel splits into Move and Preview tabs, each with a single action, and the Move tab offers Save current pose at its bottom right.
+- 663a672: Arm ghosts draw as tinted 3D models when arm models are shown.
+- 663a672: Move mode can save an arm's current pose as an arm-position-saver, show saved poses as ghosts from a new Saved poses folder in the world tree, move the arm back to one, and delete one.
+
 ## 3.2.0
 
 ### Minor Changes
