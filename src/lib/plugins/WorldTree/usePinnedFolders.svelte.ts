@@ -1,6 +1,8 @@
 import { MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus } from '@viamrobotics/svelte-sdk'
 
+import { useArmClient } from '$lib/hooks/useArmClient.svelte'
+import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 import { useFrames } from '$lib/hooks/useFrames.svelte'
 import { usePartID } from '$lib/hooks/usePartID.svelte'
 import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
@@ -15,7 +17,8 @@ import type { TreeFolderId } from './treeFolders'
  * with no frames reads as that instead of as frames that failed to load.
  * Point clouds stays while the machine has a camera, and point cloud objects
  * while it has a vision service. Neither checks `getProperties`, since some
- * cameras report no point cloud support and serve one anyway.
+ * cameras report no point cloud support and serve one anyway. Saved poses
+ * stays in move mode while the machine has an arm, since that is where one is saved.
  */
 export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 	const partID = usePartID()
@@ -23,6 +26,8 @@ export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 	const frames = useFrames()
 	const pointclouds = usePointClouds()
 	const pointcloudObjects = usePointcloudObjects()
+	const environment = useEnvironment()
+	const armClient = useArmClient()
 
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
 
@@ -45,6 +50,10 @@ export const usePinnedFolders = (): { readonly current: PinnedFolders } => {
 
 		if (pointcloudObjects.services.length > 0) {
 			pinned.set('pointcloud-objects', 'No point cloud objects drawn')
+		}
+
+		if (environment.current.mode === 'move' && armClient.names.length > 0) {
+			pinned.set('saved-poses', 'Select an arm and save its pose')
 		}
 
 		return pinned

@@ -47,6 +47,10 @@ export const matchModel = (name: string | undefined, models: Models): Group | un
 	return models[componentName]?.[id]
 }
 
+/** The name `matchModel` looks `entity` up by: the link a ghost copies, or a live link's own. */
+export const modelKey = (entity: Entity): string | undefined =>
+	entity.get(traits.GhostModelKey) ?? entity.get(traits.Name)
+
 const applyModelAppearance = (object: Object3D) => {
 	if (!isInstanceOf(object, 'Mesh')) return
 
@@ -64,7 +68,7 @@ const applyModelAppearance = (object: Object3D) => {
 }
 
 const syncColliderHidden = (entity: Entity, models: Models, hideColliders: boolean) => {
-	const shouldHide = hideColliders && matchModel(entity.get(traits.Name), models) !== undefined
+	const shouldHide = hideColliders && matchModel(modelKey(entity), models) !== undefined
 	if (shouldHide === entity.has(traits.ColliderHidden)) return
 	if (shouldHide) {
 		entity.add(traits.ColliderHidden)
@@ -199,19 +203,25 @@ export const provide3DModels = (partID: () => string) => {
 	 *
 	 * A collider named `<component>:<id>` is a kinematics link frame — the
 	 * geometry that used to arrive from `getGeometries` now comes from the frame
-	 * system, so `FramesAPI` is the only owner left.
+	 * system, so `FramesAPI` is the only owner left. A ghost of one carries
+	 * `GhostModelKey` instead, and follows the same setting as the link it copies.
 	 */
 	$effect(() => {
 		const models = current
 		const hideColliders = settings.current.renderArmModels === 'model'
+		const sync = (entity: Entity) => syncColliderHidden(entity, models, hideColliders)
 
-		for (const entity of world.query(traits.FramesAPI)) {
-			syncColliderHidden(entity, models, hideColliders)
+		for (const entity of world.query(traits.FramesAPI)) sync(entity)
+		for (const entity of world.query(traits.GhostModelKey)) sync(entity)
+
+		const unsubscribes = [
+			world.onAdd(traits.FramesAPI, sync),
+			world.onAdd(traits.GhostModelKey, sync),
+		]
+
+		return () => {
+			for (const unsubscribe of unsubscribes) unsubscribe()
 		}
-
-		return world.onAdd(traits.FramesAPI, (entity) => {
-			syncColliderHidden(entity, models, hideColliders)
-		})
 	})
 
 	/**

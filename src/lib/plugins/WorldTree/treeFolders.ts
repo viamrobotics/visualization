@@ -12,6 +12,7 @@ export type TreeFolderId =
 	| 'pointclouds'
 	| 'pointcloud-objects'
 	| 'world-state-store'
+	| 'saved-poses'
 	| 'drawn'
 	| 'imported-files'
 	| 'other'
@@ -45,6 +46,8 @@ export const treeFolders: TreeFolder[] = [
 		refreshRate: 'vision',
 	},
 	{ id: 'world-state-store', name: 'World state store', sources: [traits.WorldStateStoreAPI] },
+	// Ahead of frameless components, since every saved pose row is one too.
+	{ id: 'saved-poses', name: 'Saved poses', sources: [traits.SavedPose], sceneless: true },
 	{
 		id: 'frameless-components',
 		name: 'Frameless components',

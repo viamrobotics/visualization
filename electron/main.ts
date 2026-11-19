@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import serve from 'electron-serve'
 import path from 'node:path'
 
@@ -86,6 +86,13 @@ const createWindow = async () => {
 	})
 	mainWindow.on('closed', () => {
 		mainWindow = undefined
+	})
+	// Links such as the Viam login page belong in the user's browser, where their session already
+	// lives, not in a bare Electron window. Other schemes could launch arbitrary local handlers.
+	mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+		const protocol = URL.parse(url)?.protocol
+		if (protocol === 'https:' || protocol === 'http:') void shell.openExternal(url)
+		return { action: 'deny' }
 	})
 
 	await (loadStaticBuild ? loadStaticBuild(mainWindow) : mainWindow.loadURL(devServerUrl ?? ''))

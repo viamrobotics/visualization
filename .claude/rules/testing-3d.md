@@ -12,7 +12,7 @@ for the runner-agnostic rules this guide assumes, and `three.md` if this repo in
 how the Three.js layer itself should be authored. This guide is about testing that code, not
 writing it.
 
-## Rule — follow without deliberation
+## Rule
 
 - **Assert the scene graph, not pixels.** A unit test cannot see what rendered. What it can see
   is `Object3D` structure: which children got added to which parent, `position`, `rotation`,
@@ -37,6 +37,12 @@ writing it.
   transforms are plain Three.js objects with no renderer involved, so TH-027-style tests run
   fine in `node` or `jsdom` alongside the rest of a unit suite. Reach for a real browser only
   for the tests that actually need a renderer.
+- **Threlte components render through `@threlte/test` with no `<Canvas>`.** `render`
+  returns a plain `scene` to query and `advance({ delta, count })` for `useTask`, in the
+  same DOM environment as the component tests. `render()` performs one
+  `advance({ delta: 0 })` first, so the first `advance()` a test calls is the second tick.
+  Only `info.memory` and anything that constructs a `WebGLRenderer` moves to the browser
+  project.
 - **Context loss is a process-killing bug in disguise if you force it carelessly.** Simulating
   `webglcontextlost` through a driver or extension can crash the browser process the test is
   running in rather than failing the assertion, which is exactly the shape `testing.md` says

@@ -40,7 +40,7 @@
 
 <FloatingPanel
 	isOpen
-	defaultPosition={{ x: 10, y: 48 }}
+	defaultPosition={{ x: 10, y: 10 }}
 	defaultSize={{ width: 240, height: 400 }}
 	title="World"
 	exitable={false}

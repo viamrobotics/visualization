@@ -8,7 +8,7 @@ import { hierarchy, traits } from '$lib/ecs'
 import { descriptorLocalPose } from '$lib/motion/jointPose'
 
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
-import { previewName } from './previewNames'
+import { previewName, savedPoseName } from './previewNames'
 import { PreviewGhost } from './traits'
 
 /**
@@ -150,10 +150,50 @@ export const spawnPreviewGhosts = (
 	trajectory: readonly TrajectoryStep[],
 	ghosts: PreviewGhosts
 ): void => {
+	spawnGhosts(
+		world,
+		descriptors,
+		movingComponents(trajectory),
+		trajectory[0] ?? {},
+		previewName,
+		ghosts
+	)
+}
+
+/**
+ * Fills `ghosts` with a twin of `arm`, and whatever hangs off it, held at `joints`: where a saver
+ * would put the arm. Twins carry `savedPoseName`, so several savers can be shown side by side.
+ */
+export const spawnSavedPoseGhosts = (
+	world: World,
+	descriptors: FrameDescriptor[],
+	saverName: string,
+	arm: string,
+	joints: number[],
+	ghosts: PreviewGhosts
+): void => {
+	spawnGhosts(
+		world,
+		descriptors,
+		new Set([arm]),
+		{ [arm]: joints },
+		(frameName) => savedPoseName(saverName, frameName),
+		ghosts
+	)
+}
+
+/** Twin every frame `moving` drives, posed at `start` and named by `ghostName`. */
+const spawnGhosts = (
+	world: World,
+	descriptors: FrameDescriptor[],
+	moving: ReadonlySet<string>,
+	start: TrajectoryStep,
+	ghostName: (frameName: string) => string,
+	ghosts: PreviewGhosts
+): void => {
 	clearPreviewGhosts(ghosts)
 
 	const byName = new Map(descriptors.map((descriptor) => [descriptor.name, descriptor]))
-	const moving = movingComponents(trajectory)
 	const hidden = hiddenFrameNames(world)
 	const memo = new Map<string, boolean>()
 
@@ -162,31 +202,35 @@ export const spawnPreviewGhosts = (
 		if (drivenByMovingJoint(descriptor.name, byName, moving, memo)) previewed.add(descriptor.name)
 	}
 
-	const start = trajectory[0] ?? {}
-
 	for (const descriptor of descriptors) {
 		if (!previewed.has(descriptor.name)) continue
 
 		// The prefix stops at the edge of the previewed set, so the topmost twins parent to the live
 		// frame they branch from.
 		const parent = previewed.has(descriptor.parent)
-			? previewName(descriptor.parent)
+			? ghostName(descriptor.parent)
 			: descriptor.parent
 
 		const drawable: ConfigurableTrait[] = []
-		if (descriptor.kind === 'static' && descriptor.geometry && !hidden.has(descriptor.name)) {
+		const isShown = descriptor.kind === 'static' && !hidden.has(descriptor.name)
+		const hasCollider = isShown && descriptor.geometry !== null
+		if (isShown) {
+			// Keyed whether or not the link has a collider: its 3D model, when it has one, still draws.
 			drawable.push(
-				traits.Geometry(descriptor.geometry),
+				traits.GhostModelKey(descriptor.name),
 				traits.Color({ r: ghostColor.r, g: ghostColor.g, b: ghostColor.b }),
 				traits.Opacity(PREVIEW_OPACITY)
 			)
 
-			const center = descriptor.geometry.center
-			if (center) drawable.push(traits.Center(center))
+			if (descriptor.geometry) {
+				drawable.push(traits.Geometry(descriptor.geometry))
+				const center = descriptor.geometry.center
+				if (center) drawable.push(traits.Center(center))
+			}
 		}
 
 		const entity = world.spawn(
-			traits.Name(previewName(descriptor.name)),
+			traits.Name(ghostName(descriptor.name)),
 			traits.NonSelectable,
 			traits.Matrix(descriptorLocalPose(descriptor, start).toMatrix4()),
 			PreviewGhost,
@@ -195,7 +239,7 @@ export const spawnPreviewGhosts = (
 		)
 
 		ghosts.entities.push(entity)
-		if (drawable.length > 0) ghosts.drawn += 1
+		if (hasCollider) ghosts.drawn += 1
 		if (descriptor.kind === 'joint') ghosts.joints.push({ descriptor, entity })
 	}
 }

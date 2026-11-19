@@ -19,6 +19,7 @@ import { Pose } from '$lib/math'
 import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
 
 import { type PartComponentPatch, patchPartComponent } from './patchPartComponent'
+import { removePartComponent } from './removePartComponent'
 
 const key = Symbol('part-config-context')
 
@@ -32,8 +33,17 @@ export interface PartComponent {
 	visualizer?: Record<string, unknown>
 }
 
+/** The fields of a `modules` entry this app writes, not the whole entry. */
+export interface PartModule {
+	type: 'registry'
+	name: string
+	module_id: string
+	version: string
+}
+
 export interface PartConfig {
 	components: PartComponent[]
+	modules?: PartModule[]
 	fragment_mods?: {
 		fragment_id: string
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,6 +104,11 @@ export interface PartConfigContext {
 	 * with only a machine connection, where config editing has nowhere to go.
 	 */
 	readonly hasConfigSource: boolean
+	/**
+	 * Whether `save` writes the config itself. False when embedded, where an edit stays
+	 * staged in the host until the user saves it there.
+	 */
+	readonly canSave: boolean
 	/** Why the config is unavailable — see `LocalPartConfig.error`. */
 	error?: string
 
@@ -105,13 +120,20 @@ export interface PartConfigContext {
 	) => void
 	deleteFrame: (componentName: string) => void
 	createFrame: (componentName: string) => void
-	/** Appends `component` to the part's own components. A name already in the config is left alone. */
-	createComponent: (component: PartComponent) => void
+	/**
+	 * Appends `component` to the part's own components. A name already in the config is left alone.
+	 *
+	 * @param module Appended to the part's modules in the same edit, unless one with its `module_id`
+	 *   is already there, so the model `component` names has something to load it.
+	 */
+	createComponent: (component: PartComponent, module?: PartModule) => void
 	/**
 	 * Replaces the fields in `patch` on a part-owned component, as one undo step. A fragment's
 	 * component is left alone.
 	 */
 	updateComponent: (componentName: string, patch: PartComponentPatch) => void
+	/** Removes a part-owned component, as one undo step. Its modules stay. */
+	deleteComponent: (componentName: string) => void
 	save: () => void
 	discardChanges: () => void
 	canUndoFrameEdit: boolean
@@ -290,7 +312,7 @@ export const providePartConfig = (
 		config.set(newConfig)
 	}
 
-	const createPartComponent = (component: PartComponent) => {
+	const createPartComponent = (component: PartComponent, module?: PartModule) => {
 		const newConfig = getCurrent()
 		const components = newConfig.components ?? []
 
@@ -299,6 +321,12 @@ export const providePartConfig = (
 		}
 
 		newConfig.components = [...components, component]
+
+		const modules = newConfig.modules ?? []
+		if (module && !modules.some(({ module_id }) => module_id === module.module_id)) {
+			newConfig.modules = [...modules, module]
+		}
+
 		config.set(newConfig)
 	}
 
@@ -467,6 +495,9 @@ export const providePartConfig = (
 		get hasConfigSource() {
 			return config.hasConfigSource
 		},
+		get canSave() {
+			return config.save !== undefined
+		},
 		get error() {
 			return config.error
 		},
@@ -504,14 +535,21 @@ export const providePartConfig = (
 				createFragmentFrame(fragmentId, componentName)
 			}
 		},
-		createComponent: (component: PartComponent) => {
+		createComponent: (component: PartComponent, module?: PartModule) => {
 			markHistoryActive()
-			createPartComponent(component)
+			createPartComponent(component, module)
 		},
 		updateComponent: (componentName: string, patch: PartComponentPatch) => {
 			markHistoryActive()
 			const newConfig = getCurrent()
 			if (patchPartComponent(newConfig, componentName, patch)) {
+				config.set(newConfig)
+			}
+		},
+		deleteComponent: (componentName: string) => {
+			markHistoryActive()
+			const newConfig = getCurrent()
+			if (removePartComponent(newConfig, componentName)) {
 				config.set(newConfig)
 			}
 		},

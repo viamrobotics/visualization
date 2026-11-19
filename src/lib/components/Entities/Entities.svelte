@@ -2,7 +2,7 @@
 	import { Not } from 'koota'
 
 	import { traits, useQuery } from '$lib/ecs'
-	import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
+	import { matchModel, modelKey, use3DModels } from '$lib/hooks/use3DModels.svelte'
 	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
 
@@ -21,6 +21,7 @@
 	import Spheres from './Spheres.svelte'
 
 	const frameEntities = useQuery(traits.FramesAPI)
+	const ghostEntities = useQuery(traits.GhostModelKey)
 	const meshEntities = useQuery(Not(traits.Points), traits.BufferGeometry)
 	const points = useQuery(traits.Points)
 	const lines = useQuery(traits.LinePositions)
@@ -38,10 +39,11 @@
 	 * covers: every other frame would mount a component that renders nothing, and
 	 * this list is every frame in the scene. Reading `Name` untracked is safe
 	 * because a renamed frame is respawned — `useFrames` keys its entities by name.
+	 * Ghosts of those frames join through `GhostModelKey`, which is set at spawn.
 	 */
 	const modelFrameEntities = $derived(
-		frameEntities.current.filter(
-			(entity) => matchModel(entity.get(traits.Name), models.current) !== undefined
+		[...frameEntities.current, ...ghostEntities.current].filter(
+			(entity) => matchModel(modelKey(entity), models.current) !== undefined
 		)
 	)
 </script>

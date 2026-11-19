@@ -60,20 +60,45 @@
 		if (size) currentSize = size
 	})
 
+	// zag works in viewport coordinates. Callers work in scene coordinates, so positions they persist
+	// don't depend on how much host chrome sits above the scene.
+	const toViewport = (scenePosition: { x: number; y: number }) => {
+		const sceneRect = dom.getBoundingClientRect()
+		return { x: scenePosition.x + sceneRect.x, y: scenePosition.y + sceneRect.y }
+	}
+
+	const toScene = (details: floatingPanel.PositionChangeDetails) => {
+		const sceneRect = dom.getBoundingClientRect()
+		return {
+			position: { x: details.position.x - sceneRect.x, y: details.position.y - sceneRect.y },
+		}
+	}
+
+	const initialPosition = untrack(() =>
+		toViewport(
+			defaultPosition ?? {
+				x: dom.clientWidth / 2 - defaultSize.width / 2,
+				y: dom.clientHeight / 2 - defaultSize.height / 2,
+			}
+		)
+	)
+
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
 		size: currentSize,
-		defaultPosition: defaultPosition ?? {
-			x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
-			y: dom.clientHeight / 2 - defaultSize.width / 2 + dom.clientTop,
-		},
+		defaultPosition: initialPosition,
 		resizable,
 		allowOverflow: false,
 		strategy: 'absolute' as const,
+		getBoundaryEl: () => dom,
 		persistRect,
 		open: isOpen,
 		...props,
+		onPositionChange: (details: floatingPanel.PositionChangeDetails) =>
+			props.onPositionChange?.(toScene(details)),
+		onPositionChangeEnd: (details: floatingPanel.PositionChangeDetails) =>
+			props.onPositionChangeEnd?.(toScene(details)),
 		onSizeChange: (details: floatingPanel.SizeChangeDetails) => {
 			// Controlled panels have to adopt the drag's own result, or a resize snaps straight back.
 			if (currentSize) currentSize = details.size

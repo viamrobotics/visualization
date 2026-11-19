@@ -12,10 +12,11 @@ rules on placement, structure, and naming that this guide assumes. The examples 
 Vitest and TypeScript, but the principles they illustrate apply to any test runner with a
 `describe`/`it` shape.
 
-## Rule — follow without deliberation
+## Rule
 
-- **Pick one suffix per repo, `.test.ts` or `.spec.ts`, and never mix them.** Two conventions
-  mean every glob in the repo has to list both, and one of them eventually gets missed.
+- **Pick one suffix per package, `.test.ts` or `.spec.ts`, and never mix them within one.**
+  Two conventions mean every glob in the package has to list both, and one of them
+  eventually gets missed.
 - **Exclude tests from the build.** A test under a compiled source root is emitted into the
   published output and imports the test runner, which is a dev dependency. Add the exclude to
   the build config, then check the output directory for a `__tests__` after building. Checked
@@ -25,14 +26,13 @@ Vitest and TypeScript, but the principles they illustrate apply to any test runn
   rely on. Ordinary application code does not need one, since a runtime test already covers the
   values that flow through it. Use Vitest's built-in `expectTypeOf`, or `tsd`.
 - **Enable Vitest's `typecheck` for a type test to run at all.** Vitest strips types by default
-  rather than checking them, the same trap `CLAUDE.md` warns about for the whole repo. Without
-  `typecheck: { enabled: true }` in the Vitest config, a file full of `expectTypeOf` assertions
-  reports green while checking nothing. Checked mechanically, and only against Vitest's own
-  `expectTypeOf`, not `tsd`.
+  rather than checking them. Without `typecheck: { enabled: true }` in the Vitest config, a file
+  full of `expectTypeOf` assertions reports green while checking nothing. Checked mechanically,
+  and only against Vitest's own `expectTypeOf`, not `tsd`.
 
 ## Checked mechanically
 
-`test-layout.mjs` catches a repo mixing `.test.` and `.spec.` suffixes (shared with
+`test-layout.mjs` catches a package mixing `.test.` and `.spec.` suffixes (shared with
 `testing-javascript.md`) and a test file leaked into the build output. `test-config.mjs`
 catches a file using `expectTypeOf` with no vitest config enabling `typecheck`. Whether a type
 test is worth writing at all stays a human read.

@@ -10,6 +10,8 @@ paths:
 
 Assumes `three.md`. This is the Svelte binding residue only, not a restatement of the base rule.
 
+Fetch Threlte's upstream doc URLs from `../reference/three-upstream-docs-threlte.md` rather than recalling a signature.
+
 ## Handing an object to the scene graph
 
 Use `<T>` to declare Three.js objects in a Threlte scene, and `<T is={obj} />` to hand a

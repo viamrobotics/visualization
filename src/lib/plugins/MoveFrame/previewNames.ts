@@ -1,4 +1,5 @@
 const PREFIX = 'preview:'
+const SAVED_POSE_PREFIX = 'saved-pose:'
 
 /**
  * The name a ghost of `frameName` carries.
@@ -11,8 +12,20 @@ const PREFIX = 'preview:'
 export const previewName = (frameName: string): string => `${PREFIX}${frameName}`
 
 /**
- * The live frame a preview name mirrors, or the name unchanged when it is already a live one.
- * Read rather than parsed: the prefix is this module's own, not something RDK wrote.
+ * The name a saved pose's ghost of `frameName` carries. Scoped by saver, since two savers of the
+ * same arm can be shown at once. Resource names cannot contain `:`, so the saver ends at the first.
  */
-export const liveFrameName = (name: string): string =>
-	name.startsWith(PREFIX) ? name.slice(PREFIX.length) : name
+export const savedPoseName = (saverName: string, frameName: string): string =>
+	`${SAVED_POSE_PREFIX}${saverName}:${frameName}`
+
+/**
+ * The live frame a ghost name mirrors, or the name unchanged when it is already a live one.
+ * Read rather than parsed: the prefixes are this module's own, not something RDK wrote.
+ */
+export const liveFrameName = (name: string): string => {
+	if (name.startsWith(PREFIX)) return name.slice(PREFIX.length)
+	if (!name.startsWith(SAVED_POSE_PREFIX)) return name
+
+	const scoped = name.slice(SAVED_POSE_PREFIX.length)
+	return scoped.slice(scoped.indexOf(':') + 1)
+}

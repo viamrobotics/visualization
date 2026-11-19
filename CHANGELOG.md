@@ -1,5 +1,34 @@
 # visualization
 
+## 3.3.1
+
+### Patch Changes
+
+- a59be0c: Fix floating panels rendering above the scene and stopping short of its bottom edge when the host app uses zag 1.45 or newer.
+
+## 3.3.0
+
+### Minor Changes
+
+- e6f371c: Add Viam account login for picking machines in the local visualizer.
+
+### Patch Changes
+
+- 663a672: The move panel splits into Move and Preview tabs, each with a single action, and the Move tab offers Save current pose at its bottom right.
+- 663a672: Arm ghosts draw as tinted 3D models when arm models are shown.
+- 663a672: Move mode can save an arm's current pose as an arm-position-saver, show saved poses as ghosts from a new Saved poses folder in the world tree, move the arm back to one, and delete one.
+
+## 3.2.0
+
+### Minor Changes
+
+- b874b56: Update the desktop app in the background on Windows (installer build) and Linux (AppImage and .deb), installing the new version when the app quits.
+
+### Patch Changes
+
+- 742b32e: Keep floating panels inside the scene when the host app renders chrome above it.
+- 6c9f81d: Update the desktop app to Electron 45.2.1, which carries Chromium security fixes.
+
 ## 3.1.0
 
 ### Minor Changes

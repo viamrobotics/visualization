@@ -3,8 +3,15 @@ import { BoxGeometry, Matrix4, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '$lib/ecs'
+import { modelKey } from '$lib/hooks/use3DModels.svelte'
 
-import { clearMoveGhosts, createMoveGhosts, rigidMoveDelta, syncMoveGhosts } from '../moveGhosts'
+import {
+	clearMoveGhosts,
+	createMoveGhosts,
+	rigidMoveDelta,
+	syncGhostTriads,
+	syncMoveGhosts,
+} from '../moveGhosts'
 
 /** A metre along +x — enough to tell a ghost's transform from its source's. */
 const delta = new Matrix4().makeTranslation(1, 0, 0)
@@ -97,6 +104,14 @@ describe('syncMoveGhosts', () => {
 		expect(ghost.has(traits.NonSelectable)).toBe(true)
 	})
 
+	it('looks up the 3D model of the link it copies', () => {
+		const child = spawnFrame(root, 1, traits.Name('arm:upper_arm_link'))
+
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		expect(modelKey(ghosts.get(child)!)).toBe('arm:upper_arm_link')
+	})
+
 	it('ghosts a frame with no geometry as an axes triad', () => {
 		const child = world.spawn(
 			relations.ChildOf(root),
@@ -107,6 +122,20 @@ describe('syncMoveGhosts', () => {
 		syncMoveGhosts(world, root, delta, ghosts)
 
 		expect(ghosts.get(child)?.has(traits.ShowAxesHelper)).toBe(true)
+	})
+
+	it('draws a bare link by its 3D model rather than a triad when the model is on screen', () => {
+		const child = world.spawn(
+			relations.ChildOf(root),
+			traits.FramesAPI,
+			traits.Name('arm:wrist_link'),
+			traits.WorldMatrix(new Matrix4())
+		)
+		syncMoveGhosts(world, root, delta, ghosts)
+
+		syncGhostTriads(ghosts, (key) => key === 'arm:wrist_link')
+
+		expect(ghosts.get(child)?.has(traits.ShowAxesHelper)).toBe(false)
 	})
 
 	// IK re-solves the dragged frame's own chain, and the entity sits at the

@@ -110,6 +110,9 @@
     }
   ],
   "moduleOptions": {
+    "orchestrate": [
+      "research"
+    ],
     "svelte/svelte": [],
     "three/three": [
       "threlte"
