@@ -42,9 +42,20 @@ export interface RawKinematicsLink {
 	geometry?: RawKinematicsGeometry
 }
 
+/**
+ * rdk's `JointConfig`. `min` and `max` are degrees for a revolute joint and mm for a prismatic one.
+ * `axis` is a Go `r3.Vector` marshalled without tags, so its keys arrive capitalized, but config
+ * files written by hand use lowercase and rdk's case-insensitive unmarshal accepts both.
+ */
 export interface RawKinematicsJoint {
 	id: string
 	parent?: string
+	type?: string
+	axis?: { X?: number; Y?: number; Z?: number; x?: number; y?: number; z?: number }
+	min?: number
+	max?: number
+	/** Degrees or mm per second, as `min` and `max`. */
+	max_velocity?: number
 }
 
 /**

@@ -23,6 +23,7 @@
 		Monitor,
 		MotionPlanReplayer,
 		MoveFrame,
+		SceneExport,
 		SensorCoverage,
 		Settings,
 		WorldTree,
@@ -137,6 +138,7 @@
 					<Machines {launch} />
 					<WorldTree />
 					<Settings />
+					<SceneExport />
 					<FileDrop />
 					<FramePov />
 				{/if}

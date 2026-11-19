@@ -816,6 +816,7 @@
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
 		"d3-force": "^3.0.0",
+		"fflate": "0.8.3",
 		"filtrex": "^3.1.0",
 		"koota": "0.6.6",
 		"lodash-es": "4.18.1",
