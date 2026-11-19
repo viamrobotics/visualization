@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, IconButton, Input } from '@viamrobotics/prime-core'
+	import { tick } from 'svelte'
 
 	import { selectOnly, traits, useWorld } from '$lib/ecs'
 	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
@@ -13,6 +14,7 @@
 	import { obstacleEditError, type ObstacleEditScope } from '$lib/obstacleEditError'
 	import {
 		addObstacleGeometry,
+		duplicateObstacleGeometry,
 		patchObstacleGeometry,
 		removeObstacleGeometry,
 	} from '$lib/obstacleGeometryList'
@@ -43,32 +45,59 @@
 	/** A label problem sits under its row, any other under the list. */
 	let error = $state<{ rowIndex: number | undefined; message: string } | undefined>()
 
+	const rows = $state<HTMLLIElement[]>([])
+
+	/** The label of a duplicate not yet in the list. Its row's label field takes focus once it renders. */
+	let pendingFocusLabel = $state<string | undefined>()
+
+	$effect(() => {
+		if (pendingFocusLabel === undefined) return
+		const index = geometries.findIndex(
+			(entry) => explicitGeometryLabel(entry) === pendingFocusLabel
+		)
+		if (index === -1) return
+
+		pendingFocusLabel = undefined
+		void tick().then(() => {
+			const input = rows[index]?.querySelector('input')
+			input?.focus()
+			input?.select()
+		})
+	})
+
 	/**
 	 * Writes `next` when rdk would accept it, preferring a problem with the entry at `index`. Each
-	 * shape's saved appearance follows it as `move` says.
+	 * shape's saved appearance follows it as `move` says. Returns whether it wrote.
 	 */
 	const commit = (
 		next: ObstacleGeometryConfig[],
 		index: number | undefined,
 		scope: ObstacleEditScope,
 		move: ShapeIndexMove
-	) => {
+	): boolean => {
 		const issue = obstacleEditError(geometries, next, index, scope)
 		error = issue && {
 			rowIndex: issue.scope === 'label' ? index : undefined,
 			message: issue.message,
 		}
-		if (issue) return
+		if (issue) return false
 
 		partConfig.updateComponent(component.name, {
 			attributes: { ...component.attributes, geometries: next },
 			visualizer: complexObstacleVisualizer(component, next, move),
 		})
+		return true
 	}
 
 	const handleAdd = () => {
 		const next = addObstacleGeometry(geometries).geometries
 		commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE)
+	}
+
+	const handleDuplicate = (index: number) => {
+		const { geometries: next, label } = duplicateObstacleGeometry(geometries, index)
+		if (label === undefined) return
+		if (commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE)) pendingFocusLabel = label
 	}
 
 	const handleRemove = (index: number) => {
@@ -131,7 +160,10 @@
 			{@const label = obstacleGeometryLabel(entry, index)}
 			{@const labelError = error?.rowIndex === index ? error.message : undefined}
 			{@const labelErrorId = `${fieldId}-${index}-label-error`}
-			<li class="flex flex-col gap-0.5 p-1">
+			<li
+				bind:this={rows[index]}
+				class="flex flex-col gap-0.5 p-1"
+			>
 				<div class="flex items-center gap-1">
 					<div class="min-w-0 flex-1">
 						<Input
@@ -150,6 +182,13 @@
 						variant="ghost"
 						cx="shrink-0"
 						onclick={() => handleSelect(index)}
+					/>
+					<IconButton
+						icon="content-copy"
+						label={`Duplicate ${label}`}
+						variant="ghost"
+						cx="shrink-0"
+						onclick={() => handleDuplicate(index)}
 					/>
 					<IconButton
 						icon="trash-can-outline"
