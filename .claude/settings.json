@@ -55,28 +55,16 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/scripts/lint-format-fix.mjs\" ] && exec node \"$CLAUDE_PROJECT_DIR/.claude/scripts/lint-format-fix.mjs\" || { echo \"[houserules] lint-format-fix.mjs missing. Run: npx houserules update\" >&2; exit 1; }",
-						"statusMessage": "Running lint/format auto-fix",
-						"timeout": 120
-					},
-					{
-						"type": "command",
 						"command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/scripts/changeset-check.mjs\" ] && exec node \"$CLAUDE_PROJECT_DIR/.claude/scripts/changeset-check.mjs\" || { echo \"[houserules] changeset-check.mjs missing. Run: npx houserules update\" >&2; exit 1; }"
 					},
 					{
 						"type": "command",
 						"command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/scripts/changeset-gate.mjs\" ] && exec node \"$CLAUDE_PROJECT_DIR/.claude/scripts/changeset-gate.mjs\" || { echo \"[houserules] changeset-gate.mjs missing. Run: npx houserules update\" >&2; exit 1; }"
-					}
-				]
-			}
-		],
-		"SubagentStop": [
-			{
-				"hooks": [
+					},
 					{
 						"type": "command",
-						"command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/scripts/lint-format-fix.mjs\" ] && exec node \"$CLAUDE_PROJECT_DIR/.claude/scripts/lint-format-fix.mjs\" || { echo \"[houserules] lint-format-fix.mjs missing. Run: npx houserules update\" >&2; exit 1; }",
-						"statusMessage": "Running lint/format auto-fix",
+						"command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-edited-files.mjs\"",
+						"statusMessage": "Linting files edited this turn",
 						"timeout": 120
 					}
 				]
@@ -103,6 +91,11 @@
 					{
 						"type": "command",
 						"command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/scripts/regen-on-edit.mjs\" ] && exec node \"$CLAUDE_PROJECT_DIR/.claude/scripts/regen-on-edit.mjs\" || { echo \"[houserules] regen-on-edit.mjs missing. Run: npx houserules update\" >&2; exit 1; }"
+					},
+					{
+						"type": "command",
+						"command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited-file.mjs\"",
+						"timeout": 30
 					}
 				]
 			}

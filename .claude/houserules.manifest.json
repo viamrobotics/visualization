@@ -1,9 +1,8 @@
 {
   "kitVersion": "0.4.1",
-  "installedAt": "2026-09-30T16:17:02.061Z",
+  "installedAt": "2026-11-19T14:36:26.965Z",
   "modules": [
     "core",
-    "lint-fix",
     "session-context",
     "rename",
     "plans",
@@ -51,7 +50,6 @@
     ".claude/templates/.gitignore": "ff43e4750f6889a22672491abc89633a183a8d8929f0922edadd5f06ab9a2843",
     ".claude/scripts/.gitignore": "5837676d0344c53e2ecc4d8b7a2e8a5ea36e6e670a398f31a82b2f53b02416ae",
     "CLAUDE.md": "5682aef88850f74f2c6ea9e40dc0e2b0f8b2cdce3330c268a2758af593c4727a",
-    ".claude/scripts/lint-format-fix.mjs": "114a77adf1f9904a0dce8f707624929d86523897613fe8d6b14f687497eec202",
     ".claude/scripts/session-context.mjs": "860a9917df74e92856198de91fc9a31fd79583d60bc7a36fbe5dc0d361097550",
     ".claude/scripts/rename.mjs": "5f9a182c589736ea4d49b918929463947bdebf42e5a9d33879d53327bf26f6ab",
     ".claude/skills/plan-project/SKILL.md": "990befc8f8b3fa7359b58b12334d4d413921f753bac4abef457c24b5189e8eec",
@@ -207,16 +205,6 @@
         "script": "ledger-inject.mjs"
       },
       {
-        "event": "Stop",
-        "matcher": null,
-        "script": "lint-format-fix.mjs"
-      },
-      {
-        "event": "SubagentStop",
-        "matcher": null,
-        "script": "lint-format-fix.mjs"
-      },
-      {
         "event": "SessionStart",
         "matcher": null,
         "script": "session-context.mjs"
@@ -264,5 +252,55 @@
       "allow:Bash(node .claude/scripts/wcag.mjs:*)",
       "allow:Bash(node .claude/scripts/a11y-markup.mjs:*)"
     ]
-  }
+  },
+  "plugins": [
+    {
+      "name": "@houserules/plugin-prose",
+      "alias": "prose",
+      "version": "0.1.4",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-prose@0.1.4_@houserules+api@0.3.2/node_modules/@houserules/plugin-prose"
+    },
+    {
+      "name": "@houserules/plugin-typescript",
+      "alias": "ts",
+      "version": "0.1.2",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-typescript@0.1.2_@houserules+api@0.3.2/node_modules/@houserules/plugin-typescript"
+    },
+    {
+      "name": "@houserules/plugin-svelte",
+      "alias": "svelte",
+      "version": "0.1.2",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-svelte@0.1.2_@houserules+api@0.3.2/node_modules/@houserules/plugin-svelte"
+    },
+    {
+      "name": "@houserules/plugin-three",
+      "alias": "three",
+      "version": "0.2.1",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-three@0.2.1_@houserules+api@0.3.2/node_modules/@houserules/plugin-three"
+    },
+    {
+      "name": "@houserules/plugin-testing",
+      "alias": "testing",
+      "version": "0.2.1",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-testing@0.2.1_@houserules+api@0.3.2/node_modules/@houserules/plugin-testing"
+    },
+    {
+      "name": "@houserules/plugin-changesets",
+      "alias": "changesets",
+      "version": "0.2.2",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-changesets@0.2.2_@houserules+api@0.3.2/node_modules/@houserules/plugin-changesets"
+    },
+    {
+      "name": "@houserules/plugin-design",
+      "alias": "design",
+      "version": "0.2.2",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-design@0.2.2_@houserules+api@0.3.2/node_modules/@houserules/plugin-design"
+    },
+    {
+      "name": "@houserules/plugin-accessibility",
+      "alias": "accessibility",
+      "version": "0.1.3",
+      "dir": "/Users/michealparks/Github/acdc/node_modules/.pnpm/@houserules+plugin-accessibility@0.1.3_@houserules+api@0.3.2/node_modules/@houserules/plugin-accessibility"
+    }
+  ]
 }

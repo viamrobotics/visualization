@@ -81,7 +81,7 @@
   },
   "changesets": {
     "enabled": true,
-    "stopCheck": true,
+    "stopCheck": false,
     "baseBranch": "main"
   },
   "ledger": {
