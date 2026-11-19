@@ -16,6 +16,7 @@ Renders a Viam Geometry object
 
 	import { cloneWithOwnMaterials } from './cloneWithOwnMaterials'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
+	import { setModelGhostAppearance } from './setModelGhostAppearance'
 	import { setModelOpacity } from './setModelOpacity'
 	import { setModelWireframe } from './setModelWireframe'
 
@@ -41,14 +42,20 @@ Renders a Viam Geometry object
 	 * reveal. A user's edit is about whatever they can see, so that one lands.
 	 */
 	const override = useTrait(() => entity, traits.OpacityOverride)
-	const opacity = $derived(override.current ?? 1)
+	const ghostModelKey = useTrait(() => entity, traits.GhostModelKey)
+	const ghostColor = useTrait(() => entity, traits.Color)
+	// A ghost's `Opacity` is its translucency as a ghost, not a collider's, so it does apply.
+	const ghostOpacity = useTrait(() => entity, traits.Opacity)
+
+	const isGhost = $derived(ghostModelKey.current !== undefined)
+	const opacity = $derived(isGhost ? (ghostOpacity.current ?? 1) : (override.current ?? 1))
 
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
 			return
 		}
 
-		const match = matchModel(name.current, models.current)
+		const match = matchModel(ghostModelKey.current ?? name.current, models.current)
 		return match ? cloneWithOwnMaterials(match) : undefined
 	})
 
@@ -80,6 +87,12 @@ Renders a Viam Geometry object
 	$effect(() => {
 		if (!model) return
 		setModelOpacity(model, opacity)
+		invalidate()
+	})
+
+	$effect(() => {
+		if (!model || !isGhost || !ghostColor.current) return
+		setModelGhostAppearance(model, ghostColor.current)
 		invalidate()
 	})
 

@@ -108,6 +108,13 @@ export const InheritedInvisible = trait(() => true)
 export const ColliderHidden = trait()
 
 /**
+ * The `<component>:<id>` of the arm link this ghost copies, so it finds that link's 3D model the
+ * way a live link finds its own by `Name`. A ghost's model is tinted with the ghost's `Color` and
+ * faded to its `Opacity`, so it never reads as a second real arm.
+ */
+export const GhostModelKey = trait(() => '')
+
+/**
  * Represents that an entity is composed of many instances, so that the treeview and
  * details panel may display all instances
  */
@@ -260,6 +267,22 @@ export const DroppedFile = trait(() => true)
  * targets) exclude it with `Not(FramelessComponent)`.
  */
 export const FramelessComponent = trait()
+
+/**
+ * What an `erh:vmodutils:arm-position-saver` switch will drive `arm` back to. Rides on a
+ * `FramelessComponent` row, since the saver is a resource with no frame of its own.
+ *
+ * `joints` are the arm's inputs as RDK holds them, radians or millimetres, ready for forward
+ * kinematics. `pose` is the end of the arm in world, set only when no `joints` were saved. Both are
+ * unset on a saver that has saved nothing yet.
+ */
+export const SavedPose = trait(() => ({
+	arm: '',
+	/** The motion service that plans the saver's moves, or `''` when it moves the joints directly. */
+	motion: '',
+	joints: undefined as number[] | undefined,
+	pose: undefined as Pose | undefined,
+}))
 
 /**
  * This entity has somewhere for an edit to land: a config entry, or an ad-hoc

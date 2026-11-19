@@ -2,8 +2,15 @@ import type { Entity } from 'koota'
 import type { Matrix4 } from 'three'
 
 import { traits, useWorld } from '$lib/ecs'
+import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
 
-import { clearMoveGhosts, createMoveGhosts, rigidMoveDelta, syncMoveGhosts } from './moveGhosts'
+import {
+	clearMoveGhosts,
+	createMoveGhosts,
+	rigidMoveDelta,
+	syncGhostTriads,
+	syncMoveGhosts,
+} from './moveGhosts'
 
 /**
  * Keep a staged move's ghost entities in step with the drag, for as long as the
@@ -31,13 +38,18 @@ export const useMoveGhosts = (
 	targetWorldMatrix: () => Matrix4 | undefined
 ): void => {
 	const world = useWorld()
+	const models = use3DModels()
 	const ghosts = createMoveGhosts()
+
+	const drawsModel = (key: string) =>
+		models.shouldRender && matchModel(key, models.current) !== undefined
 
 	const sync = () => {
 		const current = currentWorldMatrix()
 		const target = targetWorldMatrix()
 		const delta = current && target ? rigidMoveDelta(current, target) : undefined
 		syncMoveGhosts(world, root(), delta, ghosts)
+		syncGhostTriads(ghosts, drawsModel)
 	}
 
 	$effect(sync)

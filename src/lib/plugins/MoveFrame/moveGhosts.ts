@@ -115,6 +115,31 @@ const shapeKind = (entity: Entity): number =>
 	(entity.has(traits.BufferGeometry) ? 0b01_0000 : 0) |
 	(entity.has(traits.Center) ? 0b10_0000 : 0)
 
+/** The `shapeKind` bits that are a collider shape, as opposed to the `Center` offset. */
+const COLLIDER_BITS = 0b01_1111
+
+/**
+ * Give each ghost with no collider either its link's 3D model or an axes triad, never both, the way
+ * the live link draws. `drawsModel` says whether the model keyed `<component>:<id>` is on screen.
+ *
+ * Kept apart from `syncMoveGhosts` because models load and toggle on their own schedule, and the
+ * triad is not part of `shapeKind`, so swapping it never respawns a ghost.
+ */
+export const syncGhostTriads = (
+	ghosts: MoveGhosts,
+	drawsModel: (modelKey: string) => boolean
+): void => {
+	for (const ghost of ghosts.values()) {
+		if (!ghost.isAlive() || (shapeKind(ghost) & COLLIDER_BITS) !== 0) continue
+
+		const key = ghost.get(traits.GhostModelKey)
+		const showsTriad = key === undefined || !drawsModel(key)
+
+		if (showsTriad && !ghost.has(traits.ShowAxesHelper)) ghost.add(traits.ShowAxesHelper)
+		if (!showsTriad && ghost.has(traits.ShowAxesHelper)) ghost.remove(traits.ShowAxesHelper)
+	}
+}
+
 /** Set on a ghost's cloned geometry, naming the geometry it was cloned from. */
 const GHOST_OF = 'moveGhostOf'
 
@@ -162,6 +187,9 @@ const spawnGhost = (world: World, source: Entity): Entity => {
 
 	const center = source.get(traits.Center)
 	if (center) shape.push(traits.Center(center))
+
+	const sourceName = source.get(traits.Name)
+	if (sourceName) shape.push(traits.GhostModelKey(sourceName))
 
 	return world.spawn(
 		GhostOf(source),
