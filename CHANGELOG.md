@@ -1,5 +1,11 @@
 # visualization
 
+## 3.3.1
+
+### Patch Changes
+
+- a59be0c: Fix floating panels rendering above the scene and stopping short of its bottom edge when the host app uses zag 1.45 or newer.
+
 ## 3.3.0
 
 ### Minor Changes
