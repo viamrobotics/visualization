@@ -203,6 +203,7 @@
 			"files": [
 				"svelte.config.js",
 				"src/**",
+				"!src/**/*.inline.ts",
 				"tsconfig.json"
 			],
 			"output": [
@@ -428,7 +429,8 @@
 			"output": [],
 			"dependencies": [
 				"test:rdk-golden",
-				"proto:gen-ts"
+				"proto:gen-ts",
+				"build:workers"
 			],
 			"packageLocks": [
 				"pnpm-lock.yaml"

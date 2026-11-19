@@ -4,7 +4,9 @@
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
 
 	import { useWorld } from '$lib/ecs'
+	import { createStreamStats } from '$lib/hooks/createStreamStats'
 	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { useWorldStateStreamStats } from '$lib/hooks/worldStateStreamStats'
 	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
 	import { createWorldStateSync, DEFAULT_WORLD_STATE_TIMING } from './worldStateSync'
@@ -17,6 +19,11 @@
 	let { partID, name }: Props = $props()
 
 	const { invalidate } = useThrelte()
+
+	const stats = createStreamStats()
+	const streamStats = useWorldStateStreamStats()
+
+	$effect(() => streamStats?.register(name, stats))
 
 	const client = createResourceClient(
 		WorldStateStoreClient,
@@ -40,6 +47,7 @@
 			return () => cancelAnimationFrame(id)
 		},
 		timing: DEFAULT_WORLD_STATE_TIMING,
+		stats,
 	})
 
 	$effect(() => {

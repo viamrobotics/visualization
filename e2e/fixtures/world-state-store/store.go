@@ -28,7 +28,6 @@ const updatingPointCloudName = "updating-pointcloud"
 type TestStore struct {
 	resource.Named
 	resource.TriviallyReconfigurable
-	resource.TriviallyCloseable
 
 	logger logging.Logger
 
@@ -41,6 +40,15 @@ type TestStore struct {
 	// fans out to every subscriber so concurrent pages don't starve each other.
 	subsMu sync.Mutex
 	subs   map[chan worldstatestore.TransformChange]struct{}
+
+	// burstCancel stops the currently running burst loop, if any. A new burst
+	// replaces the running one rather than stacking with it. burstDone closes
+	// when that loop's goroutine actually returns. burstStarted closes once the
+	// goroutine has entered its select loop (used by tests for deterministic sequencing).
+	burstMu      sync.Mutex
+	burstCancel  context.CancelFunc
+	burstDone    chan struct{}
+	burstStarted chan struct{}
 
 	// Per-entity chunked point cloud data keyed by the formatted UUID string
 	// (matching what clients send back via get_entity_chunk).
@@ -79,6 +87,7 @@ func newStore(
 
 func (s *TestStore) Close(ctx context.Context) error {
 	s.cancel()
+	s.stopBurst()
 	s.subsMu.Lock()
 	for ch := range s.subs {
 		delete(s.subs, ch)
@@ -151,6 +160,8 @@ func (s *TestStore) DoCommand(ctx context.Context, cmd map[string]any) (map[stri
 		return s.update(cmd)
 	case "remove":
 		return s.remove(cmd)
+	case "burst":
+		return s.burst(cmd)
 	default:
 		return map[string]any{"status": "unknown command"}, nil
 	}

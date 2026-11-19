@@ -3,6 +3,7 @@
 	import { Folder, FpsGraph, Monitor, Pane, WaveformMonitor } from 'svelte-tweakpane-ui'
 
 	import { useWorld } from '$lib/ecs'
+	import { useWorldStateStreamStats } from '$lib/hooks/worldStateStreamStats'
 	import { createGpuFrameTimer } from '$lib/three/gpuFrameTimer'
 
 	/** Milliseconds between pane updates. Matches three-perf's 10 logs per second. */
@@ -50,6 +51,7 @@
 
 	const { autoRenderTask, mainStage, renderer, renderStage } = useThrelte()
 	const world = useWorld()
+	const streamStats = useWorldStateStreamStats()
 
 	const gpuTimer = createGpuFrameTimer(renderer)
 	const heapSupported = (performance as PerformanceWithMemory).memory !== undefined
@@ -79,6 +81,17 @@
 	})
 
 	let longFrameLog: { duration: number; end: number; source: string }[] = []
+
+	let streamLive = $state.raw({
+		appliedLastFlush: 0,
+		backlog: 0,
+		eventsPerSecond: 0,
+		flushFrameMs: 0,
+		flushMsWorst: 0,
+		flushMsMax: 0,
+		flushesPerSecond: 0,
+		stores: 0,
+	})
 
 	let activity = $state.raw(Array.from({ length: ACTIVITY_SAMPLES }, () => 0))
 
@@ -157,6 +170,66 @@
 		lastFramePublish = now
 	}
 
+	/** The long animation frame whose span contains `time`, or 0 ms when none does. */
+	const longFrameMsContaining = (time: number): number => {
+		for (const frame of longFrameLog) {
+			if (frame.end - frame.duration <= time && time <= frame.end) {
+				return frame.duration
+			}
+		}
+		return 0
+	}
+
+	/**
+	 * Rates and backlog sum across stores; flush times take the worst store. The frame
+	 * time comes from the newest flush, because the Svelte and koota work a flush queues
+	 * runs after its callback returns and only the long-animation-frame entry sees it.
+	 */
+	const summarizeStreamStats = (now: number): typeof streamLive => {
+		let eventsPerSecond = 0
+		let flushesPerSecond = 0
+		let appliedLastFlush = 0
+		let backlog = 0
+		// Max across each store's most-recent flush duration (worst-case last flush).
+		let flushMsWorst = 0
+		let flushMsMax = 0
+		let stores = 0
+		let latestFlushStart = Number.NaN
+
+		for (const [, stats] of streamStats?.entries() ?? []) {
+			const snapshot = stats.snapshot(now)
+			eventsPerSecond += snapshot.eventsPerSecond
+			flushesPerSecond += snapshot.flushesPerSecond
+			appliedLastFlush += snapshot.appliedLastFlush
+			backlog += snapshot.backlog
+			flushMsWorst = Math.max(flushMsWorst, snapshot.flushMsLast)
+			flushMsMax = Math.max(flushMsMax, snapshot.flushMsMax)
+			stores += 1
+
+			if (
+				!Number.isNaN(snapshot.lastFlushStart) &&
+				(Number.isNaN(latestFlushStart) || snapshot.lastFlushStart > latestFlushStart)
+			) {
+				latestFlushStart = snapshot.lastFlushStart
+			}
+		}
+
+		const flushFrameMs = Number.isNaN(latestFlushStart)
+			? 0
+			: longFrameMsContaining(latestFlushStart)
+
+		return {
+			appliedLastFlush,
+			backlog,
+			eventsPerSecond,
+			flushFrameMs,
+			flushMsWorst,
+			flushMsMax,
+			flushesPerSecond,
+			stores,
+		}
+	}
+
 	const publishLiveStats = (now: number): void => {
 		const { memory } = renderer.info
 		const cutoff = now - LONG_FRAME_WINDOW_MS
@@ -186,6 +259,10 @@
 		periodTotal = 0
 		periods = 0
 		lastLivePublish = now
+
+		if (streamStats !== undefined) {
+			streamLive = summarizeStreamStats(now)
+		}
 	}
 
 	useTask(
@@ -321,6 +398,41 @@
 			<Monitor
 				value={liveStats.source}
 				label="Blamed"
+			/>
+		</Folder>
+	{/if}
+
+	{#if streamStats !== undefined && streamLive.stores > 0}
+		<Folder title="World state stream">
+			<Monitor
+				value={streamLive.eventsPerSecond}
+				label="Events/s"
+				format={formatCount}
+			/>
+			<Monitor
+				value={streamLive.appliedLastFlush}
+				label="Applied/flush"
+				format={formatCount}
+			/>
+			<Monitor
+				value={streamLive.flushMsWorst}
+				label="Flush ms"
+				format={formatMs}
+			/>
+			<Monitor
+				value={streamLive.flushMsMax}
+				label="Flush max 1s"
+				format={formatMs}
+			/>
+			<Monitor
+				value={streamLive.flushFrameMs}
+				label="Flush frame ms"
+				format={formatMs}
+			/>
+			<Monitor
+				value={streamLive.backlog}
+				label="Backlog"
+				format={formatCount}
 			/>
 		</Folder>
 	{/if}

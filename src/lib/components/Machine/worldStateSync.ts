@@ -11,6 +11,7 @@ import {
 import { Matrix4 } from 'three'
 
 import type { useRelationships } from '$lib/hooks/useRelationships.svelte'
+import type { StreamStats } from '$lib/hooks/worldStateStreamStats'
 import type { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
 
 import { createChunkLoader } from '$lib/chunking'
@@ -70,6 +71,8 @@ interface WorldStateSyncOptions {
 	/** Runs `callback` before the next render, and returns a function that cancels it. */
 	requestFrame: (callback: () => void) => () => void
 	timing: WorldStateTiming
+	/** Receives one ingest per stream event and one record per flush. */
+	stats: Pick<StreamStats, 'recordIngest' | 'recordFlush'>
 }
 
 interface WorldStateSync {
@@ -125,6 +128,7 @@ export const createWorldStateSync = ({
 	invalidate,
 	requestFrame,
 	timing,
+	stats,
 }: WorldStateSyncOptions): WorldStateSync => {
 	let client: WorldStateClient | undefined
 	let session: Session | undefined
@@ -693,17 +697,18 @@ export const createWorldStateSync = ({
 			const heldUUIDs = held
 			if (heldUUIDs === 'all') return
 
-			if (heldUUIDs === undefined) {
-				const toApply = pendingEvents
-				pendingEvents = []
-				applyEvents(toApply)
-				return
-			}
-
-			const isHeld = (event: TransformEvent) => heldUUIDs.has(event.transform.uuidString)
+			const start = performance.now()
+			const isHeld = (event: TransformEvent) =>
+				heldUUIDs !== undefined && heldUUIDs.has(event.transform.uuidString)
 			const toApply = pendingEvents.filter((event) => !isHeld(event))
 			pendingEvents = pendingEvents.filter((event) => isHeld(event))
 			applyEvents(toApply)
+			stats.recordFlush({
+				start,
+				end: performance.now(),
+				applied: toApply.length,
+				backlog: pendingEvents.length,
+			})
 		})
 	}
 
@@ -727,6 +732,7 @@ export const createWorldStateSync = ({
 				if (!event.transform) continue
 
 				pendingEvents.push(event as TransformEvent)
+				stats.recordIngest(1)
 				scheduleFlush()
 			}
 		} catch (error) {

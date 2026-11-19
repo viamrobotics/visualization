@@ -8,6 +8,7 @@ import type { useRelationships } from '$lib/hooks/useRelationships.svelte'
 
 import { hierarchy, traits } from '$lib/ecs'
 import { ChildOf, SubEntityLink } from '$lib/ecs/relations'
+import { createStreamStats } from '$lib/hooks/createStreamStats'
 
 import { createWorldStateSync, type WorldStateTiming } from '../worldStateSync'
 import {
@@ -105,6 +106,7 @@ const startSync = async (store: FakeStore, expectedNames: string[], initialGener
 			return () => clearTimeout(id)
 		},
 		timing: TIMING,
+		stats: createStreamStats(),
 	})
 	mounted.push({ world, unmount, dispose: sync.dispose })
 

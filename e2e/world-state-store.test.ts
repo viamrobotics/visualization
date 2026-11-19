@@ -24,6 +24,7 @@ const runGoTest = (testPath: string) => {
 			},
 		})
 		console.log(output)
+		return output
 	} catch (error: unknown) {
 		const execError = error as { stdout?: string; stderr?: string; message?: string }
 		console.error('Go test failed:', execError.stdout ?? '', execError.stderr ?? '')
@@ -45,6 +46,29 @@ const selectInTree = async (page: Page, name: string) => {
 const readLocalZAxis = async (page: Page, name: string) => {
 	const { localMatrix } = await readEntityState(page, name)
 	return localMatrix?.slice(8, 11)
+}
+
+/** Prefix of the one machine-readable line `TestBurstScenario/Burst` prints. */
+const BURST_FINAL_PREFIX = 'BURST_FINAL '
+
+/** Rendered pose x may lag the store's final x by float formatting, never by a full millimetre. */
+const BURST_POSE_TOLERANCE_MM = 1
+
+/**
+ * Extracts the burst's final pose.x per box from the Go test's `BURST_FINAL`
+ * line, the one place that output is machine-readable rather than log noise.
+ */
+const parseBurstFinal = (output: string): Record<string, number> => {
+	const line = output.split('\n').find((entry) => entry.startsWith(BURST_FINAL_PREFIX))
+	if (!line) throw new Error('Go test output did not include a BURST_FINAL line')
+	return JSON.parse(line.slice(BURST_FINAL_PREFIX.length)) as Record<string, number>
+}
+
+/** Reads a read-only pose field rendered by `PoseDetails`'s `ImmutableField` snippet. */
+const readImmutableNumber = async (page: Page, ariaLabel: string): Promise<number> => {
+	const label = page.locator(`[aria-label="immutable ${ariaLabel}"]`)
+	const text = (await label.locator('..').textContent()) ?? ''
+	return Number.parseFloat(text.replaceAll(/[^0-9.+-]/g, ''))
 }
 
 const getWorldStateConfig = () => {
@@ -208,6 +232,34 @@ withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 
 	runGoTest('^TestPointCloudChunking$/Cleanup')
 	await expect(page.getByText('chunked-cloud', { exact: true })).toBeHidden({ timeout: 10000 })
+})
+
+withRobot('world state store burst', async ({ robotPage }) => {
+	const { page } = robotPage
+
+	await expect(page.getByText('test-box', { exact: true })).toBeVisible({ timeout: 30000 })
+
+	runGoTest('^TestBurstScenario$/Setup')
+	await expect(page.getByText('burst-box-0', { exact: true })).toBeVisible({ timeout: 10000 })
+
+	const before = await readRenderFrame(page)
+	const output = runGoTest('^TestBurstScenario$/Burst')
+	await waitForRenderIdle(page, { after: before })
+
+	const finalPositions = parseBurstFinal(output)
+
+	for (const [name, expectedX] of Object.entries(finalPositions)) {
+		await page.getByText(name, { exact: true }).click()
+		await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
+
+		const actualX = await readImmutableNumber(page, 'local position x coordinate')
+		expect(Math.abs(actualX - expectedX)).toBeLessThan(BURST_POSE_TOLERANCE_MM)
+	}
+
+	runGoTest('^TestBurstScenario$/Cleanup')
+	for (const name of Object.keys(finalPositions)) {
+		await expect(page.getByText(name, { exact: true })).toBeHidden({ timeout: 10000 })
+	}
 })
 
 withRobot.afterAll(async () => {

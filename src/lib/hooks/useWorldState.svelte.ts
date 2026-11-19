@@ -1,6 +1,8 @@
 import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
+import { provideWorldStateStreamStats } from './worldStateStreamStats'
+
 const key = Symbol('world-state-context')
 
 interface Context {
@@ -9,6 +11,7 @@ interface Context {
 }
 
 export const provideWorldStates = (partID: () => string) => {
+	provideWorldStateStreamStats()
 	const statuses = useResourceStatuses(partID, 'world_state_store')
 
 	const stores = $derived(

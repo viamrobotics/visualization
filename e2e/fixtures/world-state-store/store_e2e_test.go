@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"go.viam.com/rdk/logging"
 	robotclient "go.viam.com/rdk/robot/client"
@@ -181,6 +184,88 @@ func TestPointCloudUpdate(t *testing.T) {
 			"name":    "updating-pointcloud",
 		})
 		test.That(t, err, test.ShouldBeNil)
+	})
+}
+
+// TestBurstScenario runs the store's synthetic "burst" producer against five
+// transforms and reports each one's final pose.x as a single BURST_FINAL JSON
+// line, so the Playwright suite can compare it against what the rendered
+// store shows without racing the burst's own background ticker.
+func TestBurstScenario(t *testing.T) {
+	if os.Getenv("VIAM_E2E_HOST") == "" || os.Getenv("VIAM_E2E_API_KEY_ID") == "" ||
+		os.Getenv("VIAM_E2E_API_KEY") == "" {
+		t.Skip("Missing VIAM_E2E_HOST, VIAM_E2E_API_KEY_ID, or VIAM_E2E_API_KEY")
+	}
+
+	ws := getWSClient(t)
+	ctx := context.Background()
+
+	burstBoxNames := []string{
+		"burst-box-0",
+		"burst-box-1",
+		"burst-box-2",
+		"burst-box-3",
+		"burst-box-4",
+	}
+
+	const (
+		burstEventsPerTick  = 200
+		burstPeriodMs       = 100
+		burstTicks          = 10
+		burstSettleMarginMs = 500
+	)
+
+	t.Run("Setup", func(t *testing.T) {
+		for _, name := range burstBoxNames {
+			_, err := ws.DoCommand(ctx, map[string]any{
+				"command": "add_sphere",
+				"name":    name,
+			})
+			test.That(t, err, test.ShouldBeNil)
+		}
+	})
+
+	t.Run("Burst", func(t *testing.T) {
+		_, err := ws.DoCommand(ctx, map[string]any{
+			"command":   "burst",
+			"count":     float64(burstEventsPerTick),
+			"period_ms": float64(burstPeriodMs),
+			"ticks":     float64(burstTicks),
+		})
+		test.That(t, err, test.ShouldBeNil)
+
+		settleTime := time.Duration(burstPeriodMs*burstTicks+burstSettleMarginMs) * time.Millisecond
+		time.Sleep(settleTime)
+
+		uuids, err := ws.ListUUIDs(ctx, nil)
+		test.That(t, err, test.ShouldBeNil)
+
+		finalX := make(map[string]float64, len(burstBoxNames))
+		for _, uuid := range uuids {
+			transform, err := ws.GetTransform(ctx, uuid, nil)
+			test.That(t, err, test.ShouldBeNil)
+
+			for _, name := range burstBoxNames {
+				if transform.ReferenceFrame == name {
+					finalX[name] = transform.PoseInObserverFrame.Pose.X
+				}
+			}
+		}
+		test.That(t, finalX, test.ShouldHaveLength, len(burstBoxNames))
+
+		payload, err := json.Marshal(finalX)
+		test.That(t, err, test.ShouldBeNil)
+		fmt.Printf("BURST_FINAL %s\n", payload)
+	})
+
+	t.Run("Cleanup", func(t *testing.T) {
+		for _, name := range burstBoxNames {
+			_, err := ws.DoCommand(ctx, map[string]any{
+				"command": "remove",
+				"name":    name,
+			})
+			test.That(t, err, test.ShouldBeNil)
+		}
 	})
 }
 
