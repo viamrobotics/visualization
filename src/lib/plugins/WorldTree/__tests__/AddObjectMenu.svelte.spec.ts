@@ -32,7 +32,7 @@ describe('AddObjectMenu', () => {
 		await userEvent.click(screen.getByRole('menuitem', { name: /Obstacle/ }))
 
 		expect(screen.getByRole('menu', { name: 'Obstacle' })).toBeInTheDocument()
-		expect(screen.getByRole('menuitem', { name: /Simple/ })).toHaveFocus()
+		await vi.waitFor(() => expect(screen.getByRole('menuitem', { name: /Simple/ })).toHaveFocus())
 		expect(screen.getByRole('menuitem', { name: /Bounds/ })).toBeInTheDocument()
 		expect(screen.getByRole('menuitem', { name: /Complex/ })).toBeInTheDocument()
 		expect(screen.queryByRole('dialog', { name: /New .* obstacle/ })).not.toBeInTheDocument()
@@ -46,7 +46,7 @@ describe('AddObjectMenu', () => {
 		await userEvent.click(screen.getByRole('menuitem', { name: 'Back' }))
 
 		expect(screen.getByRole('menu', { name: 'Add' })).toBeInTheDocument()
-		expect(screen.getByRole('menuitem', { name: /Obstacle/ })).toHaveFocus()
+		await vi.waitFor(() => expect(screen.getByRole('menuitem', { name: /Obstacle/ })).toHaveFocus())
 	})
 
 	it.each([
