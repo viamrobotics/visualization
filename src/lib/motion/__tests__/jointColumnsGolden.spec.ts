@@ -37,6 +37,7 @@ const jointOf = (column: JointColumn): JointFrameDescriptor => ({
 	componentName: COMPONENT,
 	jointIndex: column.index,
 	mimic: column.mimic,
+	geometry: null,
 	uuid: new Uint8Array(16) as Uint8Array<ArrayBuffer>,
 })
 

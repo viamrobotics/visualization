@@ -1,0 +1,77 @@
+{
+  "name": "multi_collider_gantry",
+  "kinematic_param_type": "SVA",
+  "links": [
+    {
+      "id": "base",
+      "parent": "world",
+      "translation": {
+        "x": -50,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "carriage",
+      "parent": "slide",
+      "translation": {
+        "x": 0,
+        "y": 20,
+        "z": 40
+      },
+      "orientation": {
+        "type": "ov_degrees",
+        "value": {
+          "x": 0,
+          "y": 0,
+          "z": 1,
+          "th": 30
+        }
+      },
+      "geometry": {
+        "x": 50,
+        "y": 50,
+        "z": 10,
+        "translation": {
+          "x": 0,
+          "y": 0,
+          "z": 5
+        }
+      },
+      "geometries": [
+        {
+          "r": 12,
+          "translation": {
+            "x": 30,
+            "y": -10,
+            "z": 25
+          }
+        }
+      ]
+    }
+  ],
+  "joints": [
+    {
+      "id": "slide",
+      "type": "prismatic",
+      "parent": "base",
+      "axis": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "max": 300,
+      "min": 0,
+      "geometry": {
+        "x": 80,
+        "y": 30,
+        "z": 20,
+        "translation": {
+          "x": 0,
+          "y": 0,
+          "z": 10
+        }
+      }
+    }
+  ]
+}

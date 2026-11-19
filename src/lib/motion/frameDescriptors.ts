@@ -91,6 +91,8 @@ export interface JointFrameDescriptor {
 	 * its source's and the value to use is `multiplier * step[jointIndex] + offset`.
 	 */
 	mimic?: { multiplier: number; offset: number }
+	/** A prismatic joint's own collider, which moves with the joint. Always null on a rotational one. */
+	geometry: Geometry | null
 	uuid: Uint8Array<ArrayBuffer>
 }
 
@@ -320,6 +322,82 @@ const newUuid = (): Uint8Array<ArrayBuffer> =>
 	Uint8Array.from(UuidTool.toBytes(crypto.randomUUID()))
 
 /**
+ * Every collider configured on a model link, `geometry` first, as `LinkConfig.geometryConfigs` in
+ * `referenceframe/frame_json.go` lists them. Zero-valued entries, which Go marshals for an unset
+ * `geometry`, are left out.
+ */
+const linkGeometryConfigs = (link: Record<string, unknown>): Record<string, unknown>[] => {
+	const extra = Array.isArray(link.geometries) ? (link.geometries as unknown[]) : []
+	return [link.geometry, ...extra].filter(
+		(config): config is Record<string, unknown> =>
+			!!config &&
+			typeof config === 'object' &&
+			inferGeometryType(config as Record<string, unknown>) !== ''
+	)
+}
+
+/**
+ * Descriptors for a link with more than one collider, one per collider, each an identity-posed child
+ * of the link named by its label. RDK labels an unlabelled one with `defaultGeometryLabel` in
+ * `referenceframe/frame.go`, and `SimpleModel.Geometries` prefixes the model name, as the link's own
+ * frame name is prefixed.
+ */
+const linkColliderDescriptors = (
+	configs: Record<string, unknown>[],
+	frameName: string,
+	linkId: string,
+	framePose: FramePoseJson
+): StaticFrameDescriptor[] => {
+	const modelPrefix = frameName.endsWith(linkId) ? frameName.slice(0, -linkId.length) : ''
+
+	return configs.flatMap((config, index) => {
+		const label = (config.Label as string | undefined) || `${linkId}_collision_${index}`
+		const name = `${modelPrefix}${label}`
+		const geometry = parseGeometry(config, name, framePose)
+		if (!geometry) return []
+
+		return {
+			kind: 'static',
+			name,
+			parent: frameName,
+			localPose: new Pose(),
+			geometry,
+			uuid: newUuid(),
+		}
+	})
+}
+
+/**
+ * A model link's descriptors. A link with one collider carries it, the way RDK labels a lone
+ * collider with the link's name. A link with several carries none, and each gets a child frame.
+ */
+const modelLinkDescriptors = (
+	link: Record<string, unknown>,
+	frameName: string,
+	parent: string
+): StaticFrameDescriptor[] => {
+	const framePose: FramePoseJson = {
+		translation: link.translation as Vec3Json | undefined,
+		orientation: link.orientation as RawOrientation | undefined,
+	}
+	const configs = linkGeometryConfigs(link)
+	const isMultiCollider = configs.length > 1
+
+	const linkDescriptor: StaticFrameDescriptor = {
+		kind: 'static',
+		name: frameName,
+		parent,
+		localPose: poseFromJson(framePose.translation, framePose.orientation),
+		geometry: isMultiCollider ? null : parseGeometry(configs[0], frameName, framePose),
+		uuid: newUuid(),
+	}
+	if (!isMultiCollider) return [linkDescriptor]
+
+	const linkId = typeof link.id === 'string' ? link.id : frameName
+	return [linkDescriptor, ...linkColliderDescriptors(configs, frameName, linkId, framePose)]
+}
+
+/**
  * The two facts a frame's own entry cannot supply.
  *
  * `frames` is flat: a joint frame knows it rotates about an axis, but not which arm owns it,
@@ -441,21 +519,16 @@ const buildDescriptors = (
 						componentName: joint.componentName,
 						jointIndex: joint.jointIndex,
 						mimic: joint.mimic,
+						// `JointConfig.ToFrame` attaches a collider to a prismatic joint only. It is local
+						// to the moved joint, as `translationalFrame.Geometries` places it.
+						geometry:
+							inner.frame_type === 'translational'
+								? parseGeometry(innerData.geometry, frameName)
+								: null,
 						uuid: newUuid(),
 					})
 				} else if (inner.frame_type === 'static') {
-					const framePose: FramePoseJson = {
-						translation: innerData.translation as Vec3Json | undefined,
-						orientation: innerData.orientation as RawOrientation | undefined,
-					}
-					descriptors.push({
-						kind: 'static',
-						name: frameName,
-						parent,
-						localPose: poseFromJson(framePose.translation, framePose.orientation),
-						geometry: parseGeometry(innerData.geometry, frameName, framePose),
-						uuid: newUuid(),
-					})
+					descriptors.push(...modelLinkDescriptors(innerData, frameName, parent))
 				} else {
 					warnUnhandledFrame(frameName, inner.frame_type)
 				}

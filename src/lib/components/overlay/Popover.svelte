@@ -24,13 +24,17 @@
 	}))
 	const api = $derived(popover.connect(service, normalizeProps))
 
+	// A primitive, so `use:portal` updates only when it flips. Its update re-appends the positioner,
+	// which blurs focused content, and `api` changes on every reposition.
+	const isPortalled = $derived(api.portalled)
+
 	const close = () => api.setOpen(false)
 </script>
 
 {@render trigger(api.getTriggerProps(), { isOpen: api.open })}
 
 <div
-	use:portal={{ disabled: !api.portalled }}
+	use:portal={{ disabled: !isPortalled }}
 	{...api.getPositionerProps()}
 	class="[--arrow-background:var(--color-white)] [--arrow-size:8px]"
 >

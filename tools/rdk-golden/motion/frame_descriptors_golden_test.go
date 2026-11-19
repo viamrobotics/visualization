@@ -325,5 +325,23 @@ func sceneCases() []sceneCase {
 				}
 			},
 		},
+		{
+			// The carriage carries a second collider in `geometries`, and the slide joint a collider of
+			// its own. Both are frame-less in the marshaled frame system, so only their labels name them.
+			name: "a gantry with a collider on its slide joint and two on its carriage",
+			parts: func(t *testing.T) []*referenceframe.FrameSystemPart {
+				return []*referenceframe.FrameSystemPart{
+					{
+						FrameConfig: referenceframe.NewLinkInFrame(
+							referenceframe.World,
+							poseAt(100, 200, 900, &spatialmath.OrientationVectorDegrees{OX: 1, Theta: 20}),
+							"gantry",
+							nil,
+						),
+						ModelFrame: loadModel(t, "multi_collider_gantry.json", "gantry"),
+					},
+				}
+			},
+		},
 	}
 }

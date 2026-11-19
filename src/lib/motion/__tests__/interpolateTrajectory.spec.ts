@@ -447,6 +447,7 @@ describe('jointMotionsOf', () => {
 		componentName,
 		jointIndex,
 		mimic,
+		geometry: null,
 		uuid: new Uint8Array(16) as Uint8Array<ArrayBuffer>,
 	})
 

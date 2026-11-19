@@ -18,6 +18,7 @@ const joint = (
 	axis: { X: 0, Y: 0, Z: 1 },
 	componentName: 'arm',
 	jointIndex: 0,
+	geometry: null,
 	uuid: uuid(),
 	...overrides,
 })
