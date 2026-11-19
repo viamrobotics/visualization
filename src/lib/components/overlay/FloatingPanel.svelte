@@ -9,8 +9,6 @@
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import { untrack } from 'svelte'
 
-	import { clampPanelPosition } from '$lib/components/overlay/clampPanelPosition'
-
 	interface Props {
 		title?: string
 		defaultSize?: { width: number; height: number }
@@ -62,50 +60,48 @@
 		if (size) currentSize = size
 	})
 
-	// Mirrors the machine's size while it is uncontrolled. Reading it from `api` instead would make
-	// the clamped position depend on the machine that consumes it.
-	let uncontrolledSize = $state(untrack(() => defaultSize))
-	const panelSize = $derived(currentSize ?? uncontrolledSize)
+	// zag works in viewport coordinates. Callers work in scene coordinates, so positions they persist
+	// don't depend on how much host chrome sits above the scene.
+	const toViewport = (scenePosition: { x: number; y: number }) => {
+		const sceneRect = dom.getBoundingClientRect()
+		return { x: scenePosition.x + sceneRect.x, y: scenePosition.y + sceneRect.y }
+	}
 
-	const measureScene = () => ({ width: dom.clientWidth, height: dom.clientHeight })
-	let sceneSize = $state(measureScene())
-	$effect(() => {
-		const observer = new ResizeObserver(() => (sceneSize = measureScene()))
-		observer.observe(dom)
-		return () => observer.disconnect()
-	})
+	const toScene = (details: floatingPanel.PositionChangeDetails) => {
+		const sceneRect = dom.getBoundingClientRect()
+		return {
+			position: { x: details.position.x - sceneRect.x, y: details.position.y - sceneRect.y },
+		}
+	}
 
-	const initialPosition = untrack(
-		() =>
+	const initialPosition = untrack(() =>
+		toViewport(
 			defaultPosition ?? {
-				x: dom.clientWidth / 2 - defaultSize.width / 2 + dom.clientLeft,
-				y: dom.clientHeight / 2 - defaultSize.height / 2 + dom.clientTop,
+				x: dom.clientWidth / 2 - defaultSize.width / 2,
+				y: dom.clientHeight / 2 - defaultSize.height / 2,
 			}
+		)
 	)
-
-	let requestedPosition = $state(initialPosition)
-	const position = $derived(clampPanelPosition(requestedPosition, panelSize, sceneSize))
 
 	const floatingPanelService = useMachine(floatingPanel.machine, () => ({
 		id,
 		defaultSize,
 		size: currentSize,
 		defaultPosition: initialPosition,
-		position,
 		resizable,
 		allowOverflow: false,
 		strategy: 'absolute' as const,
+		getBoundaryEl: () => dom,
 		persistRect,
 		open: isOpen,
 		...props,
-		onPositionChange: (details: floatingPanel.PositionChangeDetails) => {
-			requestedPosition = details.position
-			props.onPositionChange?.({ position })
-		},
+		onPositionChange: (details: floatingPanel.PositionChangeDetails) =>
+			props.onPositionChange?.(toScene(details)),
+		onPositionChangeEnd: (details: floatingPanel.PositionChangeDetails) =>
+			props.onPositionChangeEnd?.(toScene(details)),
 		onSizeChange: (details: floatingPanel.SizeChangeDetails) => {
 			// Controlled panels have to adopt the drag's own result, or a resize snaps straight back.
 			if (currentSize) currentSize = details.size
-			uncontrolledSize = details.size
 			props.onSizeChange?.(details)
 		},
 	}))
