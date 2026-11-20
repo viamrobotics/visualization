@@ -46,6 +46,9 @@ export default defineConfig({
 		trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
 	},
 	testDir: 'e2e',
+	// Node resolves `#lib/*.js` to a literal .js file. Only tsconfig `paths` get
+	// Playwright's .js-to-.ts swap, so the fixtures under src/lib need them.
+	tsconfig: './tsconfig.playwright.json',
 	outputDir: 'test-results',
 	timeout: 120 * 1000,
 	// Measured on an 8-core darwin box: 4 workers cut the drawing project from 451s

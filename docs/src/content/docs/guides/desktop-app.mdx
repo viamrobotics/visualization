@@ -18,6 +18,10 @@ The first run downloads the app for your platform into `~/.viam/visualizer/` and
 
 `--part` takes a part id or name. Add `--machine`, `--location` or `--organization` when the name is not unique across your account.
 
+## Open without a machine
+
+Launch the app directly, from your applications or by running its binary, to use it without a machine part. Its bundled draw server still starts, so `client/api` calls from your own code render in it. Download a build from the [GitHub releases page](https://github.com/viamrobotics/visualization/releases), or reuse the one the CLI cached in `~/.viam/visualizer/`.
+
 ## Update
 
 ```bash
@@ -40,4 +44,6 @@ Releases are on the [GitHub releases page](https://github.com/viamrobotics/visua
 
 ## What the app connects to
 
-The app connects to the part's cloud address through WebRTC, the same way the browser version does. It also bundles the Go draw server, which it starts on a free local port at launch and stops when it quits, so the draw-service panel works with nothing else running.
+The app connects to the part's cloud address through WebRTC, the same way the browser version does. It also bundles the Go draw server, which it starts at launch and stops when it quits, so the draw-service panel works with nothing else running.
+
+The draw server listens on `:3030`, the port the Go `client/api` package targets, so your own code draws into the app with no configuration. When another process already holds `:3030`, the app uses a free port instead and prints it on stdout. Set `DRAW_SERVICE_PORT` to that port in the shell that runs your code. See [Running locally](../local-usage/) for drawing from Go.

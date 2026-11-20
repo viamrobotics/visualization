@@ -5,13 +5,88 @@ description: Run the Viam visualizer on your machine, then drive it from Go usin
 
 import { Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components'
 
-You run the visualizer on your machine, point your code at it, and watch geometries / frames / drawings render in your browser.
+You run the visualizer on your machine, point your code at it, and watch geometries, frames and drawings render as your code sends them.
+
+The [desktop app](../desktop-app/) is the quickest way in. It bundles the draw server, so you need Go and nothing else. Run the visualizer [from source](#run-from-source) only when you are changing the visualizer itself.
 
 ## Getting started
 
+<Steps>
+
+1. Download the app for your platform from the [GitHub releases page](https://github.com/viamrobotics/visualization/releases). macOS blocks the bundle on first launch because it is not notarized. Allow it under System Settings → Privacy & Security → Open Anyway.
+
+2. Open the app. It starts its draw server on `:3030`, the port `client/api` targets by default.
+
+3. Add the client to your Go project:
+
+   ```bash
+   go get github.com/viamrobotics/visualization/client/api
+   ```
+
+4. Draw something:
+
+   ```go
+   package main
+
+   import (
+       "log"
+
+       "github.com/golang/geo/r3"
+       "github.com/viamrobotics/visualization/client/api"
+       "github.com/viamrobotics/visualization/draw"
+       "go.viam.com/rdk/spatialmath"
+   )
+
+   func main() {
+       box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 200, Y: 200, Z: 200}, "box")
+       if err != nil {
+           log.Fatal(err)
+       }
+
+       if _, err := api.DrawGeometry(api.DrawGeometryOptions{
+           ID:       "box",
+           Geometry: box,
+           Color:    draw.ColorFromName("coral"),
+       }); err != nil {
+           log.Fatal(err)
+       }
+   }
+   ```
+
+   Run it while the app is open. A coral box appears at the origin.
+
+</Steps>
+
+Calling `DrawGeometry` again with the same `ID` updates the box in place. Pass a different `ID`, or omit it, to add a new entity.
+
+A longer end-to-end script that draws a box, a line, a ring of pose arrows, and reference frames is at [docs/examples/basic/main.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic/main.go). For the full set of `Draw*` functions, see the [client/api reference](../../api/client-api/).
+
+<Aside
+	type="caution"
+	title="Something else already on :3030"
+>
+	When another process holds `:3030`, for example `make up`, the app starts its draw server on a
+	free port instead. Launched from a terminal, it prints which one. Your Go code still reaches
+	whatever is on `:3030`. Stop the other process and reopen the app, or set `DRAW_SERVICE_PORT` to
+	the port the app printed.
+</Aside>
+
+## Connecting to a Viam machine
+
+The visualizer can connect to live Viam machines to render their frame system, arms, and cameras. With the desktop app, open it from the Viam CLI with a part id, as described in [Desktop app](../desktop-app/#open-a-machine):
+
+```bash
+viam login
+viam machines part visualize --part <part-id>
+```
+
+## Run from source
+
+Use this when you are working on the visualizer itself, or want HMR while changing the frontend.
+
 ### Prerequisites
 
-You need Go, Node.js 22+, and pnpm. The setup script below installs the missing pieces; install manually if you'd rather pin specific versions.
+You need Go, Node.js 22+, and pnpm. The setup script below installs the missing pieces. Install manually if you'd rather pin specific versions.
 
 ### Install
 
@@ -63,64 +138,22 @@ You need Go, Node.js 22+, and pnpm. The setup script below installs the missing 
 make up
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The first invocation also builds the static assets and the draw server; subsequent runs reuse the cached build.
+Open [http://localhost:5173](http://localhost:5173). The first invocation also builds the static assets and the draw server. Later runs reuse the cached build. The draw server listens on `:3030`, so the [Go example](#getting-started) works unchanged. Quit the desktop app first, or it holds `:3030` instead.
 
 <Aside type="tip">
-	`make up` is incremental — it only rebuilds when source files change. If you're iterating heavily
+	`make up` is incremental. It only rebuilds when source files change. If you're iterating heavily
 	on the frontend, run `pnpm dev` instead for HMR.
 </Aside>
 
-### Draw something from Go
-
-Add the client to your project:
-
-```bash
-go get github.com/viamrobotics/visualization/client/api
-```
-
-Then draw to the running visualizer:
-
-```go
-package main
-
-import (
-    "log"
-
-    "github.com/golang/geo/r3"
-    "github.com/viamrobotics/visualization/client/api"
-    "github.com/viamrobotics/visualization/draw"
-    "go.viam.com/rdk/spatialmath"
-)
-
-func main() {
-    box, err := spatialmath.NewBox(spatialmath.NewZeroPose(), r3.Vector{X: 200, Y: 200, Z: 200}, "box")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    if _, err := api.DrawGeometry(api.DrawGeometryOptions{
-        ID:       "box",
-        Geometry: box,
-        Color:    draw.ColorFromName("coral"),
-    }); err != nil {
-        log.Fatal(err)
-    }
-}
-```
-
-Run it while `make up` is running. A coral box appears at the origin. Calling `DrawGeometry` again with the same `ID` updates the box in place; pass a different `ID` (or omit it) to add a new entity.
-
-A longer end-to-end script that draws a box, a line, a ring of pose arrows, and reference frames is at [docs/examples/basic/main.go](https://github.com/viamrobotics/visualization/blob/main/docs/examples/basic/main.go):
+To run the example script from the repo:
 
 ```bash
 go run ./docs/examples/basic/main.go
 ```
 
-For the full set of `Draw*` functions, see the [client/api reference](../../api/client-api/).
+### Connecting to a Viam machine from source
 
-## Connecting to a Viam machine
-
-The visualizer can connect to live Viam machines to render their frame system, arms, and cameras. Drop your machine credentials into `.env.local` at the repo root using this format:
+Drop your machine credentials into `.env.local` at the repo root using this format:
 
 ```dotenv
 VITE_CONFIGS='
@@ -138,7 +171,7 @@ VITE_CONFIGS='
 
 After `make up`, open the machine config panel (bottom right) and pick your machine.
 
-## Running multiple instances
+### Running multiple instances
 
 Useful when comparing two `client/api` callers side by side. Pass `STATIC_PORT` to the second `make up`:
 
@@ -157,11 +190,15 @@ Both apps render the same draw stream, so you'll see your `client/api` calls ref
 	title="Moving the other ports"
 >
 	`make up` also accepts `DRAW_SERVICE_PORT` (default `3030`, the Connect-RPC draw server), which
-	moves the server and the browser together. The Go `client/api` package targets `:3030`, so if you
-	move the draw server, point your producer code at the same port.
+	moves the server and the browser together. The Go `client/api` package reads the same
+	`DRAW_SERVICE_PORT` variable, so export it in the shell that runs your producer code.
 </Aside>
 
 ## Troubleshooting
+
+### `client/api` calls succeed but nothing appears
+
+Something other than the visualizer you are looking at holds `:3030`. With the desktop app, launch it from a terminal and look for a `:3030 is taken` warning. With `make up`, confirm it is still running and that [http://localhost:5173](http://localhost:5173) loads. If the page loads but nothing renders, check the browser console for connection errors. Both the Go client and the browser talk to the draw server on `:3030`.
 
 ### `make setup` finished but `make up` says "command not found"
 
@@ -182,7 +219,3 @@ make up STATIC_PORT=5180 DRAW_SERVICE_PORT=3031
 ### `pnpm proto` fails with "buf: command not found"
 
 `buf` isn't on your `PATH`. Re-run `make setup`, or install manually following [buf's instructions](https://buf.build/docs/installation), then retry.
-
-### `client/api` calls succeed but nothing appears
-
-Confirm `make up` is still running and that you can hit [http://localhost:5173](http://localhost:5173) in a browser. If the page loads but nothing renders, check the browser console for connection errors — both the Go client and the browser talk to the draw server on `:3030`.

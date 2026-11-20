@@ -4,7 +4,6 @@ import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
 
 import type { Transform } from '#lib/geometry.js'
-import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
 import { appearanceColorsByFrame } from '#lib/appearanceColors.js'
 import { resourceNameToColor, subtypeToColor } from '#lib/color.js'
@@ -15,6 +14,7 @@ import {
 	TRANSLUCENT_GEOMETRY_OPACITY,
 	useWorld,
 } from '#lib/ecs/index.js'
+import { kinematicsByComponent as kinematicsByComponentOf } from '#lib/kinematicsByComponent.js'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
@@ -80,22 +80,7 @@ export const provideFrames = (partID: () => string) => {
 		}
 	})
 
-	const kinematicsByComponent = $derived.by(() => {
-		const result: Record<string, RawKinematicsModel> = {}
-		for (const fsConfig of query.data ?? []) {
-			const componentName = fsConfig.frame?.referenceFrame
-			if (
-				componentName === undefined ||
-				componentName === '' ||
-				fsConfig.kinematics === undefined ||
-				Object.keys(fsConfig.kinematics.fields).length === 0
-			) {
-				continue
-			}
-			result[componentName] = fsConfig.kinematics.toJson() as RawKinematicsModel
-		}
-		return result
-	})
+	const kinematicsByComponent = $derived(kinematicsByComponentOf(query.data ?? []))
 
 	const kinematicsDerivedFrames = $derived.by(() => {
 		const frames: Record<string, Transform> = {}

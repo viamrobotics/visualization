@@ -51,6 +51,8 @@ export { default as SensorCoverage } from './SensorCoverage/SensorCoverage.svelt
 
 export { default as Settings } from './Settings/Settings.svelte'
 
+export { default as SceneExport } from './SceneExport/SceneExport.svelte'
+
 export { default as SelectionTool } from './Selection/SelectionTool.svelte'
 export * as selectionTraits from './Selection/traits'
 export * as selectionRelations from './Selection/relations'

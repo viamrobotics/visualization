@@ -125,6 +125,7 @@
 			"output": [
 				"src/lib/loaders/pcd/worker.inline.ts"
 			],
+			"clean": "if-file-deleted",
 			"packageLocks": [
 				"pnpm-lock.yaml"
 			]
@@ -206,7 +207,6 @@
 				"package.json"
 			],
 			"output": [
-				".svelte-kit/generated/**",
 				".svelte-kit/types/**",
 				"node_modules/$app/**"
 			],
@@ -814,6 +814,7 @@
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
 		"d3-force": "^3.0.0",
+		"fflate": "0.8.3",
 		"filtrex": "^3.1.0",
 		"koota": "0.6.6",
 		"lodash-es": "4.18.1",
