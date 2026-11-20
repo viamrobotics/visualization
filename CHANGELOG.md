@@ -1,5 +1,19 @@
 # visualization
 
+## 3.4.0
+
+### Minor Changes
+
+- 0ba864d: Build with SvelteKit 3 and require Node 22.22 or later.
+- 6880f75: Add a plugin that exports the scene as URDF and MJCF.
+
+### Patch Changes
+
+- 6880f75: The desktop app's draw server now listens on `:3030` when it is free, so `client/api` reaches it with no configuration.
+- 6880f75: Move the control widgets list from its toolbar button into a Widgets tab in settings.
+- ec76f29: Fix popover menus intermittently dropping keyboard focus.
+- ec76f29: Update to rdk v1.17.0 and draw every collider in motion plan previews.
+
 ## 3.3.1
 
 ### Patch Changes
