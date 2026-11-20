@@ -83,6 +83,7 @@ export const useFileDrop = (
 			const fileName = parseFileName(file.name)
 			if (!fileName.success) {
 				handleError(fileName.error.message)
+				completed += 1
 				continue
 			}
 

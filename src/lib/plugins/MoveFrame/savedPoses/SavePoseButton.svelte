@@ -171,9 +171,9 @@ adds the vmodutils module when the machine has nothing to load that model from.
 			createArmPositionSaver(saverName, arm, joints, defaultService),
 			isLoaded === false ? VMODUTILS_MODULE : undefined
 		)
-		if (partConfig.canSave) partConfig.save()
-
 		open = false
+		// A failed save already shows its own error toast.
+		if (partConfig.canSave && !(await partConfig.save())) return
 		toast({
 			message: partConfig.canSave
 				? `Saved the current pose of "${arm}" as ${saverName}.`

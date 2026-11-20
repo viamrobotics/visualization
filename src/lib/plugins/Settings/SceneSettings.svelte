@@ -7,6 +7,23 @@
 
 	const settings = useSettings()
 
+	const GRID_SIZE_STEP = 0.1
+
+	// A text binding would save the raw string, so clearing a field to retype it collapsed the grid.
+	const setGridSize = (
+		key: 'gridCellSize' | 'gridSectionSize' | 'gridFadeDistance',
+		event: Event
+	): void => {
+		const input = event.target as HTMLInputElement
+		const value = Number.parseFloat(input.value)
+
+		if (Number.isFinite(value) && value > 0) {
+			settings.current[key] = value
+		} else {
+			input.value = String(settings.current[key])
+		}
+	}
+
 	const renderModeOptions = $derived(
 		RENDER_MODES.map((mode) => ({
 			label: mode,
@@ -54,8 +71,6 @@
 					| 'colliders'
 					| 'model'
 					| 'colliders+model'
-
-				console.log(settings.current.renderArmModels)
 			}}
 		/>
 	</label>
@@ -75,7 +90,11 @@
 
 		<div class="w-20">
 			<Input
-				bind:value={settings.current.gridCellSize}
+				type="number"
+				min={GRID_SIZE_STEP}
+				step={GRID_SIZE_STEP}
+				value={settings.current.gridCellSize}
+				on:change={(event) => setGridSize('gridCellSize', event)}
 				on:keydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
@@ -86,7 +105,11 @@
 
 		<div class="w-20">
 			<Input
-				bind:value={settings.current.gridSectionSize}
+				type="number"
+				min={GRID_SIZE_STEP}
+				step={GRID_SIZE_STEP}
+				value={settings.current.gridSectionSize}
+				on:change={(event) => setGridSize('gridSectionSize', event)}
 				on:keydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
@@ -97,31 +120,11 @@
 
 		<div class="w-20">
 			<Input
-				bind:value={settings.current.gridFadeDistance}
-				on:keydown={(event) => event.stopImmediatePropagation()}
-			/>
-		</div>
-	</label>
-
-	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Lines</strong></h3>
-
-	<label class="flex items-center justify-between gap-2">
-		Thickness
-
-		<div class="w-20">
-			<Input
-				bind:value={settings.current.lineWidth}
-				on:keydown={(event) => event.stopImmediatePropagation()}
-			/>
-		</div>
-	</label>
-
-	<label class="flex items-center justify-between gap-2">
-		Dot size
-
-		<div class="w-20">
-			<Input
-				bind:value={settings.current.lineDotSize}
+				type="number"
+				min={GRID_SIZE_STEP}
+				step={GRID_SIZE_STEP}
+				value={settings.current.gridFadeDistance}
+				on:change={(event) => setGridSize('gridFadeDistance', event)}
 				on:keydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>

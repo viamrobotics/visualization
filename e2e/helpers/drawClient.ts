@@ -22,7 +22,7 @@ export const createDrawClient = (port: number = DEFAULT_DRAW_PORT): DrawClient =
  */
 export const resetScene = async (client: DrawClient, page: Page): Promise<void> => {
 	await client.removeAll({})
-	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
+	await expect(page.getByText('Nothing in the scene yet', { exact: true })).toBeVisible({
 		timeout: 15_000,
 	})
 }

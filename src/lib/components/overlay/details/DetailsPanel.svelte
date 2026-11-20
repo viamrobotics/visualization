@@ -1,17 +1,10 @@
-<script
-	module
-	lang="ts"
->
-	import { MathUtils } from 'three'
-</script>
-
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 	import type { HTMLAttributes } from 'svelte/elements'
 
 	import { draggable } from '@neodrag/svelte'
 	import { Portal } from '@threlte/extras/webgpu'
-	import { Icon } from '@viamrobotics/prime-core'
+	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
@@ -38,6 +31,7 @@
 	const world = useWorld()
 	const resourceByName = useResourceByName()
 	const environment = useEnvironment()
+	const toast = useToast()
 
 	const name = useTrait(() => entity, traits.Name)
 	const parent = useParentName(() => entity)
@@ -88,7 +82,7 @@
 							x: worldPose.oX,
 							y: worldPose.oY,
 							z: worldPose.oZ,
-							th: MathUtils.degToRad(worldPose.theta),
+							th: worldPose.theta,
 						}
 					: null,
 				localPosition: {
@@ -141,37 +135,20 @@ just the inputs) raises it via `focus-within:z-5`. -->
 					<span class="text-subtle-2">{displayType}</span>
 				</div>
 
-				{#if removable.current}
-					<Tooltip placement="bottom">
-						{#snippet children(tooltipID)}
-							<button
-								class="text-subtle-2"
-								aria-describedby={tooltipID}
-								onclick={() => {
-									if (world.has(entity)) {
-										entity.destroy()
-									}
-								}}
-							>
-								<Icon name="trash-can-outline" />
-							</button>
-						{/snippet}
-
-						{#snippet content()}Remove from scene{/snippet}
-					</Tooltip>
-				{/if}
-
 				{#if sceneActions}
 					<Tooltip placement="bottom">
 						{#snippet children(tooltipID)}
 							<button
 								class="text-subtle-2"
+								aria-label="Copy details to clipboard"
 								aria-describedby={tooltipID}
 								onclick={async () => {
 									try {
 										await navigator.clipboard.writeText(getCopyClipboardText())
 									} catch {
-										// clipboard unavailable (non-secure context or permission denied)
+										// Clipboard unavailable: non-secure context or permission denied.
+										toast({ message: "Couldn't copy to clipboard", variant: ToastVariant.Danger })
+										return
 									}
 									copied = true
 									setTimeout(() => (copied = false), 1000)
@@ -186,6 +163,27 @@ just the inputs) raises it via `focus-within:z-5`. -->
 						{/snippet}
 
 						{#snippet content()}Copy details to clipboard{/snippet}
+					</Tooltip>
+				{/if}
+
+				{#if removable.current}
+					<Tooltip placement="bottom">
+						{#snippet children(tooltipID)}
+							<button
+								class="text-subtle-2 hover:text-danger-dark"
+								aria-label="Remove from scene"
+								aria-describedby={tooltipID}
+								onclick={() => {
+									if (world.has(entity)) {
+										entity.destroy()
+									}
+								}}
+							>
+								<Icon name="trash-can-outline" />
+							</button>
+						{/snippet}
+
+						{#snippet content()}Remove from scene{/snippet}
 					</Tooltip>
 				{/if}
 			</div>

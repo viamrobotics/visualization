@@ -85,6 +85,24 @@ describe('ConfigAppearanceDetails', () => {
 		expect(lastVisualizer(partConfig)).toEqual({ type: 'complex' })
 	})
 
+	it('shows a saved #808080 as its sRGB channels, not three.js linear ones', () => {
+		mountDetails({ color: '#808080' })
+
+		const input = screen.getByLabelText('mutable color').querySelector<HTMLInputElement>('input')!
+
+		expect(input.value).toBe('{r: 0.50, g: 0.50, b: 0.50}')
+	})
+
+	it('saves a typed hex as the same hex', async () => {
+		const partConfig = mountDetails({})
+		const input = screen.getByLabelText('mutable color').querySelector<HTMLInputElement>('input')!
+
+		await userEvent.tripleClick(input)
+		await userEvent.keyboard('#ff8000{Tab}')
+
+		await vi.waitFor(() => expect(lastVisualizer(partConfig)).toEqual({ color: '#ff8000' }))
+	})
+
 	it('offers no reset when nothing is saved', () => {
 		mountDetails({ type: 'complex' })
 

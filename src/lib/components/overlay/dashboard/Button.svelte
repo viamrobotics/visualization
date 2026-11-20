@@ -12,6 +12,7 @@
 	interface Props extends HTMLButtonAttributes {
 		icon: IconName | 'ruler' | 'mouse-pointer' | 'shapes' | 'hammer' | 'move-3d'
 		iconCx?: string
+		/** Pressed state of a toggle. Leave unset for a plain action, so it isn't announced as a toggle. */
 		active?: boolean
 		description: string
 		keybinding?: Keybinding
@@ -24,7 +25,7 @@
 	let {
 		icon,
 		iconCx,
-		active = false,
+		active,
 		description,
 		keybinding,
 		class: className = '',
@@ -43,16 +44,18 @@
 		<label
 			class={[
 				className,
-				'relative block rounded-md border active:z-4 active:border-[#666] active:bg-[#666] active:text-white',
-				active ? 'z-4 border-[#666] bg-[#666] text-white' : 'border-gray-5 text-gray-8 bg-white',
+				'relative block rounded-md border',
+				active
+					? 'border-gray-8 bg-gray-8 z-4 text-white'
+					: 'border-gray-5 text-gray-8 not-has-disabled:hover:bg-light not-has-disabled:active:bg-medium bg-white',
+				'has-disabled:text-disabled has-disabled:cursor-not-allowed',
 			]}
 			aria-describedby={tooltipID}
 		>
 			<button
-				class=" p-1.5"
-				role="radio"
+				class="p-1.5 disabled:cursor-not-allowed"
 				aria-label={description}
-				aria-checked={active}
+				aria-pressed={active}
 				{onclick}
 				{...rest}
 			>

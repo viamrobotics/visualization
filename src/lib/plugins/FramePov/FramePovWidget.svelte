@@ -18,13 +18,8 @@
 	const frameEntities = useFrameEntities()
 	const entity = $derived(frameEntities.current.get(frameName))
 
+	// Stays open while its frame is missing: on reload, settings restore before the frames arrive.
 	let isOpen = $state(true)
-
-	$effect(() => {
-		if (entity === undefined) {
-			isOpen = false
-		}
-	})
 
 	$effect(() => {
 		if (isOpen) return
@@ -47,5 +42,9 @@
 >
 	{#if entity}
 		<FramePovView {entity} />
+	{:else}
+		<p class="text-subtle-1 bg-light flex h-full items-center justify-center p-2 text-xs">
+			Waiting for frame "{frameName}"…
+		</p>
 	{/if}
 </FloatingPanel>

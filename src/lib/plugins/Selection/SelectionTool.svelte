@@ -4,6 +4,7 @@
 
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { ElementRect } from 'runed'
+	import { untrack } from 'svelte'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
@@ -47,8 +48,16 @@
 	let selectionType = $state<SelectionType>('lasso')
 
 	$effect(() => {
-		if (isSelectionMode) {
-			settings.current.cameraMode = 'orthographic'
+		if (!isSelectionMode) return
+
+		const previousCameraMode = untrack(() => settings.current.cameraMode)
+		settings.current.cameraMode = 'orthographic'
+
+		return () => {
+			// Restore only if the user didn't pick a camera mode while selecting.
+			if (settings.current.cameraMode === 'orthographic') {
+				settings.current.cameraMode = previousCameraMode
+			}
 		}
 	})
 

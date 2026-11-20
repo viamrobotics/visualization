@@ -20,8 +20,9 @@ const obstacle = (name: string, geometries: ObstacleGeometryConfig[]): PartCompo
 	({ name, model: OBSTACLE_MODEL, attributes: { geometries } }) as PartComponent
 
 /**
- * Runs `useObstacleLivePreview` for one obstacle named `name` on a connected machine,
- * with the mode, the obstacle's config geometries and the dirty flag under test control.
+ * Runs `useObstacleLivePreview` for one obstacle named `name` on a connected machine, with
+ * the mode, the obstacle's config geometries, the dirty flag and the preview toggle (on at
+ * start) under test control.
  * Expects the hooks it replaces to be `vi.mock`ed by the spec.
  */
 export const createObstacleLivePreviewHarness = (name: string, saved: ObstacleGeometryConfig[]) => {
@@ -55,8 +56,10 @@ export const createObstacleLivePreviewHarness = (name: string, saved: ObstacleGe
 		current: { doCommand },
 	} as unknown as ReturnType<typeof createResourceClient>)
 
+	let preview: ReturnType<typeof useObstacleLivePreview> | undefined
 	const disposeRoot = $effect.root(() => {
-		useObstacleLivePreview()
+		preview = useObstacleLivePreview()
+		preview.isEnabled = true
 	})
 	flushSync()
 
@@ -71,6 +74,10 @@ export const createObstacleLivePreviewHarness = (name: string, saved: ObstacleGe
 		edit: (next: ObstacleGeometryConfig[]) => {
 			geometries = next
 			isDirty = true
+			flushSync()
+		},
+		setPreviewEnabled: (next: boolean) => {
+			if (preview) preview.isEnabled = next
 			flushSync()
 		},
 		discardAndSwitchTo: (nextMode: Mode) => {

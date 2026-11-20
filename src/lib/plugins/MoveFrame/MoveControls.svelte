@@ -44,6 +44,7 @@
 	import { parseMoveOptions } from './parseMoveOptions'
 	import { executeCommand } from './planDoCommand'
 	import SavePoseButton from './savedPoses/SavePoseButton.svelte'
+	import StopMoveButton from './StopMoveButton.svelte'
 	import { useMovedFrameMatrix } from './useMovedFrameMatrix.svelte'
 	import { useMoveGhosts } from './useMoveGhosts.svelte'
 	import { usePreviewMove } from './usePreviewMove.svelte'
@@ -437,6 +438,10 @@
 		>
 			Move
 		</Button>
+		<StopMoveButton
+			arm={frameName}
+			isMoving={executing}
+		/>
 		{#if armClient.names.includes(frameName)}
 			<SavePoseButton
 				arm={frameName}
@@ -458,7 +463,7 @@
 
 		<Collisions />
 
-		<div class="border-light border-t pt-3">
+		<div class="border-light flex items-center gap-2 border-t pt-3">
 			<Button
 				variant="success"
 				disabled={preview.status !== 'ready' || executing || otherPanelMoving || !canCommand}
@@ -468,6 +473,10 @@
 			>
 				Execute plan
 			</Button>
+			<StopMoveButton
+				arm={frameName}
+				isMoving={executing}
+			/>
 		</div>
 	</div>
 {/snippet}

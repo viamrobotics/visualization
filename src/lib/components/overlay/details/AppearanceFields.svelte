@@ -9,11 +9,11 @@
 		Slider,
 		type SliderChangeEvent,
 	} from 'svelte-tweakpane-ui'
-	import { Color as ThreeColor } from 'three'
+	import { SRGBColorSpace, Color as ThreeColor } from 'three'
 
 	import type { ResourceAppearance, ResourceAppearancePatch } from '#lib/resourceAppearance.js'
 
-	import { colors } from '#lib/color.js'
+	import { colors, parseRGB } from '#lib/color.js'
 	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
@@ -41,17 +41,23 @@
 	const fallbackAxesHelper = $derived(fallback.show_axes_helper ?? AXES_HELPER_DEFAULT)
 	const fallbackInvisible = $derived(fallback.invisible ?? INVISIBLE_DEFAULT)
 
+	// The picker works in sRGB. A three.js `Color` holds linear values, so both directions convert.
 	const colorValue = $derived.by<ColorValueRgbObject>(() => {
 		const hex = values.color ?? fallback.color
-		const color = hex ? new ThreeColor(hex) : entityColor.current
-		const { r, g, b } = color ?? new ThreeColor(colors.default)
+		let color = new ThreeColor(colors.default)
+		if (hex) {
+			color = new ThreeColor(hex)
+		} else if (entityColor.current) {
+			color = parseRGB(entityColor.current)
+		}
+		const { r, g, b } = color.getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
 		return { r, g, b }
 	})
 
 	const handleColorChange = (event: ColorChangeEvent) => {
 		if (event.detail.origin !== 'internal') return
 		const { r, g, b } = event.detail.value as ColorValueRgbObject
-		onchange({ color: `#${new ThreeColor().setRGB(r, g, b).getHexString()}` })
+		onchange({ color: `#${new ThreeColor().setRGB(r, g, b, SRGBColorSpace).getHexString()}` })
 	}
 
 	const handleOpacityChange = (event: SliderChangeEvent) => {

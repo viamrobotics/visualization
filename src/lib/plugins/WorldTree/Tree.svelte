@@ -4,7 +4,9 @@
 	import { VirtualList } from 'svelte-virtuallists'
 	import { SvelteSet } from 'svelte/reactivity'
 
+	import NullState from '#lib/components/overlay/NullState.svelte'
 	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
 	import type { TreeNode as TreeNodeType } from './buildTree'
 
@@ -29,6 +31,8 @@
 		onSelectionChange,
 		dragElement = $bindable(),
 	}: Props = $props()
+
+	const environment = useEnvironment()
 
 	const isFiltering = $derived(filter.trim() !== '')
 
@@ -185,6 +189,23 @@
 	bind:this={scroller}
 	class="h-full scrollbar-thin overflow-auto text-xs"
 >
+	<!-- Outside the `w-max` tree below, so the text wraps to the panel's width. -->
+	{#if rootChildren.length === 0 && isFiltering}
+		<p class="text-subtle-2 px-2 py-4">No matching objects</p>
+	{:else if rootChildren.length === 0}
+		<div class="h-full p-2">
+			<!-- Embedded hosts pick the machine themselves, so only the standalone app offers connecting. -->
+			<NullState
+				class="px-2 py-6"
+				illustration="stars"
+				title="Nothing in the scene yet"
+				text={environment.current.isStandalone
+					? 'Connect to a machine, drop a file onto the canvas, or send drawings with the draw API.'
+					: 'Drop a file onto the canvas, or send drawings with the draw API.'}
+			/>
+		</div>
+	{/if}
+
 	<!--
 		Sized to the widest row instead of the panel, so deep nesting scrolls
 		horizontally rather than wrapping. `min-w-full` keeps rows full width, and
@@ -194,11 +215,7 @@
 		{...api.getTreeProps()}
 		class="w-max min-w-full"
 	>
-		{#if rootChildren.length === 0}
-			<p class="text-subtle-2 px-2 py-4">
-				{isFiltering ? 'No matching objects' : 'No objects displayed'}
-			</p>
-		{:else if rootChildren.length > 200}
+		{#if rootChildren.length > 200}
 			<VirtualList items={rootChildren}>
 				{#snippet vl_slot({ index, item: node })}
 					<TreeNode
@@ -208,7 +225,7 @@
 					/>
 				{/snippet}
 			</VirtualList>
-		{:else}
+		{:else if rootChildren.length > 0}
 			{#each rootChildren as node, index (node.entity)}
 				<TreeNode
 					{node}

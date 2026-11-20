@@ -64,7 +64,7 @@
 				<div>
 					<div class="mb-1">
 						<strong class="font-semibold">world orientation</strong>
-						<span class="text-subtle-2"> (deg)</span>
+						<span class="text-subtle-2"> (OV)</span>
 					</div>
 					<div class="flex gap-3">
 						<div>
@@ -75,6 +75,9 @@
 						</div>
 						<div>
 							<span class="text-subtle-2 mr-1">z </span>{hoverInfo.oZ.toFixed(2)}
+						</div>
+						<div>
+							<span class="text-subtle-2 mr-1">th </span>{hoverInfo.theta.toFixed(2)}°
 						</div>
 					</div>
 				</div>

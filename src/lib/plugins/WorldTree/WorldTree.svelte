@@ -58,7 +58,10 @@
 		{stalenessAnnouncement}
 	</div>
 
-	<FilterBar bind:value={filter} />
+	<!-- Nothing to filter in an empty scene. Kept while a query is typed, so it can be cleared. -->
+	{#if tree.current.length > 0 || filter !== ''}
+		<FilterBar bind:value={filter} />
+	{/if}
 
 	<!-- The tree owns the scroll port, so it needs a fixed track to scroll inside. -->
 	<div class="min-h-0 flex-1">

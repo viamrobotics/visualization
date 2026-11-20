@@ -88,6 +88,24 @@
 		},
 	})
 
+	useHotkey({
+		id: 'selection.escape',
+		key: 'escape',
+		description: 'Leave the current tool, or clear the selection',
+		group: 'Selection',
+		when: () => settings.current.interactionMode !== 'navigate' || selected.current.length > 0,
+		run: () => {
+			if (settings.current.interactionMode !== 'navigate') {
+				settings.current.interactionMode = 'navigate'
+				return
+			}
+
+			for (const entity of selected.current) {
+				entity?.remove(traits.Selected)
+			}
+		},
+	})
+
 	const isRealistic = $derived(settings.current.renderMode === 'realistic')
 </script>
 

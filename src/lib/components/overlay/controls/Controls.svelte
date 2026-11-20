@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
+	import { Not } from 'koota'
 
 	import { focusCameraOnEntities } from '#lib/components/Entities/focusCameraOnEntities.js'
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
@@ -13,16 +14,23 @@
 	const settings = useSettings()
 	const cameraControls = useCameraControls()
 	const selected = useQuery(traits.Selected)
+	const visible = useQuery(traits.WorldMatrix, Not(traits.InheritedInvisible))
 
 	const isOrthographic = $derived(settings.current.cameraMode === 'orthographic')
-	const canFocus = $derived(selected.current.length > 0)
+	const hasSelection = $derived(selected.current.length > 0)
+	const canFocus = $derived(hasSelection || visible.current.length > 0)
 
 	const toggleProjection = () => {
 		settings.current.cameraMode = isOrthographic ? 'perspective' : 'orthographic'
 	}
 
+	// With nothing selected, frames everything visible so a lost scene is one press away.
 	const focusSelection = () => {
-		focusCameraOnEntities(cameraControls.current, scene, selected.current)
+		focusCameraOnEntities(
+			cameraControls.current,
+			scene,
+			hasSelection ? selected.current : visible.current
+		)
 	}
 
 	const projection = useHotkey({
@@ -36,7 +44,7 @@
 	const focus = useHotkey({
 		id: 'camera.focusSelection',
 		key: 'f',
-		description: 'Focus object',
+		description: 'Focus selection, or fit the scene',
 		group: 'Camera',
 		when: () => canFocus,
 		run: focusSelection,
@@ -50,14 +58,14 @@
 		<Button
 			class="rounded-b-none"
 			icon="image-filter-center-focus"
-			description={focus.description}
+			description={hasSelection ? 'Focus selection' : 'Fit scene in view'}
 			keybinding={focus}
 			disabled={!canFocus}
 			tooltipLocation="left"
 			onclick={focusSelection}
 		/>
 		<Button
-			class="-my-0.5 rounded-none"
+			class="-mt-px rounded-none"
 			icon="camera-outline"
 			description="Reset camera"
 			tooltipLocation="left"
@@ -66,7 +74,7 @@
 			}}
 		/>
 		<Button
-			class="-my-0.5 rounded-t-none"
+			class="-mt-px rounded-t-none"
 			icon={isOrthographic ? 'grid-orthographic' : 'grid-perspective'}
 			description={isOrthographic ? 'Switch to perspective view' : 'Switch to orthographic view'}
 			keybinding={projection}

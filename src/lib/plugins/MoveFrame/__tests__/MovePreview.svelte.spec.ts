@@ -79,13 +79,16 @@ describe('MovePreview', () => {
 		)
 	})
 
-	it('spells out the caveat under the approximation notice', () => {
+	it('spells out the caveat in the approximation notice tooltip', async () => {
+		const user = userEvent.setup()
 		render(MovePreview, {
 			props: { preview: preview({ status: 'ready', plannedSteps: 12 }), frameName: 'arm' },
 		})
 
+		await user.hover(screen.getByRole('button', { name: 'About this approximation' }))
+
 		expect(
-			screen.getByText(/how it moves between them is the component's decision/i)
+			await screen.findByText(/how it moves between them is the component's decision/i)
 		).toBeInTheDocument()
 	})
 

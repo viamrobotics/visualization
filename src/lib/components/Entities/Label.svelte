@@ -7,7 +7,7 @@
 	import { Group } from 'three'
 
 	import { parseRGB } from '#lib/color.js'
-	import { traits, useTag, useTrait } from '#lib/ecs/index.js'
+	import { selectOnly, traits, useTag, useTrait, useWorld } from '#lib/ecs/index.js'
 
 	import { labels } from './labelLayout/labelStore.svelte'
 
@@ -18,6 +18,7 @@
 	let { entity }: Props = $props()
 
 	const { invalidate } = useThrelte()
+	const world = useWorld()
 
 	const matrix = useTrait(() => entity, traits.WorldMatrix)
 	const name = useTrait(() => entity, traits.Name)
@@ -84,8 +85,14 @@
 				},
 			]}
 			style={accent ? `border-left-color: ${accent}` : undefined}
-			onclick={() => {
-				entity.add(traits.Selected)
+			onclick={(event) => {
+				if (!event.shiftKey) {
+					selectOnly(world, entity)
+				} else if (entity.has(traits.Selected)) {
+					entity.remove(traits.Selected)
+				} else {
+					entity.add(traits.Selected)
+				}
 			}}
 		>
 			{name.current}

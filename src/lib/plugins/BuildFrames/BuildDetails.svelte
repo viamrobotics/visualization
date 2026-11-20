@@ -33,6 +33,7 @@
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
 	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
+	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
@@ -44,6 +45,8 @@
 	const fragmentInfo = useFragmentInfo()
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
+	// Read here, not in `ObstacleSection`: the details panel portals its content out of this context.
+	const obstaclePreview = useObstaclePreviewToggle()
 
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 
@@ -127,7 +130,10 @@
 			{/if}
 
 			{#if showObstacleEditor && name.current}
-				<ObstacleSection name={name.current} />
+				<ObstacleSection
+					name={name.current}
+					preview={obstaclePreview}
+				/>
 			{:else if showEditFrameOptions && !isObstacle}
 				<EditGeometryDetails {entity} />
 			{:else}
