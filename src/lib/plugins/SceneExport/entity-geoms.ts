@@ -84,13 +84,14 @@ const meshRgba = (mesh: Mesh): [number, number, number, number] => {
 
 /**
  * Where a visual model's root sits in its entity's frame. A draw-API GLTF keeps its own root
- * transform, as `GLTF.svelte` draws it. An arm model's root takes the entity's `Center` instead, as
- * `GeometryModel` draws it.
+ * transform, as `GLTF.svelte` draws it. An arm model's root takes the entity's `Center` for its
+ * position and rotation but keeps its own scale, as `GeometryModel` draws it, and keeps its whole
+ * transform when the entity has no `Center`.
  */
 const modelRootPlacement = (entity: Entity, model: Object3D): Matrix4 => {
-	if (!entity.has(traits.GLTF)) return centerOf(entity)
 	model.updateMatrix()
-	return model.matrix.clone()
+	const center = entity.has(traits.GLTF) ? undefined : entity.get(traits.Center)
+	return center ? centerPose.copy(center).toMatrix4().scale(model.scale) : model.matrix.clone()
 }
 
 /**

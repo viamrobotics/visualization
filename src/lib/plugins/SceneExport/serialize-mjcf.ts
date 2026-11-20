@@ -1,8 +1,9 @@
-import { type Matrix4, Quaternion, Vector3 } from 'three'
+import { type BufferGeometry, type Matrix4, Quaternion, Vector3 } from 'three'
 
 import type { SimBody, SimDocument, SimExportNote, SimGeom, SimScene } from './sim-scene'
 
 import { childrenByParent } from './children-by-parent'
+import { convexHull } from './convex-hull'
 import { PLACEHOLDER_INERTIA_KG_M2, PLACEHOLDER_MASS_KG } from './estimate-inertial'
 import { indentXml } from './indent-xml'
 import { meshFileNamer } from './mesh-file-namer'
@@ -19,6 +20,9 @@ const VISUAL_GROUP = 1
 const COLLISION_GROUP = 3
 
 const JOINT_TYPES = { revolute: 'hinge', prismatic: 'slide' } as const
+
+/** MuJoCo refuses to load a mesh with fewer distinct vertices than this, in any role. */
+const MUJOCO_MIN_MESH_VERTICES = 4
 
 const position = new Vector3()
 const rotation = new Quaternion()
@@ -75,6 +79,40 @@ interface MjcfWriter {
 	notes: SimExportNote[]
 }
 
+/** STL stores float32, and MuJoCo merges vertices that match there. */
+const distinctVertexCount = (geometry: BufferGeometry): number => {
+	const position = geometry.getAttribute('position')
+	const keys = new Set<string>()
+	for (let index = 0; index < position.count; index++) {
+		keys.add(
+			`${Math.fround(position.getX(index))},${Math.fround(position.getY(index))},${Math.fround(position.getZ(index))}`
+		)
+	}
+	return keys.size
+}
+
+/**
+ * The role `geom` can take in MuJoCo, or `undefined` when MuJoCo cannot load it at all. MuJoCo
+ * builds a convex hull for every colliding mesh and fails to compile on a flat one, so a flat
+ * collision mesh only draws.
+ */
+const mujocoRole = (
+	geom: SimGeom,
+	bodyName: string,
+	notes: SimExportNote[]
+): SimGeom['role'] | undefined => {
+	if (geom.shape.kind !== 'mesh') return geom.role
+	if (distinctVertexCount(geom.shape.geometry) < MUJOCO_MIN_MESH_VERTICES) {
+		notes.push({ reason: 'mujoco-mesh-too-few-vertices', subject: bodyName })
+		return undefined
+	}
+	if (geom.role !== 'visual' && !convexHull(geom.shape.geometry)) {
+		notes.push({ reason: 'mujoco-flat-mesh-visual-only', subject: bodyName })
+		return 'visual'
+	}
+	return geom.role
+}
+
 const geomElement = (writer: MjcfWriter, body: SimBody, geom: SimGeom): string => {
 	let meshName: string | undefined
 	if (geom.shape.kind === 'mesh') {
@@ -101,8 +139,12 @@ const geomElement = (writer: MjcfWriter, body: SimBody, geom: SimGeom): string =
  */
 const bodyElement = (writer: MjcfWriter, body: SimBody): string => {
 	const children: string[] = []
+	const geoms = body.geoms.flatMap((geom) => {
+		const role = mujocoRole(geom, body.name, writer.notes)
+		return role ? [{ ...geom, role }] : []
+	})
 
-	if (body.geoms.every((geom) => geom.role === 'visual')) {
+	if (geoms.every((geom) => geom.role === 'visual')) {
 		const moment = PLACEHOLDER_INERTIA_KG_M2
 		children.push(
 			`<inertial pos="0 0 0" mass="${xmlSignificant(PLACEHOLDER_MASS_KG)}" diaginertia="${xmlSignificant(moment, moment, moment)}"/>`
@@ -119,7 +161,7 @@ const bodyElement = (writer: MjcfWriter, body: SimBody): string => {
 		writer.jointValues.push(value)
 	}
 
-	for (const geom of body.geoms) children.push(geomElement(writer, body, geom))
+	for (const geom of geoms) children.push(geomElement(writer, body, geom))
 	for (const child of writer.childrenOf.get(body.name) ?? []) {
 		children.push(bodyElement(writer, child))
 	}

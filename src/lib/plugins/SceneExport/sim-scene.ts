@@ -97,5 +97,7 @@ export type SimExportNoteReason =
 	| 'end-effector-offset-unknown'
 	| 'collision-mesh-hulled'
 	| 'mujoco-hulls-collision-mesh'
+	| 'mujoco-flat-mesh-visual-only'
+	| 'mujoco-mesh-too-few-vertices'
 	| 'inertia-estimated'
 	| 'joint-limits-placeholder'

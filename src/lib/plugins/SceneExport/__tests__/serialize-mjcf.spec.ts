@@ -1,4 +1,4 @@
-import { Matrix4 } from 'three'
+import { BufferGeometry, Float32BufferAttribute, Matrix4, PlaneGeometry } from 'three'
 import { describe, expect, it } from 'vitest'
 
 import { serializeMjcf } from '../serialize-mjcf'
@@ -61,5 +61,38 @@ describe('serializeMjcf', () => {
 
 		expect(attribute(mjcf, 'body[name="model"] geom', 'contype')).toBe('0')
 		expect(attribute(mjcf, 'body[name="model"] geom', 'density')).toBe('0')
+	})
+
+	it('draws a flat collision mesh without colliding it, since MuJoCo cannot hull it', () => {
+		const plate = simGeom({ kind: 'mesh', geometry: new PlaneGeometry(1, 1) })
+		const scene = { bodies: [simBody('plate', { geoms: [plate] })], notes: [] }
+
+		const { document, notes } = serializeMjcf(scene)
+		const mjcf = parseXml(document)
+
+		expect(attribute(mjcf, 'body[name="plate"] geom', 'contype')).toBe('0')
+		expect(notes).toContainEqual({ reason: 'mujoco-flat-mesh-visual-only', subject: 'plate' })
+	})
+
+	it('leaves out a mesh with fewer than 4 vertices, which MuJoCo refuses in any role', () => {
+		const triangle = new BufferGeometry().setAttribute(
+			'position',
+			new Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3)
+		)
+		const scene = {
+			bodies: [
+				simBody('shard', {
+					geoms: [simGeom({ kind: 'mesh', geometry: triangle }, { role: 'visual' })],
+				}),
+			],
+			notes: [],
+		}
+
+		const { document, meshes, notes } = serializeMjcf(scene)
+		const mjcf = parseXml(document)
+
+		expect(mjcf.querySelector('body[name="shard"] geom')).toBeNull()
+		expect(meshes.size).toBe(0)
+		expect(notes).toContainEqual({ reason: 'mujoco-mesh-too-few-vertices', subject: 'shard' })
 	})
 })

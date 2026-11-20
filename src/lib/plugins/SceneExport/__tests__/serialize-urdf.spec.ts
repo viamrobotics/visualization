@@ -1,4 +1,4 @@
-import { BoxGeometry, Matrix4 } from 'three'
+import { BoxGeometry, Matrix4, PlaneGeometry } from 'three'
 import { describe, expect, it } from 'vitest'
 
 import { serializeUrdf } from '../serialize-urdf'
@@ -73,6 +73,23 @@ describe('serializeUrdf', () => {
 			'meshes/elbow_2.stl'
 		)
 		expect(notes).toContainEqual({ reason: 'collision-mesh-hulled', subject: 'elbow' })
+	})
+
+	it('collides a flat mesh on a moving body as itself, since it has no hull', () => {
+		const plate = simGeom({ kind: 'mesh', geometry: new PlaneGeometry(1, 1) })
+		const scene = {
+			bodies: [simBody('wrist', { joint: revoluteJoint(0), geoms: [plate] })],
+			notes: [],
+		}
+
+		const { document, meshes, notes } = serializeUrdf(scene)
+		const urdf = parseXml(document)
+
+		expect(attribute(urdf, 'link[name="wrist"] collision mesh', 'filename')).toBe(
+			'meshes/wrist.stl'
+		)
+		expect(meshes.get('meshes/wrist.stl')?.getAttribute('position').count).toBe(4)
+		expect(notes).not.toContainEqual({ reason: 'collision-mesh-hulled', subject: 'wrist' })
 	})
 
 	it('writes a revolute joint with no finite limits as continuous, with no bounds', () => {

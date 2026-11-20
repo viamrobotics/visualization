@@ -20,7 +20,7 @@ export interface BuildSimSceneInput {
 }
 
 /** Why an entity has no body in the sim, or `undefined` when it gets one. */
-const skipReason = (entity: Entity): SimExportNoteReason | undefined => {
+export const skipReason = (entity: Entity): SimExportNoteReason | undefined => {
 	if (entity.has(traits.GhostModelKey)) return 'ghost-skipped'
 	if (entity.has(traits.InheritedInvisible)) return 'hidden-skipped'
 	if (entity.has(traits.Points)) return 'point-cloud-skipped'

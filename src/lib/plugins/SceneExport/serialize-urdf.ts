@@ -119,12 +119,17 @@ const visualElement = (
 
 /**
  * A `<collision>`. On a moving body a mesh collides as its convex hull, since physics engines handle
- * a concave mesh on a dynamic body badly or not at all.
+ * a concave mesh on a dynamic body badly or not at all. A flat mesh has no hull and is no less
+ * convex than one would be, so it collides as itself.
  */
 const collisionElement = (writer: UrdfWriter, body: SimBody, geom: SimGeom): string => {
 	let collisionGeom = geom
-	if (geom.shape.kind === 'mesh' && writer.moving.has(body.name)) {
-		collisionGeom = { ...geom, shape: { kind: 'mesh', geometry: convexHull(geom.shape.geometry) } }
+	const hull =
+		geom.shape.kind === 'mesh' && writer.moving.has(body.name)
+			? convexHull(geom.shape.geometry)
+			: undefined
+	if (hull) {
+		collisionGeom = { ...geom, shape: { kind: 'mesh', geometry: hull } }
 		writer.notes.push({ reason: 'collision-mesh-hulled', subject: body.name })
 	}
 	return [

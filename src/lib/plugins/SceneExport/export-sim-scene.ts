@@ -8,7 +8,7 @@ import { matchModel, modelKey } from '#lib/hooks/use3DModels.svelte.js'
 
 import type { SimExportNote } from './sim-scene'
 
-import { buildSimScene } from './build-sim-scene'
+import { buildSimScene, skipReason } from './build-sim-scene'
 import { countExportNotes } from './export-notes-text'
 import { loadGltfScene } from './load-gltf-scene'
 import { packageSimExport } from './package-sim-export'
@@ -28,12 +28,15 @@ export interface SimExportResult {
 	noteCount: number
 }
 
-/** Loads every draw-API GLTF. One that fails is noted and left out rather than failing the export. */
+/**
+ * Loads every draw-API GLTF the export keeps. One that fails is noted and left out rather than
+ * failing the export.
+ */
 const loadDrawnModels = async (
 	world: World,
 	notes: SimExportNote[]
 ): Promise<Map<Entity, Object3D>> => {
-	const entities = world.query(traits.GLTF)
+	const entities = world.query(traits.GLTF).filter((entity) => skipReason(entity) === undefined)
 	const loaded = await Promise.allSettled(
 		entities.map(async (entity) => {
 			const gltf = entity.get(traits.GLTF)

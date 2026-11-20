@@ -5,6 +5,7 @@
 	import { useWorld } from '#lib/ecs/index.js'
 	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
 	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
@@ -19,6 +20,7 @@
 	const world = useWorld()
 	const frames = useFrames()
 	const models = use3DModels()
+	const settings = useSettings()
 	const logs = useLogs()
 
 	let isExporting = $state(false)
@@ -40,7 +42,8 @@
 			const result = await exportSimScene({
 				world,
 				kinematics: kinematicsByComponent(frames.parts),
-				armModels: models.current,
+				// The export shows what the scene draws, and `GeometryModel` draws arm models only in this mode.
+				armModels: settings.current.renderArmModels.includes('model') ? models.current : {},
 			})
 			download(result.zip)
 			logs.add(

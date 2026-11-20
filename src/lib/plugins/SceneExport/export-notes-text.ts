@@ -18,12 +18,16 @@ const EXPLANATIONS: Record<SimExportNoteReason, string> = {
 	'joint-value-unknown':
 		'The snapshot position of these joints could not be measured, so they start at zero. A joint needs a pose polled through it, and only one joint between two links.',
 	'link-not-articulated':
-		'These links no longer hang from their parent in the kinematics model, or their joint type is unsupported, so they are welded where the snapshot shows them.',
+		'These links no longer hang from their parent in the kinematics model, or their joint type is unsupported or has no axis, so they are welded where the snapshot shows them.',
 	'mesh-empty-skipped': 'These meshes have no vertices and were left out.',
 	'collision-mesh-hulled':
 		'These moving collision meshes collide as their convex hulls in the URDF, because physics engines handle concave meshes on moving bodies badly.',
 	'mujoco-hulls-collision-mesh':
 		'MuJoCo collides every mesh as its convex hull, so these collision meshes are larger than they look wherever they are concave.',
+	'mujoco-flat-mesh-visual-only':
+		'These collision meshes are flat. MuJoCo cannot build a convex hull with no volume, so in the MJCF they are drawn but do not collide.',
+	'mujoco-mesh-too-few-vertices':
+		'These meshes have fewer than 4 distinct vertices, which MuJoCo cannot load, so they were left out of the MJCF.',
 	'inertia-estimated':
 		'Mass and inertia are estimated from collision geometry at the density of water, not measured.',
 	'joint-limits-placeholder':

@@ -6,11 +6,14 @@
 //
 // # Getting Started
 //
-// Before using any drawing functions, start the visualizer:
+// Before using any drawing functions, open the Viam Visualizer desktop app, or run the visualizer
+// from source with:
 //
 //	make up
 //
-// The visualizer will be available at http://localhost:5173.
+// Both serve the draw service on localhost:3030, which this package targets. Set DRAW_SERVICE_PORT
+// to reach a draw server on another port. From source, the visualizer opens at
+// http://localhost:5173.
 //
 // # Drawing API
 //
@@ -34,7 +37,7 @@
 //	)
 //
 //	func main() {
-//	    // The visualizer must be running: make up
+//	    // The visualizer must be running: the desktop app, or make up
 //
 //	    // Draw a line
 //	    positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}}

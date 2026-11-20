@@ -51,14 +51,17 @@ const axisOf = (joint: RawKinematicsJoint): Vector3 => {
 	).normalize()
 }
 
+/** `undefined` for a joint the sim cannot move: an unsupported type, or one with no axis to move on. */
 const toSimJoint = (joint: RawKinematicsJoint): SimJoint | undefined => {
 	if (joint.type !== 'revolute' && joint.type !== 'prismatic') return undefined
+	const axis = axisOf(joint)
+	if (axis.lengthSq() === 0) return undefined
 	const toSimUnits = joint.type === 'revolute' ? MathUtils.DEG2RAD : MM_TO_M
 	const { min, max, max_velocity: maxVelocity } = joint
 	const hasLimits = Number.isFinite(min) && Number.isFinite(max)
 	return {
 		type: joint.type,
-		axis: axisOf(joint),
+		axis,
 		limits: hasLimits
 			? { lower: (min as number) * toSimUnits, upper: (max as number) * toSimUnits }
 			: undefined,

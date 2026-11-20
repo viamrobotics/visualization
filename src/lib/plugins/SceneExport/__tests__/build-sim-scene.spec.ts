@@ -1,5 +1,5 @@
 import { createWorld, type World } from 'koota'
-import { Color, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { BoxGeometry, Color, Group, MathUtils, Matrix4, Mesh, Quaternion, Vector3 } from 'three'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
@@ -299,6 +299,72 @@ describe('buildSimScene', () => {
 
 		expect(shoulder.joint.value).toBeCloseTo(0.523599, 6)
 		expect(notes).not.toContainEqual({ reason: 'joint-value-unknown', subject: 'arm:shoulder' })
+	})
+
+	it('welds a link whose joint has no axis instead of writing a zero axis', async () => {
+		setup()
+		spawnArmAtThirtyDegrees()
+		await flush()
+		const [shoulder] = TWO_LINK_ARM.joints ?? []
+		assertExists(shoulder, 'TWO_LINK_ARM has no shoulder joint')
+		const axisless: RawKinematicsModel = {
+			...TWO_LINK_ARM,
+			joints: [{ ...shoulder, axis: undefined }],
+		}
+
+		const { bodies, notes } = build({ arm: axisless })
+
+		expect(bodies.map((body) => body.name)).not.toContain('arm:shoulder')
+		expect(notes).toContainEqual({ reason: 'link-not-articulated', subject: 'arm:upper' })
+	})
+
+	/** A 1000-unit cube under a root scaled to millimetres and offset 0.5 m along X. */
+	const millimetreModel = () => {
+		const root = new Group()
+		root.scale.setScalar(0.001)
+		root.position.set(0.5, 0, 0)
+		root.add(new Mesh(new BoxGeometry(1000, 1000, 1000)))
+		return root
+	}
+
+	const visualBounds = (scene: ReturnType<typeof buildSimScene>) => {
+		const visual = scene.bodies[0]?.geoms.find((geom) => geom.role === 'visual')
+		if (visual?.shape.kind !== 'mesh') throw new Error('no visual mesh')
+		visual.shape.geometry.computeBoundingBox()
+		const box = visual.shape.geometry.boundingBox
+		assertExists(box, 'the visual mesh has no bounds')
+		return box
+	}
+
+	it('keeps an arm model’s root scale under its Center, as the scene draws it', async () => {
+		setup()
+		world.spawn(
+			traits.Name('arm:base'),
+			traits.Matrix(new Matrix4()),
+			traits.Box({ x: 100, y: 100, z: 100 }),
+			traits.Center({ x: 0, y: 0, z: 0, oX: 0, oY: 0, oZ: 1, theta: 0 })
+		)
+		await flush()
+		const model = millimetreModel()
+
+		const scene = buildSimScene({ world, kinematics: {}, visualModelFor: () => model })
+
+		expect(visualBounds(scene).getSize(new Vector3()).x).toBeCloseTo(1, 6)
+	})
+
+	it('keeps an arm model’s whole root transform when it has no Center', async () => {
+		setup()
+		world.spawn(
+			traits.Name('arm:base'),
+			traits.Matrix(new Matrix4()),
+			traits.Box({ x: 100, y: 100, z: 100 })
+		)
+		await flush()
+		const model = millimetreModel()
+
+		const scene = buildSimScene({ world, kinematics: {}, visualModelFor: () => model })
+
+		expect(visualBounds(scene).getCenter(new Vector3()).x).toBeCloseTo(0.5, 6)
 	})
 
 	it('skips and notes a mesh with no vertices rather than failing the export', async () => {

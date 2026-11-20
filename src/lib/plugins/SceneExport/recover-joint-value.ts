@@ -8,6 +8,7 @@ import type { SimJoint } from './sim-scene'
  */
 const POSITION_TOLERANCE_M = 1e-4
 const ANGLE_TOLERANCE_RAD = 1e-3
+const FULL_TURN_RAD = 2 * Math.PI
 
 const jointMotion = new Matrix4()
 const rotation = new Quaternion()
@@ -20,6 +21,18 @@ const angleOf = (quaternion: Quaternion): number =>
 	2 * Math.atan2(Math.hypot(quaternion.x, quaternion.y, quaternion.z), Math.abs(quaternion.w))
 
 /**
+ * `angle`, from -π to π, moved by whole turns into `limits` when it lies outside them. One already
+ * inside stays put, so a range spanning more than a turn keeps the turn nearest zero, since a pose
+ * cannot tell the turns apart.
+ */
+const angleWithinLimits = (angle: number, limits: SimJoint['limits']): number => {
+	if (!limits || (angle >= limits.lower && angle <= limits.upper)) return angle
+	const turnsUp = Math.ceil((limits.lower - angle) / FULL_TURN_RAD)
+	const lowestInRange = angle + turnsUp * FULL_TURN_RAD
+	return lowestInRange <= limits.upper ? lowestInRange : angle
+}
+
+/**
  * The joint position that turns `childStatic` into `childInParent`. rdk composes a child of a joint
  * as `joint(value) × childStatic`, so the joint's own motion is what is left once the static part is
  * removed.
@@ -29,7 +42,7 @@ const angleOf = (quaternion: Quaternion): number =>
  * the joint, such as a config pose read before any `getPose` poll.
  */
 export const recoverJointValue = (
-	{ type, axis }: Pick<SimJoint, 'type' | 'axis'>,
+	{ type, axis, limits }: Pick<SimJoint, 'type' | 'axis' | 'limits'>,
 	childInParent: Matrix4,
 	childStatic: Matrix4
 ): number | undefined => {
@@ -48,5 +61,8 @@ export const recoverJointValue = (
 	const isAboutAxis = 2 * Math.asin(Math.min(offAxis.length(), 1)) < ANGLE_TOLERANCE_RAD
 	if (!isAboutAxis || translation.length() >= POSITION_TOLERANCE_M) return undefined
 
-	return 2 * Math.atan2(sinHalfAlongAxis, rotation.w)
+	// q and -q are the same rotation. Taking the one with w ≥ 0 keeps the angle in (-π, π].
+	const hemisphere = rotation.w < 0 ? -1 : 1
+	const angle = 2 * Math.atan2(hemisphere * sinHalfAlongAxis, hemisphere * rotation.w)
+	return angleWithinLimits(angle, limits)
 }
