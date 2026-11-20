@@ -64,7 +64,7 @@ test('draw service events lifecycle', async ({ page, drawScene, resetScene }) =>
 
 	drawScene('lifecycle/remove-all')
 
-	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible({
+	await expect(page.getByText('Nothing in the scene yet', { exact: true })).toBeVisible({
 		timeout: 15000,
 	})
 
@@ -76,7 +76,7 @@ test('draw frame system', async ({ page, drawScene, snapshotAndReset }) => {
 
 	drawScene('frame-system/draw')
 
-	await expect(page.getByText('No objects displayed', { exact: true })).not.toBeVisible()
+	await expect(page.getByText('Nothing in the scene yet', { exact: true })).not.toBeVisible()
 
 	await snapshotAndReset(testPrefix)
 })
@@ -309,7 +309,7 @@ test('scoped clears', async ({ page, drawClient, resetScene }) => {
 
 	await seed()
 	expect(await drawClient.removeAll({})).toMatchObject({ transformCount: 1, drawingCount: 1 })
-	await expect(page.getByText('No objects displayed', { exact: true })).toBeVisible()
+	await expect(page.getByText('Nothing in the scene yet', { exact: true })).toBeVisible()
 
 	await resetScene()
 })

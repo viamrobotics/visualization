@@ -131,7 +131,7 @@
 			>
 				<div
 					{...api.getHeaderProps()}
-					class="border-medium flex items-center justify-between gap-2 border-b bg-white p-2"
+					class="border-medium flex h-9 items-center justify-between gap-2 border-b bg-white p-2"
 				>
 					<div class="flex min-w-0 items-center gap-1.5">
 						{@render headerPrefix?.()}
