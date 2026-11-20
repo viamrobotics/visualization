@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { Input, Switch } from '@viamrobotics/prime-core'
+	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 	import { Color } from 'three'
 
 	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 	const pointclouds = usePointClouds()
+	const partID = usePartID()
+	const machineStatus = useMachineStatus(() => partID.current)
+	// An empty list means nothing until the machine's first status reply arrives.
+	const isWaiting = $derived(partID.current !== '' && machineStatus.current === undefined)
 
 	const { disabledCameras } = $derived(settings.current)
 
@@ -105,6 +111,6 @@
 			/>
 		</div>
 	{:else}
-		No cameras detected
+		{isWaiting ? 'Waiting for the machine…' : 'No cameras detected'}
 	{/each}
 </div>

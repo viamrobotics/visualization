@@ -33,6 +33,13 @@
 	const name = useTrait(() => node.entity, traits.Name)
 	const invisible = useTrait(() => node.entity, traits.Invisible)
 	const inheritedInvisible = useTrait(() => node.entity, traits.InheritedInvisible)
+
+	// `InheritedInvisible` is what the scene hides by. Without the row's own `Invisible`, a parent set it.
+	const isHiddenByParent = $derived(!invisible.current && !!inheritedInvisible.current)
+	const visibilityLabel = $derived.by(() => {
+		if (isHiddenByParent) return 'Hidden because a parent is hidden'
+		return invisible.current ? 'Show' : 'Hide'
+	})
 	const chunkProgress = useTrait(() => node.entity, traits.ChunkProgress)
 	const loading = $derived(chunkProgress.current !== undefined)
 	const progress = $derived(
@@ -178,7 +185,9 @@
 
 	<button
 		type="button"
-		class="text-gray-6"
+		class={['text-gray-6', isHiddenByParent && 'opacity-50']}
+		aria-label={visibilityLabel}
+		title={visibilityLabel}
 		onclick={(event) => {
 			event.stopPropagation()
 
@@ -189,10 +198,16 @@
 			}
 		}}
 	>
-		{#if invisible.current}
-			<EyeOff size={14} />
+		{#if invisible.current || isHiddenByParent}
+			<EyeOff
+				size={14}
+				aria-hidden="true"
+			/>
 		{:else}
-			<Eye size={14} />
+			<Eye
+				size={14}
+				aria-hidden="true"
+			/>
 		{/if}
 	</button>
 {/snippet}

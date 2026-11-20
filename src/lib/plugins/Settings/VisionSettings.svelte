@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { Switch } from '@viamrobotics/prime-core'
+	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
 	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 	const pointcloudObjects = usePointcloudObjects()
+	const partID = usePartID()
+	const machineStatus = useMachineStatus(() => partID.current)
+	// An empty list means nothing until the machine's first status reply arrives.
+	const isWaiting = $derived(partID.current !== '' && machineStatus.current === undefined)
 	const { disabledVisionServices } = $derived(settings.current)
 </script>
 
@@ -32,6 +38,6 @@
 			/>
 		</div>
 	{:else}
-		No vision services detected
+		{isWaiting ? 'Waiting for the machine…' : 'No vision services detected'}
 	{/each}
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResourceName } from '@viamrobotics/sdk'
 
-	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
+	import { useMachineStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
 	import { subtypeToColor } from '#lib/color.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
@@ -11,6 +11,9 @@
 
 	const partID = usePartID()
 	const statuses = useResourceStatuses(() => partID.current)
+	const machineStatus = useMachineStatus(() => partID.current)
+	// An empty list means nothing until the machine's first status reply arrives.
+	const isWaiting = $derived(partID.current !== '' && machineStatus.current === undefined)
 
 	const formatSubtype = (subtype: string) =>
 		subtype
@@ -55,6 +58,8 @@
 			<ResourceWidgetRow {resource} />
 		{/each}
 	{:else}
-		<p class="text-subtle-2 py-2">No widgets available for this machine.</p>
+		<p class="text-subtle-2 py-2">
+			{isWaiting ? 'Waiting for the machine…' : 'No widgets available for this machine.'}
+		</p>
 	{/each}
 </div>

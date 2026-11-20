@@ -12,20 +12,28 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 	import { traits, useTrait } from '#lib/ecs/index.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
+	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
+
 	interface Props {
 		entity: Entity
-		/** Cameras whose reported intrinsics describe a frustum, by name. */
-		withIntrinsics: Set<string>
+		intrinsicsStatus: (camera: string) => IntrinsicsStatus
 	}
 
-	const { entity, withIntrinsics }: Props = $props()
+	const { entity, intrinsicsStatus }: Props = $props()
+
+	const unavailableNotes: Record<Exclude<IntrinsicsStatus, 'ready'>, string> = {
+		loading: 'Checking whether this camera reports intrinsics…',
+		error: "Couldn't read this camera's properties, so its frustum is unknown.",
+		none: 'This camera reports no intrinsics, so its frustum is unknown.',
+	}
 
 	const settings = useSettings()
 
 	const name = useTrait(() => entity, traits.Name)
 
 	const cameraName = $derived(name.current)
-	const isDrawable = $derived(cameraName !== undefined && withIntrinsics.has(cameraName))
+	const status = $derived(cameraName === undefined ? 'loading' : intrinsicsStatus(cameraName))
+	const isDrawable = $derived(status === 'ready')
 	const isOn = $derived(
 		cameraName !== undefined && settings.current.disabledCoverageCameras[cameraName] !== true
 	)
@@ -45,8 +53,8 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 			/>
 		</div>
 
-		{#if !isDrawable}
-			<p class="text-subtle-2">This camera reports no intrinsics, so its frustum is unknown.</p>
+		{#if status !== 'ready'}
+			<p class="text-subtle-2">{unavailableNotes[status]}</p>
 		{:else if !settings.current.enableSensorCoverage}
 			<p class="text-subtle-2">Camera coverage is switched off in the Sensors settings.</p>
 		{/if}

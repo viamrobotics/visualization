@@ -1,13 +1,4 @@
-import type { PlainMessage } from '@bufbuild/protobuf'
-import type { cameraApi } from '@viamrobotics/sdk'
-
-/**
- * A camera's pinhole intrinsics, as `GetProperties` reports them.
- *
- * The fields of `IntrinsicParameters` without the `Message` methods, so a reply satisfies
- * it and a test can write one as a literal.
- */
-export type Intrinsics = PlainMessage<cameraApi.IntrinsicParameters>
+import { type Intrinsics, isUsableIntrinsics } from '#lib/cameraIntrinsics.js'
 
 /** Image corners as fractions of the image, wound clockwise from the top left. */
 const CORNERS = [
@@ -37,32 +28,6 @@ const EDGES = [
 ] as const
 
 /**
- * Whether these intrinsics describe a camera a frustum can be built from.
- *
- * A camera that reports the message but not the values leaves them zero, which would
- * otherwise unproject to a degenerate or wildly skewed volume. Requiring the principal
- * point to fall inside the image rejects that without rejecting any real camera.
- */
-const isUsable = (intrinsics: Intrinsics): boolean => {
-	const { widthPx, heightPx, focalXPx, focalYPx, centerXPx, centerYPx } = intrinsics
-
-	return (
-		widthPx > 0 &&
-		heightPx > 0 &&
-		focalXPx > 0 &&
-		focalYPx > 0 &&
-		Number.isFinite(widthPx) &&
-		Number.isFinite(heightPx) &&
-		Number.isFinite(focalXPx) &&
-		Number.isFinite(focalYPx) &&
-		centerXPx > 0 &&
-		centerXPx < widthPx &&
-		centerYPx > 0 &&
-		centerYPx < heightPx
-	)
-}
-
-/**
  * Wireframe line-segment endpoints for a camera's view frustum, in the camera frame's
  * own coordinates: metres, optical axis along +Z, image-down along +Y — the convention
  * `FramePovWidget` renders against.
@@ -81,7 +46,7 @@ export const frustumPositions = (
 	near: number,
 	far: number
 ): Float32Array | undefined => {
-	if (!isUsable(intrinsics)) return undefined
+	if (!isUsableIntrinsics(intrinsics)) return undefined
 	if (!Number.isFinite(near) || !Number.isFinite(far)) return undefined
 	if (near < 0 || far <= near) return undefined
 

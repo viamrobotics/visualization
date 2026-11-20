@@ -102,28 +102,4 @@
 			/>
 		</div>
 	</label>
-
-	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Lines</strong></h3>
-
-	<label class="flex items-center justify-between gap-2">
-		Thickness
-
-		<div class="w-20">
-			<Input
-				bind:value={settings.current.lineWidth}
-				on:keydown={(event) => event.stopImmediatePropagation()}
-			/>
-		</div>
-	</label>
-
-	<label class="flex items-center justify-between gap-2">
-		Dot size
-
-		<div class="w-20">
-			<Input
-				bind:value={settings.current.lineDotSize}
-				on:keydown={(event) => event.stopImmediatePropagation()}
-			/>
-		</div>
-	</label>
 </div>

@@ -1,10 +1,6 @@
-import { CameraClient } from '@viamrobotics/sdk'
-import {
-	createResourceClient,
-	createResourceQuery,
-	useResourceStatuses,
-} from '@viamrobotics/svelte-sdk'
+import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
+import { useCameraIntrinsics } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 import { frustumPositions } from './frustumPositions'
@@ -41,34 +37,15 @@ export const useCameraFrusta = ({ range }: CameraFrustaOptions) => {
 			.filter((name): name is string => name !== undefined)
 	)
 
-	const clients = $derived(
-		names.map((name) =>
-			createResourceClient(
-				CameraClient,
-				() => partID.current,
-				() => name
-			)
-		)
-	)
-
-	// Intrinsics are fixed for the life of a camera, so the reply is fetched once and
-	// never polled. It is fetched even with the drawing switched off, so the settings
-	// panel can say which cameras report none rather than blaming the switch.
-	const queries = $derived(
-		clients.map(
-			(client) =>
-				[
-					client.name,
-					createResourceQuery(client, 'getProperties', { refetchInterval: false }),
-				] as const
-		)
-	)
+	// Fetched even with the drawing switched off, so the settings panel can say which
+	// cameras report none rather than blaming the switch.
+	const cameraIntrinsics = useCameraIntrinsics(() => names)
 
 	const current = $derived.by(() => {
 		const frusta: CameraFrustum[] = []
 
-		for (const [name, query] of queries) {
-			const intrinsics = query.data?.intrinsicParameters
+		for (const name of names) {
+			const intrinsics = cameraIntrinsics.intrinsics(name)
 			if (!intrinsics) continue
 
 			const positions = frustumPositions(intrinsics, 0, range())
@@ -88,5 +65,6 @@ export const useCameraFrusta = ({ range }: CameraFrustaOptions) => {
 		get names() {
 			return names
 		},
+		intrinsicsStatus: cameraIntrinsics.status,
 	}
 }

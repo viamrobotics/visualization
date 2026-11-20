@@ -4,7 +4,10 @@
 	import { type Entity } from 'koota'
 	import { Matrix4, PerspectiveCamera } from 'three'
 
-	import { traits } from '#lib/ecs/index.js'
+	import { verticalFovDegrees } from '#lib/cameraIntrinsics.js'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { useCameraIntrinsics } from '#lib/hooks/useCameraIntrinsics.svelte.js'
+	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 	interface Props {
 		entity: Entity
@@ -12,17 +15,38 @@
 
 	const { entity }: Props = $props()
 
-	const { scene, renderStage } = useThrelte()
+	const { scene, renderStage, invalidate } = useThrelte()
+
+	const name = useTrait(() => entity, traits.Name)
+	const resourceByName = useResourceByName()
+	const cameraName = $derived(
+		name.current !== undefined && resourceByName.current[name.current]?.subtype === 'camera'
+			? name.current
+			: undefined
+	)
+	const cameraIntrinsics = useCameraIntrinsics(() => (cameraName === undefined ? [] : [cameraName]))
+	const intrinsics = $derived(
+		cameraName === undefined ? undefined : cameraIntrinsics.intrinsics(cameraName)
+	)
 
 	// Three.js cameras look down -Z. Viam camera frames put the optical axis along
 	// +Z with image-down along +Y, so a 180° rotation around X aligns the render
 	// with what a sensor at this frame would see.
 	const VIAM_TO_THREE_CAMERA = new Matrix4().makeRotationX(Math.PI)
 
-	const FOV_DEG = 60
+	/** Used for any frame that is not a camera reporting usable intrinsics. */
+	const APPROXIMATE_FOV_DEG = 60
 
-	const camera = new PerspectiveCamera(FOV_DEG, 1, 0.01, 1000)
+	const fov = $derived(intrinsics ? verticalFovDegrees(intrinsics) : APPROXIMATE_FOV_DEG)
+
+	const camera = new PerspectiveCamera(APPROXIMATE_FOV_DEG, 1, 0.01, 1000)
 	camera.up.set(0, 0, 1)
+
+	$effect(() => {
+		camera.fov = fov
+		camera.updateProjectionMatrix()
+		invalidate()
+	})
 
 	let viewEl = $state.raw<HTMLDivElement>()
 
@@ -50,6 +74,14 @@
 	bind:this={viewEl}
 	class="absolute inset-0 block h-full w-full"
 ></div>
+
+<p
+	class="text-subtle-1 pointer-events-none absolute right-1 bottom-1 z-1 rounded bg-white/80 px-1 text-xs"
+>
+	{intrinsics
+		? `FOV ${Math.round(fov)}° from camera intrinsics`
+		: `Approximate view, ${APPROXIMATE_FOV_DEG}° FOV`}
+</p>
 
 <View
 	dom={viewEl}

@@ -27,7 +27,6 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 	const frusta = useCameraFrusta({ range: () => settings.current.sensorCoverageRange })
 
 	const cameraNames = $derived(new Set(frusta.names))
-	const withIntrinsics = $derived(new Set(frusta.current.map(({ name }) => name)))
 
 	const visible = $derived(
 		frusta.current.filter(({ name }) => settings.current.disabledCoverageCameras[name] !== true)
@@ -50,14 +49,14 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 {#snippet coverageRow({ entity }: { entity: Entity })}
 	<SensorCoverageToggle
 		{entity}
-		{withIntrinsics}
+		intrinsicsStatus={frusta.intrinsicsStatus}
 	/>
 {/snippet}
 
 <SettingsPortal label="Sensors">
 	<SensorCoverageSettings
 		cameras={frusta.names}
-		{withIntrinsics}
+		intrinsicsStatus={frusta.intrinsicsStatus}
 	/>
 </SettingsPortal>
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { frustumPositions, type Intrinsics } from '../frustumPositions'
+import type { Intrinsics } from '#lib/cameraIntrinsics.js'
+
+import { frustumPositions } from '../frustumPositions'
 
 const squareFov90: Intrinsics = {
 	widthPx: 100,

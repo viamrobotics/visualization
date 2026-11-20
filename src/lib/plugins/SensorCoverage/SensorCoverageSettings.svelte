@@ -6,19 +6,33 @@ and which cameras draw one.
 -->
 <script lang="ts">
 	import { Input, Switch } from '@viamrobotics/prime-core'
+	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+
+	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 
 	interface Props {
 		/** Every camera on the part, whether or not it reports usable intrinsics. */
 		cameras: string[]
-		/** Of those, the ones whose intrinsics describe a frustum. */
-		withIntrinsics: Set<string>
+		intrinsicsStatus: (camera: string) => IntrinsicsStatus
 	}
 
-	const { cameras, withIntrinsics }: Props = $props()
+	const { cameras, intrinsicsStatus }: Props = $props()
+
+	const statusNotes: Record<IntrinsicsStatus, string | undefined> = {
+		loading: 'Checking camera properties…',
+		error: "Couldn't read camera properties",
+		none: 'No intrinsics reported',
+		ready: undefined,
+	}
 
 	const settings = useSettings()
+	const partID = usePartID()
+	const machineStatus = useMachineStatus(() => partID.current)
+	// An empty list means nothing until the machine's first status reply arrives.
+	const isWaiting = $derived(partID.current !== '' && machineStatus.current === undefined)
 
 	const { disabledCoverageCameras } = $derived(settings.current)
 </script>
@@ -60,11 +74,12 @@ and which cameras draw one.
 	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Cameras</strong></h3>
 
 	{#each cameras as camera (camera)}
+		{@const note = statusNotes[intrinsicsStatus(camera)]}
 		<div class="flex items-center justify-between py-0.5 text-xs">
 			<span class="flex flex-col">
 				{camera}
-				{#if !withIntrinsics.has(camera)}
-					<span class="text-subtle-2">No intrinsics reported</span>
+				{#if note}
+					<span class="text-subtle-2">{note}</span>
 				{/if}
 			</span>
 
@@ -76,6 +91,6 @@ and which cameras draw one.
 			/>
 		</div>
 	{:else}
-		No cameras detected
+		{isWaiting ? 'Waiting for the machine…' : 'No cameras detected'}
 	{/each}
 </div>

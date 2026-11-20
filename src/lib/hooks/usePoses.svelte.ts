@@ -265,11 +265,16 @@ export const providePoses = (partID: () => string) => {
 	})
 
 	// A paused scene is deliberately showing a snapshot, not a broken one, and a
-	// scene with no pose queries yet has no pose old enough to warn about.
+	// scene with no pose queries yet has no pose old enough to warn about. A
+	// dropped connection disables the queries but leaves their last poses drawn,
+	// so any pose already received is stale until the machine is back.
 	const isStale = $derived(
-		options.enabled &&
+		partID() !== '' &&
+			interval !== RefetchRates.OFF &&
 			entries.length > 0 &&
-			isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
+			(isConnected
+				? isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
+				: lastPoseAt > 0)
 	)
 
 	setContext<Context>(key, {
