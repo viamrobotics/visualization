@@ -133,9 +133,9 @@
 
 					<XR />
 
-					<Logs />
 					<ControlWidgets />
 					<Machines {launch} />
+					<Logs />
 					<WorldTree />
 					<SceneExport />
 					<Settings />

@@ -125,6 +125,7 @@
 			"output": [
 				"src/lib/loaders/pcd/worker.inline.ts"
 			],
+			"clean": "if-file-deleted",
 			"packageLocks": [
 				"pnpm-lock.yaml"
 			]
@@ -206,7 +207,6 @@
 				"package.json"
 			],
 			"output": [
-				".svelte-kit/generated/**",
 				".svelte-kit/types/**",
 				"node_modules/$app/**"
 			],
