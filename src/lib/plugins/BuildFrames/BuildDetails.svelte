@@ -30,10 +30,10 @@
 	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
-	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
 	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
+	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity

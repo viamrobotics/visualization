@@ -87,42 +87,42 @@
 
 <Tooltip placement="bottom">
 	{#snippet children(tooltipID)}
-	<label
-		class={[
-			className,
-			'relative block rounded-md border bg-white',
-			isSelected ? ['z-4', style.border] : 'border-gray-5 hover:bg-light active:bg-medium',
-		]}
-		aria-describedby={tooltipID}
-	>
-		<button
-			class={['flex items-center rounded-[inherit] p-1.5', isSelected ? style.fill : style.idle]}
-			role="radio"
-			aria-label={description}
-			aria-checked={isSelected}
-			onclick={request}
+		<label
+			class={[
+				className,
+				'relative block rounded-md border bg-white',
+				isSelected ? ['z-4', style.border] : 'border-gray-5 hover:bg-light active:bg-medium',
+			]}
+			aria-describedby={tooltipID}
 		>
-			{#if mode === 'monitor'}
-				<Icon name="eye-outline" />
-			{:else if mode === 'build'}
-				<Hammer size="16" />
-			{:else if mode === 'replay'}
-				<Icon name="play-circle-outline" />
-			{:else if mode === 'move'}
-				<Move3d size="16" />
-			{/if}
-
-			<span
-				class="font-public-sans grid text-xs font-medium transition-[grid-template-columns] duration-150 ease-out motion-reduce:transition-none"
-				style:grid-template-columns={isSelected ? '1fr' : '0fr'}
-				aria-hidden="true"
+			<button
+				class={['flex items-center rounded-[inherit] p-1.5', isSelected ? style.fill : style.idle]}
+				role="radio"
+				aria-label={description}
+				aria-checked={isSelected}
+				onclick={request}
 			>
-				<span class="overflow-hidden">
-					<span class="block pl-1.5 whitespace-nowrap">{style.label}</span>
+				{#if mode === 'monitor'}
+					<Icon name="eye-outline" />
+				{:else if mode === 'build'}
+					<Hammer size="16" />
+				{:else if mode === 'replay'}
+					<Icon name="play-circle-outline" />
+				{:else if mode === 'move'}
+					<Move3d size="16" />
+				{/if}
+
+				<span
+					class="font-public-sans grid text-xs font-medium transition-[grid-template-columns] duration-150 ease-out motion-reduce:transition-none"
+					style:grid-template-columns={isSelected ? '1fr' : '0fr'}
+					aria-hidden="true"
+				>
+					<span class="overflow-hidden">
+						<span class="block pl-1.5 whitespace-nowrap">{style.label}</span>
+					</span>
 				</span>
-			</span>
-		</button>
-	</label>
+			</button>
+		</label>
 	{/snippet}
 
 	{#snippet content()}{description}{/snippet}

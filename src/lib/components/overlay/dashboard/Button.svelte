@@ -47,7 +47,7 @@
 				'relative block rounded-md border',
 				active
 					? 'border-gray-8 bg-gray-8 z-4 text-white'
-					: 'border-gray-5 text-gray-8 bg-white not-has-disabled:hover:bg-light not-has-disabled:active:bg-medium',
+					: 'border-gray-5 text-gray-8 not-has-disabled:hover:bg-light not-has-disabled:active:bg-medium bg-white',
 				'has-disabled:text-disabled has-disabled:cursor-not-allowed',
 			]}
 			aria-describedby={tooltipID}

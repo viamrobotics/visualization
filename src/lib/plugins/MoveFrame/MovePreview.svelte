@@ -85,8 +85,8 @@
 
 						{#snippet content()}
 							Plans carry no timing, so this plays at a fixed rate. The arm may also deviate from
-							the planned waypoints: how it moves between them is the component's decision, not
-							the planner's.
+							the planned waypoints: how it moves between them is the component's decision, not the
+							planner's.
 						{/snippet}
 					</Tooltip>
 				</span>

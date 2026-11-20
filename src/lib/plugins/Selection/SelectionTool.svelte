@@ -2,10 +2,9 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { untrack } from 'svelte'
-
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { ElementRect } from 'runed'
+	import { untrack } from 'svelte'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'

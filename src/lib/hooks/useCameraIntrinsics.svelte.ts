@@ -26,7 +26,10 @@ export const useCameraIntrinsics = (names: () => string[]) => {
 				() => partID.current,
 				() => name
 			)
-			return [name, createResourceQuery(client, 'getProperties', { refetchInterval: false })] as const
+			return [
+				name,
+				createResourceQuery(client, 'getProperties', { refetchInterval: false }),
+			] as const
 		})
 	)
 

@@ -8,10 +8,10 @@ and which cameras draw one.
 	import { Input, Switch } from '@viamrobotics/prime-core'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
+	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
+
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
-
-	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 
 	interface Props {
 		/** Every camera on the part, whether or not it reports usable intrinsics. */

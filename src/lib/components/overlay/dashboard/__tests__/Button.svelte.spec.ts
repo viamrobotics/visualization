@@ -35,9 +35,7 @@ describe('<Button> (dashboard)', () => {
 			props: { icon: 'camera', description: 'Reset camera' },
 		})
 
-		expect(screen.getByRole('button', { name: 'Reset camera' })).not.toHaveAttribute(
-			'aria-pressed'
-		)
+		expect(screen.getByRole('button', { name: 'Reset camera' })).not.toHaveAttribute('aria-pressed')
 	})
 
 	it('renders the keybinding in the tooltip description', async () => {

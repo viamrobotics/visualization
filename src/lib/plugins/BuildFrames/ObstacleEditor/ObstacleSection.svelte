@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Expandable, Icon, Switch } from '@viamrobotics/prime-core'
 
-	import type { ObstaclePreviewToggle } from '../obstaclePreviewToggle.svelte'
-
 	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
+
+	import type { ObstaclePreviewToggle } from '../obstaclePreviewToggle.svelte'
 
 	import ObstacleEditor from './ObstacleEditor.svelte'
 

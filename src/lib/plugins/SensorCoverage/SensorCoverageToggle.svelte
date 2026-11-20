@@ -9,10 +9,10 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 
 	import { Switch } from '@viamrobotics/prime-core'
 
+	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
+
 	import { traits, useTrait } from '#lib/ecs/index.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
-
-	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 
 	interface Props {
 		entity: Entity
