@@ -2,10 +2,10 @@ import { render } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { CameraKeybinding, HotkeyKeybinding } from '$lib/keybindings'
+import type { CameraKeybinding, HotkeyKeybinding } from '#lib/keybindings/index.js'
 
-import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
-import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '$lib/keybindings'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '#lib/hooks/useEnvironment.svelte.js'
+import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '#lib/keybindings/index.js'
 
 import KeyboardBindings from '../KeyboardBindings.svelte'
 

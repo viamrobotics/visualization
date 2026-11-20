@@ -3,19 +3,19 @@ import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js
 import { type Entity, trait } from 'koota'
 import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
-import { createBufferGeometry, updateBufferGeometry } from '$lib/attribute'
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
+import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 import {
 	createBox,
 	createCapsule,
 	createCylinder,
 	createSphere,
 	type Geometry as ViamGeometry,
-} from '$lib/geometry'
-import { parsePcdInWorker } from '$lib/loaders/pcd'
-import { Pose, type PosePatch } from '$lib/math'
-import { isParsedFrom, parseMesh } from '$lib/mesh'
-import { attachPointsBvh } from '$lib/three/pointsBvh'
+} from '#lib/geometry.js'
+import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
+import { Pose, type PosePatch } from '#lib/math/index.js'
+import { isParsedFrom, parseMesh } from '#lib/mesh.js'
+import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 import { setOrAddTrait } from './setOrAddTrait'
 

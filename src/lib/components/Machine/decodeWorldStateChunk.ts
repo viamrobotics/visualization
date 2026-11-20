@@ -1,6 +1,6 @@
-import type { EntityChunk } from '$lib/chunking'
+import type { EntityChunk } from '#lib/chunking.js'
 
-import { asFloat32Array, inMeters } from '$lib/buffer'
+import { asFloat32Array, inMeters } from '#lib/buffer.js'
 
 const decodeBase64 = (encoded: string): Uint8Array => {
 	const binary = atob(encoded)

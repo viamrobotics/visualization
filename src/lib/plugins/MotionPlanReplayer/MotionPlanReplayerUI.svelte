@@ -4,8 +4,8 @@
 	import { Icon, ToastVariant, Tooltip, useToast } from '@viamrobotics/prime-core'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
-	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
+	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
+	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
 
 	import IKInspectionView from './inspect-ik/IKInspectionView.svelte'
 	import { useIKInspection } from './inspect-ik/useIKInspection.svelte'

@@ -16,7 +16,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Required versions
-REQUIRED_NODE_VERSION="22"
+# Floor set by @sveltejs/package's chokidar dependency. Setup installs INSTALLED_NODE_LINE when below it.
+MINIMUM_NODE_VERSION="22.22"
+# Matches the Node line most CI jobs run.
+INSTALLED_NODE_LINE="24"
 REQUIRED_GO_VERSION="1.25"
 
 log_info() {
@@ -87,21 +90,21 @@ check_and_install_node() {
     fi
 
     if command_exists node; then
-        local current_version=$(node --version | sed 's/v//' | cut -d. -f1)
-        if version_gte "$current_version.0" "$REQUIRED_NODE_VERSION.0"; then
+        local current_version=$(node --version | sed 's/v//')
+        if version_gte "$current_version" "$MINIMUM_NODE_VERSION"; then
             log_success "Node.js v$current_version is installed"
             return 0
         else
-            log_warning "Node.js v$current_version is below required v$REQUIRED_NODE_VERSION"
+            log_warning "Node.js v$current_version is below required v$MINIMUM_NODE_VERSION"
         fi
     fi
 
-    log_info "Installing Node.js v$REQUIRED_NODE_VERSION via fnm..."
-    fnm install $REQUIRED_NODE_VERSION
-    fnm use $REQUIRED_NODE_VERSION
-    fnm default $REQUIRED_NODE_VERSION
+    log_info "Installing Node.js v$INSTALLED_NODE_LINE via fnm..."
+    fnm install "$INSTALLED_NODE_LINE"
+    fnm use "$INSTALLED_NODE_LINE"
+    fnm default "$INSTALLED_NODE_LINE"
 
-    log_success "Node.js v$REQUIRED_NODE_VERSION installed successfully"
+    log_success "Node.js $(node --version) installed successfully"
 }
 
 check_and_install_pnpm() {

@@ -8,7 +8,7 @@ import { getContext, setContext } from 'svelte'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
-import { traits, useWorld } from '$lib/ecs'
+import { traits, useWorld } from '#lib/ecs/index.js'
 
 import { useSettings } from './useSettings.svelte'
 

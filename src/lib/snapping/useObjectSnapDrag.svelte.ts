@@ -3,8 +3,8 @@ import type { Entity } from 'koota'
 import { useThrelte } from '@threlte/core/webgpu'
 import { Matrix4, type Object3D, Quaternion, type Ray, Raycaster, Vector2, Vector3 } from 'three'
 
-import { useWorld } from '$lib/ecs'
-import { useSettings } from '$lib/hooks/useSettings.svelte'
+import { useWorld } from '#lib/ecs/index.js'
+import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 import { dragConstraintFor } from './dragConstraint'
 import { isVisibleTurn } from './isVisibleTurn'

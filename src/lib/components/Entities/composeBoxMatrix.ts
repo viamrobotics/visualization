@@ -2,8 +2,8 @@ import type { Entity } from 'koota'
 
 import { Matrix4, Vector3 } from 'three'
 
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 const tempPose = new Pose()
 const centerMatrix = new Matrix4()

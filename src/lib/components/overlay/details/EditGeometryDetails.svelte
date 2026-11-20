@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { type Entity } from 'koota'
 
-	import type { EditableFrameGeometry } from '$lib/defaultFrameGeometry'
+	import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import GeometryFields from './GeometryFields.svelte'
 

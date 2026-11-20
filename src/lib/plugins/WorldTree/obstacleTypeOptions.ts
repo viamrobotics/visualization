@@ -1,11 +1,11 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
-import type { ObstacleEditorHint } from '$lib/obstacleAttributes'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
+import type { ObstacleEditorHint } from '#lib/obstacleAttributes.js'
 
 import {
 	createBoundsObstacleComponent,
 	createComplexObstacleComponent,
 	createObstacleComponent,
-} from '$lib/obstacle'
+} from '#lib/obstacle.js'
 
 export type ObstacleType = ObstacleEditorHint['type']
 

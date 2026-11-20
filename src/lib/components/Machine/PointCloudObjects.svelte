@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
 
 	import PointCloudObject from './PointCloudObject.svelte'
 

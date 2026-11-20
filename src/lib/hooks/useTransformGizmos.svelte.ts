@@ -1,7 +1,7 @@
 import { getContext, setContext, untrack } from 'svelte'
 import { SvelteSet } from 'svelte/reactivity'
 
-import { useKeybindings } from '$lib/keybindings'
+import { useKeybindings } from '#lib/keybindings/index.js'
 
 import { TRANSFORM_KEYBINDINGS } from './transformKeybindings'
 

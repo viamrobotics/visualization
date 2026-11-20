@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Banner, BannerVariant, Button, ToggleButtons } from '@viamrobotics/prime-core'
 
-	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
+	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
 
 	import type { PreviewDetail, PreviewMove } from './usePreviewMove.svelte'
 

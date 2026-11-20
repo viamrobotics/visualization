@@ -5,12 +5,12 @@ import { type Entity } from 'koota'
 import { getContext, setContext } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 
-import type { Drawing } from '$lib/buf/draw/v1/drawing_pb'
+import type { Drawing } from '#lib/buf/draw/v1/drawing_pb.js'
 
-import { writeBufferGeometryRange } from '$lib/attribute'
-import { DrawService } from '$lib/buf/draw/v1/service_connect'
-import { EntityChangeType, EntityScope } from '$lib/buf/draw/v1/service_pb'
-import { asFloat32Array, inMeters, STRIDE } from '$lib/buffer'
+import { writeBufferGeometryRange } from '#lib/attribute.js'
+import { DrawService } from '#lib/buf/draw/v1/service_connect.js'
+import { EntityChangeType, EntityScope } from '#lib/buf/draw/v1/service_pb.js'
+import { asFloat32Array, inMeters, STRIDE } from '#lib/buffer.js'
 import {
 	drawDrawing,
 	drawTransform,
@@ -18,10 +18,10 @@ import {
 	updateDrawing,
 	updateModel,
 	updateTransform,
-} from '$lib/draw'
-import { hierarchy, traits, useWorld } from '$lib/ecs'
-import { useCameraControls } from '$lib/hooks/useControls.svelte'
-import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+} from '#lib/draw.js'
+import { hierarchy, traits, useWorld } from '#lib/ecs/index.js'
+import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
+import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import {
 	clearsDrawings,

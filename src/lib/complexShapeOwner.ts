@@ -1,6 +1,6 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { ownerOfInternalFrame } from '$lib/kinematicsFrames'
+import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 
 /**
  * The part-owned obstacle a Complex shape's `<name>:<label>` frame belongs to. The shape is

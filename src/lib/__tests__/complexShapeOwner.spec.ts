@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { complexShapeOwner } from '$lib/complexShapeOwner'
-import { createComplexObstacleComponent } from '$lib/obstacle'
+import { complexShapeOwner } from '#lib/complexShapeOwner.js'
+import { createComplexObstacleComponent } from '#lib/obstacle.js'
 
 describe('complexShapeOwner', () => {
 	const cage = createComplexObstacleComponent('cage')

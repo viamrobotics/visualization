@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import { fromDestinationPose, moveDelta, toDestinationPose } from '../moveTargetPose'
 

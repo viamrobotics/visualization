@@ -1,7 +1,7 @@
 import { type Entity, IsExcluded, type World } from 'koota'
 import { onDestroy } from 'svelte'
 
-import { traits, useWorld } from '$lib/ecs'
+import { traits, useWorld } from '#lib/ecs/index.js'
 
 import { useDeepLinkParam } from './useDeepLink.svelte'
 

@@ -1,12 +1,12 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import {
 	type ObstacleEditorHint,
 	obstacleGeometriesOf,
 	type ObstacleGeometryConfig,
 	obstacleGeometryLabel,
-} from '$lib/obstacleAttributes'
-import { withFrameAppearancesMoved } from '$lib/resourceAppearance'
+} from '#lib/obstacleAttributes.js'
+import { withFrameAppearancesMoved } from '#lib/resourceAppearance.js'
 
 /** Every key an obstacle editor hint can set, so a new hint replaces all of the old one. */
 const OBSTACLE_HINT_KEYS: ReadonlySet<string> = new Set([

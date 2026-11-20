@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { BOUNDS_FACES, type BoundsHint } from '$lib/obstacleAttributes'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { BOUNDS_FACES, type BoundsHint } from '#lib/obstacleAttributes.js'
 
 const hint: BoundsHint = {
 	type: 'bounds',

@@ -1,9 +1,9 @@
 import { Matrix4 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createComplexObstacleComponent } from '$lib/obstacle'
+import { createComplexObstacleComponent } from '#lib/obstacle.js'
 
 import { shapeOffsetFromGizmo, withObstacleShapePatch } from '../obstacleShapeGizmo'
 

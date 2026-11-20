@@ -1,10 +1,10 @@
-import type { Transform } from '$lib/geometry'
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { Transform } from '#lib/geometry.js'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { createGeometryFromFrame } from '$lib/geometry'
-import { internalFrameName } from '$lib/kinematicsFrames'
-import { Pose } from '$lib/math'
-import { obstacleGeometryLabel } from '$lib/obstacleAttributes'
+import { createGeometryFromFrame } from '#lib/geometry.js'
+import { internalFrameName } from '#lib/kinematicsFrames.js'
+import { Pose } from '#lib/math/index.js'
+import { obstacleGeometryLabel } from '#lib/obstacleAttributes.js'
 
 const buildPhysicalObject = (entry: ObstacleGeometryConfig): Transform['physicalObject'] => {
 	const geometry = createGeometryFromFrame({ geometry: entry })

@@ -10,17 +10,17 @@ import {
 } from '@viamrobotics/sdk'
 import { Matrix4 } from 'three'
 
-import type { useRelationships } from '$lib/hooks/useRelationships.svelte'
-import type { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+import type { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
+import type { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
-import { createChunkLoader } from '$lib/chunking'
-import { drawTransform, updateMetadata } from '$lib/draw'
-import { hierarchy, traits } from '$lib/ecs'
-import { ChildOf } from '$lib/ecs/relations'
-import { isPointCloud } from '$lib/geometry'
-import { Pose } from '$lib/math'
-import { metadataFromStruct } from '$lib/metadata'
-import { settleWithConcurrency } from '$lib/settleWithConcurrency'
+import { createChunkLoader } from '#lib/chunking.js'
+import { drawTransform, updateMetadata } from '#lib/draw.js'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { ChildOf } from '#lib/ecs/relations.js'
+import { isPointCloud } from '#lib/geometry.js'
+import { Pose } from '#lib/math/index.js'
+import { metadataFromStruct } from '#lib/metadata.js'
+import { settleWithConcurrency } from '#lib/settleWithConcurrency.js'
 
 import { decodeWorldStateChunk } from './decodeWorldStateChunk'
 

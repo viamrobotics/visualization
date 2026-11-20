@@ -1,13 +1,13 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { createFrame } from '$lib/frame'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { createFrame } from '#lib/frame.js'
 import {
 	type BoundsHint,
 	OBSTACLE_API,
 	OBSTACLE_MODEL,
 	type ObstacleAttributes,
-} from '$lib/obstacleAttributes'
+} from '#lib/obstacleAttributes.js'
 
 /** Edge length of a new obstacle's box, in mm. Matches the custom geometry the `=` hotkey spawns. */
 const OBSTACLE_EDGE_LENGTH = 100

@@ -6,9 +6,9 @@
 
 	import { untrack } from 'svelte'
 
-	import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+	import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-	import { createTrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+	import { createTrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 	import TrajectoryScrubber from '../../TrajectoryScrubber.svelte'
 

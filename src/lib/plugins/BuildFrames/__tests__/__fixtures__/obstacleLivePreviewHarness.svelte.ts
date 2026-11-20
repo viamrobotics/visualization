@@ -3,14 +3,14 @@ import { createResourceClient, useConnectionStatus } from '@viamrobotics/svelte-
 import { flushSync } from 'svelte'
 import { vi } from 'vitest'
 
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-import { useFrames } from '$lib/hooks/useFrames.svelte'
-import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-import { usePartID } from '$lib/hooks/usePartID.svelte'
-import { OBSTACLE_MODEL } from '$lib/obstacleAttributes'
-import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+import { OBSTACLE_MODEL } from '#lib/obstacleAttributes.js'
+import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { useObstacleLivePreview } from '../../useObstacleLivePreview.svelte'
 

@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 
-import type { PartConfigContext } from '$lib/hooks/usePartConfig.svelte'
+import type { PartConfigContext } from '#lib/hooks/usePartConfig.svelte.js'
 
 /** A readable, editable config with no components, for `usePartConfig` to return. */
 export const createPartConfigFixture = (

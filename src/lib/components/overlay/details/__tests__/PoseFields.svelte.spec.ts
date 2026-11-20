@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
 import PoseFields from '../PoseFields.svelte'
 

@@ -9,8 +9,8 @@
 
 	import { untrack } from 'svelte'
 
-	import { provideWorld, useWorld } from '$lib/ecs'
-	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideWorld, useWorld } from '#lib/ecs/index.js'
+	import { provideRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
 	import type { MotionPlanReplayerContext } from '../../useMotionPlanReplayer.svelte'
 

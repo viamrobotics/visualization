@@ -1,8 +1,8 @@
 import type { ResourceName } from '@viamrobotics/sdk'
 import type { ResourceAPIWidget } from '@viamrobotics/test-widgets/registry'
 
-import { usePartID } from '$lib/hooks/usePartID.svelte'
-import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 import { resourceWidgetToggles } from './resourceWidgetToggles'
 import { useControlWidgets } from './useControlWidgets.svelte'

@@ -3,10 +3,14 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { createFrame } from '$lib/frame'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import { OBSTACLE_API, OBSTACLE_MODEL, type ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import { createFrame } from '#lib/frame.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
+import {
+	OBSTACLE_API,
+	OBSTACLE_MODEL,
+	type ObstacleGeometryConfig,
+} from '#lib/obstacleAttributes.js'
 
 import ObstacleEditor from '../ObstacleEditor.svelte'
 

@@ -5,8 +5,8 @@ import { Struct } from '@bufbuild/protobuf'
 import { PoseInFrame, robotApi, Transform } from '@viamrobotics/sdk'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { parsePlan } from '$lib/plugins/MotionPlanReplayer/parse-plan'
+import { traits } from '#lib/ecs/index.js'
+import { parsePlan } from '#lib/plugins/MotionPlanReplayer/parse-plan.js'
 
 import planJson from '../../MotionPlanReplayer/__tests__/__fixtures__/plan.json?raw'
 import { parseMoveOptions } from '../parseMoveOptions'
@@ -18,7 +18,7 @@ import {
 	type PreviewMoveHarness,
 } from './__fixtures__/previewMoveHarness.svelte'
 
-vi.mock('$lib/hooks/use3DModels.svelte', () => ({
+vi.mock('#lib/hooks/use3DModels.svelte.js', () => ({
 	use3DModels: () => ({ current: {}, arms: [], shouldRender: false, parseArm: vi.fn() }),
 	matchModel: () => undefined,
 	modelKey: () => undefined,

@@ -2,7 +2,7 @@
 	import { Switch } from '@viamrobotics/prime-core'
 	import { onMount } from 'svelte'
 
-	import { useWeblabs, WEBLABS_EXPERIMENTS } from '$lib/hooks/useWeblabs.svelte'
+	import { useWeblabs, WEBLABS_EXPERIMENTS } from '#lib/hooks/useWeblabs.svelte.js'
 
 	const weblabs = useWeblabs()
 	const knownWeblabs = Object.keys(WEBLABS_EXPERIMENTS)

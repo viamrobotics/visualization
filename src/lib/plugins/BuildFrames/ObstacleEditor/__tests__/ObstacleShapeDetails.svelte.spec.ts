@@ -5,12 +5,12 @@ import { Matrix4 } from 'three'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { relations, traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import { createObstacleComponent } from '$lib/obstacle'
-import { type ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import { relations, traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
+import { createObstacleComponent } from '#lib/obstacle.js'
+import { type ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import ObstacleShapeDetails from '../ObstacleShapeDetails.svelte'
 

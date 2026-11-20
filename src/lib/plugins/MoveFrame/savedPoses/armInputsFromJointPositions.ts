@@ -1,6 +1,6 @@
 import { MathUtils } from 'three'
 
-import type { FrameDescriptor } from '$lib/motion/frameDescriptors'
+import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
 
 /**
  * Convert `GetJointPositions` values, degrees for a rotational joint and millimetres for a

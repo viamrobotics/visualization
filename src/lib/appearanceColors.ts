@@ -1,8 +1,8 @@
 import { Color } from 'three'
 
-import type { SavedAppearance } from '$lib/resourceAppearance'
+import type { SavedAppearance } from '#lib/resourceAppearance.js'
 
-import { internalFrameName } from '$lib/kinematicsFrames'
+import { internalFrameName } from '#lib/kinematicsFrames.js'
 
 /**
  * The color each frame is drawn in, from what each resource looks like: keyed by the component's

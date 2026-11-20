@@ -1,8 +1,8 @@
 import { createWorld } from 'koota'
 import { describe, expect, it, vi } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 import { writeMatrix } from '../traits'
 

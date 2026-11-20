@@ -1,9 +1,9 @@
 import { FieldMask } from '@bufbuild/protobuf'
 import { describe, expect, it } from 'vitest'
 
-import { Transform } from '$lib/buf/common/v1/common_pb'
-import { Drawing } from '$lib/buf/draw/v1/drawing_pb'
-import { EntityChangeType, EntityScope } from '$lib/buf/draw/v1/service_pb'
+import { Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Drawing } from '#lib/buf/draw/v1/drawing_pb.js'
+import { EntityChangeType, EntityScope } from '#lib/buf/draw/v1/service_pb.js'
 
 import {
 	clearsDrawings,

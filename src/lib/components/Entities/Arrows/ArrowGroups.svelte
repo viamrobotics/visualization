@@ -5,9 +5,9 @@
 	import { SvelteMap } from 'svelte/reactivity'
 	import { Color } from 'three'
 
-	import { STRIDE } from '$lib/buffer'
-	import { traits, useWorld } from '$lib/ecs'
-	import { InstancedArrows } from '$lib/three/InstancedArrows/InstancedArrows'
+	import { STRIDE } from '#lib/buffer.js'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { InstancedArrows } from '#lib/three/InstancedArrows/InstancedArrows.js'
 
 	import Arrows from './Arrows.svelte'
 

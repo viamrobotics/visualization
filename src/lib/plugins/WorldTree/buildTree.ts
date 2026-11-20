@@ -1,8 +1,8 @@
 import type { Entity, World } from 'koota'
 
-import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
+import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
-import { relations, traits } from '$lib/ecs'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import type { TreeFolderId } from './treeFolders'
 

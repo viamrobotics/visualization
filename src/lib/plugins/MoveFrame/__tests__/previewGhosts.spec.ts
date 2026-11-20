@@ -2,12 +2,12 @@ import { createWorld, type Entity, type World } from 'koota'
 import { Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { FrameDescriptor } from '$lib/motion/frameDescriptors'
+import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
 
-import { Geometry, RectangularPrism, Vector3 as Vector3d } from '$lib/buf/common/v1/common_pb'
-import { traits } from '$lib/ecs'
-import { modelKey } from '$lib/hooks/use3DModels.svelte'
-import { Pose } from '$lib/math'
+import { Geometry, RectangularPrism, Vector3 as Vector3d } from '#lib/buf/common/v1/common_pb.js'
+import { traits } from '#lib/ecs/index.js'
+import { modelKey } from '#lib/hooks/use3DModels.svelte.js'
+import { Pose } from '#lib/math/index.js'
 
 import { createPreviewGhosts, spawnSavedPoseGhosts } from '../previewGhosts'
 

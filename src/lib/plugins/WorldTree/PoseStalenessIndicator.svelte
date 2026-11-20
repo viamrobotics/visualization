@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
-	import { poseStalenessSummary } from '$lib/hooks/poseStaleness/poseStalenessSummary'
-	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
+	import { poseStalenessSummary } from '#lib/hooks/poseStaleness/poseStalenessSummary.js'
+	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
 
 	const health = useResourceHealth()
 

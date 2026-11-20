@@ -2,8 +2,8 @@
 	import { Icon } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 
-	import { relations, traits } from '$lib/ecs'
-	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { relations, traits } from '#lib/ecs/index.js'
+	import { useLinkedEntities } from '#lib/hooks/useLinked.svelte.js'
 
 	interface Props {
 		entity: Entity

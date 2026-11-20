@@ -1,10 +1,10 @@
 import type { Entity, World } from 'koota'
 
-import type { Transform } from '$lib/buf/common/v1/common_pb'
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
+import type { Transform } from '#lib/buf/common/v1/common_pb.js'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
 
-import { setOrAddTrait, traits } from '$lib/ecs'
-import { reconcileSnapshotEntities, type SnapshotEntity } from '$lib/snapshot'
+import { setOrAddTrait, traits } from '#lib/ecs/index.js'
+import { reconcileSnapshotEntities, type SnapshotEntity } from '#lib/snapshot.js'
 
 import { transformsToSnapshot } from '../plan-to-snapshots'
 import { namespaceSnapshot } from './namespace-snapshot'

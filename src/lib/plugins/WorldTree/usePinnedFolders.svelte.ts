@@ -1,12 +1,12 @@
 import { MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus } from '@viamrobotics/svelte-sdk'
 
-import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-import { useFrames } from '$lib/hooks/useFrames.svelte'
-import { usePartID } from '$lib/hooks/usePartID.svelte'
-import { usePointcloudObjects } from '$lib/hooks/usePointcloudObjects.svelte'
-import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
+import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
+import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
+import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
 
 import type { PinnedFolders } from './buildTree'
 import type { TreeFolderId } from './treeFolders'

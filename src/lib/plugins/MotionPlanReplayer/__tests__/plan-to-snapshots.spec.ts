@@ -1,9 +1,9 @@
 import { MathUtils, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import type { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
+import type { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
 
-import { OrientationVector } from '$lib/math/OrientationVector'
+import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 import { parsePlan, PlanParseError } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'

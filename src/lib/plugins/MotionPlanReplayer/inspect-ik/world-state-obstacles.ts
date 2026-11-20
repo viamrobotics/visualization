@@ -2,10 +2,10 @@ import type { JsonValue } from '@bufbuild/protobuf'
 
 import { UuidTool } from 'uuid-tool'
 
-import { Geometry, PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
+import { Geometry, PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
 // Not the generated Pose: this one defaults to the 0,0,1,0 orientation vector, where the proto's
 // zero value is a degenerate all-zero axis.
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 /** Frame names here are shared with `frame_system.frames` (`pallet`, `pick-station`) and the ECS
  * name index is global, so obstacles get their own namespace. */

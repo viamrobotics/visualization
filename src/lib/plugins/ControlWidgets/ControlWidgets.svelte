@@ -1,8 +1,8 @@
 <script lang="ts">
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
 	import ResourceWidgetList from './ResourceWidgetList.svelte'
 	import ResourceWidgetPanel from './ResourceWidgetPanel.svelte'

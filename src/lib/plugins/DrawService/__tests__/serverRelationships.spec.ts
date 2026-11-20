@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const context = vi.hoisted(() => ({ world: undefined as World | undefined }))
 
-vi.mock('$lib/ecs/useWorld', () => ({
+vi.mock('#lib/ecs/useWorld.js', () => ({
 	useWorld: () => context.world,
 	provideWorld: vi.fn(),
 	WORLD_CONTEXT_KEY: Symbol('koota-context'),
 }))
 
-import { uuidStringToBytes } from '$lib/draw'
-import { relations, traits } from '$lib/ecs'
+import { uuidStringToBytes } from '#lib/draw.js'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import { createServerRelationships } from '../serverRelationships'
 

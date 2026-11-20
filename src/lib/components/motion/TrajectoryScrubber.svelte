@@ -10,7 +10,7 @@
 		Play,
 	} from 'lucide-svelte'
 
-	import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+	import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		/** Playback state to drive. See `createTrajectoryPlayer`. */

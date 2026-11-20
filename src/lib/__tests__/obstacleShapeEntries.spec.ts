@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import {
 	createBoundsObstacleComponent,
 	createComplexObstacleComponent,
 	createObstacleComponent,
-} from '$lib/obstacle'
-import { obstacleShapeEntries } from '$lib/obstacleShapeEntries'
+} from '#lib/obstacle.js'
+import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
 
 const complexWithTwoShapes = (): PartComponent => ({
 	...createComplexObstacleComponent('cage'),

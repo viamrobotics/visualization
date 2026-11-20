@@ -1,10 +1,10 @@
 import type { Entity } from 'koota'
 
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
-import { defaultFrameGeometry, type EditableFrameGeometry } from '$lib/defaultFrameGeometry'
-import { hierarchy, traits } from '$lib/ecs'
-import { Pose, type PosePatch } from '$lib/math'
+import { defaultFrameGeometry, type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { Pose, type PosePatch } from '#lib/math/index.js'
 
 export type UpdateFrameFn = (
 	componentName: string,
@@ -15,7 +15,7 @@ export type UpdateFrameFn = (
 
 export type DeleteFrameFn = (componentName: string) => void
 
-export type { EditableFrameGeometry } from '$lib/defaultFrameGeometry'
+export type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 type Geometry = EditableFrameGeometry
 type GeometryType = Geometry['type']
 

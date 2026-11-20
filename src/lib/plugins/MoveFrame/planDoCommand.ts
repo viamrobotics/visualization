@@ -2,8 +2,8 @@ import type { JsonValue } from '@bufbuild/protobuf'
 
 import { Constraints, WorldState } from '@viamrobotics/sdk'
 
-import type { Pose } from '$lib/math'
-import type { TrajectoryStep } from '$lib/motion/jointPose'
+import type { Pose } from '#lib/math/index.js'
+import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
 export interface PlanResult {
 	trajectory: TrajectoryStep[]
@@ -243,4 +243,4 @@ export const isAlreadyAtGoal = (trajectory: TrajectoryStep[]): boolean => {
 	return first !== undefined && last !== undefined && sameInputs(first, last)
 }
 
-export { type TrajectoryStep } from '$lib/motion/jointPose'
+export { type TrajectoryStep } from '#lib/motion/jointPose.js'

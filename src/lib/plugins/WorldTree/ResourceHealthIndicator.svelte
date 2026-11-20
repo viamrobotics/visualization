@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import type { UnhealthyResource } from '$lib/hooks/resources/unhealthyResources'
+	import type { UnhealthyResource } from '#lib/hooks/resources/unhealthyResources.js'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		/** The machine's report for this row's resource. */

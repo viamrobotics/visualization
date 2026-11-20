@@ -3,17 +3,17 @@
 
 	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
 
-	import type { FileDropperSuccess } from '$lib/fileDropper'
+	import type { FileDropperSuccess } from '#lib/fileDropper.js'
 
-	import { createBufferGeometry } from '$lib/attribute'
-	import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-	import OverlayPortal from '$lib/components/overlay/Portals/OverlayPortal.svelte'
-	import { traits } from '$lib/ecs'
-	import { useWorld } from '$lib/ecs/useWorld'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
-	import { spawnSnapshotEntities } from '$lib/snapshot'
-	import { attachPointsBvh } from '$lib/three/pointsBvh'
+	import { createBufferGeometry } from '#lib/attribute.js'
+	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
+	import OverlayPortal from '#lib/components/overlay/Portals/OverlayPortal.svelte'
+	import { traits } from '#lib/ecs/index.js'
+	import { useWorld } from '#lib/ecs/useWorld.js'
+	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
+	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
+	import { spawnSnapshotEntities } from '#lib/snapshot.js'
+	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	import { useFileDrop } from './useFileDrop.svelte'
 

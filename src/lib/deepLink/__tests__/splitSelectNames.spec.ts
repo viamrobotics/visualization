@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { splitSelectNames } from '$lib/deepLink/useDeepLinkSelection.svelte'
+import { splitSelectNames } from '#lib/deepLink/useDeepLinkSelection.svelte.js'
 
 describe('splitSelectNames', () => {
 	it('splits one comma-separated value into names', () => {

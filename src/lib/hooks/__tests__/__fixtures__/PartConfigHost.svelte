@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { provideWorld } from '$lib/ecs'
-	import { provideFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { providePartConfig, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { provideWorld } from '#lib/ecs/index.js'
+	import { provideFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+	import { providePartConfig, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	provideWorld()
 	provideFragmentInfo(

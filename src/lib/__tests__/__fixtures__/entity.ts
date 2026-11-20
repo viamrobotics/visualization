@@ -1,7 +1,7 @@
 import type { Entity, World } from 'koota'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 export const createEntityFixture = (world: World): Entity => {
 	return world.spawn(

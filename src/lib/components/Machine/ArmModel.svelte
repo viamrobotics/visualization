@@ -2,8 +2,8 @@
 	import { ArmClient } from '@viamrobotics/sdk'
 	import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
 
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { STATIC_RESOURCE_QUERY_OPTIONS } from '$lib/staticResourceQuery'
+	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { STATIC_RESOURCE_QUERY_OPTIONS } from '#lib/staticResourceQuery.js'
 
 	interface Props {
 		partID: string

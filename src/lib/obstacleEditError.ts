@@ -1,6 +1,6 @@
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { validateObstacleGeometries } from '$lib/obstacleGeometryValidation'
+import { validateObstacleGeometries } from '#lib/obstacleGeometryValidation.js'
 
 /** Which field an obstacle edit came from, so its error can sit beside it. */
 export type ObstacleEditScope = 'label' | 'shape'

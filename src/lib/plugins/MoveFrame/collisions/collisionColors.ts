@@ -2,7 +2,7 @@ import type { Entity } from 'koota'
 
 import { Color } from 'three'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { COLLISION_COLOR } from './collisionColor'
 

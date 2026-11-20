@@ -5,10 +5,10 @@
 	import { type Snippet, untrack } from 'svelte'
 	import { OrthographicCamera } from 'three'
 
-	import { asColor, isSingleColor } from '$lib/buffer'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { PointCloud } from '$lib/three/PointCloud'
+	import { asColor, isSingleColor } from '#lib/buffer.js'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { PointCloud } from '#lib/three/PointCloud.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 

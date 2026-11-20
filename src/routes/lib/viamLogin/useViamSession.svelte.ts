@@ -3,8 +3,8 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { del, get, set } from 'idb-keyval'
 import { getContext, setContext } from 'svelte'
 
-import { ViamLoginService } from '$lib/buf/viamlogin/v1/viamlogin_connect'
-import { LoginStatus, type Session } from '$lib/buf/viamlogin/v1/viamlogin_pb'
+import { ViamLoginService } from '#lib/buf/viamlogin/v1/viamlogin_connect.js'
+import { LoginStatus, type Session } from '#lib/buf/viamlogin/v1/viamlogin_pb.js'
 
 const key = Symbol('viam-session-context')
 const STORAGE_KEY = 'viam-session'

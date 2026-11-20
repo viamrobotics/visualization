@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
+	import type { Snapshot as SnapshotProto } from '#lib/buf/draw/v1/snapshot_pb.js'
 
-	import { provideRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
 	import Snapshot from '../../Snapshot.svelte'
 

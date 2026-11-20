@@ -6,10 +6,10 @@
 	import { onDestroy } from 'svelte'
 	import { Group, Matrix4, Vector3 } from 'three'
 
-	import { transformSnaps } from '$lib/hooks/transformSnaps'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { isolateTransformControls } from '$lib/three/renderLayers'
+	import { transformSnaps } from '#lib/hooks/transformSnaps.js'
+	import { useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { isolateTransformControls } from '#lib/three/renderLayers.js'
 
 	interface Props {
 		/** Where the frame is right now — world space, metres. */

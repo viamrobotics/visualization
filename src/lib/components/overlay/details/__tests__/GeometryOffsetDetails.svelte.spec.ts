@@ -3,8 +3,8 @@ import { createWorld } from 'koota'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
-import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
+import { traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
 
 import GeometryOffsetDetails from '../GeometryOffsetDetails.svelte'
 

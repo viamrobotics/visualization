@@ -1,8 +1,8 @@
 <script lang="ts">
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import LogPanel from './LogPanel.svelte'
 	import { provideLogs } from './useLogs.svelte'

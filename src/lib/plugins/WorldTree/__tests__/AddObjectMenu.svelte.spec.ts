@@ -4,10 +4,10 @@ import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '$lib/hooks/useEnvironment.svelte'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import { createEnvironment, ENVIRONMENT_CONTEXT_KEY } from '#lib/hooks/useEnvironment.svelte.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 
 import AddObjectMenu from '../AddObjectMenu.svelte'
 

@@ -3,7 +3,7 @@
 
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import Popover from '$lib/components/overlay/Popover.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
 
 	interface Props {
 		organizations: appApi.Organization[]

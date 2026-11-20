@@ -1,7 +1,7 @@
 import { createWorld, type Entity, IsExcluded, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { relations, traits } from '$lib/ecs'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import { buildTree, type TreeNode } from '../buildTree'
 import { treeFolders } from '../treeFolders'

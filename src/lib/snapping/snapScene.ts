@@ -2,8 +2,8 @@ import type { Entity, World } from 'koota'
 
 import { Matrix4 } from 'three'
 
-import { composeMeshMatrix } from '$lib/components/Entities/composeMeshMatrix'
-import { relations, traits } from '$lib/ecs'
+import { composeMeshMatrix } from '#lib/components/Entities/composeMeshMatrix.js'
+import { relations, traits } from '#lib/ecs/index.js'
 
 import type { DraggedGeometry, SnapTarget } from './snapQuery'
 

@@ -3,8 +3,8 @@
 
 	import { untrack } from 'svelte'
 
-	import { provideHierarchy, provideWorld, useWorld } from '$lib/ecs'
-	import { provideRelationships, useRelationships } from '$lib/hooks/useRelationships.svelte'
+	import { provideHierarchy, provideWorld, useWorld } from '#lib/ecs/index.js'
+	import { provideRelationships, useRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
 	interface Props {
 		/** Handed the world and the relationship registry, once, during init. */

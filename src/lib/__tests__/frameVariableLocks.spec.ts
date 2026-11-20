@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 
-import { frameVariableLock, isFrameVariableLocked } from '$lib/frameVariableLocks'
+import { frameVariableLock, isFrameVariableLocked } from '#lib/frameVariableLocks.js'
 
 const frame = (y: number): Frame => ({
 	parent: 'world',

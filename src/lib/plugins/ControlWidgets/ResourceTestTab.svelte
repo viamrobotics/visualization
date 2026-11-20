@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ResourceName } from '@viamrobotics/sdk'
 
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import { resourceWidgetToggles } from './resourceWidgetToggles'
 

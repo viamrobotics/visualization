@@ -1,7 +1,7 @@
 import { type Entity, trait } from 'koota'
 import { untrack } from 'svelte'
 
-import { relations, traits, useQuery, useWorld } from '$lib/ecs'
+import { relations, traits, useQuery, useWorld } from '#lib/ecs/index.js'
 
 const HiddenByIsolate = trait()
 

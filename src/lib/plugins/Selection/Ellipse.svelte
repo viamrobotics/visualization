@@ -6,9 +6,9 @@
 	import { type Entity, Not } from 'koota'
 	import { Box3, Triangle, Vector3 } from 'three'
 
-	import { createBufferGeometry } from '$lib/attribute'
-	import { traits, useQuery, useWorld } from '$lib/ecs'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
+	import { createBufferGeometry } from '#lib/attribute.js'
+	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
+	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 
 	import Debug from './Debug.svelte'
 	import { isSelectionStart } from './isSelectionStart'

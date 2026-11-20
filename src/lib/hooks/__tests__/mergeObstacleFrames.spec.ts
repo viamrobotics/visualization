@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Transform } from '$lib/geometry'
+import type { Transform } from '#lib/geometry.js'
 
 import { mergeObstacleFrames } from '../mergeObstacleFrames'
 

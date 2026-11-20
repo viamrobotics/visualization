@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { JointFrameDescriptor } from '$lib/motion/frameDescriptors'
+import type { JointFrameDescriptor } from '#lib/motion/frameDescriptors.js'
 
 import { armInputsFromJointPositions } from '../armInputsFromJointPositions'
 

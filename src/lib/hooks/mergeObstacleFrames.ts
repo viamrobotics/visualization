@@ -1,6 +1,6 @@
-import type { Transform } from '$lib/geometry'
+import type { Transform } from '#lib/geometry.js'
 
-import { ownerOfInternalFrame } from '$lib/kinematicsFrames'
+import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 
 /**
  * The derived frames to draw while the part config is authoritative: every

@@ -15,9 +15,9 @@
 	import { T, useTask, useThrelte } from '@threlte/core/webgpu'
 	import { BufferAttribute, BufferGeometry, type OrthographicCamera } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { PointCloud } from '$lib/three/PointCloud'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { PointCloud } from '#lib/three/PointCloud.js'
 
 	interface Props {
 		entity: Entity

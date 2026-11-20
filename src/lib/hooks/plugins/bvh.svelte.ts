@@ -12,8 +12,8 @@ import {
 	SAH,
 } from 'three-mesh-bvh'
 
-import { PointCloud } from '$lib/three/PointCloud'
-import { pointsBvhOptions, raycastNearestPointToRay } from '$lib/three/pointsBvh'
+import { PointCloud } from '#lib/three/PointCloud.js'
+import { pointsBvhOptions, raycastNearestPointToRay } from '#lib/three/pointsBvh.js'
 
 interface Options extends BVHOptions {
 	helper?: boolean

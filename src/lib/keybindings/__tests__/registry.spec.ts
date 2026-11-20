@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { HotkeyKeybinding } from '$lib/keybindings'
+import type { HotkeyKeybinding } from '#lib/keybindings/index.js'
 
-import { createKeybindings } from '$lib/keybindings'
+import { createKeybindings } from '#lib/keybindings/index.js'
 
 const hotkey = (
 	id: string,

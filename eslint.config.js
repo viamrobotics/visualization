@@ -1,5 +1,6 @@
 import { includeIgnoreFile } from '@eslint/compat'
 import js from '@eslint/js'
+import { loadConfig } from '@sveltejs/load-config'
 import perfectionist from 'eslint-plugin-perfectionist'
 import svelte from 'eslint-plugin-svelte'
 import unicorn from 'eslint-plugin-unicorn'
@@ -9,7 +10,14 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
-import svelteConfig from './svelte.config.js'
+const loadedSvelteConfig = await loadConfig('./', { traverse: false })
+// Without this, a vite.config.ts that fails to load would lint .svelte files with no project config and no warning.
+if (!loadedSvelteConfig || 'error' in loadedSvelteConfig) {
+	throw new Error('Could not load the Svelte config from vite.config.ts', {
+		cause: loadedSvelteConfig?.error,
+	})
+}
+const svelteConfig = loadedSvelteConfig.config
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -106,7 +114,7 @@ export default defineConfig(
 			'perfectionist/sort-imports': [
 				'error',
 				{
-					internalPattern: [String.raw`^\$`],
+					internalPattern: [String.raw`^[$#]`],
 				},
 			],
 		},
@@ -164,24 +172,25 @@ export default defineConfig(
 				{
 					paths: [
 						{
-							name: '$lib',
+							name: '#lib',
 							message:
-								"Import the module directly (e.g. '$lib/components/overlay/Portals/DashboardPortal.svelte'). '$lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
+								"Import the module directly (e.g. '#lib/components/overlay/Portals/DashboardPortal.svelte'). '#lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
 						},
 						{
-							name: '$lib/lib',
+							name: '#lib/lib',
 							message:
-								"Import the module directly (e.g. '$lib/loaders/pcd'). '$lib/lib' is a published entry point, not for internal use.",
+								"Import the module directly (e.g. '#lib/loaders/pcd/index.js'). '#lib/lib.js' is a published entry point, not for internal use.",
 						},
 						{
-							name: '$lib/plugins',
+							name: '#lib/plugins',
 							message:
-								"Import the plugin module directly (e.g. '$lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
+								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
 						},
 					],
 					patterns: [
 						{
-							group: ['$lib/index*', '$lib/lib.*', '$lib/plugins/index*'],
+							// `group` takes gitignore syntax, where a leading `#` starts a comment, so `#lib` paths need a regex.
+							regex: String.raw`^#lib/(index|lib|plugins/index)\.`,
 							message:
 								'Barrel import spelled via its index file. Import the module directly instead.',
 						},

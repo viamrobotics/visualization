@@ -7,7 +7,7 @@ and which cameras draw one.
 <script lang="ts">
 	import { Input, Switch } from '@viamrobotics/prime-core'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	interface Props {
 		/** Every camera on the part, whether or not it reports usable intrinsics. */
