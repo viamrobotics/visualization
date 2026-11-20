@@ -2,10 +2,11 @@ import { type Matrix4, Quaternion, Vector3 } from 'three'
 
 import type { SimBody, SimDocument, SimExportNote, SimGeom, SimScene } from './sim-scene'
 
+import { childrenByParent } from './children-by-parent'
 import { PLACEHOLDER_INERTIA_KG_M2, PLACEHOLDER_MASS_KG } from './estimate-inertial'
 import { indentXml } from './indent-xml'
 import { meshFileNamer } from './mesh-file-namer'
-import { xmlNumbers, xmlText } from './xml-attribute-values'
+import { xmlNumbers, xmlSignificant, xmlText } from './xml-attribute-values'
 
 const MODEL_NAME = 'viam_scene'
 const SNAPSHOT_KEY = 'snapshot'
@@ -104,14 +105,16 @@ const bodyElement = (writer: MjcfWriter, body: SimBody): string => {
 	if (body.geoms.every((geom) => geom.role === 'visual')) {
 		const moment = PLACEHOLDER_INERTIA_KG_M2
 		children.push(
-			`<inertial pos="0 0 0" mass="${PLACEHOLDER_MASS_KG}" diaginertia="${xmlNumbers(moment, moment, moment)}"/>`
+			`<inertial pos="0 0 0" mass="${xmlSignificant(PLACEHOLDER_MASS_KG)}" diaginertia="${xmlSignificant(moment, moment, moment)}"/>`
 		)
 	}
 
 	if (body.joint) {
-		const { axis, lower, type, upper, value } = body.joint
+		const { axis, limits, type, value } = body.joint
+		// With `autolimits`, a joint without `range` is unlimited.
+		const range = limits ? ` range="${xmlNumbers(limits.lower, limits.upper)}"` : ''
 		children.push(
-			`<joint name="${xmlText(body.name)}" type="${JOINT_TYPES[type]}" axis="${xmlNumbers(axis.x, axis.y, axis.z)}" range="${xmlNumbers(lower, upper)}"/>`
+			`<joint name="${xmlText(body.name)}" type="${JOINT_TYPES[type]}" axis="${xmlNumbers(axis.x, axis.y, axis.z)}"${range}/>`
 		)
 		writer.jointValues.push(value)
 	}
@@ -134,13 +137,8 @@ const bodyElement = (writer: MjcfWriter, body: SimBody): string => {
  * from geoms at its default density, and collides every mesh as its convex hull.
  */
 export const serializeMjcf = (scene: SimScene): SimDocument => {
-	const childrenOf = new Map<string | undefined, SimBody[]>()
-	for (const body of scene.bodies) {
-		childrenOf.set(body.parent, [...(childrenOf.get(body.parent) ?? []), body])
-	}
-
 	const writer: MjcfWriter = {
-		childrenOf,
+		childrenOf: childrenByParent(scene.bodies),
 		assets: [],
 		meshes: new Map(),
 		nameMeshFile: meshFileNamer(),
@@ -148,7 +146,9 @@ export const serializeMjcf = (scene: SimScene): SimDocument => {
 		notes: [],
 	}
 
-	const worldBodies = (childrenOf.get(undefined) ?? []).map((body) => bodyElement(writer, body))
+	const worldBodies = (writer.childrenOf.get(undefined) ?? []).map((body) =>
+		bodyElement(writer, body)
+	)
 
 	if (scene.bodies.some((body) => body.geoms.some((geom) => geom.role !== 'visual'))) {
 		writer.notes.push({ reason: 'inertia-estimated', subject: 'MJCF' })

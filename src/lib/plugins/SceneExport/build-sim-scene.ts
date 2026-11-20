@@ -8,6 +8,7 @@ import { hierarchy, traits } from '$lib/ecs'
 import type { SimBody, SimExportNote, SimExportNoteReason, SimScene } from './sim-scene'
 
 import { articulateComponent } from './articulate-component'
+import { childrenByParent } from './children-by-parent'
 import { entityGeoms } from './entity-geoms'
 
 export interface BuildSimSceneInput {
@@ -58,13 +59,7 @@ const uniqueNamer = () => {
 
 /** `bodies` reordered so every parent precedes its children. Bodies in a parent cycle are dropped. */
 const parentsFirst = (bodies: SimBody[]): SimBody[] => {
-	const childrenOf = new Map<string | undefined, SimBody[]>()
-	for (const body of bodies) {
-		const siblings = childrenOf.get(body.parent) ?? []
-		siblings.push(body)
-		childrenOf.set(body.parent, siblings)
-	}
-
+	const childrenOf = childrenByParent(bodies)
 	const ordered: SimBody[] = []
 	const visit = (parent: string | undefined) => {
 		for (const child of childrenOf.get(parent) ?? []) {

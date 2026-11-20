@@ -75,6 +75,27 @@ describe('serializeUrdf', () => {
 		expect(notes).toContainEqual({ reason: 'collision-mesh-hulled', subject: 'elbow' })
 	})
 
+	it('writes a revolute joint with no finite limits as continuous, with no bounds', () => {
+		const joint = { ...revoluteJoint(0), limits: undefined }
+		const scene = { bodies: [simBody('wheel', { joint })], notes: [] }
+
+		const urdf = parseXml(serializeUrdf(scene).document)
+
+		expect(attribute(urdf, 'joint[name="wheel_joint"]', 'type')).toBe('continuous')
+		expect(attribute(urdf, 'joint[name="wheel_joint"] limit', 'lower')).toBeNull()
+	})
+
+	it('keeps a small link’s inertia instead of rounding it to zero', () => {
+		const scene = {
+			bodies: [simBody('pin', { geoms: [simGeom({ kind: 'sphere', radius: 0.01 })] })],
+			notes: [],
+		}
+
+		const urdf = parseXml(serializeUrdf(scene).document)
+
+		expect(attribute(urdf, 'link[name="pin"] inertia', 'ixx')).toBe('1.67552e-7')
+	})
+
 	it('writes the snapshot’s joint positions beside the URDF, keyed by URDF joint name', () => {
 		const scene = {
 			bodies: [simBody('arm:shoulder', { joint: revoluteJoint(0.5) }), simBody('table')],

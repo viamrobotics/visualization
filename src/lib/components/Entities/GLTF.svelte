@@ -1,16 +1,3 @@
-<script
-	module
-	lang="ts"
->
-	import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js'
-
-	const dracoLoader = new DRACOLoader()
-	const gltfLoader = new GLTFLoader()
-
-	dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
-	gltfLoader.setDRACOLoader(dracoLoader)
-</script>
-
 <script lang="ts">
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
@@ -21,6 +8,7 @@
 
 	import { traits, useOpacity, useTrait } from '$lib/ecs'
 	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { gltfLoader } from '$lib/loaders/gltf'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { setModelOpacity } from './setModelOpacity'

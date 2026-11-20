@@ -142,7 +142,7 @@ describe('buildSimScene', () => {
 
 		expect(shoulder.parent).toBe('arm:base')
 		expect(shoulder.joint.value).toBeCloseTo(0.523599, 6)
-		expect(shoulder.joint.lower).toBeCloseTo(-1.570796, 6)
+		expect(shoulder.joint.limits?.lower).toBeCloseTo(-1.570796, 6)
 		expect(upper.parent).toBe('arm:shoulder')
 		expect(translationOf(upper.origin).x).toBeCloseTo(0.1, 6)
 		expect(bodies.indexOf(shoulder)).toBeLessThan(bodies.indexOf(upper))
@@ -256,7 +256,60 @@ describe('buildSimScene', () => {
 		assertExists(shoulder?.joint, 'no shoulder joint body')
 
 		expect(shoulder.joint.value).toBe(0)
-		expect(notes).toContainEqual({ reason: 'joint-value-unknown', subject: 'arm:upper' })
+		expect(notes).toContainEqual({ reason: 'joint-value-unknown', subject: 'arm:shoulder' })
+	})
+
+	it('notes a link whose scene parent no longer matches the model, instead of welding it silently', async () => {
+		setup()
+		const arm = world.spawn(traits.Name('arm'), traits.Matrix(new Matrix4()))
+		world.spawn(traits.Name('arm:base'), traits.Matrix(new Matrix4()), relations.ChildOf(arm))
+		world.spawn(
+			traits.Name('arm:upper'),
+			traits.Matrix(new Pose(100).toMatrix4()),
+			relations.ChildOf(arm)
+		)
+		await flush()
+
+		const { notes } = build({ arm: TWO_LINK_ARM })
+
+		expect(notes).toContainEqual({ reason: 'link-not-articulated', subject: 'arm:upper' })
+	})
+
+	it('takes a shared joint’s value from whichever branch can measure it', async () => {
+		setup()
+		const { arm } = spawnArmAtThirtyDegrees()
+		const base = world.query(traits.Name).find((entity) => entity.get(traits.Name) === 'arm:base')
+		world.spawn(
+			traits.Name('arm:twin'),
+			traits.Matrix(new Pose(0, 0, 40).toMatrix4()),
+			relations.ChildOf(base ?? arm)
+		)
+		await flush()
+		const forked: RawKinematicsModel = {
+			...TWO_LINK_ARM,
+			links: [
+				{ id: 'twin', parent: 'shoulder', translation: { X: 100, Y: 0, Z: 0 } },
+				...(TWO_LINK_ARM.links ?? []),
+			],
+		}
+
+		const { bodies, notes } = build({ arm: forked })
+		const shoulder = bodies.find((body) => body.name === 'arm:shoulder')
+		assertExists(shoulder?.joint, 'no shoulder joint body')
+
+		expect(shoulder.joint.value).toBeCloseTo(0.523599, 6)
+		expect(notes).not.toContainEqual({ reason: 'joint-value-unknown', subject: 'arm:shoulder' })
+	})
+
+	it('skips and notes a mesh with no vertices rather than failing the export', async () => {
+		setup()
+		world.spawn(traits.Name('blank'), traits.Matrix(new Matrix4()), traits.BufferGeometry())
+		await flush()
+
+		const scene = build()
+
+		expect(scene.bodies[0]?.geoms).toEqual([])
+		expect(scene.notes).toContainEqual({ reason: 'mesh-empty-skipped', subject: 'blank' })
 	})
 
 	it('exports an open cylinder as a tube mesh rather than a solid one', async () => {

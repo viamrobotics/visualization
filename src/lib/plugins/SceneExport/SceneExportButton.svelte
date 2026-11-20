@@ -12,6 +12,9 @@
 
 	const LABEL = 'Export scene as URDF and MJCF'
 	const FILE_NAME = 'scene-urdf-mjcf.zip'
+	// Firefox and some Safari versions cancel a download whose blob URL is revoked in the same task
+	// as the click. FileSaver.js waits this long for the same reason.
+	const REVOKE_DELAY_MS = 40_000
 
 	const world = useWorld()
 	const frames = useFrames()
@@ -25,8 +28,10 @@
 		const anchor = document.createElement('a')
 		anchor.href = url
 		anchor.download = FILE_NAME
+		document.body.append(anchor)
 		anchor.click()
-		URL.revokeObjectURL(url)
+		anchor.remove()
+		setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 	}
 
 	const exportScene = async () => {

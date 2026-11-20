@@ -8,7 +8,7 @@ import { estimateInertial, type SimInertial } from './estimate-inertial'
 import { indentXml } from './indent-xml'
 import { meshFileNamer } from './mesh-file-namer'
 import { movingBodies } from './moving-bodies'
-import { xmlNumbers, xmlText } from './xml-attribute-values'
+import { xmlNumbers, xmlSignificant, xmlText } from './xml-attribute-values'
 
 const ROBOT_NAME = 'viam_scene'
 const ROOT_LINK = 'world'
@@ -19,6 +19,7 @@ const ROOT_LINK = 'world'
  */
 const PLACEHOLDER_EFFORT = 1000
 const PLACEHOLDER_VELOCITY: Record<SimJoint['type'], number> = { revolute: Math.PI, prismatic: 1 }
+const PLACEHOLDER_PRISMATIC_TRAVEL_M = 10
 
 const position = new Vector3()
 const rotation = new Quaternion()
@@ -41,8 +42,8 @@ const inertialElement = ({ mass, centerOfMass, inertia }: SimInertial): string =
 	return [
 		'<inertial>',
 		`\t<origin xyz="${xmlNumbers(centerOfMass.x, centerOfMass.y, centerOfMass.z)}" rpy="0 0 0"/>`,
-		`\t<mass value="${xmlNumbers(mass)}"/>`,
-		`\t<inertia ixx="${xmlNumbers(xx)}" ixy="${xmlNumbers(xy)}" ixz="${xmlNumbers(xz)}" iyy="${xmlNumbers(yy)}" iyz="${xmlNumbers(yz)}" izz="${xmlNumbers(zz)}"/>`,
+		`\t<mass value="${xmlSignificant(mass)}"/>`,
+		`\t<inertia ixx="${xmlSignificant(xx)}" ixy="${xmlSignificant(xy)}" ixz="${xmlSignificant(xz)}" iyy="${xmlSignificant(yy)}" iyz="${xmlSignificant(yz)}" izz="${xmlSignificant(zz)}"/>`,
 		'</inertial>',
 	].join('\n')
 }
@@ -149,6 +150,28 @@ const linkElement = (writer: UrdfWriter, body: SimBody): string => {
 
 const jointName = (body: SimBody): string => `${body.name}_joint`
 
+/** A revolute joint with no limits is URDF's `continuous`. */
+const urdfJointType = (joint: SimJoint | undefined): string => {
+	if (!joint) return 'fixed'
+	return joint.type === 'revolute' && !joint.limits ? 'continuous' : joint.type
+}
+
+/**
+ * The `<limit>`. A continuous joint takes only effort and velocity. A prismatic joint must have
+ * bounds, since URDF reads missing ones as zero and locks the joint, so an unlimited one gets
+ * placeholders.
+ */
+const limitElement = (joint: SimJoint): string => {
+	const velocity = joint.maxVelocity ?? PLACEHOLDER_VELOCITY[joint.type]
+	const rates = `effort="${PLACEHOLDER_EFFORT}" velocity="${xmlNumbers(velocity)}"`
+	if (joint.type === 'revolute' && !joint.limits) return `<limit ${rates}/>`
+	const { lower, upper } = joint.limits ?? {
+		lower: -PLACEHOLDER_PRISMATIC_TRAVEL_M,
+		upper: PLACEHOLDER_PRISMATIC_TRAVEL_M,
+	}
+	return `<limit lower="${xmlNumbers(lower)}" upper="${xmlNumbers(upper)}" ${rates}/>`
+}
+
 const jointElement = (body: SimBody): string => {
 	const { joint } = body
 	const lines = [
@@ -157,14 +180,13 @@ const jointElement = (body: SimBody): string => {
 		originElement(body.origin),
 	]
 	if (joint) {
-		const velocity = joint.maxVelocity ?? PLACEHOLDER_VELOCITY[joint.type]
 		lines.push(
 			`<axis xyz="${xmlNumbers(joint.axis.x, joint.axis.y, joint.axis.z)}"/>`,
-			`<limit lower="${xmlNumbers(joint.lower)}" upper="${xmlNumbers(joint.upper)}" effort="${PLACEHOLDER_EFFORT}" velocity="${xmlNumbers(velocity)}"/>`
+			limitElement(joint)
 		)
 	}
 	return [
-		`<joint name="${xmlText(jointName(body))}" type="${joint?.type ?? 'fixed'}">`,
+		`<joint name="${xmlText(jointName(body))}" type="${urdfJointType(joint)}">`,
 		indentXml(lines.join('\n')),
 		'</joint>',
 	].join('\n')

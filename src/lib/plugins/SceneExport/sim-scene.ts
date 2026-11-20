@@ -29,9 +29,11 @@ export interface SimJoint {
 	type: 'revolute' | 'prismatic'
 	/** Unit length, in the body's frame. */
 	axis: Vector3
-	/** Radians for revolute, metres for prismatic. */
-	lower: number
-	upper: number
+	/**
+	 * Radians for revolute, metres for prismatic. `undefined` when the model sets no finite limits,
+	 * as rdk does for a URDF `continuous` joint by giving a revolute joint infinite ones.
+	 */
+	limits: { lower: number; upper: number } | undefined
 	/** The joint's position in the snapshot, in the same units as the limits. */
 	value: number
 	/** Per second, in the same units as the limits. `undefined` when the model sets none. */
@@ -89,6 +91,8 @@ export type SimExportNoteReason =
 	| 'model-load-failed'
 	| 'dh-model-not-articulated'
 	| 'joint-value-unknown'
+	| 'link-not-articulated'
+	| 'mesh-empty-skipped'
 	| 'end-effector-unknown'
 	| 'end-effector-offset-unknown'
 	| 'collision-mesh-hulled'

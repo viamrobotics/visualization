@@ -1,6 +1,14 @@
 import type { Entity } from 'koota'
 
-import { Color, type Material, Matrix4, type Mesh, type Object3D, Vector3 } from 'three'
+import {
+	type BufferGeometry,
+	Color,
+	type Material,
+	Matrix4,
+	type Mesh,
+	type Object3D,
+	Vector3,
+} from 'three'
 
 import { traits } from '$lib/ecs'
 import { Pose } from '$lib/math'
@@ -20,7 +28,11 @@ const centerOf = (entity: Entity): Matrix4 => {
 	return center ? centerPose.copy(center).toMatrix4() : new Matrix4()
 }
 
-const colliderShape = (entity: Entity): SimShape | undefined => {
+/** Empty or truncated mesh bytes parse to a geometry with no vertices, which STL cannot hold. */
+const hasVertices = (geometry: BufferGeometry): boolean =>
+	(geometry.getAttribute('position')?.count ?? 0) > 0
+
+const colliderShape = (entity: Entity, notes: SimExportNote[]): SimShape | undefined => {
 	const box = entity.get(traits.Box)
 	if (box) {
 		return {
@@ -47,9 +59,12 @@ const colliderShape = (entity: Entity): SimShape | undefined => {
 	}
 
 	const geometry = entity.get(traits.BufferGeometry)
-	if (geometry) return { kind: 'mesh', geometry: geometry.clone() }
-
-	return undefined
+	if (!geometry) return undefined
+	if (!hasVertices(geometry)) {
+		notes.push({ reason: 'mesh-empty-skipped', subject: entity.get(traits.Name) ?? '' })
+		return undefined
+	}
+	return { kind: 'mesh', geometry: geometry.clone() }
 }
 
 const WHITE = 0xffffff
@@ -78,14 +93,17 @@ const modelRootPlacement = (entity: Entity, model: Object3D): Matrix4 => {
 	return model.matrix.clone()
 }
 
-/** One visual geom per mesh in `model`, with each mesh's transform baked into its vertices. */
+/**
+ * One visual geom per mesh in `model`, with each mesh's transform baked into its vertices. A mesh
+ * with no vertices draws nothing in the scene either, so it is left out.
+ */
 const visualModelGeoms = (model: Object3D, rootPlacement: Matrix4): SimGeom[] => {
 	model.updateMatrixWorld(true)
 	const rootInverse = model.matrixWorld.clone().invert()
 	const geoms: SimGeom[] = []
 
 	model.traverse((object) => {
-		if (!isMesh(object)) return
+		if (!isMesh(object) || !hasVertices(object.geometry)) return
 		const toBody = rootPlacement.clone().multiply(rootInverse).multiply(object.matrixWorld)
 		geoms.push({
 			shape: { kind: 'mesh', geometry: object.geometry.clone().applyMatrix4(toBody) },
@@ -111,7 +129,7 @@ export const entityGeoms = (
 	const geoms = visualModel
 		? visualModelGeoms(visualModel, modelRootPlacement(entity, visualModel))
 		: []
-	const shape = colliderShape(entity)
+	const shape = colliderShape(entity, notes)
 
 	if (visualModel && !shape) {
 		notes.push({ reason: 'model-visual-only', subject: entity.get(traits.Name) ?? '' })

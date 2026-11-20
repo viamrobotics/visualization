@@ -16,7 +16,10 @@ const EXPLANATIONS: Record<SimExportNoteReason, string> = {
 	'end-effector-offset-unknown':
 		'These frames are mounted on an arm, but their offset from its end effector is unknown, so they are welded where the snapshot shows them and do not follow the arm.',
 	'joint-value-unknown':
-		'These links sit behind more than one joint, so the snapshot pose of those joints is unknown and they start at zero.',
+		'The snapshot position of these joints could not be measured, so they start at zero. A joint needs a pose polled through it, and only one joint between two links.',
+	'link-not-articulated':
+		'These links no longer hang from their parent in the kinematics model, or their joint type is unsupported, so they are welded where the snapshot shows them.',
+	'mesh-empty-skipped': 'These meshes have no vertices and were left out.',
 	'collision-mesh-hulled':
 		'These moving collision meshes collide as their convex hulls in the URDF, because physics engines handle concave meshes on moving bodies badly.',
 	'mujoco-hulls-collision-mesh':
@@ -24,8 +27,25 @@ const EXPLANATIONS: Record<SimExportNoteReason, string> = {
 	'inertia-estimated':
 		'Mass and inertia are estimated from collision geometry at the density of water, not measured.',
 	'joint-limits-placeholder':
-		'Joint effort limits, and velocity limits the model does not set, are placeholders.',
+		'Joint effort limits, velocity limits the model does not set, and the travel of unlimited prismatic joints are placeholders.',
 }
+
+/** Each reason with the distinct subjects noted under it, in the order reasons were first noted. */
+const subjectsByReason = (
+	notes: readonly SimExportNote[]
+): Map<SimExportNoteReason, Set<string>> => {
+	const grouped = new Map<SimExportNoteReason, Set<string>>()
+	for (const { reason, subject } of notes) {
+		const subjects = grouped.get(reason)
+		if (subjects) subjects.add(subject)
+		else grouped.set(reason, new Set([subject]))
+	}
+	return grouped
+}
+
+/** How many entries `export-notes.txt` lists for `notes`, with repeats counted once. */
+export const countExportNotes = (notes: readonly SimExportNote[]): number =>
+	[...subjectsByReason(notes).values()].reduce((count, subjects) => count + subjects.size, 0)
 
 /**
  * The notes as plain text for `export-notes.txt`: one paragraph per reason, then what it applies
@@ -34,14 +54,7 @@ const EXPLANATIONS: Record<SimExportNoteReason, string> = {
 export const exportNotesText = (notes: readonly SimExportNote[]): string => {
 	if (notes.length === 0) return 'Nothing was left out or approximated.\n'
 
-	const subjectsByReason = new Map<SimExportNoteReason, Set<string>>()
-	for (const { reason, subject } of notes) {
-		const subjects = subjectsByReason.get(reason) ?? new Set()
-		subjects.add(subject)
-		subjectsByReason.set(reason, subjects)
-	}
-
-	const paragraphs = [...subjectsByReason].map(([reason, subjects]) =>
+	const paragraphs = [...subjectsByReason(notes)].map(([reason, subjects]) =>
 		[EXPLANATIONS[reason], ...[...subjects].map((subject) => `  - ${subject}`)].join('\n')
 	)
 	return `${paragraphs.join('\n\n')}\n`

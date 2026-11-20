@@ -54,13 +54,16 @@ const axisOf = (joint: RawKinematicsJoint): Vector3 => {
 const toSimJoint = (joint: RawKinematicsJoint): SimJoint | undefined => {
 	if (joint.type !== 'revolute' && joint.type !== 'prismatic') return undefined
 	const toSimUnits = joint.type === 'revolute' ? MathUtils.DEG2RAD : MM_TO_M
+	const { min, max, max_velocity: maxVelocity } = joint
+	const hasLimits = Number.isFinite(min) && Number.isFinite(max)
 	return {
 		type: joint.type,
 		axis: axisOf(joint),
-		lower: (joint.min ?? 0) * toSimUnits,
-		upper: (joint.max ?? 0) * toSimUnits,
+		limits: hasLimits
+			? { lower: (min as number) * toSimUnits, upper: (max as number) * toSimUnits }
+			: undefined,
 		value: 0,
-		maxVelocity: joint.max_velocity === undefined ? undefined : joint.max_velocity * toSimUnits,
+		maxVelocity: Number.isFinite(maxVelocity) ? (maxVelocity as number) * toSimUnits : undefined,
 	}
 }
 
@@ -143,11 +146,20 @@ export const articulateComponent = (
 			? internalFrameName(componentName, parentLinkId)
 			: componentName
 
+	// One `SimJoint` per joint, so a value recovered through either of two sibling branches reaches
+	// the body both share.
+	const simJointsById = new Map<string, SimJoint | undefined>()
+	const simJointFor = (joint: RawKinematicsJoint): SimJoint | undefined => {
+		if (!simJointsById.has(joint.id)) simJointsById.set(joint.id, toSimJoint(joint))
+		return simJointsById.get(joint.id)
+	}
+	const recoveredJointIds = new Set<string>()
+
 	const toJointChain = (
 		joints: RawKinematicsJoint[],
 		parentName: string
 	): JointChain | undefined => {
-		const simJoints = joints.map((joint) => toSimJoint(joint))
+		const simJoints = joints.map((joint) => simJointFor(joint))
 		if (simJoints.includes(undefined)) return undefined
 		return { joints, simJoints: simJoints as SimJoint[], parentName }
 	}
@@ -173,20 +185,22 @@ export const articulateComponent = (
 		return parent
 	}
 
-	/** Sets the chain's one joint from a pose measured through it, or notes that it cannot. */
+	/**
+	 * Sets the chain's joint from a pose measured through it. Only a chain of one joint can be
+	 * solved. Joints left unsolved are noted once every branch has had its try.
+	 */
 	const recoverChainValue = (
 		chain: JointChain,
-		subject: string,
 		childInParent: Matrix4 | undefined,
 		childStatic: Matrix4 | undefined
 	) => {
+		const [joint] = chain.joints
 		const [simJoint] = chain.simJoints
-		const value =
-			chain.simJoints.length === 1 && simJoint && childInParent && childStatic
-				? recoverJointValue(simJoint, childInParent, childStatic)
-				: undefined
-		if (value === undefined) notes.push({ reason: 'joint-value-unknown', subject })
-		else if (simJoint) simJoint.value = value
+		if (chain.joints.length !== 1 || !joint || !simJoint || !childInParent || !childStatic) return
+		const value = recoverJointValue(simJoint, childInParent, childStatic)
+		if (value === undefined) return
+		simJoint.value = value
+		recoveredJointIds.add(joint.id)
 	}
 
 	// A joint end effector has no link below it, so its angle can only come from a frame mounted on
@@ -212,7 +226,6 @@ export const articulateComponent = (
 		)
 		recoverChainValue(
 			endEffectorChain,
-			internalFrameName(componentName, endEffectorJoint.id),
 			mounted && parentInComponent?.clone().invert().multiply(mounted.origin),
 			mounted && configPoseOf(mounted.name)
 		)
@@ -223,15 +236,19 @@ export const articulateComponent = (
 		if (!linkBody) continue
 
 		const { joints, parentLinkId } = jointsAbove(link.parent, jointsById)
-		const parentName = parentBodyName(parentLinkId)
-		// A mismatch means the scene moved the link, and its pose no longer composes with the joints.
-		if (joints.length === 0 || linkBody.parent !== parentName) continue
+		if (joints.length === 0) continue
 
+		const parentName = parentBodyName(parentLinkId)
 		const chain = toJointChain(joints, parentName)
-		if (!chain) continue
+		// A parent mismatch means the scene moved the link, and its pose no longer composes with the
+		// joints. Either way the link stays welded where the scene shows it.
+		if (!chain || linkBody.parent !== parentName) {
+			notes.push({ reason: 'link-not-articulated', subject: linkBody.name })
+			continue
+		}
 
 		const linkStatic = poseFromJson(link.translation, link.orientation).toMatrix4()
-		recoverChainValue(chain, linkBody.name, linkBody.origin, linkStatic)
+		recoverChainValue(chain, linkBody.origin, linkStatic)
 		linkBody.parent = buildJointBodies(chain)
 		linkBody.origin = linkStatic
 	}
@@ -245,6 +262,12 @@ export const articulateComponent = (
 	}
 
 	attachChildrenToEndEffector(componentName, endEffectorName, context)
+
+	for (const [jointId, body] of jointBodiesById) {
+		if (!recoveredJointIds.has(jointId)) {
+			notes.push({ reason: 'joint-value-unknown', subject: body.name })
+		}
+	}
 
 	return added
 }

@@ -1,12 +1,7 @@
 import type { Object3D } from 'three'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-import { DRACOLoader, GLTFLoader } from 'three/examples/jsm/Addons.js'
-
-const dracoLoader = new DRACOLoader()
-const gltfLoader = new GLTFLoader()
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
-gltfLoader.setDRACOLoader(dracoLoader)
+import { gltfLoader } from '$lib/loaders/gltf'
 
 /** `traits.GLTF`'s `source`. */
 type GltfSource = { url: string } | { gltf: GLTF } | { glb: Uint8Array }

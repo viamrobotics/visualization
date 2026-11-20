@@ -25,8 +25,7 @@ export const simGeom = (shape: SimShape, overrides: Partial<SimGeom> = {}): SimG
 export const revoluteJoint = (value: number): SimJoint => ({
 	type: 'revolute',
 	axis: new Vector3(0, 0, 1),
-	lower: -Math.PI / 2,
-	upper: Math.PI / 2,
+	limits: { lower: -Math.PI / 2, upper: Math.PI / 2 },
 	value,
 	maxVelocity: undefined,
 })

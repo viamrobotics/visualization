@@ -9,6 +9,7 @@ import { matchModel, modelKey } from '$lib/hooks/use3DModels.svelte'
 import type { SimExportNote } from './sim-scene'
 
 import { buildSimScene } from './build-sim-scene'
+import { countExportNotes } from './export-notes-text'
 import { loadGltfScene } from './load-gltf-scene'
 import { packageSimExport } from './package-sim-export'
 import { serializeMjcf } from './serialize-mjcf'
@@ -73,6 +74,6 @@ export const exportSimScene = async ({
 	return {
 		zip: await packageSimExport({ urdf, mjcf, sceneNotes }),
 		bodyCount: scene.bodies.length,
-		noteCount: sceneNotes.length + urdf.notes.length + mjcf.notes.length,
+		noteCount: countExportNotes([...sceneNotes, ...urdf.notes, ...mjcf.notes]),
 	}
 }

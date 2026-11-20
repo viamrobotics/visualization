@@ -5,17 +5,11 @@ import { isInstanceOf } from '@threlte/core/webgpu'
 import { type ArmClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 import { traits, useWorld } from '$lib/ecs'
+import { gltfLoader } from '$lib/loaders/gltf'
 
 import { useSettings } from './useSettings.svelte'
-
-const gltfLoader = new GLTFLoader()
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
-gltfLoader.setDRACOLoader(dracoLoader)
 
 const key = Symbol('3d-models-context')
 
