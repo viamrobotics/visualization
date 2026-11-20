@@ -1,4 +1,6 @@
-import { sentrySvelteKit } from '@sentry/sveltekit'
+import adapter from '@sveltejs/adapter-static'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
+import { sentrySvelteKit } from '@sentry/sveltekit/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { svelteTesting } from '@testing-library/svelte/vite'
@@ -7,7 +9,6 @@ import dns from 'node:dns'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import mkcert from 'vite-plugin-mkcert'
 import { defineConfig } from 'vitest/config'
-
 import { version } from './package.json'
 
 dns.setDefaultResultOrder('verbatim')
@@ -18,23 +19,31 @@ export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
 	plugins: [
 		sentrySvelteKit({
-			sourceMapsUploadOptions: {
-				org: 'viam',
-				// Sentry project slug, not the package name. It stays until the project is
-				// renamed in Sentry; a mismatch silently breaks symbolication.
-				project: 'motion-tools',
-				// Must match `release` in hooks.client.ts. The default is the git HEAD SHA, which no
-				// event references, so uploaded maps would never be applied to a stack trace.
-				release: { name: version },
-				// Symbolication needs these uploaded, not served. Deletion is not gated on the auth
-				// token, so a build without one still keeps them out of the deployed site.
-				sourcemaps: { filesToDeleteAfterUpload: ['./build/**/*.map'] },
-			},
+			org: 'viam',
+			// Sentry project slug, not the package name. It stays until the project is
+			// renamed in Sentry; a mismatch silently breaks symbolication.
+			project: 'motion-tools',
+			// Must match `release` in hooks.client.ts. The default is the git HEAD SHA, which no
+			// event references, so uploaded maps would never be applied to a stack trace.
+			release: { name: version },
+			// Symbolication needs these uploaded, not served. Deletion is not gated on the auth
+			// token, so a build without one still keeps them out of the deployed site.
+			sourcemaps: { filesToDeleteAfterUpload: ['./build/**/*.map'] },
 		}),
 		devtoolsJson(),
 		...(https ? [mkcert()] : []),
 		tailwindcss(),
-		sveltekit(),
+		sveltekit({
+			preprocess: vitePreprocess(),
+			adapter: adapter(),
+			paths: {
+				// SvelteKit requires no trailing slash here.
+				// Set by the pr-preview workflow to /visualization/pr-preview/pr-<N>
+				// so the static build resolves assets under that subpath.
+				// SvelteKit rejects a value without a leading slash when it loads the config.
+				base: (process.env.BASE_PATH ?? '') as '' | `/${string}`,
+			},
+		}),
 		svelteTesting({ resolveBrowser: false }),
 	],
 
@@ -60,7 +69,8 @@ export default defineConfig({
 		host: true,
 		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
-		cors: true,
+		// SvelteKit 3 warns that OPTIONS handlers are skipped unless preflights continue past Vite's CORS middleware.
+		cors: { preflightContinue: true },
 		https: https ? {} : undefined,
 
 		fs: {

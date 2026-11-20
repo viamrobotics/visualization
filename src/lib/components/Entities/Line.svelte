@@ -7,8 +7,8 @@
 	import { Line2 } from 'three/addons/lines/webgpu/Line2.js'
 	import { Line2NodeMaterial } from 'three/webgpu'
 
-	import { isVertexColors, STRIDE } from '$lib/buffer'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
+	import { isVertexColors, STRIDE } from '#lib/buffer.js'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import LineDots from './LineDots.svelte'

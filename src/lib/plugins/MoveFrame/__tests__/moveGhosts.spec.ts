@@ -2,8 +2,8 @@ import { createWorld, type Entity, type World } from 'koota'
 import { BoxGeometry, Matrix4, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { relations, traits } from '$lib/ecs'
-import { modelKey } from '$lib/hooks/use3DModels.svelte'
+import { relations, traits } from '#lib/ecs/index.js'
+import { modelKey } from '#lib/hooks/use3DModels.svelte.js'
 
 import {
 	clearMoveGhosts,

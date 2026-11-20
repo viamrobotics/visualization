@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { resolvedAppearanceByComponent } from '$lib/resolvedAppearance'
+import { resolvedAppearanceByComponent } from '#lib/resolvedAppearance.js'
 
 const bounds: PartComponent = {
 	name: 'bounds-1',

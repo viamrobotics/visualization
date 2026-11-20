@@ -3,7 +3,7 @@ import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it } from 'vitest'
 
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
 
 import AxesHelperDetails from '../AxesHelperDetails.svelte'
 

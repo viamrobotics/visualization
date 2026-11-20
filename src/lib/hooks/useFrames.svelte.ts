@@ -3,16 +3,22 @@ import { createRobotQuery, useConnectionStatus, useRobotClient } from '@viamrobo
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
 
-import type { Transform } from '$lib/geometry'
-import type { RawKinematicsModel } from '$lib/kinematicsTransform'
+import type { Transform } from '#lib/geometry.js'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
-import { appearanceColorsByFrame } from '$lib/appearanceColors'
-import { resourceNameToColor, subtypeToColor } from '$lib/color'
-import { hierarchy, setOrAddTrait, traits, TRANSLUCENT_GEOMETRY_OPACITY, useWorld } from '$lib/ecs'
-import { deriveKinematicsFrames, ownerOfInternalFrame } from '$lib/kinematicsFrames'
-import { Pose } from '$lib/math'
-import { obstacleShapeEntries } from '$lib/obstacleShapeEntries'
-import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+import { appearanceColorsByFrame } from '#lib/appearanceColors.js'
+import { resourceNameToColor, subtypeToColor } from '#lib/color.js'
+import {
+	hierarchy,
+	setOrAddTrait,
+	traits,
+	TRANSLUCENT_GEOMETRY_OPACITY,
+	useWorld,
+} from '#lib/ecs/index.js'
+import { deriveKinematicsFrames, ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
+import { Pose } from '#lib/math/index.js'
+import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
+import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { machineFrameNames } from './machineFrameNames'
 import { mergeObstacleFrames } from './mergeObstacleFrames'

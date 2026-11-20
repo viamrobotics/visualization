@@ -2,7 +2,7 @@
 	module
 	lang="ts"
 >
-	import { Pose } from '$lib/math'
+	import { Pose } from '#lib/math/index.js'
 
 	const IDENTITY_POSE = new Pose()
 </script>
@@ -10,7 +10,7 @@
 <script lang="ts">
 	import { type Entity } from 'koota'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

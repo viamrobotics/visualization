@@ -1,10 +1,10 @@
-import type { PartComponentPatch } from '$lib/hooks/patchPartComponent'
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponentPatch } from '#lib/hooks/patchPartComponent.js'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { type BoundsHint, isObstacleComponent } from '$lib/obstacleAttributes'
-import { obstacleEditorHint } from '$lib/obstacleEditorType'
-import { withObstacleHint } from '$lib/obstacleVisualizer'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { type BoundsHint, isObstacleComponent } from '#lib/obstacleAttributes.js'
+import { obstacleEditorHint } from '#lib/obstacleEditorType.js'
+import { withObstacleHint } from '#lib/obstacleVisualizer.js'
 
 /** A Bounds hint needs a positive interior, so a resize never goes below this. */
 export const MIN_INTERIOR_MM = 1

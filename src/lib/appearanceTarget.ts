@@ -1,6 +1,6 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { ownerOfInternalFrame } from '$lib/kinematicsFrames'
+import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 
 /** Where a frame's appearance is saved: its part component, and its id inside that component. */
 export interface AppearanceTarget {

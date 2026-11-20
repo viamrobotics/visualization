@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import { ObstaclePreviewController } from '../ObstaclePreviewController'
 

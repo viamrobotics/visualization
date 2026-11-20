@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createFrame } from '$lib/frame'
+import { createFrame } from '#lib/frame.js'
 
 import type { PartConfig } from '../usePartConfig.svelte'
 

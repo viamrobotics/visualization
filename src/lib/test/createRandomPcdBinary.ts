@@ -1,4 +1,4 @@
-import { createBinaryPCD } from '$lib/pcd'
+import { createBinaryPCD } from '#lib/pcd.js'
 
 export const createRandomPcdBinary = async (
 	numPoints = 200,

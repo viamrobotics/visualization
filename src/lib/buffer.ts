@@ -1,6 +1,6 @@
 import { Color } from 'three'
 
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
+import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 
 export const STRIDE = {
 	/** Arrows: [x, y, z, ox, oy, oz, ...] */

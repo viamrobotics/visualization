@@ -1,12 +1,12 @@
 <script lang="ts">
-	import GeometryFields from '$lib/components/overlay/details/GeometryFields.svelte'
-	import { type EditableFrameGeometry } from '$lib/defaultFrameGeometry'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
+	import { type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import {
 		obstacleGeometriesOf,
 		type ObstacleGeometryConfig,
 		type ObstacleShape,
-	} from '$lib/obstacleAttributes'
+	} from '#lib/obstacleAttributes.js'
 
 	interface Props {
 		/** A component that `obstacleEditorType` classed as simple. */

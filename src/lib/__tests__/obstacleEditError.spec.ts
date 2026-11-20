@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { obstacleEditError } from '$lib/obstacleEditError'
-import { patchObstacleGeometry, removeObstacleGeometry } from '$lib/obstacleGeometryList'
+import { obstacleEditError } from '#lib/obstacleEditError.js'
+import { patchObstacleGeometry, removeObstacleGeometry } from '#lib/obstacleGeometryList.js'
 
 const capsule = (r: number, l: number): ObstacleGeometryConfig => ({ type: 'capsule', r, l })
 const box = (label: string): ObstacleGeometryConfig => ({ label, type: 'box', x: 1, y: 1, z: 1 })

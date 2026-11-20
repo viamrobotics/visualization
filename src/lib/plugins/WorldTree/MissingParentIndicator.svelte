@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Icon } from '@viamrobotics/prime-core'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 </script>
 
 <Tooltip

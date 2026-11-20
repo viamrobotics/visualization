@@ -2,7 +2,7 @@ import type { Entity } from 'koota'
 
 import { Box3, BufferGeometry, Vector3 } from 'three'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 const MM_TO_M = 0.001
 

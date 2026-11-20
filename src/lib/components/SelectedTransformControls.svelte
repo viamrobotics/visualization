@@ -10,31 +10,31 @@
 		type BoundsInterior,
 		boundsObstacleNamed,
 		resizeBoundsObstacle,
-	} from '$lib/boundsObstacleInterior'
-	import { complexShapeOwner } from '$lib/complexShapeOwner'
-	import SnapIndicator from '$lib/components/SnapIndicator.svelte'
-	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { shapeOffsetFromGizmo, withObstacleShapePatch } from '$lib/editing/obstacleShapeGizmo'
-	import { isFrameVariableLocked } from '$lib/frameVariableLocks'
-	import { transformSnaps } from '$lib/hooks/transformSnaps'
-	import { useConfigFrames } from '$lib/hooks/useConfigFrames.svelte'
-	import { useTransformControls } from '$lib/hooks/useControls.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { Pose } from '$lib/math'
-	import { solveEditedMatrix } from '$lib/math/transform'
-	import { type ObstacleShape } from '$lib/obstacleAttributes'
-	import { type ObstacleGeometryPatch } from '$lib/obstacleGeometryList'
+	} from '#lib/boundsObstacleInterior.js'
+	import { complexShapeOwner } from '#lib/complexShapeOwner.js'
+	import SnapIndicator from '#lib/components/SnapIndicator.svelte'
+	import { relations, traits, useQuery, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { shapeOffsetFromGizmo, withObstacleShapePatch } from '#lib/editing/obstacleShapeGizmo.js'
+	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
+	import { transformSnaps } from '#lib/hooks/transformSnaps.js'
+	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
+	import { useTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { Pose } from '#lib/math/index.js'
+	import { solveEditedMatrix } from '#lib/math/transform.js'
+	import { type ObstacleShape } from '#lib/obstacleAttributes.js'
+	import { type ObstacleGeometryPatch } from '#lib/obstacleGeometryList.js'
 	import {
 		simpleObstacleNamed,
 		simpleObstacleShape,
 		withSimpleObstacleShape,
-	} from '$lib/simpleObstacleShape'
-	import { useObjectSnapDrag } from '$lib/snapping/useObjectSnapDrag.svelte'
-	import { isolateTransformControls } from '$lib/three/renderLayers'
+	} from '#lib/simpleObstacleShape.js'
+	import { useObjectSnapDrag } from '#lib/snapping/useObjectSnapDrag.svelte.js'
+	import { isolateTransformControls } from '#lib/three/renderLayers.js'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -415,7 +415,7 @@
 	 * offset (LiveMatrix + Matrix both present), the parent-relative target feeds
 	 * solveEditedMatrix to back out the EditedMatrix satisfying
 	 * live × baseline⁻¹ × edited = local. Without one, `toLocalMatrix` in
-	 * `$lib/ecs/worldMatrix.ts` short-circuits to EditedMatrix, so we write the
+	 * `#lib/ecs/worldMatrix.ts` short-circuits to EditedMatrix, so we write the
 	 * target pose directly.
 	 */
 	const stageFrameTransform = () => {

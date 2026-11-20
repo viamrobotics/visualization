@@ -4,7 +4,7 @@
 >
 	import { Euler, MathUtils, Quaternion } from 'three'
 
-	import { OrientationVector } from '$lib/math/OrientationVector'
+	import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 	const quaternionUtil = new Quaternion()
 	const ovUtil = new OrientationVector()
@@ -29,10 +29,10 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import { relations, traits, useParentName, useTarget, useTrait } from '$lib/ecs'
-	import { FrameEditor } from '$lib/editing/FrameEditor'
-	import { useParentFrameOptions } from '$lib/hooks/useParentFrameOptions.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { relations, traits, useParentName, useTarget, useTrait } from '#lib/ecs/index.js'
+	import { FrameEditor } from '#lib/editing/FrameEditor.js'
+	import { useParentFrameOptions } from '#lib/hooks/useParentFrameOptions.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import EntityLink from '../EntityLink.svelte'
 	import { composeDisplayedPose } from './composeDisplayedPose'

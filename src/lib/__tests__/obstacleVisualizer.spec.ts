@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { DEFAULT_BOUNDS_HINT } from '$lib/obstacle'
+import { DEFAULT_BOUNDS_HINT } from '#lib/obstacle.js'
 import {
 	afterRemovingShape,
 	complexObstacleVisualizer,
 	SHAPES_IN_PLACE,
 	withObstacleHint,
-} from '$lib/obstacleVisualizer'
+} from '#lib/obstacleVisualizer.js'
 
 const boundsWithColor = (): PartComponent => ({
 	name: 'bounds-1',

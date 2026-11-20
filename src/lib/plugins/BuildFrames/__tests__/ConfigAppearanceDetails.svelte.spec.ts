@@ -5,12 +5,12 @@ import { Color } from 'three'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import { traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 
 import ConfigAppearanceDetails from '../ConfigAppearanceDetails.svelte'
 

@@ -30,7 +30,7 @@ import {
 } from 'three/tsl'
 import { MeshBasicNodeMaterial, type Node, type UniformNode } from 'three/webgpu'
 
-import { STRIDE } from '$lib/buffer'
+import { STRIDE } from '#lib/buffer.js'
 
 import { computeBoundingBox } from './box'
 import { createHeadGeometry, createShaftGeometry, toInstanced } from './geometry'

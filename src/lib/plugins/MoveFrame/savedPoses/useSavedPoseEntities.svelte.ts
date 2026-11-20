@@ -1,9 +1,9 @@
 import type { Entity } from 'koota'
 
-import type { Pose } from '$lib/math'
+import type { Pose } from '#lib/math/index.js'
 
-import { traits, useWorld } from '$lib/ecs'
-import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+import { traits, useWorld } from '#lib/ecs/index.js'
+import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 import { parseArmPositionSaver } from './armPositionSaver'
 

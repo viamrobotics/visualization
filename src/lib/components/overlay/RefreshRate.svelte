@@ -3,9 +3,9 @@
 
 	import { IconButton, Select } from '@viamrobotics/prime-core'
 
-	import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
+	import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import { refetchRateOptionsFor, RefetchRates } from './refetchRates'
 

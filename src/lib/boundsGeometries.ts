@@ -3,7 +3,7 @@ import {
 	type BoundsFace,
 	type BoundsHint,
 	type ObstacleGeometryConfig,
-} from '$lib/obstacleAttributes'
+} from '#lib/obstacleAttributes.js'
 
 /** Negates without producing `-0`, which a stored config would round-trip as `0`. */
 const negate = (value: number): number => (value === 0 ? 0 : -value)

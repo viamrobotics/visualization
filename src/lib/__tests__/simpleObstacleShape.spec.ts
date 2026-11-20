@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createBoundsObstacleComponent, createObstacleComponent } from '$lib/obstacle'
+import { createBoundsObstacleComponent, createObstacleComponent } from '#lib/obstacle.js'
 import {
 	simpleObstacleNamed,
 	simpleObstacleShape,
 	withSimpleObstacleShape,
-} from '$lib/simpleObstacleShape'
+} from '#lib/simpleObstacleShape.js'
 
 const offsetSphereObstacle = (): PartComponent => ({
 	...createObstacleComponent('ball'),

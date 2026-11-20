@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Not } from 'koota'
 
-	import { traits, useQuery } from '$lib/ecs'
-	import { matchModel, modelKey, use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { matchModel, modelKey, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import Arrows from './Arrows/ArrowGroups.svelte'
 	import AxesHelpers from './AxesHelpers.svelte'

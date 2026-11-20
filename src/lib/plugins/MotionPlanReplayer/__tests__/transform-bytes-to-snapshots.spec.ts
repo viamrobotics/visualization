@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Pose, PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
+import { Pose, PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
 
 import { transformBytesToSnapshots, transformsToSnapshot } from '../plan-to-snapshots'
 

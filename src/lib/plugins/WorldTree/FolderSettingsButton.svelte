@@ -3,12 +3,12 @@
 
 	import { MoreHorizontal } from 'lucide-svelte'
 
-	import type { RefreshRateId } from '$lib/hooks/useSettings.svelte'
+	import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import FramesSettings from '$lib/plugins/Settings/FramesSettings.svelte'
-	import PointcloudSettings from '$lib/plugins/Settings/PointcloudSettings.svelte'
-	import VisionSettings from '$lib/plugins/Settings/VisionSettings.svelte'
+	import Popover from '#lib/components/overlay/Popover.svelte'
+	import FramesSettings from '#lib/plugins/Settings/FramesSettings.svelte'
+	import PointcloudSettings from '#lib/plugins/Settings/PointcloudSettings.svelte'
+	import VisionSettings from '#lib/plugins/Settings/VisionSettings.svelte'
 
 	/** The settings tab that owns each polling group, so a folder opens its own. */
 	const SETTINGS_PANELS: Record<RefreshRateId, Component> = {

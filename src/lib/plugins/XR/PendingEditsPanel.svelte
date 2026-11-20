@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useWorld } from '$lib/ecs'
-	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import CanvasPanel from './panels/CanvasPanel.svelte'
 	import {

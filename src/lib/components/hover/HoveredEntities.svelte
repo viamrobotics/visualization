@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { traits, useQuery } from '$lib/ecs'
-	import { useLinkedEntities } from '$lib/hooks/useLinked.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useLinkedEntities } from '#lib/hooks/useLinked.svelte.js'
 
 	import HoveredEntity from './HoveredEntity.svelte'
 	import HoveredPointMarker from './HoveredPointMarker.svelte'

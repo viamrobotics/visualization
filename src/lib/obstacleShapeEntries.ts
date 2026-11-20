@@ -1,12 +1,12 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { internalFrameName } from '$lib/kinematicsFrames'
+import { internalFrameName } from '#lib/kinematicsFrames.js'
 import {
 	isObstacleComponent,
 	obstacleGeometriesOf,
 	obstacleGeometryLabel,
-} from '$lib/obstacleAttributes'
-import { obstacleEditorType } from '$lib/obstacleEditorType'
+} from '#lib/obstacleAttributes.js'
+import { obstacleEditorType } from '#lib/obstacleEditorType.js'
 
 /** Where a shape frame's geometry lives: its obstacle, and its place in `attributes.geometries`. */
 export interface ObstacleShapeEntry {

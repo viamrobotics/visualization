@@ -2,14 +2,14 @@ import type { Entity, World } from 'koota'
 
 import { Matrix4 } from 'three'
 
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import type { ComponentFramesConfig } from '$lib/resolveComponentFrames'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import type { ComponentFramesConfig } from '#lib/resolveComponentFrames.js'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
-import { composeLocalMatrix } from '$lib/math/transform'
-import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
+import { composeLocalMatrix } from '#lib/math/transform.js'
+import { mergedComponentFrames, resolveComponentFrames } from '#lib/resolveComponentFrames.js'
 
 import { applyGeometryTrait, type EditableFrameGeometry } from './FrameEditor'
 

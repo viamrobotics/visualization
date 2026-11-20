@@ -3,8 +3,8 @@
 	import { type Entity } from 'koota'
 	import { BufferAttribute } from 'three'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { PointCloud } from '$lib/three/PointCloud'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { PointCloud } from '#lib/three/PointCloud.js'
 
 	interface Props {
 		entity: Entity

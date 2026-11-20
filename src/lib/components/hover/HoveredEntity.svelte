@@ -3,10 +3,10 @@
 
 	import { MathUtils, Quaternion, Vector3 } from 'three'
 
-	import type { HoverInfo } from '$lib/HoverUpdater.svelte'
+	import type { HoverInfo } from '#lib/HoverUpdater.svelte.js'
 
-	import { traits, useTrait } from '$lib/ecs'
-	import { OrientationVector } from '$lib/math/OrientationVector'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 	import HoveredEntityTooltip from './HoveredEntityTooltip.svelte'
 

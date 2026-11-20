@@ -7,12 +7,12 @@
 		type StepperChangeEvent,
 	} from 'svelte-tweakpane-ui'
 
-	import { generateBoundsGeometries } from '$lib/boundsGeometries'
-	import { MIN_INTERIOR_MM } from '$lib/boundsObstacleInterior'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '$lib/obstacleAttributes'
-	import { obstacleEditorHint } from '$lib/obstacleEditorType'
-	import { withObstacleHint } from '$lib/obstacleVisualizer'
+	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '#lib/obstacleAttributes.js'
+	import { obstacleEditorHint } from '#lib/obstacleEditorType.js'
+	import { withObstacleHint } from '#lib/obstacleVisualizer.js'
 
 	interface Props {
 		/** A component that `obstacleEditorType` classed as bounds. */

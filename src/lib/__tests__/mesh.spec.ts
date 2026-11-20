@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { meshContentType, parseMeshInput } from '$lib/mesh'
+import { meshContentType, parseMeshInput } from '#lib/mesh.js'
 
 const asciiStl = `solid tri
 facet normal 0 0 1

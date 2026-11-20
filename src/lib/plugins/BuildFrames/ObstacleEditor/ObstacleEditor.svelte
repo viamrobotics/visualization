@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { obstacleEditorType } from '$lib/obstacleEditorType'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { obstacleEditorType } from '#lib/obstacleEditorType.js'
 
 	import BoundsObstacleEditor from './BoundsObstacleEditor.svelte'
 	import ComplexObstacleEditor from './ComplexObstacleEditor.svelte'

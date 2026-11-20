@@ -1,10 +1,10 @@
 import { getContext, setContext, untrack } from 'svelte'
 
-import type { SavedAppearance } from '$lib/resourceAppearance'
+import type { SavedAppearance } from '#lib/resourceAppearance.js'
 
-import { useQuery } from '$lib/ecs'
-import { applyFrameAppearance } from '$lib/ecs/applyFrameAppearance'
-import { resolvedAppearanceByComponent } from '$lib/resolvedAppearance'
+import { useQuery } from '#lib/ecs/index.js'
+import { applyFrameAppearance } from '#lib/ecs/applyFrameAppearance.js'
+import { resolvedAppearanceByComponent } from '#lib/resolvedAppearance.js'
 
 import { useEnvironment } from './useEnvironment.svelte'
 import { FRAME_ENTITY_QUERY } from './useFrameEntities.svelte'

@@ -3,12 +3,12 @@
 
 	import { Button } from '@viamrobotics/prime-core'
 
-	import { relations, selectOnly, useTarget, useWorld } from '$lib/ecs'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { obstacleGeometriesOf } from '$lib/obstacleAttributes'
-	import { obstacleEditError } from '$lib/obstacleEditError'
-	import { removeObstacleGeometry } from '$lib/obstacleGeometryList'
-	import { afterRemovingShape, complexObstacleVisualizer } from '$lib/obstacleVisualizer'
+	import { relations, selectOnly, useTarget, useWorld } from '#lib/ecs/index.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
+	import { obstacleEditError } from '#lib/obstacleEditError.js'
+	import { removeObstacleGeometry } from '#lib/obstacleGeometryList.js'
+	import { afterRemovingShape, complexObstacleVisualizer } from '#lib/obstacleVisualizer.js'
 
 	interface Props {
 		/** The shape's own frame entity. */

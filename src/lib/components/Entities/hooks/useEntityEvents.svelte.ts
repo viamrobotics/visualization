@@ -3,10 +3,10 @@ import type { Entity } from 'koota'
 import { type IntersectionEvent, useCursor } from '@threlte/extras/webgpu'
 import { MathUtils, Matrix4, Quaternion, Vector2 } from 'three'
 
-import { setOrAddTrait, traits, useTrait, useWorld } from '$lib/ecs'
-import { clickSelectionTarget } from '$lib/ecs/clickSelectionTarget'
-import { type HoverInfo, updateHoverInfo } from '$lib/HoverUpdater.svelte'
-import { OrientationVector } from '$lib/math/OrientationVector'
+import { setOrAddTrait, traits, useTrait, useWorld } from '#lib/ecs/index.js'
+import { clickSelectionTarget } from '#lib/ecs/clickSelectionTarget.js'
+import { type HoverInfo, updateHoverInfo } from '#lib/HoverUpdater.svelte.js'
+import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 const tempHoverMatrix = new Matrix4()
 const hoverQuat = new Quaternion()

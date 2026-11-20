@@ -2,7 +2,7 @@
 	module
 	lang="ts"
 >
-	import type { EnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
+	import type { EnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 
 	const appearance = {
 		monitor: {
@@ -41,11 +41,11 @@
 	import { Icon, Button as PrimeButton, Tooltip } from '@viamrobotics/prime-core'
 	import { Hammer, Move3d } from 'lucide-svelte'
 
-	import Dialog from '$lib/components/overlay/Dialog.svelte'
-	import { useWorld } from '$lib/ecs'
-	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import Dialog from '#lib/components/overlay/Dialog.svelte'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	interface Props {
 		/** The mode this button switches the app into. */

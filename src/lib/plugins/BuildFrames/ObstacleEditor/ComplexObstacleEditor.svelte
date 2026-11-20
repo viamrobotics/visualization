@@ -1,28 +1,28 @@
 <script lang="ts">
 	import { Button, IconButton, Input } from '@viamrobotics/prime-core'
 
-	import { selectOnly, traits, useWorld } from '$lib/ecs'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { internalFrameName } from '$lib/kinematicsFrames'
+	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { internalFrameName } from '#lib/kinematicsFrames.js'
 	import {
 		explicitGeometryLabel,
 		obstacleGeometriesOf,
 		type ObstacleGeometryConfig,
 		obstacleGeometryLabel,
-	} from '$lib/obstacleAttributes'
-	import { obstacleEditError, type ObstacleEditScope } from '$lib/obstacleEditError'
+	} from '#lib/obstacleAttributes.js'
+	import { obstacleEditError, type ObstacleEditScope } from '#lib/obstacleEditError.js'
 	import {
 		addObstacleGeometry,
 		patchObstacleGeometry,
 		removeObstacleGeometry,
-	} from '$lib/obstacleGeometryList'
-	import { validateObstacleGeometries } from '$lib/obstacleGeometryValidation'
+	} from '#lib/obstacleGeometryList.js'
+	import { validateObstacleGeometries } from '#lib/obstacleGeometryValidation.js'
 	import {
 		afterRemovingShape,
 		complexObstacleVisualizer,
 		type ShapeIndexMove,
 		SHAPES_IN_PLACE,
-	} from '$lib/obstacleVisualizer'
+	} from '#lib/obstacleVisualizer.js'
 
 	interface Props {
 		/** A component that `obstacleEditorType` classed as complex. */

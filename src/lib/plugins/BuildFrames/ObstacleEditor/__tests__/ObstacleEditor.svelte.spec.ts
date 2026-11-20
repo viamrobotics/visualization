@@ -2,15 +2,15 @@ import { render, screen } from '@testing-library/svelte'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 import {
 	createBoundsObstacleComponent,
 	createComplexObstacleComponent,
 	createObstacleComponent,
-} from '$lib/obstacle'
+} from '#lib/obstacle.js'
 
 import ObstacleEditor from '../ObstacleEditor.svelte'
 

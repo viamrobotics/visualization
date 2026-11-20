@@ -2,8 +2,8 @@ import { createWorld, type World } from 'koota'
 import { Matrix4 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { FRAME_ENTITY_QUERY, frameEntitiesByName } from '$lib/hooks/useFrameEntities.svelte'
+import { traits } from '#lib/ecs/index.js'
+import { FRAME_ENTITY_QUERY, frameEntitiesByName } from '#lib/hooks/useFrameEntities.svelte.js'
 
 let world: World
 

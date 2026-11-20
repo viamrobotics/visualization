@@ -5,13 +5,13 @@
 	import { ChevronRight, Eye, EyeOff, Folder, FolderOpen } from 'lucide-svelte'
 	import { VirtualList } from 'svelte-virtuallists'
 
-	import type { LogTarget } from '$lib/plugins/Logs/useLogs.svelte'
+	import type { LogTarget } from '#lib/plugins/Logs/useLogs.svelte.js'
 
-	import EntityLink from '$lib/components/overlay/EntityLink.svelte'
-	import { traits, useTrait } from '$lib/ecs'
-	import { useResourceHealth } from '$lib/hooks/resources/useResourceHealth.svelte'
-	import { usePoses } from '$lib/hooks/usePoses.svelte'
-	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
+	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
+	import { usePoses } from '#lib/hooks/usePoses.svelte.js'
+	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import type { TreeNode } from './buildTree'
 
@@ -57,7 +57,7 @@
 	/**
 	 * The machine's health report for this row's resource. Only a frame or a
 	 * frameless component stands for one. A name is not unique across the world:
-	 * a drawn transform takes its reference frame's name (`$lib/draw.ts`) and a
+	 * a drawn transform takes its reference frame's name (`#lib/draw.ts`) and a
 	 * folder takes its display name, so looking up every row would badge those
 	 * with another resource's report.
 	 */

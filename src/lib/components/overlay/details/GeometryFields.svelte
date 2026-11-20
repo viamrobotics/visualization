@@ -10,7 +10,7 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import { defaultFrameGeometry, type EditableFrameGeometry } from '$lib/defaultFrameGeometry'
+	import { defaultFrameGeometry, type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
 	interface Props {
 		/** The geometry to show. Undefined reads as `none`. */

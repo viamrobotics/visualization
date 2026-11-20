@@ -1,8 +1,8 @@
 import type { Entity } from 'koota'
 
-import type { SavedAppearance } from '$lib/resourceAppearance'
+import type { SavedAppearance } from '#lib/resourceAppearance.js'
 
-import { ownerOfInternalFrame } from '$lib/kinematicsFrames'
+import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 
 import { setOrAddTrait } from './setOrAddTrait'
 import * as traits from './traits'

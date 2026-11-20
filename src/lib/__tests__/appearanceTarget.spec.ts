@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { appearanceKeyOf, appearanceTargetOf } from '$lib/appearanceTarget'
-import { createComplexObstacleComponent } from '$lib/obstacle'
+import { appearanceKeyOf, appearanceTargetOf } from '#lib/appearanceTarget.js'
+import { createComplexObstacleComponent } from '#lib/obstacle.js'
 
 describe('appearanceTargetOf', () => {
 	const cage = createComplexObstacleComponent('cage')

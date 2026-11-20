@@ -1,4 +1,4 @@
-import { parentFrameOptions } from '$lib/parentFrameOptions'
+import { parentFrameOptions } from '#lib/parentFrameOptions.js'
 
 import { useConfigFrames } from './useConfigFrames.svelte'
 import { useFragmentInfo } from './useFragmentInfo.svelte'

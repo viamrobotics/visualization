@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
-import type { BoundsHint, ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
+import type { BoundsHint, ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { obstacleEditorHint, obstacleEditorType } from '$lib/obstacleEditorType'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { obstacleEditorHint, obstacleEditorType } from '#lib/obstacleEditorType.js'
 
 const componentWith = (geometries: unknown, visualizer?: unknown): PartComponent => ({
 	name: 'obstacle-1',

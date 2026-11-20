@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import {
 	frameAppearanceOf,
@@ -15,7 +15,7 @@ import {
 	withoutFrameAppearances,
 	withoutResourceAppearance,
 	withResourceAppearance,
-} from '$lib/resourceAppearance'
+} from '#lib/resourceAppearance.js'
 
 const boundsWithAppearance = (): PartComponent => ({
 	name: 'bounds-1',

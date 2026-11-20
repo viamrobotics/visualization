@@ -8,9 +8,9 @@ import {
 	PoseInFrame,
 	Transform,
 	WorldState,
-} from '$lib/buf/common/v1/common_pb'
-import { Pose } from '$lib/math'
-import { parseGeometry } from '$lib/motion/frameDescriptors'
+} from '#lib/buf/common/v1/common_pb.js'
+import { Pose } from '#lib/math/index.js'
+import { parseGeometry } from '#lib/motion/frameDescriptors.js'
 
 import type { ObstaclesInWorldFrame, ParsedPlan } from './parse-plan'
 
@@ -20,7 +20,7 @@ const namespaced = (label: string, fallback: string): string => `obstacle:${labe
 const newUuid = (): Uint8Array<ArrayBuffer> =>
 	Uint8Array.from(UuidTool.toBytes(crypto.randomUUID()))
 
-// `PartialMessage` so both `$lib/math`'s Pose and a decoded proto Pose fit — the former is the
+// `PartialMessage` so both `#lib/math`'s Pose and a decoded proto Pose fit — the former is the
 // identity default, the latter comes off a supplemental transform.
 const obstacleTransform = (
 	name: string,

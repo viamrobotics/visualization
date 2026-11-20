@@ -4,7 +4,7 @@ import {
 	EntityChangeType,
 	EntityScope,
 	StreamEntityChangesResponse,
-} from '$lib/buf/draw/v1/service_pb'
+} from '#lib/buf/draw/v1/service_pb.js'
 
 export interface StreamEvent {
 	uuid: string

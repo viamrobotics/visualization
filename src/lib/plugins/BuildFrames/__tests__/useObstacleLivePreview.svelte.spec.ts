@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import { createObstacleLivePreviewHarness } from './__fixtures__/obstacleLivePreviewHarness.svelte'
 
-vi.mock('$lib/hooks/useEnvironment.svelte', () => ({ useEnvironment: vi.fn() }))
-vi.mock('$lib/hooks/usePartID.svelte', () => ({ usePartID: vi.fn() }))
-vi.mock('$lib/plugins/Logs/useLogs.svelte', () => ({ useLogs: vi.fn() }))
+vi.mock('#lib/hooks/useEnvironment.svelte.js', () => ({ useEnvironment: vi.fn() }))
+vi.mock('#lib/hooks/usePartID.svelte.js', () => ({ usePartID: vi.fn() }))
+vi.mock('#lib/plugins/Logs/useLogs.svelte.js', () => ({ useLogs: vi.fn() }))
 vi.mock('@viamrobotics/svelte-sdk', () => ({
 	createResourceClient: vi.fn(),
 	useConnectionStatus: vi.fn(),

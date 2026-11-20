@@ -2,13 +2,13 @@ import type { Entity } from 'koota'
 
 import { onDestroy } from 'svelte'
 
-import type { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+import type { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-import { setOrAddTrait, traits, useWorld } from '$lib/ecs'
-import { useRelationships } from '$lib/hooks/useRelationships.svelte'
-import { createTrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
-import { reconcileSnapshotEntities, type SnapshotEntity } from '$lib/snapshot'
+import { setOrAddTrait, traits, useWorld } from '#lib/ecs/index.js'
+import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
+import { createTrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
+import { reconcileSnapshotEntities, type SnapshotEntity } from '#lib/snapshot.js'
 
 import { parsePlan, PlanParseError } from './parse-plan'
 import { parsedPlanToSnapshots } from './plan-to-snapshots'

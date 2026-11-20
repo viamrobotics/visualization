@@ -1,7 +1,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { expect } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor, FrameSystemJson } from '../../frameDescriptors'
 import type { TrajectoryStep } from '../../jointPose'

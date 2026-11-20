@@ -2,8 +2,8 @@ import type { Entity } from 'koota'
 
 import { Box3, Matrix4, type Object3D, Vector3 } from 'three'
 
-import { traits } from '$lib/ecs'
-import { expandBoxByTransformedBox } from '$lib/three/OBBHelper'
+import { traits } from '#lib/ecs/index.js'
+import { expandBoxByTransformedBox } from '#lib/three/OBBHelper.js'
 
 import { composeBoxMatrix } from './composeBoxMatrix'
 import { composeCapsuleBoundsMatrix } from './composeCapsuleMatrices'

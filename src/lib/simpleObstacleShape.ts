@@ -1,11 +1,11 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import {
 	isObstacleComponent,
 	obstacleGeometriesOf,
 	type ObstacleShape,
-} from '$lib/obstacleAttributes'
-import { obstacleEditorType } from '$lib/obstacleEditorType'
+} from '#lib/obstacleAttributes.js'
+import { obstacleEditorType } from '#lib/obstacleEditorType.js'
 
 /**
  * The part-owned Simple obstacle named `name`. Its one shape is what a scale gizmo resizes,

@@ -5,18 +5,18 @@ import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { StateHistory } from 'runed'
 import { getContext, setContext, untrack } from 'svelte'
 
-import { useWorld } from '$lib/ecs'
+import { useWorld } from '#lib/ecs/index.js'
 import {
 	applyFrameHistorySnapshotToWorld,
 	parsePartConfigSnapshot,
 	serializePartConfig,
-} from '$lib/editing/frameHistory'
-import { createFrame, type Frame } from '$lib/frame'
-import { frameModOperations, replaceFrameMods } from '$lib/frameFragmentMods'
-import { hasViamAppClient } from '$lib/hooks/hasViamAppClient'
-import { useFragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import { Pose } from '$lib/math'
-import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
+} from '#lib/editing/frameHistory.js'
+import { createFrame, type Frame } from '#lib/frame.js'
+import { frameModOperations, replaceFrameMods } from '#lib/frameFragmentMods.js'
+import { hasViamAppClient } from '#lib/hooks/hasViamAppClient.js'
+import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import { Pose } from '#lib/math/index.js'
+import { mergedComponentFrames, resolveComponentFrames } from '#lib/resolveComponentFrames.js'
 
 import { type PartComponentPatch, patchPartComponent } from './patchPartComponent'
 import { removePartComponent } from './removePartComponent'

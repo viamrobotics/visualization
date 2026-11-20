@@ -3,7 +3,7 @@ import type { Entity } from 'koota'
 
 import { Vector3 } from 'three'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 export interface HoverInfo {
 	index: number

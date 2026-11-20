@@ -1,4 +1,4 @@
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 /** Pushes one obstacle's geometries to the machine, e.g. through `DoCommand {"command": "set"}`. */
 export type SendObstacleGeometries = (

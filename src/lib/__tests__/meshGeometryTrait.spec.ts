@@ -2,7 +2,7 @@ import { commonApi, Geometry as ViamGeometry } from '@viamrobotics/sdk'
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 const asciiStl = `solid tri
 facet normal 0 0 1

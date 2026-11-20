@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Button from '$lib/components/overlay/dashboard/Button.svelte'
-	import DashboardPortal from '$lib/components/overlay/Portals/DashboardPortal.svelte'
-	import { traits, useQuery } from '$lib/ecs'
-	import { useHotkey } from '$lib/keybindings'
+	import Button from '#lib/components/overlay/dashboard/Button.svelte'
+	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
+	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useHotkey } from '#lib/keybindings/index.js'
 
 	import { provideIsolate } from './provideIsolate.svelte'
 

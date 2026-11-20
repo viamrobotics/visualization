@@ -1,4 +1,4 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 /**
  * How a resource is drawn, saved in its `visualizer` config so a workcell keeps its look. The

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { NumericInput } from '@viamrobotics/prime-core'
 
-	import type { TrajectoryPlayer } from '$lib/motion/trajectoryPlayer.svelte'
+	import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-	import TrajectoryScrubber from '$lib/components/motion/TrajectoryScrubber.svelte'
+	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
 
 	import type { IKCandidate } from './ik-candidates'
 	import type { PoseKind, PoseSet } from './pose-sets'
