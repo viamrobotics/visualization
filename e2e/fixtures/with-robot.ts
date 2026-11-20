@@ -89,7 +89,7 @@ export const injectMachineConfig = async (page: Page, config: E2ETestConfig) => 
 }
 
 export const activateConnectionConfigByHost = async (page: Page, host: string) => {
-	const configButton = page.getByRole('button', { name: 'Machine connection configs' })
+	const configButton = page.getByRole('button', { name: /^Machine connection:/ })
 	await configButton.click()
 
 	await expect(async () => {
@@ -172,7 +172,7 @@ export const withRobot = base.extend<{ robotPage: RobotTestPage }>({
 		await page.reload()
 		await activateConnectionConfigByHost(page, config.host)
 
-		const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+		const machineConfigButton = page.getByRole('button', { name: /^Machine connection:/ })
 
 		const maxRetries = 5
 		let connected = false

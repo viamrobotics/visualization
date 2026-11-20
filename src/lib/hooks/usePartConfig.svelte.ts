@@ -1,5 +1,6 @@
 import type { JsonValue } from '@viamrobotics/sdk'
 
+import { ToastVariant, useToast } from '@viamrobotics/prime-core'
 import { Struct } from '@viamrobotics/sdk'
 import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { StateHistory } from 'runed'
@@ -88,7 +89,7 @@ interface LocalPartConfig {
 	error?: string
 
 	set: (config: PartConfig, options?: { dirty?: boolean }) => void
-	save?: () => void
+	save?: () => void | Promise<void>
 	discardChanges?: () => void
 }
 
@@ -134,7 +135,12 @@ export interface PartConfigContext {
 	updateComponent: (componentName: string, patch: PartComponentPatch) => void
 	/** Removes a part-owned component, as one undo step. Its modules stay. */
 	deleteComponent: (componentName: string) => void
-	save: () => void
+	/**
+	 * Writes the staged edits. A failure is reported to the user as a toast.
+	 *
+	 * @returns Whether the config was saved.
+	 */
+	save: () => Promise<boolean>
 	discardChanges: () => void
 	canUndoFrameEdit: boolean
 	canRedoFrameEdit: boolean
@@ -157,6 +163,7 @@ export const providePartConfig = (
 	})
 	const fragmentInfo = useFragmentInfo()
 	const world = useWorld()
+	const toast = useToast()
 
 	const getCurrent = () => {
 		return (config.current?.toJson?.() ?? { components: [] }) as unknown as PartConfig
@@ -553,10 +560,17 @@ export const providePartConfig = (
 				config.set(newConfig)
 			}
 		},
-		save: () => {
+		save: async () => {
 			deactivateHistory()
 			cleanSettlement = 'save'
-			config.save?.()
+			try {
+				await config.save?.()
+				return true
+			} catch (error) {
+				const reason = error instanceof Error ? error.message : String(error)
+				toast({ message: `Couldn't save the config: ${reason}`, variant: ToastVariant.Danger })
+				return false
+			}
 		},
 		discardChanges: () => {
 			deactivateHistory()
@@ -720,11 +734,13 @@ const useStandalonePartConfig = (partID: () => string): LocalPartConfig => {
 
 		async save() {
 			if (!current || !partName) {
-				return
+				throw new Error('The machine config has not loaded yet.')
 			}
 
-			networkPartConfig = current
-			await updateRobotPartMutation.mutateAsync([partID(), partName, current])
+			const saving = current
+			await updateRobotPartMutation.mutateAsync([partID(), partName, saving])
+			// Only after the write lands, so a failed save leaves Discard pointing at the server's copy.
+			networkPartConfig = saving
 			isDirty = false
 		},
 

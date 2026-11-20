@@ -154,7 +154,7 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 	})
 	await page.reload({ waitUntil: 'domcontentloaded' })
 
-	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	const machineConfigButton = page.getByRole('button', { name: /^Machine connection:/ })
 	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
 		timeout: 15_000,
 	})
@@ -231,7 +231,7 @@ withRobot('create and delete frame', async ({ browser }) => {
 	await page.waitForLoadState('domcontentloaded')
 	await activateConnectionConfigByHost(page, config.host)
 
-	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	const machineConfigButton = page.getByRole('button', { name: /^Machine connection:/ })
 	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
 		timeout: 15_000,
 	})
@@ -356,7 +356,7 @@ withRobot('fragment edit frame', async ({ browser }) => {
 	await page.waitForLoadState('domcontentloaded')
 	await activateConnectionConfigByHost(page, config.host)
 
-	const machineConfigButton = page.getByRole('button', { name: 'Machine connection configs' })
+	const machineConfigButton = page.getByRole('button', { name: /^Machine connection:/ })
 	await expect(machineConfigButton.getByText('live', { exact: true })).toBeVisible({
 		timeout: 15_000,
 	})

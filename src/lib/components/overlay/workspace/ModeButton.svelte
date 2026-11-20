@@ -38,10 +38,11 @@
 <script lang="ts">
 	import type { ClassValue } from 'svelte/elements'
 
-	import { Icon, Button as PrimeButton, Tooltip } from '@viamrobotics/prime-core'
+	import { Icon, Button as PrimeButton } from '@viamrobotics/prime-core'
 	import { Hammer, Move3d } from 'lucide-svelte'
 
 	import Dialog from '#lib/components/overlay/Dialog.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { useWorld } from '#lib/ecs/index.js'
 	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
@@ -84,10 +85,8 @@
 	}
 </script>
 
-<Tooltip
-	let:tooltipID
-	location="bottom"
->
+<Tooltip placement="bottom">
+	{#snippet children(tooltipID)}
 	<label
 		class={[
 			className,
@@ -124,7 +123,9 @@
 			</span>
 		</button>
 	</label>
-	<p slot="description">{description}</p>
+	{/snippet}
+
+	{#snippet content()}{description}{/snippet}
 </Tooltip>
 
 <Dialog

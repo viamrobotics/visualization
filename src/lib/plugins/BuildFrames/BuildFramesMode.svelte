@@ -10,6 +10,7 @@
 	import BuildActionsBar from './BuildActionsBar.svelte'
 	import BuildDetails from './BuildDetails.svelte'
 	import FramelessComponentDetails from './FramelessComponentDetails.svelte'
+	import { provideObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 	import TransformDashboard from './TransformDashboard.svelte'
 	import { useFramelessComponentEntities } from './useFramelessComponentEntities.svelte'
 	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
@@ -24,7 +25,7 @@
 	useEnvironmentMode('build')
 
 	useFramelessComponentEntities()
-	useObstacleLivePreview()
+	provideObstaclePreviewToggle(useObstacleLivePreview())
 </script>
 
 <ModeTogglePortal>

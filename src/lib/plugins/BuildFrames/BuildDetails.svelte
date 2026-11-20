@@ -30,6 +30,7 @@
 	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
+	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
 	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
@@ -44,6 +45,8 @@
 	const fragmentInfo = useFragmentInfo()
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
+	// Read here, not in `ObstacleSection`: the details panel portals its content out of this context.
+	const obstaclePreview = useObstaclePreviewToggle()
 
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 
@@ -127,7 +130,10 @@
 			{/if}
 
 			{#if showObstacleEditor && name.current}
-				<ObstacleSection name={name.current} />
+				<ObstacleSection
+					name={name.current}
+					preview={obstaclePreview}
+				/>
 			{:else if showEditFrameOptions && !isObstacle}
 				<EditGeometryDetails {entity} />
 			{:else}

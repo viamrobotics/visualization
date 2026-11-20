@@ -12,6 +12,8 @@ const key = Symbol('machine-connection-context')
 interface Context {
 	connectionStatus: MachineConnectionEvent
 	error: Error | undefined
+	/** Whether a machine is picked to connect to. Without one, the status is `DISCONNECTED` but nothing is offline. */
+	hasMachine: boolean
 	isAwaitingRetry: boolean
 	secondsUntilRetry: number
 	retryNow: () => void
@@ -130,6 +132,9 @@ export const provideMachineConnection = (
 		},
 		get error() {
 			return robotConnection.error
+		},
+		get hasMachine() {
+			return dialConfig() !== undefined
 		},
 		get isAwaitingRetry() {
 			return nextRetryAt !== null

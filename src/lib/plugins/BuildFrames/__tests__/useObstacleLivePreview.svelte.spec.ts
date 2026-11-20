@@ -41,4 +41,26 @@ describe('useObstacleLivePreview', () => {
 
 		expect(harness.sentGeometries()).toEqual([wall(2), wall(1)])
 	})
+
+	it('sends the saved geometries back when preview is turned off with the draft still unsaved', () => {
+		const harness = createObstacleLivePreviewHarness('fence', wall(1))
+		disposeRoot = harness.disposeRoot
+		harness.edit(wall(2))
+		vi.advanceTimersByTime(PREVIEW_DEBOUNCE_MS)
+
+		harness.setPreviewEnabled(false)
+
+		expect(harness.sentGeometries()).toEqual([wall(2), wall(1)])
+	})
+
+	it('sends nothing while preview is off', () => {
+		const harness = createObstacleLivePreviewHarness('fence', wall(1))
+		disposeRoot = harness.disposeRoot
+		harness.setPreviewEnabled(false)
+
+		harness.edit(wall(2))
+		vi.advanceTimersByTime(PREVIEW_DEBOUNCE_MS)
+
+		expect(harness.sentGeometries()).toEqual([])
+	})
 })

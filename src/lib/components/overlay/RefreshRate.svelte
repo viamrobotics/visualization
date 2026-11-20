@@ -53,7 +53,7 @@
 		{#if rate === RefetchRates.MANUAL}
 			<IconButton
 				icon="refresh"
-				label="refetch"
+				label="Refetch now"
 				variant="secondary"
 				cx="border-light border"
 				onclick={() => {
@@ -63,7 +63,7 @@
 		{:else}
 			<IconButton
 				icon={rate === RefetchRates.OFF ? 'play-circle-outline' : 'pause'}
-				label="pause"
+				label={rate === RefetchRates.OFF ? 'Turn on manual fetching' : 'Pause polling'}
 				variant="secondary"
 				cx="border-light border"
 				onclick={() => {

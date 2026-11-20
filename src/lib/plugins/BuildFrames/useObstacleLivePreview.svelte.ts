@@ -18,18 +18,23 @@ import {
 } from '#lib/obstacleAttributes.js'
 import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
+import type { ObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
+
 import { ObstaclePreviewController } from './ObstaclePreviewController'
 
 const PREVIEW_DEBOUNCE_MS = 250
 
 /**
  * Pushes a part-owned obstacle's draft geometries to the connected machine while in
- * build mode, so the machine's own frame system shows the edit before it is saved.
- * An obstacle the machine does not report yet is skipped.
+ * build mode and preview is enabled, so the machine's own frame system shows the edit
+ * before it is saved. An obstacle the machine does not report yet is skipped. Turning
+ * preview off, or leaving build mode, sends the saved geometries back.
  *
  * Must be called during setup, inside the frames, part config and part ID providers.
+ *
+ * @returns The preview toggle, off at start, for the obstacle editor to show.
  */
-export const useObstacleLivePreview = () => {
+export const useObstacleLivePreview = (): ObstaclePreviewToggle => {
 	const partID = usePartID()
 	const environment = useEnvironment()
 	const frames = useFrames()
@@ -37,10 +42,10 @@ export const useObstacleLivePreview = () => {
 	const logs = useLogs()
 	const connectionStatus = useConnectionStatus(() => partID.current)
 
-	const isActive = $derived(
-		environment.current.mode === 'build' &&
-			connectionStatus.current === MachineConnectionEvent.CONNECTED
-	)
+	let isEnabled = $state(false)
+	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
+
+	const isActive = $derived(isEnabled && environment.current.mode === 'build' && isConnected)
 
 	const obstacles = $derived.by(() => {
 		const byName: Record<string, ObstacleGeometryConfig[]> = {}
@@ -93,6 +98,12 @@ export const useObstacleLivePreview = () => {
 
 	const controller = new ObstaclePreviewController(send, PREVIEW_DEBOUNCE_MS)
 
+	// The geometries as last saved. Turning preview off keeps the draft in the config, so restoring needs these instead.
+	let savedObstacles = untrack(() => obstacles)
+	$effect(() => {
+		if (!partConfig.isDirty) savedObstacles = obstacles
+	})
+
 	let wasActive = false
 
 	// Restores in the effect body, not a teardown: a teardown reads pre-change values, so it would see the discarded draft.
@@ -102,9 +113,25 @@ export const useObstacleLivePreview = () => {
 			controller.update(obstacles, partConfig.isDirty)
 		} else if (wasActive) {
 			wasActive = false
-			untrack(() => controller.restore(obstacles))
+			untrack(() => controller.restore(savedObstacles))
 		}
 	})
 
 	$effect(() => () => controller.stop())
+
+	return {
+		get isEnabled() {
+			return isEnabled
+		},
+		set isEnabled(value) {
+			isEnabled = value
+		},
+		unavailableReason(name) {
+			if (!isConnected) return 'Connect to a machine to preview on it.'
+			if (!frames.kinematicsComponents.has(name)) {
+				return 'The machine does not report this obstacle yet.'
+			}
+			return undefined
+		},
+	}
 }

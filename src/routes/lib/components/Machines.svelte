@@ -44,10 +44,15 @@
 		machineConnection.connectionStatus === MachineConnectionEvent.CONNECTED
 	)
 	const disconnected = $derived(
-		machineConnection.connectionStatus === MachineConnectionEvent.DISCONNECTED ||
-			machineConnection.connectionStatus === MachineConnectionEvent.RECONNECTION_FAILED
+		machineConnection.hasMachine &&
+			(machineConnection.connectionStatus === MachineConnectionEvent.DISCONNECTED ||
+				machineConnection.connectionStatus === MachineConnectionEvent.RECONNECTION_FAILED)
 	)
 	const text = $derived.by(() => {
+		if (!machineConnection.hasMachine) {
+			return 'connect'
+		}
+
 		switch (machineConnection.connectionStatus) {
 			case MachineConnectionEvent.CONNECTING:
 			case MachineConnectionEvent.DIALING: {
@@ -104,7 +109,9 @@
 						-->
 						<button
 							{...triggerProps}
-							aria-label="Machine connection configs"
+							aria-label="Machine connection: {awaitingRetry
+								? `retry in ${machineConnection.secondsUntilRetry}s`
+								: text}"
 							class={[
 								'flex items-center gap-2 border px-2.5 py-1.5 text-xs',
 								awaitingRetry ? 'rounded-l border-r-0' : 'rounded',
@@ -153,6 +160,22 @@
 								>
 									{#snippet titleContent()}
 										Launch file: {launch.error}
+									{/snippet}
+								</Banner>
+							</div>
+						{/if}
+
+						{#if machineConnection.hasMachine && machineConnection.error && !connected}
+							<div
+								role="alert"
+								class="shrink-0"
+							>
+								<Banner
+									variant={BannerVariant.Danger}
+									size="sm"
+								>
+									{#snippet titleContent()}
+										Connection failed: {machineConnection.error?.message}
 									{/snippet}
 								</Banner>
 							</div>

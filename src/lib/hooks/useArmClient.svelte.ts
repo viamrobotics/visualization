@@ -11,6 +11,8 @@ const key = Symbol('arm-client-context')
 interface Context {
 	names: string[]
 	currentPositions: Record<string, number[] | undefined>
+	/** Halts the named arm, which also fails any motion request currently driving it. */
+	stop: (name: string) => Promise<void>
 }
 
 export const provideArmClient = (partID: () => string) => {
@@ -39,6 +41,13 @@ export const provideArmClient = (partID: () => string) => {
 		},
 		get currentPositions() {
 			return currentPositions
+		},
+		async stop(name) {
+			const client = clients.find((candidate) => candidate.name === name)?.current
+			if (!client) {
+				throw new Error(`No client for arm "${name}".`)
+			}
+			await client.stop()
 		},
 	})
 }

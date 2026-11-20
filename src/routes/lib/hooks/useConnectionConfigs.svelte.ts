@@ -44,6 +44,13 @@ export const provideConnectionConfigs = () => {
 
 	const remove = (index: number) => {
 		connectionConfigs.splice(index - envConfigs.length, 1)
+
+		// The active config is stored by its position in the merged list, so keep it on the same config.
+		if (activeConfig.current === index) {
+			activeConfig.current = -1
+		} else if (activeConfig.current > index) {
+			activeConfig.current -= 1
+		}
 	}
 
 	const isEnvConfig = (config: ConnectionConfig) => {

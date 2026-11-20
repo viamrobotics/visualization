@@ -2,6 +2,8 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
+	import { untrack } from 'svelte'
+
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { ElementRect } from 'runed'
 
@@ -47,8 +49,16 @@
 	let selectionType = $state<SelectionType>('lasso')
 
 	$effect(() => {
-		if (isSelectionMode) {
-			settings.current.cameraMode = 'orthographic'
+		if (!isSelectionMode) return
+
+		const previousCameraMode = untrack(() => settings.current.cameraMode)
+		settings.current.cameraMode = 'orthographic'
+
+		return () => {
+			// Restore only if the user didn't pick a camera mode while selecting.
+			if (settings.current.cameraMode === 'orthographic') {
+				settings.current.cameraMode = previousCameraMode
+			}
 		}
 	})
 

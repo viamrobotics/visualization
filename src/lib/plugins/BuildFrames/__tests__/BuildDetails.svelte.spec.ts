@@ -21,6 +21,15 @@ import { createComplexObstacleComponent, createObstacleComponent } from '#lib/ob
 
 import BuildDetails from '../BuildDetails.svelte'
 
+vi.mock('@viamrobotics/prime-core', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@viamrobotics/prime-core')>()),
+	useToast: () => vi.fn(),
+}))
+
+vi.mock('../obstaclePreviewToggle.svelte', () => ({
+	useObstaclePreviewToggle: () => ({ isEnabled: false, unavailableReason: () => undefined }),
+}))
+
 describe('BuildDetails', () => {
 	const world = createWorld()
 

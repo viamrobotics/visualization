@@ -24,6 +24,7 @@ drives its arm there through the saver's "go to" switch position.
 
 	import { motionServiceNames } from '../moveControls'
 	import { moveExecutionOwner } from '../moveExecutionOwner.svelte'
+	import StopMoveButton from '../StopMoveButton.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		entity: Entity
@@ -130,7 +131,7 @@ drives its arm there through the saver's "go to" switch position.
 		partConfig.updateComponent(saverName, {
 			attributes: { ...component.attributes, motion: next },
 		})
-		if (partConfig.canSave) partConfig.save()
+		if (partConfig.canSave) void partConfig.save()
 	}
 
 	const moveToPose = async () => {
@@ -154,10 +155,11 @@ drives its arm there through the saver's "go to" switch position.
 
 	let deleteOpen = $state(false)
 
-	const deleteSaver = () => {
+	const deleteSaver = async () => {
 		deleteOpen = false
 		partConfig.deleteComponent(saverName)
-		if (partConfig.canSave) partConfig.save()
+		// A failed save already shows its own error toast.
+		if (partConfig.canSave && !(await partConfig.save())) return
 		toast({
 			message: partConfig.canSave
 				? `Deleted ${saverName}.`
@@ -216,6 +218,10 @@ drives its arm there through the saver's "go to" switch position.
 					>
 						Move to pose
 					</Button>
+					<StopMoveButton
+						{arm}
+						{isMoving}
+					/>
 					<Button
 						variant="outline-danger"
 						aria-disabled={!canEditConfig || isMoving}

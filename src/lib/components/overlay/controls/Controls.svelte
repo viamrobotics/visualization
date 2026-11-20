@@ -57,7 +57,7 @@
 			onclick={focusSelection}
 		/>
 		<Button
-			class="-my-0.5 rounded-none"
+			class="-mt-px rounded-none"
 			icon="camera-outline"
 			description="Reset camera"
 			tooltipLocation="left"
@@ -66,7 +66,7 @@
 			}}
 		/>
 		<Button
-			class="-my-0.5 rounded-t-none"
+			class="-mt-px rounded-t-none"
 			icon={isOrthographic ? 'grid-orthographic' : 'grid-perspective'}
 			description={isOrthographic ? 'Switch to perspective view' : 'Switch to orthographic view'}
 			keybinding={projection}

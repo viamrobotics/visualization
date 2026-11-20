@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { provideToast } from '@viamrobotics/prime-core'
+
 	import { provideWorld } from '#lib/ecs/index.js'
 	import { provideFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { providePartConfig, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
+	provideToast()
 	provideWorld()
 	provideFragmentInfo(
 		() => 'part-id',

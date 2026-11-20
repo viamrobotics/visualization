@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Banner, BannerVariant, Button, ToggleButtons } from '@viamrobotics/prime-core'
+	import { Banner, BannerVariant, Button, Icon, ToggleButtons } from '@viamrobotics/prime-core'
 
 	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	import type { PreviewDetail, PreviewMove } from './usePreviewMove.svelte'
 
@@ -66,11 +67,29 @@
 			size="sm"
 		>
 			{#snippet titleContent()}
-				This preview is an approximation
-			{/snippet}
-			{#snippet subtitle()}
-				Plans carry no timing, so this plays at a fixed rate. The arm may also deviate from the
-				planned waypoints: how it moves between them is the component's decision, not the planner's.
+				<span class="inline-flex items-center gap-1 font-normal">
+					This preview is an approximation
+					<Tooltip placement="top">
+						{#snippet children(tooltipID)}
+							<button
+								class="flex opacity-70 hover:opacity-100"
+								aria-label="About this approximation"
+								aria-describedby={tooltipID}
+							>
+								<Icon
+									name="information-outline"
+									aria-hidden="true"
+								/>
+							</button>
+						{/snippet}
+
+						{#snippet content()}
+							Plans carry no timing, so this plays at a fixed rate. The arm may also deviate from
+							the planned waypoints: how it moves between them is the component's decision, not
+							the planner's.
+						{/snippet}
+					</Tooltip>
+				</span>
 			{/snippet}
 		</Banner>
 
