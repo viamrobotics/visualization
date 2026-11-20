@@ -1,7 +1,7 @@
-import adapter from '@sveltejs/adapter-static'
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import { sentrySvelteKit } from '@sentry/sveltekit/vite'
+import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 import tailwindcss from '@tailwindcss/vite'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { playwright } from '@vitest/browser-playwright'
@@ -9,6 +9,7 @@ import dns from 'node:dns'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import mkcert from 'vite-plugin-mkcert'
 import { defineConfig } from 'vitest/config'
+
 import { version } from './package.json'
 
 dns.setDefaultResultOrder('verbatim')

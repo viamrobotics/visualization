@@ -2,8 +2,8 @@ import { getContext, setContext, untrack } from 'svelte'
 
 import type { SavedAppearance } from '#lib/resourceAppearance.js'
 
-import { useQuery } from '#lib/ecs/index.js'
 import { applyFrameAppearance } from '#lib/ecs/applyFrameAppearance.js'
+import { useQuery } from '#lib/ecs/index.js'
 import { resolvedAppearanceByComponent } from '#lib/resolvedAppearance.js'
 
 import { useEnvironment } from './useEnvironment.svelte'

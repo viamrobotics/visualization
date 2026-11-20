@@ -1,5 +1,6 @@
 import { includeIgnoreFile } from '@eslint/compat'
 import js from '@eslint/js'
+import { loadConfig } from '@sveltejs/load-config'
 import perfectionist from 'eslint-plugin-perfectionist'
 import svelte from 'eslint-plugin-svelte'
 import unicorn from 'eslint-plugin-unicorn'
@@ -9,9 +10,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
-import { loadConfig } from '@sveltejs/load-config'
-
-const svelteConfig = (await loadConfig('./', { traverse: false }))?.config
+const loadedSvelteConfig = await loadConfig('./', { traverse: false })
+const svelteConfig = loadedSvelteConfig?.config
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
