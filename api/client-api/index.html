@@ -51,9 +51,9 @@
 <p>Package api provides high-level drawing functions for the Viam visualizer.</p>
 <p>This package contains the drawing API for creating and managing 3D visualizations in a live Viam visualizer instance. All functions communicate with the DrawService via Connect-RPC, allowing real-time updates to geometric primitives, 3D models, reference frames, and robot states.</p>
 <div class="sl-heading-wrapper level-h3"><h3 id="getting-started">Getting Started</h3><a class="sl-anchor-link" href="#getting-started"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Getting Started”</span></a></div>
-<p>Before using any drawing functions, start the visualizer:</p>
+<p>Before using any drawing functions, open the Viam Visualizer desktop app, or run the visualizer from source with:</p>
 <div data-nova-code-container="" class="not-content relative overflow-hidden [&#x26;_pre]:relative [&#x26;_nova-code-copy-button]:opacity-0 [&#x26;:hover_nova-code-copy-button]:opacity-100 border border-solid border-(--sl-color-gray-5) rounded-md"><pre class="astro-code astro-code-themes one-light github-dark-dimmed" style="--shiki-light:#383A42;--shiki-dark:#adbac7;--shiki-light-bg:#FAFAFA;--shiki-dark-bg:#22272e; overflow-x: auto;" tabindex="0" data-language="plaintext" dir="ltr"><code><span class="line"><span>make up</span></span></code></pre><nova-code-copy-button type="button" data-code="make up" title="Copy code" aria-label="Copy code" class="absolute top-2 right-2 m-0 size-6 rounded border border-solid border-(--sl-color-gray-5) bg-gray-100/30 p-1 text-black backdrop-blur-sm transition hover:bg-gray-200/50 active:scale-90 dark:bg-gray-600/30 dark:text-white hover:dark:bg-gray-500/50"></nova-code-copy-button></div>
-<p>The visualizer will be available at <a href="http://localhost:5173">http://localhost:5173</a>.</p>
+<p>Both serve the draw service on localhost:3030, which this package targets. Set DRAW_SERVICE_PORT to reach a draw server on another port. From source, the visualizer opens at <a href="http://localhost:5173">http://localhost:5173</a>.</p>
 <div class="sl-heading-wrapper level-h3"><h3 id="drawing-api">Drawing API</h3><a class="sl-anchor-link" href="#drawing-api"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Drawing API”</span></a></div>
 <p>The package provides high-level drawing functions organized into three categories:</p>
 <ul>
@@ -72,7 +72,7 @@
 <span class="line"><span>)</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>func main() {</span></span>
-<span class="line"><span>    // The visualizer must be running: make up</span></span>
+<span class="line"><span>    // The visualizer must be running: the desktop app, or make up</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>    // Draw a line</span></span>
 <span class="line"><span>    positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}}</span></span>
@@ -89,7 +89,7 @@ import (
 )
 
 func main() {
-    // The visualizer must be running: make up
+    // The visualizer must be running: the desktop app, or make up
 
     // Draw a line
     positions := []r3.Vector{{X: 0, Y: 0, Z: 0}, {X: 100, Y: 100, Z: 100}}
