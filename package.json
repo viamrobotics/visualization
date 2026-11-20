@@ -85,7 +85,6 @@
 				"src/**",
 				"static/**",
 				"vite.config.ts",
-				"svelte.config.js",
 				"tsconfig.json",
 				"tailwind.config.ts",
 				"package.json"
@@ -182,7 +181,7 @@
 			"command": "svelte-package && publint",
 			"files": [
 				"src/lib/**",
-				"svelte.config.js",
+				"vite.config.ts",
 				"tsconfig.json",
 				"package.json"
 			],
@@ -201,17 +200,15 @@
 		"svelte-sync": {
 			"command": "svelte-kit sync",
 			"files": [
-				"svelte.config.js",
+				"vite.config.ts",
 				"src/**",
-				"tsconfig.json"
+				"tsconfig.json",
+				"package.json"
 			],
 			"output": [
 				".svelte-kit/generated/**",
 				".svelte-kit/types/**",
-				".svelte-kit/ambient.d.ts",
-				".svelte-kit/non-ambient.d.ts",
-				".svelte-kit/env.d.ts",
-				".svelte-kit/tsconfig.json"
+				"node_modules/$app/**"
 			],
 			"packageLocks": [
 				"pnpm-lock.yaml"
@@ -227,7 +224,7 @@
 			"files": [
 				"src/**",
 				"tsconfig.json",
-				"svelte.config.js",
+				"vite.config.ts",
 				"package.json"
 			],
 			"output": [],
@@ -779,7 +776,7 @@
 	},
 	"packageManager": "pnpm@10.18.0",
 	"engines": {
-		"node": ">=22.17.0"
+		"node": ">=22.22.0"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",

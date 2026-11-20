@@ -70,8 +70,7 @@ export default defineConfig({
 		host: true,
 		port: Number.parseInt(process.env.STATIC_PORT || '5173', 10),
 		allowedHosts: true,
-		// SvelteKit 3 warns that OPTIONS handlers are skipped unless preflights continue past Vite's CORS middleware.
-		cors: { preflightContinue: true },
+		cors: true,
 		https: https ? {} : undefined,
 
 		fs: {

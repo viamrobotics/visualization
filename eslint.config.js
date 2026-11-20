@@ -11,7 +11,13 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript-eslint'
 
 const loadedSvelteConfig = await loadConfig('./', { traverse: false })
-const svelteConfig = loadedSvelteConfig?.config
+// Without this, a vite.config.ts that fails to load would lint .svelte files with no project config and no warning.
+if (!loadedSvelteConfig || 'error' in loadedSvelteConfig) {
+	throw new Error('Could not load the Svelte config from vite.config.ts', {
+		cause: loadedSvelteConfig?.error,
+	})
+}
+const svelteConfig = loadedSvelteConfig.config
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -171,19 +177,20 @@ export default defineConfig(
 								"Import the module directly (e.g. '#lib/components/overlay/Portals/DashboardPortal.svelte'). '#lib' re-exports App.svelte, so reaching for it from inside src/lib creates a core <-> plugin import cycle.",
 						},
 						{
-							name: '#lib/lib.js',
+							name: '#lib/lib',
 							message:
 								"Import the module directly (e.g. '#lib/loaders/pcd/index.js'). '#lib/lib.js' is a published entry point, not for internal use.",
 						},
 						{
-							name: '#lib/plugins/index.js',
+							name: '#lib/plugins',
 							message:
 								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
 						},
 					],
 					patterns: [
 						{
-							group: ['#lib/index*', '#lib/lib.*', '#lib/plugins/index*'],
+							// `group` takes gitignore syntax, where a leading `#` starts a comment, so `#lib` paths need a regex.
+							regex: String.raw`^#lib/(index|lib|plugins/index)\.`,
 							message:
 								'Barrel import spelled via its index file. Import the module directly instead.',
 						},
