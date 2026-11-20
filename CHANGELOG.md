@@ -1,5 +1,28 @@
 # visualization
 
+## 3.4.1
+
+### Patch Changes
+
+- 6aecc99: Keep the stale-pose warning visible while the machine is disconnected.
+- 6aecc99: Fix the toolbar strip blocking camera controls across the top of the canvas.
+- 6aecc99: Fix popped-out POV widgets disappearing after a page reload.
+- 6aecc99: Obstacle edits reach the running machine only when "Preview on machine" is switched on.
+- 6aecc99: Fix the appearance color picker showing and saving the wrong color.
+- 6aecc99: Fix the copy button showing success when the clipboard write failed.
+- 6aecc99: Focus fits the whole scene in view when nothing is selected.
+- 6aecc99: Fix the hover tooltip labeling unitless orientation vector values as degrees.
+- 6aecc99: Add a Stop button that halts an arm during Move, Execute plan, and Move to pose.
+- 6aecc99: Press Escape to leave measure or selection mode, or to clear the selection.
+- 6aecc99: Restore the previous camera mode when leaving selection mode.
+- 6aecc99: Fix deleting a saved connection config switching to a different machine.
+- 6aecc99: Remove the line Thickness and Dot size settings, which had no effect.
+- 6aecc99: Fix a failed config save silently leaving unsaved edits that Discard could not undo.
+- 6aecc99: Show "Connect" instead of "Offline" when no machine is selected.
+- 6aecc99: Fix clicking a 3D label adding to the selection instead of replacing it.
+- 6aecc99: Show a null state in the World panel when the scene is empty.
+- 6aecc99: Fix a mixed file drop leaving an invisible overlay that blocked the app.
+
 ## 3.4.0
 
 ### Minor Changes
