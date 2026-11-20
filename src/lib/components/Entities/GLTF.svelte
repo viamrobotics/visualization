@@ -6,9 +6,9 @@
 	import { type ThrelteGltf, useGltfAnimations } from '@threlte/extras/webgpu'
 	import { Group, type Object3D } from 'three'
 
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { gltfLoader } from '$lib/loaders/gltf'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import { gltfLoader } from '#lib/loaders/gltf.js'
 
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
 	import { setModelOpacity } from './setModelOpacity'

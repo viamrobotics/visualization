@@ -1,5 +1,5 @@
-import type { Frame } from '$lib/frame'
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { Frame } from '#lib/frame.js'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 /**
  * rdk's obstacle model: a generic component whose `attributes.geometries` builds a

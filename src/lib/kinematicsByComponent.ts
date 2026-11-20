@@ -1,6 +1,6 @@
 import type { robotApi } from '@viamrobotics/sdk'
 
-import type { RawKinematicsModel } from '$lib/kinematicsTransform'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
 /**
  * The kinematics model of every component in a `frameSystemConfig` reply, keyed by component name.

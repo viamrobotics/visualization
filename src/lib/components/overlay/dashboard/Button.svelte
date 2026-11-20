@@ -2,9 +2,9 @@
 	import type { ClassValue, HTMLButtonAttributes, MouseEventHandler } from 'svelte/elements'
 
 	import { Icon, type IconName } from '@viamrobotics/prime-core'
-	import { Hammer, Joystick, MousePointer2, Move3d, Ruler, Shapes } from 'lucide-svelte'
+	import { Hammer, MousePointer2, Move3d, Ruler, Shapes } from 'lucide-svelte'
 
-	import type { Keybinding } from '$lib/keybindings'
+	import type { Keybinding } from '#lib/keybindings/index.js'
 
 	import Kbd from '../Kbd.svelte'
 	import Tooltip from '../Tooltip.svelte'
@@ -66,8 +66,6 @@
 					<Hammer size="16" />
 				{:else if icon === 'move-3d'}
 					<Move3d size="16" />
-				{:else if icon === 'joystick'}
-					<Joystick size="16" />
 				{:else}
 					<Icon
 						name={icon}

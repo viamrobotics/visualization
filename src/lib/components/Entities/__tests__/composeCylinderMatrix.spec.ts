@@ -2,8 +2,8 @@ import { createWorld, type World } from 'koota'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 import { composeCylinderBoundsMatrix, composeCylinderMatrix } from '../composeCylinderMatrix'
 

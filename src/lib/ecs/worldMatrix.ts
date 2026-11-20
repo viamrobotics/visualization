@@ -1,7 +1,7 @@
 import { type Entity, type World } from 'koota'
 import { Matrix4 } from 'three'
 
-import { composeLocalMatrix } from '$lib/math/transform'
+import { composeLocalMatrix } from '#lib/math/transform.js'
 
 import { ChildOf } from './relations'
 import { EditedMatrix, LiveMatrix, Matrix, Name, WorldMatrix } from './traits'

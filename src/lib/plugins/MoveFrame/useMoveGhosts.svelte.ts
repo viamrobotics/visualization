@@ -1,8 +1,8 @@
 import type { Entity } from 'koota'
 import type { Matrix4 } from 'three'
 
-import { traits, useWorld } from '$lib/ecs'
-import { matchModel, use3DModels } from '$lib/hooks/use3DModels.svelte'
+import { traits, useWorld } from '#lib/ecs/index.js'
+import { matchModel, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 
 import {
 	clearMoveGhosts,

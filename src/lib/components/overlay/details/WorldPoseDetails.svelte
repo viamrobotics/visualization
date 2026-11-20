@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Pose } from '$lib/math'
+	import type { Pose } from '#lib/math/index.js'
 
 	interface Props {
 		/** Undefined reads as the origin. */

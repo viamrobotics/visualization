@@ -1,9 +1,9 @@
 import { MathUtils, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import type { PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
+import type { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
 
-import { OrientationVector } from '$lib/math/OrientationVector'
+import { OrientationVector } from '#lib/math/OrientationVector.js'
 
 import { parsePlan, PlanParseError } from '../parse-plan'
 import { parsedPlanToSnapshots } from '../plan-to-snapshots'
@@ -166,6 +166,42 @@ describe('parsedPlanToSnapshots with a translational joint', () => {
 	it('leaves revolute joints on the same rig unchanged', () => {
 		const waist = snapshots[0]!.transforms.find((t) => t.referenceFrame === 'arm-1:waist')!
 		expect(waist.poseInObserverFrame!.pose!.theta).toBeCloseTo(0, 3)
+	})
+})
+
+const SLIDE_WITH_COLLIDER_PLAN =
+	JSON.stringify({
+		frame_system: {
+			frames: {
+				rail: {
+					frame_type: 'model',
+					frame: { name: 'rail', model: { joints: [{ id: 'slide' }] } },
+				},
+				'rail:slide': {
+					frame_type: 'named',
+					frame: {
+						inner_frame: {
+							frame_type: 'translational',
+							frame: {
+								axis: { X: 1, Y: 0, Z: 0 },
+								geometry: { type: 'box', x: 80, y: 30, z: 20, Label: 'slide' },
+							},
+						},
+					},
+				},
+			},
+			parents: { 'rail:slide': 'world' },
+		},
+		goals: [],
+		start_state: {},
+	}) + JSON.stringify({ trajectory: [{ rail: [40] }] })
+
+describe('parsedPlanToSnapshots with a collider on a prismatic joint', () => {
+	it('draws the collider on the joint, so it slides with it', () => {
+		const [step] = parsedPlanToSnapshots(parsePlan(SLIDE_WITH_COLLIDER_PLAN))
+		const slide = step!.transforms.find((t) => t.referenceFrame === 'rail:slide')!
+
+		expect(slide.physicalObject!.geometryType.case).toBe('box')
 	})
 })
 

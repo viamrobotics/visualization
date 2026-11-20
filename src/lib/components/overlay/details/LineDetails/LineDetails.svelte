@@ -12,7 +12,7 @@
 		type SliderChangeEvent,
 	} from 'svelte-tweakpane-ui'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	import {
 		appendLinePosition as appendLinePositionPure,

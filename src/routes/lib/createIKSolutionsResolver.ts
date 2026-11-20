@@ -1,8 +1,8 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-import { MotionPlanService } from '$lib/buf/motionplan/v1/motionplan_connect'
-import { ikSeedGroupsFromProto, type ResolveIKSolutions } from '$lib/plugins'
+import { MotionPlanService } from '#lib/buf/motionplan/v1/motionplan_connect.js'
+import { ikSeedGroupsFromProto, type ResolveIKSolutions } from '#lib/plugins/index.js'
 
 /**
  * Runs IK inspection on the local draw server, which hosts `MotionPlanService` beside the draw

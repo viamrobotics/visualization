@@ -1,9 +1,9 @@
 import type { Entity, World } from 'koota'
 
-import { writeBufferGeometryRange } from '$lib/attribute'
-import { ColorFormat } from '$lib/buf/draw/v1/metadata_pb'
-import { traits } from '$lib/ecs'
-import { type Metadata } from '$lib/metadata'
+import { writeBufferGeometryRange } from '#lib/attribute.js'
+import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
+import { traits } from '#lib/ecs/index.js'
+import { type Metadata } from '#lib/metadata.js'
 
 /**
  * One chunk of an entity's point cloud. Chunking covers point-cloud positions with

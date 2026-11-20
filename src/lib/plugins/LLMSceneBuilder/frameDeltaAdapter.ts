@@ -1,11 +1,11 @@
-import type { Frame, FrameGeometry } from '$lib/frame'
-import type { Transform } from '$lib/geometry'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
-import type { PartConfig } from '$lib/hooks/usePartConfig.svelte'
+import type { Frame, FrameGeometry } from '#lib/frame.js'
+import type { Transform } from '#lib/geometry.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import type { PartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { frameGeometryFromTransform } from '$lib/geometry'
-import { Pose } from '$lib/math'
-import { setOrientationFromEuler } from '$lib/math/transform'
+import { frameGeometryFromTransform } from '#lib/geometry.js'
+import { Pose } from '#lib/math/index.js'
+import { setOrientationFromEuler } from '#lib/math/transform.js'
 
 /**
  * Resolves current frames for fragment-defined components from live framesystem

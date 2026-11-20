@@ -10,8 +10,8 @@ import {
 	Vector3,
 } from 'three'
 
-import { traits } from '$lib/ecs'
-import { Pose } from '$lib/math'
+import { traits } from '#lib/ecs/index.js'
+import { Pose } from '#lib/math/index.js'
 
 import type { SimExportNote, SimGeom, SimShape } from './sim-scene'
 

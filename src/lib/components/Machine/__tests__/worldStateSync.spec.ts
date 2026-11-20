@@ -4,10 +4,10 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { render } from '@testing-library/svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { useRelationships } from '$lib/hooks/useRelationships.svelte'
+import type { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { ChildOf, SubEntityLink } from '$lib/ecs/relations'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { ChildOf, SubEntityLink } from '#lib/ecs/relations.js'
 
 import { createWorldStateSync, type WorldStateTiming } from '../worldStateSync'
 import {

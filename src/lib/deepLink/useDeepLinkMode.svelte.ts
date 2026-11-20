@@ -2,7 +2,7 @@ import {
 	type EnvironmentContext,
 	isEnvironmentMode,
 	useEnvironment,
-} from '$lib/hooks/useEnvironment.svelte'
+} from '#lib/hooks/useEnvironment.svelte.js'
 
 import { useDeepLinkParam } from './useDeepLink.svelte'
 

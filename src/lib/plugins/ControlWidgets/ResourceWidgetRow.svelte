@@ -4,7 +4,7 @@
 	import { Icon, Switch } from '@viamrobotics/prime-core'
 	import { PersistedState } from 'runed'
 
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import { resourceWidgetToggles } from './resourceWidgetToggles'
 	import { useControlWidgets } from './useControlWidgets.svelte'

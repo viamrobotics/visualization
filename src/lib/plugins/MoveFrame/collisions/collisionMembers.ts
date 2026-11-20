@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota'
 
-import { hierarchy, traits } from '$lib/ecs'
+import { hierarchy, traits } from '#lib/ecs/index.js'
 
 import type { CollisionMember } from './collisionWorld'
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { BoundsHint, ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { BoundsHint, ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { boundsHintFromWalls, boundsWallsMatch, parseBoundsHint } from '$lib/boundsHint'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { boundsHintFromWalls, boundsWallsMatch, parseBoundsHint } from '#lib/boundsHint.js'
 
 const hint: BoundsHint = {
 	type: 'bounds',

@@ -4,7 +4,7 @@ import {
 	ColorFormat,
 	Metadata as MetadataProto,
 	type Relationship as RelationshipProto,
-} from '$lib/buf/draw/v1/metadata_pb'
+} from '#lib/buf/draw/v1/metadata_pb.js'
 
 /** Metadata for a `Drawing` or `Transform`. Relationships default to empty. */
 export type Metadata = Omit<PlainMessage<MetadataProto>, 'relationships'> & {

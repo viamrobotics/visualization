@@ -1,13 +1,13 @@
 import { Transform } from '@viamrobotics/sdk'
 import { getContext, setContext } from 'svelte'
 
-import type { Frame } from '$lib/frame'
-import type { Transform as DerivedTransform } from '$lib/geometry'
+import type { Frame } from '#lib/frame.js'
+import type { Transform as DerivedTransform } from '#lib/geometry.js'
 
-import { createTransformFromFrame } from '$lib/frame'
-import { isObstacleComponent, obstacleGeometriesOf } from '$lib/obstacleAttributes'
-import { deriveObstacleFrames } from '$lib/obstacleFrames'
-import { mergedComponentFrames, resolveComponentFrames } from '$lib/resolveComponentFrames'
+import { createTransformFromFrame } from '#lib/frame.js'
+import { isObstacleComponent, obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
+import { deriveObstacleFrames } from '#lib/obstacleFrames.js'
+import { mergedComponentFrames, resolveComponentFrames } from '#lib/resolveComponentFrames.js'
 
 import { useFragmentInfo } from './useFragmentInfo.svelte'
 import { usePartConfig } from './usePartConfig.svelte'

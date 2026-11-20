@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createBinaryPCD } from '$lib/pcd'
+import { createBinaryPCD } from '#lib/pcd.js'
 
 import { parsePcdInWorker } from '../index'
 

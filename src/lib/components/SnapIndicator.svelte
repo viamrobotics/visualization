@@ -3,7 +3,7 @@
 	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras/webgpu'
 	import { Vector3 } from 'three'
 
-	import type { SnapIndicator } from '$lib/snapping/snapQuery'
+	import type { SnapIndicator } from '#lib/snapping/snapQuery.js'
 
 	interface Props {
 		indicator: SnapIndicator

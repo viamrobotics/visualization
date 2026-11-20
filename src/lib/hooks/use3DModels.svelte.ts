@@ -6,8 +6,8 @@ import { type ArmClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
-import { traits, useWorld } from '$lib/ecs'
-import { gltfLoader } from '$lib/loaders/gltf'
+import { traits, useWorld } from '#lib/ecs/index.js'
+import { gltfLoader } from '#lib/loaders/gltf.js'
 
 import { useSettings } from './useSettings.svelte'
 

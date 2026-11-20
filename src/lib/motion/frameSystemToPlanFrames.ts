@@ -7,8 +7,8 @@
 import type { Struct } from '@bufbuild/protobuf'
 import type { commonApi, robotApi } from '@viamrobotics/sdk'
 
-import { Geometry } from '$lib/buf/common/v1/common_pb'
-import { Pose } from '$lib/math'
+import { Geometry } from '#lib/buf/common/v1/common_pb.js'
+import { Pose } from '#lib/math/index.js'
 
 import type { DecodedFrame, FrameSystemJson, RawFrame } from './frameDescriptors'
 

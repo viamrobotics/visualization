@@ -10,8 +10,8 @@
 	} from '@viamrobotics/prime-core'
 	import { MachineConnectionEvent } from '@viamrobotics/sdk'
 
-	import { WorkspacePortal } from '$lib'
-	import Popover from '$lib/components/overlay/Popover.svelte'
+	import { WorkspacePortal } from '#lib'
+	import Popover from '#lib/components/overlay/Popover.svelte'
 
 	import type { LaunchConfigState } from '../desktop/useLaunchConfig.svelte'
 

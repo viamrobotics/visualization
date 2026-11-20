@@ -3,10 +3,10 @@ import type { Matrix4 } from 'three'
 
 import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
 
-import { RefetchRates } from '$lib/components/overlay/refetchRates'
-import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
-import { Pose } from '$lib/math'
-import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
+import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
+import { Pose } from '#lib/math/index.js'
+import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 export interface MovedFrameMatrix {
 	readonly current: Matrix4 | undefined

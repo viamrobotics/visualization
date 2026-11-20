@@ -2,9 +2,9 @@ import type { Entity } from 'koota'
 
 import { Color, SRGBColorSpace } from 'three'
 
-import { asColor } from '$lib/buffer'
-import { colors } from '$lib/color'
-import { resolveOpacity, traits } from '$lib/ecs'
+import { asColor } from '#lib/buffer.js'
+import { colors } from '#lib/color.js'
+import { resolveOpacity, traits } from '#lib/ecs/index.js'
 
 const linearColor = new Color()
 const srgb = { r: 0, g: 0, b: 0 }

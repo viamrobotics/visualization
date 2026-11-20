@@ -1,8 +1,8 @@
 import { Color } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import { appearanceColorsByFrame } from '$lib/appearanceColors'
-import { savedAppearanceOf } from '$lib/resourceAppearance'
+import { appearanceColorsByFrame } from '#lib/appearanceColors.js'
+import { savedAppearanceOf } from '#lib/resourceAppearance.js'
 
 describe('appearanceColorsByFrame', () => {
 	it('maps each color to the frame it colors', () => {

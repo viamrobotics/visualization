@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor } from '../frameDescriptors'
 import type { JointMotion, JointMotions } from '../interpolateTrajectory'
@@ -447,6 +447,7 @@ describe('jointMotionsOf', () => {
 		componentName,
 		jointIndex,
 		mimic,
+		geometry: null,
 		uuid: new Uint8Array(16) as Uint8Array<ArrayBuffer>,
 	})
 

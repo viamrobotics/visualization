@@ -1,5 +1,5 @@
-import type { Frame } from '$lib/frame'
-import type { FragmentInfo } from '$lib/hooks/useFragmentInfo.svelte'
+import type { Frame } from '#lib/frame.js'
+import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 
 type JsonObject = Record<string, unknown>
 

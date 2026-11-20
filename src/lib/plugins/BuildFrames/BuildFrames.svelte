@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import BuildFramesMode from './BuildFramesMode.svelte'
 

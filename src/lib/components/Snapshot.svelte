@@ -17,14 +17,18 @@ Renders a Snapshot protobuf by spawning its transforms and drawings as entities 
 	import { untrack } from 'svelte'
 	import { onDestroy } from 'svelte'
 
-	import type { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
+	import type { Snapshot as SnapshotProto } from '#lib/buf/draw/v1/snapshot_pb.js'
 
-	import { uuidBytesToString } from '$lib/draw'
-	import { traits, useWorld } from '$lib/ecs'
-	import { useCameraControls } from '$lib/hooks/useControls.svelte'
-	import { useRelationships } from '$lib/hooks/useRelationships.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
-	import { applySceneMetadata, reconcileSnapshotEntities, type SnapshotEntity } from '$lib/snapshot'
+	import { uuidBytesToString } from '#lib/draw.js'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
+	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
+	import {
+		applySceneMetadata,
+		reconcileSnapshotEntities,
+		type SnapshotEntity,
+	} from '#lib/snapshot.js'
 
 	interface Props {
 		snapshot: SnapshotProto

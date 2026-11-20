@@ -10,16 +10,16 @@ import {
 } from './__fixtures__/frameSystemGolden'
 
 describe('buildFrameDescriptors, against a frame system RDK marshaled', () => {
-	it('reads all 3 scenes the Go generator wrote', () => {
-		expect(frameSystemGoldenCases.length).toBe(3)
+	it('reads all 4 scenes the Go generator wrote', () => {
+		expect(frameSystemGoldenCases.length).toBe(4)
 	})
 
 	it.each(frameSystemGoldenCases)(
-		'describes every frame of $name except its models',
-		({ frameSystem }) => {
+		'describes every frame and collider of $name except its models',
+		({ frameSystem, probes }) => {
 			const described = buildFrameDescriptors(frameSystem).map((descriptor) => descriptor.name)
 
-			expect(described.toSorted()).toEqual(describableFrameNames(frameSystem).toSorted())
+			expect(described.toSorted()).toEqual(describableFrameNames(frameSystem, probes[0]).toSorted())
 		}
 	)
 })

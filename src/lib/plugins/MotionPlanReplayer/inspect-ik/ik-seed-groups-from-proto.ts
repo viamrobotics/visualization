@@ -1,4 +1,7 @@
-import type { GetIKSolutionsResponse, JointPositions } from '$lib/buf/motionplan/v1/motionplan_pb'
+import type {
+	GetIKSolutionsResponse,
+	JointPositions,
+} from '#lib/buf/motionplan/v1/motionplan_pb.js'
 
 import type { IKSeedGroup } from './parse-ik-solutions'
 

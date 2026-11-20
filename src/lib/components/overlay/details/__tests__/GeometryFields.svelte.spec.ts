@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { EditableFrameGeometry } from '$lib/defaultFrameGeometry'
+import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
 import GeometryFields from '../GeometryFields.svelte'
 

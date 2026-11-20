@@ -1,7 +1,7 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 import { addOpacityOverrideListeners } from '../useOpacityOverrides.svelte'
 

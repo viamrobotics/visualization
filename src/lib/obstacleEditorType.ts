@@ -1,12 +1,12 @@
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { boundsHintFromWalls, boundsWallsMatch, parseBoundsHint } from '$lib/boundsHint'
-import { Pose } from '$lib/math'
+import { boundsHintFromWalls, boundsWallsMatch, parseBoundsHint } from '#lib/boundsHint.js'
+import { Pose } from '#lib/math/index.js'
 import {
 	type ObstacleEditorHint,
 	obstacleGeometriesOf,
 	type ObstacleGeometryConfig,
-} from '$lib/obstacleAttributes'
+} from '#lib/obstacleAttributes.js'
 
 const IDENTITY = new Pose()
 

@@ -1,10 +1,10 @@
 import { Matrix4 } from 'three'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { Pose } from '$lib/math'
-import { obstacleGeometriesOf } from '$lib/obstacleAttributes'
-import { type ObstacleGeometryPatch, patchObstacleGeometry } from '$lib/obstacleGeometryList'
+import { Pose } from '#lib/math/index.js'
+import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
+import { type ObstacleGeometryPatch, patchObstacleGeometry } from '#lib/obstacleGeometryList.js'
 
 const tempInverse = new Matrix4()
 const tempOffset = new Matrix4()

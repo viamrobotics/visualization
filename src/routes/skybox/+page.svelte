@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Skybox } from '$lib/plugins'
+	import { Skybox } from '#lib/plugins/index.js'
 </script>
 
 <Skybox

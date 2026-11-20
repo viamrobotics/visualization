@@ -1,7 +1,7 @@
 import { Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor, JointFrameDescriptor } from '../frameDescriptors'
 
@@ -18,6 +18,7 @@ const joint = (
 	axis: { X: 0, Y: 0, Z: 1 },
 	componentName: 'arm',
 	jointIndex: 0,
+	geometry: null,
 	uuid: uuid(),
 	...overrides,
 })

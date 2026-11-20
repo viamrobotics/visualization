@@ -5,7 +5,7 @@
 	import { useDebounce } from 'runed'
 	import { Euler, Quaternion, Vector3 } from 'three'
 
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import { useAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'

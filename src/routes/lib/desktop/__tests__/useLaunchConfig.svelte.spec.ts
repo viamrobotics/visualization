@@ -7,7 +7,7 @@ import type { LaunchConfigState } from '../useLaunchConfig.svelte'
 import { useLaunchConfig } from '../useLaunchConfig.svelte'
 
 const addLog = vi.fn()
-vi.mock('$lib/plugins/Logs/useLogs.svelte', () => ({
+vi.mock('#lib/plugins/Logs/useLogs.svelte.js', () => ({
 	useLogs: () => ({ add: addLog }),
 }))
 

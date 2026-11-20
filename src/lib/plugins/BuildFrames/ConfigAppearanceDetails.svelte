@@ -3,8 +3,8 @@
 
 	import { Button } from '@viamrobotics/prime-core'
 
-	import AppearanceFields from '$lib/components/overlay/details/AppearanceFields.svelte'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
+	import AppearanceFields from '#lib/components/overlay/details/AppearanceFields.svelte'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import {
 		frameAppearanceOf,
 		hasFrameAppearances,
@@ -16,7 +16,7 @@
 		withoutFrameAppearances,
 		withoutResourceAppearance,
 		withResourceAppearance,
-	} from '$lib/resourceAppearance'
+	} from '#lib/resourceAppearance.js'
 
 	interface Props {
 		/** The frame being styled, whose current look fills in what the config leaves unset. */

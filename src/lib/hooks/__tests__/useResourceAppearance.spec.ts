@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSessionAppearance } from '$lib/hooks/useResourceAppearance.svelte'
+import { createSessionAppearance } from '#lib/hooks/useResourceAppearance.svelte.js'
 
 describe('createSessionAppearance', () => {
 	it('keeps one resource edits apart from another', () => {

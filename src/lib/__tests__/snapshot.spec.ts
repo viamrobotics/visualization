@@ -1,16 +1,16 @@
 import { createWorld, type World } from 'koota'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('$lib/loaders/pcd', () => ({
+vi.mock('#lib/loaders/pcd/index.js', () => ({
 	parsePcdInWorker: vi.fn(() =>
 		Promise.resolve({ id: 0, positions: new Float32Array(), colors: null })
 	),
 }))
 
-import { Pose, PoseInFrame, Transform } from '$lib/buf/common/v1/common_pb'
-import { Arrows, Drawing, Line, Shape } from '$lib/buf/draw/v1/drawing_pb'
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { traits } from '$lib/ecs'
+import { Pose, PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Arrows, Drawing, Line, Shape } from '#lib/buf/draw/v1/drawing_pb.js'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { traits } from '#lib/ecs/index.js'
 
 import { uuidStringToBytes } from '../draw'
 import { reconcileSnapshotEntities, type SnapshotEntity, spawnSnapshotEntities } from '../snapshot'

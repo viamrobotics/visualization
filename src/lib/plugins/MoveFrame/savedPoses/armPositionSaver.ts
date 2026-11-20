@@ -1,6 +1,6 @@
-import type { PartComponent, PartModule } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent, PartModule } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 export const ARM_POSITION_SAVER_MODEL = 'erh:vmodutils:arm-position-saver'
 

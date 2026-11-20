@@ -1,6 +1,6 @@
 import { Matrix4 } from 'three'
 
-import { Pose, type PosePatch } from '$lib/math'
+import { Pose, type PosePatch } from '#lib/math/index.js'
 
 const tempCenterPose = new Pose()
 const tempCenterMatrix = new Matrix4()

@@ -1,11 +1,11 @@
 import { type ConfigurableTrait, type Entity, type World } from 'koota'
 import { Color } from 'three'
 
-import type { FrameDescriptor, JointFrameDescriptor } from '$lib/motion/frameDescriptors'
-import type { TrajectoryStep } from '$lib/motion/jointPose'
+import type { FrameDescriptor, JointFrameDescriptor } from '#lib/motion/frameDescriptors.js'
+import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
-import { hierarchy, traits } from '$lib/ecs'
-import { descriptorLocalPose } from '$lib/motion/jointPose'
+import { hierarchy, traits } from '#lib/ecs/index.js'
+import { descriptorLocalPose } from '#lib/motion/jointPose.js'
 
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
 import { previewName, savedPoseName } from './previewNames'
@@ -212,12 +212,13 @@ const spawnGhosts = (
 			: descriptor.parent
 
 		const drawable: ConfigurableTrait[] = []
-		const isShown = descriptor.kind === 'static' && !hidden.has(descriptor.name)
-		const hasCollider = isShown && descriptor.geometry !== null
+		const isHidden = hidden.has(descriptor.name)
+		const hasCollider = !isHidden && descriptor.geometry !== null
+		// A joint draws only its collider. A link draws its 3D model too, collider or not.
+		const isShown = descriptor.kind === 'static' ? !isHidden : hasCollider
 		if (isShown) {
-			// Keyed whether or not the link has a collider: its 3D model, when it has one, still draws.
+			if (descriptor.kind === 'static') drawable.push(traits.GhostModelKey(descriptor.name))
 			drawable.push(
-				traits.GhostModelKey(descriptor.name),
 				traits.Color({ r: ghostColor.r, g: ghostColor.g, b: ghostColor.b }),
 				traits.Opacity(PREVIEW_OPACITY)
 			)

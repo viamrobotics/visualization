@@ -4,9 +4,9 @@
 	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { CanvasTexture, Mesh, PlaneGeometry, Raycaster } from 'three'
 
-	import { useArmClient } from '$lib/hooks/useArmClient.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	interface XRConfigPanelProps {
 		offset?: { x?: number; y?: number; z?: number }

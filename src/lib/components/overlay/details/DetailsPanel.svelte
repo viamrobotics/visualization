@@ -15,9 +15,9 @@
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
-	import { traits, useParentName, useTrait, useWorld } from '$lib/ecs'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { useResourceByName } from '$lib/hooks/useResourceByName.svelte'
+	import { traits, useParentName, useTrait, useWorld } from '#lib/ecs/index.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 	import Tooltip from '../Tooltip.svelte'
 	import { composeDisplayedPose } from './composeDisplayedPose'

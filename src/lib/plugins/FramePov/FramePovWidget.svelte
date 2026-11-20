@@ -1,8 +1,8 @@
 <script lang="ts">
-	import FloatingPanel from '$lib/components/overlay/FloatingPanel.svelte'
-	import { useFrameEntities } from '$lib/hooks/useFrameEntities.svelte'
-	import { usePartID } from '$lib/hooks/usePartID.svelte'
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
+	import { useFrameEntities } from '#lib/hooks/useFrameEntities.svelte.js'
+	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import FramePovView from './FramePovView.svelte'
 

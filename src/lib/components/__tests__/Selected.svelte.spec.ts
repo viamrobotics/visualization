@@ -5,8 +5,8 @@ import { flushSync } from 'svelte'
 import { Matrix4 } from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
+import { traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
 
 import Selected from '../Selected.svelte'
 

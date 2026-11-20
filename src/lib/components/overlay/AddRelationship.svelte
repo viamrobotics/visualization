@@ -3,8 +3,8 @@
 
 	import { Button, Input, Select } from '@viamrobotics/prime-core'
 
-	import { relations, traits, useQuery, useTrait } from '$lib/ecs'
-	import { SubEntityLinkType } from '$lib/ecs/relations'
+	import { relations, traits, useQuery, useTrait } from '#lib/ecs/index.js'
+	import { SubEntityLinkType } from '#lib/ecs/relations.js'
 
 	interface Props {
 		entity: Entity | undefined

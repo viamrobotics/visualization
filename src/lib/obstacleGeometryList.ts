@@ -1,6 +1,6 @@
-import type { ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
-import { defaultFrameGeometry } from '$lib/defaultFrameGeometry'
+import { defaultFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
 /** The fields of a geometry an edit can set. A key passed as `undefined` is removed. */
 export type ObstacleGeometryPatch = Partial<ObstacleGeometryConfig>

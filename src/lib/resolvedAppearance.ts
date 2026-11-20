@@ -1,12 +1,12 @@
-import type { EnvironmentMode } from '$lib/hooks/useEnvironment.svelte'
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { EnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import {
 	layeredAppearance,
 	NO_SAVED_APPEARANCE,
 	type SavedAppearance,
 	savedAppearanceOf,
-} from '$lib/resourceAppearance'
+} from '#lib/resourceAppearance.js'
 
 /**
  * How each resource is drawn in `mode`, by component name. Build mode edits the saved

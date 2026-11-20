@@ -1,4 +1,4 @@
-import { ownerOfInternalFrame } from '$lib/kinematicsFrames'
+import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 
 import type { ArticulationContext } from './articulate-component'
 import type { SimBody } from './sim-scene'

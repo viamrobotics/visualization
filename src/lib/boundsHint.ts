@@ -1,11 +1,11 @@
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 import {
 	BOUNDS_FACES,
 	type BoundsFace,
 	type BoundsHint,
 	explicitGeometryLabel,
 	type ObstacleGeometryConfig,
-} from '$lib/obstacleAttributes'
+} from '#lib/obstacleAttributes.js'
 
 /** How far apart two wall values may be and still match, in mm. Absorbs float noise from recovery. */
 const WALL_TOLERANCE_MM = 1e-6

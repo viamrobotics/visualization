@@ -1,4 +1,4 @@
-import type { Frame } from '$lib/frame'
+import type { Frame } from '#lib/frame.js'
 
 type JsonObject = Record<string, unknown>
 

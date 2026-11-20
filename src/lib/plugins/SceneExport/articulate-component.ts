@@ -1,12 +1,12 @@
 import { MathUtils, Matrix4, Vector3 } from 'three'
 
-import { internalFrameName } from '$lib/kinematicsFrames'
+import { internalFrameName } from '#lib/kinematicsFrames.js'
 import {
 	isDHModel,
 	type RawKinematicsJoint,
 	type RawKinematicsModel,
-} from '$lib/kinematicsTransform'
-import { poseFromJson } from '$lib/math/spatialJson'
+} from '#lib/kinematicsTransform.js'
+import { poseFromJson } from '#lib/math/spatialJson.js'
 
 import type { SimBody, SimExportNote, SimJoint } from './sim-scene'
 

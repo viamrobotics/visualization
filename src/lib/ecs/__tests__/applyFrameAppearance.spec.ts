@@ -1,9 +1,9 @@
 import { createWorld } from 'koota'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { ResourceAppearance } from '$lib/resourceAppearance'
+import type { ResourceAppearance } from '#lib/resourceAppearance.js'
 
-import { resolvedAppearanceByComponent } from '$lib/resolvedAppearance'
+import { resolvedAppearanceByComponent } from '#lib/resolvedAppearance.js'
 
 import { applyFrameAppearance } from '../applyFrameAppearance'
 import * as traits from '../traits'

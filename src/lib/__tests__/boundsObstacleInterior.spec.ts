@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 import {
 	boundsHintInterior,
 	boundsObstacleNamed,
 	resizeBoundsObstacle,
-} from '$lib/boundsObstacleInterior'
-import { createBoundsObstacleComponent, createObstacleComponent } from '$lib/obstacle'
-import { type BoundsHint } from '$lib/obstacleAttributes'
-import { obstacleEditorType } from '$lib/obstacleEditorType'
+} from '#lib/boundsObstacleInterior.js'
+import { createBoundsObstacleComponent, createObstacleComponent } from '#lib/obstacle.js'
+import { type BoundsHint } from '#lib/obstacleAttributes.js'
+import { obstacleEditorType } from '#lib/obstacleEditorType.js'
 
 const OPEN_TOP_HINT: BoundsHint = {
 	type: 'bounds',

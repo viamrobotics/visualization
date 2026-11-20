@@ -1,0 +1,368 @@
+name: RDK Bump
+
+# RDK cuts a release every week, usually Monday or Tuesday afternoon UTC. This bumps
+# go.viam.com/rdk in every Go module that depends on it, runs the gates a bump can break, lets
+# Claude fix what is mechanical, and opens one PR saying what was fixed and what is still broken.
+#
+# Claude never holds a token that can write. It runs with the read-only GITHUB_TOKEN and a checkout
+# without persisted credentials. The app token that pushes and opens the PR is minted after Claude
+# has exited.
+
+on:
+  schedule:
+    - cron: '0 15 * * 3' # Wednesdays 15:00 UTC, a day after the usual release
+  workflow_dispatch:
+    inputs:
+      version:
+        description: RDK tag to bump to, such as v1.17.0. Empty means the latest release.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rdk-bump
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    if: github.repository_owner == 'viamrobotics'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.target.outputs.version }}
+      branch: ${{ steps.target.outputs.branch }}
+      skip: ${{ steps.target.outputs.skip }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Resolve the target release
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          version="${REQUESTED:-$(gh release view --repo viamrobotics/rdk --json tagName --jq .tagName)}"
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a release tag like v1.17.0"
+            exit 1
+          fi
+          branch="rdk-bump/$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+          existing=$(gh pr list --repo "$REPO" --head "$branch" --state open --json url --jq '.[0].url // empty')
+          if [ -n "$existing" ]; then
+            echo "::notice::$existing already bumps RDK to $version"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Pins older than the target. A quick read of go.mod text so a week without a new
+          # release costs seconds, not a full toolchain setup. bump.sh makes the real decision.
+          behind=$(git grep -h -oE 'go\.viam\.com/rdk v[^ ]+' -- '*go.mod' | cut -d' ' -f2 | sort -u |
+            while read -r pin; do
+              [ "$(printf '%s\n%s\n' "$pin" "$version" | sort -V | tail -n1)" = "$pin" ] || echo "$pin"
+            done)
+          if [ -z "$behind" ]; then
+            echo "::notice::Every module is already at or past RDK $version"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  bump:
+    needs: resolve
+    if: needs.resolve.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      BRANCH: ${{ needs.resolve.outputs.branch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # Node, pnpm, Go, nlopt (RDK's cgo IK solver links it), wireit caching, and Chromium for the
+      # browser-mode vitest suite.
+      - name: Setup
+        uses: ./.github/actions/setup-e2e
+        with:
+          go: 'true'
+
+      # proto:gen-ts, which vitest and svelte-check depend on.
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+          github_token: ${{ github.token }}
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v2.11.4/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.11.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Bump RDK
+        run: |
+          set -euo pipefail
+          out_dir="$RUNNER_TEMP/rdk-bump"
+          mkdir -p "$out_dir"
+          echo "OUT_DIR=$out_dir" >> "$GITHUB_ENV"
+          echo "RDK_BEFORE=$(go list -m -f '{{.Version}}' go.viam.com/rdk)" >> "$GITHUB_ENV"
+          .github/scripts/rdk-bump/bump.sh "$VERSION" | tee "$out_dir/modules.md"
+
+      - name: Verify the plain bump
+        id: verify-initial
+        continue-on-error: true
+        run: .github/scripts/rdk-bump/verify.sh "$VERSION" "$OUT_DIR/initial"
+
+      - name: Fix what the bump broke
+        id: claude
+        if: steps.verify-initial.outcome == 'failure'
+        continue-on-error: true
+        timeout-minutes: 50
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          claude_args: >-
+            --max-turns 80
+            --allowed-tools "Read,Edit,Write,Glob,Grep,WebFetch,Bash(go *),Bash(gofmt *),Bash(pnpm *),Bash(.github/scripts/rdk-bump/verify.sh *),Bash(gh release view *),Bash(gh api repos/viamrobotics/*),Bash(git diff*),Bash(git status*),Bash(git log*),Bash(git show*),Bash(ls *),Bash(find *),Bash(grep *),Bash(head *),Bash(tail *)"
+          prompt: |
+            `go.viam.com/rdk` was just bumped to ${{ env.VERSION }} in every Go module of this repo
+            (the root module was on ${{ env.RDK_BEFORE }}), and some verification gates now fail.
+            Your job is to fix the failures that are mechanical consequences of the bump, and to
+            write down clearly what you could not fix. You do not commit, push, or open a PR. A
+            later step does that from your working tree and your notes.
+
+            ## Where things are
+
+            - Per-module before/after versions: `${{ env.OUT_DIR }}/modules.md`
+            - Gate results: `${{ env.OUT_DIR }}/initial/summary.md`
+            - One log per gate: `${{ env.OUT_DIR }}/initial/*.log`
+            - Release notes: `gh release view <tag> --repo viamrobotics/rdk`
+            - What changed in RDK: `gh api repos/viamrobotics/rdk/compare/${{ env.RDK_BEFORE }}...${{ env.VERSION }} --jq '.commits[].commit.message'`
+            - RDK source at the new tag: `gh api "repos/viamrobotics/rdk/contents/<path>?ref=${{ env.VERSION }}" --jq .content | base64 -d`,
+              or read it from the module cache under `$(go env GOMODCACHE)/go.viam.com/rdk@${{ env.VERSION }}`.
+
+            ## In scope
+
+            - Go code that no longer compiles or vets because an RDK API was renamed, moved,
+              removed, or changed signature. Find the replacement in RDK at the new tag and use it.
+            - `go.mod` / `go.sum` problems: a module that failed to bump (its `pin` gate fails),
+              an untidy module, a dependency conflict that `go get` of a compatible version solves.
+            - New golangci-lint findings caused by the bump, such as SA1019 deprecations. Move to
+              the replacement API. Do not add `//nolint`.
+            - Golden drift (`rdk goldens` passes but `vitest` fails in a `*Golden.spec.ts`, or
+              `rdk goldens` itself fails). The TypeScript under `src/lib/math/` and
+              `src/lib/motion/` hand-ports RDK Go, and the goldens are RDK's own output. If RDK
+              deliberately changed the behavior (a commit or release note says so), port that
+              change into the TypeScript and cite the Go file and symbol in its docblock, as
+              `.claude/rules/math.md` requires. If you cannot find a deliberate RDK change that
+              explains the drift, it may be an RDK regression. Leave it as an outstanding issue.
+
+            ## Never
+
+            - Pin RDK back to an older version, add a `replace` for it, or exclude a module from
+              the bump.
+            - Weaken a check to make it pass: loosen a tolerance, skip or delete a test, edit
+              golden expectations by hand, add `//nolint`, or `// @ts-` suppressions.
+            - Edit generated or ignored files (`draw/v1/`, `src/lib/buf/`,
+              `tools/rdk-golden/*/testdata/`, `dist/`), or anything under `.github/`. Edits under
+              `.github/` are discarded before the final verification.
+            - Refactor or tidy code the bump did not break.
+
+            ## How to work
+
+            1. Read `summary.md`, then the logs of the failing gates. Fix root causes, compile
+               errors first, since later gates often fail only because of them.
+            2. Re-run just the gate you are fixing (the command is in `summary.md`). Before you
+               finish, run the whole sweep once:
+               `.github/scripts/rdk-bump/verify.sh ${{ env.VERSION }} ${{ env.OUT_DIR }}/claude`
+            3. If one problem still fails after three distinct attempts, or the fix would need a
+               design decision, stop working on it and record it as outstanding.
+            4. A failure with no plausible link to the bump, such as a UI focus or timing test
+               in a Svelte spec, is likely a flake. Re-run that gate once. If it passes, mention
+               the flake in `outstanding.md` as unrelated to the bump. Either way, change no
+               code for it.
+            5. If you changed anything under `src/lib/`, add a one-line patch changeset with the
+               Write tool: `.changeset/rdk-${{ env.VERSION }}.md` declaring
+               `'@viamrobotics/visualization': patch`, followed by a one-line imperative summary.
+
+            ## Your notes
+
+            Write two markdown files, both required, both going verbatim into the PR description.
+            Use `-` bullets, plain hyphens rather than em dashes, and never the string `@claude`.
+
+            `${{ env.OUT_DIR }}/fixes.md`: one bullet per fix. The files touched, what changed,
+            and the RDK change that forced it (link the RDK commit or PR when you found one).
+            Write `None.` if you changed nothing.
+
+            `${{ env.OUT_DIR }}/outstanding.md`: one bullet per problem you did not resolve, each
+            with indented sub-bullets **Failure** (gate name and the key error line, verbatim in
+            backticks), **Attempted** (what you tried and why it did not work), and **Next steps**
+            (what a human should look at or decide). Write `None.` if every gate passes.
+
+      # The final sweep runs the scripts as committed, not as Claude may have left them.
+      - name: Verify after fixes
+        id: verify-final
+        if: steps.claude.outcome != 'skipped'
+        continue-on-error: true
+        run: |
+          git checkout HEAD -- .github
+          git clean -fdq -- .github
+          .github/scripts/rdk-bump/verify.sh "$VERSION" "$OUT_DIR/final"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rdk-bump-logs
+          path: ${{ runner.temp }}/rdk-bump/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CI_GITHUB_APP_PRIVATE_KEY }}
+
+      # An app token rather than GITHUB_TOKEN, because a PR opened with GITHUB_TOKEN does not
+      # trigger Pull Request Checks.
+      - name: Open the PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          INITIAL_OUTCOME: ${{ steps.verify-initial.outcome }}
+          CLAUDE_OUTCOME: ${{ steps.claude.outcome }}
+          FINAL_OUTCOME: ${{ steps.verify-final.outcome }}
+        run: |
+          set -euo pipefail
+
+          if [ "$CLAUDE_OUTCOME" = skipped ]; then
+            results="$OUT_DIR/initial"
+            gates_outcome=$INITIAL_OUTCOME
+          else
+            results="$OUT_DIR/final"
+            gates_outcome=$FINAL_OUTCOME
+          fi
+
+          # Vitest browser mode writes failure screenshots beside the spec, outside .gitignore.
+          git add -A -- . ':(exclude)**/__screenshots__/**'
+          if git diff --cached --quiet; then
+            echo "::notice::The bump changed nothing, so there is no PR to open"
+            exit 0
+          fi
+          other_files=$(git diff --cached --name-only | grep -vE '(^|/)go\.(mod|sum)$' || true)
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -q -m "Bump RDK to $VERSION"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/$BRANCH"
+
+          # Claude-written notes, with any @claude defused so the PR assistant does not fire.
+          notes() {
+            if [ -s "$OUT_DIR/$1" ]; then
+              sed 's/@claude/claude/gI' "$OUT_DIR/$1"
+            else
+              return 1
+            fi
+          }
+
+          body="$OUT_DIR/pr-body.md"
+          {
+            echo "Weekly bump of \`go.viam.com/rdk\` to [\`$VERSION\`](https://github.com/viamrobotics/rdk/releases/tag/$VERSION) in every Go module that depends on it, plus \`go mod tidy\`. RDK changes since the root module's previous pin: [\`$RDK_BEFORE...$VERSION\`](https://github.com/viamrobotics/rdk/compare/$RDK_BEFORE...$VERSION)."
+            echo
+            if [ "$gates_outcome" != success ]; then
+              echo '> [!WARNING]'
+              echo '> Some gates still fail after the automated fix attempt. See **Outstanding issues**.'
+              echo
+            fi
+            echo '## Modules'
+            echo
+            cat "$OUT_DIR/modules.md"
+            echo
+            echo '## Fixes'
+            echo
+            if [ "$CLAUDE_OUTCOME" = skipped ]; then
+              echo 'None needed. Every gate passed on the plain bump.'
+            else
+              notes fixes.md || echo "The fix agent ended (\`$CLAUDE_OUTCOME\`) without writing notes. Compare the diff against the go.mod and go.sum changes."
+            fi
+            echo
+            echo '## Outstanding issues'
+            echo
+            if notes outstanding.md; then
+              :
+            elif [ "$gates_outcome" = success ]; then
+              echo 'None.'
+            else
+              echo "The fix agent left no notes. Failing gates are marked FAIL under **Verification**, and their logs are in the \`rdk-bump-logs\` artifact of [the run]($RUN_URL)."
+            fi
+            echo
+            if [ -n "$other_files" ]; then
+              echo '## Files changed beyond go.mod and go.sum'
+              echo
+              echo "$other_files" | sed 's/.*/- `&`/'
+              echo
+            fi
+            echo '## Verification'
+            echo
+            cat "$results/summary.md"
+            echo
+            echo "Not run here: the Playwright suites. If the bump touches motion planning or the draw server, dispatch \`E2E Tests\` on \`$BRANCH\`. Per-gate logs are in the \`rdk-bump-logs\` artifact of [the run]($RUN_URL)."
+            echo
+            echo '@viamrobotics/team-viz for review.'
+          } > "$body"
+
+          pr_url=$(gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "Bump RDK to $VERSION" --body-file "$body")
+          echo "::notice::Opened $pr_url"
+          gh pr edit "$pr_url" --repo "$REPO" --add-reviewer viamrobotics/team-viz ||
+            echo "::warning::Could not request review from viamrobotics/team-viz. The PR body mentions the team instead."
+
+          # Earlier bump PRs nobody has touched are closed. One with commits beyond this
+          # workflow's single commit has someone's work on it, so it only gets a pointer.
+          pr_number=$(gh pr view "$pr_url" --repo "$REPO" --json number --jq .number)
+          gh pr list --repo "$REPO" --state open --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("rdk-bump/")) | .number' |
+            while read -r old; do
+              [ "$old" = "$pr_number" ] && continue
+              if [ "$(gh pr view "$old" --repo "$REPO" --json commits --jq '.commits | length')" = 1 ]; then
+                gh pr close "$old" --repo "$REPO" --comment "Superseded by #$pr_number."
+              else
+                gh pr comment "$old" --repo "$REPO" --body "Superseded by #$pr_number. Left open because it has commits beyond the automated bump."
+              fi || echo "::warning::Could not mark #$old as superseded by #$pr_number"
+            done
+
+  notify-failure:
+    needs: [resolve, bump]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: File an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create --repo "$REPO" \
+            --title "RDK bump to ${VERSION:-the latest release} failed before opening a PR" \
+            --body "@viamrobotics/team-viz the weekly RDK bump failed outside the verification gates, so no PR was opened. Failed run: ${RUN_URL}. Once the cause is fixed, re-run it from the Actions tab (RDK Bump, version \`${VERSION:-latest}\`)."

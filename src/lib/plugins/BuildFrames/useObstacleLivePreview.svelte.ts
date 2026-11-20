@@ -7,16 +7,16 @@ import {
 import { createResourceClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
 import { untrack } from 'svelte'
 
-import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-import { useFrames } from '$lib/hooks/useFrames.svelte'
-import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-import { usePartID } from '$lib/hooks/usePartID.svelte'
+import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import {
 	isObstacleComponent,
 	obstacleGeometriesOf,
 	type ObstacleGeometryConfig,
-} from '$lib/obstacleAttributes'
-import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+} from '#lib/obstacleAttributes.js'
+import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { ObstaclePreviewController } from './ObstaclePreviewController'
 

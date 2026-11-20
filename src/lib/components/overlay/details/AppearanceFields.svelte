@@ -11,10 +11,10 @@
 	} from 'svelte-tweakpane-ui'
 	import { Color as ThreeColor } from 'three'
 
-	import type { ResourceAppearance, ResourceAppearancePatch } from '$lib/resourceAppearance'
+	import type { ResourceAppearance, ResourceAppearancePatch } from '#lib/resourceAppearance.js'
 
-	import { colors } from '$lib/color'
-	import { traits, useOpacity, useTrait } from '$lib/ecs'
+	import { colors } from '#lib/color.js'
+	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
 		/** The frame being styled. Its current color and opacity show for a key nothing sets. */

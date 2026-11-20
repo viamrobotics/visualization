@@ -12,8 +12,8 @@
 	import { T } from '@threlte/core/webgpu'
 	import { BatchedMesh, Color, Matrix4, SphereGeometry, Vector3 } from 'three'
 
-	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '$lib/buffer'
-	import { setBatchedColorAt } from '$lib/three/setBatchedColorAt'
+	import { asColor, asRGB, isSingleColor, isVertexColors, STRIDE } from '#lib/buffer.js'
+	import { setBatchedColorAt } from '#lib/three/setBatchedColorAt.js'
 
 	interface Props {
 		colors: Uint8Array

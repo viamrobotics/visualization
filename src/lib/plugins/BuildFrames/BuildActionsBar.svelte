@@ -2,13 +2,13 @@
 	import { Button } from '@viamrobotics/prime-core'
 	import { Redo2, Undo2 } from 'lucide-svelte'
 
-	import Kbd from '$lib/components/overlay/Kbd.svelte'
-	import OverlayPortal from '$lib/components/overlay/Portals/OverlayPortal.svelte'
-	import { useWorld } from '$lib/ecs'
-	import { resetStagedEdits } from '$lib/editing/resetStagedEdits'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
-	import { usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { useHotkey } from '$lib/keybindings'
+	import Kbd from '#lib/components/overlay/Kbd.svelte'
+	import OverlayPortal from '#lib/components/overlay/Portals/OverlayPortal.svelte'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { useHotkey } from '#lib/keybindings/index.js'
 
 	const environment = useEnvironment()
 	const partConfig = usePartConfig()

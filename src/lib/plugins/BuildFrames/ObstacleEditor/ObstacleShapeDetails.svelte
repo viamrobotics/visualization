@@ -4,32 +4,32 @@
 	import { Input } from '@viamrobotics/prime-core'
 	import { Matrix4 } from 'three'
 
-	import type { Frame } from '$lib/frame'
+	import type { Frame } from '#lib/frame.js'
 
-	import GeometryFields from '$lib/components/overlay/details/GeometryFields.svelte'
-	import PoseFields from '$lib/components/overlay/details/PoseFields.svelte'
-	import WorldPoseDetails from '$lib/components/overlay/details/WorldPoseDetails.svelte'
-	import EntityLink from '$lib/components/overlay/EntityLink.svelte'
-	import { type EditableFrameGeometry } from '$lib/defaultFrameGeometry'
-	import { relations, selectOnly, traits, useTarget, useTrait, useWorld } from '$lib/ecs'
-	import { type PartComponent, usePartConfig } from '$lib/hooks/usePartConfig.svelte'
-	import { internalFrameName } from '$lib/kinematicsFrames'
-	import { Pose } from '$lib/math'
+	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
+	import PoseFields from '#lib/components/overlay/details/PoseFields.svelte'
+	import WorldPoseDetails from '#lib/components/overlay/details/WorldPoseDetails.svelte'
+	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
+	import { type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+	import { relations, selectOnly, traits, useTarget, useTrait, useWorld } from '#lib/ecs/index.js'
+	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { internalFrameName } from '#lib/kinematicsFrames.js'
+	import { Pose } from '#lib/math/index.js'
 	import {
 		explicitGeometryLabel,
 		obstacleGeometriesOf,
 		type ObstacleGeometryConfig,
 		obstacleGeometryLabel,
 		type ObstacleShape,
-	} from '$lib/obstacleAttributes'
+	} from '#lib/obstacleAttributes.js'
 	import {
 		type ObstacleEditError,
 		obstacleEditError,
 		type ObstacleEditScope,
-	} from '$lib/obstacleEditError'
-	import { type ObstacleGeometryPatch, patchObstacleGeometry } from '$lib/obstacleGeometryList'
-	import { validateObstacleGeometries } from '$lib/obstacleGeometryValidation'
-	import { complexObstacleVisualizer, SHAPES_IN_PLACE } from '$lib/obstacleVisualizer'
+	} from '#lib/obstacleEditError.js'
+	import { type ObstacleGeometryPatch, patchObstacleGeometry } from '#lib/obstacleGeometryList.js'
+	import { validateObstacleGeometries } from '#lib/obstacleGeometryValidation.js'
+	import { complexObstacleVisualizer, SHAPES_IN_PLACE } from '#lib/obstacleVisualizer.js'
 
 	interface Props {
 		/** The shape's own frame entity. */

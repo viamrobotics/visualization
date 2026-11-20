@@ -5,8 +5,8 @@ import {
 	type TransformWithUUID,
 } from '@viamrobotics/sdk'
 
-import { uuidStringToBytes } from '$lib/draw'
-import { SubEntityLinkType } from '$lib/ecs/relations'
+import { uuidStringToBytes } from '#lib/draw.js'
+import { SubEntityLinkType } from '#lib/ecs/relations.js'
 
 import type { WorldStateClient } from '../../worldStateSync'
 

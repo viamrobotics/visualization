@@ -1,10 +1,10 @@
 import type { Entity, World } from 'koota'
 import type { Group, Object3D } from 'three'
 
-import type { RawKinematicsModel } from '$lib/kinematicsTransform'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
-import { traits } from '$lib/ecs'
-import { matchModel, modelKey } from '$lib/hooks/use3DModels.svelte'
+import { traits } from '#lib/ecs/index.js'
+import { matchModel, modelKey } from '#lib/hooks/use3DModels.svelte.js'
 
 import type { SimExportNote } from './sim-scene'
 

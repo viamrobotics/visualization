@@ -1,4 +1,4 @@
-import type { HotkeyKeybinding } from '$lib/keybindings'
+import type { HotkeyKeybinding } from '#lib/keybindings/index.js'
 
 import type { TransformGizmoMode } from './useTransformGizmos.svelte'
 

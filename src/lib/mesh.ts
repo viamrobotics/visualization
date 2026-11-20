@@ -3,8 +3,8 @@ import type { BufferGeometry } from 'three'
 
 import { commonApi } from '@viamrobotics/sdk'
 
-import { parsePlyInput } from '$lib/ply'
-import { parseStlInput } from '$lib/stl'
+import { parsePlyInput } from '#lib/ply.js'
+import { parseStlInput } from '#lib/stl.js'
 
 export type MeshContentType = 'ply' | 'stl'
 

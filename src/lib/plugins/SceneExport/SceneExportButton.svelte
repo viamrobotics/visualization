@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Download, LoaderCircle } from 'lucide-svelte'
 
-	import Tooltip from '$lib/components/overlay/Tooltip.svelte'
-	import { useWorld } from '$lib/ecs'
-	import { use3DModels } from '$lib/hooks/use3DModels.svelte'
-	import { useFrames } from '$lib/hooks/useFrames.svelte'
-	import { kinematicsByComponent } from '$lib/kinematicsByComponent'
-	import { useLogs } from '$lib/plugins/Logs/useLogs.svelte'
+	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
+	import { useWorld } from '#lib/ecs/index.js'
+	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
+	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import { exportSimScene } from './export-sim-scene'
 

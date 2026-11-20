@@ -2,9 +2,9 @@
 	import { Input, Switch } from '@viamrobotics/prime-core'
 	import { Color } from 'three'
 
-	import RefreshRate from '$lib/components/overlay/RefreshRate.svelte'
-	import { usePointClouds } from '$lib/hooks/usePointclouds.svelte'
-	import { RefreshRates, useSettings } from '$lib/hooks/useSettings.svelte'
+	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
+	import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
+	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
 	const pointclouds = usePointClouds()

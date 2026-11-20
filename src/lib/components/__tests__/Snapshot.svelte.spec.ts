@@ -2,22 +2,22 @@ import { render } from '@testing-library/svelte'
 import { createWorld, type World } from 'koota'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('$lib/hooks/useSettings.svelte', () => ({
+vi.mock('#lib/hooks/useSettings.svelte.js', () => ({
 	useSettings: vi.fn(() => ({ current: {} })),
 }))
-vi.mock('$lib/hooks/useControls.svelte', () => ({
+vi.mock('#lib/hooks/useControls.svelte.js', () => ({
 	useCameraControls: vi.fn(() => ({ setPose: vi.fn(), setZoom: vi.fn() })),
 }))
 
-import { Pose, PoseInFrame, Transform, Vector3 } from '$lib/buf/common/v1/common_pb'
-import { Drawing, Line, Shape } from '$lib/buf/draw/v1/drawing_pb'
-import { Metadata, Relationship } from '$lib/buf/draw/v1/metadata_pb'
-import { SceneCamera, SceneMetadata } from '$lib/buf/draw/v1/scene_pb'
-import { Snapshot as SnapshotProto } from '$lib/buf/draw/v1/snapshot_pb'
-import { uuidStringToBytes } from '$lib/draw'
-import { relations, traits } from '$lib/ecs'
-import { WORLD_CONTEXT_KEY } from '$lib/ecs/useWorld'
-import { useCameraControls } from '$lib/hooks/useControls.svelte'
+import { Pose, PoseInFrame, Transform, Vector3 } from '#lib/buf/common/v1/common_pb.js'
+import { Drawing, Line, Shape } from '#lib/buf/draw/v1/drawing_pb.js'
+import { Metadata, Relationship } from '#lib/buf/draw/v1/metadata_pb.js'
+import { SceneCamera, SceneMetadata } from '#lib/buf/draw/v1/scene_pb.js'
+import { Snapshot as SnapshotProto } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { uuidStringToBytes } from '#lib/draw.js'
+import { relations, traits } from '#lib/ecs/index.js'
+import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
+import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 
 import SnapshotWithRelationships from './__fixtures__/SnapshotWithRelationships.svelte'
 

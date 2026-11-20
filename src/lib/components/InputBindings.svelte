@@ -5,8 +5,8 @@
 	import { useGamepad, useInputMap, useKeyboard } from '@threlte/extras/webgpu'
 	import { MathUtils, Vector3 } from 'three'
 
-	import { useKeybinding } from '$lib/keybindings'
-	import { isEditableTarget } from '$lib/keybindings/isEditableTarget'
+	import { useKeybinding } from '#lib/keybindings/index.js'
+	import { isEditableTarget } from '#lib/keybindings/isEditableTarget.js'
 
 	interface Props {
 		cameraControls: CameraControlsRef

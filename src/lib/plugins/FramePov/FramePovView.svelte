@@ -4,7 +4,7 @@
 	import { type Entity } from 'koota'
 	import { Matrix4, PerspectiveCamera } from 'three'
 
-	import { traits } from '$lib/ecs'
+	import { traits } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

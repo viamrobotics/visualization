@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Controller } from '@threlte/xr'
 
-	import { useSettings } from '$lib/hooks/useSettings.svelte'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import ArmTeleop from '../ArmTeleop.svelte'
 

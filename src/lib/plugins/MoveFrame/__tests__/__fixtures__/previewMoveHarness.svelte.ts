@@ -4,9 +4,9 @@ import type { World } from 'koota'
 
 import { flushSync, mount, unmount } from 'svelte'
 
-import type { FramesContext } from '$lib/hooks/useFrames.svelte'
+import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { MoveOptions } from '../../parseMoveOptions'
 import type { PreviewMove } from '../../usePreviewMove.svelte'

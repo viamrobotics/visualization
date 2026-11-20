@@ -1,9 +1,9 @@
 import type { Entity, World } from 'koota'
 import type { Matrix4, Object3D } from 'three'
 
-import type { RawKinematicsModel } from '$lib/kinematicsTransform'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
-import { hierarchy, traits } from '$lib/ecs'
+import { hierarchy, traits } from '#lib/ecs/index.js'
 
 import type { SimBody, SimExportNote, SimExportNoteReason, SimScene } from './sim-scene'
 

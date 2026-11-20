@@ -3,17 +3,17 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createPartConfigFixture } from '$lib/__tests__/__fixtures__/partConfig'
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
-import { createFrame } from '$lib/frame'
-import * as usePartConfig from '$lib/hooks/usePartConfig.svelte'
-import { type PartComponent } from '$lib/hooks/usePartConfig.svelte'
+import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+import { createFrame } from '#lib/frame.js'
+import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
+import { type PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 import {
 	type BoundsHint,
 	OBSTACLE_API,
 	OBSTACLE_MODEL,
 	type ObstacleAttributes,
-} from '$lib/obstacleAttributes'
+} from '#lib/obstacleAttributes.js'
 
 import ObstacleEditor from '../ObstacleEditor.svelte'
 

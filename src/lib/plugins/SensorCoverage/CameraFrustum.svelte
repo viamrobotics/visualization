@@ -15,7 +15,7 @@ the reason the matrix is copied rather than decomposed into props.
 	import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js'
 	import { Line2NodeMaterial } from 'three/webgpu'
 
-	import { traits, useTrait } from '$lib/ecs'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	interface Props {
 		entity: Entity

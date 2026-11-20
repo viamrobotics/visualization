@@ -1,8 +1,6 @@
 <script lang="ts">
-	import DashboardButton from '$lib/components/overlay/dashboard/Button.svelte'
-	import Popover from '$lib/components/overlay/Popover.svelte'
-	import WorkspacePortal from '$lib/components/overlay/Portals/WorkspacePortal.svelte'
-	import { useEnvironment } from '$lib/hooks/useEnvironment.svelte'
+	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
+	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
 	import ResourceWidgetList from './ResourceWidgetList.svelte'
 	import ResourceWidgetPanel from './ResourceWidgetPanel.svelte'
@@ -12,24 +10,9 @@
 	const resolved = useResourceWidgets()
 </script>
 
-<WorkspacePortal>
-	<fieldset>
-		<Popover placement="bottom-end">
-			{#snippet trigger(triggerProps, { isOpen })}
-				<DashboardButton
-					{...triggerProps}
-					active={isOpen}
-					icon="joystick"
-					description="Control widgets"
-				/>
-			{/snippet}
-
-			<div class="font-public-sans max-h-[480px] w-80 overflow-y-auto overscroll-contain p-2">
-				<ResourceWidgetList />
-			</div>
-		</Popover>
-	</fieldset>
-</WorkspacePortal>
+<SettingsPortal label="Widgets">
+	<ResourceWidgetList />
+</SettingsPortal>
 
 <!-- Registry widget panels render only outside XR. -->
 {#if !environment.current.isImmersive}

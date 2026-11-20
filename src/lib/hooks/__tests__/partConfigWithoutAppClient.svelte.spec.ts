@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import PartConfigHost from './__fixtures__/PartConfigHost.svelte'
 
-vi.mock('$lib/hooks/usePartConfig.svelte', (importOriginal) => importOriginal())
-vi.mock('$lib/hooks/useFragmentInfo.svelte', (importOriginal) => importOriginal())
+vi.mock('#lib/hooks/usePartConfig.svelte.js', (importOriginal) => importOriginal())
+vi.mock('#lib/hooks/useFragmentInfo.svelte.js', (importOriginal) => importOriginal())
 
 describe('part config with no ViamAppProvider and no localConfigProps', () => {
 	it('settles as an empty, read-only config instead of throwing', () => {

@@ -2,12 +2,12 @@ import { createWorld, type World } from 'koota'
 import { Color, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import type { RawKinematicsModel } from '$lib/kinematicsTransform'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
-import { assertExists } from '$lib/assert'
-import { relations, traits } from '$lib/ecs'
-import { installWorldMatrixListeners } from '$lib/ecs/worldMatrix'
-import { Pose } from '$lib/math'
+import { assertExists } from '#lib/assert.js'
+import { relations, traits } from '#lib/ecs/index.js'
+import { installWorldMatrixListeners } from '#lib/ecs/worldMatrix.js'
+import { Pose } from '#lib/math/index.js'
 
 import { buildSimScene } from '../build-sim-scene'
 

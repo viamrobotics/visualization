@@ -1,6 +1,6 @@
 import type { World } from 'koota'
 
-import { traits } from '$lib/ecs'
+import { traits } from '#lib/ecs/index.js'
 
 /**
  * Drop every staged frame edit, reverting the scene to its saved-config poses.

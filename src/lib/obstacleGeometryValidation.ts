@@ -1,4 +1,4 @@
-import { explicitGeometryLabel, type ObstacleGeometryConfig } from '$lib/obstacleAttributes'
+import { explicitGeometryLabel, type ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 /**
  * A problem rdk's config validation would reject. `index` pins it to an entry, and

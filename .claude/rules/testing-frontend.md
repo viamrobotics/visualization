@@ -24,7 +24,7 @@ Beyond external I/O, two repo-specific boundaries:
 1. **Rendering context.** Anything that needs a live `<Canvas>` or WebGL. Threlte's `useThrelte` and `useTask`, `@threlte/extras` portals, and editors that mount their own DOM all throw or hang when a component is rendered in isolation.
 2. **Provider ancestors.** A hook that requires a context provider the spec does not mount, such as `useToast` needing `provideToast`.
 
-`vitest-setup-client.ts` already mocks `@threlte/core`, `@threlte/extras`, and several `$lib/hooks/*` globally. Read it before adding a mock; re-mocking something the setup file already handles is the most common source of a spec that passes for the wrong reason. `clearMocks: true` is set in `vite.config.ts`, so mocks reset between tests and per-test teardown is unnecessary.
+`vitest-setup-client.ts` already mocks `@threlte/core`, `@threlte/extras`, and several `#lib/hooks/*` globally. Read it before adding a mock; re-mocking something the setup file already handles is the most common source of a spec that passes for the wrong reason. `clearMocks: true` is set in `vite.config.ts`, so mocks reset between tests and per-test teardown is unnecessary.
 
 When a mock stands in for a typed interface, constrain it with `satisfies` so a field added or removed on the real type fails the spec rather than leaving the mock quietly wrong.
 

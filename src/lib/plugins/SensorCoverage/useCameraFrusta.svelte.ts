@@ -5,7 +5,7 @@ import {
 	useResourceStatuses,
 } from '@viamrobotics/svelte-sdk'
 
-import { usePartID } from '$lib/hooks/usePartID.svelte'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 import { frustumPositions } from './frustumPositions'
 

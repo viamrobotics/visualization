@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { generateBoundsGeometries } from '$lib/boundsGeometries'
+import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 import {
 	createBoundsObstacleComponent,
 	createComplexObstacleComponent,
 	createObstacleComponent,
 	DEFAULT_BOUNDS_HINT,
 	nextObstacleName,
-} from '$lib/obstacle'
+} from '#lib/obstacle.js'
 
 describe('nextObstacleName', () => {
 	it('starts at obstacle-1 when the config has no obstacles', () => {

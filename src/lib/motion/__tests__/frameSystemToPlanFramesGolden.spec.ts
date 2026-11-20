@@ -20,10 +20,10 @@ const descriptorsFromParts = (parts: unknown[]) =>
 describe('frameSystemToPlanFrames, against the frame system RDK builds from the same parts', () => {
 	it.each(frameSystemGoldenCases)(
 		'synthesizes every frame of $name that RDK builds, less its models',
-		({ frameSystem, parts }) => {
+		({ frameSystem, parts, probes }) => {
 			const described = descriptorsFromParts(parts).map((descriptor) => descriptor.name)
 
-			expect(described.toSorted()).toEqual(describableFrameNames(frameSystem).toSorted())
+			expect(described.toSorted()).toEqual(describableFrameNames(frameSystem, probes[0]).toSorted())
 		}
 	)
 })

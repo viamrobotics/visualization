@@ -1,7 +1,7 @@
 import type { Object3D } from 'three'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-import { gltfLoader } from '$lib/loaders/gltf'
+import { gltfLoader } from '#lib/loaders/gltf.js'
 
 /** `traits.GLTF`'s `source`. */
 type GltfSource = { url: string } | { gltf: GLTF } | { glb: Uint8Array }

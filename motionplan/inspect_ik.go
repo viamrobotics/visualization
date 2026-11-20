@@ -16,7 +16,7 @@ import (
 // TODO: replace with go.viam.com/rdk/motionplan/armplanning/mpserver.InspectIK once it moves to a
 // package that does not import github.com/viam-labs/motion-tools. Linking mpserver registers
 // motion-tools' copy of draw/v1, which panics against this repo's draw/v1 at init.
-// Copied from rdk v1.10.0 mpserver/ik.go.
+// Copied from rdk v1.17.0 mpserver/ik.go.
 
 // ikInspectCell describes a single IK solution emitted from one seed, scored and validated the
 // same way getSolutions would score and validate it.
@@ -134,7 +134,7 @@ func inspectIK(ctx context.Context, logger logging.Logger,
 				}
 				*cells = append(*cells, ikInspectCell{
 					Cost: pc.ConfigurationDistanceFunc(stepArc) +
-						armplanning.NeutralBias(linearSchema.GetLimits(), solution.Configuration),
+						armplanning.NeutralBias(linearSchema.GetLimits(), linearSchema.GetRevolute(), solution.Configuration),
 					Exact:             solution.Exact,
 					Inputs:            inputs,
 					Valid:             finalStateErr == nil,

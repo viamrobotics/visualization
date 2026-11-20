@@ -4,9 +4,9 @@ import { flushSync } from 'svelte'
 import { UuidTool } from 'uuid-tool'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { Geometry, PoseInFrame, Sphere, Transform } from '$lib/buf/common/v1/common_pb'
-import { Snapshot } from '$lib/buf/draw/v1/snapshot_pb'
-import { traits } from '$lib/ecs'
+import { Geometry, PoseInFrame, Sphere, Transform } from '#lib/buf/common/v1/common_pb.js'
+import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'
+import { traits } from '#lib/ecs/index.js'
 
 import type { MotionPlanReplayerContext } from '../useMotionPlanReplayer.svelte'
 

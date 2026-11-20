@@ -1,7 +1,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { expect } from 'vitest'
 
-import { Pose } from '$lib/math'
+import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor, FrameSystemJson } from '../../frameDescriptors'
 import type { TrajectoryStep } from '../../jointPose'
@@ -73,10 +73,17 @@ export const modelFrameNames = (frameSystem: FrameSystemJson): Set<string> =>
 			.map(([name]) => name)
 	)
 
-/** Every frame RDK marshaled that a descriptor should exist for. */
-export const describableFrameNames = (frameSystem: FrameSystemJson): string[] => {
+/**
+ * Every name a descriptor should exist for: each frame RDK marshaled except its models, plus each
+ * geometry label, since a link with several colliders gets a child frame per collider.
+ */
+export const describableFrameNames = (
+	frameSystem: FrameSystemJson,
+	probe: GoldenProbe
+): string[] => {
 	const models = modelFrameNames(frameSystem)
-	return Object.keys(frameSystem.frames).filter((name) => !models.has(name))
+	const frames = Object.keys(frameSystem.frames).filter((name) => !models.has(name))
+	return [...new Set([...frames, ...Object.keys(probe.geometries)])]
 }
 
 /**
@@ -193,7 +200,7 @@ export const geometryPosesAgainstGolden = (
 	const tolerance = toleranceFor(nearPole)
 	const rows = descriptors.flatMap((descriptor): PoseRow[] => {
 		const golden = probe.geometries[descriptor.name]
-		if (descriptor.kind !== 'static' || !descriptor.geometry || !golden) return []
+		if (!descriptor.geometry || !golden) return []
 
 		const center = new Pose().copy(descriptor.geometry.center).toMatrix4()
 		const world = matrices.get(descriptor.name)!.clone().multiply(center)

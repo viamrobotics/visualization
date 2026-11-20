@@ -2,9 +2,9 @@ import { Struct } from '@bufbuild/protobuf'
 import { commonApi, Geometry, PoseInFrame, robotApi, Sphere, Transform } from '@viamrobotics/sdk'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Geometry as LocalGeometry } from '$lib/buf/common/v1/common_pb'
-import { Pose } from '$lib/math'
-import { parsePlan } from '$lib/plugins/MotionPlanReplayer/parse-plan'
+import { Geometry as LocalGeometry } from '#lib/buf/common/v1/common_pb.js'
+import { Pose } from '#lib/math/index.js'
+import { parsePlan } from '#lib/plugins/MotionPlanReplayer/parse-plan.js'
 
 import type { FrameDescriptor } from '../frameDescriptors'
 

@@ -8,9 +8,9 @@
 		TabPage,
 	} from 'svelte-tweakpane-ui'
 
-	import type { Frame } from '$lib/frame'
+	import type { Frame } from '#lib/frame.js'
 
-	import { Pose } from '$lib/math'
+	import { Pose } from '#lib/math/index.js'
 
 	interface Props {
 		/** Undefined reads as the origin. */
