@@ -56,8 +56,8 @@ Fuller templates live in `.claude/templates/`.
   the commit**.
 - Too big to hold in one plan: scaffold with `/plan-project`, then execute each phase with
   `/orchestrate`.
-- Building UI, an artifact, or a deck? Take colors, type, and spacing from
-  `.claude/design/tokens.json`, never a palette of your own.
+- Building UI, an artifact, or a deck? Take colors, type, and spacing from the Tailwind theme
+  via `node .claude/scripts/design.mjs token <name>`, never a palette of your own.
 
 ### Conventions
 
@@ -93,7 +93,8 @@ Fuller templates live in `.claude/templates/`.
   `run_in_background: true`, ends its turn without reporting, and reports when the completion
   notification re-invokes it, reading the output file it names. A foreground call blocks the
   subagent until Claude Code moves it to the background anyway, so starting it there saves the
-  blocked minutes and lets the subagent end its turn.
+  blocked minutes and lets the subagent end its turn. A command expected to finish inside the
+  default Bash timeout, such as a scoped test or typecheck, runs in the foreground.
 - On AskUserQuestion timeout, stop and re-ask later. Never carry tentative selections forward.
 - Read the repo's own docs + targeted greps before fanning out Explore/Plan agents.
 
