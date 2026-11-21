@@ -15,6 +15,7 @@ export {
 	TRANSLUCENT_GEOMETRY_OPACITY,
 	useOpacity,
 } from './opacity.svelte'
+export { dimColor, dimOpacity } from './dimmedAppearance'
 
 export * as traits from './traits'
 export * as relations from './relations'

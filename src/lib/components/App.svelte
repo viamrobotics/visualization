@@ -3,13 +3,10 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
-	import { Canvas } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
-	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import { provideToast, ToastContainer, ToastVariant } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
-	import { NeutralToneMapping } from 'three'
-	import { WebGPURenderer } from 'three/webgpu'
 
 	import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 
@@ -33,11 +30,9 @@
 	import { provideFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 	import { domPortal } from '#lib/portal.js'
 
-	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import { provideSettingsTabs } from './overlay/Portals/useSettingsTabs.svelte'
 	import RenderStats from './overlay/widgets/RenderStats.svelte'
-	import Scene from './Scene.svelte'
-	import SceneProviders from './SceneProviders.svelte'
+	import SceneCanvas from './SceneCanvas.svelte'
 
 	interface LocalConfigProps {
 		current: Struct
@@ -108,7 +103,7 @@
 	createPartIDContext(() => partID)
 
 	provideWeblabs()
-	provideToast()
+	const toast = provideToast()
 
 	let root = $state.raw<HTMLElement>()
 
@@ -120,7 +115,8 @@
 
 	providePartConfig(
 		() => partID,
-		() => localConfigProps
+		() => localConfigProps,
+		(message) => toast({ message, variant: ToastVariant.Danger })
 	)
 
 	$effect(() => {
@@ -146,24 +142,10 @@
 	]}
 	bind:this={root}
 >
-	<Canvas
-		renderMode="on-demand"
-		toneMapping={NeutralToneMapping}
-		createRenderer={(canvas) =>
-			new WebGPURenderer({
-				canvas,
-				antialias: true,
-				// Keeps depth precision near-uniform, so nearby surfaces don't z-fight when zoomed out.
-				reversedDepthBuffer: true,
-			})}
-	>
-		<SceneProviders>
-			<Scene>
-				{@render appChildren?.()}
-			</Scene>
+	<SceneCanvas>
+		{@render appChildren?.()}
 
-			<HoveredEntities />
-
+		{#snippet overlays()}
 			<!-- Overlays that need Threlte context -->
 			<div {@attach domPortal(root)}>
 				<Dashboard />
@@ -176,8 +158,8 @@
 					<RenderStats />
 				{/if}
 			</div>
-		</SceneProviders>
-	</Canvas>
+		{/snippet}
+	</SceneCanvas>
 
 	<ToastContainer />
 </div>

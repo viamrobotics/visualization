@@ -146,6 +146,13 @@ export const Opacity = trait(() => 1)
 export const OpacityOverride = trait(() => 1)
 
 /**
+ * De-emphasized by a scoped scene's frame focus: drawn at its opacity times `DIMMED_OPACITY`, with its
+ * color blended toward `gray-5`. Kept apart from `OpacityOverride`, which is the user's edit and
+ * outlives a respawn. Only `useFrameFocus` adds or removes it.
+ */
+export const Dimmed = trait()
+
+/**
  * The color of an object
  * @default { r: 0, g: 0, b: 0 }
  */
