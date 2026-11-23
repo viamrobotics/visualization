@@ -20,6 +20,7 @@
 	import { provideRelationships } from '#lib/hooks/useRelationships.svelte.js'
 	import { provideResourceAppearance } from '#lib/hooks/useResourceAppearance.svelte.js'
 	import { provideResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
+	import { provideSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import { provideWorldStates } from '#lib/hooks/useWorldState.svelte.js'
 
 	import ArmModels from './Machine/ArmModels.svelte'
@@ -59,6 +60,7 @@
 	provideFramelessComponents()
 
 	provideLinkedEntities()
+	provideSelectionOrder()
 </script>
 
 <PointClouds />

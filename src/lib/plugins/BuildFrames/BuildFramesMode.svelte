@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { Not } from 'koota'
-
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
-	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { traits } from '#lib/ecs/index.js'
+	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 
@@ -16,8 +15,14 @@
 	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
 
 	const environment = useEnvironment()
-	const selected = useQuery(traits.Selected, Not(traits.FramelessComponent))
-	const selectedFrameless = useQuery(traits.Selected, traits.FramelessComponent)
+	const selection = useSelectionOrder()
+	// `FramelessComponent` is set at spawn and never changes, so a plain filter stays current.
+	const selectedFrames = $derived(
+		selection.current.filter((entity) => !entity.has(traits.FramelessComponent))
+	)
+	const selectedFrameless = $derived(
+		selection.current.filter((entity) => entity.has(traits.FramelessComponent))
+	)
 	const fullscreen = useFullscreen()
 
 	// Registering also resolves a persisted `build` for hosts that don't mount
@@ -42,15 +47,15 @@
 
 <!-- One panel for the whole selection. Frameless components get theirs only when nothing else is selected. -->
 {#if environment.current.mode === 'build'}
-	{#if selected.current.length > 0}
+	{#if selectedFrames.length > 0}
 		<BuildDetails
-			entities={selected.current}
-			framelessCount={selectedFrameless.current.length}
+			entities={selectedFrames}
+			framelessCount={selectedFrameless.length}
 			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
-	{:else if selectedFrameless.current.length > 0}
+	{:else if selectedFrameless.length > 0}
 		<FramelessComponentDetails
-			entities={selectedFrameless.current}
+			entities={selectedFrameless}
 			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
 	{/if}

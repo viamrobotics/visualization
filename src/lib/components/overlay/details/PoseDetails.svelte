@@ -40,8 +40,8 @@
 	import {
 		MIXED_POSE,
 		orientationEuler,
-		type SharedPose,
 		sharedEuler,
+		type SharedPose,
 		sharedPose,
 	} from './sharedPose'
 	import {

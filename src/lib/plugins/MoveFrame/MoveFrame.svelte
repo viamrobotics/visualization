@@ -5,8 +5,9 @@
 
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
-	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { traits } from '#lib/ecs/index.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import MonitorDetails from '#lib/plugins/Monitor/MonitorDetails.svelte'
 
 	import CollisionDetector from './collisions/CollisionDetector.svelte'
@@ -16,7 +17,7 @@
 	import SavedPoses from './savedPoses/SavedPoses.svelte'
 
 	const environment = useEnvironment()
-	const selected = useQuery(traits.Selected)
+	const selected = useSelectionOrder()
 
 	useEnvironmentMode('move')
 
