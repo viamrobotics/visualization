@@ -2,8 +2,8 @@
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
 	import { traits } from '#lib/ecs/index.js'
-	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 
 	import BuildActionsBar from './BuildActionsBar.svelte'
