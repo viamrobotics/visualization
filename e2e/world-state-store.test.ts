@@ -10,6 +10,9 @@ import { type ExpectedEntityState, readEntityState } from './matrix/entityState'
 const dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const wsDir = path.resolve(dirname, 'fixtures/world-state-store')
 
+/** `numPoints` in the fixture's `add_chunked` command, `store.go`. */
+const CHUNKED_CLOUD_POINTS = 10000
+
 const runGoTest = (testPath: string) => {
 	const { host, apiKeyId, apiKey } = getE2EConfig()
 	try {
@@ -202,8 +205,12 @@ withRobot('world state store point cloud chunking', async ({ robotPage }) => {
 
 	await expect(page.getByText('chunked-cloud', { exact: true })).toBeVisible({ timeout: 10000 })
 
-	const progressBar = page.getByRole('progressbar')
-	await expect(progressBar).toBeHidden({ timeout: 30000 })
+	// The progress bar is also hidden before the first chunk is pulled, so it cannot
+	// say the cloud is complete. The draw range grows per chunk and can.
+	await expect
+		.poll(() => readEntityState(page, 'chunked-cloud'), { timeout: 30_000 })
+		.toMatchObject({ drawnPointCount: CHUNKED_CLOUD_POINTS })
+	await expect(page.getByRole('progressbar')).toBeHidden()
 	await robotPage.screenshotCanvas('WORLD-STATE-CHUNK-0-loaded')
 
 	runGoTest('^TestPointCloudChunking$/Cleanup')

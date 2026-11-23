@@ -111,8 +111,9 @@ withRobot('obstacle store: stable UUIDs across polls', async ({ robotPage }) => 
 
 	// Slot 0 (phase=0) stays visible for the first half of the cycle, about 30s, so a
 	// selection on it survives several polls. Scope to the tree treeitem to avoid the
-	// obs-0 label the details panel adds after selection.
-	const obs0 = page.getByRole('treeitem', { name: 'obs-0', exact: true })
+	// obs-0 label the details panel adds after selection. The row's name ends with
+	// its visibility button's label, so match only the leading entity name.
+	const obs0 = page.getByRole('treeitem', { name: /^obs-0(\s|$)/ })
 	await expect(obs0).toBeVisible({ timeout: 30000 })
 
 	await obs0.click()

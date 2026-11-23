@@ -40,6 +40,8 @@ export interface EntityState {
 	selected: boolean
 	/** Vertices in the entity's `BufferGeometry`: one per point for a point cloud. */
 	pointCount?: number
+	/** Vertices the geometry draws. A chunked cloud preallocates `pointCount` and grows this per chunk. */
+	drawnPointCount?: number
 	pointSize?: number
 	lineWidth?: number
 	dotSize?: number
@@ -160,7 +162,10 @@ export const readEntityState = (page: Page, name: string): Promise<EntityState> 
 		const opacity = match.get(traits.Opacity) as number | undefined
 		const localMatrix = match.get(traits.Matrix) as { elements: number[] } | undefined
 		const geometry = match.get(traits.BufferGeometry) as
-			| { getAttribute: (name: string) => { count: number } | undefined }
+			| {
+					getAttribute: (name: string) => { count: number } | undefined
+					drawRange: { count: number }
+			  }
 			| undefined
 
 		return {
@@ -179,6 +184,7 @@ export const readEntityState = (page: Page, name: string): Promise<EntityState> 
 			axesHelper: match.has(traits.ShowAxesHelper),
 			selected: match.has(traits.Selected),
 			pointCount: geometry?.getAttribute('position')?.count,
+			drawnPointCount: geometry?.drawRange.count,
 			pointSize: match.get(traits.PointSize) as number | undefined,
 			lineWidth: match.get(traits.LineWidth) as number | undefined,
 			dotSize: match.get(traits.DotSize) as number | undefined,
