@@ -15,11 +15,11 @@
 		TRANSLUCENT_GEOMETRY_OPACITY,
 		useWorld,
 	} from '#lib/ecs/index.js'
+	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
 	import { Pose } from '#lib/math/index.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	interface Props {

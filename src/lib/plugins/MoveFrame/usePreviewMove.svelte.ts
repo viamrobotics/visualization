@@ -4,71 +4,27 @@ import { untrack } from 'svelte'
 
 import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
 import type { Pose } from '#lib/math/index.js'
-import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
-import type { JointMotions } from '#lib/motion/interpolateTrajectory.js'
+import type { TrajectoryStep } from '#lib/motion/planDoCommand.js'
 import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-import { useWorld } from '#lib/ecs/index.js'
-import { matchModel, modelKey, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
-import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
-import { frameSystemToPlanFrames } from '#lib/motion/frameSystemToPlanFrames.js'
 import {
-	interpolatedFrames,
-	jointMotionsOf,
-	waypointFrames,
-} from '#lib/motion/interpolateTrajectory.js'
-import { createTrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
+	type PreviewDetail,
+	useTrajectoryDrawing,
+} from '#lib/components/motion/useTrajectoryDrawing.svelte.js'
+import { isAlreadyAtGoal, parsePlanResult, planCommand } from '#lib/motion/planDoCommand.js'
 
 import type { MoveOptions } from './parseMoveOptions'
-import type { TrajectoryStep } from './planDoCommand'
 
-import { isAlreadyAtGoal, parsePlanResult, planCommand } from './planDoCommand'
-import {
-	applyPreviewStep,
-	clearPreviewGhosts,
-	createPreviewGhosts,
-	type PreviewGhosts,
-	spawnPreviewGhosts,
-} from './previewGhosts'
+export {
+	type PreviewDetail,
+	previewFrameIntervalMs,
+} from '#lib/components/motion/useTrajectoryDrawing.svelte.js'
 
 /**
  * `already-at-goal` is not `error`: RDK answered, and the trajectory it returned is the start
  * configuration written twice, the correct answer to "how do I get somewhere I already am".
  */
 export type PreviewStatus = 'idle' | 'planning' | 'ready' | 'already-at-goal' | 'error'
-
-/**
- * What one frame of playback represents: `waypoints` gives each configuration the planner returned
- * its own frame, `interpolated` fills in along the straight joint path RDK collision-checks.
- */
-export type PreviewDetail = 'waypoints' | 'interpolated'
-
-/**
- * How long a preview aims to take, once it has frames enough to fill the time. A sparse plan
- * finishes sooner instead of stretching, because pacing two waypoints to four seconds reads as
- * nothing happening rather than as a slow move.
- */
-const PREVIEW_DURATION_MS = 4000
-
-/** Faster than this is wasted on a display. Very dense plans run longer than the target instead. */
-const MIN_FRAME_MS = 16
-
-/**
- * The longest a single frame holds. A waypoint plan is a handful of discrete configurations, and
- * without a ceiling the duration target parks a two-waypoint plan on one frame for the whole four
- * seconds.
- */
-const MAX_FRAME_MS = 250
-
-/**
- * How long each frame holds, for a plan of `frameCount` frames. Clamped at both ends: below
- * {@link MIN_FRAME_MS} a dense plan only flickers, and above {@link MAX_FRAME_MS} a sparse one
- * stops reading as motion at all.
- *
- * Playback covers `frameCount - 1` transitions, so that is what the duration divides.
- */
-export const previewFrameIntervalMs = (frameCount: number): number =>
-	Math.min(MAX_FRAME_MS, Math.max(MIN_FRAME_MS, PREVIEW_DURATION_MS / Math.max(1, frameCount - 1)))
 
 export interface PreviewMoveOptions {
 	frames: FramesContext
@@ -131,31 +87,10 @@ export const usePreviewMove = ({
 	moveOptions,
 	invalidateOn,
 }: PreviewMoveOptions): PreviewMove => {
-	const world = useWorld()
-
 	let status = $state<PreviewStatus>('idle')
 	let message = $state<string>()
-	// Raw: all three are replaced wholesale rather than mutated, so the deep proxy would go unused,
-	// `waypointIndices` included — the scrubber reads it element-wise but never writes into it.
-	let trajectory = $state.raw<TrajectoryStep[]>([])
-	// What the scrubber walks. Only `trajectory` may ever be handed to `execute`.
-	let playbackFrames = $state.raw<TrajectoryStep[]>([])
-	let waypointIndices = $state.raw<number[]>([])
-	let detail = $state<PreviewDetail>('waypoints')
 
-	// Outside `$state`: koota entities and Three.js matrices want no deep proxy. `const` because
-	// `spawnPreviewGhosts` fills it in place, keeping it the only handle teardown has across an await.
-	const ghosts: PreviewGhosts = createPreviewGhosts()
-
-	const models = use3DModels()
-	const drawsAnyModel = () =>
-		models.shouldRender &&
-		ghosts.entities.some((entity) => matchModel(modelKey(entity), models.current) !== undefined)
-	// Held alongside the twins rather than derived where it is used: `set detail` reframes the same
-	// plan without a descriptor in scope, and it needs the same answer this request built.
-	let jointMotions: JointMotions = new Map()
-
-	const frameIntervalMs = $derived(previewFrameIntervalMs(playbackFrames.length))
+	const drawing = useTrajectoryDrawing({ onStepError: (reason) => fail(reason) })
 
 	/**
 	 * Which request the state on screen belongs to. Bumped by every reset, so a plan that resolves
@@ -163,30 +98,6 @@ export const usePreviewMove = ({
 	 */
 	let generation = 0
 	let inFlight: AbortController | undefined
-
-	/** Reports whether the step was drawn; see `TrajectoryPlayerOptions.onStep`. */
-	const renderStep = (step: number): boolean => {
-		const inputs = playbackFrames[step]
-		if (!inputs) return false
-		applyPreviewStep(ghosts, inputs)
-		return true
-	}
-
-	/** Rebuild the played frames for the current detail. The plan itself is untouched. */
-	const applyDetail = (planned: TrajectoryStep[]) => {
-		const built =
-			detail === 'waypoints'
-				? waypointFrames(planned)
-				: interpolatedFrames(planned, { motions: jointMotions })
-		playbackFrames = built.steps
-		waypointIndices = built.waypoints
-	}
-
-	const player = createTrajectoryPlayer({
-		totalSteps: () => playbackFrames.length,
-		onStep: renderStep,
-		intervalMs: () => frameIntervalMs,
-	})
 
 	/**
 	 * Drop everything a preview owns. The three callers (`clear`, `settle`, and the top of
@@ -199,12 +110,7 @@ export const usePreviewMove = ({
 		inFlight?.abort()
 		inFlight = undefined
 
-		clearPreviewGhosts(ghosts)
-		jointMotions = new Map()
-		trajectory = []
-		playbackFrames = []
-		waypointIndices = []
-		player.reset()
+		drawing.clear()
 	}
 
 	const clear = () => {
@@ -268,28 +174,12 @@ export const usePreviewMove = ({
 
 			// Built from `frameSystemConfig` rather than a plan dump: the `plan` reply carries joint
 			// values only, and this is the only path a browser has to the kinematics behind them.
-			const descriptors: FrameDescriptor[] = buildFrameDescriptors(frameSystemToPlanFrames(parts))
-			if (descriptors.length === 0) {
-				fail('No frame system available to draw the plan against.')
+			const failure = drawing.draw(result.trajectory, parts)
+			if (failure) {
+				fail(failure)
 				return
 			}
 
-			// The trajectory decides which frames earn a twin, not just where they go: RDK returns a
-			// column for every component, so the ones it holds still have to be told apart from the ones
-			// it moves.
-			jointMotions = jointMotionsOf(descriptors)
-			spawnPreviewGhosts(world, descriptors, result.trajectory, ghosts)
-
-			// Joints and geometry-less mounts make up most of a chain, so counting entities here would
-			// arm the panel over a preview with nothing on screen. A twin with no collider still draws
-			// when its link has a 3D model on screen.
-			if (ghosts.drawn === 0 && !drawsAnyModel()) {
-				fail('No geometry in the frame system to draw this plan with.')
-				return
-			}
-
-			trajectory = result.trajectory
-			applyDetail(result.trajectory)
 			status = 'ready'
 		} catch (error_) {
 			// An abandoned request's failure is not the user's problem, and an aborted one reports a
@@ -313,7 +203,6 @@ export const usePreviewMove = ({
 	$effect(() => () => {
 		generation += 1
 		inFlight?.abort()
-		clearPreviewGhosts(ghosts)
 	})
 
 	return {
@@ -324,26 +213,23 @@ export const usePreviewMove = ({
 			return message
 		},
 		get trajectory() {
-			return trajectory
+			return drawing.trajectory
 		},
 		get plannedSteps() {
-			return trajectory.length
+			return drawing.trajectory.length
 		},
 		get waypointIndices() {
-			return waypointIndices
+			return drawing.waypointIndices
 		},
 		get detail() {
-			return detail
+			return drawing.detail
 		},
 		set detail(next: PreviewDetail) {
-			if (next === detail) return
-			detail = next
-			if (status !== 'ready') return
-			applyDetail(trajectory)
-			player.reset()
-			renderStep(0)
+			drawing.detail = next
 		},
-		player,
+		get player() {
+			return drawing.player
+		},
 		requestPreview,
 		clear,
 	}

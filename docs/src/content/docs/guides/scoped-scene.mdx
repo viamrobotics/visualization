@@ -1,0 +1,210 @@
+---
+title: Embedding a scoped scene
+description: Render one machine part's frames, focus one arm, and drive a move target from your own Svelte app.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+`ScopedScene` is a small scene for hosts that own their own UI. It renders one machine part's frames, geometries, and point clouds, and it can focus one component. It ships as its own entry, `@viamrobotics/visualization/scoped-scene`, and is not a set of props on `<Visualizer />`. Reach for it when you want an arm preview inside a larger page. For the full visualizer, see [Embedding `<Visualizer />`](../embedding/).
+
+## Install and required peers
+
+```bash
+pnpm add @viamrobotics/visualization
+```
+
+Install these packages in your project:
+
+| Package                    | Why                                  |
+| -------------------------- | ------------------------------------ |
+| `svelte`                   | Svelte 5 runtime                     |
+| `three`                    | The renderer and scene graph         |
+| `@threlte/core`            | The canvas and Three.js bindings     |
+| `@threlte/extras`          | Helpers the scene builds on          |
+| `@viamrobotics/sdk`        | Machine client types and config      |
+| `@viamrobotics/svelte-sdk` | `ViamProvider` and the machine hooks |
+| `idb-keyval`               | Persists scene settings              |
+
+You do not need Tailwind, prime-core, Tweakpane, or test-widgets. The `./scoped-scene` entry never imports them, and the repo checks that on every packaging run with a fixture that installs only the packages above. The fixture lives in `e2e/fixtures/scoped-scene-consumer/`.
+
+The package also declares `camera-controls`, `runed`, and `lucide-svelte` as required peers. The first two arrive through the packages above. The scoped entry does not import `lucide-svelte`, so the fixture builds without it, though pnpm may warn that it is missing. `@connectrpc/connect` is an optional peer that the scene imports, and it arrives as a dependency of `@viamrobotics/sdk`.
+
+## Configure Vite
+
+The scene imports an HDR environment map. Add it to `assetsInclude`, or `vite build` fails with `[UNLOADABLE_DEPENDENCY] Could not load` on `ferndale_studio_11_1k.hdr`.
+
+The dev server needs one more line. Vite's dependency optimizer prebundles the scoped entry, does not apply `assetsInclude`, and fails on the same HDR file, which stops `vite` before it serves a page. Exclude the package from the optimizer.
+
+```ts
+// vite.config.ts
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+	plugins: [svelte()],
+	assetsInclude: ['**/*.hdr'],
+	optimizeDeps: {
+		exclude: ['@viamrobotics/visualization'],
+	},
+	build: {
+		target: 'esnext',
+	},
+})
+```
+
+The fixture builds without `resolve.dedupe`. Add `dedupe: ['three']` only if your own dependency tree pulls in a second copy of `three`.
+
+## Turn SSR off
+
+The scene needs the browser. Rendered on the server, the page throws `Worker is not defined`. In SvelteKit, disable SSR on the page that mounts it:
+
+```ts
+// src/routes/arm/+page.ts
+export const ssr = false
+```
+
+The renderer is WebGPU and falls back to WebGL2 when the browser offers no WebGPU adapter. A built host page in Chromium launched with `--disable-features=WebGPU` renders the scene under the WebGL2 backend.
+
+## Mount `ScopedScene`
+
+`ScopedScene` fills its parent, so give the parent an explicit size.
+
+<Aside
+	type="caution"
+	title="ViamProvider is required"
+>
+	`ScopedScene` needs a `ViamProvider` ancestor. This requirement is temporary. Until it is lifted,
+	a host with no machine wraps the scene in a `ViamProvider` with empty `dialConfigs`. With no
+	provider the scene throws `No QueryClient was found in Svelte context`.
+</Aside>
+
+```svelte
+<script lang="ts">
+	import { ViamProvider } from '@viamrobotics/svelte-sdk'
+	import { ScopedScene } from '@viamrobotics/visualization/scoped-scene'
+</script>
+
+<ViamProvider dialConfigs={{}}>
+	<div style="width: 100%; height: 480px">
+		<ScopedScene
+			partID="my-part-id"
+			frame="arm-1"
+		/>
+	</div>
+</ViamProvider>
+```
+
+A host with a machine passes its `dialConfigs` to the provider instead of an empty object, and passes the part's ID as `partID`.
+
+### Props
+
+| Prop                   | Type                        | Default | Description                                                                         |
+| ---------------------- | --------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `partID`               | `string`                    | `''`    | The machine part to render. Empty or omitted, the scene makes no robot query.       |
+| `frame`                | `string`                    | none    | The frame to focus. Omit it, or pass an empty string, for no focus.                 |
+| `cameraPose`           | `CameraPose`                | none    | The starting camera pose. Omit it for the default view.                             |
+| `inputBindingsEnabled` | `boolean`                   | `false` | Whether keyboard and gamepad shortcuts fire.                                        |
+| `snapping`             | `boolean`                   | `false` | Whether moves, turns, and resizes snap while a transform gizmo is dragged.          |
+| `poseRefreshRate`      | `number`                    | `1000`  | How often frame poses are refetched, in milliseconds.                               |
+| `onError`              | `(message: string) => void` | none    | Called with a failure the user needs to know about. Omit it and the scene drops it. |
+| `children`             | `Snippet`                   | none    | Three.js children rendered inside the scene.                                        |
+
+## Focus one frame
+
+Pass `frame` to focus a component. That frame, every frame under it, and every frame above it render opaque and in their own colors, so an arm's links and a gripper mounted on it stay in focus.
+
+Other collidable geometry is de-emphasized, not hidden. Its opacity is multiplied by 0.5 and its color is blended toward gray. Point clouds and drawn shapes are left as they are.
+
+A component's bare name, such as `arm-1`, keeps its whole arm in focus, and `arm-1_origin` resolves to the same frame. A name that matches no frame de-emphasizes every geometry. Changing the prop moves the focus, and clearing it restores the unfocused scene.
+
+## Drive a move target
+
+`MoveTargetGizmo` is a headless handle for staging a goal. It renders inside the scene and writes the goal to a bindable `target`. It does not plan or move anything.
+
+```svelte
+<script lang="ts">
+	import {
+		type MoveTarget,
+		MoveTargetGizmo,
+		ScopedScene,
+	} from '@viamrobotics/visualization/scoped-scene'
+
+	let target = $state<MoveTarget>()
+</script>
+
+<ScopedScene
+	partID="my-part-id"
+	frame="arm-1"
+>
+	<MoveTargetGizmo
+		frame="arm-1"
+		bind:target
+		onRelease={(goal) => console.log(goal)}
+	/>
+</ScopedScene>
+```
+
+| Prop        | Type                           | Default       | Description                                                                                    |
+| ----------- | ------------------------------ | ------------- | ---------------------------------------------------------------------------------------------- |
+| `frame`     | `string`                       | required      | The component whose end effector the gizmo drives, by the bare name `MotionClient.move` takes. |
+| `target`    | `MoveTarget`                   | `undefined`   | The staged goal, bindable. With `undefined` the handle tracks the live end effector.           |
+| `disabled`  | `boolean`                      | `false`       | Hides the handles and ignores input. A drag in progress ends.                                  |
+| `mode`      | `'translate'` or `'rotate'`    | `'translate'` | Whether the handles move or turn the target.                                                   |
+| `space`     | `'local'` or `'world'`         | `'world'`     | Whether the handles align with the world axes or the target's own.                             |
+| `onDrag`    | `(target: MoveTarget) => void` | none          | Called with the new goal on every pointer move of a drag.                                      |
+| `onRelease` | `(target: MoveTarget) => void` | none          | Called once with the final goal when a drag ends.                                              |
+
+A `MoveTarget` has a `referenceFrame` that is always `'world'` and a `pose`. The pose is in millimeters, with an orientation vector whose `theta` is in degrees. It is the same shape the builtin motion service's `plan` command takes as a destination and `MotionClient.move` takes as a pose.
+
+## Preview a trajectory
+
+`TrajectoryPreview` draws a planned trajectory on the arm and plays it back. Feed it from the reply of the builtin motion service's `plan` `DoCommand`. Pass that reply through `parsePlanResult`, and hand its `trajectory` to the preview.
+
+```svelte
+<script lang="ts">
+	import {
+		parsePlanResult,
+		ScopedScene,
+		TrajectoryPreview,
+		type TrajectoryStep,
+	} from '@viamrobotics/visualization/scoped-scene'
+
+	let trajectory = $state<TrajectoryStep[]>()
+	let step = $state(0)
+
+	// `reply` is the JSON the `plan` DoCommand returned.
+	const showPlan = (reply: Parameters<typeof parsePlanResult>[0]) => {
+		trajectory = parsePlanResult(reply).trajectory
+	}
+</script>
+
+<ScopedScene
+	partID="my-part-id"
+	frame="arm-1"
+>
+	<TrajectoryPreview
+		{trajectory}
+		bind:step
+	/>
+</ScopedScene>
+```
+
+| Prop         | Type                              | Default       | Description                                                                                        |
+| ------------ | --------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| `trajectory` | `TrajectoryStep[] \| undefined`   | required      | The steps to draw. Each step maps a component name to its joint values. `undefined` draws nothing. |
+| `step`       | `number`                          | `0`           | The step on screen, bindable. Playback advances it and a write from the host seeks to it.          |
+| `playing`    | `boolean`                         | `true`        | Whether the preview plays, looping to the first step after the last.                               |
+| `detail`     | `'waypoints'` or `'interpolated'` | `'waypoints'` | One step per planner configuration, or steps filled in along the straight joint path between them. |
+| `onError`    | `(message: string) => void`       | none          | Called with a reason the preview cannot draw, and with an error thrown while drawing a step.       |
+
+## What the host owns
+
+`ScopedScene` renders. Everything around it stays yours:
+
+- **Target state.** You hold the `MoveTarget`, usually through `bind:target`, and decide when it resets.
+- **The plan call.** You send the `plan` `DoCommand` to the motion service and parse the reply.
+- **Execution.** You decide whether and when to move the arm. Nothing here moves it for you.
+- **The pop-out container.** The scene fills its parent, so a modal, a drawer, or a resizable pane is your code.
+- **Hotkeys.** Shortcuts are off unless you pass `inputBindingsEnabled`, so the scene never takes your page's keys.
+
+`MoveFrame` is unchanged. It is still the plugin to use inside the full `<Visualizer />`.

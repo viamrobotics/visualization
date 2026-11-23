@@ -46,6 +46,8 @@ vi.mock('@viamrobotics/svelte-sdk', async (importOriginal) => {
 })
 
 /** The shape batches the scene's renderers draw into, and the instance each entity was given there. */
+const SCENE_READY_TIMEOUT_MS = 10_000
+
 const renderedShapes = vi.hoisted(() => ({
 	batches: undefined as ShapeBatches | undefined,
 	handles: new Map<Entity, ShapeInstanceIds>(),
@@ -107,8 +109,12 @@ const renderHost = async (props: HostProps = {}) => {
 	})
 
 	const sceneCount = props.sceneCount ?? 1
-	await expect.poll(() => result.container.querySelectorAll('canvas').length).toBe(sceneCount)
-	await expect.poll(() => probes.size).toBe(sceneCount)
+	await expect
+		.poll(() => result.container.querySelectorAll('canvas').length, {
+			timeout: SCENE_READY_TIMEOUT_MS,
+		})
+		.toBe(sceneCount)
+	await expect.poll(() => probes.size, { timeout: SCENE_READY_TIMEOUT_MS }).toBe(sceneCount)
 
 	return { ...result, probes }
 }

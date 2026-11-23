@@ -18,6 +18,7 @@ REPO_ROOT="$(cd "$FIXTURE_DIR/../../.." && pwd)"
 BANNED_PACKAGES=(
 	'@viamrobotics/test-widgets'
 	'@viamrobotics/prime-core'
+	'tailwindcss'
 	'@viamrobotics/tweakpane-config'
 	'svelte-tweakpane-ui'
 )

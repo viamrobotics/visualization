@@ -5,9 +5,9 @@
 	import { useWorld } from '#lib/ecs/index.js'
 	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import { exportSimScene } from './export-sim-scene'
 

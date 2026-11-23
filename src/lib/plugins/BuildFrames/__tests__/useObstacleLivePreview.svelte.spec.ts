@@ -6,7 +6,7 @@ import { createObstacleLivePreviewHarness } from './__fixtures__/obstacleLivePre
 
 vi.mock('#lib/hooks/useEnvironment.svelte.js', () => ({ useEnvironment: vi.fn() }))
 vi.mock('#lib/hooks/usePartID.svelte.js', () => ({ usePartID: vi.fn() }))
-vi.mock('#lib/plugins/Logs/useLogs.svelte.js', () => ({ useLogs: vi.fn() }))
+vi.mock('#lib/hooks/useLogs.svelte.js', () => ({ useLogs: vi.fn() }))
 vi.mock('@viamrobotics/svelte-sdk', () => ({
 	createResourceClient: vi.fn(),
 	useConnectionStatus: vi.fn(),

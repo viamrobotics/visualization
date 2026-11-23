@@ -3,8 +3,8 @@
 
 	import { untrack } from 'svelte'
 
+	import { useFrameFocus } from '#lib/components/ScopedScene/useFrameFocus.svelte.js'
 	import { provideWorld, useWorld } from '#lib/ecs/index.js'
-	import { useFrameFocus } from '#lib/scoped-scene/useFrameFocus.svelte.js'
 
 	interface Props {
 		frame: string | undefined

@@ -702,6 +702,7 @@
 		"@threlte/rapier": ">=3",
 		"@threlte/xr": ">=1",
 		"@viamrobotics/prime-core": ">=0.1",
+		"@viamrobotics/sdk": ">=0.79",
 		"@viamrobotics/svelte-sdk": ">=1.4.0",
 		"@viamrobotics/test-widgets": ">=0.15.0",
 		"@viamrobotics/tweakpane-config": ">=0.1",
@@ -724,6 +725,15 @@
 		"three": ">=0.185"
 	},
 	"peerDependenciesMeta": {
+		"@ag-grid-community/client-side-row-model": {
+			"optional": true
+		},
+		"@ag-grid-community/core": {
+			"optional": true
+		},
+		"@ag-grid-community/styles": {
+			"optional": true
+		},
 		"@connectrpc/connect": {
 			"optional": true
 		},
@@ -751,7 +761,25 @@
 		"@viamrobotics/tweakpane-config": {
 			"optional": true
 		},
+		"@zag-js/dialog": {
+			"optional": true
+		},
+		"@zag-js/floating-panel": {
+			"optional": true
+		},
+		"@zag-js/popover": {
+			"optional": true
+		},
+		"@zag-js/svelte": {
+			"optional": true
+		},
 		"@zag-js/tabs": {
+			"optional": true
+		},
+		"@zag-js/toggle-group": {
+			"optional": true
+		},
+		"@zag-js/tooltip": {
 			"optional": true
 		},
 		"@zag-js/tree-view": {
@@ -808,8 +836,8 @@
 			"svelte": "./dist/plugins/index.js"
 		},
 		"./scoped-scene": {
-			"types": "./dist/scoped-scene/index.d.ts",
-			"svelte": "./dist/scoped-scene/index.js"
+			"types": "./dist/scoped-scene.d.ts",
+			"svelte": "./dist/scoped-scene.js"
 		},
 		"./scene-builder": {
 			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",

@@ -1,5 +1,6 @@
 import { type Entity, Not, Or, type World } from 'koota'
 
+import { PreviewGhost } from '#lib/components/motion/previewGhostTrait.js'
 import { relations, traits, useWorld } from '#lib/ecs/index.js'
 import { originFrameName } from '#lib/kinematicsFrames.js'
 
@@ -11,7 +12,8 @@ const GEOMETRY_TRAITS = [
 	traits.BufferGeometry,
 ] as const
 
-const EXCLUDED_TRAITS = [traits.Points, traits.DrawAPI, traits.GhostModelKey] as const
+// A preview ghost is the move being decided on, so it stays undimmed whichever frame is in focus.
+const EXCLUDED_TRAITS = [traits.Points, traits.DrawAPI, traits.GhostModelKey, PreviewGhost] as const
 
 /** Every trait whose arrival or departure can change which entities are candidates or in focus. */
 const WATCHED_TRAITS = [...GEOMETRY_TRAITS, ...EXCLUDED_TRAITS, traits.Name] as const

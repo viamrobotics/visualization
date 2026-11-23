@@ -6,7 +6,7 @@
 
 	import type { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
-	import { ScopedScene } from '../../index'
+	import { ScopedScene } from '../../../../scoped-scene'
 	import SceneProbe from './SceneProbe.svelte'
 
 	interface Props {

@@ -10,8 +10,8 @@ import {
 } from '@viamrobotics/sdk'
 import { Matrix4 } from 'three'
 
+import type { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import type { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
-import type { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { createChunkLoader } from '#lib/chunking.js'
 import { drawTransform, updateMetadata } from '#lib/draw.js'

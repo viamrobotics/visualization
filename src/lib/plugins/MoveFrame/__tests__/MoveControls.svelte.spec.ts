@@ -18,22 +18,24 @@ vi.mock('#lib/components/overlay/details/DetailsPanel.svelte', async () => {
 })
 // The scene-side components need a Threlte context and import @threlte/extras. Stub
 // them out for the panel-body test.
-vi.mock('../MoveGizmo.svelte', async () => {
+vi.mock('#lib/components/motion/MoveGizmo.svelte', async () => {
 	const MockScene = await import('./__fixtures__/MockSceneComponent.svelte')
 	return { default: MockScene.default }
 })
-vi.mock('../MoveTargetGhost.svelte', async () => {
+vi.mock('#lib/components/motion/MoveTargetGhost.svelte', async () => {
 	const MockScene = await import('./__fixtures__/MockSceneComponent.svelte')
 	return { default: MockScene.default }
 })
 
 // Ghosts are entities in the real world. The panel-body test has no ECS.
-vi.mock('../useMoveGhosts.svelte', () => ({ useMoveGhosts: () => undefined }))
+vi.mock('#lib/components/motion/useMoveGhosts.svelte.js', () => ({
+	useMoveGhosts: () => undefined,
+}))
 
 // The frame's live world transform normally comes from a robot `getPose` poll. Hand the
 // panel a fixed one so the pose inputs have something to seed from.
 const moved = vi.hoisted(() => ({ matrix: undefined as unknown }))
-vi.mock('../useMovedFrameMatrix.svelte', () => ({
+vi.mock('#lib/components/motion/useMovedFrameMatrix.svelte.js', () => ({
 	useMovedFrameMatrix: () => ({
 		get current() {
 			return moved.matrix

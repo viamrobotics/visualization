@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ScopedScene } from '../../index'
+	import { ScopedScene } from '../../../../scoped-scene'
 	import SceneProbe from './SceneProbe.svelte'
 
 	interface Props {

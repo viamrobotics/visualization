@@ -3,6 +3,7 @@ import type { Entity, World } from 'koota'
 import { render } from '@testing-library/svelte'
 import { describe, expect, it } from 'vitest'
 
+import { PreviewGhost } from '#lib/components/motion/previewGhostTrait.js'
 import { hierarchy, relations, resolveOpacity, traits } from '#lib/ecs/index.js'
 
 import FrameFocusHost from './__fixtures__/FrameFocusHost.svelte'
@@ -188,6 +189,22 @@ describe('useFrameFocus', () => {
 		await settle()
 
 		expect(world.query(traits.Dimmed)).toHaveLength(0)
+	})
+
+	it('leaves a preview ghost outside the focus undimmed', async () => {
+		const { world } = mount('arm-1')
+		spawnScene(world)
+		const arm2 = byName(world, 'arm-2')
+		const ghost = world.spawn(
+			traits.Name('preview:arm-2:upper'),
+			traits.Box,
+			PreviewGhost,
+			relations.ChildOf(arm2)
+		)
+		await settle()
+
+		expect(dimmedNames(world)).toEqual(ARM_1_FOCUS_DIMS)
+		expect(ghost.has(traits.Dimmed)).toBe(false)
 	})
 
 	it('leaves a user OpacityOverride intact after focusing its entity out and back in', async () => {

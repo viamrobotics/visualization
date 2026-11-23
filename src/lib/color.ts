@@ -1,52 +1,5 @@
 import { ResourceName } from '@viamrobotics/sdk'
-import twColors from 'tailwindcss/colors'
 import { Color, type ColorRepresentation, type RGB } from 'three'
-
-const linearToSrgb = (x: number) => {
-	return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055
-}
-
-const toHex = (x: number) => {
-	const hex = Math.round(x * 255)
-		.toString(16)
-		.padStart(2, '0')
-	return hex
-}
-
-const oklchToHex = (raw: string) => {
-	const match = raw.match(/oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*\)/)
-
-	if (!match) {
-		return raw
-	}
-
-	const l = Number.parseFloat(match[1]) / 100
-	const c = Number.parseFloat(match[2])
-	const h = Number.parseFloat(match[3])
-
-	const hRad = (h * Math.PI) / 180
-
-	const aa = c * Math.cos(hRad)
-	const bb = c * Math.sin(hRad)
-
-	const l_ = l + 0.3963377774 * aa + 0.2158037573 * bb
-	const m_ = l - 0.1055613458 * aa - 0.0638541728 * bb
-	const s_ = l - 0.0894841775 * aa - 1.291485548 * bb
-
-	const l_cubed = l_ ** 3
-	const m_cubed = m_ ** 3
-	const s_cubed = s_ ** 3
-
-	const r_linear = +4.0767416621 * l_cubed - 3.3077115913 * m_cubed + 0.2309699292 * s_cubed
-	const g_linear = -1.2684380046 * l_cubed + 2.6097574011 * m_cubed - 0.3413193965 * s_cubed
-	const b_linear = -0.0041960863 * l_cubed - 0.7034186147 * m_cubed + 1.707614701 * s_cubed
-
-	const r = Math.max(0, Math.min(1, linearToSrgb(r_linear)))
-	const g = Math.max(0, Math.min(1, linearToSrgb(g_linear)))
-	const b = Math.max(0, Math.min(1, linearToSrgb(b_linear)))
-
-	return `#${toHex(r)}${toHex(g)}${toHex(b)}`
-}
 
 const original = new Color()
 const hsl = { h: 0, s: 0, l: 0 }
@@ -74,45 +27,47 @@ export const subtypeToColor = (subtype?: string) => {
 	return new Color(colorValue)
 }
 
-const darker = '600'
-const lighter = '400'
-
 export const colors = {
-	default: oklchToHex(twColors.gray[darker]),
+	default: '#4a5565',
 } as const
 
+/**
+ * The color each resource subtype draws in. The values are Tailwind's default palette at shade
+ * 600, and at shade 400 for the lighter entries, written out so no host needs Tailwind at runtime.
+ * They belong in `@viamrobotics/tailwind-config` once it ships a resource palette.
+ */
 export const resourceColors = {
 	// components
-	arm: oklchToHex(twColors.amber[darker]),
-	camera: oklchToHex(twColors.blue[darker]),
-	base: oklchToHex(twColors.slate[darker]),
-	board: oklchToHex(twColors.emerald[darker]),
-	button: oklchToHex(twColors.gray[darker]),
-	encoder: oklchToHex(twColors.lime[darker]),
-	gantry: oklchToHex(twColors.purple[darker]),
-	gripper: oklchToHex(twColors.cyan[darker]),
-	motor: oklchToHex(twColors.orange[darker]),
-	movement_sensor: oklchToHex(twColors.indigo[darker]),
-	pose_tracker: oklchToHex(twColors.rose[darker]),
-	power_sensor: oklchToHex(twColors.violet[darker]),
-	sensor: oklchToHex(twColors.teal[darker]),
-	servo: oklchToHex(twColors.yellow[darker]),
-	switch: oklchToHex(twColors.stone[darker]),
-	webcam: oklchToHex(twColors.sky[darker]),
-	audio_in: oklchToHex(twColors.sky[lighter]),
-	audio_out: oklchToHex(twColors.violet[lighter]),
-	generic: oklchToHex(twColors.gray[lighter]),
-	input_controller: oklchToHex(twColors.fuchsia[lighter]),
+	arm: '#e17100',
+	camera: '#155dfc',
+	base: '#45556c',
+	board: '#009966',
+	button: '#4a5565',
+	encoder: '#5ea500',
+	gantry: '#9810fa',
+	gripper: '#0092b8',
+	motor: '#f54900',
+	movement_sensor: '#4f39f6',
+	pose_tracker: '#ec003f',
+	power_sensor: '#7f22fe',
+	sensor: '#009689',
+	servo: '#d08700',
+	switch: '#57534d',
+	webcam: '#0084d1',
+	audio_in: '#00bcff',
+	audio_out: '#a684ff',
+	generic: '#99a1af',
+	input_controller: '#ed6aff',
 	// services
-	motion: oklchToHex(twColors.green[darker]),
-	navigation: oklchToHex(twColors.red[darker]),
-	slam: oklchToHex(twColors.pink[darker]),
-	vision: oklchToHex(twColors.fuchsia[darker]),
-	mlmodel: oklchToHex(twColors.neutral[darker]),
-	discovery: oklchToHex(twColors.zinc[darker]),
-	data_manager: oklchToHex(twColors.emerald[lighter]),
-	video: oklchToHex(twColors.rose[lighter]),
-	world_state_store: oklchToHex(twColors.amber[lighter]),
+	motion: '#00a63e',
+	navigation: '#e7000b',
+	slam: '#e60076',
+	vision: '#c800de',
+	mlmodel: '#525252',
+	discovery: '#52525c',
+	data_manager: '#00d492',
+	video: '#ff637e',
+	world_state_store: '#ffb900',
 } as const
 
 export const isColorRepresentation = (color: unknown): color is ColorRepresentation => {

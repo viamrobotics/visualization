@@ -1,11 +1,11 @@
 import { createWorld, type Entity } from 'koota'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { GhostOf } from '#lib/components/motion/ghostOfRelation.js'
+import { PreviewGhost } from '#lib/components/motion/previewGhostTrait.js'
+import { previewName } from '#lib/components/motion/previewNames.js'
 import { traits } from '#lib/ecs/index.js'
 
-import { previewName } from '../../previewNames'
-import { GhostOf } from '../../relations'
-import { PreviewGhost } from '../../traits'
 import { toReports } from '../collisionReport'
 
 let world: ReturnType<typeof createWorld>

@@ -8,8 +8,8 @@ import { hierarchy, traits } from '#lib/ecs/index.js'
 import { descriptorLocalPose } from '#lib/motion/jointPose.js'
 
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
+import { PreviewGhost } from './previewGhostTrait'
 import { previewName, savedPoseName } from './previewNames'
-import { PreviewGhost } from './traits'
 
 /**
  * Lower than the staged-goal ghost's 0.5: the two are on screen together, a whole ghosted machine
