@@ -40,20 +40,18 @@
 <TransformDashboard />
 <BuildActionsBar />
 
+<!-- One panel for the whole selection. Frameless components get theirs only when nothing else is selected. -->
 {#if environment.current.mode === 'build'}
-	{#each selected.current as entity, index (entity)}
+	{#if selected.current.length > 0}
 		<BuildDetails
-			{entity}
-			style="transform: translate(0, {fullscreen.baseOffset + index * 40}px)"
+			entities={selected.current}
+			framelessCount={selectedFrameless.current.length}
+			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
-	{/each}
-
-	<!-- Offset past the panels above, so two stacks don't land on each other. -->
-	{#each selectedFrameless.current as entity, index (entity)}
+	{:else if selectedFrameless.current.length > 0}
 		<FramelessComponentDetails
-			{entity}
-			style="transform: translate(0, {fullscreen.baseOffset +
-				(selected.current.length + index) * 40}px)"
+			entities={selectedFrameless.current}
+			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
-	{/each}
+	{/if}
 {/if}

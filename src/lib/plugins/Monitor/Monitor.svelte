@@ -22,11 +22,9 @@
 	/>
 </ModeTogglePortal>
 
-{#if environment.current.mode === 'monitor'}
-	{#each selected.current as entity, index (entity)}
-		<MonitorDetails
-			{entity}
-			style="transform: translate(0, {fullscreen.baseOffset + index * 40}px)"
-		/>
-	{/each}
+{#if environment.current.mode === 'monitor' && selected.current.length > 0}
+	<MonitorDetails
+		entities={selected.current}
+		style="transform: translate(0, {fullscreen.baseOffset}px)"
+	/>
 {/if}

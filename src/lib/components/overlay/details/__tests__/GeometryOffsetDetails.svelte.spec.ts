@@ -13,7 +13,7 @@ describe('GeometryOffsetDetails', () => {
 
 	const renderFor = (entity: ReturnType<typeof world.spawn>) =>
 		render(GeometryOffsetDetails, {
-			props: { entity },
+			props: { entities: [entity] },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 

@@ -19,7 +19,8 @@
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
-	import { traits, useTag, useTrait } from '#lib/ecs/index.js'
+	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
 	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
@@ -29,17 +30,22 @@
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
 	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
-	import ConfigAppearanceDetails from './ConfigAppearanceDetails.svelte'
+	import ConfigAppearanceDetails, {
+		type ConfigAppearanceTarget,
+	} from './ConfigAppearanceDetails.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
 	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
 	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
-		entity: Entity
+		/** The selected frames. Never empty. */
+		entities: readonly Entity[]
+		/** How many selected components have no frame, and so are left out of `entities`. */
+		framelessCount?: number
 	}
 
-	const { entity, ...rest }: Props = $props()
+	const { entities, framelessCount = 0, ...rest }: Props = $props()
 
 	const environment = useEnvironment()
 	const fragmentInfo = useFragmentInfo()
@@ -50,106 +56,176 @@
 
 	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 
-	const name = useTrait(() => entity, traits.Name)
-	const points = useTrait(() => entity, traits.Points)
-	const arrows = useTrait(() => entity, traits.Arrows)
-	const framesAPI = useTrait(() => entity, traits.FramesAPI)
-	const editable = useTrait(() => entity, traits.Editable)
-	const customDetails = useTag(() => entity, traits.CustomDetails)
-	const complexShape = useTrait(() => entity, traits.ComplexObstacleShape)
+	const reads = useMappedEntitiesTraits(
+		() => entities,
+		[
+			traits.Name,
+			traits.Points,
+			traits.Arrows,
+			traits.FramesAPI,
+			traits.Editable,
+			traits.CustomDetails,
+			traits.ComplexObstacleShape,
+		],
+		(entity) => {
+			const name = entity.get(traits.Name)
+			const isFrame = entity.has(traits.FramesAPI)
+			const complexShape = entity.get(traits.ComplexObstacleShape)
 
-	const isFragmentComponentWithVariables = $derived(
-		name.current !== undefined &&
-			isFrameVariableLocked(
-				fragmentInfo.current?.[name.current],
-				configFrames.effectiveFrames.get(name.current)
-			)
+			const isFragmentComponentWithVariables =
+				name !== undefined &&
+				isFrameVariableLocked(fragmentInfo.current?.[name], configFrames.effectiveFrames.get(name))
+			const showEditFrameOptions =
+				isFrame &&
+				entity.has(traits.Editable) &&
+				partConfig.hasEditPermissions &&
+				!isFragmentComponentWithVariables
+			// A geometry on an obstacle's own frame makes rdk ignore attributes.geometries, so only the pose is editable.
+			const isObstacle =
+				partConfig.current?.components?.some(
+					(component) => component.name === name && isObstacleComponent(component)
+				) ?? false
+
+			return {
+				entity,
+				name,
+				isFrame,
+				hasCustomDetails: entity.has(traits.CustomDetails),
+				complexShape,
+				isFragmentComponentWithVariables,
+				showEditFrameOptions,
+				isObstacle,
+				showConfigUnavailableWarning:
+					isFrame && !partConfig.hasEditPermissions && partConfig.error !== undefined,
+				showRelationshipOptions: entity.has(traits.Points) || entity.has(traits.Arrows),
+				showObstacleEditor: showEditFrameOptions && isObstacle && !!name,
+				// An obstacle is a component whose frame carries its geometries, so it always keeps its frame.
+				showDeleteFrame: showEditFrameOptions && environment.current.isStandalone && !isObstacle,
+				// A Complex obstacle's shape is edited through its entry in the obstacle's attributes.
+				shapeOwner:
+					complexShape && partConfig.hasEditPermissions
+						? complexShapeOwner(partConfig.current?.components, name)
+						: undefined,
+				// A part-owned resource's appearance, and that of the frames inside it, is saved to its config while building.
+				appearanceTarget:
+					partConfig.hasEditPermissions && !isFragmentComponentWithVariables
+						? appearanceTargetOf(partConfig.current?.components, name)
+						: undefined,
+			}
+		}
 	)
-	const showEditFrameOptions = $derived(
-		!!framesAPI.current &&
-			!!editable.current &&
-			partConfig.hasEditPermissions &&
-			!isFragmentComponentWithVariables
+
+	type Read = (typeof reads.current)[number]
+
+	const isSingle = $derived(entities.length === 1)
+	const only = $derived(isSingle ? reads.current[0] : undefined)
+
+	const every = (predicate: (read: Read) => boolean) => reads.current.every(predicate)
+	const some = (predicate: (read: Read) => boolean) => reads.current.some(predicate)
+
+	const hasFragmentVariables = $derived(some((read) => read.isFragmentComponentWithVariables))
+	const hasConfigUnavailable = $derived(some((read) => read.showConfigUnavailableWarning))
+	const isAllCustom = $derived(every((read) => read.hasCustomDetails))
+	const isAnyCustom = $derived(some((read) => read.hasCustomDetails))
+	const isEditable = $derived(every((read) => read.showEditFrameOptions))
+	const isPartlyEditable = $derived(!isEditable && some((read) => read.showEditFrameOptions))
+	const hasObstacleEditor = $derived(some((read) => read.showObstacleEditor))
+	const hasObstacle = $derived(some((read) => read.isObstacle))
+	const hasShapeOwner = $derived(some((read) => !!read.shapeOwner))
+	const hasRelationshipOptions = $derived(some((read) => read.showRelationshipOptions))
+	const canDeleteEvery = $derived(every((read) => read.showDeleteFrame))
+	const canDeleteSome = $derived(!canDeleteEvery && some((read) => read.showDeleteFrame))
+	const hasFrame = $derived(some((read) => read.isFrame && read.name !== undefined))
+
+	const hasActions = $derived(
+		hasRelationshipOptions || canDeleteEvery || canDeleteSome || hasShapeOwner
 	)
-	// A geometry on an obstacle's own frame makes rdk ignore attributes.geometries, so only the pose is editable.
-	const isObstacle = $derived(
-		partConfig.current?.components?.some(
-			(component) => component.name === name.current && isObstacleComponent(component)
-		) ?? false
-	)
-	const showConfigUnavailableWarning = $derived(
-		!!framesAPI.current && !partConfig.hasEditPermissions && partConfig.error !== undefined
-	)
-	const showRelationshipOptions = $derived(!!points.current || !!arrows.current)
-	const showObstacleEditor = $derived(showEditFrameOptions && isObstacle && !!name.current)
-	// An obstacle is a component whose frame carries its geometries, so it always keeps its frame.
-	const showDeleteFrame = $derived(
-		showEditFrameOptions && environment.current.isStandalone && !isObstacle
-	)
-	// A Complex obstacle's shape is edited through its entry in the obstacle's attributes.
-	const shapeOwner = $derived(
-		complexShape.current && partConfig.hasEditPermissions
-			? complexShapeOwner(partConfig.current?.components, name.current)
-			: undefined
-	)
-	const hasActions = $derived(showRelationshipOptions || showDeleteFrame || !!shapeOwner)
-	// A part-owned resource's appearance, and that of the frames inside it, is saved to its config while building.
-	const appearanceTarget = $derived(
-		partConfig.hasEditPermissions && !isFragmentComponentWithVariables
-			? appearanceTargetOf(partConfig.current?.components, name.current)
-			: undefined
+
+	const configAppearanceTargets = $derived(
+		reads.current.flatMap(({ entity, appearanceTarget }): ConfigAppearanceTarget[] =>
+			appearanceTarget ? [{ entity, ...appearanceTarget }] : []
+		)
 	)
 
 	const tabs = $derived<DetailsTab[]>(
-		customDetails.current
+		isAllCustom
 			? [{ id: 'details', label: 'Details', content: detailsTab }]
 			: [
 					{ id: 'details', label: 'Details', content: detailsTab },
 					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
-					...(framesAPI.current && name.current !== undefined
-						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
+					...(hasFrame
+						? [{ id: 'pov', label: 'POV', content: povTab, transparent: isSingle }]
 						: []),
 				]
 	)
 </script>
 
+{#snippet geometrySection()}
+	{#if only?.showObstacleEditor && only.name}
+		<ObstacleSection
+			name={only.name}
+			preview={obstaclePreview}
+		/>
+	{:else if hasObstacleEditor}
+		<SectionNotice
+			label="obstacle"
+			message="Select a single obstacle to edit its geometries."
+		/>
+		<DimensionsDetails {entities} />
+	{:else if isEditable && !hasObstacle}
+		<EditGeometryDetails {entities} />
+	{:else}
+		<DimensionsDetails {entities} />
+	{/if}
+{/snippet}
+
 {#snippet detailsTab()}
 	<div class="flex flex-col gap-2.5 pt-3">
-		{#if shapeOwner && complexShape.current}
+		{#if only?.shapeOwner && only.complexShape}
 			<ObstacleShapeDetails
-				{entity}
-				component={shapeOwner}
-				index={complexShape.current.index}
+				entity={only.entity}
+				component={only.shapeOwner}
+				index={only.complexShape.index}
 			/>
 		{:else}
-			{#if !customDetails.current}
+			{#if hasShapeOwner}
+				<SectionNotice
+					label="obstacle shape"
+					message="Select a single obstacle shape to edit it."
+				/>
+			{/if}
+
+			{#if isPartlyEditable}
+				<SectionNotice
+					label="editing"
+					message="Some selected frames can't be edited here, so these fields are read-only."
+				/>
+			{/if}
+
+			{#if !isAnyCustom}
 				<PoseDetails
-					{entity}
-					editable={showEditFrameOptions}
+					{entities}
+					editable={isEditable && !hasShapeOwner}
+				/>
+			{:else if !isAllCustom}
+				<SectionNotice
+					label="pose"
+					message="Not every selected object shows a pose."
 				/>
 			{/if}
 
-			{#if showObstacleEditor && name.current}
-				<ObstacleSection
-					name={name.current}
-					preview={obstaclePreview}
-				/>
-			{:else if showEditFrameOptions && !isObstacle}
-				<EditGeometryDetails {entity} />
-			{:else}
-				<DimensionsDetails {entity} />
-			{/if}
+			{@render geometrySection()}
 
-			<GeometryOffsetDetails {entity} />
+			<GeometryOffsetDetails {entities} />
 		{/if}
 
-		<CountDetails {entity} />
+		<CountDetails {entities} />
 	</div>
 
-	<RelationshipDetails {entity} />
+	<RelationshipDetails {entities} />
 
 	<DetailsSections
-		{entity}
+		{entities}
 		tab="details"
 	/>
 
@@ -157,72 +233,99 @@
 		<h3 class="text-subtle-2 pt-3 pb-2">Actions</h3>
 	{/if}
 
-	{#if showRelationshipOptions}
-		<AddRelationship {entity} />
+	{#if only?.showRelationshipOptions}
+		<AddRelationship entity={only.entity} />
+	{:else if hasRelationshipOptions}
+		<SectionNotice
+			label="add relationship"
+			message="Select a single object to add a relationship."
+		/>
 	{/if}
 
-	{#if showDeleteFrame}
+	{#if canDeleteEvery}
 		<Button
 			variant="danger"
 			class="mt-2 w-full"
-			onclick={() => frameEditor.deleteFrame(entity)}
+			onclick={() => {
+				for (const entity of entities) frameEditor.deleteFrame(entity)
+			}}
 		>
-			Delete frame
+			{isSingle ? 'Delete frame' : `Delete ${entities.length} frames`}
 		</Button>
+	{:else if canDeleteSome}
+		<SectionNotice
+			label="delete"
+			message="Some selected frames can't be deleted here."
+		/>
 	{/if}
 
-	{#if shapeOwner && complexShape.current}
+	{#if only?.shapeOwner && only.complexShape}
 		<RemoveObstacleShapeButton
-			{entity}
-			component={shapeOwner}
-			index={complexShape.current.index}
+			entity={only.entity}
+			component={only.shapeOwner}
+			index={only.complexShape.index}
 		/>
 	{/if}
 {/snippet}
 
 {#snippet appearanceTab()}
-	{#if appearanceTarget}
-		<ConfigAppearanceDetails
-			{entity}
-			component={appearanceTarget.component}
-			frameId={appearanceTarget.frameId}
-		/>
+	{#if configAppearanceTargets.length === entities.length}
+		<ConfigAppearanceDetails targets={configAppearanceTargets} />
+	{:else if configAppearanceTargets.length === 0}
+		<AppearanceDetails {entities} />
 	{:else}
-		<AppearanceDetails {entity} />
+		<div class="pt-3">
+			<SectionNotice
+				label="appearance"
+				message="Only some selected objects save their appearance to the config. Select only those, or only the others, to edit it."
+			/>
+		</div>
 	{/if}
 
 	<DetailsSections
-		{entity}
+		{entities}
 		tab="appearance"
 	/>
 {/snippet}
 
 {#snippet povTab()}
-	{#if name.current !== undefined}
+	{#if only?.name !== undefined}
 		<FramePovTab
-			{entity}
-			frameName={name.current}
+			entity={only.entity}
+			frameName={only.name}
 		/>
+	{:else}
+		<div class="pt-3">
+			<SectionNotice
+				label="point of view"
+				message="Select a single frame to look through it."
+			/>
+		</div>
 	{/if}
 {/snippet}
 
 <DetailsPanel
-	{entity}
+	{entities}
 	{...rest}
 >
-	{#if isFragmentComponentWithVariables || showConfigUnavailableWarning}
+	{#if hasFragmentVariables || hasConfigUnavailable || framelessCount > 0}
 		<div class="bg-extralight px-2">
-			{#if isFragmentComponentWithVariables}
+			{#if hasFragmentVariables}
 				<p
 					class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
 					data-testid="fragment-variables-warning"
 					role="status"
 				>
-					This component is from a fragment with variables, editing frames in 3D scene is disabled
+					{#if isSingle}
+						This component is from a fragment with variables, editing frames in 3D scene is disabled
+					{:else}
+						Some selected components are from a fragment with variables, editing their frames in the
+						3D scene is disabled
+					{/if}
 				</p>
 			{/if}
 
-			{#if showConfigUnavailableWarning}
+			{#if hasConfigUnavailable}
 				<div
 					class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
 					data-testid="config-unavailable-warning"
@@ -231,6 +334,17 @@
 					<p>Frame editing is disabled — this machine's configuration could not be read.</p>
 					<p class="mt-1 wrap-break-word text-yellow-800">{partConfig.error}</p>
 				</div>
+			{/if}
+
+			{#if framelessCount > 0}
+				<p
+					class="text-subtle-1 mt-2"
+					role="status"
+				>
+					{framelessCount === 1
+						? "1 selected component has no frame, so it isn't in the scene or shown here."
+						: `${framelessCount} selected components have no frame, so they aren't in the scene or shown here.`}
+				</p>
 			{/if}
 		</div>
 	{/if}

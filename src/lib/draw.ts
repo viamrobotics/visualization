@@ -504,6 +504,7 @@ const parsePointCloud = (
 		}
 
 		entity.add(traits.BufferGeometry(geometry))
+		console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H1', at: 'parse.done', numPoints, total: total ?? null, t: performance.now() })) // CLAUDE-DEBUG
 		entity.add(traits.Points)
 	})
 }

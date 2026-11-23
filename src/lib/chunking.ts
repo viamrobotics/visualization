@@ -74,6 +74,7 @@ export const createChunkLoader = ({
 				}
 
 				const buffer = entity.get(traits.BufferGeometry)
+				console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H1', at: 'pull.bufferCheck', uuid, hasBuffer: !!buffer, chunkStart: chunk.start, t: performance.now() })) // CLAUDE-DEBUG
 				if (!buffer) break
 
 				writeBufferGeometryRange(buffer, chunk.positions, chunk.start, {
@@ -97,6 +98,7 @@ export const createChunkLoader = ({
 				console.error(`Chunk pull failed for entity ${uuid}:`, error)
 			}
 		} finally {
+			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H1', at: 'pull.exit', uuid, isSuspended, nextStart, total, aborted: signal.aborted, t: performance.now() })) // CLAUDE-DEBUG
 			// A stopped pull's uuid may already belong to a newer pull.
 			if (active.get(uuid) === pullController) active.delete(uuid)
 			// A suspended pull keeps its progress, which `resume` reports against.
@@ -109,6 +111,7 @@ export const createChunkLoader = ({
 	return {
 		start(uuid: string, entity: Entity, metadata: Metadata) {
 			const chunks = metadata.chunks
+			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H3', at: 'start', uuid, chunks: chunks ?? null, hasBuffer: entity.has(traits.BufferGeometry), t: performance.now() })) // CLAUDE-DEBUG
 			if (!chunks || chunks.total <= 0) return
 
 			entity.add(traits.ChunkProgress({ loaded: chunks.chunkSize, total: chunks.total }))
@@ -135,6 +138,7 @@ export const createChunkLoader = ({
 		 * destroyed, so a later `start` under the same uuid pulls for the new entity.
 		 */
 		stop(uuid: string) {
+			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H2', at: 'stop', uuid, wasActive: active.has(uuid), t: performance.now() })) // CLAUDE-DEBUG
 			active.get(uuid)?.abort()
 			active.delete(uuid)
 

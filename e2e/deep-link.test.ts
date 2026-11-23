@@ -88,8 +88,7 @@ test.describe('deep-link selection', () => {
 		).toBeVisible({ timeout: 10_000 })
 
 		const detailsPanels = page.getByRole('region', { name: 'Details panel' })
-		await expect(detailsPanels).toHaveCount(2, { timeout: 10_000 })
-		await expect(detailsPanels.filter({ hasText: 'lifecycle-box' })).toHaveCount(1)
-		await expect(detailsPanels.filter({ hasText: 'lifecycle-line' })).toHaveCount(1)
+		await expect(detailsPanels).toHaveCount(1, { timeout: 10_000 })
+		await expect(detailsPanels).toContainText('2 selected')
 	})
 })

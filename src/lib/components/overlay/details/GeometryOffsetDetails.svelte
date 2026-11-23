@@ -10,27 +10,40 @@
 <script lang="ts">
 	import { type Entity } from 'koota'
 
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
+
+	import { sharedPose } from './sharedPose'
+	import { formatSharedNumber, type Shared } from './sharedValue'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
-
-	const framesAPI = useTrait(() => entity, traits.FramesAPI)
-	const center = useTrait(() => entity, traits.Center)
+	const { entities }: Props = $props()
 
 	// A frame's displayed pose is its origin, so an offset geometry would sit away from it with
 	// no explanation. Other entities already fold their center into the displayed pose.
+	const offsets = useMappedEntitiesTraits(
+		() => entities,
+		[traits.FramesAPI, traits.Center],
+		(entity) => {
+			const center = entity.get(traits.Center)
+			return entity.has(traits.FramesAPI) && center && !IDENTITY_POSE.equals(center)
+				? new Pose().copy(center)
+				: undefined
+		}
+	)
+
+	// Shown once any entity has an offset. One without reads as no offset, which is what it has.
 	const offset = $derived(
-		framesAPI.current && center.current && !IDENTITY_POSE.equals(center.current)
-			? center.current
+		offsets.current.some((pose) => pose !== undefined)
+			? sharedPose(offsets.current.map((pose) => pose ?? IDENTITY_POSE))
 			: undefined
 	)
 </script>
 
-{#snippet ImmutableField({ label, value }: { label: string; value: number })}
+{#snippet ImmutableField({ label, value }: { label: string; value: Shared<number> })}
 	<div>
 		<span
 			class="text-subtle-2"
@@ -39,7 +52,7 @@
 			{label}
 		</span>
 
-		{value.toFixed(2)}
+		{formatSharedNumber(value)}
 	</div>
 {/snippet}
 

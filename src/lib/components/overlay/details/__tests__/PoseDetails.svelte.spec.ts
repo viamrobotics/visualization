@@ -15,7 +15,7 @@ describe('PoseDetails', () => {
 	it('always renders parent, world position, and world orientation sections', () => {
 		const entity = world.spawn()
 		render(PoseDetails, {
-			props: { entity, editable: true },
+			props: { entities: [entity], editable: true },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 		expect(screen.getByText('parent frame')).toBeInTheDocument()
@@ -28,7 +28,7 @@ describe('PoseDetails', () => {
 
 		const entity = world.spawn(traits.Matrix(matrix))
 		render(PoseDetails, {
-			props: { entity, editable: true },
+			props: { entities: [entity], editable: true },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 		expect(screen.getByLabelText('mutable local position')).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('PoseDetails', () => {
 			traits.Center({ x: 100, y: 200, z: 300, oX: 0, oY: 0, oZ: 1, theta: 0 })
 		)
 		render(PoseDetails, {
-			props: { entity, editable: false },
+			props: { entities: [entity], editable: false },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 
@@ -64,7 +64,7 @@ describe('PoseDetails', () => {
 			traits.FramesAPI
 		)
 		render(PoseDetails, {
-			props: { entity, editable: false },
+			props: { entities: [entity], editable: false },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 
@@ -76,13 +76,32 @@ describe('PoseDetails', () => {
 		)
 	})
 
-	it('does not render local position/orientation when entity has no matrix or center', () => {
+	it('reads an entity with no matrix or center as the origin, where it renders', () => {
 		const entity = world.spawn()
 		render(PoseDetails, {
-			props: { entity, editable: true },
+			props: { entities: [entity], editable: false },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.queryByLabelText('mutable local position')).not.toBeInTheDocument()
-		expect(screen.queryByLabelText('mutable local orientation')).not.toBeInTheDocument()
+		expect(
+			screen.getByLabelText('immutable local position x coordinate').parentElement
+		).toHaveTextContent('0.00')
+		expect(
+			screen.getByLabelText('immutable local orientation z coordinate').parentElement
+		).toHaveTextContent('1.00')
+	})
+
+	it('shows a dash for an axis the selected entities differ on, and the shared value otherwise', () => {
+		const first = world.spawn(traits.Matrix(new Pose(100, 50, 0).toMatrix4()))
+		const second = world.spawn(traits.Matrix(new Pose(200, 50, 0).toMatrix4()))
+		render(PoseDetails, {
+			props: { entities: [first, second], editable: false },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		expect(
+			screen.getByLabelText('immutable local position x coordinate').parentElement
+		).toHaveTextContent('-')
+		expect(
+			screen.getByLabelText('immutable local position y coordinate').parentElement
+		).toHaveTextContent('50.00')
 	})
 })

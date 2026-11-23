@@ -10,9 +10,20 @@ export const DETAILS_SECTIONS_CONTEXT_KEY = Symbol('details-sections')
 export type DetailsTabId = 'details' | 'appearance'
 
 export interface DetailsSection {
-	/** Rendered inside every applicable details card, with that card's entity. */
-	snippet: Snippet<[{ entity: Entity }]>
-	/** Per-entity gate, checked when the card renders. Omitted = every card. */
+	/**
+	 * Rendered once inside the details panel with every selected entity, when `when`
+	 * holds for all of them. A section edits or shows the selection as a whole.
+	 */
+	snippet: Snippet<[{ entities: readonly Entity[] }]>
+	/**
+	 * Names the section in the notice shown when `when` holds for only part of the
+	 * selection, such as `sensor coverage`.
+	 */
+	label: string
+	/**
+	 * Per-entity gate. Holding for every selected entity renders the section, for some
+	 * renders a notice in its place, and for none leaves it out. Omitted = every entity.
+	 */
 	when?: (entity: Entity) => boolean
 	/**
 	 * Where the section lands. Defaults to `details`, the tab that carries pose,

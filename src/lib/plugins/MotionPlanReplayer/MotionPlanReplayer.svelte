@@ -56,10 +56,10 @@
 		{resolvePlanSnapshots}
 	/>
 
-	{#each selected.current as entity, index (entity)}
+	{#if selected.current.length > 0}
 		<MonitorDetails
-			{entity}
-			style="transform: translate(0, {fullscreen.baseOffset + index * 40}px)"
+			entities={selected.current}
+			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
-	{/each}
+	{/if}
 {/if}

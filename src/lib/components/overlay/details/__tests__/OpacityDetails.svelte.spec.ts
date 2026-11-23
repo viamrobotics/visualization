@@ -13,7 +13,7 @@ describe('OpacityDetails', () => {
 	it('renders the opacity slider', () => {
 		const entity = world.spawn()
 		render(OpacityDetails, {
-			props: { entity },
+			props: { entities: [entity] },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 		expect(screen.getByText('opacity')).toBeInTheDocument()

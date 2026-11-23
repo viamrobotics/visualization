@@ -28,7 +28,7 @@ const mountDetails = (visualizer: Record<string, unknown>, frameId?: string) => 
 	const entity = world.spawn(traits.Name(name), traits.Color(new Color('#888888')))
 
 	render(ConfigAppearanceDetails, {
-		props: { entity, component, frameId },
+		props: { targets: [{ entity, component, frameId }] },
 		context: new Map([[WORLD_CONTEXT_KEY, world]]),
 	})
 
@@ -161,5 +161,47 @@ describe('ConfigAppearanceDetails for a frame inside a resource', () => {
 		await userEvent.click(screen.getByRole('button', { name: 'Reset to cage' }))
 
 		expect(lastVisualizer(partConfig)).toEqual({ opacity: 0.5 })
+	})
+})
+
+describe('ConfigAppearanceDetails for two frames inside one resource', () => {
+	const mountTwoFrames = (visualizer: Record<string, unknown>) => {
+		const component: PartComponent = { name: 'cage', visualizer }
+		const partConfig = createPartConfigFixture({ current: { components: [component] } })
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(partConfig)
+
+		render(ConfigAppearanceDetails, {
+			props: {
+				targets: ['post', 'rail'].map((frameId) => ({
+					entity: world.spawn(traits.Name(`cage:${frameId}`)),
+					component,
+					frameId,
+				})),
+			},
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+
+		return partConfig
+	}
+
+	it('shows a switch the frames disagree on as off beside a dash', () => {
+		mountTwoFrames({ frames: { post: { show_axes_helper: false } } })
+
+		expect(screen.getByRole('switch', { name: 'show axes helper, mixed' })).toHaveAttribute(
+			'aria-checked',
+			'false'
+		)
+	})
+
+	it('saves one change to both frames in a single write, keeping neither frame out', async () => {
+		const partConfig = mountTwoFrames({ type: 'complex' })
+
+		await userEvent.click(screen.getByRole('switch', { name: 'visible' }))
+
+		expect(vi.mocked(partConfig.updateComponent)).toHaveBeenCalledTimes(1)
+		expect(lastVisualizer(partConfig)).toEqual({
+			type: 'complex',
+			frames: { post: { invisible: true }, rail: { invisible: true } },
+		})
 	})
 })

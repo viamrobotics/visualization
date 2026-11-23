@@ -3,38 +3,57 @@
 	import { type Entity } from 'koota'
 	import { BufferAttribute } from 'three'
 
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { PointCloud } from '#lib/three/PointCloud.js'
 
+	import SectionNotice from './SectionNotice.svelte'
+	import { MIXED, MIXED_TEXT, sharedValue } from './sharedValue'
+
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 
 	const { scene } = useThrelte()
 
-	const object3d = $derived(scene.getObjectByName(entity as unknown as string))
+	const counts = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Points, traits.BufferGeometry],
+		(entity) => {
+			const object3d = scene.getObjectByName(entity as unknown as string)
+			let cloudGeometry
+			if (object3d instanceof PointCloud) cloudGeometry = object3d.cloud
+			else if (isInstanceOf(object3d, 'Points')) cloudGeometry = object3d.geometry
 
-	const cloudGeometry = $derived.by(() => {
-		if (object3d instanceof PointCloud) return object3d.cloud
-		if (isInstanceOf(object3d, 'Points')) return object3d.geometry
-		return undefined
-	})
+			const geometry = entity.get(traits.BufferGeometry)
+			let triangles
+			// Triangle count is meaningful only for meshes, not point clouds.
+			if (geometry && !entity.has(traits.Points)) {
+				const index = geometry.getIndex()
+				const vertices = index ? index.count : (geometry.getAttribute('position')?.count ?? 0)
+				triangles = Math.floor(vertices / 3)
+			}
 
-	const points = useTrait(() => entity, traits.Points)
-	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
+			return {
+				points: cloudGeometry
+					? (cloudGeometry.getAttribute('position') as BufferAttribute).array.length / 3
+					: undefined,
+				triangles,
+			}
+		}
+	)
 
-	const triangleCount = $derived.by(() => {
-		const geometry = bufferGeometry.current
-		// Triangle count is meaningful only for meshes, not point clouds.
-		if (!geometry || points.current) return
-		const index = geometry.getIndex()
-		const vertices = index ? index.count : (geometry.getAttribute('position')?.count ?? 0)
-		return Math.floor(vertices / 3)
-	})
+	const pointCounts = $derived(counts.current.map((count) => count.points))
+	const triangleCounts = $derived(counts.current.map((count) => count.triangles))
 
-	const format = (value: number) => new Intl.NumberFormat().format(value)
+	const format = (values: readonly (number | undefined)[]) => {
+		const value = sharedValue(values)
+		return value === MIXED || value === undefined
+			? MIXED_TEXT
+			: new Intl.NumberFormat().format(value)
+	}
 </script>
 
 {#snippet Count({ label, value, ariaLabel }: { label: string; value: string; ariaLabel: string })}
@@ -53,18 +72,37 @@
 	</div>
 {/snippet}
 
-{#if cloudGeometry}
-	{@render Count({
-		label: 'points',
-		ariaLabel: 'points count',
-		value: format((cloudGeometry.getAttribute('position') as BufferAttribute).array.length / 3),
-	})}
-{/if}
+{#snippet SharedCount({
+	label,
+	values,
+	ariaLabel,
+	message,
+}: {
+	label: string
+	values: (number | undefined)[]
+	ariaLabel: string
+	message: string
+})}
+	{#if values.every((value) => value !== undefined)}
+		{@render Count({ label, ariaLabel, value: format(values) })}
+	{:else if values.some((value) => value !== undefined)}
+		<SectionNotice
+			{label}
+			{message}
+		/>
+	{/if}
+{/snippet}
 
-{#if triangleCount !== undefined}
-	{@render Count({
-		label: 'triangles',
-		ariaLabel: 'triangle count',
-		value: format(triangleCount),
-	})}
-{/if}
+{@render SharedCount({
+	label: 'points',
+	ariaLabel: 'points count',
+	values: pointCounts,
+	message: 'Not every selected object is a point cloud.',
+})}
+
+{@render SharedCount({
+	label: 'triangles',
+	ariaLabel: 'triangle count',
+	values: triangleCounts,
+	message: 'Not every selected object is a mesh.',
+})}

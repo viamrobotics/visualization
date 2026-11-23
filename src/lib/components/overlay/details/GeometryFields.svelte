@@ -12,8 +12,13 @@
 
 	import { defaultFrameGeometry, type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
+	import { formatInputNumber } from './sharedValue'
+
 	interface Props {
-		/** The geometry to show. Undefined reads as `none`. */
+		/**
+		 * The geometry to show. Undefined reads as `none`. A `NaN` dimension shows as a dash,
+		 * for a value that differs across a selection, and comes back as `NaN` until edited.
+		 */
 		geometry: EditableFrameGeometry | undefined
 		/** Called with the whole next geometry: a type switch passes that type's default. */
 		onchange: (geometry: EditableFrameGeometry) => void
@@ -80,6 +85,7 @@
 						<Point
 							value={{ x: geometry.x, y: geometry.y, z: geometry.z }}
 							min={0}
+							format={formatInputNumber}
 							on:change={handleBoxChange}
 						/>
 					</div>
@@ -92,6 +98,7 @@
 							label="r"
 							value={geometry.r}
 							min={0}
+							format={formatInputNumber}
 							on:change={handleSphereRChange}
 						/>
 					</div>
@@ -104,12 +111,14 @@
 							label="r"
 							value={geometry.r}
 							min={0}
+							format={formatInputNumber}
 							on:change={handleCapsuleRChange}
 						/>
 						<Slider
 							label="l"
 							value={geometry.l}
 							min={0}
+							format={formatInputNumber}
 							on:change={handleCapsuleLChange}
 						/>
 					</div>

@@ -10,6 +10,7 @@ import {
 
 const section = (tab?: DetailsTabId): DetailsSection => ({
 	snippet: (() => undefined) as unknown as DetailsSection['snippet'],
+	label: 'section',
 	tab,
 })
 

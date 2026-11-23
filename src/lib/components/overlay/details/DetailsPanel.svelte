@@ -8,15 +8,17 @@
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
-	import { traits, useParentName, useTrait, useWorld } from '#lib/ecs/index.js'
+	import { traits, useMappedEntitiesTraits, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 	import Tooltip from '../Tooltip.svelte'
-	import { composeDisplayedPose } from './composeDisplayedPose'
+	import { detailsClipboardText } from './detailsClipboardText'
+	import { MIXED, sharedValue } from './sharedValue'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
-		entity: Entity
+		/** The selection the panel describes. Never empty. */
+		entities: readonly Entity[]
 		/** The mode's details, rendered under the shared header. They paint their own background. */
 		children: Snippet
 		/**
@@ -26,85 +28,39 @@
 		sceneActions?: boolean
 	}
 
-	const { entity, children, sceneActions = true, ...rest }: Props = $props()
+	const { entities, children, sceneActions = true, ...rest }: Props = $props()
 
 	const world = useWorld()
 	const resourceByName = useResourceByName()
 	const environment = useEnvironment()
 	const toast = useToast()
 
-	const name = useTrait(() => entity, traits.Name)
-	const parent = useParentName(() => entity)
-	const matrix = useTrait(() => entity, traits.Matrix)
-	const editedMatrix = useTrait(() => entity, traits.EditedMatrix)
-	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
-	const center = useTrait(() => entity, traits.Center)
-	const box = useTrait(() => entity, traits.Box)
-	const sphere = useTrait(() => entity, traits.Sphere)
-	const capsule = useTrait(() => entity, traits.Capsule)
-	const cylinder = useTrait(() => entity, traits.Cylinder)
-	const removable = useTrait(() => entity, traits.Removable)
-	const framesAPI = useTrait(() => entity, traits.FramesAPI)
-
-	const isFrameNode = $derived(!!framesAPI.current)
-	const geometryCenter = $derived(isFrameNode ? undefined : center.current)
-
-	const localPose = $derived(
-		composeDisplayedPose(editedMatrix.current ?? matrix.current, geometryCenter)
+	const headers = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Name, traits.FramesAPI, traits.Removable],
+		(entity) => {
+			const name = entity.get(traits.Name)
+			return {
+				name,
+				// Only a frame names a resource, so only a frame shows its subtype.
+				subtype: entity.has(traits.FramesAPI)
+					? (name ? resourceByName.current[name] : undefined)?.subtype
+					: '',
+				isRemovable: entity.has(traits.Removable),
+			}
+		}
 	)
-	const worldPose = $derived(
-		worldMatrix.current ? composeDisplayedPose(worldMatrix.current, geometryCenter) : undefined
-	)
-	const resourceName = $derived(name.current ? resourceByName.current[name.current] : undefined)
-	const displayType = $derived(isFrameNode ? resourceName?.subtype : '')
 
-	const geometryType = $derived.by(() => {
-		if (box.current) return 'box'
-		if (sphere.current) return 'sphere'
-		if (capsule.current) return 'capsule'
-		if (cylinder.current) return 'cylinder'
-		return 'none'
-	})
+	const isSingle = $derived(entities.length === 1)
+	const title = $derived(isSingle ? headers.current[0]?.name : `${entities.length} selected`)
+	const subtype = $derived(sharedValue(headers.current.map((header) => header.subtype)))
+	const isRemovable = $derived(headers.current.every((header) => header.isRemovable))
 
 	let copied = $state(false)
 	let dragElement = $state.raw<HTMLElement>()
 
 	const stopKeyboardPropagation = (event: KeyboardEvent) => {
 		event.stopPropagation()
-	}
-
-	const getCopyClipboardText = () => {
-		return JSON.stringify(
-			{
-				worldPosition: worldPose ? { x: worldPose.x, y: worldPose.y, z: worldPose.z } : null,
-				worldOrientation: worldPose
-					? {
-							x: worldPose.oX,
-							y: worldPose.oY,
-							z: worldPose.oZ,
-							th: worldPose.theta,
-						}
-					: null,
-				localPosition: {
-					x: localPose?.x,
-					y: localPose?.y,
-					z: localPose?.z,
-				},
-				localOrientation: {
-					x: localPose?.oX,
-					y: localPose?.oY,
-					z: localPose?.oZ,
-					th: localPose?.theta,
-				},
-				geometry: {
-					type: geometryType,
-					value: box.current ?? capsule.current ?? cylinder.current ?? sphere.current,
-				},
-				parentFrame: parent.current ?? 'world',
-			},
-			null,
-			2
-		)
 	}
 </script>
 
@@ -131,8 +87,10 @@ just the inputs) raises it via `focus-within:z-5`. -->
 				bind:this={dragElement}
 			>
 				<div class="flex w-[90%] items-center gap-1">
-					<strong class="overflow-hidden text-nowrap text-ellipsis">{name.current}</strong>
-					<span class="text-subtle-2">{displayType}</span>
+					<strong class="overflow-hidden text-nowrap text-ellipsis">{title}</strong>
+					{#if subtype !== MIXED}
+						<span class="text-subtle-2">{subtype}</span>
+					{/if}
 				</div>
 
 				{#if sceneActions}
@@ -144,7 +102,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								aria-describedby={tooltipID}
 								onclick={async () => {
 									try {
-										await navigator.clipboard.writeText(getCopyClipboardText())
+										await navigator.clipboard.writeText(detailsClipboardText(entities))
 									} catch {
 										// Clipboard unavailable: non-secure context or permission denied.
 										toast({ message: "Couldn't copy to clipboard", variant: ToastVariant.Danger })
@@ -166,7 +124,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 					</Tooltip>
 				{/if}
 
-				{#if removable.current}
+				{#if isRemovable}
 					<Tooltip placement="bottom">
 						{#snippet children(tooltipID)}
 							<button
@@ -174,8 +132,8 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								aria-label="Remove from scene"
 								aria-describedby={tooltipID}
 								onclick={() => {
-									if (world.has(entity)) {
-										entity.destroy()
+									for (const entity of entities) {
+										if (world.has(entity)) entity.destroy()
 									}
 								}}
 							>

@@ -6,12 +6,17 @@
 	import { useLinkedEntities } from '#lib/hooks/useLinked.svelte.js'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 
+	// Links come from the whole selection, so each one is removed from the entity that holds it.
 	const linkedEntities = useLinkedEntities()
+
+	const ownerOf = (linkedEntity: Entity) =>
+		entities.find((entity) => entity.has(relations.SubEntityLink(linkedEntity)))
 </script>
 
 {#if linkedEntities.current.length > 0}
@@ -21,13 +26,14 @@
 		<strong class="font-semibold">Linked entities</strong>
 		{#each linkedEntities.current as linkedEntity (linkedEntity)}
 			{@const linkedEntityName = linkedEntity.get(traits.Name)}
-			{@const linkType = entity.get(relations.SubEntityLink(linkedEntity))?.type}
+			{@const owner = ownerOf(linkedEntity)}
+			{@const linkType = owner?.get(relations.SubEntityLink(linkedEntity))?.type}
 			<div class="flex items-center gap-1">
 				<span class="text-primary">{linkedEntityName} ({linkType})</span>
 				<Icon
 					name="trash-can-outline"
 					class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
-					onclick={() => entity.remove(relations.SubEntityLink(linkedEntity))}
+					onclick={() => owner?.remove(relations.SubEntityLink(linkedEntity))}
 				/>
 			</div>
 		{/each}

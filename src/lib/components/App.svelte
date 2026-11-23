@@ -67,9 +67,10 @@
 		children?: Snippet
 
 		/**
-		 * Snippet to inject items into the details panel
+		 * Snippet to inject items into the details panel. Rendered once with every
+		 * selected entity, so it shows or edits the selection as a whole.
 		 */
-		details?: Snippet<[{ entity: Entity }]>
+		details?: Snippet<[{ entities: readonly Entity[] }]>
 	}
 
 	let {
@@ -134,7 +135,7 @@
 	// snippet, and no card can render before this first runs.
 	$effect(() => {
 		if (details === undefined) return
-		return detailsSections.register({ snippet: details })
+		return detailsSections.register({ snippet: details, label: 'details' })
 	})
 </script>
 
