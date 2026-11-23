@@ -37,7 +37,13 @@
 
 	import EntityLink from '../EntityLink.svelte'
 	import { composeDisplayedPose } from './composeDisplayedPose'
-	import { orientationEuler, sharedEuler, sharedPose } from './sharedPose'
+	import {
+		MIXED_POSE,
+		orientationEuler,
+		type SharedPose,
+		sharedEuler,
+		sharedPose,
+	} from './sharedPose'
 	import {
 		changedAxes,
 		formatInputNumber,
@@ -123,7 +129,15 @@
 
 	const localPoses = $derived(reads.current.map((read) => read.localPose))
 	const localPose = $derived(sharedPose(localPoses))
-	const worldPose = $derived(sharedPose(reads.current.map((read) => read.worldPose ?? new Pose())))
+	const worldPoses = $derived(reads.current.map((read) => read.worldPose))
+	const definedWorldPoses = $derived(worldPoses.filter((pose) => pose !== undefined))
+	// An entity whose world transform hasn't resolved, such as an orphan, isn't drawn at the
+	// origin, so it has no world pose to share. One alone keeps reading as the origin.
+	const worldPose = $derived.by((): SharedPose | undefined => {
+		if (definedWorldPoses.length === 0) return undefined
+		if (definedWorldPoses.length < worldPoses.length) return MIXED_POSE
+		return sharedPose(definedWorldPoses)
+	})
 	const eulerValue = $derived(sharedEuler(localPoses))
 	const isEulerMixed = $derived(Object.values(eulerValue).includes(MIXED))
 

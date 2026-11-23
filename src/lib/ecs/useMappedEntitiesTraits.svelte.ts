@@ -1,5 +1,7 @@
 import type { Entity, Relation, Trait } from 'koota'
 
+import { untrack } from 'svelte'
+
 import { useWorld } from './useWorld'
 
 /**
@@ -20,10 +22,16 @@ export const useMappedEntitiesTraits = <TValue>(
 
 	let version = $state(0)
 
+	// Callers often pass a fresh array of the same entities, so subscriptions follow the ids, not the array.
+	const membership = $derived(entities().join(','))
+
 	$effect(() => {
-		const members = new Set(entities())
+		void membership
+		const members = new Set(untrack(entities))
+		// Subscribers run inside whichever effect set the trait. Untracked, so `++` doesn't make
+		// that effect depend on `version` and re-run itself.
 		const bump = (entity: Entity) => {
-			if (members.has(entity)) version++
+			if (members.has(entity)) untrack(() => version++)
 		}
 
 		const unsubscribes = watched.flatMap((trait) => [

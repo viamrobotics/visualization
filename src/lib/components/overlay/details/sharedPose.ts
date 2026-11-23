@@ -4,7 +4,7 @@ import type { Pose } from '#lib/math/index.js'
 
 import { OrientationVector } from '#lib/math/OrientationVector.js'
 
-import { type Shared, sharedNumber } from './sharedValue'
+import { MIXED, type Shared, sharedNumber } from './sharedValue'
 
 /** Smallest angle, in radians, between two orientations that still reads as one. */
 const ANGLE_TOLERANCE = 1e-6
@@ -23,6 +23,17 @@ export interface SharedPose {
 	oY: Shared<number>
 	oZ: Shared<number>
 	theta: Shared<number>
+}
+
+/** A pose with every field mixed, for a selection where some entities have no pose to compare. */
+export const MIXED_POSE: Readonly<SharedPose> = {
+	x: MIXED,
+	y: MIXED,
+	z: MIXED,
+	oX: MIXED,
+	oY: MIXED,
+	oZ: MIXED,
+	theta: MIXED,
 }
 
 /** Euler angles in degrees across a selection, in the `ZYX` order the details panel edits. */

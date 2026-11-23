@@ -90,6 +90,17 @@ describe('PoseDetails', () => {
 		).toHaveTextContent('1.00')
 	})
 
+	it('shows the world pose as dashes when only some selected entities have a world transform', () => {
+		const identity = new Pose().toMatrix4()
+		const placed = world.spawn(traits.Matrix(identity), traits.WorldMatrix(identity.clone()))
+		const unresolved = world.spawn(traits.Matrix(identity.clone()))
+		render(PoseDetails, {
+			props: { entities: [placed, unresolved], editable: false },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		expect(screen.getByText('world position').parentElement).toHaveTextContent('x - y - z -')
+	})
+
 	it('shows a dash for an axis the selected entities differ on, and the shared value otherwise', () => {
 		const first = world.spawn(traits.Matrix(new Pose(100, 50, 0).toMatrix4()))
 		const second = world.spawn(traits.Matrix(new Pose(200, 50, 0).toMatrix4()))
