@@ -12,37 +12,58 @@ const capsule = { type: 'capsule', r: 10, l: 50 } as const
 describe('scaleHandles', () => {
 	it.each([
 		{
-			name: 'boxes facing the same way get a handle per axis',
-			geometries: [box, box],
-			orientations: [UNTURNED, UNTURNED],
+			name: 'boxes facing the gizmo’s way get a handle per axis',
+			targets: [
+				{ geometry: box, orientation: UNTURNED },
+				{ geometry: box, orientation: UNTURNED },
+			],
+			gizmo: UNTURNED,
 			expected: { showY: true, showZ: true, isUniform: false },
 		},
 		{
 			name: 'boxes facing different ways get only the uniform handle',
-			geometries: [box, box],
-			orientations: [UNTURNED, TURNED],
+			targets: [
+				{ geometry: box, orientation: UNTURNED },
+				{ geometry: box, orientation: TURNED },
+			],
+			gizmo: UNTURNED,
+			expected: { showY: false, showZ: false, isUniform: true },
+		},
+		{
+			name: 'boxes facing each other’s way but not the gizmo’s get only the uniform handle',
+			targets: [
+				{ geometry: box, orientation: UNTURNED },
+				{ geometry: box, orientation: UNTURNED },
+			],
+			gizmo: TURNED,
 			expected: { showY: false, showZ: false, isUniform: true },
 		},
 		{
 			name: 'a box and a capsule get only the uniform handle',
-			geometries: [box, capsule],
-			orientations: [UNTURNED, UNTURNED],
+			targets: [
+				{ geometry: box, orientation: UNTURNED },
+				{ geometry: capsule, orientation: UNTURNED },
+			],
+			gizmo: UNTURNED,
 			expected: { showY: false, showZ: false, isUniform: true },
 		},
 		{
-			name: 'one turned box keeps its handle per axis',
-			geometries: [box],
-			orientations: [TURNED],
+			name: 'one turned box under its own gizmo keeps its handle per axis',
+			targets: [{ geometry: box, orientation: TURNED }],
+			gizmo: TURNED,
 			expected: { showY: true, showZ: true, isUniform: false },
 		},
 		{
-			name: 'capsules facing the same way get radius and length handles',
-			geometries: [capsule, capsule],
-			orientations: [UNTURNED, UNTURNED],
+			name: 'capsules facing the gizmo’s way get radius and length handles',
+			targets: [
+				{ geometry: capsule, orientation: UNTURNED },
+				{ geometry: capsule, orientation: UNTURNED },
+			],
+			gizmo: UNTURNED,
 			expected: { showY: true, showZ: false, isUniform: false },
 		},
-	])('$name', ({ geometries, orientations, expected }) => {
-		expect(scaleHandles(geometries, orientations)).toEqual(expected)
+	])('$name', ({ targets, gizmo, expected }) => {
+		expect(scaleHandles(targets, gizmo)).toEqual(expected)
 	})
 })
 

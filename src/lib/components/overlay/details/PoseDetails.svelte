@@ -194,12 +194,24 @@
 		invalidate()
 	}
 
+	const isOrientationShared = $derived(
+		[localPose.oX, localPose.oY, localPose.oZ, localPose.theta].every((value) => value !== MIXED)
+	)
+
+	/**
+	 * A shared orientation shows the first entity's spelling, and another entity can spell the
+	 * same rotation differently. So the whole shown orientation is written, never one field onto
+	 * each entity's own spelling. A mixed orientation keeps each entity's own untouched fields.
+	 */
 	const handleOrientationOVChange = (event: PointChangeEvent) => {
 		if (event.detail.origin !== 'internal') return
-		const { x, y, z, w } = changedAxes(shownOrientation, event.detail.value as PointValue4dObject)
-		const patch = { oX: x, oY: y, oZ: z, theta: w }
-		if (Object.values(patch).every((value) => value === undefined)) return
+		const next = event.detail.value as PointValue4dObject
+		const { x, y, z, w } = changedAxes(shownOrientation, next)
+		if ([x, y, z, w].every((value) => value === undefined)) return
 
+		const patch = isOrientationShared
+			? { oX: next.x, oY: next.y, oZ: next.z, theta: next.w }
+			: { oX: x, oY: y, oZ: z, theta: w }
 		for (const entity of entities) frameEditor.setPose(entity, patch)
 		invalidate()
 	}

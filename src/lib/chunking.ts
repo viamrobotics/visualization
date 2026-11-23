@@ -1,4 +1,5 @@
 import type { Entity, World } from 'koota'
+import type { BufferGeometry } from 'three'
 
 import { writeBufferGeometryRange } from '#lib/attribute.js'
 import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -47,6 +48,32 @@ export const createChunkLoader = ({
 	const suspended = new Map<string, { entity: Entity; total: number; start: number }>()
 	const controller = new AbortController()
 
+	/**
+	 * Resolves with the entity's geometry once it has one. A point cloud's geometry lands
+	 * after its worker parse, and a fast chunk fetch can beat that parse.
+	 *
+	 * @returns The geometry, or `undefined` when `signal` aborts first.
+	 */
+	const whenBufferGeometry = (entity: Entity, signal: AbortSignal) =>
+		new Promise<BufferGeometry | undefined>((resolve) => {
+			const existing = entity.get(traits.BufferGeometry)
+			if (existing || signal.aborted) {
+				resolve(existing)
+				return
+			}
+
+			const finish = (geometry: BufferGeometry | undefined) => {
+				unsubscribe()
+				signal.removeEventListener('abort', onAbort)
+				resolve(geometry)
+			}
+			const onAbort = () => finish(undefined)
+			const unsubscribe = world.onAdd(traits.BufferGeometry, (added) => {
+				if (added === entity) finish(entity.get(traits.BufferGeometry))
+			})
+			signal.addEventListener('abort', onAbort, { once: true })
+		})
+
 	const pull = async (uuid: string, entity: Entity, total: number, firstChunkEnd: number) => {
 		if (active.has(uuid)) return
 		const pullController = new AbortController()
@@ -73,8 +100,7 @@ export const createChunkLoader = ({
 					break
 				}
 
-				const buffer = entity.get(traits.BufferGeometry)
-				console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H1', at: 'pull.bufferCheck', uuid, hasBuffer: !!buffer, chunkStart: chunk.start, t: performance.now() })) // CLAUDE-DEBUG
+				const buffer = await whenBufferGeometry(entity, signal)
 				if (!buffer) break
 
 				writeBufferGeometryRange(buffer, chunk.positions, chunk.start, {
@@ -98,7 +124,6 @@ export const createChunkLoader = ({
 				console.error(`Chunk pull failed for entity ${uuid}:`, error)
 			}
 		} finally {
-			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H1', at: 'pull.exit', uuid, isSuspended, nextStart, total, aborted: signal.aborted, t: performance.now() })) // CLAUDE-DEBUG
 			// A stopped pull's uuid may already belong to a newer pull.
 			if (active.get(uuid) === pullController) active.delete(uuid)
 			// A suspended pull keeps its progress, which `resume` reports against.
@@ -111,7 +136,6 @@ export const createChunkLoader = ({
 	return {
 		start(uuid: string, entity: Entity, metadata: Metadata) {
 			const chunks = metadata.chunks
-			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H3', at: 'start', uuid, chunks: chunks ?? null, hasBuffer: entity.has(traits.BufferGeometry), t: performance.now() })) // CLAUDE-DEBUG
 			if (!chunks || chunks.total <= 0) return
 
 			entity.add(traits.ChunkProgress({ loaded: chunks.chunkSize, total: chunks.total }))
@@ -138,7 +162,6 @@ export const createChunkLoader = ({
 		 * destroyed, so a later `start` under the same uuid pulls for the new entity.
 		 */
 		stop(uuid: string) {
-			console.log('CLAUDE-DEBUG', JSON.stringify({ hyp: 'H2', at: 'stop', uuid, wasActive: active.has(uuid), t: performance.now() })) // CLAUDE-DEBUG
 			active.get(uuid)?.abort()
 			active.delete(uuid)
 

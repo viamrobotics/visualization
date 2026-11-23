@@ -155,23 +155,29 @@
 	const isComplexShapeTarget = (target: Target | undefined) =>
 		!!target?.shapeOwner && !!target.complexShape
 
+	/**
+	 * Whether the gizmo grabs `entity` by its Complex obstacle shape. Read from the entity
+	 * itself, since the first selected entity need not be one the gizmo moves.
+	 */
+	const isComplexShape = (entity: Entity) =>
+		entity.has(traits.ComplexObstacleShape) &&
+		!!complexShapeOwner(partConfig.current.components, entity.get(traits.Name))
+
+	const gizmoWorldTraits = [
+		traits.WorldMatrix,
+		traits.Center,
+		traits.ComplexObstacleShape,
+		traits.Name,
+	]
 	const gizmoWorlds = useMappedEntitiesTraits(
 		() => movers,
-		[traits.WorldMatrix, traits.Center],
-		(entity) =>
-			gizmoWorldOf(
-				entity,
-				isComplexShapeTarget(targets.current.find((target) => target.entity === entity))
-			)
+		gizmoWorldTraits,
+		(entity) => gizmoWorldOf(entity, isComplexShape(entity))
 	)
 	const firstGizmoWorld = useMappedEntitiesTraits(
 		() => (first ? [first] : []),
-		[traits.WorldMatrix, traits.Center, traits.ComplexObstacleShape],
-		(entity) =>
-			gizmoWorldOf(
-				entity,
-				isComplexShapeTarget(targets.current.find((target) => target.entity === entity))
-			)
+		gizmoWorldTraits,
+		(entity) => gizmoWorldOf(entity, isComplexShape(entity))
 	)
 
 	// Non-mesh frames (reference frames, and instanced box/sphere/capsule frames)
@@ -186,7 +192,8 @@
 
 	$effect.pre(() => {
 		const firstWorld = firstGizmoWorld.current[0]
-		if (!firstWorld) return
+		// Mid-drag, Three.js owns the gizmo. Re-deriving it from the staged poses would fight its snapping.
+		if (!firstWorld || isGizmoDragging) return
 
 		firstWorld.decompose(anchor.position, anchor.quaternion, anchor.scale)
 		// World axes favor no object, so a group pivots on its centroid. Local axes come from
@@ -225,12 +232,27 @@
 		activeMode === 'rotate' || (activeMode === 'translate' && objectSnap.hasTurned)
 	)
 
+	// The first selected object sets the gizmo's axes, even when it isn't moved itself.
+	const gizmoOrientation = $derived.by(() => {
+		const firstWorld = firstGizmoWorld.current[0]
+		return firstWorld ? new Quaternion().setFromRotationMatrix(firstWorld) : new Quaternion()
+	})
+
+	// `targets` and `gizmoWorlds` both map `movers`, so an index names the same entity in each.
 	const handles = $derived(
 		scaleHandles(
-			targets.current.flatMap((target) => (target.geometry ? [target.geometry] : [])),
-			gizmoWorlds.current.flatMap((world) =>
-				world ? [new Quaternion().setFromRotationMatrix(world)] : []
-			)
+			targets.current.flatMap((target, index) => {
+				const world = gizmoWorlds.current[index]
+				return target.geometry && world
+					? [
+							{
+								geometry: target.geometry,
+								orientation: new Quaternion().setFromRotationMatrix(world),
+							},
+						]
+					: []
+			}),
+			gizmoOrientation
 		)
 	)
 
@@ -277,7 +299,8 @@
 
 	let dragStarts: DragStart[] = []
 	let frameHistoryEntryOpen = false
-	let isGizmoDragging = false
+	// State, so the anchor re-derives from the selection once a drag ends.
+	let isGizmoDragging = $state(false)
 	let controls = $state.raw<ThreeTransformControls>()
 
 	$effect(() => {

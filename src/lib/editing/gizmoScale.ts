@@ -17,27 +17,30 @@ export interface ScaleHandles {
 /** Smallest angle, in radians, between two orientations that still share scale axes. */
 const AXIS_ALIGNMENT_TOLERANCE = 1e-4
 
+/** One geometry the scale gizmo would size, with the world orientation its dimensions follow. */
+export interface ScaleTarget {
+	geometry: ScalableGeometry
+	orientation: Quaternion
+}
+
 /**
  * The scale handles a selection supports. Three.js always scales along the gizmo's own
- * axes, which follow the first selected geometry. A handle per axis is offered only when
- * every geometry is the same kind and lines up with the first, so an axis means the same
- * dimension on each. Otherwise only a uniform handle is offered.
+ * axes. A handle per axis is offered only when every geometry is the same kind and lines
+ * up with those axes, so an axis means the same dimension on each. Otherwise only a
+ * uniform handle is offered.
  *
- * @param geometries The selected geometries, first selected first. Never empty.
- * @param orientations Each geometry's world orientation, in the same order.
+ * @param targets The geometries to size. Never empty.
+ * @param gizmoOrientation The world orientation of the gizmo, whose axes the scale follows.
  */
 export const scaleHandles = (
-	geometries: readonly ScalableGeometry[],
-	orientations: readonly Quaternion[]
+	targets: readonly ScaleTarget[],
+	gizmoOrientation: Quaternion
 ): ScaleHandles => {
-	const [first] = geometries
-	const [firstOrientation] = orientations
-	const isOneKind = geometries.every((geometry) => geometry.type === first?.type)
-	const isAligned =
-		!!firstOrientation &&
-		orientations.every(
-			(orientation) => orientation.angleTo(firstOrientation) <= AXIS_ALIGNMENT_TOLERANCE
-		)
+	const first = targets[0]?.geometry
+	const isOneKind = targets.every(({ geometry }) => geometry.type === first?.type)
+	const isAligned = targets.every(
+		({ orientation }) => orientation.angleTo(gizmoOrientation) <= AXIS_ALIGNMENT_TOLERANCE
+	)
 
 	if (!first || !isOneKind || !isAligned) return { showY: false, showZ: false, isUniform: true }
 	if (first.type === 'sphere') return { showY: false, showZ: false, isUniform: true }
