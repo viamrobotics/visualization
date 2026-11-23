@@ -21,7 +21,7 @@ import {
 } from '#lib/draw.js'
 import { hierarchy, traits, useWorld } from '#lib/ecs/index.js'
 import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 
 import {
 	clearsDrawings,

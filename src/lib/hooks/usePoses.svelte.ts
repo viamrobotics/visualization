@@ -5,9 +5,9 @@ import { getContext, setContext, untrack } from 'svelte'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 import { traits, useParentName, useQuery, useTrait } from '#lib/ecs/index.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { originFrameName } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { isPoseStale } from './poseStaleness/isPoseStale'
 import { useFrames } from './useFrames.svelte'

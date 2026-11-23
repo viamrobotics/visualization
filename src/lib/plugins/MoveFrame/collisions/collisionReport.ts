@@ -1,12 +1,12 @@
 import type { Entity } from 'koota'
 
+import { GhostOf } from '#lib/components/motion/ghostOfRelation.js'
+import { liveFrameName } from '#lib/components/motion/previewNames.js'
 import { traits } from '#lib/ecs/index.js'
 
 import type { CollisionReport } from './collisionStore.svelte'
 import type { CollisionPair } from './collisionWorld'
 
-import { liveFrameName } from '../previewNames'
-import { GhostOf } from '../relations'
 import { isGhost } from './collisionMembers'
 
 /**

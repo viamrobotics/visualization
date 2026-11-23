@@ -3,8 +3,8 @@ import { Color, Matrix4 } from 'three'
 
 import { relations, traits } from '#lib/ecs/index.js'
 
+import { GhostOf } from './ghostOfRelation'
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
-import { GhostOf } from './relations'
 
 /**
  * Ghosting for a staged move, expressed as scene entities rather than meshes

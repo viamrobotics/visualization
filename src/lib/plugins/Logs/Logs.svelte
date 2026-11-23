@@ -2,10 +2,10 @@
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
 	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { provideLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import LogPanel from './LogPanel.svelte'
-	import { provideLogs } from './useLogs.svelte'
 
 	const logs = provideLogs()
 	const partID = usePartID()

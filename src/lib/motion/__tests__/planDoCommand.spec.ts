@@ -3,8 +3,8 @@ import type { JsonValue } from '@bufbuild/protobuf'
 import { describe, expect, it } from 'vitest'
 
 import { Pose } from '#lib/math/index.js'
+import { parseMoveOptions } from '#lib/plugins/MoveFrame/parseMoveOptions.js'
 
-import { parseMoveOptions } from '../parseMoveOptions'
 import {
 	executeCommand,
 	isAlreadyAtGoal,

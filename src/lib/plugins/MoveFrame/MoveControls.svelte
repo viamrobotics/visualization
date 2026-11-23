@@ -24,29 +24,33 @@
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import type { Pose } from '#lib/math/index.js'
 
+	import MoveGizmo from '#lib/components/motion/MoveGizmo.svelte'
+	import MoveTargetGhost from '#lib/components/motion/MoveTargetGhost.svelte'
+	import {
+		fromDestinationPose,
+		moveDelta,
+		toDestinationPose,
+	} from '#lib/components/motion/moveTargetPose.js'
+	import { useMovedFrameMatrix } from '#lib/components/motion/useMovedFrameMatrix.svelte.js'
+	import { useMoveGhosts } from '#lib/components/motion/useMoveGhosts.svelte.js'
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
 	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { setOrientationFromEuler } from '#lib/math/transform.js'
+	import { executeCommand } from '#lib/motion/planDoCommand.js'
 
 	import Collisions from './collisions/Collisions.svelte'
 	import { defaultMotionService, motionServiceNames } from './moveControls'
 	import { moveExecutionOwner } from './moveExecutionOwner.svelte'
-	import MoveGizmo from './MoveGizmo.svelte'
 	import { moveGizmoOptions } from './moveGizmoOptions.svelte'
 	import { moveGizmoOwner } from './moveGizmoOwner.svelte'
 	import MoveJsonField from './MoveJsonField.svelte'
 	import MovePreview from './MovePreview.svelte'
-	import MoveTargetGhost from './MoveTargetGhost.svelte'
-	import { fromDestinationPose, moveDelta, toDestinationPose } from './moveTargetPose'
 	import { parseMoveOptions } from './parseMoveOptions'
-	import { executeCommand } from './planDoCommand'
 	import SavePoseButton from './savedPoses/SavePoseButton.svelte'
 	import StopMoveButton from './StopMoveButton.svelte'
-	import { useMovedFrameMatrix } from './useMovedFrameMatrix.svelte'
-	import { useMoveGhosts } from './useMoveGhosts.svelte'
 	import { usePreviewMove } from './usePreviewMove.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {

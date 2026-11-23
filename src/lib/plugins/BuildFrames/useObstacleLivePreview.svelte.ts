@@ -9,6 +9,7 @@ import { untrack } from 'svelte'
 
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import {
@@ -16,7 +17,6 @@ import {
 	obstacleGeometriesOf,
 	type ObstacleGeometryConfig,
 } from '#lib/obstacleAttributes.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import type { ObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 

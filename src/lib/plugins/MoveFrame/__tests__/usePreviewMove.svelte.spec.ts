@@ -5,13 +5,13 @@ import { Struct } from '@bufbuild/protobuf'
 import { PoseInFrame, robotApi, Transform } from '@viamrobotics/sdk'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { PreviewGhost } from '#lib/components/motion/previewGhostTrait.js'
+import { liveFrameName } from '#lib/components/motion/previewNames.js'
 import { traits } from '#lib/ecs/index.js'
 import { parsePlan } from '#lib/plugins/MotionPlanReplayer/parse-plan.js'
 
 import planJson from '../../MotionPlanReplayer/__tests__/__fixtures__/plan.json?raw'
 import { parseMoveOptions } from '../parseMoveOptions'
-import { liveFrameName } from '../previewNames'
-import { PreviewGhost } from '../traits'
 import { previewFrameIntervalMs } from '../usePreviewMove.svelte'
 import {
 	createPreviewMoveHarness,

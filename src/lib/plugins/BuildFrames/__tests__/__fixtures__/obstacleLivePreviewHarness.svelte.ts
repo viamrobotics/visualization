@@ -7,10 +7,10 @@ import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 import { useFrames } from '#lib/hooks/useFrames.svelte.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import { OBSTACLE_MODEL } from '#lib/obstacleAttributes.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { useObstacleLivePreview } from '../../useObstacleLivePreview.svelte'
 

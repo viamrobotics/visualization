@@ -4,8 +4,8 @@
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
 
 	import { useWorld } from '#lib/ecs/index.js'
+	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import { createWorldStateSync, DEFAULT_WORLD_STATE_TIMING } from './worldStateSync'
 

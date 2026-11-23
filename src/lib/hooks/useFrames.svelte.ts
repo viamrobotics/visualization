@@ -14,11 +14,11 @@ import {
 	TRANSLUCENT_GEOMETRY_OPACITY,
 	useWorld,
 } from '#lib/ecs/index.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { kinematicsByComponent as kinematicsByComponentOf } from '#lib/kinematicsByComponent.js'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { machineFrameNames } from './machineFrameNames'
 import { mergeObstacleFrames } from './mergeObstacleFrames'

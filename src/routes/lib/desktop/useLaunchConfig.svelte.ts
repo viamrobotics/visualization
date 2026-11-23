@@ -1,4 +1,4 @@
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
+import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 
 import { getDesktopBridge } from './desktopBridge'
 import { type LaunchConfig, type LaunchConfigPayload, parseLaunchConfig } from './launchConfig'

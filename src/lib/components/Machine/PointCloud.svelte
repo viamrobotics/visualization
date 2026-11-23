@@ -8,10 +8,10 @@
 	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 	import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 	import { hierarchy, setOrAddTrait, traits, useWorld } from '#lib/ecs/index.js'
+	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	interface Props {
