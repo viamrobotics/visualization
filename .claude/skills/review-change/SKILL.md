@@ -53,9 +53,10 @@ Collect the verdicts into one table of area → OK / Conflict / Gap, with a one-
   fix or flag it before handoff.
 - **Gap** means the source is silent. Note it as a judgment call for the user.
 - **All OK** means the change is consistent with every touched area's source of truth. Say so.
-- **Stalled** is neither OK nor Gap. A reviewer whose report says it stalled, or whose report is
-  interim because its notification says it is waiting on background work, has not reviewed
-  anything. Re-dispatch it once with the same brief. On a second stall, read the diff for that
+- **Stalled** is neither OK nor Gap. A reviewer whose report says it stalled has not reviewed
+  anything. Re-dispatch it once with the same brief. A notification that it is waiting on its own
+  background work is interim, not a stall, so wait for its report. Re-dispatching it starts a
+  second reviewer while the first is still working. On a second stall, read the diff for that
   area in-context, report the area as "unreviewed (agent stalled twice)", and say the judgment
   layer did not run. The table never shows OK for an area whose reviewer stalled.
 
@@ -64,7 +65,7 @@ Collect the verdicts into one table of area → OK / Conflict / Gap, with a one-
 - Reviewer agents ship as **DRAFTs** (`npx houserules modules --modules=reviewers`). Each needs its
   authoritative source filled in before its verdict means anything, and `npx houserules doctor` flags
   any still-DRAFT reviewer. A DRAFT reviewer's verdict is not trustworthy, so treat it as unreviewed.
-- This dispatches reviewers. It does not run tests. For scoped verification, use `/verify-changed`.
+- This dispatches reviewers. It does not run tests. For scoped verification, use `/verify-changed` where it is installed.
 - This is the general per-target dispatcher, not a design or accessibility specialist. A change
   that touches markup or styled components is better served by `/accessibility-review` or
-  `/design-review`, which own those verdicts directly.
+  `/design-review` where they are installed, which own those verdicts directly.

@@ -86,32 +86,32 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@houserules/cli':
-        specifier: ^0.14.0
-        version: 0.14.0
+        specifier: ^0.16.0
+        version: 0.16.0
       '@houserules/plugin-accessibility':
-        specifier: ^0.2.2
-        version: 0.2.2(@houserules/api@0.7.3)
+        specifier: ^0.3.1
+        version: 0.3.1(@houserules/api@0.9.0)
       '@houserules/plugin-changesets':
-        specifier: ^0.4.0
-        version: 0.4.0(@houserules/api@0.7.3)
+        specifier: ^0.5.0
+        version: 0.5.0(@houserules/api@0.9.0)
       '@houserules/plugin-design':
-        specifier: ^0.4.3
-        version: 0.4.3(@houserules/api@0.7.3)
+        specifier: ^0.5.1
+        version: 0.5.1(@houserules/api@0.9.0)
       '@houserules/plugin-prose':
-        specifier: ^0.2.3
-        version: 0.2.3(@houserules/api@0.7.3)
+        specifier: ^0.2.4
+        version: 0.2.4(@houserules/api@0.9.0)
       '@houserules/plugin-svelte':
-        specifier: ^0.2.1
-        version: 0.2.1(@houserules/api@0.7.3)
+        specifier: ^0.2.2
+        version: 0.2.2(@houserules/api@0.9.0)
       '@houserules/plugin-testing':
-        specifier: ^0.3.4
-        version: 0.3.4(@houserules/api@0.7.3)
+        specifier: ^0.3.5
+        version: 0.3.5(@houserules/api@0.9.0)
       '@houserules/plugin-three':
         specifier: ^0.2.2
-        version: 0.2.2(@houserules/api@0.7.3)
+        version: 0.2.2(@houserules/api@0.9.0)
       '@houserules/plugin-typescript':
-        specifier: ^0.1.3
-        version: 0.1.3(@houserules/api@0.7.3)
+        specifier: ^0.1.4
+        version: 0.1.4(@houserules/api@0.9.0)
       '@playwright/test':
         specifier: 1.55.1
         version: 1.55.1
@@ -1064,51 +1064,51 @@ packages:
   '@hapi/topo@6.0.2':
     resolution: {integrity: sha512-KR3rD5inZbGMrHmgPxsJ9dbi6zEK+C3ZwUwTa+eMwWLz7oijWUTWD2pMSNNYJAU6Qq+65NkxXjqHr/7LM2Xkqg==}
 
-  '@houserules/api@0.7.3':
-    resolution: {integrity: sha512-m+epQ73Jkgi8jHQ4pKS0eYRGDjhemLBxSjmJOjDDLDK0PDeKIKvM+Q9A9/1rEnNIx9fvETy97kGRcseQwsuZ5Q==}
+  '@houserules/api@0.9.0':
+    resolution: {integrity: sha512-mTDU/1YWbas6QFwTS7JsyODyC7cv4qfCX4KtmKeaalasI0erQ1S3hr0Hin8Nhg1YDreNEHdvynNMJDJI3rKrBw==}
     engines: {node: '>=22'}
 
-  '@houserules/cli@0.14.0':
-    resolution: {integrity: sha512-RtPG5+RQdt0xGO5w0So+e+b8qolsZpChiZONBHoB3dVOcjHgV5nENsLv/HGHSv+vVdyA1P8OjHXI3HIeSamzTQ==}
+  '@houserules/cli@0.16.0':
+    resolution: {integrity: sha512-kEwFJ8fQxoiHoDahzIy1HlJLO2HYsEPt3/ndKnn3o5/HaS0qD3vT7FbfulGCl0nCMuLX0wigpTVoWOVvEULmfA==}
     engines: {node: '>=22'}
     hasBin: true
 
-  '@houserules/payload@0.5.0':
-    resolution: {integrity: sha512-z5ZFwdPELnHRnCYnIYm8ma8e2e5ObS4ccxgmJaRcPwlWr90pAxrcYi9GloogbnxP7irgQjVkf2edYapXEozxnQ==}
+  '@houserules/payload@0.6.0':
+    resolution: {integrity: sha512-wZNSmEIEKeKYiwmImO1cJKQ31jSKrFysvj63DQh1GXvk4Vxcf5c9G1UpJpUkVFJLAax6VYFnWdemSKsP7erQOA==}
     engines: {node: '>=22'}
 
-  '@houserules/plugin-accessibility@0.2.2':
-    resolution: {integrity: sha512-VwMBEpwBhdm6RQXMQaAmLTL7ar+doXgFAaHyp1ssUqR4gKuIiFIyrPeAq/5Sqr96aPbFjmk6QBC5J0eravOY4A==}
-    engines: {node: '>=22'}
-    peerDependencies:
-      '@houserules/api': '>=0.0.0 <1.0.0'
-
-  '@houserules/plugin-changesets@0.4.0':
-    resolution: {integrity: sha512-0xoOWOy7ap5eui9TfUp6cv0W4d+kMXNNpR6LiurNF3o2RbwUviasGnhiQK2HN74I+ZUygLoFBBqLvIsIkWz5aw==}
+  '@houserules/plugin-accessibility@0.3.1':
+    resolution: {integrity: sha512-K/TUZcn2TNLTwB+8IIWJu9JKxgy6tbWf/eilZzrvJAxT/AOhmEBs3dhqucQv4dRaFmVVcWNGq0/SpVRprs/sxw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-design@0.4.3':
-    resolution: {integrity: sha512-Kvhgl8Zaaz4nLqgOOfGMM/XOlhBw8wFETMI6Cc9WI66AfqB5Ioicz+pqzapm7G68IA0e/geSKQZ/9Q0zG/4Iow==}
+  '@houserules/plugin-changesets@0.5.0':
+    resolution: {integrity: sha512-N70FvtpDrQpxKZV1Ra2U6NLJEbXWbnEHjGkw4sDT/Gm2uanRsjYkdx3xSSbNcDD1mzR49VSz3FDnrKZmycDkvg==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-prose@0.2.3':
-    resolution: {integrity: sha512-Hi2xw4kwTcNI1JXHA8peSzMaYlrHFbAp61mYjtoYMEjRZMhyMMz5Cn5Id/a1qEE3XJbbkt0mZwF/EXHZouWHug==}
+  '@houserules/plugin-design@0.5.1':
+    resolution: {integrity: sha512-SRaiB7SSScIInhvHdafMZz3lbpuIfIQ3LD/1rAfecwyFp/x1r/duhyghC6L25YXP24KJ673jNFuC8U7nCneuuQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-svelte@0.2.1':
-    resolution: {integrity: sha512-cOs2A9WGmJ8ZVFChsgiHXyf8Be7X6rWNnut7kFgMDSvR1Vqp5BY56BDM8wUci+WXf6ZwRHMlKSfo0S5kxvg8LA==}
+  '@houserules/plugin-prose@0.2.4':
+    resolution: {integrity: sha512-i8qIf4b0MExoQaNrFVZhOOb07Cc4+vaW24JaZzfhgqxjeb3jlHpaKNyzaQMJliUq16PsyqnGQ319lIMbuilDww==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-testing@0.3.4':
-    resolution: {integrity: sha512-MgQ7juW4sIZUBTGj1SpopEdkLU6qyITeBsV2S66oAaRYNnPJ54SJFT5DBM+lXN8PlLarDTZL3gDmcbJw01QzXw==}
+  '@houserules/plugin-svelte@0.2.2':
+    resolution: {integrity: sha512-GMxtamDFNxvh5eWjdt7bYGCNXQKmdR5jQK4dxppED+JFBKD0izD8zPM7rvQBzJ3nptfWDfFVy0ddU6Y0NAfKDQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@houserules/api': '>=0.0.0 <1.0.0'
+
+  '@houserules/plugin-testing@0.3.5':
+    resolution: {integrity: sha512-fktA4R+2V8o2A++9/w8X1QQVhc+8QtV3DQ6nV4L9sLzVd5IzOqG+1sK+EqigQD8GYsaICNObeNbAyEfzNPYuFw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
@@ -1119,8 +1119,8 @@ packages:
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
 
-  '@houserules/plugin-typescript@0.1.3':
-    resolution: {integrity: sha512-MuuRGqcCRDWF4VkY6wApd3EokAAVZ5RHM6WfK8ZCt63Zsak/6MlfzQzRXWtxQZygxDai52K73Bp95nsmA9g5kw==}
+  '@houserules/plugin-typescript@0.1.4':
+    resolution: {integrity: sha512-AqiWQor4wFw7qou+FCLAMZYoiciEibU4oYqqR5xl1mabRA7gUaVvW8dKuNTn0LPsI5X/TtYzbsQt96Q9xc127A==}
     engines: {node: '>=22'}
     peerDependencies:
       '@houserules/api': '>=0.0.0 <1.0.0'
@@ -4442,11 +4442,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  semver@7.8.5:
-    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
-    engines: {node: '>=10'}
-    hasBin: true
-
   semver@7.8.6:
     resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
@@ -5216,7 +5211,7 @@ snapshots:
       outdent: 0.5.0
       prettier: 2.8.8
       resolve-from: 5.0.0
-      semver: 7.8.5
+      semver: 7.8.6
 
   '@changesets/assemble-release-plan@6.0.9':
     dependencies:
@@ -5225,7 +5220,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
-      semver: 7.8.5
+      semver: 7.8.6
 
   '@changesets/changelog-git@0.2.1':
     dependencies:
@@ -5283,7 +5278,7 @@ snapshots:
       '@changesets/types': 6.1.0
       '@manypkg/get-packages': 1.1.3
       picocolors: 1.1.1
-      semver: 7.8.5
+      semver: 7.8.6
 
   '@changesets/get-release-plan@4.0.13':
     dependencies:
@@ -5515,7 +5510,7 @@ snapshots:
       env-paths: 3.0.0
       graceful-fs: 4.2.11
       progress: 2.0.3
-      semver: 7.8.5
+      semver: 7.8.6
       sumchecker: 3.0.1
     optionalDependencies:
       undici: 7.30.1
@@ -5834,56 +5829,57 @@ snapshots:
     dependencies:
       '@hapi/hoek': 11.0.7
 
-  '@houserules/api@0.7.3':
+  '@houserules/api@0.9.0':
     dependencies:
-      '@houserules/payload': 0.5.0
+      '@houserules/payload': 0.6.0
       type-fest: 6.0.3
       zod: 4.6.7
 
-  '@houserules/cli@0.14.0':
+  '@houserules/cli@0.16.0':
     dependencies:
       '@clack/prompts': 1.9.0
-      '@houserules/api': 0.7.3
-      '@houserules/payload': 0.5.0
+      '@houserules/api': 0.9.0
+      '@houserules/payload': 0.6.0
       commander: 15.1.0
       dequal: 2.0.3
       diff: 9.0.0
       picocolors: 1.1.1
       semver: 7.8.6
 
-  '@houserules/payload@0.5.0': {}
+  '@houserules/payload@0.6.0': {}
 
-  '@houserules/plugin-accessibility@0.2.2(@houserules/api@0.7.3)':
+  '@houserules/plugin-accessibility@0.3.1(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
+      semver: 7.8.6
 
-  '@houserules/plugin-changesets@0.4.0(@houserules/api@0.7.3)':
+  '@houserules/plugin-changesets@0.5.0(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-design@0.4.3(@houserules/api@0.7.3)':
+  '@houserules/plugin-design@0.5.1(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-prose@0.2.3(@houserules/api@0.7.3)':
+  '@houserules/plugin-prose@0.2.4(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-svelte@0.2.1(@houserules/api@0.7.3)':
+  '@houserules/plugin-svelte@0.2.2(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-testing@0.3.4(@houserules/api@0.7.3)':
+  '@houserules/plugin-testing@0.3.5(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-three@0.2.2(@houserules/api@0.7.3)':
+  '@houserules/plugin-three@0.2.2(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
-  '@houserules/plugin-typescript@0.1.3(@houserules/api@0.7.3)':
+  '@houserules/plugin-typescript@0.1.4(@houserules/api@0.9.0)':
     dependencies:
-      '@houserules/api': 0.7.3
+      '@houserules/api': 0.9.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -8335,7 +8331,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.8.5
+      semver: 7.8.6
       serialize-error: 7.0.1
     optional: true
 
@@ -8807,7 +8803,7 @@ snapshots:
 
   make-dir@4.0.0:
     dependencies:
-      semver: 7.8.5
+      semver: 7.8.6
 
   maplibre-gl@5.24.0:
     dependencies:
@@ -8920,11 +8916,11 @@ snapshots:
 
   node-abi@4.39.0:
     dependencies:
-      semver: 7.8.5
+      semver: 7.8.6
 
   node-api-version@0.2.1:
     dependencies:
-      semver: 7.8.5
+      semver: 7.8.6
 
   node-gyp@12.4.0:
     dependencies:
@@ -8933,7 +8929,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.8.5
+      semver: 7.8.6
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.29.1
@@ -9377,8 +9373,6 @@ snapshots:
 
   semver@7.7.3: {}
 
-  semver@7.8.5: {}
-
   semver@7.8.6: {}
 
   sentry@0.49.0: {}
@@ -9404,7 +9398,7 @@ snapshots:
 
   simple-update-notifier@2.0.0:
     dependencies:
-      semver: 7.8.5
+      semver: 7.8.6
 
   sirv@3.0.2:
     dependencies:
