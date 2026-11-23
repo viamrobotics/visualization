@@ -93,7 +93,7 @@ describe('BuildDetails', () => {
 		environmentContext.current.isStandalone = isStandalone
 
 		return render(BuildDetails, {
-			props: { entity },
+			props: { entities: [entity] },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, environmentContext],

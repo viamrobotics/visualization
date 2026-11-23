@@ -2,31 +2,38 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { Switch } from '@viamrobotics/prime-core'
 
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
+
+	import SharedSwitch from './SharedSwitch.svelte'
+	import { sharedValue } from './sharedValue'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 
 	const { invalidate } = useThrelte()
 
-	const showAxesHelper = useTrait(() => entity, traits.ShowAxesHelper)
+	const shown = useMappedEntitiesTraits(
+		() => entities,
+		[traits.ShowAxesHelper],
+		(entity) => entity.has(traits.ShowAxesHelper)
+	)
 
 	const handleToggle = (next: boolean) => {
-		if (next) entity.add(traits.ShowAxesHelper)
-		else entity.remove(traits.ShowAxesHelper)
+		for (const entity of entities) {
+			if (next) entity.add(traits.ShowAxesHelper)
+			else entity.remove(traits.ShowAxesHelper)
+		}
 		invalidate()
 	}
 </script>
 
-<div class="flex items-center justify-between">
-	<strong class="font-semibold">show axes helper</strong>
-	<Switch
-		on={showAxesHelper.current === true}
-		on:change={(event) => handleToggle(event.detail)}
-	/>
-</div>
+<SharedSwitch
+	label="show axes helper"
+	value={sharedValue(shown.current)}
+	onchange={handleToggle}
+/>

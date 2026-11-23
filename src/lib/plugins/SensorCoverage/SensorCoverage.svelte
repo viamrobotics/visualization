@@ -43,12 +43,17 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 		return name !== undefined && cameraNames.has(name)
 	}
 
-	useDetailsSection({ snippet: coverageRow, when: isCameraFrame, tab: 'appearance' })
+	useDetailsSection({
+		snippet: coverageRow,
+		label: 'show coverage',
+		when: isCameraFrame,
+		tab: 'appearance',
+	})
 </script>
 
-{#snippet coverageRow({ entity }: { entity: Entity })}
+{#snippet coverageRow({ entities }: { entities: readonly Entity[] })}
 	<SensorCoverageToggle
-		{entity}
+		{entities}
 		intrinsicsStatus={frusta.intrinsicsStatus}
 	/>
 {/snippet}

@@ -794,6 +794,36 @@ describe('createChunkLoader', () => {
 		expect(geometry.drawRange.count).toBe(total)
 	})
 
+	it('writes a chunk that arrives before the entity has its geometry', async () => {
+		world = createWorld()
+		const total = 6
+		const firstChunkEnd = 3
+		const entity = world.spawn()
+		const loader = createChunkLoader({
+			world,
+			invalidate: () => {},
+			fetchChunk: async () => ({
+				start: firstChunkEnd,
+				positions: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+				done: true,
+			}),
+		})
+		loader.start('uuid', entity, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+			chunks: { chunkSize: firstChunkEnd, total, stride: STRIDE.POSITIONS },
+		})
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		const geometry = preAllocateBufferGeometry(total, STRIDE.POSITIONS, {
+			colorFormat: ColorFormat.UNSPECIFIED,
+		})
+
+		entity.add(traits.BufferGeometry(geometry))
+
+		await vi.waitFor(() => {
+			expect(geometry.drawRange.count, 'drawn points after the late geometry').toBe(total)
+		})
+	})
+
 	it('dispose aborts in-flight fetches and stops the loop', async () => {
 		world = createWorld()
 		const total = 12

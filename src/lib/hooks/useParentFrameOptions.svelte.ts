@@ -5,7 +5,8 @@ import { useFragmentInfo } from './useFragmentInfo.svelte'
 import { useFrames } from './useFrames.svelte'
 
 /**
- * Reactive list of frames the named frame may be reparented to.
+ * Reactive list of frames every named frame may be reparented to: the parents they
+ * have in common, so one pick never makes any of them its own ancestor.
  *
  * Sourced from `useFrames` — the machine's frame system merged with the part
  * config — rather than the part config alone. Components a fragment provides
@@ -14,7 +15,7 @@ import { useFrames } from './useFrames.svelte'
  * frames that are perfectly valid parents.
  */
 export const useParentFrameOptions = (
-	componentName: () => string | undefined
+	componentNames: () => readonly (string | undefined)[]
 ): { readonly current: string[] } => {
 	const frames = useFrames()
 	const configFrames = useConfigFrames()
@@ -29,14 +30,20 @@ export const useParentFrameOptions = (
 		}))
 	)
 
-	const current = $derived(
-		parentFrameOptions({
-			frames: frames.current,
-			fragmentComponents,
-			unsetFrameNames: configFrames.unsetFrames,
-			componentName: componentName(),
-		})
-	)
+	const current = $derived.by(() => {
+		const [first, ...rest] = componentNames().map((componentName) =>
+			parentFrameOptions({
+				frames: frames.current,
+				fragmentComponents,
+				unsetFrameNames: configFrames.unsetFrames,
+				componentName,
+			})
+		)
+		if (!first) return []
+
+		const allowedByRest = rest.map((options) => new Set(options))
+		return first.filter((option) => allowedByRest.every((allowed) => allowed.has(option)))
+	})
 
 	return {
 		get current() {

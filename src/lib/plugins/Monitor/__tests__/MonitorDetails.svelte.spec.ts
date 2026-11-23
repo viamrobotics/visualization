@@ -5,8 +5,6 @@ import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { DetailsSection } from '#lib/hooks/useDetailsSections.svelte.js'
-
 import { createEntityFixture } from '#lib/__tests__/__fixtures__/entity.js'
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -62,7 +60,7 @@ describe('MonitorDetails', () => {
 		})
 	})
 
-	const renderPanel = (sections = createDetailsSections()) => {
+	const renderPanel = (sections = createDetailsSections(), entities = [entity]) => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 
@@ -73,7 +71,7 @@ describe('MonitorDetails', () => {
 		}
 
 		render(MonitorDetails, {
-			props: { entity },
+			props: { entities },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
@@ -89,20 +87,43 @@ describe('MonitorDetails', () => {
 		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
+	const sectionFor = (text: string) =>
+		createRawSnippet<[{ entities: readonly Entity[] }]>(() => ({
+			render: () => `<p>${text}</p>`,
+		}))
+
 	it('renders contributed details sections gated by when()', () => {
 		const sections = createDetailsSections()
-		const sectionFor = (text: string) =>
-			createRawSnippet<[{ entity: Entity }]>(() => ({
-				render: () => `<p>${text}</p>`,
-			})) as DetailsSection['snippet']
-
-		sections.register({ snippet: sectionFor('shown section') })
-		sections.register({ snippet: sectionFor('hidden section'), when: () => false })
+		sections.register({ snippet: sectionFor('shown section'), label: 'shown' })
+		sections.register({ snippet: sectionFor('hidden section'), label: 'hidden', when: () => false })
 
 		renderPanel(sections)
 
 		expect(screen.getByText('shown section')).toBeInTheDocument()
 		expect(screen.queryByText('hidden section')).not.toBeInTheDocument()
+	})
+
+	it('names a section in a notice, in place of its content, when when() holds for only part of the selection', () => {
+		const other = world.spawn(traits.Name('Other Object'))
+		const sections = createDetailsSections()
+		sections.register({
+			snippet: sectionFor('battery rows'),
+			label: 'battery',
+			when: (candidate) => candidate === entity,
+		})
+
+		renderPanel(sections, [entity, other])
+
+		expect(screen.queryByText('battery rows')).not.toBeInTheDocument()
+		expect(screen.getByRole('note', { name: 'battery' })).toHaveTextContent(
+			'Not every selected object supports this.'
+		)
+	})
+
+	it('titles a selection of several objects by its count', () => {
+		renderPanel(undefined, [entity, world.spawn(traits.Name('Other Object'))])
+
+		expect(screen.getByText('2 selected')).toBeInTheDocument()
 	})
 
 	it('renders read-only local details', () => {

@@ -1,18 +1,61 @@
 <script lang="ts">
 	import { type Entity } from 'koota'
 
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
+
+	import SectionNotice from './SectionNotice.svelte'
+	import { formatSharedNumber, type Shared, sharedNumber, sharedValue } from './sharedValue'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 
-	const box = useTrait(() => entity, traits.Box)
-	const sphere = useTrait(() => entity, traits.Sphere)
-	const capsule = useTrait(() => entity, traits.Capsule)
-	const cylinder = useTrait(() => entity, traits.Cylinder)
+	const geometries = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Box, traits.Sphere, traits.Capsule, traits.Cylinder],
+		(entity) => {
+			const box = entity.get(traits.Box)
+			if (box) return { type: 'box', x: box.x, y: box.y, z: box.z } as const
+
+			const capsule = entity.get(traits.Capsule)
+			if (capsule) return { type: 'capsule', r: capsule.r, l: capsule.l } as const
+
+			const cylinder = entity.get(traits.Cylinder)
+			if (cylinder) {
+				return {
+					type: 'cylinder',
+					r: cylinder.r,
+					l: cylinder.l,
+					isCapped: cylinder.capped,
+				} as const
+			}
+
+			const sphere = entity.get(traits.Sphere)
+			if (sphere) return { type: 'sphere', r: sphere.r } as const
+
+			return undefined
+		}
+	)
+
+	const geometryType = $derived(sharedValue(geometries.current.map((geometry) => geometry?.type)))
+	const hasAnyGeometry = $derived(geometries.current.some((geometry) => geometry !== undefined))
+
+	/** The named dimension across a selection that shares one geometry type. */
+	const dimension = (key: 'x' | 'y' | 'z' | 'r' | 'l'): Shared<number> =>
+		sharedNumber(
+			geometries.current.map(
+				(geometry) =>
+					(geometry as Partial<Record<typeof key, number>> | undefined)?.[key] ?? Number.NaN
+			)
+		)
+
+	// A mixed capped flag reads as plain `cylinder`, which every one of them is.
+	const isOpenCylinder = $derived(
+		geometries.current.every((geometry) => geometry?.type === 'cylinder' && !geometry.isCapped)
+	)
 </script>
 
 {#snippet ImmutableField({
@@ -20,8 +63,8 @@
 	value,
 	ariaLabel,
 }: {
-	label?: string
-	value?: number | string
+	label: string
+	value: Shared<number>
 	ariaLabel: string
 })}
 	<div>
@@ -32,11 +75,11 @@
 			{label}
 		</span>
 
-		{typeof value === 'number' ? value.toFixed(2) : (value ?? '-')}
+		{formatSharedNumber(value)}
 	</div>
 {/snippet}
 
-{#if box.current}
+{#if geometryType === 'box'}
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(box) (mm)</span>
@@ -44,21 +87,21 @@
 			{@render ImmutableField({
 				label: 'x',
 				ariaLabel: 'box dimensions x value input',
-				value: box.current.x,
+				value: dimension('x'),
 			})}
 			{@render ImmutableField({
 				label: 'y',
 				ariaLabel: 'box dimensions y value input',
-				value: box.current.y,
+				value: dimension('y'),
 			})}
 			{@render ImmutableField({
 				label: 'z',
 				ariaLabel: 'box dimensions z value input',
-				value: box.current.z,
+				value: dimension('z'),
 			})}
 		</div>
 	</div>
-{:else if capsule.current}
+{:else if geometryType === 'capsule'}
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(capsule) (mm)</span>
@@ -66,43 +109,46 @@
 			{@render ImmutableField({
 				label: 'r',
 				ariaLabel: 'capsule dimensions radius value input',
-				value: capsule.current.r,
+				value: dimension('r'),
 			})}
 			{@render ImmutableField({
 				label: 'l',
 				ariaLabel: 'capsule dimensions length value input',
-				value: capsule.current.l,
+				value: dimension('l'),
 			})}
 		</div>
 	</div>
-{:else if cylinder.current}
+{:else if geometryType === 'cylinder'}
 	<div>
 		<strong class="font-semibold">dimensions</strong>
-		<span class="text-subtle-2"
-			>({cylinder.current.capped ? 'cylinder' : 'open cylinder'}) (mm)</span
-		>
+		<span class="text-subtle-2">({isOpenCylinder ? 'open cylinder' : 'cylinder'}) (mm)</span>
 		<div class="mt-0.5 flex items-center gap-2">
 			{@render ImmutableField({
 				label: 'r',
 				ariaLabel: 'cylinder dimensions radius value input',
-				value: cylinder.current.r,
+				value: dimension('r'),
 			})}
 			{@render ImmutableField({
 				label: 'l',
 				ariaLabel: 'cylinder dimensions length value input',
-				value: cylinder.current.l,
+				value: dimension('l'),
 			})}
 		</div>
 	</div>
-{:else if sphere.current}
+{:else if geometryType === 'sphere'}
 	<div>
 		<strong class="font-semibold">dimensions (sphere)</strong>
 		<div class="flex items-center gap-2">
 			{@render ImmutableField({
 				label: 'r',
 				ariaLabel: 'sphere dimensions radius value',
-				value: sphere.current.r,
+				value: dimension('r'),
 			})}
 		</div>
 	</div>
+{:else if hasAnyGeometry}
+	<SectionNotice
+		label="dimensions"
+		message="The selected objects have different geometry types."
+	/>
 {/if}

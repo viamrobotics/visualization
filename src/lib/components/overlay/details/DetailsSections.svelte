@@ -1,7 +1,7 @@
 <!--
 @component
 
-The contributed details sections that belong to one tab of one entity's card, in
+The contributed details sections that belong to one tab of the details panel, in
 registration order.
 -->
 <script lang="ts">
@@ -11,12 +11,14 @@ registration order.
 
 	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
 
+	import SectionNotice from './SectionNotice.svelte'
+
 	interface Props {
-		entity: Entity
+		entities: readonly Entity[]
 		tab: DetailsTabId
 	}
 
-	const { entity, tab }: Props = $props()
+	const { entities, tab }: Props = $props()
 
 	const sections = useDetailsSections()
 
@@ -24,7 +26,14 @@ registration order.
 </script>
 
 {#each visible as section (section)}
-	{#if section.when?.(entity) ?? true}
-		{@render section.snippet({ entity })}
+	{@const matching = entities.filter((entity) => section.when?.(entity) ?? true)}
+
+	{#if matching.length === entities.length}
+		{@render section.snippet({ entities })}
+	{:else if matching.length > 0}
+		<SectionNotice
+			label={section.label}
+			message="Not every selected object supports this."
+		/>
 	{/if}
 {/each}

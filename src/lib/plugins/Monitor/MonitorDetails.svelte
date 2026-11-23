@@ -15,108 +15,164 @@
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
-	import { traits, useTag, useTrait } from '#lib/ecs/index.js'
+	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 	import ResourceTestTab from '#lib/plugins/ControlWidgets/ResourceTestTab.svelte'
 	import { resourceWidgetToggles } from '#lib/plugins/ControlWidgets/resourceWidgetToggles.js'
 	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
-	import SessionAppearanceDetails from './SessionAppearanceDetails.svelte'
+	import SessionAppearanceDetails, {
+		type SessionAppearanceTarget,
+	} from './SessionAppearanceDetails.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
+		/** Shown above the tabs, for why the mode offers nothing more for this selection. */
+		notice?: string
 	}
 
-	const { entity, ...rest }: Props = $props()
+	const { entities, notice, ...rest }: Props = $props()
 
-	const customDetails = useTag(() => entity, traits.CustomDetails)
-	const name = useTrait(() => entity, traits.Name)
-	const framesAPI = useTrait(() => entity, traits.FramesAPI)
 	const resourceByName = useResourceByName()
 
-	const resource = $derived(name.current ? resourceByName.current[name.current] : undefined)
-	const testableResource = $derived(
-		resource && resourceWidgetToggles(resource).length > 0 ? resource : undefined
+	const reads = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Name, traits.FramesAPI, traits.CustomDetails],
+		(entity) => {
+			const name = entity.get(traits.Name)
+			const resource = name ? resourceByName.current[name] : undefined
+			return {
+				entity,
+				name,
+				isFrame: entity.has(traits.FramesAPI),
+				hasCustomDetails: entity.has(traits.CustomDetails),
+				testableResource:
+					resource && resourceWidgetToggles(resource).length > 0 ? resource : undefined,
+			}
+		}
 	)
 
+	const only = $derived(entities.length === 1 ? reads.current[0] : undefined)
+	const isAllCustom = $derived(reads.current.every((read) => read.hasCustomDetails))
+	const isAnyCustom = $derived(reads.current.some((read) => read.hasCustomDetails))
+	const hasFrame = $derived(reads.current.some((read) => read.isFrame && read.name !== undefined))
+	const hasTestable = $derived(reads.current.some((read) => read.testableResource))
+
 	// A frame's edits follow the same rules as a saved appearance, so they reach the frames inside it.
-	const appearanceKey = $derived(
-		framesAPI.current && name.current !== undefined ? appearanceKeyOf(name.current) : undefined
+	const sessionTargets = $derived(
+		reads.current.flatMap(({ entity, name, isFrame }): SessionAppearanceTarget[] =>
+			isFrame && name !== undefined ? [{ entity, ...appearanceKeyOf(name) }] : []
+		)
 	)
 
 	const tabs = $derived<DetailsTab[]>(
-		customDetails.current
+		isAllCustom
 			? [{ id: 'details', label: 'Details', content: detailsTab }]
 			: [
 					{ id: 'details', label: 'Details', content: detailsTab },
 					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
-					...(framesAPI.current && name.current !== undefined
-						? [{ id: 'pov', label: 'POV', content: povTab, transparent: true }]
+					...(hasFrame
+						? [{ id: 'pov', label: 'POV', content: povTab, transparent: only !== undefined }]
 						: []),
-					...(testableResource ? [{ id: 'test', label: 'Test', content: testTab }] : []),
+					...(hasTestable ? [{ id: 'test', label: 'Test', content: testTab }] : []),
 				]
 	)
 </script>
 
 {#snippet detailsTab()}
 	<div class="flex flex-col gap-2.5 pt-3">
-		{#if !customDetails.current}
+		{#if !isAnyCustom}
 			<PoseDetails
-				{entity}
+				{entities}
 				editable={false}
+			/>
+		{:else if !isAllCustom}
+			<SectionNotice
+				label="pose"
+				message="Not every selected object shows a pose."
 			/>
 		{/if}
 
-		<DimensionsDetails {entity} />
+		<DimensionsDetails {entities} />
 
-		<GeometryOffsetDetails {entity} />
+		<GeometryOffsetDetails {entities} />
 
-		<CountDetails {entity} />
+		<CountDetails {entities} />
 	</div>
 
-	<RelationshipDetails {entity} />
+	<RelationshipDetails {entities} />
 
 	<DetailsSections
-		{entity}
+		{entities}
 		tab="details"
 	/>
 {/snippet}
 
 {#snippet appearanceTab()}
-	{#if appearanceKey}
-		<SessionAppearanceDetails
-			{entity}
-			componentName={appearanceKey.componentName}
-			frameId={appearanceKey.frameId}
-		/>
+	{#if sessionTargets.length === entities.length}
+		<SessionAppearanceDetails targets={sessionTargets} />
+	{:else if sessionTargets.length === 0}
+		<AppearanceDetails {entities} />
 	{:else}
-		<AppearanceDetails {entity} />
+		<div class="pt-3">
+			<SectionNotice
+				label="appearance"
+				message="Frames and other objects keep their appearance differently. Select only one kind to edit it."
+			/>
+		</div>
 	{/if}
 
 	<DetailsSections
-		{entity}
+		{entities}
 		tab="appearance"
 	/>
 {/snippet}
 
 {#snippet povTab()}
-	{#if name.current !== undefined}
+	{#if only?.name !== undefined}
 		<FramePovTab
-			{entity}
-			frameName={name.current}
+			entity={only.entity}
+			frameName={only.name}
 		/>
+	{:else}
+		<div class="pt-3">
+			<SectionNotice
+				label="point of view"
+				message="Select a single frame to look through it."
+			/>
+		</div>
 	{/if}
 {/snippet}
 
 {#snippet testTab()}
-	{#if testableResource}
-		<ResourceTestTab resource={testableResource} />
+	{#if only?.testableResource}
+		<ResourceTestTab resource={only.testableResource} />
+	{:else}
+		<div class="pt-3">
+			<SectionNotice
+				label="test"
+				message="Select a single resource to test it."
+			/>
+		</div>
 	{/if}
 {/snippet}
 
 <DetailsPanel
-	{entity}
+	{entities}
 	{...rest}
 >
+	{#if notice}
+		<div class="bg-extralight px-2">
+			<p
+				class="mt-2 rounded border-l-4 border-yellow-600 bg-yellow-50 px-2 py-1.5 text-yellow-900"
+				role="status"
+			>
+				{notice}
+			</p>
+		</div>
+	{/if}
+
 	<DetailsTabs items={tabs} />
 </DetailsPanel>

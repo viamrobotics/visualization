@@ -6,14 +6,15 @@
 	import OpacityDetails from '#lib/components/overlay/details/OpacityDetails.svelte'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 </script>
 
 <div class="flex flex-col gap-2.5 pt-3">
-	<ColorDetails {entity} />
-	<OpacityDetails {entity} />
-	<AxesHelperDetails {entity} />
+	<ColorDetails {entities} />
+	<OpacityDetails {entities} />
+	<AxesHelperDetails {entities} />
 </div>

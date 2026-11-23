@@ -170,7 +170,7 @@ drives its arm there through the saver's "go to" switch position.
 </script>
 
 <DetailsPanel
-	{entity}
+	entities={[entity]}
 	{...rest}
 >
 	<div class="bg-extralight px-2 pb-2">

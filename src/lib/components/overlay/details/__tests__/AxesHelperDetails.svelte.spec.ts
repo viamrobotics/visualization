@@ -13,7 +13,7 @@ describe('AxesHelperDetails', () => {
 	it('renders the show axes helper toggle', () => {
 		const entity = world.spawn()
 		render(AxesHelperDetails, {
-			props: { entity },
+			props: { entities: [entity] },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
 		expect(screen.getByText('show axes helper')).toBeInTheDocument()

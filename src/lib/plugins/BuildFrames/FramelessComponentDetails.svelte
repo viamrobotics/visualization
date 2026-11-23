@@ -5,36 +5,44 @@
 	import { type Entity } from 'koota'
 
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import { traits } from '#lib/ecs/index.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
-		entity: Entity
+		/** The selected components without a frame. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity, ...rest }: Props = $props()
+	const { entities, ...rest }: Props = $props()
 
 	const partConfig = usePartConfig()
 
-	const name = useTrait(() => entity, traits.Name)
+	const isSingle = $derived(entities.length === 1)
 </script>
 
 <DetailsPanel
-	{entity}
+	{entities}
 	sceneActions={false}
 	{...rest}
 >
 	<div class="bg-extralight px-2 pb-2">
-		<p class="text-subtle-1 pt-3 pb-2">This component has no frame, so it isn't in the scene.</p>
+		<p class="text-subtle-1 pt-3 pb-2">
+			{isSingle
+				? "This component has no frame, so it isn't in the scene."
+				: "These components have no frame, so they aren't in the scene."}
+		</p>
 
 		<Button
 			icon="plus"
 			class="w-full"
 			onclick={() => {
-				if (name.current) partConfig.createFrame(name.current)
+				for (const entity of entities) {
+					const name = entity.get(traits.Name)
+					if (name) partConfig.createFrame(name)
+				}
 			}}
 		>
-			Add frame
+			{isSingle ? 'Add frame' : `Add ${entities.length} frames`}
 		</Button>
 	</div>
 </DetailsPanel>

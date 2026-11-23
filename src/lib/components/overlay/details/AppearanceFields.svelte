@@ -1,121 +1,178 @@
-<script lang="ts">
+<script
+	module
+	lang="ts"
+>
 	import type { Entity } from 'koota'
 
-	import { Switch } from '@viamrobotics/prime-core'
-	import {
-		Color,
-		type ColorChangeEvent,
-		type ColorValueRgbObject,
-		Slider,
-		type SliderChangeEvent,
-	} from 'svelte-tweakpane-ui'
-	import { SRGBColorSpace, Color as ThreeColor } from 'three'
+	import type { ResourceAppearance } from '#lib/resourceAppearance.js'
 
-	import type { ResourceAppearance, ResourceAppearancePatch } from '#lib/resourceAppearance.js'
-
-	import { colors, parseRGB } from '#lib/color.js'
-	import { traits, useOpacity, useTrait } from '#lib/ecs/index.js'
-
-	interface Props {
-		/** The frame being styled. Its current color and opacity show for a key nothing sets. */
+	/** One selected frame being styled. */
+	export interface AppearanceFieldsTarget {
+		/** The frame. Its current color and opacity show for a key nothing sets. */
 		entity: Entity
 		/** What is set at this level of the appearance being edited. */
 		values: ResourceAppearance
 		/** What shows for a key `values` leaves unset, such as the resource a frame inside follows. */
 		fallback: ResourceAppearance
+	}
+</script>
+
+<script lang="ts">
+	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
+	import { SRGBColorSpace, Color as ThreeColor } from 'three'
+
+	import type { ResourceAppearancePatch } from '#lib/resourceAppearance.js'
+
+	import { colors, parseRGB } from '#lib/color.js'
+	import {
+		DEFAULT_OPACITY,
+		resolveOpacity,
+		traits,
+		useMappedEntitiesTraits,
+	} from '#lib/ecs/index.js'
+
+	import SharedColor from './SharedColor.svelte'
+	import SharedSwitch from './SharedSwitch.svelte'
+	import {
+		formatSharedNumber,
+		isNearlyEqual,
+		sharedNumber,
+		sharedValue,
+		toInputNumber,
+	} from './sharedValue'
+
+	interface Props {
+		/** One per selected frame. Never empty. */
+		targets: AppearanceFieldsTarget[]
 		/** Whether to offer the visible switch, which saves a frame as hidden until shown. */
 		showsVisibility: boolean
-		onchange: (patch: ResourceAppearancePatch) => void
+		/** Called with one patch per target, in the order of `targets`. */
+		onchange: (patches: ResourceAppearancePatch[]) => void
 	}
 
-	const { entity, values, fallback, showsVisibility, onchange }: Props = $props()
+	const { targets, showsVisibility, onchange }: Props = $props()
 
 	const OPACITY_STEP = 0.01
 	const OPACITY_DECIMALS = 2
 	const AXES_HELPER_DEFAULT = true
 	const INVISIBLE_DEFAULT = false
 
-	const entityColor = useTrait(() => entity, traits.Color)
-	const entityOpacity = useOpacity(() => entity)
+	const entityLooks = useMappedEntitiesTraits(
+		() => targets.map((target) => target.entity),
+		[traits.Color, traits.Opacity, traits.OpacityOverride],
+		(entity) => ({ color: entity.get(traits.Color), opacity: resolveOpacity(entity) })
+	)
 
-	const fallbackAxesHelper = $derived(fallback.show_axes_helper ?? AXES_HELPER_DEFAULT)
-	const fallbackInvisible = $derived(fallback.invisible ?? INVISIBLE_DEFAULT)
+	const fallbackAxesHelperOf = (target: AppearanceFieldsTarget) =>
+		target.fallback.show_axes_helper ?? AXES_HELPER_DEFAULT
+	const fallbackInvisibleOf = (target: AppearanceFieldsTarget) =>
+		target.fallback.invisible ?? INVISIBLE_DEFAULT
 
 	// The picker works in sRGB. A three.js `Color` holds linear values, so both directions convert.
-	const colorValue = $derived.by<ColorValueRgbObject>(() => {
-		const hex = values.color ?? fallback.color
-		let color = new ThreeColor(colors.default)
-		if (hex) {
-			color = new ThreeColor(hex)
-		} else if (entityColor.current) {
-			color = parseRGB(entityColor.current)
-		}
-		const { r, g, b } = color.getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
-		return { r, g, b }
-	})
+	const pickerColors = $derived(
+		targets.map((target, index) => {
+			const hex = target.values.color ?? target.fallback.color
+			const entityColor = entityLooks.current[index]?.color
+			let color = new ThreeColor(colors.default)
+			if (hex) {
+				color = new ThreeColor(hex)
+			} else if (entityColor) {
+				color = parseRGB(entityColor)
+			}
+			const { r, g, b } = color.getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
+			return { r, g, b }
+		})
+	)
+	const color = $derived(
+		sharedValue(
+			pickerColors,
+			(a, b) => isNearlyEqual(a.r, b.r) && isNearlyEqual(a.g, b.g) && isNearlyEqual(a.b, b.b)
+		)
+	)
 
-	const handleColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const { r, g, b } = event.detail.value as ColorValueRgbObject
-		onchange({ color: `#${new ThreeColor().setRGB(r, g, b, SRGBColorSpace).getHexString()}` })
-	}
+	const opacity = $derived(
+		sharedNumber(
+			targets.map(
+				(target, index) =>
+					target.values.opacity ??
+					target.fallback.opacity ??
+					entityLooks.current[index]?.opacity ??
+					DEFAULT_OPACITY
+			)
+		)
+	)
+	const isVisible = $derived(
+		sharedValue(targets.map((target) => !(target.values.invisible ?? fallbackInvisibleOf(target))))
+	)
+	const isAxesHelperShown = $derived(
+		sharedValue(
+			targets.map((target) => target.values.show_axes_helper ?? fallbackAxesHelperOf(target))
+		)
+	)
 
 	const handleOpacityChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		onchange({ opacity: Number(event.detail.value.toFixed(OPACITY_DECIMALS)) })
+		const next = event.detail.value
+		// A mixed slider reports the NaN it was handed until the user moves it.
+		if (event.detail.origin !== 'internal' || Number.isNaN(next)) return
+		const patch = { opacity: Number(next.toFixed(OPACITY_DECIMALS)) }
+		onchange(targets.map(() => patch))
 	}
 
-	const handleVisibleChange = (isVisible: boolean) => {
-		const isInvisible = !isVisible
-		onchange({ invisible: isInvisible === fallbackInvisible ? undefined : isInvisible })
+	// A switch set back to what the fallback already gives clears the key, so the frame follows again.
+	const handleVisibleChange = (isNextVisible: boolean) => {
+		const isInvisible = !isNextVisible
+		onchange(
+			targets.map((target) => ({
+				invisible: isInvisible === fallbackInvisibleOf(target) ? undefined : isInvisible,
+			}))
+		)
 	}
 
 	const handleAxesHelperChange = (isShown: boolean) => {
-		onchange({ show_axes_helper: isShown === fallbackAxesHelper ? undefined : isShown })
+		onchange(
+			targets.map((target) => ({
+				show_axes_helper: isShown === fallbackAxesHelperOf(target) ? undefined : isShown,
+			}))
+		)
 	}
 </script>
 
-<div>
-	<strong class="font-semibold">color</strong>
-	<div aria-label="mutable color">
-		<Color
-			value={colorValue}
-			type="float"
-			on:change={handleColorChange}
-		/>
-	</div>
-</div>
+{#if pickerColors[0]}
+	<SharedColor
+		label="color"
+		value={color}
+		mixedSeed={pickerColors[0]}
+		onchange={({ r, g, b }) => {
+			const patch = { color: `#${new ThreeColor().setRGB(r, g, b, SRGBColorSpace).getHexString()}` }
+			onchange(targets.map(() => patch))
+		}}
+	/>
+{/if}
 
 <div>
 	<strong class="font-semibold">opacity</strong>
 	<div aria-label="mutable opacity">
 		<Slider
-			value={values.opacity ?? fallback.opacity ?? entityOpacity.current}
+			value={toInputNumber(opacity)}
 			min={0}
 			max={1}
 			step={OPACITY_STEP}
-			format={(value) => value.toFixed(OPACITY_DECIMALS)}
+			format={(value) => formatSharedNumber(value, OPACITY_DECIMALS)}
 			on:change={handleOpacityChange}
 		/>
 	</div>
 </div>
 
 {#if showsVisibility}
-	<div class="flex items-center justify-between">
-		<strong class="font-semibold">visible</strong>
-		<Switch
-			aria-label="visible"
-			on={!(values.invisible ?? fallbackInvisible)}
-			on:change={(event) => handleVisibleChange(event.detail)}
-		/>
-	</div>
+	<SharedSwitch
+		label="visible"
+		value={isVisible}
+		onchange={handleVisibleChange}
+	/>
 {/if}
 
-<div class="flex items-center justify-between">
-	<strong class="font-semibold">show axes helper</strong>
-	<Switch
-		aria-label="show axes helper"
-		on={values.show_axes_helper ?? fallbackAxesHelper}
-		on:change={(event) => handleAxesHelperChange(event.detail)}
-	/>
-</div>
+<SharedSwitch
+	label="show axes helper"
+	value={isAxesHelperShown}
+	onchange={handleAxesHelperChange}
+/>

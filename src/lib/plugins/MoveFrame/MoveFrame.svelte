@@ -5,8 +5,9 @@
 
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
-	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { traits } from '#lib/ecs/index.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import MonitorDetails from '#lib/plugins/Monitor/MonitorDetails.svelte'
 
 	import CollisionDetector from './collisions/CollisionDetector.svelte'
@@ -16,7 +17,7 @@
 	import SavedPoses from './savedPoses/SavedPoses.svelte'
 
 	const environment = useEnvironment()
-	const selected = useQuery(traits.Selected)
+	const selected = useSelectionOrder()
 
 	useEnvironmentMode('move')
 
@@ -41,17 +42,16 @@
 	}
 
 	/**
-	 * Move mode swaps the details panel for a move panel per selected frame, so the
-	 * selection drives the panels the way it drives details in the other modes. A
+	 * Move mode swaps the details panel for a move panel when one frame is selected. A
 	 * selection it has no move panel for — a point cloud, a drawing, an obstacle —
 	 * keeps its read-only details instead of losing its panel entirely. A saved pose
-	 * gets its own panel, since moving to it is the one thing to do with one.
+	 * gets its own panel, since moving to it is the one thing to do with one. Several
+	 * selected objects share one read-only panel, since the motion service moves one at a time.
 	 */
-	const panels = $derived(
-		selected.current.map((entity) => ({ entity, frameName: movableFrameName(entity) }))
-	)
+	const only = $derived(selected.current.length === 1 ? selected.current[0] : undefined)
+	const onlyFrameName = $derived(only ? movableFrameName(only) : undefined)
 
-	const hasMovableFrame = $derived(panels.some((panel) => panel.frameName !== undefined))
+	const hasMovableFrame = $derived(onlyFrameName !== undefined)
 
 	const isMoveMode = $derived(environment.current.mode === 'move')
 </script>
@@ -68,27 +68,21 @@
 	<MoveDashboard />
 	<SavedPoses />
 
-	{#each panels as { entity, frameName }, index (entity)}
-		{@const style = `transform: translate(0, ${index * 40}px)`}
-
-		{#if entity.has(traits.SavedPose)}
-			<SavedPoseControls
-				{entity}
-				{style}
-			/>
-		{:else if frameName === undefined}
-			<MonitorDetails
-				{entity}
-				{style}
-			/>
-		{:else}
-			<MoveControls
-				{entity}
-				{frameName}
-				{style}
-			/>
-		{/if}
-	{/each}
+	{#if only?.has(traits.SavedPose)}
+		<SavedPoseControls entity={only} />
+	{:else if only && onlyFrameName !== undefined}
+		<MoveControls
+			entity={only}
+			frameName={onlyFrameName}
+		/>
+	{:else if selected.current.length > 0}
+		<MonitorDetails
+			entities={selected.current}
+			notice={selected.current.length > 1
+				? "Moving more than one frame at once isn't supported. Select a single frame to move it."
+				: undefined}
+		/>
+	{/if}
 
 	{#if hasMovableFrame}
 		<World autoStart={false}>

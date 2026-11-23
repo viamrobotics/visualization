@@ -4,17 +4,26 @@
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
 
-	import { setOrAddTrait, traits, useOpacity } from '#lib/ecs/index.js'
+	import { resolveOpacity, setOrAddTrait, traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
+
+	import { formatSharedNumber, sharedNumber, toInputNumber } from './sharedValue'
 
 	interface Props {
-		entity: Entity
+		/** The selection. Never empty. */
+		entities: readonly Entity[]
 	}
 
-	const { entity }: Props = $props()
+	const { entities }: Props = $props()
 
 	const { invalidate } = useThrelte()
 
-	const opacity = useOpacity(() => entity)
+	const opacities = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Opacity, traits.OpacityOverride],
+		resolveOpacity
+	)
+
+	const opacity = $derived(sharedNumber(opacities.current))
 
 	/**
 	 * Writes `OpacityOverride`, never `Opacity`: reconcilers own the latter and
@@ -22,8 +31,11 @@
 	 * edit a moment after it was made.
 	 */
 	const handleOpacityChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		setOrAddTrait(entity, traits.OpacityOverride, event.detail.value)
+		const next = event.detail.value
+		// A mixed slider reports the NaN it was handed until the user moves it.
+		if (event.detail.origin !== 'internal' || Number.isNaN(next)) return
+
+		for (const entity of entities) setOrAddTrait(entity, traits.OpacityOverride, next)
 		invalidate()
 	}
 </script>
@@ -32,11 +44,11 @@
 	<strong class="font-semibold">opacity</strong>
 	<div aria-label="mutable opacity">
 		<Slider
-			value={opacity.current}
+			value={toInputNumber(opacity)}
 			min={0}
 			max={1}
 			step={0.01}
-			format={(v) => v.toFixed(2)}
+			format={(value) => formatSharedNumber(value)}
 			on:change={handleOpacityChange}
 		/>
 	</div>

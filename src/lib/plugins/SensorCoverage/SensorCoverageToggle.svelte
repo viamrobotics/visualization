@@ -7,19 +7,20 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Switch } from '@viamrobotics/prime-core'
-
 	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 
-	import { traits, useTrait } from '#lib/ecs/index.js'
+	import SharedSwitch from '#lib/components/overlay/details/SharedSwitch.svelte'
+	import { sharedValue } from '#lib/components/overlay/details/sharedValue.js'
+	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	interface Props {
-		entity: Entity
+		/** The selected camera frames. */
+		entities: readonly Entity[]
 		intrinsicsStatus: (camera: string) => IntrinsicsStatus
 	}
 
-	const { entity, intrinsicsStatus }: Props = $props()
+	const { entities, intrinsicsStatus }: Props = $props()
 
 	const unavailableNotes: Record<Exclude<IntrinsicsStatus, 'ready'>, string> = {
 		loading: 'Checking whether this camera reports intrinsics…',
@@ -29,32 +30,45 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 
 	const settings = useSettings()
 
-	const name = useTrait(() => entity, traits.Name)
-
-	const cameraName = $derived(name.current)
-	const status = $derived(cameraName === undefined ? 'loading' : intrinsicsStatus(cameraName))
-	const isDrawable = $derived(status === 'ready')
-	const isOn = $derived(
-		cameraName !== undefined && settings.current.disabledCoverageCameras[cameraName] !== true
+	const names = useMappedEntitiesTraits(
+		() => entities,
+		[traits.Name],
+		(entity) => entity.get(traits.Name)
 	)
+
+	const cameras = $derived(names.current.filter((name) => name !== undefined))
+	const statuses = $derived(cameras.map((camera) => intrinsicsStatus(camera)))
+	const drawable = $derived(cameras.filter((_, index) => statuses[index] === 'ready'))
+	const unavailableCount = $derived(cameras.length - drawable.length)
+
+	const isOn = (camera: string) => settings.current.disabledCoverageCameras[camera] !== true
+
+	// Only a camera with a known frustum can draw one, so the others don't count toward the switch.
+	const sharedIsOn = $derived(
+		drawable.length > 0 ? sharedValue(drawable.map((camera) => isOn(camera))) : false
+	)
+
+	const singleStatus = $derived(cameras.length === 1 ? statuses[0] : undefined)
 </script>
 
-{#if cameraName !== undefined}
+{#if cameras.length > 0}
 	<div class="flex flex-col gap-1 pt-2.5">
-		<div class="flex items-center justify-between">
-			<strong class="font-semibold">show coverage</strong>
+		<SharedSwitch
+			label="show coverage"
+			value={sharedIsOn}
+			disabled={drawable.length === 0}
+			onchange={(next) => {
+				for (const camera of drawable) settings.current.disabledCoverageCameras[camera] = !next
+			}}
+		/>
 
-			<Switch
-				on={isDrawable && isOn}
-				disabled={!isDrawable}
-				on:change={(event) => {
-					settings.current.disabledCoverageCameras[cameraName] = !event.detail
-				}}
-			/>
-		</div>
-
-		{#if status !== 'ready'}
-			<p class="text-subtle-2">{unavailableNotes[status]}</p>
+		{#if singleStatus !== undefined && singleStatus !== 'ready'}
+			<p class="text-subtle-2">{unavailableNotes[singleStatus]}</p>
+		{:else if unavailableCount > 0}
+			<p class="text-subtle-2">
+				{unavailableCount} of the {cameras.length} selected cameras have no known frustum, so the switch
+				leaves them as they are.
+			</p>
 		{:else if !settings.current.enableSensorCoverage}
 			<p class="text-subtle-2">Camera coverage is switched off in the Sensors settings.</p>
 		{/if}

@@ -1,6 +1,7 @@
 export { provideWorld, useWorld } from './useWorld'
 export { useQuery } from './useQuery.svelte'
 export { useTrait } from './useTrait.svelte'
+export { useMappedEntitiesTraits } from './useMappedEntitiesTraits.svelte'
 export { useTag } from './useTag.svelte'
 export { useTarget } from './useTarget.svelte'
 export { useParentName } from './useParentName.svelte'

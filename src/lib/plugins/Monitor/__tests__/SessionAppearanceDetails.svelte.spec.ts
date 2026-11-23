@@ -46,7 +46,7 @@ const mountPanel = ({ saved = { type: 'bounds' }, session, frameId }: MountOptio
 	const entity = world.spawn(traits.Name(name), traits.Color(new Color('#888888')))
 
 	render(SessionAppearanceDetails, {
-		props: { entity, componentName: 'bounds-1', frameId },
+		props: { targets: [{ entity, componentName: 'bounds-1', frameId }] },
 		context: new Map<symbol, unknown>([
 			[WORLD_CONTEXT_KEY, world],
 			[RESOURCE_APPEARANCE_CONTEXT_KEY, resourceAppearance],

@@ -196,7 +196,7 @@ For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `Float
 </FloatingPanel>
 ```
 
-To add UI to the per-entity **details card** instead, contribute a section with `useDetailsSection`. Every card renders it with that card's `{ entity }`, and the optional `when` gates which entities get it — this is another contribution point, like keyboard shortcuts and workspace modes below:
+To add UI to the **details panel** instead, contribute a section with `useDetailsSection`. This is another contribution point, like keyboard shortcuts and workspace modes below. The panel describes the whole selection, so the section renders once with every selected entity as `{ entities }`. The optional `when` is checked per entity. If it holds for every selected entity, the section renders. If it holds for some, the panel shows a notice naming the section's `label`. If it holds for none, the section is left out.
 
 ```svelte
 <script lang="ts">
@@ -204,16 +204,17 @@ To add UI to the per-entity **details card** instead, contribute a section with 
 
 	useDetailsSection({
 		snippet: batteryRow,
+		label: 'battery',
 		when: (entity) => entity.has(traits.FramesAPI),
 	})
 </script>
 
-{#snippet batteryRow({ entity })}
-	<!-- rows for this entity's card -->
+{#snippet batteryRow({ entities })}
+	<!-- rows for the selection: show a dash where the selected entities' values differ -->
 {/snippet}
 ```
 
-Sections render at the bottom of the card in registration order. An embedding app can also pass a `details` snippet straight to `<Visualizer />` — it is registered as a section automatically. For an entity whose card is fully custom, add the `traits.CustomDetails` tag to it: the card then suppresses its default pose, color, opacity, and axes rows and shows only contributed content.
+Sections render at the bottom of the panel in registration order. An embedding app can also pass a `details` snippet straight to `<Visualizer />`. It is registered as a section automatically and receives the same `{ entities }`. For an entity whose panel is fully custom, add the `traits.CustomDetails` tag to it. The panel then suppresses its default pose, color, opacity, and axes rows and shows only contributed content.
 
 ## Reading and writing scene state
 

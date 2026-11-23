@@ -1,4 +1,5 @@
 import type { Entity, World } from 'koota'
+import type { BufferGeometry } from 'three'
 
 import { writeBufferGeometryRange } from '#lib/attribute.js'
 import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -47,6 +48,32 @@ export const createChunkLoader = ({
 	const suspended = new Map<string, { entity: Entity; total: number; start: number }>()
 	const controller = new AbortController()
 
+	/**
+	 * Resolves with the entity's geometry once it has one. A point cloud's geometry lands
+	 * after its worker parse, and a fast chunk fetch can beat that parse.
+	 *
+	 * @returns The geometry, or `undefined` when `signal` aborts first.
+	 */
+	const whenBufferGeometry = (entity: Entity, signal: AbortSignal) =>
+		new Promise<BufferGeometry | undefined>((resolve) => {
+			const existing = entity.get(traits.BufferGeometry)
+			if (existing || signal.aborted) {
+				resolve(existing)
+				return
+			}
+
+			const finish = (geometry: BufferGeometry | undefined) => {
+				unsubscribe()
+				signal.removeEventListener('abort', onAbort)
+				resolve(geometry)
+			}
+			const onAbort = () => finish(undefined)
+			const unsubscribe = world.onAdd(traits.BufferGeometry, (added) => {
+				if (added === entity) finish(entity.get(traits.BufferGeometry))
+			})
+			signal.addEventListener('abort', onAbort, { once: true })
+		})
+
 	const pull = async (uuid: string, entity: Entity, total: number, firstChunkEnd: number) => {
 		if (active.has(uuid)) return
 		const pullController = new AbortController()
@@ -73,7 +100,7 @@ export const createChunkLoader = ({
 					break
 				}
 
-				const buffer = entity.get(traits.BufferGeometry)
+				const buffer = await whenBufferGeometry(entity, signal)
 				if (!buffer) break
 
 				writeBufferGeometryRange(buffer, chunk.positions, chunk.start, {

@@ -482,7 +482,7 @@
 {/snippet}
 
 <DetailsPanel
-	{entity}
+	entities={[entity]}
 	{...rest}
 >
 	<div class="bg-extralight px-2 pt-3 pb-2">

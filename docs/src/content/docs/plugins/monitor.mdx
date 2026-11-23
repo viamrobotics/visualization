@@ -1,9 +1,9 @@
 ---
 title: <Monitor />
-description: Monitor mode — watch live machine data, with read-only details cards for the selection.
+description: Monitor mode — watch live machine data, with a read-only details panel for the selection.
 ---
 
-`<Monitor />` contributes **monitor mode**: the mode for watching live machine data. Mounting it adds the **Monitor** button to the workspace mode toggle and a read-only details card for each selected entity — pose, dimensions, count, color, opacity, and relationships.
+`<Monitor />` contributes **monitor mode**: the mode for watching live machine data. Mounting it adds the **Monitor** button to the workspace mode toggle and a read-only details panel for the selection — pose, dimensions, count, color, opacity, and relationships.
 
 Monitor is not special. Like `build` ([`<BuildFrames />`](../build-frames/)) and `move` (`MoveFrame`), it exists only while its plugin is mounted, declared through the same [`useEnvironmentMode`](../authoring/#contributing-a-workspace-mode) hook. Mount order is priority order — mount `<Monitor />` first so it is the leftmost toggle button and the fallback when a persisted mode is unreachable. With no mode plugins mounted at all the mode is `none`, and the visualizer is a bare renderer: no toggle, no mode UI — the right shape for rendering a snapshot or a single point cloud.
 
@@ -22,9 +22,9 @@ Monitor is not special. Like `build` ([`<BuildFrames />`](../build-frames/)) and
 </div>
 ```
 
-## Details cards
+## Details panel
 
-While monitor mode is active, each selected entity gets a details card. Cards render every contributed details section with their entity, so both plugins (via `useDetailsSection`) and the embedding app (via the `details` snippet on `<Visualizer />`) can extend them — see [Adding overlay UI](../authoring/#adding-overlay-ui).
+While monitor mode is active, the selection gets one details panel. A value the selected entities share shows as itself, and a value that differs shows as a dash. The panel renders every contributed details section with the selected entities, so both plugins (via `useDetailsSection`) and the embedding app (via the `details` snippet on `<Visualizer />`) can extend it. See [Adding overlay UI](../authoring/#adding-overlay-ui).
 
 ## Runtime requirements
 
