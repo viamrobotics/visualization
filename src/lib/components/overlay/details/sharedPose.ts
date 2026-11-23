@@ -44,7 +44,7 @@ export interface SharedEuler {
 }
 
 /** Writes the pose's orientation into `dest` as a quaternion. */
-export const orientationQuaternion = (pose: Pose, dest: Quaternion): Quaternion =>
+const orientationQuaternion = (pose: Pose, dest: Quaternion): Quaternion =>
 	ovUtil.set(pose.oX, pose.oY, pose.oZ, MathUtils.degToRad(pose.theta)).toQuaternion(dest)
 
 /** The pose's orientation as `ZYX` Euler angles in degrees. */

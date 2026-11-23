@@ -56,6 +56,9 @@
 	const subtype = $derived(sharedValue(headers.current.map((header) => header.subtype)))
 	const isRemovable = $derived(headers.current.every((header) => header.isRemovable))
 
+	/** How long the copy button shows its check mark after a copy. */
+	const COPIED_FEEDBACK_MS = 1000
+
 	let copied = $state(false)
 	let dragElement = $state.raw<HTMLElement>()
 
@@ -109,7 +112,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 										return
 									}
 									copied = true
-									setTimeout(() => (copied = false), 1000)
+									setTimeout(() => (copied = false), COPIED_FEEDBACK_MS)
 								}}
 							>
 								{#if copied}
