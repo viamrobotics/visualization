@@ -126,5 +126,147 @@
       "html",
       "svelte"
     ]
+  },
+  "modules": [
+    "core",
+    "lint-fix",
+    "session-context",
+    "rename",
+    "reviewers",
+    "debug-session",
+    "plans",
+    "orchestrate",
+    "verify-changed",
+    "ready",
+    "sweep",
+    "read-guard",
+    "regen",
+    "statusline",
+    "code-cleanliness",
+    "ci-settings",
+    "prose/code-comments",
+    "prose/prose-voice",
+    "prose/output-prose",
+    "prose/pr-description",
+    "ts/typescript",
+    "svelte/svelte",
+    "svelte/svelte-mcp",
+    "three/three",
+    "testing/testing",
+    "testing/playwright-mcp",
+    "changesets/changesets",
+    "design/design",
+    "design/design-review",
+    "design/design-tailwind",
+    "accessibility/accessibility",
+    "accessibility/accessibility-review"
+  ],
+  "ejected": [
+    ".claude/settings.ci.json"
+  ],
+  "rules": {
+    "code-cleanliness": {
+      "paths": [
+        "**/*.ts",
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.go",
+        "**/*.svelte",
+        "**/*.svelte.ts",
+        "**/*.svelte.js"
+      ]
+    },
+    "code-comments": {
+      "paths": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mts",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.svelte",
+        "**/*.svelte.ts",
+        "**/*.svelte.js",
+        "**/*.go"
+      ]
+    },
+    "prose-voice": {
+      "paths": [
+        "**/*.md",
+        ".changeset/*.md",
+        ".claude/**/*.md",
+        ".github/**/*.md",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mts",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.svelte",
+        "**/*.svelte.ts",
+        "**/*.svelte.js",
+        "**/*.go"
+      ]
+    },
+    "three-threlte": {
+      "paths": [
+        "src/**/*.svelte",
+        "src/**/*.svelte.ts"
+      ]
+    },
+    "testing": {
+      "paths": [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts"
+      ]
+    },
+    "testing-typescript": {
+      "paths": [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts"
+      ]
+    },
+    "testing-svelte": {
+      "paths": [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "**/vitest.config.ts"
+      ]
+    },
+    "testing-3d": {
+      "paths": [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts"
+      ]
+    },
+    "design": {
+      "paths": [
+        "**/*.css",
+        "**/*.svelte"
+      ]
+    },
+    "accessibility-html": {
+      "paths": [
+        "**/*.html"
+      ]
+    },
+    "accessibility": {
+      "paths": [
+        "**/*.html",
+        "**/*.svelte"
+      ]
+    }
+  },
+  "_notes": {
+    "rules.code-comments.paths": "Adds **/*.go. This repo has a Go backend and the whether-to-comment discipline applies there too. go.md owns the comment shape.",
+    "rules.prose-voice.paths": "Adds **/*.go to mirror code-comments, since Go comments are prose too.",
+    "rules.design.paths": "Svelte + Tailwind only in this repo. docs/ (Astro) has its own styling.",
+    "rules.testing.paths": "Scoped to src/ so Playwright e2e suites (e2e/*.test.ts) stay out of scope.",
+    "rules.testing-typescript.paths": "Scoped to src/ so Playwright e2e suites (e2e/*.test.ts) stay out of scope.",
+    "rules.testing-3d.paths": "Scoped to src/ so Playwright e2e suites (e2e/*.test.ts) stay out of scope.",
+    "rules.testing-svelte.paths": "Scoped to src/ so Playwright e2e suites (e2e/*.test.ts) stay out of scope. This repo configures vitest inside vite.config.ts and deliberately runs one browser-mode project. See testing-frontend.md before applying the project split.",
+    "rules.three-threlte.paths": "Threlte components live across src/lib/components, src/lib/plugins, and src/lib/hooks, not under a three/ directory, so this loads for all of src/."
   }
 }

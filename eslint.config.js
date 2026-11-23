@@ -48,6 +48,7 @@ export default defineConfig(
 			'**/.claude/debug/**',
 			'.claude/houserules.config.json',
 			'.claude/houserules.manifest.json',
+			'.claude/houserules.md',
 			'**/.claude/mcp/**',
 			'**/.claude/output-styles/**',
 			'**/.claude/plans/**',
