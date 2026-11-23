@@ -120,6 +120,11 @@ export interface PartConfigContext {
 		geometry?: Frame['geometry']
 	) => void
 	deleteFrame: (componentName: string) => void
+	/**
+	 * Removes each named component's frame in one write and one undo step. See `createComponents`
+	 * for why separate calls are not enough.
+	 */
+	deleteFrames: (componentNames: readonly string[]) => void
 	createFrame: (componentName: string) => void
 	/**
 	 * Appends `component` to the part's own components. A name already in the config is left alone.
@@ -473,18 +478,22 @@ export const providePartConfig = (
 		config.set(newConfig)
 	}
 
-	const deletePartFrame = (componentName: string) => {
-		const newConfig = getCurrent()
-		const component = newConfig?.components?.find(({ name }) => name === componentName)
-
-		if (component) {
-			delete component.frame
-			config.set(newConfig)
+	/** Removes a frame from `newConfig` in place. Returns whether there was one to remove. */
+	const removeFrameFrom = (newConfig: PartConfig, componentName: string): boolean => {
+		const fragmentId = fragmentInfo.current[componentName]?.id
+		if (fragmentId !== undefined) {
+			unsetFragmentFrame(newConfig, fragmentId, componentName)
+			return true
 		}
+
+		const component = newConfig.components?.find(({ name }) => name === componentName)
+		if (!component) return false
+
+		delete component.frame
+		return true
 	}
 
-	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = getCurrent()
+	const unsetFragmentFrame = (newConfig: PartConfig, fragmentId: string, componentName: string) => {
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
@@ -501,7 +510,15 @@ export const providePartConfig = (
 			componentName,
 			[{ ['$unset']: { [`components.${componentName}.frame`]: '' } }]
 		)
-		config.set(newConfig)
+	}
+
+	const deleteFrames = (componentNames: readonly string[]) => {
+		const newConfig = getCurrent()
+		let isRemoved = false
+		for (const componentName of componentNames) {
+			if (removeFrameFrom(newConfig, componentName)) isRemoved = true
+		}
+		if (isRemoved) config.set(newConfig)
 	}
 
 	setContext<PartConfigContext>(key, {
@@ -544,12 +561,11 @@ export const providePartConfig = (
 
 		deleteFrame: (componentName: string) => {
 			markHistoryActive()
-			const fragmentId = fragmentInfo.current[componentName]?.id
-			if (fragmentId === undefined) {
-				deletePartFrame(componentName)
-			} else {
-				deleteFragmentFrame(fragmentId, componentName)
-			}
+			deleteFrames([componentName])
+		},
+		deleteFrames: (componentNames: readonly string[]) => {
+			markHistoryActive()
+			deleteFrames(componentNames)
 		},
 		createFrame: (componentName: string) => {
 			markHistoryActive()

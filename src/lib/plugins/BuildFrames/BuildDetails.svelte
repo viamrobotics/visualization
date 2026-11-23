@@ -21,7 +21,6 @@
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
-	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
 	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
@@ -56,8 +55,6 @@
 	const partConfig = usePartConfig()
 	// Read here, not in `ObstacleSection`: the details panel portals its content out of this context.
 	const obstaclePreview = useObstaclePreviewToggle()
-
-	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 
 	const reads = useMappedEntitiesTraits(
 		() => entities,
@@ -148,7 +145,7 @@
 		reads.current.every((read) => read.showObstacleEditor && !read.complexShape)
 	)
 	const canDuplicateSome = $derived(!canDuplicate && hasObstacleEditor)
-	const selectedObstacleNames = $derived(
+	const selectedNames = $derived(
 		reads.current.flatMap(({ name }) => (name === undefined ? [] : [name]))
 	)
 	const selectedShapes = $derived(
@@ -295,7 +292,7 @@
 				<Button
 					variant="danger"
 					class="flex-1"
-					onclick={() => partConfig.deleteComponents(selectedObstacleNames)}
+					onclick={() => partConfig.deleteComponents(selectedNames)}
 				>
 					{isSingle ? 'Delete obstacle' : `Delete ${entities.length} obstacles`}
 				</Button>
@@ -310,9 +307,7 @@
 				<Button
 					variant="danger"
 					class="flex-1"
-					onclick={() => {
-						for (const entity of entities) frameEditor.deleteFrame(entity)
-					}}
+					onclick={() => partConfig.deleteFrames(selectedNames)}
 				>
 					{isSingle ? 'Delete frame' : `Delete ${entities.length} frames`}
 				</Button>

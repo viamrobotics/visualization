@@ -4,13 +4,13 @@
 Appends a copy of each selected Complex obstacle shape to its obstacle, by button or by Shift+D, then moves the selection to the copies once their frames reach the scene.
 -->
 <script lang="ts">
-	import { Button } from '@viamrobotics/prime-core'
+	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
 
 	import Kbd from '#lib/components/overlay/Kbd.svelte'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
 	import { useHotkey } from '#lib/keybindings/index.js'
 	import { internalFrameName } from '#lib/kinematicsFrames.js'
-	import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
+	import { obstacleGeometriesOf, obstacleGeometryLabel } from '#lib/obstacleAttributes.js'
 	import { duplicateObstacleGeometries } from '#lib/obstacleGeometryList.js'
 	import { SHAPES_IN_PLACE } from '#lib/obstacleVisualizer.js'
 
@@ -26,6 +26,7 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 
 	const writeShapes = useObstacleShapeWrites()
 	const selectOnArrival = useSelectOnArrival()
+	const toast = useToast()
 
 	const label = $derived(
 		shapes.length === 1 ? 'Duplicate shape' : `Duplicate ${shapes.length} shapes`
@@ -51,7 +52,20 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 				move: SHAPES_IN_PLACE,
 			}))
 		)
-		if (error) selectOnArrival([])
+		if (error) {
+			selectOnArrival([])
+			return
+		}
+
+		const [only] = shapes
+		const sourceEntry = only ? obstacleGeometriesOf(only.component)[only.index] : undefined
+		toast({
+			message:
+				shapes.length === 1 && only && sourceEntry
+					? `Duplicated ${obstacleGeometryLabel(sourceEntry, only.index)} as ${copies[0]?.labels[0]}.`
+					: `Duplicated ${shapes.length} shapes.`,
+			variant: ToastVariant.Success,
+		})
 	}
 
 	const duplicateKeybinding = useHotkey({

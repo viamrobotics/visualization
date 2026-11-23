@@ -30,6 +30,32 @@ const writtenNames = (config: Struct | undefined) =>
 		({ name }) => name
 	)
 
+describe('deleteFrames, with a host that has not passed the last write back', () => {
+	it('removes every frame in a single write', () => {
+		const setLocalPartConfig = vi.fn<(config: Struct) => void>()
+		let partConfig: PartConfigContext | undefined
+		render(EmbeddedPartConfigHost, {
+			props: {
+				current: Struct.fromJson({
+					components: [
+						{ name: 'a', frame: { parent: 'world' } },
+						{ name: 'b', frame: { parent: 'world' } },
+					],
+				}),
+				setLocalPartConfig,
+				onready: (context: PartConfigContext) => (partConfig = context),
+			},
+		})
+
+		partConfig?.deleteFrames(['a', 'b'])
+
+		expect(setLocalPartConfig).toHaveBeenCalledOnce()
+		expect(setLocalPartConfig.mock.lastCall?.[0].toJson()).toEqual({
+			components: [{ name: 'a' }, { name: 'b' }],
+		})
+	})
+})
+
 describe('createComponents, with a host that has not passed the last write back', () => {
 	it('lands every component in a single write', () => {
 		const { partConfig, setLocalPartConfig } = renderEmbedded(['arm'])

@@ -14,6 +14,13 @@ import { type ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import DuplicateObstacleShapeButton from '../DuplicateObstacleShapeButton.svelte'
 
+const toast = vi.fn()
+
+vi.mock('@viamrobotics/prime-core', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@viamrobotics/prime-core')>()),
+	useToast: () => toast,
+}))
+
 const twoShapes = (): ObstacleGeometryConfig[] => [
 	{ label: 'a', type: 'box', x: 10, y: 20, z: 30 },
 	{ label: 'b', type: 'sphere', r: 4 },
@@ -82,6 +89,24 @@ describe('DuplicateObstacleShapeButton', () => {
 			{ label: 'a-copy', type: 'box', x: 10, y: 20, z: 30 },
 			{ label: 'b-copy', type: 'sphere', r: 4 },
 		])
+	})
+
+	it('names the source and its copy in a toast', async () => {
+		mountButton([0])
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate shape' }))
+
+		expect(toast).toHaveBeenCalledWith(
+			expect.objectContaining({ message: 'Duplicated a as a-copy.' })
+		)
+	})
+
+	it('counts several copies in a toast', async () => {
+		mountButton([0, 1])
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate 2 shapes' }))
+
+		expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: 'Duplicated 2 shapes.' }))
 	})
 
 	it('selects the copies once their frames appear', async () => {

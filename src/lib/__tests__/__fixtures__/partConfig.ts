@@ -20,6 +20,7 @@ export const createPartConfigFixture = (
 	deleteComponents: vi.fn(),
 	createFrame: vi.fn(),
 	deleteFrame: vi.fn(),
+	deleteFrames: vi.fn(),
 	updateFrame: vi.fn(),
 	save: vi.fn(),
 	discardChanges: vi.fn(),

@@ -71,6 +71,7 @@ describe('BuildDetails', () => {
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
+			deleteFrames: vi.fn(),
 			createFrame: vi.fn(),
 			createComponent: vi.fn(),
 			createComponents: vi.fn(),
