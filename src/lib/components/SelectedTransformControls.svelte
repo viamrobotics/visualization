@@ -412,11 +412,13 @@
 		tempGizmoWorld.compose(ref.position, stagedOrientation(ref), UNIT_SCALE)
 		dragDelta(tempGizmoStart, tempGizmoWorld, tempDelta)
 
-		for (const start of dragStarts) {
-			tempTargetWorld.multiplyMatrices(tempDelta, start.world)
-			stagePose(start.target, tempTargetWorld)
-		}
-		flushShapePatches()
+		partConfig.batchEdits(() => {
+			for (const start of dragStarts) {
+				tempTargetWorld.multiplyMatrices(tempDelta, start.world)
+				stagePose(start.target, tempTargetWorld)
+			}
+			flushShapePatches()
+		})
 	}
 
 	const onMouseUp = () => {
@@ -539,11 +541,13 @@
 
 	/** Bakes the gizmo's scale factor into each geometry's own dimensions, leaving positions alone. */
 	const stageScale = (factor: Vector3) => {
-		for (const { target } of dragStarts) {
-			if (!target.geometry) continue
-			writeGeometry(target, scaledGeometry(target.geometry, factor, handles.isUniform))
-		}
-		flushShapePatches()
+		partConfig.batchEdits(() => {
+			for (const { target } of dragStarts) {
+				if (!target.geometry) continue
+				writeGeometry(target, scaledGeometry(target.geometry, factor, handles.isUniform))
+			}
+			flushShapePatches()
+		})
 	}
 
 	const writeGeometry = (target: Target, next: ScalableGeometry) => {

@@ -72,6 +72,7 @@ describe('BuildDetails', () => {
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
 			deleteFrames: vi.fn(),
+			batchEdits: vi.fn((edit: () => void) => edit()),
 			createFrame: vi.fn(),
 			createComponent: vi.fn(),
 			createComponents: vi.fn(),

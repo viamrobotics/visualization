@@ -56,6 +56,28 @@ describe('deleteFrames, with a host that has not passed the last write back', ()
 	})
 })
 
+describe('batchEdits, with a host that has not passed the last write back', () => {
+	it('lands a frame edit and a component edit as one write that keeps both', () => {
+		const { partConfig, setLocalPartConfig } = renderEmbedded(['a', 'b'])
+
+		partConfig.batchEdits(() => {
+			partConfig.createFrame('a')
+			partConfig.updateComponent('b', { attributes: { kept: true } })
+		})
+
+		expect(setLocalPartConfig).toHaveBeenCalledOnce()
+		const written = setLocalPartConfig.mock.lastCall?.[0].toJson() as {
+			components: { name: string; frame?: unknown; attributes?: unknown }[]
+		}
+		expect(written.components[0]?.frame, 'the frame edit survives').toEqual({
+			parent: 'world',
+			translation: { x: 0, y: 0, z: 0 },
+			orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 0 } },
+		})
+		expect(written.components[1]?.attributes).toEqual({ kept: true })
+	})
+})
+
 describe('createComponents, with a host that has not passed the last write back', () => {
 	it('lands every component in a single write', () => {
 		const { partConfig, setLocalPartConfig } = renderEmbedded(['arm'])
