@@ -155,8 +155,13 @@
 		(delta) => {
 			const dt = delta * 1000
 
-			// Disallow keyboard navigation while the user holds meta or control.
-			if (keyboard.key('meta').pressed || keyboard.key('control').pressed) {
+			// No keyboard navigation while meta, control, or shift is held. Each turns a camera letter
+			// into a hotkey, such as Shift+D.
+			if (
+				keyboard.key('meta').pressed ||
+				keyboard.key('control').pressed ||
+				keyboard.key('shift').pressed
+			) {
 				return
 			}
 

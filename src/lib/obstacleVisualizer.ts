@@ -46,6 +46,16 @@ export const afterRemovingShape =
 		return oldIndex < removedIndex ? oldIndex : oldIndex - 1
 	}
 
+/** The shapes at `removedIndices` are gone, and each one after them moves up past every removal. */
+export const afterRemovingShapes =
+	(removedIndices: ReadonlySet<number>): ShapeIndexMove =>
+	(oldIndex) => {
+		if (removedIndices.has(oldIndex)) return undefined
+		let removedBefore = 0
+		for (const removed of removedIndices) if (removed < oldIndex) removedBefore += 1
+		return oldIndex - removedBefore
+	}
+
 /**
  * The visualizer config a Complex obstacle edit writes: the Complex hint, with each shape's saved
  * appearance following the shape to its new frame id. A relabel renames the id, and a removal

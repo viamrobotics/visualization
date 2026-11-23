@@ -11,6 +11,7 @@ import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 import { createObstacleComponent } from '#lib/obstacle.js'
 import { type ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
+import ComplexObstacleEditor from '../ComplexObstacleEditor.svelte'
 import ObstacleEditor from '../ObstacleEditor.svelte'
 
 const offset = { translation: { x: 5, y: 6, z: 7 } }
@@ -140,10 +141,47 @@ describe('ComplexObstacleEditor', () => {
 		expect(written[3]).toMatchObject({ label: 'shape-1', type: 'box' })
 	})
 
+	it('appends a -copy of the shape in the row', async () => {
+		const partConfig = mountEditor()
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate a' }))
+
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: {
+				extra: 'kept',
+				geometries: [...defaultGeometries(), { ...defaultGeometries()[0], label: 'a-copy' }],
+			},
+			visualizer: { type: 'complex' },
+		})
+	})
+
+	it('focuses the label of the duplicate once its row renders, ready to rename', async () => {
+		const component = createObstacleComponent('obstacle-1')
+		component.attributes = { geometries: defaultGeometries() }
+		component.visualizer = { type: 'complex' }
+		const partConfig = createPartConfigFixture({ current: { components: [component] } })
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(partConfig)
+		const { rerender } = render(ComplexObstacleEditor, {
+			props: { component },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate geometry_2' }))
+		const written = vi.mocked(partConfig.updateComponent).mock.lastCall?.[1].attributes
+
+		await rerender({ component: { ...component, attributes: written } })
+
+		const input = screen.getByLabelText<HTMLInputElement>('Shape 4 label')
+		expect(input).toHaveValue('geometry_2-copy')
+		expect(input).toHaveFocus()
+		expect(input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0)).toBe(
+			'geometry_2-copy'
+		)
+	})
+
 	it('removes the shape in the row', async () => {
 		const partConfig = mountEditor()
 
-		await userEvent.click(screen.getByRole('button', { name: 'Remove b' }))
+		await userEvent.click(screen.getByRole('button', { name: 'Delete b' }))
 
 		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
 			attributes: { extra: 'kept', geometries: [defaultGeometries()[0], defaultGeometries()[2]] },
@@ -153,7 +191,7 @@ describe('ComplexObstacleEditor', () => {
 
 	it('cannot remove the last shape', async () => {
 		const partConfig = mountEditor([{ label: 'only', type: 'box', x: 1, y: 1, z: 1 }])
-		const remove = screen.getByRole('button', { name: 'Remove only' })
+		const remove = screen.getByRole('button', { name: 'Delete only' })
 
 		expect(remove).toHaveAttribute('aria-disabled', 'true')
 		expect(remove).toHaveAttribute('title', 'An obstacle needs at least one geometry')

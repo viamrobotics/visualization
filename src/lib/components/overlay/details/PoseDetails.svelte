@@ -1,33 +1,10 @@
-<script
-	module
-	lang="ts"
->
-	import { Euler, MathUtils, Quaternion } from 'three'
-
-	import { OrientationVector } from '#lib/math/OrientationVector.js'
-
-	const quaternionUtil = new Quaternion()
-	const ovUtil = new OrientationVector()
-	const eulerUtil = new Euler()
-</script>
-
 <script lang="ts">
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import {
-		List,
-		type ListChangeEvent,
-		Point,
-		type PointChangeEvent,
-		type PointValue3dObject,
-		type PointValue4dObject,
-		RotationEuler,
-		type RotationEulerChangeEvent,
-		type RotationEulerValueObject,
-		TabGroup,
-		TabPage,
-	} from 'svelte-tweakpane-ui'
+	import { List, type ListChangeEvent } from 'svelte-tweakpane-ui'
+
+	import type { PosePatch } from '#lib/math/index.js'
 
 	import { relations, traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
@@ -37,23 +14,9 @@
 
 	import EntityLink from '../EntityLink.svelte'
 	import { composeDisplayedPose } from './composeDisplayedPose'
-	import {
-		MIXED_POSE,
-		orientationEuler,
-		sharedEuler,
-		type SharedPose,
-		sharedPose,
-	} from './sharedPose'
-	import {
-		changedAxes,
-		formatInputNumber,
-		formatSharedNumber,
-		MIXED,
-		MIXED_TEXT,
-		type Shared,
-		sharedValue,
-		toInputNumber,
-	} from './sharedValue'
+	import { MIXED_POSE, type SharedPose, sharedPose } from './sharedPose'
+	import SharedPoseFields from './SharedPoseFields.svelte'
+	import { MIXED, MIXED_TEXT, sharedValue } from './sharedValue'
 	import WorldPoseDetails from './WorldPoseDetails.svelte'
 
 	interface Props {
@@ -128,7 +91,6 @@
 	const parentOptions = useParentFrameOptions(() => reads.current.map((read) => read.name))
 
 	const localPoses = $derived(reads.current.map((read) => read.localPose))
-	const localPose = $derived(sharedPose(localPoses))
 	const worldPoses = $derived(reads.current.map((read) => read.worldPose))
 	const definedWorldPoses = $derived(worldPoses.filter((pose) => pose !== undefined))
 	// An entity whose world transform hasn't resolved, such as an orphan, isn't drawn at the
@@ -137,25 +99,6 @@
 		if (definedWorldPoses.length === 0) return undefined
 		if (definedWorldPoses.length < worldPoses.length) return MIXED_POSE
 		return sharedPose(definedWorldPoses)
-	})
-	const eulerValue = $derived(sharedEuler(localPoses))
-	const isEulerMixed = $derived(Object.values(eulerValue).includes(MIXED))
-
-	const shownPosition = $derived({
-		x: toInputNumber(localPose.x),
-		y: toInputNumber(localPose.y),
-		z: toInputNumber(localPose.z),
-	})
-	const shownOrientation = $derived({
-		x: toInputNumber(localPose.oX),
-		y: toInputNumber(localPose.oY),
-		z: toInputNumber(localPose.oZ),
-		w: toInputNumber(localPose.theta),
-	})
-	const shownEuler = $derived({
-		x: toInputNumber(eulerValue.x),
-		y: toInputNumber(eulerValue.y),
-		z: toInputNumber(eulerValue.z),
 	})
 
 	/**
@@ -185,99 +128,14 @@
 		invalidate()
 	}
 
-	const handlePositionChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const patch = changedAxes(shownPosition, event.detail.value as PointValue3dObject)
-		if (Object.keys(patch).length === 0) return
-
-		for (const entity of entities) frameEditor.setPose(entity, patch)
-		invalidate()
-	}
-
-	const isOrientationShared = $derived(
-		[localPose.oX, localPose.oY, localPose.oZ, localPose.theta].every((value) => value !== MIXED)
-	)
-
-	/**
-	 * A shared orientation shows the first entity's spelling, and another entity can spell the
-	 * same rotation differently. So the whole shown orientation is written, never one field onto
-	 * each entity's own spelling. A mixed orientation keeps each entity's own untouched fields.
-	 */
-	const handleOrientationOVChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as PointValue4dObject
-		const { x, y, z, w } = changedAxes(shownOrientation, next)
-		if ([x, y, z, w].every((value) => value === undefined)) return
-
-		const patch = isOrientationShared
-			? { oX: next.x, oY: next.y, oZ: next.z, theta: next.w }
-			: { oX: x, oY: y, oZ: z, theta: w }
-		for (const entity of entities) frameEditor.setPose(entity, patch)
-		invalidate()
-	}
-
-	/**
-	 * Writes the edited Euler angles into each entity's own orientation. An angle left
-	 * alone keeps each entity's own value, so the rotation is rebuilt per entity.
-	 */
-	const writeEuler = (next: PointValue3dObject | RotationEulerValueObject) => {
-		const patch = changedAxes(shownEuler, { x: next.x, y: next.y, z: next.z })
-		if (Object.keys(patch).length === 0) return
-
+	const handlePoseChange = (patches: PosePatch[]) => {
 		for (const [index, entity] of entities.entries()) {
-			const pose = localPoses[index]
-			if (!pose) continue
-
-			const angles = { ...orientationEuler(pose), ...patch }
-			eulerUtil.set(
-				MathUtils.degToRad(angles.x),
-				MathUtils.degToRad(angles.y),
-				MathUtils.degToRad(angles.z),
-				'ZYX'
-			)
-			quaternionUtil.setFromEuler(eulerUtil)
-			ovUtil.setFromQuaternion(quaternionUtil)
-			frameEditor.setPose(entity, {
-				oX: ovUtil.x,
-				oY: ovUtil.y,
-				oZ: ovUtil.z,
-				theta: MathUtils.radToDeg(ovUtil.th),
-			})
+			const patch = patches[index]
+			if (patch) frameEditor.setPose(entity, patch)
 		}
 		invalidate()
 	}
-
-	const handleOrientationEulerChange = (event: RotationEulerChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		writeEuler(event.detail.value as RotationEulerValueObject)
-	}
-
-	const handleMixedEulerChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		writeEuler(event.detail.value as PointValue3dObject)
-	}
 </script>
-
-{#snippet ImmutableField({
-	label,
-	value,
-	ariaLabel,
-}: {
-	label?: string
-	value: Shared<number> | string
-	ariaLabel: string
-})}
-	<div>
-		<span
-			class="text-subtle-2"
-			aria-label={`immutable ${ariaLabel}`}
-		>
-			{label}
-		</span>
-
-		{typeof value === 'string' ? value : formatSharedNumber(value)}
-	</div>
-{/snippet}
 
 <WorldPoseDetails pose={worldPose} />
 
@@ -312,101 +170,21 @@
 			{#if parentEntity !== MIXED && parentEntity}
 				<EntityLink entity={parentEntity} />
 			{:else}
-				{@render ImmutableField({
-					ariaLabel: 'parent frame name',
-					value: parentName === MIXED ? MIXED_TEXT : parentName,
-				})}
+				<div>
+					<span
+						class="text-subtle-2"
+						aria-label="immutable parent frame name"
+					></span>
+
+					{parentName === MIXED ? MIXED_TEXT : parentName}
+				</div>
 			{/if}
 		</div>
 	{/if}
 </div>
 
-<div>
-	<strong class="font-semibold">local position</strong>
-	<span class="text-subtle-2">(mm)</span>
-
-	{#if editable}
-		<div aria-label="mutable local position">
-			<Point
-				value={shownPosition}
-				format={formatInputNumber}
-				on:change={handlePositionChange}
-			/>
-		</div>
-	{:else}
-		<div class="mt-0.5 flex gap-3">
-			{@render ImmutableField({
-				label: 'x',
-				ariaLabel: 'local position x coordinate',
-				value: localPose.x,
-			})}
-			{@render ImmutableField({
-				label: 'y',
-				ariaLabel: 'local position y coordinate',
-				value: localPose.y,
-			})}
-			{@render ImmutableField({
-				label: 'z',
-				ariaLabel: 'local position z coordinate',
-				value: localPose.z,
-			})}
-		</div>
-	{/if}
-</div>
-
-<div>
-	<strong class="font-semibold">local orientation</strong>
-
-	{#if editable}
-		<div aria-label="mutable local orientation">
-			<TabGroup>
-				<TabPage title="OV (deg)">
-					<Point
-						value={shownOrientation}
-						format={formatInputNumber}
-						on:change={handleOrientationOVChange}
-					/>
-				</TabPage>
-				<TabPage title="Euler">
-					<!-- The rotation plugin converts through a quaternion, where one NaN spreads to every angle. -->
-					{#if isEulerMixed}
-						<Point
-							value={shownEuler}
-							format={formatInputNumber}
-							on:change={handleMixedEulerChange}
-						/>
-					{:else}
-						<RotationEuler
-							value={shownEuler}
-							unit="deg"
-							on:change={handleOrientationEulerChange}
-						/>
-					{/if}
-				</TabPage>
-			</TabGroup>
-		</div>
-	{:else}
-		<div class="mt-0.5 flex gap-3">
-			{@render ImmutableField({
-				label: 'x',
-				ariaLabel: 'local orientation x coordinate',
-				value: localPose.oX,
-			})}
-			{@render ImmutableField({
-				label: 'y',
-				ariaLabel: 'local orientation y coordinate',
-				value: localPose.oY,
-			})}
-			{@render ImmutableField({
-				label: 'z',
-				ariaLabel: 'local orientation z coordinate',
-				value: localPose.oZ,
-			})}
-			{@render ImmutableField({
-				label: 'th',
-				ariaLabel: 'local orientation theta degrees',
-				value: localPose.theta,
-			})}
-		</div>
-	{/if}
-</div>
+<SharedPoseFields
+	poses={localPoses}
+	{editable}
+	onchange={handlePoseChange}
+/>

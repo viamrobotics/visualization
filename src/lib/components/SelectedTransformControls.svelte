@@ -17,7 +17,10 @@
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { type ScalableGeometry, scaledGeometry, scaleHandles } from '#lib/editing/gizmoScale.js'
 	import { centroidOf, dragDelta, outermostEntities } from '#lib/editing/groupTransform.js'
-	import { shapeOffsetFromGizmo, withObstacleShapePatch } from '#lib/editing/obstacleShapeGizmo.js'
+	import {
+		shapeOffsetFromGizmo,
+		withObstacleShapePatches,
+	} from '#lib/editing/obstacleShapeGizmo.js'
 	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
 	import { transformSnaps } from '#lib/hooks/transformSnaps.js'
 	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
@@ -343,11 +346,38 @@
 		return () => objectSnap.end()
 	})
 
+	/**
+	 * Complex shape edits from the current drag step, keyed by obstacle and then by shape index.
+	 * `flushShapePatches` writes each obstacle once, so two shapes of one obstacle both move.
+	 */
+	const pendingShapePatches = new Map<
+		string,
+		{ owner: NonNullable<Target['shapeOwner']>; patches: Map<number, ObstacleGeometryPatch> }
+	>()
+
 	const patchComplexShape = (target: Target, patch: ObstacleGeometryPatch) => {
 		if (!target.shapeOwner || !target.complexShape) return
-		partConfig.updateComponent(target.shapeOwner.name, {
-			attributes: withObstacleShapePatch(target.shapeOwner, target.complexShape.index, patch),
-		})
+
+		const pending = pendingShapePatches.get(target.shapeOwner.name) ?? {
+			owner: target.shapeOwner,
+			patches: new Map<number, ObstacleGeometryPatch>(),
+		}
+		pending.patches.set(target.complexShape.index, patch)
+		pendingShapePatches.set(target.shapeOwner.name, pending)
+	}
+
+	const flushShapePatches = () => {
+		if (pendingShapePatches.size === 0) return
+
+		partConfig.updateComponents(
+			new Map(
+				[...pendingShapePatches.values()].map(({ owner, patches }) => [
+					owner.name,
+					{ attributes: withObstacleShapePatches(owner, patches) },
+				])
+			)
+		)
+		pendingShapePatches.clear()
 	}
 
 	const onMouseDown = () => {
@@ -386,6 +416,7 @@
 			tempTargetWorld.multiplyMatrices(tempDelta, start.world)
 			stagePose(start.target, tempTargetWorld)
 		}
+		flushShapePatches()
 	}
 
 	const onMouseUp = () => {
@@ -512,6 +543,7 @@
 			if (!target.geometry) continue
 			writeGeometry(target, scaledGeometry(target.geometry, factor, handles.isUniform))
 		}
+		flushShapePatches()
 	}
 
 	const writeGeometry = (target: Target, next: ScalableGeometry) => {

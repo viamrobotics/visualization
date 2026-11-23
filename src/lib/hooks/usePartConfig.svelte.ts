@@ -129,12 +129,28 @@ export interface PartConfigContext {
 	 */
 	createComponent: (component: PartComponent, module?: PartModule) => void
 	/**
+	 * Appends each of `components` to the part's own components in one write and one undo step.
+	 * Separate `createComponent` calls would each read the config the last one wrote, which an
+	 * embedding host may not have passed back yet. A name already in the config is left alone.
+	 */
+	createComponents: (components: readonly PartComponent[]) => void
+	/**
 	 * Replaces the fields in `patch` on a part-owned component, as one undo step. A fragment's
 	 * component is left alone.
 	 */
 	updateComponent: (componentName: string, patch: PartComponentPatch) => void
+	/**
+	 * Replaces the fields in each patch on its part-owned component, keyed by name, in one write and
+	 * one undo step. See `createComponents` for why separate calls are not enough.
+	 */
+	updateComponents: (patches: ReadonlyMap<string, PartComponentPatch>) => void
 	/** Removes a part-owned component, as one undo step. Its modules stay. */
 	deleteComponent: (componentName: string) => void
+	/**
+	 * Removes each named part-owned component in one write and one undo step. Their modules stay.
+	 * See `createComponents` for why separate calls are not enough.
+	 */
+	deleteComponents: (componentNames: readonly string[]) => void
 	/**
 	 * Writes the staged edits. A failure is reported to the user as a toast.
 	 *
@@ -319,15 +335,17 @@ export const providePartConfig = (
 		config.set(newConfig)
 	}
 
-	const createPartComponent = (component: PartComponent, module?: PartModule) => {
+	const createPartComponents = (added: readonly PartComponent[], module?: PartModule) => {
 		const newConfig = getCurrent()
 		const components = newConfig.components ?? []
+		const takenNames = new Set(components.map(({ name }) => name))
+		const fresh = added.filter(({ name }) => !takenNames.has(name))
 
-		if (components.some(({ name }) => name === component.name)) {
+		if (fresh.length === 0) {
 			return
 		}
 
-		newConfig.components = [...components, component]
+		newConfig.components = [...components, ...fresh]
 
 		const modules = newConfig.modules ?? []
 		if (module && !modules.some(({ module_id }) => module_id === module.module_id)) {
@@ -544,7 +562,11 @@ export const providePartConfig = (
 		},
 		createComponent: (component: PartComponent, module?: PartModule) => {
 			markHistoryActive()
-			createPartComponent(component, module)
+			createPartComponents([component], module)
+		},
+		createComponents: (components: readonly PartComponent[]) => {
+			markHistoryActive()
+			createPartComponents(components)
 		},
 		updateComponent: (componentName: string, patch: PartComponentPatch) => {
 			markHistoryActive()
@@ -553,12 +575,30 @@ export const providePartConfig = (
 				config.set(newConfig)
 			}
 		},
+		updateComponents: (patches: ReadonlyMap<string, PartComponentPatch>) => {
+			markHistoryActive()
+			const newConfig = getCurrent()
+			let isPatched = false
+			for (const [componentName, patch] of patches) {
+				if (patchPartComponent(newConfig, componentName, patch)) isPatched = true
+			}
+			if (isPatched) config.set(newConfig)
+		},
 		deleteComponent: (componentName: string) => {
 			markHistoryActive()
 			const newConfig = getCurrent()
 			if (removePartComponent(newConfig, componentName)) {
 				config.set(newConfig)
 			}
+		},
+		deleteComponents: (componentNames: readonly string[]) => {
+			markHistoryActive()
+			const newConfig = getCurrent()
+			let isRemoved = false
+			for (const componentName of componentNames) {
+				if (removePartComponent(newConfig, componentName)) isRemoved = true
+			}
+			if (isRemoved) config.set(newConfig)
 		},
 		save: async () => {
 			deactivateHistory()
