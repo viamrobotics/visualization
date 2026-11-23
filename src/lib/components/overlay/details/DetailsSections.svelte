@@ -26,7 +26,7 @@ registration order.
 </script>
 
 {#each visible as section (section)}
-	{@const matching = section.when ? entities.filter(section.when) : entities}
+	{@const matching = entities.filter((entity) => section.when?.(entity) ?? true)}
 
 	{#if matching.length === entities.length}
 		{@render section.snippet({ entities })}

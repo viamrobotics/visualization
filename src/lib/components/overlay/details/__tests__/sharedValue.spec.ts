@@ -14,7 +14,9 @@ describe('sharedNumber', () => {
 
 describe('changedAxes', () => {
 	it('keeps only the axis the user edited, so the others stay each entity’s own', () => {
-		expect(changedAxes({ x: Number.NaN, y: 50, z: 0 }, { x: Number.NaN, y: 60, z: 0 })).toEqual({ y: 60 })
+		expect(changedAxes({ x: Number.NaN, y: 50, z: 0 }, { x: Number.NaN, y: 60, z: 0 })).toEqual({
+			y: 60,
+		})
 	})
 
 	it('reports a value typed into a mixed axis', () => {

@@ -44,7 +44,9 @@ The coverage row in a camera frame's **Appearance** tab. Contributed by
 	const isOn = (camera: string) => settings.current.disabledCoverageCameras[camera] !== true
 
 	// Only a camera with a known frustum can draw one, so the others don't count toward the switch.
-	const sharedIsOn = $derived(drawable.length > 0 ? sharedValue(drawable.map(isOn)) : false)
+	const sharedIsOn = $derived(
+		drawable.length > 0 ? sharedValue(drawable.map((camera) => isOn(camera))) : false
+	)
 
 	const singleStatus = $derived(cameras.length === 1 ? statuses[0] : undefined)
 </script>

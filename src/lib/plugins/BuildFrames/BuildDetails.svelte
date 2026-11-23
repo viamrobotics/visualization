@@ -115,27 +115,32 @@
 		}
 	)
 
-	type Read = (typeof reads.current)[number]
-
 	const isSingle = $derived(entities.length === 1)
 	const only = $derived(isSingle ? reads.current[0] : undefined)
 
-	const every = (predicate: (read: Read) => boolean) => reads.current.every(predicate)
-	const some = (predicate: (read: Read) => boolean) => reads.current.some(predicate)
-
-	const hasFragmentVariables = $derived(some((read) => read.isFragmentComponentWithVariables))
-	const hasConfigUnavailable = $derived(some((read) => read.showConfigUnavailableWarning))
-	const isAllCustom = $derived(every((read) => read.hasCustomDetails))
-	const isAnyCustom = $derived(some((read) => read.hasCustomDetails))
-	const isEditable = $derived(every((read) => read.showEditFrameOptions))
-	const isPartlyEditable = $derived(!isEditable && some((read) => read.showEditFrameOptions))
-	const hasObstacleEditor = $derived(some((read) => read.showObstacleEditor))
-	const hasObstacle = $derived(some((read) => read.isObstacle))
-	const hasShapeOwner = $derived(some((read) => !!read.shapeOwner))
-	const hasRelationshipOptions = $derived(some((read) => read.showRelationshipOptions))
-	const canDeleteEvery = $derived(every((read) => read.showDeleteFrame))
-	const canDeleteSome = $derived(!canDeleteEvery && some((read) => read.showDeleteFrame))
-	const hasFrame = $derived(some((read) => read.isFrame && read.name !== undefined))
+	const hasFragmentVariables = $derived(
+		reads.current.some((read) => read.isFragmentComponentWithVariables)
+	)
+	const hasConfigUnavailable = $derived(
+		reads.current.some((read) => read.showConfigUnavailableWarning)
+	)
+	const isAllCustom = $derived(reads.current.every((read) => read.hasCustomDetails))
+	const isAnyCustom = $derived(reads.current.some((read) => read.hasCustomDetails))
+	const isEditable = $derived(reads.current.every((read) => read.showEditFrameOptions))
+	const isPartlyEditable = $derived(
+		!isEditable && reads.current.some((read) => read.showEditFrameOptions)
+	)
+	const hasObstacleEditor = $derived(reads.current.some((read) => read.showObstacleEditor))
+	const hasObstacle = $derived(reads.current.some((read) => read.isObstacle))
+	const hasShapeOwner = $derived(reads.current.some((read) => !!read.shapeOwner))
+	const hasRelationshipOptions = $derived(
+		reads.current.some((read) => read.showRelationshipOptions)
+	)
+	const canDeleteEvery = $derived(reads.current.every((read) => read.showDeleteFrame))
+	const canDeleteSome = $derived(
+		!canDeleteEvery && reads.current.some((read) => read.showDeleteFrame)
+	)
+	const hasFrame = $derived(reads.current.some((read) => read.isFrame && read.name !== undefined))
 
 	const hasActions = $derived(
 		hasRelationshipOptions || canDeleteEvery || canDeleteSome || hasShapeOwner

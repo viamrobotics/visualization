@@ -87,7 +87,7 @@ export const sharedPose = (poses: readonly Pose[]): SharedPose => {
  * @param poses One per selected entity. Never empty.
  */
 export const sharedEuler = (poses: readonly Pose[]): SharedEuler => {
-	const eulers = poses.map(orientationEuler)
+	const eulers = poses.map((pose) => orientationEuler(pose))
 	const first = eulers[0]
 
 	if (first && isOrientationShared(poses)) return first

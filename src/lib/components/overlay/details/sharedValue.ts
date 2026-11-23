@@ -37,7 +37,8 @@ export const sharedNumber = (values: readonly number[]): Shared<number> =>
  * The number a Tweakpane input is handed for a shared field. Tweakpane has no mixed
  * state, so a mixed field passes `NaN` and `formatSharedNumber` shows it as a dash.
  */
-export const toInputNumber = (value: Shared<number>): number => (value === MIXED ? Number.NaN : value)
+export const toInputNumber = (value: Shared<number>): number =>
+	value === MIXED ? Number.NaN : value
 
 /**
  * Formats a field for display, showing `MIXED_TEXT` for a mixed field or for the `NaN`

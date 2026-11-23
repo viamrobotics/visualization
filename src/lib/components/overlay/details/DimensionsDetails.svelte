@@ -47,7 +47,8 @@
 	const dimension = (key: 'x' | 'y' | 'z' | 'r' | 'l'): Shared<number> =>
 		sharedNumber(
 			geometries.current.map(
-				(geometry) => (geometry as Partial<Record<typeof key, number>> | undefined)?.[key] ?? Number.NaN
+				(geometry) =>
+					(geometry as Partial<Record<typeof key, number>> | undefined)?.[key] ?? Number.NaN
 			)
 		)
 

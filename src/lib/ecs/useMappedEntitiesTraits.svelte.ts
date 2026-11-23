@@ -39,7 +39,7 @@ export const useMappedEntitiesTraits = <TValue>(
 
 	const current = $derived.by(() => {
 		void version
-		return entities().map(read)
+		return entities().map((entity) => read(entity))
 	})
 
 	return {
