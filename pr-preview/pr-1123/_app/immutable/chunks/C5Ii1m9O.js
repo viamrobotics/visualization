@@ -1,4 +1,4 @@
-(function(){try{var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{};e.SENTRY_RELEASE={id:`3.3.1`}}catch{}})();try{(function(){var e=typeof window<`u`?window:typeof global<`u`?global:typeof globalThis<`u`?globalThis:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`8c584235-cb39-4b66-a3ee-4435729b1388`,e._sentryDebugIdIdentifier=`sentry-dbid-8c584235-cb39-4b66-a3ee-4435729b1388`)})()}catch{}var e=({status:e,message:t})=>`<!doctype html>
+(function(){try{var e=typeof globalThis<`u`?globalThis:typeof window<`u`?window:typeof global<`u`?global:typeof self<`u`?self:{},t=new e.Error().stack;t&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[t]=`abbff5a1-9a71-4ef4-8a54-022ae7d15c91`,e._sentryDebugIdIdentifier=`sentry-dbid-abbff5a1-9a71-4ef4-8a54-022ae7d15c91`)}catch{}})();var e=({status:e,message:t})=>`<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
@@ -12,17 +12,8 @@
 				background: var(--bg);
 				color: var(--fg);
 				font-family:
-					system-ui,
-					-apple-system,
-					BlinkMacSystemFont,
-					'Segoe UI',
-					Roboto,
-					Oxygen,
-					Ubuntu,
-					Cantarell,
-					'Open Sans',
-					'Helvetica Neue',
-					sans-serif;
+					system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+					Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 				display: flex;
 				align-items: center;
 				justify-content: center;
