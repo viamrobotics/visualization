@@ -1,0 +1,115 @@
+---
+title: Embedding a scoped scene
+description: Render one machine part's frames, geometries, and point clouds from your own Svelte app.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+`ScopedScene` is a small scene for hosts that own their own UI. It renders one machine part's frames, geometries, and point clouds. It ships as its own entry, `@viamrobotics/visualization/scoped-scene`, and is not a set of props on `<Visualizer />`. Reach for it when you want an arm preview inside a larger page. For the full visualizer, see [Embedding `<Visualizer />`](../embedding/).
+
+## Install and required peers
+
+```bash
+pnpm add @viamrobotics/visualization
+```
+
+Install these packages in your project:
+
+| Package                    | Why                                  |
+| -------------------------- | ------------------------------------ |
+| `svelte`                   | Svelte 5 runtime                     |
+| `three`                    | The renderer and scene graph         |
+| `@threlte/core`            | The canvas and Three.js bindings     |
+| `@threlte/extras`          | Helpers the scene builds on          |
+| `@viamrobotics/sdk`        | Machine client types and config      |
+| `@viamrobotics/svelte-sdk` | `ViamProvider` and the machine hooks |
+| `idb-keyval`               | Persists scene settings              |
+
+You do not need Tailwind, prime-core, Tweakpane, or test-widgets. The `./scoped-scene` entry never imports them, and the repo checks that on every packaging run with a fixture that installs only the packages above. The fixture lives in `e2e/fixtures/scoped-scene-consumer/`.
+
+The package also declares `camera-controls`, `runed`, and `lucide-svelte` as required peers. The first two arrive through the packages above. The scoped entry does not import `lucide-svelte`, so the fixture builds without it, though pnpm may warn that it is missing. `@connectrpc/connect` is an optional peer that the scene imports, and it arrives as a dependency of `@viamrobotics/sdk`.
+
+## Configure Vite
+
+The scene imports an HDR environment map. Add it to `assetsInclude`, or `vite build` fails with `[UNLOADABLE_DEPENDENCY] Could not load` on `ferndale_studio_11_1k.hdr`.
+
+The dev server needs one more line. Vite's dependency optimizer prebundles the scoped entry, does not apply `assetsInclude`, and fails on the same HDR file, which stops `vite` before it serves a page. Exclude the package from the optimizer.
+
+```ts
+// vite.config.ts
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+	plugins: [svelte()],
+	assetsInclude: ['**/*.hdr'],
+	optimizeDeps: {
+		exclude: ['@viamrobotics/visualization'],
+	},
+	build: {
+		target: 'esnext',
+	},
+})
+```
+
+The fixture builds without `resolve.dedupe`. Add `dedupe: ['three']` only if your own dependency tree pulls in a second copy of `three`.
+
+## Turn SSR off
+
+The scene needs the browser. Rendered on the server, the page throws `Worker is not defined`. In SvelteKit, disable SSR on the page that mounts it:
+
+```ts
+// src/routes/arm/+page.ts
+export const ssr = false
+```
+
+The renderer is WebGPU and falls back to WebGL2 when the browser offers no WebGPU adapter. A built host page in Chromium launched with `--disable-features=WebGPU` renders the scene under the WebGL2 backend.
+
+## Mount `ScopedScene`
+
+`ScopedScene` fills its parent, so give the parent an explicit size.
+
+<Aside
+	type="caution"
+	title="ViamProvider is required"
+>
+	`ScopedScene` needs a `ViamProvider` ancestor. This requirement is temporary. Until it is lifted,
+	a host with no machine wraps the scene in a `ViamProvider` with empty `dialConfigs`. With no
+	provider the scene throws `No QueryClient was found in Svelte context`.
+</Aside>
+
+```svelte
+<script lang="ts">
+	import { ViamProvider } from '@viamrobotics/svelte-sdk'
+	import { ScopedScene } from '@viamrobotics/visualization/scoped-scene'
+</script>
+
+<ViamProvider dialConfigs={{}}>
+	<div style="width: 100%; height: 480px">
+		<ScopedScene partID="my-part-id" />
+	</div>
+</ViamProvider>
+```
+
+A host with a machine passes its `dialConfigs` to the provider instead of an empty object, and passes the part's ID as `partID`.
+
+### Props
+
+| Prop                   | Type                        | Default | Description                                                                         |
+| ---------------------- | --------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `partID`               | `string`                    | `''`    | The machine part to render. Empty or omitted, the scene makes no robot query.       |
+| `cameraPose`           | `CameraPose`                | none    | The starting camera pose. Omit it for the default view.                             |
+| `inputBindingsEnabled` | `boolean`                   | `false` | Whether keyboard and gamepad shortcuts fire.                                        |
+| `snapping`             | `boolean`                   | `false` | Whether moves, turns, and resizes snap while a transform gizmo is dragged.          |
+| `poseRefreshRate`      | `number`                    | `1000`  | How often frame poses are refetched, in milliseconds.                               |
+| `onError`              | `(message: string) => void` | none    | Called with a failure the user needs to know about. Omit it and the scene drops it. |
+| `children`             | `Snippet`                   | none    | Three.js children rendered inside the scene.                                        |
+
+## What the host owns
+
+`ScopedScene` renders. Everything around it stays yours:
+
+- **The pop-out container.** The scene fills its parent, so a modal, a drawer, or a resizable pane is your code.
+- **Hotkeys.** Shortcuts are off unless you pass `inputBindingsEnabled`, so the scene never takes your page's keys.
+
+`MoveFrame` is unchanged. It is still the plugin to use inside the full `<Visualizer />`.

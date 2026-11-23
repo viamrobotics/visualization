@@ -41,6 +41,7 @@
 		"test:client": "wireit",
 		"test:draw": "wireit",
 		"test:rdk-golden": "wireit",
+		"test:scoped-consumer": "./e2e/fixtures/scoped-scene-consumer/run.sh",
 		"e2e": "pnpm go-build && playwright test --project=drawing --project=matrix",
 		"e2e:ui": "pnpm go-build && playwright test --project=drawing --project=matrix --ui",
 		"e2e:matrix": "pnpm go-build && playwright test --project=matrix",
@@ -701,8 +702,10 @@
 		"@threlte/rapier": ">=3",
 		"@threlte/xr": ">=1",
 		"@viamrobotics/prime-core": ">=0.1",
+		"@viamrobotics/sdk": ">=0.79",
 		"@viamrobotics/svelte-sdk": ">=1.4.0",
 		"@viamrobotics/test-widgets": ">=0.15.0",
+		"@viamrobotics/tweakpane-config": ">=0.1",
 		"@zag-js/dialog": ">=1.45",
 		"@zag-js/floating-panel": ">=1.45",
 		"@zag-js/popover": ">=1.45",
@@ -722,6 +725,15 @@
 		"three": ">=0.185"
 	},
 	"peerDependenciesMeta": {
+		"@ag-grid-community/client-side-row-model": {
+			"optional": true
+		},
+		"@ag-grid-community/core": {
+			"optional": true
+		},
+		"@ag-grid-community/styles": {
+			"optional": true
+		},
 		"@connectrpc/connect": {
 			"optional": true
 		},
@@ -740,13 +752,43 @@
 		"@threlte/xr": {
 			"optional": true
 		},
+		"@viamrobotics/prime-core": {
+			"optional": true
+		},
+		"@viamrobotics/test-widgets": {
+			"optional": true
+		},
+		"@viamrobotics/tweakpane-config": {
+			"optional": true
+		},
+		"@zag-js/dialog": {
+			"optional": true
+		},
+		"@zag-js/floating-panel": {
+			"optional": true
+		},
+		"@zag-js/popover": {
+			"optional": true
+		},
+		"@zag-js/svelte": {
+			"optional": true
+		},
 		"@zag-js/tabs": {
+			"optional": true
+		},
+		"@zag-js/toggle-group": {
+			"optional": true
+		},
+		"@zag-js/tooltip": {
 			"optional": true
 		},
 		"@zag-js/tree-view": {
 			"optional": true
 		},
 		"earcut": {
+			"optional": true
+		},
+		"svelte-tweakpane-ui": {
 			"optional": true
 		},
 		"svelte-virtuallists": {
@@ -792,6 +834,10 @@
 		"./plugins": {
 			"types": "./dist/plugins/index.d.ts",
 			"svelte": "./dist/plugins/index.js"
+		},
+		"./scoped-scene": {
+			"types": "./dist/scoped-scene.d.ts",
+			"svelte": "./dist/scoped-scene.js"
 		},
 		"./scene-builder": {
 			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",

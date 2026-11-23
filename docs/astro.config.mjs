@@ -40,6 +40,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Running locally', link: '/guides/local-usage/' },
 						{ label: 'Embedding <Visualizer />', link: '/guides/embedding/' },
+						{ label: 'Embedding a scoped scene', link: '/guides/scoped-scene/' },
 						{ label: 'Deep linking', link: '/guides/deep-linking/' },
 						{ label: 'Desktop app', link: '/guides/desktop-app/' },
 						{

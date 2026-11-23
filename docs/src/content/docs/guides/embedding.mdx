@@ -11,7 +11,7 @@ Common use cases: embedding a snapshot viewer next to a robot's data, rendering 
 
 ### Prerequisites
 
-A Svelte 5 / SvelteKit (or Astro+Svelte, Vite+Svelte, etc.) project. The package is `svelte`-typed and built for runes; you cannot consume it from Svelte 4.
+A Svelte 5 / SvelteKit (or Astro+Svelte, Vite+Svelte, etc.) project. The package is `svelte`-typed and built for runes, so you cannot consume it from Svelte 4.
 
 ### Install
 
@@ -19,9 +19,25 @@ A Svelte 5 / SvelteKit (or Astro+Svelte, Vite+Svelte, etc.) project. The package
 pnpm add @viamrobotics/visualization
 ```
 
-The package declares a list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project — install whatever it asks for.
+The package declares a list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project. Install whatever it asks for.
 
-Peers that only a plugin needs are marked optional, so you install them only if you mount that plugin: `@dimforge/rapier3d-compat` and `@threlte/rapier` for `MoveFrame`, `@zag-js/tree-view` and `svelte-virtuallists` for [`<WorldTree />`](../../plugins/world-tree/), `@zag-js/tabs` for [`<Settings />`](../../plugins/settings/), `@threlte/xr` for [`<XR />`](../../plugins/xr/), `earcut` for [`<SelectionTool />`](../../plugins/selection/), and the Connect RPC client for [`<DrawService />`](../../plugins/draw-service/).
+Some peers are marked optional so that a host of the [scoped scene](../scoped-scene/) can skip them. `<Visualizer />` itself imports these, so a host that mounts it installs all of them:
+
+- **`<Visualizer />` and its overlays:** `@viamrobotics/prime-core` and `@viamrobotics/tweakpane-config`, imported by the `<Visualizer />` root. `svelte-tweakpane-ui` for the details cards and the render stats widget. `@zag-js/svelte`, `@zag-js/dialog`, `@zag-js/floating-panel`, `@zag-js/popover`, `@zag-js/tabs`, `@zag-js/toggle-group`, and `@zag-js/tooltip` for the overlay components. Most plugins also import prime-core.
+
+The other optional peers are needed only by a plugin or a panel, so you install them only if you use that feature:
+
+- **Physics for `MoveFrame`:** `@dimforge/rapier3d-compat` and `@threlte/rapier`.
+- **Tree and lists for [`<WorldTree />`](../../plugins/world-tree/):** `@zag-js/tree-view` and `svelte-virtuallists`.
+- **XR for [`<XR />`](../../plugins/xr/):** `@threlte/xr`.
+- **Polygon selection for [`<SelectionTool />`](../../plugins/selection/):** `earcut`.
+- **Draw service for [`<DrawService />`](../../plugins/draw-service/):** `@connectrpc/connect-web`. `@connectrpc/connect` is also marked optional, but every scene imports it. It arrives as a dependency of `@viamrobotics/sdk`.
+- **Query devtools for [`<Debug />`](../../plugins/debug/):** `@tanstack/svelte-query-devtools`.
+- **Control widgets for [`<ControlWidgets />`](../../plugins/control-widgets/):** `@viamrobotics/test-widgets`.
+- **Tweakpane panels:** `svelte-tweakpane-ui` for the panels in MoveFrame, BuildFrames, and MeasureTool.
+- **Unused today:** `@ag-grid-community/client-side-row-model`, `@ag-grid-community/core`, and `@ag-grid-community/styles` are marked optional, but nothing in `src/lib` imports them.
+
+If you only need one arm preview, use the [scoped scene](../scoped-scene/). Of the optional peers it needs only `@connectrpc/connect`, which `@viamrobotics/sdk` brings.
 
 <Aside
 	type="tip"
@@ -110,7 +126,7 @@ Everything else is a plugin you opt into — including the workspace modes: with
 | [`<FramePov />`](../../plugins/frame-pov/)       | Per-frame point-of-view panels                  |
 
 To reproduce the standalone app, mount all six plus the feature plugins you want, keeping
-`Monitor` before `BuildFrames` before `MoveFrame` — mode plugins' mount order sets both the
+`Monitor` before `BuildFrames` before `MoveFrame`. Mode plugins' mount order sets both the
 toggle's button order and the fallback priority. To embed a focused viewer, mount none of them —
 or just the one or two that earn their space.
 
@@ -185,7 +201,7 @@ one-shot capture.
 
 ## Rendering snapshots
 
-A **snapshot** is a serialized scene — every transform, drawing, and camera setting captured into one protobuf payload. Snapshots render purely client-side; no draw server, no live machine, no network calls.
+A **snapshot** is a serialized scene, with every transform, drawing, and camera setting captured into one protobuf payload. Snapshots render purely client-side, with no draw server, no live machine, and no network calls.
 
 Use the `<Snapshot />` component as a child of `<Visualizer />`:
 

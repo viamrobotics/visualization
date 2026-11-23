@@ -8,13 +8,23 @@ import { playwright } from '@vitest/browser-playwright'
 import dns from 'node:dns'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import mkcert from 'vite-plugin-mkcert'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 import { version } from './package.json'
 
 dns.setDefaultResultOrder('verbatim')
 
 const https = process.argv.includes('--https')
+
+/**
+ * Specs that render a real Threlte canvas. Headless Chromium draws WebGL in software, so these
+ * time out when they share the machine with other spec files. They run one file at a time, after
+ * the rest of the suite.
+ */
+const REAL_CANVAS_SPECS = [
+	'src/lib/components/ScopedScene/__tests__/**/*.{test,spec}.{js,ts}',
+	'src/lib/three/__tests__/clampPointSize.spec.ts',
+]
 
 export default defineConfig({
 	assetsInclude: ['**/*.hdr'],
@@ -96,7 +106,25 @@ export default defineConfig({
 						instances: [{ browser: 'chromium' }],
 					},
 					include: ['src/**/*.{test,spec}.{js,ts}'],
+					exclude: [...configDefaults.exclude, ...REAL_CANVAS_SPECS],
 					setupFiles: ['./vitest-setup-client.ts'],
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'browser-canvas',
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+					},
+					include: REAL_CANVAS_SPECS,
+					setupFiles: ['./vitest-setup-client.ts'],
+					fileParallelism: false,
+					// A later group starts only after the `browser` project has finished.
+					sequence: { groupOrder: 1 },
 				},
 			},
 			{

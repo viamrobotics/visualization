@@ -1,0 +1,23 @@
+{
+	"name": "scoped-scene-consumer",
+	"private": true,
+	"type": "module",
+	"description": "Packaging check: a host that installs only the peers the ./scoped-scene entry point needs. Run through run.sh, which supplies visualization.tgz.",
+	"scripts": {
+		"build": "vite build"
+	},
+	"dependencies": {
+		"@threlte/core": "8.7.0",
+		"@threlte/extras": "9.23.1",
+		"@viamrobotics/sdk": "0.79.0",
+		"@viamrobotics/svelte-sdk": "1.5.3",
+		"@viamrobotics/visualization": "file:./visualization.tgz",
+		"idb-keyval": "6.3.0",
+		"svelte": "5.58.1",
+		"three": "0.187.0"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "7.1.2",
+		"vite": "8.1.6"
+	}
+}
