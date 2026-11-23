@@ -115,7 +115,9 @@ describe('MonitorDetails', () => {
 		renderPanel(sections, [entity, other])
 
 		expect(screen.queryByText('battery rows')).not.toBeInTheDocument()
-		expect(screen.getByRole('note')).toHaveTextContent('battery')
+		expect(screen.getByRole('note', { name: 'battery' })).toHaveTextContent(
+			'Not every selected object supports this.'
+		)
 	})
 
 	it('titles a selection of several objects by its count', () => {

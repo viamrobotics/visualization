@@ -9,7 +9,10 @@
 	const { label, message }: Props = $props()
 </script>
 
-<div role="note">
+<div
+	role="note"
+	aria-label={label}
+>
 	<strong class="font-semibold">{label}</strong>
 	<p class="text-subtle-2">{message}</p>
 </div>

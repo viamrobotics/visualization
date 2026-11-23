@@ -48,7 +48,7 @@ export const orientationEuler = (pose: Pose): { x: number; y: number; z: number 
 
 /**
  * Whether every pose has the same rotation. Compared as quaternions, since one rotation
- * has several orientation vector spellings, such as any axis at `theta` 0.
+ * has several orientation vector spellings, such as `theta` 180 and -180.
  */
 const isOrientationShared = (poses: readonly Pose[]): boolean => {
 	const [first, ...rest] = poses
@@ -70,7 +70,11 @@ const isOrientationShared = (poses: readonly Pose[]): boolean => {
 export const sharedPose = (poses: readonly Pose[]): SharedPose => {
 	const field = (key: keyof SharedPose) => sharedNumber(poses.map((pose) => pose[key]))
 
-	const position = { x: field('x'), y: field('y'), z: field('z') }
+	const position: Pick<SharedPose, 'x' | 'y' | 'z'> = {
+		x: field('x'),
+		y: field('y'),
+		z: field('z'),
+	}
 	const first = poses[0]
 
 	if (first && isOrientationShared(poses)) {
