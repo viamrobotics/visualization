@@ -24,8 +24,8 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 
 	const { shapes }: Props = $props()
 
-	const writeShapes = useObstacleShapeWrites()
-	const selectOnArrival = useSelectOnArrival()
+	const shapeWrites = useObstacleShapeWrites()
+	const pendingSelection = useSelectOnArrival()
 	const toast = useToast()
 
 	const label = $derived(
@@ -43,17 +43,18 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 		const frameNames = copies.flatMap(({ component, labels }) =>
 			labels.map((copyLabel) => internalFrameName(component.name, copyLabel))
 		)
-		selectOnArrival(frameNames)
+		pendingSelection.select(frameNames)
 
-		error = writeShapes(
-			copies.map(({ component, geometries }) => ({
+		error = shapeWrites.write(
+			copies.map(({ component, geometries, copies: copiedFrom }) => ({
 				component,
 				next: geometries,
 				move: SHAPES_IN_PLACE,
+				copies: copiedFrom,
 			}))
 		)
 		if (error) {
-			selectOnArrival([])
+			pendingSelection.cancel()
 			return
 		}
 

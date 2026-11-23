@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import { DEFAULT_BOUNDS_HINT } from '#lib/obstacle.js'
+import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
 import {
 	afterRemovingShape,
 	complexObstacleVisualizer,
@@ -65,6 +66,22 @@ describe('complexObstacleVisualizer', () => {
 
 		expect(complexObstacleVisualizer(cage(), next, afterRemovingShape(0)).frames).toEqual({
 			geometry_1: { opacity: 0.4 },
+		})
+	})
+
+	it('gives a duplicated shape its source shape appearance', () => {
+		const next = [
+			...obstacleGeometriesOf(cage()),
+			{ label: 'post-copy', type: 'box' as const, x: 1, y: 1, z: 1 },
+		]
+
+		expect(
+			complexObstacleVisualizer(cage(), next, SHAPES_IN_PLACE, new Map([['post-copy', 'post']]))
+				.frames
+		).toEqual({
+			post: { color: '#ff0000' },
+			'post-copy': { color: '#ff0000' },
+			geometry_2: { opacity: 0.4 },
 		})
 	})
 

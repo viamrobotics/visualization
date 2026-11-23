@@ -27,7 +27,7 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 
 	const { shapes }: Props = $props()
 
-	const writeShapes = useObstacleShapeWrites()
+	const shapeWrites = useObstacleShapeWrites()
 
 	const entries = $derived(
 		shapes.map(({ component, index }) => obstacleGeometriesOf(component)[index])
@@ -73,7 +73,7 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 				: (next as ObstacleShape)
 		if (Object.keys(patch).length === 0) return
 
-		error = writeShapes(
+		error = shapeWrites.write(
 			shapePatchEdits(
 				shapes,
 				shapes.map(() => patch)
@@ -86,6 +86,11 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 	<SectionNotice
 		label="geometry"
 		message="The selected shapes have different geometry types."
+	/>
+{:else if geometry === undefined}
+	<SectionNotice
+		label="geometry"
+		message="The selected shapes have a geometry type that can't be edited here."
 	/>
 {:else}
 	<GeometryFields

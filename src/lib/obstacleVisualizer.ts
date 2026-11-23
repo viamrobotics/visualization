@@ -6,7 +6,7 @@ import {
 	type ObstacleGeometryConfig,
 	obstacleGeometryLabel,
 } from '#lib/obstacleAttributes.js'
-import { withFrameAppearancesMoved } from '#lib/resourceAppearance.js'
+import { withFrameAppearancesCopied, withFrameAppearancesMoved } from '#lib/resourceAppearance.js'
 
 /** Every key an obstacle editor hint can set, so a new hint replaces all of the old one. */
 const OBSTACLE_HINT_KEYS: ReadonlySet<string> = new Set([
@@ -60,11 +60,15 @@ export const afterRemovingShapes =
  * The visualizer config a Complex obstacle edit writes: the Complex hint, with each shape's saved
  * appearance following the shape to its new frame id. A relabel renames the id, and a removal
  * renumbers the unlabeled shapes after it.
+ *
+ * @param copies Labels of shapes the edit duplicated, each keyed to its source's label, so a copy
+ *   keeps the look of what it copies.
  */
 export const complexObstacleVisualizer = (
 	component: PartComponent,
 	next: ObstacleGeometryConfig[],
-	move: ShapeIndexMove
+	move: ShapeIndexMove,
+	copies: ReadonlyMap<string, string> = new Map()
 ): Record<string, unknown> => {
 	const moves = new Map<string, string | undefined>()
 	for (const [oldIndex, geometry] of obstacleGeometriesOf(component).entries()) {
@@ -75,8 +79,9 @@ export const complexObstacleVisualizer = (
 		if (from !== to) moves.set(from, to)
 	}
 
+	const moved = { ...component, visualizer: withFrameAppearancesMoved(component, moves) }
 	return withObstacleHint(
-		{ ...component, visualizer: withFrameAppearancesMoved(component, moves) },
+		{ ...component, visualizer: withFrameAppearancesCopied(moved, copies) },
 		{ type: 'complex' }
 	)
 }

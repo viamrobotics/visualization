@@ -14,7 +14,7 @@
 	import { obstacleEditError, type ObstacleEditScope } from '#lib/obstacleEditError.js'
 	import {
 		addObstacleGeometry,
-		duplicateObstacleGeometry,
+		duplicateObstacleGeometries,
 		patchObstacleGeometry,
 		removeObstacleGeometry,
 	} from '#lib/obstacleGeometryList.js'
@@ -48,19 +48,22 @@
 	const rows = $state<HTMLLIElement[]>([])
 
 	/**
-	 * The label of a duplicate not yet in the list. Its row's label field takes focus once the
-	 * config round trip renders it, so the copy can be renamed straight away.
+	 * A duplicate not yet in the list, and the list it was written from. Its row's label field takes
+	 * focus once the config round trip renders it, so the copy can be renamed straight away.
 	 */
-	let pendingFocusLabel = $state<string | undefined>()
+	// Raw, so `writtenFrom` stays the list itself for the identity check below.
+	let pendingFocus = $state.raw<{ label: string; writtenFrom: ObstacleGeometryConfig[] }>()
 
 	$effect(() => {
-		if (pendingFocusLabel === undefined) return
-		const index = geometries.findIndex(
-			(entry) => explicitGeometryLabel(entry) === pendingFocusLabel
-		)
+		if (pendingFocus === undefined || geometries === pendingFocus.writtenFrom) return
+
+		// The first list after the write either holds the copy or shows the write never landed,
+		// as after an undo, so a later shape given the same label never steals focus.
+		const { label } = pendingFocus
+		pendingFocus = undefined
+		const index = geometries.findIndex((entry) => explicitGeometryLabel(entry) === label)
 		if (index === -1) return
 
-		pendingFocusLabel = undefined
 		void tick().then(() => {
 			const input = rows[index]?.querySelector('input')
 			input?.focus()
@@ -78,7 +81,8 @@
 		next: ObstacleGeometryConfig[],
 		index: number | undefined,
 		scope: ObstacleEditScope,
-		move: ShapeIndexMove
+		move: ShapeIndexMove,
+		copies?: ReadonlyMap<string, string>
 	): boolean => {
 		const issue = obstacleEditError(geometries, next, index, scope)
 		error = issue && {
@@ -89,7 +93,7 @@
 
 		partConfig.updateComponent(component.name, {
 			attributes: { ...component.attributes, geometries: next },
-			visualizer: complexObstacleVisualizer(component, next, move),
+			visualizer: complexObstacleVisualizer(component, next, move, copies),
 		})
 		return true
 	}
@@ -100,9 +104,15 @@
 	}
 
 	const handleDuplicate = (index: number) => {
-		const { geometries: next, label } = duplicateObstacleGeometry(geometries, index)
+		const {
+			geometries: next,
+			labels: [label],
+			copies,
+		} = duplicateObstacleGeometries(geometries, [index])
 		if (label === undefined) return
-		if (commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE)) pendingFocusLabel = label
+		if (commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE, copies)) {
+			pendingFocus = { label, writtenFrom: geometries }
+		}
 	}
 
 	const handleRemove = (index: number) => {

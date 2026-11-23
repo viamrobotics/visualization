@@ -44,6 +44,8 @@ export interface PartModule {
 
 export interface PartConfig {
 	components: PartComponent[]
+	/** Only `name` is read, to keep new component names unique. */
+	services?: { name: string }[]
 	modules?: PartModule[]
 	fragment_mods?: {
 		fragment_id: string

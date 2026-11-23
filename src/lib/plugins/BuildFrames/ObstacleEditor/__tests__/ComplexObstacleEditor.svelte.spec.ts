@@ -178,6 +178,25 @@ describe('ComplexObstacleEditor', () => {
 		)
 	})
 
+	it('stops waiting to focus a duplicate once an update arrives without it', async () => {
+		const component = createObstacleComponent('obstacle-1')
+		component.attributes = { geometries: defaultGeometries() }
+		component.visualizer = { type: 'complex' }
+		const partConfig = createPartConfigFixture({ current: { components: [component] } })
+		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(partConfig)
+		const { rerender } = render(ComplexObstacleEditor, {
+			props: { component },
+			context: new Map([[WORLD_CONTEXT_KEY, world]]),
+		})
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate geometry_2' }))
+		const written = vi.mocked(partConfig.updateComponent).mock.lastCall?.[1].attributes
+		await rerender({ component: { ...component, attributes: { geometries: defaultGeometries() } } })
+
+		await rerender({ component: { ...component, attributes: written } })
+
+		expect(screen.getByLabelText('Shape 4 label')).not.toHaveFocus()
+	})
+
 	it('removes the shape in the row', async () => {
 		const partConfig = mountEditor()
 

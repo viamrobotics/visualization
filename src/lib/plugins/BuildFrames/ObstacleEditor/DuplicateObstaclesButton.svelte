@@ -10,9 +10,9 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 
 	import Kbd from '#lib/components/overlay/Kbd.svelte'
 	import { traits } from '#lib/ecs/index.js'
-	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
+	import { useTakenResourceNames } from '#lib/hooks/useTakenResourceNames.js'
 	import { useHotkey } from '#lib/keybindings/index.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
 	import { nextCopyName } from '#lib/obstacleCopyName.js'
@@ -25,9 +25,9 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 	const { entities }: Props = $props()
 
 	const partConfig = usePartConfig()
-	const fragmentInfo = useFragmentInfo()
+	const takenResourceNames = useTakenResourceNames()
 	const toast = useToast()
-	const selectOnArrival = useSelectOnArrival()
+	const pendingSelection = useSelectOnArrival()
 
 	const label = $derived(
 		entities.length === 1 ? 'Duplicate obstacle' : `Duplicate ${entities.length} obstacles`
@@ -44,17 +44,14 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 		})
 		if (sources.length === 0) return
 
-		const takenNames = new Set([
-			...components.map(({ name }) => name),
-			...Object.keys(fragmentInfo.current ?? {}),
-		])
+		const takenNames = takenResourceNames.current
 		const copies = sources.map((source) => {
 			const name = nextCopyName(takenNames, source.name)
 			takenNames.add(name)
 			return { ...$state.snapshot(source), name }
 		})
 
-		selectOnArrival(copies.map(({ name }) => name))
+		pendingSelection.select(copies.map(({ name }) => name))
 		partConfig.createComponents(copies)
 
 		toast({

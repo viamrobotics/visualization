@@ -20,7 +20,7 @@ The offsets of several selected Complex obstacle shapes from their obstacles. A 
 
 	const { shapes }: Props = $props()
 
-	const writeShapes = useObstacleShapeWrites()
+	const shapeWrites = useObstacleShapeWrites()
 
 	const offsets = $derived(
 		shapes.map(({ component, index }) => {
@@ -49,7 +49,7 @@ The offsets of several selected Complex obstacle shapes from their obstacles. A 
 	})
 
 	const handleChange = (patches: PosePatch[]) => {
-		error = writeShapes(
+		error = shapeWrites.write(
 			shapePatchEdits(
 				shapes,
 				offsets.map((offset, position) => offsetPatch(offset, patches[position] ?? {}))

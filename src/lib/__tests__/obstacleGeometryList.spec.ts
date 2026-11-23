@@ -4,6 +4,7 @@ import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import {
 	addObstacleGeometry,
+	duplicateObstacleGeometries,
 	duplicateObstacleGeometry,
 	patchObstacleGeometry,
 	removeObstacleGeometry,
@@ -64,6 +65,17 @@ describe('duplicateObstacleGeometry', () => {
 		const input = [box('a')]
 
 		expect(duplicateObstacleGeometry(input, 3)).toEqual({ geometries: input, label: undefined })
+	})
+})
+
+describe('duplicateObstacleGeometries', () => {
+	it('keys each copy to the source it was made from, by what rdk calls it', () => {
+		expect(duplicateObstacleGeometries([box('a'), box()], [0, 1]).copies).toEqual(
+			new Map([
+				['a-copy', 'a'],
+				['geometry_1-copy', 'geometry_1'],
+			])
+		)
 	})
 })
 

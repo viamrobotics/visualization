@@ -49,21 +49,32 @@ export const duplicateObstacleGeometry = (
 }
 
 /**
- * Appends a copy of each entry in `indices`, in the order given, and returns their labels. A later
- * copy's label skips the earlier copies', so two copies of one entry never share a label.
+ * Appends a copy of each entry in `indices`, in the order given. A later copy's label skips the
+ * earlier copies', so two copies of one entry never share a label.
+ *
+ * @returns The copies' labels in order, and each copy's label keyed to its source's.
  */
 export const duplicateObstacleGeometries = (
 	geometries: ObstacleGeometryConfig[],
 	indices: readonly number[]
-): { geometries: ObstacleGeometryConfig[]; labels: string[] } => {
+): {
+	geometries: ObstacleGeometryConfig[]
+	labels: string[]
+	copies: Map<string, string>
+} => {
 	let next = geometries
 	const labels: string[] = []
+	const copies = new Map<string, string>()
 	for (const index of indices) {
+		const source = geometries[index]
 		const result = duplicateObstacleGeometry(next, index)
 		next = result.geometries
-		if (result.label !== undefined) labels.push(result.label)
+		if (result.label === undefined || !source) continue
+
+		labels.push(result.label)
+		copies.set(result.label, obstacleGeometryLabel(source, index))
 	}
-	return { geometries: next, labels }
+	return { geometries: next, labels, copies }
 }
 
 /** Removes the entry at `index`. An index out of range leaves the contents unchanged. */

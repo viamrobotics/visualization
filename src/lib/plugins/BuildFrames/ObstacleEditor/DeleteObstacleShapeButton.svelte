@@ -19,7 +19,7 @@
 	const { shapes }: Props = $props()
 
 	const world = useWorld()
-	const writeShapes = useObstacleShapeWrites()
+	const shapeWrites = useObstacleShapeWrites()
 
 	const groups = $derived(groupShapesByObstacle(shapes))
 	// An obstacle needs at least one shape, so a removal may not take every shape it has.
@@ -42,7 +42,7 @@
 			})
 		)
 
-		error = writeShapes(
+		error = shapeWrites.write(
 			groups.map(({ component, indices }) => {
 				const removed = new Set(indices)
 				return {

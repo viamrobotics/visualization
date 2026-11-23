@@ -4,9 +4,9 @@
 
 	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
+	import { useTakenResourceNames } from '#lib/hooks/useTakenResourceNames.js'
 	import { nextObstacleName } from '#lib/obstacle.js'
 
 	import { OBSTACLE_TYPE_OPTIONS, type ObstacleType } from './obstacleTypeOptions'
@@ -22,13 +22,10 @@
 	const option = $derived(OBSTACLE_TYPE_OPTIONS[type])
 
 	const environment = useEnvironment()
-	const fragmentInfo = useFragmentInfo()
 	const partConfig = usePartConfig()
+	const takenResourceNames = useTakenResourceNames()
 
-	const takenNames = $derived([
-		...(partConfig.current.components ?? []).map(({ name }) => name),
-		...Object.keys(fragmentInfo.current ?? {}),
-	])
+	const takenNames = $derived(takenResourceNames.current)
 
 	let name = $state('')
 
@@ -46,17 +43,16 @@
 
 	const error = $derived.by(() => {
 		if (trimmedName === '') return 'Enter a name.'
-		if (takenNames.includes(trimmedName))
-			return `This machine already has a component named ${trimmedName}.`
+		if (takenNames.has(trimmedName)) return `This machine already uses the name ${trimmedName}.`
 		return undefined
 	})
 
-	const selectOnArrival = useSelectOnArrival()
+	const pendingSelection = useSelectOnArrival()
 
 	const create = () => {
 		if (error !== undefined) return
 
-		selectOnArrival([trimmedName])
+		pendingSelection.select([trimmedName])
 
 		// Config-only frames are merged into the scene in build mode. Creating an
 		// obstacle anywhere else would write it to the config and show nothing.

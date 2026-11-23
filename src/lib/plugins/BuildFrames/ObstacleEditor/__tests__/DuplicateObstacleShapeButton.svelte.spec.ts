@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
-import { relations, traits } from '#lib/ecs/index.js'
+import { relations, selectOnly, traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
 import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '#lib/keybindings/index.js'
@@ -117,6 +117,17 @@ describe('DuplicateObstacleShapeButton', () => {
 		const copyB = world.spawn(traits.Name('obstacle-1:b-copy'), relations.ChildOf(obstacle))
 
 		expect([...world.query(traits.Selected)]).toEqual([copyA, copyB])
+	})
+
+	it('leaves the selection alone when the user selects something else before the copy arrives', async () => {
+		mountButton([0])
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate shape' }))
+		const other = world.spawn(traits.Name('elsewhere'))
+		selectOnly(world, other)
+
+		world.spawn(traits.Name('obstacle-1:a-copy'), relations.ChildOf(obstacle))
+
+		expect([...world.query(traits.Selected)]).toEqual([other])
 	})
 
 	it('shows the error and writes nothing for a copy rdk would reject', async () => {

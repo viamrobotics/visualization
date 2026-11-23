@@ -61,6 +61,18 @@ describe('ObstacleShapesGeometryDetails', () => {
 		)
 	})
 
+	it('names a shared type it cannot edit instead of offering fields that drop edits', () => {
+		mountDetails([
+			{ label: 'a', type: 'mesh' } as unknown as ObstacleGeometryConfig,
+			{ label: 'b', type: 'mesh' } as unknown as ObstacleGeometryConfig,
+		])
+
+		expect(
+			screen.getByText("The selected shapes have a geometry type that can't be edited here.")
+		).toBeInTheDocument()
+		expect(screen.queryByLabelText('mutable geometry')).not.toBeInTheDocument()
+	})
+
 	it('names a mix of geometry types instead of offering fields', () => {
 		mountDetails([
 			{ label: 'a', type: 'box', x: 10, y: 20, z: 30 },
