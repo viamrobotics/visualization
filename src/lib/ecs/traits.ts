@@ -4,6 +4,7 @@ import { type Entity, type Trait, trait } from 'koota'
 import { Group, Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import type { Intrinsics } from '#lib/cameraIntrinsics.js'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
 import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
 import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -359,6 +360,9 @@ export const ShowAxesHelper = trait(() => true)
  * when it reports none that describe a real pinhole camera.
  */
 export const Camera = trait(() => ({ intrinsics: undefined as Intrinsics | undefined }))
+
+/** The kinematics model of the component this frame belongs to, as the frame system reports it. */
+export const Kinematics = trait(() => ({ model: undefined as RawKinematicsModel | undefined }))
 
 /**
  * The resource appearance last written onto this frame entity, serialized. An appearance change is

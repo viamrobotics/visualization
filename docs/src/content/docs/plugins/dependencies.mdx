@@ -59,7 +59,7 @@ Some plugins need more than a mounted `<Visualizer />`:
 | Plugin                         | Also needs                                                                    |
 | ------------------------------ | ----------------------------------------------------------------------------- |
 | `<ControlWidgets />`, `<XR />` | a live machine connection (resources resolved per part)                       |
-| `<BuildFrames />`              | a `partID` and edit permissions on that part                                  |
+| `<BuildFrames />`              | to be inside `<Machine />`, with edit permissions on its part                 |
 | `<XR />`                       | a WebXR-capable device to enter a session                                     |
 | `<Focus />`                    | an active selection — click an entity first                                   |
 | `<DrawService />`              | a running draw server (see its [page](../draw-service/))                      |

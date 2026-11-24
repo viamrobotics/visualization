@@ -61,6 +61,7 @@ export default defineConfig({
 						{ label: '<Focus />', link: '/plugins/focus/' },
 						{ label: '<Fullscreen />', link: '/plugins/fullscreen/' },
 						{ label: '<Logs />', link: '/plugins/logs/' },
+						{ label: '<Machine />', link: '/plugins/machine/' },
 						{ label: '<MeasureTool />', link: '/plugins/measure-tool/' },
 						{ label: '<Monitor />', link: '/plugins/monitor/' },
 						{ label: '<MotionPlanReplayer />', link: '/plugins/motion-plan-replayer/' },

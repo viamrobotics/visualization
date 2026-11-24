@@ -83,7 +83,7 @@ export const ssr = false
 That's enough to get an empty scene: the camera and its controls, the grid, the entity
 renderer, and the portal targets plugins render into. From there, you can:
 
-- **Pass `partID`** to bind it to a specific Viam machine part.
+- **Mount [`<Machine partID />`](../../plugins/machine/)** inside it to render a Viam machine part, with the plugins that work on the machine as its children.
 - **Pass `cameraPose`** to set an initial camera position and look-at target.
 - **Provide a `children` snippet** to render your own Threlte primitives or the `<Snapshot />` component inside the scene.
 
@@ -171,10 +171,7 @@ one-shot capture.
 </script>
 
 <div class="h-screen w-screen">
-	<Visualizer
-		partID="my-part-id"
-		cameraPose={{ position: [2, 2, 2], lookAt: [0, 0, 0] }}
-	>
+	<Visualizer cameraPose={{ position: [2, 2, 2], lookAt: [0, 0, 0] }}>
 		{#snippet children()}
 			<!-- Anything Threlte-compatible. Runs inside <Canvas>. -->
 		{/snippet}

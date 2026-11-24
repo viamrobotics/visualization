@@ -51,6 +51,7 @@ inside it.
 	import FramesSettings from './settings/FramesSettings.svelte'
 	import VisionSettings from './settings/VisionSettings.svelte'
 	import { useCameraTraits } from './useCameraTraits.svelte'
+	import { useKinematicsTraits } from './useKinematicsTraits.svelte'
 	import WorldStates from './WorldStates.svelte'
 
 	interface Props {
@@ -111,6 +112,7 @@ inside it.
 	provideFramelessComponents()
 	useFramelessComponentEntities(() => partID)
 	useCameraTraits()
+	useKinematicsTraits()
 </script>
 
 <PointClouds />

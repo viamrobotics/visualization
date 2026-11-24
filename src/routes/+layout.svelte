@@ -136,7 +136,6 @@
 
 						<ControlWidgets />
 						<Logs />
-						<SceneExport />
 					</Machine>
 
 					<Machines {launch} />
@@ -150,6 +149,7 @@
 		<Isolate />
 		<MeasureTool />
 		<WorldTree />
+		<SceneExport />
 		<Settings />
 		<RenderStats />
 		<FileDrop />

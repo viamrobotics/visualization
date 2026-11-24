@@ -12,12 +12,14 @@ Monitor is not special. Like `build` ([`<BuildFrames />`](../build-frames/)) and
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { Monitor } from '@viamrobotics/visualization/plugins'
+	import { Machine, Monitor } from '@viamrobotics/visualization/plugins'
 </script>
 
 <div class="h-screen w-screen">
-	<Visualizer partID="my-part-id">
-		<Monitor />
+	<Visualizer>
+		<Machine partID="my-part-id">
+			<Monitor />
+		</Machine>
 	</Visualizer>
 </div>
 ```

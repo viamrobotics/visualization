@@ -2,10 +2,10 @@
 	import { Tooltip } from '@viamrobotics/prime-ui'
 	import { Download, LoaderCircle } from 'lucide-svelte'
 
-	import { useWorld } from '#lib/ecs/index.js'
+	import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
+
+	import { traits, useWorld } from '#lib/ecs/index.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
-	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
-	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
 
 	import { exportSimScene } from './export-sim-scene'
 
@@ -16,8 +16,18 @@
 	const REVOKE_DELAY_MS = 40_000
 
 	const world = useWorld()
-	const frames = useFrames()
 	const bus = useEventBus()
+
+	/** Each component's kinematics model, keyed by the name of the frame that carries it. */
+	const kinematicsByName = (): Record<string, RawKinematicsModel> => {
+		const result: Record<string, RawKinematicsModel> = {}
+		for (const entity of world.query(traits.Kinematics, traits.Name)) {
+			const name = entity.get(traits.Name)
+			const model = entity.get(traits.Kinematics)?.model
+			if (name !== undefined && model !== undefined) result[name] = model
+		}
+		return result
+	}
 
 	let isExporting = $state(false)
 
@@ -37,7 +47,7 @@
 		try {
 			const result = await exportSimScene({
 				world,
-				kinematics: kinematicsByComponent(frames.parts),
+				kinematics: kinematicsByName(),
 			})
 			download(result.zip)
 			bus.publish('diagnostic', {
