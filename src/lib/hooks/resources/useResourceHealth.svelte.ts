@@ -1,11 +1,23 @@
+import type { Entity } from 'koota'
+
 import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
+
+import { setIssues, traits, useQuery } from '#lib/ecs/index.js'
+import { useResourceRowRenames } from '#lib/hooks/useResourceRowRenames.svelte.js'
 
 import type { UnhealthyResource } from './unhealthyResources'
 
 import { unhealthyResources } from './unhealthyResources'
 
 const key = Symbol('resource-health-context')
+
+const healthLine = ({ error }: UnhealthyResource): traits.IssueLine => ({
+	severity: 'warn',
+	message: error
+		? `The machine reports this resource as unhealthy: ${error}`
+		: 'The machine reports this resource as unhealthy',
+})
 
 export interface Context {
 	/** Every resource the machine currently reports as unhealthy. */
@@ -26,6 +38,36 @@ export const provideResourceHealth = (partID: () => string): Context => {
 
 	const unhealthy = $derived(unhealthyResources(machineStatus.current?.resources))
 	const byName = $derived(new Map(unhealthy.map((resource) => [resource.name, resource])))
+
+	// A name is not unique across the world: a drawn transform takes its reference frame's
+	// name (`#lib/draw.ts`), so only rows that stand for a resource are marked.
+	const frameEntities = useQuery(traits.FramesAPI, traits.Name)
+	const framelessEntities = useQuery(traits.FramelessComponent, traits.Name)
+	const renames = useResourceRowRenames()
+	const marked = new Set<Entity>()
+
+	$effect(() => {
+		void renames.current
+		const resourceEntities = [...frameEntities.current, ...framelessEntities.current]
+
+		for (const entity of marked) {
+			if (!resourceEntities.includes(entity)) setIssues(entity, 'health', [])
+		}
+		marked.clear()
+
+		for (const entity of resourceEntities) {
+			const resource = byName.get(entity.get(traits.Name) ?? '')
+			setIssues(entity, 'health', resource ? [healthLine(resource)] : [])
+			if (resource) marked.add(entity)
+		}
+	})
+
+	$effect(() => {
+		return () => {
+			for (const entity of marked) setIssues(entity, 'health', [])
+			marked.clear()
+		}
+	})
 
 	const context: Context = {
 		get unhealthy() {

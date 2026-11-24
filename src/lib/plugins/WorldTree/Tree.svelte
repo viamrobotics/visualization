@@ -44,7 +44,7 @@
 	const collection = $derived(
 		tree.collection<TreeNodeType>({
 			nodeToValue: (node) => `${node.entity}`,
-			nodeToString: (node) => node.entity.get(traits.Name) ?? '',
+			nodeToString: (node) => node.folder?.name ?? node.entity.get(traits.Name) ?? '',
 			// Zag reads an empty `children` as a leaf. A pinned folder with no rows is still a folder.
 			nodeToChildrenCount: (node) => (node.folder ? (node.children?.length ?? 0) : undefined),
 			rootNode: {
@@ -55,9 +55,6 @@
 	)
 
 	const rootChildren = $derived(collection.rootNode.children ?? [])
-
-	const folderNameOf = (node: TreeNodeType): string | undefined =>
-		node.folder ? (node.entity.get(traits.Name) ?? undefined) : undefined
 
 	const expandedValues = new SvelteSet<string>()
 
@@ -119,7 +116,7 @@
 			// handed out fresh each session and would key nothing on the next load.
 			const expandedByName: Record<string, boolean> = {}
 			for (const node of rootChildren) {
-				const name = folderNameOf(node)
+				const name = node.folder?.name
 				if (name) expandedByName[name] = expandedValues.has(`${node.entity}`)
 			}
 
@@ -136,7 +133,7 @@
 	// commit, otherwise every folder renders collapsed for a frame and then pops open.
 	$effect.pre(() => {
 		for (const node of rootChildren) {
-			const name = folderNameOf(node)
+			const name = node.folder?.name
 			if (name === undefined) continue
 
 			const value = `${node.entity}`

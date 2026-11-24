@@ -2,10 +2,10 @@ import type { Entity } from 'koota'
 
 import { traits } from '#lib/ecs/index.js'
 
-import type { TreeNode } from './buildTree'
+import { rollupOfChildren, type TreeNode } from './buildTree'
 
 const matchesName = (node: TreeNode, needle: string): boolean =>
-	(node.entity.get(traits.Name) ?? '').toLowerCase().includes(needle)
+	(node.folder?.name ?? node.entity.get(traits.Name) ?? '').toLowerCase().includes(needle)
 
 const countRows = (nodes: TreeNode[]): number =>
 	nodes.reduce((total, node) => total + 1 + countRows(node.children ?? []), 0)
@@ -28,10 +28,12 @@ const keepMatching = (
 		const children = keepMatching(node.children ?? [], needle, selected)
 		if (children.length === 0) continue
 
+		const rollup = rollupOfChildren(children)
+
 		kept.push(
 			node.folder
-				? { ...node, children, folder: { ...node.folder, itemCount: countRows(children) } }
-				: { ...node, children }
+				? { ...node, children, rollup, folder: { ...node.folder, itemCount: countRows(children) } }
+				: { ...node, children, rollup }
 		)
 	}
 
@@ -40,8 +42,8 @@ const keepMatching = (
 
 /**
  * Rows whose name contains `query`, matched case-insensitively, plus the ancestors
- * that lead to them. A folder kept only for its descendants is recounted over what
- * survived, so its row never claims more than it shows.
+ * that lead to them. A row kept only for its descendants has its count and issue
+ * rollup recomputed over what survived, so it never claims more than it shows.
  *
  * A row in `selected` is kept whether or not it matches. Picking an object in the
  * scene has to reach the tree, and clearing the query the user typed to get there

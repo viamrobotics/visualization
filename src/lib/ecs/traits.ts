@@ -1,7 +1,9 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-import { type Entity, trait } from 'koota'
+import { type Entity, type Trait, trait } from 'koota'
 import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
+
+import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
 import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
 import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -283,6 +285,53 @@ export const SavedPose = trait(() => ({
 	joints: undefined as number[] | undefined,
 	pose: undefined as Pose | undefined,
 }))
+
+/**
+ * A world tree folder. It claims every entity carrying one of `sources`, and an
+ * untagged descendant takes its parent's folder. An entity matching two folders goes
+ * to the lower `order`. The entity carries no `Name`, so it never shows up as a row
+ * of its own. Spawn it with `useFolder`, which shares one entity per `id`.
+ */
+export const Folder = trait(() => ({
+	/** Stable key for log targets and persisted expansion, independent of `name`. */
+	id: '',
+	name: '',
+	/** Display position. Lower comes first. */
+	order: 0,
+	sources: [] as Trait[],
+	/** Shown in place of rows while empty. */
+	placeholder: undefined as string | undefined,
+	/** Kept in the tree while empty. An empty folder with neither this nor a placeholder is left out. */
+	pinned: false,
+	/** Starts closed instead of open, for a folder that is a side note. */
+	collapsed: false,
+	/** Rows here have no scene object, so they get no visibility toggle. */
+	sceneless: false,
+	/** Poll that fills the folder, which puts refresh controls on its row. */
+	refreshRate: undefined as RefreshRateId | undefined,
+}))
+
+/** How bad an issue is. Ordered, so the worst of several is the greatest index. */
+export const ISSUE_SEVERITIES = ['warn', 'error'] as const
+
+export type IssueSeverity = (typeof ISSUE_SEVERITIES)[number]
+
+export interface IssueLine {
+	severity: IssueSeverity
+	message: string
+	/**
+	 * Repeats of this line. A writer that counts hands in a getter over its own reactive
+	 * state, so a repeat re-renders whatever shows the count without rewriting the trait.
+	 */
+	readonly count?: number
+}
+
+/**
+ * Problems on an entity, keyed by the writer that owns them, so each writer replaces
+ * only its own lines. Write it through `setIssues`, which drops an emptied key and
+ * the trait with its last key.
+ */
+export const Issues = trait(() => new Map<string, IssueLine[]>())
 
 /**
  * This entity has somewhere for an edit to land: a config entry, or an ad-hoc

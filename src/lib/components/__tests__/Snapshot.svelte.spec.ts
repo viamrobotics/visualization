@@ -1,4 +1,4 @@
-import { render } from '@testing-library/svelte'
+import { cleanup, render } from '@testing-library/svelte'
 import { createWorld, type World } from 'koota'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -68,6 +68,7 @@ describe('Snapshot', () => {
 	})
 
 	afterEach(() => {
+		cleanup()
 		world.destroy()
 	})
 

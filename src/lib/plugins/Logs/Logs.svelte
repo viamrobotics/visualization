@@ -1,13 +1,19 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
+
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
 	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useResourceRowRenames } from '#lib/hooks/useResourceRowRenames.svelte.js'
 
+	import { createLogIssueMirror } from './logIssueMirror'
 	import LogPanel from './LogPanel.svelte'
 	import { provideLogs } from './useLogs.svelte'
 
+	const world = useWorld()
 	const logs = provideLogs()
 	const partID = usePartID()
 	const bus = useEventBus()
@@ -44,6 +50,34 @@
 
 		logs.clear()
 	})
+
+	const countByUuid = $derived(new Map(logs.current.map((log) => [log.uuid, log.count])))
+	const issueMirror = createLogIssueMirror(world, (uuid) => countByUuid.get(uuid))
+
+	// Repeats arrive at pose rate and change no row, so the mirror reruns only when the set of
+	// alert lines does, or when a row it could mark spawns, despawns or is renamed.
+	const alertSignature = $derived(
+		logs.current
+			.filter((log) => log.level !== 'info')
+			.map((log) => log.uuid)
+			.join('\0')
+	)
+	// Only rows a line can target, so world-state churn never reruns the mirror.
+	const frameRows = useQuery(traits.Name, traits.FramesAPI)
+	const framelessRows = useQuery(traits.Name, traits.FramelessComponent)
+	const folderRows = useQuery(traits.Folder)
+	const renames = useResourceRowRenames()
+
+	$effect(() => {
+		void alertSignature
+		void renames.current
+		void frameRows.current
+		void framelessRows.current
+		void folderRows.current
+		untrack(() => issueMirror.apply(logs.current))
+	})
+
+	$effect(() => issueMirror.clear)
 
 	/**
 	 * One badge, not two stacked in the same corner. Errors outrank warnings, so

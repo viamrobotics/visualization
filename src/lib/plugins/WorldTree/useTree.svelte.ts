@@ -1,32 +1,26 @@
-import { IsExcluded } from 'koota'
 import { createSubscriber } from 'svelte/reactivity'
 
 import { relations, traits, useWorld } from '#lib/ecs/index.js'
 
-import type { PinnedFolders, Tree, TreeNode } from './buildTree'
+import type { FallbackFolders, Tree, TreeNode } from './buildTree'
 
 import { buildTree } from './buildTree'
-import { treeFolders } from './treeFolders'
 
 /**
- * Reactive scene tree, grouped into `treeFolders`. Rebuilds when any named entity
- * is added, removed, renamed, or gains or loses a `ChildOf` or `Orphan` edge, and
- * when `pinnedFolders` hands back a different map.
+ * Reactive scene tree, grouped into the world's `Folder` entities. Rebuilds when any
+ * named entity is added, removed, renamed, or gains or loses a `ChildOf` or `Orphan`
+ * edge, when a folder changes, and when an entity's `Issues` change, since rows roll
+ * their descendants' issues up.
  * Rebuild notifications are throttled to at most one per 100ms, so bursts of
  * world-state churn stay off the frame budget.
  */
 export const useTree = (
-	pinnedFolders: () => PinnedFolders
+	fallback: FallbackFolders
 ): {
 	readonly current: TreeNode[]
 	readonly parents: Map<string, string>
 } => {
 	const world = useWorld()
-
-	// `IsExcluded` keeps the folder rows out of every query, including this hook's own.
-	const folderEntities = treeFolders.map((folder) =>
-		world.spawn(IsExcluded, traits.Name(folder.name))
-	)
 
 	let cached: Tree | undefined
 	let dirty = true
@@ -67,6 +61,12 @@ export const useTree = (
 			world.onRemove(relations.ChildOf, invalidate),
 			world.onAdd(traits.Orphan, invalidate),
 			world.onRemove(traits.Orphan, invalidate),
+			world.onAdd(traits.Folder, invalidate),
+			world.onChange(traits.Folder, invalidate),
+			world.onRemove(traits.Folder, invalidate),
+			world.onAdd(traits.Issues, invalidate),
+			world.onChange(traits.Issues, invalidate),
+			world.onRemove(traits.Issues, invalidate),
 		]
 
 		return () => {
@@ -75,17 +75,11 @@ export const useTree = (
 		}
 	})
 
-	let cachedPinnedFolders: PinnedFolders | undefined
-
 	const read = (): Tree => {
 		subscribe()
 
-		// Read on every call so the caller's effect tracks it. A new map is a new pin set.
-		const currentPinnedFolders = pinnedFolders()
-
-		if (dirty || !cached || currentPinnedFolders !== cachedPinnedFolders) {
-			cached = buildTree(world, folderEntities, currentPinnedFolders)
-			cachedPinnedFolders = currentPinnedFolders
+		if (dirty || !cached) {
+			cached = buildTree(world, fallback)
 			dirty = false
 		}
 

@@ -8,7 +8,7 @@
 	import { createBufferGeometry } from '#lib/attribute.js'
 	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 	import OverlayPortal from '#lib/components/overlay/Portals/OverlayPortal.svelte'
-	import { traits } from '#lib/ecs/index.js'
+	import { traits, useFolder } from '#lib/ecs/index.js'
 	import { useWorld } from '#lib/ecs/useWorld.js'
 	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
@@ -23,6 +23,15 @@
 	const toast = useToast()
 	const cameraControls = useCameraControls()
 	const relationships = useRelationships()
+
+	// A dropped snapshot is a drawing, so it shares `Drawn` with the draw service.
+	useFolder({ id: 'drawn', name: 'Drawn', order: 700, sources: [traits.SnapshotAPI] })
+	useFolder({
+		id: 'imported-files',
+		name: 'Imported files',
+		order: 800,
+		sources: [traits.DroppedFile],
+	})
 
 	const fileDrop = useFileDrop(
 		(result: FileDropperSuccess) => {

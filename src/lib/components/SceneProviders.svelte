@@ -9,6 +9,7 @@
 	import { provideConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
 	import { provideTransformControls } from '#lib/hooks/useControls.svelte.js'
 	import { provideEventBus } from '#lib/hooks/useEventBus.js'
+	import { useFramelessComponentEntities } from '#lib/hooks/useFramelessComponentEntities.svelte.js'
 	import { provideFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
 	import { provideFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { provideInheritedInvisible } from '#lib/hooks/useInheritedInvisible.svelte.js'
@@ -61,6 +62,7 @@
 	provideArmKinematics(() => partID.current)
 	provideWorldStates(() => partID.current)
 	provideFramelessComponents()
+	useFramelessComponentEntities(() => partID.current)
 
 	provideLinkedEntities()
 	provideSelectionOrder()

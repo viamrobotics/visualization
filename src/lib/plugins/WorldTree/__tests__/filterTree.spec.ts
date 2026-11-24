@@ -19,7 +19,7 @@ const node = (name: string, children?: TreeNode[]): TreeNode => ({
 
 const folder = (name: string, children: TreeNode[], itemCount: number): TreeNode => ({
 	...node(name, children),
-	folder: { id: 'frames', itemCount },
+	folder: { id: 'frames', name, collapsed: false, itemCount },
 })
 
 const namesIn = (nodes: TreeNode[]): string[] =>
@@ -83,6 +83,20 @@ describe('filterTree', () => {
 		const nodes = [folder('Frames', [node('arm', [node('gripper')]), node('camera')], 3)]
 
 		expect(filterTree(nodes, 'gripper', NOTHING_SELECTED)[0]?.folder?.itemCount).toBe(2)
+	})
+
+	it('drops the issue rollup of rows the filter hid from a kept ancestor', () => {
+		world = createWorld()
+		const camera = node('camera')
+		camera.entity.add(
+			traits.Issues(new Map([['health', [{ severity: 'error', message: 'down' }]]]))
+		)
+		const base = node('base', [node('arm'), camera])
+		base.rollup = { severity: 'error', count: 1 }
+
+		const [kept] = filterTree([base], 'arm', NOTHING_SELECTED)
+
+		expect(kept?.rollup).toBeUndefined()
 	})
 
 	it('leaves the count of a folder matched by name at its full total', () => {

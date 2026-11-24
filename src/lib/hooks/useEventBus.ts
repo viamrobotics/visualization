@@ -11,7 +11,7 @@ type DiagnosticLevel = 'info' | 'warn' | 'error'
 export interface DiagnosticTarget {
 	/** A resource, matched against its `traits.Name`. */
 	resource?: string
-	/** A folder, matched against its `TreeFolderId`. */
+	/** A folder, matched against its `traits.Folder` id. */
 	folder?: string
 }
 

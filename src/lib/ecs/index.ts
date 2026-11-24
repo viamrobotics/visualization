@@ -8,6 +8,8 @@ export { useParentName } from './useParentName.svelte'
 export { provideHierarchy } from './provideHierarchy.svelte'
 export { provideWorldMatrix } from './provideWorldMatrix.svelte'
 export { setOrAddTrait } from './setOrAddTrait'
+export { setIssues } from './setIssues'
+export { type FolderSpec, useFolder } from './useFolder.svelte'
 export { selectOnly } from './selectOnly'
 export {
 	DEFAULT_OPACITY,
