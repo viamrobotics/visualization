@@ -4,8 +4,8 @@ import { untrack } from 'svelte'
 
 import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
 import type { Pose } from '#lib/math/index.js'
-import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
+import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 
 import { isAlreadyAtGoal, parsePlanResult, planCommand } from '#lib/motion/planDoCommand.js'
 

@@ -1,8 +1,8 @@
 import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
 import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
 import type { JointMotions } from '#lib/motion/interpolateTrajectory.js'
-import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
+import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 
 import { useWorld } from '#lib/ecs/index.js'
 import { matchModel, modelKey, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
