@@ -25,13 +25,34 @@ interface Environment {
 	isImmersive: boolean
 }
 
+/** What leaving a mode would throw away, and how to throw it away. */
+export interface LeaveConfirmation {
+	/** Shown in the confirmation dialog, such as "Your unsaved frame edits will be discarded." */
+	description: string
+	/** Called when the user confirms, before the mode switches. */
+	discard: () => void
+}
+
+export interface ModeOptions {
+	/**
+	 * Asked before switching away from the mode. Returns a confirmation while leaving would lose
+	 * something, and `undefined` while it is safe to leave.
+	 */
+	confirmLeave?: () => LeaveConfirmation | undefined
+}
+
 export interface EnvironmentContext {
 	current: Environment
 	/**
 	 * Declares `mode` reachable for as long as the caller is mounted, and returns
 	 * the matching release function.
 	 */
-	registerMode: (mode: EnvironmentMode) => () => void
+	registerMode: (mode: EnvironmentMode, options?: ModeOptions) => () => void
+	/**
+	 * What switching away from the active mode would lose, from the first of its registrations
+	 * that reports anything. `undefined` when the switch loses nothing.
+	 */
+	leaveConfirmation: () => LeaveConfirmation | undefined
 	/**
 	 * Every mode currently reachable, in registration order. Order is priority:
 	 * the first entry is the fallback when the stored mode is unreachable. Empty
@@ -57,6 +78,8 @@ export const createEnvironment = (): EnvironmentContext => {
 		'monitor'
 	)
 	const availableModes = new SvelteMap<EnvironmentMode, number>()
+	// Read only when a switch is requested, so it needs no reactivity.
+	const leaveGuards = new Map<EnvironmentMode, Set<NonNullable<ModeOptions['confirmLeave']>>>()
 
 	const effectiveMode = $derived.by((): EnvironmentMode | 'none' => {
 		const value = stored.current
@@ -85,13 +108,35 @@ export const createEnvironment = (): EnvironmentContext => {
 		get availableModes() {
 			return [...availableModes.keys()]
 		},
-		registerMode(mode) {
+		leaveConfirmation() {
+			const mode = effectiveMode
+			if (mode === 'none') return undefined
+
+			for (const confirmLeave of leaveGuards.get(mode) ?? []) {
+				const confirmation = confirmLeave()
+				if (confirmation) return confirmation
+			}
+
+			return undefined
+		},
+		registerMode(mode, options) {
 			availableModes.set(mode, (availableModes.get(mode) ?? 0) + 1)
+
+			const guard = options?.confirmLeave
+			// Wrapped so registering the same function twice still yields two entries to release.
+			const confirmLeave = guard && (() => guard())
+			if (confirmLeave) {
+				const guards = leaveGuards.get(mode) ?? new Set()
+				guards.add(confirmLeave)
+				leaveGuards.set(mode, guards)
+			}
 
 			let released = false
 			return () => {
 				if (released) return
 				released = true
+
+				if (confirmLeave) leaveGuards.get(mode)?.delete(confirmLeave)
 
 				const count = (availableModes.get(mode) ?? 1) - 1
 				if (count > 0) {
@@ -120,8 +165,9 @@ export const useEnvironment = () => {
  * Declares `mode` reachable for as long as the calling component is mounted.
  * Plugins that contribute a mode call this in setup (synchronously), so the first
  * render already resolves the persisted mode instead of flashing the fallback.
+ * `options.confirmLeave` lets the mode ask the user before a switch away throws its work out.
  */
-export const useEnvironmentMode = (mode: EnvironmentMode) => {
-	const release = useEnvironment().registerMode(mode)
+export const useEnvironmentMode = (mode: EnvironmentMode, options?: ModeOptions) => {
+	const release = useEnvironment().registerMode(mode, options)
 	onDestroy(release)
 }

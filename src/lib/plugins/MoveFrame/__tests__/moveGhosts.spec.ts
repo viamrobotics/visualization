@@ -3,7 +3,6 @@ import { BoxGeometry, Matrix4, Vector3 } from 'three'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '#lib/ecs/index.js'
-import { modelKey } from '#lib/hooks/use3DModels.svelte.js'
 
 import {
 	clearMoveGhosts,
@@ -109,7 +108,7 @@ describe('syncMoveGhosts', () => {
 
 		syncMoveGhosts(world, root, delta, ghosts)
 
-		expect(modelKey(ghosts.get(child)!)).toBe('arm:upper_arm_link')
+		expect(ghosts.get(child)?.get(traits.GhostModelKey)).toBe('arm:upper_arm_link')
 	})
 
 	it('ghosts a frame with no geometry as an axes triad', () => {

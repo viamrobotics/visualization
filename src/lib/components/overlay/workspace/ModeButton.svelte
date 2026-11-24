@@ -42,10 +42,7 @@
 	import { Dialog, Icon, Tooltip } from '@viamrobotics/prime-ui'
 	import { Hammer, Move3d } from 'lucide-svelte'
 
-	import { useWorld } from '#lib/ecs/index.js'
-	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
-	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { type LeaveConfirmation, useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
 	interface Props {
 		/** The mode this button switches the app into. */
@@ -57,18 +54,19 @@
 	const { mode, description, class: className }: Props = $props()
 
 	const environment = useEnvironment()
-	const partConfig = usePartConfig()
-	const world = useWorld()
 
 	let confirmOpen = $state(false)
+	let confirmation = $state.raw<LeaveConfirmation>()
 
 	const style = $derived(appearance[mode])
 	const isSelected = $derived(environment.current.mode === mode)
 
-	// Leaving build mode with staged edits would silently hide them, so confirm
-	// first. Switching without unsaved edits (or into build) is unguarded.
+	// The mode being left decides whether leaving loses anything, so it is asked before switching.
 	const request = () => {
-		if (mode !== 'build' && environment.current.mode === 'build' && partConfig.isDirty) {
+		if (isSelected) return
+
+		confirmation = environment.leaveConfirmation()
+		if (confirmation) {
 			confirmOpen = true
 			return
 		}
@@ -77,8 +75,7 @@
 	}
 
 	const discardAndSwitch = () => {
-		partConfig.discardChanges()
-		resetStagedEdits(world)
+		confirmation?.discard()
 		environment.current.mode = mode
 		confirmOpen = false
 	}
@@ -128,9 +125,7 @@
 <Dialog bind:open={confirmOpen}>
 	<Dialog.Content class="w-full max-w-sm gap-3">
 		<Dialog.Title>Discard unsaved changes?</Dialog.Title>
-		<Dialog.Description>
-			Switching to {mode} mode will discard your unsaved frame edits.
-		</Dialog.Description>
+		<Dialog.Description>{confirmation?.description}</Dialog.Description>
 
 		<div class="mt-1 flex justify-end gap-2">
 			<Dialog.Close class="button button-compact">Cancel</Dialog.Close>

@@ -12,7 +12,6 @@
 		resizeBoundsObstacle,
 	} from '#lib/boundsObstacleInterior.js'
 	import { complexShapeOwner } from '#lib/complexShapeOwner.js'
-	import SnapIndicator from '#lib/components/SnapIndicator.svelte'
 	import { relations, traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { type ScalableGeometry, scaledGeometry, scaleHandles } from '#lib/editing/gizmoScale.js'
@@ -40,6 +39,8 @@
 	} from '#lib/simpleObstacleShape.js'
 	import { useObjectSnapDrag } from '#lib/snapping/useObjectSnapDrag.svelte.js'
 	import { isolateTransformControls } from '#lib/three/renderLayers.js'
+
+	import SnapIndicator from './SnapIndicator.svelte'
 
 	const { invalidate } = useThrelte()
 	const settings = useSettings()
@@ -74,7 +75,6 @@
 			traits.Name,
 			traits.Editable,
 			traits.InheritedInvisible,
-			traits.FramesAPI,
 			traits.Box,
 			traits.Sphere,
 			traits.Capsule,
@@ -100,7 +100,6 @@
 				boundsObstacle,
 				isMovable: entity.has(traits.Editable) || !!shapeOwner,
 				isInvisible: entity.has(traits.InheritedInvisible),
-				isFrame: entity.has(traits.FramesAPI),
 				isFragmentLocked:
 					name !== undefined &&
 					isFrameVariableLocked(
@@ -259,25 +258,14 @@
 		)
 	)
 
-	/**
-	 * A frame drag is only ever staged through the part config, so without edit
-	 * permissions every change is discarded — `updatePartFrame` finds no matching
-	 * component and returns, leaving the frame visibly moved but nothing dirtied.
-	 * Withhold the gizmo rather than offering an edit that can't land. Non-frame
-	 * entities (drawings, tool gizmos) stage straight into `Matrix` and never
-	 * touch the config, so they stay draggable.
-	 */
-	const canEdit = $derived(
-		targets.current.every((target) => !target.isFrame || partConfig.hasEditPermissions)
-	)
-
 	// Every selected object must be movable, or the scene would show a group move that only part of it made.
+	// Every movable target is a config frame, so without edit permissions no drag could land in the config.
 	const transforming = $derived(
 		isBuildMode &&
 			ref &&
 			movers.length > 0 &&
 			activeMode &&
-			canEdit &&
+			partConfig.hasEditPermissions &&
 			!targets.current.some((target) => target.isFragmentLocked || target.isInvisible)
 	)
 
@@ -311,7 +299,6 @@
 	})
 
 	const beginFrameHistoryEntry = () => {
-		if (!targets.current.some((target) => target.isFrame)) return
 		partConfig.beginFrameEditHistoryEntry()
 		frameHistoryEntryOpen = true
 	}
@@ -432,10 +419,8 @@
 	const stagePose = (target: Target, targetWorld: Matrix4) => {
 		if (isComplexShapeTarget(target)) {
 			stageComplexShapePose(target, targetWorld)
-		} else if (target.isFrame) {
-			stageFramePose(target.entity, targetWorld)
 		} else {
-			stageLocalPose(target.entity, targetWorld)
+			stageFramePose(target.entity, targetWorld)
 		}
 	}
 
@@ -509,36 +494,6 @@
 		frameEditor.setPose(entity, { ...tempPose })
 	}
 
-	/**
-	 * Stages a translate/rotate drag for a non-frame-system entity (e.g. a gizmo)
-	 * by writing the dragged component into the Matrix trait. Gizmos carry no
-	 * LiveMatrix, so there's no live-pose blend to invert — the parent-relative
-	 * target is the new local transform.
-	 */
-	const stageLocalPose = (entity: Entity, targetWorld: Matrix4) => {
-		const matrix = entity.get(traits.Matrix)
-		if (!matrix) return
-
-		localTargetOf(entity, targetWorld, tempLocal)
-		tempPose.setFromMatrix4(matrix)
-		refPose.setFromMatrix4(tempLocal)
-
-		if (stagesPosition) {
-			tempPose.x = refPose.x
-			tempPose.y = refPose.y
-			tempPose.z = refPose.z
-		}
-		if (stagesOrientation) {
-			tempPose.oX = refPose.oX
-			tempPose.oY = refPose.oY
-			tempPose.oZ = refPose.oZ
-			tempPose.theta = refPose.theta
-		}
-
-		tempPose.toMatrix4(matrix)
-		entity.changed(traits.Matrix)
-	}
-
 	/** Bakes the gizmo's scale factor into each geometry's own dimensions, leaving positions alone. */
 	const stageScale = (factor: Vector3) => {
 		partConfig.batchEdits(() => {
@@ -564,14 +519,8 @@
 			)
 		} else if (isComplexShapeTarget(target)) {
 			patchComplexShape(target, next)
-		} else if (target.isFrame) {
-			frameEditor.setGeometry(entity, next)
-		} else if (next.type === 'box') {
-			entity.set(traits.Box, { x: next.x, y: next.y, z: next.z })
-		} else if (next.type === 'sphere') {
-			entity.set(traits.Sphere, { r: next.r })
 		} else {
-			entity.set(traits.Capsule, { r: next.r, l: next.l })
+			frameEditor.setGeometry(entity, next)
 		}
 	}
 </script>

@@ -6,7 +6,7 @@ import { type ArmClient, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { useConnectionStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
-import { traits, useWorld } from '#lib/ecs/index.js'
+import { setOrAddTrait, traits, useWorld } from '#lib/ecs/index.js'
 import { gltfLoader } from '#lib/loaders/gltf.js'
 
 import { useSettings } from './useSettings.svelte'
@@ -28,11 +28,9 @@ interface Context {
 }
 
 /**
- * Resolves the loaded 3D model for a geometry entity's `Name`, formatted
+ * Resolves the loaded 3D model for a kinematics link name, formatted
  * `"<componentName>:<id>"`. Returns undefined when the name is malformed or no
- * model has been fetched for it. Shared by `GeometryModel` (to render the
- * model) and the `ColliderHidden` sync below (to hide the collider it replaces)
- * so the two decisions can never drift apart.
+ * model has been fetched for it.
  */
 export const matchModel = (name: string | undefined, models: Models): Group | undefined => {
 	if (!name) return undefined
@@ -41,9 +39,14 @@ export const matchModel = (name: string | undefined, models: Models): Group | un
 	return models[componentName]?.[id]
 }
 
-/** The name `matchModel` looks `entity` up by: the link a ghost copies, or a live link's own. */
-export const modelKey = (entity: Entity): string | undefined =>
-	entity.get(traits.GhostModelKey) ?? entity.get(traits.Name)
+/** Attaches `model` as the entity's `Model`, or removes its `Model` when there is none. */
+export const syncModelTrait = (entity: Entity, model: Group | undefined): void => {
+	if (model === undefined) {
+		if (entity.has(traits.Model)) entity.remove(traits.Model)
+	} else if (entity.get(traits.Model) !== model) {
+		setOrAddTrait(entity, traits.Model, model)
+	}
+}
 
 const applyModelAppearance = (object: Object3D) => {
 	if (!isInstanceOf(object, 'Mesh')) return
@@ -58,16 +61,6 @@ const applyModelAppearance = (object: Object3D) => {
 	if (isInstanceOf(material, 'MeshStandardMaterial')) {
 		material.roughness = 0.3
 		material.metalness = 0.1
-	}
-}
-
-const syncColliderHidden = (entity: Entity, models: Models, hideColliders: boolean) => {
-	const shouldHide = hideColliders && matchModel(modelKey(entity), models) !== undefined
-	if (shouldHide === entity.has(traits.ColliderHidden)) return
-	if (shouldHide) {
-		entity.add(traits.ColliderHidden)
-	} else {
-		entity.remove(traits.ColliderHidden)
 	}
 }
 
@@ -190,32 +183,18 @@ export const provide3DModels = (partID: () => string) => {
 	})
 
 	/**
-	 * Colliders are hidden only in the `'model'`-only mode — `'colliders+model'`
-	 * intentionally shows both. Reacts to `current` (models finishing loading)
-	 * and the setting; the `onAdd` listener covers frames that stream in while
-	 * neither has changed.
-	 *
-	 * A collider named `<component>:<id>` is a kinematics link frame — the
-	 * geometry that used to arrive from `getGeometries` now comes from the frame
-	 * system, so `FramesAPI` is the only owner left. A ghost of one carries
-	 * `GhostModelKey` instead, and follows the same setting as the link it copies.
+	 * Hands each kinematics link frame, named `<component>:<id>`, its loaded model.
+	 * Reacts to `current` (models finishing loading) and the setting. The `onAdd`
+	 * listener covers frames that stream in while neither has changed.
 	 */
 	$effect(() => {
-		const models = current
-		const hideColliders = settings.current.renderArmModels === 'model'
-		const sync = (entity: Entity) => syncColliderHidden(entity, models, hideColliders)
+		const models = shouldRenderModels ? current : {}
+		const sync = (entity: Entity) =>
+			syncModelTrait(entity, matchModel(entity.get(traits.Name), models))
 
 		for (const entity of world.query(traits.FramesAPI)) sync(entity)
-		for (const entity of world.query(traits.GhostModelKey)) sync(entity)
 
-		const unsubscribes = [
-			world.onAdd(traits.FramesAPI, sync),
-			world.onAdd(traits.GhostModelKey, sync),
-		]
-
-		return () => {
-			for (const unsubscribe of unsubscribes) unsubscribe()
-		}
+		return world.onAdd(traits.FramesAPI, sync)
 	})
 
 	/**

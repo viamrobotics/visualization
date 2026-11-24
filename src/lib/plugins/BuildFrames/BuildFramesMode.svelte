@@ -1,19 +1,24 @@
 <script lang="ts">
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
-	import { traits } from '#lib/ecs/index.js'
+	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
+	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
 	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 
 	import BuildActionsBar from './BuildActionsBar.svelte'
 	import BuildDetails from './BuildDetails.svelte'
+	import BuildTransformControls from './BuildTransformControls.svelte'
 	import FramelessComponentDetails from './FramelessComponentDetails.svelte'
 	import { provideObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 	import TransformDashboard from './TransformDashboard.svelte'
 	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
 
 	const environment = useEnvironment()
+	const world = useWorld()
+	const partConfig = usePartConfig()
 	const selection = useSelectionOrder()
 	// `FramelessComponent` is set at spawn and never changes, so a plain filter stays current.
 	const selectedFrames = $derived(
@@ -26,7 +31,19 @@
 
 	// Registering also resolves a persisted `build` for hosts that don't mount
 	// this plugin, instead of pausing live queries with no UI out.
-	useEnvironmentMode('build')
+	// Leaving with staged edits would silently hide them, so the switch asks first.
+	useEnvironmentMode('build', {
+		confirmLeave: () =>
+			partConfig.isDirty
+				? {
+						description: 'Switching modes will discard your unsaved frame edits.',
+						discard: () => {
+							partConfig.discardChanges()
+							resetStagedEdits(world)
+						},
+					}
+				: undefined,
+	})
 
 	provideObstaclePreviewToggle(useObstacleLivePreview())
 </script>
@@ -42,6 +59,7 @@
 <!-- Each of these gates itself on build mode being active. -->
 <TransformDashboard />
 <BuildActionsBar />
+<BuildTransformControls />
 
 <!-- One panel for the whole selection. Frameless components get theirs only when nothing else is selected. -->
 {#if environment.current.mode === 'build'}

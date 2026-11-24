@@ -66,7 +66,6 @@ vi.mock('#lib/hooks/usePartID.svelte.js', () => ({ usePartID: vi.fn() }))
 vi.mock('#lib/hooks/use3DModels.svelte.js', () => ({
 	use3DModels: () => ({ current: {}, arms: [], shouldRender: false, parseArm: vi.fn() }),
 	matchModel: () => undefined,
-	modelKey: () => undefined,
 }))
 vi.mock('#lib/hooks/useArmClient.svelte.js', () => ({
 	useArmClient: () => ({ names: [], currentPositions: {} }),

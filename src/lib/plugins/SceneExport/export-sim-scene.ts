@@ -1,10 +1,9 @@
 import type { Entity, World } from 'koota'
-import type { Group, Object3D } from 'three'
+import type { Object3D } from 'three'
 
 import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
 import { traits } from '#lib/ecs/index.js'
-import { matchModel, modelKey } from '#lib/hooks/use3DModels.svelte.js'
 
 import type { SimExportNote } from './sim-scene'
 
@@ -18,8 +17,6 @@ import { serializeUrdf } from './serialize-urdf'
 export interface SimExportInput {
 	world: World
 	kinematics: Record<string, RawKinematicsModel>
-	/** Loaded arm models by component, then link id, as `use3DModels` holds them. */
-	armModels: Record<string, Record<string, Group>>
 }
 
 export interface SimExportResult {
@@ -60,7 +57,6 @@ const loadDrawnModels = async (
 export const exportSimScene = async ({
 	world,
 	kinematics,
-	armModels,
 }: SimExportInput): Promise<SimExportResult> => {
 	const loadNotes: SimExportNote[] = []
 	const drawnModels = await loadDrawnModels(world, loadNotes)
@@ -68,7 +64,8 @@ export const exportSimScene = async ({
 	const scene = buildSimScene({
 		world,
 		kinematics,
-		visualModelFor: (entity) => drawnModels.get(entity) ?? matchModel(modelKey(entity), armModels),
+		// `Model` is attached only while the scene draws it, so the export shows what the scene does.
+		visualModelFor: (entity) => drawnModels.get(entity) ?? entity.get(traits.Model),
 	})
 	const urdf = serializeUrdf(scene)
 	const mjcf = serializeMjcf(scene)

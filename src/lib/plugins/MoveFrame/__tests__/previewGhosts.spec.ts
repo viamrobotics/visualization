@@ -6,7 +6,6 @@ import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
 
 import { Geometry, RectangularPrism, Vector3 as Vector3d } from '#lib/buf/common/v1/common_pb.js'
 import { traits } from '#lib/ecs/index.js'
-import { modelKey } from '#lib/hooks/use3DModels.svelte.js'
 import { Pose } from '#lib/math/index.js'
 
 import { createPreviewGhosts, spawnSavedPoseGhosts } from '../previewGhosts'
@@ -81,7 +80,7 @@ describe('spawnSavedPoseGhosts', () => {
 		spawnSavedPoseGhosts(world, arm, 'arm-pose-1', 'arm', [0], createPreviewGhosts())
 
 		const link = twinNamed(world, 'saved-pose:arm-pose-1:arm:upper_arm_link')
-		expect(modelKey(link!)).toBe('arm:upper_arm_link')
+		expect(link?.get(traits.GhostModelKey)).toBe('arm:upper_arm_link')
 	})
 
 	it('draws the collider a prismatic joint carries', () => {

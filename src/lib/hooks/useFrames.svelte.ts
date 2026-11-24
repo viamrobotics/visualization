@@ -261,6 +261,8 @@ export const provideFrames = (partID: () => string) => {
 				// the frame's own over its resource's.
 				const owner = ownerComponent(name)
 				const resourceName = currentResourcesByName[owner]
+				// Only a frame that is itself a resource has a kind. An arm's links name no resource.
+				const kind = currentResourcesByName[name]?.subtype
 				const color =
 					currentAppearanceColors.get(name) ??
 					currentAppearanceColors.get(owner) ??
@@ -308,6 +310,12 @@ export const provideFrames = (partID: () => string) => {
 							existing.remove(traits.ComplexObstacleShape)
 					} else if (existing.get(traits.ComplexObstacleShape)?.index !== complexShapeIndex) {
 						setOrAddTrait(existing, traits.ComplexObstacleShape, { index: complexShapeIndex })
+					}
+
+					if (kind === undefined) {
+						if (existing.has(traits.Kind)) existing.remove(traits.Kind)
+					} else if (existing.get(traits.Kind) !== kind) {
+						setOrAddTrait(existing, traits.Kind, kind)
 					}
 
 					if (color) {
@@ -387,6 +395,10 @@ export const provideFrames = (partID: () => string) => {
 					// Derived links are synthesized from the model; there is no
 					// `components.<arm>:<link>` for an edit to write to.
 					entityTraits.push(traits.Editable)
+				}
+
+				if (kind !== undefined) {
+					entityTraits.push(traits.Kind(kind))
 				}
 
 				if (color) {
