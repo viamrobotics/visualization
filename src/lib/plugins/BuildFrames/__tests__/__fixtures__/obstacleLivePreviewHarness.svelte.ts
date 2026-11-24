@@ -7,7 +7,6 @@ import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 import { useFrames } from '#lib/hooks/useFrames.svelte.js'
-import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import { OBSTACLE_MODEL } from '#lib/obstacleAttributes.js'
@@ -48,7 +47,6 @@ export const createObstacleLivePreviewHarness = (name: string, saved: ObstacleGe
 			return isDirty
 		},
 	} as ReturnType<typeof usePartConfig>)
-	vi.mocked(useLogs).mockReturnValue({ add: vi.fn() } as unknown as ReturnType<typeof useLogs>)
 	vi.mocked(useConnectionStatus).mockReturnValue({
 		current: MachineConnectionEvent.CONNECTED,
 	} as ReturnType<typeof useConnectionStatus>)

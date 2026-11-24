@@ -5,13 +5,13 @@
 	import { ChevronRight, Eye, EyeOff, Folder, FolderOpen } from 'lucide-svelte'
 	import { VirtualList } from 'svelte-virtuallists'
 
-	import type { LogTarget } from '#lib/hooks/useLogs.svelte.js'
+	import type { LogTarget } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import { traits, useTrait } from '#lib/ecs/index.js'
 	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
-	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { usePoses } from '#lib/hooks/usePoses.svelte.js'
+	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import type { TreeNode } from './buildTree'
 

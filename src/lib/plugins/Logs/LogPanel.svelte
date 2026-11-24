@@ -2,7 +2,7 @@
 	import { Badge, Icon } from '@viamrobotics/prime-core'
 	import { PersistedState, Throttled } from 'runed'
 
-	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
+	import { useLogs } from './useLogs.svelte'
 
 	const logs = useLogs()
 

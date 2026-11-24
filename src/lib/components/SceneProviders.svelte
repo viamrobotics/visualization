@@ -8,6 +8,7 @@
 	import { provideArmKinematics } from '#lib/hooks/useArmKinematics.svelte.js'
 	import { provideConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
 	import { provideTransformControls } from '#lib/hooks/useControls.svelte.js'
+	import { provideEventBus } from '#lib/hooks/useEventBus.js'
 	import { provideFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
 	import { provideFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { provideInheritedInvisible } from '#lib/hooks/useInheritedInvisible.svelte.js'
@@ -36,6 +37,8 @@
 
 	const partID = usePartID()
 
+	// First, since the providers below publish to it.
+	provideEventBus()
 	provideTransformControls()
 
 	provideHierarchy()

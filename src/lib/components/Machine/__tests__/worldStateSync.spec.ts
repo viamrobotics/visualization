@@ -90,11 +90,11 @@ const startSync = async (store: FakeStore, expectedNames: string[], initialGener
 	const sync = createWorldStateSync({
 		world,
 		relationships: context.relationships,
-		logs: {
-			add: (message: string) => {
-				logged.push(message)
+		bus: {
+			publish: (_name, event) => {
+				if ('message' in event) logged.push(event.message)
 			},
-		} as Parameters<typeof createWorldStateSync>[0]['logs'],
+		},
 		invalidate: () => {},
 		requestFrame: (callback) => {
 			if (isFramesPaused) {

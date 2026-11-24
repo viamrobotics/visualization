@@ -4,7 +4,7 @@
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
 
 	import { useWorld } from '#lib/ecs/index.js'
-	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
+	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
 	import { createWorldStateSync, DEFAULT_WORLD_STATE_TIMING } from './worldStateSync'
@@ -33,7 +33,7 @@
 	const sync = createWorldStateSync({
 		world: useWorld(),
 		relationships: useRelationships(),
-		logs: useLogs(),
+		bus: useEventBus(),
 		invalidate,
 		requestFrame: (callback) => {
 			const id = requestAnimationFrame(callback)

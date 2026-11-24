@@ -4,7 +4,7 @@ import type { Matrix4 } from 'three'
 import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
-import { useLogs } from '#lib/hooks/useLogs.svelte.js'
+import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 import { Pose } from '#lib/math/index.js'
 
@@ -33,7 +33,7 @@ export const useMovedFrameMatrix = (
 ): MovedFrameMatrix => {
 	const settings = useSettings()
 	const client = useRobotClient(partID)
-	const logs = useLogs()
+	const bus = useEventBus()
 
 	// Per call, not per module: two open panels each get their own, so neither
 	// depends on the other's decode finishing first.
@@ -62,9 +62,10 @@ export const useMovedFrameMatrix = (
 	$effect(() => {
 		if (!query.error) return
 
-		logs.add(`Error fetching pose for ${frameName()}: ${query.error.message}`, 'error', {
-			resource: frameName(),
-			folder: 'frames',
+		bus.publish('diagnostic', {
+			message: `Error fetching pose for ${frameName()}: ${query.error.message}`,
+			level: 'error',
+			target: { resource: frameName(), folder: 'frames' },
 		})
 	})
 
