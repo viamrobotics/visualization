@@ -63,8 +63,8 @@ describe('ComplexObstacleEditor', () => {
 	it('offers no pose or geometry fields, which belong to a selected shape', () => {
 		mountEditor()
 
-		expect(screen.queryByLabelText('mutable local position')).not.toBeInTheDocument()
-		expect(screen.queryByLabelText('mutable geometry')).not.toBeInTheDocument()
+		expect(screen.queryByRole('group', { name: 'local position (mm)' })).not.toBeInTheDocument()
+		expect(screen.queryByRole('tablist', { name: 'geometry type' })).not.toBeInTheDocument()
 	})
 
 	it('writes a valid relabel from the row', async () => {

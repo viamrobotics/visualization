@@ -10,7 +10,7 @@ Every UI change should look intentional and high-craft. The failure mode to avoi
 
 Viam already made the distinctive choices: the fonts, the palette, the components. Here, "slop" means _ignoring the design system_: hardcoded hex instead of tokens, inconsistent spacing/density, re-inventing components prime already ships, missing interaction states, and weak hierarchy. Do not add new fonts, color schemes, gradients, or "creative" layouts.
 
-**Source of truth: https://design.viam.com**, implemented as Viam's prime config — `@viamrobotics/tailwind-config` (tokens/utilities) and `@viamrobotics/tweakpane-config` (tweakpane theme). The design system's own words: "consistency across applications"; "use PRIME elements over native when possible, and extend or modify PRIME as necessary"; colors "match one-to-one with our tailwind config." `viam-context.md` already covers _how/when_ to WebFetch design.viam.com and the Viam repos. Follow it; don't re-verify what it covers.
+**Source of truth: https://design.viam.com**, implemented as Viam's prime config — `@viamrobotics/tailwind-config` (tokens/utilities) and `@viamrobotics/tweakpane-config` (the theme for the one remaining tweakpane panel, `RenderStats`). The design system's own words: "consistency across applications"; "use PRIME elements over native when possible, and extend or modify PRIME as necessary"; colors "match one-to-one with our tailwind config." `viam-context.md` already covers _how/when_ to WebFetch design.viam.com and the Viam repos. Follow it; don't re-verify what it covers.
 
 This rule is about **visual craft + design-system fidelity**. Svelte code conventions (runes, `class={[...]}` array syntax, Svelte MCP) live in `svelte.md`; on-demand rendering / `invalidate()` lives in `threlte-scene.md`; generic token/scale/contrast mechanics live in the kit's `design.md` (query actual values with `design.mjs`). Cross-reference them; don't duplicate.
 
@@ -24,7 +24,8 @@ Prefer PRIME over native or hand-rolled UI. Never import `@viamrobotics/prime-co
 - Code editing → `CodeEditor` from `@viamrobotics/prime-editor`.
 
 - Stateful primitives prime-ui doesn't cover (floating-panel, tree-view, the local `Popover`) → `@zag-js/*`. Never build a local tooltip, dialog, or toggle group: use prime-ui `Tooltip` and `Dialog`, and prime-controls `ToggleButtons`. A multi-select toggle is a `button-group` of `aria-pressed` buttons.
-- Control panels (sliders, points, color, rotation) → `svelte-tweakpane-ui`, themed globally by `primeTheme` from `@viamrobotics/tweakpane-config` via `ThemeUtils.setGlobalDefaultTheme(primeTheme)` (set once in `App.svelte`, client-side only). Don't restyle tweakpane ad hoc — fix the theme.
+- Control panels (number fields, points, sliders, selects, tabs, folders) → `@viamrobotics/prime-controls`. Bind with a function binding (`bind:value={() => current, write}`): its setter runs only on user input, so it needs no echo guard. A standalone number field is `HeldNumberField`, which never writes `undefined` when cleared. Shared values across a selection use `SharedNumberFields`. Colors are prime-ui `Input type="color"` through `SharedColor`.
+- `svelte-tweakpane-ui` remains only for `RenderStats`, whose graphs and monitors prime-controls lacks. Don't use it anywhere else.
 - Icons: prime-ui `Icon` with an `@mdi/js` path (`<Icon icon={mdiCog} />`), or a Viam glyph from `@viamrobotics/prime-ui/icons`. `lucide-svelte` exists, use only where neither has an equivalent. prime-ui `Icon` is decorative by default. Pass `aria-label` only when it carries meaning.
 
 ## Color & tokens

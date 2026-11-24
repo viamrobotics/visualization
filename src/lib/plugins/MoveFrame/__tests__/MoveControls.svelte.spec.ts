@@ -2,7 +2,7 @@ import type { ResourceName } from '@viamrobotics/sdk'
 import type { Entity } from 'koota'
 
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen, within } from '@testing-library/svelte'
 import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -199,7 +199,7 @@ describe('MoveControls', () => {
 		expect(screen.getByRole('button', { name: /reset/i })).not.toHaveAttribute('aria-disabled')
 		expect(screen.getByRole('button', { name: 'Move' })).not.toHaveAttribute('aria-disabled')
 		expect(
-			screen.getByText(/400\.0 mm · 0\.0°/),
+			within(screen.getByRole('tabpanel', { name: 'Move' })).getByText(/400\.0 mm · 0\.0°/),
 			'400 mm of travel along x, no rotation'
 		).toBeInTheDocument()
 	})

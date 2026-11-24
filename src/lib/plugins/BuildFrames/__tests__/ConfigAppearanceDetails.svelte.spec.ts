@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
+import { enterNumber, numberField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -69,7 +69,7 @@ describe('ConfigAppearanceDetails', () => {
 	it('saves a typed opacity', async () => {
 		const partConfig = mountDetails({ type: 'complex' })
 
-		await enterNumber(screen.getByRole('spinbutton', { name: 'opacity' }), '0.35')
+		await enterNumber(numberField('opacity'), '0.35')
 
 		expect(lastVisualizer(partConfig)).toEqual({ type: 'complex', opacity: 0.35 })
 	})
@@ -124,7 +124,7 @@ describe('ConfigAppearanceDetails for a frame inside a resource', () => {
 	it('saves a typed opacity under its own id', async () => {
 		const partConfig = mountDetails({ type: 'complex', opacity: 0.5 }, 'post')
 
-		await enterNumber(screen.getByRole('spinbutton', { name: 'opacity' }), '0.35')
+		await enterNumber(numberField('opacity'), '0.35')
 
 		expect(lastVisualizer(partConfig)).toEqual({
 			type: 'complex',

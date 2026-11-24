@@ -73,7 +73,7 @@
 just the inputs) raises it via `focus-within:z-5`. -->
 		<div
 			id="details-panel"
-			class="border-medium absolute top-10 right-0 z-4 m-2 w-70 border text-xs focus-within:z-5"
+			class="border-medium absolute top-10 right-0 z-4 m-2 w-76 border text-xs focus-within:z-5"
 			role="region"
 			aria-label="Details panel"
 			tabindex="-1"

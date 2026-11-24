@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
-import { enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
+import { enterNumber, numberField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -58,7 +58,7 @@ const mountPanel = ({ saved = { type: 'bounds' }, session, frameId }: MountOptio
 }
 
 const typeOpacity = (value: string) =>
-	enterNumber(screen.getByRole('spinbutton', { name: 'opacity' }), value)
+	enterNumber(numberField('opacity'), value)
 
 describe('SessionAppearanceDetails', () => {
 	it('holds an edit for the session and leaves the config alone', async () => {

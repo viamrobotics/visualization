@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
+import { axisField, enterNumber, numberField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 import { createFrame } from '#lib/frame.js'
@@ -48,7 +48,7 @@ const mountEditor = (initial: BoundsHint = hint, { isHintStored = true } = {}) =
 	return partConfig
 }
 
-const thicknessField = () => screen.getByRole('spinbutton', { name: 'wall thickness (mm)' })
+const thicknessField = () => numberField('wall thickness (mm)')
 
 describe('BoundsObstacleEditor', () => {
 	beforeEach(() => vi.clearAllMocks())
