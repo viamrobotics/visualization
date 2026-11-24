@@ -61,7 +61,10 @@
 	const writeLinePosition = (index: number, value: LinePosition) => {
 		const current = linePositions.current
 		if (!current) return
-		entity.set(traits.LinePositions, writeLinePositionPure(current, index, value.x, value.y, value.z))
+		entity.set(
+			traits.LinePositions,
+			writeLinePositionPure(current, index, value.x, value.y, value.z)
+		)
 		invalidate()
 	}
 
