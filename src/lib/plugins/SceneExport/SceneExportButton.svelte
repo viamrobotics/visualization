@@ -6,7 +6,6 @@
 	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
-	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
 

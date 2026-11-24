@@ -10,7 +10,6 @@ import { untrack } from 'svelte'
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { useFrames } from '#lib/hooks/useFrames.svelte.js'
-import { useLogs } from '#lib/hooks/useLogs.svelte.js'
 import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import {

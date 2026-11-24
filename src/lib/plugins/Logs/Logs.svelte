@@ -6,6 +6,7 @@
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import LogPanel from './LogPanel.svelte'
+	import { provideLogs } from './useLogs.svelte'
 
 	const logs = provideLogs()
 	const partID = usePartID()

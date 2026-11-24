@@ -19,7 +19,7 @@ export type { InferCallback, ComponentFrameInfo } from './LLMSceneBuilder/useSce
 export type { FrameDelta } from './LLMSceneBuilder/frameDeltaAdapter'
 
 export { default as Logs } from './Logs/Logs.svelte'
-export { useLogs } from '../hooks/useLogs.svelte'
+export { useLogs } from './Logs/useLogs.svelte'
 
 export { default as MeasureTool } from './MeasureTool/MeasureTool.svelte'
 

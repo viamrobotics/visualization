@@ -2,7 +2,7 @@
 	import { Icon } from '@viamrobotics/prime-core'
 
 	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
-	import { type LogStatus, type LogTarget, useLogs } from '#lib/hooks/useLogs.svelte.js'
+	import { type LogStatus, type LogTarget, useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	interface Props {
 		/** The row this marks, matched against what a log line was filed under. */
