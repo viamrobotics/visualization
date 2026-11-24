@@ -61,6 +61,17 @@ describe('useFolder', () => {
 		expect(world.query(traits.Folder)[0]?.get(traits.Folder)?.placeholder).toBe('Nothing drawn')
 	})
 
+	it('keeps a folder respawned under the same id when the stale producer unmounts', () => {
+		const stale = mountHost({ sources: [traits.DrawAPI] })
+		world.query(traits.Folder)[0]?.destroy()
+		mountHost({ sources: [traits.SnapshotAPI] })
+
+		stale.unmount()
+		mountHost({ sources: [traits.DrawAPI] })
+
+		expect(world.query(traits.Folder)).toHaveLength(1)
+	})
+
 	it('keeps one producer’s placeholder when another without one joins', () => {
 		mountHost({ sources: [traits.DrawAPI], placeholder: 'Nothing drawn' })
 		mountHost({ sources: [traits.SnapshotAPI] })

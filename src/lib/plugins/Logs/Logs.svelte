@@ -7,6 +7,7 @@
 	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { useResourceRowRenames } from '#lib/hooks/useResourceRowRenames.svelte.js'
 
 	import { createLogIssueMirror } from './logIssueMirror'
 	import LogPanel from './LogPanel.svelte'
@@ -54,7 +55,7 @@
 	const issueMirror = createLogIssueMirror(world, (uuid) => countByUuid.get(uuid))
 
 	// Repeats arrive at pose rate and change no row, so the mirror reruns only when the set of
-	// alert lines does, or when a row it could mark spawns after its line was logged.
+	// alert lines does, or when a row it could mark spawns, despawns or is renamed.
 	const alertSignature = $derived(
 		logs.current
 			.filter((log) => log.level !== 'info')
@@ -65,9 +66,11 @@
 	const frameRows = useQuery(traits.Name, traits.FramesAPI)
 	const framelessRows = useQuery(traits.Name, traits.FramelessComponent)
 	const folderRows = useQuery(traits.Folder)
+	const renames = useResourceRowRenames()
 
 	$effect(() => {
 		void alertSignature
+		void renames.current
 		void frameRows.current
 		void framelessRows.current
 		void folderRows.current

@@ -128,7 +128,8 @@ export const useFolder = (spec: FolderSpec, state: FolderState = {}): Entity => 
 				return
 			}
 
-			registry.delete(spec.id)
+			// A folder destroyed from outside is replaced under the same id. That newer entry is not ours to drop.
+			if (registry.get(spec.id) === folder) registry.delete(spec.id)
 			if (folder.entity.isAlive()) folder.entity.destroy()
 		}
 	})

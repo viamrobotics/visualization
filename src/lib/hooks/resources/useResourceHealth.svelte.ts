@@ -4,6 +4,7 @@ import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 import { getContext, setContext } from 'svelte'
 
 import { setIssues, traits, useQuery } from '#lib/ecs/index.js'
+import { useResourceRowRenames } from '#lib/hooks/useResourceRowRenames.svelte.js'
 
 import type { UnhealthyResource } from './unhealthyResources'
 
@@ -42,9 +43,11 @@ export const provideResourceHealth = (partID: () => string): Context => {
 	// name (`#lib/draw.ts`), so only rows that stand for a resource are marked.
 	const frameEntities = useQuery(traits.FramesAPI, traits.Name)
 	const framelessEntities = useQuery(traits.FramelessComponent, traits.Name)
+	const renames = useResourceRowRenames()
 	const marked = new Set<Entity>()
 
 	$effect(() => {
+		void renames.current
 		const resourceEntities = [...frameEntities.current, ...framelessEntities.current]
 
 		for (const entity of marked) {
