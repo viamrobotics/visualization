@@ -8,8 +8,6 @@ export { default as DrawService } from './DrawService/DrawService.svelte'
 
 export { default as FileDrop } from './FileDrop/FileDrop.svelte'
 
-export { default as FramePov } from './FramePov/FramePov.svelte'
-
 export { default as Fullscreen } from './Fullscreen/Fullscreen.svelte'
 
 export { default as Isolate } from './Isolate/Isolate.svelte'
@@ -20,6 +18,8 @@ export type { FrameDelta } from './LLMSceneBuilder/frameDeltaAdapter'
 
 export { default as Logs } from './Logs/Logs.svelte'
 export { useLogs } from './Logs/useLogs.svelte'
+
+export { default as Machine } from './Machine/Machine.svelte'
 
 export { default as MeasureTool } from './MeasureTool/MeasureTool.svelte'
 
@@ -60,3 +60,4 @@ export { default as Skybox } from './Skybox/Skybox.svelte'
 export { default as WorldTree } from './WorldTree/WorldTree.svelte'
 
 export { default as XR } from './XR/XR.svelte'
+export { default as XRMachine } from './XR/XRMachine.svelte'

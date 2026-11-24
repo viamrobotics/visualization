@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Portal } from '@threlte/extras/webgpu'
-
+	import DomPortal from '#lib/components/overlay/Portals/DomPortal.svelte'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 
 	import AddObjectMenu from './AddObjectMenu.svelte'
@@ -9,9 +8,9 @@
 	const partConfig = usePartConfig()
 </script>
 
-<Portal id="world-tree-actions">
+<DomPortal id="world-tree-actions">
 	<AddObjectMenu />
-</Portal>
+</DomPortal>
 
 <!-- Every Build edit is saved through the part config, so with nothing to save it Build mode is left out. -->
 {#if partConfig.hasConfigSource}

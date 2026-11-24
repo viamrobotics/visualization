@@ -4,10 +4,8 @@ import { PersistedState } from 'runed'
  * Which world-tree folders the user left open. Keyed by folder name because entity
  * ids are handed out fresh each session, so nothing else survives a reload.
  *
- * Module scope rather than a context: the tree renders through a Threlte
- * `PortalTarget`, so `Tree.svelte` is instantiated under the portal's ancestors and
- * never sees a context set in `WorldTree.svelte`. `PersistedState` no-ops without a
- * `window`, the same as `useControlWidgets.svelte.ts`.
+ * Module scope, since it mirrors one `localStorage` entry. `PersistedState` no-ops
+ * without a `window`, the same as `useControlWidgets.svelte.ts`.
  */
 const stored = new PersistedState<Record<string, boolean>>('world-tree-expanded-folders', {})
 

@@ -1,9 +1,13 @@
-import { getContext, setContext, type Snippet } from 'svelte'
+import { getContext, setContext } from 'svelte'
 
 interface SettingsTab {
 	label: string
-	children: Snippet
+	/** Where the tab sits among the others, lowest first. A tab without one goes last. */
+	order?: number
 }
+
+/** The `DomPortal` id a contributed tab's content moves to, inside that tab's panel. */
+export const settingsTabPortalId = (label: string): string => `settings-tab:${label}`
 
 interface Context {
 	current: SettingsTab[]

@@ -4,11 +4,12 @@
 
 	import { mdiClose } from '@mdi/js'
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon } from '@viamrobotics/prime-ui'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import { untrack } from 'svelte'
+
+	import DomPortal from './Portals/DomPortal.svelte'
 
 	interface Props {
 		title?: string
@@ -110,7 +111,7 @@
 	const api = $derived(floatingPanel.connect(floatingPanelService, normalizeProps))
 </script>
 
-<Portal id="dom">
+<DomPortal id="dom">
 	<div
 		{...api.getPositionerProps()}
 		class="z-5"
@@ -215,4 +216,4 @@
 			{/if}
 		</div>
 	</div>
-</Portal>
+</DomPortal>

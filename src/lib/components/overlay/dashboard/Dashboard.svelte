@@ -1,5 +1,5 @@
 <script>
-	import { PortalTarget } from '@threlte/extras/webgpu'
+	import DomPortalTarget from '../Portals/DomPortalTarget.svelte'
 
 	let { ...rest } = $props()
 </script>
@@ -11,6 +11,6 @@
 >
 	<!-- `contents` keeps the portaled buttons as flex items. `pointer-events` still inherits through it. -->
 	<div class="pointer-events-auto contents">
-		<PortalTarget id="dashboard" />
+		<DomPortalTarget id="dashboard" />
 	</div>
 </div>

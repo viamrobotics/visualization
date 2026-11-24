@@ -24,7 +24,7 @@ const spawnFolder = (
 			pinned: options.pinned ?? false,
 			collapsed: options.collapsed ?? false,
 			sceneless: options.sceneless ?? false,
-			refreshRate: undefined,
+			hasSettings: false,
 		})
 	)
 

@@ -18,7 +18,7 @@
 			name: 'Point cloud objects',
 			order: 300,
 			sources: [traits.PointCloudObjectAPI],
-			refreshRate: 'vision',
+			hasSettings: true,
 		},
 		{
 			placeholder: () =>

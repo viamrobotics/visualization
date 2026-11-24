@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Portal } from '@threlte/extras/webgpu'
+	import DomPortal from './DomPortal.svelte'
 
 	interface Props {
 		children: Snippet
@@ -10,6 +10,6 @@
 	let { children }: Props = $props()
 </script>
 
-<Portal id="workspace">
+<DomPortal id="workspace">
 	{@render children()}
-</Portal>
+</DomPortal>

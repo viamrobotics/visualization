@@ -18,7 +18,7 @@
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
-	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
+	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 
 	import SessionAppearanceDetails, {
 		type SessionAppearanceTarget,
@@ -129,10 +129,7 @@
 
 {#snippet povTab()}
 	{#if only?.name !== undefined}
-		<FramePovTab
-			entity={only.entity}
-			frameName={only.name}
-		/>
+		<FramePovTab entity={only.entity} />
 	{:else}
 		<div class="pt-3">
 			<SectionNotice

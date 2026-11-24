@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { PortalTarget } from '@threlte/extras/webgpu'
-
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+
+	import DomPortalTarget from '../Portals/DomPortalTarget.svelte'
 
 	const environment = useEnvironment()
 
@@ -16,6 +16,6 @@
 		role="radiogroup"
 		aria-label="Workspace mode"
 	>
-		<PortalTarget id="mode-toggle" />
+		<DomPortalTarget id="mode-toggle" />
 	</fieldset>
 {/if}

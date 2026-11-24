@@ -96,7 +96,7 @@
 	let lastLivePublish = 0
 
 	// three.js clears `renderer.info` as each render starts, and one frame can hold
-	// several passes (a FramePov widget renders its own view). Accumulate across the
+	// several passes (a details panel's POV tab renders its own view). Accumulate across the
 	// passes instead, and reset once the frame is done.
 	$effect(() => {
 		renderer.info.autoReset = false

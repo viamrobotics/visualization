@@ -98,7 +98,7 @@ renderer, and the portal targets plugins render into. From there, you can:
 - selection and hover affordances
 - the portal targets that plugins render their UI into
 
-Everything else is a plugin you opt into — including the workspace modes: with no mode plugin mounted the mode is `none` and the visualizer is a bare renderer, with no toggle, no details cards, and no live-query pausing. The visualizer's own chrome ships as six plugins:
+Everything else is a plugin you opt into — including the workspace modes: with no mode plugin mounted the mode is `none` and the visualizer is a bare renderer, with no toggle, no details cards, and no live-query pausing. The visualizer's own chrome ships as plugins:
 
 | Plugin                                           | Adds                                            |
 | ------------------------------------------------ | ----------------------------------------------- |
@@ -107,9 +107,8 @@ Everything else is a plugin you opt into — including the workspace modes: with
 | [`<Settings />`](../../plugins/settings/)        | The settings cog and its tabbed popover         |
 | [`<BuildFrames />`](../../plugins/build-frames/) | Build mode: gizmos, snapping, frame editing     |
 | [`<FileDrop />`](../../plugins/file-drop/)       | Drag-and-drop loading of snapshots, PCD and PLY |
-| [`<FramePov />`](../../plugins/frame-pov/)       | Per-frame point-of-view panels                  |
 
-To reproduce the standalone app, mount all six plus the feature plugins you want, keeping
+To reproduce the standalone app, mount all of these plus the feature plugins you want, keeping
 `Monitor` before `BuildFrames` before `MoveFrame` — mode plugins' mount order sets both the
 toggle's button order and the fallback priority. To embed a focused viewer, mount none of them —
 or just the one or two that earn their space.

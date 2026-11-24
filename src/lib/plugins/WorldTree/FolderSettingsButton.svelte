@@ -1,31 +1,18 @@
 <script lang="ts">
-	import type { Component } from 'svelte'
-
 	import { MoreHorizontal } from 'lucide-svelte'
 
-	import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
-
 	import Popover from '#lib/components/overlay/Popover.svelte'
-	import FramesSettings from '#lib/plugins/Settings/FramesSettings.svelte'
-	import PointcloudSettings from '#lib/plugins/Settings/PointcloudSettings.svelte'
-	import VisionSettings from '#lib/plugins/Settings/VisionSettings.svelte'
-
-	/** The settings tab that owns each polling group, so a folder opens its own. */
-	const SETTINGS_PANELS: Record<RefreshRateId, Component> = {
-		poses: FramesSettings,
-		pointclouds: PointcloudSettings,
-		vision: VisionSettings,
-	}
+	import DomPortalTarget from '#lib/components/overlay/Portals/DomPortalTarget.svelte'
+	import { folderSettingsPortalId } from '#lib/ecs/index.js'
 
 	interface Props {
-		id: RefreshRateId
+		/** `traits.Folder.id`. The folder's owner moves its settings panel in under this id. */
+		folderId: string
 		/** Folder name, so the trigger names the group it opens. */
 		label: string
 	}
 
-	const { id, label }: Props = $props()
-
-	const SettingsPanel = $derived(SETTINGS_PANELS[id])
+	const { folderId, label }: Props = $props()
 </script>
 
 <Popover placement="right-start">
@@ -46,6 +33,6 @@
 	{/snippet}
 
 	<div class="font-public-sans text-default w-80 p-3">
-		<SettingsPanel />
+		<DomPortalTarget id={folderSettingsPortalId(folderId)} />
 	</div>
 </Popover>

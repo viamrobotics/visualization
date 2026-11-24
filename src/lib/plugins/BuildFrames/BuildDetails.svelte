@@ -25,7 +25,7 @@
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
-	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
+	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails, {
 		type ConfigAppearanceTarget,
@@ -337,10 +337,7 @@
 
 {#snippet povTab()}
 	{#if only?.name !== undefined}
-		<FramePovTab
-			entity={only.entity}
-			frameName={only.name}
-		/>
+		<FramePovTab entity={only.entity} />
 	{:else}
 		<div class="pt-3">
 			<SectionNotice

@@ -35,14 +35,12 @@ No plugin imports another as a hard requirement, but several pairs coordinate at
 | `<ControlWidgets />`      | `<XR />`         | Registry widget panels are hidden while an immersive XR session is active.                                |
 | `<DrawService />`         | `<Logs />`       | Connection status and errors are written to the Logs panel. Without Logs, they're dropped silently.       |
 | mode plugins              | each other       | Buttons portal into the mode toggle in mount order, which is also fallback priority. Mount Monitor first. |
-| `<FramePov />`            | `<XR />`         | POV panels hide while an immersive session owns the canvas.                                               |
 | any `SettingsPortal` user | `<Settings />`   | The contributed tab is registered either way, but only renders when Settings is mounted.                  |
 
 ```text
 ControlWidgets ──► XR         panels hide during an immersive session
 DrawService ──► Logs          draw-server diagnostics, if Logs is mounted
 Monitor ──► BuildFrames ──► MoveFrame   mount order is button order and priority
-FramePov ──► XR               POV panels hide during an immersive session
 SettingsPortal ──► Settings   contributed tabs need a popover to live in
 ```
 
@@ -50,7 +48,7 @@ The `<ControlWidgets />` ──► `<XR />` link only observes the session state
 
 ## Plugins
 
-Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Monitor />`](../monitor/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), [`<FileDrop />`](../file-drop/), and [`<FramePov />`](../frame-pov/). Mount all six — Monitor first, so it is the default mode — for the full standalone app; mount none for a bare scene with camera controls.
+Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Monitor />`](../monitor/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), and [`<FileDrop />`](../file-drop/). Mount all of them — Monitor first, so it is the default mode — for the full standalone app; mount none for a bare scene with camera controls.
 
 One of them reaches beyond the visualizer element: `<FileDrop />` listens for drags on `window`, so it swallows drag-and-drop for the whole page. Keyboard shortcuts are dispatched by core but exist only when the feature contributing them is mounted, and `inputBindingsEnabled={false}` disables keyboard input wholesale.
 
@@ -58,12 +56,11 @@ One of them reaches beyond the visualizer element: `<FileDrop />` listens for dr
 
 Some plugins need more than a mounted `<Visualizer />`:
 
-| Plugin                                         | Also needs                                                                    |
-| ---------------------------------------------- | ----------------------------------------------------------------------------- |
-| `<ControlWidgets />`, `<XR />`, `<FramePov />` | a live machine connection (resources resolved per part)                       |
-| `<BuildFrames />`                              | a `partID` and edit permissions on that part                                  |
-| `<XR />`                                       | a WebXR-capable device to enter a session                                     |
-| `<Focus />`                                    | an active selection — click an entity first                                   |
-| `<DrawService />`                              | a running draw server (see its [page](../draw-service/))                      |
-| `<TopDownLock />`                              | orbit-style camera controls (the default); no effect under trackball controls |
-| `<FramePov />`                                 | a POV panel opened from a frame's details card                                |
+| Plugin                         | Also needs                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `<ControlWidgets />`, `<XR />` | a live machine connection (resources resolved per part)                       |
+| `<BuildFrames />`              | a `partID` and edit permissions on that part                                  |
+| `<XR />`                       | a WebXR-capable device to enter a session                                     |
+| `<Focus />`                    | an active selection — click an entity first                                   |
+| `<DrawService />`              | a running draw server (see its [page](../draw-service/))                      |
+| `<TopDownLock />`              | orbit-style camera controls (the default); no effect under trackball controls |

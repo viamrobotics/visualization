@@ -20,7 +20,7 @@
 			name: 'Point clouds',
 			order: 200,
 			sources: [traits.PointCloudAPI],
-			refreshRate: 'pointclouds',
+			hasSettings: true,
 		},
 		{
 			placeholder: () =>

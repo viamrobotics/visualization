@@ -19,6 +19,10 @@ const migrations: ((stored: StoredSettings) => void)[] = [
 	(stored) => {
 		stored.renderMode = 'realistic'
 	},
+	// Point-of-view windows stopped being restored on reload, so their saved frame names went unused.
+	(stored) => {
+		delete stored.openFramePovWidgets
+	},
 ]
 
 /** Stamped onto every record written, so the next load can tell what it has already seen. */

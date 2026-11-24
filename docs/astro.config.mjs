@@ -59,7 +59,6 @@ export default defineConfig({
 						{ label: '<DrawService />', link: '/plugins/draw-service/' },
 						{ label: '<FileDrop />', link: '/plugins/file-drop/' },
 						{ label: '<Focus />', link: '/plugins/focus/' },
-						{ label: '<FramePov />', link: '/plugins/frame-pov/' },
 						{ label: '<Fullscreen />', link: '/plugins/fullscreen/' },
 						{ label: '<Logs />', link: '/plugins/logs/' },
 						{ label: '<MeasureTool />', link: '/plugins/measure-tool/' },

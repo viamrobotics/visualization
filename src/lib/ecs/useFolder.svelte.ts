@@ -1,9 +1,10 @@
 import type { Entity, Trait, World } from 'koota'
 
-import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
-
 import { Folder } from './traits'
 import { useWorld } from './useWorld'
+
+/** The `DomPortal` id a folder's settings panel content moves to, for a folder with `hasSettings`. */
+export const folderSettingsPortalId = (folderId: string): string => `folder-settings:${folderId}`
 
 /** What a producer declares about its folder. See `traits.Folder` for each field. */
 export interface FolderSpec {
@@ -13,7 +14,7 @@ export interface FolderSpec {
 	sources: Trait[]
 	collapsed?: boolean
 	sceneless?: boolean
-	refreshRate?: RefreshRateId
+	hasSettings?: boolean
 }
 
 /** What a producer says about its folder while mounted. Each is reread reactively. */
@@ -99,7 +100,7 @@ export const useFolder = (spec: FolderSpec, state: FolderState = {}): Entity => 
 					pinned: false,
 					collapsed: spec.collapsed ?? false,
 					sceneless: spec.sceneless ?? false,
-					refreshRate: spec.refreshRate,
+					hasSettings: spec.hasSettings ?? false,
 				})
 			),
 			contributions: new Set(),

@@ -17,17 +17,19 @@ vi.mock('@threlte/core/webgpu', () => ({
 }))
 
 // @threlte/extras components call into Threlte context that needs a <Canvas> parent,
-// which these isolated component tests do not have. Portal must preserve its children
-// because the shared DetailsPanel renders its whole UI through it.
-vi.mock('@threlte/extras/webgpu', async () => {
-	const MockPortal = await import('#lib/__tests__/__fixtures__/MockPortal.svelte')
-	return {
-		PortalTarget: vi.fn(),
-		Portal: MockPortal.default,
-		HTML: vi.fn(),
-		View: vi.fn(),
-	}
-})
+// which these isolated component tests do not have.
+vi.mock('@threlte/extras/webgpu', () => ({
+	PortalTarget: vi.fn(),
+	HTML: vi.fn(),
+	View: vi.fn(),
+}))
+
+// Isolated component tests mount no portal targets. `DomPortal` renders its children in place
+// instead, because the shared DetailsPanel renders its whole UI through it.
+vi.mock(
+	'#lib/components/overlay/Portals/DomPortal.svelte',
+	() => import('#lib/__tests__/__fixtures__/MockPortal.svelte')
+)
 
 vi.mock('#lib/hooks/useFrames.svelte.js', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false })),

@@ -45,7 +45,7 @@ const spawnFolder = (id: string): Entity =>
 			pinned: false,
 			collapsed: false,
 			sceneless: false,
-			refreshRate: undefined,
+			hasSettings: false,
 		})
 	)
 

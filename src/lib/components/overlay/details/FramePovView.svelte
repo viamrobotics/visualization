@@ -6,8 +6,6 @@
 
 	import { verticalFovDegrees } from '#lib/cameraIntrinsics.js'
 	import { traits, useTrait } from '#lib/ecs/index.js'
-	import { useCameraIntrinsics } from '#lib/hooks/useCameraIntrinsics.svelte.js'
-	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 	interface Props {
 		entity: Entity
@@ -17,17 +15,8 @@
 
 	const { scene, renderStage, invalidate } = useThrelte()
 
-	const name = useTrait(() => entity, traits.Name)
-	const resourceByName = useResourceByName()
-	const cameraName = $derived(
-		name.current !== undefined && resourceByName.current[name.current]?.subtype === 'camera'
-			? name.current
-			: undefined
-	)
-	const cameraIntrinsics = useCameraIntrinsics(() => (cameraName === undefined ? [] : [cameraName]))
-	const intrinsics = $derived(
-		cameraName === undefined ? undefined : cameraIntrinsics.intrinsics(cameraName)
-	)
+	const cameraTrait = useTrait(() => entity, traits.Camera)
+	const intrinsics = $derived(cameraTrait.current?.intrinsics)
 
 	// Three.js cameras look down -Z. Viam camera frames put the optical axis along
 	// +Z with image-down along +Y, so a 180° rotation around X aligns the render

@@ -5,17 +5,19 @@
 	import { useDebounce } from 'runed'
 	import { Euler, Quaternion, Vector3 } from 'three'
 
-	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
-
 	import { useAnchors } from './useAnchors.svelte'
 	import { useOrigin } from './useOrigin.svelte'
 
+	interface Props {
+		/** The `localStorage` key the persistent anchor's UUID is saved under. */
+		anchorKey: string
+	}
+
+	const { anchorKey: storageKey }: Props = $props()
+
 	const origin = useOrigin()
 	const anchors = useAnchors()
-	const partID = usePartID()
 	const headset = useHeadset()
-
-	const storageKey = $derived(`xr-origin-anchor:${partID.current}`)
 
 	const DEFAULT_ORIGIN: [number, number, number] = [-1, -1, 0]
 	const COMMIT_DEBOUNCE_MS = 500

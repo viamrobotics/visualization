@@ -705,7 +705,8 @@ export const usePartConfig = (): PartConfigContext => {
 	return getContext<PartConfigContext>(key)
 }
 
-interface AppEmbeddedPartConfigProps {
+/** A part config the embedding host owns and saves, handed to `<Machine localConfigProps>`. */
+export interface AppEmbeddedPartConfigProps {
 	current: Struct
 	isDirty: boolean
 

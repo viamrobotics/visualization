@@ -15,9 +15,9 @@
 		BuildFrames,
 		DrawService,
 		FileDrop,
-		FramePov,
 		Isolate,
 		Logs,
+		Machine,
 		MeasureTool,
 		Monitor,
 		MotionPlanReplayer,
@@ -27,6 +27,7 @@
 		Settings,
 		WorldTree,
 		XR,
+		XRMachine,
 	} from '#lib/plugins/index.js'
 	import { RenderStats } from '#lib/plugins/RenderStats/index.js'
 	import { page } from '$app/state'
@@ -105,47 +106,52 @@
 	const resolveIKSolutions = createIKSolutionsResolver(() => drawServerUrl)
 </script>
 
-<ViamProvider
-	options={{ resetQueriesOnDisconnect: false }}
-	{dialConfigs}
->
-	<ViamAppProvider
-		serviceHost={launch.current?.serviceHost ?? 'https://app.viam.com'}
-		credentials={resolved?.appCredentials ?? { type: 'api-key', payload: '', authEntity: '' }}
-	>
-		<MachineConnectionProvider
-			{partID}
-			{dialConfig}
+<Visualizer>
+	{@render children()}
+
+	{#if pluginsEnabled}
+		<ViamProvider
+			options={{ resetQueriesOnDisconnect: false }}
+			{dialConfigs}
 		>
-			<Visualizer {partID}>
-				{@render children()}
+			<ViamAppProvider
+				serviceHost={launch.current?.serviceHost ?? 'https://app.viam.com'}
+				credentials={resolved?.appCredentials ?? { type: 'api-key', payload: '', authEntity: '' }}
+			>
+				<MachineConnectionProvider
+					{partID}
+					{dialConfig}
+				>
+					<Machine partID={partID ?? ''}>
+						<SensorCoverage />
 
-				{#if pluginsEnabled}
-					{#if sidecar.ready}
-						<DrawService config={{ backendIP, port: drawPort }} />
-					{/if}
-					<Isolate />
-					<MeasureTool />
-					<SensorCoverage />
+						<Monitor />
+						<BuildFrames />
+						<MoveFrame />
+						<MotionPlanReplayer {resolveIKSolutions} />
 
-					<Monitor />
-					<BuildFrames />
-					<MoveFrame />
-					<MotionPlanReplayer {resolveIKSolutions} />
+						<XR anchorKey="xr-origin-anchor:{partID ?? ''}">
+							<XRMachine />
+						</XR>
 
-					<XR />
+						<ControlWidgets />
+						<Logs />
+						<SceneExport />
+					</Machine>
 
-					<ControlWidgets />
 					<Machines {launch} />
-					<Logs />
-					<WorldTree />
-					<SceneExport />
-					<Settings />
-					<RenderStats />
-					<FileDrop />
-					<FramePov />
-				{/if}
-			</Visualizer>
-		</MachineConnectionProvider>
-	</ViamAppProvider>
-</ViamProvider>
+				</MachineConnectionProvider>
+			</ViamAppProvider>
+		</ViamProvider>
+
+		{#if sidecar.ready}
+			<DrawService config={{ backendIP, port: drawPort }} />
+		{/if}
+		<Isolate />
+		<MeasureTool />
+		<WorldTree />
+		<Settings />
+		<RenderStats />
+		<FileDrop />
+	{/if}
+</Visualizer>

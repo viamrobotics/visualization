@@ -67,8 +67,6 @@ export interface Settings {
 
 	enableLabels: boolean
 
-	openFramePovWidgets: Record<string, string[]>
-
 	/** Whether the sensor-coverage plugin draws camera view frusta into the scene. */
 	enableSensorCoverage: boolean
 	/** Far-plane depth of a coverage frustum, in metres. */
@@ -163,8 +161,6 @@ const defaults = (): Settings => ({
 	enableMeasureAxisZ: true,
 
 	enableLabels: false,
-
-	openFramePovWidgets: {},
 
 	enableSensorCoverage: true,
 	sensorCoverageRange: 2,

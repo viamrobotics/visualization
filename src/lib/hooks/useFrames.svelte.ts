@@ -50,7 +50,7 @@ const FRAMES_FOLDER = {
 	name: 'Frames',
 	order: 100,
 	sources: [traits.FramesAPI],
-	refreshRate: 'poses',
+	hasSettings: true,
 } satisfies FolderSpec
 
 export const provideFrames = (partID: () => string) => {
