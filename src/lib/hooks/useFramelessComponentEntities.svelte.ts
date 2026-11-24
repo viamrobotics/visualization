@@ -2,11 +2,9 @@ import type { Entity, World } from 'koota'
 
 import { onDestroy } from 'svelte'
 
-import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
-import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-import { useFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
-import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
-import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+import { type FolderSpec, selectOnly, traits, useFolder, useWorld } from '#lib/ecs/index.js'
+
+import { useFramelessComponents } from './useFramelessComponents.svelte'
 
 /**
  * Keeps one `FramelessComponent` entity per name in `names`, so the world tree
@@ -91,26 +89,29 @@ export const createFramelessComponentEntities = (
 	}
 }
 
-/**
- * Mounts `createFramelessComponentEntities` for the current part, active only
- * while build mode is editing it: the rows exist to be acted on, and the action
- * is `partConfig.createFrame`.
- */
-export const useFramelessComponentEntities = (): void => {
-	const world = useWorld()
-	const environment = useEnvironment()
-	const framelessComponents = useFramelessComponents()
-	const partConfig = usePartConfig()
-	const partID = usePartID()
+const FRAMELESS_COMPONENTS_FOLDER = {
+	id: 'frameless-components',
+	name: 'Frameless components',
+	order: 600,
+	sources: [traits.FramelessComponent],
+	collapsed: true,
+	sceneless: true,
+} satisfies FolderSpec
 
-	const active = $derived(
-		environment.current.mode === 'build' && partID.current !== '' && partConfig.hasEditPermissions
-	)
+/**
+ * Mounts `createFramelessComponentEntities` for the current part, in every mode, so a
+ * component without a frame still has a row to carry its health and its logs.
+ */
+export const useFramelessComponentEntities = (partID: () => string): void => {
+	const world = useWorld()
+	const framelessComponents = useFramelessComponents()
+
+	useFolder(FRAMELESS_COMPONENTS_FOLDER)
 
 	onDestroy(
 		createFramelessComponentEntities(
 			world,
-			() => active,
+			() => partID() !== '',
 			() => framelessComponents.current
 		)
 	)

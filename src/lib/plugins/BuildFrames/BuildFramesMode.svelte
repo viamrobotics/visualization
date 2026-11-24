@@ -11,7 +11,6 @@
 	import FramelessComponentDetails from './FramelessComponentDetails.svelte'
 	import { provideObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 	import TransformDashboard from './TransformDashboard.svelte'
-	import { useFramelessComponentEntities } from './useFramelessComponentEntities.svelte'
 	import { useObstacleLivePreview } from './useObstacleLivePreview.svelte'
 
 	const environment = useEnvironment()
@@ -29,7 +28,6 @@
 	// this plugin, instead of pausing live queries with no UI out.
 	useEnvironmentMode('build')
 
-	useFramelessComponentEntities()
 	provideObstaclePreviewToggle(useObstacleLivePreview())
 </script>
 

@@ -8,10 +8,12 @@ import type { Transform } from '#lib/geometry.js'
 import { appearanceColorsByFrame } from '#lib/appearanceColors.js'
 import { resourceNameToColor, subtypeToColor } from '#lib/color.js'
 import {
+	type FolderSpec,
 	hierarchy,
 	setOrAddTrait,
 	traits,
 	TRANSLUCENT_GEOMETRY_OPACITY,
+	useFolder,
 	useWorld,
 } from '#lib/ecs/index.js'
 import { useEventBus } from '#lib/hooks/useEventBus.js'
@@ -35,15 +37,21 @@ export interface FramesContext {
 	 * its data, so non-empty does not mean live: `current` may have fallen back to config frames.
 	 */
 	parts: robotApi.FrameSystemConfig[]
-	/** How many frames the machine reported, or `undefined` before it has answered. */
-	readonly machineFrameCount: number | undefined
-	/** True while the first `frameSystemConfig` request is in flight. */
-	readonly isLoadingMachineFrames: boolean
 	/** Components whose frame is a model's mount — the set `usePoses` redirects. */
 	readonly kinematicsComponents: ReadonlySet<string>
+	/** The world tree folder the frames sit in, for writing `Issues` about them as a whole. */
+	readonly folder: Entity
 }
 
 const key = Symbol('frames-context')
+
+const FRAMES_FOLDER = {
+	id: 'frames',
+	name: 'Frames',
+	order: 100,
+	sources: [traits.FramesAPI],
+	refreshRate: 'poses',
+} satisfies FolderSpec
 
 export const provideFrames = (partID: () => string) => {
 	const configFrames = useConfigFrames()
@@ -71,6 +79,15 @@ export const provideFrames = (partID: () => string) => {
 		// on the name alone answers `not connected yet` for every machine on load.
 		enabled: partID() !== '' && isConnected,
 	}))
+
+	// Shown while connected, so a machine with no frames reads as that rather than as
+	// frames that failed to load.
+	const folder = useFolder(FRAMES_FOLDER, () => {
+		if (!isConnected) return undefined
+		if (query.isLoading) return 'Loading frames…'
+		if (query.data?.length === 0) return 'This machine has no frames'
+		return undefined
+	})
 
 	$effect(() => {
 		if (query.isFetching) {
@@ -417,15 +434,10 @@ export const provideFrames = (partID: () => string) => {
 		get parts() {
 			return parts
 		},
-		get machineFrameCount() {
-			return query.data?.length
-		},
-		get isLoadingMachineFrames() {
-			return query.isLoading
-		},
 		get kinematicsComponents() {
 			return kinematicsComponents
 		},
+		folder,
 	})
 }
 

@@ -5,21 +5,14 @@
 	import { ChevronRight, Eye, EyeOff, Folder, FolderOpen } from 'lucide-svelte'
 	import { VirtualList } from 'svelte-virtuallists'
 
-	import type { LogTarget } from '#lib/plugins/Logs/useLogs.svelte.js'
-
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import { traits, useTrait } from '#lib/ecs/index.js'
-	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
-	import { usePoses } from '#lib/hooks/usePoses.svelte.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import type { TreeNode } from './buildTree'
 
 	import FolderSettingsButton from './FolderSettingsButton.svelte'
-	import LogStatusIndicator from './LogStatusIndicator.svelte'
-	import MissingParentIndicator from './MissingParentIndicator.svelte'
-	import PoseStalenessIndicator from './PoseStalenessIndicator.svelte'
-	import ResourceHealthIndicator from './ResourceHealthIndicator.svelte'
+	import IssueRollupIndicator from './IssueRollupIndicator.svelte'
+	import IssuesIndicator from './IssuesIndicator.svelte'
 	import Self from './TreeNode.svelte'
 
 	interface Props {
@@ -30,7 +23,9 @@
 
 	let { node, indexPath, api }: Props = $props()
 
-	const name = useTrait(() => node.entity, traits.Name)
+	const entityName = useTrait(() => node.entity, traits.Name)
+	// Folder entities carry no `Name`, so they stay out of every query over named entities.
+	const name = $derived(node.folder?.name ?? entityName.current ?? '')
 	const invisible = useTrait(() => node.entity, traits.Invisible)
 	const inheritedInvisible = useTrait(() => node.entity, traits.InheritedInvisible)
 
@@ -48,49 +43,14 @@
 			: 0
 	)
 
-	/**
-	 * A folder stands for the API that fills it, so it is marked by its own id
-	 * rather than by its display name, which a resource could collide with.
-	 */
-	const logTarget = $derived<LogTarget>(
-		node.folder ? { folder: node.folder.id } : { resource: name.current }
-	)
-
-	// A map lookup per row, waking only when a row's worst level changes, so a
-	// repeating message costs the tree nothing. Healthy rows mount no indicator.
-	const logs = useLogs()
-	const logStatus = $derived(logs.statusFor(logTarget))
-
-	/**
-	 * The machine's health report for this row's resource. Only a frame or a
-	 * frameless component stands for one. A name is not unique across the world:
-	 * a drawn transform takes its reference frame's name (`#lib/draw.ts`) and a
-	 * folder takes its display name, so looking up every row would badge those
-	 * with another resource's report.
-	 */
-	const health = useResourceHealth()
-	const isResourceRow = $derived(
-		node.entity.has(traits.FramesAPI) || node.entity.has(traits.FramelessComponent)
-	)
-	const unhealthy = $derived(isResourceRow ? health.statusFor(name.current) : undefined)
-
-	/**
-	 * Staleness is a property of the poll that fills the Frames folder, not of any
-	 * one frame, so it marks that folder's row. Short-circuited on the folder id so
-	 * every other row in the tree takes no dependency on the freshness clock.
-	 */
-	const poses = usePoses()
-	const posesStale = $derived(node.folder?.id === 'frames' && poses.isStale)
-
-	// The folder only exists while it holds an orphan, so its warning is unconditional.
-	const isMissingParentFolder = $derived(node.folder?.id === 'missing-parent')
-
-	const hasAlert = $derived(
-		logStatus !== undefined || unhealthy !== undefined || posesStale || isMissingParentFolder
-	)
+	const issues = useTrait(() => node.entity, traits.Issues)
 
 	const nodeProps = $derived({ indexPath, node })
 	const nodeState = $derived(api.getNodeState(nodeProps))
+
+	// Expanded, the rows underneath carry their own badges, so the hint would only repeat them.
+	const rollup = $derived(nodeState.isBranch && !nodeState.expanded ? node.rollup : undefined)
+	const hasAlert = $derived(issues.current !== undefined || rollup !== undefined)
 
 	/**
 	 * Every row is as wide as the widest row in the tree, so the fill has to be
@@ -135,24 +95,18 @@
 {/snippet}
 
 {#snippet alertIndicators()}
-	{#if logStatus}
-		<LogStatusIndicator
-			target={logTarget}
-			label={name.current ?? ''}
-			status={logStatus}
+	{#if rollup}
+		<IssueRollupIndicator
+			label={name}
+			{rollup}
 		/>
 	{/if}
 
-	{#if unhealthy}
-		<ResourceHealthIndicator resource={unhealthy} />
-	{/if}
-
-	{#if posesStale}
-		<PoseStalenessIndicator />
-	{/if}
-
-	{#if isMissingParentFolder}
-		<MissingParentIndicator />
+	{#if issues.current}
+		<IssuesIndicator
+			label={name}
+			issues={issues.current}
+		/>
 	{/if}
 {/snippet}
 
@@ -162,7 +116,7 @@
 	{#if node.folder?.refreshRate}
 		<FolderSettingsButton
 			id={node.folder.refreshRate}
-			label={name.current ?? ''}
+			label={name}
 		/>
 	{/if}
 {/snippet}
@@ -240,7 +194,7 @@
 				class="flex items-center gap-1.5"
 				{...api.getBranchTextProps(nodeProps)}
 			>
-				{name.current}
+				{name}
 				{#if node.folder}
 					<span class="text-disabled">
 						<span aria-hidden="true">·</span>
@@ -305,7 +259,7 @@
 			class="flex items-center gap-1.5"
 			{...api.getItemTextProps(nodeProps)}
 		>
-			{name.current}
+			{name}
 			{#if node.detachedParent}
 				<span class="text-subtle-2">
 					in <EntityLink entity={node.detachedParent} />

@@ -5,7 +5,7 @@ import { traits } from '#lib/ecs/index.js'
 import type { TreeNode } from './buildTree'
 
 const matchesName = (node: TreeNode, needle: string): boolean =>
-	(node.entity.get(traits.Name) ?? '').toLowerCase().includes(needle)
+	(node.folder?.name ?? node.entity.get(traits.Name) ?? '').toLowerCase().includes(needle)
 
 const countRows = (nodes: TreeNode[]): number =>
 	nodes.reduce((total, node) => total + 1 + countRows(node.children ?? []), 0)

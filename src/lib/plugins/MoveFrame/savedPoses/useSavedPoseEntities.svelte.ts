@@ -1,9 +1,14 @@
 import type { Entity } from 'koota'
 
+import { MachineConnectionEvent } from '@viamrobotics/sdk'
+import { useConnectionStatus } from '@viamrobotics/svelte-sdk'
+
 import type { Pose } from '#lib/math/index.js'
 
-import { traits, useWorld } from '#lib/ecs/index.js'
+import { traits, useFolder, useWorld } from '#lib/ecs/index.js'
+import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 import { parseArmPositionSaver } from './armPositionSaver'
 
@@ -39,6 +44,25 @@ const isSameSavedPose = (a: SavedPoseValue, b: SavedPoseValue): boolean =>
 export const useSavedPoseEntities = (): void => {
 	const world = useWorld()
 	const partConfig = usePartConfig()
+	const partID = usePartID()
+	const armClient = useArmClient()
+	const connectionStatus = useConnectionStatus(() => partID.current)
+
+	// Ahead of frameless components, since every saved pose row is one too. Shown while the
+	// machine has an arm, since that is where a pose is saved from.
+	useFolder(
+		{
+			id: 'saved-poses',
+			name: 'Saved poses',
+			order: 500,
+			sources: [traits.SavedPose],
+			sceneless: true,
+		},
+		() =>
+			connectionStatus.current === MachineConnectionEvent.CONNECTED && armClient.names.length > 0
+				? 'Select an arm and save its pose'
+				: undefined
+	)
 
 	const savers = $derived(
 		(partConfig.current.components ?? []).flatMap((component) => {

@@ -1,6 +1,6 @@
 import type { JsonValue } from '@bufbuild/protobuf'
 import type { MotionClient, robotApi } from '@viamrobotics/sdk'
-import type { World } from 'koota'
+import type { Entity, World } from 'koota'
 
 import { flushSync, mount, unmount } from 'svelte'
 
@@ -80,11 +80,10 @@ export const createPreviewMoveHarness = (
 		get parts() {
 			return parts
 		},
-		get machineFrameCount() {
-			return parts.length
-		},
-		isLoadingMachineFrames: false,
 		kinematicsComponents: new Set<string>(),
+		get folder(): Entity {
+			throw new Error('usePreviewMove does not read the frames folder')
+		},
 	}
 
 	let preview!: PreviewMove

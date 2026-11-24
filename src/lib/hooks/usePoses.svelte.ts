@@ -4,12 +4,14 @@ import { type Entity, Not } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
-import { traits, useParentName, useQuery, useTrait } from '#lib/ecs/index.js'
+import { setIssues, traits, useParentName, useQuery, useTrait } from '#lib/ecs/index.js'
 import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { originFrameName } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 
 import { isPoseStale } from './poseStaleness/isPoseStale'
+import { stalenessLines } from './poseStaleness/stalenessLines'
+import { useResourceHealth } from './resources/useResourceHealth.svelte'
 import { useFrames } from './useFrames.svelte'
 import { RefreshRates, useSettings } from './useSettings.svelte'
 
@@ -53,6 +55,7 @@ export const providePoses = (partID: () => string) => {
 	const robotClient = useRobotClient(partID)
 	const connectionStatus = useConnectionStatus(partID)
 	const frames = useFrames()
+	const health = useResourceHealth()
 
 	const frameEntities = useQuery(traits.FramesAPI, Not(traits.ConfigOnlyFrame))
 
@@ -282,6 +285,13 @@ export const providePoses = (partID: () => string) => {
 				? isPoseStale({ now, lastPoseAt, pollingStartedAt, framesJoinedAt, interval })
 				: lastPoseAt > 0)
 	)
+
+	// Staleness belongs to the poll that fills the Frames folder, not to any one frame.
+	$effect(() => {
+		const folder = frames.folder
+		setIssues(folder, 'staleness', isStale ? stalenessLines(health.unhealthy) : [])
+		return () => setIssues(folder, 'staleness', [])
+	})
 
 	setContext<Context>(key, {
 		get isStale() {

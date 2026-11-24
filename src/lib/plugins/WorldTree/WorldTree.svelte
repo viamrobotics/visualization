@@ -1,34 +1,50 @@
 <script lang="ts">
+	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { type Entity, IsExcluded } from 'koota'
 
 	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
-	import { traits, useWorld } from '#lib/ecs/index.js'
-	import { poseStalenessSummary } from '#lib/hooks/poseStaleness/poseStalenessSummary.js'
-	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
+	import { setIssues, traits, useFolder, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { usePoses } from '#lib/hooks/usePoses.svelte.js'
 
 	import type { TreeNode } from './buildTree'
 
-	import AddObjectMenu from './AddObjectMenu.svelte'
 	import FilterBar from './FilterBar.svelte'
 	import Tree from './Tree.svelte'
-	import { usePinnedFolders } from './usePinnedFolders.svelte'
 	import { useTree } from './useTree.svelte'
 
 	const world = useWorld()
 	const environment = useEnvironment()
 
-	const health = useResourceHealth()
-	const poses = usePoses()
-	const stalenessAnnouncement = $derived(
-		poses.isStale ? poseStalenessSummary(health.unhealthy) : ''
-	)
-
 	const worldEntity = world.spawn(IsExcluded, traits.Name('World'))
 
-	const pinnedFolders = usePinnedFolders()
-	const tree = useTree(() => pinnedFolders.current)
+	// Claimed by rule in `buildTree`, not by source, so neither lists any.
+	const missingParent = useFolder({
+		id: 'missing-parent',
+		name: 'Missing parent',
+		order: Infinity,
+		sources: [],
+		collapsed: true,
+	})
+	const other = useFolder({ id: 'other', name: 'Other', order: Infinity, sources: [] })
+
+	// The folder is only in the tree while it holds an orphan, so its warning can stand unconditionally.
+	setIssues(missingParent, 'missing-parent', [
+		{
+			severity: 'warn',
+			message:
+				'The parent frames these objects name are not found, so they are positioned relative to the world origin.',
+		},
+	])
+
+	const tree = useTree({ missingParent, other })
+
+	/** Issues on the folders in view, read out as they change, since a folder badge is easy to miss. */
+	const folderAnnouncement = $derived(
+		tree.current
+			.flatMap((node) => [...(node.entity.get(traits.Issues)?.values() ?? [])].flat())
+			.map((line) => line.message)
+			.join('. ')
+	)
 
 	const rootNode = $derived<TreeNode>({
 		entity: worldEntity,
@@ -48,14 +64,15 @@
 	bodyClass="flex flex-col bg-white"
 >
 	{#snippet headerSuffix()}
-		<AddObjectMenu />
+		<!-- Plugins that add objects to the scene portal their menus in here. -->
+		<PortalTarget id="world-tree-actions" />
 	{/snippet}
 
 	<div
 		role="status"
 		class="sr-only"
 	>
-		{stalenessAnnouncement}
+		{folderAnnouncement}
 	</div>
 
 	<!-- Nothing to filter in an empty scene. Kept while a query is typed, so it can be cleared. -->
@@ -79,10 +96,9 @@
 
 					for (const id of next) {
 						const entity = id as Entity
-						// Folder rows and the `World` root are `IsExcluded`, so they never come
-						// back out of the `Selected` query — selecting one would clear the
-						// user's real selection on the next round trip.
-						if (entity.has(IsExcluded)) continue
+						// Folder rows have nothing to select, and the `World` root is `IsExcluded`,
+						// so it never comes back out of the `Selected` query.
+						if (entity.has(IsExcluded) || entity.has(traits.Folder)) continue
 						if (!entity.has(traits.Selected)) entity.add(traits.Selected)
 					}
 				}}

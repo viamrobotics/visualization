@@ -3,9 +3,6 @@ import { MathUtils } from 'three'
 
 type Level = 'info' | 'warn' | 'error'
 
-/** The levels worth marking a tree row with. Info there is noise. */
-export type LogStatus = 'warn' | 'error'
-
 /**
  * The world tree rows a line is about. Both may be set: a per-camera point cloud
  * failure is about that camera and about the folder whose poll produced it, and
@@ -14,7 +11,7 @@ export type LogStatus = 'warn' | 'error'
 export interface LogTarget {
 	/** A resource, matched against its `traits.Name`. */
 	resource?: string
-	/** A folder, matched against its `TreeFolderId`. */
+	/** A folder, matched against its `traits.Folder` id. */
 	folder?: string
 }
 
@@ -55,10 +52,6 @@ interface Context {
 	 * failures against the new part's resources.
 	 */
 	clear(): void
-	/** Worst level currently logged against a row, or `undefined` when it is clean. */
-	statusFor(target: LogTarget): LogStatus | undefined
-	/** That row's lines, ordered like `current`. */
-	linesFor(target: LogTarget): Log[]
 }
 
 /** Position of a line's first occurrence, which is what the list sorts by. */
@@ -81,14 +74,6 @@ export const provideLogs = () => {
 	let nextSequence = 0
 
 	/**
-	 * Warn and error tallies per tally key, maintained as lines arrive and age out.
-	 * Every tree row reads `statusFor`, so this is deliberately kept off `entries`:
-	 * a scan of the whole log per row per add would be the tree's frame budget.
-	 */
-	const tallies = new Map<string, { warn: number; error: number }>()
-	let statusVersion = $state(0)
-
-	/**
 	 * Distinct warn and error lines, for the trigger badge. Kept as running totals
 	 * so a repeat, which is most adds at a live pose rate, costs the badge nothing.
 	 */
@@ -106,35 +91,10 @@ export const provideLogs = () => {
 	const dedupKey = (level: Level, target: LogTarget, message: string): string =>
 		`${level}\0${target.resource ?? ''}\0${target.folder ?? ''}\0${message}`
 
-	/** Namespaced so a resource cannot inherit the alerts of a folder sharing its name. */
-	const tallyKeys = (target: LogTarget): string[] => {
-		const keys: string[] = []
-		if (target.resource !== undefined) keys.push(`resource\0${target.resource}`)
-		if (target.folder !== undefined) keys.push(`folder\0${target.folder}`)
-		return keys
-	}
-
-	const worst = (tally: { warn: number; error: number }): LogStatus | undefined =>
-		tally.error > 0 ? 'error' : tally.warn > 0 ? 'warn' : undefined
-
-	/** Move a line into or out of every row it names. `delta` is `1` on add, `-1` on evict. */
+	/** Move a line into or out of the badge totals. `delta` is `1` on add, `-1` on evict. */
 	const tally = (log: Log, delta: number): void => {
 		if (log.level === 'info') return
-
 		lineCounts[log.level] += delta
-
-		for (const key of tallyKeys(log)) {
-			const current = tallies.get(key) ?? { warn: 0, error: 0 }
-			const before = worst(current)
-			current[log.level] += delta
-
-			if (worst(current) === undefined) tallies.delete(key)
-			else tallies.set(key, current)
-
-			// Every tree row subscribes to this, so only a change in what a row would
-			// draw wakes them, not the repeat of a message already being reported.
-			if (before !== worst(current)) statusVersion++
-		}
 	}
 
 	const evictOldest = (): void => {
@@ -203,39 +163,14 @@ export const provideLogs = () => {
 		},
 		clear() {
 			untrack(() => {
-				// Tallies are derived from `entries`, so an empty log has no alerts left
-				// to retract and waking every tree row here would buy nothing.
+				// An empty log has no alerts left to retract, and waking every reader would buy nothing.
 				if (entries.size === 0) return
 
 				entries.clear()
-				tallies.clear()
 				lineCounts.warn = 0
 				lineCounts.error = 0
 				version++
-				statusVersion++
 			})
-		},
-		statusFor(target) {
-			void statusVersion
-
-			let found: LogStatus | undefined
-			for (const key of tallyKeys(target)) {
-				const tallied = tallies.get(key)
-				if (tallied?.error) return 'error'
-				if (tallied?.warn) found = 'warn'
-			}
-			return found
-		},
-		linesFor(target) {
-			void version
-			const out: Entry[] = []
-			for (const log of entries.values()) {
-				const matches =
-					(target.resource !== undefined && log.resource === target.resource) ||
-					(target.folder !== undefined && log.folder === target.folder)
-				if (matches) out.push({ ...log })
-			}
-			return out.toSorted(byFirstAppearance)
 		},
 		add(message, level = 'info', target = {}) {
 			untrack(() => {
@@ -302,12 +237,6 @@ const facade: Context = {
 	},
 	clear() {
 		context?.clear()
-	},
-	statusFor(target) {
-		return context?.statusFor(target)
-	},
-	linesFor(target) {
-		return context?.linesFor(target) ?? []
 	},
 }
 
