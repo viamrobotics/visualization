@@ -4,6 +4,7 @@
 
 	import { ViamProvider } from '@viamrobotics/svelte-sdk'
 
+	import type { EventBus } from '#lib/hooks/useEventBus.js'
 	import type { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import { ScopedScene } from '../../../../scoped-scene'
@@ -18,7 +19,13 @@
 		poseRefreshRate?: number
 		onready: (
 			index: number,
-			probe: { world: World; settings: ReturnType<typeof useSettings>; camera: () => Camera }
+			probe: {
+				world: World
+				settings: ReturnType<typeof useSettings>
+				camera: () => Camera
+				bus: EventBus
+				isSceneBus: boolean
+			}
 		) => void
 	}
 

@@ -1,5 +1,5 @@
 import { createWorld, type World } from 'koota'
-import { getContext, setContext } from 'svelte'
+import { getContext, onDestroy, setContext } from 'svelte'
 
 import * as relations from './relations'
 import * as traits from './traits'
@@ -17,6 +17,13 @@ export function provideWorld() {
 	}
 
 	setContext<World>(WORLD_CONTEXT_KEY, world)
+
+	// Koota allows 16 live worlds on a page, so a scene that never freed its own would make the
+	// seventeenth mount throw. Deferred a microtask: this teardown runs before the scene's children
+	// run theirs, and they still destroy entities in this world.
+	onDestroy(() => {
+		queueMicrotask(() => world.destroy())
+	})
 }
 
 export function useWorld() {

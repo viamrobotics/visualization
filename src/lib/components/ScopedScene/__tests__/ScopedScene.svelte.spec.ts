@@ -17,6 +17,7 @@ import {
 } from 'three'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { EventBus } from '#lib/hooks/useEventBus.js'
 import type { useSettings } from '#lib/hooks/useSettings.svelte.js'
 import type { ShapeBatches, ShapeInstanceIds } from '#lib/three/shapeBatches.js'
 
@@ -95,6 +96,8 @@ interface Probe {
 	world: World
 	settings: ReturnType<typeof useSettings>
 	camera: () => Camera
+	bus: EventBus
+	isSceneBus: boolean
 }
 
 type HostProps = Omit<Parameters<typeof ScopedSceneHost>[1], 'onready'>
@@ -360,6 +363,36 @@ describe('ScopedScene', () => {
 		expect(entity && first?.has(entity)).toBe(true)
 		expect(entity && second?.has(entity)).toBe(false)
 		expect(second?.query(traits.Selected)).toHaveLength(0)
+	})
+
+	it('provides the scene an event bus of its own, the one its diagnostic writers publish to', async () => {
+		const { probes } = await renderHost()
+
+		expect(firstProbe(probes).isSceneBus).toBe(true)
+	})
+
+	it('gives each of two scenes on one page its own event bus', async () => {
+		const { probes } = await renderHost({ sceneCount: 2 })
+		const first = probes.get(0)?.bus
+		const second = probes.get(1)?.bus
+		const heardByFirst = vi.fn()
+		const heardBySecond = vi.fn()
+		first?.subscribe('diagnostic', heardByFirst)
+		second?.subscribe('diagnostic', heardBySecond)
+
+		first?.publish('diagnostic', { message: 'only in the first scene', level: 'error' })
+
+		expect(heardByFirst).toHaveBeenCalledTimes(1)
+		expect(heardBySecond).not.toHaveBeenCalled()
+	})
+
+	it('drops a diagnostic published with no Logs plugin mounted', async () => {
+		const { probes } = await renderHost()
+		const { bus } = firstProbe(probes)
+
+		expect(() =>
+			bus.publish('diagnostic', { message: 'nobody listens', level: 'error' })
+		).not.toThrow()
 	})
 
 	it('mounts its scene children under nothing but the Viam provider without an uncaught error', async () => {
