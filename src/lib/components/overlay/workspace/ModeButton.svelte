@@ -39,10 +39,9 @@
 	import type { ClassValue } from 'svelte/elements'
 
 	import { mdiEyeOutline, mdiPlayCircleOutline } from '@mdi/js'
-	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
+	import { Dialog, Icon, Tooltip } from '@viamrobotics/prime-ui'
 	import { Hammer, Move3d } from 'lucide-svelte'
 
-	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import { useWorld } from '#lib/ecs/index.js'
 	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
@@ -126,23 +125,22 @@
 	<Tooltip.Content placement="bottom">{description}</Tooltip.Content>
 </Tooltip>
 
-<Dialog
-	bind:open={confirmOpen}
-	title="Discard unsaved changes?"
-	description={`Switching to ${mode} mode will discard your unsaved frame edits.`}
->
-	{#snippet actions({ close })}
-		<button
-			type="button"
-			class="button button-compact"
-			onclick={close}>Cancel</button
-		>
-		<button
-			type="button"
-			class="button button-compact button-dark"
-			onclick={discardAndSwitch}
-		>
-			Discard
-		</button>
-	{/snippet}
+<Dialog bind:open={confirmOpen}>
+	<Dialog.Content class="w-full max-w-sm gap-3">
+		<Dialog.Title>Discard unsaved changes?</Dialog.Title>
+		<Dialog.Description>
+			Switching to {mode} mode will discard your unsaved frame edits.
+		</Dialog.Description>
+
+		<div class="mt-1 flex justify-end gap-2">
+			<Dialog.Close class="button button-compact">Cancel</Dialog.Close>
+			<button
+				type="button"
+				class="button button-compact button-dark"
+				onclick={discardAndSwitch}
+			>
+				Discard
+			</button>
+		</div>
+	</Dialog.Content>
 </Dialog>

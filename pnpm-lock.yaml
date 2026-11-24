@@ -241,9 +241,6 @@ importers:
       '@zag-js/tabs':
         specifier: 1.49.0
         version: 1.49.0
-      '@zag-js/toggle-group':
-        specifier: 1.49.0
-        version: 1.49.0
       '@zag-js/tree-view':
         specifier: 1.49.0
         version: 1.49.0
@@ -2358,9 +2355,6 @@ packages:
 
   '@zag-js/toast@1.49.0':
     resolution: {integrity: sha512-W6yBbbbyiyn0IShVs4ZY1/J/T6rVM/x0C4QO2TpiNuxZZvtEQ4sKqPkl1qIglzgPDdymM0nNkoXtod1iSRPrnA==}
-
-  '@zag-js/toggle-group@1.49.0':
-    resolution: {integrity: sha512-5jIGiFcSoEIUObcZ4ChVXcFwziSiCqK7SOLLvPwY+zrKi0aUIOsV/MuQAfh3Eev8WaHIJY26Ci+rGmm6juxBGA==}
 
   '@zag-js/tree-view@1.49.0':
     resolution: {integrity: sha512-3k9Za7qJ5caywzTtEMaMGfSnqjURIKb9N0jnryPnwgqWoNV3yEM3f64ZFsOIHKHqGkV+50WZ6u/iudNsmXgMqw==}
@@ -7352,14 +7346,6 @@ snapshots:
       '@zag-js/anatomy': 1.49.0
       '@zag-js/core': 1.49.0
       '@zag-js/dismissable': 1.49.0
-      '@zag-js/dom-query': 1.49.0
-      '@zag-js/types': 1.49.0
-      '@zag-js/utils': 1.49.0
-
-  '@zag-js/toggle-group@1.49.0':
-    dependencies:
-      '@zag-js/anatomy': 1.49.0
-      '@zag-js/core': 1.49.0
       '@zag-js/dom-query': 1.49.0
       '@zag-js/types': 1.49.0
       '@zag-js/utils': 1.49.0

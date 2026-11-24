@@ -7,11 +7,10 @@ adds the vmodutils module when the machine has nothing to load that model from.
 <script lang="ts">
 	import { mdiContentSaveOutline } from '@mdi/js'
 	import { TextField } from '@viamrobotics/prime-controls'
-	import { Banner, Icon, useToast } from '@viamrobotics/prime-ui'
+	import { Banner, Dialog, Icon, useToast } from '@viamrobotics/prime-ui'
 	import { useResourceStatuses, useRobotClient } from '@viamrobotics/svelte-sdk'
 	import { untrack } from 'svelte'
 
-	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
@@ -188,75 +187,69 @@ adds the vmodutils module when the machine has nothing to load that model from.
 	Save current pose
 </button>
 
-<Dialog
-	bind:open
-	role="dialog"
-	title="Save current pose"
->
-	{#if hasStagedMove}
-		<Banner variant="warning">
-			<Banner.Title>A move is staged</Banner.Title>
-			<Banner.Description>
-				This saves where "{arm}" is now, not the target shown by the ghost.
-			</Banner.Description>
-		</Banner>
-	{/if}
+<Dialog bind:open>
+	<Dialog.Content class="w-full max-w-sm gap-3">
+		<Dialog.Title>Save current pose</Dialog.Title>
 
-	<div>
-		<label
-			id={nameLabelId}
-			for={nameId}
-			class="text-subtle-2 mb-1 block text-xs"
-		>
-			Name
-		</label>
-		<TextField
-			id={nameId}
-			aria-labelledby={nameLabelId}
-			aria-describedby={nameError === undefined ? undefined : errorId}
-			bind:value={name}
-			onkeydown={(event) => {
-				if (event.key !== 'Enter') return
-				event.preventDefault()
-				void save()
-			}}
-			state={nameError === undefined ? undefined : 'error'}
-		/>
-		{#if nameError !== undefined}
-			<p
-				id={errorId}
-				class="text-danger-dark mt-1 text-xs"
-			>
-				{nameError}
-			</p>
+		{#if hasStagedMove}
+			<Banner variant="warning">
+				<Banner.Title>A move is staged</Banner.Title>
+				<Banner.Description>
+					This saves where "{arm}" is now, not the target shown by the ghost.
+				</Banner.Description>
+			</Banner>
 		{/if}
-		<p class="text-subtle-2 mt-2 text-xs">
-			Saves the joint positions of "{arm}" right now to the machine config.
-		</p>
-	</div>
 
-	{#snippet actions({ close })}
-		<button
-			type="button"
-			class="button button-compact button-ghost"
-			onclick={close}
-		>
-			Cancel
-		</button>
-		<button
-			type="button"
-			class="button button-compact"
-			aria-disabled={nameError !== undefined || saving || undefined}
-			aria-busy={saving || undefined}
-			onclick={() => void save()}
-		>
-			{#if saving}
-				<span
-					class="progress-dots"
-					aria-hidden="true"
-				></span>
+		<div>
+			<label
+				id={nameLabelId}
+				for={nameId}
+				class="text-subtle-2 mb-1 block text-xs"
+			>
+				Name
+			</label>
+			<TextField
+				id={nameId}
+				aria-labelledby={nameLabelId}
+				aria-describedby={nameError === undefined ? undefined : errorId}
+				bind:value={name}
+				onkeydown={(event) => {
+					if (event.key !== 'Enter') return
+					event.preventDefault()
+					void save()
+				}}
+				state={nameError === undefined ? undefined : 'error'}
+			/>
+			{#if nameError !== undefined}
+				<p
+					id={errorId}
+					class="text-danger-dark mt-1 text-xs"
+				>
+					{nameError}
+				</p>
 			{/if}
-			Save
-		</button>
-	{/snippet}
+			<p class="text-subtle-2 mt-2 text-xs">
+				Saves the joint positions of "{arm}" right now to the machine config.
+			</p>
+		</div>
+
+		<div class="mt-1 flex justify-end gap-2">
+			<Dialog.Close class="button button-compact button-ghost">Cancel</Dialog.Close>
+			<button
+				type="button"
+				class="button button-compact"
+				aria-disabled={nameError !== undefined || saving || undefined}
+				aria-busy={saving || undefined}
+				onclick={() => void save()}
+			>
+				{#if saving}
+					<span
+						class="progress-dots"
+						aria-hidden="true"
+					></span>
+				{/if}
+				Save
+			</button>
+		</div>
+	</Dialog.Content>
 </Dialog>
