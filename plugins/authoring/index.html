@@ -135,8 +135,9 @@ manual mutation.</p></div></aside>
 <p>That’s a complete, working plugin. Now give it a control. Because the button lives in the DOM overlay rather than the 3D scene, wrap it in <code dir="auto">DashboardPortal</code> to teleport it into the top toolbar, and drive visibility from local state:</p>
 <div data-nova-code-container="" class="not-content relative overflow-hidden [&#x26;_pre]:relative [&#x26;_nova-code-copy-button]:opacity-0 [&#x26;:hover_nova-code-copy-button]:opacity-100 border border-solid border-(--sl-color-gray-5) rounded-md"><pre class="astro-code astro-code-themes one-light github-dark-dimmed" style="--shiki-light:#383A42;--shiki-dark:#adbac7;--shiki-light-bg:#FAFAFA;--shiki-dark-bg:#22272e; overflow-x: auto;" tabindex="0" data-language="svelte" dir="ltr"><code><span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#768390;--shiki-dark-font-style:inherit">&#x3C;!-- Waypoint.svelte --></span></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">script</span><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF"> lang</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"ts"</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">mdiEyeOffOutline</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">, </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">mdiEyeOutline</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@mdi/js'</span></span>
 <span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">T</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@threlte/core/webgpu'</span></span>
-<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">IconButton</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/prime-core'</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">Icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/prime-ui'</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">DashboardPortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/visualization'</span></span>
 <span class="line"></span>
@@ -149,12 +150,14 @@ manual mutation.</p></div></aside>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;/</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">script</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">DashboardPortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
-<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">IconButton</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">{</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">visible </span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067">?</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> 'eye-outline'</span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067"> :</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> 'eye-off-outline'</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">}</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		label</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"Toggle waypoint"</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		variant</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"secondary"</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">button</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		type</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"button"</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		class</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"icon-button button-ghost"</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		aria-label</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"Toggle waypoint"</span></span>
 <span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		onclick</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">{</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">() </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">=></span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> (visible </span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067">=</span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067"> !</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">visible)</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">}</span></span>
-<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	/></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">		&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">Icon</span><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF"> icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">{</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">visible </span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067">?</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> mdiEyeOutline </span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067">:</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> mdiEyeOffOutline</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">}</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> /></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;/</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">button</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;/</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">DashboardPortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">{#</span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">if</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> visible}</span></span>
@@ -164,8 +167,9 @@ manual mutation.</p></div></aside>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;/</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">T</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">.</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">Mesh</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">{/</span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">if</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">}</span></span></code></pre><nova-code-copy-button type="button" data-code="<!-- Waypoint.svelte -->
 <script lang=&#x22;ts&#x22;>
+	import { mdiEyeOffOutline, mdiEyeOutline } from &#x27;@mdi/js&#x27;
 	import { T } from &#x27;@threlte/core/webgpu&#x27;
-	import { IconButton } from &#x27;@viamrobotics/prime-core&#x27;
+	import { Icon } from &#x27;@viamrobotics/prime-ui&#x27;
 
 	import { DashboardPortal } from &#x27;@viamrobotics/visualization&#x27;
 
@@ -178,12 +182,14 @@ manual mutation.</p></div></aside>
 </script>
 
 <DashboardPortal>
-	<IconButton
-		icon={visible ? &#x27;eye-outline&#x27; : &#x27;eye-off-outline&#x27;}
-		label=&#x22;Toggle waypoint&#x22;
-		variant=&#x22;secondary&#x22;
+	<button
+		type=&#x22;button&#x22;
+		class=&#x22;icon-button button-ghost&#x22;
+		aria-label=&#x22;Toggle waypoint&#x22;
 		onclick={() => (visible = !visible)}
-	/>
+	>
+		<Icon icon={visible ? mdiEyeOutline : mdiEyeOffOutline} />
+	</button>
 </DashboardPortal>
 
 {#if visible}
@@ -254,12 +260,14 @@ manual mutation.</p></div></aside>
 <DashboardPortal>
 	<!-- your button / control here -->
 </DashboardPortal>" title="Copy code" aria-label="Copy code" class="absolute top-2 right-2 m-0 size-6 rounded border border-solid border-(--sl-color-gray-5) bg-gray-100/30 p-1 text-black backdrop-blur-sm transition hover:bg-gray-200/50 active:scale-90 dark:bg-gray-600/30 dark:text-white hover:dark:bg-gray-500/50"></nova-code-copy-button></div>
-<aside aria-label="Bring your own button" class="starlight-aside starlight-aside--tip"><p class="starlight-aside__title" aria-hidden="true"><svg aria-hidden="true" class="starlight-aside__icon astro-i6or3h62" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M1.44 8.855v-.001l3.527-3.516c.34-.344.802-.541 1.285-.548h6.649l.947-.947c3.07-3.07 6.207-3.072 7.62-2.868a1.821 1.821 0 0 1 1.557 1.557c.204 1.413.203 4.55-2.868 7.62l-.946.946v6.649a1.845 1.845 0 0 1-.549 1.286l-3.516 3.528a1.844 1.844 0 0 1-3.11-.944l-.858-4.275-4.52-4.52-2.31-.463-1.964-.394A1.847 1.847 0 0 1 .98 10.693a1.843 1.843 0 0 1 .46-1.838Zm5.379 2.017-3.873-.776L6.32 6.733h4.638l-4.14 4.14Zm8.403-5.655c2.459-2.46 4.856-2.463 5.89-2.33.134 1.035.13 3.432-2.329 5.891l-6.71 6.71-3.561-3.56 6.71-6.711Zm-1.318 15.837-.776-3.873 4.14-4.14v4.639l-3.364 3.374Z" clip-rule="evenodd"/><path d="M9.318 18.345a.972.972 0 0 0-1.86-.561c-.482 1.435-1.687 2.204-2.934 2.619a8.22 8.22 0 0 1-1.23.302c.062-.365.157-.79.303-1.229.415-1.247 1.184-2.452 2.62-2.935a.971.971 0 1 0-.62-1.842c-.12.04-.236.084-.35.13-2.02.828-3.012 2.588-3.493 4.033a10.383 10.383 0 0 0-.51 2.845l-.001.016v.063c0 .536.434.972.97.972H2.24a7.21 7.21 0 0 0 .878-.065c.527-.063 1.248-.19 2.02-.447 1.445-.48 3.205-1.472 4.033-3.494a5.828 5.828 0 0 0 .147-.407Z"/></svg>Bring your own button</p><div class="starlight-aside__content"><p>The dashboard <code dir="auto">Button</code> the built-in plugins use is internal and <strong>not</strong> exported. Put a prime-core
-<a href="https://design.viam.com/"><code dir="auto">IconButton</code></a> (or any element of your own) inside the Portal instead —
-it keeps you aligned with the visualizer’s design system.</p></div></aside>
+<aside aria-label="Bring your own button" class="starlight-aside starlight-aside--tip"><p class="starlight-aside__title" aria-hidden="true"><svg aria-hidden="true" class="starlight-aside__icon astro-i6or3h62" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path fill-rule="evenodd" d="M1.44 8.855v-.001l3.527-3.516c.34-.344.802-.541 1.285-.548h6.649l.947-.947c3.07-3.07 6.207-3.072 7.62-2.868a1.821 1.821 0 0 1 1.557 1.557c.204 1.413.203 4.55-2.868 7.62l-.946.946v6.649a1.845 1.845 0 0 1-.549 1.286l-3.516 3.528a1.844 1.844 0 0 1-3.11-.944l-.858-4.275-4.52-4.52-2.31-.463-1.964-.394A1.847 1.847 0 0 1 .98 10.693a1.843 1.843 0 0 1 .46-1.838Zm5.379 2.017-3.873-.776L6.32 6.733h4.638l-4.14 4.14Zm8.403-5.655c2.459-2.46 4.856-2.463 5.89-2.33.134 1.035.13 3.432-2.329 5.891l-6.71 6.71-3.561-3.56 6.71-6.711Zm-1.318 15.837-.776-3.873 4.14-4.14v4.639l-3.364 3.374Z" clip-rule="evenodd"/><path d="M9.318 18.345a.972.972 0 0 0-1.86-.561c-.482 1.435-1.687 2.204-2.934 2.619a8.22 8.22 0 0 1-1.23.302c.062-.365.157-.79.303-1.229.415-1.247 1.184-2.452 2.62-2.935a.971.971 0 1 0-.62-1.842c-.12.04-.236.084-.35.13-2.02.828-3.012 2.588-3.493 4.033a10.383 10.383 0 0 0-.51 2.845l-.001.016v.063c0 .536.434.972.97.972H2.24a7.21 7.21 0 0 0 .878-.065c.527-.063 1.248-.19 2.02-.447 1.445-.48 3.205-1.472 4.033-3.494a5.828 5.828 0 0 0 .147-.407Z"/></svg>Bring your own button</p><div class="starlight-aside__content"><p>The dashboard <code dir="auto">Button</code> the built-in plugins use is internal and <strong>not</strong> exported. Put a <code dir="auto">&#x3C;button></code>
+with the <a href="https://viamrobotics.github.io/prime/packages/tailwind-config/component-classes/"><code dir="auto">icon-button</code></a>
+class inside the Portal instead, or any element of your own. The class keeps you aligned with the
+visualizer’s design system.</p></div></aside>
 <p>For a launcher-plus-panel pattern, pair a <code dir="auto">WorkspacePortal</code> button with a <code dir="auto">FloatingPanel</code> whose <code dir="auto">isOpen</code> you bind — this is exactly how <a href="https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/ControlWidgets/ControlWidgets.svelte"><code dir="auto">&#x3C;ControlWidgets /></code></a> works:</p>
 <div data-nova-code-container="" class="not-content relative overflow-hidden [&#x26;_pre]:relative [&#x26;_nova-code-copy-button]:opacity-0 [&#x26;:hover_nova-code-copy-button]:opacity-100 border border-solid border-(--sl-color-gray-5) rounded-md"><pre class="astro-code astro-code-themes one-light github-dark-dimmed" style="--shiki-light:#383A42;--shiki-dark:#adbac7;--shiki-light-bg:#FAFAFA;--shiki-dark-bg:#22272e; overflow-x: auto;" tabindex="0" data-language="svelte" dir="ltr"><code><span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">script</span><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF"> lang</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"ts"</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
-<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">IconButton</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/prime-core'</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">mdiCog</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@mdi/js'</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">Icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/prime-ui'</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">	import</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> { </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">FloatingPanel</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">, </span><span style="--shiki-light:#E45649;--shiki-dark:#ADBAC7">WorkspacePortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> } </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">from</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF"> '@viamrobotics/visualization'</span></span>
 <span class="line"></span>
@@ -267,12 +275,14 @@ it keeps you aligned with the visualizer’s design system.</p></div></aside>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;/</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">script</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">WorkspacePortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
-<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">IconButton</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"cog"</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		label</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"Diagnostics"</span></span>
-<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		variant</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"secondary"</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">button</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		type</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"button"</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		class</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"icon-button button-ghost"</span></span>
+<span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		aria-label</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#50A14F;--shiki-dark:#96D0FF">"Diagnostics"</span></span>
 <span class="line"><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF">		onclick</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">{</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">() </span><span style="--shiki-light:#A626A4;--shiki-dark:#F47067">=></span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> (open </span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067">=</span><span style="--shiki-light:#0184BC;--shiki-dark:#F47067"> !</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">open)</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">}</span></span>
-<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	/></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">		&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">Icon</span><span style="--shiki-light:#986801;--shiki-dark:#6CB6FF"> icon</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">=</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">{</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">mdiCog</span><span style="--shiki-light:#CA1243;--shiki-dark:#F47067">}</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7"> /></span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">	&#x3C;/</span><span style="--shiki-light:#E45649;--shiki-dark:#8DDB8C">button</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;/</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">WorkspacePortal</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">FloatingPanel</span></span>
@@ -283,7 +293,8 @@ it keeps you aligned with the visualizer’s design system.</p></div></aside>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span>
 <span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#768390;--shiki-dark-font-style:inherit">	&#x3C;!-- panel body --></span></span>
 <span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">&#x3C;/</span><span style="--shiki-light:#C18401;--shiki-dark:#8DDB8C">FloatingPanel</span><span style="--shiki-light:#383A42;--shiki-dark:#ADBAC7">></span></span></code></pre><nova-code-copy-button type="button" data-code="<script lang=&#x22;ts&#x22;>
-	import { IconButton } from &#x27;@viamrobotics/prime-core&#x27;
+	import { mdiCog } from &#x27;@mdi/js&#x27;
+	import { Icon } from &#x27;@viamrobotics/prime-ui&#x27;
 
 	import { FloatingPanel, WorkspacePortal } from &#x27;@viamrobotics/visualization&#x27;
 
@@ -291,12 +302,14 @@ it keeps you aligned with the visualizer’s design system.</p></div></aside>
 </script>
 
 <WorkspacePortal>
-	<IconButton
-		icon=&#x22;cog&#x22;
-		label=&#x22;Diagnostics&#x22;
-		variant=&#x22;secondary&#x22;
+	<button
+		type=&#x22;button&#x22;
+		class=&#x22;icon-button button-ghost&#x22;
+		aria-label=&#x22;Diagnostics&#x22;
 		onclick={() => (open = !open)}
-	/>
+	>
+		<Icon icon={mdiCog} />
+	</button>
 </WorkspacePortal>
 
 <FloatingPanel
