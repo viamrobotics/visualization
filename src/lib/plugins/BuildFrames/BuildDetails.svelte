@@ -21,10 +21,8 @@
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
-	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { isFrameVariableLocked } from '#lib/frameVariableLocks.js'
 	import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
-	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
@@ -33,9 +31,14 @@
 	import ConfigAppearanceDetails, {
 		type ConfigAppearanceTarget,
 	} from './ConfigAppearanceDetails.svelte'
+	import DeleteObstacleShapeButton from './ObstacleEditor/DeleteObstacleShapeButton.svelte'
+	import DuplicateObstaclesButton from './ObstacleEditor/DuplicateObstaclesButton.svelte'
+	import DuplicateObstacleShapeButton from './ObstacleEditor/DuplicateObstacleShapeButton.svelte'
 	import ObstacleSection from './ObstacleEditor/ObstacleSection.svelte'
 	import ObstacleShapeDetails from './ObstacleEditor/ObstacleShapeDetails.svelte'
-	import RemoveObstacleShapeButton from './ObstacleEditor/RemoveObstacleShapeButton.svelte'
+	import ObstacleShapesGeometryDetails from './ObstacleEditor/ObstacleShapesGeometryDetails.svelte'
+	import ObstacleShapesOffsetDetails from './ObstacleEditor/ObstacleShapesOffsetDetails.svelte'
+	import { type SelectedObstacleShape } from './ObstacleEditor/selectedObstacleShapes'
 	import { useObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
@@ -47,14 +50,11 @@
 
 	const { entities, framelessCount = 0, ...rest }: Props = $props()
 
-	const environment = useEnvironment()
 	const fragmentInfo = useFragmentInfo()
 	const configFrames = useConfigFrames()
 	const partConfig = usePartConfig()
 	// Read here, not in `ObstacleSection`: the details panel portals its content out of this context.
 	const obstaclePreview = useObstaclePreviewToggle()
-
-	const frameEditor = new FrameEditor(partConfig.updateFrame, partConfig.deleteFrame)
 
 	const reads = useMappedEntitiesTraits(
 		() => entities,
@@ -100,7 +100,7 @@
 				showRelationshipOptions: entity.has(traits.Points) || entity.has(traits.Arrows),
 				showObstacleEditor: showEditFrameOptions && isObstacle && !!name,
 				// An obstacle is a component whose frame carries its geometries, so it always keeps its frame.
-				showDeleteFrame: showEditFrameOptions && environment.current.isStandalone && !isObstacle,
+				showDeleteFrame: showEditFrameOptions && !isObstacle,
 				// A Complex obstacle's shape is edited through its entry in the obstacle's attributes.
 				shapeOwner:
 					complexShape && partConfig.hasEditPermissions
@@ -141,9 +141,30 @@
 		!canDeleteEvery && reads.current.some((read) => read.showDeleteFrame)
 	)
 	const hasFrame = $derived(reads.current.some((read) => read.isFrame && read.name !== undefined))
+	const canDuplicate = $derived(
+		reads.current.every((read) => read.showObstacleEditor && !read.complexShape)
+	)
+	const canDuplicateSome = $derived(!canDuplicate && hasObstacleEditor)
+	const selectedNames = $derived(
+		reads.current.flatMap(({ name }) => (name === undefined ? [] : [name]))
+	)
+	const selectedShapes = $derived(
+		reads.current.flatMap(({ entity, shapeOwner, complexShape }): SelectedObstacleShape[] =>
+			shapeOwner && complexShape
+				? [{ entity, component: shapeOwner, index: complexShape.index }]
+				: []
+		)
+	)
+	// Shapes are edited together only when nothing else is selected with them.
+	const isAllShapes = $derived(selectedShapes.length === entities.length)
 
 	const hasActions = $derived(
-		hasRelationshipOptions || canDeleteEvery || canDeleteSome || hasShapeOwner
+		hasRelationshipOptions ||
+			canDeleteEvery ||
+			canDeleteSome ||
+			isAllShapes ||
+			canDuplicate ||
+			canDuplicateSome
 	)
 
 	const configAppearanceTargets = $derived(
@@ -192,11 +213,14 @@
 				component={only.shapeOwner}
 				index={only.complexShape.index}
 			/>
+		{:else if isAllShapes}
+			<ObstacleShapesOffsetDetails shapes={selectedShapes} />
+			<ObstacleShapesGeometryDetails shapes={selectedShapes} />
 		{:else}
 			{#if hasShapeOwner}
 				<SectionNotice
 					label="obstacle shape"
-					message="Select a single obstacle shape to edit it."
+					message="Select only obstacle shapes to edit them together."
 				/>
 			{/if}
 
@@ -247,29 +271,48 @@
 		/>
 	{/if}
 
-	{#if canDeleteEvery}
-		<Button
-			variant="danger"
-			class="mt-2 w-full"
-			onclick={() => {
-				for (const entity of entities) frameEditor.deleteFrame(entity)
-			}}
-		>
-			{isSingle ? 'Delete frame' : `Delete ${entities.length} frames`}
-		</Button>
-	{:else if canDeleteSome}
+	{#if canDuplicateSome}
+		<SectionNotice
+			label="duplicate"
+			message="Select only obstacles to duplicate them."
+		/>
+	{/if}
+
+	{#if canDeleteSome}
 		<SectionNotice
 			label="delete"
 			message="Some selected frames can't be deleted here."
 		/>
 	{/if}
 
-	{#if only?.shapeOwner && only.complexShape}
-		<RemoveObstacleShapeButton
-			entity={only.entity}
-			component={only.shapeOwner}
-			index={only.complexShape.index}
-		/>
+	{#if canDuplicate || canDeleteEvery || isAllShapes}
+		<div class="mt-2 flex items-start gap-2">
+			{#if canDuplicate}
+				<DuplicateObstaclesButton {entities} />
+				<Button
+					variant="danger"
+					class="flex-1"
+					onclick={() => partConfig.deleteComponents(selectedNames)}
+				>
+					{isSingle ? 'Delete obstacle' : `Delete ${entities.length} obstacles`}
+				</Button>
+			{/if}
+
+			{#if isAllShapes}
+				<DuplicateObstacleShapeButton shapes={selectedShapes} />
+				<DeleteObstacleShapeButton shapes={selectedShapes} />
+			{/if}
+
+			{#if canDeleteEvery}
+				<Button
+					variant="danger"
+					class="flex-1"
+					onclick={() => partConfig.deleteFrames(selectedNames)}
+				>
+					{isSingle ? 'Delete frame' : `Delete ${entities.length} frames`}
+				</Button>
+			{/if}
+		</div>
 	{/if}
 {/snippet}
 

@@ -17,6 +17,7 @@ import * as useLinkedEntities from '#lib/hooks/useLinked.svelte.js'
 import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
 import * as useResourceByName from '#lib/hooks/useResourceByName.svelte.js'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '#lib/hooks/useWeblabs.svelte.js'
+import { createKeybindings, KEYBINDINGS_CONTEXT_KEY } from '#lib/keybindings/index.js'
 import { createComplexObstacleComponent, createObstacleComponent } from '#lib/obstacle.js'
 
 import BuildDetails from '../BuildDetails.svelte'
@@ -70,10 +71,15 @@ describe('BuildDetails', () => {
 			save: vi.fn(),
 			discardChanges: vi.fn(),
 			deleteFrame: vi.fn(),
+			deleteFrames: vi.fn(),
+			batchEdits: vi.fn((edit: () => void) => edit()),
 			createFrame: vi.fn(),
 			createComponent: vi.fn(),
+			createComponents: vi.fn(),
 			updateComponent: vi.fn(),
+			updateComponents: vi.fn(),
 			deleteComponent: vi.fn(),
+			deleteComponents: vi.fn(),
 			hasEditPermissions: true,
 			hasConfigSource: true,
 			canSave: true,
@@ -86,20 +92,30 @@ describe('BuildDetails', () => {
 		})
 	})
 
-	const renderPanel = ({ isStandalone = true } = {}) => {
+	let keybindings = createKeybindings()
+
+	const renderPanel = ({ isStandalone = true, entities = [entity] } = {}) => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 		const environmentContext = createEnvironment()
 		environmentContext.current.isStandalone = isStandalone
+		keybindings = createKeybindings()
 
 		return render(BuildDetails, {
-			props: { entities: [entity] },
+			props: { entities },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, environmentContext],
 				[WORLD_CONTEXT_KEY, world],
+				[KEYBINDINGS_CONTEXT_KEY, keybindings],
 			]),
 		})
+	}
+
+	const pressShiftD = () => {
+		for (const { handler } of keybindings.matching({ key: 'D', shift: true, mod: false })) {
+			handler.run()
+		}
 	}
 
 	it('renders update fields for frame nodes', () => {
@@ -124,11 +140,16 @@ describe('BuildDetails', () => {
 		})
 	}
 
-	const useSimpleObstacle = () => {
+	const useSimpleObstacle = (otherComponents: usePartConfig.PartComponent[] = []) => {
 		const obstacle = { ...createObstacleComponent(resource.name), frame: resource.frame }
+		const createComponents = vi.fn()
 		vi.mocked(usePartConfig.usePartConfig).mockReturnValue(
-			createPartConfigFixture({ current: { components: [obstacle] } })
+			createPartConfigFixture({
+				current: { components: [obstacle, ...otherComponents] },
+				createComponents,
+			})
 		)
+		return createComponents
 	}
 
 	it('keeps Delete frame and its Actions heading for a frame', () => {
@@ -140,22 +161,86 @@ describe('BuildDetails', () => {
 		expect(screen.getByRole('button', { name: 'Delete frame' })).toBeInTheDocument()
 	})
 
-	it('renders no Actions heading when there is no action', () => {
+	it('offers Delete frame when embedded, not only in the standalone app', () => {
 		useComponentModel('rdk:builtin:fake')
 
 		renderPanel({ isStandalone: false })
 
-		expect(screen.queryByRole('button', { name: 'Delete frame' })).not.toBeInTheDocument()
-		expect(screen.queryByRole('heading', { name: 'Actions' })).not.toBeInTheDocument()
+		expect(screen.getByRole('button', { name: 'Delete frame' })).toBeInTheDocument()
 	})
 
-	it('offers no Delete frame, and so no Actions heading, for an obstacle', () => {
-		useSimpleObstacle()
+	it('renders no Actions heading when there is no action', () => {
+		useComponentModel('rdk:builtin:fake')
+		entity.remove(traits.Editable)
 
 		renderPanel()
 
 		expect(screen.queryByRole('button', { name: 'Delete frame' })).not.toBeInTheDocument()
 		expect(screen.queryByRole('heading', { name: 'Actions' })).not.toBeInTheDocument()
+	})
+
+	it('offers Delete obstacle, not Delete frame, for an obstacle', () => {
+		useSimpleObstacle()
+
+		renderPanel()
+
+		expect(screen.queryByRole('button', { name: 'Delete frame' })).not.toBeInTheDocument()
+		expect(screen.getByRole('button', { name: 'Delete obstacle' })).toBeInTheDocument()
+	})
+
+	it('deletes the whole obstacle component when Delete obstacle is pressed', async () => {
+		useSimpleObstacle()
+		const { deleteComponents } = vi.mocked(usePartConfig.usePartConfig)()
+		renderPanel()
+
+		await userEvent.click(screen.getByRole('button', { name: 'Delete obstacle' }))
+
+		expect(deleteComponents).toHaveBeenCalledWith(['Test Object'])
+	})
+
+	it('offers Duplicate obstacle under Actions for an obstacle', () => {
+		useSimpleObstacle()
+
+		renderPanel()
+
+		expect(screen.getByRole('heading', { name: 'Actions' })).toBeInTheDocument()
+		expect(screen.getByRole('button', { name: 'Duplicate obstacle' })).toBeInTheDocument()
+	})
+
+	it('writes an in-place copy named -copy when Duplicate obstacle is pressed', async () => {
+		const createComponents = useSimpleObstacle()
+		renderPanel()
+
+		await userEvent.click(screen.getByRole('button', { name: 'Duplicate obstacle' }))
+
+		expect(createComponents).toHaveBeenCalledWith([
+			expect.objectContaining({
+				name: 'Test Object-copy',
+				model: 'rdk:builtin:obstacle',
+				frame: resource.frame,
+			}),
+		])
+	})
+
+	it('duplicates the selected obstacle on Shift+D', () => {
+		const createComponents = useSimpleObstacle()
+		renderPanel()
+
+		pressShiftD()
+
+		expect(createComponents).toHaveBeenCalledWith([
+			expect.objectContaining({ name: 'Test Object-copy' }),
+		])
+	})
+
+	it('asks for only obstacles when the selection mixes in another frame', () => {
+		useSimpleObstacle([{ ...resource, name: 'other', model: 'rdk:builtin:fake' }])
+		const other = world.spawn(traits.Name('other'), traits.FramesAPI, traits.Editable)
+
+		renderPanel({ entities: [entity, other] })
+
+		expect(screen.queryByRole('button', { name: /Duplicate/ })).not.toBeInTheDocument()
+		expect(screen.getByText('Select only obstacles to duplicate them.')).toBeInTheDocument()
 	})
 
 	it('shows an obstacle section, open by default, in place of the frame geometry editor', () => {
@@ -254,13 +339,31 @@ describe('BuildDetails', () => {
 			expect(screen.queryByLabelText('mutable parent frame')).not.toBeInTheDocument()
 		})
 
-		it('offers Remove shape as its action', () => {
+		it('offers Duplicate shape and Delete shape as its actions', () => {
 			useComplexObstacle()
 
 			renderPanel()
 
 			expect(screen.getByRole('heading', { name: 'Actions' })).toBeInTheDocument()
-			expect(screen.getByRole('button', { name: 'Remove shape' })).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'Duplicate shape' })).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'Delete shape' })).toBeInTheDocument()
+		})
+
+		it('duplicates the shape, not its obstacle, on Shift+D', () => {
+			useComplexObstacle()
+			const { createComponents, updateComponents } = vi.mocked(usePartConfig.usePartConfig)()
+			renderPanel()
+
+			pressShiftD()
+
+			expect(createComponents).not.toHaveBeenCalled()
+			expect(vi.mocked(updateComponents).mock.lastCall?.[0].get('cage')?.attributes).toEqual({
+				geometries: [
+					{ label: 'a', type: 'box', x: 10, y: 10, z: 10 },
+					{ label: 'b', type: 'sphere', r: 5 },
+					{ label: 'b-copy', type: 'sphere', r: 5 },
+				],
+			})
 		})
 
 		it('stays read-only without permission to edit the config', () => {
@@ -269,7 +372,25 @@ describe('BuildDetails', () => {
 			renderPanel()
 
 			expect(screen.queryByLabelText('label')).not.toBeInTheDocument()
-			expect(screen.queryByRole('button', { name: 'Remove shape' })).not.toBeInTheDocument()
+			expect(screen.queryByRole('button', { name: 'Delete shape' })).not.toBeInTheDocument()
+		})
+
+		it('edits several selected shapes together, offering their shared actions', () => {
+			useComplexObstacle()
+			const shapeA = world.spawn(
+				traits.Name('cage:a'),
+				traits.FramesAPI,
+				traits.ComplexObstacleShape({ index: 0 })
+			)
+
+			renderPanel({ entities: [shapeA, entity] })
+
+			expect(screen.getByLabelText('mutable local position')).toBeInTheDocument()
+			expect(
+				screen.getByText('The selected shapes have different geometry types.')
+			).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'Duplicate 2 shapes' })).toBeInTheDocument()
+			expect(screen.getByRole('button', { name: 'Delete 2 shapes' })).toBeInTheDocument()
 		})
 	})
 
