@@ -187,6 +187,22 @@ export const withoutFrameAppearances = (component: PartComponent): Record<string
 	withSavedFrames(component, {})
 
 /**
+ * The component's `visualizer` config with each copy given its source frame's saved appearance,
+ * keyed copy id to source id, so a duplicate looks like what it duplicates.
+ */
+export const withFrameAppearancesCopied = (
+	component: PartComponent,
+	copies: ReadonlyMap<string, string>
+): Record<string, unknown> => {
+	const frames = savedFramesOf(component)
+	const next = { ...frames }
+	for (const [copyId, sourceId] of copies) {
+		if (sourceId in frames) next[copyId] = frames[sourceId]
+	}
+	return withSavedFrames(component, next)
+}
+
+/**
  * The component's `visualizer` config with each frame's saved appearance moved to the frame's
  * new id, after a rename or a removal renumbered them. A frame moved to `undefined` was removed,
  * and its entry goes with it.

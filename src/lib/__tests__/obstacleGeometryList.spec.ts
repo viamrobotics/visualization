@@ -4,6 +4,8 @@ import type { ObstacleGeometryConfig } from '#lib/obstacleAttributes.js'
 
 import {
 	addObstacleGeometry,
+	duplicateObstacleGeometries,
+	duplicateObstacleGeometry,
 	patchObstacleGeometry,
 	removeObstacleGeometry,
 } from '#lib/obstacleGeometryList.js'
@@ -28,6 +30,52 @@ describe('addObstacleGeometry', () => {
 		const result = addObstacleGeometry(input)
 		expect(input).toHaveLength(1)
 		expect(result.geometries).not.toBe(input)
+	})
+})
+
+describe('duplicateObstacleGeometry', () => {
+	it('appends a copy labeled <label>-copy', () => {
+		const result = duplicateObstacleGeometry([box('a'), box('b')], 0)
+
+		expect(result.label).toBe('a-copy')
+		expect(result.geometries).toEqual([
+			box('a'),
+			box('b'),
+			{ type: 'box', x: 1, y: 2, z: 3, label: 'a-copy' },
+		])
+	})
+
+	it('names an unlabeled copy after what rdk calls the source', () => {
+		expect(duplicateObstacleGeometry([box('a'), box()], 1).label).toBe('geometry_1-copy')
+	})
+
+	it('numbers the copy once -copy is taken', () => {
+		expect(duplicateObstacleGeometry([box('a'), box('a-copy')], 0).label).toBe('a-copy-2')
+	})
+
+	it('drops a capitalized Label key, so the copy has one label', () => {
+		const source = { type: 'box', x: 1, y: 2, z: 3, Label: 'a' } as ObstacleGeometryConfig
+
+		const copy = duplicateObstacleGeometry([source], 0).geometries[1]
+
+		expect(copy).toEqual({ type: 'box', x: 1, y: 2, z: 3, label: 'a-copy' })
+	})
+
+	it('leaves the list unchanged and returns no label for an index out of range', () => {
+		const input = [box('a')]
+
+		expect(duplicateObstacleGeometry(input, 3)).toEqual({ geometries: input, label: undefined })
+	})
+})
+
+describe('duplicateObstacleGeometries', () => {
+	it('keys each copy to the source it was made from, by what rdk calls it', () => {
+		expect(duplicateObstacleGeometries([box('a'), box()], [0, 1]).copies).toEqual(
+			new Map([
+				['a-copy', 'a'],
+				['geometry_1-copy', 'geometry_1'],
+			])
+		)
 	})
 })
 

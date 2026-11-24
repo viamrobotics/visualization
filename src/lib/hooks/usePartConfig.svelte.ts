@@ -43,6 +43,8 @@ export interface PartModule {
 
 export interface PartConfig {
 	components: PartComponent[]
+	/** Only `name` is read, to keep new component names unique. */
+	services?: { name: string }[]
 	modules?: PartModule[]
 	fragment_mods?: {
 		fragment_id: string
@@ -119,6 +121,16 @@ export interface PartConfigContext {
 		geometry?: Frame['geometry']
 	) => void
 	deleteFrame: (componentName: string) => void
+	/**
+	 * Removes each named component's frame in one write and one undo step. See `createComponents`
+	 * for why separate calls are not enough.
+	 */
+	deleteFrames: (componentNames: readonly string[]) => void
+	/**
+	 * Runs `edit`, landing every config edit it makes as one write. Separate writes would each start
+	 * from the config an embedding host may not have passed back yet, and undo one another.
+	 */
+	batchEdits: (edit: () => void) => void
 	createFrame: (componentName: string) => void
 	/**
 	 * Appends `component` to the part's own components. A name already in the config is left alone.
@@ -128,12 +140,28 @@ export interface PartConfigContext {
 	 */
 	createComponent: (component: PartComponent, module?: PartModule) => void
 	/**
+	 * Appends each of `components` to the part's own components in one write and one undo step.
+	 * Separate `createComponent` calls would each read the config the last one wrote, which an
+	 * embedding host may not have passed back yet. A name already in the config is left alone.
+	 */
+	createComponents: (components: readonly PartComponent[]) => void
+	/**
 	 * Replaces the fields in `patch` on a part-owned component, as one undo step. A fragment's
 	 * component is left alone.
 	 */
 	updateComponent: (componentName: string, patch: PartComponentPatch) => void
+	/**
+	 * Replaces the fields in each patch on its part-owned component, keyed by name, in one write and
+	 * one undo step. See `createComponents` for why separate calls are not enough.
+	 */
+	updateComponents: (patches: ReadonlyMap<string, PartComponentPatch>) => void
 	/** Removes a part-owned component, as one undo step. Its modules stay. */
 	deleteComponent: (componentName: string) => void
+	/**
+	 * Removes each named part-owned component in one write and one undo step. Their modules stay.
+	 * See `createComponents` for why separate calls are not enough.
+	 */
+	deleteComponents: (componentNames: readonly string[]) => void
 	/**
 	 * Writes the staged edits. A failure goes to the `onError` given to `providePartConfig`.
 	 *
@@ -170,6 +198,40 @@ export const providePartConfig = (
 
 	const getCurrent = () => {
 		return (config.current?.toJson?.() ?? { components: [] }) as unknown as PartConfig
+	}
+
+	/** The working copy every edit reads and writes while `batchEdits` runs. */
+	let batchDraft: PartConfig | undefined
+	let isBatchWritten = false
+
+	/** The config an edit starts from: the batch's working copy inside `batchEdits`, else the current one. */
+	const readForEdit = (): PartConfig => batchDraft ?? getCurrent()
+
+	/** Writes an edit, or holds it in the batch's working copy for `batchEdits` to write once. */
+	const writeEdit = (next: PartConfig) => {
+		if (batchDraft === undefined) {
+			config.set(next)
+			return
+		}
+		batchDraft = next
+		isBatchWritten = true
+	}
+
+	const batchEdits = (edit: () => void) => {
+		if (batchDraft !== undefined) {
+			edit()
+			return
+		}
+
+		batchDraft = getCurrent()
+		isBatchWritten = false
+		try {
+			edit()
+		} finally {
+			const draft = batchDraft
+			batchDraft = undefined
+			if (isBatchWritten) config.set(draft)
+		}
 	}
 
 	const current = $derived(getCurrent())
@@ -299,7 +361,7 @@ export const providePartConfig = (
 	}
 
 	const createFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = getCurrent()
+		const newConfig = readForEdit()
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
@@ -319,34 +381,36 @@ export const providePartConfig = (
 		}
 
 		fragmentMod.mods.push(frame)
-		config.set(newConfig)
+		writeEdit(newConfig)
 	}
 
-	const createPartComponent = (component: PartComponent, module?: PartModule) => {
-		const newConfig = getCurrent()
+	const createPartComponents = (added: readonly PartComponent[], module?: PartModule) => {
+		const newConfig = readForEdit()
 		const components = newConfig.components ?? []
+		const takenNames = new Set(components.map(({ name }) => name))
+		const fresh = added.filter(({ name }) => !takenNames.has(name))
 
-		if (components.some(({ name }) => name === component.name)) {
+		if (fresh.length === 0) {
 			return
 		}
 
-		newConfig.components = [...components, component]
+		newConfig.components = [...components, ...fresh]
 
 		const modules = newConfig.modules ?? []
 		if (module && !modules.some(({ module_id }) => module_id === module.module_id)) {
 			newConfig.modules = [...modules, module]
 		}
 
-		config.set(newConfig)
+		writeEdit(newConfig)
 	}
 
 	const createPartFrame = (componentName: string) => {
-		const newConfig = getCurrent()
+		const newConfig = readForEdit()
 		const component = newConfig?.components?.find((comp) => comp.name === componentName)
 		if (component) {
 			component.frame = createFrame()
 		}
-		config.set(newConfig)
+		writeEdit(newConfig)
 	}
 
 	const updateFragmentFrame = (
@@ -356,7 +420,7 @@ export const providePartConfig = (
 		framePosition: Pose,
 		frameGeometry?: Frame['geometry']
 	) => {
-		const newConfig = getCurrent()
+		const newConfig = readForEdit()
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find(
@@ -410,7 +474,7 @@ export const providePartConfig = (
 			frameModOperations(componentName, fragmentInfo.current[componentName]?.frame, nextFrame)
 		)
 
-		config.set(newConfig)
+		writeEdit(newConfig)
 	}
 
 	const updatePartFrame = (
@@ -419,7 +483,7 @@ export const providePartConfig = (
 		pose: Pose,
 		geometry?: Frame['geometry']
 	) => {
-		const newConfig = getCurrent()
+		const newConfig = readForEdit()
 		const component = newConfig.components?.find(({ name }) => name === componentName)
 
 		if (!component) {
@@ -455,21 +519,25 @@ export const providePartConfig = (
 			}
 		}
 
-		config.set(newConfig)
+		writeEdit(newConfig)
 	}
 
-	const deletePartFrame = (componentName: string) => {
-		const newConfig = getCurrent()
-		const component = newConfig?.components?.find(({ name }) => name === componentName)
-
-		if (component) {
-			delete component.frame
-			config.set(newConfig)
+	/** Removes a frame from `newConfig` in place. Returns whether there was one to remove. */
+	const removeFrameFrom = (newConfig: PartConfig, componentName: string): boolean => {
+		const fragmentId = fragmentInfo.current[componentName]?.id
+		if (fragmentId !== undefined) {
+			unsetFragmentFrame(newConfig, fragmentId, componentName)
+			return true
 		}
+
+		const component = newConfig.components?.find(({ name }) => name === componentName)
+		if (!component) return false
+
+		delete component.frame
+		return true
 	}
 
-	const deleteFragmentFrame = (fragmentId: string, componentName: string) => {
-		const newConfig = getCurrent()
+	const unsetFragmentFrame = (newConfig: PartConfig, fragmentId: string, componentName: string) => {
 		newConfig.fragment_mods ??= []
 
 		let fragmentMod = newConfig.fragment_mods.find((mod) => mod.fragment_id === fragmentId)
@@ -486,7 +554,15 @@ export const providePartConfig = (
 			componentName,
 			[{ ['$unset']: { [`components.${componentName}.frame`]: '' } }]
 		)
-		config.set(newConfig)
+	}
+
+	const deleteFrames = (componentNames: readonly string[]) => {
+		const newConfig = readForEdit()
+		let isRemoved = false
+		for (const componentName of componentNames) {
+			if (removeFrameFrom(newConfig, componentName)) isRemoved = true
+		}
+		if (isRemoved) writeEdit(newConfig)
 	}
 
 	setContext<PartConfigContext>(key, {
@@ -529,13 +605,13 @@ export const providePartConfig = (
 
 		deleteFrame: (componentName: string) => {
 			markHistoryActive()
-			const fragmentId = fragmentInfo.current[componentName]?.id
-			if (fragmentId === undefined) {
-				deletePartFrame(componentName)
-			} else {
-				deleteFragmentFrame(fragmentId, componentName)
-			}
+			deleteFrames([componentName])
 		},
+		deleteFrames: (componentNames: readonly string[]) => {
+			markHistoryActive()
+			deleteFrames(componentNames)
+		},
+		batchEdits,
 		createFrame: (componentName: string) => {
 			markHistoryActive()
 			const fragmentId = fragmentInfo.current[componentName]?.id
@@ -547,21 +623,43 @@ export const providePartConfig = (
 		},
 		createComponent: (component: PartComponent, module?: PartModule) => {
 			markHistoryActive()
-			createPartComponent(component, module)
+			createPartComponents([component], module)
+		},
+		createComponents: (components: readonly PartComponent[]) => {
+			markHistoryActive()
+			createPartComponents(components)
 		},
 		updateComponent: (componentName: string, patch: PartComponentPatch) => {
 			markHistoryActive()
-			const newConfig = getCurrent()
+			const newConfig = readForEdit()
 			if (patchPartComponent(newConfig, componentName, patch)) {
-				config.set(newConfig)
+				writeEdit(newConfig)
 			}
+		},
+		updateComponents: (patches: ReadonlyMap<string, PartComponentPatch>) => {
+			markHistoryActive()
+			const newConfig = readForEdit()
+			let isPatched = false
+			for (const [componentName, patch] of patches) {
+				if (patchPartComponent(newConfig, componentName, patch)) isPatched = true
+			}
+			if (isPatched) writeEdit(newConfig)
 		},
 		deleteComponent: (componentName: string) => {
 			markHistoryActive()
-			const newConfig = getCurrent()
+			const newConfig = readForEdit()
 			if (removePartComponent(newConfig, componentName)) {
-				config.set(newConfig)
+				writeEdit(newConfig)
 			}
+		},
+		deleteComponents: (componentNames: readonly string[]) => {
+			markHistoryActive()
+			const newConfig = readForEdit()
+			let isRemoved = false
+			for (const componentName of componentNames) {
+				if (removePartComponent(newConfig, componentName)) isRemoved = true
+			}
+			if (isRemoved) writeEdit(newConfig)
 		},
 		save: async () => {
 			deactivateHistory()

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, IconButton, Input } from '@viamrobotics/prime-core'
+	import { tick } from 'svelte'
 
 	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
@@ -13,6 +14,7 @@
 	import { obstacleEditError, type ObstacleEditScope } from '#lib/obstacleEditError.js'
 	import {
 		addObstacleGeometry,
+		duplicateObstacleGeometries,
 		patchObstacleGeometry,
 		removeObstacleGeometry,
 	} from '#lib/obstacleGeometryList.js'
@@ -43,32 +45,74 @@
 	/** A label problem sits under its row, any other under the list. */
 	let error = $state<{ rowIndex: number | undefined; message: string } | undefined>()
 
+	const rows = $state<HTMLLIElement[]>([])
+
+	/**
+	 * A duplicate not yet in the list, and the list it was written from. Its row's label field takes
+	 * focus once the config round trip renders it, so the copy can be renamed straight away.
+	 */
+	// Raw, so `writtenFrom` stays the list itself for the identity check below.
+	let pendingFocus = $state.raw<{ label: string; writtenFrom: ObstacleGeometryConfig[] }>()
+
+	$effect(() => {
+		if (pendingFocus === undefined || geometries === pendingFocus.writtenFrom) return
+
+		// The first list after the write either holds the copy or shows the write never landed,
+		// as after an undo, so a later shape given the same label never steals focus.
+		const { label } = pendingFocus
+		pendingFocus = undefined
+		const index = geometries.findIndex((entry) => explicitGeometryLabel(entry) === label)
+		if (index === -1) return
+
+		void tick().then(() => {
+			const input = rows[index]?.querySelector('input')
+			input?.focus()
+			input?.select()
+		})
+	})
+
 	/**
 	 * Writes `next` when rdk would accept it, preferring a problem with the entry at `index`. Each
 	 * shape's saved appearance follows it as `move` says.
+	 *
+	 * @returns Whether it wrote.
 	 */
 	const commit = (
 		next: ObstacleGeometryConfig[],
 		index: number | undefined,
 		scope: ObstacleEditScope,
-		move: ShapeIndexMove
-	) => {
+		move: ShapeIndexMove,
+		copies?: ReadonlyMap<string, string>
+	): boolean => {
 		const issue = obstacleEditError(geometries, next, index, scope)
 		error = issue && {
 			rowIndex: issue.scope === 'label' ? index : undefined,
 			message: issue.message,
 		}
-		if (issue) return
+		if (issue) return false
 
 		partConfig.updateComponent(component.name, {
 			attributes: { ...component.attributes, geometries: next },
-			visualizer: complexObstacleVisualizer(component, next, move),
+			visualizer: complexObstacleVisualizer(component, next, move, copies),
 		})
+		return true
 	}
 
 	const handleAdd = () => {
 		const next = addObstacleGeometry(geometries).geometries
 		commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE)
+	}
+
+	const handleDuplicate = (index: number) => {
+		const {
+			geometries: next,
+			labels: [label],
+			copies,
+		} = duplicateObstacleGeometries(geometries, [index])
+		if (label === undefined) return
+		if (commit(next, next.length - 1, 'shape', SHAPES_IN_PLACE, copies)) {
+			pendingFocus = { label, writtenFrom: geometries }
+		}
 	}
 
 	const handleRemove = (index: number) => {
@@ -131,7 +175,10 @@
 			{@const label = obstacleGeometryLabel(entry, index)}
 			{@const labelError = error?.rowIndex === index ? error.message : undefined}
 			{@const labelErrorId = `${fieldId}-${index}-label-error`}
-			<li class="flex flex-col gap-0.5 p-1">
+			<li
+				bind:this={rows[index]}
+				class="flex flex-col gap-0.5 p-1"
+			>
 				<div class="flex items-center gap-1">
 					<div class="min-w-0 flex-1">
 						<Input
@@ -152,9 +199,16 @@
 						onclick={() => handleSelect(index)}
 					/>
 					<IconButton
+						icon="content-copy"
+						label={`Duplicate ${label}`}
+						variant="ghost"
+						cx="shrink-0"
+						onclick={() => handleDuplicate(index)}
+					/>
+					<IconButton
 						icon="trash-can-outline"
-						label={`Remove ${label}`}
-						title={isLastShape ? 'An obstacle needs at least one geometry' : `Remove ${label}`}
+						label={`Delete ${label}`}
+						title={isLastShape ? 'An obstacle needs at least one geometry' : `Delete ${label}`}
 						variant="danger"
 						cx="shrink-0"
 						disabled={isLastShape}
