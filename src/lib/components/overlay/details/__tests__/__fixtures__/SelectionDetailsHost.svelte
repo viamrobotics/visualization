@@ -30,9 +30,7 @@
 		tab={section.tab}
 		replacesAppearance={section.replacesAppearance}
 	>
-		{#snippet children()}
-			<p>{section.text}</p>
-		{/snippet}
+		<p>{section.text}</p>
 	</DetailsSection>
 {/each}
 

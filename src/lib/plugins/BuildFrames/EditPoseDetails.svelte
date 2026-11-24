@@ -6,11 +6,11 @@
 
 	import type { PosePatch } from '#lib/math/index.js'
 
-	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import SharedPoseFields from '#lib/components/overlay/details/SharedPoseFields.svelte'
 	import { MIXED, MIXED_TEXT } from '#lib/components/overlay/details/sharedValue.js'
 	import { useSharedPose } from '#lib/components/overlay/details/useSharedPose.svelte.js'
 	import WorldPoseDetails from '#lib/components/overlay/details/WorldPoseDetails.svelte'
+	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { useParentFrameOptions } from '#lib/hooks/useParentFrameOptions.svelte.js'

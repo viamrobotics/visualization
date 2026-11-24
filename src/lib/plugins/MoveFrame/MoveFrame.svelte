@@ -3,12 +3,12 @@
 
 	import { World } from '@threlte/rapier'
 
+	import SelectionDetails from '#lib/components/overlay/details/SelectionDetails.svelte'
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
 	import { traits } from '#lib/ecs/index.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
-	import SelectionDetails from '#lib/components/overlay/details/SelectionDetails.svelte'
 
 	import CollisionDetector from './collisions/CollisionDetector.svelte'
 	import MoveControls from './MoveControls.svelte'

@@ -15,14 +15,13 @@ inside it.
 ```
 -->
 <script lang="ts">
+	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
 	import { useToast } from '@viamrobotics/prime-ui'
 
 	import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import type { AppEmbeddedPartConfigProps } from '#lib/hooks/usePartConfig.svelte.js'
-
-	import type { Entity } from 'koota'
 
 	import { appearanceKeyOf } from '#lib/appearanceTarget.js'
 	import DetailsSection from '#lib/components/overlay/details/DetailsSection.svelte'

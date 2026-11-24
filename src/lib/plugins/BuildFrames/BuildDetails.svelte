@@ -15,9 +15,9 @@
 	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '#lib/components/overlay/details/DimensionsDetails.svelte'
 	import EditGeometryDetails from '#lib/components/overlay/details/EditGeometryDetails.svelte'
+	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
-	import EditPoseDetails from './EditPoseDetails.svelte'
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
@@ -26,11 +26,11 @@
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
-	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails, {
 		type ConfigAppearanceTarget,
 	} from './ConfigAppearanceDetails.svelte'
+	import EditPoseDetails from './EditPoseDetails.svelte'
 	import DeleteObstacleShapeButton from './ObstacleEditor/DeleteObstacleShapeButton.svelte'
 	import DuplicateObstaclesButton from './ObstacleEditor/DuplicateObstaclesButton.svelte'
 	import DuplicateObstacleShapeButton from './ObstacleEditor/DuplicateObstacleShapeButton.svelte'
