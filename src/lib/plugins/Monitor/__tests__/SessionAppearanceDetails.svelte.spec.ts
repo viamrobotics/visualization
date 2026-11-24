@@ -57,8 +57,7 @@ const mountPanel = ({ saved = { type: 'bounds' }, session, frameId }: MountOptio
 	return { partConfig, setSession: vi.mocked(resourceAppearance.setSession) }
 }
 
-const typeOpacity = (value: string) =>
-	enterNumber(numberField('opacity'), value)
+const typeOpacity = (value: string) => enterNumber(numberField('opacity'), value)
 
 describe('SessionAppearanceDetails', () => {
 	it('holds an edit for the session and leaves the config alone', async () => {

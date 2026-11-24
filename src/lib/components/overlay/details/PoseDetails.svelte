@@ -140,16 +140,26 @@
 			</span>
 		{/if}
 		<Select
-			aria-label="parent frame"
 			items={parentFrameItems}
-			placeholder={MIXED_TEXT}
 			bind:value={
 				() => (parentName === MIXED ? undefined : parentName),
 				(next) => {
 					if (next) setParent(next)
 				}
 			}
-		/>
+		>
+			<Select.Trigger
+				aria-label="parent frame"
+				class="w-full"
+			>
+				<Select.Value placeholder={MIXED_TEXT} />
+			</Select.Trigger>
+			<Select.Content>
+				<Select.Viewport>
+					<Select.Items />
+				</Select.Viewport>
+			</Select.Content>
+		</Select>
 	{:else}
 		<div class="mt-0.5 flex gap-3">
 			{#if parentEntity !== MIXED && parentEntity}

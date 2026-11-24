@@ -26,7 +26,7 @@
 	)
 
 	const definedColors = $derived(
-		colors.current.filter((color) => color !== undefined).map(colorChannelsToHex)
+		colors.current.filter((color) => color !== undefined).map((color) => colorChannelsToHex(color))
 	)
 	const color = $derived(sharedValue(definedColors))
 </script>

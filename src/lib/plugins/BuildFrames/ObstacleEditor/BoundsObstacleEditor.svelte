@@ -2,8 +2,8 @@
 	import { Point } from '@viamrobotics/prime-controls'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
+	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '#lib/obstacleAttributes.js'
 	import { obstacleEditorHint } from '#lib/obstacleEditorType.js'

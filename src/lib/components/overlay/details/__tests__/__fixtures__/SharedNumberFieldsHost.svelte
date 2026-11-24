@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
+
 	import SharedNumberFields from '../../SharedNumberFields.svelte'
 	import { type Shared } from '../../sharedValue'
 
@@ -12,7 +14,7 @@
 	const { initial, onchange }: Props = $props()
 
 	// The values a parent would hold, written back after each patch as a details panel does.
-	let values = $state({ ...initial })
+	let values = $state(untrack(() => ({ ...initial })))
 </script>
 
 <SharedNumberFields

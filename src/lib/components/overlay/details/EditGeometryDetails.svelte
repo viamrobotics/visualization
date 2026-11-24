@@ -64,7 +64,8 @@
 		}}
 		ondimensionchange={(patch) => {
 			// Each frame keeps its own value for every dimension left alone.
-			for (const entity of entities) frameEditor.setGeometry(entity, { type: geometryType, ...patch })
+			for (const entity of entities)
+				frameEditor.setGeometry(entity, { type: geometryType, ...patch })
 		}}
 	/>
 {/if}

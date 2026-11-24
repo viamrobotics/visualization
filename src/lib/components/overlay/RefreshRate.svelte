@@ -34,7 +34,6 @@
 	<span id={labelId}>{label}</span>
 	<div class="flex items-center gap-1">
 		<Select
-			aria-labelledby={labelId}
 			{items}
 			bind:value={
 				() => String(rate),
@@ -42,7 +41,19 @@
 					refreshRates[id] = Number.parseInt(next, 10)
 				}
 			}
-		/>
+		>
+			<Select.Trigger
+				aria-labelledby={labelId}
+				class="min-w-0 flex-1"
+			>
+				<Select.Value />
+			</Select.Trigger>
+			<Select.Content>
+				<Select.Viewport>
+					<Select.Items />
+				</Select.Viewport>
+			</Select.Content>
+		</Select>
 
 		{#if rate === RefetchRates.MANUAL}
 			<button

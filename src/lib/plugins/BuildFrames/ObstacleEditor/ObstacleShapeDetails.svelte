@@ -127,7 +127,6 @@
 		commit(obstacleShapeOffsetPatch(offset, patch ?? {}), 'shape')
 	}
 
-
 	const fieldId = $props.id()
 	const labelFieldId = `${fieldId}-shape-label`
 	const labelId = `${fieldId}-shape-label-name`

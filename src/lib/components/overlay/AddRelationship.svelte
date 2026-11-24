@@ -98,18 +98,40 @@
 		<div>
 			<span class="text-subtle-2 mb-1 block text-xs">Relationship type</span>
 			<Select
-				aria-label="Select relationship type"
 				items={relationshipTypeItems}
 				bind:value={selectedRelationshipType}
-			/>
+			>
+				<Select.Trigger
+					aria-label="Select relationship type"
+					class="w-full"
+				>
+					<Select.Value />
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Viewport>
+						<Select.Items />
+					</Select.Viewport>
+				</Select.Content>
+			</Select>
 		</div>
 		<div>
 			<span class="text-subtle-2 mb-1 block text-xs">Entity</span>
 			<Select
-				aria-label="Select entity for relationship"
 				items={entityItems}
 				bind:value={selectedRelationshipEntity}
-			/>
+			>
+				<Select.Trigger
+					aria-label="Select entity for relationship"
+					class="w-full"
+				>
+					<Select.Value />
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Viewport>
+						<Select.Items />
+					</Select.Viewport>
+				</Select.Content>
+			</Select>
 		</div>
 		<div>
 			<label
